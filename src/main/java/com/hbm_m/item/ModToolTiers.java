@@ -2,11 +2,11 @@
 package com.hbm_m.item;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item; // Добавлен импорт для Item
+//import net.minecraft.world.item.Item; // Добавлен импорт для Item
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.tags.TagKey; // Добавлен импорт для TagKey
+//import net.minecraft.tags.TagKey; // Добавлен импорт для TagKey
 import net.minecraftforge.common.ForgeTier;
 import net.minecraftforge.common.TierSortingRegistry;
 import net.minecraftforge.common.util.Lazy; // Добавлен импорт для Lazy

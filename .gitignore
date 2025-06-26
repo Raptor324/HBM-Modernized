@@ -1,25 +1,68 @@
 # eclipse
-bin
+bin/
 *.launch
-.settings
-.metadata
+.settings/
+.metadata/
 .classpath
 .project
 
 # idea
-out
+out/
 *.ipr
 *.iws
 *.iml
-.idea
+.idea/
 
 # gradle
-build
-.gradle
+build/
+.gradle/
 
 # other
-eclipse
-run
+run/
+temp/
+run-data/
+logs/
+.DS_Store
+Thumbs.db
+
+
+# Minecraft
+*.pid
+*.zip
+*.json
+*.dat
+*.dat_old
+*.txt
+*.srg
+*.tsrg
+*.bat
+*.exe
+*.dll
+*.so
+*.dylib
+natives/
+natives/**
+
+# Libs (если не нужны в репозитории)
+
+
+# VS Code
+.vscode/
+
+# User-specific
+*.iml
+.idea/
+.kilocode/
+opik-mcp/
+
+# Ignore old backup folders
+OLD/
+
+# Example project
+ExampleProject/
+
+# Uncomment if you want to ignore generated sources
+# src/generated/
 
 # Files from Forge MDK
 forge*changelog.txt
