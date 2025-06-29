@@ -46,7 +46,7 @@ natives/
 natives/**
 
 # Libs (если не нужны в репозитории)
-libs
+
 
 # VS Code
 .vscode/
