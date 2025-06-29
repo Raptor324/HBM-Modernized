@@ -1,7 +1,7 @@
 package com.hbm_m.radiation;
 
 import com.hbm_m.block.RadioactiveBlock;
-import com.hbm_m.config.RadiationConfig;
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
 
@@ -24,7 +24,7 @@ public class ChunkRadiationManager {
     // Singleton instance
     public static final ChunkRadiationManager INSTANCE = new ChunkRadiationManager();
 
-    public static final ChunkRadiationHandler proxy = RadiationConfig.usePrismSystem
+    public static final ChunkRadiationHandler proxy = ModClothConfig.get().usePrismSystem
             ? new ChunkRadiationHandlerPRISM()
             : new ChunkRadiationHandlerSimple();
 
@@ -36,7 +36,7 @@ public class ChunkRadiationManager {
      */
     @SubscribeEvent
     public void onWorldLoad(LevelEvent.Load event) {
-        if (RadiationConfig.enableChunkRads) {
+        if (ModClothConfig.get().enableChunkRads) {
             if (event.getLevel() instanceof net.minecraft.world.level.Level) {
                 net.minecraft.world.level.Level level = (net.minecraft.world.level.Level) event.getLevel();
                 MainRegistry.LOGGER.debug("World load event received for {}", level.dimension().location());
@@ -50,7 +50,7 @@ public class ChunkRadiationManager {
      */
     @SubscribeEvent
     public void onWorldUnload(LevelEvent.Unload event) {
-        if (RadiationConfig.enableChunkRads) {
+        if (ModClothConfig.get().enableChunkRads) {
             if (event.getLevel() instanceof net.minecraft.world.level.Level) {
                 net.minecraft.world.level.Level level = (net.minecraft.world.level.Level) event.getLevel();
                 MainRegistry.LOGGER.debug("World unload event received for {}", level.dimension().location());
@@ -64,7 +64,7 @@ public class ChunkRadiationManager {
      */
     @SubscribeEvent
     public void onChunkLoad(ChunkDataEvent.Load event) {
-        if (RadiationConfig.enableChunkRads) {
+        if (ModClothConfig.get().enableChunkRads) {
             proxy.receiveChunkLoad(event);
         }
     }
@@ -74,7 +74,7 @@ public class ChunkRadiationManager {
      */
     @SubscribeEvent
     public void onChunkSave(ChunkDataEvent.Save event) {
-        if (RadiationConfig.enableChunkRads) {
+        if (ModClothConfig.get().enableChunkRads) {
             proxy.receiveChunkSave(event);
         }
     }
@@ -84,7 +84,7 @@ public class ChunkRadiationManager {
      */
     @SubscribeEvent
     public void onChunkUnload(ChunkEvent.Unload event) {
-        if (RadiationConfig.enableChunkRads) {
+        if (ModClothConfig.get().enableChunkRads) {
             proxy.receiveChunkUnload(event);
         }
     }
@@ -94,29 +94,23 @@ public class ChunkRadiationManager {
      */
     @SubscribeEvent
     public void updateSystem(TickEvent.ServerTickEvent event) {
-        if (RadiationConfig.enableChunkRads && event.phase == TickEvent.Phase.END) {
-            tickCounter++;
-
-            // Обновляем систему радиации каждые 20 тиков (1 секунда), как в старом HBM
-            if (tickCounter >= 20) {
-                proxy.updateSystem();
-                tickCounter = 0;
-
-                // Если включены эффекты радиации на мир, обрабатываем их
-                if (RadiationConfig.worldRadEffects) {
-                    proxy.handleWorldDestruction();
-                }
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads || event.phase != TickEvent.Phase.END) return;
+        tickCounter++;
+        if (tickCounter >= 20) {
+            proxy.updateSystem();
+            tickCounter = 0;
+            if (ModClothConfig.get().worldRadEffects) {
+                proxy.handleWorldDestruction();
             }
-
-            // Передаем тик в обработчик радиации
-            proxy.receiveWorldTick(event);
         }
+        proxy.receiveWorldTick(event);
     }
 
     /**
      * Получить уровень радиации в указанной позиции
      */
     public static float getRadiation(net.minecraft.world.level.Level level, int x, int y, int z) {
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return 0F;
         float rad = proxy.getRadiation(level, x, y, z);
         MainRegistry.LOGGER.debug("ChunkRadiationManager: getRadiation for pos ({}, {}, {}): {}", x, y, z, rad);
         return rad;
@@ -126,6 +120,7 @@ public class ChunkRadiationManager {
      * Установить уровень радиации в указанной позиции
      */
     public static void setRadiation(net.minecraft.world.level.Level level, int x, int y, int z, float rad) {
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return;
         proxy.setRadiation(level, x, y, z, rad);
     }
 
@@ -133,6 +128,7 @@ public class ChunkRadiationManager {
      * Увеличить уровень радиации в указанной позиции
      */
     public static void incrementRad(net.minecraft.world.level.Level level, int x, int y, int z, float rad) {
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return;
         proxy.incrementRad(level, x, y, z, rad);
     }
 
@@ -148,7 +144,7 @@ public class ChunkRadiationManager {
                     ChunkRadiationHandlerSimple.getChunkRadiationCap((LevelChunk) level.getChunk(pos.x, pos.z)).ifPresent(cap -> {
                         float currentBlockRad = cap.getBlockRadiation();
                         float addedRad = ((RadioactiveBlock) event.getPlacedBlock().getBlock()).getRadiationLevel();
-                        float newBlockRad = Mth.clamp(currentBlockRad + addedRad, 0, RadiationConfig.maxRad);
+                        float newBlockRad = Mth.clamp(currentBlockRad + addedRad, 0, ModClothConfig.get().maxRad);
                         cap.setBlockRadiation(newBlockRad);
                         ((LevelChunk) level.getChunk(pos.x, pos.z)).setUnsaved(true);
                         MainRegistry.LOGGER.debug("RadioactiveBlock placed at {}. Chunk block radiation updated from {} to {}.", event.getPos(), currentBlockRad, newBlockRad);
@@ -162,7 +158,7 @@ public class ChunkRadiationManager {
                     });
                 }
             }
-            // ...existing code...
+            
         }
     }
 
@@ -190,7 +186,7 @@ public class ChunkRadiationManager {
                     });
                 }
             }
-            // ...existing code...
+            
         }
     }
 

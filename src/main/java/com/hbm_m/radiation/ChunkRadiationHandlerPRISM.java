@@ -1,7 +1,7 @@
 package com.hbm_m.radiation;
 
 import com.hbm_m.capability.ChunkRadiationProvider;
-import com.hbm_m.config.RadiationConfig;
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -27,7 +27,7 @@ public class ChunkRadiationHandlerPRISM extends ChunkRadiationHandler {
     public ConcurrentHashMap<Level, RadPerWorld> perWorld = new ConcurrentHashMap<>();
     public static int cycles = 0;
 
-    public static final float MAX_RADIATION = RadiationConfig.maxRad;
+    public static final float MAX_RADIATION = ModClothConfig.get().maxRad;
     private static final String NBT_KEY_CHUNK_RADIATION = "hfr_prism_radiation_";
     private static final String NBT_KEY_CHUNK_RESISTANCE = "hfr_prism_resistance_";
     private static final String NBT_KEY_CHUNK_EXISTS = "hfr_prism_exists_";

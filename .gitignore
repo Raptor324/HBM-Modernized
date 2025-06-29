@@ -46,7 +46,7 @@ natives/
 natives/**
 
 # Libs (если не нужны в репозитории)
-
+libs
 
 # VS Code
 .vscode/
@@ -70,3 +70,6 @@ ExampleProject/
 forge*changelog.txt
 
 .fake
+hs_err_pid*
+replay_pid*
+.editorconfig

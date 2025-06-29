@@ -22,6 +22,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.network.chat.Component;
 import net.minecraftforge.network.PacketDistributor;
+import com.hbm_m.config.ModClothConfig;
 
 import java.util.Random;
 
@@ -50,20 +51,24 @@ public class GeigerCounterItem extends Item {
             //     );
             // }
 
-            float chunkRad = ChunkRadiationManager.getRadiation(
-                pLevel,
-                (int)Math.floor(pPlayer.getX()),
-                (int)Math.floor(pPlayer.getY() + pPlayer.getBbHeight() * 0.5),
-                (int)Math.floor(pPlayer.getZ())
-            );
+            float chunkRad = 0F;
+            float invRad = 0F;
+            float totalEnvironmentRads = 0F;
+            if (ModClothConfig.get().enableRadiation) {
+                chunkRad = ChunkRadiationManager.getRadiation(
+                    pLevel,
+                    (int)Math.floor(pPlayer.getX()),
+                    (int)Math.floor(pPlayer.getY() + pPlayer.getBbHeight() * 0.5),
+                    (int)Math.floor(pPlayer.getZ())
+                );
+                invRad = PlayerRadiationHandler.getInventoryRadiation(pPlayer);
+                totalEnvironmentRads = chunkRad + invRad;
+            }
 
             float protection = 0.0f;
             float protectionAbs = 0.0f;
             // protection = PlayerRadiationHandler.getProtectionPercent(pPlayer);
             // protectionAbs = PlayerRadiationHandler.getProtectionAbs(pPlayer);
-
-            float invRad = PlayerRadiationHandler.getInventoryRadiation(pPlayer);
-            float totalEnvironmentRads = chunkRad + invRad;
 
             Component msg = Component.translatable(
                 "item.hbm_m.geiger_counter.full_message",
@@ -104,14 +109,19 @@ public class GeigerCounterItem extends Item {
                 //     );
                 // }
 
-                float chunkRad = ChunkRadiationManager.getRadiation(
-                    pLevel,
-                    (int)Math.floor(serverPlayer.getX()),
-                    (int)Math.floor(serverPlayer.getY() + serverPlayer.getBbHeight() * 0.5),
-                    (int)Math.floor(serverPlayer.getZ())
-                );
-                float invRad = PlayerRadiationHandler.getInventoryRadiation(serverPlayer);
-                float totalEnvironmentRads = chunkRad + invRad;
+                float chunkRad = 0F;
+                float invRad = 0F;
+                float totalEnvironmentRads = 0F;
+                if (ModClothConfig.get().enableRadiation) {
+                    chunkRad = ChunkRadiationManager.getRadiation(
+                        pLevel,
+                        (int)Math.floor(serverPlayer.getX()),
+                        (int)Math.floor(serverPlayer.getY() + serverPlayer.getBbHeight() * 0.5),
+                        (int)Math.floor(serverPlayer.getZ())
+                    );
+                    invRad = PlayerRadiationHandler.getInventoryRadiation(serverPlayer);
+                    totalEnvironmentRads = chunkRad + invRad;
+                }
                 MainRegistry.LOGGER.debug("GeigerCounter: chunkRad = {}, invRad = {}, totalEnvironmentRads = {}", chunkRad, invRad, totalEnvironmentRads);
 
                 // Отправляем пакет только если игрок не в креативе или наблюдателе

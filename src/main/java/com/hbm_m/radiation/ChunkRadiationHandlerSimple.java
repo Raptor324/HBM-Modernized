@@ -2,7 +2,7 @@ package com.hbm_m.radiation;
 
 import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.capability.IChunkRadiation;
-import com.hbm_m.config.RadiationConfig;
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.block.RadioactiveBlock;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.server.level.ServerLevel;
@@ -25,7 +25,7 @@ import com.hbm_m.network.ChunkRadiationDebugPacket;
 
 public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
 
-    private static final float MAX_RAD = RadiationConfig.maxRad;
+    private static final float MAX_RAD = ModClothConfig.get().maxRad;
     private final java.util.Set<ChunkPos> activeChunks = java.util.concurrent.ConcurrentHashMap.newKeySet();
 
     // Публичный статический метод для доступа к capability радиации чанка
@@ -40,6 +40,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
 
     @Override
     public float getRadiation(Level level, int x, int y, int z) {
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return 0F;
         if (level == null || level.isClientSide()) return 0F;
         LevelChunk chunk = level.getChunk(x >> 4, z >> 4);
         final float[] radiation = {0F};
@@ -54,6 +55,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
 
     @Override
     public void setRadiation(Level level, int x, int y, int z, float rad) {
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return;
         if (level == null || level.isClientSide()) return;
         LevelChunk chunk = level.getChunk(x >> 4, z >> 4);
         float value = Mth.clamp(rad, 0, MAX_RAD);
@@ -76,6 +78,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
 
     @Override
     public void updateSystem() {
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return;
         for (ServerLevel level : ServerLifecycleHooks.getCurrentServer().getAllLevels()) {
             if (level.isClientSide()) continue;
 
@@ -96,7 +99,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             for (ChunkPos pos : activeChunks) {
                 LevelChunk chunk = level.getChunkSource().getChunk(pos.x, pos.z, false);
                 if (chunk != null) {
-                    float blockRad = recalculateChunkRadiation(chunk) * RadiationConfig.radSourceInfluenceFactor; // только приток от блоков с коэффициентом
+                    float blockRad = recalculateChunkRadiation(chunk) * ModClothConfig.get().radSourceInfluenceFactor; // только приток от блоков с коэффициентом
                     newRadiation.put(pos, blockRad);
                 }
             }

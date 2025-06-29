@@ -11,6 +11,9 @@ import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.client.ClientSetup;
 import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.capability.IChunkRadiation;
+import me.shedaniel.autoconfig.AutoConfig;
+import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
+import com.hbm_m.config.ModClothConfig;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTabs;
@@ -35,6 +38,11 @@ public class MainRegistry {
     // Добавляем логгер для отладки
     public static final Logger LOGGER = LogManager.getLogger(RefStrings.MODID);
 
+    static {
+        // Регистрируем конфиг до любых обращений к нему!
+        ModClothConfig.register();
+    }
+
     public MainRegistry(FMLJavaModLoadingContext context) {
         LOGGER.info("Initializing " + RefStrings.NAME);
         
@@ -45,7 +53,8 @@ public class MainRegistry {
         ModCreativeTabs.register(modEventBus); // Регистрация наших вкладок креативного режима
         ModSounds.register(modEventBus); // Регистрация звуков
         ModPacketHandler.register(); // Регистрация пакетов
-        // УДАЛЕНО: ModDamageTypes.DAMAGE_TYPES.register(modEventBus); // Регистрация DeferredRegister
+
+        // Удаляем AutoConfig, так как теперь используется ClothConfig2 напрямую
 
         modEventBus.addListener(this::commonSetup); // Добавлен слушатель для FMLCommonSetupEvent
         modEventBus.addListener(this::addCreative);
@@ -86,7 +95,7 @@ public class MainRegistry {
         MinecraftForge.EVENT_BUS.register(new ChunkRadiationManager());
         MinecraftForge.EVENT_BUS.register(new PlayerRadiationHandler());
         
-        LOGGER.info("Radiation handlers registered. Using {}.", com.hbm_m.config.RadiationConfig.usePrismSystem ? "ChunkRadiationHandlerPRISM" : "ChunkRadiationHandlerSimple");
+        LOGGER.info("Radiation handlers registered. Using {}.", ModClothConfig.get().usePrismSystem ? "ChunkRadiationHandlerPRISM" : "ChunkRadiationHandlerSimple");
     }
 
     @SubscribeEvent

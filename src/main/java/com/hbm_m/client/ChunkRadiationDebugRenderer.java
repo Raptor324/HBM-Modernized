@@ -13,6 +13,8 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+import com.hbm_m.config.ModClothConfig;
+
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class ChunkRadiationDebugRenderer {
 
@@ -33,17 +35,24 @@ public class ChunkRadiationDebugRenderer {
     public static void onRenderWorld(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY) return;
         Minecraft mc = Minecraft.getInstance();
-        if (!com.hbm_m.config.RadiationConfig.enableDebugRender || !mc.options.renderDebug || (mc.player != null && !mc.player.isCreative() && !mc.player.isSpectator())) return; // Только если открыт F3, включен дебаг-рендер и игрок в творческом режиме или режиме наблюдателя
+        if (!ModClothConfig.get().enableDebugRender || !mc.options.renderDebug) return;
+        if (mc.player != null) {
+            boolean isCreativeOrSpectator = mc.player.isCreative() || mc.player.isSpectator();
+            if (!ModClothConfig.get().debugRenderInSurvival && !isCreativeOrSpectator) return;
+        }
 
         Level level = mc.level;
         if (level == null) return;
 
         Vec3 camPos = event.getCamera().getPosition();
-        int radius = com.hbm_m.config.RadiationConfig.debugRenderDistance; // Сколько чанков вокруг игрока показывать
+        // Используем значения из ClothConfig:
+        int radius = ModClothConfig.get().debugRenderDistance; // Сколько чанков вокруг игрока показывать
 
         PoseStack poseStack = event.getPoseStack();
         MultiBufferSource.BufferSource buffer = mc.renderBuffers().bufferSource();
         Font font = mc.font;
+
+        float scale = ModClothConfig.get().debugRenderTextSize;
 
         int playerChunkX = ((int)camPos.x) >> 4;
         int playerChunkZ = ((int)camPos.z) >> 4;
@@ -67,7 +76,6 @@ public class ChunkRadiationDebugRenderer {
                 poseStack.pushPose();
                 poseStack.translate(x - camPos.x, y - camPos.y, z - camPos.z);
                 poseStack.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
-                float scale = com.hbm_m.config.RadiationConfig.debugRenderTextSize;
                 poseStack.scale(-scale, -scale, scale);
 
                 font.drawInBatch(text, -font.width(text) / 2f, 0, 0xFFFFFF, false, poseStack.last().pose(), buffer, Font.DisplayMode.SEE_THROUGH, 0, 15728880);

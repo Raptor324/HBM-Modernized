@@ -2,7 +2,7 @@ package com.hbm_m.capability;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.util.Mth;
-import com.hbm_m.config.RadiationConfig;
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 
 public class ChunkRadiation implements IChunkRadiation {
@@ -20,7 +20,7 @@ public class ChunkRadiation implements IChunkRadiation {
     
     @Override
     public void setBlockRadiation(float blockRadiation) {
-        float clamped = Mth.clamp(blockRadiation, 0, RadiationConfig.maxRad);
+        float clamped = Mth.clamp(blockRadiation, 0, ModClothConfig.get().maxRad);
         this.blockRadiation = clamped;
     }
 

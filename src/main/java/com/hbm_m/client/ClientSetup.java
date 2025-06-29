@@ -6,6 +6,7 @@ import com.hbm_m.main.MainRegistry;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -47,6 +48,13 @@ public class ClientSetup {
         // Overlay registration is handled in registerGuiOverlays via RegisterGuiOverlaysEvent.
         // No need to register overlays here.
         MinecraftForge.EVENT_BUS.register(com.hbm_m.client.ChunkRadiationDebugRenderer.class);
+        // Регистрируем обработчик клавиш для открытия меню конфигурации
+        MinecraftForge.EVENT_BUS.register(ModConfigKeybindHandler.class);
+    }
+
+    @SubscribeEvent
+    public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
+        ModConfigKeybindHandler.onRegisterKeyMappings(event);
     }
 
     static {

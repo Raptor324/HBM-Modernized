@@ -1,6 +1,6 @@
 package com.hbm_m.radiation;
 
-import com.hbm_m.config.RadiationConfig;
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.item.RadioactiveItem;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
@@ -199,7 +199,7 @@ public class PlayerRadiationHandler {
             return;
         }
 
-        if (!RadiationConfig.enableRadiation || event.phase != TickEvent.Phase.END || event.player.level().isClientSide()) {
+        if (!ModClothConfig.get().enableRadiation || event.phase != TickEvent.Phase.END || event.player.level().isClientSide()) {
             return;
         }
 
@@ -210,19 +210,23 @@ public class PlayerRadiationHandler {
         if (tickCounter >= 20) {
             tickCounter = 0;
 
-            // Добавляем лог для отслеживания режима игрока перед проверкой
             MainRegistry.LOGGER.debug("SERVER: Player {} isCreative: {}, isSpectator: {}", player.getName().getString(), player.isCreative(), player.isSpectator());
 
-            // Начисление радиации только в режиме выживания
             if (!player.isCreative() && !player.isSpectator()) {
-                float chunkRad = ChunkRadiationManager.getRadiation(player.level(), player.blockPosition().getX(), player.blockPosition().getY(), player.blockPosition().getZ());
-                float invRad = getInventoryRadiation(player);
+                float chunkRad = 0F;
+                float invRad = 0F;
+                if (ModClothConfig.get().enableChunkRads) {
+                    chunkRad = ChunkRadiationManager.getRadiation(player.level(), player.blockPosition().getX(), player.blockPosition().getY(), player.blockPosition().getZ());
+                }
+                if (ModClothConfig.get().enableRadiation) {
+                    invRad = getInventoryRadiation(player);
+                }
                 float totalRad = chunkRad + invRad;
                 if (totalRad > 0) {
                     incrementPlayerRads(player, totalRad);
                     MainRegistry.LOGGER.debug("Add total radiation to player {}: chunk={} inv={} total={}", player.getName().getString(), chunkRad, invRad, totalRad);
                 }
-                decrementPlayerRads(player, RadiationConfig.radDecay);
+                decrementPlayerRads(player, ModClothConfig.get().radDecay);
                 applyRadiationEffects(player);
             }
             // Отправляем текущее значение радиации игроку на клиент только если он в режиме выживания
@@ -286,32 +290,32 @@ public class PlayerRadiationHandler {
         }
 
         // Если радиация достигла летального порога, игрок умирает
-        if (rads >= RadiationConfig.maxPlayerRad) {
-            MainRegistry.LOGGER.debug("SERVER: Player {} radiation ({}) reached maxPlayerRad ({}). Killing player and resetting radiation.", player.getName().getString(), rads, RadiationConfig.maxPlayerRad);
+        if (rads >= ModClothConfig.get().maxPlayerRad) {
+            MainRegistry.LOGGER.debug("SERVER: Player {} radiation ({}) reached maxPlayerRad ({}). Killing player and resetting radiation.", player.getName().getString(), rads, ModClothConfig.get().maxPlayerRad);
             player.hurt(new RadiationDamageSource(player.level(), player), Float.MAX_VALUE);
             setPlayerRads(player, 0F); // Сброс радиации после смерти
             return; // Прекращаем применение других эффектов, так как игрок мертв
         }
 
         // Если радиация выше порога урона, наносим урон
-        if (rads > RadiationConfig.radDamageThreshold) {
-            player.hurt(player.damageSources().magic(), RadiationConfig.radDamage);
+        if (rads > ModClothConfig.get().radDamageThreshold) {
+            player.hurt(player.damageSources().magic(), ModClothConfig.get().radDamage);
         }
         
         // Применяем различные эффекты в зависимости от уровня радиации
-        if (rads > RadiationConfig.radBlindness) {
+        if (rads > ModClothConfig.get().radBlindness) {
             player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 220, 0));
         }
         
-        if (rads > RadiationConfig.radConfusion) {
+        if (rads > ModClothConfig.get().radConfusion) {
             player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 220, 0));
         }
         
-        if (rads > RadiationConfig.radWater) {
+        if (rads > ModClothConfig.get().radWater) {
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 220, 2));
         }
         
-        if (rads > RadiationConfig.radSickness) {
+        if (rads > ModClothConfig.get().radSickness) {
             player.addEffect(new MobEffectInstance(MobEffects.HUNGER, 220, 0));
             player.addEffect(new MobEffectInstance(MobEffects.POISON, 220, 0));
         }
