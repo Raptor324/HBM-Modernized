@@ -58,6 +58,10 @@ Constructive feedback and bug reports are very welcome. All crafts are currently
 - **Commands:**  
   - `/hbm_m rad` for manipulating player radiation (add, remove, clear).
 
+- **Advancements:** 
+    - **Hooray, Radiation!** Reach a radiation level of 200 RAD
+    - **Ouch, Radiation!** Reach a radiation level of 1000 RAD and die from radiation sickness
+
 - **Client Features:**  
   - Debug chunk radiation renderer (toggleable).
   - Deep Cloth Config API integration, so you can easily tweak mod settings. (This is a required dependency for now, but I might make it optional in the future.)
@@ -162,6 +166,10 @@ Thank you for trying out the mod and helping with feedback.
 
   - **Команды:**
       - `/hbm_m rad` для управления радиацией игрока (добавить, удалить, очистить).
+
+  - **Достижения**
+    - **Ура, Радиация!** Достигнуть уровня радиации в 200 РАД
+    - **Ай, Радиация!** Достигнуть уровня радиации в 1000 РАД и умереть от лучевой болезни
 
   - **Клиентские функции:**
       - Отладочный рендерер радиации чанков (переключаемый).
