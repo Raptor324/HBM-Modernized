@@ -69,8 +69,8 @@ jobs:
       env:
          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Токен, предоставленный GitHub автоматически
       with:
-        tag_name: ${{ github.ref }} # Имя тега, который вызвал воркфлоу (например, v1.0.0)
-        release_name: Release ${{ github.ref }} # Имя релиза в GitHub
+        tag_name: ${{ github.ref_name }} # Только имя тега, без refs/tags/
+        release_name: Release ${{ github.ref_name }} # Имя релиза
         draft: false # Опубликовать сразу
         prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') || contains(github.ref, '-rc') }} # Автоматически помечать как пре-релиз, если в теге есть -beta, -alpha, -rc
 
