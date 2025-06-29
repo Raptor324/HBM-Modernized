@@ -31,7 +31,6 @@ Thumbs.db
 # Minecraft
 *.pid
 *.zip
-*.json
 *.dat
 *.dat_old
 *.txt

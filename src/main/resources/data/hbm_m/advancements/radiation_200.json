@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:geiger_counter"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.radiation_200.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.radiation_200.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "minecraft:story/root",
+  "criteria": {
+    "reached_200_rads": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

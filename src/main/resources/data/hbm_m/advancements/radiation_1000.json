@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:uranium_ingot"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.radiation_1000.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.radiation_1000.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "parent": "hbm_m:radiation_200",
+  "criteria": {
+    "reached_1000_rads": {
+      "trigger": "minecraft:impossible"
+    }
+  }
+}

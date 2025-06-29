@@ -1,0 +1,46 @@
+{
+  "geiger1": {
+    "category": "player",
+    "sounds": ["hbm_m:tool/geiger1"],
+    "subtitle": "sounds.hbm_m.geiger_counter"
+  },
+  "geiger2": {
+    "category": "player",
+    "sounds": ["hbm_m:tool/geiger2"],
+    "subtitle": "sounds.hbm_m.geiger_counter"
+  },
+  "geiger3": {
+    "category": "player",
+    "sounds": ["hbm_m:tool/geiger3"],
+    "subtitle": "sounds.hbm_m.geiger_counter"
+  },
+  "geiger4": {
+    "category": "player",
+    "sounds": ["hbm_m:tool/geiger4"],
+    "subtitle": "sounds.hbm_m.geiger_counter"
+  },
+  "geiger5": {
+    "category": "player",
+    "sounds": ["hbm_m:tool/geiger5"],
+    "subtitle": "sounds.hbm_m.geiger_counter"
+  },
+  "geiger6": {
+    "category": "player",
+    "sounds": ["hbm_m:tool/geiger6"],
+    "subtitle": "sounds.hbm_m.geiger_counter"
+  },
+  "techboop": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.techboop",
+    "sounds": [
+      "hbm_m:techboop"
+    ]
+  },
+  "testboop": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.testboop",
+    "sounds": [
+      "hbm_m:metal_detector_found_ore"
+    ]
+  }
+}
