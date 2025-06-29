@@ -59,6 +59,7 @@ opik-mcp/
 
 # Ignore old backup folders
 OLD/
+temp
 
 # Example project
 ExampleProject/
