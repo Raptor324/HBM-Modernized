@@ -18,7 +18,7 @@ jobs:
 
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
 
     steps:
     - uses: actions/checkout@v4
@@ -49,6 +49,40 @@ jobs:
     #
     # - name: Build with Gradle 8.9
     #   run: gradle build
+    - name: Get JAR file name
+      id: get_jar_name
+      run: |
+          # Ищем JAR-файл в папке build/libs/. 
+          # Возможно, вам придется изменить путь или паттерн поиска
+          JAR_FILE=$(find build/libs -name "*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
+          if [ -z "$JAR_FILE" ]; then
+            echo "No JAR file found!"
+            exit 1
+          fi
+          echo "Found JAR: $JAR_FILE"
+          echo "JAR_PATH=$JAR_FILE" >> $GITHUB_OUTPUT
+          echo "JAR_NAME=$(basename $JAR_FILE)" >> $GITHUB_OUTPUT
+
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Токен, предоставленный GitHub автоматически
+      with:
+        tag_name: ${{ github.ref }} # Имя тега, который вызвал воркфлоу (например, v1.0.0)
+        release_name: Release ${{ github.ref }} # Имя релиза в GitHub
+        draft: false # Опубликовать сразу
+        prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') || contains(github.ref, '-rc') }} # Автоматически помечать как пре-релиз, если в теге есть -beta, -alpha, -rc
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }} # URL для загрузки актива, полученный из предыдущего шага
+        asset_path: ${{ steps.get_jar_name.outputs.JAR_PATH }} # Путь к вашему JAR-файлу
+        asset_name: ${{ steps.get_jar_name.outputs.JAR_NAME }} # Имя файла актива в релизе
+        asset_content_type: application/java-archive # MIME-тип для JAR-файла
 
   dependency-submission:
 
