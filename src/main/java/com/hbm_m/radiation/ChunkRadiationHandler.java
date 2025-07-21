@@ -1,9 +1,12 @@
 package com.hbm_m.radiation;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.level.ChunkDataEvent;
+// import net.minecraftforge.event.level.ChunkDataEvent;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.LevelEvent;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.event.TickEvent;
 
 /**
@@ -45,6 +48,8 @@ public abstract class ChunkRadiationHandler {
      * @param rad величина увеличения радиации в рад/с
      */
     public abstract void incrementRad(Level level, int x, int y, int z, float rad);
+
+    public abstract void incrementBlockRadiation(Level level, BlockPos pos, float diff);
     
     /**
      * Уменьшает уровень радиации в указанной позиции
@@ -62,6 +67,8 @@ public abstract class ChunkRadiationHandler {
      */
     public abstract void clearSystem(Level level);
 
+    public abstract void onBlockUpdated(Level level, BlockPos pos);
+    
     /**
      * Обработчики событий
      */
@@ -69,8 +76,13 @@ public abstract class ChunkRadiationHandler {
     public void receiveWorldUnload(LevelEvent.Unload event) { }
     public void receiveWorldTick(TickEvent.ServerTickEvent event) { }
     
+    // Методы для PRISM системы
     public void receiveChunkLoad(ChunkDataEvent.Load event) { }
     public void receiveChunkSave(ChunkDataEvent.Save event) { }
+
+    public abstract void recalculateChunkRadiation(LevelChunk chunk);
+    public abstract void receiveChunkLoad(LevelChunk chunk);
+    // public void receiveChunkSave(ChunkDataEvent.Save event) { }
     public void receiveChunkUnload(ChunkEvent.Unload event) { }
     
     /**

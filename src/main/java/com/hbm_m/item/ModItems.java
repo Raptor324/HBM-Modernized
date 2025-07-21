@@ -28,6 +28,9 @@ public class ModItems {
     public static final RegistryObject<Item> GEIGER_COUNTER = ITEMS.register("geiger_counter",
             () -> new GeigerCounterItem(new Item.Properties().stacksTo(1)));
 
+    public static final RegistryObject<Item> DOSIMETER = ITEMS.register("dosimeter",
+            () -> new DosimeterItem(new Item.Properties().stacksTo(1)));
+
     // Метод для регистрации всех предметов, вызывается в основном классе мода.
     public static void register(IEventBus eventBus) {
         ITEMS.register(eventBus);

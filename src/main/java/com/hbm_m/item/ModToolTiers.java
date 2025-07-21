@@ -32,7 +32,7 @@ public class ModToolTiers {
             ),
             // Это параметры для TierSortingRegistry.registerTier
             // Первый: ResourceLocation идентификатор твоего уровня
-            ResourceLocation.fromNamespaceAndPath("hbm_m", "alloy"), // ИСПРАВЛЕНО: использование fromNamespaceAndPath
+            ResourceLocation.fromNamespaceAndPath("hbm_m", "alloy"),
             // Второй: список уровней, выше которых находится твой уровень
             List.of(Tiers.NETHERITE),
             // Третий: список уровней, ниже которых находится твой уровень (обычно пустой)

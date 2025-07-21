@@ -49,6 +49,10 @@ public class ChunkRadiationHandlerPRISM extends ChunkRadiationHandler {
     }
 
     @Override
+    public void recalculateChunkRadiation(LevelChunk chunk) {
+    }
+
+    @Override
     public void setRadiation(Level level, int x, int y, int z, float rad) {
         if (Float.isNaN(rad)) rad = 0;
 
@@ -84,6 +88,13 @@ public class ChunkRadiationHandlerPRISM extends ChunkRadiationHandler {
     @Override
     public void decrementRad(Level level, int x, int y, int z, float rad) {
         setRadiation(level, x, y, z, Math.max(getRadiation(level, x, y, z) - rad, 0));
+    }
+
+    @Override
+    public void incrementBlockRadiation(Level level, BlockPos pos, float diff) {
+        // TODO: Реализовать логику для инкрементального обновления в системе PRISM,
+        // когда она будет полностью введена в эксплуатацию.
+        // Пока что это пустая реализация для компиляции.
     }
 
     @Override
@@ -130,6 +141,11 @@ public class ChunkRadiationHandlerPRISM extends ChunkRadiationHandler {
                 MainRegistry.LOGGER.warn("RadPerWorld not found for level {} during chunk load.", level.dimension().location());
             }
         }
+    }
+
+    @Override
+    public void receiveChunkLoad(LevelChunk chunk) {
+        // Оставляем пустым, так как PRISM использует событие ChunkDataEvent.Load
     }
 
     @Override
@@ -319,6 +335,14 @@ public class ChunkRadiationHandlerPRISM extends ChunkRadiationHandler {
 
     public static class RadPerWorld {
         public ConcurrentHashMap<ChunkPos, SubChunk[]> radiation = new ConcurrentHashMap<>();
+    }
+
+    @Override
+    public void onBlockUpdated(Level level, BlockPos pos) {
+        // TODO: Реализуйте здесь логику для PRISM системы.
+        // Например, если PRISM тоже должен пересчитывать источники радиации в чанке,
+        // то соответствующий код должен быть вызван здесь.
+        // Пока что можно оставить пустым, чтобы код скомпилировался.
     }
 
     public static class SubChunk {

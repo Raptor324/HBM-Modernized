@@ -3,192 +3,188 @@ package com.hbm_m.radiation;
 import com.hbm_m.block.RadioactiveBlock;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.network.ModPacketHandler;
-
-import net.minecraftforge.event.level.ChunkDataEvent;
-import net.minecraftforge.event.level.ChunkEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.event.level.BlockEvent;
-import net.minecraft.world.level.ChunkPos;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelAccessor;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraft.util.Mth;
+import net.minecraftforge.common.util.BlockSnapshot;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.level.BlockEvent;
+// import net.minecraftforge.event.level.ChunkDataEvent;
+import net.minecraftforge.event.level.ChunkEvent;
+import net.minecraftforge.event.level.ExplosionEvent;
+import net.minecraftforge.event.level.LevelEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+
 
 /**
- * Менеджер радиации, управляющий обработчиками радиации и обрабатывающий события
+ * ЕДИНЫЙ менеджер радиации, управляющий обработчиками и ВСЕМИ связанными событиями.
+ * Этот класс является единственным источником истины для системы радиации.
  */
 public class ChunkRadiationManager {
 
-    // Singleton instance
+    // Singleton instance. Этот объект должен быть зарегистрирован в FORGE Event Bus.
     public static final ChunkRadiationManager INSTANCE = new ChunkRadiationManager();
+    private ChunkRadiationManager() {}
 
-    public static final ChunkRadiationHandler proxy = ModClothConfig.get().usePrismSystem
-            ? new ChunkRadiationHandlerPRISM()
-            : new ChunkRadiationHandlerSimple();
-
-    // Счетчик тиков для периодического обновления
-    private int tickCounter = 0;
+    // Единственный экземпляр обработчика симуляции.
+    private static ChunkRadiationHandler proxyInstance;
 
     /**
-     * Обработчик события загрузки мира
+     * Глобальная точка доступа к единственному экземпляру обработчика симуляции.
      */
+    public static ChunkRadiationHandler getProxy() {
+        if (proxyInstance == null) {
+            proxyInstance = ModClothConfig.get().usePrismSystem
+                    ? new ChunkRadiationHandlerPRISM()
+                    : new ChunkRadiationHandlerSimple();
+        }
+        return proxyInstance;
+    }
+
+    private int tickCounter = 0;
+
+    // --- ОБРАБОТЧИКИ СОБЫТИЙ ЖИЗНЕННОГО ЦИКЛА МИРА ---
+
     @SubscribeEvent
     public void onWorldLoad(LevelEvent.Load event) {
         if (ModClothConfig.get().enableChunkRads) {
-            if (event.getLevel() instanceof net.minecraft.world.level.Level) {
-                net.minecraft.world.level.Level level = (net.minecraft.world.level.Level) event.getLevel();
-                MainRegistry.LOGGER.debug("World load event received for {}", level.dimension().location());
+            if (event.getLevel() instanceof Level level) {
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.debug("World load event received for {}", level.dimension().location());
+                }
             }
-            proxy.receiveWorldLoad(event);
+            getProxy().receiveWorldLoad(event);
         }
     }
 
-    /**
-     * Обработчик события выгрузки мира
-     */
     @SubscribeEvent
     public void onWorldUnload(LevelEvent.Unload event) {
         if (ModClothConfig.get().enableChunkRads) {
-            if (event.getLevel() instanceof net.minecraft.world.level.Level) {
-                net.minecraft.world.level.Level level = (net.minecraft.world.level.Level) event.getLevel();
-                MainRegistry.LOGGER.debug("World unload event received for {}", level.dimension().location());
+            if (event.getLevel() instanceof Level level) {
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.debug("World unload event received for {}", level.dimension().location());
+                }
             }
-            proxy.receiveWorldUnload(event);
+            getProxy().receiveWorldUnload(event);
         }
     }
 
-    /**
-     * Обработчик события загрузки чанка
-     */
     @SubscribeEvent
-    public void onChunkLoad(ChunkDataEvent.Load event) {
-        if (ModClothConfig.get().enableChunkRads) {
-            proxy.receiveChunkLoad(event);
+    public void onChunkLoad(ChunkEvent.Load event) {
+        // Мы работаем только на сервере и только с полноценными чанками
+        if (ModClothConfig.get().enableChunkRads && !event.getLevel().isClientSide() && event.getChunk() instanceof LevelChunk chunk) {
+            // Передаем чанк в наш обработчик, чтобы он "проснулся"
+            getProxy().receiveChunkLoad(chunk);
         }
     }
 
-    /**
-     * Обработчик события сохранения чанка
-     */
-    @SubscribeEvent
-    public void onChunkSave(ChunkDataEvent.Save event) {
-        if (ModClothConfig.get().enableChunkRads) {
-            proxy.receiveChunkSave(event);
-        }
-    }
+    // @SubscribeEvent
+    // public void onChunkSave(ChunkDataEvent.Save event) {
+    //     if (ModClothConfig.get().enableChunkRads) {
+    //         getProxy().receiveChunkSave(event);
+    //     }
+    // }
 
-    /**
-     * Обработчик события выгрузки чанка
-     */
     @SubscribeEvent
     public void onChunkUnload(ChunkEvent.Unload event) {
         if (ModClothConfig.get().enableChunkRads) {
-            proxy.receiveChunkUnload(event);
+            getProxy().receiveChunkUnload(event);
         }
     }
 
-    /**
-     * Обработчик тика сервера, обновляет систему радиации
-     */
     @SubscribeEvent
-    public void updateSystem(TickEvent.ServerTickEvent event) {
+    public void onServerTick(TickEvent.ServerTickEvent event) {
         if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads || event.phase != TickEvent.Phase.END) return;
         tickCounter++;
         if (tickCounter >= 20) {
-            proxy.updateSystem();
+            getProxy().updateSystem();
             tickCounter = 0;
             if (ModClothConfig.get().worldRadEffects) {
-                proxy.handleWorldDestruction();
+                getProxy().handleWorldDestruction();
             }
         }
-        proxy.receiveWorldTick(event);
+        getProxy().receiveWorldTick(event);
     }
 
-    /**
-     * Получить уровень радиации в указанной позиции
-     */
-    public static float getRadiation(net.minecraft.world.level.Level level, int x, int y, int z) {
-        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return 0F;
-        float rad = proxy.getRadiation(level, x, y, z);
-        MainRegistry.LOGGER.debug("ChunkRadiationManager: getRadiation for pos ({}, {}, {}): {}", x, y, z, rad);
-        return rad;
+    // --- ОБРАБОТЧИКИ СОБЫТИЙ ИЗМЕНЕНИЯ БЛОКОВ (ИНТЕГРИРОВАНЫ СЮДА) ---
+
+    private float getRadFromState(BlockState state) {
+        if (state.getBlock() instanceof RadioactiveBlock radioactiveBlock) {
+            return radioactiveBlock.getRadiationLevel();
+        }
+        return 0f;
     }
 
-    /**
-     * Установить уровень радиации в указанной позиции
-     */
-    public static void setRadiation(net.minecraft.world.level.Level level, int x, int y, int z, float rad) {
-        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return;
-        proxy.setRadiation(level, x, y, z, rad);
+    private void handleBlockChange(BlockState oldState, BlockState newState, LevelAccessor level, BlockPos pos) {
+        if (level.isClientSide() || !(level instanceof Level world)) {
+            return;
+        }
+
+        float oldRad = getRadFromState(oldState);
+        float newRad = getRadFromState(newState);
+        float diff = newRad - oldRad;
+
+        // Если произошло реальное изменение радиации, сообщаем симулятору.
+        // Это единственный вызов, который должен быть здесь.
+        if (Math.abs(diff) > 1e-6f) {
+            getProxy().incrementBlockRadiation(world, pos, diff);
+        }
     }
 
-    /**
-     * Увеличить уровень радиации в указанной позиции
-     */
-    public static void incrementRad(net.minecraft.world.level.Level level, int x, int y, int z, float rad) {
-        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return;
-        proxy.incrementRad(level, x, y, z, rad);
-    }
 
     @SubscribeEvent
     public void onBlockPlace(BlockEvent.EntityPlaceEvent event) {
-        MainRegistry.LOGGER.debug("onBlockPlace called: {} at {}", event.getPlacedBlock().getBlock().getClass().getName(), event.getPos());
-        if (event.getLevel() instanceof Level level && !level.isClientSide()) {
-            ChunkPos pos = new ChunkPos(event.getPos().getX() >> 4, event.getPos().getZ() >> 4);
-            boolean isRadioactive = event.getPlacedBlock().getBlock() instanceof RadioactiveBlock;
-            MainRegistry.LOGGER.debug("is RadioactiveBlock: {}", isRadioactive);
-            if (proxy instanceof ChunkRadiationHandlerSimple) { // Проверяем, что используется SimpleHandler
-                if (isRadioactive) {
-                    ChunkRadiationHandlerSimple.getChunkRadiationCap((LevelChunk) level.getChunk(pos.x, pos.z)).ifPresent(cap -> {
-                        float currentBlockRad = cap.getBlockRadiation();
-                        float addedRad = ((RadioactiveBlock) event.getPlacedBlock().getBlock()).getRadiationLevel();
-                        float newBlockRad = Mth.clamp(currentBlockRad + addedRad, 0, ModClothConfig.get().maxRad);
-                        cap.setBlockRadiation(newBlockRad);
-                        ((LevelChunk) level.getChunk(pos.x, pos.z)).setUnsaved(true);
-                        MainRegistry.LOGGER.debug("RadioactiveBlock placed at {}. Chunk block radiation updated from {} to {}.", event.getPos(), currentBlockRad, newBlockRad);
-
-                        // Отправляем отладочный пакет всем игрокам в режиме отладки
-                        for (net.minecraft.server.level.ServerPlayer player : net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
-                            if (player.level() == level && (player.isCreative() || player.isSpectator())) {
-                                ModPacketHandler.INSTANCE.send(net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player), new com.hbm_m.network.ChunkRadiationDebugPacket(pos.x, pos.z, cap.getRadiation()));
-                            }
-                        }
-                    });
-                }
-            }
-            
-        }
+        BlockSnapshot snapshot = event.getBlockSnapshot();
+        BlockState oldState = snapshot.getReplacedBlock();
+        BlockState newState = event.getState();
+        handleBlockChange(oldState, newState, event.getLevel(), event.getPos());
     }
 
     @SubscribeEvent
     public void onBlockBreak(BlockEvent.BreakEvent event) {
-        if (event.getLevel() instanceof Level level && !level.isClientSide()) {
-            ChunkPos pos = new ChunkPos(event.getPos().getX() >> 4, event.getPos().getZ() >> 4);
-            if (proxy instanceof ChunkRadiationHandlerSimple) { // Проверяем, что используется SimpleHandler
-                if (event.getState().getBlock() instanceof RadioactiveBlock radioactiveBlock) {
-                    ChunkRadiationHandlerSimple.getChunkRadiationCap((LevelChunk) level.getChunk(pos.x, pos.z)).ifPresent(cap -> {
-                        float currentBlockRad = cap.getBlockRadiation();
-                        float brokenBlockRad = radioactiveBlock.getRadiationLevel();
-                        float newBlockRad = Math.max(0, currentBlockRad - brokenBlockRad);
-                        cap.setBlockRadiation(newBlockRad);
-                        // Удалено: if (newBlockRad < 1e-8F) { cap.setEnvRadiation(0.0F); }
-                        ((LevelChunk) level.getChunk(pos.x, pos.z)).setUnsaved(true);
-                        MainRegistry.LOGGER.debug("RadioactiveBlock broken at {}. Chunk block radiation updated from {} to {}.", event.getPos(), currentBlockRad, newBlockRad);
+        handleBlockChange(event.getState(), Blocks.AIR.defaultBlockState(), event.getLevel(), event.getPos());
+    }
 
-                        // Отправляем отладочный пакет всем игрокам в режиме отладки
-                        for (net.minecraft.server.level.ServerPlayer player : net.minecraftforge.server.ServerLifecycleHooks.getCurrentServer().getPlayerList().getPlayers()) {
-                            if (player.level() == level && (player.isCreative() || player.isSpectator())) {
-                                ModPacketHandler.INSTANCE.send(net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> player), new com.hbm_m.network.ChunkRadiationDebugPacket(pos.x, pos.z, cap.getRadiation()));
-                            }
-                        }
-                    });
-                }
-            }
-            
+    @SubscribeEvent
+    public void onExplosionDetonate(ExplosionEvent.Detonate event) {
+        Level level = event.getLevel();
+        if (level.isClientSide()) return;
+        for (BlockPos pos : event.getAffectedBlocks()) {
+            // Передаем BlockState до взрыва
+            BlockState oldState = level.getBlockState(pos);
+            handleBlockChange(oldState, Blocks.AIR.defaultBlockState(), level, pos);
         }
     }
 
-    // Аналогично добавьте обработчики для изменения контейнеров и выброшенных предметов
+    @SubscribeEvent
+    public void onPlayerLogOut(PlayerEvent.PlayerLoggedOutEvent event) {
+        // Проверяем, что уровень серверный
+        if (event.getEntity().level().isClientSide()) return;
+        
+        // Используем instanceof для безопасного приведения типов
+        if (getProxy() instanceof ChunkRadiationHandlerSimple handler) {
+            handler.clearPlayerDebugCache(event.getEntity().getUUID());
+        }
+    }
+
+    // --- СТАТИЧЕСКИЕ МЕТОДЫ-ОБЕРТКИ (остаются без изменений) ---
+
+    public static float getRadiation(Level level, int x, int y, int z) {
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return 0F;
+        return getProxy().getRadiation(level, x, y, z);
+    }
+
+    public static void setRadiation(Level level, int x, int y, int z, float rad) {
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return;
+        getProxy().setRadiation(level, x, y, z, rad);
+    }
+
+    public static void incrementRad(Level level, int x, int y, int z, float rad) {
+        if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return;
+        getProxy().incrementRad(level, x, y, z, rad);
+    }
 }

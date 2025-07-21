@@ -76,11 +76,17 @@ public class PlayerRadiationHandler {
             // Отправляем пакет только если соединение игрока установлено и значение радиации больше 0
             if (serverPlayer.connection != null && clamped > 0) {
                 ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new RadiationDataPacket(clamped));
-                MainRegistry.LOGGER.debug("SERVER: Sent RadiationDataPacket to player {} with value {}", player.getName().getString(), clamped);
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.debug("SERVER: Sent RadiationDataPacket to player {} with value {}", player.getName().getString(), clamped);
+                }
             } else if (serverPlayer.connection != null && clamped == 0) {
-                MainRegistry.LOGGER.debug("SERVER: NOT sending RadiationDataPacket to player {} because value is 0.0", player.getName().getString());
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.debug("SERVER: NOT sending RadiationDataPacket to player {} because value is 0.0", player.getName().getString());
+                }
             }
-            MainRegistry.LOGGER.debug("SERVER: Player {} radiation set to {}", player.getName().getString(), clamped);
+            if (ModClothConfig.get().enableDebugLogging) {
+                MainRegistry.LOGGER.debug("SERVER: Player {} radiation set to {}", player.getName().getString(), clamped);
+            }
         }
     }
     
@@ -210,7 +216,7 @@ public class PlayerRadiationHandler {
         if (tickCounter >= 20) {
             tickCounter = 0;
 
-            MainRegistry.LOGGER.debug("SERVER: Player {} isCreative: {}, isSpectator: {}", player.getName().getString(), player.isCreative(), player.isSpectator());
+            // MainRegistry.LOGGER.debug("SERVER: Player {} isCreative: {}, isSpectator: {}", player.getName().getString(), player.isCreative(), player.isSpectator());
 
             if (!player.isCreative() && !player.isSpectator()) {
                 float chunkRad = 0F;
@@ -234,13 +240,17 @@ public class PlayerRadiationHandler {
                 float currentRads = getPlayerRads(player);
                 if (currentRads > 0) {
                     ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new RadiationDataPacket(currentRads));
-                    MainRegistry.LOGGER.debug("SERVER: Sending periodic RadiationDataPacket to player {} (survival) with value {}", player.getName().getString(), currentRads);
+                    // MainRegistry.LOGGER.debug("SERVER: Sending periodic RadiationDataPacket to player {} (survival) with value {}", player.getName().getString(), currentRads);
                 } else {
-                    MainRegistry.LOGGER.debug("SERVER: NOT sending periodic RadiationDataPacket to player {} (survival) because value is 0.0", player.getName().getString());
+                    if (ModClothConfig.get().enableDebugLogging) {
+                        MainRegistry.LOGGER.debug("SERVER: NOT sending periodic RadiationDataPacket to player {} (survival) because value is 0.0", player.getName().getString());
+                    }
                 }
             } else if (player instanceof ServerPlayer) {
                 // Добавляем лог, если пакет не отправляется из-за режима креатива/наблюдателя
-                MainRegistry.LOGGER.debug("SERVER: NOT sending periodic RadiationDataPacket to player {} because isCreative: {}, isSpectator: {}", player.getName().getString(), player.isCreative(), player.isSpectator());
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.debug("SERVER: NOT sending periodic RadiationDataPacket to player {} because isCreative: {}, isSpectator: {}", player.getName().getString(), player.isCreative(), player.isSpectator());
+                }
             }
         }
     }
@@ -262,11 +272,15 @@ public class PlayerRadiationHandler {
                 if (rad200Advancement != null) {
                     AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(rad200Advancement);
                     if (!progress.isDone()) {
-                        MainRegistry.LOGGER.debug("SERVER: Checking radiation_200 advancement for player {}. Current rads: {}, isDone: {}", serverPlayer.getName().getString(), rads, progress.isDone());
-                        if (rads >= 200.0F) {
+                        if (ModClothConfig.get().enableDebugLogging) {
+                            MainRegistry.LOGGER.debug("SERVER: Checking radiation_200 advancement for player {}. Current rads: {}, isDone: {}", serverPlayer.getName().getString(), rads, progress.isDone());
+                        }
+                            if (rads >= 200.0F) {
                             for (String criterion : progress.getRemainingCriteria()) {
                                 serverPlayer.getAdvancements().award(rad200Advancement, criterion);
-                                MainRegistry.LOGGER.info("SERVER: Awarded radiation_200 advancement to player {} for criterion {}", serverPlayer.getName().getString(), criterion);
+                                if (ModClothConfig.get().enableDebugLogging) {
+                                    MainRegistry.LOGGER.info("SERVER: Awarded radiation_200 advancement to player {} for criterion {}", serverPlayer.getName().getString(), criterion);
+                                }
                             }
                         }
                     }
@@ -277,11 +291,15 @@ public class PlayerRadiationHandler {
                 if (rad1000Advancement != null) {
                     AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(rad1000Advancement);
                     if (!progress.isDone()) {
-                        MainRegistry.LOGGER.debug("SERVER: Checking radiation_1000 advancement for player {}. Current rads: {}, isDone: {}", serverPlayer.getName().getString(), rads, progress.isDone());
-                        if (rads >= 1000.0F) {
+                        if (ModClothConfig.get().enableDebugLogging) {
+                            MainRegistry.LOGGER.debug("SERVER: Checking radiation_1000 advancement for player {}. Current rads: {}, isDone: {}", serverPlayer.getName().getString(), rads, progress.isDone());
+                        }
+                            if (rads >= ModClothConfig.get().maxPlayerRad) {
                             for (String criterion : progress.getRemainingCriteria()) {
                                 serverPlayer.getAdvancements().award(rad1000Advancement, criterion);
-                                MainRegistry.LOGGER.info("SERVER: Awarded radiation_1000 advancement to player {} for criterion {}", serverPlayer.getName().getString(), criterion);
+                                if (ModClothConfig.get().enableDebugLogging) {
+                                    MainRegistry.LOGGER.info("SERVER: Awarded radiation_1000 advancement to player {} for criterion {}", serverPlayer.getName().getString(), criterion);
+                                }
                             }
                         }
                     }

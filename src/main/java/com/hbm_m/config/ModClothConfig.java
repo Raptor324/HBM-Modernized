@@ -1,108 +1,189 @@
 package com.hbm_m.config;
 
+import net.minecraft.util.Mth;
+import com.hbm_m.main.MainRegistry;
+
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
-import me.shedaniel.autoconfig.annotation.ConfigEntry;
+import me.shedaniel.autoconfig.annotation.ConfigEntry.BoundedDiscrete;
+import me.shedaniel.autoconfig.annotation.ConfigEntry.Category;
+import me.shedaniel.autoconfig.annotation.ConfigEntry.Gui;
+
+// import static me.shedaniel.autoconfig.annotation.ConfigEntry.*;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
 
 @Config(name = "hbm_m")
 public class ModClothConfig implements ConfigData {
     // === Общие настройки ===
-    @ConfigEntry.Category("general")
-    @ConfigEntry.Gui.Tooltip
+    @Category("general")
+    @Gui.Tooltip
     public boolean enableRadiation = true;
-    @ConfigEntry.Category("general")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("general")
+    @Gui.Tooltip
     public boolean enableChunkRads = true;
-    @ConfigEntry.Category("general")
-    @ConfigEntry.Gui.Tooltip
-    public boolean worldRadEffects = true;
-    @ConfigEntry.Category("general")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("general")
+    @Gui.Tooltip
     public boolean usePrismSystem = false;
 
+     // === Эффекты мира ===
+    @Category("world_effects")
+    @Gui.Tooltip
+    public boolean worldRadEffects = true;
+
+    @Category("world_effects")
+    @Gui.Tooltip
+    public float worldRadEffectsThreshold = 500.0F;
+    @Category("world_effects")
+
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 1, max = 100)
+    public int worldRadEffectsBlockChecks = 10;
+
+    @Category("world_effects")
+    @Gui.Tooltip
+    public float worldRadEffectsMaxScaling = 4.0F;
+
+    @Category("world_effects")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 1, max = 16) // Ограничим, чтобы не портить мир слишком глубоко
+    public int worldRadEffectsMaxDepth = 5;
+
     // === Игрок ===
-    @ConfigEntry.Category("player")
-    @ConfigEntry.Gui.Tooltip
+    @Category("player")
+    @Gui.Tooltip
     public float maxPlayerRad = 1000F;
-    @ConfigEntry.Category("player")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("player")
+    @Gui.Tooltip
     public float radDecay = 0.01F;
-    @ConfigEntry.Category("player")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("player")
+    @Gui.Tooltip
     public float radDamage = 0.05F;
-    @ConfigEntry.Category("player")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("player")
+    @Gui.Tooltip
     public float radDamageThreshold = 200F;
-    @ConfigEntry.Category("player")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("player")
+    @Gui.Tooltip
     public int radSickness = 300;
-    @ConfigEntry.Category("player")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("player")
+    @Gui.Tooltip
     public int radWater = 500;
-    @ConfigEntry.Category("player")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("player")
+    @Gui.Tooltip
     public int radConfusion = 700;
-    @ConfigEntry.Category("player")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("player")
+    @Gui.Tooltip
     public int radBlindness = 900;
 
     // === Чанк ===
-    @ConfigEntry.Category("chunk")
-    @ConfigEntry.Gui.Tooltip
+    @Category("chunk")
+    @Gui.Tooltip
     public float maxRad = 100_000F;
-    @ConfigEntry.Category("chunk")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("chunk")
+    @Gui.Tooltip
     public float fogRad = 50F;
-    @ConfigEntry.Category("chunk")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("chunk")
+    @Gui.Tooltip
     public int fogCh = 50;
-    @ConfigEntry.Category("chunk")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("chunk")
+    @Gui.Tooltip
     public float radChunkDecay = 0.1F;
-    @ConfigEntry.Category("chunk")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("chunk")
+    @Gui.Tooltip
     public float radChunkSpreadFactor = 0.2F;
-    @ConfigEntry.Category("chunk")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("chunk")
+    @Gui.Tooltip
     public float radSpreadThreshold = 0.01F;
-    @ConfigEntry.Category("chunk")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("chunk")
+    @Gui.Tooltip
     public float minRadDecayAmount = 0.01F;
-    @ConfigEntry.Category("chunk")
-    @ConfigEntry.Gui.Tooltip
-    public float radSourceInfluenceFactor = 0.35F;
-    @ConfigEntry.Category("chunk")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("chunk")
+    @Gui.Tooltip
+    public float radSourceInfluenceFactor = 0.08F;
+
+    @Category("chunk")
+    @Gui.Tooltip
     public float radRandomizationFactor = 1.0F;
 
-    // === Модификаторы ===
-    @ConfigEntry.Category("modifiers")
-    @ConfigEntry.Gui.Tooltip
+    // === Модификаторы (WIP) ===
+    @Category("modifiers")
+    @Gui.Tooltip
     public float hazmatMod = 0.25F;
-    @ConfigEntry.Category("modifiers")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("modifiers")
+    @Gui.Tooltip
     public float advHazmatMod = 0.1F;
-    @ConfigEntry.Category("modifiers")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("modifiers")
+    @Gui.Tooltip
     public float paaHazmatMod = 0.05F;
 
     // === Отладка ===
-    @ConfigEntry.Category("debug_render")
-    @ConfigEntry.Gui.Tooltip
+    @Category("debug")
+    @Gui.Tooltip
     public boolean enableDebugRender = true;
-    @ConfigEntry.Category("debug_render")
-    @ConfigEntry.Gui.Tooltip
-    public float debugRenderTextSize = 0.1F;
-    @ConfigEntry.Category("debug_render")
-    @ConfigEntry.Gui.Tooltip
-    public int debugRenderDistance = 4;
-    @ConfigEntry.Category("debug_render")
-    @ConfigEntry.Gui.Tooltip
+
+    @Category("debug")
+    @Gui.Tooltip
     public boolean debugRenderInSurvival = false;
 
-    // Можно добавить validatePostLoad() если нужно автокорректировать значения
+    @Category("debug")
+    @Gui.Tooltip
+    public float debugRenderTextSize = 0.2F;
+
+    @Category("debug")
+    @Gui.Tooltip
+    public int debugRenderDistance = 4;
+
+    @Category("debug")
+    @Gui.Tooltip
+    public boolean enableDebugLogging = false;
+
+    @Override
+    public void validatePostLoad() throws ValidationException {
+        // Вызываем родительский метод на всякий случай
+        ConfigData.super.validatePostLoad();
+
+        // Проверяем и исправляем наше float значение
+        float minThreshold = 1.0F;
+        float maxThreshold = 100000.0F;
+
+        // Используем Mth.clamp для удобства. Он ограничивает значение между min и max.
+        float originalValue = this.worldRadEffectsThreshold;
+        this.worldRadEffectsThreshold = Mth.clamp(originalValue, minThreshold, maxThreshold);
+
+        // Если значение было исправлено, выводим предупреждение в лог.
+        // Это очень полезно для администраторов серверов.
+        if (originalValue != this.worldRadEffectsThreshold) {
+            MainRegistry.LOGGER.warn("[HBM-M Config] Значение 'worldRadEffectsThreshold' было некорректным ({}). Оно было автоматически исправлено на {}.", originalValue, this.worldRadEffectsThreshold);
+        }
+
+        float minScaling = 1.0F;
+        float maxScaling = 10.0F; // Ограничим 10-кратным увеличением, чтобы избежать проблем
+        float originalScaling = this.worldRadEffectsMaxScaling;
+        this.worldRadEffectsMaxScaling = Mth.clamp(originalScaling, minScaling, maxScaling);
+
+        if (originalScaling != this.worldRadEffectsMaxScaling) {
+            MainRegistry.LOGGER.warn("[HBM-M Config] Значение 'worldRadEffectsMaxScaling' было некорректным ({}). Оно было автоматически исправлено на {}.", originalScaling, this.worldRadEffectsMaxScaling);
+        }
+            // Здесь можно добавить валидацию для других полей, если потребуется
+    }
 
     // === Регистрация конфига (вызывать в инициализации мода) ===
     public static void register() {

@@ -1,0 +1,4 @@
+// 1.20.1	2025-07-20T23:15:52.1346988	Registries
+94a0985146777082f29c11816feb84153d26b7ee data/hbm_m/forge/biome_modifier/add_uranium_ore.json
+860b3198c845bd284a0b648ba6d50f1f2dd64c12 data/hbm_m/worldgen/configured_feature/ore_uranium.json
+ec18ae090e3dd9f049e9b13a1d26f32bab7c71fc data/hbm_m/worldgen/placed_feature/ore_uranium_placed.json

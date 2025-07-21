@@ -1,15 +1,23 @@
 package com.hbm_m.capability;
 
-import net.minecraft.nbt.CompoundTag;
+// import net.minecraft.nbt.CompoundTag;
 
 public interface IChunkRadiation {
-    // Получить общую радиацию (только block)
-    float getRadiation();
-    // Получить/установить только радиацию от блоков
+    // Получает ОБЩУЮ радиацию (блоки + эмбиентная)
+    // float getTotalRadiation();
+
+    // Радиация от блоков
     float getBlockRadiation();
-    void setBlockRadiation(float blockRadiation);
-    // Копирование поля blockRadiation
+    void setBlockRadiation(float value);
+
+    // Радиация, пришедшая извне (эмбиентная)
+    float getAmbientRadiation();
+    void setAmbientRadiation(float value);
+    
+    // Копирование данных от другого capability (например, при смерти игрока)
     void copyFrom(IChunkRadiation source);
-    CompoundTag serializeNBT();
-    void deserializeNBT(CompoundTag nbt);
+
+    // Сериализация для сохранения
+    // CompoundTag serializeNBT();
+    // void deserializeNBT(CompoundTag nbt);
 }

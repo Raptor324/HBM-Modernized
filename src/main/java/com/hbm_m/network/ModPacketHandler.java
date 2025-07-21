@@ -18,6 +18,6 @@ public class ModPacketHandler {
         int id = 0;
         INSTANCE.registerMessage(id++, GeigerSoundPacket.class, GeigerSoundPacket::encode, GeigerSoundPacket::decode, GeigerSoundPacket::handle);
         INSTANCE.registerMessage(id++, RadiationDataPacket.class, RadiationDataPacket::encode, RadiationDataPacket::decode, RadiationDataPacket::handle);
-        INSTANCE.registerMessage(id++, ChunkRadiationDebugPacket.class, ChunkRadiationDebugPacket::encode, ChunkRadiationDebugPacket::decode, ChunkRadiationDebugPacket::handle);
+        INSTANCE.registerMessage(id++, ChunkRadiationDebugBatchPacket.class, ChunkRadiationDebugBatchPacket::encode, ChunkRadiationDebugBatchPacket::decode, ChunkRadiationDebugBatchPacket::handle);
     }
 }

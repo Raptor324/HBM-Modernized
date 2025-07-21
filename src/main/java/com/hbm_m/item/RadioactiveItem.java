@@ -49,11 +49,21 @@ public class RadioactiveItem extends Item {
     @Override
     public void appendHoverText(@javax.annotation.Nonnull ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
-        
-        // Добавляем информацию о радиоактивности в подсказку
+
         tooltip.add(Component.translatable("item.hbm_m.radioactive").withStyle(ChatFormatting.GREEN));
-        tooltip.add(Component.literal(radiationLevel + "RAD/s").withStyle(ChatFormatting.GREEN));
+
+        tooltip.add(Component.literal(radiationLevel + " RAD/s").withStyle(ChatFormatting.YELLOW));
+
+        // Суммарная радиоактивность = уровень * количество предметов в стаке
+        int count = stack.getCount();
+        float totalRadiation = radiationLevel * count;
+
+        // Добавляем информацию о радиоактивности в подсказку
         
+        if (count > 1) {
+            tooltip.add(Component.literal("Stack: " + totalRadiation + " RAD/s").withStyle(ChatFormatting.YELLOW));
+        }
+
         // Добавляем информацию о словаре руд, если он есть
         if (oreDict != null && oreDict.length > 0) {
             tooltip.add(Component.translatable("item.hbm_m.ore_dict").withStyle(ChatFormatting.DARK_PURPLE));

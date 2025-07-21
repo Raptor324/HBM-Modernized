@@ -2,6 +2,7 @@ plugins {
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '[6.0,6.3)'
     id 'java-library'
+    id 'org.spongepowered.mixin' version '0.7.+'
 }
 
 version = mod_version
@@ -9,6 +10,14 @@ group = mod_group_id
 
 base {
     archivesName = mod_id
+}
+
+mixin {
+    add sourceSets.main, "mixins.hbm_m.refmap.json"
+    config "mixins.hbm_m.json"
+
+    debug.verbose = true
+    debug.export = true
 }
 
 // Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
@@ -115,7 +124,14 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 repositories {
     // Put repositories for dependencies here
     // ForgeGradle automatically adds the Forge maven and Maven Central for you
+    mavenCentral()
+    maven { url = 'https://maven.minecraftforge.net/' }
+    gradlePluginPortal()
     maven { url = "https://maven.shedaniel.me/" }
+    // maven {
+    //     name = 'SpongePowered'
+    //     url = 'https://repo.spongepowered.org/maven'
+    // }
     // If you have mod jar dependencies in ./libs, you can declare them as a repository like so.
     // See https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:flat_dir_resolver
     flatDir {
@@ -132,7 +148,9 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     // runtimeOnly fg.deobf("me.lucko:spark:1.10.53-forge")
     api(fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.136"))
-    // api (fg.deobf("me.shedaniel.cloth:autoconfig1u-forge:4.6.2"))
+    // implementation 'org.spongepowered:mixin:0.8.5'
+    annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
+    
 
     // Example mod dependency with JEI - using fg.deobf() ensures the dependency is remapped to your development mappings
     // The JEI API is declared for compile time use, while the full JEI artifact is used at runtime

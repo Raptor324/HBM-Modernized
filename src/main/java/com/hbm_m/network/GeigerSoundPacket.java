@@ -9,6 +9,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.api.distmarker.Dist;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.config.ModClothConfig;
 
 import java.util.function.Supplier;
 
@@ -52,9 +53,13 @@ public class GeigerSoundPacket {
                         msg.pitch,
                         false // distanceDelay - false for immediate playback
                     );
-                    //MainRegistry.LOGGER.debug("GeigerSoundPacket: Sound played successfully.");
+                    if (ModClothConfig.get().enableDebugLogging) {
+                        MainRegistry.LOGGER.debug("GeigerSoundPacket: Sound played successfully.");
+                    }
                 } else {
-                    MainRegistry.LOGGER.warn("GeigerSoundPacket: Failed to play sound. Sound: {}, MC: {}, Level: {}, Player: {}", sound != null, mc != null, mc != null ? mc.level != null : false, mc != null ? mc.player != null : false);
+                    if (ModClothConfig.get().enableDebugLogging) {
+                        MainRegistry.LOGGER.warn("GeigerSoundPacket: Failed to play sound. Sound: {}, MC: {}, Level: {}, Player: {}", sound != null, mc != null, mc != null ? mc.level != null : false, mc != null ? mc.player != null : false);
+                    }
                 }
             });
         });

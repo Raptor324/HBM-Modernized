@@ -1,86 +1,102 @@
 package com.hbm_m.client;
 
 // Этот класс отвечает за отрисовку радиации в чанках в режиме отладки
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.resources.ResourceLocation;
 
 import com.hbm_m.config.ModClothConfig;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class ChunkRadiationDebugRenderer {
 
-    // Карта для хранения радиации чанков на клиенте
-    private static final java.util.Map<net.minecraft.world.level.ChunkPos, Float> chunkRadiationData = new java.util.concurrent.ConcurrentHashMap<>();
-
-    // Метод для обновления данных о радиации чанка
-    public static void updateChunkRadiation(int chunkX, int chunkZ, float radiationValue) {
-        net.minecraft.world.level.ChunkPos pos = new net.minecraft.world.level.ChunkPos(chunkX, chunkZ);
-        if (radiationValue <= 1e-4f) {
-            chunkRadiationData.remove(pos);
-        } else {
-            chunkRadiationData.put(pos, radiationValue);
-        }
-    }
-
     @SubscribeEvent
     public static void onRenderWorld(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_SKY) return;
-        Minecraft mc = Minecraft.getInstance();
-        if (!ModClothConfig.get().enableDebugRender || !mc.options.renderDebug) return;
-        if (mc.player != null) {
-            boolean isCreativeOrSpectator = mc.player.isCreative() || mc.player.isSpectator();
-            if (!ModClothConfig.get().debugRenderInSurvival && !isCreativeOrSpectator) return;
-        }
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
 
+        Minecraft mc = Minecraft.getInstance();
+        Player player = mc.player;
         Level level = mc.level;
-        if (level == null) return;
+
+        // Проверяем, что игрок и уровень существуют.
+        if (player == null || level == null) return;
+        
+        // ИСПРАВЛЕНИЕ: Объявляем переменную dimension и получаем ее из текущего уровня.
+        final ResourceLocation dimension = level.dimension().location();
+
+        if (!ModClothConfig.get().enableDebugRender || !mc.options.renderDebug) return;
+
+        boolean isCreativeOrSpectator = player.isCreative() || player.isSpectator();
+        if (!ModClothConfig.get().debugRenderInSurvival && !isCreativeOrSpectator) return;
 
         Vec3 camPos = event.getCamera().getPosition();
         // Используем значения из ClothConfig:
         int radius = ModClothConfig.get().debugRenderDistance; // Сколько чанков вокруг игрока показывать
+        float scale = ModClothConfig.get().debugRenderTextSize;
 
         PoseStack poseStack = event.getPoseStack();
         MultiBufferSource.BufferSource buffer = mc.renderBuffers().bufferSource();
         Font font = mc.font;
 
-        float scale = ModClothConfig.get().debugRenderTextSize;
+        int playerChunkX = player.chunkPosition().x;
+        int playerChunkZ = player.chunkPosition().z;
 
-        int playerChunkX = ((int)camPos.x) >> 4;
-        int playerChunkZ = ((int)camPos.z) >> 4;
+        final boolean hasCeiling = level.dimensionType().hasCeiling();
 
-        for (int dx = -radius; dx <= radius; dx++) {
-            for (int dz = -radius; dz <= radius; dz++) {
-                int chunkX = playerChunkX + dx;
-                int chunkZ = playerChunkZ + dz;
-                net.minecraft.world.level.ChunkPos chunkPos = new net.minecraft.world.level.ChunkPos(chunkX, chunkZ);
-                
-                // Получаем значение радиации из локальной карты
-                float value = chunkRadiationData.getOrDefault(chunkPos, 0.0f);
+        try {
+            poseStack.pushPose(); // Сохраняем текущую матрицу
+            RenderSystem.disableDepthTest(); // Отключаем тест глубины - текст будет поверх всего.
 
-                // Центр чанка
-                double x = (chunkX << 4) + 8;
-                double z = (chunkZ << 4) + 8;
-                double y = level.getHeightmapPos(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, new BlockPos((int)x, 0, (int)z)).getY() + 1.5;
+            for (int dx = -radius; dx <= radius; dx++) {
+                for (int dz = -radius; dz <= radius; dz++) {
+                    int chunkX = playerChunkX + dx;
+                    int chunkZ = playerChunkZ + dz;
+                    net.minecraft.world.level.ChunkPos chunkPos = new net.minecraft.world.level.ChunkPos(chunkX, chunkZ);
+                    
+                    // Теперь эта строка будет работать, так как переменная dimension объявлена выше
+                    float value = ClientRadiationData.getRadiationForChunk(dimension, chunkPos);
+                    if (value <= 1e-4f) continue; // Не рендерим нулевые значения для чистоты
 
-                String text = String.format("Rad: %.2f", value);
+                    double x = (chunkX << 4) + 8;
+                    double z = (chunkZ << 4) + 8;
+                    double y;
+                    
+                    if (hasCeiling) {
+                        y = player.getY() + 1.0; 
+                    } else {
+                        y = level.getHeightmapPos(Heightmap.Types.WORLD_SURFACE, BlockPos.containing(x, 0, z)).getY() + 1.5;
+                    }
 
-                poseStack.pushPose();
-                poseStack.translate(x - camPos.x, y - camPos.y, z - camPos.z);
-                poseStack.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
-                poseStack.scale(-scale, -scale, scale);
+                    String text = String.format("Rad: %.2f", value);
 
-                font.drawInBatch(text, -font.width(text) / 2f, 0, 0xFFFFFF, false, poseStack.last().pose(), buffer, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
-                poseStack.popPose();
+                    poseStack.pushPose();
+                    poseStack.translate(x - camPos.x, y - camPos.y, z - camPos.z);
+                    poseStack.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
+                    poseStack.scale(-scale, -scale, scale);
+
+                    font.drawInBatch(text, -font.width(text) / 2f, 0, 0xFFFFFF, false, poseStack.last().pose(), buffer, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
+                    
+                    poseStack.popPose();
+                }
             }
+            buffer.endBatch(); // Завершаем отрисовку
+            
+        } finally {
+            // Возвращаем все как было, даже если произошла ошибка.
+            RenderSystem.enableDepthTest(); // Включаем тест глубины обратно!
+            poseStack.popPose();
         }
     }
 }

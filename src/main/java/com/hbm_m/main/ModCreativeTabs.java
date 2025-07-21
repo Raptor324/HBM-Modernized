@@ -1,6 +1,7 @@
 package com.hbm_m.main;
 
 import com.hbm_m.item.ModItems;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
@@ -18,7 +19,7 @@ public class ModCreativeTabs {
     public static final RegistryObject<CreativeModeTab> NTM_RESOURCES_TAB = CREATIVE_MODE_TABS.register("ntm_resources_tab",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_resources_tab"))
-                    .icon(() -> new ItemStack(ModItems.ALLOY_SWORD.get())) // Временно используем меч как иконку
+                    .icon(() -> new ItemStack(ModItems.URANIUM_INGOT.get()))
                     .build());
 
     public static final RegistryObject<CreativeModeTab> NTM_FUEL_TAB = CREATIVE_MODE_TABS.register("ntm_fuel_tab",
@@ -36,7 +37,7 @@ public class ModCreativeTabs {
     public static final RegistryObject<CreativeModeTab> NTM_ORES_TAB = CREATIVE_MODE_TABS.register("ntm_ores_tab",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_ores_tab"))
-                    .icon(() -> new ItemStack(ModItems.ALLOY_SWORD.get()))
+                    .icon(() -> new ItemStack(ModBlocks.URANIUM_ORE.get()))
                     .build());
 
     public static final RegistryObject<CreativeModeTab> NTM_MACHINES_TAB = CREATIVE_MODE_TABS.register("ntm_machines_tab",

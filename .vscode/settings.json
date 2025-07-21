@@ -3,7 +3,10 @@
     "java.configuration.updateBuildConfiguration": "automatic",
     "java.compile.nullAnalysis.mode": "automatic",
     "cSpell.words": [
+        "Chestplate",
         "minecraftforge",
         "MODID"
-    ]
+    ],
+    "java.debug.settings.hotCodeReplace": "auto",
+    "java.debug.settings.onBuildFailureProceed": true
 }
