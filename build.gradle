@@ -126,7 +126,6 @@ repositories {
     // ForgeGradle automatically adds the Forge maven and Maven Central for you
     mavenCentral()
     maven { url = 'https://maven.minecraftforge.net/' }
-    gradlePluginPortal()
     maven { url = "https://maven.shedaniel.me/" }
     // maven {
     //     name = 'SpongePowered'
