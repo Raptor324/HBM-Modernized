@@ -1,104 +1,79 @@
-# This workflow uses actions that are not certified by GitHub.
-# They are provided by a third-party and are governed by
-# separate terms of service, privacy policy, and support
-# documentation.
-# This workflow will build a Java project with Gradle and cache/restore any dependencies to improve the workflow execution time
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-gradle
+name: Create Release and Upload Build
 
-name: Java CI with Gradle
-
+# Этот воркфлоу запускается ТОЛЬКО при создании нового тега,
+# который начинается с 'v', например: v0.0.3-alpha, v1.0.0
 on:
   push:
     tags:
-      - 'v*.*.*' # Это будет триггером для релиза, например v1.0.0, v0.0.1-alpha
+      - 'v*.*.*'
 
 jobs:
-  build:
-
+  build_and_release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: write # Необходимо для создания релизов и загрузки артефактов
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-        cache: 'gradle'
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    # Configure Gradle for optimal use in GitHub Actions, including caching of downloaded dependencies.
-    # See: https://github.com/gradle/actions/blob/main/setup-gradle/README.md
-    - name: Setup Gradle
-      uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: 'gradle'
 
-    - name: Grant execute permission for gradlew
-      run: chmod +x gradlew
-    
-    - name: Build with Gradle Wrapper
-      run: ./gradlew build
+      - name: Grant execute permission for gradlew
+        run: chmod +x gradlew
 
-    # NOTE: The Gradle Wrapper is the default and recommended way to run Gradle (https://docs.gradle.org/current/userguide/gradle_wrapper.html).
-    # If your project does not have the Gradle Wrapper configured, you can use the following configuration to run Gradle with a specified version.
-    #
-    # - name: Setup Gradle
-    #   uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
-    #   with:
-    #     gradle-version: '8.9'
-    #
-    # - name: Build with Gradle 8.9
-    #   run: gradle build
-    - name: Get JAR file name
-      id: get_jar_name
-      run: |
-          # Ищем JAR-файл в папке build/libs/. 
-          # Возможно, вам придется изменить путь или паттерн поиска
-          JAR_FILE=$(find build/libs -name "*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
-          if [ -z "$JAR_FILE" ]; then
-            echo "No JAR file found!"
+      - name: Extract version from tag
+        id: get_version
+        # Эта команда убирает префикс 'v' из тега (v0.0.3-alpha -> 0.0.3-alpha)
+        # и сохраняет результат в переменную version
+        run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
+
+      - name: Build with Gradle
+        # ВАЖНО: Мы передаем версию в Gradle через параметр -P
+        # Это переопределит 'mod_version' из gradle.properties
+        run: ./gradlew build -Pmod_version=${{ steps.get_version.outputs.version }}
+
+      - name: Get JAR file name and path
+        id: get_jar
+        run: |
+          # Ищем JAR-файл, исключая -sources и -javadoc
+          JAR_PATH=$(find build/libs -name "*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
+          if [ -z "$JAR_PATH" ]; then
+            echo "::error::No JAR file found in build/libs!"
             exit 1
           fi
-          echo "Found JAR: $JAR_FILE"
-          echo "JAR_PATH=$JAR_FILE" >> $GITHUB_OUTPUT
-          echo "JAR_NAME=$(basename $JAR_FILE)" >> $GITHUB_OUTPUT
+          echo "Found JAR file at: $JAR_PATH"
+          echo "path=$JAR_PATH" >> $GITHUB_OUTPUT
+          echo "name=$(basename $JAR_PATH)" >> $GITHUB_OUTPUT
 
-    - name: Create Release
-      id: create_release
-      uses: actions/create-release@v1
-      env:
-         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Токен, предоставленный GitHub автоматически
-      with:
-        tag_name: ${{ github.ref_name }} # Только имя тега, без refs/tags/
-        release_name: Gradle automatic build ${{ github.ref_name }} # Имя релиза
-        draft: false # Опубликовать сразу
-        prerelease: ${{ contains(github.ref, '-beta') || contains(github.ref, '-alpha') || contains(github.ref, '-rc') }} # Автоматически помечать как пре-релиз, если в теге есть -beta, -alpha, -rc
+      - name: Create Release on GitHub
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          # Имя тега берется напрямую из события, которое запустило воркфлоу
+          tag_name: ${{ github.ref_name }}
+          # Имя релиза будет "HBM Modernized v0.0.3-alpha"
+          release_name: "HBM Modernized ${{ github.ref_name }}"
+          # Автоматически помечать как пре-релиз, если в теге есть -alpha, -beta или -rc
+          prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
+          draft: false
+          # Сюда можно добавить описание релиза, если нужно
+          # body: |
+          #   Automatic release based on git tag.
 
-    - name: Upload Release Asset
-      uses: actions/upload-release-asset@v1
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      with:
-        upload_url: ${{ steps.create_release.outputs.upload_url }} # URL для загрузки актива, полученный из предыдущего шага
-        asset_path: ${{ steps.get_jar_name.outputs.JAR_PATH }} # Путь к вашему JAR-файлу
-        asset_name: ${{ steps.get_jar_name.outputs.JAR_NAME }} # Имя файла актива в релизе
-        asset_content_type: application/java-archive # MIME-тип для JAR-файла
-
-  dependency-submission:
-
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-
-    steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 17
-      uses: actions/setup-java@v4
-      with:
-        java-version: '17'
-        distribution: 'temurin'
-
-    # Generates and submits a dependency graph, enabling Dependabot Alerts for all project dependencies.
-    # See: https://github.com/gradle/actions/blob/main/dependency-submission/README.md
-    - name: Generate and submit dependency graph
-      uses: gradle/actions/dependency-submission@af1da67850ed9a4cedd57bfd976089dd991e2582 # v4.0.0
+      - name: Upload JAR to Release
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ steps.get_jar.outputs.path }}
+          asset_name: ${{ steps.get_jar.outputs.name }}
+          asset_content_type: application/java-archive
