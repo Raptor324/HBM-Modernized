@@ -1,7 +1,5 @@
 name: Create Release and Upload Build
 
-# Этот воркфлоу запускается ТОЛЬКО при создании нового тега,
-# который начинается с 'v', например: v0.0.3-alpha, v1.0.0
 on:
   push:
     tags:
@@ -11,7 +9,7 @@ jobs:
   build_and_release:
     runs-on: ubuntu-latest
     permissions:
-      contents: write # Необходимо для создания релизов и загрузки артефактов
+      contents: write
 
     steps:
       - name: Checkout repository
@@ -29,51 +27,27 @@ jobs:
 
       - name: Extract version from tag
         id: get_version
-        # Эта команда убирает префикс 'v' из тега (v0.0.3-alpha -> 0.0.3-alpha)
-        # и сохраняет результат в переменную version
         run: echo "version=${GITHUB_REF_NAME#v}" >> $GITHUB_OUTPUT
 
       - name: Build with Gradle
-        # ВАЖНО: Мы передаем версию в Gradle через параметр -P
-        # Это переопределит 'mod_version' из gradle.properties
         run: ./gradlew build -Pmod_version=${{ steps.get_version.outputs.version }}
 
-      - name: Get JAR file name and path
+      - name: Get JAR file path
         id: get_jar
         run: |
-          # Ищем JAR-файл, исключая -sources и -javadoc
           JAR_PATH=$(find build/libs -name "*.jar" ! -name "*-sources.jar" ! -name "*-javadoc.jar" | head -n 1)
-          if [ -z "$JAR_PATH" ]; then
-            echo "::error::No JAR file found in build/libs!"
-            exit 1
-          fi
-          echo "Found JAR file at: $JAR_PATH"
           echo "path=$JAR_PATH" >> $GITHUB_OUTPUT
-          echo "name=$(basename $JAR_PATH)" >> $GITHUB_OUTPUT
 
-      - name: Create Release on GitHub
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Create Release and Upload Asset
+        uses: softprops/action-gh-release@v2
         with:
-          # Имя тега берется напрямую из события, которое запустило воркфлоу
+          # Файл, который нужно загрузить. Мы берем путь из предыдущего шага.
+          files: ${{ steps.get_jar.outputs.path }}
+          # Имя релиза (например, "HBM Modernized v0.0.4-alpha")
+          name: "HBM Modernized ${{ github.ref_name }}"
+          # Имя тега (например, "v0.0.4-alpha")
           tag_name: ${{ github.ref_name }}
-          # Имя релиза будет "HBM Modernized v0.0.3-alpha"
-          release_name: "HBM Modernized ${{ github.ref_name }}"
-          # Автоматически помечать как пре-релиз, если в теге есть -alpha, -beta или -rc
+          # Автоматически помечать как пре-релиз
           prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}
-          draft: false
-          # Сюда можно добавить описание релиза, если нужно
-          # body: |
-          #   Automatic release based on git tag.
-
-      - name: Upload JAR to Release
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ steps.get_jar.outputs.path }}
-          asset_name: ${{ steps.get_jar.outputs.name }}
-          asset_content_type: application/java-archive
+          # Можно добавить описание релиза здесь, если нужно
+          # body: "Автоматическая сборка"

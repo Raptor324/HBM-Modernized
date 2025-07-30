@@ -35,11 +35,13 @@ hs_err_pid*
 replay_pid*
 temp/
 logs/
-
+/ExampleProject/
+/OLD/
 # ================= OS Specific =================
 # Системные файлы, которые могут случайно появиться.
 .DS_Store
 Thumbs.db
+.kilocode
 
 # ================= Minecraft/Forge Specific =================
 # Файлы, генерируемые средой разработки Forge.
