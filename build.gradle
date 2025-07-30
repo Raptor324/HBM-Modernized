@@ -3,10 +3,10 @@ plugins {
     id 'net.minecraftforge.gradle' version '[6.0,6.3)'
     id 'java-library'
     id 'org.spongepowered.mixin' version '0.7.+'
-    id 'com.widen.versioning' version '1.1.0'
 }
 
 group = mod_group_id
+version = mod_version
 
 base {
     archivesName = mod_id
