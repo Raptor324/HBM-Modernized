@@ -3,7 +3,6 @@ package com.hbm_m.radiation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.event.level.ChunkDataEvent;
-// import net.minecraftforge.event.level.ChunkDataEvent;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraft.world.level.chunk.LevelChunk;
@@ -82,7 +81,6 @@ public abstract class ChunkRadiationHandler {
 
     public abstract void recalculateChunkRadiation(LevelChunk chunk);
     public abstract void receiveChunkLoad(LevelChunk chunk);
-    // public void receiveChunkSave(ChunkDataEvent.Save event) { }
     public void receiveChunkUnload(ChunkEvent.Unload event) { }
     
     /**

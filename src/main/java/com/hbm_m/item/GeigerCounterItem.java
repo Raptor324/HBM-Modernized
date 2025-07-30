@@ -38,8 +38,10 @@ public class GeigerCounterItem extends AbstractRadiationMeterItem {
         String chunkRadStr = getRadColor(data.chunkRad()) + String.format("%.1f RAD/s", data.chunkRad());
         String envRadStr = getRadColor(data.getTotalEnvironmentRad()) + String.format("%.1f RAD/s\n", data.getTotalEnvironmentRad());
         String playerRadStr = getRadColor(data.playerRad()) + String.format("%.1f RAD", data.playerRad());
-        String protectionPercentStr = String.format("%.1f%%", data.protectionPercent());
-        String protectionAbsoluteStr = String.format("%.1f", data.protectionAbsolute());
+        // Форматируем процент с двумя знаками после запятой (например, "99.05%")
+        String protectionPercentStr = String.format("%.2f%%", data.protectionPercent() * 100);
+        // Форматируем абсолютное значение с тремя знаками после запятой (например, "2.021")
+        String protectionAbsoluteStr = String.format("%.3f", data.protectionAbsolute());
 
         // 2. Собираем заголовок. §e - желтый цвет
         String titleString = "\n§6===== ☢ " + Component.translatable("item.hbm_m.meter.geiger_counter.name").getString() + " ☢ =====\n";
@@ -71,7 +73,7 @@ public class GeigerCounterItem extends AbstractRadiationMeterItem {
 
                 if (!serverPlayer.isCreative() && !serverPlayer.isSpectator()) {
                     ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer),
-                    new RadiationDataPacket(totalEnvironmentRads));
+                        new RadiationDataPacket(data.getTotalEnvironmentRad(), data.playerRad()));
                 }
 
                 playGeigerTickSound(serverPlayer, totalEnvironmentRads);
@@ -109,11 +111,9 @@ public class GeigerCounterItem extends AbstractRadiationMeterItem {
             default -> Optional.empty();
         };
 
-        // ИСПРАВЛЕНИЕ 2: Убираем внешнюю переменную soundLocation и делаем всю работу внутри лямбды
         soundRegistryObject.ifPresent(regObject -> {
             SoundEvent soundEvent = regObject.get();
             if (soundEvent != null) {
-                // Переменная soundLocation теперь локальна для этой лямбды и не вызывает конфликта
                 ResourceLocation soundLocation = soundEvent.getLocation();
                 ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
             }

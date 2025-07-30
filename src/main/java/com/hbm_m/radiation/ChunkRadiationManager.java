@@ -1,9 +1,11 @@
 package com.hbm_m.radiation;
 
-import com.hbm_m.block.RadioactiveBlock;
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.hazard.HazardSystem;
+import com.hbm_m.hazard.HazardType;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.Blocks;
@@ -13,7 +15,6 @@ import net.minecraftforge.common.util.BlockSnapshot;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.event.level.BlockEvent;
-// import net.minecraftforge.event.level.ChunkDataEvent;
 import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.ExplosionEvent;
 import net.minecraftforge.event.level.LevelEvent;
@@ -110,13 +111,21 @@ public class ChunkRadiationManager {
         getProxy().receiveWorldTick(event);
     }
 
-    // --- ОБРАБОТЧИКИ СОБЫТИЙ ИЗМЕНЕНИЯ БЛОКОВ (ИНТЕГРИРОВАНЫ СЮДА) ---
+    // --- ОБРАБОТЧИКИ СОБЫТИЙ ИЗМЕНЕНИЯ БЛОКОВ ---
 
     private float getRadFromState(BlockState state) {
-        if (state.getBlock() instanceof RadioactiveBlock radioactiveBlock) {
-            return radioactiveBlock.getRadiationLevel();
-        }
+    // Простая проверка для оптимизации: воздушные блоки не могут быть радиоактивными.
+    if (state.isAir()) {
         return 0f;
+    }
+
+    // 1. Создаем временный ItemStack, представляющий этот блок.
+    // Это ключевой шаг для связи мира блоков с нашей предметно-ориентированной HazardSystem.
+    ItemStack blockAsStack = new ItemStack(state.getBlock().asItem());
+
+    // 2. Запрашиваем уровень радиации у нашей центральной системы, передавая ей созданный ItemStack.
+    // Вся старая логика с `instanceof` заменяется этой одной строкой.
+    return HazardSystem.getHazardLevelFromStack(blockAsStack, HazardType.RADIATION);
     }
 
     private void handleBlockChange(BlockState oldState, BlockState newState, LevelAccessor level, BlockPos pos) {
@@ -171,7 +180,7 @@ public class ChunkRadiationManager {
         }
     }
 
-    // --- СТАТИЧЕСКИЕ МЕТОДЫ-ОБЕРТКИ (остаются без изменений) ---
+    // --- СТАТИЧЕСКИЕ МЕТОДЫ-ОБЕРТКИ ---
 
     public static float getRadiation(Level level, int x, int y, int z) {
         if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return 0F;

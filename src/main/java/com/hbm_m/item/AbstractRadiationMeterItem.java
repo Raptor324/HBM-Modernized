@@ -1,5 +1,6 @@
 package com.hbm_m.item;
 
+import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.network.GeigerSoundPacket;
 import com.hbm_m.network.ModPacketHandler;
@@ -55,8 +56,17 @@ public abstract class AbstractRadiationMeterItem extends Item {
             );
             invRad = PlayerRadiationHandler.getInventoryRadiation(player);
         }
+        
         float playerRads = PlayerRadiationHandler.getPlayerRads(player);
-        return new RadiationData(chunkRad, invRad, playerRads, 0f, 0f);
+        float totalAbsoluteProtection = 0f;
+        for (ItemStack armorStack : player.getArmorSlots()) {
+            totalAbsoluteProtection += ArmorModificationHelper.getTotalAbsoluteRadProtection(armorStack);
+        }
+        float protectionPercent = ArmorModificationHelper.convertAbsoluteToPercent(totalAbsoluteProtection);
+        // ---------------------------------------------
+        
+        // Передаем новые данные в record
+        return new RadiationData(chunkRad, invRad, playerRads, protectionPercent, totalAbsoluteProtection);
     }
 
     protected abstract Component createUsageMessage(RadiationData data);

@@ -15,4 +15,10 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("armor_table_be", () ->
                     BlockEntityType.Builder.of(ArmorTableBlockEntity::new, ModBlocks.ARMOR_TABLE.get())
                             .build(null));
+
+    public static final RegistryObject<BlockEntityType<GeigerCounterBlockEntity>> GEIGER_COUNTER_BE =
+            BLOCK_ENTITIES.register("geiger_counter_be", () ->
+                    BlockEntityType.Builder.of(GeigerCounterBlockEntity::new,
+                            ModBlocks.GEIGER_COUNTER_BLOCK.get())
+                            .build(null));
 }

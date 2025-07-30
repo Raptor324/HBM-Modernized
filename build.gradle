@@ -124,10 +124,15 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 repositories {
     // Put repositories for dependencies here
     // ForgeGradle automatically adds the Forge maven and Maven Central for you
+    mavenLocal()
+    // maven {
+    //     url 'file:///C:/local-maven-repo' 
+    // }
     mavenCentral()
     maven { url = 'https://maven.minecraftforge.net/' }
     gradlePluginPortal()
     maven { url = "https://maven.shedaniel.me/" }
+    
     // maven {
     //     name = 'SpongePowered'
     //     url = 'https://repo.spongepowered.org/maven'
@@ -177,7 +182,7 @@ tasks.named('processResources', ProcessResources).configure {
             minecraft_version: minecraft_version, minecraft_version_range: minecraft_version_range,
             forge_version: forge_version, forge_version_range: forge_version_range,
             loader_version_range: loader_version_range,
-            mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: mod_version,
+            mod_id: mod_id, mod_name: mod_name, mod_license: mod_license, mod_version: project.version,
             mod_authors: mod_authors, mod_description: mod_description,
     ]
     inputs.properties replaceProperties
@@ -197,7 +202,8 @@ tasks.named('jar', Jar).configure {
                 'Implementation-Title'    : project.name,
                 'Implementation-Version'  : project.jar.archiveVersion,
                 'Implementation-Vendor'   : mod_authors,
-                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
+                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
+                'Implementation-Version'  : project.jar.archiveVersion
         ])
     }
 
@@ -227,3 +233,29 @@ publishing {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }
+// Создаем новую задачу с именем 'cleanObjFiles'
+// task cleanObjFiles(type: DefaultTask) {
+//     description = 'Removes mtllib and usemtl lines from all .obj files in resources.'
+//     doLast {
+//         // Указываем, где искать файлы: в папке ресурсов нашего мода
+//         fileTree('src/main/resources/assets/' + mod_id + '/models/').include('**/*.obj').each { File file ->
+//             println "Cleaning OBJ file: " + file.name
+            
+//             // Читаем весь текст из файла
+//             String content = file.getText('UTF-8')
+            
+//             // С помощью регулярных выражений заменяем все строки, 
+//             // начинающиеся с 'mtllib' или 'usemtl', на пустую строку
+//             String cleanedContent = content.replaceAll('(?m)^mtllib.*\\r?\\n', '').replaceAll('(?m)^usemtl.*\\r?\\n', '')
+            
+//             // Перезаписываем файл очищенным содержимым
+//             file.write(cleanedContent, 'UTF-8')
+//         }
+//     }
+// }
+
+// Указываем, что наша задача должна выполняться ПЕРЕД стандартной задачей 'processResources'
+// 'processResources' отвечает за копирование ресурсов в папку сборки, которую видит игра.
+// tasks.named('processResources') {
+//     dependsOn cleanObjFiles
+// }

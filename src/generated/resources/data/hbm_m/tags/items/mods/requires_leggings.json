@@ -1,0 +1,9 @@
+{
+  "values": [
+    "hbm_m:cladding_ghiorsium",
+    "hbm_m:cladding_desh",
+    "hbm_m:cladding_lead",
+    "hbm_m:cladding_rubber",
+    "hbm_m:cladding_paint"
+  ]
+}

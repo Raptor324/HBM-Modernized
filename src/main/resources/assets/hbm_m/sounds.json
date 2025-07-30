@@ -36,11 +36,69 @@
       "hbm_m:techboop"
     ]
   },
-  "testboop": {
-    "category": "player",
-    "subtitle": "sounds.hbm_m.testboop",
+  "radaway_use": {
+    "subtitle": "sounds.hbm_m.radaway_use",
     "sounds": [
-      "hbm_m:metal_detector_found_ore"
+      "hbm_m:item/radaway"
+    ]
+  },
+  "tool.repair1": {
+    "subtitle": "sounds.hbm_m.subtitle.repair",
+    "sounds": [ "hbm_m:tool/repair1" ]
+  },
+  "tool.repair2": {
+    "subtitle": "sounds.hbm_m.subtitle.repair",
+    "sounds": [ "hbm_m:tool/repair2" ]
+  },
+  "tool.repair3": {
+    "subtitle": "sounds.hbm_m.subtitle.repair",
+    "sounds": [ "hbm_m:tool/repair3" ]
+  },
+  "tool.repair4": {
+    "subtitle": "sounds.hbm_m.subtitle.repair",
+    "sounds": [ "hbm_m:tool/repair4" ]
+  },
+  "tool.repair5": {
+    "subtitle": "sounds.hbm_m.subtitle.repair",
+    "sounds": [ "hbm_m:tool/repair5" ]
+  },
+  "tool.repair6": {
+    "subtitle": "sounds.hbm_m.subtitle.repair",
+    "sounds": [ "hbm_m:tool/repair6" ]
+  },
+  "tool.repair7": {
+    "subtitle": "sounds.hbm_m.subtitle.repair",
+    "sounds": [ "hbm_m:tool/repair7" ]
+  },
+
+  "tool.repair_random": {
+    "subtitle": "sounds.hbm_m.subtitle.repair",
+    "sounds": [
+      "hbm_m:tool/repair1",
+      "hbm_m:tool/repair2",
+      "hbm_m:tool/repair3",
+      "hbm_m:tool/repair4",
+      "hbm_m:tool/repair5",
+      "hbm_m:tool/repair6",
+      "hbm_m:tool/repair7"
+    ]
+  },
+
+  "tool.extract1": {
+    "subtitle": "sounds.hbm_m.subtitle.extract",
+    "sounds": [ "hbm_m:tool/extract1" ]
+  },
+
+  "tool.extract2": {
+    "subtitle": "sounds.hbm_m.subtitle.extract",
+    "sounds": [ "hbm_m:tool/extract2" ]
+  },
+
+  "tool.extract_random": {
+    "subtitle": "sounds.hbm_m.subtitle.extract",
+    "sounds": [
+      "hbm_m:tool/extract1",
+      "hbm_m:tool/extract2"
     ]
   }
 }

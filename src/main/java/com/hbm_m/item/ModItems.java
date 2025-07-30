@@ -1,28 +1,74 @@
-//src\main\java\com\hbm_m\item\ModItems.java
 package com.hbm_m.item;
 
+import java.util.EnumMap;
+import java.util.Map;
+
+import com.hbm_m.armormod.item.ItemModHealth;
+import com.hbm_m.armormod.item.ItemModRadProtection;
+import com.hbm_m.effect.ModEffects;
 import com.hbm_m.lib.RefStrings;
-//import com.hbm_m.main.ModCreativeTabs;
+import com.hbm_m.sound.ModSounds;
+
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.Item;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
+
 public class ModItems {
     // Создаем отложенный регистратор для предметов.
     // Это стандартный способ регистрации объектов в Forge.
     public static final DeferredRegister<Item> ITEMS =
             DeferredRegister.create(ForgeRegistries.ITEMS, RefStrings.MODID);
+    // --- АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ СЛИТКОВ ---
+    // 1. Создаем карту для хранения всех RegistryObject'ов наших слитков
+    public static final Map<ModIngots, RegistryObject<Item>> INGOTS = new EnumMap<>(ModIngots.class);
+
+    // 2. Используем статический блок для заполнения карты
+    static {
+        for (ModIngots ingot : ModIngots.values()) {
+            // Регистрируем предмет. Имя будет, например, "ingot_uranium"
+            // Важно: мы стандартизируем имена, добавляя префикс "ingot_"
+            RegistryObject<Item> registeredItem;
+
+            // Пример того, как сделать один из слитков особенным
+            if (ingot == ModIngots.URANIUM) {
+                registeredItem = ITEMS.register(ingot.getName() + "_ingot", // Имя в реестре: uranium_ingot
+                        () -> new RadioactiveItem(new Item.Properties()));
+            } else {
+                registeredItem = ITEMS.register(ingot.getName() + "_ingot", // Имя в реестре: steel_ingot
+                        () -> new Item(new Item.Properties()));
+            }
+            
+            // Кладём зарегистрированный объект в нашу карту
+            INGOTS.put(ingot, registeredItem);
+        }
+    }
+    
+    /**
+     * УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА 
+     */
+    public static RegistryObject<Item> getIngot(ModIngots ingot) {
+        return INGOTS.get(ingot);
+    }
+
+    public static final int SLOT_HELMET = 0;
+    public static final int SLOT_CHEST = 1;
+    public static final int SLOT_LEGS = 2;
+    public static final int SLOT_BOOTS = 3;
+    public static final int SLOT_BATTERY = 4;
+    public static final int SLOT_SPECIAL = 5;
+    public static final int SLOT_INSERT = 6;
+    public static final int SLOT_CLADDING = 7;
+    public static final int SLOT_SERVOS = 8;
 
     // Регистрируем наш меч.
     // RegistryObject<Item> будет содержать ссылку на зарегистрированный предмет.
     public static final RegistryObject<Item> ALLOY_SWORD = ITEMS.register("alloy_sword",
             () -> new AlloySword()); // Имя файла меча будет "alloy_sword"
             
-    // Радиоактивные материалы
-    public static final RegistryObject<Item> URANIUM_INGOT = ITEMS.register("uranium_ingot",
-            () -> new RadioactiveItem(new Item.Properties(), 0.35F, "ingotUranium", "ingotUranium235"));
 
     // Инструменты
     public static final RegistryObject<Item> GEIGER_COUNTER = ITEMS.register("geiger_counter",
@@ -30,6 +76,100 @@ public class ModItems {
 
     public static final RegistryObject<Item> DOSIMETER = ITEMS.register("dosimeter",
             () -> new DosimeterItem(new Item.Properties().stacksTo(1)));
+
+    // Модификаторы брони
+    public static final RegistryObject<Item> HEART_PIECE = ITEMS.register("heart_piece",
+            () -> new ItemModHealth(
+                    new Item.Properties(),
+                    SLOT_SPECIAL,
+                    5.0
+            )
+    );
+    public static final RegistryObject<Item> HEART_CONTAINER = ITEMS.register("heart_container",
+            () -> new ItemModHealth(
+                    new Item.Properties(),
+                    SLOT_SPECIAL,
+                    20.0
+            )
+    );
+    public static final RegistryObject<Item> HEART_BOOSTER = ITEMS.register("heart_booster",
+            () -> new ItemModHealth(
+                    new Item.Properties(),
+                    SLOT_SPECIAL,
+                    40.0
+            )
+    );
+    public static final RegistryObject<Item> HEART_FAB = ITEMS.register("heart_fab",
+            () -> new ItemModHealth(
+                    new Item.Properties(),
+                    SLOT_SPECIAL,
+                    60.0
+            )
+    );
+    public static final RegistryObject<Item> BLACK_DIAMOND = ITEMS.register("black_diamond",
+            () -> new ItemModHealth(
+                    new Item.Properties(),
+                    SLOT_SPECIAL,
+                    40.0
+            )
+    );
+
+    public static final RegistryObject<Item> GHIORSIUM_CLADDING = ITEMS.register("cladding_ghiorsium",
+            () -> new ItemModRadProtection(
+                    new Item.Properties(),
+                    SLOT_CLADDING,
+                    0.5f
+            )
+    );
+    public static final RegistryObject<Item> DESH_CLADDING = ITEMS.register("cladding_desh",
+            () -> new ItemModRadProtection(
+                    new Item.Properties(),
+                    SLOT_CLADDING,
+                    0.2f
+            )
+    );
+    public static final RegistryObject<Item> LEAD_CLADDING = ITEMS.register("cladding_lead",
+            () -> new ItemModRadProtection(
+                    new Item.Properties(),
+                    SLOT_CLADDING,
+                    0.1f
+            )
+    );
+    public static final RegistryObject<Item> RUBBER_CLADDING = ITEMS.register("cladding_rubber",
+            () -> new ItemModRadProtection(
+                    new Item.Properties(),
+                    SLOT_CLADDING,
+                    0.005f
+            )
+    );
+    public static final RegistryObject<Item> PAINT_CLADDING = ITEMS.register("cladding_paint",
+            () -> new ItemModRadProtection(
+                    new Item.Properties(),
+                    SLOT_CLADDING,
+                    0.025f
+            )
+    );
+    public static final RegistryObject<Item> RADAWAY = ITEMS.register("radaway",
+            () -> new ItemSimpleConsumable(new Item.Properties(), (player, stack) -> {
+                // Это лямбда-выражение определяет, что произойдет при использовании предмета.
+                
+                // Действуем только на сервере
+                if (!player.level().isClientSide()) {
+                    // 1. Накладываем эффект Антирадина.
+                    //    Длительность: 200 тиков (10 секунд)
+                    //    Уровень: I (amplifier = 0)
+                    player.addEffect(new MobEffectInstance(ModEffects.RADAWAY.get(), 120, 0));
+
+                    // 2. Проигрываем звук
+                    player.level().playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.RADAWAY_USE.get(), player.getSoundSource(), 1.0F, 1.0F);
+
+                    // 3. Уменьшаем количество предметов в стаке
+                    if (!player.getAbilities().instabuild) { // не уменьшать в креативе
+                        stack.shrink(1);
+                    }
+                }
+            })
+    );
 
     // Метод для регистрации всех предметов, вызывается в основном классе мода.
     public static void register(IEventBus eventBus) {

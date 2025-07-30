@@ -5,7 +5,7 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "hbm_m.refmap.json",
   "mixins": [
-    
+    "SlotMixin"
   ],
   "injectors": {
     "defaultRequire": 1

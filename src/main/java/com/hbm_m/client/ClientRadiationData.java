@@ -16,9 +16,9 @@ import java.util.concurrent.ConcurrentHashMap;
 
 @OnlyIn(Dist.CLIENT)
 public class ClientRadiationData {
-    /**
-     * Очищает все клиентские данные о радиации (например, при смене мира или измерения).
-     */
+    
+    // Очищает все клиентские данные о радиации (например, при смене мира или измерения).
+    
     public static void clearAll() {
         radiationByDimension.clear();
     }

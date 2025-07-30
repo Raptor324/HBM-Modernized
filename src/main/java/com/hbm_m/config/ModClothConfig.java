@@ -9,7 +9,6 @@ import me.shedaniel.autoconfig.annotation.ConfigEntry.BoundedDiscrete;
 import me.shedaniel.autoconfig.annotation.ConfigEntry.Category;
 import me.shedaniel.autoconfig.annotation.ConfigEntry.Gui;
 
-// import static me.shedaniel.autoconfig.annotation.ConfigEntry.*;
 import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
 
@@ -48,8 +47,20 @@ public class ModClothConfig implements ConfigData {
 
     @Category("world_effects")
     @Gui.Tooltip
-    @BoundedDiscrete(min = 1, max = 16) // Ограничим, чтобы не портить мир слишком глубоко
+    @BoundedDiscrete(min = 1, max = 16)
     public int worldRadEffectsMaxDepth = 5;
+
+    @Category("world_effects")
+    @Gui.Tooltip
+    public boolean enableRadFogEffect = true;
+
+    @Category("world_effects")
+    @Gui.Tooltip
+    public float radFogThreshold = 50F;
+
+    @Category("world_effects")
+    @Gui.Tooltip
+    public int radFogChance = 10;
 
     // === Игрок ===
     @Category("player")
@@ -88,14 +99,6 @@ public class ModClothConfig implements ConfigData {
     @Category("chunk")
     @Gui.Tooltip
     public float maxRad = 100_000F;
-
-    @Category("chunk")
-    @Gui.Tooltip
-    public float fogRad = 50F;
-
-    @Category("chunk")
-    @Gui.Tooltip
-    public int fogCh = 50;
 
     @Category("chunk")
     @Gui.Tooltip

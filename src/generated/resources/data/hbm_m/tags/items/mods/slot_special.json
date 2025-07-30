@@ -1,0 +1,9 @@
+{
+  "values": [
+    "hbm_m:heart_piece",
+    "hbm_m:heart_container",
+    "hbm_m:heart_booster",
+    "hbm_m:heart_fab",
+    "hbm_m:black_diamond"
+  ]
+}

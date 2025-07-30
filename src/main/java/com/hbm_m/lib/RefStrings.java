@@ -5,7 +5,6 @@ import net.minecraft.resources.ResourceLocation;
 public class RefStrings {
 	public static final String MODID = "hbm_m";
 	public static final String NAME = "Hbm's Nuclear Tech Mod Modernized";
-	public static final String VERSION = "0.0.1 Pre-Alpha";
 	//HBM's Beta Naming Convention:
 	//V T (X)
 	//V -> next release version

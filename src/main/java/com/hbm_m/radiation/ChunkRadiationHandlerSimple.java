@@ -3,6 +3,11 @@ package com.hbm_m.radiation;
 import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.capability.IChunkRadiation;
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.hazard.HazardSystem;
+import com.hbm_m.hazard.HazardType;
+import com.hbm_m.block.RadioactiveBlock;
+import com.hbm_m.main.MainRegistry;
+import com.hbm_m.block.ModBlocks;
 
 import java.util.HashMap;
 import java.util.HashSet;
@@ -13,24 +18,19 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.Map;
 import java.util.Optional;
 
-import com.hbm_m.block.RadioactiveBlock;
-import com.hbm_m.main.MainRegistry;
-import com.hbm_m.block.ModBlocks;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
 import net.minecraft.world.level.chunk.ChunkAccess;
-// import net.minecraftforge.event.level.ChunkDataEvent;
 import net.minecraftforge.event.level.ChunkEvent;
-// import net.minecraft.server.level.ChunkMap;
 import net.minecraft.resources.ResourceLocation;
-// import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.core.registries.Registries;
@@ -40,15 +40,14 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraftforge.network.PacketDistributor;
 import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.network.ChunkRadiationDebugBatchPacket;
-// import com.hbm_m.mixin.ChunkMapAccessor;
 
 // Моя конфетка, сколько же сил и нервов я на тебя потратил!
 public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
 
     private static final float MAX_RAD = ModClothConfig.get().maxRad;
     private final Map<ResourceLocation, Set<ChunkPos>> activeChunksByDimension = new ConcurrentHashMap<>();
-    // private final Map<ResourceLocation, Set<ChunkPos>> dirtyChunksByDimension = new ConcurrentHashMap<>();
     private final Map<UUID, Map<ChunkPos, Float>> lastSentDebugValues = new ConcurrentHashMap<>();
 
     public static Optional<IChunkRadiation> getChunkRadiationCap(LevelChunk chunk) {
@@ -125,7 +124,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                             
                             float share = (Math.abs(dx) + Math.abs(dz) == 1) ? cardinalShare : diagonalShare;
 
-                            // ИЗМЕНЕНО: Добавляем порог для распространения
+                            // Добавляем порог для распространения
                             // Это предотвратит распространение незначительных значений
                             if (share > 0.1f) {
                                 ChunkPos neighbor = new ChunkPos(pos.x + dx, pos.z + dz);
@@ -155,8 +154,6 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 if (generation > 1e-6f) {
                     newAmbient += generation * ModClothConfig.get().radSourceInfluenceFactor;
                 }
-
-                // 3. НОВАЯ, БОЛЕЕ ПРОСТАЯ И НАДЕЖНАЯ ФОРМУЛА РАСПАДА
                 // Распад состоит из процентной и фиксированной части, чтобы добивать малые значения.
                 float decayPercent = 0.05f; // 5% от текущего значения
                 float decayFlat = 0.1f;    // 0.1 рад в секунду (в 20 тиков)
@@ -169,7 +166,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 }
 
                 // 4. Ограничения и очистка
-                float clearThreshold = 0.01f; // Немного увеличим порог для большей стабильности
+                float clearThreshold = 0.01f;
                 if (newAmbient < clearThreshold) {
                     newAmbient = 0f;
                 }
@@ -177,6 +174,33 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 newAmbient = Mth.clamp(newAmbient, 0f, MAX_RAD);
 
                 final float finalAmbientRad = newAmbient;
+
+                // СПАВНИМ РАДИОАКТИВНЫЙ ТУМАН
+                if (ModClothConfig.get().enableRadFogEffect && finalAmbientRad > ModClothConfig.get().radFogThreshold && level.random.nextInt(ModClothConfig.get().radFogChance) == 0) {
+                    int x = pos.getMinBlockX() + level.random.nextInt(16);
+                    int z = pos.getMinBlockZ() + level.random.nextInt(16);
+                    int y = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
+
+                    // Спавним несколько частиц, чтобы создать эффект облака
+                    for (int i = 0; i < 7; i++) {
+                        double offsetX = level.random.nextGaussian() * 1.5;
+                        double offsetY = level.random.nextGaussian() * 0.5;
+                        double offsetZ = level.random.nextGaussian() * 1.5;
+
+                        level.sendParticles(
+                                ModParticleTypes.RAD_FOG_PARTICLE.get(),
+                                x + 0.5 + offsetX,
+                                y + 1.0 + offsetY,
+                                z + 0.5 + offsetZ,
+                                1, // <-- Количество пакетов/частиц
+                                0.0, // <-- dx, dy, dz здесь не используются как скорость, а как смещение
+                                0.0,
+                                0.0,
+                                0.01 // <-- delta/speed
+                        );
+                    }
+                }
+
                 getChunkRadiationCap(chunk).ifPresent(cap -> {
                     if (Math.abs(cap.getAmbientRadiation() - finalAmbientRad) > 1e-6f) {
                         cap.setAmbientRadiation(finalAmbientRad);
@@ -216,8 +240,19 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                     for (int z = 0; z < 16; z++) {
                         for (int x = 0; x < 16; x++) {
                             BlockState blockState = section.getBlockState(x, y, z);
-                            if (!blockState.isAir() && blockState.getBlock() instanceof RadioactiveBlock radioactiveBlock) {
-                                totalBlockRadiation += radioactiveBlock.getRadiationLevel();
+                            if (blockState.isAir()) {
+                                continue;
+                            }
+
+                            // Создаем временный ItemStack для блока, чтобы передать его в HazardSystem
+                            ItemStack blockStack = new ItemStack(blockState.getBlock());
+
+                            // Запрашиваем уровень радиации у нашей новой универсальной системы
+                            float blockRad = HazardSystem.getHazardLevelFromStack(blockStack, HazardType.RADIATION);
+
+                            // Если радиация есть, добавляем ее к общей сумме в чанке
+                            if (blockRad > 0) {
+                                totalBlockRadiation += blockRad;
                             }
                         }
                     }
@@ -324,7 +359,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             
             boolean isCreativeOrSpectator = player.isCreative() || player.isSpectator();
             if (!ModClothConfig.get().debugRenderInSurvival && !isCreativeOrSpectator) {
-                // Если игрок не в креативе/спекте и рендер в выживании выключен, очищаем его кеш
+                // Если игрок не в креативе/спектаторе и рендер в выживании выключен, очищаем его кеш
                 // на случай, если он только что вышел из креатива, и пропускаем его.
                 lastSentDebugValues.remove(player.getUUID());
                 continue;
@@ -334,7 +369,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             Map<ChunkPos, Float> playerLastValues = lastSentDebugValues.computeIfAbsent(player.getUUID(), k -> new HashMap<>());
             
             ChunkPos playerChunkPos = player.chunkPosition();
-            int radius = 4; // Немного увеличим радиус для плавности
+            int radius = 4;
             
             Set<ChunkPos> visibleChunks = new HashSet<>();
 
@@ -416,7 +451,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             // 1. Находим высоту самой верхней точки.
             int surfaceY = level.getHeight(net.minecraft.world.level.levelgen.Heightmap.Types.WORLD_SURFACE, x, z);
         
-            // 2. Выбираем случайную глубину "бурения" от 0 до максимальной из конфига.
+            // 2. Выбираем случайную глубину "бурения" от 0 до максимальной из конфига. Пока что работает криво, доработаю в будущем
             int depth = level.random.nextInt(config.worldRadEffectsMaxDepth);
             
             // 3. Вычисляем целевую Y-координату.
@@ -433,23 +468,27 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             if (currentState.isAir() || currentState.getBlock() instanceof RadioactiveBlock) {
                 continue;
             }
+            BlockPos posAbove = blockPos.above();
+            BlockState stateAbove = level.getBlockState(posAbove);
+
+            // 2. Если сверху стоит трава, цветок или снег, которые могут сломаться и издать звук...
+            if (stateAbove.is(Blocks.TALL_GRASS) || stateAbove.is(Blocks.GRASS) || stateAbove.is(BlockTags.FLOWERS) || stateAbove.is(Blocks.SNOW)) {
+                // 3. ...мы заменяем их на воздух "беззвучно", используя флаг '2'.
+                // Этот флаг уведомляет клиентов об изменении, но НЕ вызывает каскадное обновление соседей.
+                level.setBlock(posAbove, Blocks.AIR.defaultBlockState(), 2);
+            }
             // --- Логика замены блоков ---
             // Замена листвы
             if (currentState.is(net.minecraft.world.level.block.Blocks.GRASS_BLOCK)) {
                 level.setBlock(blockPos, com.hbm_m.block.ModBlocks.WASTE_GRASS.get().defaultBlockState(), 2);
                 continue;
             }
+
             // Замена земли
             // if (currentState.is(net.minecraft.world.level.block.Blocks.DIRT)) {
             //      level.setBlock(blockPos, com.hbm_m.block.ModBlocks.WASTE_DIRT.get().defaultBlockState(), 3);
             //     continue;
             // }
-
-            // Замена травы на воздух
-            if (currentState.is(net.minecraft.world.level.block.Blocks.TALL_GRASS) || currentState.is(net.minecraft.world.level.block.Blocks.GRASS)) {
-                level.setBlock(blockPos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 2);
-                continue;
-            }
 
             // Замена листвы. Используем тег, чтобы работать со всеми видами листвы.
             if (currentState.is(BlockTags.LEAVES)) {

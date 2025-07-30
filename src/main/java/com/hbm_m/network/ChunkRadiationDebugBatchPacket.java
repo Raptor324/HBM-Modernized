@@ -15,7 +15,7 @@ import java.util.function.Supplier;
 public class ChunkRadiationDebugBatchPacket {
 
     private final Map<ChunkPos, Float> radiationData;
-    // ИЗМЕНЕНО: Добавлено поле для идентификатора измерения.
+    // Добавлено поле для идентификатора измерения.
     private final ResourceLocation dimension;
 
     public ChunkRadiationDebugBatchPacket(Map<ChunkPos, Float> radiationData, ResourceLocation dimension) {

@@ -1,6 +1,7 @@
 //src\main\java\com\hbm_m\main\MainRegistry.java
 package com.hbm_m.main;
 
+import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.item.ModItems;
@@ -14,10 +15,13 @@ import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.client.ClientSetup;
 import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.effect.ModEffects;
+import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.worldgen.ModWorldGen;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTabs;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
@@ -25,13 +29,20 @@ import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent; // Добавлен импорт
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+
+import java.util.List;
+import java.util.stream.Collectors;
+
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 @Mod(RefStrings.MODID)
 public class MainRegistry {
+    
     // Добавляем логгер для отладки
     public static final Logger LOGGER = LogManager.getLogger(RefStrings.MODID);
 
@@ -54,6 +65,7 @@ public class MainRegistry {
         ModParticleTypes.PARTICLES.register(modEventBus); // Регистрация частиц
         ModBlockEntities.BLOCK_ENTITIES.register(modEventBus); // Регистрация блочных сущностей
         ModWorldGen.BIOME_MODIFIERS.register(modEventBus); // Регистрация модификаторов биомов (руды, структуры и тд)
+        ModEffects.register(modEventBus); // Регистрация эффектов
 
         // Регистрация обработчиков событий мода
         modEventBus.addListener(this::commonSetup);
@@ -77,7 +89,8 @@ public class MainRegistry {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
-            LOGGER.info("commonSetup: Enqueued work running.");
+            ModHazards.registerHazards(); // Регистрация опасностей (радиация, биологическая опасность в будущем и тд)
+            LOGGER.info("HazardSystem initialized successfully");
         });
     }
 
@@ -101,41 +114,57 @@ public class MainRegistry {
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
         // Логгирование для отладки
         LOGGER.info("Building creative tab contents for: " + event.getTabKey());
-        
-        // Добавляем меч во вкладку оружия NTM
+
         if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get()) {
             event.accept(ModItems.ALLOY_SWORD);
             if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added alloy sword to NTM Weapons tab");
+                LOGGER.info("Added Alloy Sword to NTM Weapons tab");
             }
         }
         
-        // Для совместимости также добавляем его в стандартную вкладку Combat
         if (event.getTabKey() == CreativeModeTabs.COMBAT) {
             event.accept(ModItems.ALLOY_SWORD);
             if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added alloy sword to vanilla Combat tab");
+                LOGGER.info("Added Alloy Sword to vanilla Combat tab");
             }
         }
         
-        // Добавляем урановый слиток в соответствующие вкладки
         if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
-            event.accept(ModItems.URANIUM_INGOT);
-            if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added uranium ingot to NTM Resources tab");
+            // Проходимся циклом по ВСЕМ сллиткам
+            for (RegistryObject<Item> ingotObject : ModItems.INGOTS.values()) {
+                event.accept(ingotObject.get());
+                if (ModClothConfig.get().enableDebugLogging) {
+                    LOGGER.info("Added {} to NTM Resources tab", ingotObject.get());
+                }
             }
+            
         }
         
-        // Добавляем счетчик Гейгера в соответствующие вкладки
         if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get()) {
-            event.accept(ModItems.GEIGER_COUNTER);
-            event.accept(ModItems.DOSIMETER);
-            event.accept(ModBlocks.ARMOR_TABLE);
-            if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added dosimeter to NTM Consumables tab");
-                LOGGER.info("Added geiger counter to NTM Consumables tab");
-                LOGGER.info("Added armor table to NTM Consumables tab");
+            // --- АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ МОДИФИКАТОРОВ ---
+            
+            // 1. Получаем все зарегистрированные предметы из вашего мода
+            List<RegistryObject<Item>> allModItems = ForgeRegistries.ITEMS.getEntries().stream()
+                    .filter(entry -> entry.getKey().location().getNamespace().equals(RefStrings.MODID))
+                    .map(entry -> RegistryObject.create(entry.getKey().location(), ForgeRegistries.ITEMS))
+                    .collect(Collectors.toList());
+
+            // 2. Проходимся по всем предметам и добавляем те, которые являются модификаторами
+            for (RegistryObject<Item> itemObject : allModItems) {
+                Item item = itemObject.get();
+                if (item instanceof ItemArmorMod) { // Проверяем, является ли предмет наследником ItemArmorMod
+                    event.accept(item);
+                    if (ModClothConfig.get().enableDebugLogging) {
+                        LOGGER.info("Automatically added Armor Mod [{}] to NTM Consumables tab", itemObject.getId());
+                    }
+                }
             }
+            
+            // --- ДОБАВЛЕНИЕ ОСТАЛЬНЫХ ПРЕДМЕТОВ ВРУЧНУЮ ---
+            event.accept(ModBlocks.ARMOR_TABLE);
+            event.accept(ModItems.DOSIMETER);
+            event.accept(ModItems.GEIGER_COUNTER);
+            event.accept(ModItems.RADAWAY);
         }
         
         // Добавляем урановый блок в соответствующие вкладки
@@ -155,6 +184,12 @@ public class MainRegistry {
                 LOGGER.info("Added uranium ore to NTM Resources tab");
                 LOGGER.info("Added waste leaves block to NTM Resources tab");
                 LOGGER.info("Added waste grass block to NTM Resources tab");
+            }
+        }
+        if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
+            event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
+            if (ModClothConfig.get().enableDebugLogging) {
+                LOGGER.info("Added geiger counter BLOCK to NTM Consumables tab");
             }
         }
     }

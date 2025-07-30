@@ -7,9 +7,9 @@ import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/**
- * Обработчик клиентских событий для очистки данных о радиации при входе в мир или отключении.
- */
+
+// Обработчик клиентских событий для очистки данных о радиации при входе в мир или отключении.
+
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class ClientRadiationEventHandler {
 

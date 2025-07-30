@@ -1,0 +1,8 @@
+{
+  "values": [
+    "hbm_m:revolver_bullet",
+    "hbm_m:chopper_bullet",
+    "hbm_m:shrapnel",
+    "hbm_m:rubble"
+  ]
+}

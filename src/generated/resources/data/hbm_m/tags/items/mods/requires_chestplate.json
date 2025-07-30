@@ -1,0 +1,14 @@
+{
+  "values": [
+    "hbm_m:heart_piece",
+    "hbm_m:heart_container",
+    "hbm_m:heart_booster",
+    "hbm_m:heart_fab",
+    "hbm_m:black_diamond",
+    "hbm_m:cladding_ghiorsium",
+    "hbm_m:cladding_desh",
+    "hbm_m:cladding_lead",
+    "hbm_m:cladding_rubber",
+    "hbm_m:cladding_paint"
+  ]
+}

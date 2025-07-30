@@ -1,5 +1,6 @@
 package com.hbm_m.main;
 
+import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
@@ -19,7 +20,7 @@ public class ModCreativeTabs {
     public static final RegistryObject<CreativeModeTab> NTM_RESOURCES_TAB = CREATIVE_MODE_TABS.register("ntm_resources_tab",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_resources_tab"))
-                    .icon(() -> new ItemStack(ModItems.URANIUM_INGOT.get()))
+                    .icon(() -> new ItemStack(ModItems.getIngot(ModIngots.URANIUM).get()))
                     .build());
 
     public static final RegistryObject<CreativeModeTab> NTM_FUEL_TAB = CREATIVE_MODE_TABS.register("ntm_fuel_tab",
@@ -43,7 +44,7 @@ public class ModCreativeTabs {
     public static final RegistryObject<CreativeModeTab> NTM_MACHINES_TAB = CREATIVE_MODE_TABS.register("ntm_machines_tab",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_machines_tab"))
-                    .icon(() -> new ItemStack(ModItems.ALLOY_SWORD.get()))
+                    .icon(() -> new ItemStack(ModBlocks.GEIGER_COUNTER_BLOCK.get()))
                     .build());
 
     public static final RegistryObject<CreativeModeTab> NTM_BOMBS_TAB = CREATIVE_MODE_TABS.register("ntm_bombs_tab",
@@ -67,7 +68,7 @@ public class ModCreativeTabs {
     public static final RegistryObject<CreativeModeTab> NTM_CONSUMABLES_TAB = CREATIVE_MODE_TABS.register("ntm_consumables_tab",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_consumables_tab"))
-                    .icon(() -> new ItemStack(ModItems.ALLOY_SWORD.get()))
+                    .icon(() -> new ItemStack(ModItems.GEIGER_COUNTER.get()))
                     .build());
 
     // Метод для регистрации всех вкладок

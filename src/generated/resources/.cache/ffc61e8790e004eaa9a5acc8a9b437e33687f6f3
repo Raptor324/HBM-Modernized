@@ -1,0 +1,5 @@
+// 1.20.1	2025-07-22T02:20:32.3008478	Tags for minecraft:damage_type mod id hbm_m
+6e724a91b3be79d52d433e887ef979759db96f5e data/minecraft/tags/damage_type/bypasses_armor.json
+9b9493f57ce3683b07bac4005309c302c5187a15 data/minecraft/tags/damage_type/bypasses_invulnerability.json
+450d24a4ea59b98d1e82172d46613fa9c384113c data/minecraft/tags/damage_type/is_explosion.json
+d33bb17c0e3497d42631fc74d0045691c3d8d18b data/minecraft/tags/damage_type/is_projectile.json

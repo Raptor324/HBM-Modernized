@@ -1,4 +1,3 @@
-//HBM-Modernized\src\main\java\com\hbm_m\item\AlloySword.java
 package com.hbm_m.item;
 
 import net.minecraft.world.item.Item;

@@ -24,6 +24,7 @@ import java.util.Random;
  * Дозиметр - простой измеритель радиации, показывающий только
  * общий уровень радиации в окружающей среде.
  */
+
 public class DosimeterItem extends AbstractRadiationMeterItem {
 
     private static final Random RANDOM = new Random();
@@ -56,7 +57,7 @@ public class DosimeterItem extends AbstractRadiationMeterItem {
         String envRadStr;
         String colorCode = getDosimeterRadColor(totalEnvironmentRad);
 
-        // ИЗМЕНЕНИЕ 1: Проверяем уровень радиации
+        // Проверяем уровень радиации
         if (totalEnvironmentRad < 3.6f) {
             // Если радиация в пределах нормы для прибора, показываем точное значение
             envRadStr = colorCode + String.format("%.1f RAD/s", totalEnvironmentRad);
@@ -102,18 +103,18 @@ public class DosimeterItem extends AbstractRadiationMeterItem {
      * @param player Игрок, для которого проигрывается звук.
      * @param radiationLevel Текущий уровень радиации.
      */
+
     private void playDosimeterTickSound(ServerPlayer player, float radiationLevel) {
         int soundIndex = 0;
         List<Integer> soundOptions = new ArrayList<>();
 
-        // ИЗМЕНЕНИЕ 2: Ограничиваем выбор звуков
+        // Ограничиваем выбор звуков
         if (radiationLevel > 0) {
             // Всегда есть шанс проиграть базовый щелчок, если есть радиация
             if (radiationLevel < 10) soundOptions.add(1);
             // Более интенсивный щелчок добавляется только при радиации > 5 RAD/s
             if (radiationLevel > 5) soundOptions.add(2);
             if (radiationLevel > 15) soundOptions.add(3);
-            // Другие звуки (4, 5, 6) НЕ добавляются, т.к. прибор их "не умеет" проигрывать.
 
             if (!soundOptions.isEmpty()) {
                 soundIndex = soundOptions.get(RANDOM.nextInt(soundOptions.size()));

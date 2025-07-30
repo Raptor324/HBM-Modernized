@@ -1,7 +1,0 @@
-{
-  "message_id": "hbm_m.radiation_damage",
-  "scaling": "never",
-  "exhaustion": 0.1,
-  "no_impact": true,
-  "is_absolute": true
-}

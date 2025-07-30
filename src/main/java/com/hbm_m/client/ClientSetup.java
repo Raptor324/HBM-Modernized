@@ -1,27 +1,28 @@
 package com.hbm_m.client;
 
-// import com.hbm_m.client.overlay.GeigerOverlay;
+import com.hbm_m.client.overlay.ArmorTableGUI;
+import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.client.overlay.GeigerOverlay;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.DarkParticle;
+import com.hbm_m.particle.custom.RadFogParticle;
 import com.hbm_m.block.ModBlocks;
+
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
-
-import com.hbm_m.client.overlay.ArmorTableGUI;
-import com.hbm_m.config.ModClothConfig;
-
+import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
+import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ModelEvent;
-// import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.client.model.BakedModelWrapper;
@@ -36,11 +37,6 @@ import net.minecraftforge.client.ChunkRenderTypeSet;
 import javax.annotation.Nonnull;
 import java.util.Map;
 
-// import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-// import net.minecraftforge.client.gui.overlay.ForgeGui;
-// import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-// import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientSetup {
 
@@ -52,7 +48,8 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(ModConfigKeybindHandler.class);
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
-        
+        // MinecraftForge.EVENT_BUS.register(ModBlockEntities.class);
+
         event.enqueueWork(() -> {
             // Здесь мы связываем наш тип меню с классом экрана
             MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), ArmorTableGUI::new);
@@ -91,20 +88,25 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
-        // Связываем наш ТИП частицы с ее ФАБРИКОЙ. Это выглядит ПРАВИЛЬНО.
+        // Связываем наш ТИП частицы с ее ФАБРИКОЙ.
         event.registerSpriteSet(ModParticleTypes.DARK_PARTICLE.get(), DarkParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.RAD_FOG_PARTICLE.get(), RadFogParticle.Provider::new);
         MainRegistry.LOGGER.info("Registered custom particle providers.");
     }
 
-    // @SubscribeEvent
-    // public static void onRegisterGuiOverlays(RegisterGuiOverlaysEvent event) {
-    //     // Объединяем всю логику регистрации оверлеев в один метод.
-    //     MainRegistry.LOGGER.info("Registering GUI overlays...");
-    //     event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", GeigerOverlay.GEIGER_HUD_OVERLAY);
-    //     // Если у вас есть второй оверлей, регистрируйте его здесь же.
-    //     // event.registerAboveAll("geiger_counter", new GeigerCounterOverlay()); // Пример
-    //     MainRegistry.LOGGER.info("GUI overlays registered.");
-    // }
+    @SubscribeEvent
+    public static void onRegisterGuiOverlays(RegisterGuiOverlaysEvent event) {
+        MainRegistry.LOGGER.info("Registering GUI overlays...");
+        
+        // Регистрируем наш оверлей.
+        // Мы говорим: "Нарисуй оверлей с ID 'geiger_counter_hud' НАД хотбаром,
+        // используя логику из объекта GeigerOverlay.GEIGER_HUD_OVERLAY".
+        event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", GeigerOverlay.GEIGER_HUD_OVERLAY);
+        
+        MainRegistry.LOGGER.info("GUI overlays registered.");
+    }
+
+
     private static class LeavesModelWrapper extends BakedModelWrapper<BakedModel> {
 
         public LeavesModelWrapper(BakedModel originalModel) {
@@ -117,7 +119,7 @@ public class ClientSetup {
             GraphicsStatus graphics = Minecraft.getInstance().options.graphicsMode().get();
             
             if (graphics == GraphicsStatus.FANCY || graphics == GraphicsStatus.FABULOUS) {
-                // <<< ИЗМЕНЕНИЕ 2: Используем ChunkRenderTypeSet.of() >>>
+                // Используем ChunkRenderTypeSet.of()
                 return ChunkRenderTypeSet.of(RenderType.cutoutMipped());
             }
             

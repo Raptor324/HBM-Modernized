@@ -1,7 +1,6 @@
 package com.hbm_m.block;
 
 import com.hbm_m.lib.RefStrings;
-//import com.hbm_m.main.ModCreativeTabs;
 import com.hbm_m.item.ModItems;
 
 import net.minecraft.world.item.BlockItem;
@@ -23,21 +22,23 @@ import java.util.function.Supplier;
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS =
             DeferredRegister.create(ForgeRegistries.BLOCKS, RefStrings.MODID);
-    
+    public static final RegistryObject<Block> GEIGER_COUNTER_BLOCK = registerBlock("geiger_counter_block",
+            () -> new GeigerCounterBlock(Block.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
+            
     private static final BlockBehaviour.Properties TABLE_PROPERTIES =
                 BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops();
             
     public static final RegistryObject<Block> URANIUM_BLOCK = registerBlock("uranium_block",
-            () -> new RadioactiveBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL), 3.5F));
+            () -> new RadioactiveBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL)));
 
     public static final RegistryObject<Block> POLONIUM210_BLOCK = registerBlock("polonium210_block",
-            () -> new RadioactiveBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL), 750F));
+            () -> new RadioactiveBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL)));
 
     public static final RegistryObject<Block> PLUTONIUM_BLOCK = registerBlock("plutonium_block",
-            () -> new RadioactiveBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL), 75F));
+            () -> new RadioactiveBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL)));
 
     public static final RegistryObject<Block> PLUTONIUM_FUEL_BLOCK = registerBlock("plutonium_fuel_block",
-            () -> new RadioactiveBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL), 42.5F));
+            () -> new RadioactiveBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL)));
 
     public static final RegistryObject<Block> ARMOR_TABLE = registerBlock("armor_table",
             () -> new BlockArmorTable(TABLE_PROPERTIES));

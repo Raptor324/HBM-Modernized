@@ -1,8 +1,8 @@
 package com.hbm_m.datagen;
 
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
-import net.minecraft.tags.BlockTags;
+import com.hbm_m.damagesource.ModDamageTypes; // Убедитесь, что импорт правильный
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.worldgen.ModWorldGen;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.HolderSet;
@@ -11,7 +11,10 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.data.DataGenerator;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BiomeTags;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.level.levelgen.GenerationStep;
 import net.minecraft.world.level.levelgen.VerticalAnchor;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
@@ -25,8 +28,11 @@ import net.minecraftforge.common.world.ForgeBiomeModifiers;
 import net.minecraftforge.data.event.GatherDataEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.ForgeRegistries;
 
+import java.lang.reflect.Field;
+import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -39,32 +45,60 @@ public class DataGenerators {
         DataGenerator generator = event.getGenerator();
         PackOutput packOutput = generator.getPackOutput();
         CompletableFuture<HolderLookup.Provider> lookupProvider = event.getLookupProvider();
+        ExistingFileHelper existingFileHelper = event.getExistingFileHelper();
 
-        RegistrySetBuilder registrySetBuilder = new RegistrySetBuilder()
-                // --- ШАГ 1: Определяем ConfiguredFeature (ЧТО генерировать) ---
+        ModBlockTagProvider blockTagProvider = new ModBlockTagProvider(packOutput, lookupProvider, existingFileHelper);
+        generator.addProvider(event.includeServer(), blockTagProvider);
+
+        // Создаем и регистрируем провайдер для тегов ПРЕДМЕТОВ.
+        // Он зависит от провайдера блоков, поэтому мы передаем в него blockTagProvider.contentsGetter()
+        generator.addProvider(event.includeServer(), new ModItemTagProvider(packOutput, lookupProvider, blockTagProvider.contentsGetter(), existingFileHelper));
+
+        DatapackBuiltinEntriesProvider datapackProvider = new DatapackBuiltinEntriesProvider(
+                packOutput, lookupProvider, getRegistrySetBuilder(), Set.of(RefStrings.MODID)
+        );
+        
+        @SuppressWarnings("deprecation")
+        CompletableFuture<HolderLookup.Provider> newLookupProvider = datapackProvider.getRegistryProvider();
+        generator.addProvider(event.includeServer(), datapackProvider);
+        generator.addProvider(event.includeServer(), new ModDamageTypeTagProvider(
+                packOutput, newLookupProvider, existingFileHelper));
+        generator.addProvider(event.includeClient(), new ModBlockStateProvider(packOutput, existingFileHelper));
+        generator.addProvider(event.includeClient(), new ModItemModelProvider(packOutput, existingFileHelper));
+        generator.addProvider(event.includeClient(), new ModLanguageProvider(packOutput, "ru_ru"));
+        generator.addProvider(event.includeClient(), new ModLanguageProvider(packOutput, "en_us"));
+    }
+
+    public static RegistrySetBuilder getRegistrySetBuilder() {
+        return new RegistrySetBuilder()
+                .add(Registries.DAMAGE_TYPE, context -> {
+                    for (Field field : ModDamageTypes.class.getDeclaredFields()) {
+                        if (Modifier.isStatic(field.getModifiers()) && field.getType().equals(ResourceKey.class)) {
+                            try {
+                                @SuppressWarnings("unchecked")
+                                ResourceKey<DamageType> key = (ResourceKey<DamageType>) field.get(null);
+                                context.register(key, new DamageType(key.location().getPath(), 0.1F));
+                            } catch (IllegalAccessException e) {
+                                throw new RuntimeException("Could not access DamageType key field: " + field.getName(), e);
+                            }
+                        }
+                    }
+                })
                 .add(Registries.CONFIGURED_FEATURE, context -> {
                     RuleTest stoneReplaceables = new TagMatchTest(BlockTags.STONE_ORE_REPLACEABLES);
-
-                    List<OreConfiguration.TargetBlockState> targets = List.of(
-                            OreConfiguration.target(stoneReplaceables, ModBlocks.URANIUM_ORE.get().defaultBlockState())
-                    );
-
+                    List<OreConfiguration.TargetBlockState> targets = List.of(OreConfiguration.target(stoneReplaceables, ModBlocks.URANIUM_ORE.get().defaultBlockState()));
                     context.register(ModWorldGen.URANIUM_ORE_CONFIGURED_KEY, new ConfiguredFeature<>(Feature.ORE, new OreConfiguration(targets, 7)));
                 })
-                // --- ШАГ 2: Определяем PlacedFeature (ГДЕ генерировать) ---
                 .add(Registries.PLACED_FEATURE, context -> {
                     var configuredFeature = context.lookup(Registries.CONFIGURED_FEATURE);
-
                     context.register(ModWorldGen.URANIUM_ORE_PLACED_KEY, new PlacedFeature(
                             configuredFeature.getOrThrow(ModWorldGen.URANIUM_ORE_CONFIGURED_KEY),
-                            orePlacement(CountPlacement.of(4), // 4 жилы на чанк
-                                         HeightRangePlacement.uniform(VerticalAnchor.absolute(-60), VerticalAnchor.absolute(50)))
+                            orePlacement(CountPlacement.of(4), HeightRangePlacement.uniform(VerticalAnchor.absolute(-60), VerticalAnchor.absolute(50)))
                     ));
                 })
-                // --- ШАГ 3: ИСПОЛЬЗУЕМ PlacedFeature в BiomeModifier ---
                 .add(ForgeRegistries.Keys.BIOME_MODIFIERS, context -> {
                     context.register(
-                            ResourceKey.create(ForgeRegistries.Keys.BIOME_MODIFIERS, RefStrings.resourceLocation("add_uranium_ore")),
+                            ResourceKey.create(ForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "add_uranium_ore")),
                             new ForgeBiomeModifiers.AddFeaturesBiomeModifier(
                                     context.lookup(Registries.BIOME).getOrThrow(BiomeTags.IS_OVERWORLD),
                                     HolderSet.direct(context.lookup(Registries.PLACED_FEATURE).getOrThrow(ModWorldGen.URANIUM_ORE_PLACED_KEY)),
@@ -72,13 +106,9 @@ public class DataGenerators {
                             )
                     );
                 });
-
-        generator.addProvider(event.includeServer(), new DatapackBuiltinEntriesProvider(
-                packOutput, lookupProvider, registrySetBuilder, Set.of(RefStrings.MODID)
-        ));
     }
 
-    // Вспомогательный метод для создания списка правил размещения (скопирован из ванильного кода для чистоты)
+    // Вспомогательный метод для создания списка правил размещения
     public static List<PlacementModifier> orePlacement(PlacementModifier p_195347_, PlacementModifier p_195348_) {
         return List.of(p_195347_, InSquarePlacement.spread(), p_195348_, BiomeFilter.biome());
     }

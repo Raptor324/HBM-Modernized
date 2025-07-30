@@ -1,5 +1,6 @@
 package com.hbm_m.radiation;
 
+// Эта система пока что ВООБЩЕ не работает. Будет исправлено в будущем, пока что просто как заглушка
 import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;

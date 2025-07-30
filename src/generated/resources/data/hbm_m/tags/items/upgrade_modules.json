@@ -1,0 +1,13 @@
+{
+  "values": [
+    "#hbm_m:mods/slot_helmet",
+    "#hbm_m:mods/slot_chestplate",
+    "#hbm_m:mods/slot_leggings",
+    "#hbm_m:mods/slot_boots",
+    "#hbm_m:mods/slot_servos",
+    "#hbm_m:mods/slot_cladding",
+    "#hbm_m:mods/slot_special",
+    "#hbm_m:mods/slot_battery",
+    "#hbm_m:mods/slot_insert"
+  ]
+}

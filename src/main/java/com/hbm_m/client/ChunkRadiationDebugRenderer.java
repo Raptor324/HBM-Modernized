@@ -33,7 +33,7 @@ public class ChunkRadiationDebugRenderer {
         // Проверяем, что игрок и уровень существуют.
         if (player == null || level == null) return;
         
-        // ИСПРАВЛЕНИЕ: Объявляем переменную dimension и получаем ее из текущего уровня.
+        // Объявляем переменную dimension и получаем ее из текущего уровня.
         final ResourceLocation dimension = level.dimension().location();
 
         if (!ModClothConfig.get().enableDebugRender || !mc.options.renderDebug) return;
@@ -44,7 +44,7 @@ public class ChunkRadiationDebugRenderer {
         Vec3 camPos = event.getCamera().getPosition();
         // Используем значения из ClothConfig:
         int radius = ModClothConfig.get().debugRenderDistance; // Сколько чанков вокруг игрока показывать
-        float scale = ModClothConfig.get().debugRenderTextSize;
+        float scale = ModClothConfig.get().debugRenderTextSize; // Размер текста
 
         PoseStack poseStack = event.getPoseStack();
         MultiBufferSource.BufferSource buffer = mc.renderBuffers().bufferSource();
@@ -65,7 +65,6 @@ public class ChunkRadiationDebugRenderer {
                     int chunkZ = playerChunkZ + dz;
                     net.minecraft.world.level.ChunkPos chunkPos = new net.minecraft.world.level.ChunkPos(chunkX, chunkZ);
                     
-                    // Теперь эта строка будет работать, так как переменная dimension объявлена выше
                     float value = ClientRadiationData.getRadiationForChunk(dimension, chunkPos);
                     if (value <= 1e-4f) continue; // Не рендерим нулевые значения для чистоты
 
