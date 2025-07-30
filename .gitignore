@@ -1,75 +1,51 @@
-# eclipse
-bin/
-*.launch
-.settings/
-.metadata/
+# ================= Gradle & Build Artifacts =================
+# Эти файлы создаются при сборке и не должны быть в репозитории.
+/build/
+/.gradle/
+/run/
+/run-data/
+
+# ================= IDE Specific =================
+# Файлы настроек для разных сред разработки.
+# Они специфичны для каждого пользователя и не должны быть общими.
+
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse
 .classpath
 .project
+.settings/
+bin/
 
-# idea
-out/
-*.ipr
-*.iws
-*.iml
-.idea/
-.vscode
-
-# gradle
-build/
-.gradle/
-
-# other
-run/
-temp/
-run-data/
-logs/
-.DS_Store
-Thumbs.db
-.gitignore/
-
-
-# Minecraft
-*.pid
-*.zip
-*.dat
-*.dat_old
-*.txt
-*.srg
-*.tsrg
-*.bat
-*.exe
-*.dll
-*.so
-*.dylib
-natives/
-natives/**
-
-# Libs (если не нужны в репозитории)
-
-
-# VS Code
+# Visual Studio Code
 .vscode/
 
-# User-specific
-*.iml
-.idea/
-.kilocode/
-opik-mcp/
+# ================= Generated Files =================
+/src/generated/
 
-# Ignore old backup folders
-OLD/
-temp
-
-# Example project
-ExampleProject/
-
-# Uncomment if you want to ignore generated sources
-# src/generated/
-
-# Files from Forge MDK
-forge*changelog.txt
-
-.fake
+# ================= Logs & Temporary Files =================
+# Логи, дампы ошибок и временные файлы.
+*.log
 hs_err_pid*
 replay_pid*
+temp/
+logs/
+
+# ================= OS Specific =================
+# Системные файлы, которые могут случайно появиться.
+.DS_Store
+Thumbs.db
+
+# ================= Minecraft/Forge Specific =================
+# Файлы, генерируемые средой разработки Forge.
+natives/
+*.srg
+*.tsrg
+forge*changelog.txt
+.fake
 .editorconfig

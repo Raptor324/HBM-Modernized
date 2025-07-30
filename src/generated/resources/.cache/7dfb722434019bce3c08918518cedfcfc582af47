@@ -1,6 +1,0 @@
-// 1.20.1	2025-07-22T17:41:10.1123501	Tags for minecraft:block mod id hbm_m
-23b3e78a7c301def5a98512fcc554eef60e17a77 data/forge/tags/blocks/ores/uranium.json
-a8439a80c8119b93eb5a41c5ab31b9500498fc31 data/forge/tags/blocks/storage_blocks/plutonium.json
-8b43683a36f8a380a14d3d50248ca23aca0599e2 data/forge/tags/blocks/storage_blocks/uranium.json
-177b883796c9f3c639828718e11e5ba2b63a0518 data/minecraft/tags/blocks/mineable/pickaxe.json
-23b3e78a7c301def5a98512fcc554eef60e17a77 data/minecraft/tags/blocks/needs_iron_tool.json

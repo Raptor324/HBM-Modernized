@@ -1,9 +1,0 @@
-{
-  "values": [
-    "hbm_m:uranium_ore",
-    "hbm_m:uranium_block",
-    "hbm_m:polonium210_block",
-    "hbm_m:plutonium_block",
-    "hbm_m:plutonium_fuel_block"
-  ]
-}
