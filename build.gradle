@@ -209,16 +209,6 @@ tasks.named('jar', Jar).configure {
     // This is the preferred method to reobfuscate your jar file
     finalizedBy 'reobfJar'
 }
-tasks.named('processResources').configure {
-    dependsOn(tasks.named('runData'))
-}
-tasks.named('runClient').configure {
-    dependsOn(tasks.named('runData'))
-}
-
-tasks.named('runServer').configure {
-    dependsOn(tasks.named('runData'))
-}
 
 // However if you are in a multi-project build, dev time needs unobfed jar files, so you can delay the obfuscation until publishing by doing:
 // tasks.named('publish').configure {
