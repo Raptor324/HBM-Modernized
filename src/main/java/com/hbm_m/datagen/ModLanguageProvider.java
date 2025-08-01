@@ -264,9 +264,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.LEAD_CLADDING.get(), "Lead Cladding");
                 add(ModItems.PAINT_CLADDING.get(), "Lead Paint");
 
-
-
-
                 add("item.hbm_m.radaway", "Radaway");
                 add("effect.hbm_m.radaway", "Radiation cleansing");
                 
@@ -288,6 +285,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.plutonium_fuel_block", "Plutonium Fuel Block");
                 add("block.hbm_m.polonium210_block", "Polonium-210 Block");
                 add("block.hbm_m.armor_table", "Armor Modification Table");
+                add("container.hbm_m.armor_table", "Armor Modification Table");
+                add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");
                 add("block.hbm_m.uranium_ore", "Uranium Ore");
                 add("block.hbm_m.waste_grass", "Waste Grass");
                 add("block.hbm_m.waste_leaves", "Waste Leaves");
@@ -307,7 +306,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.rad_protection.value", "Radiation Resistance: %s");
                 add("tooltip.hbm_m.rad_protection.value_short", "%s rad-resistance");
                 
-                add("hazard.hbm_m.radation", "[Radioactive]");
+                add("hazard.hbm_m.radiation", "[Radioactive]");
                 add("hazard.hbm_m.hydro_reactive", "[Hydro-reactive]");
                 add("hazard.hbm_m.explosive_on_fire", "[Flammable / Explosive]");
                 add("hazard.hbm_m.pyrophoric", "[Pyrophoric / Hot]");
