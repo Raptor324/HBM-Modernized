@@ -22,9 +22,9 @@ import javax.annotation.Nullable;
 
 import com.hbm_m.armormod.menu.ArmorTableMenu;
 
-public class BlockArmorTable extends BaseEntityBlock {
+public class ArmorTableBlock extends BaseEntityBlock {
 
-    public BlockArmorTable(Properties properties) {
+    public ArmorTableBlock(Properties properties) {
         super(properties);
     }
 

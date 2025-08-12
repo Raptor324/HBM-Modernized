@@ -72,10 +72,10 @@ public class ModItems {
 
     // Инструменты
     public static final RegistryObject<Item> GEIGER_COUNTER = ITEMS.register("geiger_counter",
-            () -> new GeigerCounterItem(new Item.Properties().stacksTo(1)));
+            () -> new ItemGeigerCounter(new Item.Properties().stacksTo(1)));
 
     public static final RegistryObject<Item> DOSIMETER = ITEMS.register("dosimeter",
-            () -> new DosimeterItem(new Item.Properties().stacksTo(1)));
+            () -> new ItemDosimeter(new Item.Properties().stacksTo(1)));
 
     // Модификаторы брони
     public static final RegistryObject<Item> HEART_PIECE = ITEMS.register("heart_piece",
@@ -149,6 +149,21 @@ public class ModItems {
                     0.025f
             )
     );
+    public static final RegistryObject<Item> CREATIVE_BATTERY = ITEMS.register("battery_creative",
+            () -> new ItemCreativeBattery(
+                    new Item.Properties()
+            )
+    );
+    public static final RegistryObject<Item> ASSEMBLY_TEMPLATE = ITEMS.register("assembly_template",
+            () -> new ItemAssemblyTemplate(
+                    new Item.Properties()
+            )
+    );
+    public static final RegistryObject<Item> TEMPLATE_FOLDER = ITEMS.register("template_folder",
+            () -> new ItemTemplateFolder(
+                    new Item.Properties()
+            )
+    );
     public static final RegistryObject<Item> RADAWAY = ITEMS.register("radaway",
             () -> new ItemSimpleConsumable(new Item.Properties(), (player, stack) -> {
                 // Это лямбда-выражение определяет, что произойдет при использовании предмета.
@@ -170,6 +185,44 @@ public class ModItems {
                 }
             })
     );
+    public static final RegistryObject<Item> PLATE_IRON = ITEMS.register("plate_iron",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_STEEL = ITEMS.register("plate_steel",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_GOLD = ITEMS.register("plate_gold",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_GUNMETAL = ITEMS.register("plate_gunmetal",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_GUNSTEEL = ITEMS.register("plate_gunsteel",
+            () -> new Item(new Item.Properties()));   
+
+    public static final RegistryObject<Item> PLATE_KEVLAR = ITEMS.register("plate_kevlar",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_LEAD = ITEMS.register("plate_lead",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_MIXED = ITEMS.register("plate_mixed",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_PAA = ITEMS.register("plate_paa",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_POLYMER = ITEMS.register("plate_polymer",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_SATURNITE = ITEMS.register("plate_saturnite",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_SCHRABIDIUM = ITEMS.register("plate_schrabidium",
+            () -> new Item(new Item.Properties()));
+
+    
+
 
     // Метод для регистрации всех предметов, вызывается в основном классе мода.
     public static void register(IEventBus eventBus) {

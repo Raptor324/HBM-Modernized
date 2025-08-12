@@ -1,0 +1,7 @@
+{
+  "parent": "item/generated",
+  "textures": {
+    "layer0": "hbm_m:item/assembly_template"
+  },
+  "loader": "hbm_m:template_loader"
+}

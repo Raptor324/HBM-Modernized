@@ -5,7 +5,6 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.RegistryObject;
@@ -47,26 +46,22 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.RUBBER_CLADDING);
         simpleItem(ModItems.PAINT_CLADDING);
         simpleItem(ModItems.RADAWAY);
-        
-        // --- КАСТОМНАЯ МОДЕЛЬ ДЛЯ ПРЕДМЕТА "СЧЕТЧИК ГЕЙГЕРА" ---
-        withExistingParent("geiger_counter_block", modLoc("block/geiger_counter_block"))
-            .transforms()
-            // Используем ванильный ItemDisplayContext
-            .transform(ItemDisplayContext.GUI)
-                .rotation(30, 45, 0)
-                .translation(0, 1.0f, 0)
-                .scale(0.625f)
-                .end()
-            .transform(ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
-                .rotation(75, 45, 0)
-                .translation(0, 2.5f, 0)
-                .scale(0.375f)
-                .end()
-            .transform(ItemDisplayContext.HEAD)
-                .rotation(0, 0, 0)
-                .translation(0, 13, 7)
-                .end();
-    }
+        simpleItem(ModItems.CREATIVE_BATTERY);
+        simpleItem(ModItems.TEMPLATE_FOLDER);
+
+        simpleItem(ModItems.PLATE_IRON);
+        simpleItem(ModItems.PLATE_STEEL);
+        simpleItem(ModItems.PLATE_GOLD);
+        simpleItem(ModItems.PLATE_GUNMETAL);
+        simpleItem(ModItems.PLATE_GUNSTEEL);
+        simpleItem(ModItems.PLATE_KEVLAR);
+        simpleItem(ModItems.PLATE_LEAD);
+        simpleItem(ModItems.PLATE_MIXED);
+        simpleItem(ModItems.PLATE_PAA);
+        simpleItem(ModItems.PLATE_POLYMER);
+        simpleItem(ModItems.PLATE_SATURNITE);
+        simpleItem(ModItems.PLATE_SCHRABIDIUM);        
+    };
 
     /**
      * Вспомогательный метод для генерации простой модели предмета.

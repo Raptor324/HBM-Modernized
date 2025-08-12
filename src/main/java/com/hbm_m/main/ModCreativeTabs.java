@@ -26,13 +26,13 @@ public class ModCreativeTabs {
     public static final RegistryObject<CreativeModeTab> NTM_FUEL_TAB = CREATIVE_MODE_TABS.register("ntm_fuel_tab",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_fuel_tab"))
-                    .icon(() -> new ItemStack(ModItems.ALLOY_SWORD.get())) 
+                    .icon(() -> new ItemStack(ModItems.CREATIVE_BATTERY.get())) 
                     .build());
 
     public static final RegistryObject<CreativeModeTab> NTM_TEMPLATES_TAB = CREATIVE_MODE_TABS.register("ntm_templates_tab",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_templates_tab"))
-                    .icon(() -> new ItemStack(ModItems.ALLOY_SWORD.get()))
+                    .icon(() -> new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get()))
                     .build());
 
     public static final RegistryObject<CreativeModeTab> NTM_ORES_TAB = CREATIVE_MODE_TABS.register("ntm_ores_tab",

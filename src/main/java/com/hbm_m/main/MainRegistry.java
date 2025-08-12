@@ -4,12 +4,15 @@ package com.hbm_m.main;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.item.ItemAssemblyTemplate;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerRadiationHandler;
+import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.client.ClientSetup;
@@ -19,9 +22,12 @@ import com.hbm_m.effect.ModEffects;
 import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.worldgen.ModWorldGen;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
@@ -63,9 +69,10 @@ public class MainRegistry {
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus); // Регистрация наших вкладок креативного режима
         ModSounds.SOUND_EVENTS.register(modEventBus); // Регистрация звуков
         ModParticleTypes.PARTICLES.register(modEventBus); // Регистрация частиц
-        ModBlockEntities.BLOCK_ENTITIES.register(modEventBus); // Регистрация блочных сущностей
+        ModBlockEntities.register(modEventBus); // Регистрация блочных сущностей
         ModWorldGen.BIOME_MODIFIERS.register(modEventBus); // Регистрация модификаторов биомов (руды, структуры и тд)
         ModEffects.register(modEventBus); // Регистрация эффектов
+        ModRecipes.register(modEventBus); // Регистрация рецептов
 
         // Регистрация обработчиков событий мода
         modEventBus.addListener(this::commonSetup);
@@ -75,9 +82,10 @@ public class MainRegistry {
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new PlayerRadiationHandler());
+        
 
         // Регистрация остальных систем
-        ModPacketHandler.register(); // Регистрация пакетов
+        // ModPacketHandler.register(); // Регистрация пакетов
         
         // Инстанцируем ClientSetup, чтобы его конструктор вызвал регистрацию на Forge Event Bus
         new ClientSetup();
@@ -89,6 +97,7 @@ public class MainRegistry {
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
+            ModPacketHandler.register();
             ModHazards.registerHazards(); // Регистрация опасностей (радиация, биологическая опасность в будущем и тд)
             LOGGER.info("HazardSystem initialized successfully");
         });
@@ -137,7 +146,18 @@ public class MainRegistry {
                     LOGGER.info("Added {} to NTM Resources tab", ingotObject.get());
                 }
             }
-            
+            event.accept(ModItems.PLATE_IRON);
+            event.accept(ModItems.PLATE_STEEL);
+            event.accept(ModItems.PLATE_GOLD);
+            event.accept(ModItems.PLATE_GUNMETAL);
+            event.accept(ModItems.PLATE_GUNSTEEL);
+            event.accept(ModItems.PLATE_KEVLAR);
+            event.accept(ModItems.PLATE_LEAD);
+            event.accept(ModItems.PLATE_MIXED);
+            event.accept(ModItems.PLATE_PAA);
+            event.accept(ModItems.PLATE_POLYMER);
+            event.accept(ModItems.PLATE_SATURNITE);
+            event.accept(ModItems.PLATE_SCHRABIDIUM);
         }
         
         if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get()) {
@@ -188,8 +208,53 @@ public class MainRegistry {
         }
         if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
             event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
+            event.accept(ModBlocks.MACHINE_ASSEMBLER);
             if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added geiger counter BLOCK to NTM Consumables tab");
+                LOGGER.info("Added geiger counter BLOCK to NTM Machines tab");
+                LOGGER.info("Added assembly machine BLOCK to NTM Machines tab");
+            }
+        }
+        if (event.getTab() == ModCreativeTabs.NTM_FUEL_TAB.get()) {
+            event.accept(ModItems.CREATIVE_BATTERY);
+            if (ModClothConfig.get().enableDebugLogging) {
+                LOGGER.info("");
+            }
+        }
+
+        if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get()) {
+            
+            event.accept(ModItems.TEMPLATE_FOLDER);
+
+            // --- ИСПРАВЛЕНИЕ: Получаем RecipeManager через клиент Minecraft ---
+            // Этот код выполняется на стороне клиента, поэтому такой доступ безопасен
+            if (Minecraft.getInstance().level != null) {
+                RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
+                List<AssemblerRecipe> recipes = recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
+
+                for (AssemblerRecipe recipe : recipes) {
+                    ItemStack templateStack = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
+                    ItemAssemblyTemplate.writeRecipeOutput(templateStack, recipe.getResultItem(null));
+                    event.accept(templateStack);
+                }
+                
+                if (ModClothConfig.get().enableDebugLogging) {
+                    LOGGER.info("Added {} templates to NTM Templates tab", recipes.size());
+                }
+            } else {
+                 if (ModClothConfig.get().enableDebugLogging) {
+                    LOGGER.warn("Could not populate templates tab: Minecraft level is null.");
+                }
+            }
+        }
+
+        if (event.getTab() == ModCreativeTabs.NTM_BOMBS_TAB.get()) {
+            if (ModClothConfig.get().enableDebugLogging) {
+                LOGGER.info("");
+            }
+        }
+        if (event.getTab() == ModCreativeTabs.NTM_MISSILES_TAB.get()) {
+            if (ModClothConfig.get().enableDebugLogging) {
+                LOGGER.info("");
             }
         }
     }

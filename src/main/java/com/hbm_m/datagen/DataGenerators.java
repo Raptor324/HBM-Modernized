@@ -49,6 +49,7 @@ public class DataGenerators {
 
         ModBlockTagProvider blockTagProvider = new ModBlockTagProvider(packOutput, lookupProvider, existingFileHelper);
         generator.addProvider(event.includeServer(), blockTagProvider);
+        generator.addProvider(event.includeServer(), new ModRecipeProvider(packOutput));
 
         // Создаем и регистрируем провайдер для тегов ПРЕДМЕТОВ.
         // Он зависит от провайдера блоков, поэтому мы передаем в него blockTagProvider.contentsGetter()

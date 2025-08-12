@@ -2,8 +2,8 @@ package com.hbm_m.item;
 
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.network.GeigerSoundPacket;
 import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.network.sounds.GeigerSoundPacket;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerRadiationHandler;
 import com.hbm_m.sound.ModSounds;

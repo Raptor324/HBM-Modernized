@@ -3,9 +3,9 @@ package com.hbm_m.item;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraftforge.registries.RegistryObject;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.network.GeigerSoundPacket;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.RadiationDataPacket;
+import com.hbm_m.network.sounds.GeigerSoundPacket;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -23,12 +23,12 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
-public class GeigerCounterItem extends AbstractRadiationMeterItem {
+public class ItemGeigerCounter extends AbstractRadiationMeterItem {
 
     private static final Random RANDOM = new Random();
     private int soundTickCounter = 0;
 
-    public GeigerCounterItem(Properties pProperties) {
+    public ItemGeigerCounter(Properties pProperties) {
         super(pProperties);
     }
 

@@ -33,7 +33,7 @@ public class ClientModEvents {
         if (hasTags) {
             if (Screen.hasShiftDown()) {
                 event.getToolTip().add(Component.empty());
-                event.getToolTip().add(Component.literal("Теги (OreDict):").withStyle(ChatFormatting.GRAY));
+                event.getToolTip().add(Component.translatable("tooltip.hbm_m.tags").withStyle(ChatFormatting.GRAY));
                 event.getItemStack().getTags()
                     .map(TagKey::location)
                     .sorted(ResourceLocation::compareTo)

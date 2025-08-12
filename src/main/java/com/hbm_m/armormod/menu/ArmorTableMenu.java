@@ -100,9 +100,6 @@ public class ArmorTableMenu extends AbstractContainerMenu {
         super.removed(pPlayer);
         if (!pPlayer.level().isClientSide) {
             pPlayer.drop(this.armorInventory.getStackInSlot(0), false);
-            for(int i = 0; i < this.modsInventory.getSlots(); i++) {
-                 pPlayer.drop(this.modsInventory.getStackInSlot(i), false);
-            }
         }
     }
 

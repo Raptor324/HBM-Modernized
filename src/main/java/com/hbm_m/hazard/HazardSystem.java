@@ -3,7 +3,9 @@ package com.hbm_m.hazard;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.*;
 
@@ -28,6 +30,8 @@ public final class HazardSystem {
     private static final Map<Item, HazardData> ITEM_RULES = new HashMap<>();
     // Хранилище защиты от радиации для брони
     private static final Map<Item, Float> ARMOR_PROTECTION_RULES = new HashMap<>();
+    // Кэш для уже вычисленных результатов. Ключ - Item, Значение - финальный список опасностей.
+    private static final Map<Item, List<HazardEntry>> HAZARD_CACHE = new HashMap<>();
 
     // --- ПУБЛИЧНЫЕ МЕТОДЫ РЕГИСТРАЦИИ ---
 
@@ -83,23 +87,27 @@ public final class HazardSystem {
             return Collections.emptyList();
         }
 
-        // 1. Собираем все применимые HazardData в порядке приоритета (от низшего к высшему)
-        List<HazardData> applicableData = new ArrayList<>();
+        Item item = stack.getItem();
 
-        // Сначала добавляем правила для всех тегов, которые есть у предмета
+        // 1. Сначала проверяем кэш
+        if (HAZARD_CACHE.containsKey(item)) {
+            return HAZARD_CACHE.get(item);
+        }
+
+        // --- Если в кэше нет, выполняем полную логику (ваш существующий код) ---
+        List<HazardData> applicableData = new ArrayList<>();
         stack.getTags().forEach(tag -> {
             if (TAG_RULES.containsKey(tag)) {
                 applicableData.add(TAG_RULES.get(tag));
             }
         });
 
-        // Затем добавляем правило для самого предмета, если оно есть.
-        if (ITEM_RULES.containsKey(stack.getItem())) {
-            applicableData.add(ITEM_RULES.get(stack.getItem()));
+        if (ITEM_RULES.containsKey(item)) {
+            applicableData.add(ITEM_RULES.get(item));
         }
 
-        // Если правил не найдено, возвращаем пустой список
         if (applicableData.isEmpty()) {
+            HAZARD_CACHE.put(item, Collections.emptyList()); // Кэшируем и пустой результат
             return Collections.emptyList();
         }
 
@@ -120,7 +128,7 @@ public final class HazardSystem {
                 mutex |= data.getMutex();
             }
         }
-
+        HAZARD_CACHE.put(item, finalEntries);
         return finalEntries;
     }
 
@@ -138,6 +146,16 @@ public final class HazardSystem {
                 .map(entry -> entry.baseLevel) // В будущем здесь можно будет применять модификаторы
                 .findFirst() // Возвращаем первое найденное значение (самое высокоприоритетное)
                 .orElse(0.0f);
+    }
+
+    public static float getHazardLevelFromState(BlockState state, HazardType type) {
+        // Блоки без предмета (как огонь) не могут иметь опасности в этой системе
+        if (state.isAir() || state.getBlock().asItem() == Items.AIR) {
+            return 0.0f;
+        }
+        // Создаем временный пустой стак, чтобы передать его в основной метод.
+        // С кэшированием это будет быстро.
+        return getHazardLevelFromStack(new ItemStack(state.getBlock()), type);
     }
 
     /**

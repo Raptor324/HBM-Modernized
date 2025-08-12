@@ -1,7 +1,7 @@
 package com.hbm_m.item;
 
-import com.hbm_m.network.GeigerSoundPacket;
 import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.network.sounds.GeigerSoundPacket;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.chat.MutableComponent;
@@ -25,12 +25,12 @@ import java.util.Random;
  * общий уровень радиации в окружающей среде.
  */
 
-public class DosimeterItem extends AbstractRadiationMeterItem {
+public class ItemDosimeter extends AbstractRadiationMeterItem {
 
     private static final Random RANDOM = new Random();
     private int soundTickCounter = 0;
 
-    public DosimeterItem(Properties pProperties) {
+    public ItemDosimeter(Properties pProperties) {
         super(pProperties);
     }
     /** Локальный метод для получения цвета, ограниченный зеленым и желтым.

@@ -15,6 +15,10 @@ public class ModMenuTypes {
 
     public static final RegistryObject<MenuType<ArmorTableMenu>> ARMOR_TABLE_MENU =
             MENUS.register("armor_table_menu", () -> IForgeMenuType.create(ArmorTableMenu::new));
+
+    public static final RegistryObject<MenuType<MachineAssemblerMenu>> MACHINE_ASSEMBLER_MENU =
+            MENUS.register("machine_assembler_menu", () -> IForgeMenuType.create(MachineAssemblerMenu::new));
+
             
     public static void register(IEventBus eventBus) {
         MENUS.register(eventBus);

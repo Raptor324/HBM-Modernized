@@ -100,5 +100,14 @@
       "hbm_m:tool/extract1",
       "hbm_m:tool/extract2"
     ]
+  },
+  "block.assembler_operate": {
+    "subtitle": "sounds.hbm_m.subtitle.assembler_operate",
+    "sounds": [
+      {
+        "name": "hbm_m:block/assembler_operate",
+        "stream": true
+      }
+    ]
   }
 }

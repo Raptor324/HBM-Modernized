@@ -8,6 +8,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.registries.RegistryObject;
 
@@ -15,17 +16,20 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
+import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 
 public class GeigerCounterBlockEntity extends BlockEntity {
+
+    public static Supplier<BlockEntityType<GeigerCounterBlockEntity>> TYPE_SUPPLIER;
 
     private static final Random RANDOM = new Random();
     private int timer = 0;
     private float lastMeasuredRads = 0;
 
     public GeigerCounterBlockEntity(BlockPos pPos, BlockState pBlockState) {
-        super(ModBlockEntities.GEIGER_COUNTER_BE.get(), pPos, pBlockState);
+        super(TYPE_SUPPLIER.get(), pPos, pBlockState);
     }
 
     // Основная логика, вызывается каждый тик на сервере благодаря тикеру, который мы настроили в классе блока

@@ -37,6 +37,8 @@ temp/
 logs/
 /ExampleProject/
 /OLD/
+agent
+ideas
 # ================= OS Specific =================
 # Системные файлы, которые могут случайно появиться.
 .DS_Store

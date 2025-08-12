@@ -48,6 +48,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // Блок с кастомной OBJ моделью
         customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
+        customObjBlock(ModBlocks.MACHINE_ASSEMBLER);
+
+        simpleBlock(ModBlocks.MACHINE_ASSEMBLER_PART.get(), models().getBuilder(ModBlocks.MACHINE_ASSEMBLER_PART.getId().getPath()));   
     }
 
     /**
@@ -96,6 +99,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlock(blockObject.get());
         simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
     }
+
     /**
      * Генерирует модель и состояние для блока типа "колонна".
      * @param blockObject Блок
@@ -122,18 +126,18 @@ public class ModBlockStateProvider extends BlockStateProvider {
      * @param frontTexture Имя файла текстуры для лицевой стороны
      * @param topTexture Имя файла текстуры для верха (и низа)
      */
-    private void directionalBlockWithItemFACING(RegistryObject<Block> blockObject, ResourceLocation down, ResourceLocation up, ResourceLocation north, ResourceLocation south, ResourceLocation west, ResourceLocation east) {
-        // 1. Создаем модель блока с 6-ю разными текстурами.
-        var model = models().cube(blockObject.getId().getPath(), down, up, north, south, west, east);
+    // private void directionalBlockWithItemFACING(RegistryObject<Block> blockObject, ResourceLocation down, ResourceLocation up, ResourceLocation north, ResourceLocation south, ResourceLocation west, ResourceLocation east) {
+    //     // 1. Создаем модель блока с 6-ю разными текстурами.
+    //     var model = models().cube(blockObject.getId().getPath(), down, up, north, south, west, east);
 
-        // 2. Создаем состояние блока (blockstate), которое будет вращать эту модель по горизонтали.
-        //    Когда игрок смотрит на юг и ставит блок, блок будет повернут на 180 градусов (y=180),
-        //    чтобы его "северная" (лицевая) сторона смотрела на игрока.
-        horizontalBlock(blockObject.get(), model);
+    //     // 2. Создаем состояние блока (blockstate), которое будет вращать эту модель по горизонтали.
+    //     //    Когда игрок смотрит на юг и ставит блок, блок будет повернут на 180 градусов (y=180),
+    //     //    чтобы его "северная" (лицевая) сторона смотрела на игрока.
+    //     horizontalBlock(blockObject.get(), model);
         
-        // 3. Создаем модель для предмета-блока, которая выглядит так же, как и сам блок.
-        simpleBlockItem(blockObject.get(), model);
-    }
+    //     // 3. Создаем модель для предмета-блока, которая выглядит так же, как и сам блок.
+    //     simpleBlockItem(blockObject.get(), model);
+    // }
 
     private void directionalBlockWithItem(RegistryObject<Block> blockObject, ResourceLocation down, ResourceLocation up, ResourceLocation north, ResourceLocation south, ResourceLocation west, ResourceLocation east) {
         // 1. Создаем модель блока с 6-ю разными текстурами. Этот шаг остается прежним.

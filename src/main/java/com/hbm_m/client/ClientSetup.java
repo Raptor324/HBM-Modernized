@@ -1,8 +1,13 @@
 package com.hbm_m.client;
 
-import com.hbm_m.client.overlay.ArmorTableGUI;
+import com.hbm_m.client.overlay.GUIArmorTable;
+import com.hbm_m.client.overlay.GUIMachineAssembler;
+import com.hbm_m.client.model.*;
 import com.hbm_m.config.ModClothConfig;
+
 import com.hbm_m.client.overlay.GeigerOverlay;
+import com.hbm_m.client.tooltip.ItemTooltipComponent;
+import com.hbm_m.client.tooltip.ItemTooltipComponentRenderer;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.ModMenuTypes;
@@ -12,6 +17,7 @@ import com.hbm_m.particle.custom.RadFogParticle;
 import com.hbm_m.block.ModBlocks;
 
 import net.minecraft.client.renderer.RenderType;
+
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
@@ -21,8 +27,10 @@ import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.MenuScreens;
+
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ModelEvent;
+import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.client.model.BakedModelWrapper;
@@ -52,7 +60,8 @@ public class ClientSetup {
 
         event.enqueueWork(() -> {
             // Здесь мы связываем наш тип меню с классом экрана
-            MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), ArmorTableGUI::new);
+            MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
+            MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
         });
     }
 
@@ -104,6 +113,17 @@ public class ClientSetup {
         event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", GeigerOverlay.GEIGER_HUD_OVERLAY);
         
         MainRegistry.LOGGER.info("GUI overlays registered.");
+    }
+    
+    @SubscribeEvent
+    public static void registerTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
+        event.register(ItemTooltipComponent.class, ItemTooltipComponentRenderer::new);
+    }
+
+    @SubscribeEvent
+    public static void onRegisterGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {
+
+        event.register("template_loader", new TemplateModelLoader());
     }
 
 

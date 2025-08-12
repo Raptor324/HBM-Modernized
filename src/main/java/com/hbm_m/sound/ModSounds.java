@@ -37,6 +37,8 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> EXTRACT_1 = registerSoundEvents("tool.extract1");
     public static final RegistryObject<SoundEvent> EXTRACT_2 = registerSoundEvents("tool.extract2");
 
+    public static final RegistryObject<SoundEvent> ASSEMBLER_OPERATE = registerSoundEvents("block.assembler_operate");    
+
     // --- РЕГИСТРАЦИЯ АБСТРАКТНОГО СОБЫТИЯ ---
     // Это тот самый звук, который мы будем вызывать в коде.
     // Minecraft сам выберет один из 7 реальных звуков случайным образом.

@@ -1,7 +1,13 @@
 package com.hbm_m.network;
 
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.network.sounds.GeigerSoundPacket;
+import com.hbm_m.network.sounds.RequestAssemblerStateC2SPacket;
+import com.hbm_m.network.sounds.StartAssemblerSoundS2CPacket;
+import com.hbm_m.network.sounds.StopAssemblerSoundS2CPacket;
+
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 
@@ -19,5 +25,14 @@ public class ModPacketHandler {
         INSTANCE.registerMessage(id++, GeigerSoundPacket.class, GeigerSoundPacket::encode, GeigerSoundPacket::decode, GeigerSoundPacket::handle);
         INSTANCE.registerMessage(id++, RadiationDataPacket.class, RadiationDataPacket::encode, RadiationDataPacket::decode, RadiationDataPacket::handle);
         INSTANCE.registerMessage(id++, ChunkRadiationDebugBatchPacket.class, ChunkRadiationDebugBatchPacket::encode, ChunkRadiationDebugBatchPacket::decode, ChunkRadiationDebugBatchPacket::handle);
+        INSTANCE.registerMessage(id++, GiveTemplateC2SPacket.class, GiveTemplateC2SPacket::encode, GiveTemplateC2SPacket::decode, GiveTemplateC2SPacket::handle);
+        
+        INSTANCE.registerMessage(id++, StartAssemblerSoundS2CPacket.class, StartAssemblerSoundS2CPacket::toBytes, StartAssemblerSoundS2CPacket::new, (msg, ctx) -> msg.handle(ctx));
+        INSTANCE.registerMessage(id++, StopAssemblerSoundS2CPacket.class, StopAssemblerSoundS2CPacket::toBytes, StopAssemblerSoundS2CPacket::new, (msg, ctx) -> msg.handle(ctx));
+        INSTANCE.registerMessage(id++, RequestAssemblerStateC2SPacket.class,
+            RequestAssemblerStateC2SPacket::toBytes,
+            RequestAssemblerStateC2SPacket::new,
+            (msg, ctx) -> msg.handle(ctx)
+    );
     }
 }

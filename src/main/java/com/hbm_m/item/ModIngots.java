@@ -44,7 +44,25 @@ public enum ModIngots {
             "en_us", "Steel Ingot"),
     ADVANCED_ALLOY("advanced_alloy",
             "ru_ru", "Слиток продвинутого сплава",
-            "en_us", "Advanced Alloy Ingot");
+            "en_us", "Advanced Alloy Ingot"),
+    ALUMINIUM("aluminium",
+            "ru_ru", "Слиток алюминия",
+            "en_us", "Aluminum Ingot"),
+    SCHRABIDIUM("schrabidium",
+            "ru_ru", "Шрабидиевый слиток",
+            "en_us", "Schrabidium Ingot"),
+    SATURNITE("saturnite",
+            "ru_ru", "Сатурнитовый слиток",
+            "en_us", "Saturnite Ingot"),
+    LEAD("lead",
+            "ru_ru", "Свинцовый слиток",
+            "en_us", "Lead Ingot"),
+    GUNMETAL("gunmetal",
+            "ru_ru", "Cлиток пушечной бронзы",
+            "en_us", "Gunmetal Ingot"),
+    GUNSTEEL("gunsteel",
+            "ru_ru", "Слиток оружейной стали",
+            "en_us", "Gunsteel Ingot");
             
     // Чтобы добавить новый слиток, просто добавьте новую запись с его переводами
 

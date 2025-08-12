@@ -46,12 +46,26 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("item.hbm_m.geiger_counter", "Счетчик Гейгера");
                 add("item.hbm_m.dosimeter", "Дозиметр");
+                add("item.hbm_m.battery_creative", "Бесконечная батарейка");
+                add("tooltip.hbm_m.creative_battery_desc","Предоставляет бесконечное количество энергии");
+                add("tooltip.hbm_m.creative_battery_flavor","Бесконечность — не предел!!");
 
                 add("item.hbm_m.heart_piece", "Частичка сердца");
                 add(ModItems.HEART_CONTAINER.get(), "Контейнер для сердца");
                 add(ModItems.HEART_BOOSTER.get(), "Усилитель сердца");
                 add(ModItems.HEART_FAB.get(), "Фаб-сердце");
                 add(ModItems.BLACK_DIAMOND.get(), "Черный алмаз");
+
+                add(ModItems.TEMPLATE_FOLDER.get(), "Папка шаблонов машин");
+                add(ModItems.ASSEMBLY_TEMPLATE.get(), "Шаблон сборочной машины: %s");
+                add("tooltip.hbm_m.template_broken", "Сломанный шаблон");
+                add("tooltip.hbm_m.created_with_template_folder", "Создано с помощью Папки шаблонов машин");
+                add("tooltip.hbm_m.output", "Выход: ");
+                add("tooltip.hbm_m.input", "Вход: ");
+                add("tooltip.hbm_m.production_time", "Время производства: ");
+                add("tooltip.hbm_m.seconds", "секунд");
+                add("tooltip.hbm_m.tags", "Теги (OreDict):");
+                add("item.hbm_m.template_folder.desc", "Шаблоны машин: Бумага + Краситель$Идентификатор: Железная пластина + Краситель$Штамп для пресса: Плоский штамп$Трек сирены: Изолятор + Стальная пластина");
 
                 add(ModItems.GHIORSIUM_CLADDING.get(), "Прокладка из гиорсия");
                 add(ModItems.DESH_CLADDING.get(), "Обшивка из деш");
@@ -61,6 +75,19 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("item.hbm_m.radaway", "Антирадин");
                 add("effect.hbm_m.radaway", "Очищение от радиации");
+
+                add(ModItems.PLATE_GOLD.get(), "Золотая пластина");
+                add(ModItems.PLATE_GUNMETAL.get(), "Пластина пушечной бронзы");
+                add(ModItems.PLATE_GUNSTEEL.get(), "Пластина оружейной стали");
+                add(ModItems.PLATE_IRON.get(), "Железная пластина");
+                add(ModItems.PLATE_KEVLAR.get(), "Кевларовая пластина");
+                add(ModItems.PLATE_LEAD.get(), "Оловянная пластина");
+                add(ModItems.PLATE_MIXED.get(), "Композитная пластина");
+                add(ModItems.PLATE_PAA.get(), "Пластина сплава РаА");
+                add(ModItems.PLATE_POLYMER.get(), "Полимерная пластина");
+                add(ModItems.PLATE_SATURNITE.get(), "Сатурнитовая пластина");
+                add(ModItems.PLATE_SCHRABIDIUM.get(), "Шрабидиевая пластина");
+                add(ModItems.PLATE_STEEL.get(), "Стальная пластина");
                 
                 add("sounds.hbm_m.radaway_use", "Использование антирадина");
                 
@@ -81,7 +108,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.plutonium_fuel_block", "Блок плутониевого топлива");
                 add("block.hbm_m.polonium210_block", "Блок полония-210");
                 add("block.hbm_m.armor_table", "Стол модификации брони");
+                add("block.hbm_m.machine_assembler", "Сборочная машина");
                 add("container.hbm_m.armor_table", "Стол модификации брони");
+                add("container.hbm_m.machine_assembler", "Сборочная машина");
                 add("block.hbm_m.geiger_counter_block", "Стационарный счетчик Гейгера");
                 add("block.hbm_m.uranium_ore", "Урановая руда");
                 add("block.hbm_m.waste_grass", "Мёртвая трава");
@@ -251,6 +280,9 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("item.hbm_m.geiger_counter", "Geiger Counter");
                 add("item.hbm_m.dosimeter", "Dosimeter");
+                add("item.hbm_m.battery_creative", "Creative Battery");
+                add("tooltip.hbm_m.creative_battery_desc","Provides an infinite amount of power");
+                add("tooltip.hbm_m.creative_battery_flavor","To infinity... and beyond!!");
 
                 add("item.hbm_m.heart_piece", "Heart Piece");
                 add(ModItems.HEART_CONTAINER.get(), "Heart Container");
@@ -266,8 +298,31 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("item.hbm_m.radaway", "Radaway");
                 add("effect.hbm_m.radaway", "Radiation cleansing");
-                
                 add("sounds.hbm_m.radaway_use", "Use of radaway");
+
+                add(ModItems.TEMPLATE_FOLDER.get(), "Template Folder");
+                add(ModItems.ASSEMBLY_TEMPLATE.get(), "Assembly Template: %s");
+                add("tooltip.hbm_m.template_broken", "Broken template");
+                add("tooltip.hbm_m.created_with_template_folder", "Created via Template Folder");
+                add("tooltip.hbm_m.output", "Output: ");
+                add("tooltip.hbm_m.input", "Input: ");
+                add("tooltip.hbm_m.production_time", "Production time: ");
+                add("tooltip.hbm_m.seconds", "seconds");
+                add("tooltip.hbm_m.tags", "Тags (OreDict):");
+                add("item.hbm_m.template_folder.desc", "Machine Templates: Paper + Dye$Fluid IDs: Iron Plate + Dye$Press Stamps: Flat Stamp$Siren Tracks: Insulator + Steel Plate");
+
+                add(ModItems.PLATE_GOLD.get(), "Golden Plate");
+                add(ModItems.PLATE_GUNMETAL.get(), "Gunmetal Plate");
+                add(ModItems.PLATE_GUNSTEEL.get(), "Gunsteel Plate");
+                add(ModItems.PLATE_IRON.get(), "Iron Plate");
+                add(ModItems.PLATE_KEVLAR.get(), "Kevlar Plate");
+                add(ModItems.PLATE_LEAD.get(), "Lead Plate");
+                add(ModItems.PLATE_MIXED.get(), "Mixed Plate");
+                add(ModItems.PLATE_PAA.get(), "PAA Plate");
+                add(ModItems.PLATE_POLYMER.get(), "Polymer Plate");
+                add(ModItems.PLATE_SATURNITE.get(), "Saturnite Plate");
+                add(ModItems.PLATE_SCHRABIDIUM.get(), "Schrabidium Plate");
+                add(ModItems.PLATE_STEEL.get(), "Steel Plate");
                 
                 add("tooltip.hbm_m.mods", "Modifications:");
                 add("tooltip.hbm_m.heart_piece.effect", "+5 Max Health");
@@ -285,7 +340,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.plutonium_fuel_block", "Plutonium Fuel Block");
                 add("block.hbm_m.polonium210_block", "Polonium-210 Block");
                 add("block.hbm_m.armor_table", "Armor Modification Table");
+                add("block.hbm_m.machine_assembler", "Assembly Machine");
                 add("container.hbm_m.armor_table", "Armor Modification Table");
+                add("container.hbm_m.machine_assembler", "Assembly Machine");
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");
                 add("block.hbm_m.uranium_ore", "Uranium Ore");
                 add("block.hbm_m.waste_grass", "Waste Grass");
@@ -332,7 +389,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("commands.hbm_m.rad.added.self", "You have been given %s radiation.");
                 add("commands.hbm_m.rad.removed", "Removed %s radiation from %s players.");
                 add("commands.hbm_m.rad.removed.self", "%s radiation has been removed from you.");
-                add("death.attack.radiation_damage", "Player %s died from radiation sickness");
+
+                add("death.attack.radiation", "Player %s died from radiation sickness");
                 add("advancements.hbm_m.radiation_200.title", "Hooray, Radiation!");
                 add("advancements.hbm_m.radiation_200.description", "Reach a radiation level of 200 RAD");
                 add("advancements.hbm_m.radiation_1000.title", "Ouch, Radiation!");

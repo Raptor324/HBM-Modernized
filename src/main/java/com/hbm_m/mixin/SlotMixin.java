@@ -7,6 +7,7 @@ import org.spongepowered.asm.mixin.Mutable;
 import org.spongepowered.asm.mixin.Shadow;
 
 import com.hbm_m.util.mixin.IMixinSlot;
+// Используется для корректного взаимодействия со слотами брони в инвентаре стола модификации брони.
 
 // Указываем, что наша цель - ванильный класс Slot
 @Mixin(Slot.class)

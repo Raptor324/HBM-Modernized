@@ -111,6 +111,14 @@ public class ModHazards {
         HazardSystem.register(Items.GUNPOWDER, new HazardData(
             new HazardEntry(HazardType.EXPLOSIVE_ON_FIRE, 1.0f)
         ));
+
+        HazardSystem.register(ModItems.PLATE_SCHRABIDIUM.get(), new HazardData(
+            new HazardEntry(HazardType.RADIATION, 15.0f)
+        ));
+
+        HazardSystem.register(ModItems.getIngot(ModIngots.SCHRABIDIUM).get(), new HazardData(
+            new HazardEntry(HazardType.RADIATION, 15.0f)
+        ));
         
         // Блок ТНТ, когда он выброшен как предмет и горит, взрывается с ванильной силой.
         // Это НЕ влияет на уже поставленный блок ТНТ, а только на ItemEntity.

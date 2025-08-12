@@ -1,4 +1,4 @@
-package com.hbm_m.network;
+package com.hbm_m.network.sounds;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.sounds.SoundEvent;

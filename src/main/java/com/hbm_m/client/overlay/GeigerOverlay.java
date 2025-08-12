@@ -1,7 +1,7 @@
 package com.hbm_m.client.overlay;
 
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.item.GeigerCounterItem;
+import com.hbm_m.item.ItemGeigerCounter;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
@@ -91,12 +91,12 @@ public class GeigerOverlay {
 
     private static boolean checkForGeiger(LocalPlayer player) {
         // Проверяем руки в первую очередь
-        if (player.getMainHandItem().getItem() instanceof GeigerCounterItem || player.getOffhandItem().getItem() instanceof GeigerCounterItem) {
+        if (player.getMainHandItem().getItem() instanceof ItemGeigerCounter || player.getOffhandItem().getItem() instanceof ItemGeigerCounter) {
             return true;
         }
         // Затем остальной инвентарь
         for (ItemStack stack : player.getInventory().items) {
-            if (stack.getItem() instanceof GeigerCounterItem) {
+            if (stack.getItem() instanceof ItemGeigerCounter) {
                 return true;
             }
         }

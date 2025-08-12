@@ -3,8 +3,8 @@ package com.hbm_m.block;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.block.entity.GeigerCounterBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.network.GeigerSoundPacket;
 import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.network.sounds.GeigerSoundPacket;
 import com.hbm_m.radiation.PlayerRadiationHandler;
 import com.hbm_m.sound.ModSounds;
 
@@ -166,7 +166,6 @@ public class GeigerCounterBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(@Nonnull BlockState pState) {
-        // Указываем, что у блока нет своей модели, он будет отрисован через BlockEntityRenderer
         return RenderShape.MODEL;
     }
     

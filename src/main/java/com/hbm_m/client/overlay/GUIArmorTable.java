@@ -18,7 +18,7 @@ import net.minecraft.world.item.ItemStack;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-public class ArmorTableGUI extends AbstractContainerScreen<ArmorTableMenu> {
+public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_armor_modifier.png");
@@ -35,7 +35,7 @@ public class ArmorTableGUI extends AbstractContainerScreen<ArmorTableMenu> {
     private static final int SLOT_START_X = -17;
     private static final int SLOT_START_Y = 36;
 
-    public ArmorTableGUI(ArmorTableMenu menu, Inventory playerInventory, Component title) {
+    public GUIArmorTable(ArmorTableMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
         this.imageHeight = 222;

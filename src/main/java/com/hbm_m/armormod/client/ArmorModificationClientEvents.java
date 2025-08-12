@@ -1,6 +1,6 @@
 package com.hbm_m.armormod.client;
 
-import com.hbm_m.client.overlay.ArmorTableGUI;
+import com.hbm_m.client.overlay.GUIArmorTable;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.client.Minecraft;
@@ -32,7 +32,7 @@ public class ArmorModificationClientEvents {
 
         
         // 1. Проверяем, является ли текущий открытый экран нашим столом
-        boolean isArmorTableOpen = Minecraft.getInstance().screen instanceof ArmorTableGUI;
+        boolean isArmorTableOpen = Minecraft.getInstance().screen instanceof GUIArmorTable;
         
         // 2. Вызываем наш обновленный хелпер, передавая ему этот флаг
         Optional<List<Component>> modsTooltipOptional = ArmorTooltipHandler.getModificationsTooltip(stack, isArmorTableOpen);
