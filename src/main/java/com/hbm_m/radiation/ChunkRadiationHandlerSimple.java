@@ -84,7 +84,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
         Map<ChunkPos, Float> ambientReadBuffer = new HashMap<>();
         Map<ChunkPos, Float> blockReadBuffer = new HashMap<>();
 
-        // --- ФАЗА 1: ЧТЕНИЕ ---
+        // ФАЗА 1: ЧТЕНИЕ 
         // Считываем состояние всех активных чанков, чтобы избежать гонки потоков
         for (ChunkPos pos : new HashSet<>(currentActiveChunks)) {
             LevelChunk chunk = level.getChunkSource().getChunk(pos.x, pos.z, false);
@@ -99,7 +99,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
         // Буфер для записи результатов распространения
         Map<ChunkPos, Float> writeBuffer = new HashMap<>();
 
-        // --- ФАЗА 2: РАСЧЕТ РАСПРОСТРАНЕНИЯ ---
+        // ФАЗА 2: РАСЧЕТ РАСПРОСТРАНЕНИЯ 
         // Корректное распространение радиации: только чтение из ambientReadBuffer, запись в writeBuffer с merge
         for (Map.Entry<ChunkPos, Float> entry : ambientReadBuffer.entrySet()) {
                 ChunkPos pos = entry.getKey();
@@ -134,7 +134,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                 }
             }
 
-        // --- ФАЗА 3: ПРИМЕНЕНИЕ И ОБНОВЛЕНИЕ ---
+        // ФАЗА 3: ПРИМЕНЕНИЕ И ОБНОВЛЕНИЕ 
         Set<ChunkPos> chunksToProcess = new HashSet<>(currentActiveChunks);
             chunksToProcess.addAll(writeBuffer.keySet());
             Set<ChunkPos> nextActiveChunks = ConcurrentHashMap.newKeySet();

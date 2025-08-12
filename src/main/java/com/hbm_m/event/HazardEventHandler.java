@@ -43,7 +43,7 @@ public class HazardEventHandler {
                 // Флаг, который показывает, что предмет был уничтожен и дальнейшая обработка не нужна.
                 boolean itemDestroyed = false;
 
-                // --- 1. Проверка на гидрореактивность ---
+                // 1. Проверка на гидрореактивность 
                 float hydroStrength = HazardSystem.getHazardLevelFromStack(stack, HazardType.HYDRO_REACTIVE);
                 if (hydroStrength > 0 && itemEntity.isInWaterOrRain()) {
                     // Уничтожаем предмет и создаем взрыв
@@ -52,7 +52,7 @@ public class HazardEventHandler {
                     itemDestroyed = true;
                 }
 
-                // --- 2. Проверка на взрыв в огне ---
+                // 2. Проверка на взрыв в огне 
                 if (!itemDestroyed) {
                     float explosiveStrength = HazardSystem.getHazardLevelFromStack(stack, HazardType.EXPLOSIVE_ON_FIRE);
                     if (explosiveStrength > 0 && itemEntity.isOnFire()) {
@@ -62,7 +62,7 @@ public class HazardEventHandler {
                     }
                 }
 
-                // --- 3. Проверка на излучение радиации ---
+                // 3. Проверка на излучение радиации 
                 if (!itemDestroyed) {
                     float radiationLevel = HazardSystem.getHazardLevelFromStack(stack, HazardType.RADIATION);
                     if (radiationLevel > 0) {

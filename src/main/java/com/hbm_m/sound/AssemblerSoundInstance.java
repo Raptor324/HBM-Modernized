@@ -1,13 +1,9 @@
 package com.hbm_m.sound;
 
-import com.hbm_m.block.entity.MachineAssemblerBlockEntity;
-import com.hbm_m.main.MainRegistry; // Добавьте импорт вашего логгера
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.core.BlockPos;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -19,7 +15,7 @@ public class AssemblerSoundInstance extends AbstractTickableSoundInstance {
     private final BlockPos pos;
 
     public AssemblerSoundInstance(BlockPos pos) {
-        // --- ДИАГНОСТИЧЕСКОЕ ИЗМЕНЕНИЕ ---
+        // ДИАГНОСТИЧЕСКОЕ ИЗМЕНЕНИЕ 
         // Временно используем ванильный звук вагонетки вместо вашего.
         // super(SoundEvents.MINECART_RIDING, SoundSource.BLOCKS, Minecraft.getInstance().level.getRandom());
         super(ModSounds.ASSEMBLER_OPERATE.get(), SoundSource.BLOCKS, Minecraft.getInstance().level.getRandom()); // <-- Ваша строка закомментирована

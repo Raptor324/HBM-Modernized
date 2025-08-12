@@ -12,7 +12,6 @@ public class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
             DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, RefStrings.MODID);
 
-    // Регистрируем как и раньше, используя лямбду или ::new
     public static final RegistryObject<BlockEntityType<ArmorTableBlockEntity>> ARMOR_TABLE_BE =
             BLOCK_ENTITIES.register("armor_table_be", () ->
                     BlockEntityType.Builder.of(ArmorTableBlockEntity::new, ModBlocks.ARMOR_TABLE.get())

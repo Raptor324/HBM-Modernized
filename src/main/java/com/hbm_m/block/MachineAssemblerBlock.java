@@ -33,6 +33,8 @@ import net.minecraftforge.network.NetworkHooks;
 
 import java.util.Map;
 
+import javax.annotation.Nonnull;
+
 import org.jetbrains.annotations.Nullable;
 
 public class MachineAssemblerBlock extends BaseEntityBlock {
@@ -49,7 +51,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock {
         // Константа для удобства расчетов. 1 пиксель = 1/16 блока.
         final double PIXEL = 1.0 / 16.0;
 
-        // --- 1. ОПРЕДЕЛЯЕМ ВСЕ ДОПОЛНИТЕЛЬНЫЕ КОЛЛАЙДЕРЫ ДЛЯ НАПРАВЛЕНИЯ NORTH ---
+        // 1. ОПРЕДЕЛЯЕМ ВСЕ ДОПОЛНИТЕЛЬНЫЕ КОЛЛАЙДЕРЫ ДЛЯ НАПРАВЛЕНИЯ NORTH 
         // Все координаты относительны центрального блока (0,0,0)
 
         // Конвейеры по бокам: размер 1х1 блок, выпирают на 0.5 блока (8 пикселей)
@@ -91,7 +93,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock {
         VoxelShape wireBackLeft = Shapes.box(wireX1_neg, wireY1, 2.0, wireX2_neg, wireY2, 2.5);
         VoxelShape wireBackRight = Shapes.box(wireX1_pos, wireY1, 2.0, wireX2_pos, wireY2, 2.5);
 
-        // --- 2. ОБЪЕДИНЯЕМ ВСЕ ЧАСТИ В ОДНУ ОБЩУЮ ФОРМУ ДЛЯ НАПРАВЛЕНИЯ NORTH ---
+        // 2. ОБЪЕДИНЯЕМ ВСЕ ЧАСТИ В ОДНУ ОБЩУЮ ФОРМУ ДЛЯ НАПРАВЛЕНИЯ NORTH 
         VoxelShape masterShapeNorth = Shapes.or(
                 BASE_SHAPE_NORTH,
                 conveyorLeft,
@@ -102,7 +104,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock {
                 wireBackRight
         );
 
-        // --- 3. ПОВОРАЧИВАЕМ И СДВИГАЕМ ЭТУ КОМБИНИРОВАННУЮ ФОРМУ ---
+        // 3. ПОВОРАЧИВАЕМ И СДВИГАЕМ ЭТУ КОМБИНИРОВАННУЮ ФОРМУ 
         
         // Сначала создаем повернутые мастер-формы
         VoxelShape masterShapeS = rotateShape(masterShapeNorth, Rotation.CLOCKWISE_180);
@@ -129,7 +131,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock {
     }
 
     @Override
-    public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
+    public void setPlacedBy(@Nonnull Level level, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nullable LivingEntity placer, @Nonnull ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
         if (!level.isClientSide) {
             placeStructure(level, pos, state.getValue(FACING));
@@ -164,9 +166,9 @@ public class MachineAssemblerBlock extends BaseEntityBlock {
         }
     }
 
-    // --- РАЗРУШЕНИЕ СТРУКТУРЫ ---
+    // РАЗРУШЕНИЕ СТРУКТУРЫ 
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+    public void onRemove(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos, @Nonnull BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof MachineAssemblerBlockEntity assemblerEntity) {
@@ -183,7 +185,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, isMoving);
     }
     
-    // --- УНИЧТОЖЕНИЕ СТРУКТУРЫ 4x4x2 ---
+    // УНИЧТОЖЕНИЕ СТРУКТУРЫ 4x4x2 
     private void destroyStructure(Level level, BlockPos controllerPos, Direction facing) {
         for (int yOffset = 0; yOffset <= 1; yOffset++) {
             for (int xzOffset = -1; xzOffset <= 2; xzOffset++) {
@@ -204,7 +206,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock {
 
     // Взаимодействие (открытие GUI)
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    public InteractionResult use(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos, @Nonnull Player player, @Nonnull InteractionHand hand, @Nonnull BlockHitResult hit) {
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider) {
@@ -218,17 +220,17 @@ public class MachineAssemblerBlock extends BaseEntityBlock {
     }
 
     @Override
-    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+    public VoxelShape getShape(@Nonnull BlockState pState, @Nonnull BlockGetter pLevel, @Nonnull BlockPos pPos, @Nonnull CollisionContext pContext) {
         // Просто берем нужную форму из кэша
         return SHAPES.get(pState.getValue(FACING));
     }
 
     @Override
-    public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+    public VoxelShape getCollisionShape(@Nonnull BlockState pState, @Nonnull BlockGetter pLevel, @Nonnull BlockPos pPos, @Nonnull CollisionContext pContext) {
         return SHAPES.get(pState.getValue(FACING));
     }
 
-    // --- ХЕЛПЕР-МЕТОД ДЛЯ ПОВОРОТА VOXELSHAPE ---
+    // ХЕЛПЕР-МЕТОД ДЛЯ ПОВОРОТА VOXELSHAPE 
     private static VoxelShape rotateShape(VoxelShape shape, Rotation rotation) {
         VoxelShape[] buffer = {Shapes.empty()}; // Используем массив, чтобы его можно было изменять внутри лямбды
         shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
@@ -244,28 +246,28 @@ public class MachineAssemblerBlock extends BaseEntityBlock {
     }
 
     @Override
-    public RenderShape getRenderShape(BlockState state) {
+    public RenderShape getRenderShape(@Nonnull BlockState state) {
         return RenderShape.MODEL;
     }
 
-    // --- Стандартный код для BaseEntityBlock ---
+    // Стандартный код для BaseEntityBlock 
     @Nullable @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+    public BlockEntity newBlockEntity(@Nonnull BlockPos pos, @Nonnull BlockState state) {
         return new MachineAssemblerBlockEntity(pos, state);
     }
 
     @Nullable @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@Nonnull Level level, @Nonnull BlockState state, @Nonnull BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerBlockEntity::tick);
     }
     
     @Nullable @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
+    public BlockState getStateForPlacement(@Nonnull BlockPlaceContext context) {
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(@Nonnull StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);
     }
 }

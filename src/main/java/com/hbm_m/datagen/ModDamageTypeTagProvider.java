@@ -1,7 +1,7 @@
-package com.hbm_m.datagen; // Убедитесь, что пакет правильный
+package com.hbm_m.datagen;
 
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.damagesource.ModDamageTypes; // Ваш класс с ключами
+import com.hbm_m.damagesource.ModDamageTypes;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.tags.DamageTypeTagsProvider;
@@ -21,7 +21,6 @@ public class ModDamageTypeTagProvider extends DamageTypeTagsProvider {
     @Override
     protected void addTags(@Nonnull HolderLookup.Provider pProvider) {
         // Здесь мы добавляем наши типы урона в ванильные теги, используя стандартный API.
-        // Это надежно, чисто и правильно.
 
         // Тег: Урон, который игнорирует броню
         tag(DamageTypeTags.BYPASSES_ARMOR).add(

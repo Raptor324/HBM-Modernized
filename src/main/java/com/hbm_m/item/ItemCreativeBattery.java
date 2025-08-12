@@ -14,13 +14,15 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
+import javax.annotation.Nonnull;
+
 public class ItemCreativeBattery extends ItemBattery {
     public ItemCreativeBattery(Properties pProperties) {
         super(pProperties.rarity(Rarity.EPIC), 0, 0, 0);
     }
 
     @Override
-    public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
+    public void appendHoverText(@Nonnull ItemStack pStack, @Nullable Level pLevel, @Nonnull List<Component> pTooltipComponents, @Nonnull TooltipFlag pIsAdvanced) {
         // Основная подсказка, например, "Provides infinite power."
         pTooltipComponents.add(Component.translatable("tooltip.hbm_m.creative_battery_desc")
                 .withStyle(ChatFormatting.LIGHT_PURPLE));
@@ -30,16 +32,15 @@ public class ItemCreativeBattery extends ItemBattery {
                 .withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.ITALIC));
     }
 
-    // --- НОВЫЙ КОД ДЛЯ УДАЛЕНИЯ ПОЛОСКИ ---
 
     @Override
-    public boolean isBarVisible(ItemStack pStack) {
+    public boolean isBarVisible(@Nonnull ItemStack pStack) {
         // Никогда не показывать полоску прочности/заряда
         return false;
     }
 
     @Override
-    public int getBarWidth(ItemStack pStack) {
+    public int getBarWidth(@Nonnull ItemStack pStack) {
         // Так как полоска не видна, ширина не важна, но 0 - самое логичное значение.
         return 0;
     }

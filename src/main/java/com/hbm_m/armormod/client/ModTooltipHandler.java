@@ -28,7 +28,7 @@ public class ModTooltipHandler {
         // Добавляем отступ, чтобы отделить наши строки от строк эффектов
         tooltip.add(Component.empty());
         
-        // --- Секция "Применяется к:" ---
+        // Секция "Применяется к:"
         tooltip.add(Component.translatable("tooltip.hbm_m.applies_to").withStyle(ChatFormatting.DARK_PURPLE));
             
             boolean requiresHelmet = event.getItemStack().is(ModItemTagProvider.REQUIRES_HELMET);
@@ -55,7 +55,7 @@ public class ModTooltipHandler {
                 }
             }
             
-            // --- Секция "Slot:" ---
+            // Секция "Slot:"
             tooltip.add(Component.translatable("tooltip.hbm_m.slot").withStyle(ChatFormatting.DARK_PURPLE));
             
             // Определяем название слота по его типу (индексу)

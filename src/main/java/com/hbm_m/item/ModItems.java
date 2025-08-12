@@ -22,7 +22,8 @@ public class ModItems {
     // Это стандартный способ регистрации объектов в Forge.
     public static final DeferredRegister<Item> ITEMS =
             DeferredRegister.create(ForgeRegistries.ITEMS, RefStrings.MODID);
-    // --- АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ СЛИТКОВ ---
+
+    // АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ СЛИТКОВ 
     // 1. Создаем карту для хранения всех RegistryObject'ов наших слитков
     public static final Map<ModIngots, RegistryObject<Item>> INGOTS = new EnumMap<>(ModIngots.class);
 
@@ -47,9 +48,9 @@ public class ModItems {
         }
     }
     
-    /**
-     * УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА 
-     */
+    
+    // УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА 
+     
     public static RegistryObject<Item> getIngot(ModIngots ingot) {
         return INGOTS.get(ingot);
     }

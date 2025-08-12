@@ -24,7 +24,7 @@ public class PlayerHazardHandler {
             return;
         }
 
-        // --- Инициализируем суммарные уровни опасностей ---
+        // Инициализируем суммарные уровни опасностей 
         float totalRadiation = 0;
         float totalIgnition = 0;
 
@@ -36,7 +36,7 @@ public class PlayerHazardHandler {
             }
         }
         
-        // --- Применяем накопленные эффекты ---
+        // Применяем накопленные эффекты 
         
         // Применение радиации (когда будет система здоровья/радиации)
         if (totalRadiation > 0) {

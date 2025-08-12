@@ -14,7 +14,6 @@ public class RadiationDataPacket {
     private final float totalEnvironmentRad;
     private final float playerRad;
 
-    // Конструктор теперь принимает два значения
     public RadiationDataPacket(float totalEnvironmentRad, float playerRad) {
         this.totalEnvironmentRad = totalEnvironmentRad;
         this.playerRad = playerRad;

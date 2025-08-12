@@ -10,10 +10,7 @@ import com.hbm_m.network.sounds.RequestAssemblerStateC2SPacket;
 import com.hbm_m.network.sounds.StartAssemblerSoundS2CPacket;
 import com.hbm_m.network.sounds.StopAssemblerSoundS2CPacket;
 import com.hbm_m.recipe.AssemblerRecipe;
-import com.hbm_m.sound.ModSounds;
 
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -22,7 +19,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener; // <-- ПРАВИЛЬНЫЙ ИМПОРТ
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -48,6 +44,8 @@ import net.minecraftforge.network.PacketDistributor;
 
 import java.util.Optional;
 import java.util.function.Supplier;
+
+import javax.annotation.Nonnull;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -138,7 +136,7 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
 
     @Nullable
     @Override
-    public AbstractContainerMenu createMenu(int pContainerId, Inventory pPlayerInventory, Player pPlayer) {
+    public AbstractContainerMenu createMenu(int pContainerId, @Nonnull Inventory pPlayerInventory, Player pPlayer) {
         // Отправляем пакет с данными при открытии меню
         sendUpdateToClient();
         return new MachineAssemblerMenu(pContainerId, pPlayerInventory, this, this.data);
@@ -175,7 +173,7 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     }
     
     @Override
-    protected void saveAdditional(CompoundTag nbt) {
+    protected void saveAdditional(@Nonnull CompoundTag nbt) {
         super.saveAdditional(nbt);
         nbt.put("inventory", itemHandler.serializeNBT());
         nbt.putInt("energy", energyStorage.getEnergyStored());
@@ -184,7 +182,7 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     }
 
     @Override
-    public void load(CompoundTag nbt) {
+    public void load(@Nonnull CompoundTag nbt) {
         super.load(nbt);
         itemHandler.deserializeNBT(nbt.getCompound("inventory"));
         energyStorage.setEnergy(nbt.getInt("energy"));
@@ -227,18 +225,17 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
             }
         }
 
-        // --- НОВАЯ ЛОГИКА КРАФТА ---
+        // ЛОГИКА КРАФТА
 
         Optional<AssemblerRecipe> recipeOpt = getRecipeFromTemplate(pLevel, pBlockEntity);
 
         // Проверяем, можем ли мы ВООБЩЕ крафтить по этому рецепту
         if (recipeOpt.isPresent() && hasResources(pBlockEntity, recipeOpt.get()) && hasPower(pBlockEntity) && canInsertResult(pBlockEntity, recipeOpt.get().getResultItem(null))) {
             
-            // --- НАЧАЛО НОВОГО КРАФТА ---
+            // НАЧАЛО НОВОГО КРАФТA
             // Если машина не крафтила, но теперь может, это начало нового цикла.
             if (!pBlockEntity.isCrafting) {
                 pBlockEntity.isCrafting = true;
-                // Устанавливаем maxProgress ИЗ РЕЦЕПТА!
                 pBlockEntity.maxProgress = recipeOpt.get().getDuration();
                 // Отправляем пакет на запуск звука
                 ModPacketHandler.INSTANCE.send(PacketDistributor.TRACKING_CHUNK.with(() -> pLevel.getChunkAt(pPos)),
@@ -246,12 +243,12 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
                 setChanged(pLevel, pPos, pState); // Важно для синхронизации
             }
 
-            // --- ПРОЦЕСС КРАФТА ---
+            // ПРОЦЕСС КРАФТА
             pBlockEntity.progress++;
             pBlockEntity.energyStorage.extractEnergy(10, false); // Потребляем энергию
             setChanged(pLevel, pPos, pState);
 
-            // --- ЗАВЕРШЕНИЕ КРАФТА ---
+            // ЗАВЕРШЕНИЕ КРАФТА
             if (pBlockEntity.progress >= pBlockEntity.maxProgress) {
                 craftItem(pBlockEntity, recipeOpt.get());
                 // Сбрасываем все для следующего цикла
@@ -262,7 +259,7 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
             }
 
         } else {
-            // --- УСЛОВИЯ ДЛЯ КРАФТА НЕ ВЫПОЛНЕНЫ ---
+            // УСЛОВИЯ ДЛЯ КРАФТА НЕ ВЫПОЛНЕНЫ 
             // Если машина крафтила, но теперь не может (например, кончились ресурсы), останавливаем ее.
             if (pBlockEntity.isCrafting) {
                 pBlockEntity.progress = 0;
@@ -281,7 +278,7 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     
 
 
-    /** Получает рецепт из шаблона в слоте */
+    // Получает рецепт из шаблона в слоте
     private static Optional<AssemblerRecipe> getRecipeFromTemplate(Level level, MachineAssemblerBlockEntity pBlockEntity) {
         ItemStack templateStack = pBlockEntity.itemHandler.getStackInSlot(TEMPLATE_SLOT);
         if (!(templateStack.getItem() instanceof ItemAssemblyTemplate)) {
@@ -300,7 +297,7 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
                 .findFirst();
     }
 
-    /** Проверяет, достаточно ли ресурсов во входных слотах */
+    // Проверяет, достаточно ли ресурсов во входных слотах
     private static boolean hasResources(MachineAssemblerBlockEntity pBlockEntity, AssemblerRecipe recipe) {
         // Создаем "контейнер" из наших входных слотов
         SimpleContainer inventory = new SimpleContainer(INPUT_SLOT_END - INPUT_SLOT_START + 1);
@@ -312,12 +309,12 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
         return recipe.matches(inventory, pBlockEntity.level);
     }
 
-    /** Проверяет, достаточно ли энергии для одного тика крафта */
+    // Проверяет, достаточно ли энергии для одного тика крафта
     private static boolean hasPower(MachineAssemblerBlockEntity pBlockEntity) {
         return pBlockEntity.energyStorage.getEnergyStored() >= 10;
     }
 
-    /** Проверяет, можно ли поместить результат в выходной слот */
+    // Проверяет, можно ли поместить результат в выходной слот
     private static boolean canInsertResult(MachineAssemblerBlockEntity pBlockEntity, ItemStack result) {
         ItemStack outputSlotStack = pBlockEntity.itemHandler.getStackInSlot(OUTPUT_SLOT);
         
@@ -328,7 +325,7 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     }
 
     
-    /** Выполняет крафт: списывает ресурсы и создает результат (ИСПРАВЛЕННАЯ ВЕРСЯ) */
+    // Выполняет крафт: списывает ресурсы и создает результат
     private static void craftItem(MachineAssemblerBlockEntity pBlockEntity, AssemblerRecipe recipe) {
         NonNullList<Ingredient> ingredients = recipe.getIngredients();
         ItemStack result = recipe.getResultItem(null);
@@ -342,7 +339,7 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
                     // Используем extractItem, так как он корректно обрабатывает изменение стака.
                     // false - означает, что мы реально выполняем действие, а не симулируем.
                     pBlockEntity.itemHandler.extractItem(i, 1, false);
-                    break; // <- Важно! Выходим из внутреннего цикла, чтобы не списать лишнего за один ингредиент.
+                    break; // Выходим из внутреннего цикла, чтобы не списать лишнего за один ингредиент.
                 }
             }
         }
@@ -351,7 +348,7 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
         pBlockEntity.itemHandler.insertItem(OUTPUT_SLOT, result, false);
     }
     
-    // --- Синхронизация с клиентом (ИСПРАВЛЕНО) ---
+    // Синхронизация с клиентом
     private void sendUpdateToClient() {
         if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -376,7 +373,6 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     @Override
     public void setRemoved() {
         if (!level.isClientSide() && isCrafting) {
-            // <<--- ЛОГ
             MainRegistry.LOGGER.info("SERVER ({}): Block is being removed while crafting. Sending final STOP packet.", worldPosition);
             ModPacketHandler.INSTANCE.send(PacketDistributor.TRACKING_CHUNK.with(() -> level.getChunkAt(worldPosition)),
                                             new StopAssemblerSoundS2CPacket(worldPosition));

@@ -62,8 +62,7 @@ public abstract class AbstractRadiationMeterItem extends Item {
         for (ItemStack armorStack : player.getArmorSlots()) {
             totalAbsoluteProtection += ArmorModificationHelper.getTotalAbsoluteRadProtection(armorStack);
         }
-        float protectionPercent = ArmorModificationHelper.convertAbsoluteToPercent(totalAbsoluteProtection);
-        // ---------------------------------------------
+        float protectionPercent = ArmorModificationHelper.convertAbsoluteToPercent(totalAbsoluteProtection);        
         
         // Передаем новые данные в record
         return new RadiationData(chunkRad, invRad, playerRads, protectionPercent, totalAbsoluteProtection);

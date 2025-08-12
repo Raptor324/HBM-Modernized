@@ -9,7 +9,6 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraftforge.client.model.BakedModelWrapper;
 
 import javax.annotation.Nonnull;
@@ -44,7 +43,7 @@ public class TemplateBakedModel extends BakedModelWrapper<BakedModel> {
 
         @Override
         @Nullable
-        public BakedModel resolve(BakedModel model, ItemStack stack, @Nullable ClientLevel level, @Nullable LivingEntity entity, int seed) {
+        public BakedModel resolve(@Nonnull BakedModel model, @Nonnull ItemStack stack, @Nullable ClientLevel level, @Nullable LivingEntity entity, int seed) {
             if (!Screen.hasShiftDown()) {
                 return model;
             }

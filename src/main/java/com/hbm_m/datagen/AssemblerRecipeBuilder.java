@@ -4,10 +4,7 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.AssemblerRecipe;
 import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.AdvancementRewards;
 import net.minecraft.advancements.CriterionTriggerInstance;
-import net.minecraft.advancements.RequirementsStrategy;
-import net.minecraft.advancements.critereon.RecipeUnlockedTrigger;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -21,6 +18,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+
+import javax.annotation.Nonnull;
 
 public class AssemblerRecipeBuilder implements RecipeBuilder {
     private final ItemStack output;
@@ -37,12 +36,12 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
         this.power = power;
     }
 
-    // --- НОВЫЙ УДОБНЫЙ СПОСОБ СОЗДАНИЯ ---
+    // НОВЫЙ УДОБНЫЙ СПОСОБ СОЗДАНИЯ 
     public static AssemblerRecipeBuilder assemblerRecipe(ItemStack output, int duration, int power) {
         return new AssemblerRecipeBuilder(output, duration, power);
     }
 
-    // --- НОВЫЕ УДОБНЫЕ СПОСОБЫ ДОБАВЛЕНИЯ ИНГРЕДИЕНТОВ ---
+    // НОВЫЕ УДОБНЫЕ СПОСОБЫ ДОБАВЛЕНИЯ ИНГРЕДИЕНТОВ 
     
     /**
      * Добавляет ингредиент с указанным количеством.
@@ -64,7 +63,7 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
 
 
     @Override
-    public RecipeBuilder unlockedBy(String pCriterionName, CriterionTriggerInstance pCriterionTrigger) {
+    public RecipeBuilder unlockedBy(@Nonnull String pCriterionName, @Nonnull CriterionTriggerInstance pCriterionTrigger) {
         this.advancement.addCriterion(pCriterionName, pCriterionTrigger);
         return this;
     }
@@ -80,7 +79,7 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public void save(Consumer<FinishedRecipe> pFinishedRecipeConsumer, ResourceLocation pRecipeId) {
+    public void save(@Nonnull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @Nonnull ResourceLocation pRecipeId) {
         pFinishedRecipeConsumer.accept(new Result(pRecipeId, this));
     }
 
@@ -97,9 +96,9 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
         
 
         @Override
-        public void serializeRecipeData(JsonObject pJson) {
+        public void serializeRecipeData(@Nonnull JsonObject pJson) {
             JsonArray jsonIngredients = new JsonArray();
-            // --- НОВАЯ ЛОГИКА СЕРИАЛИЗАЦИИ ---
+            // НОВАЯ ЛОГИКА СЕРИАЛИЗАЦИИ 
             for (CountableIngredient countableIng : this.builder.ingredients) {
                 // Преобразуем наш Ingredient в JSON
                 JsonObject ingredientJson = countableIng.ingredient().toJson().getAsJsonObject();

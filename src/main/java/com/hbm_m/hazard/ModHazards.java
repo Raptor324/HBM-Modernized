@@ -20,7 +20,7 @@ public class ModHazards {
             ResourceLocation.fromNamespaceAndPath("forge", "ingots/sodium"));
 
      public static void registerHazards() {
-        // --- АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ ОПАСНОСТЕЙ ДЛЯ СЛИТКОВ ---
+        // АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ ОПАСНОСТЕЙ ДЛЯ СЛИТКОВ 
         for (ModIngots ingot : ModIngots.values()) {
             // Используем switch для явного назначения опасностей
             // Это гораздо чище и гибче, чем хранить данные в enum
@@ -91,7 +91,7 @@ public class ModHazards {
                     break;
             }
         }
-        // --- БЛОКИ ---
+        // БЛОКИ 
         HazardSystem.register(ModBlocks.URANIUM_BLOCK.get(), new HazardData(
             new HazardEntry(HazardType.RADIATION, 3.5f)
         ));
@@ -106,7 +106,7 @@ public class ModHazards {
             new HazardEntry(HazardType.RADIATION, 42.5f)
         ));
 
-        // --- ПРЕДМЕТЫ ---
+        // ПРЕДМЕТЫ 
         // Порох взрывается в огне. Сила взрыва 1/4 от ТНТ (4.0f / 4 = 1.0f) за единицу.
         HazardSystem.register(Items.GUNPOWDER, new HazardData(
             new HazardEntry(HazardType.EXPLOSIVE_ON_FIRE, 1.0f)
@@ -130,7 +130,7 @@ public class ModHazards {
             new HazardEntry(HazardType.EXPLOSIVE_ON_FIRE, 4.0f)
         ));
 
-        // --- ТЕГИ ---
+        // ТЕГИ 
         HazardSystem.register(URANIUM_INGOTS, new HazardData(
             new HazardEntry(HazardType.RADIATION, 0.35f)
         ));
@@ -140,7 +140,7 @@ public class ModHazards {
         ));
 
 
-        // --- РЕГИСТРАЦИЯ ЗАЩИТЫ ДЛЯ ВАНИЛЬНОЙ БРОНИ ---
+        // РЕГИСТРАЦИЯ ЗАЩИТЫ ДЛЯ ВАНИЛЬНОЙ БРОНИ 
         HazardSystem.registerArmorProtection(Items.IRON_HELMET, 0.004f);
         HazardSystem.registerArmorProtection(Items.IRON_CHESTPLATE, 0.009f);
         HazardSystem.registerArmorProtection(Items.IRON_LEGGINGS, 0.006f);

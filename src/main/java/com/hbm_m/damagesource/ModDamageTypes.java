@@ -9,7 +9,7 @@ import net.minecraft.world.damagesource.DamageType;
 
 public class ModDamageTypes {
 
-    // Helper-метод для краткости, чтобы не дублировать код
+    // Helper-метод для краткости
     private static ResourceKey<DamageType> createKey(String name) {
 
         return ResourceKey.create(Registries.DAMAGE_TYPE, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, name));

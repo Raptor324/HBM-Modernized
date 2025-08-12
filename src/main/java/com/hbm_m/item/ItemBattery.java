@@ -12,6 +12,8 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
+import javax.annotation.Nonnull;
+
 public class ItemBattery extends Item {
     private final int capacity;
     private final int maxReceive;
@@ -25,24 +27,24 @@ public class ItemBattery extends Item {
     }
 
     @Override
-    public boolean isBarVisible(ItemStack pStack) {
+    public boolean isBarVisible(@Nonnull ItemStack pStack) {
         return true;
     }
 
     @Override
-    public int getBarWidth(ItemStack pStack) {
+    public int getBarWidth(@Nonnull ItemStack pStack) {
         return pStack.getCapability(ForgeCapabilities.ENERGY)
                 .map(storage -> Math.round(13.0F * storage.getEnergyStored() / storage.getMaxEnergyStored()))
                 .orElse(0);
     }
 
     @Override
-    public int getBarColor(ItemStack pStack) {
-        return 0x44B027; // Зеленый цвет из HBM
+    public int getBarColor(@Nonnull ItemStack pStack) {
+        return 0x44B027; // Зеленый цвет
     }
 
     @Override
-    public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
+    public void appendHoverText(@Nonnull ItemStack pStack, @Nullable Level pLevel, @Nonnull List<Component> pTooltipComponents, @Nonnull TooltipFlag pIsAdvanced) {
         pStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(storage -> {
             pTooltipComponents.add(Component.translatable("tooltip.hbm_m.energy_stored",
                 Component.literal(String.format("%,d", storage.getEnergyStored())).withStyle(ChatFormatting.GREEN),

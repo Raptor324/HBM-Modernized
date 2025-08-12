@@ -6,7 +6,7 @@ import net.minecraft.world.item.Tiers;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraftforge.common.ForgeTier;
 import net.minecraftforge.common.TierSortingRegistry;
-import net.minecraftforge.common.util.Lazy; // Добавлен импорт для Lazy
+import net.minecraftforge.common.util.Lazy;
 
 import java.util.List;
 

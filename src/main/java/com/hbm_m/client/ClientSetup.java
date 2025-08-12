@@ -107,7 +107,7 @@ public class ClientSetup {
     public static void onRegisterGuiOverlays(RegisterGuiOverlaysEvent event) {
         MainRegistry.LOGGER.info("Registering GUI overlays...");
         
-        // Регистрируем наш оверлей.
+        // Регистрируем оверлей.
         // Мы говорим: "Нарисуй оверлей с ID 'geiger_counter_hud' НАД хотбаром,
         // используя логику из объекта GeigerOverlay.GEIGER_HUD_OVERLAY".
         event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", GeigerOverlay.GEIGER_HUD_OVERLAY);

@@ -23,7 +23,7 @@ public class BlockEntityEnergyStorage extends EnergyStorage {
         this.energy = energy;
     }
 
-    // --- НОВЫЕ МЕТОДЫ-ГЕТТЕРЫ ---
+    // НОВЫЕ МЕТОДЫ-ГЕТТЕРЫ 
 
     /**
      * Возвращает максимальное количество энергии, которое можно принять за один тик.

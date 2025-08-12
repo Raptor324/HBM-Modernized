@@ -51,9 +51,9 @@ public class ChunkRadiationDebugBatchPacket {
         ctx.get().setPacketHandled(true);
     }
 
-    /**
-     * Внутренний класс для обработки пакета, который существует только на клиенте.
-     */
+
+    // Внутренний класс для обработки пакета, который существует только на клиенте.
+
     private static class ClientHandler {
         public static void handlePacket(ChunkRadiationDebugBatchPacket msg) {
             ClientRadiationData.updateRadiationData(msg.dimension, msg.radiationData);

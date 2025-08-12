@@ -13,6 +13,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
+
+import javax.annotation.Nonnull;
+
 import org.jetbrains.annotations.NotNull;
 
 public class MachineAssemblerMenu extends AbstractContainerMenu {
@@ -120,7 +123,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
     private static final int TE_INVENTORY_SLOT_COUNT = 18;
 
     @Override
-    public @NotNull ItemStack quickMoveStack(@NotNull Player playerIn, int pIndex) {
+    public @NotNull ItemStack quickMoveStack(@Nonnull Player playerIn, int pIndex) {
         Slot sourceSlot = this.slots.get(pIndex);
         if (sourceSlot == null || !sourceSlot.hasItem()) return ItemStack.EMPTY;
         ItemStack sourceStack = sourceSlot.getItem();
@@ -152,7 +155,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public boolean stillValid(@NotNull Player pPlayer) {
+    public boolean stillValid(@Nonnull Player pPlayer) {
         return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
                 pPlayer, ModBlocks.MACHINE_ASSEMBLER.get());
     }

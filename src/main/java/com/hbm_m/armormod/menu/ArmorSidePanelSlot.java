@@ -1,5 +1,3 @@
-// Создайте новый файл ArmorSidePanelSlot.java в пакете com.hbm_m.menu
-
 package com.hbm_m.armormod.menu;
 
 import net.minecraft.sounds.SoundEvent;
@@ -54,7 +52,7 @@ public class ArmorSidePanelSlot extends Slot {
         player.level().playSound(null, player.getX(), player.getY(), player.getZ(), sound, SoundSource.PLAYERS, 1.0F, 1.0F);
     }
 
-    // --- Валидация и прочие методы, как в ванильном слоте брони ---
+    // Валидация и прочие методы, как в ванильном слоте брони
 
     @Override
     public boolean mayPlace(@Nonnull ItemStack stack) {

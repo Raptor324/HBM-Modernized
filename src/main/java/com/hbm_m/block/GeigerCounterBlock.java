@@ -149,7 +149,7 @@ public class GeigerCounterBlock extends BaseEntityBlock {
                 (level, pos, state, blockEntity) -> blockEntity.tick(level, pos, state));
     }
 
-    // --- Вращение блока ---
+    // Вращение блока 
 
     @Override
     public BlockState getStateForPlacement(@Nonnull BlockPlaceContext pContext) {
@@ -162,8 +162,7 @@ public class GeigerCounterBlock extends BaseEntityBlock {
         pBuilder.add(FACING);
     }
 
-    // --- Рендер и сигналы ---
-
+    // Рендер и сигналы 
     @Override
     public RenderShape getRenderShape(@Nonnull BlockState pState) {
         return RenderShape.MODEL;

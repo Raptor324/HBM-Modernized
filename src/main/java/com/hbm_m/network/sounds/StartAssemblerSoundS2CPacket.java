@@ -1,7 +1,7 @@
 package com.hbm_m.network.sounds;
 
 import com.hbm_m.block.entity.MachineAssemblerBlockEntity;
-import com.hbm_m.sound.ClientSoundManager; // Наш новый клиентский менеджер
+import com.hbm_m.sound.ClientSoundManager;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;

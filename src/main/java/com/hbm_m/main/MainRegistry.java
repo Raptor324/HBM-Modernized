@@ -62,7 +62,7 @@ public class MainRegistry {
         
         IEventBus modEventBus = context.getModEventBus();
 
-        // --- ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS ---
+        // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS 
         ModBlocks.BLOCKS.register(modEventBus); // Регистрация наших блоков
         ModItems.ITEMS.register(modEventBus); // Регистрация наших предметов
         ModMenuTypes.MENUS.register(modEventBus); // Регистрация меню
@@ -161,7 +161,7 @@ public class MainRegistry {
         }
         
         if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get()) {
-            // --- АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ МОДИФИКАТОРОВ ---
+            // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ МОДИФИКАТОРОВ 
             
             // 1. Получаем все зарегистрированные предметы из вашего мода
             List<RegistryObject<Item>> allModItems = ForgeRegistries.ITEMS.getEntries().stream()
@@ -180,7 +180,7 @@ public class MainRegistry {
                 }
             }
             
-            // --- ДОБАВЛЕНИЕ ОСТАЛЬНЫХ ПРЕДМЕТОВ ВРУЧНУЮ ---
+            // ДОБАВЛЕНИЕ ОСТАЛЬНЫХ ПРЕДМЕТОВ ВРУЧНУЮ 
             event.accept(ModBlocks.ARMOR_TABLE);
             event.accept(ModItems.DOSIMETER);
             event.accept(ModItems.GEIGER_COUNTER);
@@ -225,7 +225,7 @@ public class MainRegistry {
             
             event.accept(ModItems.TEMPLATE_FOLDER);
 
-            // --- ИСПРАВЛЕНИЕ: Получаем RecipeManager через клиент Minecraft ---
+            // ИСПРАВЛЕНИЕ: Получаем RecipeManager через клиент Minecraft 
             // Этот код выполняется на стороне клиента, поэтому такой доступ безопасен
             if (Minecraft.getInstance().level != null) {
                 RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();

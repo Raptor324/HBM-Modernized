@@ -2,7 +2,7 @@
 
 package com.hbm_m.block;
 
-// --- Убедитесь, что ваши импорты выглядят именно так ---
+// Убедитесь, что ваши импорты выглядят именно так 
 import com.hbm_m.block.entity.MachineAssemblerPartBlockEntity;
 import com.hbm_m.main.MainRegistry;
 

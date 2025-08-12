@@ -1,4 +1,4 @@
-package com.hbm_m.damagesource; // Убедитесь, что пакет правильный
+package com.hbm_m.damagesource;
 
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -13,7 +13,7 @@ import net.minecraft.world.level.Level;
  */
 public final class ModDamageSources {
 
-    // --- Приватные методы-конструкторы для избежания дублирования кода ---
+    // Приватные методы-конструкторы 
 
     /**
      * Базовый метод для создания DamageSource, у которого нет прямого атакующего.
@@ -41,7 +41,7 @@ public final class ModDamageSources {
         );
     }
     
-    // --- Публичные статические методы для удобного получения DamageSource в коде ---
+    // Публичные статические методы для удобного получения DamageSource в коде 
 
     // Типы урона от окружения (без конкретного атакующего)
     public static DamageSource nuclearBlast(Level level) { return create(level, ModDamageTypes.NUCLEAR_BLAST); }

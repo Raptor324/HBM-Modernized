@@ -39,7 +39,7 @@ public class ModSounds {
 
     public static final RegistryObject<SoundEvent> ASSEMBLER_OPERATE = registerSoundEvents("block.assembler_operate");    
 
-    // --- РЕГИСТРАЦИЯ АБСТРАКТНОГО СОБЫТИЯ ---
+    // РЕГИСТРАЦИЯ АБСТРАКТНОГО СОБЫТИЯ 
     // Это тот самый звук, который мы будем вызывать в коде.
     // Minecraft сам выберет один из 7 реальных звуков случайным образом.
     public static final RegistryObject<SoundEvent> REPAIR_RANDOM = registerSoundEvents("tool.repair_random");

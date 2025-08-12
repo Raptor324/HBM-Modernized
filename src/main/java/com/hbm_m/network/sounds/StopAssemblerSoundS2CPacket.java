@@ -1,6 +1,6 @@
 package com.hbm_m.network.sounds;
 
-import com.hbm_m.sound.ClientSoundManager; // Наш новый клиентский менеджер
+import com.hbm_m.sound.ClientSoundManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;

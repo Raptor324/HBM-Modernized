@@ -10,6 +10,8 @@ import net.minecraft.world.item.Items;
 
 import java.util.function.Consumer;
 
+import javax.annotation.Nonnull;
+
 public class ModRecipeProvider extends RecipeProvider {
 
     public ModRecipeProvider(PackOutput pOutput) {
@@ -17,9 +19,7 @@ public class ModRecipeProvider extends RecipeProvider {
     }
 
     @Override
-    protected void buildRecipes(Consumer<FinishedRecipe> pWriter) {
-        
-        // --- РЕЦЕПТЫ В НОВОМ ФОРМАТЕ ---
+    protected void buildRecipes(@Nonnull Consumer<FinishedRecipe> pWriter) {
 
         // Рецепт для алмазного меча
         AssemblerRecipeBuilder.assemblerRecipe(

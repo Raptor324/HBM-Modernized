@@ -67,7 +67,7 @@ public class ArmorModificationHelper {
         CompoundTag mainTag = armorStack.getOrCreateTag();
         CompoundTag modsCompound = new CompoundTag();
 
-        // --- ШАГ 1: СОХРАНЕНИЕ КОНФИГУРАЦИИ МОДОВ В НАШ ТЕГ ---
+        // ШАГ 1: СОХРАНЕНИЕ КОНФИГУРАЦИИ МОДОВ В НАШ ТЕГ
         for (int i = 0; i < 9; i++) {
             ItemStack modStack = tableInventory.getStackInSlot(i);
             if (!modStack.isEmpty()) {
@@ -81,7 +81,7 @@ public class ArmorModificationHelper {
         }
 
 
-        // --- ШАГ 2: БЕЗОПАСНАЯ ПЕРЕСБОРКА СПИСКА АТРИБУТОВ ---
+        // ШАГ 2: БЕЗОПАСНАЯ ПЕРЕСБОРКА СПИСКА АТРИБУТОВ
 
         ListTag preservedModifiers = new ListTag();
 
@@ -166,9 +166,9 @@ public class ArmorModificationHelper {
         }
         return modsList;
     }
-    /**
-     * Вычисляет СУММАРНУЮ абсолютную защиту от радиации для стака брони со всеми модами.
-     */
+
+    // Вычисляет СУММАРНУЮ абсолютную защиту от радиации для стака брони со всеми модами.
+    
     public static float getTotalAbsoluteRadProtection(ItemStack armorStack) {
         if (!(armorStack.getItem() instanceof ArmorItem)) {
             return 0.0f;
@@ -188,9 +188,8 @@ public class ArmorModificationHelper {
         return totalProtection;
     }
 
-    /**
-     * Конвертирует абсолютное значение защиты в процент.
-     */
+    // Конвертирует абсолютное значение защиты в процент.
+
     public static float convertAbsoluteToPercent(float absoluteValue) {
         if (absoluteValue <= 0) return 0.0f;
         // Наша формула: 1 - e^(-2.3 * x)

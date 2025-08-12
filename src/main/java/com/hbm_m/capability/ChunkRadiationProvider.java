@@ -39,9 +39,8 @@ public class ChunkRadiationProvider implements ICapabilitySerializable<CompoundT
         return LazyOptional.empty();
     }
 
-    /**
-     * Handles saving the capability data to the chunk's NBT tag.
-     */
+    
+    // Handles saving the capability data to the chunk's NBT tag.
     @Override
     public CompoundTag serializeNBT() {
         IChunkRadiation radiation = getOrCreate();
@@ -65,9 +64,8 @@ public class ChunkRadiationProvider implements ICapabilitySerializable<CompoundT
         return new CompoundTag();
     }
 
-    /**
-     * Handles loading the capability data from the chunk's NBT tag.
-     */
+    
+    // Handles loading the capability data from the chunk's NBT tag.
     @Override
     public void deserializeNBT(CompoundTag nbt) {
         IChunkRadiation radiation = getOrCreate();

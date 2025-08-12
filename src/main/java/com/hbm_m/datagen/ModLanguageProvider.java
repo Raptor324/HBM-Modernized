@@ -18,7 +18,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
-        // --- АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ ---
+        // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ 
         for (ModIngots ingot : ModIngots.values()) {
             // 3. Теперь мы используем наше поле 'this.locale', к которому у нас есть доступ
             String translation = ingot.getTranslation(this.locale);
@@ -27,7 +27,7 @@ public class ModLanguageProvider extends LanguageProvider {
             }
         }
 
-        // --- ЯВНАЯ ЛОКАЛИЗАЦИЯ ДЛЯ ОСТАЛЬНЫХ КЛЮЧЕЙ ---
+        // ЯВНАЯ ЛОКАЛИЗАЦИЯ ДЛЯ ОСТАЛЬНЫХ КЛЮЧЕЙ 
         switch (this.locale) {
             case "ru_ru":
                 add("itemGroup.hbm_m.ntm_resources_tab", "Ресурсы и детали NTM");

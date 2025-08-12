@@ -25,10 +25,10 @@ public class ClientModEvents {
             return;
         }
         
-        // --- Логика для опасностей ---
+        // Логика для опасностей 
         HazardTooltipHandler.appendHazardTooltips(event.getItemStack(), event.getToolTip());
 
-        // --- Логика для OreDict тегов ---
+        // Логика для OreDict тегов 
         boolean hasTags = event.getItemStack().getTags().findAny().isPresent();
         if (hasTags) {
             if (Screen.hasShiftDown()) {

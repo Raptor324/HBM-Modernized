@@ -48,7 +48,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
     @Override
     protected void addTags(@Nonnull HolderLookup.Provider provider) {
 
-        // --- АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ СЛИТКОВ ---
+        // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ СЛИТКОВ 
         TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots")));
 
         for (ModIngots ingot : ModIngots.values()) {
@@ -60,7 +60,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
             ingotsTagBuilder.add(ingotObject.getKey());
         }
 
-        // === АВТОМАТИЧЕСКОЕ КОПИРОВАНИЕ ТЕГОВ ИЗ БЛОКОВ ===
+        // АВТОМАТИЧЕСКОЕ КОПИРОВАНИЕ ТЕГОВ ИЗ БЛОКОВ 
         // Это хорошая практика, чтобы не дублировать код.
         // Все блоки с тегом "forge:storage_blocks/uranium" получат одноименный тег предмета.
         this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")),

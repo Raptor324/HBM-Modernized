@@ -48,7 +48,7 @@ public class ChunkRadiationManager {
 
     private int tickCounter = 0;
 
-    // --- ОБРАБОТЧИКИ СОБЫТИЙ ЖИЗНЕННОГО ЦИКЛА МИРА ---
+    // ОБРАБОТЧИКИ СОБЫТИЙ ЖИЗНЕННОГО ЦИКЛА МИРА 
 
     @SubscribeEvent
     public void onWorldLoad(LevelEvent.Load event) {
@@ -111,7 +111,7 @@ public class ChunkRadiationManager {
         getProxy().receiveWorldTick(event);
     }
 
-    // --- ОБРАБОТЧИКИ СОБЫТИЙ ИЗМЕНЕНИЯ БЛОКОВ ---
+    // ОБРАБОТЧИКИ СОБЫТИЙ ИЗМЕНЕНИЯ БЛОКОВ 
 
     private float getRadFromState(BlockState state) {
     // Простая проверка для оптимизации: воздушные блоки не могут быть радиоактивными.
@@ -180,7 +180,7 @@ public class ChunkRadiationManager {
         }
     }
 
-    // --- СТАТИЧЕСКИЕ МЕТОДЫ-ОБЕРТКИ ---
+    // СТАТИЧЕСКИЕ МЕТОДЫ-ОБЕРТКИ 
 
     public static float getRadiation(Level level, int x, int y, int z) {
         if (!ModClothConfig.get().enableRadiation || !ModClothConfig.get().enableChunkRads) return 0F;

@@ -84,7 +84,6 @@ public class ItemGeigerCounter extends AbstractRadiationMeterItem {
     private void playGeigerTickSound(ServerPlayer player, float radiationLevel) {
         int soundIndex = 0;
         List<Integer> soundOptions = new ArrayList<>();
-        // ResourceLocation soundLocation = null;
 
         if (radiationLevel > 0) {
             if (radiationLevel < 10) soundOptions.add(1);

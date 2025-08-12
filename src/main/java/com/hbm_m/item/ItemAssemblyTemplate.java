@@ -12,12 +12,14 @@ import com.hbm_m.util.TemplateTooltipUtil;
 
 import java.util.List;
 
+import javax.annotation.Nonnull;
+
 public class ItemAssemblyTemplate extends Item {
     public ItemAssemblyTemplate(Properties pProperties) {
         super(pProperties);
     }
 
-    // --- Логика NBT для хранения рецепта ---
+    // Логика NBT для хранения рецепта 
     public static void writeRecipeOutput(ItemStack templateStack, ItemStack outputStack) {
         if (templateStack.getItem() instanceof ItemAssemblyTemplate) {
             CompoundTag nbt = templateStack.getOrCreateTag();
@@ -35,9 +37,9 @@ public class ItemAssemblyTemplate extends Item {
         return ItemStack.EMPTY;
     }
     
-    // --- Кастомное название и тултип ---
+    // Кастомное название и тултип 
    @Override
-    public Component getName(ItemStack pStack) {
+    public Component getName(@Nonnull ItemStack pStack) {
         ItemStack output = getRecipeOutput(pStack);
         if (!output.isEmpty()) {
             // Используем ключ локализации и передаем имя предмета как аргумент
@@ -61,7 +63,7 @@ public class ItemAssemblyTemplate extends Item {
     // }
 
     @Override
-    public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltipComponents, TooltipFlag pIsAdvanced) {
+    public void appendHoverText(@Nonnull ItemStack pStack, @Nullable Level pLevel, @Nonnull List<Component> pTooltipComponents, @Nonnull TooltipFlag pIsAdvanced) {
 
         TemplateTooltipUtil.buildTemplateTooltip(pStack, pLevel, pTooltipComponents);
     }

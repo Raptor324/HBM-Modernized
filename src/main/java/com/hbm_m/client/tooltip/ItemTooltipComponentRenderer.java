@@ -1,5 +1,7 @@
 package com.hbm_m.client.tooltip; // Убедитесь, что пакет правильный
 
+import javax.annotation.Nonnull;
+
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
@@ -19,13 +21,13 @@ public class ItemTooltipComponentRenderer implements ClientTooltipComponent {
     }
 
     @Override
-    public int getWidth(Font pFont) {
+    public int getWidth(@Nonnull Font pFont) {
         // Ширина иконки (16px) + ширина текста + отступ
         return 18 + pFont.width(stack.getHoverName());
     }
 
     @Override
-    public void renderImage(Font pFont, int pX, int pY, GuiGraphics pGuiGraphics) {
+    public void renderImage(@Nonnull Font pFont, int pX, int pY, @Nonnull GuiGraphics pGuiGraphics) {
         // Рендерим иконку предмета
         pGuiGraphics.renderFakeItem(this.stack, pX, pY);
         // Рендерим название предмета рядом с иконкой

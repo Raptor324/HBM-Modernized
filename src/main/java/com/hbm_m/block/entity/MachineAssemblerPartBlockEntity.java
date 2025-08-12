@@ -2,7 +2,7 @@ package com.hbm_m.block.entity;
 
 import java.util.function.Supplier;
 
-import com.hbm_m.main.MainRegistry;
+import javax.annotation.Nonnull;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -30,7 +30,7 @@ public class MachineAssemblerPartBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag nbt) {
+    protected void saveAdditional(@Nonnull CompoundTag nbt) {
         if (this.controllerPos != null) {
             nbt.put("controller", NbtUtils.writeBlockPos(this.controllerPos));
         }
@@ -38,13 +38,12 @@ public class MachineAssemblerPartBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void load(CompoundTag nbt) {
+    public void load(@Nonnull CompoundTag nbt) {
         super.load(nbt);
         if (nbt.contains("controller")) {
             this.controllerPos = NbtUtils.readBlockPos(nbt.getCompound("controller"));
             // MainRegistry.LOGGER.info("[CLIENT] Loaded controllerPos from NBT. Controller is at {}", this.controllerPos);
 
-            // Оставляем этот код на всякий случай, он может быть полезен
              if (level != null && level.isClientSide) {
                  level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
                 //  MainRegistry.LOGGER.info("[CLIENT] Requested block update after loading NBT.");

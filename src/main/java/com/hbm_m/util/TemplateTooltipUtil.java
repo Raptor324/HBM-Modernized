@@ -48,20 +48,18 @@ public class TemplateTooltipUtil {
 
         AssemblerRecipe recipe = recipeOpt.get();
 
-        // --- НАЧИНАЕМ СТРОИТЬ ТУЛТИП СОГЛАСНО НОВОМУ ФОРМАТУ ---
-
         // "Created via Template Folder"
         tooltip.add(Component.translatable("tooltip.hbm_m.created_with_template_folder").withStyle(ChatFormatting.YELLOW));
 
         // Отступ в одну строку
         tooltip.add(Component.empty());
 
-        // --- Выход ---
+        // Выход 
         tooltip.add(Component.translatable("tooltip.hbm_m.output").withStyle(ChatFormatting.GRAY, ChatFormatting.BOLD));
         tooltip.add(Component.literal("  " + output.getCount() + "x ").withStyle(ChatFormatting.WHITE)
                 .append(output.getHoverName()));
 
-        // --- Вход ---
+        // Вход 
         tooltip.add(Component.translatable("tooltip.hbm_m.input").withStyle(ChatFormatting.GRAY, ChatFormatting.BOLD));
         
         NonNullList<Ingredient> ingredients = recipe.getIngredients();
@@ -82,7 +80,7 @@ public class TemplateTooltipUtil {
                     .append(ingredientStack.getHoverName()));
         }
 
-        // --- Время ---
+        // Время 
         tooltip.add(Component.translatable("tooltip.hbm_m.production_time").withStyle(ChatFormatting.GRAY, ChatFormatting.BOLD));
 
         // 1. Получаем время из рецепта. ПРЕДПОЛАГАЕМ, ЧТО ОНО В ТИКАХ.
@@ -93,7 +91,6 @@ public class TemplateTooltipUtil {
         // Этот код будет работать и с int, и с float, но теперь он логически верен.
         float timeInSeconds = timeInTicks / 20.0f; 
 
-        // ... (остальной код для форматирования остается таким же)
         String formattedTime = String.format("%.1f", timeInSeconds);
         tooltip.add(Component.literal("  " + formattedTime + " ")
             .withStyle(ChatFormatting.WHITE)

@@ -14,7 +14,7 @@ import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
 
 @Config(name = "hbm_m")
 public class ModClothConfig implements ConfigData {
-    // === Общие настройки ===
+    // Общие настройки 
     @Category("general")
     @Gui.Tooltip
     public boolean enableRadiation = true;
@@ -27,7 +27,7 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public boolean usePrismSystem = false;
 
-     // === Эффекты мира ===
+     // Эффекты мира 
     @Category("world_effects")
     @Gui.Tooltip
     public boolean worldRadEffects = true;
@@ -62,7 +62,7 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public int radFogChance = 10;
 
-    // === Игрок ===
+    // Игрок 
     @Category("player")
     @Gui.Tooltip
     public float maxPlayerRad = 1000F;
@@ -95,7 +95,7 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public int radBlindness = 900;
 
-    // === Чанк ===
+    // Чанк 
     @Category("chunk")
     @Gui.Tooltip
     public float maxRad = 100_000F;
@@ -124,7 +124,7 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public float radRandomizationFactor = 1.0F;
 
-    // === Модификаторы (WIP) ===
+    // Модификаторы (WIP) 
     @Category("modifiers")
     @Gui.Tooltip
     public float hazmatMod = 0.25F;
@@ -137,7 +137,7 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public float paaHazmatMod = 0.05F;
 
-    // === Отладка ===
+    // Отладка 
     @Category("debug")
     @Gui.Tooltip
     public boolean enableDebugRender = true;
@@ -188,12 +188,12 @@ public class ModClothConfig implements ConfigData {
             // Здесь можно добавить валидацию для других полей, если потребуется
     }
 
-    // === Регистрация конфига (вызывать в инициализации мода) ===
+    // Регистрация конфига (вызывать в инициализации мода) 
     public static void register() {
         AutoConfig.register(ModClothConfig.class, Toml4jConfigSerializer::new);
     }
 
-    // === Получение текущих настроек ===
+    // Получение текущих настроек 
     public static ModClothConfig get() {
         return AutoConfig.getConfigHolder(ModClothConfig.class).getConfig();
     }

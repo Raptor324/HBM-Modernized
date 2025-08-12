@@ -1,10 +1,10 @@
 package com.hbm_m.recipe;
 
+import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.core.NonNullList;
@@ -34,7 +34,7 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
     }
 
     @Override
-    public boolean matches(SimpleContainer pContainer, Level pLevel) {
+    public boolean matches(@Nonnull SimpleContainer pContainer, @Nonnull Level pLevel) {
         if (pLevel.isClientSide()) {
             return false;
         }
@@ -58,7 +58,7 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
     }
 
     @Override
-    public ItemStack assemble(SimpleContainer pContainer, RegistryAccess pRegistryAccess) {
+    public ItemStack assemble(@Nonnull SimpleContainer pContainer, @Nonnull RegistryAccess pRegistryAccess) {
         return output.copy();
     }
 
@@ -68,7 +68,7 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
     }
 
     @Override
-    public ItemStack getResultItem(RegistryAccess pRegistryAccess) {
+    public ItemStack getResultItem(@Nonnull RegistryAccess pRegistryAccess) {
         return output.copy();
     }
 
@@ -95,7 +95,7 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
         return Type.INSTANCE;
     }
 
-    // --- Вложенные классы для регистрации ---
+    // Вложенные классы для регистрации 
     public static class Type implements RecipeType<AssemblerRecipe> {
         public static final Type INSTANCE = new Type();
         public static final String ID = "assembler";
@@ -103,13 +103,13 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
 
     public static class Serializer implements RecipeSerializer<AssemblerRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "assembler");
+        public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler");
 
         @Override
-        public AssemblerRecipe fromJson(ResourceLocation pRecipeId, JsonObject pSerializedRecipe) {
+        public AssemblerRecipe fromJson(@Nonnull ResourceLocation pRecipeId, @Nonnull JsonObject pSerializedRecipe) {
             ItemStack output = ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(pSerializedRecipe, "output"));
             
-            // --- НАЧАЛО ИСПРАВЛЕННОЙ ЛОГИКИ ---
+            // НАЧАЛО ИСПРАВЛЕННОЙ ЛОГИКИ 
             
             JsonArray ingredientsJson = GsonHelper.getAsJsonArray(pSerializedRecipe, "ingredients");
             // Используем ArrayList, так как мы не знаем итоговый размер списка заранее
@@ -138,7 +138,7 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
         }
 
         @Override
-        public @Nullable AssemblerRecipe fromNetwork(ResourceLocation pRecipeId, FriendlyByteBuf pBuffer) {
+        public @Nullable AssemblerRecipe fromNetwork(@Nonnull ResourceLocation pRecipeId, @Nonnull FriendlyByteBuf pBuffer) {
             // Эта часть тоже должна быть исправлена для консистентности,
             // хотя она меньше используется в синглплеере.
             int ingredientCount = pBuffer.readVarInt();
@@ -153,7 +153,7 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
         }
 
         @Override
-        public void toNetwork(FriendlyByteBuf pBuffer, AssemblerRecipe pRecipe) {
+        public void toNetwork(@Nonnull FriendlyByteBuf pBuffer, @Nonnull AssemblerRecipe pRecipe) {
             // Теперь мы просто записываем размер и сами ингредиенты
             pBuffer.writeVarInt(pRecipe.recipeItems.size());
             for (Ingredient ing : pRecipe.recipeItems) {

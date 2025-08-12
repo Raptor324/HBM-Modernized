@@ -20,7 +20,7 @@ public class ModItemModelProvider extends ItemModelProvider {
      */
     @Override
     protected void registerModels() {
-        // --- АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ СЛИТКОВ ---
+        // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ СЛИТКОВ 
         // Проходимся по всем слиткам из нашего enum'а
         for (ModIngots ingot : ModIngots.values()) {
             // Получаем объект-обертку предмета
@@ -30,7 +30,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             ingotItem(ingotObject);
         }
 
-        // --- РЕГИСТРАЦИЯ МОДЕЛЕЙ ДЛЯ УНИКАЛЬНЫХ ПРЕДМЕТОВ ---
+        // РЕГИСТРАЦИЯ МОДЕЛЕЙ ДЛЯ УНИКАЛЬНЫХ ПРЕДМЕТОВ 
         // Для предметов, зарегистрированных вручную, мы также можем генерировать модели.
         simpleItem(ModItems.ALLOY_SWORD);
         simpleItem(ModItems.GEIGER_COUNTER);

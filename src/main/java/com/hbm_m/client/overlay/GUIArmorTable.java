@@ -49,7 +49,7 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
         for (Slot slot : this.menu.slots) {
             if (isArmorSlot(slot)) {
                 int armorIndex = slot.index - 46;
-                // ИСПОЛЬЗУЕМ НОВЫЕ КОНСТАНТЫ ДЛЯ РАСЧЕТА ПОЗИЦИИ
+                // ИСПОЛЬЗУЕМ КОНСТАНТЫ ДЛЯ РАСЧЕТА ПОЗИЦИИ
                 int newX = SLOT_START_X;
                 int newY = SLOT_START_Y + (armorIndex * 18);
 

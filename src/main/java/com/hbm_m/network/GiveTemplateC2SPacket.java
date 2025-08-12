@@ -36,9 +36,9 @@ public class GiveTemplateC2SPacket {
         this.recipeOutput = buf.readItem();
     }
 
-    /**
-     * Кодировщик: записывает данные из полей пакета в буфер.
-     */
+
+    // Кодировщик: записывает данные из полей пакета в буфер.
+
     public static void encode(GiveTemplateC2SPacket packet, FriendlyByteBuf buf) {
         buf.writeItem(packet.recipeOutput);
     }
@@ -51,26 +51,24 @@ public class GiveTemplateC2SPacket {
         return new GiveTemplateC2SPacket(buf);
     }
 
-    /**
-     * Обработчик: выполняет логику пакета на сервере.
-     */
+
+    // Обработчик: выполняет логику пакета на сервере.
+
     public boolean handle(Supplier<NetworkEvent.Context> supplier) {
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
             if (player == null) return;
 
-            // --- НОВАЯ, РАЗДЕЛЕННАЯ ЛОГИКА ---
-
             if (player.isCreative()) {
-                // --- ЛОГИКА ДЛЯ КРЕАТИВА ---
+                // ЛОГИКА ДЛЯ КРЕАТИВА 
                 // Просто создаем и выдаем шаблон, никаких проверок.
                 ItemStack newTemplate = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
                 ItemAssemblyTemplate.writeRecipeOutput(newTemplate, this.recipeOutput);
                 player.getInventory().add(newTemplate);
 
             } else {
-                // --- ЛОГИКА ДЛЯ ВЫЖИВАНИЯ (ваш старый код) ---
+                // ЛОГИКА ДЛЯ ВЫЖИВАНИЯ
                 NonNullList<Ingredient> cost = TemplateCraftingCosts.getCostFor(this.recipeOutput);
                 if (cost == null) return;
 

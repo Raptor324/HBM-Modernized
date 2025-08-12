@@ -1,5 +1,3 @@
-// com/hbm_m/item/armor/ItemArmorMod.java
-
 package com.hbm_m.armormod.item;
 
 import com.google.common.collect.Multimap;

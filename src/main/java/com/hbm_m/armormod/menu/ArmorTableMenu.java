@@ -35,24 +35,25 @@ public class ArmorTableMenu extends AbstractContainerMenu {
     
     // Индексы для quickMoveStack
     // Правильные индексы для вашего кода
-    // --- Слоты стола ---
+
+    // Слоты стола
     private static final int SLOT_ARMOR_IN = 0;
     private static final int SLOT_MOD_START = 1;
     private static final int SLOT_MOD_END = 9; // 9 слотов (1-9)
 
-    // --- Слоты инвентаря ---
+    // Слоты инвентаря
     private static final int PLAYER_INVENTORY_START = 10;
     private static final int PLAYER_INVENTORY_END = 36;
     private static final int PLAYER_HOTBAR_START = 37;
     private static final int PLAYER_HOTBAR_END = 45;
 
-    // --- Боковая панель брони ---
+    // Боковая панель брони
     public static final int SLOT_ARMOR_SIDE_HELMET = 46;
     public static final int SLOT_ARMOR_SIDE_CHEST = 47;
     public static final int SLOT_ARMOR_SIDE_LEGS = 48;
     public static final int SLOT_ARMOR_SIDE_BOOTS = 49;
 
-    // --- Общие диапазоны для удобства ---
+    // Общие диапазоны для удобства
     // private static final int TABLE_SLOTS_START = 0;
     // private static final int TABLE_SLOTS_END = 9;
     private static final int INVENTORY_SLOTS_START = 10;
@@ -88,7 +89,6 @@ public class ArmorTableMenu extends AbstractContainerMenu {
     }
     
     /**
-     * НОВЫЙ КОНСТРУКТОР!
      * Этот конструктор вызывается на клиенте для синхронизации. Он обязателен.
      */
     public ArmorTableMenu(int pContainerId, Inventory pPlayerInventory, FriendlyByteBuf extraData) {
@@ -113,7 +113,7 @@ public class ArmorTableMenu extends AbstractContainerMenu {
             ItemStack sourceStack = slot.getItem();
             itemstack = sourceStack.copy();
 
-            // --- Сценарий 1: Клик в инвентаре/хотбаре игрока (логика остается прежней) ---
+            // Сценарий 1: Клик в инвентаре/хотбаре игрока
             if (pIndex >= PLAYER_INVENTORY_START && pIndex <= PLAYER_HOTBAR_END) {
                 // Если предмет - броня
                 if (sourceStack.getItem() instanceof ArmorItem armorItem) {
@@ -173,7 +173,7 @@ public class ArmorTableMenu extends AbstractContainerMenu {
                     }
                 }
             }
-            // --- Сценарий 2: Клик в слотах GUI стола ---
+            // Сценарий 2: Клик в слотах GUI стола
             else {
                 // Клик по надетой броне (боковая панель)
                 if (pIndex >= ARMOR_PANEL_START && pIndex <= ARMOR_PANEL_END) {
@@ -192,7 +192,7 @@ public class ArmorTableMenu extends AbstractContainerMenu {
                         }
                     }
                 }
-                // --- Клик по броне в ЦЕНТРАЛЬНОМ слоте ---
+                //ц Клик по броне в центральном слоте
                 else if (pIndex == SLOT_ARMOR_IN) {
                     // ПОПЫТКА 1: Экипировать броню (переместить в боковую панель)
                     int targetSlotIndex = -1;
@@ -260,7 +260,6 @@ public class ArmorTableMenu extends AbstractContainerMenu {
         for(int i = 0; i < ARMOR_SLOTS.length; ++i) {
             final EquipmentSlot slotType = ARMOR_SLOTS[i];
             
-            // Заменяем `new Slot(...)` на наш новый `new ArmorSidePanelSlot(...)`
             this.addSlot(new ArmorSidePanelSlot(
                     playerInventory,     // 1. Инвентарь, которому принадлежит слот
                     39 - i,              // 2. Индекс слота в инвентаре игрока
@@ -353,12 +352,10 @@ public class ArmorTableMenu extends AbstractContainerMenu {
 
             // Проверяем, что мы именно ПОЛОЖИЛИ новый предмет, а не забрали старый
             if (!pStack.isEmpty() && !ItemStack.matches(oldStack, pStack)) {
-                // --- ВОСПРОИЗВОДИМ ЗВУК ЗДЕСЬ (ДЛЯ ПЕРЕТАСКИВАНИЯ) ---
-                // this.player доступен из внешнего класса ArmorTableMenu
                 ArmorTableMenu.this.player.level().playSound(null, ArmorTableMenu.this.player.getX(), ArmorTableMenu.this.player.getY(), ArmorTableMenu.this.player.getZ(), ModSounds.REPAIR_RANDOM.get(), SoundSource.PLAYERS, 0.7F, 1.0F);
             }
 
-            // Когда СТАВИМ мод, пересчитываем NBT брони (этот код остается)
+            // Когда СТАВИМ мод, пересчитываем NBT брони
             ItemStack armor = armorInventory.getStackInSlot(0);
             if (!armor.isEmpty()) {
                 ArmorModificationHelper.saveTableToArmor(armor, modsInventory, ArmorTableMenu.this.player);

@@ -7,7 +7,6 @@ import com.hbm_m.network.sounds.StartAssemblerSoundS2CPacket;
 import com.hbm_m.network.sounds.StopAssemblerSoundS2CPacket;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
 import net.minecraftforge.network.simple.SimpleChannel;
 

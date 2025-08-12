@@ -1,7 +1,7 @@
 package com.hbm_m.datagen;
 
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.damagesource.ModDamageTypes; // Убедитесь, что импорт правильный
+import com.hbm_m.damagesource.ModDamageTypes;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.worldgen.ModWorldGen;
 import net.minecraft.core.HolderLookup;
