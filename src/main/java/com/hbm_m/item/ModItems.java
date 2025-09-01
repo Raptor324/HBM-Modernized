@@ -5,8 +5,10 @@ import java.util.Map;
 
 import com.hbm_m.armormod.item.ItemModHealth;
 import com.hbm_m.armormod.item.ItemModRadProtection;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.world.effect.MobEffectInstance;
@@ -64,6 +66,8 @@ public class ModItems {
     public static final int SLOT_INSERT = 6;
     public static final int SLOT_CLADDING = 7;
     public static final int SLOT_SERVOS = 8;
+
+    public static final int BATTERY_CAPACITY = 1_000_000;
 
     // Регистрируем наш меч.
     // RegistryObject<Item> будет содержать ссылку на зарегистрированный предмет.
@@ -221,6 +225,16 @@ public class ModItems {
 
     public static final RegistryObject<Item> PLATE_SCHRABIDIUM = ITEMS.register("plate_schrabidium",
             () -> new Item(new Item.Properties()));
+
+
+    public static final RegistryObject<Item> MACHINE_ASSEMBLER = ITEMS.register("machine_assembler",
+            () -> new MultiblockBlockItem(ModBlocks.MACHINE_ASSEMBLER.get(), new Item.Properties()));
+            
+    public static final RegistryObject<Item> ADVANCED_ASSEMBLY_MACHINE = ITEMS.register("advanced_assembly_machine",
+        () -> new MultiblockBlockItem(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get(), new Item.Properties()));
+
+    public static final RegistryObject<Item> MACHINE_BATTERY = ITEMS.register("machine_battery",
+            () -> new MachineBatteryBlockItem(ModBlocks.MACHINE_BATTERY.get(), new Item.Properties(), BATTERY_CAPACITY));
 
     
 

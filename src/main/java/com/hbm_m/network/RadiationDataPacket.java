@@ -41,7 +41,9 @@ public class RadiationDataPacket {
                 GeigerOverlay.clientTotalEnvironmentRadiation = msg.totalEnvironmentRad;
                 GeigerOverlay.clientPlayerRadiation = msg.playerRad;
                 
-                MainRegistry.LOGGER.debug("CLIENT: Received RadiationDataPacket. EnvRad: {}, PlayerRad: {}", msg.totalEnvironmentRad, msg.playerRad);
+                if (msg.totalEnvironmentRad > 0 || msg.playerRad > 0) {
+                    MainRegistry.LOGGER.debug("CLIENT: Received RadiationDataPacket. EnvRad: {}, PlayerRad: {}", msg.totalEnvironmentRad, msg.playerRad);
+                }
             });
         });
         ctx.get().setPacketHandled(true);

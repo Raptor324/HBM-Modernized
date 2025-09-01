@@ -35,8 +35,8 @@ public class ModClothConfig implements ConfigData {
     @Category("world_effects")
     @Gui.Tooltip
     public float worldRadEffectsThreshold = 500.0F;
-    @Category("world_effects")
 
+    @Category("world_effects")
     @Gui.Tooltip
     @BoundedDiscrete(min = 1, max = 100)
     public int worldRadEffectsBlockChecks = 10;
@@ -94,6 +94,37 @@ public class ModClothConfig implements ConfigData {
     @Category("player")
     @Gui.Tooltip
     public int radBlindness = 900;
+
+    // Экранные наложения
+
+    @Category("overlay")
+    @Gui.Tooltip
+    public boolean enableRadiationPixelEffect = true;
+
+    @Category("overlay")
+    @Gui.Tooltip
+    public float radiationPixelEffectThreshold = 0.3f;
+
+    @Category("overlay")
+    @Gui.Tooltip
+    public float radiationPixelMaxIntensityRad = 100.0f;
+
+    @Category("overlay")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 1, max = 500)
+    public int radiationPixelEffectMaxDots = 250;
+
+    @Category("overlay")
+    @Gui.Tooltip
+    public float radiationPixelEffectGreenChance = 0.5f;
+
+    @Category("overlay")
+    @Gui.Tooltip
+    public int radiationPixelMinLifetime = 5;
+
+    @Category("overlay")
+    @Gui.Tooltip
+    public int radiationPixelMaxLifetime = 20;
 
     // Чанк 
     @Category("chunk")
@@ -185,7 +216,11 @@ public class ModClothConfig implements ConfigData {
         if (originalScaling != this.worldRadEffectsMaxScaling) {
             MainRegistry.LOGGER.warn("[HBM-M Config] Значение 'worldRadEffectsMaxScaling' было некорректным ({}). Оно было автоматически исправлено на {}.", originalScaling, this.worldRadEffectsMaxScaling);
         }
-            // Здесь можно добавить валидацию для других полей, если потребуется
+
+        originalScaling = this.radiationPixelEffectGreenChance;
+
+        this.radiationPixelEffectGreenChance = Mth.clamp(originalScaling, 0.0F, 1.0F);
+        // Здесь можно добавить валидацию для других полей, если потребуется
     }
 
     // Регистрация конфига (вызывать в инициализации мода) 

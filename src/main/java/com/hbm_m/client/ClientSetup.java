@@ -2,10 +2,14 @@ package com.hbm_m.client;
 
 import com.hbm_m.client.overlay.GUIArmorTable;
 import com.hbm_m.client.overlay.GUIMachineAssembler;
+import com.hbm_m.client.overlay.GUIMachineBattery;
 import com.hbm_m.client.model.*;
+import com.hbm_m.client.model.loader.AdvancedAssemblyMachineModelLoader;
+import com.hbm_m.client.model.loader.ProceduralWireLoader;
 import com.hbm_m.config.ModClothConfig;
-
+import com.hbm_m.config.ModConfigKeybindHandler;
 import com.hbm_m.client.overlay.GeigerOverlay;
+import com.hbm_m.client.overlay.RadiationVisualsOverlay;
 import com.hbm_m.client.tooltip.ItemTooltipComponent;
 import com.hbm_m.client.tooltip.ItemTooltipComponentRenderer;
 import com.hbm_m.lib.RefStrings;
@@ -30,6 +34,7 @@ import net.minecraft.client.gui.screens.MenuScreens;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ModelEvent;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
@@ -44,6 +49,8 @@ import net.minecraftforge.client.ChunkRenderTypeSet;
 
 import javax.annotation.Nonnull;
 import java.util.Map;
+import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.client.model.render.AdvancedAssemblyMachineRenderer;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientSetup {
@@ -56,12 +63,14 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(ModConfigKeybindHandler.class);
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
-        // MinecraftForge.EVENT_BUS.register(ModBlockEntities.class);
 
         event.enqueueWork(() -> {
             // Здесь мы связываем наш тип меню с классом экрана
             MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
             MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
+            MenuScreens.register(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
+            // Register BlockEntity renderer for Advanced Assembly Machine
+            BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE.get(), AdvancedAssemblyMachineRenderer::new);
         });
     }
 
@@ -90,6 +99,13 @@ public class ClientSetup {
     }
 
     @SubscribeEvent
+    public static void onModelRegister(ModelEvent.RegisterGeometryLoaders event) {
+        event.register("procedural_wire", new ProceduralWireLoader());
+        event.register("advanced_assembly_machine_loader", new AdvancedAssemblyMachineModelLoader());
+    MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader");
+    }
+
+    @SubscribeEvent
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         ModConfigKeybindHandler.onRegisterKeyMappings(event);
         MainRegistry.LOGGER.info("Registered key mappings.");
@@ -111,6 +127,8 @@ public class ClientSetup {
         // Мы говорим: "Нарисуй оверлей с ID 'geiger_counter_hud' НАД хотбаром,
         // используя логику из объекта GeigerOverlay.GEIGER_HUD_OVERLAY".
         event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", GeigerOverlay.GEIGER_HUD_OVERLAY);
+
+        event.registerAbove(VanillaGuiOverlay.PORTAL.id(), "radiation_pixels", RadiationVisualsOverlay.RADIATION_PIXELS_OVERLAY);
         
         MainRegistry.LOGGER.info("GUI overlays registered.");
     }

@@ -28,10 +28,7 @@ public class ModPacketHandler {
         
         INSTANCE.registerMessage(id++, StartAssemblerSoundS2CPacket.class, StartAssemblerSoundS2CPacket::toBytes, StartAssemblerSoundS2CPacket::new, (msg, ctx) -> msg.handle(ctx));
         INSTANCE.registerMessage(id++, StopAssemblerSoundS2CPacket.class, StopAssemblerSoundS2CPacket::toBytes, StopAssemblerSoundS2CPacket::new, (msg, ctx) -> msg.handle(ctx));
-        INSTANCE.registerMessage(id++, RequestAssemblerStateC2SPacket.class,
-            RequestAssemblerStateC2SPacket::toBytes,
-            RequestAssemblerStateC2SPacket::new,
-            (msg, ctx) -> msg.handle(ctx)
-    );
+        INSTANCE.registerMessage(id++, RequestAssemblerStateC2SPacket.class,RequestAssemblerStateC2SPacket::toBytes,RequestAssemblerStateC2SPacket::new,(msg, ctx) -> msg.handle(ctx));
+        INSTANCE.registerMessage(id++, UpdateBatteryC2SPacket.class, UpdateBatteryC2SPacket::toBytes, UpdateBatteryC2SPacket::new, (msg, ctx) -> msg.handle(ctx));
     }
 }

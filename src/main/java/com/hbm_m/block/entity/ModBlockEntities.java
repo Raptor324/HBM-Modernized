@@ -10,37 +10,42 @@ import net.minecraftforge.registries.RegistryObject;
 
 public class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
-            DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, RefStrings.MODID);
-
-    public static final RegistryObject<BlockEntityType<ArmorTableBlockEntity>> ARMOR_TABLE_BE =
-            BLOCK_ENTITIES.register("armor_table_be", () ->
-                    BlockEntityType.Builder.of(ArmorTableBlockEntity::new, ModBlocks.ARMOR_TABLE.get())
-                            .build(null));
+		DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, RefStrings.MODID);
 
     public static final RegistryObject<BlockEntityType<GeigerCounterBlockEntity>> GEIGER_COUNTER_BE =
-            BLOCK_ENTITIES.register("geiger_counter_be", () ->
-                    BlockEntityType.Builder.of(GeigerCounterBlockEntity::new, ModBlocks.GEIGER_COUNTER_BLOCK.get())
-                            .build(null));
+		BLOCK_ENTITIES.register("geiger_counter_be", () ->
+			BlockEntityType.Builder.<GeigerCounterBlockEntity>of(GeigerCounterBlockEntity::new, ModBlocks.GEIGER_COUNTER_BLOCK.get())
+				.build(null));
 
     public static final RegistryObject<BlockEntityType<MachineAssemblerBlockEntity>> MACHINE_ASSEMBLER_BE =
-            BLOCK_ENTITIES.register("machine_assembler_be", () ->
-                    BlockEntityType.Builder.of(MachineAssemblerBlockEntity::new, ModBlocks.MACHINE_ASSEMBLER.get())
-                            .build(null));
+		BLOCK_ENTITIES.register("machine_assembler_be", () ->
+			BlockEntityType.Builder.<MachineAssemblerBlockEntity>of(MachineAssemblerBlockEntity::new, ModBlocks.MACHINE_ASSEMBLER.get())
+				.build(null));
 
     public static final RegistryObject<BlockEntityType<MachineAssemblerPartBlockEntity>> MACHINE_ASSEMBLER_PART_BE =
-            BLOCK_ENTITIES.register("machine_assembler_part_be", () ->
-                    BlockEntityType.Builder.of(MachineAssemblerPartBlockEntity::new, ModBlocks.MACHINE_ASSEMBLER_PART.get())
-                            .build(null));
+		BLOCK_ENTITIES.register("machine_assembler_part_be", () ->
+			BlockEntityType.Builder.<MachineAssemblerPartBlockEntity>of(MachineAssemblerPartBlockEntity::new, ModBlocks.MACHINE_ASSEMBLER_PART.get())
+				.build(null));
 
-    // Статический блок инициализации, который выполнится после создания всех RegistryObject'ов
-    static {
-        // "Инъекция" поставщиков в классы BlockEntity.
-        // Это происходит ПОСЛЕ того, как все поля выше созданы, но ДО того, как игра их использует.
-        ArmorTableBlockEntity.TYPE_SUPPLIER = ARMOR_TABLE_BE;
-        GeigerCounterBlockEntity.TYPE_SUPPLIER = GEIGER_COUNTER_BE;
-        MachineAssemblerBlockEntity.TYPE_SUPPLIER = MACHINE_ASSEMBLER_BE;
-        MachineAssemblerPartBlockEntity.TYPE_SUPPLIER = MACHINE_ASSEMBLER_PART_BE;
-    }
+    public static final RegistryObject<BlockEntityType<AdvancedAssemblyMachineBlockEntity>> ADVANCED_ASSEMBLY_MACHINE =
+		BLOCK_ENTITIES.register("advanced_assembly_machine_be", () ->
+			BlockEntityType.Builder.<AdvancedAssemblyMachineBlockEntity>of(AdvancedAssemblyMachineBlockEntity::new, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get())
+				.build(null));
+
+    public static final RegistryObject<BlockEntityType<AdvancedAssemblyMachinePartBlockEntity>> ADVANCED_ASSEMBLY_MACHINE_PART =
+        BLOCK_ENTITIES.register("advanced_assembly_machine_part_be", () ->
+			BlockEntityType.Builder.<AdvancedAssemblyMachinePartBlockEntity>of(AdvancedAssemblyMachinePartBlockEntity::new, ModBlocks.ADVANCED_ASSEMBLY_MACHINE_PART.get())
+				.build(null));
+
+     public static final RegistryObject<BlockEntityType<WireBlockEntity>> WIRE_BE =
+		BLOCK_ENTITIES.register("wire_be", () ->
+			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get())
+				.build(null));
+
+    public static final RegistryObject<BlockEntityType<MachineBatteryBlockEntity>> MACHINE_BATTERY_BE =
+		BLOCK_ENTITIES.register("machine_battery_be", () ->
+			BlockEntityType.Builder.<MachineBatteryBlockEntity>of(MachineBatteryBlockEntity::new, ModBlocks.MACHINE_BATTERY.get())
+				.build(null));
 
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITIES.register(eventBus);

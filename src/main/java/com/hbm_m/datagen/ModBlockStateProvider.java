@@ -1,6 +1,7 @@
 package com.hbm_m.datagen;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.WireBlock;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
@@ -36,25 +37,34 @@ public class ModBlockStateProvider extends BlockStateProvider {
         );
 
         // Блок типа "ориентируемый"
-        directionalBlockWithItem(
+        columnBlockWithItem(
             ModBlocks.ARMOR_TABLE,
-            modLoc("block/armor_table_bottom"), // Низ
-            modLoc("block/armor_table_top"),    // Верх
             modLoc("block/armor_table_side"),   // Север (лицо)
-            modLoc("block/armor_table_side"),   // Юг (зад)
-            modLoc("block/armor_table_side"),   // Запад (лево)
-            modLoc("block/armor_table_side")    // Восток (право)
+            modLoc("block/armor_table_top"),    // Верх
+            modLoc("block/armor_table_bottom") // Низ
         );
 
         // Блок с кастомной OBJ моделью
         customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
         customObjBlock(ModBlocks.MACHINE_ASSEMBLER);
+        customObjBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
 
-        simpleBlock(ModBlocks.MACHINE_ASSEMBLER_PART.get(), models().getBuilder(ModBlocks.MACHINE_ASSEMBLER_PART.getId().getPath()));   
+        simpleBlock(ModBlocks.MACHINE_ASSEMBLER_PART.get(), models().getBuilder(ModBlocks.MACHINE_ASSEMBLER_PART.getId().getPath()));
+
+        simpleBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE_PART.get(), models().getBuilder(ModBlocks.ADVANCED_ASSEMBLY_MACHINE_PART.getId().getPath()));
+
+        simpleBlockWithItem(ModBlocks.WIRE_COATED.get(), models().getExistingFile(modLoc("block/wire_coated")));
+        
+        orientableBlockWithItem(
+            ModBlocks.MACHINE_BATTERY,
+            modLoc("block/battery_side_alt"),    // Бока (юг, запад, восток)
+            modLoc("block/battery_front_alt"),   // Лицо (север)
+            modLoc("block/battery_top")          // Верх и низ
+        );
     }
 
     /**
-     * НОВЫЙ метод для блоков, у которых текстура имеет префикс "block_".
+     * Метод для блоков, у которых текстура имеет префикс "block_".
      * Например, для блока с именем "uranium_block" он будет искать текстуру "block_uranium".
      */
     private void resourceBlockWithItem(RegistryObject<Block> blockObject) {
@@ -119,38 +129,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
     }
 
-    /**
-     * Генерирует модель и состояние для горизонтально-ориентированного блока.
-     * @param blockObject Блок
-     * @param sideTexture Имя файла текстуры для боковых сторон
-     * @param frontTexture Имя файла текстуры для лицевой стороны
-     * @param topTexture Имя файла текстуры для верха (и низа)
-     */
-    // private void directionalBlockWithItemFACING(RegistryObject<Block> blockObject, ResourceLocation down, ResourceLocation up, ResourceLocation north, ResourceLocation south, ResourceLocation west, ResourceLocation east) {
-    //     // 1. Создаем модель блока с 6-ю разными текстурами.
-    //     var model = models().cube(blockObject.getId().getPath(), down, up, north, south, west, east);
-
-    //     // 2. Создаем состояние блока (blockstate), которое будет вращать эту модель по горизонтали.
-    //     //    Когда игрок смотрит на юг и ставит блок, блок будет повернут на 180 градусов (y=180),
-    //     //    чтобы его "северная" (лицевая) сторона смотрела на игрока.
-    //     horizontalBlock(blockObject.get(), model);
-        
-    //     // 3. Создаем модель для предмета-блока, которая выглядит так же, как и сам блок.
-    //     simpleBlockItem(blockObject.get(), model);
-    // }
-
-    private void directionalBlockWithItem(RegistryObject<Block> blockObject, ResourceLocation down, ResourceLocation up, ResourceLocation north, ResourceLocation south, ResourceLocation west, ResourceLocation east) {
-        // 1. Создаем модель блока с 6-ю разными текстурами. Этот шаг остается прежним.
-        var model = models().cube(blockObject.getId().getPath(), down, up, north, south, west, east).texture("particle", north);
-
-        // 2. ИСПОЛЬЗУЕМ simpleBlock ВМЕСТО horizontalBlock.
-        //    simpleBlock создаст blockstate.json с одним единственным вариантом,
-        //    который не зависит от facing и всегда ссылается на нашу модель.
-        simpleBlock(blockObject.get(), model);
-        
-        // 3. Создаем модель для предмета-блока. Этот шаг остается прежним.
-        simpleBlockItem(blockObject.get(), model);
-    }
     
     /**
      * Генерирует состояние для блока с кастомной OBJ моделью.
@@ -160,6 +138,30 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Генерируем blockstate, который ссылается на УЖЕ СУЩЕСТВУЮЩИЙ файл модели.
         // Мы не создаем модель, а просто говорим: "используй вот этот файл".
         horizontalBlock(blockObject.get(), models().getExistingFile(modLoc("block/" + blockObject.getId().getPath())));
+    }
+
+    /**
+     * Генерирует модель и состояние для горизонтально-ориентированного блока.
+     * @param blockObject Блок
+     * @param sideTexture Текстура для боковых и задней сторон
+     * @param frontTexture Текстура для лицевой стороны (север)
+     * @param topTexture Текстура для верха и низа
+     */
+    private void orientableBlockWithItem(RegistryObject<Block> blockObject, ResourceLocation sideTexture, ResourceLocation frontTexture, ResourceLocation topTexture) {
+        // 1. Создаем модель блока с разными текстурами.
+        //    Метод orientable использует стандартные имена: side, front, top, bottom.
+        var model = models().orientable(
+            blockObject.getId().getPath(),
+            sideTexture,
+            frontTexture,
+            topTexture
+        ).texture("particle", frontTexture); // Частицы при ломании будут из лицевой текстуры
+
+        // 2. Создаем состояние блока (blockstate), которое будет вращать эту модель по горизонтали.
+        horizontalBlock(blockObject.get(), model);
+        
+        // 3. Создаем модель для предмета-блока, которая выглядит так же, как и сам блок.
+        simpleBlockItem(blockObject.get(), model);
     }
 
 }

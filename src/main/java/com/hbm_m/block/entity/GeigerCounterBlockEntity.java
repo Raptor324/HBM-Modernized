@@ -22,14 +22,12 @@ import javax.annotation.Nonnull;
 
 public class GeigerCounterBlockEntity extends BlockEntity {
 
-    public static Supplier<BlockEntityType<GeigerCounterBlockEntity>> TYPE_SUPPLIER;
-
     private static final Random RANDOM = new Random();
     private int timer = 0;
     private float lastMeasuredRads = 0;
 
     public GeigerCounterBlockEntity(BlockPos pPos, BlockState pBlockState) {
-        super(TYPE_SUPPLIER.get(), pPos, pBlockState);
+        super(ModBlockEntities.GEIGER_COUNTER_BE.get(), pPos, pBlockState);
     }
 
     // Основная логика, вызывается каждый тик на сервере благодаря тикеру, который мы настроили в классе блока

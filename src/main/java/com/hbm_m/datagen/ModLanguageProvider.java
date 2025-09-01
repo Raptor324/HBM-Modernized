@@ -109,6 +109,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.polonium210_block", "Блок полония-210");
                 add("block.hbm_m.armor_table", "Стол модификации брони");
                 add("block.hbm_m.machine_assembler", "Сборочная машина");
+                add("block.hbm_m.machine_battery", "Энергохранилище");
                 add("container.hbm_m.armor_table", "Стол модификации брони");
                 add("container.hbm_m.machine_assembler", "Сборочная машина");
                 add("block.hbm_m.geiger_counter_block", "Стационарный счетчик Гейгера");
@@ -129,6 +130,35 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.armor_table.servos_slot", "Сервоприводы");
 
                 add("tooltip.hbm_m.rad_protection.value", "Сопротивление радиации: %s");
+
+                add("container.inventory", "Инвентарь");
+
+                add("gui.hbm_m.battery.priority.0", "Приоритет: Низкий");
+                add("gui.hbm_m.battery.priority.0.desc", "Низший приоритет. Опустошается в первую очередь, заполняется в последнюю");
+                add("gui.hbm_m.battery.priority.1", "Приоритет: Нормальный");
+                add("gui.hbm_m.battery.priority.1.desc", "Стандартный приоритет для передачи энергии.");
+                add("gui.hbm_m.battery.priority.2", "Приоритет: Высокий");
+                add("gui.hbm_m.battery.priority.2.desc", "Высший приоритет. Заполняется первым, опустошается последним.");
+                add("gui.hbm_m.battery.priority.recommended", "(Рекомендуется)");
+
+                add("gui.hbm_m.battery.condition.no_signal", "Когда НЕТ редстоун-сигнала:");
+                add("gui.hbm_m.battery.condition.with_signal", "Когда ЕСТЬ редстоун-сигнал:");
+
+                add("gui.hbm_m.battery.mode.both", "Режим: Приём и Передача");
+                add("gui.hbm_m.battery.mode.both.desc", "Разрешены все операции с энергией.");
+                add("gui.hbm_m.battery.mode.input", "Режим: Только Приём");
+                add("gui.hbm_m.battery.mode.input.desc", "Разрешён только приём энергии.");
+                add("gui.hbm_m.battery.mode.output", "Режим: Только Передача");
+                add("gui.hbm_m.battery.mode.output.desc", "Разрешена только отдача энергии.");
+                add("gui.hbm_m.battery.mode.locked", "Режим: Заблокировано");
+                add("gui.hbm_m.battery.mode.locked.desc", "Все операции с энергией отключены.");
+
+                add("tooltip.hbm_m.machine_battery.capacity", "Ёмкость: %1$s FE");
+                add("tooltip.hbm_m.machine_battery.charge_speed", "Скорость зарядки: %1$s FE/т");
+                add("tooltip.hbm_m.machine_battery.discharge_speed", "Скорость разрядки: %1$s FE/т");
+                add("tooltip.hbm_m.machine_battery.stored", "Заряжено: %1$s / %2$s FE");
+
+                add("block.hbm_m.wire_coated", "Провод из красной меди");
 
                 add("hazard.hbm_m.radiation", "[Радиоактивный]");
                 add("hazard.hbm_m.hydro_reactive", "[Гидрореактивный]");
@@ -162,6 +192,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("advancements.hbm_m.radiation_200.description", "Достигнуть уровня радиации в 200 РАД");
                 add("advancements.hbm_m.radiation_1000.title", "Ай, Радиация!");
                 add("advancements.hbm_m.radiation_1000.description", "Умереть от лучевой болезни");
+
+                add("chat.hbm_m.structure.obstructed", "Другие блоки мешают установке структуры!!");
 
 
                 add("text.autoconfig.hbm_m.title", "Настройки радиации (HBM Modernized)");
@@ -206,7 +238,18 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radConfusion", "Порог для замешательства, WIP");
                 add("text.autoconfig.hbm_m.option.radBlindness", "Порог для слепоты");
 
+                add("text.autoconfig.hbm_m.category.overlay", "Экранные наложения");
+
+                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect", "Экранный эффект радиационных помех");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold", "Порог срабатывания эффекта");
+                add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad", "Максимальная интенсивность эффекта");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots", "Макс. количество пикселей");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance", "Шанс зеленого пикселя");
+                add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime", "Мин. время жизни пикселя");
+                add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime", "Макс. время жизни пикселя");
+
                 add("text.autoconfig.hbm_m.category.chunk", "Чанк");
+                
                 add("text.autoconfig.hbm_m.option.maxRad", "Максимальная радиация в чанке");
                 add("text.autoconfig.hbm_m.option.fogRad", "Порог радиации для появления тумана");
                 add("text.autoconfig.hbm_m.option.fogCh", "Шанс появления тумана (1 из fogCh), WIP");
@@ -241,6 +284,14 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radWater.@Tooltip", "Порог для негативного эффекта воды (WIP)");
                 add("text.autoconfig.hbm_m.option.radConfusion.@Tooltip", "Порог для эффекта замешательства (WIP)");
                 add("text.autoconfig.hbm_m.option.radBlindness.@Tooltip", "Порог для эффекта слепоты");
+
+                                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect.@Tooltip", "Включает/выключает эффект случайных мерцающих пикселей на экране, когда игрок подвергается радиационному облучению.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold.@Tooltip", "Минимальный уровень входящей радиации (в RAD/с), при котором начинает появляться эффект визуальных помех.");
+                add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad.@Tooltip", "Уровень входящей радиации (в RAD/с), при котором эффект помех достигает своей максимальной силы (максимальное количество пикселей).");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots.@Tooltip", "Максимальное количество пикселей, которое может одновременно находиться на экране при пиковой интенсивности эффекта. Влияет на производительность на слабых системах.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance.@Tooltip", "Вероятность (от 0.0 до 1.0), что новый появившийся пиксель будет зеленым, а не белым. Например, 0.1 = 10% шанс.");
+                add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime.@Tooltip", "Минимальное время (в тиках), которое один пиксель будет оставаться на экране. 20 тиков = 1 секунда.");
+                add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime.@Tooltip", "Максимальное время (в тиках), которое один пиксель будет оставаться на экране. Для каждого пикселя выбирается случайное значение между минимальным и максимальным временем жизни.");
 
                 add("text.autoconfig.hbm_m.option.maxRad.@Tooltip", "Максимальная радиация в чанке");
                 add("text.autoconfig.hbm_m.option.fogRad.@Tooltip", "Порог радиации для появления тумана (WIP)");
@@ -341,6 +392,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.polonium210_block", "Polonium-210 Block");
                 add("block.hbm_m.armor_table", "Armor Modification Table");
                 add("block.hbm_m.machine_assembler", "Assembly Machine");
+                add("block.hbm_m.machine_battery", "Machine Battery");
                 add("container.hbm_m.armor_table", "Armor Modification Table");
                 add("container.hbm_m.machine_assembler", "Assembly Machine");
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");
@@ -362,6 +414,35 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("tooltip.hbm_m.rad_protection.value", "Radiation Resistance: %s");
                 add("tooltip.hbm_m.rad_protection.value_short", "%s rad-resistance");
+
+                add("container.inventory", "Inventory");
+
+                add("gui.hbm_m.battery.priority.0", "Priority: Low");
+                add("gui.hbm_m.battery.priority.0.desc", "Lowest priority. Will be drained first and filled last.");
+                add("gui.hbm_m.battery.priority.1", "Priority: Normal");
+                add("gui.hbm_m.battery.priority.1.desc", "Standard priority for energy transfer.");
+                add("gui.hbm_m.battery.priority.2", "Priority: High");
+                add("gui.hbm_m.battery.priority.2.desc", "Highest priority. Will be filled first and drained last.");
+                add("gui.hbm_m.battery.priority.recommended", "(Recommended)");
+
+                add("gui.hbm_m.battery.condition.no_signal", "When there is NO redstone signal:");
+                add("gui.hbm_m.battery.condition.with_signal", "When there IS a redstone signal:");
+
+                add("gui.hbm_m.battery.mode.both", "Mode: Input & Output");
+                add("gui.hbm_m.battery.mode.both.desc", "All energy operations are allowed.");
+                add("gui.hbm_m.battery.mode.input", "Mode: Input Only");
+                add("gui.hbm_m.battery.mode.input.desc", "Only receiving energy is allowed.");
+                add("gui.hbm_m.battery.mode.output", "Mode: Output Only");
+                add("gui.hbm_m.battery.mode.output.desc", "Only sending energy is allowed.");
+                add("gui.hbm_m.battery.mode.locked", "Mode: Locked");
+                add("gui.hbm_m.battery.mode.locked.desc", "All energy operations are disabled.");
+
+                add("tooltip.hbm_m.machine_battery.capacity", "Capacity: %1$s FE");
+                add("tooltip.hbm_m.machine_battery.charge_speed", "Charge Speed: %1$s FE/t");
+                add("tooltip.hbm_m.machine_battery.discharge_speed", "Discharge Speed: %1$s FE/t");
+                add("tooltip.hbm_m.machine_battery.stored", "Stored: %1$s / %2$s FE");
+
+                add("block.hbm_m.wire_coated", "Red Copper Wire");
                 
                 add("hazard.hbm_m.radiation", "[Radioactive]");
                 add("hazard.hbm_m.hydro_reactive", "[Hydro-reactive]");
@@ -378,6 +459,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.meter.protection", "§ePlayer protection: %s (%s)");
 
                 add("item.hbm_m.meter.rads_over_limit", ">%s RAD/s");
+                add("gui.hbm_m.battery.energy.info", "%s / %s FE");
+                add("gui.hbm_m.battery.energy.delta", "%s FE/t");
                 add("tooltip.hbm_m.hold_shift_for_details", "<Hold SHIFT to display more info>");
 
                 add("sounds.hbm_m.geiger_counter", "Geiger Counter clicking");
@@ -395,6 +478,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("advancements.hbm_m.radiation_200.description", "Reach a radiation level of 200 RAD");
                 add("advancements.hbm_m.radiation_1000.title", "Ouch, Radiation!");
                 add("advancements.hbm_m.radiation_1000.description", "Die from radiation sickness");
+
+                add("chat.hbm_m.structure.obstructed", "Placement obstructed by other blocks!");
                 
                 add("text.autoconfig.hbm_m.title", "Radiation Settings (HBM Modernized)");
 
@@ -434,6 +519,16 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radWater", "Water negative effect threshold, WIP");
                 add("text.autoconfig.hbm_m.option.radConfusion", "Confusion threshold, WIP");
                 add("text.autoconfig.hbm_m.option.radBlindness", "Blindness threshold");
+
+                add("text.autoconfig.hbm_m.category.overlay", "Screen Overlays");
+
+                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect", "Enable Radiation Screen Pixel Effect");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold", "Pixel Effect Threshold");
+                add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad", "Pixel Effect Max Intensity");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots", "Max Pixel Count");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance", "Green Pixel Chance");
+                add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime", "Min Pixel Lifetime");
+                add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime", "Max Pixel Lifetime");
 
                 add("text.autoconfig.hbm_m.category.chunk", "Chunk");
 
@@ -480,6 +575,14 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radWater.@Tooltip", "Threshold for water negative effect (WIP)");
                 add("text.autoconfig.hbm_m.option.radConfusion.@Tooltip", "Threshold for confusion effect (WIP)");
                 add("text.autoconfig.hbm_m.option.radBlindness.@Tooltip", "Threshold for blindness effect");
+
+                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect.@Tooltip", "Shows random, flickering pixels on the screen when the player is exposed to incoming radiation.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold.@Tooltip", "The minimum incoming radiation (RAD/s) required for the visual interference effect to appear.");
+                add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad.@Tooltip", "The level of incoming radiation (RAD/s) at which the pixel effect reaches its maximum strength (maximum number of pixels).");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots.@Tooltip", "The maximum number of pixels that can be on the screen at once when the effect is at its peak intensity. Affects performance on weak systems.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance.@Tooltip", "The probability (from 0.0 to 1.0) that a newly appeared pixel will be green instead of white. E.g., 0.1 = 10% chance.");
+                add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime.@Tooltip", "The minimum time (in ticks) a single pixel will stay on the screen. 20 ticks = 1 second.");
+                add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime.@Tooltip", "The maximum time (in ticks) a single pixel will stay on the screen. A random value between min and max lifetime is chosen for each pixel.");
                 
                 add("text.autoconfig.hbm_m.option.maxRad.@Tooltip", "Maximum chunk radiation");
                 add("text.autoconfig.hbm_m.option.fogRad.@Tooltip", "Chunk radiation for fog to appear (WIP)");

@@ -152,6 +152,9 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
     // runtimeOnly fg.deobf("me.lucko:spark:1.10.53-forge")
     api(fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.136"))
+
+    // implementation fg.deobf("net.minecraftforge:forge-obj-loader-ng:1.20.1-8.0.0")
+    
     // implementation 'org.spongepowered:mixin:0.8.5'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     

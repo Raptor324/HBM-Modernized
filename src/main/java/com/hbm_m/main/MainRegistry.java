@@ -209,15 +209,21 @@ public class MainRegistry {
         if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
             event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
+            event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
+            event.accept(ModBlocks.MACHINE_BATTERY);
+            event.accept(ModBlocks.WIRE_COATED);
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added geiger counter BLOCK to NTM Machines tab");
                 LOGGER.info("Added assembly machine BLOCK to NTM Machines tab");
+                LOGGER.info("Added advanced assembly machine BLOCK to NTM Machines tab");
+                LOGGER.info("Added battery machine BLOCK to NTM Machines tab");
+                LOGGER.info("Added wire coated BLOCK to NTM Machines tab");
             }
         }
         if (event.getTab() == ModCreativeTabs.NTM_FUEL_TAB.get()) {
             event.accept(ModItems.CREATIVE_BATTERY);
             if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("");
+                LOGGER.info("Added creative battery ITEM to NTM Fuel tab");
             }
         }
 

@@ -25,7 +25,9 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.URANIUM_BLOCK.get())
                 .add(ModBlocks.POLONIUM210_BLOCK.get())
                 .add(ModBlocks.PLUTONIUM_BLOCK.get())
-                .add(ModBlocks.PLUTONIUM_FUEL_BLOCK.get());
+                .add(ModBlocks.PLUTONIUM_FUEL_BLOCK.get())
+                .add(ModBlocks.MACHINE_BATTERY.get())
+                .add(ModBlocks.WIRE_COATED.get());
 
         // Указываем минимальный уровень инструмента (1 = деревянный, 2 = каменный, 3 = железный и т.д.)
         // Например, для урановой руды нужен как минимум железный инструмент

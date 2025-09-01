@@ -206,56 +206,66 @@ public class PlayerRadiationHandler {
 
         // Обновляем радиацию каждые 20 тиков (1 секунда)
         if (tickCounter >= 20) {
-        tickCounter = 0;
+            tickCounter = 0;
 
-        if (!player.isCreative() && !player.isSpectator()) {
-            float chunkRad = 0F;
-            float invRad = 0F;
-            if (ModClothConfig.get().enableChunkRads) {
-                chunkRad = ChunkRadiationManager.getRadiation(player.level(), player.blockPosition().getX(), player.blockPosition().getY(), player.blockPosition().getZ());
-            }
-            if (ModClothConfig.get().enableRadiation) {
-                invRad = getInventoryRadiation(player);
-            }
-            float totalRad = chunkRad + invRad;
-            
-            // Расчет входящей радиации С УЧЕТОМ защиты
-            float totalAbsoluteProtection = 0f;
-            for (ItemStack armorStack : player.getArmorSlots()) {
-                totalAbsoluteProtection += ArmorModificationHelper.getTotalAbsoluteRadProtection(armorStack);
-            }
-            float protectionPercent = ArmorModificationHelper.convertAbsoluteToPercent(totalAbsoluteProtection);
-            float resultingRad = totalRad * (1.0f - protectionPercent);
-            
-            // Увеличиваем радиацию, только если она положительна
-            if (resultingRad > 0) {
-                incrementPlayerRads(player, resultingRad);
-                if (ModClothConfig.get().enableDebugLogging) { // Логгер теперь внутри if
-                    MainRegistry.LOGGER.debug("Add total radiation to player {}: chunk={} inv={} total={} prot={} final={}", 
-                        player.getName().getString(), chunkRad, invRad, totalRad, String.format("%.2f%%", protectionPercent * 100), resultingRad);
+            // Переменные для входящей радиации. Инициализируем нулем.
+            float totalRad = 0f;
+
+            if (!player.isCreative() && !player.isSpectator()) {
+                float chunkRad = 0F;
+                float invRad = 0F;
+                if (ModClothConfig.get().enableChunkRads) {
+                    chunkRad = ChunkRadiationManager.getRadiation(player.level(), player.blockPosition().getX(), player.blockPosition().getY(), player.blockPosition().getZ());
                 }
-            }
-
-            // ЭТИ ДВА МЕТОДА ВЫЗЫВАЮТСЯ ВСЕГДА (для игрока в выживании) 
-            // Уменьшаем радиацию (естественный распад)
-            decrementPlayerRads(player, ModClothConfig.get().radDecay);
-            // Применяем эффекты от текущего уровня радиации
-            applyRadiationEffects(player);
-            // ----------------------------------------------------------------------
-        }
-            // Отправляем текущее значение радиации игроку на клиент только если он в режиме выживания
-            if (player instanceof ServerPlayer serverPlayer && !player.isCreative() && !player.isSpectator()) {
-                float currentRads = getPlayerRads(player);
-                float environmentRad = ChunkRadiationManager.getRadiation(serverPlayer.level(), serverPlayer.blockPosition().getX(), serverPlayer.blockPosition().getY(), serverPlayer.blockPosition().getZ());
+                if (ModClothConfig.get().enableRadiation) {
+                    invRad = getInventoryRadiation(player);
+                }
+                // Это и есть наша суммарная ВХОДЯЩАЯ радиация
+                totalRad = chunkRad + invRad;
                 
-                // Отправляем пакет с ДВУМЯ значениями
-                ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new RadiationDataPacket(environmentRad, currentRads));
+                // Расчет входящей радиации С УЧЕТОМ защиты
+                float totalAbsoluteProtection = 0f;
+                for (ItemStack armorStack : player.getArmorSlots()) {
+                    totalAbsoluteProtection += ArmorModificationHelper.getTotalAbsoluteRadProtection(armorStack);
+                }
+                float protectionPercent = ArmorModificationHelper.convertAbsoluteToPercent(totalAbsoluteProtection);
+                float resultingRad = totalRad * (1.0f - protectionPercent);
+            
+                // Увеличиваем накопленную радиацию
+                if (resultingRad > 0) {
+                    incrementPlayerRads(player, resultingRad);
+                    if (ModClothConfig.get().enableDebugLogging) {
+                        MainRegistry.LOGGER.debug("Add total radiation to player {}: chunk={} inv={} total={} prot={} final={}", 
+                            player.getName().getString(), chunkRad, invRad, totalRad, String.format("%.2f%%", protectionPercent * 100), resultingRad);
+                    }
+                }
+
+                // Уменьшаем накопленную радиацию (естественный распад)
+                decrementPlayerRads(player, ModClothConfig.get().radDecay);
+                // Применяем эффекты от НАКОПЛЕННОЙ радиации
+                applyRadiationEffects(player);
+            }
+
+            // --- ИСПРАВЛЕННЫЙ БЛОК ОТПРАВКИ ПАКЕТА ---
+            // Отправляем пакет ВСЕМ игрокам, чтобы клиент всегда имел актуальные данные.
+            // Оверлей на клиенте сам решит, показывать ли эффект в креативе.
+            if (player instanceof ServerPlayer serverPlayer) {
+                float currentAccumulatedRads = getPlayerRads(player);
+                
+                // totalRad для игроков в креативе будет 0, что корректно.
+                // Для игроков в выживании это будет сумма chunkRad + invRad.
+                float incomingRadForPacket = totalRad;
+                
+                // 1. КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Добавлен недостающий вызов отправки пакета.
+                // 2. УЛУЧШЕНИЕ: В качестве 'environmentRad' теперь отправляется `incomingRadForPacket`, 
+                //    который включает и чанк, и инвентарь.
+                ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new RadiationDataPacket(incomingRadForPacket, currentAccumulatedRads));
+                
                 if (ModClothConfig.get().enableDebugLogging) {
-                    MainRegistry.LOGGER.debug("SERVER: NOT sending periodic RadiationDataPacket to player {} because isCreative: {}, isSpectator: {}", player.getName().getString(), player.isCreative(), player.isSpectator());
+                    MainRegistry.LOGGER.debug("SERVER: Sending periodic RadiationDataPacket to player {}. EnvRad (Incoming): {}, PlayerRad (Accumulated): {}", player.getName().getString(), incomingRadForPacket, currentAccumulatedRads);
                 }
             }
         }
-        
     }
     
     /**

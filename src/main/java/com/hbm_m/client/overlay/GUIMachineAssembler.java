@@ -14,7 +14,7 @@ import net.minecraft.world.entity.player.Inventory;
 
 public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemblerMenu> {
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_assembler.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_assembler_old.png");
 
     public GUIMachineAssembler(MachineAssemblerMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);

@@ -326,8 +326,9 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             
             cap.setBlockRadiation(newBlockRad);
             chunk.setUnsaved(true);
-            MainRegistry.LOGGER.debug("[RadSim] Updated block radiation for chunk {}: {} -> {} (diff: {})", chunkPos, oldBlockRad, newBlockRad, diff);
-
+            if (ModClothConfig.get().enableDebugLogging) {
+                MainRegistry.LOGGER.debug("[RadSim] Updated block radiation for chunk {}: {} -> {} (diff: {})", chunkPos, oldBlockRad, newBlockRad, diff);
+            }
             // "Пробуждаем" симуляцию для этого чанка, если он еще не активен
             if (newBlockRad > 1e-6f || cap.getAmbientRadiation() > 1e-6f) {
                 activeChunksByDimension.computeIfAbsent(level.dimension().location(), k -> ConcurrentHashMap.newKeySet())

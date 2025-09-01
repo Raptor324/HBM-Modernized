@@ -48,7 +48,6 @@ jobs:
           files: ${{ steps.get_jar.outputs.path }}
           # Имя релиза (например, "HBM Modernized v0.0.4-alpha")
           name: "HBM Modernized ${{ github.ref_name }}"
-          # Имя тега (например, "v0.0.4-alpha")
           tag_name: ${{ github.ref_name }}
           # Автоматически помечать как пре-релиз
           prerelease: ${{ contains(github.ref_name, '-alpha') || contains(github.ref_name, '-beta') || contains(github.ref_name, '-rc') }}

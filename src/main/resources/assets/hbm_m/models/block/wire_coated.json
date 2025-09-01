@@ -1,0 +1,6 @@
+{
+    "loader": "hbm_m:procedural_wire",
+    "textures": {
+        "particle": "hbm_m:block/wire_coated"
+    }
+}

@@ -44,12 +44,20 @@ public class ModBlocks {
     public static final RegistryObject<Block> ARMOR_TABLE = registerBlock("armor_table",
             () -> new ArmorTableBlock(TABLE_PROPERTIES));
 
-    public static final RegistryObject<Block> MACHINE_ASSEMBLER = registerBlock("machine_assembler",
-            () -> new MachineAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion()));
-            
-    // РЕГИСТРИРУЕМ НОВЫЙ БЛОК БЕЗ ПРЕДМЕТА
+    public static final RegistryObject<Block> MACHINE_ASSEMBLER = registerBlockWithoutItem("machine_assembler",
+        () -> new MachineAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
+
     public static final RegistryObject<Block> MACHINE_ASSEMBLER_PART = registerBlockWithoutItem("machine_assembler_part",
             () -> new MachineAssemblerPartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
+
+    public static final RegistryObject<Block> ADVANCED_ASSEMBLY_MACHINE = BLOCKS.register("advanced_assembly_machine",
+        () -> new AdvancedAssemblyMachineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
+
+    public static final RegistryObject<Block> ADVANCED_ASSEMBLY_MACHINE_PART = BLOCKS.register("advanced_assembly_machine_part",
+        () -> new AdvancedAssemblyMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
+
+    public static final RegistryObject<Block> MACHINE_BATTERY = registerBlockWithoutItem("machine_battery",
+        () -> new MachineBatteryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion()));
 
     public static final RegistryObject<Block> URANIUM_ORE = registerBlock("uranium_ore",
             () -> new DropExperienceBlock(BlockBehaviour.Properties.copy(Blocks.STONE)
@@ -61,6 +69,9 @@ public class ModBlocks {
             
     public static final RegistryObject<Block> WASTE_LEAVES = registerBlock("waste_leaves",
             () -> new LeavesBlock(BlockBehaviour.Properties.copy(Blocks.OAK_LEAVES).noOcclusion()));
+
+    public static final RegistryObject<Block> WIRE_COATED = registerBlock("wire_coated",
+            () -> new WireBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
 
     private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block) {

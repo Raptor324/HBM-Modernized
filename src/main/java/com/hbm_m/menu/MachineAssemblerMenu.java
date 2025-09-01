@@ -131,9 +131,32 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
 
         if (pIndex < VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT) {
             // Перемещение из инвентаря игрока в машину
-            // Упрощенная логика: пытаемся поместить в любой подходящий слот машины
-            if (!this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT, false)) {
-                return ItemStack.EMPTY;
+            // Try prioritized placement from player inventory into TE:
+            // 1) energy items -> slot 0
+            // 2) assembly templates -> slot 4
+            // 3) other items -> input slots (6..17)
+            boolean moved = false;
+
+            // 1) Energy-capable items -> energy slot (index TE_INVENTORY_FIRST_SLOT_INDEX + 0)
+            if (sourceStack.getCapability(ForgeCapabilities.ENERGY).isPresent()) {
+                moved = this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX + 0, TE_INVENTORY_FIRST_SLOT_INDEX + 1, false);
+            }
+
+            // 2) Assembly templates -> template slot (index TE_INVENTORY_FIRST_SLOT_INDEX + 4)
+            if (!moved && sourceStack.getItem() instanceof ItemAssemblyTemplate) {
+                moved = this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX + 4, TE_INVENTORY_FIRST_SLOT_INDEX + 5, false);
+            }
+
+            // 3) Any other items -> input slots (indices TE_INVENTORY_FIRST_SLOT_INDEX + 6 .. TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT)
+            if (!moved) {
+                moved = this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX + 6, TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT, false);
+            }
+
+            // If none of the prioritized moves succeeded, as a fallback try the full TE range
+            if (!moved) {
+                if (!this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT, false)) {
+                    return ItemStack.EMPTY;
+                }
             }
         } else if (pIndex < TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT) {
             // Перемещение из машины в инвентарь игрока

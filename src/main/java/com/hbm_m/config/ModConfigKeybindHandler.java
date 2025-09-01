@@ -1,6 +1,5 @@
-package com.hbm_m.client;
+package com.hbm_m.config;
 
-import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.client.Minecraft;

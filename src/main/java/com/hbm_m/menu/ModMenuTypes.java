@@ -11,13 +11,19 @@ import net.minecraftforge.registries.RegistryObject;
 
 public class ModMenuTypes {
     public static final DeferredRegister<MenuType<?>> MENUS =
-            DeferredRegister.create(ForgeRegistries.MENU_TYPES, RefStrings.MODID);
+		DeferredRegister.create(ForgeRegistries.MENU_TYPES, RefStrings.MODID);
 
     public static final RegistryObject<MenuType<ArmorTableMenu>> ARMOR_TABLE_MENU =
-            MENUS.register("armor_table_menu", () -> IForgeMenuType.create(ArmorTableMenu::new));
+		MENUS.register("armor_table_menu", () -> IForgeMenuType.create(ArmorTableMenu::new));
 
     public static final RegistryObject<MenuType<MachineAssemblerMenu>> MACHINE_ASSEMBLER_MENU =
-            MENUS.register("machine_assembler_menu", () -> IForgeMenuType.create(MachineAssemblerMenu::new));
+		MENUS.register("machine_assembler_menu", () -> IForgeMenuType.create(MachineAssemblerMenu::new));
+
+	public static final RegistryObject<MenuType<AdvancedAssemblyMachineMenu>> ADVANCED_ASSEMBLY_MACHINE_MENU =
+        MENUS.register("advanced_assembly_machine_menu", () -> IForgeMenuType.create(AdvancedAssemblyMachineMenu::new));
+
+    public static final RegistryObject<MenuType<MachineBatteryMenu>> MACHINE_BATTERY_MENU =
+        MENUS.register("machine_battery_menu", () -> IForgeMenuType.create(MachineBatteryMenu::new));
 
             
     public static void register(IEventBus eventBus) {

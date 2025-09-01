@@ -1,32 +1,27 @@
-// MachineAssemblerPartBlock.java — ПОЛНАЯ ИСПРАВЛЕННАЯ ВЕРСИЯ
-
 package com.hbm_m.block;
 
-// Убедитесь, что ваши импорты выглядят именно так 
 import com.hbm_m.block.entity.MachineAssemblerPartBlockEntity;
-import com.hbm_m.main.MainRegistry;
 
-import net.minecraft.client.particle.ParticleEngine;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block; // ВАЖНЫЙ ИМПОРТ
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState; // ВАЖНЫЙ ИМПОРТ
-import net.minecraft.world.level.block.state.StateDefinition; // ВАЖНЫЙ ИМПОРТ
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.IntegerProperty;
-import net.minecraft.world.level.block.state.properties.Property;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
@@ -72,40 +67,39 @@ public class MachineAssemblerPartBlock extends BaseEntityBlock {
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
         Direction facing = pState.getValue(FACING);
         
-        // 1. Берем уже правильно ПОВЕРНУТУЮ форму из кэша контроллера
-        // Убедитесь, что SHAPES в MachineAssemblerBlock имеет видимость public или package-private,
-        // либо создайте публичный геттер для него. Для простоты сделаем его package-private.
-        VoxelShape masterShape = MachineAssemblerBlock.SHAPES.get(facing);
+        // 1. Берем повернутую мастер-форму, как и раньше
+        VoxelShape masterShape = MachineAssemblerBlock.SHAPES_LAZY.get().get(facing);
 
-        // 2. Получаем наши ЛОКАЛЬНЫЕ смещения (как будто мы смотрим на север)
+        // 2. Вычисляем локальное смещение блока от контроллера
+        // Эта логика восстанавливает исходные координаты x (-1..2) и z (-2..1)
         int localX = pState.getValue(OFFSET_X) - 1;
         int localY = pState.getValue(OFFSET_Y);
-        int localZ = pState.getValue(OFFSET_Z) - 2;
+        int localZ = pState.getValue(OFFSET_Z) - 1;
 
-        // 3. Рассчитываем вектор смещения в МИРОВЫХ координатах
-        double moveX = 0;
-        double moveZ = 0;
+        // 3. Создаем вектор смещения. Чтобы отобразить часть структуры,
+        // находящуюся в точке (x,y,z), нам нужно сдвинуть всю мастер-форму
+        // на вектор (-x, -y, -z).
+        BlockPos offsetVector = new BlockPos(-localX, -localY, -localZ);
 
-         switch (facing) {
-            case NORTH:
-                moveX = localX;
-                moveZ = -localZ;
-                break;
-            case SOUTH:
-                moveX = -localX;
-                moveZ = localZ;
-                break;
-            case WEST:
-                moveX = -localZ;
-                moveZ = -localX;
-                break;
-            case EAST: // Смотрим на +X. "Вправо" это +Z. "Вперед" это +X.
-                moveX = localZ; // <-- БЫЛО: -localZ
-                moveZ = localX; // <-- БЫЛО: localX
-                break;
-        }
+        // 4. Вращаем этот вектор смещения в соответствии с направлением блока.
+        // Это КЛЮЧЕВОЙ шаг, который исправляет ошибку.
+        BlockPos rotatedOffset = rotate(offsetVector, facing);
 
-        return masterShape.move(-moveX, -localY, -moveZ);
+        // 5. Применяем повернутое смещение к мастер-форме.
+        return masterShape.move(rotatedOffset.getX(), rotatedOffset.getY(), rotatedOffset.getZ());
+    }
+
+    /**
+     * Локальный хелпер-метод для вращения вектора смещения.
+     * Он должен быть идентичен методу rotate в MultiblockStructureHelper.
+     */
+    private BlockPos rotate(BlockPos pos, Direction facing) {
+        return switch (facing) {
+            case SOUTH -> new BlockPos(-pos.getX(), pos.getY(), -pos.getZ());
+            case WEST -> new BlockPos(pos.getZ(), pos.getY(), -pos.getX());
+            case EAST -> new BlockPos(-pos.getZ(), pos.getY(), pos.getX());
+            default -> pos; // NORTH
+        };
     }
     
     @Override
@@ -150,5 +144,21 @@ public class MachineAssemblerPartBlock extends BaseEntityBlock {
             }
             super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
         }
+    }
+    @Override
+    public ItemStack getCloneItemStack(BlockState state, HitResult target, BlockGetter level, BlockPos pos, Player player) {
+        if (level.getBlockEntity(pos) instanceof MachineAssemblerPartBlockEntity part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null) {
+                BlockState controllerState = level.getBlockState(controllerPos);
+                // Проверяем, что контроллер на месте и является нужным блоком
+                if (controllerState.is(ModBlocks.MACHINE_ASSEMBLER.get())) {
+                    // Возвращаем предмет, соответствующий главному блоку
+                    return new ItemStack(ModBlocks.MACHINE_ASSEMBLER.get());
+                }
+            }
+        }
+        // Возвращаем пустой стак, если что-то пошло не так
+        return ItemStack.EMPTY;
     }
 }
