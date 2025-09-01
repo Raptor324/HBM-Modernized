@@ -108,7 +108,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.plutonium_fuel_block", "Блок плутониевого топлива");
                 add("block.hbm_m.polonium210_block", "Блок полония-210");
                 add("block.hbm_m.armor_table", "Стол модификации брони");
-                add("block.hbm_m.machine_assembler", "Сборочная машина");
+                add("block.hbm_m.machine_assembler", "Сборочная машина (Старая)");
+                add("block.hbm_m.advanced_assembly_machine", "Сборочная машина (VERY WIP)");
                 add("block.hbm_m.machine_battery", "Энергохранилище");
                 add("container.hbm_m.armor_table", "Стол модификации брони");
                 add("container.hbm_m.machine_assembler", "Сборочная машина");
@@ -391,7 +392,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.plutonium_fuel_block", "Plutonium Fuel Block");
                 add("block.hbm_m.polonium210_block", "Polonium-210 Block");
                 add("block.hbm_m.armor_table", "Armor Modification Table");
-                add("block.hbm_m.machine_assembler", "Assembly Machine");
+                add("block.hbm_m.machine_assembler", "Assembly Machine (Old)");
+                add("block.hbm_m.advanced_assembly_machine", "Assembly Machine (VERY WIP)");
                 add("block.hbm_m.machine_battery", "Machine Battery");
                 add("container.hbm_m.armor_table", "Armor Modification Table");
                 add("container.hbm_m.machine_assembler", "Assembly Machine");
