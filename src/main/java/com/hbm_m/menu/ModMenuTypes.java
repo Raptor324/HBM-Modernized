@@ -25,6 +25,15 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<MachineBatteryMenu>> MACHINE_BATTERY_MENU =
         MENUS.register("machine_battery_menu", () -> IForgeMenuType.create(MachineBatteryMenu::new));
 
+    public static final RegistryObject<MenuType<BlastFurnaceMenu>> BLAST_FURNACE_MENU =
+            MENUS.register("blast_furnace_menu", () -> IForgeMenuType.create(BlastFurnaceMenu::new));
+
+    public static final RegistryObject<MenuType<PressMenu>> PRESS_MENU =
+            MENUS.register("press_menu", () -> IForgeMenuType.create(PressMenu::new));
+
+    public static final RegistryObject<MenuType<WoodBurnerMenu>> WOOD_BURNER_MENU =
+            MENUS.register("wood_burner_menu", () -> IForgeMenuType.create(WoodBurnerMenu::new));
+
             
     public static void register(IEventBus eventBus) {
         MENUS.register(eventBus);

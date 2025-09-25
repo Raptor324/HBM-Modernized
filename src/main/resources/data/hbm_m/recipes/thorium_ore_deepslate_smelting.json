@@ -1,0 +1,14 @@
+{
+	"type": "minecraft:smelting",
+
+	"cookingtime": 200,
+	"experience": 2.1,
+
+	"ingredient": {
+		"item": "hbm_m:thorium_ore_deepslate"
+	},
+
+	"result": {
+		"item": "hbm_m:thorium_ingot"
+	}
+}

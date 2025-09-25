@@ -1,0 +1,13 @@
+{
+	"type": "hbm_m:blast_furnace",
+	"inputA": {
+		"item": "minecraft:redstone"
+	},
+	"inputB": {
+		"item": "minecraft:copper_ingot"
+	},
+	"output": {
+		"item": "hbm_m:red_copper_ingot",
+		"count": 2
+	}
+}
