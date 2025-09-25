@@ -1,0 +1,19 @@
+{
+	"type": "minecraft:crafting_shaped",
+	"key": {
+		"A": {
+			"item": "hbm_m:aluminum_ore"
+		},
+		"B": {
+			"item": "minecraft:clay_ball"
+		}
+	},
+	"pattern": [
+		"AB",
+		"BB"
+	],
+	"result": {
+		"item": "hbm_m:fireclay_ball",
+		"count": 4
+	}
+}

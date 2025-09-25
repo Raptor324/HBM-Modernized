@@ -88,13 +88,13 @@ public class DataGenerators {
                 .add(Registries.CONFIGURED_FEATURE, context -> {
                     RuleTest stoneReplaceables = new TagMatchTest(BlockTags.STONE_ORE_REPLACEABLES);
                     List<OreConfiguration.TargetBlockState> targets = List.of(OreConfiguration.target(stoneReplaceables, ModBlocks.URANIUM_ORE.get().defaultBlockState()));
-                    context.register(ModWorldGen.URANIUM_ORE_CONFIGURED_KEY, new ConfiguredFeature<>(Feature.ORE, new OreConfiguration(targets, 7)));
+                    context.register(ModWorldGen.URANIUM_ORE_CONFIGURED_KEY, new ConfiguredFeature<>(Feature.ORE, new OreConfiguration(targets, 1)));
                 })
                 .add(Registries.PLACED_FEATURE, context -> {
                     var configuredFeature = context.lookup(Registries.CONFIGURED_FEATURE);
                     context.register(ModWorldGen.URANIUM_ORE_PLACED_KEY, new PlacedFeature(
                             configuredFeature.getOrThrow(ModWorldGen.URANIUM_ORE_CONFIGURED_KEY),
-                            orePlacement(CountPlacement.of(4), HeightRangePlacement.uniform(VerticalAnchor.absolute(-60), VerticalAnchor.absolute(50)))
+                            orePlacement(CountPlacement.of(1), HeightRangePlacement.uniform(VerticalAnchor.absolute(-60), VerticalAnchor.absolute(-62)))
                     ));
                 })
                 .add(ForgeRegistries.Keys.BIOME_MODIFIERS, context -> {

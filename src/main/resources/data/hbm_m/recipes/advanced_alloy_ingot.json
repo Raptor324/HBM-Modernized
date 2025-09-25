@@ -1,0 +1,13 @@
+{
+	"type": "hbm_m:blast_furnace",
+	"inputA": {
+		"item": "hbm_m:red_copper_ingot"
+	},
+	"inputB": {
+		"item": "hbm_m:steel_ingot"
+	},
+	"output": {
+		"item": "hbm_m:advanced_alloy_ingot",
+		"count": 2
+	}
+}

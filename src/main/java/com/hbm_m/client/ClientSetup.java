@@ -1,5 +1,6 @@
 package com.hbm_m.client;
 
+
 import com.hbm_m.client.overlay.GUIArmorTable;
 import com.hbm_m.client.overlay.GUIMachineAssembler;
 import com.hbm_m.client.overlay.GUIMachineBattery;
@@ -19,6 +20,7 @@ import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.DarkParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.client.overlay.BlastFurnaceScreen;
 
 import net.minecraft.client.renderer.RenderType;
 
@@ -69,6 +71,7 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
             MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
             MenuScreens.register(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
+            MenuScreens.register(ModMenuTypes.BLAST_FURNACE_MENU.get(), BlastFurnaceScreen::new);
             // Register BlockEntity renderer for Advanced Assembly Machine
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE.get(), AdvancedAssemblyMachineRenderer::new);
         });

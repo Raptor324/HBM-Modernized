@@ -5,6 +5,7 @@ import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.item.ItemAssemblyTemplate;
+import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.particle.ModParticleTypes;
@@ -51,6 +52,7 @@ public class MainRegistry {
     
     // Добавляем логгер для отладки
     public static final Logger LOGGER = LogManager.getLogger(RefStrings.MODID);
+    public static final String MOD_ID = "hbm_m";
 
     static {
         // Регистрируем конфиг до любых обращений к нему!
@@ -158,6 +160,7 @@ public class MainRegistry {
             event.accept(ModItems.PLATE_POLYMER);
             event.accept(ModItems.PLATE_SATURNITE);
             event.accept(ModItems.PLATE_SCHRABIDIUM);
+
         }
         
         if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get()) {
@@ -196,6 +199,31 @@ public class MainRegistry {
             event.accept(ModBlocks.URANIUM_ORE);
             event.accept(ModBlocks.WASTE_GRASS);
             event.accept(ModBlocks.WASTE_LEAVES);
+
+            event.accept(ModBlocks.ALUMINUM_ORE);
+            event.accept(ModBlocks.ALUMINUM_ORE_DEEPSLATE);
+            event.accept(ModBlocks.LIGNITE_ORE);
+            event.accept(ModBlocks.TITANIUM_ORE);
+            event.accept(ModBlocks.TITANIUM_ORE_DEEPSLATE);
+            event.accept(ModBlocks.TUNGSTEN_ORE);
+            event.accept(ModBlocks.ASBESTOS_ORE);
+            event.accept(ModBlocks.SULFUR_ORE);
+            event.accept(ModBlocks.COBALT_ORE);
+            event.accept(ModBlocks.URANIUM_ORE_H);
+            event.accept(ModBlocks.URANIUM_ORE_DEEPSLATE);
+            event.accept(ModBlocks.THORIUM_ORE);
+            event.accept(ModBlocks.THORIUM_ORE_DEEPSLATE);
+            event.accept(ModBlocks.RAREGROUND_ORE);
+            event.accept(ModBlocks.RAREGROUND_ORE_DEEPSLATE);
+            event.accept(ModBlocks.BERYLLIUM_ORE);
+            event.accept(ModBlocks.BERYLLIUM_ORE_DEEPSLATE);
+            event.accept(ModBlocks.FLUORITE_ORE);
+            event.accept(ModBlocks.LEAD_ORE);
+            event.accept(ModBlocks.LEAD_ORE_DEEPSLATE);
+            event.accept(ModBlocks.CINNABAR_ORE);
+
+
+
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added uranium block to NTM Resources tab");
                 LOGGER.info("Added polonium210 block to NTM Resources tab");
@@ -208,6 +236,9 @@ public class MainRegistry {
         }
         if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
             event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
+            event.accept(ModBlocks.PRESS);
+            event.accept(ModBlocks.BLAST_FURNACE);
+            event.accept(ModBlocks.WOOD_BURNER);
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.MACHINE_BATTERY);

@@ -62,7 +62,25 @@ public enum ModIngots {
             "en_us", "Gunmetal Ingot"),
     GUNSTEEL("gunsteel",
             "ru_ru", "Слиток оружейной стали",
-            "en_us", "Gunsteel Ingot");
+            "en_us", "Gunsteel Ingot"),
+    RED_COPPER("red_copper",
+            "ru_ru", "Слиток красной меди",
+            "en_us", "Red Copper Ingot"),
+    ASBESTOS("asbestos",
+            "ru_ru", "Асбест",
+            "en_us", "Asbestos"),
+    TITANIUM("titanium",
+            "ru_ru", "Титановый слиток",
+            "en_us", "Titanium Ingot"),
+    COBALT("cobalt",
+            "ru_ru", "Кобальтовый слиток",
+            "en_us", "Cobalt Ingot"),
+    TUNGSTEN("tungsten",
+            "ru_ru", "Вольфрамовый слиток",
+            "en_us", "Tungsten Ingot"),
+    BERYLLIUM("beryllium",
+            "ru_ru", "Бериллиевый слиток",
+            "en_us", "Beryllium Ingot");
             
     // Чтобы добавить новый слиток, просто добавьте новую запись с его переводами
 

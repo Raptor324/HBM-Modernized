@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "hbm_m:block/beryllium_ore"
+  }
+}

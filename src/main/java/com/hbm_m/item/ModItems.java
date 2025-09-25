@@ -227,6 +227,61 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
 
 
+
+
+    public static final RegistryObject<Item> URANIUM_RAW = ITEMS.register("uranium_raw",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> LEAD_RAW = ITEMS.register("lead_raw",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BERYLLIUM_RAW = ITEMS.register("beryllium_raw",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> ALUMINUM_RAW = ITEMS.register("aluminum_raw",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> TITANIUM_RAW = ITEMS.register("titanium_raw",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> THORIUM_RAW = ITEMS.register("thorium_raw",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> COBALT_RAW = ITEMS.register("cobalt_raw",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> TUNGSTEN_RAW = ITEMS.register("tungsten_raw",
+            () -> new Item(new Item.Properties()));
+
+
+
+
+    // Материалы
+    public static final RegistryObject<Item> SULFUR = ITEMS.register("sulfur",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> FLUORITE = ITEMS.register("fluorite",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> RAREGROUND_ORE_CHUNK = ITEMS.register("rareground_ore_chunk",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> FIRECLAY_BALL = ITEMS.register("fireclay_ball",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> FIREBRICK = ITEMS.register("firebrick",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> LIGNITE = ITEMS.register("lignite",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CINNABAR = ITEMS.register("cinnabar",
+            () -> new Item(new Item.Properties()));
+
+
+
+
+
     public static final RegistryObject<Item> MACHINE_ASSEMBLER = ITEMS.register("machine_assembler",
             () -> new MultiblockBlockItem(ModBlocks.MACHINE_ASSEMBLER.get(), new Item.Properties()));
             
