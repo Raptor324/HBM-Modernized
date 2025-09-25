@@ -37,7 +37,7 @@ public class ModBlockEntities {
 			BlockEntityType.Builder.<AdvancedAssemblyMachinePartBlockEntity>of(AdvancedAssemblyMachinePartBlockEntity::new, ModBlocks.ADVANCED_ASSEMBLY_MACHINE_PART.get())
 				.build(null));
 
-     public static final RegistryObject<BlockEntityType<WireBlockEntity>> WIRE_BE =
+	public static final RegistryObject<BlockEntityType<WireBlockEntity>> WIRE_BE =
 		BLOCK_ENTITIES.register("wire_be", () ->
 			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get())
 				.build(null));
@@ -46,6 +46,21 @@ public class ModBlockEntities {
 		BLOCK_ENTITIES.register("machine_battery_be", () ->
 			BlockEntityType.Builder.<MachineBatteryBlockEntity>of(MachineBatteryBlockEntity::new, ModBlocks.MACHINE_BATTERY.get())
 				.build(null));
+
+	public static final RegistryObject<BlockEntityType<BlastFurnaceBlockEntity>> BLAST_FURNACE_BE =
+			BLOCK_ENTITIES.register("blast_furnace_be", () ->
+					BlockEntityType.Builder.of(BlastFurnaceBlockEntity::new,
+							ModBlocks.BLAST_FURNACE.get()).build(null));
+
+	public static final RegistryObject<BlockEntityType<PressBlockEntity>> PRESS_BE =
+			BLOCK_ENTITIES.register("press_be", () ->
+					BlockEntityType.Builder.of(PressBlockEntity::new,
+							ModBlocks.PRESS.get()).build(null));
+
+	public static final RegistryObject<BlockEntityType<WoodBurnerBlockEntity>> WOOD_BURNER_BE =
+			BLOCK_ENTITIES.register("wood_burner_be", () ->
+					BlockEntityType.Builder.of(WoodBurnerBlockEntity::new,
+							ModBlocks.WOOD_BURNER.get()).build(null));
 
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITIES.register(eventBus);

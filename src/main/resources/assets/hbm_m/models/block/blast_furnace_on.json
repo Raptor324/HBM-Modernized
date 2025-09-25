@@ -1,0 +1,9 @@
+{
+	"parent": "block/orientable",
+	"textures": {
+		"top": "hbm_m:block/blast_furnace_top_on",
+		"front": "hbm_m:block/blast_furnace_front_on",
+		"side": "hbm_m:block/blast_furnace_side",
+		"bottom": "hbm_m:block/blast_furnace_top_off"
+	}
+}

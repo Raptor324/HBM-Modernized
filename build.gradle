@@ -235,6 +235,12 @@ publishing {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8' // Use the UTF-8 charset for Java compilation
 }
+
+processResources {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE // или INCLUDE, или WARN
+
+    // остальные настройки processResources...
+}
 // Создаем новую задачу с именем 'cleanObjFiles'
 // task cleanObjFiles(type: DefaultTask) {
 //     description = 'Removes mtllib and usemtl lines from all .obj files in resources.'
