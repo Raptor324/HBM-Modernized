@@ -4,24 +4,10 @@
 		"particle": "hbm_m:block/machine/press"
 	},
 	"children": {
-		"base": {
-			"parent": "block/slab",
-			"textures": {
-				"bottom": "hbm_m:block/press_base",
-				"top": "hbm_m:block/press_base",
-				"side": "hbm_m:block/press_base"
-			},
-			"transform": {
-				"translation": [-0.5, 0.0, -0.5],
-				"rotation": [0, 0, 0],
-				"scale": 1.0
-			}
-		},
 		"press_model": {
 			"loader": "forge:obj",
 			"model": "hbm_m:models/block/press.obj",
 			"flip_v": true,
-			"render_type": "minecraft:cutout",
 			"textures": {
 				"default": "hbm_m:block/machine/press"
 			}
@@ -30,7 +16,6 @@
 			"loader": "forge:obj",
 			"model": "hbm_m:models/block/press_head.obj",
 			"flip_v": true,
-			"render_type": "minecraft:cutout",
 			"textures": {
 				"default": "hbm_m:block/press_head"
 			},

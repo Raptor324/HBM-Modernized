@@ -10,18 +10,18 @@ import net.minecraft.world.entity.player.Inventory;
 
 public class PressScreen extends AbstractContainerScreen<PressMenu> {
     private static final ResourceLocation GUI_TEXTURE =
-            new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/press/press_gui.png");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/press/press_gui.png");
     private static final ResourceLocation PRESS_ARROW_TEXTURE =
-            new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/press/press_arrow.png");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/press/press_arrow.png");
     private static final ResourceLocation LIGHT_ON_TEXTURE =
-            new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/press/light_on.png");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/press/light_on.png");
 
     // Текстуры для 13 состояний индикатора нагрева (0-12)
     private static final ResourceLocation[] HEAT_INDICATOR_TEXTURES = new ResourceLocation[13];
 
     static {
         for (int i = 0; i < 13; i++) {
-            HEAT_INDICATOR_TEXTURES[i] = new ResourceLocation(MainRegistry.MOD_ID,
+            HEAT_INDICATOR_TEXTURES[i] = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,
                     "textures/gui/press/heat_indicator_" + i + ".png");
         }
     }

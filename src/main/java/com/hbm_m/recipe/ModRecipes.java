@@ -22,6 +22,18 @@ public class ModRecipes {
         public static final RegistryObject<RecipeType<AssemblerRecipe>> ASSEMBLER_TYPE =
                 RECIPE_TYPES.register("assembler", () -> AssemblerRecipe.Type.INSTANCE);
 
+		public static final RegistryObject<RecipeSerializer<PressRecipe>> PRESS_SERIALIZER =
+				SERIALIZERS.register("press", () -> PressRecipe.Serializer.INSTANCE);
+				
+		public static final RegistryObject<RecipeType<PressRecipe>> PRESS_TYPE =
+				RECIPE_TYPES.register("press", () -> PressRecipe.Type.INSTANCE);
+
+		public static final RegistryObject<RecipeSerializer<BlastFurnaceRecipe>> BLAST_FURNACE_SERIALIZER =
+				SERIALIZERS.register("blast_furnace", () -> BlastFurnaceRecipe.Serializer.INSTANCE);
+
+		public static final RegistryObject<RecipeType<BlastFurnaceRecipe>> BLAST_FURNACE_TYPE =
+            	RECIPE_TYPES.register("blast_furnace", () -> BlastFurnaceRecipe.Type.INSTANCE);
+
 
         public static void register(IEventBus eventBus) {
             SERIALIZERS.register(eventBus);

@@ -8,7 +8,6 @@
       "loader": "forge:obj",
       "model": "hbm_m:models/block/wood_burner.obj",
       "flip_v": true,
-      "render_type": "minecraft:cutout",
       "textures": {
         "default": "hbm_m:block/machine/wood_burner"
       }
@@ -17,7 +16,7 @@
   "transform": {
     "translation": [1, 0.0, 1],
     "rotation": [0, 0, 0],
-    "scale": 0.99
+    "scale": 1.0
   },
   "display": {
     "gui": {

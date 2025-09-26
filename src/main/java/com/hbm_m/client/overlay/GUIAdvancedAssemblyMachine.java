@@ -18,7 +18,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUIAdvancedAssemblyMachine extends AbstractContainerScreen<AdvancedAssemblyMachineMenu> {
 
     // Текстура из старого GUI
-    private static final ResourceLocation TEXTURE = new ResourceLocation(RefStrings.MODID, "textures/gui/gui_assembler.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_assembler.png");
 
     private final AdvancedAssemblyMachineBlockEntity blockEntity;
 

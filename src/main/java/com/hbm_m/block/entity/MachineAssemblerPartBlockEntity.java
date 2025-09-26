@@ -7,6 +7,7 @@ import javax.annotation.Nullable;
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.block.MachineAssemblerPartBlock;
+import com.hbm_m.multiblock.IMultiblockPart;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,10 +25,10 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
 
-public class MachineAssemblerPartBlockEntity extends BlockEntity {
+public class MachineAssemblerPartBlockEntity extends BlockEntity implements IMultiblockPart {
         
     private BlockPos controllerPos;
-    // ИЗМЕНЕНО: Прокси теперь будет проще
+
     private final LazyOptional<IEnergyStorage> energyProxy = LazyOptional.of(this::createEnergyProxy);
     // Прокси для взаимодействия с предметами через конвейер (вставка в входы, извлечение из выхода)
     private final LazyOptional<net.minecraftforge.items.IItemHandler> itemProxy = LazyOptional.of(this::createItemProxy);

@@ -8,18 +8,17 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-@SuppressWarnings("deprecation")
 public class BlastFurnaceScreen extends AbstractContainerScreen<BlastFurnaceMenu> {
     private static final ResourceLocation GUI_TEXTURE =
-            new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/blast_furnace/blast_furnace_gui.png");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/blast_furnace/blast_furnace_gui.png");
     private static final ResourceLocation ARROW_TEXTURE =
-            new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/blast_furnace/arrow.png");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/blast_furnace/arrow.png");
     private static final ResourceLocation FUEL_TEXTURE =
-            new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/blast_furnace/fuel_progress.png");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/blast_furnace/fuel_progress.png");
     private static final ResourceLocation LIGHT_ON_TEXTURE =
-            new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/blast_furnace/light_on.png");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/blast_furnace/light_on.png");
     private static final ResourceLocation LIGHT_OFF_TEXTURE =
-            new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/blast_furnace/light_off.png");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/blast_furnace/light_off.png");
 
     public BlastFurnaceScreen(BlastFurnaceMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -61,8 +60,8 @@ public class BlastFurnaceScreen extends AbstractContainerScreen<BlastFurnaceMenu
         if(menu.hasFuel()) {
             int fuelHeight = menu.getScaledFuelProgress();
             // Индикатор топлива возле топливного слота
-            guiGraphics.blit(FUEL_TEXTURE, x + 43, y + 25 - fuelHeight + 52,
-                    0, 52 - fuelHeight, 18, fuelHeight, 18, 52);
+            guiGraphics.blit(FUEL_TEXTURE, x + 43, y + 25 - fuelHeight + 51,
+                    0, 52 - fuelHeight, 18, fuelHeight, 18, 51);
         }
     }
 

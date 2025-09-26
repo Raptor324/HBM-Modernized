@@ -1,6 +1,8 @@
 package com.hbm_m.block;
 
 import com.hbm_m.block.entity.MachineAssemblerPartBlockEntity;
+import com.hbm_m.multiblock.IMultiblockController;
+import com.hbm_m.multiblock.IMultiblockPart;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,6 +24,7 @@ import net.minecraft.world.level.block.state.properties.IntegerProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
 
@@ -57,50 +60,90 @@ public class MachineAssemblerPartBlock extends BaseEntityBlock {
     }
     
     
+    // @Override
+    // public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+    //     // За физику отвечает только контроллер. Фиктивные блоки всегда нематериальны.
+    //     return this.getShape(pState, pLevel, pPos, pContext);
+    // }
+
     @Override
     public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        // За физику отвечает только контроллер. Фиктивные блоки всегда нематериальны.
+        // Коллизия должна быть абсолютно такой же, как и форма для взгляда
         return this.getShape(pState, pLevel, pPos, pContext);
     }
 
+    // @Override
+    // public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+    //     Direction facing = pState.getValue(FACING);
+        
+    //     // 1. Берем повернутую мастер-форму, как и раньше
+    //     VoxelShape masterShape = MachineAssemblerBlock.SHAPES_LAZY.get().get(facing);
+
+    //     // 2. Вычисляем локальное смещение блока от контроллера
+    //     // Эта логика восстанавливает исходные координаты x (-1..2) и z (-2..1)
+    //     int localX = pState.getValue(OFFSET_X) - 1;
+    //     int localY = pState.getValue(OFFSET_Y);
+    //     int localZ = pState.getValue(OFFSET_Z) - 1;
+
+    //     // 3. Создаем вектор смещения. Чтобы отобразить часть структуры,
+    //     // находящуюся в точке (x,y,z), нам нужно сдвинуть всю мастер-форму
+    //     // на вектор (-x, -y, -z).
+    //     BlockPos offsetVector = new BlockPos(-localX, -localY, -localZ);
+
+    //     // 4. Вращаем этот вектор смещения в соответствии с направлением блока.
+    //     // Это КЛЮЧЕВОЙ шаг, который исправляет ошибку.
+    //     BlockPos rotatedOffset = rotate(offsetVector, facing);
+
+    //     // 5. Применяем повернутое смещение к мастер-форме.
+    //     return masterShape.move(rotatedOffset.getX(), rotatedOffset.getY(), rotatedOffset.getZ());
+    // }
+
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        Direction facing = pState.getValue(FACING);
+        // Пытаемся найти контроллер через BlockEntity
+        if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null) {
+                BlockState controllerState = pLevel.getBlockState(controllerPos);
+                
+                // Убеждаемся, что контроллер на месте и правильного типа
+                if (controllerState.getBlock() instanceof IMultiblockController controller) {
+                    VoxelShape masterShape;
+
+                    // 1. Получаем мастер-форму, используя ту же логику, что и в хендлере
+                    masterShape = controller.getCustomMasterVoxelShape(controllerState);
+                    if (masterShape.isEmpty()) {
+                        Direction facing = controllerState.hasProperty(HorizontalDirectionalBlock.FACING) ? 
+                                           controllerState.getValue(HorizontalDirectionalBlock.FACING) : Direction.NORTH;
+                        masterShape = controller.getStructureHelper().generateShapeFromParts(facing);
+                    }
+
+                    // 2. Вычисляем вектор смещения от контроллера до ЭТОЙ части
+                    BlockPos offset = pPos.subtract(controllerPos);
+
+                    // 3. Сдвигаем мастер-форму (которая находится в координатах контроллера)
+                    //    назад на это смещение. Это позиционирует ее правильно относительно текущего блока.
+                    return masterShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
+                }
+            }
+        }
         
-        // 1. Берем повернутую мастер-форму, как и раньше
-        VoxelShape masterShape = MachineAssemblerBlock.SHAPES_LAZY.get().get(facing);
-
-        // 2. Вычисляем локальное смещение блока от контроллера
-        // Эта логика восстанавливает исходные координаты x (-1..2) и z (-2..1)
-        int localX = pState.getValue(OFFSET_X) - 1;
-        int localY = pState.getValue(OFFSET_Y);
-        int localZ = pState.getValue(OFFSET_Z) - 1;
-
-        // 3. Создаем вектор смещения. Чтобы отобразить часть структуры,
-        // находящуюся в точке (x,y,z), нам нужно сдвинуть всю мастер-форму
-        // на вектор (-x, -y, -z).
-        BlockPos offsetVector = new BlockPos(-localX, -localY, -localZ);
-
-        // 4. Вращаем этот вектор смещения в соответствии с направлением блока.
-        // Это КЛЮЧЕВОЙ шаг, который исправляет ошибку.
-        BlockPos rotatedOffset = rotate(offsetVector, facing);
-
-        // 5. Применяем повернутое смещение к мастер-форме.
-        return masterShape.move(rotatedOffset.getX(), rotatedOffset.getY(), rotatedOffset.getZ());
+        // Если контроллер не найден, блок невидимый и неосязаемый
+        return Shapes.empty();
     }
 
     /**
      * Локальный хелпер-метод для вращения вектора смещения.
      * Он должен быть идентичен методу rotate в MultiblockStructureHelper.
      */
-    private BlockPos rotate(BlockPos pos, Direction facing) {
-        return switch (facing) {
-            case SOUTH -> new BlockPos(-pos.getX(), pos.getY(), -pos.getZ());
-            case WEST -> new BlockPos(pos.getZ(), pos.getY(), -pos.getX());
-            case EAST -> new BlockPos(-pos.getZ(), pos.getY(), pos.getX());
-            default -> pos; // NORTH
-        };
-    }
+    // private BlockPos rotate(BlockPos pos, Direction facing) {
+    //     return switch (facing) {
+    //         case SOUTH -> new BlockPos(-pos.getX(), pos.getY(), -pos.getZ());
+    //         case WEST -> new BlockPos(pos.getZ(), pos.getY(), -pos.getX());
+    //         case EAST -> new BlockPos(-pos.getZ(), pos.getY(), pos.getX());
+    //         default -> pos; // NORTH
+    //     };
+    // }
     
     @Override
     public RenderShape getRenderShape(BlockState state) {

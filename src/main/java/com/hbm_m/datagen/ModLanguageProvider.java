@@ -113,6 +113,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.machine_battery", "Энергохранилище");
                 add("container.hbm_m.armor_table", "Стол модификации брони");
                 add("container.hbm_m.machine_assembler", "Сборочная машина");
+                add("container.hbm_m.wood_burner", "Дровяной генератор");
+                add("block.hbm_m.wood_burner", "Дровяной генератор");
+                add("block.hbm_m.blast_furnace", "Доменная печь");
+                add("block.hbm_m.press", "Пресс");
                 add("block.hbm_m.geiger_counter_block", "Стационарный счетчик Гейгера");
                 add("block.hbm_m.uranium_ore", "Урановая руда");
                 add("block.hbm_m.waste_grass", "Мёртвая трава");
@@ -395,8 +399,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.machine_assembler", "Assembly Machine (Old)");
                 add("block.hbm_m.advanced_assembly_machine", "Assembly Machine (VERY WIP)");
                 add("block.hbm_m.machine_battery", "Machine Battery");
+                add("block.hbm_m.wood_burner", "Wood Burner Generator");
+                add("block.hbm_m.blast_furnace", "Blast Furnace");
+                add("block.hbm_m.press", "Press");
                 add("container.hbm_m.armor_table", "Armor Modification Table");
                 add("container.hbm_m.machine_assembler", "Assembly Machine");
+                add("container.hbm_m.wood_burner", "Wood Burner Generator");
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");
                 add("block.hbm_m.uranium_ore", "Uranium Ore");
                 add("block.hbm_m.waste_grass", "Waste Grass");

@@ -27,7 +27,7 @@ public class AdvancedAssemblyMachineModelLoader implements IGeometryLoader<Advan
     public Geometry read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) {
         String modelStr = GsonHelper.getAsString(jsonObject, "model");
         MainRegistry.LOGGER.debug("AdvancedAssemblyMachineModelLoader.read: model string='{}'", modelStr);
-        ResourceLocation model = new ResourceLocation(modelStr);
+        ResourceLocation model = ResourceLocation.parse(modelStr);
         return new Geometry(model);
     }
 

@@ -241,7 +241,7 @@ public class WoodBurnerBlockEntity extends BlockEntity implements MenuProvider {
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("block.hbm_renaissance.wood_burner");
+        return Component.translatable("container.hbm_m.wood_burner");
     }
 
     @Override

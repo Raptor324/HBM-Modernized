@@ -62,7 +62,7 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
     public int getScaledFuelProgress() {
         int fuelLevel = this.data.get(2);
         int maxFuelLevel = this.data.get(3);
-        int fuelPixelHeight = 54; // Высота индикатора топлива
+        int fuelPixelHeight = 53; // Высота индикатора топлива
 
         return maxFuelLevel != 0 ? fuelLevel * fuelPixelHeight / maxFuelLevel : 0;
     }

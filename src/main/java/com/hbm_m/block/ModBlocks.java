@@ -41,24 +41,6 @@ public class ModBlocks {
     public static final RegistryObject<Block> PLUTONIUM_FUEL_BLOCK = registerBlock("plutonium_fuel_block",
             () -> new RadioactiveBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL)));
 
-    public static final RegistryObject<Block> ARMOR_TABLE = registerBlock("armor_table",
-            () -> new ArmorTableBlock(TABLE_PROPERTIES));
-
-    public static final RegistryObject<Block> MACHINE_ASSEMBLER = registerBlockWithoutItem("machine_assembler",
-        () -> new MachineAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
-
-    public static final RegistryObject<Block> MACHINE_ASSEMBLER_PART = registerBlockWithoutItem("machine_assembler_part",
-            () -> new MachineAssemblerPartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
-
-    public static final RegistryObject<Block> ADVANCED_ASSEMBLY_MACHINE = BLOCKS.register("advanced_assembly_machine",
-        () -> new AdvancedAssemblyMachineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
-
-    public static final RegistryObject<Block> ADVANCED_ASSEMBLY_MACHINE_PART = BLOCKS.register("advanced_assembly_machine_part",
-        () -> new AdvancedAssemblyMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
-
-    public static final RegistryObject<Block> MACHINE_BATTERY = registerBlockWithoutItem("machine_battery",
-        () -> new MachineBatteryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion()));
-
     public static final RegistryObject<Block> URANIUM_ORE = registerBlock("uranium_ore",
             () -> new DropExperienceBlock(BlockBehaviour.Properties.copy(Blocks.STONE)
                     .strength(3.0F, 3.0F).requiresCorrectToolForDrops(),
@@ -79,10 +61,28 @@ public class ModBlocks {
             () -> new BlastFurnaceBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL)));
 
     public static final RegistryObject<Block> PRESS = registerBlock("press",
-            () -> new PressBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL)));
+            () -> new PressBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistryObject<Block> WOOD_BURNER = registerBlock("wood_burner",
-            () -> new WoodBurnerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL)));
+            () -> new WoodBurnerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+
+	public static final RegistryObject<Block> ARMOR_TABLE = registerBlock("armor_table",
+            () -> new ArmorTableBlock(TABLE_PROPERTIES));
+
+    public static final RegistryObject<Block> MACHINE_ASSEMBLER = registerBlockWithoutItem("machine_assembler",
+        () -> new MachineAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
+
+    public static final RegistryObject<Block> MACHINE_ASSEMBLER_PART = registerBlockWithoutItem("machine_assembler_part",
+            () -> new MachineAssemblerPartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
+
+    public static final RegistryObject<Block> ADVANCED_ASSEMBLY_MACHINE = BLOCKS.register("advanced_assembly_machine",
+        () -> new AdvancedAssemblyMachineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
+
+    public static final RegistryObject<Block> ADVANCED_ASSEMBLY_MACHINE_PART = BLOCKS.register("advanced_assembly_machine_part",
+        () -> new AdvancedAssemblyMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
+
+    public static final RegistryObject<Block> MACHINE_BATTERY = registerBlockWithoutItem("machine_battery",
+        () -> new MachineBatteryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion()));
 
     // -----------------------<РУДЫ>-----------------------------
     public static final RegistryObject<Block> LIGNITE_ORE = registerBlock("lignite_ore",

@@ -1,12 +1,14 @@
 package com.hbm_m.block.entity;
 
+import com.hbm_m.multiblock.IMultiblockPart;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtUtils;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class AdvancedAssemblyMachinePartBlockEntity extends BlockEntity {
+public class AdvancedAssemblyMachinePartBlockEntity extends BlockEntity implements IMultiblockPart {
 
     private BlockPos controllerPos;
 

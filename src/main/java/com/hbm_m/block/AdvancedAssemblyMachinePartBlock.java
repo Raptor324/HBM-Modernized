@@ -40,7 +40,7 @@ public class AdvancedAssemblyMachinePartBlock extends BaseEntityBlock {
                 .setValue(FACING, Direction.NORTH));
     }
 
-    // --- ЛОГИКА VOXELSHAPE (ИСПРАВЛЕНО) ---
+    // ЛОГИКА VOXELSHAPE
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
         // Получаем смещение этого блока относительно контроллера (-1, 0, 1 и т.д.)
@@ -60,8 +60,6 @@ public class AdvancedAssemblyMachinePartBlock extends BaseEntityBlock {
     public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
         return this.getShape(pState, pLevel, pPos, pContext);
     }
-
-    // --- Остальной код ---
     
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
@@ -88,15 +86,26 @@ public class AdvancedAssemblyMachinePartBlock extends BaseEntityBlock {
     
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        if (pLevel.isClientSide) return InteractionResult.SUCCESS;
-        if (pLevel.getBlockEntity(pPos) instanceof AdvancedAssemblyMachinePartBlockEntity partBe) {
-            BlockPos controllerPos = partBe.getControllerPos();
-            if (controllerPos != null) {
-                BlockState controllerState = pLevel.getBlockState(controllerPos);
-                return controllerState.use(pLevel, pPlayer, pHand, pHit.withPosition(controllerPos));
-            }
+        // Вычисляем позицию главного блока математически
+        int offsetX = pState.getValue(OFFSET_X) - 1;
+        int offsetY = pState.getValue(OFFSET_Y);
+        int offsetZ = pState.getValue(OFFSET_Z) - 1;
+
+        // Поворачиваем смещение в соответствии с направлением структуры
+        BlockPos rotatedOffset = rotate(new BlockPos(offsetX, offsetY, offsetZ), pState.getValue(FACING));
+
+        BlockPos masterPos = pPos.subtract(rotatedOffset); 
+
+        BlockState masterState = pLevel.getBlockState(masterPos);
+        Block masterBlock = masterState.getBlock();
+
+        // Проверяем, что на месте главного блока действительно наш главный блок
+        if (masterBlock instanceof AdvancedAssemblyMachineBlock) {
+            // Перенаправляем вызов, используя новый BlockHitResult, который "смотрит" на главный блок.
+            return masterBlock.use(masterState, pLevel, masterPos, pPlayer, pHand, pHit.withPosition(masterPos));
         }
-        return InteractionResult.FAIL;
+
+        return InteractionResult.PASS;
     }
 
     @Override

@@ -17,14 +17,14 @@ import java.util.Optional;
 public class WoodBurnerScreen extends AbstractContainerScreen<WoodBurnerMenu> {
     // Основная текстура GUI
     private static final ResourceLocation TEXTURE =
-            new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/wood_burner/wood_burner_gui.png");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/wood_burner/wood_burner_gui.png");
 
     // Текстуры для шкал
     private static final ResourceLocation BURN_TIME_BAR_TEXTURE =
-            new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/wood_burner/fuel_bar.png");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/wood_burner/fuel_bar.png");
 
     private static final ResourceLocation ENERGY_BAR_TEXTURE =
-            new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/wood_burner/energy_bar.png");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/wood_burner/energy_bar.png");
 
     public WoodBurnerScreen(WoodBurnerMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);

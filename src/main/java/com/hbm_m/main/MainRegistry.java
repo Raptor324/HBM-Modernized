@@ -1,4 +1,3 @@
-//src\main\java\com\hbm_m\main\MainRegistry.java
 package com.hbm_m.main;
 
 import com.hbm_m.armormod.item.ItemArmorMod;

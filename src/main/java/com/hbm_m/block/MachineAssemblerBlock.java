@@ -45,12 +45,13 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     
-    public static final VoxelShape BASE_SHAPE_NORTH = Shapes.box(-1, 0, -1, 2, 2, 2);
+    // public static final VoxelShape BASE_SHAPE_NORTH = Shapes.box(-1, 0, -1, 2, 2, 2);
     
     static final Lazy<Map<Direction, VoxelShape>> SHAPES_LAZY = Lazy.of(() -> {
 
         final double PIXEL = 1.0 / 16.0;
 
+        VoxelShape base = Shapes.box(-1, 0, -1, 2, 2, 2);
         VoxelShape conveyorLeft = Shapes.box(-1.5, 0.0, 0.5, -0.5, 1.0, 1.5);
         VoxelShape conveyorRight = Shapes.box(2.0, 0.0, -0.5, 2.5, 1.0, 0.5);
 
@@ -67,25 +68,28 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
         VoxelShape wireBackLeft = Shapes.box(wireX1_neg, wireY1, 2.0, wireX2_neg, wireY2, 2.5);
         VoxelShape wireBackRight = Shapes.box(wireX1_pos, wireY1, 2.0, wireX2_pos, wireY2, 2.5);
 
-        VoxelShape masterShapeNorth = Shapes.or(
-                BASE_SHAPE_NORTH,
-                conveyorLeft,
-                conveyorRight,
-                wireFrontLeft,
-                wireFrontRight,
-                wireBackLeft,
-                wireBackRight
+        VoxelShape unalignedShape = Shapes.or(
+            base, conveyorLeft, conveyorRight,
+            wireFrontLeft, wireFrontRight, wireBackLeft, wireBackRight
         );
 
+        // --- ШАГ 2: Создание ЕДИНОЙ, правильно смещенной мастер-формы для NORTH ---
+        // Сначала применяем нужное смещение ОДИН РАЗ. Это наша эталонная форма.
+        VoxelShape masterShapeNorth = unalignedShape.move(0.5, 0, 0.5);
+
+        // --- ШАГ 3: Поворачиваем уже смещенную форму ---
+        // Теперь мы вращаем не исходную форму, а ту, что уже правильно отцентрована.
         VoxelShape masterShapeS = rotateShape(masterShapeNorth, Rotation.CLOCKWISE_180);
         VoxelShape masterShapeW = rotateShape(masterShapeNorth, Rotation.COUNTERCLOCKWISE_90);
         VoxelShape masterShapeE = rotateShape(masterShapeNorth, Rotation.CLOCKWISE_90);
 
+        // --- ШАГ 4: Собираем карту БЕЗ дополнительных смещений ---
+        // Все смещения уже "запечены" в формы на предыдущих шагах.
         return ImmutableMap.<Direction, VoxelShape>builder()
-                .put(Direction.NORTH, masterShapeNorth.move(0.5, 0, 0.5))
-                .put(Direction.SOUTH,  masterShapeS.move(-0.5, 0, -0.5))
-                .put(Direction.WEST, masterShapeW.move(0.5, 0, -0.5))
-                .put(Direction.EAST, masterShapeE.move(-0.5, 0, 0.5))
+                .put(Direction.NORTH, masterShapeNorth)
+                .put(Direction.SOUTH,  masterShapeS)
+                .put(Direction.WEST,   masterShapeW)
+                .put(Direction.EAST,   masterShapeE)
                 .build();
     });
 
@@ -126,6 +130,13 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
     @Override
     public MultiblockStructureHelper getStructureHelper() {
         return STRUCTURE_HELPER;
+    }
+
+    @Override
+    public VoxelShape getCustomMasterVoxelShape(BlockState state) {
+        // Наш сборщик - особенный. Мы возвращаем его сложную, вручную
+        // созданную форму. Это переопределит стандартное поведение.
+        return SHAPES_LAZY.get().get(state.getValue(FACING));
     }
 
     @Override
@@ -170,15 +181,26 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
         return InteractionResult.SUCCESS;
     }
 
+    // @Override
+    // public VoxelShape getShape(@Nonnull BlockState pState, @Nonnull BlockGetter pLevel, @Nonnull BlockPos pPos, @Nonnull CollisionContext pContext) {
+    //     // Просто берем нужную форму из кэша
+    //     return SHAPES_LAZY.get().get(pState.getValue(FACING));
+    // }
+
     @Override
     public VoxelShape getShape(@Nonnull BlockState pState, @Nonnull BlockGetter pLevel, @Nonnull BlockPos pPos, @Nonnull CollisionContext pContext) {
-        // Просто берем нужную форму из кэша
-        return SHAPES_LAZY.get().get(pState.getValue(FACING));
+        return getCustomMasterVoxelShape(pState);
     }
+
+    // @Override
+    // public VoxelShape getCollisionShape(@Nonnull BlockState pState, @Nonnull BlockGetter pLevel, @Nonnull BlockPos pPos, @Nonnull CollisionContext pContext) {
+    //     return SHAPES_LAZY.get().get(pState.getValue(FACING));
+    // }
 
     @Override
     public VoxelShape getCollisionShape(@Nonnull BlockState pState, @Nonnull BlockGetter pLevel, @Nonnull BlockPos pPos, @Nonnull CollisionContext pContext) {
-        return SHAPES_LAZY.get().get(pState.getValue(FACING));
+        // Физика и выделение для контроллера совпадают.
+        return getCustomMasterVoxelShape(pState);
     }
 
     // ХЕЛПЕР-МЕТОД ДЛЯ ПОВОРОТА VOXELSHAPE 

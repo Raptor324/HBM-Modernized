@@ -9,6 +9,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 
 import java.util.Map;
 import java.util.Set;
@@ -28,7 +30,6 @@ public class MultiblockStructureHelper {
     }
 
     public boolean checkPlacement(Level level, BlockPos controllerPos, Direction facing, Player player) {
-        // ... Этот метод уже написан правильно и не требует изменений
         for (BlockPos relativePos : structureMap.keySet()) {
             BlockPos worldPos = getRotatedPos(controllerPos, relativePos, facing);
             BlockState existingState = level.getBlockState(worldPos);
@@ -43,7 +44,6 @@ public class MultiblockStructureHelper {
     }
 
     public void placeStructure(Level level, BlockPos controllerPos, Direction facing) {
-        // ... Этот метод тоже уже исправлен и универсален
         if (level.isClientSide) return;
         for (Map.Entry<BlockPos, Supplier<BlockState>> entry : structureMap.entrySet()) {
             BlockPos relativePos = entry.getKey();
@@ -54,19 +54,14 @@ public class MultiblockStructureHelper {
             BlockPos worldPos = getRotatedPos(controllerPos, relativePos, facing);
             level.setBlock(worldPos, partState, 3);
             
-            // Здесь вам нужно будет обеспечить, чтобы все ваши PartBlockEntity
-            // имели общий интерфейс или родительский класс для установки контроллера,
-            // либо использовать instanceof для каждого типа.
-            // Например:
-            if (level.getBlockEntity(worldPos) instanceof com.hbm_m.block.entity.MachineAssemblerPartBlockEntity partBe) {
+            if (level.getBlockEntity(worldPos) instanceof IMultiblockPart partBe) {
+                // Если да, то просто вызываем метод из интерфейса.
+                // Этот код будет работать для ЛЮБОЙ мультиблочной структуры.
                 partBe.setControllerPos(controllerPos);
-            } else if (level.getBlockEntity(worldPos) instanceof com.hbm_m.block.entity.AdvancedAssemblyMachinePartBlockEntity advancedPartBe) {
-                advancedPartBe.setControllerPos(controllerPos);
             }
         }
     }
-    
-    // --- ИСПРАВЛЕННЫЙ МЕТОД УНИЧТОЖЕНИЯ ---
+
     public void destroyStructure(Level level, BlockPos controllerPos, Direction facing) {
         if (level.isClientSide) return;
 
@@ -87,15 +82,39 @@ public class MultiblockStructureHelper {
             BlockState stateInWorld = level.getBlockState(worldPos);
 
             // 4. Сравниваем блок в мире с ожидаемым блоком.
-            // Эта проверка теперь универсальна и будет работать для ЛЮБОЙ структуры,
-            // определенной через этот хелпер.
             if (stateInWorld.is(expectedBlock)) {
                  level.setBlock(worldPos, Blocks.AIR.defaultBlockState(), 3);
             }
         }
     }
 
-    // --- Остальные методы хелпера без изменений ---
+    /**
+     * Автоматически генерирует VoxelShape для структуры, объединяя
+     * кубы 1x1x1 для каждой части. Идеально для не-прямоугольных структур.
+     * @param facing Направление структуры.
+     * @return Сгенерированная VoxelShape.
+     */
+    public VoxelShape generateShapeFromParts(Direction facing) {
+        VoxelShape finalShape = Shapes.empty();
+
+        // Включаем контроллер в форму
+        finalShape = Shapes.or(finalShape, Block.box(0, 0, 0, 16, 16, 16));
+
+        for (BlockPos localOffset : structureMap.keySet()) {
+            if (localOffset.equals(BlockPos.ZERO)) continue;
+
+            BlockPos rotatedOffset = rotate(localOffset, facing);
+            
+            // Создаем VoxelShape для одного блока и смещаем его
+            VoxelShape partShape = Block.box(0, 0, 0, 16, 16, 16)
+                                        .move(rotatedOffset.getX(), rotatedOffset.getY(), rotatedOffset.getZ());
+            
+            // Объединяем с общей формой
+            finalShape = Shapes.or(finalShape, partShape);
+        }
+        return finalShape;
+    }
+
 
     public Set<BlockPos> getPartOffsets() {
         return this.structureMap.keySet();

@@ -109,8 +109,6 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
         public AssemblerRecipe fromJson(@Nonnull ResourceLocation pRecipeId, @Nonnull JsonObject pSerializedRecipe) {
             ItemStack output = ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(pSerializedRecipe, "output"));
             
-            // НАЧАЛО ИСПРАВЛЕННОЙ ЛОГИКИ 
-            
             JsonArray ingredientsJson = GsonHelper.getAsJsonArray(pSerializedRecipe, "ingredients");
             // Используем ArrayList, так как мы не знаем итоговый размер списка заранее
             NonNullList<Ingredient> inputs = NonNullList.create(); 
@@ -160,7 +158,7 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
                 ing.toNetwork(pBuffer);
             }
             pBuffer.writeItem(pRecipe.getResultItem(null));
-            pBuffer.writeInt(pRecipe.getDuration()); // Исправлено с writeFloat на writeInt
+            pBuffer.writeInt(pRecipe.getDuration());
             pBuffer.writeInt(pRecipe.getPowerConsumption());
         }
     }
