@@ -1,5 +1,9 @@
 package com.hbm_m.client.model.loader;
 
+// Загрузчик модели для продвинутой сборочной машины, использующий OBJ модель с частями.
+// Каждая часть (Base, Ring, ArmLower1, ArmUpper1, Head1, Spike1, ArmLower2, ArmUpper2, Head2, Spike2)
+// запекается отдельно и передается в AdvancedAssemblyMachineBakedModel для рендеринга.
+// Это позволяет анимировать части независимо (вращение кольца, движение рук и т.д.).
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 import com.hbm_m.client.model.AdvancedAssemblyMachineBakedModel;

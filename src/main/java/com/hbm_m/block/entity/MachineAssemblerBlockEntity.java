@@ -1,14 +1,14 @@
 package com.hbm_m.block.entity;
 
+// Это блок-энтити для сборочной машины, которая может автоматически собирать сложные предметы по шаблонам.
 import com.hbm_m.block.MachineAssemblerBlock;
-import com.hbm_m.block.MachineAssemblerPartBlock;
-import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.energy.BlockEntityEnergyStorage;
 import com.hbm_m.item.ItemAssemblyTemplate;
 import com.hbm_m.item.ItemCreativeBattery;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.MachineAssemblerMenu;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.sounds.RequestAssemblerStateC2SPacket;
 import com.hbm_m.network.sounds.StartAssemblerSoundS2CPacket;
@@ -58,13 +58,13 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
         }
     };
 
-
     // Используем наш кастомный класс
-    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100000, 250);
+    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100000, 250, 0);
 
     private boolean isCrafting = false;
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
     private LazyOptional<IEnergyStorage> lazyEnergyHandler = LazyOptional.empty();
+
     protected final ContainerData data;
     private int progress = 0;
     private int maxProgress = 100;
@@ -75,6 +75,9 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     // Диапазон слотов для входных ресурсов (включительно)
     private static final int INPUT_SLOT_START = 6;
     private static final int INPUT_SLOT_END = 17;
+
+    private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
+    private LazyOptional<IItemHandler> lazyOutputProxy = LazyOptional.empty();
 
     private static final int DATA_IS_CRAFTING = 4;
 
@@ -119,19 +122,138 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     }
 
     /**
+     * Called by universal part entities to get a specific item handler for their role.
+     * @param role The role of the part asking for the handler.
+     * @return A LazyOptional containing an IItemHandler configured for that role.
+     */
+    public LazyOptional<IItemHandler> getItemHandlerForPart(PartRole role) {
+        if (role == PartRole.ITEM_INPUT) {
+            if (!lazyInputProxy.isPresent()) {
+                lazyInputProxy = LazyOptional.of(this::createInputProxy);
+            }
+            return lazyInputProxy;
+        }
+        if (role == PartRole.ITEM_OUTPUT) {
+            if (!lazyOutputProxy.isPresent()) {
+                lazyOutputProxy = LazyOptional.of(this::createOutputProxy);
+            }
+            return lazyOutputProxy;
+        }
+        return LazyOptional.empty();
+    }
+    
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        lazyItemHandler.invalidate();
+        lazyEnergyHandler.invalidate();
+        lazyInputProxy.invalidate();
+        lazyOutputProxy.invalidate();
+    }
+
+    /**
+     * Creates an item handler proxy that ONLY allows inserting into the input slots.
+     */
+    @NotNull
+    private IItemHandler createInputProxy() {
+
+        return new IItemHandler() {
+            @Override
+            public int getSlots() {
+                // Expose only the input slots
+                return INPUT_SLOT_END - INPUT_SLOT_START + 1;
+            }
+
+            @NotNull
+            @Override
+            public ItemStack getStackInSlot(int slot) {
+                // Map the proxy slot to the main handler's slot
+                return itemHandler.getStackInSlot(slot + INPUT_SLOT_START);
+            }
+
+            @NotNull
+            @Override
+            public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                // Allow insertion into any of our exposed slots, mapped to the correct internal slot
+                return itemHandler.insertItem(slot + INPUT_SLOT_START, stack, simulate);
+            }
+
+            @NotNull
+            @Override
+            public ItemStack extractItem(int slot, int amount, boolean simulate) {
+                // Prevent extraction from the input proxy
+                return ItemStack.EMPTY;
+            }
+
+            @Override
+            public int getSlotLimit(int slot) {
+                return itemHandler.getSlotLimit(slot + INPUT_SLOT_START);
+            }
+
+            @Override
+            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+                return itemHandler.isItemValid(slot + INPUT_SLOT_START, stack);
+            }
+        };
+    }
+    
+    /**
+     * Creates an item handler proxy that ONLY allows extracting from the output slot.
+     */
+    @NotNull
+    private IItemHandler createOutputProxy() {
+        return new IItemHandler() {
+            @Override
+            public int getSlots() {
+                // Expose only the single output slot
+                return 1;
+            }
+
+            @NotNull
+            @Override
+            public ItemStack getStackInSlot(int slot) {
+                // If slot 0 is requested, return the contents of the actual output slot
+                return slot == 0 ? itemHandler.getStackInSlot(OUTPUT_SLOT) : ItemStack.EMPTY;
+            }
+
+            @NotNull
+            @Override
+            public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                // Prevent insertion into the output proxy
+                return stack;
+            }
+
+            @NotNull
+            @Override
+            public ItemStack extractItem(int slot, int amount, boolean simulate) {
+                // If extraction from slot 0 is requested, extract from the actual output slot
+                return slot == 0 ? itemHandler.extractItem(OUTPUT_SLOT, amount, simulate) : ItemStack.EMPTY;
+            }
+
+            @Override
+            public int getSlotLimit(int slot) {
+                return slot == 0 ? itemHandler.getSlotLimit(OUTPUT_SLOT) : 0;
+            }
+
+            @Override
+            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+                // No items are valid for insertion
+                return false;
+            }
+        };
+    }
+
+    /**
      * Попытка подтянуть ровно столько ингредиентов из соседних инвентарей, чтобы хватило на один крафт.
      * Извлекает только недостающее количество до одного крафта и только если в машине есть шаблон/рецепт.
      */
     private void pullIngredientsForOneCraft(AssemblerRecipe recipe) {
-        if (level == null) return;
+        if (level == null || hasResources(this, recipe)) return;
         lastPullSources.clear();
 
-        // Если в машине уже есть все ресурсы для крафта, ничего не делаем
-        if (hasResources(this, recipe)) return;
-
-        // Сформируем потребности: агрегируем одинаковые объекты Ingredient и посчитаем требуемое количество
+        // (Ingredient requirement logic is unchanged)
         NonNullList<Ingredient> ingredients = recipe.getIngredients();
-        java.util.IdentityHashMap<Ingredient, Integer> required = new java.util.IdentityHashMap<>();
+        Map<Ingredient, Integer> required = new IdentityHashMap<>();
         for (Ingredient ing : ingredients) {
             required.put(ing, required.getOrDefault(ing, 0) + 1);
         }
@@ -140,25 +262,28 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
         MultiblockStructureHelper helper = ((MachineAssemblerBlock) this.getBlockState().getBlock()).getStructureHelper();
 
         for (BlockPos localOffset : helper.getPartOffsets()) {
+
+            // Determine if the part at this offset is an input conveyor
+            int x = localOffset.getX();
+            int y = localOffset.getY();
+            int z = localOffset.getZ();
+            boolean isInputConveyor = (y == 0) && (x == 2) && (z == 0 || z == 1);
+            
+            if (!isInputConveyor) continue;
+
+
             BlockPos partPos = helper.getRotatedPos(this.worldPosition, localOffset, facing);
             BlockEntity partBE = level.getBlockEntity(partPos);
 
-            if (!(partBE instanceof MachineAssemblerPartBlockEntity part) || !part.isConveyorConnector()) continue;
-
-            // В этой версии коннекторы оказались инвертированы: используем противоположное значение
-            // Разрешаем подтягивание только с входных частей (offsetX == 3)
-            int partOffsetX = part.getBlockState().getValue(MachineAssemblerPartBlock.OFFSET_X);
-            boolean partIsInput = (partOffsetX == 3);
-            if (!partIsInput) continue;
-
-            // Определим внешний сосед как единичный шаг от части в направлении от контроллера к части
+            // Check if it's a universal part
+            if (!(partBE instanceof UniversalMachinePartBlockEntity)) continue;
+            
+            // (The rest of the logic for finding the neighbor and pulling items remains the same)
             int dx = Integer.signum(partPos.getX() - this.worldPosition.getX());
             int dz = Integer.signum(partPos.getZ() - this.worldPosition.getZ());
             BlockPos neighborPosGlobal = partPos.offset(dx, 0, dz);
             BlockEntity neighbor = level.getBlockEntity(neighborPosGlobal);
-            if (neighbor == null) continue;
-            if (neighbor instanceof MachineAssemblerPartBlockEntity || neighbor == this) continue;
-            if (lastPullSources.contains(neighborPosGlobal)) continue;
+            if (neighbor == null || neighbor instanceof UniversalMachinePartBlockEntity || neighbor == this || lastPullSources.contains(neighborPosGlobal)) continue;
 
             // Получаем направление от части к соседу и запросим capability с этой стороны у соседа
             int dxN = partPos.getX() - neighborPosGlobal.getX();
@@ -227,7 +352,6 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
      */
     private void pushOutputToNeighbors() {
         if (level == null) return;
-
         ItemStack out = this.itemHandler.getStackInSlot(OUTPUT_SLOT);
         if (out.isEmpty()) return;
 
@@ -237,16 +361,16 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
         for (BlockPos localOffset : helper.getPartOffsets()) {
             if (out.isEmpty()) break;
 
+            // Определяем, является ли эта часть выходным коннектором по ее относительной позиции
+            int x = localOffset.getX();
+            int y = localOffset.getY();
+            int z = localOffset.getZ();
+            boolean isOutputConveyor = (y == 0) && (x == -1) && (z == 0 || z == 1);
+
+            if (!isOutputConveyor) continue;
+
             BlockPos partPos = helper.getRotatedPos(this.worldPosition, localOffset, facing);
-            BlockEntity partBE = level.getBlockEntity(partPos);
-
-            if (!(partBE instanceof MachineAssemblerPartBlockEntity part) || !part.isConveyorConnector()) continue;
-
-            int partOffsetX = part.getBlockState().getValue(MachineAssemblerPartBlock.OFFSET_X);
-            boolean partIsOutput = (partOffsetX == 0);
-            if (!partIsOutput) continue;
-
-            // --- ИСПРАВЛЕННАЯ ЛОГИКА ---
+            
             // 1. Определяем направление "наружу" от центра машины к коннектору.
             int dxOut = Integer.signum(partPos.getX() - this.worldPosition.getX());
             int dzOut = Integer.signum(partPos.getZ() - this.worldPosition.getZ());
@@ -256,30 +380,29 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
             Direction facingDir = this.getBlockState().getValue(MachineAssemblerBlock.FACING);
 
             // 3. Целевой инвентарь сдвинут по диагонали: на 1 блок наружу и на 1 блок НАЗАД.
-            BlockPos neighborGlobal = partPos.relative(outDir).relative(facingDir.getOpposite());
+            BlockPos neighborPos = partPos.relative(outDir).relative(facingDir.getOpposite());
 
-            BlockEntity neighbor = level.getBlockEntity(neighborGlobal);
-            if (neighbor == null || neighbor instanceof MachineAssemblerPartBlockEntity || neighbor == this) continue;
-            if (lastPullSources.contains(neighborGlobal)) continue;
+            BlockEntity neighbor = level.getBlockEntity(neighborPos);
+            if (neighbor == null || neighbor instanceof UniversalMachinePartBlockEntity || neighbor == this || lastPullSources.contains(neighborPos)) continue;
 
             // 4. Так как блок диагональный, нужно проверить обе возможные грани для подключения.
             Direction side1 = outDir.getOpposite(); // Грань, смотрящая на коннектор
-            Direction side2 = facingDir; // Грань, смотрящая "вперёд", навстречу сдвигу "назад"
+            Direction side2 = facingDir;         // Грань, смотрящая "вперёд", навстречу сдвигу "назад"
 
             IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side1)
                     .orElse(neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side2)
                             .orElse(null));
             if (cap == null) continue;
-            // --- КОНЕЦ ИСПРАВЛЕННОЙ ЛОГИКИ ---
 
             // Попытаться вставить всю стопку в соседний инвентарь
             ItemStack toInsert = out.copy();
             for (int slot = 0; slot < cap.getSlots() && !toInsert.isEmpty(); slot++) {
-                ItemStack remaining = cap.insertItem(slot, toInsert.copy(), true);
-                int inserted = toInsert.getCount() - remaining.getCount();
-                if (inserted > 0) {
-                    // делаем реальную вставку
-                    cap.insertItem(slot, this.itemHandler.extractItem(OUTPUT_SLOT, inserted, false), false);
+                ItemStack remaining = cap.insertItem(slot, toInsert.copy(), false);
+                // Если что-то было вставлено, обновляем наш инвентарь
+                if (remaining.getCount() < toInsert.getCount()) {
+                    // Уменьшаем стак в нашем выходном слоте на количество вставленных предметов
+                    this.itemHandler.getStackInSlot(OUTPUT_SLOT).shrink(toInsert.getCount() - remaining.getCount());
+                    toInsert = remaining;
                 }
             }
             // Обновляем ссылку на стак в выходном слоте, так как он мог измениться
@@ -336,13 +459,6 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     }
 
     @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        lazyItemHandler.invalidate();
-        lazyEnergyHandler.invalidate();
-    }
-
-    @Override
     protected void saveAdditional(@Nonnull CompoundTag nbt) {
         super.saveAdditional(nbt);
         nbt.put("inventory", itemHandler.serializeNBT());
@@ -364,7 +480,7 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
         if (!pLevel.isClientSide()) {
             // В самом начале серверного тика мы очищаем список обработанных запросов.
             // Это КЛЮЧЕВОЙ момент для работы системы.
-            WireBlockEntity.startNewTick();
+            // WireBlockEntity.startNewTick();
             serverTick(pLevel, pPos, pState, pBlockEntity);
         }
     }
@@ -459,68 +575,47 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     }
 
     private void requestEnergy() {
-        if (this.energyStorage.getEnergyStored() >= this.energyStorage.getMaxEnergyStored()) {
-            return;
-        }
-
+        if (this.energyStorage.getEnergyStored() >= this.energyStorage.getMaxEnergyStored()) return;
         int energyNeeded = this.energyStorage.getMaxReceive();
         if (energyNeeded <= 0) return;
 
-        // --- ЛОГ #1: Начало запроса ---
-        if (ModClothConfig.get().enableDebugLogging) {
-            MainRegistry.LOGGER.debug("[ASSEMBLER >>>] Starting energy request for {} FE.", energyNeeded);
-        }
-
-        UUID requestId = UUID.randomUUID();
+        // UUID requestId = UUID.randomUUID();
         Direction facing = this.getBlockState().getValue(MachineAssemblerBlock.FACING);
         MultiblockStructureHelper helper = ((MachineAssemblerBlock) this.getBlockState().getBlock()).getStructureHelper();
 
         for (BlockPos localOffset : helper.getPartOffsets()) {
-            BlockPos partPos = helper.getRotatedPos(this.worldPosition, localOffset, facing);
-            BlockEntity partBE = level.getBlockEntity(partPos);
 
-            if (partBE instanceof MachineAssemblerPartBlockEntity part && part.isEnergyConnector()) {
-                if (ModClothConfig.get().enableDebugLogging) {
-                    MainRegistry.LOGGER.debug("[ASSEMBLER] Found an energy connector at {}.", partPos);
-                }
+            // Determine if the part at this offset is an energy connector
+            int x = localOffset.getX();
+            int y = localOffset.getY();
+            int z = localOffset.getZ();
+            boolean isEnergyConnector = (y == 0) && (x == 0 || x == 1) && (z == -1 || z == 2);
+            
+            if (isEnergyConnector) {
+                BlockPos partPos = helper.getRotatedPos(this.worldPosition, localOffset, facing);
+                BlockEntity partBE = level.getBlockEntity(partPos);
+
+                // Check if it's a universal part
+                if (!(partBE instanceof UniversalMachinePartBlockEntity)) continue;
 
                 for (Direction dir : Direction.values()) {
                     BlockEntity neighbor = level.getBlockEntity(partPos.relative(dir));
 
-                    if (neighbor == null || neighbor instanceof MachineAssemblerPartBlockEntity || neighbor == this) {
+                    if (neighbor == null || neighbor instanceof UniversalMachinePartBlockEntity || neighbor == this) {
                         continue;
                     }
-
-                    if (ModClothConfig.get().enableDebugLogging) {
-                        MainRegistry.LOGGER.debug("[ASSEMBLER]  -> Connector at {} is checking neighbor at {} [{}]", partPos, partPos.relative(dir), neighbor.getClass().getSimpleName());
-                    }
-
+                    
                     int extracted = 0;
                     if (neighbor instanceof WireBlockEntity wire) {
-                        if (ModClothConfig.get().enableDebugLogging) {
-                            MainRegistry.LOGGER.debug("[ASSEMBLER]    -> It's a wire. Forwarding request with ID {}.", requestId);
-                        }
-                        extracted = wire.requestEnergy(energyNeeded, false, requestId);
+                        extracted = wire.requestEnergy(energyNeeded, false /*, requestId*/);
                     } else {
                         IEnergyStorage source = neighbor.getCapability(ForgeCapabilities.ENERGY, dir.getOpposite()).orElse(null);
                         if (source != null && source.canExtract()) {
-                            if (ModClothConfig.get().enableDebugLogging) {
-                                MainRegistry.LOGGER.debug("[ASSEMBLER]    -> It's a direct source. canExtract() is true. Attempting to pull {} FE.", energyNeeded);
-                            }
                             extracted = source.extractEnergy(energyNeeded, false);
-                        } else if (source == null) {
-                            if (ModClothConfig.get().enableDebugLogging)
-                                MainRegistry.LOGGER.debug("[ASSEMBLER]    -> Neighbor does not have ENERGY capability.");
-                        } else {
-                            if (ModClothConfig.get().enableDebugLogging)
-                                MainRegistry.LOGGER.debug("[ASSEMBLER]    -> Neighbor has capability, but canExtract() is false.");
                         }
                     }
 
                     if (extracted > 0) {
-                        if (ModClothConfig.get().enableDebugLogging) {
-                            MainRegistry.LOGGER.debug("[ASSEMBLER]      -> SUCCESS! Pulled {} FE.", extracted);
-                        }
                         int accepted = this.energyStorage.receiveEnergy(extracted, false);
                         energyNeeded -= accepted;
                         if (energyNeeded <= 0) break;

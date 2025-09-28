@@ -1,5 +1,8 @@
 package com.hbm_m.network;
 
+// Пакет от Клиента к Серверу "Выдать шаблон сборки"
+// Содержит ItemStack результата рецепта, который игрок хочет сохранить в шаблон.
+
 import com.hbm_m.item.ItemAssemblyTemplate;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.util.TemplateCraftingCosts;

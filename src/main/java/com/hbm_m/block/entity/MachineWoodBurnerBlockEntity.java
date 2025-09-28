@@ -1,9 +1,10 @@
 package com.hbm_m.block.entity;
 
-import com.hbm_m.block.WoodBurnerBlock;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.EnergyStorageBlockEntity;
-import com.hbm_m.menu.WoodBurnerMenu;
+// Этот класс реализует BE дровяной печи, которая сжигает древесину для генерации энергии.
+// Она имеет два слота: один для топлива (древесина) и один для пепла
+// Печь генерирует энергию, которая может быть передана соседним блокам.
+import com.hbm_m.block.MachineWoodBurnerBlock;
+import com.hbm_m.menu.MachineWoodBurnerMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -34,7 +35,7 @@ import javax.annotation.Nonnull;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class WoodBurnerBlockEntity extends BlockEntity implements MenuProvider {
+public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuProvider {
 
     private final ItemStackHandler itemHandler = new ItemStackHandler(2) {
         @Override
@@ -56,7 +57,7 @@ public class WoodBurnerBlockEntity extends BlockEntity implements MenuProvider {
     private static final int FUEL_SLOT = 0;
     private static final int ASH_SLOT = 1;
 
-    public WoodBurnerBlockEntity(BlockPos pPos, BlockState pBlockState) {
+    public MachineWoodBurnerBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.WOOD_BURNER_BE.get(), pPos, pBlockState);
 
         // Устанавливаем связь с BlockEntity для автоматического setChanged()
@@ -66,11 +67,11 @@ public class WoodBurnerBlockEntity extends BlockEntity implements MenuProvider {
             @Override
             public int get(int pIndex) {
                 return switch (pIndex) {
-                    case 0 -> WoodBurnerBlockEntity.this.energyStorage.getEnergyStored();
-                    case 1 -> WoodBurnerBlockEntity.this.energyStorage.getMaxEnergyStored();
-                    case 2 -> WoodBurnerBlockEntity.this.burnTime;
-                    case 3 -> WoodBurnerBlockEntity.this.maxBurnTime;
-                    case 4 -> WoodBurnerBlockEntity.this.isLit ? 1 : 0;
+                    case 0 -> MachineWoodBurnerBlockEntity.this.energyStorage.getEnergyStored();
+                    case 1 -> MachineWoodBurnerBlockEntity.this.energyStorage.getMaxEnergyStored();
+                    case 2 -> MachineWoodBurnerBlockEntity.this.burnTime;
+                    case 3 -> MachineWoodBurnerBlockEntity.this.maxBurnTime;
+                    case 4 -> MachineWoodBurnerBlockEntity.this.isLit ? 1 : 0;
                     default -> 0;
                 };
             }
@@ -78,10 +79,10 @@ public class WoodBurnerBlockEntity extends BlockEntity implements MenuProvider {
             @Override
             public void set(int pIndex, int pValue) {
                 switch (pIndex) {
-                    case 0 -> WoodBurnerBlockEntity.this.energyStorage.setEnergy(pValue);
-                    case 2 -> WoodBurnerBlockEntity.this.burnTime = pValue;
-                    case 3 -> WoodBurnerBlockEntity.this.maxBurnTime = pValue;
-                    case 4 -> WoodBurnerBlockEntity.this.isLit = pValue != 0;
+                    case 0 -> MachineWoodBurnerBlockEntity.this.energyStorage.setEnergy(pValue);
+                    case 2 -> MachineWoodBurnerBlockEntity.this.burnTime = pValue;
+                    case 3 -> MachineWoodBurnerBlockEntity.this.maxBurnTime = pValue;
+                    case 4 -> MachineWoodBurnerBlockEntity.this.isLit = pValue != 0;
                 }
             }
 
@@ -92,7 +93,7 @@ public class WoodBurnerBlockEntity extends BlockEntity implements MenuProvider {
         };
     }
 
-    public static void tick(Level pLevel, BlockPos pPos, BlockState pState, WoodBurnerBlockEntity pBlockEntity) {
+    public static void tick(Level pLevel, BlockPos pPos, BlockState pState, MachineWoodBurnerBlockEntity pBlockEntity) {
         if (pLevel.isClientSide()) return;
 
         boolean wasLit = pBlockEntity.isLit;
@@ -134,7 +135,7 @@ public class WoodBurnerBlockEntity extends BlockEntity implements MenuProvider {
 
         // Обновляем состояние блока если изменилось
         if (wasLit != pBlockEntity.isLit) {
-            pLevel.setBlock(pPos, pState.setValue(WoodBurnerBlock.LIT, pBlockEntity.isLit), 3);
+            pLevel.setBlock(pPos, pState.setValue(MachineWoodBurnerBlock.LIT, pBlockEntity.isLit), 3);
         }
 
         setChanged(pLevel, pPos, pState);
@@ -215,7 +216,7 @@ public class WoodBurnerBlockEntity extends BlockEntity implements MenuProvider {
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int pContainerId, @Nonnull Inventory pPlayerInventory, @Nonnull Player pPlayer) {
-        return new WoodBurnerMenu(pContainerId, pPlayerInventory, this, this.data);
+        return new MachineWoodBurnerMenu(pContainerId, pPlayerInventory, this, this.data);
     }
 
     @Override

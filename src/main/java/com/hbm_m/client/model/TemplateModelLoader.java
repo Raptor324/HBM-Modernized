@@ -1,5 +1,7 @@
 package com.hbm_m.client.model;
 
+// Загрузчик модели, который читает JSON, десериализует его как стандартную BlockModel,
+// а затем оборачивает в наш кастомный TemplateBakedModel.
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 import net.minecraft.client.renderer.block.model.BlockModel;
@@ -18,7 +20,7 @@ public class TemplateModelLoader implements IGeometryLoader<TemplateModelLoader.
     // JsonObject jsonObject - это наш assembly_template.json
     @Override
     public TemplateGeometry read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) {
-        // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ:
+
         // Перед тем, как передать json дальше, мы удаляем из него ключ "loader".
         // Это предотвращает бесконечную рекурсию, так как стандартный десериализатор
         // больше не будет видеть наш кастомный загрузчик и не вызовет нас снова.

@@ -1,8 +1,12 @@
 package com.hbm_m.client.model.render;
 
+// Рендер для продвинутой сборочной машины.
+// Отвечает за анимацию вращающегося кольца и двух манипуляторов.
+// Использует модель AdvancedAssemblyMachineBakedModel, которая разбивает модель на части.
+// TODO: Сейчас не работает
 import com.hbm_m.client.model.AdvancedAssemblyMachineBakedModel;
-import com.hbm_m.block.AdvancedAssemblyMachineBlock;
-import com.hbm_m.block.entity.AdvancedAssemblyMachineBlockEntity;
+import com.hbm_m.block.MachineAdvancedAssemblerBlock;
+import com.hbm_m.block.entity.MachineAdvancedAssemblerBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
@@ -17,16 +21,15 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.model.data.ModelData;
-// Добавьте импорты, если их нет
 import net.minecraft.client.renderer.entity.ItemRenderer;
 
-public class AdvancedAssemblyMachineRenderer implements BlockEntityRenderer<AdvancedAssemblyMachineBlockEntity> {
+public class AdvancedAssemblyMachineRenderer implements BlockEntityRenderer<MachineAdvancedAssemblerBlockEntity> {
 
     public AdvancedAssemblyMachineRenderer(BlockEntityRendererProvider.Context context) {
     }
 
     @Override
-    public void render(AdvancedAssemblyMachineBlockEntity pBlockEntity, float pPartialTick, PoseStack pPoseStack,
+    public void render(MachineAdvancedAssemblerBlockEntity pBlockEntity, float pPartialTick, PoseStack pPoseStack,
                     MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay) {
 
         BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
@@ -51,12 +54,11 @@ public class AdvancedAssemblyMachineRenderer implements BlockEntityRenderer<Adva
         
         pPoseStack.pushPose();
 
-        // --- ФИНАЛЬНОЕ ИСПРАВЛЕНИЕ СМЕЩЕНИЯ ---
         // 1. Перемещаемся в ЦЕНТР блока.
         pPoseStack.translate(0.5, 0.0, 0.5);
 
         // 2. Поворачиваем систему координат.
-        Direction facing = pBlockEntity.getBlockState().getValue(AdvancedAssemblyMachineBlock.FACING);
+        Direction facing = pBlockEntity.getBlockState().getValue(MachineAdvancedAssemblerBlock.FACING);
         float yRot = -facing.toYRot(); 
         pPoseStack.mulPose(Axis.YP.rotationDegrees(yRot));
         
@@ -90,10 +92,8 @@ public class AdvancedAssemblyMachineRenderer implements BlockEntityRenderer<Adva
             );
         }
     }
-    
-    // Методы renderArm1, renderArm2 и другие остаются БЕЗ ИЗМЕНЕНИЙ.
-    // ...
-    private void renderArm1(AdvancedAssemblyMachineBlockEntity.AssemblerArm arm, float pPartialTick, AdvancedAssemblyMachineBakedModel model, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay, BlockRenderDispatcher blockRenderer) {
+
+    private void renderArm1(MachineAdvancedAssemblerBlockEntity.AssemblerArm arm, float pPartialTick, AdvancedAssemblyMachineBakedModel model, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay, BlockRenderDispatcher blockRenderer) {
         pPoseStack.pushPose();
         float[] angles = getInterpolatedAngles(arm, pPartialTick);
 
@@ -118,8 +118,8 @@ public class AdvancedAssemblyMachineRenderer implements BlockEntityRenderer<Adva
         pPoseStack.popPose();
     }
 
-    private void renderArm2(AdvancedAssemblyMachineBlockEntity.AssemblerArm arm, float pPartialTick, AdvancedAssemblyMachineBakedModel model, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay, BlockRenderDispatcher blockRenderer) {
-         pPoseStack.pushPose();
+    private void renderArm2(MachineAdvancedAssemblerBlockEntity.AssemblerArm arm, float pPartialTick, AdvancedAssemblyMachineBakedModel model, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay, BlockRenderDispatcher blockRenderer) {
+        pPoseStack.pushPose();
         float[] angles = getInterpolatedAngles(arm, pPartialTick);
 
         pPoseStack.translate(0, 1.625, -0.9375);
@@ -143,7 +143,7 @@ public class AdvancedAssemblyMachineRenderer implements BlockEntityRenderer<Adva
         pPoseStack.popPose();
     }
     
-    private void renderRecipeIcon(AdvancedAssemblyMachineBlockEntity pBlockEntity, float pPartialTick, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay) {
+    private void renderRecipeIcon(MachineAdvancedAssemblerBlockEntity pBlockEntity, float pPartialTick, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay) {
         ItemStack recipeIcon = ItemStack.EMPTY; // = pBlockEntity.getRecipeIcon();
         if (!recipeIcon.isEmpty()) {
             pPoseStack.pushPose();
@@ -156,7 +156,7 @@ public class AdvancedAssemblyMachineRenderer implements BlockEntityRenderer<Adva
         }
     }
 
-    private float[] getInterpolatedAngles(AdvancedAssemblyMachineBlockEntity.AssemblerArm arm, float pPartialTick) {
+    private float[] getInterpolatedAngles(MachineAdvancedAssemblerBlockEntity.AssemblerArm arm, float pPartialTick) {
         float[] angles = new float[4];
         for (int i = 0; i < 4; i++) {
             angles[i] = Mth.lerp(pPartialTick, arm.prevAngles[i], arm.angles[i]);

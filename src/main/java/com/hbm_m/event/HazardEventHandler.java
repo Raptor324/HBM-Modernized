@@ -1,5 +1,7 @@
 package com.hbm_m.event;
 
+// Этот класс обрабатывает события уровня, проверяя выброшенные предметы на наличие опасных свойств.
+// Если предмет обладает гидрореактивностью и находится в воде, он взрывается
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;
 import net.minecraft.server.level.ServerLevel;
@@ -11,7 +13,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-// Эта аннотация автоматически регистрирует класс в шине событий Forge.
+
 @Mod.EventBusSubscriber
 public class HazardEventHandler {
 
@@ -67,7 +69,7 @@ public class HazardEventHandler {
                     float radiationLevel = HazardSystem.getHazardLevelFromStack(stack, HazardType.RADIATION);
                     if (radiationLevel > 0) {
                         // Здесь должна быть логика излучения.
-                        // Позже реализую утилитарный класс типа ContaminationUtil, как в оригинальном HBM.
+                        // TODO: Позже реализую утилитарный класс типа ContaminationUtil, как в оригинальном HBM.
                         
                         // ContaminationUtil.radiate(level, itemEntity.blockPosition(), 32, radiationLevel / 10f * stack.getCount());
                         

@@ -1,5 +1,7 @@
 package com.hbm_m.event;
 
+// Обработчик событий клиента, добавляющий подсказки к предметам (опасности, OreDict теги).
+// Подсказки показываются при наведении на предмет в инвентаре.
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.ChatFormatting;

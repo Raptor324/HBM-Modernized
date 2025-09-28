@@ -61,10 +61,10 @@ public class ModBlocks {
             () -> new BlastFurnaceBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL)));
 
     public static final RegistryObject<Block> PRESS = registerBlock("press",
-            () -> new PressBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+            () -> new MachinePressBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistryObject<Block> WOOD_BURNER = registerBlock("wood_burner",
-            () -> new WoodBurnerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+            () -> new MachineWoodBurnerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
 	public static final RegistryObject<Block> ARMOR_TABLE = registerBlock("armor_table",
             () -> new ArmorTableBlock(TABLE_PROPERTIES));
@@ -72,14 +72,11 @@ public class ModBlocks {
     public static final RegistryObject<Block> MACHINE_ASSEMBLER = registerBlockWithoutItem("machine_assembler",
         () -> new MachineAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
 
-    public static final RegistryObject<Block> MACHINE_ASSEMBLER_PART = registerBlockWithoutItem("machine_assembler_part",
-            () -> new MachineAssemblerPartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
-
     public static final RegistryObject<Block> ADVANCED_ASSEMBLY_MACHINE = BLOCKS.register("advanced_assembly_machine",
-        () -> new AdvancedAssemblyMachineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
+        () -> new MachineAdvancedAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
 
-    public static final RegistryObject<Block> ADVANCED_ASSEMBLY_MACHINE_PART = BLOCKS.register("advanced_assembly_machine_part",
-        () -> new AdvancedAssemblyMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
+    public static final RegistryObject<Block> UNIVERSAL_MACHINE_PART = BLOCKS.register("universal_machine_part",
+        () -> new UniversalMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
 
     public static final RegistryObject<Block> MACHINE_BATTERY = registerBlockWithoutItem("machine_battery",
         () -> new MachineBatteryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion()));

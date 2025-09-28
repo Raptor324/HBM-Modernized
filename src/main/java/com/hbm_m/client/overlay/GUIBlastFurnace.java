@@ -1,5 +1,7 @@
 package com.hbm_m.client.overlay;
 
+// GUI для плавильной печи. Показывает прогресс плавки, уровень топлива и индикатор работы печи.
+// Основан на AbstractContainerScreen и использует текстуры из ресурсов мода.
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.BlastFurnaceMenu;
 import net.minecraft.client.gui.GuiGraphics;
@@ -8,7 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-public class BlastFurnaceScreen extends AbstractContainerScreen<BlastFurnaceMenu> {
+public class GUIBlastFurnace extends AbstractContainerScreen<BlastFurnaceMenu> {
     private static final ResourceLocation GUI_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/blast_furnace/blast_furnace_gui.png");
     private static final ResourceLocation ARROW_TEXTURE =
@@ -20,7 +22,7 @@ public class BlastFurnaceScreen extends AbstractContainerScreen<BlastFurnaceMenu
     private static final ResourceLocation LIGHT_OFF_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/blast_furnace/light_off.png");
 
-    public BlastFurnaceScreen(BlastFurnaceMenu menu, Inventory playerInventory, Component title) {
+    public GUIBlastFurnace(BlastFurnaceMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
         this.imageHeight = 176;

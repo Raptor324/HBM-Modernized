@@ -1,5 +1,9 @@
 package com.hbm_m.event;
 
+// Обработчик для применения эффектов опасностей (радиация, пирофорность) к игроку на основе его инвентаря.
+// Эффекты применяются каждый тик на сервере, если игрок не в креативе или режиме наблюдателя.
+// Используется в классе MainRegistry для регистрации на событие PlayerTickEvent.
+
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;
 import net.minecraft.world.entity.player.Player;

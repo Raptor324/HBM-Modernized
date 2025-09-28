@@ -1,10 +1,10 @@
-// Файл: com/hbm_m/client/overlay/RadiationVisualsOverlay.java
-
 package com.hbm_m.client.overlay;
 
+// Оверлей для визуальных эффектов радиации (пиксели на экране).
+// Пиксели появляются с вероятностью, зависящей от уровня радиации в окружающей среде.
+// Использует IGuiOverlay из Forge для интеграции с GUI игры.
 import com.hbm_m.config.ModClothConfig;
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
@@ -13,7 +13,7 @@ import java.awt.Color;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RadiationVisualsOverlay {
+public class OverlayRadiationVisuals {
     private static final RandomSource random = RandomSource.create();
     private static final List<RadiationPixel> activePixels = new ArrayList<>();
 
@@ -43,7 +43,7 @@ public class RadiationVisualsOverlay {
         if (!config.enableRadiationPixelEffect || player == null || player.isCreative() || player.isSpectator()) {
             // ... (логика отключения остается прежней)
         } else {
-            float incomingRadiation = GeigerOverlay.clientTotalEnvironmentRadiation;
+            float incomingRadiation = OverlayGeiger.clientTotalEnvironmentRadiation;
             
             // --- ИСПРАВЛЕНИЕ №1: Используем порог из конфига ---
             // Теперь эта настройка действительно работает.

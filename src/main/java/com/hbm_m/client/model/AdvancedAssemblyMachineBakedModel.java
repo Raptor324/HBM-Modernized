@@ -1,5 +1,6 @@
 package com.hbm_m.client.model;
 
+// Модель продвинутой сборочной машины, состоящая из нескольких частей.
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
@@ -19,12 +20,11 @@ import java.util.Map;
 public class AdvancedAssemblyMachineBakedModel implements BakedModel {
 
     private final Map<String, BakedModel> parts;
-    private final ItemTransforms transforms; // <-- ДОБАВЛЕНО: храним трансформации для предмета
+    private final ItemTransforms transforms; // храним трансформации для предмета
 
-    // Конструктор обновлен
     public AdvancedAssemblyMachineBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
         this.parts = parts;
-        this.transforms = transforms; // <-- ДОБАВЛЕНО
+        this.transforms = transforms;
     }
 
     public BakedModel getPart(String name) {
@@ -33,7 +33,6 @@ public class AdvancedAssemblyMachineBakedModel implements BakedModel {
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
-        // --- ИСПРАВЛЕНИЕ РЕНДЕРА ПРЕДМЕТА ---
         if (state == null) {
             // Собираем полигоны со ВСЕХ частей для рендера предмета
             List<BakedQuad> quads = new ArrayList<>();

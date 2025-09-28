@@ -1,5 +1,8 @@
 package com.hbm_m.effect;
 
+// Класс, реализующий эффект "Radaway" для снижения радиации у игрока.
+// Эффект полезный (BENEFICIAL) и имеет оранжевый цвет
+
 import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
@@ -73,7 +76,7 @@ public class RadawayEffect extends MobEffect {
              * ВАЖНО: x и y здесь - это координаты фона, а не иконки.
              * Нам нужно вручную отцентровать нашу иконку 18x18 внутри фона.
              * Стандартный фон имеет размер около 24x24.
-             * Но иконка эффекта один хуй пока не работает нормально. Похуй, потом доработаю
+             * TODO: Но иконка эффекта один хуй пока не работает нормально. Похуй, потом доработаю
              */
             @Override
             public boolean renderInventoryIcon(MobEffectInstance instance, EffectRenderingInventoryScreen<?> screen, GuiGraphics guiGraphics, int x, int y, int blitOffset) {

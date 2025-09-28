@@ -1,5 +1,6 @@
 package com.hbm_m.armormod.client;
 
+// Этот класс отвечает за добавление подсказок к броне с модификациями
 import com.hbm_m.client.overlay.GUIArmorTable;
 import com.hbm_m.lib.RefStrings;
 

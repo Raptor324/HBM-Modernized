@@ -1,5 +1,8 @@
 package com.hbm_m.sound;
 
+// Менеджер звуков на клиенте. Управляет воспроизведением и остановкой звуков машин.
+// Использует карту для отслеживания активных звуков по позициям блоков.
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraftforge.api.distmarker.Dist;
@@ -12,10 +15,8 @@ public class ClientSoundManager {
     private static final Map<BlockPos, AssemblerSoundInstance> ACTIVE_ASSEMBLER_SOUNDS = new ConcurrentHashMap<>();
 
     public static void playAssemblerSound(BlockPos pos) {
-        // MainRegistry.LOGGER.info("CLIENT ({}): Received START packet.", pos);
-        // Используем computeIfAbsent для атомарной и безопасной операции
+
         ACTIVE_ASSEMBLER_SOUNDS.computeIfAbsent(pos, key -> {
-            // MainRegistry.LOGGER.info("CLIENT ({}): Sound not found in map. Starting new sound instance.", key);
             AssemblerSoundInstance sound = new AssemblerSoundInstance(key);
             Minecraft.getInstance().getSoundManager().play(sound);
             return sound;
@@ -23,12 +24,9 @@ public class ClientSoundManager {
     }
 
     public static void stopAssemblerSound(BlockPos pos) {
-        // MainRegistry.LOGGER.info("CLIENT ({}): Received STOP packet.", pos);
         AssemblerSoundInstance sound = ACTIVE_ASSEMBLER_SOUNDS.get(pos);
         if (sound != null) {
             sound.stopSound(); // stopSound теперь сам вызовет onSoundStopped
-        } else {
-            // MainRegistry.LOGGER.warn("CLIENT ({}): Tried to stop a sound that was not playing.", pos);
         }
     }
 
@@ -38,7 +36,6 @@ public class ClientSoundManager {
      */
     public static void onSoundStopped(BlockPos pos) {
         if (ACTIVE_ASSEMBLER_SOUNDS.remove(pos) != null) {
-            // MainRegistry.LOGGER.info("CLIENT ({}): Sound instance stopped and was removed from the active map.", pos);
         }
     }
 }

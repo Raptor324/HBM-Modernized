@@ -11,6 +11,7 @@ import net.minecraftforge.event.TickEvent;
 /**
  * Абстрактный класс для обработки радиации в чанках
  */
+
 public abstract class ChunkRadiationHandler {
 
     /**

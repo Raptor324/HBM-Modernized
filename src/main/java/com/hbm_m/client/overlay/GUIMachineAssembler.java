@@ -1,5 +1,7 @@
 package com.hbm_m.client.overlay;
 
+// GUI для сборочной машины. Отвечает за отрисовку прогресса, энергии и подсказок.
+// Основан на AbstractContainerScreen и использует текстуры из ресурсов мода.
 import javax.annotation.Nonnull;
 
 import com.hbm_m.lib.RefStrings;

@@ -1,5 +1,9 @@
 package com.hbm_m.datagen;
 
+// Провайдер генерации тегов типов урона для мода.
+// Здесь мы добавляем наши пользовательские типы урона в ванильные теги,
+// используя стандартный API Minecraft.
+
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.damagesource.ModDamageTypes;
 import net.minecraft.core.HolderLookup;

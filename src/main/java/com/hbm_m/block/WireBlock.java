@@ -1,7 +1,15 @@
 package com.hbm_m.block;
 
+// Блок провода для передачи энергии между машинами и устройствами.
+// Провод может соединяться с другими проводами, с машинами и с блоками, у которых есть энергия (FE) capability.
+// Форма провода динамически меняется в зависимости от того, с чем он соединён.
+// Логика соединения реализована в методе canConnectTo().
 import com.google.common.collect.ImmutableMap;
+import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.entity.UniversalMachinePartBlockEntity;
 import com.hbm_m.block.entity.WireBlockEntity;
+import com.hbm_m.multiblock.PartRole;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -44,7 +52,6 @@ public class WireBlock extends BaseEntityBlock {
             Direction.UP, UP, Direction.DOWN, DOWN
         );
 
-    // VoxelShapes остаются без изменений
     private static final VoxelShape CORE_SHAPE = Block.box(5.5, 5.5, 5.5, 10.5, 10.5, 10.5);
     private static final Map<Direction, VoxelShape> ARM_SHAPES =
         ImmutableMap.of(
@@ -76,7 +83,6 @@ public class WireBlock extends BaseEntityBlock {
         return shape;
     }
     
-    // При установке блока проверяем всех соседей один раз
     @Override
     public BlockState getStateForPlacement(@Nonnull BlockPlaceContext pContext) {
         BlockGetter level = pContext.getLevel();
@@ -88,31 +94,50 @@ public class WireBlock extends BaseEntityBlock {
         return state;
     }
 
-    // --- ГЛАВНОЕ ИСПРАВЛЕНИЕ №1: ОПТИМИЗИРОВАННЫЙ UPDATE ---
-    // Вызывается, когда соседний блок меняется. Обновляет только одну сторону.
     @Override
     public BlockState updateShape(@Nonnull BlockState pState, @Nonnull Direction pFacing, @Nonnull BlockState pFacingState, @Nonnull LevelAccessor pLevel, @Nonnull BlockPos pCurrentPos, @Nonnull BlockPos pFacingPos) {
-        BooleanProperty facingProperty = PROPERTIES_MAP.get(pFacing);
+        if (pLevel.isClientSide() && pFacingState.getBlock() instanceof UniversalMachinePartBlock) {
+            if (pLevel.getBlockEntity(pCurrentPos) instanceof WireBlockEntity wire) {
+                wire.scheduleRecheck();
+            }
+        }
+
+        // на сервере уведомляем менеджер о том, что провод поменялся,
+        // чтобы он инвалидировал/пересчитал соответствующие кэши.
+        if (pLevel instanceof Level lvl && !lvl.isClientSide()) {
+            com.hbm_m.energy.WireNetworkManager.get().onWireChanged(lvl, pCurrentPos);
+        }
+
         boolean canConnect = this.canConnectTo(pLevel, pCurrentPos, pFacing);
-        return pState.setValue(facingProperty, canConnect);
+        return pState.setValue(PROPERTIES_MAP.get(pFacing), canConnect);
     }
     
-    // Логика проверки соединения остается прежней
-    private boolean canConnectTo(BlockGetter level, BlockPos pos, Direction direction) {
+    /**
+     * Логика проверки соединения.
+     */
+    public boolean canConnectTo(BlockGetter level, BlockPos pos, Direction direction) {
         BlockPos neighborPos = pos.relative(direction);
         BlockState neighborState = level.getBlockState(neighborPos);
 
+        // 1. Подключаемся к другим проводам
         if (neighborState.is(this)) {
             return true;
         }
 
         BlockEntity be = level.getBlockEntity(neighborPos);
-        if (be != null) {
-            // Проверяем Capability со стороны соседа (direction.getOpposite())
-            return be.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite()).isPresent();
+        if (be == null) {
+            return false;
+        }
+
+        // если это наша фантомная часть — прочитать её роль напрямую (работает и на клиенте)
+        if (be instanceof UniversalMachinePartBlockEntity partBe) {
+            if (partBe.getPartRole() == PartRole.ENERGY_CONNECTOR) {
+                return true;
+            }
         }
         
-        return false;
+        // 2. Для ВСЕ остальных блоков используем проверку через Forge Capabilities.
+        return be.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite()).isPresent();
     }
 
     @Override
@@ -134,6 +159,9 @@ public class WireBlock extends BaseEntityBlock {
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@Nonnull Level pLevel, @Nonnull BlockState pState, @Nonnull BlockEntityType<T> pBlockEntityType) {
-        return null; // ТИКЕР НЕ НУЖЕН, ПРОВОД ПАССИВЕН
+        if (pLevel.isClientSide()) {
+            return createTickerHelper(pBlockEntityType, ModBlockEntities.WIRE_BE.get(), WireBlockEntity::clientTick);
+        }
+        return null;
     }
 }

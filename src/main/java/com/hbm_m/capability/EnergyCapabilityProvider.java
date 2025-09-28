@@ -1,5 +1,9 @@
 package com.hbm_m.capability;
 
+//Данный класс предоставляет capability для хранения энергии (FE) в предмете.
+//Он реализует ICapabilityProvider и INBTSerializable для интеграции с системой capability Minecraft Forge.
+//Энергия хранится в ItemEnergyStorage, который привязан к ItemStack, позволяя сохранять энергию вместе с предметом.
+
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;

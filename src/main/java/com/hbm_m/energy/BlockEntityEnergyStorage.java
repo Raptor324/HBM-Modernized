@@ -1,5 +1,6 @@
 package com.hbm_m.energy;
 
+// Универсальный класс для хранения энергии в блоках, реализующий EnergyStorage с возможностью настройки и отладки.
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 

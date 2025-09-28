@@ -1,5 +1,6 @@
 package com.hbm_m.hazard;
 
+// Перечисление типов опасностей, определяющее их свойства и отображение в подсказках.
 import net.minecraft.ChatFormatting;
 
 public enum HazardType {

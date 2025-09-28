@@ -1,5 +1,6 @@
 package com.hbm_m.capability;
 
+// Реализация IChunkRadiation для хранения данных о радиации в чанке.
 import net.minecraft.util.Mth;
 import com.hbm_m.config.ModClothConfig;
 

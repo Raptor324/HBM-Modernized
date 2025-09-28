@@ -1,5 +1,9 @@
 package com.hbm_m.client;
-
+/**
+ * Этот класс существует ТОЛЬКО НА КЛИЕНТЕ.
+ * Он отвечает за хранение данных о радиации, полученных от сервера,
+ * чтобы другие клиентские системы (например, дебаг рендер) могли их использовать.
+ */
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.api.distmarker.Dist;
@@ -7,12 +11,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-
-/**
- * Этот класс существует ТОЛЬКО НА КЛИЕНТЕ.
- * Он отвечает за хранение данных о радиации, полученных от сервера,
- * чтобы другие клиентские системы (например, дебаг рендер) могли их использовать.
- */
 
 @OnlyIn(Dist.CLIENT)
 public class ClientRadiationData {

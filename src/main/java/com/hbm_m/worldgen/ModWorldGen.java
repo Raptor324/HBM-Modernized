@@ -1,5 +1,8 @@
 package com.hbm_m.worldgen;
 
+// Класс для регистрации и управления генерацией мира, включая руды и биом-модификаторы.
+// Использует DeferredRegister для регистрации биом-модификаторов и ресурсные ключи для настройки генерации руд.
+
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;

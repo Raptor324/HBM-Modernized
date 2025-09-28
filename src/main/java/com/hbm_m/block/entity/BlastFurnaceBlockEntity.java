@@ -1,7 +1,7 @@
 package com.hbm_m.block.entity;
 
+// Блок-энтити для Плавильной Печи, которая переплавляет два входных предмета в один выходной с использованием топлива.
 import com.hbm_m.block.BlastFurnaceBlock;
-import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
 import com.hbm_m.menu.BlastFurnaceMenu;
 import net.minecraft.core.BlockPos;
@@ -11,7 +11,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.world.Container;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;

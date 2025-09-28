@@ -1,8 +1,11 @@
 package com.hbm_m.menu;
 
+// Меню для пресс-машины.
+// Имеет слоты для топлива, штампа, материала и выхода.
+// Содержит логику для обработки Shift-клика и отображения прогресса прессовки, уровня топлива и нагрева.
+
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.PressBlockEntity;
-import com.hbm_m.menu.ModMenuTypes;
+import com.hbm_m.block.entity.MachinePressBlockEntity;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -14,19 +17,19 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
 
-public class PressMenu extends AbstractContainerMenu {
-    public final PressBlockEntity blockEntity;
+public class MachinePressMenu extends AbstractContainerMenu {
+    public final MachinePressBlockEntity blockEntity;
     private final Level level;
     private final ContainerData data;
 
-    public PressMenu(int containerId, Inventory inv, FriendlyByteBuf extraData) {
+    public MachinePressMenu(int containerId, Inventory inv, FriendlyByteBuf extraData) {
         this(containerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(11));
     }
 
-    public PressMenu(int containerId, Inventory inv, BlockEntity entity, ContainerData data) {
+    public MachinePressMenu(int containerId, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.PRESS_MENU.get(), containerId);
         checkContainerSize(inv, 4);
-        blockEntity = ((PressBlockEntity) entity);
+        blockEntity = ((MachinePressBlockEntity) entity);
         this.level = inv.player.level();
         this.data = data;
 

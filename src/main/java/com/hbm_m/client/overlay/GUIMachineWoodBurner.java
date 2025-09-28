@@ -1,7 +1,9 @@
 package com.hbm_m.client.overlay;
 
+// GUI для дровяной печи. Показывает время горения топлива, уровень энергии,
+// индикатор пламени и подсказки. Основан на AbstractContainerScreen и использует текстуры из ресурсов мода.
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.menu.WoodBurnerMenu;
+import com.hbm_m.menu.MachineWoodBurnerMenu;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -14,7 +16,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-public class WoodBurnerScreen extends AbstractContainerScreen<WoodBurnerMenu> {
+public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBurnerMenu> {
     // Основная текстура GUI
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/wood_burner/wood_burner_gui.png");
@@ -26,7 +28,7 @@ public class WoodBurnerScreen extends AbstractContainerScreen<WoodBurnerMenu> {
     private static final ResourceLocation ENERGY_BAR_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/wood_burner/energy_bar.png");
 
-    public WoodBurnerScreen(WoodBurnerMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
+    public GUIMachineWoodBurner(MachineWoodBurnerMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);
         this.imageWidth = 176;
         this.imageHeight = 200;

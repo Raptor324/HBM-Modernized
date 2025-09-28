@@ -1,7 +1,10 @@
 package com.hbm_m.client.overlay;
 
-import com.hbm_m.menu.AdvancedAssemblyMachineMenu;
-import com.hbm_m.block.entity.AdvancedAssemblyMachineBlockEntity;
+// GUI для продвинутой сборочной машины.
+// Отвечает за отрисовку прогресса, энергии, подсказок и взаимодействие с пользователем.
+// Основан на AbstractContainerScreen и использует текстуры из ресурсов мода.
+import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
+import com.hbm_m.block.entity.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
@@ -12,21 +15,20 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 
-// TODO: Вам понадобится утилитарный класс для отрисовки подсказок и жидкостей.
-// Этот функционал я встроил прямо в этот класс для наглядности.
+// TODO: Нужен утилитарный класс для отрисовки подсказок и жидкостей.
+// Этот функционал сейчас встроен в этот класс
 
-public class GUIAdvancedAssemblyMachine extends AbstractContainerScreen<AdvancedAssemblyMachineMenu> {
+public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<MachineAdvancedAssemblerMenu> {
 
     // Текстура из старого GUI
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_assembler.png");
 
-    private final AdvancedAssemblyMachineBlockEntity blockEntity;
+    private final MachineAdvancedAssemblerBlockEntity blockEntity;
 
-    public GUIAdvancedAssemblyMachine(AdvancedAssemblyMachineMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
+    public GUIMachineAdvancedAssembler(MachineAdvancedAssemblerMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);
         this.blockEntity = pMenu.getBlockEntity();
-        
-        // Размеры из старого GUI
+
         this.imageWidth = 176;
         this.imageHeight = 256;
     }

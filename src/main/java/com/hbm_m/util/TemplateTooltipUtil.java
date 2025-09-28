@@ -1,5 +1,9 @@
 package com.hbm_m.util;
 
+// Утилитарный класс для построения тултипов предметов-шаблонов.
+// Извлекает информацию о рецепте из шаблона и форматирует её для отображения в тултипе.
+// Используется в ItemAssemblyTemplate для добавления информации в тултип.
+
 import com.hbm_m.item.ItemAssemblyTemplate;
 import com.hbm_m.recipe.AssemblerRecipe;
 import net.minecraft.ChatFormatting;

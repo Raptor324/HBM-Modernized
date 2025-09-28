@@ -1,5 +1,6 @@
 package com.hbm_m.armormod.client;
 
+// Этот класс отвечает за генерацию компонентов тултипа для брони с модификациями
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import net.minecraft.ChatFormatting;

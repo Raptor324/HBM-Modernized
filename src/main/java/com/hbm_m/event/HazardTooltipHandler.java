@@ -1,4 +1,7 @@
 package com.hbm_m.event;
+// Обработчик для добавления подсказок об уровнях опасностей на предметы.
+// Подсказки показывают тип опасности, её уровень на один предмет и общий уровень в стаке.
+// Используется в классе ClientEventHandler для регистрации на событие ItemTooltipEvent.
 
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;

@@ -22,19 +22,14 @@ public class ModBlockEntities {
 			BlockEntityType.Builder.<MachineAssemblerBlockEntity>of(MachineAssemblerBlockEntity::new, ModBlocks.MACHINE_ASSEMBLER.get())
 				.build(null));
 
-    public static final RegistryObject<BlockEntityType<MachineAssemblerPartBlockEntity>> MACHINE_ASSEMBLER_PART_BE =
-		BLOCK_ENTITIES.register("machine_assembler_part_be", () ->
-			BlockEntityType.Builder.<MachineAssemblerPartBlockEntity>of(MachineAssemblerPartBlockEntity::new, ModBlocks.MACHINE_ASSEMBLER_PART.get())
-				.build(null));
-
-    public static final RegistryObject<BlockEntityType<AdvancedAssemblyMachineBlockEntity>> ADVANCED_ASSEMBLY_MACHINE =
+    public static final RegistryObject<BlockEntityType<MachineAdvancedAssemblerBlockEntity>> ADVANCED_ASSEMBLY_MACHINE =
 		BLOCK_ENTITIES.register("advanced_assembly_machine_be", () ->
-			BlockEntityType.Builder.<AdvancedAssemblyMachineBlockEntity>of(AdvancedAssemblyMachineBlockEntity::new, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get())
+			BlockEntityType.Builder.<MachineAdvancedAssemblerBlockEntity>of(MachineAdvancedAssemblerBlockEntity::new, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get())
 				.build(null));
 
-    public static final RegistryObject<BlockEntityType<AdvancedAssemblyMachinePartBlockEntity>> ADVANCED_ASSEMBLY_MACHINE_PART =
-        BLOCK_ENTITIES.register("advanced_assembly_machine_part_be", () ->
-			BlockEntityType.Builder.<AdvancedAssemblyMachinePartBlockEntity>of(AdvancedAssemblyMachinePartBlockEntity::new, ModBlocks.ADVANCED_ASSEMBLY_MACHINE_PART.get())
+    public static final RegistryObject<BlockEntityType<UniversalMachinePartBlockEntity>> UNIVERSAL_MACHINE_PART_BE =
+        BLOCK_ENTITIES.register("universal_machine_part_be", () ->
+			BlockEntityType.Builder.<UniversalMachinePartBlockEntity>of(UniversalMachinePartBlockEntity::new, ModBlocks.UNIVERSAL_MACHINE_PART.get())
 				.build(null));
 
 	public static final RegistryObject<BlockEntityType<WireBlockEntity>> WIRE_BE =
@@ -52,14 +47,14 @@ public class ModBlockEntities {
 					BlockEntityType.Builder.of(BlastFurnaceBlockEntity::new,
 							ModBlocks.BLAST_FURNACE.get()).build(null));
 
-	public static final RegistryObject<BlockEntityType<PressBlockEntity>> PRESS_BE =
+	public static final RegistryObject<BlockEntityType<MachinePressBlockEntity>> PRESS_BE =
 			BLOCK_ENTITIES.register("press_be", () ->
-					BlockEntityType.Builder.of(PressBlockEntity::new,
+					BlockEntityType.Builder.of(MachinePressBlockEntity::new,
 							ModBlocks.PRESS.get()).build(null));
 
-	public static final RegistryObject<BlockEntityType<WoodBurnerBlockEntity>> WOOD_BURNER_BE =
+	public static final RegistryObject<BlockEntityType<MachineWoodBurnerBlockEntity>> WOOD_BURNER_BE =
 			BLOCK_ENTITIES.register("wood_burner_be", () ->
-					BlockEntityType.Builder.of(WoodBurnerBlockEntity::new,
+					BlockEntityType.Builder.of(MachineWoodBurnerBlockEntity::new,
 							ModBlocks.WOOD_BURNER.get()).build(null));
 
     public static void register(IEventBus eventBus) {

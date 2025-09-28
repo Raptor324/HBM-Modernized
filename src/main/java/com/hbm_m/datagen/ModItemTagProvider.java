@@ -1,5 +1,10 @@
 package com.hbm_m.datagen;
 
+// Провайдер генерации тегов предметов для мода.
+// Здесь мы определяем, в какие категории попадают наши предметы,
+// а также создаем теги для модификаторов для их совместимости с определенной броней.
+// Используется в классе DataGenerators для регистрации.
+
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;

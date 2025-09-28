@@ -1,5 +1,8 @@
 package com.hbm_m.item;
 
+// Предмет-дозиметр для измерения радиации в окружающей среде.
+// Показывает уровень радиации в чате при использовании и издает звуки щелчков в зависимости от уровня радиации.
+
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.sounds.GeigerSoundPacket;
 import com.hbm_m.sound.ModSounds;
@@ -20,10 +23,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
-/**
- * Дозиметр - простой измеритель радиации, показывающий только
- * общий уровень радиации в окружающей среде.
- */
 
 public class ItemDosimeter extends AbstractRadiationMeterItem {
 

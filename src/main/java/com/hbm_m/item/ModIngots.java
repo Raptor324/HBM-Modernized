@@ -1,5 +1,8 @@
 package com.hbm_m.item;
 
+// Перечисление всех слитков в моде с поддержкой многоязычности.
+// Для каждого слитка можно задать переводы на разные языки.
+
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;

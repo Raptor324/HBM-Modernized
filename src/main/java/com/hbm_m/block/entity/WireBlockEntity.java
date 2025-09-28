@@ -1,5 +1,8 @@
 package com.hbm_m.block.entity;
 
+// Этот BE представляет собой блок-провод, который может передавать энергию между машинами.
+// Он не хранит энергию, а только проксирует запросы в центральный менеджер проводов,
+// который реализует алгоритм union-find для эффективного управления сетью проводов.
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -15,16 +18,15 @@ import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
 
+import com.hbm_m.block.WireBlock;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 
-import java.util.HashSet;
-import java.util.Set;
 import java.util.UUID;
 
 public class WireBlockEntity extends BlockEntity {
 
-    private static final ThreadLocal<Set<UUID>> HANDLED_REQUESTS = ThreadLocal.withInitial(HashSet::new);
+    private int recheckTimer = 0;
 
     private final IEnergyStorage energyProxy = createEnergyProxy();
     private final LazyOptional<IEnergyStorage> lazyProxy = LazyOptional.of(() -> energyProxy);
@@ -33,55 +35,73 @@ public class WireBlockEntity extends BlockEntity {
         super(ModBlockEntities.WIRE_BE.get(), pPos, pState);
     }
 
-    public static void startNewTick() {
-        HANDLED_REQUESTS.get().clear();
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        if (level != null && !level.isClientSide()) {
+            // NEW: register this wire in the union-find manager
+            com.hbm_m.energy.WireNetworkManager.get().onWireAdded(level, this.worldPosition);
+        }
     }
 
-    public int requestEnergy(int maxRequest, boolean simulate, UUID requestId) {
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (level != null && !level.isClientSide()) {
+            // NEW: inform manager about removal so it can rebuild components
+            com.hbm_m.energy.WireNetworkManager.get().onWireRemoved(level, this.worldPosition);
+        }
+    }
+
+    /**
+     * Этот метод вызывается из WireBlock, когда рядом появляется "проблемный" сосед.
+     */
+    public void scheduleRecheck() {
+        // Увеличиваем таймер до 20 тиков (~1 секунда) — даём больше времени на синхронизацию TE на клиенте.
+        this.recheckTimer = 20;
+    }
+
+    public static void clientTick(Level level, BlockPos pos, BlockState state, WireBlockEntity be) {
+        if (be.recheckTimer <= 0) {
+            return;
+        }
+
+        be.recheckTimer--;
+
+        if (be.recheckTimer == 0) {
+            // 1. Получаем текущее состояние блока в мире
+            BlockState currentState = level.getBlockState(pos);
+            if (!(currentState.getBlock() instanceof WireBlock wireBlock)) {
+                return; // На всякий случай
+            }
+
+            // 2. Вычисляем, каким состояние ДОЛЖНО БЫТЬ, оглядевшись по сторонам.
+            //    Мы, по сути, заново запускаем логику установки блока.
+            BlockState correctState = wireBlock.defaultBlockState();
+            for (Direction dir : Direction.values()) {
+                correctState = correctState.setValue(
+                    WireBlock.PROPERTIES_MAP.get(dir),
+                    wireBlock.canConnectTo(level, pos, dir)
+                );
+            }
+
+            // 3. Сравниваем. Если текущее состояние на клиенте неверно...
+            if (currentState != correctState) {
+                level.setBlock(pos, correctState, 2);
+            }
+        }
+    }
+
+    /**
+     * Публичный метод для начала запроса энергии из этой точки сети.
+     */
+    public int requestEnergy(int maxRequest, boolean simulate) {
         Level lvl = this.level;
         if (lvl == null) return 0;
-        if (!HANDLED_REQUESTS.get().add(requestId)) {
-            return 0;
-        }
-
-        if (ModClothConfig.get().enableDebugLogging) {
-            MainRegistry.LOGGER.debug("[WIRE >>>] requestEnergy id={} pos={} need={} simulate={}", requestId, this.worldPosition, maxRequest, simulate);
-        }
-
-        int totalExtracted = 0;
-        for (Direction dir : Direction.values()) {
-            if (totalExtracted >= maxRequest) break;
-
-            BlockEntity neighbor = lvl.getBlockEntity(worldPosition.relative(dir));
-            if (neighbor == null) continue;
-
-            // Игнорируем части ассемблера, чтобы не спрашивать энергию у того, кто ее и так запрашивает.
-            if (neighbor instanceof MachineAssemblerPartBlockEntity) {
-                continue;
-            }
-
-            if (neighbor instanceof WireBlockEntity wireNeighbor) {
-                totalExtracted += wireNeighbor.requestEnergy(maxRequest - totalExtracted, simulate, requestId);
-            } else {
-                LazyOptional<IEnergyStorage> cap = neighbor.getCapability(ForgeCapabilities.ENERGY, dir.getOpposite());
-                if (cap.isPresent()) {
-                    IEnergyStorage source = cap.resolve().orElse(null);
-                    if (source != null && source.canExtract()) {
-                        int extracted = source.extractEnergy(maxRequest - totalExtracted, simulate);
-                        if (extracted > 0) {
-                            if (ModClothConfig.get().enableDebugLogging) {
-                                MainRegistry.LOGGER.debug("[WIRE >>>] Pulled {} FE from {} at {}", extracted, source.getClass().getSimpleName(), neighbor.getBlockPos());
-                            }
-                            totalExtracted += extracted;
-                        }
-                    }
-                }
-            }
-        }
-
-        return totalExtracted;
+        // делегируем сложный обход в центральный менеджер (union-find / incremental)
+        return com.hbm_m.energy.WireNetworkManager.get().requestEnergy(lvl, this.worldPosition, maxRequest, simulate);
     }
-
+    
     // Принимает энергию от источника и проксирует её дальше по проводам/соседям.
     // Возвращает количество реально принятое целевыми хранилищами.
     public int acceptEnergy(int amount, UUID pushId) {

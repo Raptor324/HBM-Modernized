@@ -1,5 +1,8 @@
 package com.hbm_m.multiblock;
 
+// Item для главного блока-контроллера мультиблочной структуры.
+// Выполняет проверку структуры перед установкой блока в мир. Если что-то мешает постройке, установка не происходит. Мешающие блоки выделяются красным.
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;

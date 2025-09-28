@@ -1,5 +1,7 @@
 package com.hbm_m.armormod.menu;
 
+// Этот класс отвечает за логику контейнера (меню) стола модификации брони
+// Он управляет слотами, перемещением предметов и взаимодействием с инвентарем игрока
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.block.ModBlocks;
@@ -39,11 +41,11 @@ public class ArmorTableMenu extends AbstractContainerMenu {
     // Слоты стола
     private static final int SLOT_ARMOR_IN = 0;
     private static final int SLOT_MOD_START = 1;
-    private static final int SLOT_MOD_END = 9; // 9 слотов (1-9)
+    // private static final int SLOT_MOD_END = 9; // 9 слотов (1-9)
 
     // Слоты инвентаря
     private static final int PLAYER_INVENTORY_START = 10;
-    private static final int PLAYER_INVENTORY_END = 36;
+    // private static final int PLAYER_INVENTORY_END = 36;
     private static final int PLAYER_HOTBAR_START = 37;
     private static final int PLAYER_HOTBAR_END = 45;
 
@@ -56,8 +58,8 @@ public class ArmorTableMenu extends AbstractContainerMenu {
     // Общие диапазоны для удобства
     // private static final int TABLE_SLOTS_START = 0;
     // private static final int TABLE_SLOTS_END = 9;
-    private static final int INVENTORY_SLOTS_START = 10;
-    private static final int INVENTORY_SLOTS_END = 45;
+    // private static final int INVENTORY_SLOTS_START = 10;
+    // private static final int INVENTORY_SLOTS_END = 45;
     private static final int ARMOR_PANEL_START = 46;
     private static final int ARMOR_PANEL_END = 49;
 

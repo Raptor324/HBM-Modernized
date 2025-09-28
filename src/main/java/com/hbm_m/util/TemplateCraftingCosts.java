@@ -1,5 +1,8 @@
 package com.hbm_m.util;
 
+// Этот класс управляет стоимостью создания шаблонов крафта для различных машин.
+// Стоимость определяется в виде списка ингредиентов.
+
 import com.hbm_m.item.ModItems;
 import net.minecraft.core.NonNullList;
 import net.minecraft.world.item.Item;
@@ -22,11 +25,11 @@ public class TemplateCraftingCosts {
         // Для обычных рецептов в сборщике (AssemblerRecipe)
         // Стоимость: 1 бумага + 1 любой краситель
         registerCost(ModItems.ASSEMBLY_TEMPLATE.get(), // <-- Это заглушка, см. ниже
-                     NonNullList.of(Ingredient.EMPTY,
+                    NonNullList.of(Ingredient.EMPTY,
                                     Ingredient.of(Items.PAPER),
                                     Ingredient.of(Tags.Items.DYES)
-                     ));
-                     
+                    ));
+
         // Для идентификаторов
         // Стоимость: 1 железная пластина + 1 любой краситель
         // ЗАМЕНИТЕ ModItems.IRON_PLATE.get() НА ВАШ ПРЕДМЕТ ЖЕЛЕЗНОЙ ПЛАСТИНЫ

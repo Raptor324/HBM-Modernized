@@ -1,9 +1,8 @@
 package com.hbm_m.block.entity;
 
-import com.hbm_m.block.PressBlock;
-import com.hbm_m.block.entity.ModBlockEntities;
+// Это блок-энтити для пресса, который может создавать предметы по рецептам с использованием топлива и тепла.
 import com.hbm_m.recipe.PressRecipe;
-import com.hbm_m.menu.PressMenu;
+import com.hbm_m.menu.MachinePressMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -33,7 +32,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
-public class PressBlockEntity extends BlockEntity implements MenuProvider {
+public class MachinePressBlockEntity extends BlockEntity implements MenuProvider {
     private final ItemStackHandler itemHandler = new ItemStackHandler(4) {
         @Override
         protected void onContentsChanged(int slot) {
@@ -74,23 +73,23 @@ public class PressBlockEntity extends BlockEntity implements MenuProvider {
 
     protected final ContainerData data;
 
-    public PressBlockEntity(BlockPos pos, BlockState state) {
+    public MachinePressBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.PRESS_BE.get(), pos, state);
         this.data = new ContainerData() {
             @Override
             public int get(int index) {
                 return switch (index) {
-                    case 0 -> PressBlockEntity.this.progress;
-                    case 1 -> PressBlockEntity.this.maxProgress;
-                    case 2 -> PressBlockEntity.this.fuelTime;
-                    case 3 -> PressBlockEntity.this.maxFuelTime;
-                    case 4 -> PressBlockEntity.this.heatLevel;
-                    case 5 -> PressBlockEntity.this.maxHeatLevel;
-                    case 6 -> PressBlockEntity.this.heatState;
-                    case 7 -> PressBlockEntity.this.pressPosition;
-                    case 8 -> PressBlockEntity.this.pressingDown;
-                    case 9 -> PressBlockEntity.this.efficiency;
-                    case 10 -> PressBlockEntity.this.pressAnimationSpeed;
+                    case 0 -> MachinePressBlockEntity.this.progress;
+                    case 1 -> MachinePressBlockEntity.this.maxProgress;
+                    case 2 -> MachinePressBlockEntity.this.fuelTime;
+                    case 3 -> MachinePressBlockEntity.this.maxFuelTime;
+                    case 4 -> MachinePressBlockEntity.this.heatLevel;
+                    case 5 -> MachinePressBlockEntity.this.maxHeatLevel;
+                    case 6 -> MachinePressBlockEntity.this.heatState;
+                    case 7 -> MachinePressBlockEntity.this.pressPosition;
+                    case 8 -> MachinePressBlockEntity.this.pressingDown;
+                    case 9 -> MachinePressBlockEntity.this.efficiency;
+                    case 10 -> MachinePressBlockEntity.this.pressAnimationSpeed;
                     default -> 0;
                 };
             }
@@ -98,17 +97,17 @@ public class PressBlockEntity extends BlockEntity implements MenuProvider {
             @Override
             public void set(int index, int value) {
                 switch (index) {
-                    case 0 -> PressBlockEntity.this.progress = value;
-                    case 1 -> PressBlockEntity.this.maxProgress = value;
-                    case 2 -> PressBlockEntity.this.fuelTime = value;
-                    case 3 -> PressBlockEntity.this.maxFuelTime = value;
-                    case 4 -> PressBlockEntity.this.heatLevel = value;
-                    case 5 -> PressBlockEntity.this.maxHeatLevel = value;
-                    case 6 -> PressBlockEntity.this.heatState = value;
-                    case 7 -> PressBlockEntity.this.pressPosition = value;
-                    case 8 -> PressBlockEntity.this.pressingDown = value;
-                    case 9 -> PressBlockEntity.this.efficiency = value;
-                    case 10 -> PressBlockEntity.this.pressAnimationSpeed = value;
+                    case 0 -> MachinePressBlockEntity.this.progress = value;
+                    case 1 -> MachinePressBlockEntity.this.maxProgress = value;
+                    case 2 -> MachinePressBlockEntity.this.fuelTime = value;
+                    case 3 -> MachinePressBlockEntity.this.maxFuelTime = value;
+                    case 4 -> MachinePressBlockEntity.this.heatLevel = value;
+                    case 5 -> MachinePressBlockEntity.this.maxHeatLevel = value;
+                    case 6 -> MachinePressBlockEntity.this.heatState = value;
+                    case 7 -> MachinePressBlockEntity.this.pressPosition = value;
+                    case 8 -> MachinePressBlockEntity.this.pressingDown = value;
+                    case 9 -> MachinePressBlockEntity.this.efficiency = value;
+                    case 10 -> MachinePressBlockEntity.this.pressAnimationSpeed = value;
                 }
             }
 
@@ -168,7 +167,7 @@ public class PressBlockEntity extends BlockEntity implements MenuProvider {
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new PressMenu(containerId, playerInventory, this, this.data);
+        return new MachinePressMenu(containerId, playerInventory, this, this.data);
     }
 
     @Override

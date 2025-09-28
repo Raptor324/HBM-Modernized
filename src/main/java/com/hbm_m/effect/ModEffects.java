@@ -1,5 +1,8 @@
 package com.hbm_m.effect;
 
+// Класс для регистрации пользовательских эффектов (зелья) в моде.
+// Здесь мы создаем DeferredRegister для MobEffect и регистрируем наш эффект Radaway.
+
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.world.effect.MobEffect;
@@ -10,7 +13,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 public class ModEffects {
-    // 1. Создаем DeferredRegister для MobEffect
+
     public static final DeferredRegister<MobEffect> EFFECTS =
             DeferredRegister.create(ForgeRegistries.MOB_EFFECTS, RefStrings.MODID);
 

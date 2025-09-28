@@ -1,5 +1,8 @@
 package com.hbm_m.capability;
 
+// Данный класс предоставляет capability для хранения данных о радиации в чанке.
+// Он реализует ICapabilitySerializable для сохранения и загрузки данных в NBT тег чанка.
+// Данные включают уровень радиации от блоков и фоновую радиацию.
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraftforge.common.capabilities.Capability;

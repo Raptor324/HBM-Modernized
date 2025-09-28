@@ -1,5 +1,7 @@
 package com.hbm_m.client.model;
 
+// Модель предмета, которая показывает результат сборки из шаблона при зажатом Shift.
+// Основана на BakedModelWrapper и ItemOverrides.
 import com.hbm_m.item.ItemAssemblyTemplate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
@@ -36,7 +38,7 @@ public class TemplateBakedModel extends BakedModelWrapper<BakedModel> {
         private final Map<Item, BakedModel> cache = new ConcurrentHashMap<>();
 
         public TemplateItemOverrides() {
-            // 1. Используем пустой конструктор. Старый способ с (null, null, null) больше не нужен.
+            // 1. Используем пустой конструктор
             super();
         }
 

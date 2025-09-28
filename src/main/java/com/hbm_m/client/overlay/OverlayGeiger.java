@@ -1,5 +1,9 @@
 package com.hbm_m.client.overlay;
 
+// Оверлей для геигер-счетчика. Показывает уровень радиации игрока и окружающей среды,
+// если геигер-счетчик есть в инвентаре игрока. Использует кэширование для оптимизации проверки инвентаря.
+// Рендерит прогресс-бар для радиации игрока и иконки/текст для радиации окружающей среды.
+// Использует IGuiOverlay из Forge для интеграции с GUI игры.
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.item.ItemGeigerCounter;
 import net.minecraft.client.Minecraft;
@@ -11,7 +15,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 
-public class GeigerOverlay {
+public class OverlayGeiger {
 
     public static float clientPlayerRadiation = 0.0f;
     public static float clientTotalEnvironmentRadiation = 0.0f;
@@ -103,5 +107,5 @@ public class GeigerOverlay {
         return false;
     }
 
-    public static final IGuiOverlay GEIGER_HUD_OVERLAY = GeigerOverlay::onRenderOverlay;
+    public static final IGuiOverlay GEIGER_HUD_OVERLAY = OverlayGeiger::onRenderOverlay;
 }

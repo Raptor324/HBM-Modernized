@@ -1,5 +1,7 @@
 package com.hbm_m.armormod.util;
 
+// Хелпер для управления модификациями брони: сохранение/загрузка из NBT,
+// применение атрибутов, вычисление защиты от радиации и т.п.
 import com.google.common.collect.Multimap;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.armormod.item.ItemModRadProtection;
@@ -63,7 +65,7 @@ public class ArmorModificationHelper {
             return;
         }
 
-        final Multimap<Attribute, AttributeModifier> oldAttributeModifiers = armorStack.getAttributeModifiers(armorItem.getEquipmentSlot());
+        // final Multimap<Attribute, AttributeModifier> oldAttributeModifiers = armorStack.getAttributeModifiers(armorItem.getEquipmentSlot());
         CompoundTag mainTag = armorStack.getOrCreateTag();
         CompoundTag modsCompound = new CompoundTag();
 

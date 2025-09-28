@@ -1,5 +1,6 @@
 package com.hbm_m.client.model;
 
+// Утилитарный класс для создания кубоидов с настраиваемыми UV координатами для каждой грани.
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
@@ -45,24 +46,23 @@ public class ModelHelper {
 
         switch (direction) {
             case DOWN  -> putVertices(builder, normal, spec.rotate90(),
-                                      new float[]{x0, y0, z1, u0, v1}, new float[]{x0, y0, z0, u0, v0},
-                                      new float[]{x1, y0, z0, u1, v0}, new float[]{x1, y0, z1, u1, v1});
+                                    new float[]{x0, y0, z1, u0, v1}, new float[]{x0, y0, z0, u0, v0},
+                                    new float[]{x1, y0, z0, u1, v0}, new float[]{x1, y0, z1, u1, v1});
             case UP    -> putVertices(builder, normal, spec.rotate90(),
-                                      new float[]{x0, y1, z0, u0, v0}, new float[]{x0, y1, z1, u0, v1},
-                                      new float[]{x1, y1, z1, u1, v1}, new float[]{x1, y1, z0, u1, v0});
+                                    new float[]{x0, y1, z0, u0, v0}, new float[]{x0, y1, z1, u0, v1},
+                                    new float[]{x1, y1, z1, u1, v1}, new float[]{x1, y1, z0, u1, v0});
             case NORTH -> putVertices(builder, normal, spec.rotate90(),
-                                      new float[]{x0, y1, z0, u0, v0}, new float[]{x1, y1, z0, u1, v0},
-                                      new float[]{x1, y0, z0, u1, v1}, new float[]{x0, y0, z0, u0, v1});
+                                    new float[]{x0, y1, z0, u0, v0}, new float[]{x1, y1, z0, u1, v0},
+                                    new float[]{x1, y0, z0, u1, v1}, new float[]{x0, y0, z0, u0, v1});
             case SOUTH -> putVertices(builder, normal, spec.rotate90(),
-                                      new float[]{x0, y0, z1, u0, v1}, new float[]{x1, y0, z1, u1, v1},
-                                      new float[]{x1, y1, z1, u1, v0}, new float[]{x0, y1, z1, u0, v0});
-            // !! КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ ЗДЕСЬ !! Порядок UV-координат был неправильным (u1 -> u0 вместо u0 -> u1)
+                                    new float[]{x0, y0, z1, u0, v1}, new float[]{x1, y0, z1, u1, v1},
+                                    new float[]{x1, y1, z1, u1, v0}, new float[]{x0, y1, z1, u0, v0});
             case WEST  -> putVertices(builder, normal, spec.rotate90(),
-                                      new float[]{x0, y0, z1, u0, v1}, new float[]{x0, y1, z1, u0, v0},
-                                      new float[]{x0, y1, z0, u1, v0}, new float[]{x0, y0, z0, u1, v1});
+                                    new float[]{x0, y0, z1, u0, v1}, new float[]{x0, y1, z1, u0, v0},
+                                    new float[]{x0, y1, z0, u1, v0}, new float[]{x0, y0, z0, u1, v1});
             case EAST  -> putVertices(builder, normal, spec.rotate90(),
-                                      new float[]{x1, y0, z0, u0, v1}, new float[]{x1, y1, z0, u0, v0},
-                                      new float[]{x1, y1, z1, u1, v0}, new float[]{x1, y0, z1, u1, v1});
+                                    new float[]{x1, y0, z0, u0, v1}, new float[]{x1, y1, z0, u0, v0},
+                                    new float[]{x1, y1, z1, u1, v0}, new float[]{x1, y0, z1, u1, v1});
         }
         return builder.getQuad();
     }

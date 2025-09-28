@@ -1,5 +1,6 @@
 package com.hbm_m.armormod.menu;
 
+// Интерфейс для слотов, которые могут показывать подсказки, когда они пусты
 import net.minecraft.network.chat.Component;
 
 public interface IHasTooltip {

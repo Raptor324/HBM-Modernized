@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity;
 
+// Это блок-энтити для энергохранилища, которое может заряжать предметы и машины по проводам
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.energy.BlockEntityEnergyStorage;
 import com.hbm_m.menu.MachineBatteryMenu;
@@ -212,7 +213,6 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         setChanged();
     }
 
-    // ... (createMenu, getCapability, onLoad, invalidateCaps, customName methods остаются без изменений)
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int pContainerId, @Nonnull Inventory pPlayerInventory, @Nonnull Player pPlayer) {

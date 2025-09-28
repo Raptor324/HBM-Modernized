@@ -1,4 +1,7 @@
 package com.hbm_m.client;
+// Обработчик частиц для блоков с тегом "emit_dark_particles".
+// Каждые несколько тиков выбирает случайные блоки в радиусе вокруг игрока,
+// и если блок имеет нужный тег, спавнит частицы в соседних воздушных блоках. (НЕ работает)
 
 import com.hbm_m.block.HBMBlockTags;
 import com.hbm_m.particle.ModParticleTypes;

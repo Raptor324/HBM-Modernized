@@ -1,5 +1,8 @@
 package com.hbm_m.item;
 
+// Предмет-батарея с поддержкой хранения энергии через Forge Energy.
+// Показывает уровень заряда в виде полоски и в подсказке.
+
 import com.hbm_m.capability.EnergyCapabilityProvider;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;

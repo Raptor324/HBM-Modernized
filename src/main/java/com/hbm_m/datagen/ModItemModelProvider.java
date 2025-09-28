@@ -1,4 +1,7 @@
 package com.hbm_m.datagen;
+// Провайдер генерации моделей предметов для мода.
+// Здесь мы определяем, как будут выглядеть наши предметы в инвентаре и в мире.
+// Используется в классе DataGenerators для регистрации.
 
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;

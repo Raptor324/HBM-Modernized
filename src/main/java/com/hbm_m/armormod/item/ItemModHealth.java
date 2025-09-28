@@ -1,7 +1,7 @@
-
-
 package com.hbm_m.armormod.item;
 
+// Это мод, который увеличивает максимальное здоровье игрока при установке на броню.
+// Он подходит для всех типов брони и добавляет соответствующую строку в тултип
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 import net.minecraft.ChatFormatting;

@@ -1,5 +1,8 @@
 package com.hbm_m.item;
 
+// Предмет-шаблон для крафтов в сборочной машине.
+// Хранит в себе NBT с рецептом сборки (выходной предмет).
+
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;

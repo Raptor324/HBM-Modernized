@@ -1,10 +1,13 @@
 package com.hbm_m.block;
 
+// Этот класс реализует блок сборочной машины,
+// которая является мультиблочной структурой 3x2x3 с центральным контроллером. Может принимать энергию и обрабатывать предметы.
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.block.entity.MachineAssemblerBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -13,9 +16,7 @@ import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
-import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -44,83 +45,68 @@ import org.jetbrains.annotations.Nullable;
 public class MachineAssemblerBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-    
-    // public static final VoxelShape BASE_SHAPE_NORTH = Shapes.box(-1, 0, -1, 2, 2, 2);
-    
-    static final Lazy<Map<Direction, VoxelShape>> SHAPES_LAZY = Lazy.of(() -> {
 
-        final double PIXEL = 1.0 / 16.0;
+    // Инициализируем формы напрямую из заранее заготовленных методов, без вращения
+    static final Lazy<Map<Direction, VoxelShape>> SHAPES_LAZY = Lazy.of(() ->
+        ImmutableMap.<Direction, VoxelShape>builder()
+            .put(Direction.NORTH, buildShapeNorth().move(0.5, 0, 0.5))
+            .put(Direction.SOUTH,  buildShapeSouth().move(0.5, 0, 0.5))
+            .put(Direction.WEST,   buildShapeWest().move(0.5, 0, 0.5))
+            .put(Direction.EAST,   buildShapeEast().move(0.5, 0, 0.5))
+            .build()
+    );
 
-        VoxelShape base = Shapes.box(-1, 0, -1, 2, 2, 2);
-        VoxelShape conveyorLeft = Shapes.box(-1.5, 0.0, 0.5, -0.5, 1.0, 1.5);
-        VoxelShape conveyorRight = Shapes.box(2.0, 0.0, -0.5, 2.5, 1.0, 0.5);
+    // --- ЧЕТЫРЕ НЕЗАВИСИМЫХ МЕТОДА ДЛЯ КАЖДОГО НАПРАВЛЕНИЯ ---
 
-        double wireY1 = 5.5 * PIXEL;
-        double wireY2 = 10.5 * PIXEL;
-        double wireX1_pos = 1.0 - 2.5 * PIXEL;
-        double wireX1_neg = -1.0 + 13.5 * PIXEL;
-        double wireX2_pos = 1.0 + 2.5 * PIXEL;
-        double wireX2_neg = -1.0 + 18.5 * PIXEL;
-
-        VoxelShape wireFrontLeft = Shapes.box(wireX1_neg, wireY1, -1.5, wireX2_neg, wireY2, -1.0);
-        VoxelShape wireFrontRight = Shapes.box(wireX1_pos, wireY1, -1.5, wireX2_pos, wireY2, -1.0);
-        
-        VoxelShape wireBackLeft = Shapes.box(wireX1_neg, wireY1, 2.0, wireX2_neg, wireY2, 2.5);
-        VoxelShape wireBackRight = Shapes.box(wireX1_pos, wireY1, 2.0, wireX2_pos, wireY2, 2.5);
-
-        VoxelShape unalignedShape = Shapes.or(
-            base, conveyorLeft, conveyorRight,
-            wireFrontLeft, wireFrontRight, wireBackLeft, wireBackRight
-        );
-
-        // --- ШАГ 2: Создание ЕДИНОЙ, правильно смещенной мастер-формы для NORTH ---
-        // Сначала применяем нужное смещение ОДИН РАЗ. Это наша эталонная форма.
-        VoxelShape masterShapeNorth = unalignedShape.move(0.5, 0, 0.5);
-
-        // --- ШАГ 3: Поворачиваем уже смещенную форму ---
-        // Теперь мы вращаем не исходную форму, а ту, что уже правильно отцентрована.
-        VoxelShape masterShapeS = rotateShape(masterShapeNorth, Rotation.CLOCKWISE_180);
-        VoxelShape masterShapeW = rotateShape(masterShapeNorth, Rotation.COUNTERCLOCKWISE_90);
-        VoxelShape masterShapeE = rotateShape(masterShapeNorth, Rotation.CLOCKWISE_90);
-
-        // --- ШАГ 4: Собираем карту БЕЗ дополнительных смещений ---
-        // Все смещения уже "запечены" в формы на предыдущих шагах.
-        return ImmutableMap.<Direction, VoxelShape>builder()
-                .put(Direction.NORTH, masterShapeNorth)
-                .put(Direction.SOUTH,  masterShapeS)
-                .put(Direction.WEST,   masterShapeW)
-                .put(Direction.EAST,   masterShapeE)
-                .build();
-    });
-
-    private static final MultiblockStructureHelper STRUCTURE_HELPER = new MultiblockStructureHelper(defineStructure());
-
-        private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
-        ImmutableMap.Builder<BlockPos, Supplier<BlockState>> builder = ImmutableMap.builder();
-
-        for (int y = 0; y <= 1; y++) {
-            for (int x = -1; x <= 2; x++) {
-                for (int z = -1; z <= 2; z++) {
-                    if (y == 0 && x == 0 && z == 0) continue;
-                    
-                    // Создаем final-переменные для использования в лямбде
-                    final int finalX = x;
-                    final int finalY = y;
-                    final int finalZ = z;
-
-                    // Оборачиваем получение BlockState в лямбду (Supplier).
-                    // Этот код НЕ будет выполнен немедленно. Он будет ждать, пока его не вызовут.
-                    builder.put(new BlockPos(x, y, z), () -> 
-                        ModBlocks.MACHINE_ASSEMBLER_PART.get().defaultBlockState()
-                            .setValue(MachineAssemblerPartBlock.OFFSET_X, finalX + 1)
-                            .setValue(MachineAssemblerPartBlock.OFFSET_Y, finalY)
-                            .setValue(MachineAssemblerPartBlock.OFFSET_Z, finalZ + 1)
-                    );
-                }
-            }
-        }
-        return builder.build();
+    private static VoxelShape buildShapeNorth() {
+        return Shapes.or(
+            Block.box(-16, 0, -16, 32, 32, 32),
+            Block.box(-24, 0, 8, -8, 16, 24),
+            Block.box(32, 0, -8, 40, 16, 8),
+            Block.box(-2.5, 5.5, -24, 2.5, 10.5, -16),
+            Block.box(13.5, 5.5, -24, 18.5, 10.5, -16),
+            Block.box(-2.5, 5.5, 32, 2.5, 10.5, 40),
+            Block.box(13.5, 5.5, 32, 18.5, 10.5, 40)
+        ).optimize();
     }
+
+    private static VoxelShape buildShapeEast() { // Rotation: (x, z) -> (-z, x)
+        return Shapes.or(
+            Block.box(-32, 0, -16, 16, 32, 32),
+            Block.box(-24, 0, -24, -8, 16, -8),
+            Block.box(-8, 0, 32, 8, 16, 40),
+            Block.box(16, 5.5, -2.5, 24, 10.5, 2.5),
+            Block.box(16, 5.5, 13.5, 24, 10.5, 18.5),
+            Block.box(-40, 5.5, -2.5, -32, 10.5, 2.5),
+            Block.box(-40, 5.5, 13.5, -32, 10.5, 18.5)
+        ).optimize();
+    }
+
+    private static VoxelShape buildShapeSouth() { // Rotation: (x, z) -> (-x, -z)
+        return Shapes.or(
+            Block.box(-32, 0, -32, 16, 32, 16),
+            Block.box(8, 0, -24, 24, 16, -8),
+            Block.box(-40, 0, -8, -32, 16, 8),
+            Block.box(-2.5, 5.5, 16, 2.5, 10.5, 24),
+            Block.box(-18.5, 5.5, 16, -13.5, 10.5, 24),
+            Block.box(-2.5, 5.5, -40, 2.5, 10.5, -32),
+            Block.box(-18.5, 5.5, -40, -13.5, 10.5, -32)
+        ).optimize();
+    }
+
+    private static VoxelShape buildShapeWest() { // Rotation: (x, z) -> (z, -x)
+        return Shapes.or(
+            Block.box(-16, 0, -32, 32, 32, 16),
+            Block.box(8, 0, 8, 24, 16, 24),
+            Block.box(-8, 0, -40, 8, 16, -32),
+            Block.box(-24, 5.5, -2.5, -16, 10.5, 2.5),
+            Block.box(-24, 5.5, -18.5, -16, 10.5, -13.5),
+            Block.box(32, 5.5, -2.5, 40, 10.5, 2.5),
+            Block.box(32, 5.5, -18.5, 40, 10.5, -13.5)
+        ).optimize();
+    }
+
+    private static MultiblockStructureHelper STRUCTURE_HELPER;
     
     public MachineAssemblerBlock(Properties properties) {
         super(properties);
@@ -128,28 +114,71 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
     }
 
     @Override
+    public PartRole getPartRole(BlockPos localOffset) {
+        int x = localOffset.getX();
+        int y = localOffset.getY();
+        int z = localOffset.getZ();
+
+        // Logic moved from MachineAssemblerPartBlockEntity.isEnergyConnector()
+        boolean isEnergy = (y == 0) && (x >= 0 && x <= 1) && (z == -1 || z == 2);
+        if (isEnergy) {
+            return PartRole.ENERGY_CONNECTOR;
+        }
+
+        // Logic moved from MachineAssemblerPartBlockEntity.isConveyorConnector()
+        boolean isOutput = (y == 0) && x == -1 && (z == 0 || z == 1);
+        if (isOutput) {
+            return PartRole.ITEM_OUTPUT;
+        }
+        
+        boolean isInput = (y == 0) && x == 2 && (z == 0 || z == 1);
+        if (isInput) {
+            return PartRole.ITEM_INPUT;
+        }
+
+        return PartRole.DEFAULT;
+    }
+
+    @Override
     public MultiblockStructureHelper getStructureHelper() {
+        if (STRUCTURE_HELPER == null) {
+            // The structure definition remains the same, but we tell the helper to use the universal Phantom Block
+            STRUCTURE_HELPER = new MultiblockStructureHelper(defineStructure(), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+        }
         return STRUCTURE_HELPER;
     }
 
     @Override
     public VoxelShape getCustomMasterVoxelShape(BlockState state) {
-        // Наш сборщик - особенный. Мы возвращаем его сложную, вручную
-        // созданную форму. Это переопределит стандартное поведение.
         return SHAPES_LAZY.get().get(state.getValue(FACING));
     }
 
+    private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
+        ImmutableMap.Builder<BlockPos, Supplier<BlockState>> builder = ImmutableMap.builder();
+        for (int y = 0; y <= 1; y++) {
+            for (int x = -1; x <= 2; x++) {
+                for (int z = -1; z <= 2; z++) {
+                    if (y == 0 && x == 0 && z == 0) continue;
+                    // The supplier here is now just a placeholder, as the helper uses the one from its constructor
+                    builder.put(new BlockPos(x, y, z), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+                }
+            }
+        }
+        return builder.build();
+    }
+
     @Override
-    public void setPlacedBy(@Nonnull Level level, @Nonnull BlockPos pos, @Nonnull BlockState state, @Nullable LivingEntity placer, @Nonnull ItemStack stack) {
-        super.setPlacedBy(level, pos, state, placer, stack);
-        // Мы больше не проверяем здесь, мы просто строим.
-        // BlockItem уже гарантировал, что место свободно.
-        if (!level.isClientSide) {
-            STRUCTURE_HELPER.placeStructure(level, pos, state.getValue(FACING));
+    public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
+        super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
+        // Проверяем, что это не просто смена состояния блока, а именно установка нового
+        if (!pState.is(pOldState.getBlock())) {
+            if (!pLevel.isClientSide) {
+                // Вызываем логику постройки структуры
+                getStructureHelper().placeStructure(pLevel, pPos, pState.getValue(FACING), this);
+            }
         }
     }
 
-    // РАЗРУШЕНИЕ СТРУКТУРЫ 
     @Override
     public void onRemove(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos, @Nonnull BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
@@ -166,8 +195,6 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
         super.onRemove(state, level, pos, newState, isMoving);
     }
     
-
-    // Взаимодействие (открытие GUI)
     @Override
     public InteractionResult use(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos, @Nonnull Player player, @Nonnull InteractionHand hand, @Nonnull BlockHitResult hit) {
         if (!level.isClientSide) {
@@ -181,41 +208,14 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
         return InteractionResult.SUCCESS;
     }
 
-    // @Override
-    // public VoxelShape getShape(@Nonnull BlockState pState, @Nonnull BlockGetter pLevel, @Nonnull BlockPos pPos, @Nonnull CollisionContext pContext) {
-    //     // Просто берем нужную форму из кэша
-    //     return SHAPES_LAZY.get().get(pState.getValue(FACING));
-    // }
-
     @Override
-    public VoxelShape getShape(@Nonnull BlockState pState, @Nonnull BlockGetter pLevel, @Nonnull BlockPos pPos, @Nonnull CollisionContext pContext) {
+    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
         return getCustomMasterVoxelShape(pState);
     }
 
-    // @Override
-    // public VoxelShape getCollisionShape(@Nonnull BlockState pState, @Nonnull BlockGetter pLevel, @Nonnull BlockPos pPos, @Nonnull CollisionContext pContext) {
-    //     return SHAPES_LAZY.get().get(pState.getValue(FACING));
-    // }
-
     @Override
-    public VoxelShape getCollisionShape(@Nonnull BlockState pState, @Nonnull BlockGetter pLevel, @Nonnull BlockPos pPos, @Nonnull CollisionContext pContext) {
-        // Физика и выделение для контроллера совпадают.
+    public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
         return getCustomMasterVoxelShape(pState);
-    }
-
-    // ХЕЛПЕР-МЕТОД ДЛЯ ПОВОРОТА VOXELSHAPE 
-    private static VoxelShape rotateShape(VoxelShape shape, Rotation rotation) {
-        VoxelShape[] buffer = {Shapes.empty()}; // Используем массив, чтобы его можно было изменять внутри лямбды
-        shape.forAllBoxes((minX, minY, minZ, maxX, maxY, maxZ) -> {
-            // Центр блока (0.5, 0.5) используется как точка вращения
-            buffer[0] = Shapes.or(buffer[0], switch (rotation) {
-                case CLOCKWISE_90 -> Shapes.box(1 - maxZ, minY, minX, 1 - minZ, maxY, maxX);
-                case CLOCKWISE_180 -> Shapes.box(1 - maxX, minY, 1 - maxZ, 1 - minX, maxY, 1 - minZ);
-                case COUNTERCLOCKWISE_90 -> Shapes.box(minZ, minY, 1 - maxX, maxZ, maxY, 1 - minX);
-                default -> shape; // Для NONE
-            });
-        });
-        return buffer[0];
     }
 
     @Override
@@ -223,7 +223,6 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
         return RenderShape.MODEL;
     }
 
-    // Стандартный код для BaseEntityBlock 
     @Nullable @Override
     public BlockEntity newBlockEntity(@Nonnull BlockPos pos, @Nonnull BlockState state) {
         return new MachineAssemblerBlockEntity(pos, state);

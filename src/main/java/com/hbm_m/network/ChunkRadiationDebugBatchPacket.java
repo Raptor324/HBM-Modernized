@@ -1,5 +1,9 @@
 package com.hbm_m.network;
 
+// Пакет для отправки от сервера к клиенту данных о радиации в чанках для отладки.
+// Используется только в режиме отладки для отображения уровней радиации в чанках на клиенте.
+// Содержит карту позиций чанков и их уровней радиации, а также идентификатор измерения.
+
 import com.hbm_m.client.ClientRadiationData;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;

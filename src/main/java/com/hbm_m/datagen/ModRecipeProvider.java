@@ -1,5 +1,8 @@
 package com.hbm_m.datagen;
 
+// Провайдер генерации рецептов крафта для мода.
+// Здесь мы определяем, как создаются наши предметы в игре.
+
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
 import net.minecraft.data.PackOutput;

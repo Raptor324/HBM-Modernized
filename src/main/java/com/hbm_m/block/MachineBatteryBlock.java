@@ -1,7 +1,6 @@
-// Файл: com/hbm_m/block/MachineBatteryBlock.java
-
 package com.hbm_m.block;
-
+// Этот класс реализует блок энергохранилища, которое может хранить энергию и взаимодействовать с другими машинами.
+// Блок имеет интерфейс для игрока и может выдавать сигнал компаратора на основе уровня заряда.
 import com.hbm_m.block.entity.MachineBatteryBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import net.minecraft.core.BlockPos;

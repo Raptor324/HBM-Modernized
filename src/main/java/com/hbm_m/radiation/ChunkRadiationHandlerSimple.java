@@ -1,5 +1,7 @@
 package com.hbm_m.radiation;
 
+// Этот класс реализует простую и эффективную систему симуляции радиации в чанках. Ядро всей радиационной механики мода.
+
 import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.capability.IChunkRadiation;
 import com.hbm_m.config.ModClothConfig;

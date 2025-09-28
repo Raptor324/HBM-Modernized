@@ -1,5 +1,7 @@
 package com.hbm_m.client.model;
 
+// Модель провода, которая генерируется процедурно в зависимости от состояния блока.
+// Использует IUnbakedGeometry для создания BakedModel на основе BlockState.
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.texture.TextureAtlas;

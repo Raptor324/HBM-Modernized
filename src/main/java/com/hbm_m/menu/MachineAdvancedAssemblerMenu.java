@@ -1,26 +1,29 @@
 package com.hbm_m.menu;
 
-import com.hbm_m.block.ModBlocks; // Замените на ваш класс с блоками
-import com.hbm_m.block.entity.AdvancedAssemblyMachineBlockEntity;
+// Меню для продвинутой сборочной машины.
+// Имеет слоты для батареи, улучшений, схемы, ввода и вывода.
+// Содержит логику для обработки Shift-клика и отображения прогресса сборки.
+
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.MachineAdvancedAssemblerBlockEntity;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
-public class AdvancedAssemblyMachineMenu extends AbstractContainerMenu {
+public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
 
-    private final AdvancedAssemblyMachineBlockEntity blockEntity;
+    private final MachineAdvancedAssemblerBlockEntity blockEntity;
     private final Level level;
     private final ContainerData data;
 
     // Конструктор, вызываемый с сервера
-    public AdvancedAssemblyMachineMenu(int pContainerId, Inventory pPlayerInventory, AdvancedAssemblyMachineBlockEntity pBlockEntity, ContainerData pData) {
+    public MachineAdvancedAssemblerMenu(int pContainerId, Inventory pPlayerInventory, MachineAdvancedAssemblerBlockEntity pBlockEntity, ContainerData pData) {
         super(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), pContainerId);
         checkContainerSize(pPlayerInventory, 17);
         this.blockEntity = pBlockEntity;
@@ -55,12 +58,12 @@ public class AdvancedAssemblyMachineMenu extends AbstractContainerMenu {
     }
 
     // Конструктор, вызываемый с клиента
-    public AdvancedAssemblyMachineMenu(int pContainerId, Inventory pPlayerInventory, FriendlyByteBuf pExtraData) {
+    public MachineAdvancedAssemblerMenu(int pContainerId, Inventory pPlayerInventory, FriendlyByteBuf pExtraData) {
         this(pContainerId, pPlayerInventory, getBlockEntity(pPlayerInventory, pExtraData), new SimpleContainerData(4));
     }
 
-    private static AdvancedAssemblyMachineBlockEntity getBlockEntity(final Inventory playerInventory, final FriendlyByteBuf data) {
-        if (playerInventory.player.level().getBlockEntity(data.readBlockPos()) instanceof AdvancedAssemblyMachineBlockEntity be) {
+    private static MachineAdvancedAssemblerBlockEntity getBlockEntity(final Inventory playerInventory, final FriendlyByteBuf data) {
+        if (playerInventory.player.level().getBlockEntity(data.readBlockPos()) instanceof MachineAdvancedAssemblerBlockEntity be) {
             return be;
         }
         throw new IllegalStateException("BlockEntity не найден!");
@@ -71,7 +74,7 @@ public class AdvancedAssemblyMachineMenu extends AbstractContainerMenu {
         return data.get(0) > 0;
     }
     
-    public AdvancedAssemblyMachineBlockEntity getBlockEntity() {
+    public MachineAdvancedAssemblerBlockEntity getBlockEntity() {
         return this.blockEntity;
     }
 

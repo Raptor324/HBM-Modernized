@@ -1,8 +1,9 @@
 package com.hbm_m.recipe;
 
+// Рецепт для Плавильной печи - машины, которая сплавляет два предмета в один.
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.hbm_m.main.MainRegistry;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;

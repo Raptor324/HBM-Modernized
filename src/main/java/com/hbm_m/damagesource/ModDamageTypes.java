@@ -1,5 +1,7 @@
 package com.hbm_m.damagesource;
 
+// Класс, содержащий ключи типов урона, используемых в моде.
+// Эти ключи применяются при создании DamageSource в ModDamageSources.java.
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.core.registries.Registries;

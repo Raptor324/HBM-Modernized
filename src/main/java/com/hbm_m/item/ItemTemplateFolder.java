@@ -1,5 +1,8 @@
 package com.hbm_m.item;
 
+// Предмет-папка для хранения и управления шаблонами мультиблоков.
+// При использовании открывает GUI с возможностью получать шаблоны.
+
 import java.util.List;
 
 import javax.annotation.Nonnull;

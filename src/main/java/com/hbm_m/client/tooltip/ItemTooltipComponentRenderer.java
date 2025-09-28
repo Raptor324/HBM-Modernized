@@ -1,5 +1,7 @@
-package com.hbm_m.client.tooltip; // Убедитесь, что пакет правильный
+package com.hbm_m.client.tooltip;
 
+// Компонент подсказки для рендеринга ItemStack в подсказках на клиенте.
+// Реализует ClientTooltipComponent для интеграции с системой подсказок Minecraft.
 import javax.annotation.Nonnull;
 
 import net.minecraft.client.gui.Font;

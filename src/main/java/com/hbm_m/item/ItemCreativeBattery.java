@@ -1,5 +1,8 @@
 package com.hbm_m.item;
 
+// Креативная батарея, которая предоставляет бесконечную энергию.
+// Не разряжается и не заряжается, всегда показывает полный заряд.
+
 import com.hbm_m.capability.EnergyCapabilityProvider;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;

@@ -1,5 +1,8 @@
 package com.hbm_m.hazard;
 
+// Система опасностей для предметов и блоков.
+// Позволяет регистрировать опасности для Item, Block и тегов.
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;

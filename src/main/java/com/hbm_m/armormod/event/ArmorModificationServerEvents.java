@@ -1,5 +1,6 @@
 package com.hbm_m.armormod.event;
 
+// Этот класс отвечает за корректировку здоровья игрока при смене брони с модификациями.
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;

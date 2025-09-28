@@ -1,14 +1,16 @@
 package com.hbm_m.client.overlay;
 
+// GUI для пресса. Отвечает за отрисовку прогресса прессования, состояния нагрева,
+// индикатора топлива и подсказок. Основан на AbstractContainerScreen и использует текстуры из ресурсов мода.
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.menu.PressMenu;
+import com.hbm_m.menu.MachinePressMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-public class PressScreen extends AbstractContainerScreen<PressMenu> {
+public class GUIMachinePress extends AbstractContainerScreen<MachinePressMenu> {
     private static final ResourceLocation GUI_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/press/press_gui.png");
     private static final ResourceLocation PRESS_ARROW_TEXTURE =
@@ -26,7 +28,7 @@ public class PressScreen extends AbstractContainerScreen<PressMenu> {
         }
     }
 
-    public PressScreen(PressMenu menu, Inventory playerInventory, Component title) {
+    public GUIMachinePress(MachinePressMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
         this.imageHeight = 166;

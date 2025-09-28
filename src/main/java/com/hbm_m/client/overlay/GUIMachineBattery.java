@@ -1,5 +1,7 @@
 package com.hbm_m.client.overlay;
 
+// GUI для энергохранилища. Показывает уровень энергии, режимы работы по красному камню и приоритет.
+// Основан на AbstractContainerScreen и использует текстуры из ресурсов мода.
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.menu.MachineBatteryMenu;
 import com.hbm_m.network.ModPacketHandler;

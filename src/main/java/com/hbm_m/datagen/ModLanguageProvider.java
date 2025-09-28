@@ -1,5 +1,7 @@
 package com.hbm_m.datagen;
 
+// Провайдер генерации локализаций (переводов) для мода.
+
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
@@ -118,7 +120,30 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.blast_furnace", "Доменная печь");
                 add("block.hbm_m.press", "Пресс");
                 add("block.hbm_m.geiger_counter_block", "Стационарный счетчик Гейгера");
+
                 add("block.hbm_m.uranium_ore", "Урановая руда");
+                add("block.hbm_m.aluminum_ore", "Алюминиевая руда");
+                add("block.hbm_m.aluminum_ore_deepslate", "Глубинная алюминиевая руда");
+                add("block.hbm_m.titanium_ore", "Титановая руда");
+                add("block.hbm_m.titanium_ore_deepslate", "Глубинная титановая руда");
+                add("block.hbm_m.tungsten_ore", "Вольфрамовая руда");
+                add("block.hbm_m.asbestos_ore", "Асбестовая руда");
+                add("block.hbm_m.sulfur_ore", "Серная руда");
+                add("block.hbm_m.cobalt_ore", "Кобальтовая руда");
+                add("block.hbm_m.uranium_ore_h", "Обогащённая урановая руда");
+                add("block.hbm_m.uranium_ore_deepslate", "Глубинная урановая руда");
+                add("block.hbm_m.thorium_ore", "Ториевая руда");
+                add("block.hbm_m.thorium_ore_deepslate", "Глубинная ториевая руда");
+                add("block.hbm_m.rareground_ore", "Руда редкоземельных металлов");
+                add("block.hbm_m.rareground_ore_deepslate", "Глубинная руда редкоземельных металлов");
+                add("block.hbm_m.beryllium_ore", "Бериллиевая руда");
+                add("block.hbm_m.beryllium_ore_deepslate", "Глубинная бериллиевая руда");
+                add("block.hbm_m.fluorite_ore", "Флюоритовая руда");
+                add("block.hbm_m.lead_ore", "Свинцовая руда");
+                add("block.hbm_m.lead_ore_deepslate", "Глубинная свинцовая руда");
+                add("block.hbm_m.cinnabar_ore", "Киноварная руда");
+
+
                 add("block.hbm_m.waste_grass", "Мёртвая трава");
                 add("block.hbm_m.waste_leaves", "Мёртвая листва");
                 
@@ -252,6 +277,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance", "Шанс зеленого пикселя");
                 add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime", "Мин. время жизни пикселя");
                 add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime", "Макс. время жизни пикселя");
+                add("text.autoconfig.hbm_m.option.enableObstructionHighlight", "Включить подсветку препятствий");
+                add("text.autoconfig.hbm_m.option.enableObstructionHighlight.@Tooltip", "Если включено, блоки, мешающие размещению мультиблока, \nбудут подсвечиваться красной рамкой.");
+                add("text.autoconfig.hbm_m.option.obstructionHighlightDuration", "Длительность подсветки (сек)");
+                add("text.autoconfig.hbm_m.option.obstructionHighlightDuration.@Tooltip", "Время в секундах, в течение которого будет видна подсветка препятствий.");
+                add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha", "Непрозрачность подсветки препятствий");
+                add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha.@Tooltip", "Устанавливает непрозрачность заливки подсветки.\n0% = Невидимая, 100% = Непрозрачная.");
 
                 add("text.autoconfig.hbm_m.category.chunk", "Чанк");
                 
@@ -406,7 +437,29 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.machine_assembler", "Assembly Machine");
                 add("container.hbm_m.wood_burner", "Wood Burner Generator");
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");
+
                 add("block.hbm_m.uranium_ore", "Uranium Ore");
+                add("block.hbm_m.aluminum_ore", "Aluminum Ore");
+                add("block.hbm_m.aluminum_ore_deepslate", "Deepslate Aluminum Ore");
+                add("block.hbm_m.titanium_ore", "Titanium Ore");
+                add("block.hbm_m.titanium_ore_deepslate", "Deepslate Titanium Ore");
+                add("block.hbm_m.tungsten_ore", "Tungsten Ore");
+                add("block.hbm_m.asbestos_ore", "Asbestos Ore");
+                add("block.hbm_m.sulfur_ore", "Sulfur Ore");
+                add("block.hbm_m.cobalt_ore", "Cobalt Ore");
+                add("block.hbm_m.uranium_ore_h", "High-Yield Uranium Ore");
+                add("block.hbm_m.uranium_ore_deepslate", "Deepslate Uranium Ore");
+                add("block.hbm_m.thorium_ore", "Thorium Ore");
+                add("block.hbm_m.thorium_ore_deepslate", "Deepslate Thorium Ore");
+                add("block.hbm_m.rareground_ore", "Rare Earth Ore");
+                add("block.hbm_m.rareground_ore_deepslate", "Deepslate Rare Earth Ore");
+                add("block.hbm_m.beryllium_ore", "Beryllium Ore");
+                add("block.hbm_m.beryllium_ore_deepslate", "Deepslate Beryllium Ore");
+                add("block.hbm_m.fluorite_ore", "Fluorite Ore");
+                add("block.hbm_m.lead_ore", "Lead Ore");
+                add("block.hbm_m.lead_ore_deepslate", "Deepslate Lead Ore");
+                add("block.hbm_m.cinnabar_ore", "Cinnabar Ore");
+
                 add("block.hbm_m.waste_grass", "Waste Grass");
                 add("block.hbm_m.waste_leaves", "Waste Leaves");
                 
@@ -539,6 +592,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance", "Green Pixel Chance");
                 add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime", "Min Pixel Lifetime");
                 add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime", "Max Pixel Lifetime");
+                add("text.autoconfig.hbm_m.option.enableObstructionHighlight", "Enable Obstruction Highlight");
+                add("text.autoconfig.hbm_m.option.enableObstructionHighlight.@Tooltip", "If enabled, blocks obstructing multiblock placement\nwill be highlighted with a red box.");
+                add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha", "Obstruction Highlight Opacity");
+add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha.@Tooltip", "Sets the opacity of the highlight box's fill.\n0% = Invisible, 100% = Solid.");
+
+                add("text.autoconfig.hbm_m.option.obstructionHighlightDuration", "Highlight Duration (sec)");
+                add("text.autoconfig.hbm_m.option.obstructionHighlightDuration.@Tooltip", "The duration in seconds for how long the obstruction highlight will be visible.");
 
                 add("text.autoconfig.hbm_m.category.chunk", "Chunk");
 

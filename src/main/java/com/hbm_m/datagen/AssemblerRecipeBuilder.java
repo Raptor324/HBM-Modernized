@@ -1,5 +1,8 @@
 package com.hbm_m.datagen;
 
+// Билдер рецептов для AssemblerRecipe с поддержкой количества ингредиентов.
+// Позволяет легко создавать рецепты с несколькими ингредиентами, каждый из которых имеет свое количество.
+// Используется в классе генерации данных ModRecipeProvider.
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.AssemblerRecipe;
@@ -25,23 +28,19 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
     private final ItemStack output;
     private final int duration;
     private final int power;
-    // Используем наш новый внутренний класс/record для хранения ингредиентов
     private final List<CountableIngredient> ingredients = new ArrayList<>();
     private final Advancement.Builder advancement = Advancement.Builder.advancement();
 
-    // Конструктор теперь приватный, используем фабричный метод для создания
     private AssemblerRecipeBuilder(ItemStack output, int duration, int power) {
         this.output = output;
         this.duration = duration;
         this.power = power;
     }
 
-    // НОВЫЙ УДОБНЫЙ СПОСОБ СОЗДАНИЯ 
     public static AssemblerRecipeBuilder assemblerRecipe(ItemStack output, int duration, int power) {
         return new AssemblerRecipeBuilder(output, duration, power);
     }
 
-    // НОВЫЕ УДОБНЫЕ СПОСОБЫ ДОБАВЛЕНИЯ ИНГРЕДИЕНТОВ 
     
     /**
      * Добавляет ингредиент с указанным количеством.
@@ -98,7 +97,7 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
         @Override
         public void serializeRecipeData(@Nonnull JsonObject pJson) {
             JsonArray jsonIngredients = new JsonArray();
-            // НОВАЯ ЛОГИКА СЕРИАЛИЗАЦИИ 
+
             for (CountableIngredient countableIng : this.builder.ingredients) {
                 // Преобразуем наш Ingredient в JSON
                 JsonObject ingredientJson = countableIng.ingredient().toJson().getAsJsonObject();
@@ -107,8 +106,7 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
                 jsonIngredients.add(ingredientJson);
             }
             pJson.add("ingredients", jsonIngredients);
-            
-            // Логика для output, duration и power остается прежней
+
             JsonObject jsonOutput = new JsonObject();
             jsonOutput.addProperty("item", ForgeRegistries.ITEMS.getKey(this.builder.output.getItem()).toString());
             if (this.builder.output.getCount() > 1) {

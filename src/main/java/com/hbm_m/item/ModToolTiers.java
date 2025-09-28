@@ -1,5 +1,7 @@
 package com.hbm_m.item;
 
+// Класс для определения нового уровня инструментов "ALLOY" с характеристиками.
+
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.Tiers;

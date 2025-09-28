@@ -1,8 +1,10 @@
 package com.hbm_m.menu;
+// Меню для доменной печи.
+// Обеспечивает взаимодействие между игроком и блоком, включая слоты для предметов и синхронизацию данных.
+// Содержит логику для обработки Shift-клика и отображения прогресса плавки и уровня топлива.
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.BlastFurnaceBlockEntity;
-import com.hbm_m.menu.ModMenuTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;

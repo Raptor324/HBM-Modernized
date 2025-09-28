@@ -1,14 +1,12 @@
 package com.hbm_m.client;
 
+// Обработчик клиентских событий для очистки данных о радиации при входе в мир или отключении.
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.event.entity.EntityJoinLevelEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-
-
-// Обработчик клиентских событий для очистки данных о радиации при входе в мир или отключении.
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class ClientRadiationEventHandler {

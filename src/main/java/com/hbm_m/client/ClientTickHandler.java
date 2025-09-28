@@ -1,8 +1,13 @@
 package com.hbm_m.client;
 
-import com.hbm_m.block.AdvancedAssemblyMachinePartBlock;
-import com.hbm_m.block.entity.AdvancedAssemblyMachineBlockEntity;
+// Клиентский обработчик тиков для проверки, на какой блок смотрит игрок каждые 20 тиков.
+// Если игрок смотрит на MachineAdvancedAssemblerBlockEntity или его часть, выводим в лог статус сборки.
+// Это полезно для отладки и проверки взаимодействия с мультиблочными структурами.
+import com.hbm_m.block.UniversalMachinePartBlock;
+import com.hbm_m.block.entity.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.multiblock.IMultiblockPart;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -37,30 +42,26 @@ public class ClientTickHandler {
         BlockState lookingAtState = mc.level.getBlockState(lookingAtPos);
         BlockEntity targetBE = null;
         
-        // Сценарий 1: Мы смотрим прямо на главный блок
-        if (mc.level.getBlockEntity(lookingAtPos) instanceof AdvancedAssemblyMachineBlockEntity aamBe) {
+        // Scenario 1: We are looking directly at the main block
+        if (mc.level.getBlockEntity(lookingAtPos) instanceof MachineAdvancedAssemblerBlockEntity aamBe) {
             targetBE = aamBe;
         
-        // Сценарий 2: Мы смотрим на блок-часть
-        } else if (lookingAtState.getBlock() instanceof AdvancedAssemblyMachinePartBlock) {
-            // Читаем оффсеты из BlockState части
-            int offsetX = lookingAtState.getValue(AdvancedAssemblyMachinePartBlock.OFFSET_X) - 1;
-            int offsetY = lookingAtState.getValue(AdvancedAssemblyMachinePartBlock.OFFSET_Y);
-            int offsetZ = lookingAtState.getValue(AdvancedAssemblyMachinePartBlock.OFFSET_Z) - 1;
+        // Scenario 2: We are looking at a part block
+        } else if (lookingAtState.getBlock() instanceof UniversalMachinePartBlock) {
 
-            // Вычисляем позицию главного блока
-            BlockPos masterPos = lookingAtPos.offset(-offsetX, -offsetY, -offsetZ);
-            
-            // Пытаемся получить BlockEntity из вычисленной позиции
-            if (mc.level.getBlockEntity(masterPos) instanceof AdvancedAssemblyMachineBlockEntity aamBe) {
-                targetBE = aamBe;
+            // Ask the part where its controller is, don't calculate it.
+            if (mc.level.getBlockEntity(lookingAtPos) instanceof IMultiblockPart part) {
+                BlockPos masterPos = part.getControllerPos();
+                if (masterPos != null && mc.level.getBlockEntity(masterPos) instanceof MachineAdvancedAssemblerBlockEntity aamBe) {
+                    targetBE = aamBe;
+                }
             }
+
         }
 
-        // Если мы нашли наш BlockEntity одним из двух способов
         if (targetBE != null) {
-             MainRegistry.LOGGER.debug("[ASSEMBLER >>>] Успешно смотрю на AAMBE. Статус isCrafting: {}", 
-                ((AdvancedAssemblyMachineBlockEntity) targetBE).isCrafting());
+             MainRegistry.LOGGER.debug("[CLIENT TICK] Looking at AAMBE. Crafting Status: {}", 
+                ((MachineAdvancedAssemblerBlockEntity) targetBE).isCrafting());
         }
     }
 }

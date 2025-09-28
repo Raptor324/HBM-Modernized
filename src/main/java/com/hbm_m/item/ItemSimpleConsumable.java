@@ -1,4 +1,6 @@
 package com.hbm_m.item;
+// Простой предмет, который выполняет заданное действие при использовании.
+// Действие передается через BiConsumer в конструкторе.
 
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;

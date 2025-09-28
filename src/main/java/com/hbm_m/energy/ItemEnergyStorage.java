@@ -1,5 +1,8 @@
 package com.hbm_m.energy;
 
+// Этот класс реализует хранение энергии в предметах, используя IEnergyStorage.
+// Энергия хранится в NBT-теге "energy". Можно настроить ёмкость, скорость приёма и отдачи.
+// Методы setEnergy, receiveEnergy и extractEnergy позволяют управлять энергией.
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.energy.IEnergyStorage;
 

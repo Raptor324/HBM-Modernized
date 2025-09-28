@@ -1,5 +1,8 @@
 package com.hbm_m.network.sounds;
 
+// Пакет для отправки звуковых эффектов от сервера к клиенту.
+// Используется для воспроизведения звуковых эффектов на клиентской стороне, инициируемых сервером (например, звуки приборов, действия игрока и т.д.).
+
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;

@@ -1,7 +1,8 @@
-// Файл: com/hbm_m/client/model/ProceduralWireBakedModel.java
-
 package com.hbm_m.client.model;
 
+// Модель процедурного провода, которая генерирует геометрию на основе состояния блока.
+// Поддерживает соединения в 6 направлениях и корректно ориентирует текстуры на всех гранях.
+// Логика текстурирования унифицирована для центрального куба и "рукавов" провода.
 import com.hbm_m.block.WireBlock;
 import com.hbm_m.client.model.ModelHelper.UVBox;
 import com.hbm_m.client.model.ModelHelper.UVSpec;
@@ -38,7 +39,7 @@ public class ProceduralWireBakedModel implements BakedModel {
         List<BakedQuad> quads = new ArrayList<>();
         float min = 5.5f, max = 10.5f;
 
-        if (state == null) { // Инвентарь
+        if (state == null) {
             ModelHelper.createCuboid(quads, new Vector3f(min, min, min), new Vector3f(max, max, max), sprite, Map.of(
                 Direction.UP, CORNER_CONTACT_SPEC, Direction.DOWN, CORNER_CONTACT_SPEC,
                 Direction.NORTH, BODY_SPEC, Direction.SOUTH, BODY_SPEC,
@@ -47,7 +48,7 @@ public class ProceduralWireBakedModel implements BakedModel {
             return quads;
         }
 
-        // --- 1. Анализ соединений ---
+        // 1. Анализ соединений
         Set<Direction> connections = new HashSet<>();
         for (Direction dir : Direction.values()) {
             if (state.getValue(WireBlock.PROPERTIES_MAP.get(dir))) {
@@ -58,14 +59,14 @@ public class ProceduralWireBakedModel implements BakedModel {
         boolean isStraight = connections.size() == 2 && connections.stream().anyMatch(d -> connections.contains(d.getOpposite()));
         boolean showCornerContacts = connections.size() <= 1 || !isStraight;
 
-        // !! ИЗМЕНЕНИЕ 1: Определяем главное направление провода, если он прямой !!
+        // Определяем главное направление провода, если он прямой
         Direction wireDirection = null;
         if (isStraight) {
             // Берем любое из соединений, чтобы узнать ось провода
             wireDirection = connections.iterator().next();
         }
 
-        // --- 2. Рендер центрального куба ---
+        // 2. Рендер центрального куба
         Map<Direction, UVSpec> coreUvMap = new HashMap<>();
         for (Direction faceDir : Direction.values()) {
             // Рендерим грань, только если к ней нет подключения
@@ -73,7 +74,6 @@ public class ProceduralWireBakedModel implements BakedModel {
                 if (showCornerContacts) {
                     coreUvMap.put(faceDir, CORNER_CONTACT_SPEC);
                 } else {
-                    // !! ИЗМЕНЕНИЕ 2: Используем УЖЕ РАБОТАЮЩУЮ логику для рукавов !!
                     coreUvMap.put(faceDir, getBodyTextureForArmFace(wireDirection, faceDir));
                 }
             }
@@ -82,7 +82,7 @@ public class ProceduralWireBakedModel implements BakedModel {
         ModelHelper.createCuboid(quads, new Vector3f(min, min, min), new Vector3f(max, max, max), sprite, coreUvMap, Collections.emptySet());
 
 
-        // --- 3. Рендер "рукавов" (этот блок уже был корректен) ---
+        // 3. Рендер рукавов
         for (Direction armDir : connections) {
             Map<Direction, UVSpec> armUvMap = new HashMap<>();
             armUvMap.put(armDir, END_CONTACT_SPEC);
@@ -104,9 +104,6 @@ public class ProceduralWireBakedModel implements BakedModel {
         return quads;
     }
 
-    /**
-     * ЕДИНАЯ И КОРРЕКТНАЯ ЛОГИКА ОРИЕНТАЦИИ ТЕКСТУР для всех частей провода
-     */
     private UVSpec getBodyTextureForArmFace(Direction armDir, Direction faceDir) {
         Direction.Axis armAxis = armDir.getAxis();
         Direction.Axis faceAxis = faceDir.getAxis();
@@ -121,8 +118,7 @@ public class ProceduralWireBakedModel implements BakedModel {
             return BODY_ROTATED_SPEC;
         }
     }
-    
-    // ... стандартные методы ...
+
     @Override public @NotNull List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull RandomSource rand) { return getQuads(state, side, rand, ModelData.EMPTY, null); }
     @Override public boolean useAmbientOcclusion() { return true; } @Override public boolean isGui3d() { return false; } @Override public boolean usesBlockLight() { return false; }
     @Override public boolean isCustomRenderer() { return false; } @Override public TextureAtlasSprite getParticleIcon() { return this.sprite; }

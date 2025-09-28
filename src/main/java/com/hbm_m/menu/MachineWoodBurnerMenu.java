@@ -1,8 +1,9 @@
 package com.hbm_m.menu;
+// Меню для дровяной печи.
+// Имеет слоты для топлива и пепла. 
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.WoodBurnerBlockEntity;
-import com.hbm_m.menu.ModMenuTypes;
+import com.hbm_m.block.entity.MachineWoodBurnerBlockEntity;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -17,19 +18,19 @@ import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
 
-public class WoodBurnerMenu extends AbstractContainerMenu {
-    private final WoodBurnerBlockEntity blockEntity;
+public class MachineWoodBurnerMenu extends AbstractContainerMenu {
+    private final MachineWoodBurnerBlockEntity blockEntity;
     private final Level level;
     private final ContainerData data;
 
-    public WoodBurnerMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
+    public MachineWoodBurnerMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
         this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(5));
     }
 
-    public WoodBurnerMenu(int pContainerId, Inventory inv, BlockEntity entity, ContainerData data) {
+    public MachineWoodBurnerMenu(int pContainerId, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.WOOD_BURNER_MENU.get(), pContainerId);
         checkContainerSize(inv, 2);
-        this.blockEntity = (WoodBurnerBlockEntity) entity;
+        this.blockEntity = (MachineWoodBurnerBlockEntity) entity;
         this.level = inv.player.level();
         this.data = data;
 

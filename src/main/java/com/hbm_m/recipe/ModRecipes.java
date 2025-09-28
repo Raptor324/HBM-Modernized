@@ -14,25 +14,25 @@ public class ModRecipes {
         DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, RefStrings.MODID);
 
         public static final DeferredRegister<RecipeType<?>> RECIPE_TYPES =
-        DeferredRegister.create(ForgeRegistries.RECIPE_TYPES, RefStrings.MODID);
+            DeferredRegister.create(ForgeRegistries.RECIPE_TYPES, RefStrings.MODID);
 
         public static final RegistryObject<RecipeSerializer<AssemblerRecipe>> ASSEMBLER_SERIALIZER =
-                SERIALIZERS.register("assembler", () -> AssemblerRecipe.Serializer.INSTANCE);
+            SERIALIZERS.register("assembler", () -> AssemblerRecipe.Serializer.INSTANCE);
                 
         public static final RegistryObject<RecipeType<AssemblerRecipe>> ASSEMBLER_TYPE =
-                RECIPE_TYPES.register("assembler", () -> AssemblerRecipe.Type.INSTANCE);
+            RECIPE_TYPES.register("assembler", () -> AssemblerRecipe.Type.INSTANCE);
 
 		public static final RegistryObject<RecipeSerializer<PressRecipe>> PRESS_SERIALIZER =
-				SERIALIZERS.register("press", () -> PressRecipe.Serializer.INSTANCE);
+			SERIALIZERS.register("press", () -> PressRecipe.Serializer.INSTANCE);
 				
 		public static final RegistryObject<RecipeType<PressRecipe>> PRESS_TYPE =
-				RECIPE_TYPES.register("press", () -> PressRecipe.Type.INSTANCE);
+			RECIPE_TYPES.register("press", () -> PressRecipe.Type.INSTANCE);
 
 		public static final RegistryObject<RecipeSerializer<BlastFurnaceRecipe>> BLAST_FURNACE_SERIALIZER =
-				SERIALIZERS.register("blast_furnace", () -> BlastFurnaceRecipe.Serializer.INSTANCE);
+			SERIALIZERS.register("blast_furnace", () -> BlastFurnaceRecipe.Serializer.INSTANCE);
 
 		public static final RegistryObject<RecipeType<BlastFurnaceRecipe>> BLAST_FURNACE_TYPE =
-            	RECIPE_TYPES.register("blast_furnace", () -> BlastFurnaceRecipe.Type.INSTANCE);
+            RECIPE_TYPES.register("blast_furnace", () -> BlastFurnaceRecipe.Type.INSTANCE);
 
 
         public static void register(IEventBus eventBus) {

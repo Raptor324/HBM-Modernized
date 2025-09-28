@@ -1,5 +1,8 @@
 package com.hbm_m.recipe;
 
+// Рецепт для Ассемблера - машины, которая собирает предметы из других предметов по рецептам.
+// Отличается от стандартных рецептов Minecraft тем, что позволяет указывать количество каждого ингредиента
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 

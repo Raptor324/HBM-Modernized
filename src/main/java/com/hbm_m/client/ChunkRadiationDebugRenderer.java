@@ -1,6 +1,6 @@
 package com.hbm_m.client;
 
-// Этот класс отвечает за отрисовку радиации в чанках в режиме отладки
+// Этот класс отвечает за отрисовку радиации в чанках в режиме отладки. 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;

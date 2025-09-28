@@ -1,6 +1,8 @@
 package com.hbm_m.client;
 
-import com.hbm_m.client.overlay.GUIAdvancedAssemblyMachine;
+// Основной класс клиентской настройки мода. Здесь регистрируются все клиентские обработчики событий,
+// GUI, рендереры, модели и т.д.
+import com.hbm_m.client.overlay.GUIMachineAdvancedAssembler;
 import com.hbm_m.client.overlay.GUIArmorTable;
 import com.hbm_m.client.overlay.GUIMachineAssembler;
 import com.hbm_m.client.overlay.GUIMachineBattery;
@@ -9,10 +11,10 @@ import com.hbm_m.client.model.loader.AdvancedAssemblyMachineModelLoader;
 import com.hbm_m.client.model.loader.ProceduralWireLoader;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.ModConfigKeybindHandler;
-import com.hbm_m.client.overlay.GeigerOverlay;
-import com.hbm_m.client.overlay.PressScreen;
-import com.hbm_m.client.overlay.RadiationVisualsOverlay;
-import com.hbm_m.client.overlay.WoodBurnerScreen;
+import com.hbm_m.client.overlay.OverlayGeiger;
+import com.hbm_m.client.overlay.GUIMachinePress;
+import com.hbm_m.client.overlay.OverlayRadiationVisuals;
+import com.hbm_m.client.overlay.GUIMachineWoodBurner;
 import com.hbm_m.client.tooltip.ItemTooltipComponent;
 import com.hbm_m.client.tooltip.ItemTooltipComponentRenderer;
 import com.hbm_m.lib.RefStrings;
@@ -22,7 +24,7 @@ import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.DarkParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.client.overlay.BlastFurnaceScreen;
+import com.hbm_m.client.overlay.GUIBlastFurnace;
 
 import net.minecraft.client.renderer.RenderType;
 
@@ -67,17 +69,18 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(ModConfigKeybindHandler.class);
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
+        MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
         MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
         event.enqueueWork(() -> {
             // Здесь мы связываем наш тип меню с классом экрана
             MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
             MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
-            MenuScreens.register(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIAdvancedAssemblyMachine::new);
+            MenuScreens.register(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
             MenuScreens.register(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
-            MenuScreens.register(ModMenuTypes.BLAST_FURNACE_MENU.get(), BlastFurnaceScreen::new);
-            MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), PressScreen::new);
-            MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), WoodBurnerScreen::new);
+            MenuScreens.register(ModMenuTypes.BLAST_FURNACE_MENU.get(), GUIBlastFurnace::new);
+            MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
+            MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
             // Register BlockEntity renderer for Advanced Assembly Machine
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE.get(), AdvancedAssemblyMachineRenderer::new);
         });
@@ -135,9 +138,9 @@ public class ClientSetup {
         // Регистрируем оверлей.
         // Мы говорим: "Нарисуй оверлей с ID 'geiger_counter_hud' НАД хотбаром,
         // используя логику из объекта GeigerOverlay.GEIGER_HUD_OVERLAY".
-        event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", GeigerOverlay.GEIGER_HUD_OVERLAY);
+        event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", OverlayGeiger.GEIGER_HUD_OVERLAY);
 
-        event.registerAbove(VanillaGuiOverlay.PORTAL.id(), "radiation_pixels", RadiationVisualsOverlay.RADIATION_PIXELS_OVERLAY);
+        event.registerAbove(VanillaGuiOverlay.PORTAL.id(), "radiation_pixels", OverlayRadiationVisuals.RADIATION_PIXELS_OVERLAY);
         
         MainRegistry.LOGGER.info("GUI overlays registered.");
     }
@@ -166,7 +169,6 @@ public class ClientSetup {
             GraphicsStatus graphics = Minecraft.getInstance().options.graphicsMode().get();
             
             if (graphics == GraphicsStatus.FANCY || graphics == GraphicsStatus.FABULOUS) {
-                // Используем ChunkRenderTypeSet.of()
                 return ChunkRenderTypeSet.of(RenderType.cutoutMipped());
             }
             

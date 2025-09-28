@@ -1,5 +1,9 @@
 package com.hbm_m.particle.custom;
 
+// Частица радиационного тумана.
+// Используется для создания эффекта радиационного тумана в зонах с высокой радиацией.
+// Частица медленно увеличивается в размере и плавно исчезает, создавая атмосферный эффект.
+
 import javax.annotation.Nonnull;
 
 import net.minecraft.client.multiplayer.ClientLevel;

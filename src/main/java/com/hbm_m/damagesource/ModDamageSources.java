@@ -1,5 +1,9 @@
 package com.hbm_m.damagesource;
 
+/**
+ * Вспомогательный класс-фабрика для динамического создания DamageSource.
+ * НЕ создавайте экземпляры этого класса. Используйте только статические методы.
+ */
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.world.damagesource.DamageSource;
@@ -7,10 +11,6 @@ import net.minecraft.world.damagesource.DamageType;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.level.Level;
 
-/**
- * Вспомогательный класс-фабрика для динамического создания DamageSource.
- * НЕ создавайте экземпляры этого класса. Используйте только статические методы.
- */
 public final class ModDamageSources {
 
     // Приватные методы-конструкторы 

@@ -1,5 +1,8 @@
 package com.hbm_m.item;
 
+// Предмет-блок батареи для машин, поддерживающий хранение энергии через Forge Energy (Энергохранилище).
+// Показывает информацию о емкости, скорости зарядки/разрядки и текущем заряде в подсказке.
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;

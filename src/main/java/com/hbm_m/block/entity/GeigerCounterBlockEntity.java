@@ -1,5 +1,9 @@
 package com.hbm_m.block.entity;
 
+// Блок-энтити для Гейгера, который измеряет радиацию в чанке и издает щелчки в зависимости от уровня радиации.
+// Логика звуков адаптирована из GeigerCounterItem, но с учетом того, что это блок, а не предмет.
+// Радиоактивность измеряется с помощью ChunkRadiationManager, который управляет радиацией на уровне чанков.
+// Звук издается в мире, а не игроку, и громкость/частота зависят от измеренного уровня радиации.
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.core.BlockPos;
@@ -8,7 +12,6 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.registries.RegistryObject;
 
@@ -16,7 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Random;
-import java.util.function.Supplier;
 
 import javax.annotation.Nonnull;
 

@@ -1,10 +1,13 @@
 package com.hbm_m.main;
 
+// Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
+// Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
+// Также здесь настраиваются обработчики событий и системы радиации.
+
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.item.ItemAssemblyTemplate;
-import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.particle.ModParticleTypes;

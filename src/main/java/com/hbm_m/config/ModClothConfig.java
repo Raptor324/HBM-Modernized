@@ -1,4 +1,6 @@
 package com.hbm_m.config;
+// Конфигурация мода с использованием AutoConfig и Cloth Config.
+// Включает валидацию значений после загрузки для обеспечения корректных настроек
 
 import net.minecraft.util.Mth;
 import com.hbm_m.main.MainRegistry;
@@ -125,6 +127,20 @@ public class ModClothConfig implements ConfigData {
     @Category("overlay")
     @Gui.Tooltip
     public int radiationPixelMaxLifetime = 20;
+
+    @Category("overlay")
+    @Gui.Tooltip()
+    public boolean enableObstructionHighlight = true;
+
+    @Category("overlay")
+    @Gui.Tooltip()
+    @BoundedDiscrete(min = 0, max = 100)
+    public int obstructionHighlightAlpha = 20;
+
+    @Category("overlay")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 1, max = 10)
+    public int obstructionHighlightDuration = 2;
 
     // Чанк 
     @Category("chunk")

@@ -1,5 +1,6 @@
 package com.hbm_m.block;
 
+// Этот класс реализует блок стола модификации брони
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;

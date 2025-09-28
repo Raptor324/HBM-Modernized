@@ -1,6 +1,10 @@
 package com.hbm_m.network;
 
-import com.hbm_m.client.overlay.GeigerOverlay;
+// Пакет для передачи данных о радиации от сервера к клиенту.
+// Содержит два значения: общую радиацию в окружающей среде и радиацию игрока.
+// Используется для обновления оверлея радиации на клиенте.
+
+import com.hbm_m.client.overlay.OverlayGeiger;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.fml.DistExecutor;
@@ -38,8 +42,8 @@ public class RadiationDataPacket {
             // Выполняем код только на клиенте
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
                 // Обновляем ОБА статических поля в нашем классе-оверлее
-                GeigerOverlay.clientTotalEnvironmentRadiation = msg.totalEnvironmentRad;
-                GeigerOverlay.clientPlayerRadiation = msg.playerRad;
+                OverlayGeiger.clientTotalEnvironmentRadiation = msg.totalEnvironmentRad;
+                OverlayGeiger.clientPlayerRadiation = msg.playerRad;
                 
                 if (msg.totalEnvironmentRad > 0 || msg.playerRad > 0) {
                     MainRegistry.LOGGER.debug("CLIENT: Received RadiationDataPacket. EnvRad: {}, PlayerRad: {}", msg.totalEnvironmentRad, msg.playerRad);

@@ -1,7 +1,8 @@
 package com.hbm_m.block.entity;
 
+// Блок-энтити для Продвинутой Сборочной Машины с поддержкой энергии, жидкостей, предметов и анимаций.
 import com.hbm_m.energy.BlockEntityEnergyStorage;
-import com.hbm_m.menu.AdvancedAssemblyMachineMenu;
+import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -23,20 +24,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.EnergyStorage;
-import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.Random;
-
-
-public class AdvancedAssemblyMachineBlockEntity extends BlockEntity implements MenuProvider {
+public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements MenuProvider {
 private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
         @Override
         protected void onContentsChanged(int slot) {
@@ -64,7 +58,7 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
     private LazyOptional<FluidTank> lazyFluidHandler = LazyOptional.empty();
     
     // --- ЛОГИКА ПРОЦЕССОВ ---
-    // TODO: Замените это на вашу систему рецептов и модуль обработки
+    // TODO: Заменить это на систему рецептов и модуль обработки
     // public ModuleMachineAssembler assemblerModule;
     public int progress = 0;
     public int maxProgress = 100; // Пример
@@ -80,7 +74,7 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
 
     protected final ContainerData data;
 
-    public AdvancedAssemblyMachineBlockEntity(BlockPos pPos, BlockState pBlockState) {
+    public MachineAdvancedAssemblerBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE.get(), pPos, pBlockState); // Укажите ваш тип BlockEntity
         for (int i = 0; i < this.arms.length; i++) {
             this.arms[i] = new AssemblerArm();
@@ -91,8 +85,8 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
             @Override
             public int get(int pIndex) {
                 return switch (pIndex) {
-                    case 0 -> AdvancedAssemblyMachineBlockEntity.this.progress;
-                    case 1 -> AdvancedAssemblyMachineBlockEntity.this.maxProgress;
+                    case 0 -> MachineAdvancedAssemblerBlockEntity.this.progress;
+                    case 1 -> MachineAdvancedAssemblerBlockEntity.this.maxProgress;
                     // Можно добавить еще 2 поля, например, для энергии, если нужно
                     default -> 0;
                 };
@@ -101,8 +95,8 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
             @Override
             public void set(int pIndex, int pValue) {
                 switch (pIndex) {
-                    case 0 -> AdvancedAssemblyMachineBlockEntity.this.progress = pValue;
-                    case 1 -> AdvancedAssemblyMachineBlockEntity.this.maxProgress = pValue;
+                    case 0 -> MachineAdvancedAssemblerBlockEntity.this.progress = pValue;
+                    case 1 -> MachineAdvancedAssemblerBlockEntity.this.maxProgress = pValue;
                 }
             }
 
@@ -120,7 +114,7 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
     public int getMaxProgress() { return this.maxProgress; }
 
     // --- TICK ЛОГИКА ---
-    public static void tick(Level level, BlockPos pos, BlockState state, AdvancedAssemblyMachineBlockEntity pEntity) {
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity pEntity) {
         if (level.isClientSide()) {
             pEntity.clientTick();
         } else {
@@ -311,7 +305,7 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int pContainerId, Inventory pPlayerInventory, Player pPlayer) {
-        return new AdvancedAssemblyMachineMenu(pContainerId, pPlayerInventory, this, this.data);
+        return new MachineAdvancedAssemblerMenu(pContainerId, pPlayerInventory, this, this.data);
     }
 
     // --- ВНУТРЕННИЙ КЛАСС ДЛЯ АНИМАЦИИ РУК-МАНИПУЛЯТОРОВ ---

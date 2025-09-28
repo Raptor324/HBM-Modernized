@@ -1,5 +1,7 @@
 package com.hbm_m.client.overlay;
 
+// GUI для папки с шаблонами. Позволяет искать и просматривать рецепты сборочной машины,
+// выбирать рецепт для создания шаблона. Поддерживает поиск, постраничный просмотр. При клике в режиме выживания списываются соответствующие ресурсы.
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.GiveTemplateC2SPacket;
 import com.hbm_m.network.ModPacketHandler;

@@ -1,5 +1,6 @@
 package com.hbm_m.armormod.item;
 
+// Это базовый класс для всех предметов-модификаций брони.
 import com.google.common.collect.Multimap;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 

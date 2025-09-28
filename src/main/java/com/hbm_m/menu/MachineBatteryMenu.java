@@ -1,5 +1,9 @@
 package com.hbm_m.menu;
 
+// Меню для энергохранилища.
+// Имеет слоты для ввода и вывода предметов, а также синхронизирует данные с клиентом.
+// Содержит логику для обработки Shift-клика и взаимодействия с инвентарем игрока. Можно настроить режимы работы и приоритеты.
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.MachineBatteryBlockEntity;
 import net.minecraft.network.FriendlyByteBuf;
@@ -20,7 +24,6 @@ public class MachineBatteryMenu extends AbstractContainerMenu {
     private final Level level;
     private final ContainerData data;
 
-    // Конструкторы остаются без изменений
     public MachineBatteryMenu(int pContainerId, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.MACHINE_BATTERY_MENU.get(), pContainerId);
         checkContainerSize(inv, 2);
@@ -64,7 +67,6 @@ public class MachineBatteryMenu extends AbstractContainerMenu {
     private static final int TE_INPUT_SLOT_INDEX = 36;
     private static final int TE_OUTPUT_SLOT_INDEX = 37;
 
-    // --- ИСПРАВЛЕННЫЙ МЕТОД БЫСТРОГО ПЕРЕМЕЩЕНИЯ ---
     @Override
     public ItemStack quickMoveStack(Player playerIn, int index) {
         Slot sourceSlot = slots.get(index);
@@ -124,7 +126,6 @@ public class MachineBatteryMenu extends AbstractContainerMenu {
         return copyOfSourceStack;
     }
 
-    // Методы добавления инвентаря игрока остаются без изменений
     private void addPlayerInventory(Inventory playerInventory) {
         for (int i = 0; i < 3; ++i) {
             for (int l = 0; l < 9; ++l) {

@@ -1,5 +1,7 @@
 package com.hbm_m.block.entity;
 
+// Универсальный класс для хранения энергии в блоках, реализующий IEnergyStorage с возможностью настройки.
+// TODO: Похоже, у меня есть похожаая реализация в другом месте (com.hbm_m.energy.BlockEntityEnergyStorage), нужно будет потом объединить.
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.energy.IEnergyStorage;
 

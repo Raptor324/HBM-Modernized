@@ -1,7 +1,9 @@
 package com.hbm_m.datagen;
 
+// Провайдер генерации состояний блоков и моделей для блоков мода.
+// Используется в классе DataGenerators для регистрации.
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.WireBlock;
+
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
@@ -49,9 +51,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.MACHINE_ASSEMBLER);
         customObjBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
 
-        simpleBlock(ModBlocks.MACHINE_ASSEMBLER_PART.get(), models().getBuilder(ModBlocks.MACHINE_ASSEMBLER_PART.getId().getPath()));
-
-        simpleBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE_PART.get(), models().getBuilder(ModBlocks.ADVANCED_ASSEMBLY_MACHINE_PART.getId().getPath()));
+        simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath()));
 
         simpleBlockWithItem(ModBlocks.WIRE_COATED.get(), models().getExistingFile(modLoc("block/wire_coated")));
         

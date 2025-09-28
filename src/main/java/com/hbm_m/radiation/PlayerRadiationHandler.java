@@ -1,5 +1,7 @@
 package com.hbm_m.radiation;
 
+// Обработчик радиации для игроков
+
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
@@ -35,9 +37,6 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.UUID;
 
-/**
- * Обработчик радиации для игроков
- */
 public class PlayerRadiationHandler {
     
     // Хранит текущий уровень радиации для каждого игрока
