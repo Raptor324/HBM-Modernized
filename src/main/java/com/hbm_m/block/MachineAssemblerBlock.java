@@ -159,7 +159,6 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
             for (int x = -1; x <= 2; x++) {
                 for (int z = -1; z <= 2; z++) {
                     if (y == 0 && x == 0 && z == 0) continue;
-                    // The supplier here is now just a placeholder, as the helper uses the one from its constructor
                     builder.put(new BlockPos(x, y, z), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
                 }
             }

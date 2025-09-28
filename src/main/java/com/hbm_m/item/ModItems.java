@@ -285,13 +285,22 @@ public class ModItems {
 
 
 
+    // Здесь мы регистрируем мультиблочные структуры для того, чтобы MultiblockBlockItem при установке мог обрабатывать их на наличие препятствующих блоков.
 
     public static final RegistryObject<Item> MACHINE_ASSEMBLER = ITEMS.register("machine_assembler",
-            () -> new MultiblockBlockItem(ModBlocks.MACHINE_ASSEMBLER.get(), new Item.Properties()));
+        () -> new MultiblockBlockItem(ModBlocks.MACHINE_ASSEMBLER.get(), new Item.Properties()));
             
     public static final RegistryObject<Item> ADVANCED_ASSEMBLY_MACHINE = ITEMS.register("advanced_assembly_machine",
         () -> new MultiblockBlockItem(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get(), new Item.Properties()));
 
+    public static final RegistryObject<Item> PRESS = ITEMS.register("press",
+        () -> new MultiblockBlockItem(ModBlocks.PRESS.get(), new Item.Properties()));
+
+    public static final RegistryObject<Item> WOOD_BURNER = ITEMS.register("wood_burner",
+        () -> new MultiblockBlockItem(ModBlocks.WOOD_BURNER.get(), new Item.Properties()));
+
+
+    // Здесь мы регистрируем предмет-блок батареи для машин, поддерживающий хранение энергии через Forge Energy
     public static final RegistryObject<Item> MACHINE_BATTERY = ITEMS.register("machine_battery",
             () -> new MachineBatteryBlockItem(ModBlocks.MACHINE_BATTERY.get(), new Item.Properties(), BATTERY_CAPACITY));
 

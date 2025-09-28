@@ -60,10 +60,10 @@ public class ModBlocks {
     public static final RegistryObject<Block> BLAST_FURNACE = registerBlock("blast_furnace",
             () -> new BlastFurnaceBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL)));
 
-    public static final RegistryObject<Block> PRESS = registerBlock("press",
+    public static final RegistryObject<Block> PRESS = registerBlockWithoutItem("press",
             () -> new MachinePressBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
-    public static final RegistryObject<Block> WOOD_BURNER = registerBlock("wood_burner",
+    public static final RegistryObject<Block> WOOD_BURNER = registerBlockWithoutItem("wood_burner",
             () -> new MachineWoodBurnerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
 	public static final RegistryObject<Block> ARMOR_TABLE = registerBlock("armor_table",
@@ -72,10 +72,10 @@ public class ModBlocks {
     public static final RegistryObject<Block> MACHINE_ASSEMBLER = registerBlockWithoutItem("machine_assembler",
         () -> new MachineAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
 
-    public static final RegistryObject<Block> ADVANCED_ASSEMBLY_MACHINE = BLOCKS.register("advanced_assembly_machine",
+    public static final RegistryObject<Block> ADVANCED_ASSEMBLY_MACHINE = registerBlockWithoutItem("advanced_assembly_machine",
         () -> new MachineAdvancedAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
 
-    public static final RegistryObject<Block> UNIVERSAL_MACHINE_PART = BLOCKS.register("universal_machine_part",
+    public static final RegistryObject<Block> UNIVERSAL_MACHINE_PART = registerBlockWithoutItem("universal_machine_part",
         () -> new UniversalMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
 
     public static final RegistryObject<Block> MACHINE_BATTERY = registerBlockWithoutItem("machine_battery",
