@@ -22,6 +22,8 @@ This is a modernized rewrite of the classic Hbm's Nuclear Tech Mod, aiming to br
 
 ![HBM_M Preview](docs/images/2025-07-21_04.46.43.png)
 
+### 🟢 [Modrinth](https://modrinth.com/mod/hbms-nuclear-tech-modernized) | 🔨 [Curseforge](https://www.curseforge.com/minecraft/mc-mods/hbms-nuclear-tech-modernized)
+
 ## Dependency
 [Cloth Config API v1.11.136](https://www.curseforge.com/minecraft/mc-mods/cloth-config/files?version=1.20)
 
