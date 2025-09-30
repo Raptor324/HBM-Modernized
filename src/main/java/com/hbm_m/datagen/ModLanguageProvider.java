@@ -130,6 +130,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.asbestos_ore", "Асбестовая руда");
                 add("block.hbm_m.sulfur_ore", "Серная руда");
                 add("block.hbm_m.cobalt_ore", "Кобальтовая руда");
+                add("block.hbm_m.lignite_ore", "Лигнитовая руда");
                 add("block.hbm_m.uranium_ore_h", "Обогащённая урановая руда");
                 add("block.hbm_m.uranium_ore_deepslate", "Глубинная урановая руда");
                 add("block.hbm_m.thorium_ore", "Ториевая руда");
@@ -453,6 +454,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.thorium_ore_deepslate", "Deepslate Thorium Ore");
                 add("block.hbm_m.rareground_ore", "Rare Earth Ore");
                 add("block.hbm_m.rareground_ore_deepslate", "Deepslate Rare Earth Ore");
+                add("block.hbm_m.lignite_ore", "Lignite Ore");
                 add("block.hbm_m.beryllium_ore", "Beryllium Ore");
                 add("block.hbm_m.beryllium_ore_deepslate", "Deepslate Beryllium Ore");
                 add("block.hbm_m.fluorite_ore", "Fluorite Ore");

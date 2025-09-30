@@ -75,7 +75,7 @@ public class ClientRenderHandler {
                 return true;
             }
             
-            // НОВОЕ: Проверяем соседей, чтобы не рисовать внутренние грани
+            // Проверяем соседей, чтобы не рисовать внутренние грани
             boolean drawDown = !highlightedBlocks.containsKey(pos.below());
             boolean drawUp = !highlightedBlocks.containsKey(pos.above());
             boolean drawNorth = !highlightedBlocks.containsKey(pos.north());
@@ -83,7 +83,7 @@ public class ClientRenderHandler {
             boolean drawWest = !highlightedBlocks.containsKey(pos.west());
             boolean drawEast = !highlightedBlocks.containsKey(pos.east());
 
-            // НОВОЕ: Слегка "раздуваем" AABB, чтобы избежать Z-fighting
+            // Слегка "раздуваем" AABB, чтобы избежать Z-fighting
             AABB boundingBox = new AABB(pos).inflate(0.002D).move(-cameraPos.x, -cameraPos.y, -cameraPos.z);
             
             renderFilledBox(poseStack, fillConsumer, boundingBox, color, alpha, drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast);
@@ -94,9 +94,7 @@ public class ClientRenderHandler {
         mc.renderBuffers().bufferSource().endBatch(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
     }
 
-    /**
-     * НОВЫЙ МЕТОД: Рендерит только те грани куба, которые не примыкают к другим подсвеченным блокам.
-     */
+    // Рендерим только те грани куба, которые не примыкают к другим подсвеченным блокам.
     private static void renderFilledBox(PoseStack poseStack, VertexConsumer consumer, AABB box, Color color, float alpha,
                                         boolean drawDown, boolean drawUp, boolean drawNorth, boolean drawSouth, boolean drawWest, boolean drawEast) {
         Matrix4f matrix = poseStack.last().pose();

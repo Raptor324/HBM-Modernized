@@ -6,7 +6,7 @@ package com.hbm_m.client.model.loader;
 // Это позволяет анимировать части независимо (вращение кольца, движение рук и т.д.).
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
-import com.hbm_m.client.model.AdvancedAssemblyMachineBakedModel;
+import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
 import com.mojang.math.Transformation;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
@@ -25,7 +25,7 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.function.Function;
 
-public class AdvancedAssemblyMachineModelLoader implements IGeometryLoader<AdvancedAssemblyMachineModelLoader.Geometry> {
+public class MachineAdvancedAssemblerModelLoader implements IGeometryLoader<MachineAdvancedAssemblerModelLoader.Geometry> {
 
     @Override
     public Geometry read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) {
@@ -69,12 +69,11 @@ public class AdvancedAssemblyMachineModelLoader implements IGeometryLoader<Advan
             }
             
             if (!bakedParts.containsKey("Base")) {
-                 bakedParts.put("Base", model.bake(new SinglePartBakingContext(context, "Base"), baker, spriteGetter, modelState, overrides, modelName));
+                bakedParts.put("Base", model.bake(new SinglePartBakingContext(context, "Base"), baker, spriteGetter, modelState, overrides, modelName));
             }
 
-            // --- ИСПРАВЛЕНИЕ ---
-            // Теперь мы передаем в конструктор не только части, но и ItemTransforms из контекста
-            return new AdvancedAssemblyMachineBakedModel(bakedParts, context.getTransforms());
+            // Мы передаем в конструктор не только части, но и ItemTransforms из контекста
+            return new MachineAdvancedAssemblerBakedModel(bakedParts, context.getTransforms());
         }
     }
 
@@ -89,7 +88,6 @@ public class AdvancedAssemblyMachineModelLoader implements IGeometryLoader<Advan
         
         // --- Делегируем все вызовы родительскому контексту ---
         @Override public String getModelName() { return parent.getModelName(); }
-        // ... (остальные делегированные методы без изменений) ...
         @Override public boolean isGui3d() { return parent.isGui3d(); }
         @Override public boolean useBlockLight() { return parent.useBlockLight(); }
         @Override public boolean useAmbientOcclusion() { return parent.useAmbientOcclusion(); }
@@ -99,7 +97,7 @@ public class AdvancedAssemblyMachineModelLoader implements IGeometryLoader<Advan
         @Override public boolean hasMaterial(String name) { return parent.hasMaterial(name); }
         @Override public ResourceLocation getRenderTypeHint() { return parent.getRenderTypeHint(); }
 
-        // --- КЛЮЧЕВОЕ ИЗМЕНЕНИЕ ЗДЕСЬ ---
+
         @Override public boolean isComponentVisible(String component, boolean fallback) {
             // Делаем видимым компонент, если его имя НАЧИНАЕТСЯ с имени нашей части.
             // Это включает дочерние объекты (например, "Base/Base_default" будет видим при запекании "Base").

@@ -1,0 +1,26 @@
+{
+    "variants": {
+        "facing=east": {
+            "model": "hbm_m:block/advanced_assembly_machine",
+            "y": 90
+        },
+        "facing=north": {
+            "model": "hbm_m:block/advanced_assembly_machine"
+        },
+        "facing=south": {
+            "model": "hbm_m:block/advanced_assembly_machine",
+            "y": 180
+        },
+        "facing=west": {
+            "model": "hbm_m:block/advanced_assembly_machine",
+            "y": 270
+        },
+        "normal": {
+            "model": "hbm_m:models/block/advanced_assembler.obj"
+        },
+        "inventory": {
+            "model": "hbm_m:models/block/advanced_assembler.obj",
+            "transform": "forge:default-block"
+        }
+    }
+}

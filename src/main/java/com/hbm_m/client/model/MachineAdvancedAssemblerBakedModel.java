@@ -17,12 +17,12 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class AdvancedAssemblyMachineBakedModel implements BakedModel {
+public class MachineAdvancedAssemblerBakedModel implements BakedModel {
 
     private final Map<String, BakedModel> parts;
     private final ItemTransforms transforms; // храним трансформации для предмета
 
-    public AdvancedAssemblyMachineBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
+    public MachineAdvancedAssemblerBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
         this.parts = parts;
         this.transforms = transforms;
     }
@@ -33,22 +33,26 @@ public class AdvancedAssemblyMachineBakedModel implements BakedModel {
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
-        if (state == null) {
-            // Собираем полигоны со ВСЕХ частей для рендера предмета
-            List<BakedQuad> quads = new ArrayList<>();
-            for (BakedModel part : parts.values()) {
-                quads.addAll(part.getQuads(null, side, rand));
-            }
-            return quads;
+        // Рендер в мире по-прежнему обрабатывается через BlockEntityRenderer (BER),
+        // но теперь нам нужен способ его "отключить" без isCustomRenderer().
+        // Мы будем возвращать пустоту, ТОЛЬКО если есть BlockState, и он имеет наш BlockEntity.
+        if (state != null && state.hasBlockEntity()) {
+            return Collections.emptyList();
         }
-        // Для блока в мире возвращаем пустоту (рендерит BER)
-        return Collections.emptyList();
+
+        // --- РЕНДЕР ПРЕДМЕТА (state == null) или блока в инвентаре (например, в креативе) ---
+        // Собираем полигоны со ВСЕХ частей для полноценного отображения.
+        List<BakedQuad> quads = new ArrayList<>();
+        for (BakedModel part : parts.values()) {
+            quads.addAll(part.getQuads(state, side, rand));
+        }
+        return quads;
     }
     
     @Override public boolean useAmbientOcclusion() { return true; }
     @Override public boolean isGui3d() { return true; }
     @Override public boolean usesBlockLight() { return true; }
-    @Override public boolean isCustomRenderer() { return true; }
+    @Override public boolean isCustomRenderer() { return false; }
     
     @Override public TextureAtlasSprite getParticleIcon() {
         BakedModel base = parts.get("Base");

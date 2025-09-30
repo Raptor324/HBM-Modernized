@@ -60,7 +60,7 @@ public class ClientTickHandler {
         }
 
         if (targetBE != null) {
-             MainRegistry.LOGGER.debug("[CLIENT TICK] Looking at AAMBE. Crafting Status: {}", 
+            MainRegistry.LOGGER.debug("[CLIENT TICK] Looking at AAMBE. Crafting Status: {}", 
                 ((MachineAdvancedAssemblerBlockEntity) targetBE).isCrafting());
         }
     }

@@ -4,7 +4,7 @@ package com.hbm_m.client.model.render;
 // Отвечает за анимацию вращающегося кольца и двух манипуляторов.
 // Использует модель AdvancedAssemblyMachineBakedModel, которая разбивает модель на части.
 // TODO: Сейчас не работает
-import com.hbm_m.client.model.AdvancedAssemblyMachineBakedModel;
+import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
 import com.hbm_m.block.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.entity.MachineAdvancedAssemblerBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -23,64 +23,76 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraft.client.renderer.entity.ItemRenderer;
 
-public class AdvancedAssemblyMachineRenderer implements BlockEntityRenderer<MachineAdvancedAssemblerBlockEntity> {
+public class MachineAdvancedAssemblerRenderer implements BlockEntityRenderer<MachineAdvancedAssemblerBlockEntity> {
 
-    public AdvancedAssemblyMachineRenderer(BlockEntityRendererProvider.Context context) {
+    public MachineAdvancedAssemblerRenderer(BlockEntityRendererProvider.Context context) {
     }
 
     @Override
     public void render(MachineAdvancedAssemblerBlockEntity pBlockEntity, float pPartialTick, PoseStack pPoseStack,
-                    MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay) {
+                MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay) {
 
         BlockRenderDispatcher blockRenderer = Minecraft.getInstance().getBlockRenderer();
         BakedModel originalModel = blockRenderer.getBlockModel(pBlockEntity.getBlockState());
 
-        // --- ДИАГНОСТИКА ---
-        if (!(originalModel instanceof AdvancedAssemblyMachineBakedModel model)) {
-            // Если вы видите это сообщение, значит, ваша модель не зарегистрировалась
-            // или не загрузилась правильно. Это КРИТИЧЕСКАЯ ошибка.
-            System.err.println("ОШИБКА РЕНДЕРА: Модель блока НЕ является AdvancedAssemblyMachineBakedModel! Тип модели: " + originalModel.getClass().getName());
+        if (!(originalModel instanceof MachineAdvancedAssemblerBakedModel model)) {
+            System.err.println("ОШИБКА РЕНДЕРА: Модель блока НЕ является MachineAdvancedAssemblerBakedModel! Тип модели: " + originalModel.getClass().getName());
             return;
         }
-
-        // --- ДИАГНОСТИКА 2 ---
-        // Проверим, что клиентский BlockEntity действительно имеет флаг isCrafting
+        
+        // Диагностика, если нужна
         if (pBlockEntity.isCrafting()) {
-            // Чтобы не спамить в лог, можно выводить это сообщение раз в секунду
             if(pBlockEntity.getLevel().getGameTime() % 20 == 0) {
                 System.out.println("[РЕНДЕРЕР] Рендеринг в состоянии крафта. Угол кольца: " + pBlockEntity.ringAngle);
             }
         }
-        
+
         pPoseStack.pushPose();
 
-        // 1. Перемещаемся в ЦЕНТР блока.
+        // --- ЭТАП 1: УСТАНОВКА ОБЩЕЙ ОРИЕНТАЦИИ БЛОКА ---
+        // 1. Перемещаемся в ЦЕНТР блока, чтобы он стал точкой вращения.
         pPoseStack.translate(0.5, 0.0, 0.5);
 
-        // 2. Поворачиваем систему координат.
+        // 2. Поворачиваем всю систему координат в соответствии с направлением блока.
         Direction facing = pBlockEntity.getBlockState().getValue(MachineAdvancedAssemblerBlock.FACING);
         float yRot = -facing.toYRot(); 
         pPoseStack.mulPose(Axis.YP.rotationDegrees(yRot));
         
-        // Рендерим статичную базу
+        // 3. Возвращаемся обратно. Теперь начало координат (0,0,0) снова в углу блока,
+        // но вся система координат повернута. Это ключевой шаг.
+        pPoseStack.translate(-0.5, 0.0, -0.5);
+        
+        // --- ЭТАП 2: РЕНДЕР СТАТИЧНЫХ ЧАСТЕЙ ---
+        // Рендерим базу. Она будет нарисована в уже повернутой системе координат и встанет на свое место.
         renderPart(model, "Base", pPoseStack, pBufferSource, pPackedLight, pPackedOverlay, blockRenderer);
+        
+        // --- ЭТАП 3: РЕНДЕР АНИМИРОВАННЫХ ЧАСТЕЙ ---
+        pPoseStack.pushPose(); // Изолируем трансформации анимации
 
-        // --- Анимация ---
-        pPoseStack.pushPose();
+        // Чтобы вращать анимированные части вокруг центра, нам снова нужно:
+        // 1. Переместиться в центр (в уже повернутой системе).
+        pPoseStack.translate(0.5, 0.0, 0.5);
+        
+        // 2. Применить вращение анимации (кольца).
         float ringSpin = Mth.lerp(pPartialTick, pBlockEntity.prevRingAngle, pBlockEntity.ringAngle);
         pPoseStack.mulPose(Axis.YP.rotationDegrees(ringSpin));
         
+        // 3. Вернуться из центра.
+        pPoseStack.translate(-0.5, 0.0, -0.5);
+
+        // Теперь рендерим анимированные части. Они унаследовали основной поворот блока
+        // и получили дополнительное вращение от анимации, вращаясь при этом вокруг центра.
         renderPart(model, "Ring", pPoseStack, pBufferSource, pPackedLight, pPackedOverlay, blockRenderer);
         renderArm1(pBlockEntity.arms[0], pPartialTick, model, pPoseStack, pBufferSource, pPackedLight, pPackedOverlay, blockRenderer);
         renderArm2(pBlockEntity.arms[1], pPartialTick, model, pPoseStack, pBufferSource, pPackedLight, pPackedOverlay, blockRenderer);
         
-        pPoseStack.popPose();
+        pPoseStack.popPose(); // Завершаем изоляцию трансформаций анимации
         // --- Конец анимации ---
 
-        pPoseStack.popPose();
+        pPoseStack.popPose(); // Завершаем основную трансформацию
     }
 
-    private void renderPart(AdvancedAssemblyMachineBakedModel model, String name, PoseStack poseStack, MultiBufferSource bufferSource, int light, int overlay, BlockRenderDispatcher blockRenderer) {
+    private void renderPart(MachineAdvancedAssemblerBakedModel model, String name, PoseStack poseStack, MultiBufferSource bufferSource, int light, int overlay, BlockRenderDispatcher blockRenderer) {
         BakedModel part = model.getPart(name);
         if (part != null) {
             RenderType rt = RenderType.cutout();
@@ -93,7 +105,7 @@ public class AdvancedAssemblyMachineRenderer implements BlockEntityRenderer<Mach
         }
     }
 
-    private void renderArm1(MachineAdvancedAssemblerBlockEntity.AssemblerArm arm, float pPartialTick, AdvancedAssemblyMachineBakedModel model, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay, BlockRenderDispatcher blockRenderer) {
+    private void renderArm1(MachineAdvancedAssemblerBlockEntity.AssemblerArm arm, float pPartialTick, MachineAdvancedAssemblerBakedModel model, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay, BlockRenderDispatcher blockRenderer) {
         pPoseStack.pushPose();
         float[] angles = getInterpolatedAngles(arm, pPartialTick);
 
@@ -118,7 +130,7 @@ public class AdvancedAssemblyMachineRenderer implements BlockEntityRenderer<Mach
         pPoseStack.popPose();
     }
 
-    private void renderArm2(MachineAdvancedAssemblerBlockEntity.AssemblerArm arm, float pPartialTick, AdvancedAssemblyMachineBakedModel model, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay, BlockRenderDispatcher blockRenderer) {
+    private void renderArm2(MachineAdvancedAssemblerBlockEntity.AssemblerArm arm, float pPartialTick, MachineAdvancedAssemblerBakedModel model, PoseStack pPoseStack, MultiBufferSource pBufferSource, int pPackedLight, int pPackedOverlay, BlockRenderDispatcher blockRenderer) {
         pPoseStack.pushPose();
         float[] angles = getInterpolatedAngles(arm, pPartialTick);
 

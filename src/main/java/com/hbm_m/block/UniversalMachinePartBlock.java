@@ -96,8 +96,39 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
 
     @Override
     public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        // Фантомные части не должны блокировать движение — всегда пустая collision-shape
-        return Shapes.empty();
+        
+        // 1. Get the BlockEntity of this part
+        if (!(pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part)) {
+            return Shapes.empty(); // Для коллизии возвращаем пустоту, если что-то не так
+        }
+
+        // 2. Find the controller's position
+        BlockPos controllerPos = part.getControllerPos();
+        if (controllerPos == null) {
+            return Shapes.empty();
+        }
+
+        // 3. Get the controller's state and block
+        BlockState controllerState = pLevel.getBlockState(controllerPos);
+        if (!(controllerState.getBlock() instanceof IMultiblockController controller)) {
+            return Shapes.empty();
+        }
+
+        // 4. Ask the controller for its "master shape"
+        VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState);
+        if (masterShape == null) {
+            // If no custom shape is defined, generate one from the structure's parts
+            masterShape = controller.getStructureHelper().generateShapeFromParts(controllerState.getValue(FACING));
+        }
+        
+        // 5. If masterShape is empty, there is no collision
+        if (masterShape.isEmpty()) {
+            return Shapes.empty();
+        }
+
+        // 6. Move the master shape so it's correctly positioned relative to this phantom block
+        BlockPos offset = pPos.subtract(controllerPos);
+        return masterShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
     }
 
     @Override

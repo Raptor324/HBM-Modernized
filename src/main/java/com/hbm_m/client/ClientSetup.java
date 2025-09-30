@@ -7,7 +7,7 @@ import com.hbm_m.client.overlay.GUIArmorTable;
 import com.hbm_m.client.overlay.GUIMachineAssembler;
 import com.hbm_m.client.overlay.GUIMachineBattery;
 import com.hbm_m.client.model.*;
-import com.hbm_m.client.model.loader.AdvancedAssemblyMachineModelLoader;
+import com.hbm_m.client.model.loader.MachineAdvancedAssemblerModelLoader;
 import com.hbm_m.client.model.loader.ProceduralWireLoader;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.ModConfigKeybindHandler;
@@ -56,7 +56,7 @@ import net.minecraftforge.client.ChunkRenderTypeSet;
 import javax.annotation.Nonnull;
 import java.util.Map;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.client.model.render.AdvancedAssemblyMachineRenderer;
+import com.hbm_m.client.model.render.MachineAdvancedAssemblerRenderer;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientSetup {
@@ -82,7 +82,7 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
             MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
             // Register BlockEntity renderer for Advanced Assembly Machine
-            BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE.get(), AdvancedAssemblyMachineRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE.get(), MachineAdvancedAssemblerRenderer::new);
         });
     }
 
@@ -113,7 +113,7 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onModelRegister(ModelEvent.RegisterGeometryLoaders event) {
         event.register("procedural_wire", new ProceduralWireLoader());
-        event.register("advanced_assembly_machine_loader", new AdvancedAssemblyMachineModelLoader());
+        event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
     MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader");
     }
 

@@ -1,6 +1,6 @@
 package com.hbm_m.client.model;
 
-// Утилитарный класс для создания кубоидов с настраиваемыми UV координатами для каждой грани.
+// Утилитарный класс для создания кубоидов с настраиваемыми UV координатами для каждой грани. Необходим для процедурной генерации модели провода.
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;

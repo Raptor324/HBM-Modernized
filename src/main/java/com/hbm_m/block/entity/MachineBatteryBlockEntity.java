@@ -49,6 +49,35 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     // Режим, когда ЕСТЬ сигнал (настраивается нижней кнопкой)
     public int modeOnSignal = 0;
 
+    // --- ОБЕРТКА ДЛЯ IENERGYSTORAGE, УЧИТЫВАЮЩАЯ РЕДСТОУН ---
+    private final IEnergyStorage energyWrapper = createEnergyWrapper();
+
+    private IEnergyStorage createEnergyWrapper() {
+        return new IEnergyStorage() {
+            private boolean isInputAllowed() {
+                if (level == null) return false;
+                boolean hasSignal = level.hasNeighborSignal(worldPosition);
+                int activeMode = hasSignal ? modeOnSignal : modeOnNoSignal;
+                // Режимы, разрешающие ПРИЁМ: 0 (Приём и Передача), 1 (Только Приём)
+                return activeMode == 0 || activeMode == 1;
+            }
+
+            private boolean isOutputAllowed() {
+                if (level == null) return false;
+                boolean hasSignal = level.hasNeighborSignal(worldPosition);
+                int activeMode = hasSignal ? modeOnSignal : modeOnNoSignal;
+                // Режимы, разрешающие ПЕРЕДАЧУ: 0 (Приём и Передача), 2 (Только Передача)
+                return activeMode == 0 || activeMode == 2;
+            }
+
+            @Override public int receiveEnergy(int maxReceive, boolean simulate) { return !isInputAllowed() ? 0 : energyStorage.receiveEnergy(maxReceive, simulate); }
+            @Override public int extractEnergy(int maxExtract, boolean simulate) { return !isOutputAllowed() ? 0 : energyStorage.extractEnergy(maxExtract, simulate); }
+            @Override public int getEnergyStored() { return energyStorage.getEnergyStored(); }
+            @Override public int getMaxEnergyStored() { return energyStorage.getMaxEnergyStored(); }
+            @Override public boolean canExtract() { return isOutputAllowed() && energyStorage.canExtract(); }
+            @Override public boolean canReceive() { return isInputAllowed() && energyStorage.canReceive(); }
+        };
+    }
     // Режимы: 0 = Приём и Передача, 1 = Только Приём, 2 = Только Передача, 3 = Заблокировано
     public Priority priority = Priority.NORMAL;
     
@@ -230,7 +259,7 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     public void onLoad() {
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
-        lazyEnergyHandler = LazyOptional.of(() -> energyStorage);
+        lazyEnergyHandler = LazyOptional.of(() -> this.energyWrapper);
     }
 
     @Override
