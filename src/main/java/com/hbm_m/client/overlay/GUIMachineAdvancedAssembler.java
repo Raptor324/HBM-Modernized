@@ -148,7 +148,7 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             // if (this.blockEntity.hasRecipe()) {
             //     guiGraphics.renderTooltip(this.font, recipe.print(), pMouseX, pMouseY);
             // } else {
-                 guiGraphics.renderTooltip(this.font, Component.translatable("gui.hbm_m.set_recipe"), pMouseX, pMouseY);
+                guiGraphics.renderTooltip(this.font, Component.translatable("gui.hbm_m.set_recipe"), pMouseX, pMouseY);
             // }
         }
     }
@@ -177,6 +177,6 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
      */
     private boolean isMouseOver(int pMouseX, int pMouseY, int pX, int pY, int pWidth, int pHeight) {
         return pMouseX >= this.leftPos + pX && pMouseX < this.leftPos + pX + pWidth &&
-               pMouseY >= this.topPos + pY && pMouseY < this.topPos + pY + pHeight;
+            pMouseY >= this.topPos + pY && pMouseY < this.topPos + pY + pHeight;
     }
 }

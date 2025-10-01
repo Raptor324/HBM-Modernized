@@ -150,6 +150,7 @@ public class MainRegistry {
                     LOGGER.info("Added {} to NTM Resources tab", ingotObject.get());
                 }
             }
+
             event.accept(ModItems.PLATE_IRON);
             event.accept(ModItems.PLATE_STEEL);
             event.accept(ModItems.PLATE_GOLD);
@@ -162,7 +163,21 @@ public class MainRegistry {
             event.accept(ModItems.PLATE_POLYMER);
             event.accept(ModItems.PLATE_SATURNITE);
             event.accept(ModItems.PLATE_SCHRABIDIUM);
-
+            event.accept(ModItems.CINNABAR);
+            event.accept(ModItems.ALUMINUM_RAW);
+            event.accept(ModItems.BERYLLIUM_RAW);
+            event.accept(ModItems.COBALT_RAW);
+            event.accept(ModItems.FIRECLAY_BALL);
+            event.accept(ModItems.FLUORITE);
+            event.accept(ModItems.LEAD_RAW);
+            event.accept(ModItems.LIGNITE);
+            event.accept(ModItems.RAREGROUND_ORE_CHUNK);
+            event.accept(ModItems.SULFUR);
+            event.accept(ModItems.THORIUM_RAW);
+            event.accept(ModItems.TITANIUM_RAW);
+            event.accept(ModItems.TUNGSTEN_RAW);
+            event.accept(ModItems.URANIUM_RAW);
+            event.accept(ModItems.FIREBRICK);
         }
         
         if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get()) {
@@ -201,6 +216,7 @@ public class MainRegistry {
             event.accept(ModBlocks.URANIUM_ORE);
             event.accept(ModBlocks.WASTE_GRASS);
             event.accept(ModBlocks.WASTE_LEAVES);
+            
 
             event.accept(ModBlocks.ALUMINUM_ORE);
             event.accept(ModBlocks.ALUMINUM_ORE_DEEPSLATE);

@@ -5,6 +5,7 @@ package com.hbm_m.block;
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.block.entity.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -69,10 +70,17 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
     }
     
     @Override
-    public void setPlacedBy(Level pLevel, BlockPos pPos, BlockState pState, @Nullable LivingEntity pPlacer, ItemStack pStack) {
-        super.setPlacedBy(pLevel, pPos, pState, pPlacer, pStack);
-        if (!pLevel.isClientSide) {
+    public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
+        super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
+        // Если это не клиентская сторона и блок действительно был установлен (а не просто изменилось состояние)
+        if (!pLevel.isClientSide() && !pState.is(pOldState.getBlock())) {
+            // Вызываем метод для расстановки фантомных блоков структуры
             getStructureHelper().placeStructure(pLevel, pPos, pState.getValue(FACING), this);
+
+            // Этот вызов можно оставить, если он нужен для дополнительной логики (например, отрисовки рамки)
+            if (pLevel.getBlockEntity(pPos) instanceof IFrameSupportable be) {
+                be.checkForFrame();
+            }
         }
     }
 
@@ -83,6 +91,18 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
             getStructureHelper().destroyStructure(pLevel, pPos, pState.getValue(FACING));
         }
         super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
+    }
+
+    @Override
+    public void neighborChanged(BlockState pState, Level pLevel, BlockPos pPos, Block pBlock, BlockPos pFromPos, boolean pIsMoving) {
+        super.neighborChanged(pState, pLevel, pPos, pBlock, pFromPos, pIsMoving);
+        
+        if (!pLevel.isClientSide()) {
+            // Здесь мы также используем проверку на интерфейс
+            if (pLevel.getBlockEntity(pPos) instanceof IFrameSupportable be) {
+                be.checkForFrame();
+            }
+        }
     }
 
     @Override
@@ -108,30 +128,51 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
     }
     
     @Override
-public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-    if (!pLevel.isClientSide()) {
-        BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
-        if (blockEntity instanceof MachineAdvancedAssemblerBlockEntity aamBe) {
-            if (pPlayer.isShiftKeyDown()) {
-                // --- ДИАГНОСТИКА ---
-                aamBe.isCrafting = !aamBe.isCrafting;
-                System.out.println("[СЕРВЕР] Статус крафта изменен на: " + aamBe.isCrafting);
+    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+        // Игнорируем вторую руку, это все еще хорошая практика
+        if (pHand == InteractionHand.OFF_HAND) {
+            return InteractionResult.PASS;
+        }
+
+        if (!(pLevel.getBlockEntity(pPos) instanceof MachineAdvancedAssemblerBlockEntity aamBe)) {
+            return InteractionResult.FAIL;
+        }
+
+        // --- ЛОГИКА ДЛЯ SHIFT-КЛИКА ---
+        if (pPlayer.isShiftKeyDown()) {
+            if (!pLevel.isClientSide()) {
+                // ---- ПРОВЕРКА COOLDOWN ----
+                long currentTime = pLevel.getGameTime();
+                // Запрещаем менять состояние чаще, чем раз в 10 тиков (0.5 секунды)
+                if (currentTime < aamBe.lastUseTick + 10) {
+                    return InteractionResult.FAIL; // Игнорируем слишком частые клики
+                }
+                aamBe.lastUseTick = currentTime; // Обновляем таймер
+
+                // Ваша основная логика
+                boolean oldState = aamBe.isCrafting;
+                aamBe.isCrafting = !oldState;
+                System.out.println(String.format("[СЕРВЕР] Toggled crafting from %b to %b", oldState, aamBe.isCrafting));
                 
-                // Важно! Нужно уведомить BlockEntity об изменении, чтобы оно сохранилось
-                aamBe.setChanged(); 
-                
-                // Эта строка отправляет пакет с обновлением клиенту.
-                // Флаг '3' означает: обновить блок, отправить клиентам и перерисовать на клиенте.
+                if (aamBe.isCrafting) {
+                    aamBe.progress = 0;
+                }
+
+                aamBe.setChanged();
                 pLevel.sendBlockUpdated(pPos, pState, pState, 3);
-                
                 pPlayer.displayClientMessage(Component.literal("Animation toggled: " + aamBe.isCrafting), true);
-                return InteractionResult.SUCCESS;
             }
-            NetworkHooks.openScreen((ServerPlayer) pPlayer, aamBe, pPos);
+            return InteractionResult.SUCCESS;
+        } 
+        
+        // --- ЛОГИКА ДЛЯ ОБЫЧНОГО КЛИКА (GUI) ---
+        else {
+            if (!pLevel.isClientSide()) {
+                NetworkHooks.openScreen((ServerPlayer) pPlayer, aamBe, pPos);
+            }
+            return InteractionResult.CONSUME;
         }
     }
-    return InteractionResult.sidedSuccess(pLevel.isClientSide());
-}
 
     @Nullable
     @Override

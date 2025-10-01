@@ -1,8 +1,13 @@
 package com.hbm_m.block.entity;
 
+import com.hbm_m.block.MachineAdvancedAssemblerBlock;
 // Блок-энтити для Продвинутой Сборочной Машины с поддержкой энергии, жидкостей, предметов и анимаций.
 import com.hbm_m.energy.BlockEntityEnergyStorage;
 import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
+import com.hbm_m.multiblock.IFrameSupportable;
+import com.hbm_m.multiblock.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -30,7 +35,7 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements MenuProvider {
+public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements MenuProvider, IFrameSupportable {
 private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
         @Override
         protected void onContentsChanged(int slot) {
@@ -56,6 +61,7 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
     private LazyOptional<BlockEntityEnergyStorage> lazyEnergyHandler = LazyOptional.empty(); // Тип изменен
     private LazyOptional<FluidTank> lazyFluidHandler = LazyOptional.empty();
+    public boolean frame = false;
     
     // --- ЛОГИКА ПРОЦЕССОВ ---
     // TODO: Заменить это на систему рецептов и модуль обработки
@@ -112,6 +118,7 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
     public boolean isCrafting() { return this.isCrafting; }
     public int getProgress() { return this.progress; }
     public int getMaxProgress() { return this.maxProgress; }
+    public long lastUseTick = 0;
 
     // --- TICK ЛОГИКА ---
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity pEntity) {
@@ -134,32 +141,84 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
             progress++;
             setChanged();
             
-            if (progress >= maxProgress) {
-                craftItem();
-                progress = 0;
-                isCrafting = false;
-                // Отправить обновление клиенту, чтобы остановить анимацию
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-            }
-        } else {
+        //     if (progress >= maxProgress) {
+        //         craftItem();
+        //         progress = 0;
+        //         isCrafting = false;
+        //         // Отправить обновление клиенту, чтобы остановить анимацию
+        //         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        //     }
+        // } else {
             // Попытаться начать новый крафт
             // ... ваша логика ...
             // Для теста можно сделать так:
-            if (energyStorage.getEnergyStored() > 1000) {
-                 isCrafting = true;
-                 // Отправить обновление клиенту, чтобы запустить анимацию
-                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            // if (energyStorage.getEnergyStored() > 1000) {
+            //      isCrafting = true;
+            //      // Отправить обновление клиенту, чтобы запустить анимацию
+            //      level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            // }
+        }
+    }
+
+    /**
+     * Проверяет, есть ли блоки над структурой, и обновляет состояние рамки.
+     */
+    @Override
+    public void checkForFrame() {
+        if (level == null || level.isClientSide() || !(getBlockState().getBlock() instanceof IMultiblockController controller)) {
+            return;
+        }
+
+        boolean shouldHaveFrame = false;
+        MultiblockStructureHelper helper = controller.getStructureHelper();
+        
+        // --- ИСПРАВЛЕНИЕ ---
+        // 1. Находим максимальную высоту структуры, чтобы определить "крышу"
+        int maxY = Integer.MIN_VALUE;
+        for (BlockPos localOffset : helper.getPartOffsets()) {
+            if (localOffset.getY() > maxY) {
+                maxY = localOffset.getY();
             }
+        }
+        
+        // Если структура плоская или не определена, выходим
+        if (maxY == Integer.MIN_VALUE) {
+            return;
+        }
+
+        // 2. Проверяем блоки только над самым верхним слоем
+        for (BlockPos localOffset : helper.getPartOffsets()) {
+            // Пропускаем все части, которые не на крыше
+            if (localOffset.getY() != maxY) {
+                continue;
+            }
+
+            BlockPos worldPos = helper.getRotatedPos(this.worldPosition, localOffset, getBlockState().getValue(MachineAdvancedAssemblerBlock.FACING));
+            
+            // Проверяем блок НАД частью структуры
+            if (!level.getBlockState(worldPos.above()).isAir()) {
+                shouldHaveFrame = true;
+                break; // Нашли хотя бы один блок, дальше можно не проверять
+            }
+        }
+
+        // Если состояние изменилось, обновляем его и отправляем пакет клиенту
+        if (this.frame != shouldHaveFrame) {
+            this.frame = shouldHaveFrame;
+            setChanged(); // Помечаем BlockEntity как "грязный" для сохранения
+            // Отправляем обновление клиенту, чтобы рендер обновился
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
     
-    private void craftItem() {
-        // TODO: Реализуйте логику создания предмета
-        // Например: this.itemHandler.insertItem(16, new ItemStack(Items.DIAMOND), false);
-        setChanged();
-    }
+    // private void craftItem() {
+    //     // TODO: Реализуйте логику создания предмета
+    //     // Например: this.itemHandler.insertItem(16, new ItemStack(Items.DIAMOND), false);
+    //     setChanged();
+    // }
 
     private void clientTick() {
+        this.isCrafting = true;
         this.prevRingAngle = this.ringAngle;
 
         // Обновление анимации рук
@@ -240,10 +299,14 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
         nbt.put("output_tank", outputTank.writeToNBT(new CompoundTag()));
         nbt.putInt("progress", progress);
         
-        // ===== ИСПРАВЛЕНИЕ: ДОБАВЛЯЕМ СОХРАНЕНИЕ ФЛАГА =====
         nbt.putBoolean("is_crafting", this.isCrafting);
 
+        // ---- СОХРАНЯЕМ ВРЕМЯ ----
+        nbt.putLong("last_use_tick", this.lastUseTick);
+        
+        nbt.putBoolean("hasFrame", this.frame);
         super.saveAdditional(nbt);
+        
     }
 
     // Этот метод теперь будет использоваться и при загрузке чанка, и при получении пакета
@@ -255,16 +318,30 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
         inputTank.readFromNBT(nbt.getCompound("input_tank"));
         outputTank.readFromNBT(nbt.getCompound("output_tank"));
         progress = nbt.getInt("progress");
+        this.frame = nbt.getBoolean("hasFrame");
         
         // Сохраняем предыдущее состояние для сравнения
         boolean wasCrafting = this.isCrafting;
         this.isCrafting = nbt.getBoolean("is_crafting");
+        this.lastUseTick = nbt.getLong("last_use_tick");
 
         // --- ДИАГНОСТИКА ---
         // this.level может быть null при первой загрузке, поэтому проверяем
         if (this.level != null && this.level.isClientSide() && wasCrafting != this.isCrafting) {
             System.out.println("[КЛИЕНТ] Получено обновление! isCrafting теперь: " + this.isCrafting);
         }
+    }
+
+    @Override
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = new CompoundTag();
+        saveAdditional(tag);
+        return tag;
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        load(tag);
     }
 
     @Override

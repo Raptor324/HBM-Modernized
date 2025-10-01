@@ -25,6 +25,8 @@ import java.util.HashMap;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.jetbrains.annotations.NotNull;
+
 public class MachineAdvancedAssemblerModelLoader implements IGeometryLoader<MachineAdvancedAssemblerModelLoader.Geometry> {
 
     @Override
@@ -63,13 +65,22 @@ public class MachineAdvancedAssemblerModelLoader implements IGeometryLoader<Mach
             
             var bakedParts = new HashMap<String, BakedModel>();
             
+            ModelState identityState = new ModelState() {
+                @Override
+                public @NotNull Transformation getRotation() {
+                    return Transformation.identity();
+                }
+            };
+            
             for(String partName : PART_NAMES) {
                 var partContext = new SinglePartBakingContext(context, partName);
-                bakedParts.put(partName, model.bake(partContext, baker, spriteGetter, modelState, overrides, modelName));
+                // Используем наш пустой identityState вместо modelState из параметров
+                bakedParts.put(partName, model.bake(partContext, baker, spriteGetter, identityState, overrides, modelName));
             }
             
             if (!bakedParts.containsKey("Base")) {
-                bakedParts.put("Base", model.bake(new SinglePartBakingContext(context, "Base"), baker, spriteGetter, modelState, overrides, modelName));
+                // Используем наш пустой identityState и здесь
+                bakedParts.put("Base", model.bake(new SinglePartBakingContext(context, "Base"), baker, spriteGetter, identityState, overrides, modelName));
             }
 
             // Мы передаем в конструктор не только части, но и ItemTransforms из контекста

@@ -5,6 +5,7 @@ package com.hbm_m.block;
 // наведя курсор на любую часть структуры. Форма фантомного блока определяется формой всей структуры, сдвинутой так,
 // чтобы правильно отображаться на позиции этой части.
 import com.hbm_m.block.entity.UniversalMachinePartBlockEntity;
+import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.IMultiblockPart;
 import net.minecraft.core.BlockPos;
@@ -129,6 +130,24 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
         // 6. Move the master shape so it's correctly positioned relative to this phantom block
         BlockPos offset = pPos.subtract(controllerPos);
         return masterShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
+    }
+
+    @Override
+    public void neighborChanged(BlockState pState, Level pLevel, BlockPos pPos, Block pBlock, BlockPos pFromPos, boolean pIsMoving) {
+        super.neighborChanged(pState, pLevel, pPos, pBlock, pFromPos, pIsMoving);
+
+        if (!pLevel.isClientSide()) {
+            if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
+                BlockPos controllerPos = part.getControllerPos();
+                if (controllerPos != null) {
+                    BlockEntity be = pLevel.getBlockEntity(controllerPos);
+                    if (be instanceof IFrameSupportable controllerBe) {
+                        // Если да, то вызываем метод. Если нет - ничего не делаем.
+                        controllerBe.checkForFrame();
+                    }
+                }
+            }
+        }
     }
 
     @Override
