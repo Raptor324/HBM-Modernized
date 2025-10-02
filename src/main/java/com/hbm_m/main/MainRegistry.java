@@ -130,6 +130,10 @@ public class MainRegistry {
 
         if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get()) {
             event.accept(ModItems.ALLOY_SWORD);
+            event.accept(ModItems.ALLOY_AXE);
+            event.accept(ModItems.ALLOY_PICKAXE);
+            event.accept(ModItems.ALLOY_HOE);
+            event.accept(ModItems.ALLOY_SHOVEL);
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");
             }
@@ -216,8 +220,9 @@ public class MainRegistry {
             event.accept(ModBlocks.URANIUM_ORE);
             event.accept(ModBlocks.WASTE_GRASS);
             event.accept(ModBlocks.WASTE_LEAVES);
-            
-
+            event.accept(ModBlocks.REINFORCED_STONE);
+            event.accept(ModBlocks.REINFORCED_STONE_SLAB);
+            event.accept(ModBlocks.REINFORCED_STONE_STAIRS);
             event.accept(ModBlocks.ALUMINUM_ORE);
             event.accept(ModBlocks.ALUMINUM_ORE_DEEPSLATE);
             event.accept(ModBlocks.LIGNITE_ORE);

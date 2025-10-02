@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "#$#",
+    "$#$",
+    "#$#"
+
+  ],
+
+  "key": {
+    "#": {
+      "item": "minecraft:cobblestone"
+    },
+
+    "$": {
+      "item": "minecraft:stone"
+    }
+
+  },
+
+  "result": {
+
+    "item": "hbm_m:reinforced_stone"
+  }
+
+}
