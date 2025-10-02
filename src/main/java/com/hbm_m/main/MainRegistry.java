@@ -259,7 +259,7 @@ public class MainRegistry {
             event.accept(ModBlocks.WOOD_BURNER);
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
-            event.accept(ModBlocks.FLUID_TANK);
+            // event.accept(ModBlocks.FLUID_TANK);
             event.accept(ModBlocks.MACHINE_BATTERY);
             event.accept(ModBlocks.WIRE_COATED);
             if (ModClothConfig.get().enableDebugLogging) {

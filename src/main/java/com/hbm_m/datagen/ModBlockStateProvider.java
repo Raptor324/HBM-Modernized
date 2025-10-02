@@ -49,7 +49,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Блок с кастомной OBJ моделью
         customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
         customObjBlock(ModBlocks.MACHINE_ASSEMBLER);
-        customObjBlock(ModBlocks.FLUID_TANK);
+        // customObjBlock(ModBlocks.FLUID_TANK);
         // customObjBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
 
         simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath()));
