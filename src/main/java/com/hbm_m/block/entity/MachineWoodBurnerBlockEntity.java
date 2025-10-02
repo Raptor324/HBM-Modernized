@@ -1,9 +1,9 @@
 package com.hbm_m.block.entity;
 
-// Этот класс реализует BE дровяной печи, которая сжигает древесину для генерации энергии.
-// Она имеет два слота: один для топлива (древесина) и один для пепла
-// Печь генерирует энергию, которая может быть передана соседним блокам.
 import com.hbm_m.block.MachineWoodBurnerBlock;
+import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.energy.BlockEntityEnergyStorage;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.MachineWoodBurnerMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -32,7 +32,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
-import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuProvider {
@@ -44,24 +43,57 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         }
     };
 
-    private final EnergyStorageBlockEntity energyStorage = new EnergyStorageBlockEntity(100000, 0, 1000);
+    // ВАЖНО: maxExtract > 0 чтобы провода могли извлекать энергию
+    // maxReceive > 0 для внутренней генерации (receiveEnergy в tick)
+    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100000, 1000, 1000);
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
     private LazyOptional<IEnergyStorage> lazyEnergyHandler = LazyOptional.empty();
+
+    // Обёртка для IENERGYSTORAGE, которая запрещает приём энергии ИЗВНЕ
+    private final IEnergyStorage energyWrapper = new IEnergyStorage() {
+        @Override
+        public int receiveEnergy(int maxReceive, boolean simulate) {
+            // Генератор НЕ принимает энергию от внешних источников
+            return 0;
+        }
+
+        @Override
+        public int extractEnergy(int maxExtract, boolean simulate) {
+            return energyStorage.extractEnergy(maxExtract, simulate);
+        }
+
+        @Override
+        public int getEnergyStored() {
+            return energyStorage.getEnergyStored();
+        }
+
+        @Override
+        public int getMaxEnergyStored() {
+            return energyStorage.getMaxEnergyStored();
+        }
+
+        @Override
+        public boolean canExtract() {
+            return energyStorage.canExtract();
+        }
+
+        @Override
+        public boolean canReceive() {
+            // Генератор НЕ принимает энергию от внешних источников
+            return false;
+        }
+    };
 
     protected final ContainerData data;
     private int burnTime = 0;
     private int maxBurnTime = 0;
     private boolean isLit = false;
 
-    // Слоты
     private static final int FUEL_SLOT = 0;
     private static final int ASH_SLOT = 1;
 
     public MachineWoodBurnerBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.WOOD_BURNER_BE.get(), pPos, pBlockState);
-
-        // Устанавливаем связь с BlockEntity для автоматического setChanged()
-        this.energyStorage.setBlockEntity(this);
 
         this.data = new ContainerData() {
             @Override
@@ -108,8 +140,10 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
             pBlockEntity.burnTime--;
             pBlockEntity.isLit = true;
 
-            // Генерируем энергию (1000 FE в секунду = 50 FE в тик при 20 TPS)
-            pBlockEntity.energyStorage.receiveEnergy(50, false);
+            // Генерируем энергию только если есть место в хранилище
+            if (pBlockEntity.energyStorage.getEnergyStored() < pBlockEntity.energyStorage.getMaxEnergyStored()) {
+                pBlockEntity.energyStorage.receiveEnergy(50, false);
+            }
 
             // Когда топливо полностью сгорает
             if (pBlockEntity.burnTime <= 0) {
@@ -120,7 +154,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
                 if (pLevel.random.nextFloat() < 0.5f) {
                     ItemStack ashSlotStack = pBlockEntity.itemHandler.getStackInSlot(ASH_SLOT);
                     if (ashSlotStack.isEmpty()) {
-                        pBlockEntity.itemHandler.setStackInSlot(ASH_SLOT, new ItemStack(Items.GUNPOWDER)); // Используем порох как пепел
+                        pBlockEntity.itemHandler.setStackInSlot(ASH_SLOT, new ItemStack(Items.GUNPOWDER));
                     } else if (ashSlotStack.getItem() == Items.GUNPOWDER && ashSlotStack.getCount() < 64) {
                         ashSlotStack.grow(1);
                     }
@@ -130,7 +164,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
             pBlockEntity.isLit = false;
         }
 
-        // Передача энергии соседям
+        // ДОБАВЛЕНО: Активно отдаём энергию соседям (как у батареи)
         pBlockEntity.pushEnergyToNeighbors();
 
         // Обновляем состояние блока если изменилось
@@ -141,22 +175,102 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         setChanged(pLevel, pPos, pState);
     }
 
+    // НОВЫЙ МЕТОД: Активная передача энергии соседям
+    private void pushEnergyToNeighbors() {
+        if (ModClothConfig.get().enableDebugLogging) {
+            MainRegistry.LOGGER.debug("[GENERATOR >>>] pushEnergyToNeighbors at {} currentEnergy={}", this.worldPosition, this.energyStorage.getEnergyStored());
+        }
+
+        AtomicInteger energyToSend = new AtomicInteger(this.energyStorage.extractEnergy(this.energyStorage.getMaxExtract(), true));
+
+        if (energyToSend.get() <= 0) {
+            if (ModClothConfig.get().enableDebugLogging) {
+                MainRegistry.LOGGER.debug("[GENERATOR >>>] No energy to send");
+                // Отправляем в чат ближайшему игроку
+                sendDebugToNearbyPlayers("§e[GEN] No energy to send");
+            }
+            return; // Нечего отправлять
+        }
+
+        if (ModClothConfig.get().enableDebugLogging) {
+            sendDebugToNearbyPlayers("§a[GEN] Trying to send " + energyToSend + " FE");
+        }
+
+        Level lvl = this.level;
+        if (lvl == null) return;
+
+        for (Direction direction : Direction.values()) {
+            if (energyToSend.get() <= 0) {
+                break; // Вся энергия роздана
+            }
+
+            BlockPos neighborPos = worldPosition.relative(direction);
+            BlockEntity neighbor = lvl.getBlockEntity(neighborPos);
+            if (neighbor == null) {
+                continue;
+            }
+
+            // Пропускаем самого себя и другие генераторы
+            if (neighbor instanceof MachineWoodBurnerBlockEntity) {
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.debug("[GENERATOR >>>] Skipping generator at {}", neighborPos);
+                    sendDebugToNearbyPlayers("§c[GEN] Skipping generator at " + direction);
+                }
+                continue;
+            }
+
+            // Получаем capability соседа
+            LazyOptional<IEnergyStorage> neighborCapability = neighbor.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite());
+
+            if (neighborCapability.isPresent()) {
+                neighborCapability.ifPresent(neighborStorage -> {
+                    if (neighborStorage.canReceive()) {
+                        int accepted = neighborStorage.receiveEnergy(energyToSend.get(), false);
+                        if (accepted > 0) {
+                            this.energyStorage.extractEnergy(accepted, false);
+                            energyToSend.addAndGet(-accepted);
+                            if (ModClothConfig.get().enableDebugLogging) {
+                                MainRegistry.LOGGER.debug("[GENERATOR >>>] Sent {} FE to {} (direction: {})", accepted, neighborPos, direction);
+                                sendDebugToNearbyPlayers("§a[GEN] Sent " + accepted + " FE to " + direction + " -> " + neighbor.getClass().getSimpleName());
+                            }
+                        }
+                    } else if (ModClothConfig.get().enableDebugLogging) {
+                        sendDebugToNearbyPlayers("§c[GEN] Neighbor at " + direction + " can't receive (" + neighbor.getClass().getSimpleName() + ")");
+                    }
+                });
+            } else if (ModClothConfig.get().enableDebugLogging) {
+                sendDebugToNearbyPlayers("§7[GEN] No energy capability at " + direction + " (" + neighbor.getClass().getSimpleName() + ")");
+            }
+        }
+    }
+
+    // Вспомогательный метод для отправки debug сообщений в чат
+    private void sendDebugToNearbyPlayers(String message) {
+        if (this.level == null) return;
+        this.level.players().forEach(player -> {
+            if (player.blockPosition().distSqr(this.worldPosition) < 256) { // В радиусе 16 блоков
+                player.sendSystemMessage(Component.literal(message));
+            }
+        });
+    }
+
     private boolean canBurn() {
         ItemStack fuelStack = itemHandler.getStackInSlot(FUEL_SLOT);
-        return !fuelStack.isEmpty() && getBurnTime(fuelStack.getItem()) > 0;
+        return !fuelStack.isEmpty() &&
+                getBurnTime(fuelStack.getItem()) > 0 &&
+                energyStorage.getEnergyStored() < energyStorage.getMaxEnergyStored();
     }
 
     private void startBurning() {
         ItemStack fuelStack = itemHandler.getStackInSlot(FUEL_SLOT);
         if (!fuelStack.isEmpty()) {
-            maxBurnTime = getBurnTime(fuelStack.getItem()) * 20; // Конвертируем секунды в тики
+            maxBurnTime = getBurnTime(fuelStack.getItem()) * 20;
             burnTime = maxBurnTime;
             fuelStack.shrink(1);
         }
     }
 
     private int getBurnTime(Item item) {
-        // Возвращает время горения в секундах
         if (item == Items.OAK_PLANKS || item == Items.BIRCH_PLANKS || item == Items.SPRUCE_PLANKS ||
                 item == Items.JUNGLE_PLANKS || item == Items.ACACIA_PLANKS || item == Items.DARK_OAK_PLANKS ||
                 item == Items.MANGROVE_PLANKS || item == Items.CHERRY_PLANKS || item == Items.BAMBOO_PLANKS ||
@@ -173,44 +287,13 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
                 item == Items.STRIPPED_CRIMSON_STEM || item == Items.STRIPPED_WARPED_STEM) {
             return 60;
         }
-        if (item == Items.BROWN_MUSHROOM || item == Items.RED_MUSHROOM) { // Используем грибы как бурый уголь
+        if (item == Items.BROWN_MUSHROOM || item == Items.RED_MUSHROOM) {
             return 80;
         }
         if (item == Items.COAL) {
             return 120;
         }
         return 0;
-    }
-
-    private void pushEnergyToNeighbors() {
-        if (energyStorage.getEnergyStored() <= 0) return;
-
-        AtomicInteger energyToSend = new AtomicInteger(energyStorage.extractEnergy(energyStorage.getMaxExtract(), true));
-        UUID pushId = UUID.randomUUID();
-
-        if (energyToSend.get() <= 0) return;
-
-        Level lvl = this.level;
-        if (lvl == null) return;
-
-        for (Direction direction : Direction.values()) {
-            if (energyToSend.get() <= 0) break;
-
-            BlockEntity neighbor = lvl.getBlockEntity(worldPosition.relative(direction));
-            if (neighbor == null) continue;
-
-            LazyOptional<IEnergyStorage> neighborCapability = neighbor.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite());
-
-            neighborCapability.ifPresent(neighborStorage -> {
-                if (neighborStorage.canReceive()) {
-                    int accepted = neighborStorage.receiveEnergy(energyToSend.get(), false);
-                    if (accepted > 0) {
-                        this.energyStorage.extractEnergy(accepted, false);
-                        energyToSend.addAndGet(-accepted);
-                    }
-                }
-            });
-        }
     }
 
     @Nullable
@@ -230,7 +313,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
     public void onLoad() {
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
-        lazyEnergyHandler = LazyOptional.of(() -> energyStorage);
+        lazyEnergyHandler = LazyOptional.of(() -> energyWrapper); // Используем обёртку вместо прямого energyStorage
     }
 
     @Override

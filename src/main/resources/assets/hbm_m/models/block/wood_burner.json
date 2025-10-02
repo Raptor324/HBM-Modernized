@@ -14,8 +14,8 @@
     }
   },
   "transform": {
-    "translation": [1, 0, 1],
-    "rotation": [0, 0, 0],
+    "translation": [-1, 0, -1],
+    "rotation": [0, 180, 0],
     "scale": 1.0
   },
   "display": {

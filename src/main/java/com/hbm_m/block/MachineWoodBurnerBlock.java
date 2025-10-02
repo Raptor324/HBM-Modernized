@@ -1,7 +1,5 @@
 package com.hbm_m.block;
 
-// Этот класс реализует структуру блока дровяного генератора, который является контроллером мультиблочной структуры.
-// Дровяной генератор занимает 2x2x2 блока и использует вспомогательный класс MultiblockStructureHelper для управления своей структурой.
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.MachineWoodBurnerBlockEntity;
 import com.hbm_m.multiblock.IMultiblockController;
@@ -40,7 +38,6 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty LIT = BooleanProperty.create("lit");
 
-    // Форма блока 2x2x2 блока (каждый блок = 16 пикселей, значит 32 пикселя = 2 блока)
     private static final VoxelShape SHAPE = Shapes.box(0.0, 0.0, 0.0, 2.0, 2.0, 2.0);
 
     public MachineWoodBurnerBlock(Properties properties) {
@@ -52,7 +49,6 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
 
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        // Используем "мастер-форму" мультиблока — это устраняет сдвиги outline при наведении.
         VoxelShape master = getCustomMasterVoxelShape(pState);
         return master == null ? SHAPE : master;
     }
@@ -65,8 +61,6 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
 
     @Override
     public VoxelShape getCustomMasterVoxelShape(BlockState state) {
-        // Генерируем форму по частям структуры (2x2x2). MultiblockStructureHelper возвращает shape
-        // в координатах контроллера, что корректно используется UniversalMachinePartBlock.
         return getStructureHelper().generateShapeFromParts(state.getValue(FACING));
     }
 
@@ -91,7 +85,6 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
         super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
         if (!pState.is(pOldState.getBlock())) {
             if (!pLevel.isClientSide) {
-                // Построить 2x2x2 структуру частей при установке контроллера
                 getStructureHelper().placeStructure(pLevel, pPos, pState.getValue(FACING), this);
             }
         }
@@ -110,7 +103,6 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
             if (blockEntity instanceof MachineWoodBurnerBlockEntity) {
                 ((MachineWoodBurnerBlockEntity) blockEntity).drops();
             }
-            // Destroy multiblock parts when controller removed
             this.getStructureHelper().destroyStructure(pLevel, pPos, pState.getValue(FACING));
         }
         super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
@@ -178,7 +170,19 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
 
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
-        // Пока роли не нужны — все части структурные
+        // Задняя нижняя грань: y=0, z=1 (задняя по локальной оси Z), x=0 или 1
+        // FACING определяет вращение, но localOffset всегда в локальных координатах
+        int x = localOffset.getX();
+        int y = localOffset.getY();
+        int z = localOffset.getZ();
+
+        // Задние нижние блоки (2 блока)
+        boolean isEnergyConnector = (y == 0) && (z == 1) && (x == 0 || x == 1);
+
+        if (isEnergyConnector) {
+            return PartRole.ENERGY_CONNECTOR;
+        }
+
         return PartRole.DEFAULT;
     }
 }
