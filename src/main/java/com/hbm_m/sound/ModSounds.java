@@ -37,13 +37,21 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> EXTRACT_1 = registerSoundEvents("tool.extract1");
     public static final RegistryObject<SoundEvent> EXTRACT_2 = registerSoundEvents("tool.extract2");
 
-    public static final RegistryObject<SoundEvent> ASSEMBLER_OPERATE = registerSoundEvents("block.assembler_operate");    
+    public static final RegistryObject<SoundEvent> ASSEMBLER_OPERATE = registerSoundEvents("block.assembler_operate");
+
+    public static final RegistryObject<SoundEvent> ASSEMBLER_CUT = registerSoundEvents("block.assembler_cut");
+    public static final RegistryObject<SoundEvent> ASSEMBLER_START = registerSoundEvents("block.assembler_start");
+    public static final RegistryObject<SoundEvent> ASSEMBLER_STOP = registerSoundEvents("block.assembler_stop");
+    public static final RegistryObject<SoundEvent> ASSEMBLER_STRIKE_1 = registerSoundEvents("block.assembler_strike1");
+    public static final RegistryObject<SoundEvent> ASSEMBLER_STRIKE_2 = registerSoundEvents("block.assembler_strike2");
 
     // РЕГИСТРАЦИЯ АБСТРАКТНОГО СОБЫТИЯ 
     // Это тот самый звук, который мы будем вызывать в коде.
     // Minecraft сам выберет один из 7 реальных звуков случайным образом.
     public static final RegistryObject<SoundEvent> REPAIR_RANDOM = registerSoundEvents("tool.repair_random");
     public static final RegistryObject<SoundEvent> EXTRACT_RANDOM = registerSoundEvents("tool.extract_random");
+    public static final RegistryObject<SoundEvent> ASSEMBLER_STRIKE_RANDOM = registerSoundEvents("block.assembler_strike_random");
+
     
     // Вспомогательный метод для регистрации
     private static RegistryObject<SoundEvent> registerSoundEvents(String name) {

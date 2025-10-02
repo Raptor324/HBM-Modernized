@@ -81,6 +81,9 @@ public class ModBlocks {
     public static final RegistryObject<Block> MACHINE_BATTERY = registerBlockWithoutItem("machine_battery",
         () -> new MachineBatteryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion()));
 
+    public static final RegistryObject<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
+        () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+
     // -----------------------<РУДЫ>-----------------------------
     public static final RegistryObject<Block> LIGNITE_ORE = registerBlock("lignite_ore",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));

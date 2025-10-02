@@ -1,113 +1,132 @@
 {
-  "geiger1": {
-    "category": "player",
-    "sounds": ["hbm_m:tool/geiger1"],
-    "subtitle": "sounds.hbm_m.geiger_counter"
-  },
-  "geiger2": {
-    "category": "player",
-    "sounds": ["hbm_m:tool/geiger2"],
-    "subtitle": "sounds.hbm_m.geiger_counter"
-  },
-  "geiger3": {
-    "category": "player",
-    "sounds": ["hbm_m:tool/geiger3"],
-    "subtitle": "sounds.hbm_m.geiger_counter"
-  },
-  "geiger4": {
-    "category": "player",
-    "sounds": ["hbm_m:tool/geiger4"],
-    "subtitle": "sounds.hbm_m.geiger_counter"
-  },
-  "geiger5": {
-    "category": "player",
-    "sounds": ["hbm_m:tool/geiger5"],
-    "subtitle": "sounds.hbm_m.geiger_counter"
-  },
-  "geiger6": {
-    "category": "player",
-    "sounds": ["hbm_m:tool/geiger6"],
-    "subtitle": "sounds.hbm_m.geiger_counter"
-  },
-  "techboop": {
-    "category": "player",
-    "subtitle": "sounds.hbm_m.techboop",
-    "sounds": [
-      "hbm_m:techboop"
-    ]
-  },
-  "radaway_use": {
-    "subtitle": "sounds.hbm_m.radaway_use",
-    "sounds": [
-      "hbm_m:item/radaway"
-    ]
-  },
-  "tool.repair1": {
-    "subtitle": "sounds.hbm_m.subtitle.repair",
-    "sounds": [ "hbm_m:tool/repair1" ]
-  },
-  "tool.repair2": {
-    "subtitle": "sounds.hbm_m.subtitle.repair",
-    "sounds": [ "hbm_m:tool/repair2" ]
-  },
-  "tool.repair3": {
-    "subtitle": "sounds.hbm_m.subtitle.repair",
-    "sounds": [ "hbm_m:tool/repair3" ]
-  },
-  "tool.repair4": {
-    "subtitle": "sounds.hbm_m.subtitle.repair",
-    "sounds": [ "hbm_m:tool/repair4" ]
-  },
-  "tool.repair5": {
-    "subtitle": "sounds.hbm_m.subtitle.repair",
-    "sounds": [ "hbm_m:tool/repair5" ]
-  },
-  "tool.repair6": {
-    "subtitle": "sounds.hbm_m.subtitle.repair",
-    "sounds": [ "hbm_m:tool/repair6" ]
-  },
-  "tool.repair7": {
-    "subtitle": "sounds.hbm_m.subtitle.repair",
-    "sounds": [ "hbm_m:tool/repair7" ]
-  },
-
-  "tool.repair_random": {
-    "subtitle": "sounds.hbm_m.subtitle.repair",
-    "sounds": [
-      "hbm_m:tool/repair1",
-      "hbm_m:tool/repair2",
-      "hbm_m:tool/repair3",
-      "hbm_m:tool/repair4",
-      "hbm_m:tool/repair5",
-      "hbm_m:tool/repair6",
-      "hbm_m:tool/repair7"
-    ]
-  },
-
-  "tool.extract1": {
-    "subtitle": "sounds.hbm_m.subtitle.extract",
-    "sounds": [ "hbm_m:tool/extract1" ]
-  },
-
-  "tool.extract2": {
-    "subtitle": "sounds.hbm_m.subtitle.extract",
-    "sounds": [ "hbm_m:tool/extract2" ]
-  },
-
-  "tool.extract_random": {
-    "subtitle": "sounds.hbm_m.subtitle.extract",
-    "sounds": [
-      "hbm_m:tool/extract1",
-      "hbm_m:tool/extract2"
-    ]
-  },
-  "block.assembler_operate": {
-    "subtitle": "sounds.hbm_m.subtitle.assembler_operate",
-    "sounds": [
-      {
-        "name": "hbm_m:block/assembler_operate",
-        "stream": true
-      }
-    ]
-  }
+    "geiger1": {
+        "category": "player",
+        "sounds": ["hbm_m:tool/geiger1"],
+        "subtitle": "sounds.hbm_m.geiger_counter"
+    },
+    "geiger2": {
+        "category": "player",
+        "sounds": ["hbm_m:tool/geiger2"],
+        "subtitle": "sounds.hbm_m.geiger_counter"
+    },
+    "geiger3": {
+        "category": "player",
+        "sounds": ["hbm_m:tool/geiger3"],
+        "subtitle": "sounds.hbm_m.geiger_counter"
+    },
+    "geiger4": {
+        "category": "player",
+        "sounds": ["hbm_m:tool/geiger4"],
+        "subtitle": "sounds.hbm_m.geiger_counter"
+    },
+    "geiger5": {
+        "category": "player",
+        "sounds": ["hbm_m:tool/geiger5"],
+        "subtitle": "sounds.hbm_m.geiger_counter"
+    },
+    "geiger6": {
+        "category": "player",
+        "sounds": ["hbm_m:tool/geiger6"],
+        "subtitle": "sounds.hbm_m.geiger_counter"
+    },
+    "techboop": {
+        "category": "player",
+        "subtitle": "sounds.hbm_m.techboop",
+        "sounds": [ "hbm_m:techboop" ]
+    },
+    "radaway_use": {
+        "subtitle": "sounds.hbm_m.radaway_use",
+        "sounds": [ "hbm_m:item/radaway" ]
+    },
+    "tool.repair1": {
+        "subtitle": "sounds.hbm_m.subtitle.repair",
+        "sounds": [ "hbm_m:tool/repair1" ]
+    },
+    "tool.repair2": {
+        "subtitle": "sounds.hbm_m.subtitle.repair",
+        "sounds": [ "hbm_m:tool/repair2" ]
+    },
+    "tool.repair3": {
+        "subtitle": "sounds.hbm_m.subtitle.repair",
+        "sounds": [ "hbm_m:tool/repair3" ]
+    },
+    "tool.repair4": {
+        "subtitle": "sounds.hbm_m.subtitle.repair",
+        "sounds": [ "hbm_m:tool/repair4" ]
+    },
+    "tool.repair5": {
+        "subtitle": "sounds.hbm_m.subtitle.repair",
+        "sounds": [ "hbm_m:tool/repair5" ]
+    },
+    "tool.repair6": {
+        "subtitle": "sounds.hbm_m.subtitle.repair",
+        "sounds": [ "hbm_m:tool/repair6" ]
+    },
+    "tool.repair7": {
+        "subtitle": "sounds.hbm_m.subtitle.repair",
+        "sounds": [ "hbm_m:tool/repair7" ]
+    },
+    "tool.repair_random": {
+        "subtitle": "sounds.hbm_m.subtitle.repair",
+        "sounds": [
+            "hbm_m:tool/repair1",
+            "hbm_m:tool/repair2",
+            "hbm_m:tool/repair3",
+            "hbm_m:tool/repair4",
+            "hbm_m:tool/repair5",
+            "hbm_m:tool/repair6",
+            "hbm_m:tool/repair7"
+        ]
+    },
+    "tool.extract1": {
+        "subtitle": "sounds.hbm_m.subtitle.extract",
+        "sounds": [ "hbm_m:tool/extract1" ]
+    },
+    "tool.extract2": {
+        "subtitle": "sounds.hbm_m.subtitle.extract",
+        "sounds": [ "hbm_m:tool/extract2" ]
+    },
+    "tool.extract_random": {
+        "subtitle": "sounds.hbm_m.subtitle.extract",
+        "sounds": [
+            "hbm_m:tool/extract1",
+            "hbm_m:tool/extract2"
+        ]
+    },
+    "block.assembler_operate": {
+        "subtitle": "sounds.hbm_m.subtitle.assembler_operate",
+        "sounds": [
+            {
+                "name": "hbm_m:block/assembler_operate",
+                "stream": true
+            }
+        ]
+    },
+    "block.assembler_cut": {
+        "subtitle": "sounds.hbm_m.subtitle.assembler_cut",
+        "sounds": [ "hbm_m:block/assembler_cut" ]
+    },
+    "block.assembler_start": {
+        "subtitle": "sounds.hbm_m.subtitle.assembler_start",
+        "sounds": [ "hbm_m:block/assembler_start" ]
+    },
+    "block.assembler_stop": {
+        "subtitle": "sounds.hbm_m.subtitle.assembler_stop",
+        "sounds": [ "hbm_m:block/assembler_stop" ]
+    },
+    "block.assembler_strike1": {
+        "subtitle": "sounds.hbm_m.subtitle.assembler_strike",
+        "sounds": [ "hbm_m:block/assembler_strike1" ]
+    },
+    "block.assembler_strike2": {
+        "subtitle": "sounds.hbm_m.subtitle.assembler_strike",
+        "sounds": [ "hbm_m:block/assembler_strike2" ]
+    },
+    "block.assembler_strike_random": {
+        "subtitle": "sounds.hbm_m.subtitle.assembler_strike",
+        "sounds": [ 
+            "hbm_m:block/assembler_strike1",
+            "hbm_m:block/assembler_strike2"
+        ]
+    }
 }

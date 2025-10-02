@@ -239,8 +239,8 @@ public class MainRegistry {
             event.accept(ModBlocks.LEAD_ORE);
             event.accept(ModBlocks.LEAD_ORE_DEEPSLATE);
             event.accept(ModBlocks.CINNABAR_ORE);
-
-
+            // event.accept(ModBlocks.UNIVERSAL_MACHINE_PART);
+            event.accept(ModBlocks.FREAKY_ALIEN_BLOCK);
 
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added uranium block to NTM Resources tab");
@@ -259,6 +259,7 @@ public class MainRegistry {
             event.accept(ModBlocks.WOOD_BURNER);
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
+            event.accept(ModBlocks.FLUID_TANK);
             event.accept(ModBlocks.MACHINE_BATTERY);
             event.accept(ModBlocks.WIRE_COATED);
             if (ModClothConfig.get().enableDebugLogging) {

@@ -42,7 +42,7 @@ public class MachineAdvancedAssemblerModelLoader implements IGeometryLoader<Mach
 
         // Определяем "чистые" имена частей, которые мы используем в рендерере
         private static final Set<String> PART_NAMES = Set.of(
-            "Base", "Ring", "ArmLower1", "ArmUpper1", "Head1", "Spike1",
+            "Base", "Frame", "Ring", "ArmLower1", "ArmUpper1", "Head1", "Spike1",
             "ArmLower2", "ArmUpper2", "Head2", "Spike2"
         );
 

@@ -3,25 +3,18 @@ package com.hbm_m.client.model.render;
 // Рендер для продвинутой сборочной машины.
 // Отвечает за анимацию вращающегося кольца и двух манипуляторов.
 // Использует модель AdvancedAssemblyMachineBakedModel, которая разбивает модель на части.
-// TODO: Сейчас не работает
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
 import com.hbm_m.block.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.entity.MachineAdvancedAssemblerBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemDisplayContext;
-import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraft.client.renderer.entity.ItemRenderer;
 
 public class MachineAdvancedAssemblerRenderer implements BlockEntityRenderer<MachineAdvancedAssemblerBlockEntity> {
 

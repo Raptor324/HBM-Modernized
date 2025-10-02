@@ -6,6 +6,7 @@ package com.hbm_m.menu;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.MachineAssemblerBlockEntity;
 import com.hbm_m.item.ItemAssemblyTemplate;
+import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -167,7 +168,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
         } else {
-            System.out.println("Invalid slotIndex:" + pIndex);
+            MainRegistry.LOGGER.debug("Invalid slotIndex:" + pIndex);
             return ItemStack.EMPTY;
         }
 

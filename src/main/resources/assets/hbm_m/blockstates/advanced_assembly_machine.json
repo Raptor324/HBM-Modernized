@@ -14,13 +14,6 @@
         "facing=west": {
             "model": "hbm_m:block/advanced_assembly_machine",
             "y": 270
-        },
-        "normal": {
-            "model": "hbm_m:models/block/advanced_assembler.obj"
-        },
-        "inventory": {
-            "model": "hbm_m:models/block/advanced_assembler.obj",
-            "transform": "forge:default-block"
         }
     }
 }

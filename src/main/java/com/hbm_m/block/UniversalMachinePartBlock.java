@@ -8,6 +8,9 @@ import com.hbm_m.block.entity.UniversalMachinePartBlockEntity;
 import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.IMultiblockPart;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.main.MainRegistry;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -135,19 +138,11 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
     @Override
     public void neighborChanged(BlockState pState, Level pLevel, BlockPos pPos, Block pBlock, BlockPos pFromPos, boolean pIsMoving) {
         super.neighborChanged(pState, pLevel, pPos, pBlock, pFromPos, pIsMoving);
-
-        if (!pLevel.isClientSide()) {
-            if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
-                BlockPos controllerPos = part.getControllerPos();
-                if (controllerPos != null) {
-                    BlockEntity be = pLevel.getBlockEntity(controllerPos);
-                    if (be instanceof IFrameSupportable controllerBe) {
-                        // Если да, то вызываем метод. Если нет - ничего не делаем.
-                        controllerBe.checkForFrame();
-                    }
-                }
-            }
-        }
+        
+        MainRegistry.LOGGER.debug("[PART NEIGHBOR] neighborChanged вызван на " + pPos + " из-за " + pFromPos);
+        
+        // Делегируем всю логику в MultiblockStructureHelper
+        MultiblockStructureHelper.onNeighborChangedForPart(pLevel, pPos, pFromPos);
     }
 
     @Override

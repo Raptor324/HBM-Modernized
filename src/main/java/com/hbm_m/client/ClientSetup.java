@@ -82,7 +82,7 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
             MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
             // Register BlockEntity renderer for Advanced Assembly Machine
-            BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE.get(), MachineAdvancedAssemblerRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
         });
     }
 

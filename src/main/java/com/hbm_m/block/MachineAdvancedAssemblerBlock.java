@@ -16,9 +16,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -41,81 +40,36 @@ import java.util.function.Supplier;
 public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-    private static MultiblockStructureHelper STRUCTURE_HELPER;
-    
-    // A map to cache generated shapes for each direction to improve performance
-    private static final Map<Direction, VoxelShape> SHAPE_CACHE = new java.util.EnumMap<>(Direction.class);
+
+    // --- НАЧАЛО ИСПРАВЛЕНИЯ АРХИТЕКТУРЫ ---
+
+    // 1. Определение структуры теперь СТАТИЧЕСКОЕ и НЕИЗМЕНЯЕМОЕ (final). Оно создается один раз при загрузке класса.
+    private static final Map<BlockPos, Supplier<BlockState>> STRUCTURE_DEFINITION = defineStructure();
+
+    // 2. Хелпер теперь НЕ static. Он final и создается для КАЖДОГО экземпляра блока в конструкторе.
+    private final MultiblockStructureHelper structureHelper;
+
+    // 3. VoxelShape кэш также стал нестатическим. Каждый блок кэширует свои формы.
+    private final Map<Direction, VoxelShape> shapeCache = new java.util.EnumMap<>(Direction.class);
+
+    // --- КОНЕЦ ИСПРАВЛЕНИЯ АРХИТЕКТУРЫ ---
+
 
     public MachineAdvancedAssemblerBlock(Properties pProperties) {
         super(pProperties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-    }
-
-    @Override
-    public PartRole getPartRole(BlockPos localOffset) {
-        // This machine is a simple cube with no special connectors.
-        return PartRole.DEFAULT;
-    }
-    
-    @Override
-    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        // Use the cached shape if available, otherwise generate and cache it.
-        return SHAPE_CACHE.computeIfAbsent(pState.getValue(FACING),
-                facing -> getStructureHelper().generateShapeFromParts(facing));
-    }
-    
-    @Override
-    public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        return getShape(pState, pLevel, pPos, pContext);
-    }
-    
-    @Override
-    public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
-        super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
-        // Если это не клиентская сторона и блок действительно был установлен (а не просто изменилось состояние)
-        if (!pLevel.isClientSide() && !pState.is(pOldState.getBlock())) {
-            // Вызываем метод для расстановки фантомных блоков структуры
-            getStructureHelper().placeStructure(pLevel, pPos, pState.getValue(FACING), this);
-
-            // Этот вызов можно оставить, если он нужен для дополнительной логики (например, отрисовки рамки)
-            if (pLevel.getBlockEntity(pPos) instanceof IFrameSupportable be) {
-                be.checkForFrame();
-            }
-        }
-    }
-
-    @Override
-    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
-        if (!pState.is(pNewState.getBlock())) {
-            // Drop items and other onRemove logic...
-            getStructureHelper().destroyStructure(pLevel, pPos, pState.getValue(FACING));
-        }
-        super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
-    }
-
-    @Override
-    public void neighborChanged(BlockState pState, Level pLevel, BlockPos pPos, Block pBlock, BlockPos pFromPos, boolean pIsMoving) {
-        super.neighborChanged(pState, pLevel, pPos, pBlock, pFromPos, pIsMoving);
-        
-        if (!pLevel.isClientSide()) {
-            // Здесь мы также используем проверку на интерфейс
-            if (pLevel.getBlockEntity(pPos) instanceof IFrameSupportable be) {
-                be.checkForFrame();
-            }
-        }
+        // Инициализируем УНИКАЛЬНЫЙ хелпер для этого экземпляра блока
+        this.structureHelper = new MultiblockStructureHelper(STRUCTURE_DEFINITION, () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
     public MultiblockStructureHelper getStructureHelper() {
-        if (STRUCTURE_HELPER == null) {
-            STRUCTURE_HELPER = new MultiblockStructureHelper(defineStructure(), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
-        }
-        return STRUCTURE_HELPER;
+        // Просто возвращаем наш уникальный экземпляр хелпера
+        return this.structureHelper;
     }
-    
+
     private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
         ImmutableMap.Builder<BlockPos, Supplier<BlockState>> builder = ImmutableMap.builder();
-        // Define a 3x3x3 cube structure, skipping the center (controller)
         for (int y = 0; y <= 2; y++) {
             for (int x = -1; x <= 1; x++) {
                 for (int z = -1; z <= 1; z++) {
@@ -126,53 +80,74 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
         }
         return builder.build();
     }
+
+    @Override
+    public PartRole getPartRole(BlockPos localOffset) {
+        return PartRole.DEFAULT;
+    }
+
+
+    // --- ЛОГИКА ВЗАИМОДЕЙСТВИЯ И ОБНОВЛЕНИЙ ---
+
+    @Override
+    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        // Используем НЕСТАТИЧЕСКИЙ кэш
+        return this.shapeCache.computeIfAbsent(pState.getValue(FACING),
+                facing -> getStructureHelper().generateShapeFromParts(facing));
+    }
+
+    @Override
+    public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
+        super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
+        if (!pLevel.isClientSide() && !pState.is(pOldState.getBlock())) {
+            getStructureHelper().placeStructure(pLevel, pPos, pState.getValue(FACING), this);
+            
+            // Запускаем первую проверку рамки сразу после постройки
+            if (pLevel.getBlockEntity(pPos) instanceof IFrameSupportable be) {
+                be.checkForFrame();
+            }
+        }
+    }
+
+    @Override
+    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
+        if (!pState.is(pNewState.getBlock())) {
+            // Логика дропа предметов должна быть здесь, если она нужна
+            getStructureHelper().destroyStructure(pLevel, pPos, pState.getValue(FACING));
+        }
+        super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
+    }
     
+    // ВАЖНО: Метод neighborChanged убран из контроллера.
+    // Всю логику теперь обрабатывает `UniversalMachinePartBlock`, что является правильным подходом.
+    // Контроллер не должен реагировать на изменения над ним самим, только его части.
+
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        // Игнорируем вторую руку, это все еще хорошая практика
         if (pHand == InteractionHand.OFF_HAND) {
             return InteractionResult.PASS;
         }
 
-        if (!(pLevel.getBlockEntity(pPos) instanceof MachineAdvancedAssemblerBlockEntity aamBe)) {
-            return InteractionResult.FAIL;
-        }
-
-        // --- ЛОГИКА ДЛЯ SHIFT-КЛИКА ---
         if (pPlayer.isShiftKeyDown()) {
             if (!pLevel.isClientSide()) {
-                // ---- ПРОВЕРКА COOLDOWN ----
-                long currentTime = pLevel.getGameTime();
-                // Запрещаем менять состояние чаще, чем раз в 10 тиков (0.5 секунды)
-                if (currentTime < aamBe.lastUseTick + 10) {
-                    return InteractionResult.FAIL; // Игнорируем слишком частые клики
+                if (pLevel.getBlockEntity(pPos) instanceof IFrameSupportable frameBe) {
+                    frameBe.checkForFrame();
+                    pPlayer.displayClientMessage(Component.literal("Рамка проверена вручную!"), true);
                 }
-                aamBe.lastUseTick = currentTime; // Обновляем таймер
-
-                // Ваша основная логика
-                boolean oldState = aamBe.isCrafting;
-                aamBe.isCrafting = !oldState;
-                System.out.println(String.format("[СЕРВЕР] Toggled crafting from %b to %b", oldState, aamBe.isCrafting));
-                
-                if (aamBe.isCrafting) {
-                    aamBe.progress = 0;
-                }
-
-                aamBe.setChanged();
-                pLevel.sendBlockUpdated(pPos, pState, pState, 3);
-                pPlayer.displayClientMessage(Component.literal("Animation toggled: " + aamBe.isCrafting), true);
             }
             return InteractionResult.SUCCESS;
-        } 
-        
-        // --- ЛОГИКА ДЛЯ ОБЫЧНОГО КЛИКА (GUI) ---
-        else {
-            if (!pLevel.isClientSide()) {
-                NetworkHooks.openScreen((ServerPlayer) pPlayer, aamBe, pPos);
-            }
-            return InteractionResult.CONSUME;
         }
+
+        if (!pLevel.isClientSide()) {
+            if (pLevel.getBlockEntity(pPos) instanceof MenuProvider menuProvider) {
+                NetworkHooks.openScreen((ServerPlayer) pPlayer, menuProvider, pPos);
+            }
+        }
+        return InteractionResult.CONSUME;
     }
+
+
+    // --- СТАНДАРТНЫЕ МЕТОДЫ БЛОКА ---
 
     @Nullable
     @Override
@@ -199,6 +174,6 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pBlockEntityType) {
-        return createTickerHelper(pBlockEntityType, ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE.get(), MachineAdvancedAssemblerBlockEntity::tick);
+        return createTickerHelper(pBlockEntityType, ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerBlockEntity::tick);
     }
 }

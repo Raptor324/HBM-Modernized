@@ -1,12 +1,11 @@
 package com.hbm_m.block.entity;
 
-import com.hbm_m.block.MachineAdvancedAssemblerBlock;
 // Блок-энтити для Продвинутой Сборочной Машины с поддержкой энергии, жидкостей, предметов и анимаций.
 import com.hbm_m.energy.BlockEntityEnergyStorage;
 import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.multiblock.IFrameSupportable;
-import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -59,7 +58,7 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
     private final FluidTank outputTank = new FluidTank(4000);
 
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
-    private LazyOptional<BlockEntityEnergyStorage> lazyEnergyHandler = LazyOptional.empty(); // Тип изменен
+    private LazyOptional<BlockEntityEnergyStorage> lazyEnergyHandler = LazyOptional.empty();
     private LazyOptional<FluidTank> lazyFluidHandler = LazyOptional.empty();
     public boolean frame = false;
     
@@ -81,7 +80,7 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
     protected final ContainerData data;
 
     public MachineAdvancedAssemblerBlockEntity(BlockPos pPos, BlockState pBlockState) {
-        super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE.get(), pPos, pBlockState); // Укажите ваш тип BlockEntity
+        super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pPos, pBlockState); // Укажите ваш тип BlockEntity
         for (int i = 0; i < this.arms.length; i++) {
             this.arms[i] = new AssemblerArm();
         }
@@ -120,6 +119,53 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
     public int getMaxProgress() { return this.maxProgress; }
     public long lastUseTick = 0;
 
+    /**
+     * Этот метод устанавливает состояние видимости рамки и, если оно изменилось,
+     * синхронизирует его с клиентом. Это центральная точка обновления.
+     */
+    @Override
+    public boolean setFrameVisible(boolean visible) {
+        // Проверяем, нужно ли вообще что-то менять
+        if (this.frame != visible) {
+            this.frame = visible;
+            this.setChanged(); // Помечаем BlockEntity как "грязный" для сохранения в чанке
+
+            // Убеждаемся, что у нас есть мир и мы на сервере, прежде чем отправлять пакет
+            if (this.level != null && !this.level.isClientSide()) {
+                // Отправляем пакет обновления клиенту. Это заставит клиент запросить getUpdateTag()
+                // и обновить свой BlockEntity, включая поле 'frame'.
+                this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+                MainRegistry.LOGGER.debug("[FRAME SET] Состояние рамки изменено на " + visible + ". Отправлен пакет клиенту.");
+            }
+            return true; // Состояние изменилось
+        }
+        return false; // Состояние не изменилось
+    }
+
+    /**
+     * ИЗМЕНЕНИЕ: Новый метод из интерфейса.
+     * Просто возвращает текущее состояние поля 'frame'.
+     * Используется на клиенте рендерером для определения, рисовать ли рамку.
+     */
+    @Override
+    public boolean isFrameVisible() {
+        return this.frame;
+    }
+
+    /**
+     * ИЗМЕНЕНИЕ: Логика этого метода полностью заменена.
+     * Раньше здесь была сложная и дублирующаяся проверка. Теперь он просто
+     * делегирует вызов в централизованный метод в MultiblockStructureHelper.
+     */
+    @Override
+    public void checkForFrame() {
+        // Запускаем проверку только на сервере
+        if (this.level != null && !this.level.isClientSide()) {
+            MainRegistry.LOGGER.debug("[FRAME CHECK] Запущена проверка checkForFrame() для контроллера на " + this.worldPosition);
+            MultiblockStructureHelper.updateFrameForController(this.level, this.worldPosition);
+        }
+    }
+
     // --- TICK ЛОГИКА ---
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity pEntity) {
         if (level.isClientSide()) {
@@ -157,57 +203,6 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
             //      // Отправить обновление клиенту, чтобы запустить анимацию
             //      level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
             // }
-        }
-    }
-
-    /**
-     * Проверяет, есть ли блоки над структурой, и обновляет состояние рамки.
-     */
-    @Override
-    public void checkForFrame() {
-        if (level == null || level.isClientSide() || !(getBlockState().getBlock() instanceof IMultiblockController controller)) {
-            return;
-        }
-
-        boolean shouldHaveFrame = false;
-        MultiblockStructureHelper helper = controller.getStructureHelper();
-        
-        // --- ИСПРАВЛЕНИЕ ---
-        // 1. Находим максимальную высоту структуры, чтобы определить "крышу"
-        int maxY = Integer.MIN_VALUE;
-        for (BlockPos localOffset : helper.getPartOffsets()) {
-            if (localOffset.getY() > maxY) {
-                maxY = localOffset.getY();
-            }
-        }
-        
-        // Если структура плоская или не определена, выходим
-        if (maxY == Integer.MIN_VALUE) {
-            return;
-        }
-
-        // 2. Проверяем блоки только над самым верхним слоем
-        for (BlockPos localOffset : helper.getPartOffsets()) {
-            // Пропускаем все части, которые не на крыше
-            if (localOffset.getY() != maxY) {
-                continue;
-            }
-
-            BlockPos worldPos = helper.getRotatedPos(this.worldPosition, localOffset, getBlockState().getValue(MachineAdvancedAssemblerBlock.FACING));
-            
-            // Проверяем блок НАД частью структуры
-            if (!level.getBlockState(worldPos.above()).isAir()) {
-                shouldHaveFrame = true;
-                break; // Нашли хотя бы один блок, дальше можно не проверять
-            }
-        }
-
-        // Если состояние изменилось, обновляем его и отправляем пакет клиенту
-        if (this.frame != shouldHaveFrame) {
-            this.frame = shouldHaveFrame;
-            setChanged(); // Помечаем BlockEntity как "грязный" для сохранения
-            // Отправляем обновление клиенту, чтобы рендер обновился
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
     
@@ -328,7 +323,7 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
         // --- ДИАГНОСТИКА ---
         // this.level может быть null при первой загрузке, поэтому проверяем
         if (this.level != null && this.level.isClientSide() && wasCrafting != this.isCrafting) {
-            System.out.println("[КЛИЕНТ] Получено обновление! isCrafting теперь: " + this.isCrafting);
+            MainRegistry.LOGGER.debug("[КЛИЕНТ] Получено обновление! isCrafting теперь: " + this.isCrafting);
         }
     }
 
@@ -359,7 +354,7 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
             
             // Наша диагностика. Теперь она должна сработать.
             if (this.level != null && this.level.isClientSide() && wasCrafting != this.isCrafting) {
-                System.out.println("[КЛИЕНТ onDataPacket] Пакет успешно получен! isCrafting теперь: " + this.isCrafting);
+                MainRegistry.LOGGER.debug("[КЛИЕНТ onDataPacket] Пакет успешно получен! isCrafting теперь: " + this.isCrafting);
             }
         }
         
