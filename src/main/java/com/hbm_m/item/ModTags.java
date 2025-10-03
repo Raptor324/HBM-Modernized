@@ -14,6 +14,7 @@ public class ModTags {
 
         public static final TagKey<Block> NEEDS_STEEL_TOOL = tag("needs_steel_tool");
 
+        public static final TagKey<Block> NEEDS_TITANIUM_TOOL = tag("needs_steel_tool");
 
         private static TagKey<Block> tag(String name) {
             return BlockTags.create(new ResourceLocation(MainRegistry.MOD_ID, name));

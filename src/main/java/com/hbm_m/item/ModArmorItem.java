@@ -1,7 +1,6 @@
 package com.hbm_m.item;
 
 import com.google.common.collect.ImmutableMap;
-import com.hbm_m.item.ModArmorMaterials;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.player.Player;
@@ -15,8 +14,16 @@ import java.util.Map;
 public class ModArmorItem extends ArmorItem {
     private static final Map<ArmorMaterial, MobEffectInstance> MATERIAL_TO_EFFECT_MAP =
             (new ImmutableMap.Builder<ArmorMaterial, MobEffectInstance>())
-                    .put(ModArmorMaterials.ALLOY, new MobEffectInstance(MobEffects.CONDUIT_POWER, 200, 1,
-                            false,false, true)).build();
+                    .put(ModArmorMaterials.TITANIUM, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 0,
+                            false,false, true))
+                    .put(ModArmorMaterials.COBALT, new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 20, 2,
+                            false,false, true))
+                    .put(ModArmorMaterials.SECURITY, new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 20, 0,
+                            false,false, true))
+                    .put(ModArmorMaterials.ALLOY, new MobEffectInstance(MobEffects.CONDUIT_POWER, 20, 0,
+            false,false, true)).build();
+
+
 
     public ModArmorItem(ArmorMaterial pMaterial, Type pType, Properties pProperties) {
         super(pMaterial, pType, pProperties);

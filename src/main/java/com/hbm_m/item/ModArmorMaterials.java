@@ -15,7 +15,21 @@ public enum ModArmorMaterials implements ArmorMaterial {
 
 
     ALLOY("alloy", 26, new int[]{ 5, 7, 5, 4 }, 25,
-            SoundEvents.ARMOR_EQUIP_IRON, 1f, 0f, () -> Ingredient.of(ModItems.PLATE_STEEL.get()));
+            SoundEvents.ARMOR_EQUIP_IRON, 1.5f, 0f, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
+
+    SECURITY("security", 26, new int[]{ 4, 6, 4, 3 }, 25,
+            SoundEvents.ARMOR_EQUIP_IRON, 1.5f, 0f, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
+
+    COBALT("cobalt", 26, new int[]{ 2, 4, 2, 1 }, 25,
+            SoundEvents.ARMOR_EQUIP_IRON, 0.75f, 0f, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
+
+
+    TITANIUM("titanium", 26, new int[]{ 5, 7, 5, 4 }, 25,
+    SoundEvents.ARMOR_EQUIP_IRON, 1.25f, 0f, () -> Ingredient.of(ModItems.PLATE_IRON.get()));
+
+
+
+
 
     private final String name;
     private final int durabilityMultiplier;
@@ -39,19 +53,6 @@ public enum ModArmorMaterials implements ArmorMaterial {
         this.knockbackResistance = knockbackResistance;
         this.repairIngredient = repairIngredient;
     }
-
-
-
-
-
-
-
-
-
-
-
-
-    
 
     @Override
     public int getDurabilityForType(ArmorItem.Type pType) {

@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "# #",
+    "###",
+    "###"
+
+  ],
+
+  "key": {
+    "#": {
+      "item": "hbm_m:titanium_ingot"
+    }
+
+  },
+
+  "result": {
+
+    "item": "hbm_m:titanium_chestplate"
+  }
+
+}

@@ -50,6 +50,18 @@ public class ModItemModelProvider extends ItemModelProvider {
         trimmedArmorItem(ModItems.ALLOY_CHESTPLATE);
         trimmedArmorItem(ModItems.ALLOY_LEGGINGS);
         trimmedArmorItem(ModItems.ALLOY_BOOTS);
+        trimmedArmorItem(ModItems.TITANIUM_HELMET);
+        trimmedArmorItem(ModItems.TITANIUM_CHESTPLATE);
+        trimmedArmorItem(ModItems.TITANIUM_LEGGINGS);
+        trimmedArmorItem(ModItems.TITANIUM_BOOTS);
+        trimmedArmorItem(ModItems.SECURITY_HELMET);
+        trimmedArmorItem(ModItems.SECURITY_CHESTPLATE);
+        trimmedArmorItem(ModItems.SECURITY_LEGGINGS);
+        trimmedArmorItem(ModItems.SECURITY_BOOTS);
+        trimmedArmorItem(ModItems.COBALT_HELMET);
+        trimmedArmorItem(ModItems.COBALT_CHESTPLATE);
+        trimmedArmorItem(ModItems.COBALT_LEGGINGS);
+        trimmedArmorItem(ModItems.COBALT_BOOTS);
 
     }
 

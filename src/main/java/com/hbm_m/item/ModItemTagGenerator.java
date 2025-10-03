@@ -25,6 +25,18 @@ public class ModItemTagGenerator extends ItemTagsProvider {
                 .add(ModItems.ALLOY_HELMET.get(),
                         ModItems.ALLOY_CHESTPLATE.get(),
                         ModItems.ALLOY_LEGGINGS.get(),
+                        ModItems.TITANIUM_HELMET.get(),
+                        ModItems.TITANIUM_CHESTPLATE.get(),
+                        ModItems.TITANIUM_LEGGINGS.get(),
+                        ModItems.TITANIUM_BOOTS.get(),
+                        ModItems.SECURITY_HELMET.get(),
+                        ModItems.SECURITY_CHESTPLATE.get(),
+                        ModItems.SECURITY_LEGGINGS.get(),
+                        ModItems.SECURITY_BOOTS.get(),
+                        ModItems.COBALT_HELMET.get(),
+                        ModItems.COBALT_CHESTPLATE.get(),
+                        ModItems.COBALT_LEGGINGS.get(),
+                        ModItems.COBALT_BOOTS.get(),
                         ModItems.ALLOY_BOOTS.get());
 
     }
