@@ -2,15 +2,15 @@
   "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
-    "###",
-    " $ ",
+    " # ",
+    " # ",
     " $ "
 
   ],
 
   "key": {
     "#": {
-      "item": "hbm_m:advanced_alloy_ingot"
+      "item": "hbm_m:steel_ingot"
     },
 
     "$": {
@@ -21,7 +21,7 @@
 
   "result": {
 
-    "item": "hbm_m:alloy_pickaxe"
+    "item": "hbm_m:steel_sword"
   }
 
 }
