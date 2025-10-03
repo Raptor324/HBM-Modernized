@@ -16,7 +16,7 @@ import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.item.*;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -73,11 +73,29 @@ public class ModItems {
 
     public static final int BATTERY_CAPACITY = 1_000_000;
 
-    // Регистрируем наш меч.
-    // RegistryObject<Item> будет содержать ссылку на зарегистрированный предмет.
+
+
+
+
+// ИНСТРУМЕНТЫ ГОРНЯКА:
     public static final RegistryObject<Item> ALLOY_SWORD = ITEMS.register("alloy_sword",
-            () -> new AlloySword()); // Имя файла меча будет "alloy_sword"
-            
+            () -> new SwordItem(ModToolTiers.ALLOY, 4, 2, new Item.Properties()));
+
+    public static final RegistryObject<Item> ALLOY_AXE = ITEMS.register("alloy_axe",
+            () -> new AxeItem(ModToolTiers.ALLOY, 7, 1, new Item.Properties()));
+
+    public static final RegistryObject<Item> ALLOY_PICKAXE = ITEMS.register("alloy_pickaxe",
+            () -> new PickaxeItem(ModToolTiers.ALLOY, 2, 2, new Item.Properties()));
+
+    public static final RegistryObject<Item> ALLOY_SHOVEL = ITEMS.register("alloy_shovel",
+            () -> new ShovelItem(ModToolTiers.ALLOY, 1, 1, new Item.Properties()));
+
+    public static final RegistryObject<Item> ALLOY_HOE = ITEMS.register("alloy_hoe",
+            () -> new HoeItem(ModToolTiers.ALLOY, 1, 1, new Item.Properties()));
+
+
+
+
 
     // Инструменты
     public static final RegistryObject<Item> GEIGER_COUNTER = ITEMS.register("geiger_counter",
@@ -277,7 +295,7 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> LIGNITE = ITEMS.register("lignite",
-            () -> new Item(new Item.Properties()));
+            () -> new FuelItem(new Item.Properties(), 400));
 
     public static final RegistryObject<Item> CINNABAR = ITEMS.register("cinnabar",
             () -> new Item(new Item.Properties()));

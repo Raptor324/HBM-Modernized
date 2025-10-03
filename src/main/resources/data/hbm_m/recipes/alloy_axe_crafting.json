@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "## ",
+    "#$ ",
+    " $ "
+
+  ],
+
+  "key": {
+    "#": {
+      "item": "hbm_m:advanced_alloy"
+    },
+
+    "$": {
+      "item": "minecraft:stick"
+    }
+
+  },
+
+  "result": {
+
+    "item": "hbm_m:alloy_axe"
+  }
+
+}
