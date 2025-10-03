@@ -81,6 +81,9 @@ public enum ModIngots {
     TUNGSTEN("tungsten",
             "ru_ru", "Вольфрамовый слиток",
             "en_us", "Tungsten Ingot"),
+    STARMETAL("starmetal",
+            "ru_ru", "Слиток Звёздного Металла",
+            "en_us", "Star Metal Ingot"),
     BERYLLIUM("beryllium",
             "ru_ru", "Бериллиевый слиток",
             "en_us", "Beryllium Ingot");
