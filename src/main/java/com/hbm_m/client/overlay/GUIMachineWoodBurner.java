@@ -84,18 +84,25 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
 
     private void renderEnergyBar(GuiGraphics graphics, int x, int y) {
         if (menu.getEnergy() > 0) {
-            int totalHeight = 52;
+            int totalHeight = 34;
             int barHeight = menu.getEnergyScaled(totalHeight);
 
             // Переключаемся на текстуру шкалы энергии
             RenderSystem.setShaderTexture(0, ENERGY_BAR_TEXTURE);
 
-            // Рендерим заполненную часть шкалы энергии
-            // Теперь берем с координат (0,0) так как это отдельный файл
-            int startY = y + 18 + (totalHeight - barHeight);
-            int textureStartY = totalHeight - barHeight;
+            // РЕНДЕРИМ СНИЗУ ВВЕРХ - берём текстуру с НУЛЯ (самый низ)
+            // Позиция на экране: рисуем внизу шкалы и поднимаемся вверх
+            int startY = y + 52 - barHeight;  // 52 = 18 + 34 (низ шкалы минус высота заполнения)
 
-            graphics.blit(ENERGY_BAR_TEXTURE, x + 143, startY, 0, textureStartY, 16, barHeight);
+            graphics.blit(
+                    ENERGY_BAR_TEXTURE,  // текстура
+                    x + 143,              // X на экране
+                    startY,               // Y на экране (верх заполненной части)
+                    0,                    // X в текстуре
+                    0,                    // Y в текстуре - ВСЕГДА берём с нуля (снизу)!
+                    16,                   // ширина
+                    barHeight             // высота (сколько взять от низа текстуры)
+            );
         }
     }
 
@@ -118,8 +125,8 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
             pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pX, pY);
         }
 
-        // Тултип для шкалы энергии
-        if (isMouseOver(pX, pY, 132, 17, 14, 52)) {
+        // Тултип для шкалы энергии (обновлены координаты под размер 16x34)
+        if (isMouseOver(pX, pY, 143, 18, 16, 34)) {
             List<Component> tooltip = new ArrayList<>();
             tooltip.add(Component.literal(String.format("%,d / %,d FE", menu.getEnergy(), menu.getMaxEnergy()))
                     .withStyle(ChatFormatting.GREEN));
