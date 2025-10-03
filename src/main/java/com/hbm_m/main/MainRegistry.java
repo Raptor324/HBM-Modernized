@@ -139,11 +139,28 @@ public class MainRegistry {
             event.accept(ModItems.STEEL_PICKAXE);
             event.accept(ModItems.STEEL_HOE);
             event.accept(ModItems.STEEL_SHOVEL);
+            event.accept(ModItems.TITANIUM_SWORD);
+            event.accept(ModItems.TITANIUM_AXE);
+            event.accept(ModItems.TITANIUM_PICKAXE);
+            event.accept(ModItems.TITANIUM_HOE);
+            event.accept(ModItems.TITANIUM_SHOVEL);
 
             event.accept(ModItems.ALLOY_HELMET);
             event.accept(ModItems.ALLOY_CHESTPLATE);
             event.accept(ModItems.ALLOY_LEGGINGS);
             event.accept(ModItems.ALLOY_BOOTS);
+            event.accept(ModItems.COBALT_HELMET);
+            event.accept(ModItems.COBALT_CHESTPLATE);
+            event.accept(ModItems.COBALT_LEGGINGS);
+            event.accept(ModItems.COBALT_BOOTS);
+            event.accept(ModItems.TITANIUM_HELMET);
+            event.accept(ModItems.TITANIUM_CHESTPLATE);
+            event.accept(ModItems.TITANIUM_LEGGINGS);
+            event.accept(ModItems.TITANIUM_BOOTS);
+            event.accept(ModItems.SECURITY_HELMET);
+            event.accept(ModItems.SECURITY_CHESTPLATE);
+            event.accept(ModItems.SECURITY_LEGGINGS);
+            event.accept(ModItems.SECURITY_BOOTS);
 
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");

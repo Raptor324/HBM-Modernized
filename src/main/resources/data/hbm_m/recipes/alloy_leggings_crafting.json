@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "###",
+    "# #",
+    "# #"
+
+  ],
+
+  "key": {
+    "#": {
+      "item": "hbm_m:advanced_alloy_ingot"
+    }
+
+  },
+
+  "result": {
+
+    "item": "hbm_m:alloy_leggings"
+  }
+
+}

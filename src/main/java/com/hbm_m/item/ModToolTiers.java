@@ -20,6 +20,11 @@ public class ModToolTiers {
     public static final Tier STEEL = TierSortingRegistry.registerTier(
             new ForgeTier(4, 1000, 1f, 1f, 25,
                     ModTags.Blocks.NEEDS_STEEL_TOOL, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
-            new ResourceLocation(MainRegistry.MOD_ID, "steel"), List.of(Tiers.NETHERITE), List.of());
+            new ResourceLocation(MainRegistry.MOD_ID, "steel"), List.of(Tiers.IRON), List.of());
+
+    public static final Tier TITANIUM = TierSortingRegistry.registerTier(
+            new ForgeTier(3, 1250, 1f, 1f, 25,
+                    ModTags.Blocks.NEEDS_TITANIUM_TOOL, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
+            new ResourceLocation(MainRegistry.MOD_ID, "titanium"), List.of(Tiers.IRON), List.of());
 
 }

@@ -78,37 +78,41 @@ public class ModItems {
 
 
 // ИНСТРУМЕНТЫ ГОРНЯКА:
-    public static final RegistryObject<Item> ALLOY_SWORD = ITEMS.register("alloy_sword",
-            () -> new SwordItem(ModToolTiers.ALLOY, 4, 0, new Item.Properties()));
 
+
+
+    public static final RegistryObject<Item> ALLOY_SWORD = ITEMS.register("alloy_sword",
+        () -> new SwordItem(ModToolTiers.ALLOY, 3, 0, new Item.Properties()));
     public static final RegistryObject<Item> ALLOY_AXE = ITEMS.register("alloy_axe",
             () -> new AxeItem(ModToolTiers.ALLOY, 6, 0, new Item.Properties()));
-
     public static final RegistryObject<Item> ALLOY_PICKAXE = ITEMS.register("alloy_pickaxe",
             () -> new PickaxeItem(ModToolTiers.ALLOY, 1, 0, new Item.Properties()));
-
     public static final RegistryObject<Item> ALLOY_SHOVEL = ITEMS.register("alloy_shovel",
             () -> new ShovelItem(ModToolTiers.ALLOY, 0, 0, new Item.Properties()));
-
     public static final RegistryObject<Item> ALLOY_HOE = ITEMS.register("alloy_hoe",
             () -> new HoeItem(ModToolTiers.ALLOY, 0, 0f, new Item.Properties()));
 
-
-
     public static final RegistryObject<Item> STEEL_SWORD = ITEMS.register("steel_sword",
             () -> new SwordItem(ModToolTiers.STEEL, 3, 0, new Item.Properties()));
-
     public static final RegistryObject<Item> STEEL_AXE = ITEMS.register("steel_axe",
             () -> new AxeItem(ModToolTiers.STEEL, 4, 0, new Item.Properties()));
-
     public static final RegistryObject<Item> STEEL_PICKAXE = ITEMS.register("steel_pickaxe",
             () -> new PickaxeItem(ModToolTiers.STEEL, 1, 0, new Item.Properties()));
-
     public static final RegistryObject<Item> STEEL_SHOVEL = ITEMS.register("steel_shovel",
             () -> new ShovelItem(ModToolTiers.STEEL, 0, 0, new Item.Properties()));
-
     public static final RegistryObject<Item> STEEL_HOE = ITEMS.register("steel_hoe",
             () -> new HoeItem(ModToolTiers.STEEL, 0, 0, new Item.Properties()));
+
+    public static final RegistryObject<Item> TITANIUM_SWORD = ITEMS.register("titanium_sword",
+            () -> new SwordItem(ModToolTiers.TITANIUM, 3, 0, new Item.Properties()));
+    public static final RegistryObject<Item> TITANIUM_AXE = ITEMS.register("titanium_axe",
+            () -> new AxeItem(ModToolTiers.TITANIUM, 5, 0, new Item.Properties()));
+    public static final RegistryObject<Item> TITANIUM_PICKAXE = ITEMS.register("titanium_pickaxe",
+            () -> new PickaxeItem(ModToolTiers.TITANIUM, 1, 0, new Item.Properties()));
+    public static final RegistryObject<Item> TITANIUM_SHOVEL = ITEMS.register("titanium_shovel",
+            () -> new ShovelItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
+    public static final RegistryObject<Item> TITANIUM_HOE = ITEMS.register("titanium_hoe",
+            () -> new HoeItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
 
 
 
@@ -123,9 +127,32 @@ public class ModItems {
     public static final RegistryObject<Item> ALLOY_BOOTS = ITEMS.register("alloy_boots",
             () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.BOOTS, new Item.Properties()));
 
+    public static final RegistryObject<Item> TITANIUM_HELMET = ITEMS.register("titanium_helmet",
+            () -> new ModArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.HELMET, new Item.Properties()));
+    public static final RegistryObject<Item> TITANIUM_CHESTPLATE = ITEMS.register("titanium_chestplate",
+            () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+    public static final RegistryObject<Item> TITANIUM_LEGGINGS = ITEMS.register("titanium_leggings",
+            () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+    public static final RegistryObject<Item> TITANIUM_BOOTS = ITEMS.register("titanium_boots",
+            () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.BOOTS, new Item.Properties()));
 
+    public static final RegistryObject<Item> COBALT_HELMET = ITEMS.register("cobalt_helmet",
+            () -> new ModArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.HELMET, new Item.Properties()));
+    public static final RegistryObject<Item> COBALT_CHESTPLATE = ITEMS.register("cobalt_chestplate",
+            () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+    public static final RegistryObject<Item> COBALT_LEGGINGS = ITEMS.register("cobalt_leggings",
+            () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+    public static final RegistryObject<Item> COBALT_BOOTS = ITEMS.register("cobalt_boots",
+            () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-
+    public static final RegistryObject<Item> SECURITY_HELMET = ITEMS.register("security_helmet",
+            () -> new ModArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.HELMET, new Item.Properties()));
+    public static final RegistryObject<Item> SECURITY_CHESTPLATE = ITEMS.register("security_chestplate",
+            () -> new ArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+    public static final RegistryObject<Item> SECURITY_LEGGINGS = ITEMS.register("security_leggings",
+            () -> new ArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+    public static final RegistryObject<Item> SECURITY_BOOTS = ITEMS.register("security_boots",
+            () -> new ArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.BOOTS, new Item.Properties()));
 
     // Инструменты
     public static final RegistryObject<Item> GEIGER_COUNTER = ITEMS.register("geiger_counter",
