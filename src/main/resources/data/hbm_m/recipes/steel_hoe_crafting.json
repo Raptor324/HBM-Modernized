@@ -1,5 +1,5 @@
 {
-  "type": "minecraft:steel_shaped",
+  "type": "minecraft:crafting_shaped",
   "category": "misc",
   "pattern": [
     "## ",
@@ -21,7 +21,7 @@
 
   "result": {
 
-    "item": "hbm_m:alloy_hoe"
+    "item": "hbm_m:steel_hoe"
   }
 
 }

@@ -1,8 +1,7 @@
 package com.hbm_m.item;
-
+import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.ModItems;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -43,29 +42,56 @@ public class ModItemModelProvider extends ItemModelProvider {
     @Override
     protected void registerModels() {
 
+        trimmedArmorItem(com.hbm_m.item.ModItems.ALLOY_HELMET);
+        trimmedArmorItem(com.hbm_m.item.ModItems.ALLOY_CHESTPLATE);
+        trimmedArmorItem(com.hbm_m.item.ModItems.ALLOY_LEGGINGS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.ALLOY_BOOTS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.TITANIUM_HELMET);
+        trimmedArmorItem(com.hbm_m.item.ModItems.TITANIUM_CHESTPLATE);
+        trimmedArmorItem(com.hbm_m.item.ModItems.TITANIUM_LEGGINGS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.TITANIUM_BOOTS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.SECURITY_HELMET);
+        trimmedArmorItem(com.hbm_m.item.ModItems.SECURITY_CHESTPLATE);
+        trimmedArmorItem(com.hbm_m.item.ModItems.SECURITY_LEGGINGS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.SECURITY_BOOTS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.ASBESTOS_HELMET);
+        trimmedArmorItem(com.hbm_m.item.ModItems.ASBESTOS_CHESTPLATE);
+        trimmedArmorItem(com.hbm_m.item.ModItems.ASBESTOS_LEGGINGS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.ASBESTOS_BOOTS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.AJR_HELMET);
+        trimmedArmorItem(com.hbm_m.item.ModItems.AJR_CHESTPLATE);
+        trimmedArmorItem(com.hbm_m.item.ModItems.AJR_LEGGINGS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.AJR_BOOTS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.STEEL_HELMET);
+        trimmedArmorItem(com.hbm_m.item.ModItems.STEEL_CHESTPLATE);
+        trimmedArmorItem(com.hbm_m.item.ModItems.STEEL_LEGGINGS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.STEEL_BOOTS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.PAA_HELMET);
+        trimmedArmorItem(com.hbm_m.item.ModItems.PAA_CHESTPLATE);
+        trimmedArmorItem(com.hbm_m.item.ModItems.PAA_LEGGINGS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.PAA_BOOTS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.LIQUIDATOR_HELMET);
+        trimmedArmorItem(com.hbm_m.item.ModItems.LIQUIDATOR_CHESTPLATE);
+        trimmedArmorItem(com.hbm_m.item.ModItems.LIQUIDATOR_LEGGINGS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.LIQUIDATOR_BOOTS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.HAZMAT_HELMET);
+        trimmedArmorItem(com.hbm_m.item.ModItems.HAZMAT_CHESTPLATE);
+        trimmedArmorItem(com.hbm_m.item.ModItems.HAZMAT_LEGGINGS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.HAZMAT_BOOTS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.STARMETAL_HELMET);
+        trimmedArmorItem(com.hbm_m.item.ModItems.STARMETAL_CHESTPLATE);
+        trimmedArmorItem(com.hbm_m.item.ModItems.STARMETAL_LEGGINGS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.STARMETAL_BOOTS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.COBALT_HELMET);
+        trimmedArmorItem(com.hbm_m.item.ModItems.COBALT_CHESTPLATE);
+        trimmedArmorItem(com.hbm_m.item.ModItems.COBALT_LEGGINGS);
+        trimmedArmorItem(com.hbm_m.item.ModItems.COBALT_BOOTS);
+
         evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_STAIRS);
         evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_SLAB);
 
-        trimmedArmorItem(ModItems.ALLOY_HELMET);
-        trimmedArmorItem(ModItems.ALLOY_CHESTPLATE);
-        trimmedArmorItem(ModItems.ALLOY_LEGGINGS);
-        trimmedArmorItem(ModItems.ALLOY_BOOTS);
-        trimmedArmorItem(ModItems.TITANIUM_HELMET);
-        trimmedArmorItem(ModItems.TITANIUM_CHESTPLATE);
-        trimmedArmorItem(ModItems.TITANIUM_LEGGINGS);
-        trimmedArmorItem(ModItems.TITANIUM_BOOTS);
-        trimmedArmorItem(ModItems.SECURITY_HELMET);
-        trimmedArmorItem(ModItems.SECURITY_CHESTPLATE);
-        trimmedArmorItem(ModItems.SECURITY_LEGGINGS);
-        trimmedArmorItem(ModItems.SECURITY_BOOTS);
-        trimmedArmorItem(ModItems.COBALT_HELMET);
-        trimmedArmorItem(ModItems.COBALT_CHESTPLATE);
-        trimmedArmorItem(ModItems.COBALT_LEGGINGS);
-        trimmedArmorItem(ModItems.COBALT_BOOTS);
-
     }
 
-    // Shoutout to El_Redstoniano for making this
     private void trimmedArmorItem(RegistryObject<Item> itemRegistryObject) {
         final String MOD_ID = MainRegistry.MOD_ID; // Change this to your mod id
 
@@ -90,17 +116,13 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ResourceLocation trimResLoc = new ResourceLocation(trimPath); // minecraft namespace
                 ResourceLocation trimNameResLoc = new ResourceLocation(MOD_ID, currentTrimName);
 
-                // This is used for making the ExistingFileHelper acknowledge that this texture exist, so this will
-                // avoid an IllegalArgumentException
                 existingFileHelper.trackGenerated(trimResLoc, PackType.CLIENT_RESOURCES, ".png", "textures");
 
-                // Trimmed armorItem files
                 getBuilder(currentTrimName)
                         .parent(new ModelFile.UncheckedModelFile("item/generated"))
                         .texture("layer0", armorItemResLoc)
                         .texture("layer1", trimResLoc);
 
-                // Non-trimmed armorItem file (normal variant)
                 this.withExistingParent(itemRegistryObject.getId().getPath(),
                                 mcLoc("item/generated"))
                         .override()
@@ -112,59 +134,8 @@ public class ModItemModelProvider extends ItemModelProvider {
             });
         }
     }
-
-    private ItemModelBuilder saplingItem(RegistryObject<Block> item) {
-        return withExistingParent(item.getId().getPath(),
-                new ResourceLocation("item/generated")).texture("layer0",
-                new ResourceLocation(MainRegistry.MOD_ID,"block/" + item.getId().getPath()));
-    }
-
-    private ItemModelBuilder simpleItem(RegistryObject<Item> item) {
-        return withExistingParent(item.getId().getPath(),
-                new ResourceLocation("item/generated")).texture("layer0",
-                new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
-    }
-
     public void evenSimplerBlockItem(RegistryObject<Block> block) {
         this.withExistingParent(MainRegistry.MOD_ID + ":" + ForgeRegistries.BLOCKS.getKey(block.get()).getPath(),
                 modLoc("block/" + ForgeRegistries.BLOCKS.getKey(block.get()).getPath()));
-    }
-
-    public void trapdoorItem(RegistryObject<Block> block) {
-        this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(),
-                modLoc("block/" + ForgeRegistries.BLOCKS.getKey(block.get()).getPath() + "_bottom"));
-    }
-
-    public void fenceItem(RegistryObject<Block> block, RegistryObject<Block> baseBlock) {
-        this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), mcLoc("block/fence_inventory"))
-                .texture("texture",  new ResourceLocation(MainRegistry.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
-    }
-
-    public void buttonItem(RegistryObject<Block> block, RegistryObject<Block> baseBlock) {
-        this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), mcLoc("block/button_inventory"))
-                .texture("texture",  new ResourceLocation(MainRegistry.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
-    }
-
-    public void wallItem(RegistryObject<Block> block, RegistryObject<Block> baseBlock) {
-        this.withExistingParent(ForgeRegistries.BLOCKS.getKey(block.get()).getPath(), mcLoc("block/wall_inventory"))
-                .texture("wall",  new ResourceLocation(MainRegistry.MOD_ID, "block/" + ForgeRegistries.BLOCKS.getKey(baseBlock.get()).getPath()));
-    }
-
-    private ItemModelBuilder handheldItem(RegistryObject<Item> item) {
-        return withExistingParent(item.getId().getPath(),
-                new ResourceLocation("item/handheld")).texture("layer0",
-                new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
-    }
-
-    private ItemModelBuilder simpleBlockItem(RegistryObject<Block> item) {
-        return withExistingParent(item.getId().getPath(),
-                new ResourceLocation("item/generated")).texture("layer0",
-                new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
-    }
-
-    private ItemModelBuilder simpleBlockItemBlockTexture(RegistryObject<Block> item) {
-        return withExistingParent(item.getId().getPath(),
-                new ResourceLocation("item/generated")).texture("layer0",
-                new ResourceLocation(MainRegistry.MOD_ID,"block/" + item.getId().getPath()));
     }
 }

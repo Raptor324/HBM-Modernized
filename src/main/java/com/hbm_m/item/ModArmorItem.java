@@ -14,13 +14,31 @@ import java.util.Map;
 public class ModArmorItem extends ArmorItem {
     private static final Map<ArmorMaterial, MobEffectInstance> MATERIAL_TO_EFFECT_MAP =
             (new ImmutableMap.Builder<ArmorMaterial, MobEffectInstance>())
-                    .put(ModArmorMaterials.TITANIUM, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 20, 0,
+                    .put(ModArmorMaterials.TITANIUM, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 200, 1,
                             false,false, true))
-                    .put(ModArmorMaterials.COBALT, new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 20, 2,
+
+
+                    .put(ModArmorMaterials.COBALT, new MobEffectInstance(MobEffects.MOVEMENT_SPEED, 200, 2,
                             false,false, true))
-                    .put(ModArmorMaterials.SECURITY, new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 20, 0,
+
+
+                    .put(ModArmorMaterials.SECURITY, new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 0,
                             false,false, true))
-                    .put(ModArmorMaterials.ALLOY, new MobEffectInstance(MobEffects.CONDUIT_POWER, 20, 0,
+
+
+                    .put(ModArmorMaterials.LIQUIDATOR, new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 200, 1,
+                            false,false, true))
+
+
+                    .put(ModArmorMaterials.AJR, new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 2,
+                            false,false, true))
+
+
+                    .put(ModArmorMaterials.ASBESTOS, new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200, 1,
+                            false,false, true))
+
+
+                    .put(ModArmorMaterials.ALLOY, new MobEffectInstance(MobEffects.DIG_SPEED, 200, 1,
             false,false, true)).build();
 
 

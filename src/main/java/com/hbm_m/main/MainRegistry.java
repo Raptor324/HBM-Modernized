@@ -144,6 +144,11 @@ public class MainRegistry {
             event.accept(ModItems.TITANIUM_PICKAXE);
             event.accept(ModItems.TITANIUM_HOE);
             event.accept(ModItems.TITANIUM_SHOVEL);
+            event.accept(ModItems.STARMETAL_SWORD);
+            event.accept(ModItems.STARMETAL_AXE);
+            event.accept(ModItems.STARMETAL_PICKAXE);
+            event.accept(ModItems.STARMETAL_HOE);
+            event.accept(ModItems.STARMETAL_SHOVEL);
 
             event.accept(ModItems.ALLOY_HELMET);
             event.accept(ModItems.ALLOY_CHESTPLATE);
@@ -161,6 +166,34 @@ public class MainRegistry {
             event.accept(ModItems.SECURITY_CHESTPLATE);
             event.accept(ModItems.SECURITY_LEGGINGS);
             event.accept(ModItems.SECURITY_BOOTS);
+            event.accept(ModItems.AJR_HELMET);
+            event.accept(ModItems.AJR_CHESTPLATE);
+            event.accept(ModItems.AJR_LEGGINGS);
+            event.accept(ModItems.AJR_BOOTS);
+            event.accept(ModItems.STEEL_HELMET);
+            event.accept(ModItems.STEEL_CHESTPLATE);
+            event.accept(ModItems.STEEL_LEGGINGS);
+            event.accept(ModItems.STEEL_BOOTS);
+            event.accept(ModItems.ASBESTOS_HELMET);
+            event.accept(ModItems.ASBESTOS_CHESTPLATE);
+            event.accept(ModItems.ASBESTOS_LEGGINGS);
+            event.accept(ModItems.ASBESTOS_BOOTS);
+            event.accept(ModItems.HAZMAT_HELMET);
+            event.accept(ModItems.HAZMAT_CHESTPLATE);
+            event.accept(ModItems.HAZMAT_LEGGINGS);
+            event.accept(ModItems.HAZMAT_BOOTS);
+            event.accept(ModItems.LIQUIDATOR_HELMET);
+            event.accept(ModItems.LIQUIDATOR_CHESTPLATE);
+            event.accept(ModItems.LIQUIDATOR_LEGGINGS);
+            event.accept(ModItems.LIQUIDATOR_BOOTS);
+            event.accept(ModItems.PAA_HELMET);
+            event.accept(ModItems.PAA_CHESTPLATE);
+            event.accept(ModItems.PAA_LEGGINGS);
+            event.accept(ModItems.PAA_BOOTS);
+            event.accept(ModItems.STARMETAL_HELMET);
+            event.accept(ModItems.STARMETAL_CHESTPLATE);
+            event.accept(ModItems.STARMETAL_LEGGINGS);
+            event.accept(ModItems.STARMETAL_BOOTS);
 
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");
