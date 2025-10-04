@@ -8,6 +8,8 @@ import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.RegistryObject;
@@ -30,6 +32,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         oreWithItem(ModBlocks.URANIUM_ORE);
 
         blockWithItem(ModBlocks.WASTE_LEAVES);
+        blockWithItem(ModBlocks.REINFORCED_STONE);
 
         columnBlockWithItem(
             ModBlocks.WASTE_GRASS, 
@@ -62,6 +65,21 @@ public class ModBlockStateProvider extends BlockStateProvider {
             modLoc("block/battery_front_alt"),   // Лицо (север)
             modLoc("block/battery_top")          // Верх и низ
         );
+
+        // Генерация моделей для ступенек
+        stairsBlock((StairBlock) ModBlocks.REINFORCED_STONE_STAIRS.get(),
+        modLoc("block/reinforced_stone"));
+        
+        simpleBlockItem(ModBlocks.REINFORCED_STONE_STAIRS.get(),
+        models().getExistingFile(modLoc("block/reinforced_stone_stairs")));
+
+        // Генерация моделей для плиты
+        slabBlock((SlabBlock) ModBlocks.REINFORCED_STONE_SLAB.get(),
+        blockTexture(ModBlocks.REINFORCED_STONE.get()),
+        modLoc("block/reinforced_stone"));
+
+        simpleBlockItem(ModBlocks.REINFORCED_STONE_SLAB.get(),
+        models().getExistingFile(modLoc("block/reinforced_stone_slab")));
     }
 
     /**

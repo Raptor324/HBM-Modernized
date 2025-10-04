@@ -56,7 +56,6 @@ public class ModItems {
     
     
     // УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА 
-     
     public static RegistryObject<Item> getIngot(ModIngots ingot) {
         return INGOTS.get(ingot);
     }
@@ -72,9 +71,6 @@ public class ModItems {
     public static final int SLOT_SERVOS = 8;
 
     public static final int BATTERY_CAPACITY = 1_000_000;
-
-
-
 
 
 // ИНСТРУМЕНТЫ ГОРНЯКА:

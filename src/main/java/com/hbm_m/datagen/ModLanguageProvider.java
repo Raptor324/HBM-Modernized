@@ -32,6 +32,7 @@ public class ModLanguageProvider extends LanguageProvider {
         // ЯВНАЯ ЛОКАЛИЗАЦИЯ ДЛЯ ОСТАЛЬНЫХ КЛЮЧЕЙ 
         switch (this.locale) {
             case "ru_ru":
+                // КРЕАТИВНЫЕ ВКЛАДКИ
                 add("itemGroup.hbm_m.ntm_resources_tab", "Ресурсы и детали NTM");
                 add("itemGroup.hbm_m.ntm_fuel_tab", "Топливо и элементы механизмов NTM");
                 add("itemGroup.hbm_m.ntm_templates_tab", "Шаблоны NTM");
@@ -42,15 +43,94 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("itemGroup.hbm_m.ntm_weapons_tab", "Оружие и турели NTM");
                 add("itemGroup.hbm_m.ntm_consumables_tab", "Расходные материалы и снаряжение NTM");
                 
+                // СНАРЯГА
                 add("item.hbm_m.alloy_sword", "Меч из продвинутого сплава");
-                add("item.hbm_m.alloy_sword.desc1", "Меч, выкованный из особых сплавов");
-                add("item.hbm_m.alloy_sword.desc2", "Обладает повышенной прочностью");
+                add("item.hbm_m.alloy_pickaxe", "Кирка из продвинутого сплава");
+                add("item.hbm_m.alloy_axe", "Топор из продвинутого сплава");
+                add("item.hbm_m.alloy_hoe", "Мотыга из продвинутого сплава");
+                add("item.hbm_m.alloy_shovel", "Лопата из продвинутого сплава");
+
+                add("item.hbm_m.steel_sword", "Стальной меч");
+                add("item.hbm_m.steel_pickaxe", "Стальная кирка");
+                add("item.hbm_m.steel_axe", "Стальной топор");
+                add("item.hbm_m.steel_hoe", "Стальная мотыга");
+                add("item.hbm_m.steel_shovel", "Стальная лопата");
+
+                add("item.hbm_m.titanium_sword", "Титановый меч");
+                add("item.hbm_m.titanium_pickaxe", "Титановая кирка");
+                add("item.hbm_m.titanium_axe", "Титановый топор");
+                add("item.hbm_m.titanium_hoe", "Титановая мотыга");
+                add("item.hbm_m.titanium_shovel", "Титановая лопата");
+
+                add("item.hbm_m.starmetal_sword", "Меч из звёздного металла");
+                add("item.hbm_m.starmetal_pickaxe", "Кирка из звёздного металла");
+                add("item.hbm_m.starmetal_axe", "Топор из звёздного металла");
+                add("item.hbm_m.starmetal_hoe", "Мотыга из звёздного металла");
+                add("item.hbm_m.starmetal_shovel", "Лопата из звёздного металла");
+
+                // БРОНЯ
+                add("item.hbm_m.alloy_helmet", "Шлем из продвинутого сплава");
+                add("item.hbm_m.alloy_chestplate", "Нагрудник из продвинутого сплава");
+                add("item.hbm_m.alloy_leggings", "Поножи из продвинутого сплава");
+                add("item.hbm_m.alloy_boots", "Ботинки из продвинутого сплава");
+
+                add("item.hbm_m.cobalt_helmet", "Кобальтовый шлем");
+                add("item.hbm_m.cobalt_chestplate", "Кобальтовый нагрудник");
+                add("item.hbm_m.cobalt_leggings", "Кобальтовые поножи");
+                add("item.hbm_m.cobalt_boots", "Кобальтовые ботинки");
+
+                add("item.hbm_m.titanium_helmet", "Титановый шлем");
+                add("item.hbm_m.titanium_chestplate", "Титановый нагрудник");
+                add("item.hbm_m.titanium_leggings", "Титановые поножи");
+                add("item.hbm_m.titanium_boots", "Титановые ботинки");
+
+                add("item.hbm_m.security_helmet", "Шлем охранника");
+                add("item.hbm_m.security_chestplate", "Нагрудник охранника");
+                add("item.hbm_m.security_leggings", "Поножи охранника");
+                add("item.hbm_m.security_boots", "Ботинки охранника");
+
+                add("item.hbm_m.ajr_helmet", "Шлем Стальных Рейнджеров");
+                add("item.hbm_m.ajr_chestplate", "Нагрудник Стальных Рейнджеров");
+                add("item.hbm_m.ajr_leggings", "Поножи Стальных Рейнджеров");
+                add("item.hbm_m.ajr_boots", "Ботинки Стальных Рейнджеров");
+
+                add("item.hbm_m.steel_helmet", "Стальной шлем");
+                add("item.hbm_m.steel_chestplate", "Стальной нагрудник");
+                add("item.hbm_m.steel_leggings", "Стальные поножи");
+                add("item.hbm_m.steel_boots", "Стальные ботинки");
+
+                add("item.hbm_m.asbestos_helmet", "Огнезащитный шлем");
+                add("item.hbm_m.asbestos_chestplate", "Огнезащитный нагрудник");
+                add("item.hbm_m.asbestos_leggings", "Огнезащитные поножи");
+                add("item.hbm_m.asbestos_boots", "Огнезащитные ботинки");
+
+                add("item.hbm_m.hazmat_helmet", "Защитный шлем");
+                add("item.hbm_m.hazmat_chestplate", "Защитный нагрудник");
+                add("item.hbm_m.hazmat_leggings", "Защитные поножи");
+                add("item.hbm_m.hazmat_boots", "Защитные ботинки");
+
+                add("item.hbm_m.liquidator_helmet", "Шлем костюма Ликвидатора");
+                add("item.hbm_m.liquidator_chestplate", "Нагрудник костюма Ликвидатора");
+                add("item.hbm_m.liquidator_leggings", "Поножи костюма Ликвидатора");
+                add("item.hbm_m.liquidator_boots", "Ботинки костюма Ликвидатора");
+
+                add("item.hbm_m.paa_helmet", "Боевой защитный шлем PaA");
+                add("item.hbm_m.paa_chestplate", "Защищающая нагрудная пластина из PaA");
+                add("item.hbm_m.paa_leggings", "Укреплённые поножи из PaA");
+                add("item.hbm_m.paa_boots", "''Старые добрые ботинки'' из PaA");
+
+                add("item.hbm_m.starmetal_helmet", "Шлем из звёздного металла");
+                add("item.hbm_m.starmetal_chestplate", "Нагрудник из звёздного металла");
+                add("item.hbm_m.starmetal_leggings", "Поножи из звёздного металла");
+                add("item.hbm_m.starmetal_boots", "Ботинки из звёздного металла");
 
                 add("item.hbm_m.geiger_counter", "Счетчик Гейгера");
                 add("item.hbm_m.dosimeter", "Дозиметр");
                 add("item.hbm_m.battery_creative", "Бесконечная батарейка");
                 add("tooltip.hbm_m.creative_battery_desc","Предоставляет бесконечное количество энергии");
                 add("tooltip.hbm_m.creative_battery_flavor","Бесконечность — не предел!!");
+
+                // ПРЕДМЕТЫ
 
                 add("item.hbm_m.heart_piece", "Частичка сердца");
                 add(ModItems.HEART_CONTAINER.get(), "Контейнер для сердца");
@@ -90,6 +170,22 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_SATURNITE.get(), "Сатурнитовая пластина");
                 add(ModItems.PLATE_SCHRABIDIUM.get(), "Шрабидиевая пластина");
                 add(ModItems.PLATE_STEEL.get(), "Стальная пластина");
+
+                add("item.hbm_m.firebrick", "Шамотный кирпич");
+                add("item.hbm_m.uranium_raw", "Рудный уран");
+                add("item.hbm_m.tungsten_raw", "Рудный вольфрам");
+                add("item.hbm_m.titanium_raw", "Рудный титан");
+                add("item.hbm_m.thorium_raw", "Рудный торий");
+                add("item.hbm_m.lead_raw", "Рудный свинец");
+                add("item.hbm_m.cobalt_raw", "Рудный кобальт");
+                add("item.hbm_m.beryllium_raw", "Рудный бериллий");
+                add("item.hbm_m.aluminum_raw", "Рудный алюминий");
+                add("item.hbm_m.cinnabar", "Киноварь");
+                add("item.hbm_m.sulfur", "Сера");
+                add("item.hbm_m.rareground_ore_chunk", "Кусок редкоземельной руды");
+                add("item.hbm_m.lignite", "Бурый уголь");
+                add("item.hbm_m.fluorite", "Флюорит");
+                add("item.hbm_m.fireclay_ball", "Комок огнеупорной глины");
                 
                 add("sounds.hbm_m.radaway_use", "Использование антирадина");
                 
@@ -120,6 +216,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.blast_furnace", "Доменная печь");
                 add("block.hbm_m.press", "Пресс");
                 add("block.hbm_m.geiger_counter_block", "Стационарный счетчик Гейгера");
+                add("block.hbm_m.freaky_alien_block", "Блок ебанутого инопланетянина");
+                add("block.hbm_m.reinforced_stone", "Уплотнённый камень");
+                add("block.hbm_m.reinforced_stone_slab", "Плита из уплотнённого камня");
+                add("block.hbm_m.reinforced_stone_stairs", "Ступеньки из уплотнённого камня");
 
                 add("block.hbm_m.uranium_ore", "Урановая руда");
                 add("block.hbm_m.aluminum_ore", "Алюминиевая руда");
@@ -130,7 +230,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.asbestos_ore", "Асбестовая руда");
                 add("block.hbm_m.sulfur_ore", "Серная руда");
                 add("block.hbm_m.cobalt_ore", "Кобальтовая руда");
-                add("block.hbm_m.lignite_ore", "Лигнитовая руда");
+                add("block.hbm_m.lignite_ore", "Руда бурого угля");
                 add("block.hbm_m.uranium_ore_h", "Обогащённая урановая руда");
                 add("block.hbm_m.uranium_ore_deepslate", "Глубинная урановая руда");
                 add("block.hbm_m.thorium_ore", "Ториевая руда");
@@ -352,6 +452,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 break;
             
             case "en_us":
+
+                // TABS
                 add("itemGroup.hbm_m.ntm_resources_tab", "NTM Resources and Parts");
                 add("itemGroup.hbm_m.ntm_fuel_tab", "NTM Fuel and Machine Components");
                 add("itemGroup.hbm_m.ntm_templates_tab", "NTM Templates");
@@ -362,9 +464,89 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("itemGroup.hbm_m.ntm_weapons_tab", "NTM Weapons and Turrets");
                 add("itemGroup.hbm_m.ntm_consumables_tab", "NTM Consumables and Equipment");
                 
+                // EQUIPMENT
                 add("item.hbm_m.alloy_sword", "Alloy Sword");
-                add("item.hbm_m.alloy_sword.desc1", "A sword forged from special alloys");
-                add("item.hbm_m.alloy_sword.desc2", "Provides enhanced durability");
+                add("item.hbm_m.alloy_pickaxe", "Alloy Pickaxe");
+                add("item.hbm_m.alloy_axe", "Alloy Axe");
+                add("item.hbm_m.alloy_hoe", "Alloy Hoe");
+                add("item.hbm_m.alloy_shovel", "Alloy Shovel");
+
+                add("item.hbm_m.steel_sword", "Steel Sword");
+                add("item.hbm_m.steel_pickaxe", "Steel Pickaxe");
+                add("item.hbm_m.steel_axe", "Steel Axe");
+                add("item.hbm_m.steel_hoe", "Steel Hoe");
+                add("item.hbm_m.steel_shovel", "Steel Shovel");
+
+                add("item.hbm_m.titanium_sword", "Titanium Sword");
+                add("item.hbm_m.titanium_pickaxe", "Titanium Pickaxe");
+                add("item.hbm_m.titanium_axe", "Titanium Axe");
+                add("item.hbm_m.titanium_hoe", "Titanium Hoe");
+                add("item.hbm_m.titanium_shovel", "Titanium Shovel");
+
+                add("item.hbm_m.starmetal_sword", "Starmetal Sword");
+                add("item.hbm_m.starmetal_pickaxe", "Starmetal Pickaxe");
+                add("item.hbm_m.starmetal_axe", "Starmetal Axe");
+                add("item.hbm_m.starmetal_hoe", "Starmetal Hoe");
+                add("item.hbm_m.starmetal_shovel", "Starmetal Shovel");
+
+                // ARMOR
+
+                add("item.hbm_m.alloy_helmet", "Alloy Helmet");
+                add("item.hbm_m.alloy_chestplate", "Alloy Chestplate");
+                add("item.hbm_m.alloy_leggings", "Alloy Leggings");
+                add("item.hbm_m.alloy_boots", "Alloy Boots");
+
+                add("item.hbm_m.cobalt_helmet", "Cobalt Helmet");
+                add("item.hbm_m.cobalt_chestplate", "Cobalt Chestplate");
+                add("item.hbm_m.cobalt_leggings", "Cobalt Leggings");
+                add("item.hbm_m.cobalt_boots", "Cobalt Boots");
+
+                add("item.hbm_m.titanium_helmet", "Titanium Helmet");
+                add("item.hbm_m.titanium_chestplate", "Titanium Chestplate");
+                add("item.hbm_m.titanium_leggings", "Titanium Leggings");
+                add("item.hbm_m.titanium_boots", "Titanium Boots");
+
+                add("item.hbm_m.security_helmet", "Security Helmet");
+                add("item.hbm_m.security_chestplate", "Security Chestplate");
+                add("item.hbm_m.security_leggings", "Security Leggings");
+                add("item.hbm_m.security_boots", "Security Boots");
+
+                add("item.hbm_m.ajr_helmet", "Steel Ranger Helmet");
+                add("item.hbm_m.ajr_chestplate", "Steel Ranger Chestplate");
+                add("item.hbm_m.ajr_leggings", "Steel Ranger Leggings");
+                add("item.hbm_m.ajr_boots", "Steel Ranger Boots");
+
+                add("item.hbm_m.steel_helmet", "Steel Helmet");
+                add("item.hbm_m.steel_chestplate", "Steel Chestplate");
+                add("item.hbm_m.steel_leggings", "Steel Leggings");
+                add("item.hbm_m.steel_boots", "Steel Boots");
+
+                add("item.hbm_m.asbestos_helmet", "Fire Proximity Helmet");
+                add("item.hbm_m.asbestos_chestplate", "Fire Proximity Chestplate");
+                add("item.hbm_m.asbestos_leggings", "Fire Proximity Leggings");
+                add("item.hbm_m.asbestos_boots", "Fire Proximity Boots");
+
+                add("item.hbm_m.hazmat_helmet", "Hazmat Helmet");
+                add("item.hbm_m.hazmat_chestplate", "Hazmat Chestplate");
+                add("item.hbm_m.hazmat_leggings", "Hazmat Leggings");
+                add("item.hbm_m.hazmat_boots", "Hazmat Boots");
+
+                add("item.hbm_m.liquidator_helmet", "Liquidator Suit Helmet");
+                add("item.hbm_m.liquidator_chestplate", "Liquidator Suit Chestplate");
+                add("item.hbm_m.liquidator_leggings", "Liquidator Suit Leggings");
+                add("item.hbm_m.liquidator_boots", "Liquidator Suit Boots");
+
+                add("item.hbm_m.paa_helmet", "PaA Battle Hazmat Suit Helmet");
+                add("item.hbm_m.paa_chestplate", "PaA Chest Protection Plate");
+                add("item.hbm_m.paa_leggings", "PaA Leg Reinforcements");
+                add("item.hbm_m.paa_boots", "PaA ''good ol` shoes''");
+
+                add("item.hbm_m.starmetal_helmet", "Starmetal Helmet");
+                add("item.hbm_m.starmetal_chestplate", "Starmetal Chestplate");
+                add("item.hbm_m.starmetal_leggings", "Starmetal Leggings");
+                add("item.hbm_m.starmetal_boots", "Starmetal Boots");
+
+                // ITEMS
 
                 add("item.hbm_m.geiger_counter", "Geiger Counter");
                 add("item.hbm_m.dosimeter", "Dosimeter");
@@ -411,24 +593,57 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_SATURNITE.get(), "Saturnite Plate");
                 add(ModItems.PLATE_SCHRABIDIUM.get(), "Schrabidium Plate");
                 add(ModItems.PLATE_STEEL.get(), "Steel Plate");
+
+                add("item.hbm_m.firebrick", "Firebrick");
+                add("item.hbm_m.uranium_raw", "Raw Uranium");
+                add("item.hbm_m.tungsten_raw", "Raw Tungsten");
+                add("item.hbm_m.titanium_raw", "Raw Titanium");
+                add("item.hbm_m.thorium_raw", "Raw Thorium");
+                add("item.hbm_m.lead_raw", "Raw Lead");
+                add("item.hbm_m.cobalt_raw", "Raw Cobalt");
+                add("item.hbm_m.beryllium_raw", "Raw Beryllium");
+                add("item.hbm_m.aluminum_raw", "Raw Aluminum");
+                add("item.hbm_m.cinnabar", "Cinnabar");
+                add("item.hbm_m.sulfur", "Sulfur");
+                add("item.hbm_m.rareground_ore_chunk", "Rareground Ore Chunk");
+                add("item.hbm_m.lignite", "Lignite");
+                add("item.hbm_m.fluorite", "Fluorite");
+                add("item.hbm_m.fireclay_ball", "Fireclay Ball");
+
                 
                 add("tooltip.hbm_m.mods", "Modifications:");
                 add("tooltip.hbm_m.heart_piece.effect", "+5 Max Health");
                 
                 add("tooltip.hbm_m.applies_to", "Applies to:");
 
+                // ARMOR MODIFICATION TABLE TOOLTIPS
+
                 add("tooltip.hbm_m.helmet", "Helmet");
                 add("tooltip.hbm_m.chestplate", "Chestplate");
                 add("tooltip.hbm_m.leggings", "Leggings");
                 add("tooltip.hbm_m.boots", "Boots");
                 add("tooltip.hbm_m.armor.all", "Any Armor");
+
+                add("tooltip.hbm_m.armor_table.main_slot", "Insert armor to be modified...");
+                add("tooltip.hbm_m.slot", "Slot");
+                add("tooltip.hbm_m.armor_table.helmet_slot", "Helmet");
+                add("tooltip.hbm_m.armor_table.chestplate_slot", "Chestplate");
+                add("tooltip.hbm_m.armor_table.leggings_slot", "Leggings");
+                add("tooltip.hbm_m.armor_table.boots_slot", "Boots");
+                add("tooltip.hbm_m.armor_table.battery_slot", "Battery");
+                add("tooltip.hbm_m.armor_table.special_slot", "Special");
+                add("tooltip.hbm_m.armor_table.plating_slot", "Plating");
+                add("tooltip.hbm_m.armor_table.casing_slot", "Casing");
+                add("tooltip.hbm_m.armor_table.servos_slot", "Servos");
+
+                // BLOCKS
                 
                 add("block.hbm_m.uranium_block", "Uranium Block");
                 add("block.hbm_m.plutonium_block", "Plutonium Block");
                 add("block.hbm_m.plutonium_fuel_block", "Plutonium Fuel Block");
                 add("block.hbm_m.polonium210_block", "Polonium-210 Block");
                 add("block.hbm_m.armor_table", "Armor Modification Table");
-                add("block.hbm_m.machine_assembler", "Assembly Machine (Old)");
+                add("block.hbm_m.machine_assembler", "Assembly Machine (Legacy)");
                 add("block.hbm_m.advanced_assembly_machine", "Assembly Machine (VERY WIP)");
                 add("block.hbm_m.machine_battery", "Machine Battery");
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
@@ -438,6 +653,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.machine_assembler", "Assembly Machine");
                 add("container.hbm_m.wood_burner", "Wood Burner Generator");
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");
+                add("block.hbm_m.wire_coated", "Red Copper Wire");
+
+                // ORES
 
                 add("block.hbm_m.uranium_ore", "Uranium Ore");
                 add("block.hbm_m.aluminum_ore", "Aluminum Ore");
@@ -461,24 +679,17 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.lead_ore", "Lead Ore");
                 add("block.hbm_m.lead_ore_deepslate", "Deepslate Lead Ore");
                 add("block.hbm_m.cinnabar_ore", "Cinnabar Ore");
-
                 add("block.hbm_m.waste_grass", "Waste Grass");
                 add("block.hbm_m.waste_leaves", "Waste Leaves");
+                add("block.hbm_m.freaky_alien_block", "Freaky Allien Block");
+                add("block.hbm_m.reinforced_stone", "Reinforced Stone");
+                add("block.hbm_m.reinforced_stone_slab", "Reinforced Stone Slab");
+                add("block.hbm_m.reinforced_stone_stairs", "Reinforced Stone Stairs");
                 
-                add("tooltip.hbm_m.armor_table.main_slot", "Insert armor to be modified...");
-                add("tooltip.hbm_m.slot", "Slot");
-                add("tooltip.hbm_m.armor_table.helmet_slot", "Helmet");
-                add("tooltip.hbm_m.armor_table.chestplate_slot", "Chestplate");
-                add("tooltip.hbm_m.armor_table.leggings_slot", "Leggings");
-                add("tooltip.hbm_m.armor_table.boots_slot", "Boots");
-                add("tooltip.hbm_m.armor_table.battery_slot", "Battery");
-                add("tooltip.hbm_m.armor_table.special_slot", "Special");
-                add("tooltip.hbm_m.armor_table.plating_slot", "Plating");
-                add("tooltip.hbm_m.armor_table.casing_slot", "Casing");
-                add("tooltip.hbm_m.armor_table.servos_slot", "Servos");
-
                 add("tooltip.hbm_m.rad_protection.value", "Radiation Resistance: %s");
                 add("tooltip.hbm_m.rad_protection.value_short", "%s rad-resistance");
+
+                // MACHINE GUI
 
                 add("container.inventory", "Inventory");
 
@@ -507,8 +718,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.machine_battery.discharge_speed", "Discharge Speed: %1$s FE/t");
                 add("tooltip.hbm_m.machine_battery.stored", "Stored: %1$s / %2$s FE");
 
-                add("block.hbm_m.wire_coated", "Red Copper Wire");
-                
+                // HAZARD TOOLTIPS
+
                 add("hazard.hbm_m.radiation", "[Radioactive]");
                 add("hazard.hbm_m.hydro_reactive", "[Hydro-reactive]");
                 add("hazard.hbm_m.explosive_on_fire", "[Flammable / Explosive]");
@@ -547,6 +758,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("chat.hbm_m.structure.obstructed", "Placement obstructed by other blocks!");
                 
                 add("text.autoconfig.hbm_m.title", "Radiation Settings (HBM Modernized)");
+
+                // CONFIG
 
                 add("text.autoconfig.hbm_m.category.general", "General Settings");
                 add("text.autoconfig.hbm_m.option.enableRadiation", "Enable radiation");
@@ -597,7 +810,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.enableObstructionHighlight", "Enable Obstruction Highlight");
                 add("text.autoconfig.hbm_m.option.enableObstructionHighlight.@Tooltip", "If enabled, blocks obstructing multiblock placement\nwill be highlighted with a red box.");
                 add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha", "Obstruction Highlight Opacity");
-add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha.@Tooltip", "Sets the opacity of the highlight box's fill.\n0% = Invisible, 100% = Solid.");
+                add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha.@Tooltip", "Sets the opacity of the highlight box's fill.\n0% = Invisible, 100% = Solid.");
 
                 add("text.autoconfig.hbm_m.option.obstructionHighlightDuration", "Highlight Duration (sec)");
                 add("text.autoconfig.hbm_m.option.obstructionHighlightDuration.@Tooltip", "The duration in seconds for how long the obstruction highlight will be visible.");

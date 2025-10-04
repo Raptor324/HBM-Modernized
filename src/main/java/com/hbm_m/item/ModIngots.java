@@ -70,7 +70,7 @@ public enum ModIngots {
             "ru_ru", "Слиток красной меди",
             "en_us", "Red Copper Ingot"),
     ASBESTOS("asbestos",
-            "ru_ru", "Асбест",
+            "ru_ru", "Асбестовый лист",
             "en_us", "Asbestos"),
     TITANIUM("titanium",
             "ru_ru", "Титановый слиток",

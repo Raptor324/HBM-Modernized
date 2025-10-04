@@ -43,8 +43,7 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
 
     @Override
     public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        // Просто вызываем super.render() и renderTooltip().
-        // super.render() сам позаботится о renderBackground() и renderBg().
+        this.renderBackground(pGuiGraphics);
         super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
         this.renderTooltip(pGuiGraphics, pMouseX, pMouseY);
     }
