@@ -44,20 +44,20 @@ public class ModCreativeTabs {
     public static final RegistryObject<CreativeModeTab> NTM_MACHINES_TAB = CREATIVE_MODE_TABS.register("ntm_machines_tab",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_machines_tab"))
-                    .icon(() -> new ItemStack(ModBlocks.GEIGER_COUNTER_BLOCK.get()))
+                    .icon(() -> new ItemStack(ModBlocks.MACHINE_ASSEMBLER.get()))
                     .build());
 
-    public static final RegistryObject<CreativeModeTab> NTM_BOMBS_TAB = CREATIVE_MODE_TABS.register("ntm_bombs_tab",
-            () -> CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_bombs_tab"))
-                    .icon(() -> new ItemStack(ModItems.ALLOY_SWORD.get()))
-                    .build());
+    // public static final RegistryObject<CreativeModeTab> NTM_BOMBS_TAB = CREATIVE_MODE_TABS.register("ntm_bombs_tab",
+    //         () -> CreativeModeTab.builder()
+    //                 .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_bombs_tab"))
+    //                 .icon(() -> new ItemStack(ModItems.ALLOY_SWORD.get()))
+    //                 .build());
 
-    public static final RegistryObject<CreativeModeTab> NTM_MISSILES_TAB = CREATIVE_MODE_TABS.register("ntm_missiles_tab",
-            () -> CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_missiles_tab"))
-                    .icon(() -> new ItemStack(ModItems.ALLOY_SWORD.get()))
-                    .build());
+    // public static final RegistryObject<CreativeModeTab> NTM_MISSILES_TAB = CREATIVE_MODE_TABS.register("ntm_missiles_tab",
+    //         () -> CreativeModeTab.builder()
+    //                 .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_missiles_tab"))
+    //                 .icon(() -> new ItemStack(ModItems.ALLOY_SWORD.get()))
+    //                 .build());
 
     public static final RegistryObject<CreativeModeTab> NTM_WEAPONS_TAB = CREATIVE_MODE_TABS.register("ntm_weapons_tab",
             () -> CreativeModeTab.builder()

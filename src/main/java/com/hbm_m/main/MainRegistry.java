@@ -363,21 +363,21 @@ public class MainRegistry {
                     LOGGER.info("Added {} templates to NTM Templates tab", recipes.size());
                 }
             } else {
-                 if (ModClothConfig.get().enableDebugLogging) {
+                if (ModClothConfig.get().enableDebugLogging) {
                     LOGGER.warn("Could not populate templates tab: Minecraft level is null.");
                 }
             }
         }
 
-        if (event.getTab() == ModCreativeTabs.NTM_BOMBS_TAB.get()) {
-            if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("");
-            }
-        }
-        if (event.getTab() == ModCreativeTabs.NTM_MISSILES_TAB.get()) {
-            if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("");
-            }
-        }
+        // if (event.getTab() == ModCreativeTabs.NTM_BOMBS_TAB.get()) {
+        //     if (ModClothConfig.get().enableDebugLogging) {
+        //         LOGGER.info("");
+        //     }
+        // }
+        // if (event.getTab() == ModCreativeTabs.NTM_MISSILES_TAB.get()) {
+        //     if (ModClothConfig.get().enableDebugLogging) {
+        //         LOGGER.info("");
+        //     }
+        // }
     }
 }
