@@ -128,5 +128,9 @@
             "hbm_m:block/assembler_strike1",
             "hbm_m:block/assembler_strike2"
         ]
+    },
+    "block.motor": {
+        "subtitle": "sounds.hbm_m.subtitle.motor",
+        "sounds": [ "hbm_m:block/motor" ]
     }
 }

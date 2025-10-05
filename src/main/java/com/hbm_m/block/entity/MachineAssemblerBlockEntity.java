@@ -2,18 +2,16 @@ package com.hbm_m.block.entity;
 
 // Это блок-энтити для сборочной машины, которая может автоматически собирать сложные предметы по шаблонам.
 import com.hbm_m.block.MachineAssemblerBlock;
+import com.hbm_m.client.ClientSoundManager;
 import com.hbm_m.energy.BlockEntityEnergyStorage;
 import com.hbm_m.item.ItemAssemblyTemplate;
 import com.hbm_m.item.ItemCreativeBattery;
-import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.MachineAssemblerMenu;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.network.sounds.RequestAssemblerStateC2SPacket;
-import com.hbm_m.network.sounds.StartAssemblerSoundS2CPacket;
-import com.hbm_m.network.sounds.StopAssemblerSoundS2CPacket;
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.sound.AssemblerSoundInstance;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -42,7 +40,6 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -451,11 +448,6 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
         lazyEnergyHandler = LazyOptional.of(() -> energyStorage);
-
-        // Этот код остается, он идеален для перезагрузки
-        if (level != null && level.isClientSide) {
-            ModPacketHandler.INSTANCE.sendToServer(new RequestAssemblerStateC2SPacket(this.worldPosition));
-        }
     }
 
     @Override
@@ -473,16 +465,26 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
         itemHandler.deserializeNBT(nbt.getCompound("inventory"));
         energyStorage.setEnergy(nbt.getInt("energy"));
         progress = nbt.getInt("progress");
+        boolean wasCrafting = this.isCrafting;
         this.isCrafting = nbt.getBoolean("isCrafting"); // Загружаем состояние крафта
+        
+        if (this.level != null && this.level.isClientSide() && wasCrafting && !this.isCrafting) {
+            ClientSoundManager.updateSound(this, false, null);
+        }
     }
 
     public static void tick(Level pLevel, BlockPos pPos, BlockState pState, MachineAssemblerBlockEntity pBlockEntity) {
-        if (!pLevel.isClientSide()) {
-            // В самом начале серверного тика мы очищаем список обработанных запросов.
-            // Это КЛЮЧЕВОЙ момент для работы системы.
-            // WireBlockEntity.startNewTick();
+        if (pLevel.isClientSide) {
+            pBlockEntity.clientTick(pLevel, pPos, pState);
+        } else {
             serverTick(pLevel, pPos, pState, pBlockEntity);
         }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private void clientTick(Level level, BlockPos pos, BlockState state) {
+        // Эта одна строка теперь полностью управляет запуском и остановкой зацикленного звука.
+        ClientSoundManager.updateSound(this, this.isCrafting, () -> new AssemblerSoundInstance(this.getBlockPos()));
     }
 
     private static void serverTick(Level pLevel, BlockPos pPos, BlockState pState, MachineAssemblerBlockEntity pBlockEntity) {
@@ -532,9 +534,6 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
             if (!pBlockEntity.isCrafting) {
                 pBlockEntity.isCrafting = true;
                 pBlockEntity.maxProgress = recipeOpt.get().getDuration();
-                // Отправляем пакет на запуск звука
-                ModPacketHandler.INSTANCE.send(PacketDistributor.TRACKING_CHUNK.with(() -> pLevel.getChunkAt(pPos)),
-                        new StartAssemblerSoundS2CPacket(pPos));
                 setChanged(pLevel, pPos, pState); // Важно для синхронизации
             }
 
@@ -563,9 +562,6 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
             if (pBlockEntity.isCrafting) {
                 pBlockEntity.progress = 0;
                 pBlockEntity.isCrafting = false;
-                // Отправляем пакет на остановку звука
-                ModPacketHandler.INSTANCE.send(PacketDistributor.TRACKING_CHUNK.with(() -> pLevel.getChunkAt(pPos)),
-                        new StopAssemblerSoundS2CPacket(pPos));
                 setChanged(pLevel, pPos, pState); // Важно для синхронизации
             }
         }
@@ -721,10 +717,13 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     // Добавим обработку уничтожения блока для надежности
     @Override
     public void setRemoved() {
-        if (level != null && !level.isClientSide() && isCrafting) {
-            MainRegistry.LOGGER.info("SERVER ({}): Block is being removed while crafting. Sending final STOP packet.", worldPosition);
-            ModPacketHandler.INSTANCE.send(PacketDistributor.TRACKING_CHUNK.with(() -> level.getChunkAt(worldPosition)),
-                    new StopAssemblerSoundS2CPacket(worldPosition));
+        // Этот метод вызывается при удалении BlockEntity.
+        // Важно выполнять операции со звуком только на стороне клиента.
+        if (level.isClientSide) {
+            // Используем существующий менеджер звуков, чтобы остановить звук.
+            // Передаем 'false', чтобы указать, что звук больше не должен играть.
+            // Supplier звука может быть null, так как он не будет использоваться при остановке.
+            ClientSoundManager.updateSound(this, false, null);
         }
         super.setRemoved();
     }

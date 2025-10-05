@@ -1,4 +1,4 @@
-package com.hbm_m.client.model.render;
+package com.hbm_m.util;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;

@@ -41,8 +41,6 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
-    // --- НАЧАЛО ИСПРАВЛЕНИЯ АРХИТЕКТУРЫ ---
-
     // 1. Определение структуры теперь СТАТИЧЕСКОЕ и НЕИЗМЕНЯЕМОЕ (final). Оно создается один раз при загрузке класса.
     private static final Map<BlockPos, Supplier<BlockState>> STRUCTURE_DEFINITION = defineStructure();
 
@@ -51,8 +49,6 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
 
     // 3. VoxelShape кэш также стал нестатическим. Каждый блок кэширует свои формы.
     private final Map<Direction, VoxelShape> shapeCache = new java.util.EnumMap<>(Direction.class);
-
-    // --- КОНЕЦ ИСПРАВЛЕНИЯ АРХИТЕКТУРЫ ---
 
 
     public MachineAdvancedAssemblerBlock(Properties pProperties) {
@@ -174,6 +170,12 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pBlockEntityType) {
-        return createTickerHelper(pBlockEntityType, ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerBlockEntity::tick);
+        if (pLevel.isClientSide()) {
+            return createTickerHelper(pBlockEntityType, ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(),
+                (level1, pos, state1, blockEntity) -> blockEntity.clientTick(level1, pos, state1));
+        }
+        
+        return createTickerHelper(pBlockEntityType, ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(),
+            (level1, pos, state1, blockEntity) -> MachineAdvancedAssemblerBlockEntity.tick(level1, pos, state1, blockEntity));
     }
 }

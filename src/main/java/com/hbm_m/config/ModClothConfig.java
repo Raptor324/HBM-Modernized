@@ -171,19 +171,6 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public float radRandomizationFactor = 1.0F;
 
-    // Модификаторы (WIP) 
-    @Category("modifiers")
-    @Gui.Tooltip
-    public float hazmatMod = 0.25F;
-
-    @Category("modifiers")
-    @Gui.Tooltip
-    public float advHazmatMod = 0.1F;
-
-    @Category("modifiers")
-    @Gui.Tooltip
-    public float paaHazmatMod = 0.05F;
-
     // Отладка 
     @Category("debug")
     @Gui.Tooltip

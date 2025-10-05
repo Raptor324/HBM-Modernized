@@ -44,6 +44,7 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> ASSEMBLER_STOP = registerSoundEvents("block.assembler_stop");
     public static final RegistryObject<SoundEvent> ASSEMBLER_STRIKE_1 = registerSoundEvents("block.assembler_strike1");
     public static final RegistryObject<SoundEvent> ASSEMBLER_STRIKE_2 = registerSoundEvents("block.assembler_strike2");
+    public static final RegistryObject<SoundEvent> MOTOR = registerSoundEvents("block.motor");
 
     // РЕГИСТРАЦИЯ АБСТРАКТНОГО СОБЫТИЯ 
     // Это тот самый звук, который мы будем вызывать в коде.

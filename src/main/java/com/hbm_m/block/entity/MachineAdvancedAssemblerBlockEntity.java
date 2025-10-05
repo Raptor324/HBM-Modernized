@@ -1,10 +1,14 @@
 package com.hbm_m.block.entity;
 
+import com.hbm_m.client.ClientSoundManager;
 // Блок-энтити для Продвинутой Сборочной Машины с поддержкой энергии, жидкостей, предметов и анимаций.
 import com.hbm_m.energy.BlockEntityEnergyStorage;
 import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.sound.AdvancedAssemblerSoundInstance;
+import com.hbm_m.sound.ModSounds;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.core.BlockPos;
@@ -15,6 +19,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.MenuProvider;
@@ -22,23 +28,34 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
+
+import java.util.HashSet;
+import java.util.Set;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements MenuProvider, IFrameSupportable {
-private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
+    private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
+            // КРИТИЧНО: Синхронизируем изменения в слотах с клиентом
+            if (level != null && !level.isClientSide()) {
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            }
         }
     };
 
@@ -48,9 +65,18 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
             int received = super.receiveEnergy(maxReceive, simulate);
             if (received > 0 && !simulate) {
                 setChanged();
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
             }
             return received;
+        }
+        
+        @Override
+        public int extractEnergy(int maxExtract, boolean simulate) {
+            int extracted = super.extractEnergy(maxExtract, simulate);
+            if (extracted > 0 && !simulate) {
+                setChanged();
+                // Также не вызываем sendBlockUpdated
+            }
+            return extracted;
         }
     };
 
@@ -61,6 +87,13 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
     private LazyOptional<BlockEntityEnergyStorage> lazyEnergyHandler = LazyOptional.empty();
     private LazyOptional<FluidTank> lazyFluidHandler = LazyOptional.empty();
     public boolean frame = false;
+    private ResourceLocation selectedRecipeId = null;
+    
+    private int syncCounter = 0;
+    private int lastSyncedEnergy = 0;
+
+    @OnlyIn(Dist.CLIENT)
+    private AdvancedAssemblerSoundInstance soundInstance;
     
     // --- ЛОГИКА ПРОЦЕССОВ ---
     // TODO: Заменить это на систему рецептов и модуль обработки
@@ -80,19 +113,19 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
     protected final ContainerData data;
 
     public MachineAdvancedAssemblerBlockEntity(BlockPos pPos, BlockState pBlockState) {
-        super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pPos, pBlockState); // Укажите ваш тип BlockEntity
+        super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pPos, pBlockState);
         for (int i = 0; i < this.arms.length; i++) {
             this.arms[i] = new AssemblerArm();
         }
 
         this.data = new ContainerData() {
-
             @Override
             public int get(int pIndex) {
                 return switch (pIndex) {
                     case 0 -> MachineAdvancedAssemblerBlockEntity.this.progress;
                     case 1 -> MachineAdvancedAssemblerBlockEntity.this.maxProgress;
-                    // Можно добавить еще 2 поля, например, для энергии, если нужно
+                    case 2 -> MachineAdvancedAssemblerBlockEntity.this.energyStorage.getEnergyStored();
+                    case 3 -> MachineAdvancedAssemblerBlockEntity.this.energyStorage.getMaxEnergyStored();
                     default -> 0;
                 };
             }
@@ -102,12 +135,14 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
                 switch (pIndex) {
                     case 0 -> MachineAdvancedAssemblerBlockEntity.this.progress = pValue;
                     case 1 -> MachineAdvancedAssemblerBlockEntity.this.maxProgress = pValue;
+                    case 2 -> MachineAdvancedAssemblerBlockEntity.this.energyStorage.setEnergy(pValue);
+                    case 3 -> {} // maxEnergy - только для чтения
                 }
             }
 
             @Override
             public int getCount() {
-                return 2; // Или 4, если добавите энергию
+                return 4; // Теперь 4 поля: progress, maxProgress, energy, maxEnergy
             }
         };
     }
@@ -152,11 +187,6 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
         return this.frame;
     }
 
-    /**
-     * ИЗМЕНЕНИЕ: Логика этого метода полностью заменена.
-     * Раньше здесь была сложная и дублирующаяся проверка. Теперь он просто
-     * делегирует вызов в централизованный метод в MultiblockStructureHelper.
-     */
     @Override
     public void checkForFrame() {
         // Запускаем проверку только на сервере
@@ -169,41 +199,68 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
     // --- TICK ЛОГИКА ---
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity pEntity) {
         if (level.isClientSide()) {
-            pEntity.clientTick();
+            pEntity.clientTick(level, pos, state);
         } else {
             pEntity.serverTick();
         }
     }
 
     private void serverTick() {
-        // TODO: Перенести сюда логику из assemblerModule.update()
-        // 1. Проверить наличие рецепта (по чертежу в слоте 1)
-        // 2. Проверить наличие ресурсов (предметы, энергия, жидкость)
-        // 3. Если все есть, начать крафт (isCrafting = true)
+        chargeMachineFromBattery();
+        
+        // Синхронизируем данные через ContainerData каждые 5 тиков
+        syncCounter++;
+        if (syncCounter >= 5) {
+            syncCounter = 0;
+            // Принудительная синхронизация энергии если изменилась
+            int currentEnergy = energyStorage.getEnergyStored();
+            if (Math.abs(currentEnergy - lastSyncedEnergy) > 10) { // Порог 10 FE
+                lastSyncedEnergy = currentEnergy;
+                setChanged();
+            }
+        }
         
         if (isCrafting) {
-            // Потреблять энергию
-            energyStorage.extractEnergy(100, false); // Примерное значение
+            energyStorage.extractEnergy(100, false);
             progress++;
             setChanged();
             
-        //     if (progress >= maxProgress) {
-        //         craftItem();
-        //         progress = 0;
-        //         isCrafting = false;
-        //         // Отправить обновление клиенту, чтобы остановить анимацию
-        //         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        //     }
-        // } else {
-            // Попытаться начать новый крафт
-            // ... ваша логика ...
-            // Для теста можно сделать так:
-            // if (energyStorage.getEnergyStored() > 1000) {
-            //      isCrafting = true;
-            //      // Отправить обновление клиенту, чтобы запустить анимацию
-            //      level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-            // }
+            if (progress >= maxProgress) {
+                progress = 0;
+                isCrafting = false;
+                setChanged();
+                // Синхронизация остановки
+                if (level != null) {
+                    level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+                }
+            }
         }
+    }
+
+    /**
+     * Извлекает энергию из батареи в слоте 0 и передаёт её во внутренний буфер машины.
+     */
+    private void chargeMachineFromBattery() {
+        ItemStack batteryStack = itemHandler.getStackInSlot(0);
+        if (batteryStack.isEmpty()) return;
+        
+        // Проверяем, есть ли у предмета энергетическая capability
+        batteryStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(batteryEnergy -> {
+            // Сколько энергии может принять наш внутренний буфер?
+            int spaceAvailable = energyStorage.getMaxEnergyStored() - energyStorage.getEnergyStored();
+            if (spaceAvailable <= 0) return; // Буфер полон
+            
+            // Пытаемся извлечь энергию из батареи
+            // Ограничиваем скорость зарядки максимальным вводом энергии (1000 FE/t из конструктора)
+            int maxTransfer = Math.min(spaceAvailable, energyStorage.getMaxReceive());
+            int extracted = batteryEnergy.extractEnergy(maxTransfer, false);
+            
+            if (extracted > 0) {
+                // Добавляем извлечённую энергию во внутренний буфер
+                energyStorage.receiveEnergy(extracted, false);
+                setChanged(); // Помечаем для сохранения
+            }
+        });
     }
     
     // private void craftItem() {
@@ -212,44 +269,93 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
     //     setChanged();
     // }
 
-    private void clientTick() {
-        this.isCrafting = true;
+    @Override
+    public void setRemoved() {
+        // Этот метод вызывается при удалении BlockEntity.
+        // Важно выполнять операции со звуком только на стороне клиента.
+        if (level.isClientSide) {
+            // Используем существующий менеджер звуков, чтобы остановить звук.
+            // Передаем 'false', чтобы указать, что звук больше не должен играть.
+            // Supplier звука может быть null, так как он не будет использоваться при остановке.
+            ClientSoundManager.updateSound(this, false, null);
+        }
+        super.setRemoved();
+    }
+
+    public void clientTick(Level level, BlockPos pos, BlockState state) {
+        ClientSoundManager.updateSound(this, this.isCrafting, () -> new AdvancedAssemblerSoundInstance(this.getBlockPos()));
+
         this.prevRingAngle = this.ringAngle;
 
-        // Обновление анимации рук
         for (AssemblerArm arm : arms) {
             arm.updateInterp();
             if (isCrafting) {
-                arm.updateArm(level.random);
+                // Передаем level и pos в метод для воспроизведения звуков
+                arm.updateArm(level, pos, level.random);
             } else {
                 arm.returnToNullPos();
             }
         }
         
-        // Обновление анимации кольца
         if (isCrafting) {
             if (this.ringAngle != this.ringTarget) {
                 float ringDelta = Mth.wrapDegrees(this.ringTarget - this.ringAngle);
+
                 if (Math.abs(ringDelta) <= this.ringSpeed) {
                     this.ringAngle = this.ringTarget;
+                    // --- ЗВУК ОСТАНОВКИ АНИМАЦИИ ---
+                    level.playSound(null, pos, ModSounds.ASSEMBLER_STOP.get(), SoundSource.BLOCKS, 0.25f, 1.5F);
+                    this.ringDelay = 20 + level.random.nextInt(21);
                 } else {
                     this.ringAngle += Math.signum(ringDelta) * this.ringSpeed;
                 }
-                
-                if (this.ringAngle == this.ringTarget) {
-                    this.ringDelay = 20 + level.random.nextInt(21);
-                }
-            } else {
-                if (this.ringDelay > 0) this.ringDelay--;
-                if (this.ringDelay <= 0) {
-                    this.ringTarget += (level.random.nextFloat() * 2 - 1) * 135;
+            } else if (this.ringDelay > 0) {
+                this.ringDelay--;
+                if (this.ringDelay == 0) {
+                    this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
                     this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
+                    // --- ЗВУК СТАРТА АНИМАЦИИ ---
+                    level.playSound(null, pos, ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.25f, 1.25F + level.random.nextFloat() * 0.25F);
                 }
             }
         } else {
-            // Плавно вернуть кольцо в исходное положение, если не крафтит
             this.ringAngle = Mth.lerp(0.1f, this.ringAngle, 0);
         }
+    }
+
+    /**
+     * Устанавливает выбранный рецепт для машины.
+     * Вызывается из сетевого пакета.
+     */
+    public void setSelectedRecipe(ResourceLocation recipeId) {
+        this.selectedRecipeId = recipeId;
+        this.setChanged();
+        
+        // Синхронизируем с клиентом
+        if (level != null && !level.isClientSide()) {
+            level.sendBlockUpdated(this.worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    /**
+     * Получает текущий выбранный рецепт.
+     */
+    public ResourceLocation getSelectedRecipeId() {
+        return selectedRecipeId;
+    }
+
+    /**
+     * Находит рецепт по его ID.
+     */
+    @Nullable
+    public AssemblerRecipe getSelectedRecipe() {
+        if (selectedRecipeId == null || level == null) return null;
+        
+        return level.getRecipeManager()
+            .byKey(selectedRecipeId)
+            .filter(recipe -> recipe instanceof AssemblerRecipe)
+            .map(recipe -> (AssemblerRecipe) recipe)
+            .orElse(null);
     }
     
     // --- CAPABILITIES ---
@@ -293,15 +399,16 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
         nbt.put("input_tank", inputTank.writeToNBT(new CompoundTag()));
         nbt.put("output_tank", outputTank.writeToNBT(new CompoundTag()));
         nbt.putInt("progress", progress);
-        
         nbt.putBoolean("is_crafting", this.isCrafting);
-
-        // ---- СОХРАНЯЕМ ВРЕМЯ ----
         nbt.putLong("last_use_tick", this.lastUseTick);
-        
         nbt.putBoolean("hasFrame", this.frame);
-        super.saveAdditional(nbt);
+
+        nbt.putBoolean("HasRecipe", selectedRecipeId != null);
+        if (selectedRecipeId != null) {
+            nbt.putString("SelectedRecipe", selectedRecipeId.toString());
+        }
         
+        super.saveAdditional(nbt);
     }
 
     // Этот метод теперь будет использоваться и при загрузке чанка, и при получении пакета
@@ -314,23 +421,39 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
         outputTank.readFromNBT(nbt.getCompound("output_tank"));
         progress = nbt.getInt("progress");
         this.frame = nbt.getBoolean("hasFrame");
+        if (nbt.contains("HasRecipe") && nbt.getBoolean("HasRecipe")) {
+            this.selectedRecipeId = ResourceLocation.tryParse(nbt.getString("SelectedRecipe"));
+        } else {
+            this.selectedRecipeId = null; // Явно сбрасываем
+        }
         
-        // Сохраняем предыдущее состояние для сравнения
         boolean wasCrafting = this.isCrafting;
         this.isCrafting = nbt.getBoolean("is_crafting");
         this.lastUseTick = nbt.getLong("last_use_tick");
-
-        // --- ДИАГНОСТИКА ---
-        // this.level может быть null при первой загрузке, поэтому проверяем
-        if (this.level != null && this.level.isClientSide() && wasCrafting != this.isCrafting) {
-            MainRegistry.LOGGER.debug("[КЛИЕНТ] Получено обновление! isCrafting теперь: " + this.isCrafting);
+        
+        if (this.level != null && this.level.isClientSide() && wasCrafting && !this.isCrafting) {
+            ClientSoundManager.updateSound(this, false, null);
         }
     }
 
     @Override
     public CompoundTag getUpdateTag() {
-        CompoundTag tag = new CompoundTag();
-        saveAdditional(tag);
+        CompoundTag tag = super.getUpdateTag();
+        
+        // Синхронизируем всё необходимое для рендера
+        tag.putBoolean("HasRecipe", selectedRecipeId != null);
+        if (selectedRecipeId != null) {
+            tag.putString("SelectedRecipe", selectedRecipeId.toString());
+        }
+        tag.putBoolean("is_crafting", this.isCrafting);
+        tag.putBoolean("hasFrame", this.frame);
+        
+        // КРИТИЧНО: Синхронизируем инвентарь для отображения предметов
+        tag.put("inventory", itemHandler.serializeNBT());
+        
+        // Энергия для GUI (хотя она идёт через ContainerData)
+        tag.putInt("energy", energyStorage.getEnergyStored());
+        
         return tag;
     }
 
@@ -341,24 +464,15 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
 
     @Override
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        // Получаем NBT-тег из пакета. Это тот самый тег, который был создан 
-        // на сервере с помощью saveAdditional().
         CompoundTag nbt = pkt.getTag();
         if (nbt != null) {
-            // Запоминаем старое значение для диагностики
             boolean wasCrafting = this.isCrafting;
-            
-            // Вызываем стандартный обработчик, который в свою очередь вызовет наш метод load()
-            // Это гарантирует, что все данные из NBT будут загружены как положено.
-            this.handleUpdateTag(nbt);
-            
-            // Наша диагностика. Теперь она должна сработать.
-            if (this.level != null && this.level.isClientSide() && wasCrafting != this.isCrafting) {
-                MainRegistry.LOGGER.debug("[КЛИЕНТ onDataPacket] Пакет успешно получен! isCrafting теперь: " + this.isCrafting);
+            handleUpdateTag(nbt);
+            // --- ЗВУК ОСТАНОВКИ ПРИ ОБНОВЛЕНИИ С СЕРВЕРА ---
+            if (this.level != null && this.level.isClientSide && wasCrafting && !this.isCrafting) {
+                level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(), SoundSource.BLOCKS, 0.25f, 1.5F);
             }
         }
-        
-        // ВАЖНО: Вызываем super, чтобы ванильный код тоже мог обработать пакет, если ему нужно
         super.onDataPacket(net, pkt);
     }
 
@@ -414,7 +528,7 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
             speed[0] = 15; speed[1] = 15; speed[2] = 15; speed[3] = 0.5f;
         }
 
-        public void updateArm(RandomSource random) {
+        public void updateArm(Level level, BlockPos pos, RandomSource random) {
             resetSpeed();
             if (actionDelay > 0) {
                 actionDelay--;
@@ -431,6 +545,9 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
                     break;
                 case EXTEND_STRIKER:
                     if (move()) {
+                        // --- ЗВУК УДАРА ---
+                        level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                            ModSounds.ASSEMBLER_STRIKE_RANDOM.get(), SoundSource.BLOCKS, 0.5f, 1.0F, false);
                         state = ArmActionState.RETRACT_STRIKER;
                         targetAngles[3] = 0f;
                     }
@@ -469,6 +586,25 @@ private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
                 angles[i] += Math.signum(targetAngles[i] - angles[i]) * speed[i];
             }
             return !didMove;
+        }
+    }
+
+    public class AssemblerRecipeConfig {
+        // Список отключенных базовых рецептов
+        private static final Set<ResourceLocation> DISABLED_BASE_RECIPES = new HashSet<>();
+        
+        static {
+            // Пример: отключаем алмазный меч из базовых рецептов
+            // DISABLED_BASE_RECIPES.add(new ResourceLocation("hbm_m", "diamond_sword_from_assembler"));
+        }
+        
+        public static boolean isRecipeEnabled(ResourceLocation recipeId) {
+            return !DISABLED_BASE_RECIPES.contains(recipeId);
+        }
+        
+        // Метод для загрузки конфигурации из файла
+        public static void loadConfig() {
+            // TODO: Реализовать чтение из config файла
         }
     }
 }
