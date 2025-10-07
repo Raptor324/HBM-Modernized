@@ -65,6 +65,10 @@ public class ModBlocks {
 	public static final RegistryObject<Block> ARMOR_TABLE = registerBlock("armor_table",
             () -> new ArmorTableBlock(TABLE_PROPERTIES));
 
+    public static final RegistryObject<Block> SHREDDER = registerBlock("shredder",
+            () -> new ShredderBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
+
+
     public static final RegistryObject<Block> MACHINE_ASSEMBLER = registerBlockWithoutItem("machine_assembler",
         () -> new MachineAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
 

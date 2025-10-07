@@ -2,19 +2,12 @@ package com.hbm_m.client;
 
 // Основной класс клиентской настройки мода. Здесь регистрируются все клиентские обработчики событий,
 // GUI, рендереры, модели и т.д.
-import com.hbm_m.client.overlay.GUIMachineAdvancedAssembler;
-import com.hbm_m.client.overlay.GUIArmorTable;
-import com.hbm_m.client.overlay.GUIMachineAssembler;
-import com.hbm_m.client.overlay.GUIMachineBattery;
+import com.hbm_m.client.overlay.*;
 import com.hbm_m.client.model.*;
 import com.hbm_m.client.model.loader.MachineAdvancedAssemblerModelLoader;
 import com.hbm_m.client.model.loader.ProceduralWireLoader;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.ModConfigKeybindHandler;
-import com.hbm_m.client.overlay.OverlayGeiger;
-import com.hbm_m.client.overlay.GUIMachinePress;
-import com.hbm_m.client.overlay.OverlayRadiationVisuals;
-import com.hbm_m.client.overlay.GUIMachineWoodBurner;
 import com.hbm_m.client.tooltip.ItemTooltipComponent;
 import com.hbm_m.client.tooltip.ItemTooltipComponentRenderer;
 import com.hbm_m.lib.RefStrings;
@@ -24,7 +17,6 @@ import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.DarkParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.client.overlay.GUIBlastFurnace;
 
 import net.minecraft.client.renderer.RenderType;
 
@@ -80,6 +72,7 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
             MenuScreens.register(ModMenuTypes.BLAST_FURNACE_MENU.get(), GUIBlastFurnace::new);
             MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
+            MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), GUIShredder::new);
             MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
             // Register BlockEntity renderer for Advanced Assembly Machine
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
