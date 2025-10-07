@@ -32,7 +32,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.atomic.AtomicInteger;
 
 public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -43,8 +42,6 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         }
     };
 
-    // ВАЖНО: maxExtract > 0 чтобы провода могли извлекать энергию
-    // maxReceive > 0 для внутренней генерации (receiveEnergy в tick)
     private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100000, 1000, 1000);
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
     private LazyOptional<IEnergyStorage> lazyEnergyHandler = LazyOptional.empty();
@@ -53,8 +50,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
     private final IEnergyStorage energyWrapper = new IEnergyStorage() {
         @Override
         public int receiveEnergy(int maxReceive, boolean simulate) {
-            // Генератор НЕ принимает энергию от внешних источников
-            return 0;
+            return 0; // Генератор НЕ принимает энергию от внешних источников
         }
 
         @Override
@@ -79,8 +75,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
         @Override
         public boolean canReceive() {
-            // Генератор НЕ принимает энергию от внешних источников
-            return false;
+            return false; // Генератор НЕ принимает энергию от внешних источников
         }
     };
 
@@ -164,8 +159,8 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
             pBlockEntity.isLit = false;
         }
 
-        // ДОБАВЛЕНО: Активно отдаём энергию соседям (как у батареи)
-        pBlockEntity.pushEnergyToNeighbors();
+        // НОВОЕ: Отдаём энергию через ENERGY_CONNECTOR части мультиблока
+        pBlockEntity.distributeEnergyToConnectors(pLevel, pPos, pState);
 
         // Обновляем состояние блока если изменилось
         if (wasLit != pBlockEntity.isLit) {
@@ -175,83 +170,89 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         setChanged(pLevel, pPos, pState);
     }
 
-    // НОВЫЙ МЕТОД: Активная передача энергии соседям
-    private void pushEnergyToNeighbors() {
-        if (ModClothConfig.get().enableDebugLogging) {
-            MainRegistry.LOGGER.debug("[GENERATOR >>>] pushEnergyToNeighbors at {} currentEnergy={}", this.worldPosition, this.energyStorage.getEnergyStored());
-        }
+    // НОВЫЙ МЕТОД: Распределение энергии через части мультиблока (унифицировано с батареей)
+    private void distributeEnergyToConnectors(Level level, BlockPos controllerPos, BlockState state) {
+        Direction facing = state.getValue(MachineWoodBurnerBlock.FACING);
 
-        AtomicInteger energyToSend = new AtomicInteger(this.energyStorage.extractEnergy(this.energyStorage.getMaxExtract(), true));
+        int energyAvailable = this.energyStorage.extractEnergy(this.energyStorage.getMaxExtract(), true);
+        if (energyAvailable <= 0) return;
 
-        if (energyToSend.get() <= 0) {
-            if (ModClothConfig.get().enableDebugLogging) {
-                MainRegistry.LOGGER.debug("[GENERATOR >>>] No energy to send");
-                // Отправляем в чат ближайшему игроку
-                sendDebugToNearbyPlayers("§e[GEN] No energy to send");
-            }
-            return; // Нечего отправлять
-        }
+        // Получаем позиции ENERGY_CONNECTOR частей (задние нижние блоки)
+        BlockPos[] connectorOffsets = {
+                new BlockPos(0, 0, 1),
+                new BlockPos(1, 0, 1)
+        };
 
-        if (ModClothConfig.get().enableDebugLogging) {
-            sendDebugToNearbyPlayers("§a[GEN] Trying to send " + energyToSend + " FE");
-        }
+        java.util.UUID pushId = java.util.UUID.randomUUID();
+        final int[] totalSent = {0};
 
-        Level lvl = this.level;
-        if (lvl == null) return;
+        for (BlockPos localOffset : connectorOffsets) {
+            if (totalSent[0] >= energyAvailable) break;
 
-        for (Direction direction : Direction.values()) {
-            if (energyToSend.get() <= 0) {
-                break; // Вся энергия роздана
-            }
+            BlockPos worldOffset = rotateOffset(localOffset, facing);
+            BlockPos connectorPos = controllerPos.offset(worldOffset);
 
-            BlockPos neighborPos = worldPosition.relative(direction);
-            BlockEntity neighbor = lvl.getBlockEntity(neighborPos);
-            if (neighbor == null) {
-                continue;
-            }
+            // Проверяем всех соседей этого коннектора
+            for (Direction dir : Direction.values()) {
+                if (totalSent[0] >= energyAvailable) break;
 
-            // Пропускаем самого себя и другие генераторы
-            if (neighbor instanceof MachineWoodBurnerBlockEntity) {
-                if (ModClothConfig.get().enableDebugLogging) {
-                    MainRegistry.LOGGER.debug("[GENERATOR >>>] Skipping generator at {}", neighborPos);
-                    sendDebugToNearbyPlayers("§c[GEN] Skipping generator at " + direction);
+                BlockPos neighborPos = connectorPos.relative(dir);
+                BlockEntity neighbor = level.getBlockEntity(neighborPos);
+                if (neighbor == null) continue;
+
+                // Пропускаем части мультиблока и другие генераторы
+                if (neighbor instanceof UniversalMachinePartBlockEntity ||
+                        neighbor instanceof MachineWoodBurnerBlockEntity) {
+                    continue;
                 }
-                continue;
-            }
 
-            // Получаем capability соседа
-            LazyOptional<IEnergyStorage> neighborCapability = neighbor.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite());
+                // Если сосед — провод, используем acceptEnergy как у батареи
+                if (neighbor instanceof WireBlockEntity wire) {
+                    int remaining = energyAvailable - totalSent[0];
+                    int accepted = wire.acceptEnergy(remaining, pushId, this.worldPosition);
+                    if (accepted > 0) {
+                        this.energyStorage.extractEnergy(accepted, false);
+                        totalSent[0] += accepted;
+                        if (ModClothConfig.get().enableDebugLogging) {
+                            MainRegistry.LOGGER.debug("[GENERATOR] Sent {} FE to wire at {} via connector {}",
+                                    accepted, neighborPos, connectorPos);
+                        }
+                    }
+                    continue;
+                }
 
-            if (neighborCapability.isPresent()) {
-                neighborCapability.ifPresent(neighborStorage -> {
-                    if (neighborStorage.canReceive()) {
-                        int accepted = neighborStorage.receiveEnergy(energyToSend.get(), false);
+                // Для других устройств используем capability
+                neighbor.getCapability(ForgeCapabilities.ENERGY, dir.getOpposite()).ifPresent(storage -> {
+                    if (storage.canReceive()) {
+                        int remaining = energyAvailable - totalSent[0];
+                        int accepted = storage.receiveEnergy(remaining, false);
                         if (accepted > 0) {
                             this.energyStorage.extractEnergy(accepted, false);
-                            energyToSend.addAndGet(-accepted);
+                            totalSent[0] += accepted;
                             if (ModClothConfig.get().enableDebugLogging) {
-                                MainRegistry.LOGGER.debug("[GENERATOR >>>] Sent {} FE to {} (direction: {})", accepted, neighborPos, direction);
-                                sendDebugToNearbyPlayers("§a[GEN] Sent " + accepted + " FE to " + direction + " -> " + neighbor.getClass().getSimpleName());
+                                MainRegistry.LOGGER.debug("[GENERATOR] Sent {} FE to {} at {} via connector {}",
+                                        accepted, neighbor.getClass().getSimpleName(), neighborPos, connectorPos);
                             }
                         }
-                    } else if (ModClothConfig.get().enableDebugLogging) {
-                        sendDebugToNearbyPlayers("§c[GEN] Neighbor at " + direction + " can't receive (" + neighbor.getClass().getSimpleName() + ")");
                     }
                 });
-            } else if (ModClothConfig.get().enableDebugLogging) {
-                sendDebugToNearbyPlayers("§7[GEN] No energy capability at " + direction + " (" + neighbor.getClass().getSimpleName() + ")");
             }
         }
     }
 
-    // Вспомогательный метод для отправки debug сообщений в чат
-    private void sendDebugToNearbyPlayers(String message) {
-        if (this.level == null) return;
-        this.level.players().forEach(player -> {
-            if (player.blockPosition().distSqr(this.worldPosition) < 256) { // В радиусе 16 блоков
-                player.sendSystemMessage(Component.literal(message));
-            }
-        });
+    // Вспомогательный метод для поворота локальных координат
+    private BlockPos rotateOffset(BlockPos local, Direction facing) {
+        int x = local.getX();
+        int y = local.getY();
+        int z = local.getZ();
+
+        return switch (facing) {
+            case NORTH -> new BlockPos(x, y, z);
+            case SOUTH -> new BlockPos(-x, y, -z);
+            case WEST -> new BlockPos(z, y, -x);
+            case EAST -> new BlockPos(-z, y, x);
+            default -> local;
+        };
     }
 
     private boolean canBurn() {
@@ -313,7 +314,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
     public void onLoad() {
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
-        lazyEnergyHandler = LazyOptional.of(() -> energyWrapper); // Используем обёртку вместо прямого energyStorage
+        lazyEnergyHandler = LazyOptional.of(() -> energyWrapper);
     }
 
     @Override
@@ -360,5 +361,10 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
     public int getComparatorPower() {
         return (int) Math.floor(((double) this.energyStorage.getEnergyStored() / this.energyStorage.getMaxEnergyStored()) * 15.0);
+    }
+
+    // Публичный метод для доступа к энергохранилищу (для частей мультиблока)
+    public BlockEntityEnergyStorage getEnergyStorage() {
+        return this.energyStorage;
     }
 }
