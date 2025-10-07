@@ -322,6 +322,7 @@ public class MainRegistry {
             event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
             event.accept(ModBlocks.PRESS);
             event.accept(ModBlocks.BLAST_FURNACE);
+            event.accept(ModBlocks.SHREDDER);
             event.accept(ModBlocks.WOOD_BURNER);
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);

@@ -2,9 +2,11 @@ package com.hbm_m.menu;
 
 import com.hbm_m.armormod.menu.ArmorTableMenu;
 import com.hbm_m.lib.RefStrings;
+import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.network.IContainerFactory;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -34,7 +36,10 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<MachineWoodBurnerMenu>> WOOD_BURNER_MENU =
             MENUS.register("wood_burner_menu", () -> IForgeMenuType.create(MachineWoodBurnerMenu::new));
 
-            
+    public static final RegistryObject<MenuType<ShredderMenu>> SHREDDER_MENU =
+            MENUS.register("shredder_menu", () -> IForgeMenuType.create(ShredderMenu::new));
+
+
     public static void register(IEventBus eventBus) {
         MENUS.register(eventBus);
     }

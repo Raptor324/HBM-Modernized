@@ -27,6 +27,11 @@ public class ModBlockEntities {
 			BlockEntityType.Builder.<MachineAdvancedAssemblerBlockEntity>of(MachineAdvancedAssemblerBlockEntity::new, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get())
 				.build(null));
 
+    public static final RegistryObject<BlockEntityType<ShredderBlockEntity>> SHREDDER =
+            BLOCK_ENTITIES.register("shredder", () ->
+                    BlockEntityType.Builder.of(ShredderBlockEntity::new,
+                            ModBlocks.SHREDDER.get()).build(null));
+
     public static final RegistryObject<BlockEntityType<UniversalMachinePartBlockEntity>> UNIVERSAL_MACHINE_PART_BE =
         BLOCK_ENTITIES.register("universal_machine_part_be", () ->
 			BlockEntityType.Builder.<UniversalMachinePartBlockEntity>of(UniversalMachinePartBlockEntity::new, ModBlocks.UNIVERSAL_MACHINE_PART.get())

@@ -28,6 +28,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         stairsBlock(((StairBlock) ModBlocks.REINFORCED_STONE_STAIRS.get()), blockTexture(ModBlocks.REINFORCED_STONE.get()));
         slabBlock(((SlabBlock) ModBlocks.REINFORCED_STONE_SLAB.get()), blockTexture(ModBlocks.REINFORCED_STONE_SLAB.get()), blockTexture(ModBlocks.REINFORCED_STONE.get()));
 
+
+        simpleBlockWithItem(ModBlocks.SHREDDER.get(),
+                new ModelFile.UncheckedModelFile(modLoc("block/shredder")));
+
     }
 
     private void blockItem(RegistryObject<Block> blockRegistryObject) {
