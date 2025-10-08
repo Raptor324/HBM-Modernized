@@ -65,6 +65,9 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     protected final ContainerData data;
     private int progress = 0;
     private int maxProgress = 100;
+    private int previousEnergy = 0;
+    private int energyDelta = 0;
+    private int energyDeltaUpdateCounter = 0;
 
     // Номера слотов для удобства
     private static final int TEMPLATE_SLOT = 4;
@@ -93,8 +96,8 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
                     case 1 -> MachineAssemblerBlockEntity.this.maxProgress;
                     case 2 -> MachineAssemblerBlockEntity.this.energyStorage.getEnergyStored();
                     case 3 -> MachineAssemblerBlockEntity.this.energyStorage.getMaxEnergyStored();
-                    // 1. Читаем состояние крафта
-                    case DATA_IS_CRAFTING -> MachineAssemblerBlockEntity.this.isCrafting ? 1 : 0;
+                    case 4 -> MachineAssemblerBlockEntity.this.isCrafting ? 1 : 0;
+                    case 5 -> MachineAssemblerBlockEntity.this.energyDelta; // НОВОЕ: энергетическая дельта
                     default -> 0;
                 };
             }
@@ -105,15 +108,14 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
                     case 0 -> MachineAssemblerBlockEntity.this.progress = value;
                     case 1 -> MachineAssemblerBlockEntity.this.maxProgress = value;
                     case 2 -> MachineAssemblerBlockEntity.this.energyStorage.setEnergy(value);
-                    // 2. Устанавливаем состояние крафта
-                    case DATA_IS_CRAFTING -> MachineAssemblerBlockEntity.this.isCrafting = value != 0;
+                    case 4 -> MachineAssemblerBlockEntity.this.isCrafting = value != 0;
+                    case 5 -> MachineAssemblerBlockEntity.this.energyDelta = value; // НОВОЕ
                 }
             }
 
             @Override
             public int getCount() {
-                // 3. Увеличиваем размер до 5
-                return 5;
+                return 6; // ИЗМЕНЕНО: было 5, теперь 6
             }
         };
     }
@@ -457,6 +459,8 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
         nbt.putInt("energy", energyStorage.getEnergyStored());
         nbt.putInt("progress", progress);
         nbt.putBoolean("isCrafting", this.isCrafting); // Сохраняем состояние крафта
+        nbt.putInt("previousEnergy", this.previousEnergy);
+        nbt.putInt("energyDelta", this.energyDelta);
     }
 
     @Override
@@ -467,6 +471,8 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
         progress = nbt.getInt("progress");
         boolean wasCrafting = this.isCrafting;
         this.isCrafting = nbt.getBoolean("isCrafting"); // Загружаем состояние крафта
+        this.previousEnergy = nbt.getInt("previousEnergy");
+        this.energyDelta = nbt.getInt("energyDelta");
         
         if (this.level != null && this.level.isClientSide() && wasCrafting && !this.isCrafting) {
             ClientSoundManager.updateSound(this, false, null);
@@ -488,6 +494,8 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     }
 
     private static void serverTick(Level pLevel, BlockPos pPos, BlockState pState, MachineAssemblerBlockEntity pBlockEntity) {
+        
+
         pBlockEntity.requestEnergy();
 
         final int ENERGY_SLOT_INDEX = 0; // Определяем индекс слота для зарядки
@@ -514,6 +522,15 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
                     }
                 });
             }
+        }
+
+        pBlockEntity.energyDeltaUpdateCounter++;
+        if (pBlockEntity.energyDeltaUpdateCounter >= 20) {
+            int currentEnergy = pBlockEntity.energyStorage.getEnergyStored();
+            pBlockEntity.energyDelta = currentEnergy - pBlockEntity.previousEnergy;
+            pBlockEntity.previousEnergy = currentEnergy;
+            pBlockEntity.energyDeltaUpdateCounter = 0;
+            setChanged(pLevel, pPos, pState); // Синхронизируем с клиентом
         }
 
         // ЛОГИКА КРАФТА

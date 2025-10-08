@@ -27,8 +27,9 @@ public class ModRecipeProvider extends RecipeProvider {
         // Рецепт для алмазного меча
         AssemblerRecipeBuilder.assemblerRecipe(
                 new ItemStack(Items.DIAMOND_SWORD), 100, 1000)
-                .addIngredient(Items.DIAMOND, 2) // <-- Добавляем 2 алмаза
-                .addIngredient(Items.STICK, 1)    // <-- Добавляем 1 палку
+                .addIngredient(Items.DIAMOND, 2)
+                .addIngredient(Items.STICK, 1)
+                .withBlueprintPool("weapons")
                 .save(pWriter, "diamond_sword_from_assembler");
         
         
