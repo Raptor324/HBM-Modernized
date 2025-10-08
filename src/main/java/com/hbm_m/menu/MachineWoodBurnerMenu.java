@@ -4,12 +4,16 @@ package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.MachineWoodBurnerBlockEntity;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -19,6 +23,9 @@ import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
+
+import static net.minecraft.tags.BlockTags.PLANKS;
+import static net.minecraft.tags.ItemTags.SAPLINGS;
 
 public class MachineWoodBurnerMenu extends AbstractContainerMenu {
     private final MachineWoodBurnerBlockEntity blockEntity;
@@ -62,25 +69,52 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
     }
 
     private boolean isFuel(ItemStack stack) {
-        return stack.getItem() == Items.OAK_PLANKS || stack.getItem() == Items.BIRCH_PLANKS ||
-                stack.getItem() == Items.SPRUCE_PLANKS || stack.getItem() == Items.JUNGLE_PLANKS ||
-                stack.getItem() == Items.ACACIA_PLANKS || stack.getItem() == Items.DARK_OAK_PLANKS ||
-                stack.getItem() == Items.MANGROVE_PLANKS || stack.getItem() == Items.CHERRY_PLANKS ||
-                stack.getItem() == Items.BAMBOO_PLANKS || stack.getItem() == Items.CRIMSON_PLANKS ||
-                stack.getItem() == Items.WARPED_PLANKS ||
-                stack.getItem() == Items.OAK_LOG || stack.getItem() == Items.BIRCH_LOG ||
-                stack.getItem() == Items.SPRUCE_LOG || stack.getItem() == Items.JUNGLE_LOG ||
-                stack.getItem() == Items.ACACIA_LOG || stack.getItem() == Items.DARK_OAK_LOG ||
-                stack.getItem() == Items.MANGROVE_LOG || stack.getItem() == Items.CHERRY_LOG ||
-                stack.getItem() == Items.BAMBOO_BLOCK || stack.getItem() == Items.CRIMSON_STEM ||
-                stack.getItem() == Items.WARPED_STEM ||
-                stack.getItem() == Items.STRIPPED_OAK_LOG || stack.getItem() == Items.STRIPPED_BIRCH_LOG ||
-                stack.getItem() == Items.STRIPPED_SPRUCE_LOG || stack.getItem() == Items.STRIPPED_JUNGLE_LOG ||
-                stack.getItem() == Items.STRIPPED_ACACIA_LOG || stack.getItem() == Items.STRIPPED_DARK_OAK_LOG ||
-                stack.getItem() == Items.STRIPPED_MANGROVE_LOG || stack.getItem() == Items.STRIPPED_CHERRY_LOG ||
-                stack.getItem() == Items.STRIPPED_CRIMSON_STEM || stack.getItem() == Items.STRIPPED_WARPED_STEM ||
-                stack.getItem() == Items.BROWN_MUSHROOM || stack.getItem() == Items.RED_MUSHROOM ||
-                stack.getItem() == Items.COAL;
+        Item item = stack.getItem();
+
+        // КАСТОМНОЕ ТОПЛИВО
+        if (item == ModItems.LIGNITE.get()) return true;
+
+        // УГОЛЬ
+        if (item == Items.COAL || item == Items.CHARCOAL) return true;
+
+        // ТЕГИ - автоматически покрывают все типы дерева
+        if (stack.is(ItemTags.LOGS) || stack.is(ItemTags.LOGS_THAT_BURN)) return true;
+        if (stack.is(ItemTags.PLANKS)) return true;
+        if (stack.is(ItemTags.WOODEN_STAIRS)) return true;
+
+        if (stack.is(ItemTags.WOODEN_SLABS)) return true;
+        if (stack.is(ItemTags.WOODEN_FENCES)) return true;
+        if (stack.is(ItemTags.WOODEN_TRAPDOORS)) return true;
+        if (stack.is(ItemTags.WOODEN_DOORS)) return true;
+        if (stack.is(ItemTags.WOODEN_BUTTONS)) return true;
+        if (stack.is(ItemTags.WOODEN_PRESSURE_PLATES)) return true;
+        if (stack.is(ItemTags.SIGNS)) return true;
+        if (stack.is(ItemTags.HANGING_SIGNS)) return true;
+        if (stack.is(ItemTags.BOATS)) return true;
+        if (stack.is(ItemTags.CHEST_BOATS)) return true;
+
+        // МЕЛОЧИ
+        if (item == Items.STICK || item == Items.BOWL || item == Items.BAMBOO) return true;
+
+        // ДЕРЕВЯННЫЕ ИНСТРУМЕНТЫ
+        if (item == Items.WOODEN_SWORD || item == Items.WOODEN_PICKAXE ||
+                item == Items.WOODEN_AXE || item == Items.WOODEN_SHOVEL ||
+                item == Items.WOODEN_HOE) return true;
+
+        // ПРОЧИЕ ДЕРЕВЯННЫЕ БЛОКИ
+        if (item == Items.CRAFTING_TABLE || item == Items.CARTOGRAPHY_TABLE ||
+                item == Items.FLETCHING_TABLE || item == Items.SMITHING_TABLE ||
+                item == Items.LOOM || item == Items.BARREL || item == Items.COMPOSTER ||
+                item == Items.CHEST || item == Items.TRAPPED_CHEST ||
+                item == Items.BOOKSHELF || item == Items.CHISELED_BOOKSHELF ||
+                item == Items.LECTERN || item == Items.NOTE_BLOCK ||
+                item == Items.JUKEBOX || item == Items.DAYLIGHT_DETECTOR ||
+                item == Items.LADDER) return true;
+
+        // ПРОЧЕЕ ТОПЛИВО
+        if (item == Items.BLAZE_ROD || item == Items.DRIED_KELP_BLOCK) return true;
+
+        return false;
     }
 
     public int getEnergy() {

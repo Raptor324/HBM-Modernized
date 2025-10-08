@@ -417,6 +417,9 @@ public class ModItems {
     public static final RegistryObject<Item> FIRECLAY_BALL = ITEMS.register("fireclay_ball",
             () -> new Item(new Item.Properties()));
 
+    public static final RegistryObject<Item> WOOD_ASH_POWDER = ITEMS.register("wood_ash_powder",
+            () -> new Item(new Item.Properties()));
+
     public static final RegistryObject<Item> FIREBRICK = ITEMS.register("firebrick",
             () -> new Item(new Item.Properties()));
 

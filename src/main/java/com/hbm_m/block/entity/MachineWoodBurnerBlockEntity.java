@@ -3,12 +3,15 @@ package com.hbm_m.block.entity;
 import com.hbm_m.block.MachineWoodBurnerBlock;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.energy.BlockEntityEnergyStorage;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.MachineWoodBurnerMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.ItemTags;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
@@ -32,6 +35,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
+import java.util.Map;
+
+import static com.hbm_m.item.ModItems.ITEMS;
 
 public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -149,8 +155,8 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
                 if (pLevel.random.nextFloat() < 0.5f) {
                     ItemStack ashSlotStack = pBlockEntity.itemHandler.getStackInSlot(ASH_SLOT);
                     if (ashSlotStack.isEmpty()) {
-                        pBlockEntity.itemHandler.setStackInSlot(ASH_SLOT, new ItemStack(Items.GUNPOWDER));
-                    } else if (ashSlotStack.getItem() == Items.GUNPOWDER && ashSlotStack.getCount() < 64) {
+                        pBlockEntity.itemHandler.setStackInSlot(ASH_SLOT, new ItemStack(ModItems.WOOD_ASH_POWDER.get()));
+                    } else if (ashSlotStack.getItem() == ModItems.WOOD_ASH_POWDER.get() && ashSlotStack.getCount() < 64) {
                         ashSlotStack.grow(1);
                     }
                 }
@@ -270,30 +276,60 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
             fuelStack.shrink(1);
         }
     }
+    public int getBurnTime(Item item) {
+        ItemStack stack = new ItemStack(item);
 
-    private int getBurnTime(Item item) {
-        if (item == Items.OAK_PLANKS || item == Items.BIRCH_PLANKS || item == Items.SPRUCE_PLANKS ||
-                item == Items.JUNGLE_PLANKS || item == Items.ACACIA_PLANKS || item == Items.DARK_OAK_PLANKS ||
-                item == Items.MANGROVE_PLANKS || item == Items.CHERRY_PLANKS || item == Items.BAMBOO_PLANKS ||
-                item == Items.CRIMSON_PLANKS || item == Items.WARPED_PLANKS) {
-            return 30;
-        }
-        if (item == Items.OAK_LOG || item == Items.BIRCH_LOG || item == Items.SPRUCE_LOG ||
-                item == Items.JUNGLE_LOG || item == Items.ACACIA_LOG || item == Items.DARK_OAK_LOG ||
-                item == Items.MANGROVE_LOG || item == Items.CHERRY_LOG || item == Items.BAMBOO_BLOCK ||
-                item == Items.CRIMSON_STEM || item == Items.WARPED_STEM ||
-                item == Items.STRIPPED_OAK_LOG || item == Items.STRIPPED_BIRCH_LOG || item == Items.STRIPPED_SPRUCE_LOG ||
-                item == Items.STRIPPED_JUNGLE_LOG || item == Items.STRIPPED_ACACIA_LOG || item == Items.STRIPPED_DARK_OAK_LOG ||
-                item == Items.STRIPPED_MANGROVE_LOG || item == Items.STRIPPED_CHERRY_LOG ||
-                item == Items.STRIPPED_CRIMSON_STEM || item == Items.STRIPPED_WARPED_STEM) {
-            return 60;
-        }
-        if (item == Items.BROWN_MUSHROOM || item == Items.RED_MUSHROOM) {
-            return 80;
-        }
-        if (item == Items.COAL) {
-            return 120;
-        }
+        // КАСТОМНОЕ ТОПЛИВО
+        if (item == ModItems.LIGNITE.get()) return 30; // 400 тиков / 20 = 20 секунд
+
+        // УГОЛЬ
+        if (item == Items.COAL || item == Items.CHARCOAL) return 40; // 1600 тиков
+
+        // ТЕГИ - автоматически покрывают все типы дерева
+        if (stack.is(ItemTags.LOGS) || stack.is(ItemTags.LOGS_THAT_BURN)) return 30;
+        if (stack.is(ItemTags.PLANKS)) return 15; 
+
+        // Деревянные строительные блоки (используем ItemTags вместо BlockTags)
+        if (stack.is(ItemTags.WOODEN_STAIRS)) return 15; // 300 тиков
+        if (stack.is(ItemTags.WOODEN_SLABS)) return 8; // 150 тиков
+        if (stack.is(ItemTags.WOODEN_FENCES)) return 15; // 300 тиков
+        if (stack.is(ItemTags.WOODEN_TRAPDOORS)) return 15; // 300 тиков
+        if (stack.is(ItemTags.WOODEN_DOORS)) return 10; // 200 тиков
+        if (stack.is(ItemTags.WOODEN_BUTTONS)) return 5; // 100 тиков
+        if (stack.is(ItemTags.WOODEN_PRESSURE_PLATES)) return 15; // 300 тиков
+
+        // Таблички
+        if (stack.is(ItemTags.SIGNS)) return 10; // 200 тиков
+        if (stack.is(ItemTags.HANGING_SIGNS)) return 40; // 800 тиков
+
+        // Лодки
+        if (stack.is(ItemTags.BOATS)) return 60; // 1200 тиков
+        if (stack.is(ItemTags.CHEST_BOATS)) return 60; // 1200 тиков
+
+        // Мелочи
+        if (item == Items.STICK) return 5; // 100 тиков
+        if (item == Items.BOWL) return 5; // 100 тиков
+        if (item == Items.BAMBOO) return 3; // 50 тиков
+
+        // Деревянные инструменты
+        if (item == Items.WOODEN_SWORD || item == Items.WOODEN_PICKAXE ||
+                item == Items.WOODEN_AXE || item == Items.WOODEN_SHOVEL ||
+                item == Items.WOODEN_HOE) return 10; // 200 тиков
+
+        // Прочие деревянные блоки
+        if (item == Items.CRAFTING_TABLE || item == Items.CARTOGRAPHY_TABLE ||
+                item == Items.FLETCHING_TABLE || item == Items.SMITHING_TABLE ||
+                item == Items.LOOM || item == Items.BARREL || item == Items.COMPOSTER ||
+                item == Items.CHEST || item == Items.TRAPPED_CHEST ||
+                item == Items.BOOKSHELF || item == Items.CHISELED_BOOKSHELF ||
+                item == Items.LECTERN || item == Items.NOTE_BLOCK ||
+                item == Items.JUKEBOX || item == Items.DAYLIGHT_DETECTOR ||
+                item == Items.LADDER) return 15; // 300 тиков
+
+        // Прочее топливо
+        if (item == Items.BLAZE_ROD) return 120; // 2400 тиков
+        if (item == Items.DRIED_KELP_BLOCK) return 200; // 4000 тиков
+
         return 0;
     }
 
