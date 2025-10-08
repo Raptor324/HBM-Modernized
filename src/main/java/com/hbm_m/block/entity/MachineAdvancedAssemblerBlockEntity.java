@@ -583,7 +583,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
     // --- GUI ---
     @Override
     public Component getDisplayName() {
-        return Component.translatable("container.advanced_assembly_machine"); // Ключ для локализации
+        return Component.translatable("container.hbm_m.advanced_assembly_machine");
     }
 
     @Nullable

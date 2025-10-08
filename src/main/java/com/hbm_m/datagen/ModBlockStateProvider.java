@@ -54,6 +54,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.MACHINE_ASSEMBLER);
         // customObjBlock(ModBlocks.FLUID_TANK);
         // customObjBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
+        customObjBlock(ModBlocks.LARGE_VEHICLE_DOOR);
 
         simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath()));
 
@@ -153,10 +154,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
      * Генерирует состояние для блока с кастомной OBJ моделью.
      * ВАЖНО: Сам файл модели (.json) должен быть создан вручную в /resources!
      */
-    private void customObjBlock(RegistryObject<Block> blockObject) {
-        // Генерируем blockstate, который ссылается на УЖЕ СУЩЕСТВУЮЩИЙ файл модели.
-        // Мы не создаем модель, а просто говорим: "используй вот этот файл".
-        horizontalBlock(blockObject.get(), models().getExistingFile(modLoc("block/" + blockObject.getId().getPath())));
+    private <T extends Block> void customObjBlock(RegistryObject<T> blockObject) {
+        // Создаём только blockstate, который ссылается на JSON модель
+        // JSON модель должна лежать в resources/assets/hbm_m/models/block/<название>.json
+        horizontalBlock(blockObject.get(), 
+            models().getExistingFile(modLoc("block/" + blockObject.getId().getPath())));
     }
 
     /**

@@ -48,6 +48,7 @@ import net.minecraftforge.client.ChunkRenderTypeSet;
 import javax.annotation.Nonnull;
 import java.util.Map;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.client.model.render.DoorRenderer;
 import com.hbm_m.client.model.render.MachineAdvancedAssemblerRenderer;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -62,6 +63,7 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
+        
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
         event.enqueueWork(() -> {
@@ -74,8 +76,10 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
             MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), GUIShredder::new);
             MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
+            
             // Register BlockEntity renderer for Advanced Assembly Machine
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
         });
     }
 

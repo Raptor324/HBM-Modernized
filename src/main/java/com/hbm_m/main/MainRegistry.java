@@ -327,6 +327,7 @@ public class MainRegistry {
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             // event.accept(ModBlocks.FLUID_TANK);
+            event.accept(ModBlocks.LARGE_VEHICLE_DOOR);
             event.accept(ModBlocks.MACHINE_BATTERY);
             event.accept(ModBlocks.WIRE_COATED);
             if (ModClothConfig.get().enableDebugLogging) {

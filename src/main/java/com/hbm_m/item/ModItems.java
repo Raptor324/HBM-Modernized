@@ -443,6 +443,9 @@ public class ModItems {
     public static final RegistryObject<Item> WOOD_BURNER = ITEMS.register("wood_burner",
         () -> new MultiblockBlockItem(ModBlocks.WOOD_BURNER.get(), new Item.Properties()));
 
+    public static final RegistryObject<Item> LARGE_VEHICLE_DOOR = ITEMS.register("large_vehicle_door",
+        () -> new MultiblockBlockItem(ModBlocks.LARGE_VEHICLE_DOOR.get(), new Item.Properties()));
+
 
     // Здесь мы регистрируем предмет-блок батареи для машин, поддерживающий хранение энергии через Forge Energy
     public static final RegistryObject<Item> MACHINE_BATTERY = ITEMS.register("machine_battery",

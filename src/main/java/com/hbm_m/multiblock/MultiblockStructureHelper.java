@@ -94,8 +94,6 @@ public class MultiblockStructureHelper {
     public void placeStructure(Level level, BlockPos controllerPos, Direction facing, IMultiblockController controller) {
         if (level.isClientSide) return;
 
-        MainRegistry.LOGGER.debug("[STRUCTURE] Начинаем установку структуры с контроллером на " + controllerPos);
-
         for (Map.Entry<BlockPos, Supplier<BlockState>> entry : structureMap.entrySet()) {
             BlockPos relativePos = entry.getKey();
             if (relativePos.equals(BlockPos.ZERO)) continue;
@@ -117,7 +115,6 @@ public class MultiblockStructureHelper {
         // ВАЖНО: После того как ВСЯ структура построена, мы один раз проверяем состояние рамки.
         // Этой проверки достаточно, не нужно делать ее для каждой части.
         updateFrameForController(level, controllerPos);
-        MainRegistry.LOGGER.debug("[STRUCTURE] Установка завершена, рамка проверена.");
     }
 
     public void destroyStructure(Level level, BlockPos controllerPos, Direction facing) {
@@ -190,27 +187,12 @@ public class MultiblockStructureHelper {
      */
     public boolean computeFrameVisible(Level level, BlockPos controllerPos, Direction facing) {
         List<BlockPos> topRingWorld = getTopRingWorldPositions(controllerPos, facing);
-        int maxY = getMaxY(); // Вызываем ОДИН раз
-
-        MainRegistry.LOGGER.debug("[FRAME COMPUTE] Проверка рамки для контроллера на " + controllerPos);
-        MainRegistry.LOGGER.debug("[FRAME COMPUTE] Направление: " + facing);
-        MainRegistry.LOGGER.debug("[FRAME COMPUTE] Максимальная локальная Y: " + maxY);
-        MainRegistry.LOGGER.debug("[FRAME COMPUTE] Найдено " + topRingWorld.size() + " блоков верхнего пояса");
-
         for (BlockPos p : topRingWorld) {
             BlockPos above = p.above();
-            BlockState stateAbove = level.getBlockState(above);
-            MainRegistry.LOGGER.debug("[FRAME COMPUTE] Блок верхнего пояса: " + p);
-            MainRegistry.LOGGER.debug("[FRAME COMPUTE] Над ним (" + above + "): " + stateAbove.getBlock());
-            MainRegistry.LOGGER.debug("[FRAME COMPUTE] Пустой? " + level.isEmptyBlock(above));
-
             if (!level.isEmptyBlock(above)) {
-                MainRegistry.LOGGER.debug("[FRAME COMPUTE] ✓ Найден непустой блок! Рамка ВИДИМА");
                 return true;
             }
         }
-
-        MainRegistry.LOGGER.debug("[FRAME COMPUTE] ✗ Все блоки над структурой пусты, рамка СКРЫТА");
         return false;
     }
 
@@ -221,56 +203,42 @@ public class MultiblockStructureHelper {
     public static void updateFrameForController(Level level, BlockPos controllerPos) {
         if (level.isClientSide()) return;
 
-        MainRegistry.LOGGER.debug("[FRAME] === НАЧАЛО ПРОВЕРКИ РАМКИ ===");
-        MainRegistry.LOGGER.debug("[FRAME] Контроллер на позиции: " + controllerPos);
-
         BlockState state = level.getBlockState(controllerPos);
         Block block = state.getBlock(); // Получаем сам блок
 
         // Проверяем, что БЛОК является контроллером
         if (!(block instanceof IMultiblockController controller)) {
-            MainRegistry.LOGGER.debug("[FRAME ERROR] Блок " + block.asItem() + " НЕ является IMultiblockController!");
             return;
         }
         
         BlockEntity be = level.getBlockEntity(controllerPos);
         // Проверяем, что BlockEntity поддерживает рамку
         if (!(be instanceof IFrameSupportable frameSupportable)) {
-            MainRegistry.LOGGER.debug("[FRAME ERROR] BlockEntity НЕ IFrameSupportable!");
             return;
         }
-
-        MainRegistry.LOGGER.debug("[FRAME] Контроллер и BlockEntity найдены, получаем параметры...");
         
         if (!state.hasProperty(HorizontalDirectionalBlock.FACING)) {
-            MainRegistry.LOGGER.debug("[FRAME ERROR] У BlockState нет свойства FACING!");
             return;
         }
 
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
-        MainRegistry.LOGGER.debug("[FRAME] Направление структуры: " + facing);
 
         // Получаем хелпер из КОНТРОЛЛЕРА (блока)
         MultiblockStructureHelper helper = controller.getStructureHelper();
         if (helper == null) {
-            MainRegistry.LOGGER.debug("[FRAME ERROR] getStructureHelper() вернул NULL!");
             return;
         }
 
-        MainRegistry.LOGGER.debug("[FRAME] StructureHelper получен успешно");
         // Вычисляем видимость рамки
         boolean visible = helper.computeFrameVisible(level, controllerPos, facing);
-        MainRegistry.LOGGER.debug("[FRAME] Результат computeFrameVisible: " + visible);
 
         // Применяем изменения через интерфейс BlockEntity
         frameSupportable.setFrameVisible(visible);
-        MainRegistry.LOGGER.debug("[FRAME] === КОНЕЦ ПРОВЕРКИ РАМКИ ===");
     }
 
 
     /**
      * Вызывается из фантомной части при изменении соседа
-     * ИСПРАВЛЕНО: теперь правильно вычисляет локальный оффсет
      */
     public static void onNeighborChangedForPart(Level level, BlockPos partPos, BlockPos changedPos) {
         if (level.isClientSide() || level.getServer() == null) {
@@ -299,11 +267,9 @@ public class MultiblockStructureHelper {
         BlockPos localOffset = rotateBack(worldOffset, facing);
 
         if (helper.isTopRingPart(localOffset) && changedPos.equals(partPos.above())) {
-            MainRegistry.LOGGER.debug("[FRAME PART] Изменение НАД частью! Планируем проверку на следующий тик.");
             
             // Вместо прямого вызова, планируем задачу на следующий тик сервера.
             level.getServer().execute(() -> {
-                MainRegistry.LOGGER.debug("[FRAME PART TICK] Выполняется отложенная проверка рамки для контроллера на {}.", ctrlPos);
                 // Проверяем, что контроллер все еще на месте, перед выполнением
                 if (level.getBlockState(ctrlPos).is(controllerBlock)) {
                     updateFrameForController(level, ctrlPos);

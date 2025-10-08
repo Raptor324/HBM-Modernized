@@ -1,18 +1,24 @@
 package com.hbm_m.block;
 
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.util.DoorDecl;
 import com.hbm_m.item.ModItems;
 
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import net.minecraft.core.BlockPos;
 import net.minecraft.util.valueproviders.UniformInt;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.function.Supplier;
 
 public class ModBlocks {
@@ -162,16 +168,31 @@ public class ModBlocks {
     public static final RegistryObject<Block> ALUMINUM_ORE_DEEPSLATE = registerBlock("aluminum_ore_deepslate",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.DEEPSLATE).strength(5.0f, 5.0f).requiresCorrectToolForDrops()));
 
-
+    // ДВЕРИ
+    
+    public static final RegistryObject<DoorBlock> LARGE_VEHICLE_DOOR =
+    registerBlockWithoutItem("large_vehicle_door",
+        () -> new DoorBlock(
+            BlockBehaviour.Properties.of()
+                .strength(10.0F, 1000.0F)
+                .requiresCorrectToolForDrops()
+                .sound(SoundType.METAL)
+                .noOcclusion(),
+            DoorDecl.LARGE_VEHICLE_DOOR
+        ));
+    
+    // ==================== Helper Methods ====================
+    
     private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block) {
         RegistryObject<T> toReturn = BLOCKS.register(name, block);
         registerBlockItem(name, toReturn);
         return toReturn;
     }
+    
     private static <T extends Block> RegistryObject<T> registerBlockWithoutItem(String name, Supplier<T> block) {
         return BLOCKS.register(name, block);
     }
-
+    
     private static <T extends Block> RegistryObject<Item> registerBlockItem(String name, RegistryObject<T> block) {
         return ModItems.ITEMS.register(name, () -> new BlockItem(block.get(), new Item.Properties()));
     }

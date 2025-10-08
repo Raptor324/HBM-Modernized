@@ -210,9 +210,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.machine_assembler", "Сборочная машина (Старая)");
                 add("block.hbm_m.advanced_assembly_machine", "Сборочная машина (VERY WIP)");
                 add("block.hbm_m.machine_battery", "Энергохранилище");
-                add("container.hbm_m.armor_table", "Стол модификации брони");
-                add("container.hbm_m.machine_assembler", "Сборочная машина");
-                add("container.hbm_m.wood_burner", "Дровяной генератор");
+                add("block.hbm_m.wire_coated", "Провод из красной меди");
                 add("block.hbm_m.wood_burner", "Дровяной генератор");
                 add("block.hbm_m.blast_furnace", "Доменная печь");
                 add("block.hbm_m.press", "Пресс");
@@ -248,6 +246,8 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("block.hbm_m.waste_grass", "Мёртвая трава");
                 add("block.hbm_m.waste_leaves", "Мёртвая листва");
+
+                // MACHINE GUI
                 
                 add("tooltip.hbm_m.armor_table.main_slot", "Вставьте броню, чтобы ее модифицировать...");
                 add("tooltip.hbm_m.slot", "Слот");
@@ -264,6 +264,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.rad_protection.value", "Сопротивление радиации: %s");
 
                 add("container.inventory", "Инвентарь");
+                add("container.hbm_m.armor_table", "Стол модификации брони");
+                add("container.hbm_m.machine_assembler", "Сборочная машина");
+                add("container.hbm_m.advanced_assembly_machine", "Сборочная машина");
+                add("container.hbm_m.wood_burner", "Дровяной генератор");
 
                 add("gui.hbm_m.battery.priority.0", "Приоритет: Низкий");
                 add("gui.hbm_m.battery.priority.0.desc", "Низший приоритет. Опустошается в первую очередь, заполняется в последнюю");
@@ -285,12 +289,14 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.battery.mode.locked", "Режим: Заблокировано");
                 add("gui.hbm_m.battery.mode.locked.desc", "Все операции с энергией отключены.");
 
+                add("gui.recipe.setRecipe", "Выбрать рецепт");
+
                 add("tooltip.hbm_m.machine_battery.capacity", "Ёмкость: %1$s FE");
                 add("tooltip.hbm_m.machine_battery.charge_speed", "Скорость зарядки: %1$s FE/т");
                 add("tooltip.hbm_m.machine_battery.discharge_speed", "Скорость разрядки: %1$s FE/т");
                 add("tooltip.hbm_m.machine_battery.stored", "Заряжено: %1$s / %2$s FE");
 
-                add("block.hbm_m.wire_coated", "Провод из красной меди");
+                
 
                 add("hazard.hbm_m.radiation", "[Радиоактивный]");
                 add("hazard.hbm_m.hydro_reactive", "[Гидрореактивный]");
@@ -651,9 +657,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
                 add("block.hbm_m.blast_furnace", "Blast Furnace");
                 add("block.hbm_m.press", "Press");
-                add("container.hbm_m.armor_table", "Armor Modification Table");
-                add("container.hbm_m.machine_assembler", "Assembly Machine");
-                add("container.hbm_m.wood_burner", "Wood Burner Generator");
+
+                
+
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");
                 add("block.hbm_m.wire_coated", "Red Copper Wire");
 
@@ -694,6 +700,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 // MACHINE GUI
 
                 add("container.inventory", "Inventory");
+                add("container.hbm_m.armor_table", "Armor Modification Table");
+                add("container.hbm_m.machine_assembler", "Assembly Machine");
+                add("container.hbm_m.wood_burner", "Wood Burner Generator");
+                add("container.hbm_m.advanced_assembly_machine", "Assembly Machine");
 
                 add("gui.hbm_m.battery.priority.0", "Priority: Low");
                 add("gui.hbm_m.battery.priority.0.desc", "Lowest priority. Will be drained first and filled last.");
@@ -714,6 +724,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.battery.mode.output.desc", "Only sending energy is allowed.");
                 add("gui.hbm_m.battery.mode.locked", "Mode: Locked");
                 add("gui.hbm_m.battery.mode.locked.desc", "All energy operations are disabled.");
+
+                add("gui.recipe.setRecipe", "Set Recipe");
 
                 add("tooltip.hbm_m.machine_battery.capacity", "Capacity: %1$s FE");
                 add("tooltip.hbm_m.machine_battery.charge_speed", "Charge Speed: %1$s FE/t");

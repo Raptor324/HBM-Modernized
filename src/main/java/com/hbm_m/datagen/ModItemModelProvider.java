@@ -33,6 +33,9 @@ public class ModItemModelProvider extends ItemModelProvider {
             ingotItem(ingotObject);
         }
 
+        withExistingParent("large_vehicle_door", 
+            modLoc("block/large_vehicle_door"));
+
         // РЕГИСТРАЦИЯ МОДЕЛЕЙ ДЛЯ УНИКАЛЬНЫХ ПРЕДМЕТОВ 
         // Для предметов, зарегистрированных вручную, мы также можем генерировать модели.
         simpleItem(ModItems.ALLOY_SWORD);
@@ -83,7 +86,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("layer0", modLoc("item/" + name));
 
     }
-     private void ingotItem(RegistryObject<Item> itemObject) {
+    
+    private void ingotItem(RegistryObject<Item> itemObject) {
         // 1. Получаем регистрационное имя (например, "uranium_ingot")
         String registrationName = itemObject.getId().getPath();
         
