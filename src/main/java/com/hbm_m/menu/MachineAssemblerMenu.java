@@ -28,7 +28,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
     private final ContainerData data;
 
     public MachineAssemblerMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
-        this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(5));
+        this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(6));
     }
 
     public MachineAssemblerMenu(int pContainerId, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -97,6 +97,11 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
     public boolean isCrafting() {
         return data.get(0) > 0;
     }
+
+    public int getEnergyDelta() {
+        return this.data.get(5);
+    }
+
 
     public int getProgressScaled(int width) {
         int progress = this.data.get(0);

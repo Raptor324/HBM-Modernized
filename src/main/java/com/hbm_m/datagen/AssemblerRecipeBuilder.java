@@ -31,6 +31,9 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
     private final List<CountableIngredient> ingredients = new ArrayList<>();
     private final Advancement.Builder advancement = Advancement.Builder.advancement();
 
+    @Nullable
+    private String blueprintPool = null;
+
     private AssemblerRecipeBuilder(ItemStack output, int duration, int power) {
         this.output = output;
         this.duration = duration;
@@ -55,6 +58,11 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
      */
     public AssemblerRecipeBuilder addIngredient(Item item, int count) {
         return addIngredient(Ingredient.of(item), count);
+    }
+
+    public AssemblerRecipeBuilder withBlueprintPool(String pool) {
+        this.blueprintPool = pool;
+        return this;
     }
     
     // Внутренний record для хранения пары "Ингредиент-Количество"
@@ -116,6 +124,10 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
 
             pJson.addProperty("duration", this.builder.duration);
             pJson.addProperty("power", this.builder.power);
+
+            if (this.builder.blueprintPool != null) {
+                pJson.addProperty("blueprint_pool", this.builder.blueprintPool);
+            }
         }
 
         @Override

@@ -140,12 +140,13 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add(ModItems.TEMPLATE_FOLDER.get(), "Папка шаблонов машин");
                 add(ModItems.ASSEMBLY_TEMPLATE.get(), "Шаблон сборочной машины: %s");
-                add("tooltip.hbm_m.template_broken", "Сломанный шаблон");
+                add("tooltip.hbm_m.template_broken", "Шаблон сломан!");
                 add("tooltip.hbm_m.created_with_template_folder", "Создано с помощью Папки шаблонов машин");
                 add("tooltip.hbm_m.output", "Выход: ");
                 add("tooltip.hbm_m.input", "Вход: ");
                 add("tooltip.hbm_m.production_time", "Время производства: ");
                 add("tooltip.hbm_m.seconds", "секунд");
+                add("tooltip.hbm_m.energy_consumption", "Потребление энергии:");
                 add("tooltip.hbm_m.tags", "Теги (OreDict):");
                 add("item.hbm_m.template_folder.desc", "Шаблоны машин: Бумага + Краситель$Идентификатор: Железная пластина + Краситель$Штамп для пресса: Плоский штамп$Трек сирены: Изолятор + Стальная пластина");
 
@@ -576,8 +577,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.created_with_template_folder", "Created via Template Folder");
                 add("tooltip.hbm_m.output", "Output: ");
                 add("tooltip.hbm_m.input", "Input: ");
-                add("tooltip.hbm_m.production_time", "Production time: ");
+                add("tooltip.hbm_m.production_time", "Production time:");
                 add("tooltip.hbm_m.seconds", "seconds");
+                add("tooltip.hbm_m.energy_consumption", "Energy Consumption:");
                 add("tooltip.hbm_m.tags", "Тags (OreDict):");
                 add("item.hbm_m.template_folder.desc", "Machine Templates: Paper + Dye$Fluid IDs: Iron Plate + Dye$Press Stamps: Flat Stamp$Siren Tracks: Insulator + Steel Plate");
 

@@ -44,7 +44,7 @@ public class PlayerRadiationHandler {
     
     // Ключ для хранения радиации в данных игрока
     private static final String NBT_KEY_PLAYER_RADIATION = "hbm_m_player_radiation";
-    
+
     /**
      * Получает уровень радиации игрока
      * @param player игрок
@@ -179,8 +179,7 @@ public class PlayerRadiationHandler {
     if (stack.isEmpty()) {
         return 0.0F;
     }
-    // 2. Получаем уровень радиации для ОДНОГО предмета из нашей новой универсальной системы.
-    // Вся старая логика с `instanceof` и вызовами `.getRadiationLevel()` заменяется одной строкой.
+
     float perItemRadiation = HazardSystem.getHazardLevelFromStack(stack, HazardType.RADIATION);
         return perItemRadiation * stack.getCount();
     }

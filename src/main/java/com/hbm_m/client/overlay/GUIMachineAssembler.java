@@ -1,5 +1,8 @@
 package com.hbm_m.client.overlay;
 
+import java.util.ArrayList;
+import java.util.List;
+
 // GUI для сборочной машины. Отвечает за отрисовку прогресса, энергии и подсказок.
 // Основан на AbstractContainerScreen и использует текстуры из ресурсов мода.
 import javax.annotation.Nonnull;
@@ -7,6 +10,8 @@ import javax.annotation.Nonnull;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.menu.MachineAssemblerMenu;
 import com.mojang.blaze3d.systems.RenderSystem;
+
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
@@ -60,7 +65,7 @@ public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemble
     @Override
     protected void renderTooltip(@Nonnull GuiGraphics pGuiGraphics, int pX, int pY) {
         super.renderTooltip(pGuiGraphics, pX, pY);
-
+        
         // Координаты и размеры шкалы энергии
         int energyBarX = this.leftPos + 116;
         int energyBarY = this.topPos + 18;
@@ -68,9 +73,23 @@ public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemble
         int energyBarHeight = 52;
         
         // Проверяем, находится ли курсор над шкалой
-        if (pX >= energyBarX && pX < energyBarX + energyBarWidth && pY >= energyBarY && pY < energyBarY + energyBarHeight) {
-            Component text = Component.literal(this.menu.getEnergy() + " / " + this.menu.getMaxEnergy() + " FE");
-            pGuiGraphics.renderTooltip(this.font, text, pX, pY);
+        if (pX >= energyBarX && pX < energyBarX + energyBarWidth && 
+            pY >= energyBarY && pY < energyBarY + energyBarHeight) {
+            
+            List<Component> tooltip = new ArrayList<>();
+            
+            // Первая строка: текущая / максимальная энергия
+            tooltip.add(Component.literal(this.menu.getEnergy() + " / " 
+                                        + this.menu.getMaxEnergy() + " FE"));
+            
+            // НОВОЕ: Вторая строка - изменение энергии в тик
+            int delta = this.menu.getEnergyDelta();
+            String deltaText = (delta >= 0 ? "+" : "") + delta + " FE/t";
+            ChatFormatting deltaColor = delta > 0 ? ChatFormatting.GREEN 
+                                    : (delta < 0 ? ChatFormatting.RED : ChatFormatting.YELLOW);
+            tooltip.add(Component.literal(deltaText).withStyle(deltaColor));
+            
+            pGuiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), pX, pY);
         }
     }
 }
