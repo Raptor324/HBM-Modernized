@@ -114,7 +114,7 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
         super.renderTooltip(pGuiGraphics, pX, pY);
 
         // Тултип для шкалы времени горения
-        if (isMouseOver(pX, pY, 30, 17, 14, 52)) {
+        if (isMouseOver(pX, pY, 17, 17, 4, 52)) {
             List<Component> tooltip = new ArrayList<>();
             if (menu.isLit()) {
                 int burnTimeSeconds = menu.getBurnTime() / 20; // конвертируем тики в секунды

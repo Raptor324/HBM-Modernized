@@ -157,6 +157,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PAINT_CLADDING.get(), "Свинцовая краска");
 
                 add("item.hbm_m.radaway", "Антирадин");
+                add("item.hbm_m.wood_ash_powder", "Древесный Пепел");
                 add("effect.hbm_m.radaway", "Очищение от радиации");
 
                 add(ModItems.PLATE_GOLD.get(), "Золотая пластина");

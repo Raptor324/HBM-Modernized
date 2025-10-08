@@ -183,44 +183,78 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         if (ModClothConfig.get().enableDebugLogging) {
             MainRegistry.LOGGER.debug("[BATTERY >>>] pushEnergyToNeighbors at {} currentEnergy={}", this.worldPosition, this.energyStorage.getEnergyStored());
         }
-    AtomicInteger energyToSend = new AtomicInteger(this.energyStorage.extractEnergy(this.energyStorage.getMaxExtract(), true));
-    UUID pushId = UUID.randomUUID();
 
-            if (energyToSend.get() <= 0) {
-                return; // Нечего отправлять
-            }
+        int energyToSend = this.energyStorage.extractEnergy(this.energyStorage.getMaxExtract(), true);
+        UUID pushId = UUID.randomUUID();
+
+        if (energyToSend <= 0) {
+            return;
+        }
 
         Level lvl = this.level;
         if (lvl == null) return;
 
+        final int[] totalSent = {0};
+
         for (Direction direction : Direction.values()) {
-            if (energyToSend.get() <= 0) {
-                break; // Вся энергия роздана
-            }
+            if (totalSent[0] >= energyToSend) break;
 
             BlockEntity neighbor = lvl.getBlockEntity(worldPosition.relative(direction));
-            if (neighbor == null) {
-                continue;
-            }
+            if (neighbor == null) continue;
 
-            // Если сосед — провод, используем его проксирующий метод acceptEnergy
-            if (neighbor instanceof WireBlockEntity wire) {
-                int accepted = wire.acceptEnergy(energyToSend.get(), pushId, this.worldPosition);
-                if (accepted > 0) {
-                    this.energyStorage.extractEnergy(accepted, false);
-                    energyToSend.addAndGet(-accepted);
+            // НОВОЕ: Пропускаем другие батареи чтобы избежать взаимной перекачки
+            if (neighbor instanceof MachineBatteryBlockEntity otherBattery) {
+                // Передаём энергию только если у нас БОЛЬШЕ энергии чем у соседа
+                int myEnergy = this.energyStorage.getEnergyStored();
+                int theirEnergy = otherBattery.energyStorage.getEnergyStored();
+
+                if (myEnergy <= theirEnergy) {
+                    if (ModClothConfig.get().enableDebugLogging) {
+                        MainRegistry.LOGGER.debug("[BATTERY >>>] Skipping battery at {} (my: {}, their: {})",
+                                neighbor.getBlockPos(), myEnergy, theirEnergy);
+                    }
+                    continue; // Не отдаём, если у нас меньше или равно
+                }
+
+                // Отдаём только половину разницы для плавного выравнивания
+                int difference = myEnergy - theirEnergy;
+                int toSend = Math.min(difference / 2, energyToSend - totalSent[0]);
+
+                if (toSend > 0) {
+                    int accepted = otherBattery.energyWrapper.receiveEnergy(toSend, false);
+                    if (accepted > 0) {
+                        this.energyStorage.extractEnergy(accepted, false);
+                        totalSent[0] += accepted;
+                        if (ModClothConfig.get().enableDebugLogging) {
+                            MainRegistry.LOGGER.debug("[BATTERY >>>] Balanced {} FE to battery at {}",
+                                    accepted, neighbor.getBlockPos());
+                        }
+                    }
                 }
                 continue;
             }
 
+            // Для проводов используем acceptEnergy
+            if (neighbor instanceof WireBlockEntity wire) {
+                int remaining = energyToSend - totalSent[0];
+                int accepted = wire.acceptEnergy(remaining, pushId, this.worldPosition);
+                if (accepted > 0) {
+                    this.energyStorage.extractEnergy(accepted, false);
+                    totalSent[0] += accepted;
+                }
+                continue;
+            }
+
+            // Для остальных устройств используем capability
             LazyOptional<IEnergyStorage> neighborCapability = neighbor.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite());
 
             neighborCapability.ifPresent(neighborStorage -> {
                 if (neighborStorage.canReceive()) {
-                    int accepted = neighborStorage.receiveEnergy(energyToSend.get(), false);
+                    int remaining = energyToSend - totalSent[0];
+                    int accepted = neighborStorage.receiveEnergy(remaining, false);
                     if (accepted > 0) {
                         this.energyStorage.extractEnergy(accepted, false);
-                        energyToSend.addAndGet(-accepted);
+                        totalSent[0] += accepted;
                     }
                 }
             });
