@@ -72,9 +72,12 @@ public class ModItems {
 
     public static final int BATTERY_CAPACITY = 1_000_000;
 
+// ХАВЧИК:
+public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry",
+        () -> new Item(new Item.Properties().food(ModFoods.STRAWBERRY)));
+
 
 // ИНСТРУМЕНТЫ ГОРНЯКА:
-
     public static final RegistryObject<Item> STARMETAL_SWORD = ITEMS.register("starmetal_sword",
             () -> new SwordItem(ModToolTiers.STARMETAL, 7, 3, new Item.Properties()));
     public static final RegistryObject<Item> STARMETAL_AXE = ITEMS.register("starmetal_axe",
@@ -85,7 +88,6 @@ public class ModItems {
             () -> new ShovelItem(ModToolTiers.STARMETAL, 0, 0, new Item.Properties()));
     public static final RegistryObject<Item> STARMETAL_HOE = ITEMS.register("starmetal_hoe",
             () -> new HoeItem(ModToolTiers.STARMETAL, 0, 0f, new Item.Properties()));
-
 
     public static final RegistryObject<Item> ALLOY_SWORD = ITEMS.register("alloy_sword",
         () -> new SwordItem(ModToolTiers.ALLOY, 5, 2, new Item.Properties()));
@@ -120,7 +122,8 @@ public class ModItems {
     public static final RegistryObject<Item> TITANIUM_HOE = ITEMS.register("titanium_hoe",
             () -> new HoeItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
 
-
+    public static final RegistryObject<Item> GRENADEHE = ITEMS.register("grenadehe",
+            () -> new GrenadeheItem(new Item.Properties()));
 
 
     // БРОНЯ ГОРНЯКА:
@@ -373,8 +376,6 @@ public class ModItems {
 
     public static final RegistryObject<Item> PLATE_SCHRABIDIUM = ITEMS.register("plate_schrabidium",
             () -> new Item(new Item.Properties()));
-
-
 
 
     public static final RegistryObject<Item> URANIUM_RAW = ITEMS.register("uranium_raw",

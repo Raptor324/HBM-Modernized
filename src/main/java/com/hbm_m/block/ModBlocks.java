@@ -3,6 +3,7 @@ package com.hbm_m.block;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.item.ModItems;
 
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.*;
@@ -93,6 +94,12 @@ public class ModBlocks {
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
     public static final RegistryObject<Block> REINFORCED_STONE_SLAB = registerBlock("reinforced_stone_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+
+    // -----------------------<РАСТЕНИЯ>-----------------------------
+    public static final RegistryObject<Block> STRAWBERRY_BUSH = registerBlock("strawberry_bush",
+            () -> new FlowerBlock(() -> MobEffects.LUCK, 5,
+                    BlockBehaviour.Properties.copy(Blocks.ALLIUM).noOcclusion().noCollission()));
+
 
     // -----------------------<РУДЫ>-----------------------------
     public static final RegistryObject<Block> LIGNITE_ORE = registerBlock("lignite_ore",

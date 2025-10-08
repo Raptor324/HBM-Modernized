@@ -3,10 +3,11 @@ package com.hbm_m.main;
 // Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
-
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ItemAssemblyTemplate;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.ModMenuTypes;
@@ -26,17 +27,23 @@ import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.worldgen.ModWorldGen;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.MenuScreens;
+import net.minecraft.client.renderer.Sheets;
+import net.minecraft.client.renderer.entity.EntityRenderers;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -68,6 +75,7 @@ public class MainRegistry {
 
         // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS 
         ModBlocks.BLOCKS.register(modEventBus); // Регистрация наших блоков
+        ModEntities.ENTITY_TYPES.register(modEventBus);
         ModItems.ITEMS.register(modEventBus); // Регистрация наших предметов
         ModMenuTypes.MENUS.register(modEventBus); // Регистрация меню
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus); // Регистрация наших вкладок креативного режима
@@ -129,6 +137,7 @@ public class MainRegistry {
         LOGGER.info("Building creative tab contents for: " + event.getTabKey());
 
         if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get()) {
+            event.accept(ModItems.GRENADEHE);
             event.accept(ModItems.ALLOY_SWORD);
             event.accept(ModItems.ALLOY_AXE);
             event.accept(ModItems.ALLOY_PICKAXE);
@@ -206,7 +215,7 @@ public class MainRegistry {
                 LOGGER.info("Added Alloy Sword to vanilla Combat tab");
             }
         }
-        
+
         if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
             // Проходимся циклом по ВСЕМ сллиткам
             for (RegistryObject<Item> ingotObject : ModItems.INGOTS.values()) {
@@ -264,12 +273,14 @@ public class MainRegistry {
                     }
                 }
             }
-            
+
             // ДОБАВЛЕНИЕ ОСТАЛЬНЫХ ПРЕДМЕТОВ ВРУЧНУЮ 
             event.accept(ModBlocks.ARMOR_TABLE);
             event.accept(ModItems.DOSIMETER);
             event.accept(ModItems.GEIGER_COUNTER);
             event.accept(ModItems.RADAWAY);
+            event.accept(ModItems.STRAWBERRY);
+            event.accept(ModBlocks.STRAWBERRY_BUSH);
         }
         
         // Добавляем урановый блок в соответствующие вкладки
@@ -381,4 +392,21 @@ public class MainRegistry {
         //     }
         // }
     }
+
+        @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+        public static class ClientModEvents {
+            @SubscribeEvent
+            public static void onClientSetup(FMLClientSetupEvent event) {
+                // Регистрируем рендеры для entity — например, для гранаты
+                ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType ->
+                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
+                );
+            }
+        }
+
+
+
+
+
+
 }

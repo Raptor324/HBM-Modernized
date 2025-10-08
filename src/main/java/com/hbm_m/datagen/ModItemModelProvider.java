@@ -3,11 +3,16 @@ package com.hbm_m.datagen;
 // Здесь мы определяем, как будут выглядеть наши предметы в инвентаре и в мире.
 // Используется в классе DataGenerators для регистрации.
 
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.main.MainRegistry;
 import net.minecraft.data.PackOutput;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraftforge.client.model.generators.ItemModelBuilder;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.RegistryObject;
@@ -63,7 +68,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PLATE_PAA);
         simpleItem(ModItems.PLATE_POLYMER);
         simpleItem(ModItems.PLATE_SATURNITE);
-        simpleItem(ModItems.PLATE_SCHRABIDIUM);        
+        simpleItem(ModItems.PLATE_SCHRABIDIUM);
     };
 
     /**

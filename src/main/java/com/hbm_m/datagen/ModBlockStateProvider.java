@@ -22,8 +22,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
-        // ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ-РЕСУРСОВ С ПРЕФИКСОМ "block_" 
+        // ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ-РЕСУРСОВ С ПРЕФИКСОМ "block_"
 
+        simpleBlockWithItem(ModBlocks.STRAWBERRY_BUSH.get(), models().cross(blockTexture(ModBlocks.STRAWBERRY_BUSH.get()).getPath(),
+                blockTexture(ModBlocks.STRAWBERRY_BUSH.get())).renderType("cutout"));
         resourceBlockWithItem(ModBlocks.URANIUM_BLOCK);
         resourceBlockWithItem(ModBlocks.PLUTONIUM_BLOCK);
         resourceBlockWithItem(ModBlocks.PLUTONIUM_FUEL_BLOCK);
