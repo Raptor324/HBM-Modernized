@@ -1,25 +1,27 @@
 package com.hbm_m.entity;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.core.BlockPos;
+
 import com.hbm_m.item.ModItems;
+import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
-public class GrenadeheProjectileEntity extends ThrowableItemProjectile {
-    public GrenadeheProjectileEntity(EntityType<? extends ThrowableItemProjectile> pEntityType, Level pLevel) {
+import net.minecraft.world.phys.BlockHitResult;
+
+public class GrenadefireProjectileEntity extends ThrowableItemProjectile {
+    public GrenadefireProjectileEntity(EntityType<? extends ThrowableItemProjectile> pEntityType, Level pLevel) {
         super(pEntityType, pLevel);
     }
-    public GrenadeheProjectileEntity(Level pLevel) {
-        super(ModEntities.GRENADEHE_PROJECTILE.get(), pLevel);
+    public GrenadefireProjectileEntity(Level pLevel) {
+        super(ModEntities.GRENADEFIRE_PROJECTILE.get(), pLevel);
     }
-    public GrenadeheProjectileEntity(Level pLevel, LivingEntity livingEntity) {
-        super(ModEntities.GRENADEHE_PROJECTILE.get(), livingEntity, pLevel);
+    public GrenadefireProjectileEntity(Level pLevel, LivingEntity livingEntity) {
+        super(ModEntities.GRENADEFIRE_PROJECTILE.get(), livingEntity, pLevel);
     }
     @Override
     protected Item getDefaultItem() {
-        return ModItems.GRENADEHE.get();
+        return ModItems.GRENADEFIRE.get();
     }
     @Override
     protected void onHitBlock(BlockHitResult pResult) {
@@ -27,8 +29,8 @@ public class GrenadeheProjectileEntity extends ThrowableItemProjectile {
         if (!this.level().isClientSide()) {
             BlockPos blockPos = pResult.getBlockPos(); // Получаем позицию блока, в который попала граната
 
-            float power = 7.0F; // Мощность взрыва. Можешь изменить это значение по своему усмотрению.
-            boolean causesFire = false; // Будет ли взрыв вызывать огонь. Установи в 'false', если огонь не нужен.
+            float power = 5.0F; // Мощность взрыва. Можешь изменить это значение по своему усмотрению.
+            boolean causesFire = true; // Будет ли взрыв вызывать огонь. Установи в 'false', если огонь не нужен.
 
             // Используем метод level.explode() для создания взрыва.
             // Это более прямой и надежный способ, который обрабатывает все аспекты взрыва:

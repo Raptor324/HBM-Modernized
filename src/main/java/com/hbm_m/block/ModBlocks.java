@@ -89,6 +89,14 @@ public class ModBlocks {
     public static final RegistryObject<Block> REINFORCED_STONE = registerBlock("reinforced_stone",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
+    public static final RegistryObject<Block> CONCRETE_HAZZARD = registerBlock("concrete_hazzard",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+    public static final RegistryObject<Block> CONCRETE_HAZZARD_STAIRS = registerBlock("concrete_hazzard_stairs",
+            () -> new StairBlock(() -> ModBlocks.CONCRETE_HAZZARD.get().defaultBlockState(),
+                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+    public static final RegistryObject<Block> CONCRETE_HAZZARD_SLAB = registerBlock("concrete_hazzard_slab",
+            () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+
     public static final RegistryObject<Block> REINFORCED_STONE_STAIRS = registerBlock("reinforced_stone_stairs",
             () -> new StairBlock(() -> ModBlocks.REINFORCED_STONE.get().defaultBlockState(),
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));

@@ -137,7 +137,10 @@ public class MainRegistry {
         LOGGER.info("Building creative tab contents for: " + event.getTabKey());
 
         if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get()) {
+
             event.accept(ModItems.GRENADEHE);
+            event.accept(ModItems.GRENADEFIRE);
+
             event.accept(ModItems.ALLOY_SWORD);
             event.accept(ModItems.ALLOY_AXE);
             event.accept(ModItems.ALLOY_PICKAXE);
@@ -292,9 +295,14 @@ public class MainRegistry {
             event.accept(ModBlocks.URANIUM_ORE);
             event.accept(ModBlocks.WASTE_GRASS);
             event.accept(ModBlocks.WASTE_LEAVES);
+
             event.accept(ModBlocks.REINFORCED_STONE);
             event.accept(ModBlocks.REINFORCED_STONE_SLAB);
             event.accept(ModBlocks.REINFORCED_STONE_STAIRS);
+            event.accept(ModBlocks.CONCRETE_HAZZARD);
+            event.accept(ModBlocks.CONCRETE_HAZZARD_SLAB);
+            event.accept(ModBlocks.CONCRETE_HAZZARD_STAIRS);
+
             event.accept(ModBlocks.ALUMINUM_ORE);
             event.accept(ModBlocks.ALUMINUM_ORE_DEEPSLATE);
             event.accept(ModBlocks.LIGNITE_ORE);
@@ -399,6 +407,9 @@ public class MainRegistry {
             public static void onClientSetup(FMLClientSetupEvent event) {
                 // Регистрируем рендеры для entity — например, для гранаты
                 ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType ->
+                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
+                );
+                ModEntities.GRENADEFIRE_PROJECTILE.ifPresent(entityType ->
                         EntityRenderers.register(entityType, ThrownItemRenderer::new)
                 );
             }

@@ -124,6 +124,8 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
 
     public static final RegistryObject<Item> GRENADEHE = ITEMS.register("grenadehe",
             () -> new GrenadeheItem(new Item.Properties()));
+    public static final RegistryObject<Item> GRENADEFIRE = ITEMS.register("grenadefire",
+            () -> new GrenadefireItem(new Item.Properties()));
 
 
     // БРОНЯ ГОРНЯКА:

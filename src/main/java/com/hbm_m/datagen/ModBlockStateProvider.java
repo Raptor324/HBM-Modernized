@@ -71,17 +71,26 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Генерация моделей для ступенек
         stairsBlock((StairBlock) ModBlocks.REINFORCED_STONE_STAIRS.get(),
         modLoc("block/reinforced_stone"));
-        
         simpleBlockItem(ModBlocks.REINFORCED_STONE_STAIRS.get(),
         models().getExistingFile(modLoc("block/reinforced_stone_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_HAZZARD_STAIRS.get(),
+                modLoc("block/concrete_hazzard"));
+        simpleBlockItem(ModBlocks.CONCRETE_HAZZARD_STAIRS.get(),
+                models().getExistingFile(modLoc("block/concrete_hazzard_stairs")));
 
         // Генерация моделей для плиты
         slabBlock((SlabBlock) ModBlocks.REINFORCED_STONE_SLAB.get(),
         blockTexture(ModBlocks.REINFORCED_STONE.get()),
         modLoc("block/reinforced_stone"));
-
         simpleBlockItem(ModBlocks.REINFORCED_STONE_SLAB.get(),
         models().getExistingFile(modLoc("block/reinforced_stone_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_HAZZARD_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_HAZZARD.get()),
+                modLoc("block/concrete_hazzard"));
+        simpleBlockItem(ModBlocks.CONCRETE_HAZZARD_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_hazzard_slab")));
     }
 
     /**

@@ -20,6 +20,13 @@ public class ModEntities {
                             .sized(0.5f, 0.5f)
                             .build("grenadehe_projectile"));
 
+    public static final RegistryObject<EntityType<GrenadefireProjectileEntity>> GRENADEFIRE_PROJECTILE =
+            ENTITY_TYPES.register("grenadefire_projectile",
+                    () -> EntityType.Builder
+                            .<GrenadefireProjectileEntity>of(GrenadefireProjectileEntity::new, MobCategory.MISC)
+                            .sized(0.5f, 0.5f)
+                            .build("grenadefire_projectile"));
+
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);
     }

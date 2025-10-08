@@ -88,7 +88,12 @@ public class ModItemModelProvider extends ItemModelProvider {
 
         evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_STAIRS);
         evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_SLAB);
+
+        evenSimplerBlockItem(ModBlocks.CONCRETE_HAZZARD_STAIRS);
+        evenSimplerBlockItem(ModBlocks.CONCRETE_HAZZARD_SLAB);
+
         simpleItem(ModItems.GRENADEHE);
+        simpleItem(ModItems.GRENADEFIRE);
     }
 
     private void trimmedArmorItem(RegistryObject<Item> itemRegistryObject) {
