@@ -23,10 +23,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
     @Override
     protected void registerStatesAndModels() {
         blockWithItem(ModBlocks.REINFORCED_STONE);
-
-
         stairsBlock(((StairBlock) ModBlocks.REINFORCED_STONE_STAIRS.get()), blockTexture(ModBlocks.REINFORCED_STONE.get()));
         slabBlock(((SlabBlock) ModBlocks.REINFORCED_STONE_SLAB.get()), blockTexture(ModBlocks.REINFORCED_STONE_SLAB.get()), blockTexture(ModBlocks.REINFORCED_STONE.get()));
+
+        blockWithItem(ModBlocks.CONCRETE_HAZZARD);
+        stairsBlock(((StairBlock) ModBlocks.CONCRETE_HAZZARD_STAIRS.get()), blockTexture(ModBlocks.CONCRETE_HAZZARD.get()));
+        slabBlock(((SlabBlock) ModBlocks.CONCRETE_HAZZARD_SLAB.get()), blockTexture(ModBlocks.CONCRETE_HAZZARD_SLAB.get()), blockTexture(ModBlocks.CONCRETE_HAZZARD.get()));
 
 
         simpleBlockWithItem(ModBlocks.SHREDDER.get(),

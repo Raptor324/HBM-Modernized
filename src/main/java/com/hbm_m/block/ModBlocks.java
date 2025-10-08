@@ -5,6 +5,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.util.DoorDecl;
 import com.hbm_m.item.ModItems;
 
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.*;
@@ -94,11 +95,25 @@ public class ModBlocks {
     public static final RegistryObject<Block> REINFORCED_STONE = registerBlock("reinforced_stone",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
+    public static final RegistryObject<Block> CONCRETE_HAZZARD = registerBlock("concrete_hazzard",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+    public static final RegistryObject<Block> CONCRETE_HAZZARD_STAIRS = registerBlock("concrete_hazzard_stairs",
+            () -> new StairBlock(() -> ModBlocks.CONCRETE_HAZZARD.get().defaultBlockState(),
+                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+    public static final RegistryObject<Block> CONCRETE_HAZZARD_SLAB = registerBlock("concrete_hazzard_slab",
+            () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+
     public static final RegistryObject<Block> REINFORCED_STONE_STAIRS = registerBlock("reinforced_stone_stairs",
             () -> new StairBlock(() -> ModBlocks.REINFORCED_STONE.get().defaultBlockState(),
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
     public static final RegistryObject<Block> REINFORCED_STONE_SLAB = registerBlock("reinforced_stone_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+
+    // -----------------------<РАСТЕНИЯ>-----------------------------
+    public static final RegistryObject<Block> STRAWBERRY_BUSH = registerBlock("strawberry_bush",
+            () -> new FlowerBlock(() -> MobEffects.LUCK, 5,
+                    BlockBehaviour.Properties.copy(Blocks.ALLIUM).noOcclusion().noCollission()));
+
 
     // -----------------------<РУДЫ>-----------------------------
     public static final RegistryObject<Block> LIGNITE_ORE = registerBlock("lignite_ore",
