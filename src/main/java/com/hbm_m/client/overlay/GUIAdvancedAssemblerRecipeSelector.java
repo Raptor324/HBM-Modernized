@@ -116,15 +116,17 @@ public class GUIAdvancedAssemblerRecipeSelector extends Screen {
     
     @Override
     public void render(@Nonnull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        // ПОЛНОСТЬЮ ЗАТЕМНЯЕМ ФОН - НЕ РЕНДЕРИМ РОДИТЕЛЬСКИЙ ЭКРАН
-        // Рендерим только тёмный оверлей
-        this.renderBackground(guiGraphics);
-        // guiGraphics.fill(0, 0, this.width, this.height, 0xCC000000); // Более тёмное затемнение
+        // Рендерим родительский экран на фоне
+        if (this.parentScreen != null) {
+            this.parentScreen.render(guiGraphics, -1, -1, partialTick);
+        }
+        
+        // Затемнение
+        guiGraphics.fill(0, 0, this.width, this.height, 0x88000000);
         
         // Отрисовка фона GUI
         drawGuiBackground(guiGraphics, mouseX, mouseY);
         
-        // Рендерим виджеты (поле поиска)
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         
         // Отрисовка рецептов и тултипов

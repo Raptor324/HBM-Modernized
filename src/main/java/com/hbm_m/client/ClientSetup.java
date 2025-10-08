@@ -62,7 +62,7 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
-        // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
+        MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
         event.enqueueWork(() -> {
             // Здесь мы связываем наш тип меню с классом экрана

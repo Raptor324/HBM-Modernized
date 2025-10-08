@@ -4,7 +4,6 @@ import com.hbm_m.client.ClientSoundManager;
 // Блок-энтити для Продвинутой Сборочной Машины с поддержкой энергии, жидкостей, предметов и анимаций.
 import com.hbm_m.energy.BlockEntityEnergyStorage;
 import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
-import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
 import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.recipe.AssemblerRecipe;
@@ -44,32 +43,19 @@ import net.minecraftforge.items.ItemStackHandler;
 
 import java.util.HashSet;
 import java.util.Set;
-import java.util.Objects;
-
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements MenuProvider, IFrameSupportable {
-
     private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
-            // При изменении входных слотов модуль автоматически пересчитает рецепт
+            // КРИТИЧНО: Синхронизируем изменения в слотах с клиентом
             if (level != null && !level.isClientSide()) {
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
             }
-        }
-        
-        @Override
-        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            if (slot == 0) return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-            if (slot >= 4 && slot <= 15) {
-                return assemblerModule == null || assemblerModule.isItemValidForSlot(slot, stack);
-            }
-            if (slot == 16) return true;
-            return super.isItemValid(slot, stack);
         }
     };
 
@@ -88,12 +74,11 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
             int extracted = super.extractEnergy(maxExtract, simulate);
             if (extracted > 0 && !simulate) {
                 setChanged();
+                // Также не вызываем sendBlockUpdated
             }
             return extracted;
         }
     };
-
-    public boolean frame = false;
 
     private final FluidTank inputTank = new FluidTank(4000);
     private final FluidTank outputTank = new FluidTank(4000);
@@ -101,23 +86,21 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
     private LazyOptional<BlockEntityEnergyStorage> lazyEnergyHandler = LazyOptional.empty();
     private LazyOptional<FluidTank> lazyFluidHandler = LazyOptional.empty();
-    
+    public boolean frame = false;
     private ResourceLocation selectedRecipeId = null;
     
     private int syncCounter = 0;
-    private int previousEnergy = 0;
-    private int energyDelta = 0;
-    private int energyDeltaUpdateCounter = 0;
-
-    private boolean clientIsCrafting = false;
-    private boolean wasCraftingLastTick = false;
-
-    private MachineModuleAdvancedAssembler assemblerModule;
-
-    protected final ContainerData data;
+    private int lastSyncedEnergy = 0;
 
     @OnlyIn(Dist.CLIENT)
     private AdvancedAssemblerSoundInstance soundInstance;
+    
+    // --- ЛОГИКА ПРОЦЕССОВ ---
+    // TODO: Заменить это на систему рецептов и модуль обработки
+    // public ModuleMachineAssembler assemblerModule;
+    public int progress = 0;
+    public int maxProgress = 100; // Пример
+    public boolean isCrafting = false;
 
     // --- ЛОГИКА АНИМАЦИЙ (КЛИЕНТ) ---
     public final AssemblerArm[] arms = new AssemblerArm[2];
@@ -126,6 +109,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
     private float ringTarget;
     private float ringSpeed;
     private int ringDelay;
+
+    protected final ContainerData data;
 
     public MachineAdvancedAssemblerBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pPos, pBlockState);
@@ -137,32 +122,36 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
             @Override
             public int get(int pIndex) {
                 return switch (pIndex) {
-                    case 0 -> assemblerModule != null ? assemblerModule.getProgressInt() : 0;
-                    case 1 -> assemblerModule != null ? assemblerModule.getMaxProgress() : 0;
-                    case 2 -> energyStorage.getEnergyStored();
-                    case 3 -> energyStorage.getMaxEnergyStored();
-                    case 4 -> energyDelta;
+                    case 0 -> MachineAdvancedAssemblerBlockEntity.this.progress;
+                    case 1 -> MachineAdvancedAssemblerBlockEntity.this.maxProgress;
+                    case 2 -> MachineAdvancedAssemblerBlockEntity.this.energyStorage.getEnergyStored();
+                    case 3 -> MachineAdvancedAssemblerBlockEntity.this.energyStorage.getMaxEnergyStored();
                     default -> 0;
                 };
             }
-            
+
             @Override
             public void set(int pIndex, int pValue) {
-                // Только для чтения на клиенте
+                switch (pIndex) {
+                    case 0 -> MachineAdvancedAssemblerBlockEntity.this.progress = pValue;
+                    case 1 -> MachineAdvancedAssemblerBlockEntity.this.maxProgress = pValue;
+                    case 2 -> MachineAdvancedAssemblerBlockEntity.this.energyStorage.setEnergy(pValue);
+                    case 3 -> {} // maxEnergy - только для чтения
+                }
             }
-            
+
             @Override
             public int getCount() {
-                return 5;
+                return 4; // Теперь 4 поля: progress, maxProgress, energy, maxEnergy
             }
         };
     }
 
     public int getEnergyStored() { return this.energyStorage.getEnergyStored(); }
     public int getMaxEnergyStored() { return this.energyStorage.getMaxEnergyStored(); }
-    public int getMaxProgress() { 
-        return assemblerModule != null ? assemblerModule.getMaxProgress() : 100;
-    }
+    public boolean isCrafting() { return this.isCrafting; }
+    public int getProgress() { return this.progress; }
+    public int getMaxProgress() { return this.maxProgress; }
     public long lastUseTick = 0;
 
     /**
@@ -189,6 +178,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
     }
 
     /**
+     * ИЗМЕНЕНИЕ: Новый метод из интерфейса.
      * Просто возвращает текущее состояние поля 'frame'.
      * Используется на клиенте рендерером для определения, рисовать ли рамку.
      */
@@ -215,101 +205,36 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         }
     }
 
-    public boolean isCrafting() {
-        if (level != null && level.isClientSide()) {
-            return clientIsCrafting; // На клиенте используем синхронизированное значение
-        }
-        return assemblerModule != null && assemblerModule.isProcessing();
-    }
-    
-    public int getProgress() { 
-        return assemblerModule != null ? assemblerModule.getProgressInt() : 0; 
-    }
-    
     private void serverTick() {
         chargeMachineFromBattery();
-        if (assemblerModule == null && level != null) {
-            assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, itemHandler, level);
-        }
-
-        if (assemblerModule != null) {
-            boolean wasCrafting = assemblerModule.isProcessing();
-            ItemStack blueprintStack = itemHandler.getStackInSlot(1);
-            
-            // Восстанавливаем preferredRecipe ПЕРЕД update()
-            if (selectedRecipeId != null && assemblerModule.getPreferredRecipe() == null) {
-                AssemblerRecipe recipe = getSelectedRecipe();
-                if (recipe != null) {
-                    assemblerModule.setPreferredRecipe(recipe);
-                }
-            }
-            
-            assemblerModule.update(1.0, 1.0, true, blueprintStack);
-            boolean isCraftingNow = assemblerModule.isProcessing();
-
-            // ИСПРАВЛЕНИЕ: Воспроизведение звуков на СЕРВЕРЕ
-            if (!wasCrafting && isCraftingNow) {
-                // ЗВУК СТАРТА - крафт только начался
-                level.playSound(null, worldPosition, ModSounds.ASSEMBLER_START.get(), 
-                    SoundSource.BLOCKS, 0.5f, 1.0f);
-            } else if (wasCrafting && !isCraftingNow) {
-                // ЗВУК ОСТАНОВКИ - крафт только закончился
-                level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(), 
-                    SoundSource.BLOCKS, 0.5f, 1.0f);
-            }
-
-            // Синхронизация selectedRecipeId с модулем (автоматический режим)
-            if (selectedRecipeId == null) {
-                ResourceLocation moduleRecipeId = assemblerModule.getCurrentRecipe() != null
-                    ? assemblerModule.getCurrentRecipe().getId()
-                    : null;
-                
-                if (!Objects.equals(selectedRecipeId, moduleRecipeId)) {
-                    selectedRecipeId = moduleRecipeId;
-                    setChanged();
-                    if (level != null) {
-                        level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-                    }
-                }
-            }
-
-            if (wasCrafting != isCraftingNow) {
+        
+        // Синхронизируем данные через ContainerData каждые 5 тиков
+        syncCounter++;
+        if (syncCounter >= 5) {
+            syncCounter = 0;
+            // Принудительная синхронизация энергии если изменилась
+            int currentEnergy = energyStorage.getEnergyStored();
+            if (Math.abs(currentEnergy - lastSyncedEnergy) > 10) { // Порог 10 FE
+                lastSyncedEnergy = currentEnergy;
                 setChanged();
+            }
+        }
+        
+        if (isCrafting) {
+            energyStorage.extractEnergy(100, false);
+            progress++;
+            setChanged();
+            
+            if (progress >= maxProgress) {
+                progress = 0;
+                isCrafting = false;
+                setChanged();
+                // Синхронизация остановки
                 if (level != null) {
                     level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
                 }
             }
-
-            if (assemblerModule.needsSync) {
-                setChanged();
-            }
-
-            if (isCraftingNow) {
-                setChanged();
-            }
         }
-
-        // Обновление energyDelta каждые 20 тиков
-        energyDeltaUpdateCounter++;
-        if (energyDeltaUpdateCounter >= 20) {
-            int currentEnergy = energyStorage.getEnergyStored();
-            int totalChange = currentEnergy - previousEnergy;
-            energyDelta = totalChange / 20;
-            
-            previousEnergy = currentEnergy;
-            energyDeltaUpdateCounter = 0;
-        }
-
-        // Синхронизация каждые 5 тиков (для энергии)
-        syncCounter++;
-        if (syncCounter >= 5) {
-            syncCounter = 0;
-            setChanged();
-        }
-    }
-
-    public int getEnergyDelta() {
-        return energyDelta;
     }
 
     /**
@@ -337,6 +262,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
             }
         });
     }
+    
+    // private void craftItem() {
+    //     // TODO: Реализуйте логику создания предмета
+    //     // Например: this.itemHandler.insertItem(16, new ItemStack(Items.DIAMOND), false);
+    //     setChanged();
+    // }
 
     @Override
     public void setRemoved() {
@@ -352,36 +283,28 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
     }
 
     public void clientTick(Level level, BlockPos pos, BlockState state) {
-        ClientSoundManager.updateSound(this, this.isCrafting(), () -> new AdvancedAssemblerSoundInstance(this.getBlockPos()));
-        
+        ClientSoundManager.updateSound(this, this.isCrafting, () -> new AdvancedAssemblerSoundInstance(this.getBlockPos()));
+
         this.prevRingAngle = this.ringAngle;
-        
+
         for (AssemblerArm arm : arms) {
             arm.updateInterp();
-            if (isCrafting()) {
+            if (isCrafting) {
+                // Передаем level и pos в метод для воспроизведения звуков
                 arm.updateArm(level, pos, level.random);
             } else {
                 arm.returnToNullPos();
             }
         }
         
-        boolean craftingNow = isCrafting();
-        
-        // Инициализация анимации кольца при старте крафта
-        if (craftingNow && !wasCraftingLastTick) {
-            this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
-            this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
-            this.ringDelay = 0;
-        }
-        
-        wasCraftingLastTick = craftingNow;
-        
-        if (craftingNow) {
-            // Обновляем вращение кольца
+        if (isCrafting) {
             if (this.ringAngle != this.ringTarget) {
                 float ringDelta = Mth.wrapDegrees(this.ringTarget - this.ringAngle);
+
                 if (Math.abs(ringDelta) <= this.ringSpeed) {
                     this.ringAngle = this.ringTarget;
+                    // --- ЗВУК ОСТАНОВКИ АНИМАЦИИ ---
+                    level.playSound(null, pos, ModSounds.ASSEMBLER_STOP.get(), SoundSource.BLOCKS, 0.25f, 1.5F);
                     this.ringDelay = 20 + level.random.nextInt(21);
                 } else {
                     this.ringAngle += Math.signum(ringDelta) * this.ringSpeed;
@@ -391,6 +314,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
                 if (this.ringDelay == 0) {
                     this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
                     this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
+                    // --- ЗВУК СТАРТА АНИМАЦИИ ---
+                    level.playSound(null, pos, ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.25f, 1.25F + level.random.nextFloat() * 0.25F);
                 }
             }
         } else {
@@ -404,18 +329,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
      */
     public void setSelectedRecipe(ResourceLocation recipeId) {
         this.selectedRecipeId = recipeId;
-        
-        // НОВОЕ: Устанавливаем предпочтительный рецепт в модуль
-        if (assemblerModule != null && level != null) {
-            AssemblerRecipe recipe = level.getRecipeManager()
-                .byKey(recipeId)
-                .filter(r -> r instanceof AssemblerRecipe)
-                .map(r -> (AssemblerRecipe) r)
-                .orElse(null);
-            assemblerModule.setPreferredRecipe(recipe);
-        }
-        
         this.setChanged();
+        
+        // Синхронизируем с клиентом
         if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(this.worldPosition, getBlockState(), getBlockState(), 3);
         }
@@ -463,12 +379,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
         lazyEnergyHandler = LazyOptional.of(() -> energyStorage);
+        // TODO: Если у вас разные танки для входа/выхода с разных сторон, нужна более сложная логика
         lazyFluidHandler = LazyOptional.of(() -> inputTank);
-        
-        // Инициализация модуля при загрузке
-        if (level != null && assemblerModule == null) {
-            assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, itemHandler, level);
-        }
     }
 
     @Override
@@ -486,18 +398,14 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         nbt.putInt("energy", energyStorage.getEnergyStored());
         nbt.put("input_tank", inputTank.writeToNBT(new CompoundTag()));
         nbt.put("output_tank", outputTank.writeToNBT(new CompoundTag()));
+        nbt.putInt("progress", progress);
+        nbt.putBoolean("is_crafting", this.isCrafting);
         nbt.putLong("last_use_tick", this.lastUseTick);
         nbt.putBoolean("hasFrame", this.frame);
-        nbt.putInt("PreviousEnergy", previousEnergy);
-        nbt.putInt("EnergyDelta", energyDelta);
+
         nbt.putBoolean("HasRecipe", selectedRecipeId != null);
         if (selectedRecipeId != null) {
             nbt.putString("SelectedRecipe", selectedRecipeId.toString());
-        }
-        if (assemblerModule != null) {
-            CompoundTag moduleTag = new CompoundTag();
-            assemblerModule.writeToNBT(moduleTag);
-            nbt.put("AssemblerModule", moduleTag);
         }
         
         super.saveAdditional(nbt);
@@ -511,27 +419,21 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         energyStorage.setEnergy(nbt.getInt("energy"));
         inputTank.readFromNBT(nbt.getCompound("input_tank"));
         outputTank.readFromNBT(nbt.getCompound("output_tank"));
+        progress = nbt.getInt("progress");
         this.frame = nbt.getBoolean("hasFrame");
-        this.clientIsCrafting = nbt.getBoolean("is_crafting");
-        this.previousEnergy = nbt.getInt("PreviousEnergy");
-        this.energyDelta = nbt.getInt("EnergyDelta");
         if (nbt.contains("HasRecipe") && nbt.getBoolean("HasRecipe")) {
             this.selectedRecipeId = ResourceLocation.tryParse(nbt.getString("SelectedRecipe"));
         } else {
             this.selectedRecipeId = null; // Явно сбрасываем
         }
-
-        if (nbt.contains("AssemblerModule") && level != null) {
-            if (assemblerModule == null) {
-                assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, itemHandler, level);
-            }
-            assemblerModule.readFromNBT(nbt.getCompound("AssemblerModule"));
-        }
+        
+        boolean wasCrafting = this.isCrafting;
+        this.isCrafting = nbt.getBoolean("is_crafting");
         this.lastUseTick = nbt.getLong("last_use_tick");
         
-        // if (this.level != null && this.level.isClientSide() && wasCrafting && !this.isCrafting) {
-        //     ClientSoundManager.updateSound(this, false, null);
-        // }
+        if (this.level != null && this.level.isClientSide() && wasCrafting && !this.isCrafting) {
+            ClientSoundManager.updateSound(this, false, null);
+        }
     }
 
     @Override
@@ -543,7 +445,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         if (selectedRecipeId != null) {
             tag.putString("SelectedRecipe", selectedRecipeId.toString());
         }
-        tag.putBoolean("is_crafting", this.isCrafting());
+        tag.putBoolean("is_crafting", this.isCrafting);
         tag.putBoolean("hasFrame", this.frame);
         
         // КРИТИЧНО: Синхронизируем инвентарь для отображения предметов
@@ -564,10 +466,10 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
         CompoundTag nbt = pkt.getTag();
         if (nbt != null) {
-            boolean wasCrafting = this.isCrafting();
+            boolean wasCrafting = this.isCrafting;
             handleUpdateTag(nbt);
             // --- ЗВУК ОСТАНОВКИ ПРИ ОБНОВЛЕНИИ С СЕРВЕРА ---
-            if (this.level != null && this.level.isClientSide && wasCrafting && !this.isCrafting()) {
+            if (this.level != null && this.level.isClientSide && wasCrafting && !this.isCrafting) {
                 level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(), SoundSource.BLOCKS, 0.25f, 1.5F);
             }
         }

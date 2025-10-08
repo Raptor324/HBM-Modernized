@@ -17,8 +17,6 @@ public class RadiationDataPacket {
 
     private final float totalEnvironmentRad;
     private final float playerRad;
-    private static float lastEnvRad = -1f;
-    private static float lastPlayerRad = -1f;
 
     public RadiationDataPacket(float totalEnvironmentRad, float playerRad) {
         this.totalEnvironmentRad = totalEnvironmentRad;
@@ -41,15 +39,14 @@ public class RadiationDataPacket {
     // Обрабатываем пакет на клиенте
     public static void handle(RadiationDataPacket msg, Supplier<NetworkEvent.Context> ctx) {
         ctx.get().enqueueWork(() -> {
+            // Выполняем код только на клиенте
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                // Обновляем ОБА статических поля в нашем классе-оверлее
                 OverlayGeiger.clientTotalEnvironmentRadiation = msg.totalEnvironmentRad;
                 OverlayGeiger.clientPlayerRadiation = msg.playerRad;
                 
-                if (msg.totalEnvironmentRad != lastEnvRad || msg.playerRad != lastPlayerRad) {
-                    MainRegistry.LOGGER.debug("CLIENT: Received RadiationDataPacket. EnvRad: {}, PlayerRad: {}", 
-                        msg.totalEnvironmentRad, msg.playerRad);
-                    lastEnvRad = msg.totalEnvironmentRad;
-                    lastPlayerRad = msg.playerRad;
+                if (msg.totalEnvironmentRad > 0 || msg.playerRad > 0) {
+                    MainRegistry.LOGGER.debug("CLIENT: Received RadiationDataPacket. EnvRad: {}, PlayerRad: {}", msg.totalEnvironmentRad, msg.playerRad);
                 }
             });
         });

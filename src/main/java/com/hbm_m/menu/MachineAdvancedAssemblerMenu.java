@@ -24,11 +24,6 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
     private final Level level;
     private final ContainerData data;
 
-    private int lastProgress = 0;
-    private int lastMaxProgress = 0;
-    private int lastEnergy = 0;
-    private int lastMaxEnergy = 0;
-
     // Конструктор, вызываемый с сервера
     public MachineAdvancedAssemblerMenu(int pContainerId, Inventory pPlayerInventory, MachineAdvancedAssemblerBlockEntity pBlockEntity, ContainerData pData) {
         super(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), pContainerId);
@@ -82,7 +77,7 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
 
     // Конструктор, вызываемый с клиента
     public MachineAdvancedAssemblerMenu(int pContainerId, Inventory pPlayerInventory, FriendlyByteBuf pExtraData) {
-        this(pContainerId, pPlayerInventory, getBlockEntity(pPlayerInventory, pExtraData), new SimpleContainerData(5));
+        this(pContainerId, pPlayerInventory, getBlockEntity(pPlayerInventory, pExtraData), new SimpleContainerData(4));
     }
 
     private static MachineAdvancedAssemblerBlockEntity getBlockEntity(final Inventory playerInventory, final FriendlyByteBuf data) {
@@ -92,51 +87,11 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
         throw new IllegalStateException("BlockEntity не найден!");
     }
 
-    @Override
-    public void broadcastChanges() {
-        super.broadcastChanges();
-        
-        // Получаем текущие значения
-        int currentProgress = this.data.get(0);
-        int currentMaxProgress = this.data.get(1);
-        int currentEnergy = this.data.get(2);
-        int currentMaxEnergy = this.data.get(3);
-        
-        // Проверяем изменения
-        boolean changed = false;
-        if (currentProgress != lastProgress) {
-            lastProgress = currentProgress;
-            changed = true;
-        }
-        if (currentMaxProgress != lastMaxProgress) {
-            lastMaxProgress = currentMaxProgress;
-            changed = true;
-        }
-        if (currentEnergy != lastEnergy) {
-            lastEnergy = currentEnergy;
-            changed = true;
-        }
-        if (currentMaxEnergy != lastMaxEnergy) {
-            lastMaxEnergy = currentMaxEnergy;
-            changed = true;
-        }
-        
-        // НЕ НУЖНО вручную вызывать dataChanged - super.broadcastChanges() сделает это сам!
-        // Просто убедимся что данные изменились через setChanged()
-        if (changed && level != null && !level.isClientSide()) {
-            blockEntity.setChanged();
-        }
-    }
-
     // --- Логика для GUI ---
     public boolean isCrafting() {
         return data.get(0) > 0;
     }
-
-    public int getEnergyDelta() {
-        return this.data.get(4);
-    }
-
+    
     public MachineAdvancedAssemblerBlockEntity getBlockEntity() {
         return this.blockEntity;
     }
@@ -144,9 +99,12 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
     public int getScaledProgress() {
         int progress = this.data.get(0);
         int maxProgress = this.data.get(1);
-        int progressArrowSize = 70;
+        int progressArrowSize = 70; // Ширина полосы прогресса в пикселях
+
         return maxProgress != 0 && progress != 0 ? progress * progressArrowSize / maxProgress : 0;
     }
+
+    // --- Стандартные методы ---
 
     public int getProgress() {
         return this.data.get(0);
