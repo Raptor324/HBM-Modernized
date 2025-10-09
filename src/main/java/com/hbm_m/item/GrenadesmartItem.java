@@ -1,6 +1,7 @@
 package com.hbm_m.item;
 
-import com.hbm_m.entity.GrenadefireProjectileEntity;
+
+import com.hbm_m.entity.GrenadesmartProjectileEntity;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
@@ -11,8 +12,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-public class GrenadefireItem extends Item {
-    public GrenadefireItem(Properties pProperties) {
+public class GrenadesmartItem extends Item {
+    public GrenadesmartItem(Properties pProperties) {
         super(pProperties);
     }
 
@@ -22,10 +23,10 @@ public class GrenadefireItem extends Item {
                 SoundEvents.SNOWBALL_THROW, SoundSource.NEUTRAL, 0.5F, 0.4F / (pLevel.getRandom().nextFloat() * 0.4F + 0.8F));
 
         if (!pLevel.isClientSide) {
-            GrenadefireProjectileEntity Grenadefire = new GrenadefireProjectileEntity(pLevel, pPlayer);
-            Grenadefire.setItem(itemstack);
-            Grenadefire.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, 1.5F, 1.0F);
-            pLevel.addFreshEntity(Grenadefire);
+            GrenadesmartProjectileEntity Grenadesmart = new GrenadesmartProjectileEntity(pLevel, pPlayer);
+            Grenadesmart.setItem(itemstack);
+            Grenadesmart.shootFromRotation(pPlayer, pPlayer.getXRot(), pPlayer.getYRot(), 0.0F, 1.5F, 1.0F);
+            pLevel.addFreshEntity(Grenadesmart);
         }
 
         pPlayer.awardStat(Stats.ITEM_USED.get(this));
