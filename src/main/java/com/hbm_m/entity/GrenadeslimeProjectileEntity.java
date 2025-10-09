@@ -13,29 +13,29 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 
-public class GrenadefireProjectileEntity extends ThrowableItemProjectile {
+public class GrenadeslimeProjectileEntity extends ThrowableItemProjectile {
 
     // --- НОВЫЕ ПОЛЯ КЛАССА ---
-    private static final int MAX_BOUNCES = 3; // Максимальное количество отскоков перед взрывом
+    private static final int MAX_BOUNCES = 4; // Максимальное количество отскоков перед взрывом
     private int bounceCount = 0; // Текущий счетчик отскоков
-    private float bounceMultiplier = 0.3f; // Коэффициент сохранения скорости после отскока (0.0 - 1.0)
+    private float bounceMultiplier = 0.51f; // Коэффициент сохранения скорости после отскока (0.0 - 1.0)
     // -------------------------
 
-    public GrenadefireProjectileEntity(EntityType<? extends ThrowableItemProjectile> p_37442_pEntityType, Level p_37443_pLevel) {
+    public GrenadeslimeProjectileEntity(EntityType<? extends ThrowableItemProjectile> p_37442_pEntityType, Level p_37443_pLevel) {
         super(p_37442_pEntityType, p_37443_pLevel);
     }
 
-    public GrenadefireProjectileEntity(Level pLevel) {
-        super(ModEntities.GRENADEFIRE_PROJECTILE.get(), pLevel);
+    public GrenadeslimeProjectileEntity(Level pLevel) {
+        super(ModEntities.GRENADESLIME_PROJECTILE.get(), pLevel);
     }
 
-    public GrenadefireProjectileEntity(Level pLevel, LivingEntity livingEntity) {
-        super(ModEntities.GRENADEFIRE_PROJECTILE.get(), livingEntity, pLevel);
+    public GrenadeslimeProjectileEntity(Level pLevel, LivingEntity livingEntity) {
+        super(ModEntities.GRENADESLIME_PROJECTILE.get(), livingEntity, pLevel);
     }
 
     @Override
     protected Item getDefaultItem() {
-        return ModItems.GRENADEFIRE.get();
+        return ModItems.GRENADESLIME.get();
     }
 
     @Override
@@ -72,8 +72,8 @@ public class GrenadefireProjectileEntity extends ThrowableItemProjectile {
                 // Если достигнуто максимальное количество отскоков, граната взрывается
 
                 BlockPos blockPos = pResult.getBlockPos(); // Получаем позицию блока, в который попала граната
-                float power = 6.0F; // Мощность взрыва. Можешь изменить это значение по своему усмотрению.
-                boolean causesFire = true; // Будет ли взрыв вызывать огонь. Установлено в 'false', если огонь не нужен.
+                float power = 6.5F; // Мощность взрыва. Можешь изменить это значение по своему усмотрению.
+                boolean causesFire = false; // Будет ли взрыв вызывать огонь. Установлено в 'false', если огонь не нужен.
 
                 // Используем метод level.explode() для создания взрыва.
                 // Это более прямой и надежный способ, который обрабатывает все аспекты взрыва:

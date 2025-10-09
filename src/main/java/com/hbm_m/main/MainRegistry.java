@@ -72,7 +72,6 @@ public class MainRegistry {
         LOGGER.info("Initializing " + RefStrings.NAME);
         
         IEventBus modEventBus = context.getModEventBus();
-
         // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS 
         ModBlocks.BLOCKS.register(modEventBus); // Регистрация наших блоков
         ModEntities.ENTITY_TYPES.register(modEventBus);
@@ -137,9 +136,11 @@ public class MainRegistry {
         LOGGER.info("Building creative tab contents for: " + event.getTabKey());
 
         if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get()) {
-
+            event.accept(ModItems.GRENADE);
             event.accept(ModItems.GRENADEHE);
             event.accept(ModItems.GRENADEFIRE);
+            event.accept(ModItems.GRENADESMART);
+            event.accept(ModItems.GRENADESLIME);
 
             event.accept(ModItems.ALLOY_SWORD);
             event.accept(ModItems.ALLOY_AXE);
@@ -407,12 +408,23 @@ public class MainRegistry {
             @SubscribeEvent
             public static void onClientSetup(FMLClientSetupEvent event) {
                 // Регистрируем рендеры для entity — например, для гранаты
+
+                ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
+                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
+                );
                 ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType ->
                         EntityRenderers.register(entityType, ThrownItemRenderer::new)
                 );
                 ModEntities.GRENADEFIRE_PROJECTILE.ifPresent(entityType ->
                         EntityRenderers.register(entityType, ThrownItemRenderer::new)
                 );
+                ModEntities.GRENADESMART_PROJECTILE.ifPresent(entityType ->
+                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
+                );
+                ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType ->
+                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
+                );
+
             }
         }
 

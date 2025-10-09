@@ -13,6 +13,13 @@ public class ModEntities {
     public static final DeferredRegister<EntityType<?>> ENTITY_TYPES =
             DeferredRegister.create(ForgeRegistries.ENTITY_TYPES, MainRegistry.MOD_ID);
 
+    public static final RegistryObject<EntityType<GrenadeProjectileEntity>> GRENADE_PROJECTILE =
+            ENTITY_TYPES.register("grenade_projectile",
+                    () -> EntityType.Builder
+                            .<GrenadeProjectileEntity>of(GrenadeProjectileEntity::new, MobCategory.MISC)
+                            .sized(0.5f, 0.5f)
+                            .build("grenade_projectile"));
+
     public static final RegistryObject<EntityType<GrenadeheProjectileEntity>> GRENADEHE_PROJECTILE =
             ENTITY_TYPES.register("grenadehe_projectile",
                     () -> EntityType.Builder
@@ -26,6 +33,21 @@ public class ModEntities {
                             .<GrenadefireProjectileEntity>of(GrenadefireProjectileEntity::new, MobCategory.MISC)
                             .sized(0.5f, 0.5f)
                             .build("grenadefire_projectile"));
+
+    public static final RegistryObject<EntityType<GrenadesmartProjectileEntity>> GRENADESMART_PROJECTILE =
+            ENTITY_TYPES.register("grenadesmart_projectile",
+                    () -> EntityType.Builder
+                            .<GrenadesmartProjectileEntity>of(GrenadesmartProjectileEntity::new, MobCategory.MISC)
+                            .sized(0.5f, 0.5f)
+                            .build("grenadesmart_projectile"));
+
+    public static final RegistryObject<EntityType<GrenadeslimeProjectileEntity>> GRENADESLIME_PROJECTILE =
+            ENTITY_TYPES.register("grenadeslime_projectile",
+                    () -> EntityType.Builder
+                            .<GrenadeslimeProjectileEntity>of(GrenadeslimeProjectileEntity::new, MobCategory.MISC)
+                            .sized(0.5f, 0.5f)
+                            .build("grenadeslime_projectile"));
+
 
     public static void register(IEventBus eventBus) {
         ENTITY_TYPES.register(eventBus);

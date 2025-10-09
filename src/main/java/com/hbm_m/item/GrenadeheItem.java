@@ -30,7 +30,7 @@ public class GrenadeheItem extends Item {
 
         pPlayer.awardStat(Stats.ITEM_USED.get(this));
         if (!pPlayer.getAbilities().instabuild) {
-            itemstack.shrink(1);
+            itemstack.shrink(4);
         }
 
         return InteractionResultHolder.sidedSuccess(itemstack, pLevel.isClientSide());

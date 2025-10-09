@@ -124,9 +124,14 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
 
     public static final RegistryObject<Item> GRENADEHE = ITEMS.register("grenadehe",
             () -> new GrenadeheItem(new Item.Properties()));
+    public static final RegistryObject<Item> GRENADE = ITEMS.register("grenade",
+            () -> new GrenadeItem(new Item.Properties()));
     public static final RegistryObject<Item> GRENADEFIRE = ITEMS.register("grenadefire",
             () -> new GrenadefireItem(new Item.Properties()));
-
+    public static final RegistryObject<Item> GRENADESMART = ITEMS.register("grenadesmart",
+            () -> new GrenadesmartItem(new Item.Properties()));
+    public static final RegistryObject<Item> GRENADESLIME = ITEMS.register("grenadeslime",
+            () -> new GrenadeslimeItem(new Item.Properties()));
 
     // БРОНЯ ГОРНЯКА:
     public static final RegistryObject<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet",
