@@ -69,7 +69,7 @@ public class GrenadeheProjectileEntity extends ThrowableItemProjectile {
                         blockPos,     // Позиция, где проигрывается звук
                         bounceSound,  // Выбранный случайный звук
                         SoundSource.NEUTRAL, // Категория звука (например, NEUTRAL, BLOCKS, PLAYERS)
-                        1.0F,         // Громкость (1.0F - полная громкость)
+                        3.0F,         // Громкость (1.0F - полная громкость)
                         1.0F          // Высота тона (1.0F - обычная высота тона)
                 );
 

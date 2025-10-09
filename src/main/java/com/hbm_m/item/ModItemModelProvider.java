@@ -89,8 +89,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_STAIRS);
         evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_SLAB);
 
-        evenSimplerBlockItem(ModBlocks.CONCRETE_HAZZARD_STAIRS);
-        evenSimplerBlockItem(ModBlocks.CONCRETE_HAZZARD_SLAB);
+        evenSimplerBlockItem(ModBlocks.CONCRETE_HAZARD_STAIRS);
+        evenSimplerBlockItem(ModBlocks.CONCRETE_HAZARD_SLAB);
 
         simpleItem(ModItems.GRENADEHE);
         simpleItem(ModItems.GRENADEFIRE);

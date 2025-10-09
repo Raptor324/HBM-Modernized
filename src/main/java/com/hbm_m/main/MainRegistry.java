@@ -300,9 +300,9 @@ public class MainRegistry {
             event.accept(ModBlocks.REINFORCED_STONE);
             event.accept(ModBlocks.REINFORCED_STONE_SLAB);
             event.accept(ModBlocks.REINFORCED_STONE_STAIRS);
-            event.accept(ModBlocks.CONCRETE_HAZZARD);
-            event.accept(ModBlocks.CONCRETE_HAZZARD_SLAB);
-            event.accept(ModBlocks.CONCRETE_HAZZARD_STAIRS);
+            event.accept(ModBlocks.CONCRETE_HAZARD);
+            event.accept(ModBlocks.CONCRETE_HAZARD_SLAB);
+            event.accept(ModBlocks.CONCRETE_HAZARD_STAIRS);
 
             event.accept(ModBlocks.ALUMINUM_ORE);
             event.accept(ModBlocks.ALUMINUM_ORE_DEEPSLATE);

@@ -63,7 +63,7 @@ public class GrenadefireProjectileEntity extends ThrowableItemProjectile {
                 // this.setDeltaMovement(this.getDeltaMovement().add(0, 0.1, 0));
 
                 // Опционально: проиграть звук отскока
-                this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.STONE_HIT, SoundSource.NEUTRAL, 0.5F, 1.0F);
+                this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.STONE_HIT, SoundSource.NEUTRAL, 3.5F, 3.0F);
 
                 // Важно: не вызываем super.onHitBlock(pResult); чтобы не вызывать стандартное поведение ThrowableItemProjectile
                 // и не даем гранате взорваться до достижения MAX_BOUNCES.

@@ -42,7 +42,26 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("itemGroup.hbm_m.ntm_missiles_tab", "Ракеты и спутники NTM");
                 add("itemGroup.hbm_m.ntm_weapons_tab", "Оружие и турели NTM");
                 add("itemGroup.hbm_m.ntm_consumables_tab", "Расходные материалы и снаряжение NTM");
-                
+
+                // ОРУЖИЕ
+                add("item.hbm_m.grenade", "Отскок-Граната");
+                add("item.hbm_m.grenade_desc","Количество отскоков перед взрывом: 3* Коэффициент сохранения энергии после отскока: 0.2");
+                add("item.hbm_m.grenade_flavor","Отскакивает от поверхности и взрывается");
+                add("item.hbm_m.grenadehe", "Мощная Отскок-Граната");
+                add("item.hbm_m.grenadehe_desc","Количество отскоков перед взрывом: 3* Коэффициент сохранения энергии после отскока: 0.2");
+                add("item.hbm_m.grenadehe_flavor","Отскакивает от поверхности и взрывается");
+                add("item.hbm_m.grenadefire", "Огненная Отскок-Граната");
+                add("item.hbm_m.grenadefire_desc","Количество отскоков перед взрывом: 3* Коэффициент сохранения энергии после отскока: 0.2");
+                add("item.hbm_m.grenadefire_flavor","Отскакивает от поверхности и взрывается");
+                add("item.hbm_m.grenadesmart", "УМная Отскок-Граната");
+                add("item.hbm_m.grenadesmart_desc","Количество отскоков перед взрывом: 3* Коэффициент сохранения энергии после отскока: 0.2");
+                add("item.hbm_m.grenadesmart_flavor","Отскакивает от поверхности и взрывается");
+                add("item.hbm_m.grenadeslime", "Отскок-Отскок-Граната");
+                add("item.hbm_m.grenadeslime_desc","Количество отскоков перед взрывом: 4* Коэффициент сохранения энергии после отскока: 0.51");
+                add("item.hbm_m.grenadeslime_flavor","Отскакивает от поверхности и взрывается");
+
+
+
                 // СНАРЯГА
                 add("item.hbm_m.alloy_sword", "Меч из продвинутого сплава");
                 add("item.hbm_m.alloy_pickaxe", "Кирка из продвинутого сплава");

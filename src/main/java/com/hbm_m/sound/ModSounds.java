@@ -68,6 +68,6 @@ public class ModSounds {
     // Метод для регистрации в Forge EventBus
     public static void register(IEventBus eventBus) {
         SOUND_EVENTS.register(eventBus);
-        MainRegistry.LOGGER.info("Registered SoundEvents for " + RefStrings.MODID);
+        MainRegistry.LOGGER.info("Registered SoundEvents for" + RefStrings.MODID);
     }
 }

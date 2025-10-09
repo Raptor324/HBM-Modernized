@@ -1,6 +1,6 @@
 {
   "parent": "block/cube_all",
   "textures": {
-    "all": "hbm_m:block/concrete_hazzard"
+    "all": "hbm_m:block/concrete_hazard"
   }
 }
