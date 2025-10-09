@@ -35,6 +35,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         blockWithItem(ModBlocks.WASTE_LEAVES);
         blockWithItem(ModBlocks.REINFORCED_STONE);
+        blockWithItem(ModBlocks.CONCRETE_HAZARD);
 
         columnBlockWithItem(
             ModBlocks.WASTE_GRASS, 
@@ -75,23 +76,23 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(ModBlocks.REINFORCED_STONE_STAIRS.get(),
         models().getExistingFile(modLoc("block/reinforced_stone_stairs")));
 
-        stairsBlock((StairBlock) ModBlocks.CONCRETE_HAZZARD_STAIRS.get(),
-                modLoc("block/concrete_hazzard"));
-        simpleBlockItem(ModBlocks.CONCRETE_HAZZARD_STAIRS.get(),
-                models().getExistingFile(modLoc("block/concrete_hazzard_stairs")));
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_HAZARD_STAIRS.get(),
+            modLoc("block/concrete_hazard"));
+        simpleBlockItem(ModBlocks.CONCRETE_HAZARD_STAIRS.get(),
+            models().getExistingFile(modLoc("block/concrete_hazard_stairs")));
 
         // Генерация моделей для плиты
         slabBlock((SlabBlock) ModBlocks.REINFORCED_STONE_SLAB.get(),
-        blockTexture(ModBlocks.REINFORCED_STONE.get()),
-        modLoc("block/reinforced_stone"));
+            blockTexture(ModBlocks.REINFORCED_STONE.get()),
+            modLoc("block/reinforced_stone"));
         simpleBlockItem(ModBlocks.REINFORCED_STONE_SLAB.get(),
-        models().getExistingFile(modLoc("block/reinforced_stone_slab")));
+            models().getExistingFile(modLoc("block/reinforced_stone_slab")));
 
-        slabBlock((SlabBlock) ModBlocks.CONCRETE_HAZZARD_SLAB.get(),
-                blockTexture(ModBlocks.CONCRETE_HAZZARD.get()),
-                modLoc("block/concrete_hazzard"));
-        simpleBlockItem(ModBlocks.CONCRETE_HAZZARD_SLAB.get(),
-                models().getExistingFile(modLoc("block/concrete_hazzard_slab")));
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_HAZARD_SLAB.get(),
+            blockTexture(ModBlocks.CONCRETE_HAZARD.get()),
+            modLoc("block/concrete_hazard"));
+        simpleBlockItem(ModBlocks.CONCRETE_HAZARD_SLAB.get(),
+            models().getExistingFile(modLoc("block/concrete_hazard_slab")));
     }
 
     /**

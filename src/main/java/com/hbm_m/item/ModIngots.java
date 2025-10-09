@@ -48,7 +48,7 @@ public enum ModIngots {
     ADVANCED_ALLOY("advanced_alloy",
             "ru_ru", "Слиток продвинутого сплава",
             "en_us", "Advanced Alloy Ingot"),
-    ALUMINIUM("aluminium",
+    ALUMINUM("aluminum",
             "ru_ru", "Слиток алюминия",
             "en_us", "Aluminum Ingot"),
     SCHRABIDIUM("schrabidium",
@@ -86,7 +86,484 @@ public enum ModIngots {
             "en_us", "Star Metal Ingot"),
     BERYLLIUM("beryllium",
             "ru_ru", "Бериллиевый слиток",
-            "en_us", "Beryllium Ingot");
+            "en_us", "Beryllium Ingot"),
+
+    BISMUTH("bismuth",
+            "ru_ru", "Висмутовый слиток",
+            "en_us", "Bismuth Ingot"),
+
+    POLYMER("polymer",
+        "ru_ru", "Кусок полимера",
+        "en_us", "Polymer Chunk"),
+
+    BAKELITE("bakelite",
+        "ru_ru", "Бакелитовый слиток",
+        "en_us", "Bakelite Ingot"),
+
+    RUBBER("rubber",
+        "ru_ru", "Резиновый слиток",
+        "en_us", "Rubber Ingot"),
+
+    DESH("desh",
+        "ru_ru", "Дешевый слиток",
+        "en_us", "Desh Ingot"),
+
+    FIREBRICK("firebrick",
+        "ru_ru", "Шамотный кирпич",
+        "en_us", "Firebrick"),
+
+    GRAPHITE("graphite",
+        "ru_ru", "Графитовый слиток",
+        "en_us", "Graphite Ingot"),
+
+    PHOSPHORUS("phosphorus",
+        "ru_ru", "Слиток фосфора",
+        "en_us", "Phosphorus Ingot"),
+
+    LITHIUM_INGOT("les",
+        "ru_ru", "Литиево-оловянный сплав",
+        "en_us", "Lithium-Tin Alloy Ingot"),
+
+    MAGNETIZED_TUNGSTEN("magnetized_tungsten",
+        "ru_ru", "Намагниченный вольфрам",
+        "en_us", "Magnetized Tungsten"),
+
+    COMBINE_STEEL("combine_steel",
+        "ru_ru", "Слиток комбинированной стали",
+        "en_us", "Combine Steel Ingot"),
+
+    DURA_STEEL("dura_steel",
+        "ru_ru", "Слиток прочной стали",
+        "en_us", "Dura Steel Ingot"),
+
+    POLYMER_COMPOSITE("pc",
+        "ru_ru", "Полимерный композит",
+        "en_us", "Polymer Composite"),
+
+    DIGAMMA("digamma",
+        "ru_ru", "Слиток Дигаммы",
+        "en_us", "Digamma Ingot"),
+
+    EUPHEMIUM("euphemium",
+        "ru_ru", "Эуфемиевый слиток",
+        "en_us", "Euphemium Ingot"),
+
+    DINEUTRONIUM("dineutronium",
+        "ru_ru", "Динейтрониевый слиток",
+        "en_us", "Dineutronium Ingot"),
+
+    ELECTRONIUM("electronium",
+        "ru_ru", "Электрониевый слиток",
+        "en_us", "Electronium Ingot"),
+
+    AUSTRALIUM("australium",
+        "ru_ru", "Австралиевый слиток",
+        "en_us", "Australium Ingot"),
+
+    SOLINIUM("solinium",
+        "ru_ru", "Солиниевый слиток",
+        "en_us", "Solinium Ingot"),
+
+    TANTALIUM("tantalium",
+        "ru_ru", "Танталиевый слиток",
+        "en_us", "Tantalium Ingot"),
+
+    CHAINSSTEEL("chainsteel",
+        "ru_ru", "Цепная сталь",
+        "en_us", "Chain Steel Ingot"),
+
+    METEORITE("meteorite",
+        "ru_ru", "Метеоритный слиток",
+        "en_us", "Meteorite Ingot"),
+
+    LANTHANIUM("lanthanium",
+        "ru_ru", "Лантаниевый слиток",
+        "en_us", "Lanthanium Ingot"),
+
+    NEODYMIUM("neodymium",
+        "ru_ru", "Неодимовый слиток",
+        "en_us", "Neodymium Ingot"),
+
+    NIOBIUM("niobium",
+        "ru_ru", "Ниобиевый слиток",
+        "en_us", "Niobium Ingot"),
+
+    CERIUM("cerium",
+        "ru_ru", "Цериевый слиток",
+        "en_us", "Cerium Ingot"),
+
+    CADMIUM("cadmium",
+        "ru_ru", "Кадмиевый слиток",
+        "en_us", "Cadmium Ingot"),
+
+    CAESIUM("caesium",
+        "ru_ru", "Цезиевый слиток",
+        "en_us", "Caesium Ingot"),
+
+    STRONTIUM("strontium",
+        "ru_ru", "Стронциевый слиток",
+        "en_us", "Strontium Ingot"),
+
+    BROMINE("bromide",
+        "ru_ru", "Слиток бромида",
+        "en_us", "Bromide Ingot"),
+
+    TENNESSINE("tennessine",
+        "ru_ru", "Теннессиновый слиток",
+        "en_us", "Tennessine Ingot"),
+
+    ZIRCONIUM("zirconium",
+        "ru_ru", "Цирконивый слиток",
+        "en_us", "Zirconium Ingot"),
+
+    ARSENIC("arsenic",
+        "ru_ru", "Мышьяковый слиток",
+        "en_us", "Arsenic Ingot"),
+
+    IODINE("iodine",
+        "ru_ru", "Йодный слиток",
+        "en_us", "Iodine Ingot"),
+
+    ASTATINE("astatine",
+        "ru_ru", "Астатиновый слиток",
+        "en_us", "Astatine Ingot"),
+
+    AMERICIUM("americium",
+        "ru_ru", "Америциевый слиток",
+        "en_us", "Americium Ingot"),
+
+    NEPTUNIUM("neptunium",
+        "ru_ru", "Нептуниевый слиток",
+        "en_us", "Neptunium Ingot"),
+
+    POLONIUM("polonium",
+        "ru_ru", "Полониевый слиток",
+        "en_us", "Polonium Ingot"),
+
+    TECHNETIUM("technetium",
+        "ru_ru", "Технециевый слиток",
+        "en_us", "Technetium Ingot"),
+
+    BORON("boron",
+        "ru_ru", "Борный слиток",
+        "en_us", "Boron Ingot"),
+
+    SCHRABIDATE("schrabidate",
+        "ru_ru", "Шрабидат",
+        "en_us", "Schrabidate"),
+
+    SCHRARANIUM("schraranium",
+        "ru_ru", "Шрараниевый слиток",
+        "en_us", "Schraranium Ingot"),
+
+    AU198("au198",
+        "ru_ru", "Золото-198",
+        "en_us", "Gold-198"),
+
+    PB209("pb209",
+        "ru_ru", "Свинец-209",
+        "en_us", "Lead-209"),
+
+    RA226("ra226",
+        "ru_ru", "Радий-226",
+        "en_us", "Radium-226"),
+
+    THORIUM("thorium",
+        "ru_ru", "Ториевый слиток",
+        "en_us", "Thorium Ingot"),
+
+    OSMIRIDIUM("osmiridium",
+        "ru_ru", "Осмиридиевый слиток",
+        "en_us", "Osmiridium Ingot"),
+
+    SELENIUM("selenium",
+        "ru_ru", "Селеновый слиток",
+        "en_us", "Selenium Ingot"),
+
+    CO60("co60",
+        "ru_ru", "Кобальт-60",
+        "en_us", "Cobalt-60"),
+
+    SR90("sr90",
+        "ru_ru", "Стронций-90",
+        "en_us", "Strontium-90"),
+
+    AM241("am241",
+        "ru_ru", "Америций-241",
+        "en_us", "Americium-241"),
+
+    AM242("am242",
+        "ru_ru", "Америций-242",
+        "en_us", "Americium-242"),
+
+    STEEL_DUSTED("steel_dusted",
+        "ru_ru", "Пыльная сталь",
+        "en_us", "Dusted Steel"),
+
+    CALCIUM("calcium",
+        "ru_ru", "Кальциевый слиток",
+        "en_us", "Calcium Ingot"),
+
+    GRAPHENE("graphene",
+        "ru_ru", "Графеновый лист",
+        "en_us", "Graphene Sheet"),
+
+    MOX_FUEL("mox_fuel",
+        "ru_ru", "MOX топливо",
+        "en_us", "MOX Fuel"),
+
+    SMORE("smore",
+        "ru_ru", "Слиток S'more",
+        "en_us", "S'more Ingot"),
+
+    SCHRABIDIUM_FUEL("schrabidium_fuel",
+        "ru_ru", "Шрабидиевое топливо",
+        "en_us", "Schrabidium Fuel"),
+
+    URANIUM_FUEL("uranium_fuel",
+        "ru_ru", "Урановое топливо",
+        "en_us", "Uranium Fuel"),
+
+    THORIUM_FUEL("thorium_fuel",
+        "ru_ru", "Ториевое топливо",
+        "en_us", "Thorium Fuel"),
+
+    PLUTONIUM_FUEL("plutonium_fuel",
+        "ru_ru", "Плутониевое топливо",
+        "en_us", "Plutonium Fuel"),
+
+    NEPTUNIUM_FUEL("neptunium_fuel",
+        "ru_ru", "Нептуниевое топливо",
+        "en_us", "Neptunium Fuel"),
+
+    AMERICIUM_FUEL("americium_fuel",
+        "ru_ru", "Америциевое топливо",
+        "en_us", "Americium Fuel"),
+
+    BISMUTH_BRONZE("bismuth_bronze",
+        "ru_ru", "Висмутовая бронза",
+        "en_us", "Bismuth Bronze"),
+
+    ARSENIC_BRONZE("arsenic_bronze",
+        "ru_ru", "Мышьяковая бронза",
+        "en_us", "Arsenic Bronze"),
+
+    CRYSTALLINE("crystalline",
+        "ru_ru", "Кристаллический слиток",
+        "en_us", "Crystalline Ingot"),
+
+    MUD("mud",
+        "ru_ru", "Грязь",
+        "en_us", "Mud"),
+
+    SILICON("silicon",
+        "ru_ru", "Кремниевый слиток",
+        "en_us", "Silicon Ingot"),
+
+    FIBERGLASS("fiberglass",
+        "ru_ru", "Стекловолокно",
+        "en_us", "Fiberglass"),
+
+    CERAMIC("ceramic",
+        "ru_ru", "Керамический слиток",
+        "en_us", "Ceramic Ingot"),
+
+    PU_MIX("pu_mix",
+        "ru_ru", "Плутониевая смесь",
+        "en_us", "Plutonium Mix"),
+
+    AM_MIX("am_mix",
+        "ru_ru", "Америциевая смесь",
+        "en_us", "Americium Mix"),
+
+    PET("pet",
+        "ru_ru", "ПЭТ слиток",
+        "en_us", "PET Ingot"),
+
+    FERROURANIUM("ferrouranium",
+        "ru_ru", "Ферроураниевый слиток",
+        "en_us", "Ferrouranium Ingot"),
+
+    PVC("pvc",
+        "ru_ru", "ПВХ слиток",
+        "en_us", "PVC Ingot"),
+
+    BIORUBBER("biorubber",
+        "ru_ru", "Биорезиновый слиток",
+        "en_us", "Biorubber Ingot"),
+
+    SEMTEX("semtex",
+        "ru_ru", "Семтекс",
+        "en_us", "Semtex"),
+
+    C4("c4",
+        "ru_ru", "C4",
+        "en_us", "C4"),
+
+    STABALLOY("staballoy",
+        "ru_ru", "Стабаллой",
+        "en_us", "Staballoy"),
+
+    METAL_BEACON("metal.beacon",
+        "ru_ru", "Металлический маяк",
+        "en_us", "Metal Beacon"),
+
+    METAL_SCRAP("metal.scrap",
+            "ru_ru", "Металлический лом",
+            "en_us", "Metal Scrap"),
+
+    METAL_SHEET("metal_sheet",
+            "ru_ru", "Металлический лист",
+            "en_us", "Metal Sheet"),
+
+    METAL_CASING("metal.casing",
+            "ru_ru", "Металлический корпус",
+            "en_us", "Metal Casing"),
+
+    METAL_CLOCKWORK("metal.clockwork",
+            "ru_ru", "Металлический часовой механизм",
+            "en_us", "Metal Clockwork"),
+
+    METAL_COUNTER("metal.counter",
+            "ru_ru", "Металлический счётчик",
+            "en_us", "Metal Counter"),
+
+    METAL_DETECTOR("metal.detector",
+            "ru_ru", "Металлодетектор",
+            "en_us", "Metal Detector"),
+
+    METAL_KEY("metal.key",
+            "ru_ru", "Металлический ключ",
+            "en_us", "Metal Key"),
+
+    METAL_BAR("metal.bar",
+            "ru_ru", "Металлический стержень",
+            "en_us", "Metal Bar"),
+
+    RAW("raw",
+            "ru_ru", "Сырой материал",
+            "en_us", "Raw Material"),
+
+    METEORITE_FORGED("meteorite_forged",
+            "ru_ru", "Кованый метеоритный слиток",
+            "en_us", "Forged Meteorite Ingot"),
+
+    METEORITE_FORGED_HOT("meteorite_forged_hot",
+            "ru_ru", "Горячий кованый метеоритный слиток",
+            "en_us", "Hot Forged Meteorite Ingot"),
+
+    METEORITE_HOT("meteorite_hot",
+            "ru_ru", "Горячий метеоритный слиток",
+            "en_us", "Hot Meteorite Ingot"),
+
+    IRON_SMALL("iron_small",
+            "ru_ru", "Маленький железный слиток",
+            "en_us", "Small Iron Ingot"),
+
+    GRAYSCALE_1_17_COPPER_BASE("grayscale_1_17_copper_base",
+            "ru_ru", "Серый медный слиток 1.17",
+            "en_us", "Grayscale 1.17 Copper Base Ingot"),
+
+    GRAYSCALE("grayscale",
+            "ru_ru", "Серый слиток",
+            "en_us", "Grayscale Ingot"),
+
+    METAL_ALT("metal_alt",
+            "ru_ru", "Альтернативный металлический слиток",
+            "en_us", "Alternative Metal Ingot"),
+
+    CHAINSTEEL_HOT("chainsteel_hot",
+            "ru_ru", "Горячая цепная сталь",
+            "en_us", "Hot Chain Steel"),
+
+    GH336("gh336",
+            "ru_ru", "GH336",
+            "en_us", "GH336"),
+
+    STARMETAL_ORION_BASE("starmetal_orion_base",
+            "ru_ru", "Базовый звёздный металл Орион",
+            "en_us", "Star Metal Orion Base"),
+
+    STARMETAL_ORION("starmetal_orion",
+            "ru_ru", "Звёздный металл Орион",
+            "en_us", "Star Metal Orion"),
+
+    STARMETAL_URSA_BASE("starmetal_ursa_base",
+            "ru_ru", "Базовый звёздный металл Урса",
+            "en_us", "Star Metal Ursa Base"),
+
+    STARMETAL_URSA("starmetal_ursa",
+            "ru_ru", "Звёздный металл Урса",
+            "en_us", "Star Metal Ursa"),
+
+    STARMETAL_ASTRA_BASE("starmetal_astra_base",
+            "ru_ru", "Базовый звёздный металл Астра",
+            "en_us", "Star Metal Astra Base"),
+
+    STARMETAL_ASTRA("starmetal_astra",
+            "ru_ru", "Звёздный металл Астра",
+            "en_us", "Star Metal Astra"),
+
+    DESH_RAINBOW("desh_rainbow",
+            "ru_ru", "Радужный деш",
+            "en_us", "Rainbow Desh"),
+
+    TCALLOY("tcalloy",
+            "ru_ru", "Слиток TCaloy",
+            "en_us", "TCaloy Ingot"),
+
+    U238M2("u238m2",
+            "ru_ru", "Слиток урана-238M2",
+            "en_us", "Uranium-238M2 Ingot"),
+
+    CELNEUTRONOPHYRIUM_NEW("celneutronophyrium_new",
+            "ru_ru", "Новый цельнейтронофириевый слиток",
+            "en_us", "New Celneutronophyrium Ingot"),
+
+    CELNEUTRONOPHYRIUM("celneutronophyrium",
+            "ru_ru", "Цельнейтронофириевый слиток",
+            "en_us", "Celneutronophyrium Ingot"),
+
+    TETRANEUTRONIUM_NEW("tetraneutronium_new",
+            "ru_ru", "Новый тетранейтрониевый слиток",
+            "en_us", "New Tetraneutronium Ingot"),
+
+    TETRANEUTRONIUM("tetraneutronium",
+            "ru_ru", "Тетранейтрониевый слиток",
+            "en_us", "Tetraneutronium Ingot"),
+
+    CFT("cft",
+            "ru_ru", "CFT слиток",
+            "en_us", "CFT Ingot"),
+
+    CF_TEST1("cf_test1",
+            "ru_ru", "Тестовый CF1",
+            "en_us", "CF Test1"),
+
+    CF_TEST2("cf_test2",
+            "ru_ru", "Тестовый CF2",
+            "en_us", "CF Test2"),
+
+    CDALLOY("cdalloy",
+            "ru_ru", "Слиток CDalloy",
+            "en_us", "CDalloy Ingot"),
+
+    BSCCO("bscco",
+            "ru_ru", "BSCCO слиток",
+            "en_us", "BSCCO Ingot"),
+
+    BESKAR_DOUBLE("beskar_double",
+            "ru_ru", "Двойной бескаровый слиток",
+            "en_us", "Double Beskar Ingot"),
+
+    BESKAR_SINGLE("beskar_single",
+            "ru_ru", "Одиночный бескаровый слиток",
+            "en_us", "Single Beskar Ingot"),
+
+    BESKAR_SINGLE_ALT("beskar_single_alt",
+            "ru_ru", "Альтернативный одиночный бескаровый слиток",
+            "en_us", "Alternative Single Beskar Ingot");
+
             
     // Чтобы добавить новый слиток, просто добавьте новую запись с его переводами
 

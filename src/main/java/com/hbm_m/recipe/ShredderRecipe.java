@@ -76,7 +76,7 @@ public class ShredderRecipe implements Recipe<SimpleContainer> {
 
     public static class Serializer implements RecipeSerializer<ShredderRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        public static final ResourceLocation ID = new ResourceLocation(MainRegistry.MOD_ID, "shredder");
+        public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shredder");
 
         @Override
         public ShredderRecipe fromJson(ResourceLocation pRecipeId, JsonObject pSerializedRecipe) {

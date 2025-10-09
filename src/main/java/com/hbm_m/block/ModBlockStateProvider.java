@@ -26,9 +26,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         stairsBlock(((StairBlock) ModBlocks.REINFORCED_STONE_STAIRS.get()), blockTexture(ModBlocks.REINFORCED_STONE.get()));
         slabBlock(((SlabBlock) ModBlocks.REINFORCED_STONE_SLAB.get()), blockTexture(ModBlocks.REINFORCED_STONE_SLAB.get()), blockTexture(ModBlocks.REINFORCED_STONE.get()));
 
-        blockWithItem(ModBlocks.CONCRETE_HAZZARD);
-        stairsBlock(((StairBlock) ModBlocks.CONCRETE_HAZZARD_STAIRS.get()), blockTexture(ModBlocks.CONCRETE_HAZZARD.get()));
-        slabBlock(((SlabBlock) ModBlocks.CONCRETE_HAZZARD_SLAB.get()), blockTexture(ModBlocks.CONCRETE_HAZZARD_SLAB.get()), blockTexture(ModBlocks.CONCRETE_HAZZARD.get()));
+        blockWithItem(ModBlocks.CONCRETE_HAZARD);
+        stairsBlock(((StairBlock) ModBlocks.CONCRETE_HAZARD_STAIRS.get()), blockTexture(ModBlocks.CONCRETE_HAZARD.get()));
+        slabBlock(((SlabBlock) ModBlocks.CONCRETE_HAZARD_SLAB.get()), blockTexture(ModBlocks.CONCRETE_HAZARD_SLAB.get()), blockTexture(ModBlocks.CONCRETE_HAZARD.get()));
 
 
         simpleBlockWithItem(ModBlocks.SHREDDER.get(),

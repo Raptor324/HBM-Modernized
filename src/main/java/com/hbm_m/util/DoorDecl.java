@@ -66,12 +66,12 @@ public abstract class DoorDecl {
         
         @Override
         public ResourceLocation getModelLocation() {
-            return new ResourceLocation("hbm_m", "models/block/door_large_vehicle.obj");
+            return ResourceLocation.fromNamespaceAndPath("hbm_m", "models/block/door_large_vehicle.obj");
         }
         
         @Override
         public ResourceLocation getTextureLocation() {
-            return new ResourceLocation("hbm_m", "textures/block/door_large_vehicle.png");
+            return ResourceLocation.fromNamespaceAndPath("hbm_m", "textures/block/door_large_vehicle.png");
         }
         
         @Override

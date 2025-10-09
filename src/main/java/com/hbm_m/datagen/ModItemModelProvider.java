@@ -59,11 +59,13 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.RADAWAY);
         simpleItem(ModItems.CREATIVE_BATTERY);
         simpleItem(ModItems.TEMPLATE_FOLDER);
+        simpleItem(ModItems.STRAWBERRY);
 
         simpleItem(ModItems.PLATE_IRON);
         simpleItem(ModItems.PLATE_STEEL);
         simpleItem(ModItems.PLATE_GOLD);
         simpleItem(ModItems.PLATE_GUNMETAL);
+        simpleItem(ModItems.PLATE_TITANIUM);
         simpleItem(ModItems.PLATE_GUNSTEEL);
         simpleItem(ModItems.PLATE_KEVLAR);
         simpleItem(ModItems.PLATE_LEAD);
@@ -72,6 +74,35 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PLATE_POLYMER);
         simpleItem(ModItems.PLATE_SATURNITE);
         simpleItem(ModItems.PLATE_SCHRABIDIUM);
+        simpleItem(ModItems.PLATE_ADVANCED_ALLOY);
+        simpleItem(ModItems.PLATE_ALUMINUM);
+        simpleItem(ModItems.PLATE_COPPER);
+        simpleItem(ModItems.PLATE_BISMUTH);
+        simpleItem(ModItems.PLATE_ARMOR_AJR);
+        simpleItem(ModItems.PLATE_ARMOR_DNT);
+        simpleItem(ModItems.PLATE_ARMOR_DNT_RUSTED);
+        simpleItem(ModItems.PLATE_ARMOR_FAU);
+        simpleItem(ModItems.PLATE_ARMOR_HEV);
+        simpleItem(ModItems.PLATE_ARMOR_LUNAR);
+        simpleItem(ModItems.PLATE_ARMOR_TITANIUM);
+        simpleItem(ModItems.PLATE_CAST);
+        simpleItem(ModItems.PLATE_CAST_ALT);
+        simpleItem(ModItems.PLATE_CAST_BISMUTH);
+        simpleItem(ModItems.PLATE_CAST_DARK);
+        simpleItem(ModItems.PLATE_COMBINE_STEEL);
+        simpleItem(ModItems.PLATE_DURA_STEEL);
+        simpleItem(ModItems.PLATE_DALEKANIUM);
+        simpleItem(ModItems.PLATE_DESH);
+        simpleItem(ModItems.PLATE_DINEUTRONIUM);
+        simpleItem(ModItems.PLATE_EUPHEMIUM);
+        simpleItem(ModItems.PLATE_FUEL_MOX);
+        simpleItem(ModItems.PLATE_FUEL_PU238BE);
+        simpleItem(ModItems.PLATE_FUEL_PU239);
+        simpleItem(ModItems.PLATE_FUEL_RA226BE);
+        simpleItem(ModItems.PLATE_FUEL_SA326);
+        simpleItem(ModItems.PLATE_FUEL_U233);
+        simpleItem(ModItems.PLATE_FUEL_U235);
+
     };
 
     /**

@@ -173,7 +173,7 @@ public class MachineAdvancedAssemblerRenderer implements BlockEntityRenderer<Mac
             } else {
                 // Обычные предметы - поворот и смещение
                 pPoseStack.mulPose(Axis.XP.rotationDegrees(-90));
-                pPoseStack.translate(-1, -0.25, 0);
+                pPoseStack.translate(-0.5, -0.5, -0.03);
             }
             
             // Общее масштабирование (как в оригинале)

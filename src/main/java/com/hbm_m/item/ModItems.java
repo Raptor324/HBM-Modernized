@@ -314,14 +314,20 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
     );
     public static final RegistryObject<Item> ASSEMBLY_TEMPLATE = ITEMS.register("assembly_template",
             () -> new ItemAssemblyTemplate(
-                    new Item.Properties()
+                    new Item.Properties().stacksTo(1)
             )
     );
     public static final RegistryObject<Item> TEMPLATE_FOLDER = ITEMS.register("template_folder",
             () -> new ItemTemplateFolder(
-                    new Item.Properties()
+                    new Item.Properties().stacksTo(1)
             )
     );
+    public static final RegistryObject<Item> BLUEPRINT_FOLDER = ITEMS.register("blueprint_folder",
+        () -> new ItemBlueprintFolder(
+                new Item.Properties().stacksTo(1)
+        )
+    );
+
     public static final RegistryObject<Item> RADAWAY = ITEMS.register("radaway",
             () -> new ItemSimpleConsumable(new Item.Properties(), (player, stack) -> {
                 // Это лямбда-выражение определяет, что произойдет при использовании предмета.
@@ -356,7 +362,10 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> PLATE_GUNSTEEL = ITEMS.register("plate_gunsteel",
-            () -> new Item(new Item.Properties()));   
+            () -> new Item(new Item.Properties()));
+            
+    public static final RegistryObject<Item> PLATE_TITANIUM = ITEMS.register("plate_titanium",
+            () -> new Item(new Item.Properties())); 
 
     public static final RegistryObject<Item> PLATE_KEVLAR = ITEMS.register("plate_kevlar",
             () -> new Item(new Item.Properties()));
@@ -379,6 +388,91 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
     public static final RegistryObject<Item> PLATE_SCHRABIDIUM = ITEMS.register("plate_schrabidium",
             () -> new Item(new Item.Properties()));
 
+    public static final RegistryObject<Item> PLATE_COPPER = ITEMS.register("plate_copper",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_ALUMINUM = ITEMS.register("plate_aluminum",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_ADVANCED_ALLOY = ITEMS.register("plate_advanced_alloy",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_BISMUTH = ITEMS.register("plate_bismuth",
+        () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_ARMOR_AJR = ITEMS.register("plate_armor_ajr",
+        () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_ARMOR_DNT = ITEMS.register("plate_armor_dnt",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_ARMOR_DNT_RUSTED = ITEMS.register("plate_armor_dnt_rusted",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_ARMOR_FAU = ITEMS.register("plate_armor_fau",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_ARMOR_HEV = ITEMS.register("plate_armor_hev",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_ARMOR_LUNAR = ITEMS.register("plate_armor_lunar",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_ARMOR_TITANIUM = ITEMS.register("plate_armor_titanium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_CAST = ITEMS.register("plate_cast",
+        () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_CAST_ALT = ITEMS.register("plate_cast_alt",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_CAST_BISMUTH = ITEMS.register("plate_cast_bismuth",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_CAST_DARK = ITEMS.register("plate_cast_dark",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_COMBINE_STEEL = ITEMS.register("plate_combine_steel",
+        () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_DURA_STEEL = ITEMS.register("plate_dura_steel",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_DALEKANIUM = ITEMS.register("plate_dalekanium",
+        () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_DESH = ITEMS.register("plate_desh",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_DINEUTRONIUM = ITEMS.register("plate_dineutronium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_EUPHEMIUM = ITEMS.register("plate_euphemium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_FUEL_MOX = ITEMS.register("plate_fuel_mox",
+        () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_FUEL_PU238BE = ITEMS.register("plate_fuel_pu238be",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_FUEL_PU239 = ITEMS.register("plate_fuel_pu239",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_FUEL_RA226BE = ITEMS.register("plate_fuel_ra226be",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_FUEL_SA326 = ITEMS.register("plate_fuel_sa326",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_FUEL_U233 = ITEMS.register("plate_fuel_u233",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PLATE_FUEL_U235 = ITEMS.register("plate_fuel_u235",
+            () -> new Item(new Item.Properties()));
+
+    // RAW METALS
 
     public static final RegistryObject<Item> URANIUM_RAW = ITEMS.register("uranium_raw",
             () -> new Item(new Item.Properties()));

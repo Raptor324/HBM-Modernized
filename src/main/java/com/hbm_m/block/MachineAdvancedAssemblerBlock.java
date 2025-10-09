@@ -4,6 +4,7 @@ package com.hbm_m.block;
 // которая является мультиблочной структурой 3x3x3 с центральным контроллером
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.block.entity.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.block.entity.MachineAssemblerBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.IMultiblockController;
@@ -14,10 +15,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -31,11 +34,14 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Map;
 import java.util.function.Supplier;
+
+import javax.annotation.Nonnull;
 
 public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -79,6 +85,10 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
 
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
+        // Если блок на нижнем уровне (y == 0), это энергетический коннектор
+        if (localOffset.getY() == 0) {
+            return PartRole.ENERGY_CONNECTOR;
+        }
         return PartRole.DEFAULT;
     }
 
@@ -106,32 +116,25 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
     }
 
     @Override
-    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
-        if (!pState.is(pNewState.getBlock())) {
-            // Логика дропа предметов должна быть здесь, если она нужна
-            getStructureHelper().destroyStructure(pLevel, pPos, pState.getValue(FACING));
+    public void onRemove(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos, @Nonnull BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock())) {
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            if (blockEntity instanceof MachineAdvancedAssemblerBlockEntity assemblerEntity) {
+                assemblerEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
+                    for (int i = 0; i < handler.getSlots(); i++) {
+                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), handler.getStackInSlot(i));
+                    }
+                });
+            }
+            getStructureHelper().destroyStructure(level, pos, state.getValue(FACING));
         }
-        super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
+        super.onRemove(state, level, pos, newState, isMoving);
     }
-    
-    // ВАЖНО: Метод neighborChanged убран из контроллера.
-    // Всю логику теперь обрабатывает `UniversalMachinePartBlock`, что является правильным подходом.
-    // Контроллер не должен реагировать на изменения над ним самим, только его части.
 
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (pHand == InteractionHand.OFF_HAND) {
             return InteractionResult.PASS;
-        }
-
-        if (pPlayer.isShiftKeyDown()) {
-            if (!pLevel.isClientSide()) {
-                if (pLevel.getBlockEntity(pPos) instanceof IFrameSupportable frameBe) {
-                    frameBe.checkForFrame();
-                    pPlayer.displayClientMessage(Component.literal("Рамка проверена вручную!"), true);
-                }
-            }
-            return InteractionResult.SUCCESS;
         }
 
         if (!pLevel.isClientSide()) {

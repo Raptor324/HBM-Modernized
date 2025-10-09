@@ -1,7 +1,6 @@
 package com.hbm_m.block;
 
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.util.DoorDecl;
 import com.hbm_m.item.ModItems;
 
@@ -10,16 +9,12 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import net.minecraft.core.BlockPos;
 import net.minecraft.util.valueproviders.UniformInt;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.function.Supplier;
 
 public class ModBlocks {
@@ -95,12 +90,12 @@ public class ModBlocks {
     public static final RegistryObject<Block> REINFORCED_STONE = registerBlock("reinforced_stone",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
-    public static final RegistryObject<Block> CONCRETE_HAZZARD = registerBlock("concrete_hazzard",
+    public static final RegistryObject<Block> CONCRETE_HAZARD = registerBlock("concrete_hazard",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
-    public static final RegistryObject<Block> CONCRETE_HAZZARD_STAIRS = registerBlock("concrete_hazzard_stairs",
-            () -> new StairBlock(() -> ModBlocks.CONCRETE_HAZZARD.get().defaultBlockState(),
+    public static final RegistryObject<Block> CONCRETE_HAZARD_STAIRS = registerBlock("concrete_hazard_stairs",
+            () -> new StairBlock(() -> ModBlocks.CONCRETE_HAZARD.get().defaultBlockState(),
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
-    public static final RegistryObject<Block> CONCRETE_HAZZARD_SLAB = registerBlock("concrete_hazzard_slab",
+    public static final RegistryObject<Block> CONCRETE_HAZARD_SLAB = registerBlock("concrete_hazard_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
 
     public static final RegistryObject<Block> REINFORCED_STONE_STAIRS = registerBlock("reinforced_stone_stairs",

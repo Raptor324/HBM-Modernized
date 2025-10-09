@@ -55,7 +55,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
             this.addSlot(new SlotItemHandler(handler, 2, 152, 36));
             this.addSlot(new SlotItemHandler(handler, 3, 152, 54));
 
-            // Слот для схемы (4) - НАШЕ ГЛАВНОЕ ИЗМЕНЕНИЕ
+            // Слот для схемы (4)
             this.addSlot(new SlotItemHandler(handler, 4, 80, 54) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {

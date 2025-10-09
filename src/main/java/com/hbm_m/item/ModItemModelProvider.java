@@ -89,8 +89,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_STAIRS);
         evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_SLAB);
 
-        evenSimplerBlockItem(ModBlocks.CONCRETE_HAZZARD_STAIRS);
-        evenSimplerBlockItem(ModBlocks.CONCRETE_HAZZARD_SLAB);
+        evenSimplerBlockItem(ModBlocks.CONCRETE_HAZARD_STAIRS);
+        evenSimplerBlockItem(ModBlocks.CONCRETE_HAZARD_SLAB);
 
         simpleItem(ModItems.GRENADEHE);
         simpleItem(ModItems.GRENADEFIRE);
@@ -145,7 +145,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 
     private ItemModelBuilder simpleItem(RegistryObject<Item> item) {
         return withExistingParent(item.getId().getPath(),
-                new ResourceLocation("item/generated")).texture("layer0",
-                new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
+                ResourceLocation.parse("item/generated")).texture("layer0",
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
     }
 }

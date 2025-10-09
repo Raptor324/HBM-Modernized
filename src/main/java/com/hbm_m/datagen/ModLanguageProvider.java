@@ -149,6 +149,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.energy_consumption", "Потребление энергии:");
                 add("tooltip.hbm_m.tags", "Теги (OreDict):");
                 add("item.hbm_m.template_folder.desc", "Шаблоны машин: Бумага + Краситель$Идентификатор: Железная пластина + Краситель$Штамп для пресса: Плоский штамп$Трек сирены: Изолятор + Стальная пластина");
+                add("desc.gui.template", "Вставьте сборочный шаблон");
+                add("desc.gui.assembler.warning", "Некорректный шаблон!");
+                
 
                 add(ModItems.GHIORSIUM_CLADDING.get(), "Прокладка из гиорсия");
                 add(ModItems.DESH_CLADDING.get(), "Обшивка из деш");
@@ -156,12 +159,16 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.LEAD_CLADDING.get(), "Свинцовая обшивка");
                 add(ModItems.PAINT_CLADDING.get(), "Свинцовая краска");
 
+                add(ModItems.GRENADEHE.get(), "Осколочная граната");
+                add(ModItems.GRENADEFIRE.get(), "Зажигательная граната");
+
                 add("item.hbm_m.radaway", "Антирадин");
-                add("item.hbm_m.wood_ash_powder", "Древесный Пепел");
+                add("item.hbm_m.wood_ash_powder", "Древесный пепел");
                 add("effect.hbm_m.radaway", "Очищение от радиации");
 
                 add(ModItems.PLATE_GOLD.get(), "Золотая пластина");
                 add(ModItems.PLATE_GUNMETAL.get(), "Пластина пушечной бронзы");
+                add(ModItems.PLATE_TITANIUM.get(), "Титановая пластина");
                 add(ModItems.PLATE_GUNSTEEL.get(), "Пластина оружейной стали");
                 add(ModItems.PLATE_IRON.get(), "Железная пластина");
                 add(ModItems.PLATE_KEVLAR.get(), "Кевларовая пластина");
@@ -172,6 +179,34 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_SATURNITE.get(), "Сатурнитовая пластина");
                 add(ModItems.PLATE_SCHRABIDIUM.get(), "Шрабидиевая пластина");
                 add(ModItems.PLATE_STEEL.get(), "Стальная пластина");
+                add(ModItems.PLATE_ADVANCED_ALLOY.get(), "Пластина из продвинутого сплава");
+                add(ModItems.PLATE_ALUMINUM.get(), "Алюминиевая пластина");
+                add(ModItems.PLATE_COPPER.get(), "Медная пластина");
+                add(ModItems.PLATE_BISMUTH.get(), "Висмутовая пластина");
+                add(ModItems.PLATE_ARMOR_AJR.get(), "Броневая пластина AJR");
+                add(ModItems.PLATE_ARMOR_DNT.get(), "Броневая пластина DNT");
+                add(ModItems.PLATE_ARMOR_DNT_RUSTED.get(), "Ржавая броневая пластина DNT");
+                add(ModItems.PLATE_ARMOR_FAU.get(), "Броневая пластина FAU");
+                add(ModItems.PLATE_ARMOR_HEV.get(), "Броневая пластина HEV");
+                add(ModItems.PLATE_ARMOR_LUNAR.get(), "Лунная броневая пластина");
+                add(ModItems.PLATE_ARMOR_TITANIUM.get(), "Титановая броневая пластина");
+                add(ModItems.PLATE_CAST.get(), "Литейная форма");
+                add(ModItems.PLATE_CAST_ALT.get(), "Альтернативная литейная форма");
+                add(ModItems.PLATE_CAST_BISMUTH.get(), "Висмутовая литейная форма");
+                add(ModItems.PLATE_CAST_DARK.get(), "Тёмная литейная форма");
+                add(ModItems.PLATE_COMBINE_STEEL.get(), "Пластина из комбинированной стали");
+                add(ModItems.PLATE_DURA_STEEL.get(), "Пластина из прочной стали");
+                add(ModItems.PLATE_DALEKANIUM.get(), "Далеканиевая пластина");
+                add(ModItems.PLATE_DESH.get(), "Дешевая пластина");
+                add(ModItems.PLATE_DINEUTRONIUM.get(), "Динейтрониевая пластина");
+                add(ModItems.PLATE_EUPHEMIUM.get(), "Эуфемиевая пластина");
+                add(ModItems.PLATE_FUEL_MOX.get(), "Топливная пластина MOX");
+                add(ModItems.PLATE_FUEL_PU238BE.get(), "Топливная пластина Pu-238/Be");
+                add(ModItems.PLATE_FUEL_PU239.get(), "Топливная пластина Pu-239");
+                add(ModItems.PLATE_FUEL_RA226BE.get(), "Топливная пластина Ra-226/Be");
+                add(ModItems.PLATE_FUEL_SA326.get(), "Топливная пластина SA-326");
+                add(ModItems.PLATE_FUEL_U233.get(), "Топливная пластина U-233");
+                add(ModItems.PLATE_FUEL_U235.get(), "Топливная пластина U-235");
 
                 add("item.hbm_m.firebrick", "Шамотный кирпич");
                 add("item.hbm_m.uranium_raw", "Рудный уран");
@@ -188,6 +223,14 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.lignite", "Бурый уголь");
                 add("item.hbm_m.fluorite", "Флюорит");
                 add("item.hbm_m.fireclay_ball", "Комок огнеупорной глины");
+
+                add("item.hbm_m.blueprint_folder", "Папка шаблонов");
+                add("item.hbm_m.blueprint_folder.named", "Папка шаблонов машин");
+                add("item.hbm_m.blueprint_folder.empty", "Пустая папка");
+                add("item.hbm_m.blueprint_folder.obsolete", "Устаревший шаблон (группа удалена)");
+                add("item.hbm_m.blueprint_folder.desc", "Вставьте в Сборочную машину для разблокировки рецептов");
+                add("item.hbm_m.blueprint_folder.recipes", "Содержит рецепты:");
+                add("gui.hbm_m.recipe_from_group", "Из группы:");
                 
                 add("sounds.hbm_m.radaway_use", "Использование антирадина");
                 
@@ -202,7 +245,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.boots", "Ботинкам");
                 add("tooltip.hbm_m.armor.all", "Любой броне");
                 add("tooltip.hbm_m.rad_protection.value_short", "%s сопр. радиации.");
-                
+
+                // БЛОКИ
+
                 add("block.hbm_m.uranium_block", "Урановый блок");
                 add("block.hbm_m.plutonium_block", "Плутониевый блок");
                 add("block.hbm_m.plutonium_fuel_block", "Блок плутониевого топлива");
@@ -213,6 +258,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.machine_battery", "Энергохранилище");
                 add("block.hbm_m.wire_coated", "Провод из красной меди");
                 add("block.hbm_m.wood_burner", "Дровяной генератор");
+                add("block.hbm_m.shredder", "Шредер (WIP)");
                 add("block.hbm_m.blast_furnace", "Доменная печь");
                 add("block.hbm_m.press", "Пресс");
                 add("block.hbm_m.geiger_counter_block", "Стационарный счетчик Гейгера");
@@ -220,6 +266,14 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.reinforced_stone", "Уплотнённый камень");
                 add("block.hbm_m.reinforced_stone_slab", "Плита из уплотнённого камня");
                 add("block.hbm_m.reinforced_stone_stairs", "Ступеньки из уплотнённого камня");
+                add("block.hbm_m.concrete_hazard", "Бетон ''Выбор строителя'' - Полоса опасности");
+                add("block.hbm_m.concrete_hazard_slab", "Бетонная плита ''Выбор строителя'' - Полоса опасности");
+                add("block.hbm_m.concrete_hazard_stairs", "Бетонные ступеньки ''Выбор строителя'' - Полоса опасности");
+                add("block.hbm_m.large_vehicle_door", "Дверь для крупногабаритного транспорта");
+                add("block.hbm_m.strawberry_bush", "Куст клубники");
+                add("block.hbm_m.strawberry", "Клубника");
+
+                // РУДЫ
 
                 add("block.hbm_m.uranium_ore", "Урановая руда");
                 add("block.hbm_m.aluminum_ore", "Алюминиевая руда");
@@ -561,6 +615,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.battery_creative", "Creative Battery");
                 add("tooltip.hbm_m.creative_battery_desc","Provides an infinite amount of power");
                 add("tooltip.hbm_m.creative_battery_flavor","To infinity... and beyond!!");
+                add("item.hbm_m.blueprint_folder", "Template Folder");
+                add("item.hbm_m.blueprint_folder.named", "Machine Template Folder");
+                add("item.hbm_m.blueprint_folder.empty", "Empty folder");
+                add("item.hbm_m.blueprint_folder.obsolete", "Folder is Deprecated (Group was removed)");
+                add("item.hbm_m.blueprint_folder.desc", "Insert into Assembly Machine to unlock recipes");
+                add("item.hbm_m.blueprint_folder.recipes", "Contains recipes:");
+                add("gui.hbm_m.recipe_from_group", "From Group:");
 
                 add("item.hbm_m.heart_piece", "Heart Piece");
                 add(ModItems.HEART_CONTAINER.get(), "Heart Container");
@@ -589,10 +650,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.energy_consumption", "Energy Consumption:");
                 add("tooltip.hbm_m.tags", "Тags (OreDict):");
                 add("item.hbm_m.template_folder.desc", "Machine Templates: Paper + Dye$Fluid IDs: Iron Plate + Dye$Press Stamps: Flat Stamp$Siren Tracks: Insulator + Steel Plate");
+                add("desc.gui.template", "Insert Assembly Template");
+                add("desc.gui.assembler.warning", "No valid template!");
 
                 add(ModItems.PLATE_GOLD.get(), "Golden Plate");
                 add(ModItems.PLATE_GUNMETAL.get(), "Gunmetal Plate");
                 add(ModItems.PLATE_GUNSTEEL.get(), "Gunsteel Plate");
+                add(ModItems.PLATE_TITANIUM.get(), "Titanium Plate");
                 add(ModItems.PLATE_IRON.get(), "Iron Plate");
                 add(ModItems.PLATE_KEVLAR.get(), "Kevlar Plate");
                 add(ModItems.PLATE_LEAD.get(), "Lead Plate");
@@ -602,6 +666,37 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_SATURNITE.get(), "Saturnite Plate");
                 add(ModItems.PLATE_SCHRABIDIUM.get(), "Schrabidium Plate");
                 add(ModItems.PLATE_STEEL.get(), "Steel Plate");
+                add(ModItems.PLATE_ADVANCED_ALLOY.get(), "Advanced Alloy Plate");
+                add(ModItems.PLATE_ALUMINUM.get(), "Aluminum Plate");
+                add(ModItems.PLATE_COPPER.get(), "Copper Plate");
+                add(ModItems.PLATE_BISMUTH.get(), "Bismuth Plate");
+                add(ModItems.PLATE_ARMOR_AJR.get(), "AJR Armor Plate");
+                add(ModItems.PLATE_ARMOR_DNT.get(), "DNT Armor Plate");
+                add(ModItems.PLATE_ARMOR_DNT_RUSTED.get(), "Rusted DNT Armor Plate");
+                add(ModItems.PLATE_ARMOR_FAU.get(), "FAU Armor Plate");
+                add(ModItems.PLATE_ARMOR_HEV.get(), "HEV Armor Plate");
+                add(ModItems.PLATE_ARMOR_LUNAR.get(), "Lunar Armor Plate");
+                add(ModItems.PLATE_ARMOR_TITANIUM.get(), "Titanium Armor Plate");
+                add(ModItems.PLATE_CAST.get(), "Casting Mold");
+                add(ModItems.PLATE_CAST_ALT.get(), "Alternative Casting Mold");
+                add(ModItems.PLATE_CAST_BISMUTH.get(), "Bismuth Casting Mold");
+                add(ModItems.PLATE_CAST_DARK.get(), "Dark Casting Mold");
+                add(ModItems.PLATE_COMBINE_STEEL.get(), "Combine Steel Plate");
+                add(ModItems.PLATE_DURA_STEEL.get(), "Dura Steel Plate");
+                add(ModItems.PLATE_DALEKANIUM.get(), "Dalekanium Plate");
+                add(ModItems.PLATE_DESH.get(), "Desh Plate");
+                add(ModItems.PLATE_DINEUTRONIUM.get(), "Dineutronium Plate");
+                add(ModItems.PLATE_EUPHEMIUM.get(), "Euphemium Plate");
+                add(ModItems.PLATE_FUEL_MOX.get(), "MOX Fuel Plate");
+                add(ModItems.PLATE_FUEL_PU238BE.get(), "Pu-238/Be Fuel Plate");
+                add(ModItems.PLATE_FUEL_PU239.get(), "Pu-239 Fuel Plate");
+                add(ModItems.PLATE_FUEL_RA226BE.get(), "Ra-226/Be Fuel Plate");
+                add(ModItems.PLATE_FUEL_SA326.get(), "SA-326 Fuel Plate");
+                add(ModItems.PLATE_FUEL_U233.get(), "U-233 Fuel Plate");
+                add(ModItems.PLATE_FUEL_U235.get(), "U-235 Fuel Plate");
+
+                add(ModItems.GRENADEHE.get(), "Grenade");
+                add(ModItems.GRENADEFIRE.get(), "Incendiary Grenade");
 
                 add("item.hbm_m.firebrick", "Firebrick");
                 add("item.hbm_m.uranium_raw", "Raw Uranium");
@@ -618,6 +713,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.lignite", "Lignite");
                 add("item.hbm_m.fluorite", "Fluorite");
                 add("item.hbm_m.fireclay_ball", "Fireclay Ball");
+                add("item.hbm_m.wood_ash_powder", "Wood Ash Powder");
 
                 
                 add("tooltip.hbm_m.mods", "Modifications:");
@@ -655,11 +751,16 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.machine_assembler", "Assembly Machine (Legacy)");
                 add("block.hbm_m.advanced_assembly_machine", "Assembly Machine (VERY WIP)");
                 add("block.hbm_m.machine_battery", "Machine Battery");
+                add("block.hbm_m.shredder", "Shredder (WIP)");
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
                 add("block.hbm_m.blast_furnace", "Blast Furnace");
                 add("block.hbm_m.press", "Press");
-
-                
+                add("block.hbm_m.concrete_hazard", "Concrete Block with Hazard line");
+                add("block.hbm_m.concrete_hazard_slab", "Concrete Slab with Hazard line");
+                add("block.hbm_m.concrete_hazard_stairs", "Concrete Stairs with Hazard line");
+                add("block.hbm_m.large_vehicle_door", "Large Vehicle Door");
+                add("block.hbm_m.strawberry_bush", "Strawberry Bush");
+                add("block.hbm_m.strawberry", "Strawberry");
 
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");
                 add("block.hbm_m.wire_coated", "Red Copper Wire");

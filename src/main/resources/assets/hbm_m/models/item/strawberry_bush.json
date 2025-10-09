@@ -1,6 +1,6 @@
 {
     "parent": "item/generated",
     "textures": {
-        "layer0": "hbm_m:block/strawberry"
+        "layer0": "hbm_m:block/strawberry_bush"
     }
 }

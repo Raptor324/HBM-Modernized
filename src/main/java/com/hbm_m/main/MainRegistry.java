@@ -9,6 +9,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ItemAssemblyTemplate;
+import com.hbm_m.item.ItemBlueprintFolder;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.particle.ModParticleTypes;
@@ -50,7 +51,9 @@ import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -220,7 +223,7 @@ public class MainRegistry {
         }
 
         if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
-            // Проходимся циклом по ВСЕМ сллиткам
+            // Проходимся циклом по ВСЕМ слиткам
             for (RegistryObject<Item> ingotObject : ModItems.INGOTS.values()) {
                 event.accept(ingotObject.get());
                 if (ModClothConfig.get().enableDebugLogging) {
@@ -233,6 +236,7 @@ public class MainRegistry {
             event.accept(ModItems.PLATE_GOLD);
             event.accept(ModItems.PLATE_GUNMETAL);
             event.accept(ModItems.PLATE_GUNSTEEL);
+            event.accept(ModItems.PLATE_TITANIUM);
             event.accept(ModItems.PLATE_KEVLAR);
             event.accept(ModItems.PLATE_LEAD);
             event.accept(ModItems.PLATE_MIXED);
@@ -240,6 +244,35 @@ public class MainRegistry {
             event.accept(ModItems.PLATE_POLYMER);
             event.accept(ModItems.PLATE_SATURNITE);
             event.accept(ModItems.PLATE_SCHRABIDIUM);
+            event.accept(ModItems.PLATE_ADVANCED_ALLOY);
+            event.accept(ModItems.PLATE_ALUMINUM);
+            event.accept(ModItems.PLATE_COPPER);
+            event.accept(ModItems.PLATE_BISMUTH);
+            event.accept(ModItems.PLATE_ARMOR_AJR);
+            event.accept(ModItems.PLATE_ARMOR_DNT);
+            event.accept(ModItems.PLATE_ARMOR_DNT_RUSTED);
+            event.accept(ModItems.PLATE_ARMOR_FAU);
+            event.accept(ModItems.PLATE_ARMOR_HEV);
+            event.accept(ModItems.PLATE_ARMOR_LUNAR);
+            event.accept(ModItems.PLATE_ARMOR_TITANIUM);
+            event.accept(ModItems.PLATE_CAST);
+            event.accept(ModItems.PLATE_CAST_ALT);
+            event.accept(ModItems.PLATE_CAST_BISMUTH);
+            event.accept(ModItems.PLATE_CAST_DARK);
+            event.accept(ModItems.PLATE_COMBINE_STEEL);
+            event.accept(ModItems.PLATE_DURA_STEEL);
+            event.accept(ModItems.PLATE_DALEKANIUM);
+            event.accept(ModItems.PLATE_DESH);
+            event.accept(ModItems.PLATE_DINEUTRONIUM);
+            event.accept(ModItems.PLATE_EUPHEMIUM);
+            event.accept(ModItems.PLATE_FUEL_MOX);
+            event.accept(ModItems.PLATE_FUEL_PU238BE);
+            event.accept(ModItems.PLATE_FUEL_PU239);
+            event.accept(ModItems.PLATE_FUEL_RA226BE);
+            event.accept(ModItems.PLATE_FUEL_SA326);
+            event.accept(ModItems.PLATE_FUEL_U233);
+            event.accept(ModItems.PLATE_FUEL_U235);
+
             event.accept(ModItems.CINNABAR);
             event.accept(ModItems.ALUMINUM_RAW);
             event.accept(ModItems.BERYLLIUM_RAW);
@@ -299,9 +332,9 @@ public class MainRegistry {
             event.accept(ModBlocks.REINFORCED_STONE);
             event.accept(ModBlocks.REINFORCED_STONE_SLAB);
             event.accept(ModBlocks.REINFORCED_STONE_STAIRS);
-            event.accept(ModBlocks.CONCRETE_HAZZARD);
-            event.accept(ModBlocks.CONCRETE_HAZZARD_SLAB);
-            event.accept(ModBlocks.CONCRETE_HAZZARD_STAIRS);
+            event.accept(ModBlocks.CONCRETE_HAZARD);
+            event.accept(ModBlocks.CONCRETE_HAZARD_SLAB);
+            event.accept(ModBlocks.CONCRETE_HAZARD_STAIRS);
 
             event.accept(ModBlocks.ALUMINUM_ORE);
             event.accept(ModBlocks.ALUMINUM_ORE_DEEPSLATE);
@@ -368,12 +401,31 @@ public class MainRegistry {
             
             event.accept(ModItems.TEMPLATE_FOLDER);
 
-            // ИСПРАВЛЕНИЕ: Получаем RecipeManager через клиент Minecraft 
-            // Этот код выполняется на стороне клиента, поэтому такой доступ безопасен
             if (Minecraft.getInstance().level != null) {
                 RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
                 List<AssemblerRecipe> recipes = recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
 
+                // Собираем уникальные blueprintPool из всех рецептов
+                Set<String> blueprintPools = new HashSet<>();
+                for (AssemblerRecipe recipe : recipes) {
+                    String pool = recipe.getBlueprintPool();
+                    if (pool != null && !pool.isEmpty()) {
+                        blueprintPools.add(pool);
+                    }
+                }
+
+                // Создаём папку для каждого уникального пула
+                for (String pool : blueprintPools) {
+                    ItemStack folderStack = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
+                    ItemBlueprintFolder.writeBlueprintPool(folderStack, pool);
+                    event.accept(folderStack);
+                }
+
+                if (ModClothConfig.get().enableDebugLogging) {
+                    LOGGER.info("Added {} blueprint folders to NTM Templates tab", blueprintPools.size());
+                }
+
+                // Добавляем шаблоны как раньше
                 for (AssemblerRecipe recipe : recipes) {
                     ItemStack templateStack = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
                     ItemAssemblyTemplate.writeRecipeOutput(templateStack, recipe.getResultItem(null));

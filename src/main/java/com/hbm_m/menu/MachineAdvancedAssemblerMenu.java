@@ -6,6 +6,7 @@ package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.item.ItemBlueprintFolder;
 import com.hbm_m.item.ItemTemplateFolder;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -16,6 +17,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
+
+import javax.annotation.Nonnull;
+
 import org.jetbrains.annotations.NotNull;
 
 public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
@@ -58,10 +62,16 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
             // Слот 1: Папка шаблонов
             this.addSlot(new SlotItemHandler(handler, 1, 34, 126) {
                 @Override
-                public boolean mayPlace(ItemStack stack) {
-                    return stack.getItem() instanceof ItemTemplateFolder;
+                public boolean mayPlace(@Nonnull ItemStack stack) {
+                    return stack.getItem() instanceof ItemBlueprintFolder;
+                }
+                
+                @Override
+                public int getMaxStackSize() {
+                    return 1;
                 }
             });
+            
             // Слоты 2-3: Улучшения
             this.addSlot(new SlotItemHandler(handler, 2, 152, 108));
             this.addSlot(new SlotItemHandler(handler, 3, 152, 126));
@@ -74,7 +84,12 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
             }
 
             // Слот 16: Выход
-            this.addSlot(new SlotItemHandler(handler, 16, 98, 45));
+            this.addSlot(new SlotItemHandler(handler, 16, 98, 45){
+                @Override
+                public boolean mayPlace(ItemStack stack) {
+                    return false; // Запрещаем размещение предметов игроком
+                }
+            });
         });
 
         addDataSlots(pData);
@@ -95,37 +110,6 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
     @Override
     public void broadcastChanges() {
         super.broadcastChanges();
-        
-        // Получаем текущие значения
-        int currentProgress = this.data.get(0);
-        int currentMaxProgress = this.data.get(1);
-        int currentEnergy = this.data.get(2);
-        int currentMaxEnergy = this.data.get(3);
-        
-        // Проверяем изменения
-        boolean changed = false;
-        if (currentProgress != lastProgress) {
-            lastProgress = currentProgress;
-            changed = true;
-        }
-        if (currentMaxProgress != lastMaxProgress) {
-            lastMaxProgress = currentMaxProgress;
-            changed = true;
-        }
-        if (currentEnergy != lastEnergy) {
-            lastEnergy = currentEnergy;
-            changed = true;
-        }
-        if (currentMaxEnergy != lastMaxEnergy) {
-            lastMaxEnergy = currentMaxEnergy;
-            changed = true;
-        }
-        
-        // НЕ НУЖНО вручную вызывать dataChanged - super.broadcastChanges() сделает это сам!
-        // Просто убедимся что данные изменились через setChanged()
-        if (changed && level != null && !level.isClientSide()) {
-            blockEntity.setChanged();
-        }
     }
 
     // --- Логика для GUI ---

@@ -64,9 +64,6 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     @Nullable
     protected abstract T findRecipeForItem(ItemStack stack);
 
-    /**
-     * ИСПРАВЛЕНО: Добавлен параметр extraCondition
-     */
     public void update(double speedMultiplier, double powerMultiplier, boolean extraCondition) {
         this.didProcess = false;
         this.needsSync = false;
@@ -81,32 +78,51 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             }
         }
 
-        // ИСПРАВЛЕНО: Учитываем extraCondition и потребляем энергию правильно
+        // Обработка крафта
         if (extraCondition && currentRecipe != null && canProcess(currentRecipe)) {
-            // ИСПРАВЛЕНО: Энергия потребляется ТОЛЬКО при завершении крафта, а не каждый тик
-            double step = Math.min(speedMultiplier, 1.0);
-            this.progress += step;
-            this.didProcess = true;
-
-            // Завершаем крафт
-            if (progress >= maxProgress) {
-                // ИСПРАВЛЕНО: Потребляем всю энергию за рецепт ЗДЕСЬ
-                int totalEnergyCost = (int) (getRecipeEnergyCost(currentRecipe) * powerMultiplier);
-                energyStorage.extractEnergy(totalEnergyCost, false);
+            // Вычисляем полную стоимость энергии за тик (как в 1.7.10)
+            int energyPerTick = (int) (getRecipeEnergyCost(currentRecipe) * powerMultiplier);
+            
+            // НОВОЕ: Проверяем, хватит ли энергии на весь крафт перед началом
+            long totalEnergyRequired = (long) energyPerTick * maxProgress;
+            
+            // Если крафт только начинается (progress == 0), проверяем полную стоимость
+            if (progress == 0.0 && energyStorage.getEnergyStored() < totalEnergyRequired) {
+                // Недостаточно энергии для полного крафта - не начинаем
+                return;
+            }
+            
+            // Проверяем наличие энергии для ЭТОГО тика
+            if (energyStorage.getEnergyStored() >= energyPerTick) {
+                // Потребляем энергию ПЕРЕД увеличением прогресса (как в оригинале)
+                energyStorage.extractEnergy(energyPerTick, false);
                 
-                processCraft(currentRecipe);
-                this.needsSync = true;
+                double step = Math.min(speedMultiplier, 1.0);
+                this.progress += step;
+                this.didProcess = true;
 
-                // Проверяем, можем ли продолжить с тем же рецептом
-                if (canProcess(currentRecipe)) {
-                    progress -= maxProgress; // Продолжаем с остатком
-                } else {
+                // Завершаем крафт
+                if (progress >= maxProgress) {
+                    processCraft(currentRecipe);
+                    this.needsSync = true;
+
+                    // Проверяем, можем ли продолжить с тем же рецептом
+                    if (canProcess(currentRecipe)) {
+                        progress -= maxProgress;
+                    } else {
+                        progress = 0.0;
+                        currentRecipe = null;
+                    }
+                }
+            } else {
+                // Недостаточно энергии для этого тика - сбрасываем прогресс
+                if (progress > 0.0) {
                     progress = 0.0;
-                    currentRecipe = null;
+                    needsSync = true;
                 }
             }
         } else {
-            // ИСПРАВЛЕНО: Сброс прогресса при отсутствии условий (как в 1.7.10)
+            // Сброс прогресса при отсутствии условий
             if (progress > 0.0) {
                 progress = 0.0;
                 needsSync = true;
@@ -134,6 +150,17 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             }
         }
         return false;
+    }
+
+    /**
+     * Сбрасывает прогресс крафта и текущий рецепт.
+     * Используется при принудительной смене рецепта через GUI.
+     */
+    public void resetProgress() {
+        this.progress = 0.0;
+        this.currentRecipe = null;
+        this.didProcess = false;
+        this.needsSync = true;
     }
 
     // === GETTERS ===
@@ -173,9 +200,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
      */
     protected abstract boolean isRecipeValidForBlueprint(T recipe, ItemStack blueprint);
     
-    /**
-     * ИСПРАВЛЕНО: Добавлена проверка blueprint pool
-     */
+
     public void update(double speedMultiplier, double powerMultiplier, boolean extraCondition, ItemStack blueprint) {
         this.didProcess = false;
         this.needsSync = false;
@@ -190,7 +215,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             }
         }
 
-        // НОВОЕ: Проверка blueprint pool (как в 1.7.10)
+        // Проверка blueprint pool
         if (currentRecipe != null && !isRecipeValidForBlueprint(currentRecipe, blueprint)) {
             this.didProcess = false;
             this.progress = 0.0;
@@ -201,22 +226,43 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
 
         // Обработка крафта
         if (extraCondition && currentRecipe != null && canProcess(currentRecipe)) {
-            double step = Math.min(speedMultiplier, 1.0);
-            this.progress += step;
-            this.didProcess = true;
-
-            if (progress >= maxProgress) {
-                int totalEnergyCost = (int) (getRecipeEnergyCost(currentRecipe) * powerMultiplier);
-                energyStorage.extractEnergy(totalEnergyCost, false);
+            // Вычисляем полную стоимость энергии за тик (как в 1.7.10)
+            int energyPerTick = (int) (getRecipeEnergyCost(currentRecipe) * powerMultiplier);
+            
+            // НОВОЕ: Проверяем, хватит ли энергии на весь крафт перед началом
+            long totalEnergyRequired = (long) energyPerTick * maxProgress;
+            
+            // Если крафт только начинается (progress == 0), проверяем полную стоимость
+            if (progress == 0.0 && energyStorage.getEnergyStored() < totalEnergyRequired) {
+                // Недостаточно энергии для полного крафта - не начинаем
+                return;
+            }
+            
+            // Проверяем наличие энергии для ЭТОГО тика
+            if (energyStorage.getEnergyStored() >= energyPerTick) {
+                // Потребляем энергию ПЕРЕД увеличением прогресса (как в оригинале)
+                energyStorage.extractEnergy(energyPerTick, false);
                 
-                processCraft(currentRecipe);
-                this.needsSync = true;
+                double step = Math.min(speedMultiplier, 1.0);
+                this.progress += step;
+                this.didProcess = true;
 
-                if (canProcess(currentRecipe)) {
-                    progress -= maxProgress;
-                } else {
+                if (progress >= maxProgress) {
+                    processCraft(currentRecipe);
+                    this.needsSync = true;
+
+                    if (canProcess(currentRecipe)) {
+                        progress -= maxProgress;
+                    } else {
+                        progress = 0.0;
+                        currentRecipe = null;
+                    }
+                }
+            } else {
+                // Недостаточно энергии для этого тика - сбрасываем прогресс
+                if (progress > 0.0) {
                     progress = 0.0;
-                    currentRecipe = null;
+                    needsSync = true;
                 }
             }
         } else {

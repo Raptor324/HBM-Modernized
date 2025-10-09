@@ -139,8 +139,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
     public void neighborChanged(BlockState pState, Level pLevel, BlockPos pPos, Block pBlock, BlockPos pFromPos, boolean pIsMoving) {
         super.neighborChanged(pState, pLevel, pPos, pBlock, pFromPos, pIsMoving);
         
-        MainRegistry.LOGGER.debug("[PART NEIGHBOR] neighborChanged вызван на " + pPos + " из-за " + pFromPos);
-        
         // Делегируем всю логику в MultiblockStructureHelper
         MultiblockStructureHelper.onNeighborChangedForPart(pLevel, pPos, pFromPos);
     }

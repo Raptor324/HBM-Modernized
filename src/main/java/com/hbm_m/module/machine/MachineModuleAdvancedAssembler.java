@@ -12,6 +12,7 @@ import net.minecraftforge.items.IItemHandler;
 
 import javax.annotation.Nullable;
 import java.util.List;
+import java.util.Objects;
 
 /**
  * Модуль крафта для продвинутой сборочной машины.
@@ -68,23 +69,25 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
     public AssemblerRecipe findRecipeForInputs() {
         if (level == null) return null;
         
-        // ИСПРАВЛЕНИЕ: Если preferredRecipe установлен, НЕ ищем другие рецепты
-        // Проверяем, соответствует ли он текущим входам
+        // Если preferredRecipe установлен, проверяем его
         if (preferredRecipe != null) {
             if (matchesRecipe(preferredRecipe)) {
-                return preferredRecipe; // Возвращаем выбранный рецепт
+                return preferredRecipe;
             } else {
-                // Если выбранный рецепт больше не соответствует входам,
-                // НЕ переключаемся автоматически - возвращаем null
                 return null;
             }
         }
         
-        // Автоматический поиск ТОЛЬКО если preferredRecipe == null
+        // ИСПРАВЛЕНО: Читаем папку из слота 1, а не 17
+        ItemStack blueprint = itemHandler.getStackInSlot(1);
+        
+        // Автоматический поиск с учетом blueprint pool
         RecipeManager recipeManager = level.getRecipeManager();
         List<AssemblerRecipe> allRecipes = recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
+        
         for (AssemblerRecipe recipe : allRecipes) {
-            if (matchesRecipe(recipe)) {
+            // Проверяем и ингредиенты, И blueprint pool
+            if (matchesRecipe(recipe) && isRecipeValidForBlueprint(recipe, blueprint)) {
                 return recipe;
             }
         }
@@ -122,6 +125,11 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
 
     public void setPreferredRecipe(@Nullable AssemblerRecipe recipe) {
         this.preferredRecipe = recipe;
+
+        if (currentRecipe != null && recipe != null 
+            && !Objects.equals(currentRecipe.getId(), recipe.getId())) {
+            resetProgress();
+        }
     }
 
     @Nullable
@@ -171,8 +179,7 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
                 }
             }
         }
-        
-        // ИСПРАВЛЕНО: Используем только insertItem
+
         ItemStack result = recipe.getResultItem(level.registryAccess()).copy();
         
         // insertItem автоматически объединит стаки, если возможно
@@ -223,25 +230,26 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
      */
     @Override
     protected boolean isRecipeValidForBlueprint(AssemblerRecipe recipe, ItemStack blueprint) {
-        // Если blueprint пустой или null - все рецепты доступны
-        if (blueprint == null || blueprint.isEmpty()) {
+        // Получаем pool рецепта
+        String recipePool = recipe.getBlueprintPool();
+        
+        // Базовые рецепты (без pool) - всегда доступны
+        if (recipePool == null || recipePool.isEmpty()) {
             return true;
         }
         
-        // ВАРИАНТ 1: Если у вас есть метод в AssemblerRecipe
-        // return recipe.isValidForBlueprint(blueprint);
-        
-        // ВАРИАНТ 2: Если проверка в AssemblerRecipeConfig статическая
-        // return AssemblerRecipeConfig.isRecipeInBlueprintPool(recipe, blueprint);
-        
-        // ВАРИАНТ 3: Если blueprint имеет NBT тег с pool ID
-        CompoundTag nbt = blueprint.getTag();
-        if (nbt == null || !nbt.contains("BlueprintPool")) {
-            return true; // Blueprint без pool - доступны все рецепты
+        // Если blueprint пустой - рецепты с pool НЕ доступны
+        if (blueprint == null || blueprint.isEmpty()) {
+            return false;
         }
         
-        String blueprintPool = nbt.getString("BlueprintPool");
-        String recipePool = recipe.getBlueprintPool(); // Метод должен быть в AssemblerRecipe
+        // Получаем pool из blueprint
+        CompoundTag nbt = blueprint.getTag();
+        if (nbt == null || !nbt.contains("blueprintPool")) {
+            return false;
+        }
+        
+        String blueprintPool = nbt.getString("blueprintPool");
         
         // Проверяем совпадение pool
         return recipePool.equals(blueprintPool);

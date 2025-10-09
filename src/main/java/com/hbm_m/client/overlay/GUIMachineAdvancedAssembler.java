@@ -52,42 +52,42 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
         
         // Отрисовка основной текстуры
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
-        
+
         // Отрисовка энергии
-        int energyStored = this.menu.getBlockEntity().getEnergyStored();
-        int maxEnergy = this.menu.getBlockEntity().getMaxEnergyStored();
+        int energyStored = this.menu.getEnergy();
+        int maxEnergy = this.menu.getMaxEnergy();
         if (maxEnergy > 0) {
             int energyBarHeight = (int) ((long)energyStored * 61 / maxEnergy);
             guiGraphics.blit(TEXTURE, this.leftPos + 152, this.topPos + 79 - energyBarHeight,
                     176, 61 - energyBarHeight, 16, energyBarHeight);
         }
-        
-        // ИСПРАВЛЕНО: Отрисовка прогресса - проверяем progress > 0, а не isCrafting()
-        double progress = this.menu.getBlockEntity().getProgress();
-        if (progress > 0) {  // <-- ИЗМЕНЕНО: было isCrafting()
-            int maxProgress = this.menu.getBlockEntity().getMaxProgress();
-            if (maxProgress > 0) {  // Защита от деления на 0
+
+        // ИСПРАВЛЕНО: Отрисовка прогресса - используем ContainerData через menu
+        int progress = this.menu.getProgress(); // <-- ИЗМЕНЕНО: используем menu вместо blockEntity
+        if (progress > 0) {
+            int maxProgress = this.menu.getMaxProgress(); // <-- ИЗМЕНЕНО
+            if (maxProgress > 0) {
                 int progressWidth = (int) Math.ceil(70.0 * progress / maxProgress);
                 guiGraphics.blit(TEXTURE, this.leftPos + 62, this.topPos + 126, 176, 61, progressWidth, 16);
             }
         }
-        
+
         // Получаем текущий рецепт
         ResourceLocation selectedRecipeId = this.menu.getBlockEntity().getSelectedRecipeId();
         AssemblerRecipe recipe = null;
         if (selectedRecipeId != null && this.minecraft != null && this.minecraft.level != null) {
             recipe = this.minecraft.level.getRecipeManager()
-                .byKey(selectedRecipeId)
-                .filter(r -> r instanceof AssemblerRecipe)
-                .map(r -> (AssemblerRecipe) r)
-                .orElse(null);
+                    .byKey(selectedRecipeId)
+                    .filter(r -> r instanceof AssemblerRecipe)
+                    .map(r -> (AssemblerRecipe) r)
+                    .orElse(null);
         }
-        
+
         boolean hasRecipe = recipe != null;
         boolean canProcess = hasRecipe && energyStored >= 100;
         
-        // Отрисовка светодиодов (LEDs) - как в оригинале
-        if (this.menu.getBlockEntity().isCrafting()) {
+        // Отрисовка светодиодов (LEDs) - используем isCrafting() из menu
+        if (this.menu.isCrafting()) { // <-- ПРАВИЛЬНО: используется menu
             // Левый LED (зеленый)
             guiGraphics.blit(TEXTURE, this.leftPos + 51, this.topPos + 121, 195, 0, 3, 6);
             // Правый LED (зеленый)
@@ -100,8 +100,8 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
                 guiGraphics.blit(TEXTURE, this.leftPos + 56, this.topPos + 121, 192, 0, 3, 6);
             }
         }
-        
-        // Отрисовка "призрачных" предметов в пустых слотах - ВОССТАНОВЛЕНО из оригинала
+
+        // Отрисовка "призрачных" предметов в пустых слотах
         if (recipe != null) {
             renderGhostItems(guiGraphics, recipe);
         }
@@ -364,26 +364,16 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
     private void openRecipeSelector() {
         if (this.minecraft == null || this.minecraft.level == null) return;
         
-        List<ResourceLocation> availableRecipes = new ArrayList<>();
-        
-        // Добавляем все зарегистрированные рецепты
-        List<AssemblerRecipe> allRecipes = this.minecraft.level.getRecipeManager()
-            .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
-        
-        for (AssemblerRecipe recipe : allRecipes) {
-            availableRecipes.add(recipe.getId());
-        }
-        
         ResourceLocation currentRecipe = this.menu.getBlockEntity().getSelectedRecipeId();
         
-        // Открываем GUI выбора
+        // Убираем передачу списка рецептов
         this.minecraft.setScreen(new GUIAdvancedAssemblerRecipeSelector(
             this.menu.getBlockEntity().getBlockPos(),
-            availableRecipes,
             currentRecipe,
             this
         ));
     }
+
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {

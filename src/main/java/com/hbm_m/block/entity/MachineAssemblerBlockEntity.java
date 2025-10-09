@@ -52,6 +52,9 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
+            if (level != null && !level.isClientSide()) {
+                sendUpdateToClient();
+            }
         }
     };
 
@@ -494,96 +497,96 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     }
 
     private static void serverTick(Level pLevel, BlockPos pPos, BlockState pState, MachineAssemblerBlockEntity pBlockEntity) {
-        
-
         pBlockEntity.requestEnergy();
-
-        final int ENERGY_SLOT_INDEX = 0; // Определяем индекс слота для зарядки
+        
+        final int ENERGY_SLOT_INDEX = 0;
         ItemStack energySourceStack = pBlockEntity.itemHandler.getStackInSlot(ENERGY_SLOT_INDEX);
-
+        
         if (!energySourceStack.isEmpty()) {
-            // Проверяем, является ли предмет в слоте нашей креативной батарейкой
             if (energySourceStack.getItem() instanceof ItemCreativeBattery) {
-                // Если да, мгновенно заполняем буфер машины
                 pBlockEntity.energyStorage.receiveEnergy(Integer.MAX_VALUE, false);
-                // setChanged() здесь не нужен, так как receiveEnergy уже вызывает его внутри
             } else {
-                // Если это любой другой предмет с энергией (обычная батарейка)
                 energySourceStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
-                    // Рассчитываем, сколько энергии машина может принять
                     int energyNeeded = pBlockEntity.energyStorage.getMaxEnergyStored() - pBlockEntity.energyStorage.getEnergyStored();
                     int maxCanReceive = pBlockEntity.energyStorage.getMaxReceive();
                     int energyToTransfer = Math.min(energyNeeded, maxCanReceive);
-
+                    
                     if (energyToTransfer > 0) {
-                        // Извлекаем энергию из предмета и передаем в машину
                         int extracted = itemEnergy.extractEnergy(energyToTransfer, false);
                         pBlockEntity.energyStorage.receiveEnergy(extracted, false);
                     }
                 });
             }
         }
-
+        
         pBlockEntity.energyDeltaUpdateCounter++;
         if (pBlockEntity.energyDeltaUpdateCounter >= 20) {
             int currentEnergy = pBlockEntity.energyStorage.getEnergyStored();
             pBlockEntity.energyDelta = currentEnergy - pBlockEntity.previousEnergy;
             pBlockEntity.previousEnergy = currentEnergy;
             pBlockEntity.energyDeltaUpdateCounter = 0;
-            setChanged(pLevel, pPos, pState); // Синхронизируем с клиентом
+            setChanged(pLevel, pPos, pState);
         }
-
+        
         // ЛОГИКА КРАФТА
-
         Optional<AssemblerRecipe> recipeOpt = getRecipeFromTemplate(pLevel, pBlockEntity);
-
-        // Попытаться подтянуть ресурсы из соседних инвентарей (сундуков) для одного крафта,
-        // только если есть шаблон и рецепт найден.
+        
         if (recipeOpt.isPresent()) {
             pBlockEntity.pullIngredientsForOneCraft(recipeOpt.get());
         }
-
-        // Проверяем, можем ли мы ВООБЩЕ крафтить по этому рецепту
-        if (recipeOpt.isPresent() && hasResources(pBlockEntity, recipeOpt.get()) && hasPower(pBlockEntity) && canInsertResult(pBlockEntity, recipeOpt.get().getResultItem(null))) {
-
-            // НАЧАЛО НОВОГО КРАФТA
-            // Если машина не крафтила, но теперь может, это начало нового цикла.
-            if (!pBlockEntity.isCrafting) {
-                pBlockEntity.isCrafting = true;
-                pBlockEntity.maxProgress = recipeOpt.get().getDuration();
-                setChanged(pLevel, pPos, pState); // Важно для синхронизации
+        
+        // Проверяем условия для крафта
+        if (recipeOpt.isPresent() && hasResources(pBlockEntity, recipeOpt.get()) && canInsertResult(pBlockEntity, recipeOpt.get().getResultItem(null))) {
+            AssemblerRecipe recipe = recipeOpt.get();
+            
+            // Вычисляем потребление энергии за тик (как в старой версии)
+            int energyPerTick = recipe.getPowerConsumption();
+            
+            // Проверяем, достаточно ли энергии для этого тика
+            if (pBlockEntity.energyStorage.getEnergyStored() >= energyPerTick) {
+                
+                // НАЧАЛО КРАФТА
+                if (!pBlockEntity.isCrafting) {
+                    pBlockEntity.isCrafting = true;
+                    pBlockEntity.maxProgress = recipe.getDuration();
+                    setChanged(pLevel, pPos, pState);
+                    pBlockEntity.sendUpdateToClient();
+                }
+                
+                // ПРОЦЕСС КРАФТА - потребляем энергию КАЖДЫЙ ТИК (как в 1.7.10)
+                pBlockEntity.energyStorage.extractEnergy(energyPerTick, false);
+                pBlockEntity.progress++;
+                setChanged(pLevel, pPos, pState);
+                
+                // ЗАВЕРШЕНИЕ КРАФТА
+                if (pBlockEntity.progress >= pBlockEntity.maxProgress) {
+                    craftItem(pBlockEntity, recipe);
+                    pBlockEntity.progress = 0;
+                    
+                    pBlockEntity.pushOutputToNeighbors();
+                    getRecipeFromTemplate(pLevel, pBlockEntity).ifPresent(pBlockEntity::pullIngredientsForOneCraft);
+                }
+                
+            } else {
+                // Недостаточно энергии - останавливаем
+                if (pBlockEntity.isCrafting) {
+                    pBlockEntity.progress = 0;
+                    pBlockEntity.isCrafting = false;
+                    setChanged(pLevel, pPos, pState);
+                    pBlockEntity.sendUpdateToClient();
+                }
             }
-
-            // ПРОЦЕСС КРАФТА
-            pBlockEntity.progress++;
-            pBlockEntity.energyStorage.extractEnergy(10, false); // Потребляем энергию
-            setChanged(pLevel, pPos, pState);
-
-            // ЗАВЕРШЕНИЕ КРАФТА
-            if (pBlockEntity.progress >= pBlockEntity.maxProgress) {
-                craftItem(pBlockEntity, recipeOpt.get());
-                // Сбрасываем все для следующего цикла
-                pBlockEntity.progress = 0;
-                // После крафта попробуем переместить результат в соседние сундуки
-                pBlockEntity.pushOutputToNeighbors();
-                // И сразу подтянуть следующую партию для нового крафта, если рецепт все еще валиден
-                getRecipeFromTemplate(pLevel, pBlockEntity).ifPresent(pBlockEntity::pullIngredientsForOneCraft);
-                // НЕ устанавливаем isCrafting в false здесь,
-                // пусть это произойдет в блоке else на следующем тике, если ресурсы кончатся.
-                // Это позволит машине сразу начать новый крафт без остановки звука.
-            }
-
+            
         } else {
-            // УСЛОВИЯ ДЛЯ КРАФТА НЕ ВЫПОЛНЕНЫ
-            // Если машина крафтила, но теперь не может (например, кончились ресурсы), останавливаем ее.
+            // УСЛОВИЯ НЕ ВЫПОЛНЕНЫ
             if (pBlockEntity.isCrafting) {
                 pBlockEntity.progress = 0;
                 pBlockEntity.isCrafting = false;
-                setChanged(pLevel, pPos, pState); // Важно для синхронизации
+                setChanged(pLevel, pPos, pState);
+                pBlockEntity.sendUpdateToClient();
             }
         }
-
-        // Синхронизируем состояние isCrafting с GUI в любом случае
+        
         pBlockEntity.data.set(DATA_IS_CRAFTING, pBlockEntity.isCrafting ? 1 : 0);
     }
 
@@ -670,11 +673,6 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
         return recipe.matches(inventory, pBlockEntity.level);
     }
 
-    // Проверяет, достаточно ли энергии для одного тика крафта
-    private static boolean hasPower(MachineAssemblerBlockEntity pBlockEntity) {
-        return pBlockEntity.energyStorage.getEnergyStored() >= 10;
-    }
-
     // Проверяет, можно ли поместить результат в выходной слот
     private static boolean canInsertResult(MachineAssemblerBlockEntity pBlockEntity, ItemStack result) {
         ItemStack outputSlotStack = pBlockEntity.itemHandler.getStackInSlot(OUTPUT_SLOT);
@@ -706,6 +704,7 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
 
         // Помещаем результат в выходной слот
         pBlockEntity.itemHandler.insertItem(OUTPUT_SLOT, result, false);
+        pBlockEntity.sendUpdateToClient();
     }
 
     // Синхронизация с клиентом
@@ -723,7 +722,21 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
 
     @Override
     public CompoundTag getUpdateTag() {
-        return saveWithoutMetadata();
+        CompoundTag tag = super.getUpdateTag();
+        tag.putBoolean("isCrafting", this.isCrafting);
+        tag.put("inventory", itemHandler.serializeNBT());
+        return tag;
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        super.handleUpdateTag(tag);
+        if (this.level != null && this.level.isClientSide) {
+            this.isCrafting = tag.getBoolean("isCrafting");
+            if (tag.contains("inventory")) {
+                itemHandler.deserializeNBT(tag.getCompound("inventory"));
+            }
+        }
     }
 
     @Override
