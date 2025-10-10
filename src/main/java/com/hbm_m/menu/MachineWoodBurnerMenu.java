@@ -33,7 +33,7 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
     private final ContainerData data;
 
     public MachineWoodBurnerMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
-        this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(5));
+        this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(6)); // ✅ Было 5, стало 6
     }
 
     public MachineWoodBurnerMenu(int pContainerId, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -137,6 +137,15 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
         return this.data.get(4) != 0;
     }
 
+    public void toggleEnabled() {
+        // Отправляем специальное значение -1 для переключения
+        this.data.set(5, -1);
+    }
+
+    public boolean isEnabled() {
+        return data.get(5) != 0;
+    }
+
     public int getBurnTimeScaled(int scale) {
         int maxBurnTime = this.data.get(3);
         int burnTime = this.data.get(2);
@@ -215,5 +224,9 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
             // ИЗМЕНЕНО: было 142, стало 178 (опустили на 36 пикселей)
             this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 162));
         }
+    }
+
+    public MachineWoodBurnerBlockEntity getBlockEntity() {
+        return this.blockEntity;
     }
 }
