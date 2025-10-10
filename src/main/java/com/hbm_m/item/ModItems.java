@@ -133,6 +133,9 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
     public static final RegistryObject<Item> GRENADESLIME = ITEMS.register("grenadeslime",
             () -> new GrenadeslimeItem(new Item.Properties()));
 
+    public static final RegistryObject<Item> GRENADEIF = ITEMS.register("grenadeif",
+            () -> new GrenadeheItem(new Item.Properties()));
+
     // БРОНЯ ГОРНЯКА:
     public static final RegistryObject<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet",
             () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.HELMET, new Item.Properties()));

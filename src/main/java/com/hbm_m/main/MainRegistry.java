@@ -28,8 +28,6 @@ import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.worldgen.ModWorldGen;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.MenuScreens;
-import net.minecraft.client.renderer.Sheets;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.resources.ResourceLocation;
@@ -45,7 +43,6 @@ import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.fml.common.Mod;
@@ -87,7 +84,6 @@ public class MainRegistry {
         ModWorldGen.BIOME_MODIFIERS.register(modEventBus); // Регистрация модификаторов биомов (руды, структуры и тд)
         ModEffects.register(modEventBus); // Регистрация эффектов
         ModRecipes.register(modEventBus); // Регистрация рецептов
-
         // Регистрация обработчиков событий мода
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
@@ -144,6 +140,8 @@ public class MainRegistry {
             event.accept(ModItems.GRENADEFIRE);
             event.accept(ModItems.GRENADESMART);
             event.accept(ModItems.GRENADESLIME);
+
+            event.accept(ModItems.GRENADEIF);
 
             event.accept(ModItems.ALLOY_SWORD);
             event.accept(ModItems.ALLOY_AXE);
@@ -443,18 +441,7 @@ public class MainRegistry {
             }
         }
 
-        // if (event.getTab() == ModCreativeTabs.NTM_BOMBS_TAB.get()) {
-        //     if (ModClothConfig.get().enableDebugLogging) {
-        //         LOGGER.info("");
-        //     }
-        // }
-        // if (event.getTab() == ModCreativeTabs.NTM_MISSILES_TAB.get()) {
-        //     if (ModClothConfig.get().enableDebugLogging) {
-        //         LOGGER.info("");
-        //     }
-        // }
     }
-
         @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
         public static class ClientModEvents {
             @SubscribeEvent

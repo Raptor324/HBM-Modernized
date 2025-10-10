@@ -1,6 +1,6 @@
 package com.hbm_m.item;
 
-import com.hbm_m.entity.GrenadeheProjectileEntity;
+import com.hbm_m.entity.grenades.GrenadeheProjectileEntity;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;

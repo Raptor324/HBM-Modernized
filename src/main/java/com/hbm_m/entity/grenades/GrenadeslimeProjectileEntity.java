@@ -1,9 +1,12 @@
-package com.hbm_m.entity;
+package com.hbm_m.entity.grenades;
 
+import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.sound.ModSounds;
 import net.minecraft.core.BlockPos;
-import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
@@ -13,35 +16,59 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 
 
-public class GrenadeProjectileEntity extends ThrowableItemProjectile {
+public class GrenadeslimeProjectileEntity extends ThrowableItemProjectile {
 
     // --- НОВЫЕ ПОЛЯ КЛАССА ---
-    private static final int MAX_BOUNCES = 3; // Максимальное количество отскоков перед взрывом
+    private static final int MAX_BOUNCES = 4; // Максимальное количество отскоков перед взрывом
     private int bounceCount = 0; // Текущий счетчик отскоков
-    private float bounceMultiplier = 0.3f; // Коэффициент сохранения скорости после отскока (0.0 - 1.0)
+    private float bounceMultiplier = 0.51f; // Коэффициент сохранения скорости после отскока (0.0 - 1.0)
     // -------------------------
 
-    public GrenadeProjectileEntity(EntityType<? extends ThrowableItemProjectile> p_37442_pEntityType, Level p_37443_pLevel) {
+    public GrenadeslimeProjectileEntity(EntityType<? extends ThrowableItemProjectile> p_37442_pEntityType, Level p_37443_pLevel) {
         super(p_37442_pEntityType, p_37443_pLevel);
     }
 
-    public GrenadeProjectileEntity(Level pLevel) {
-        super(ModEntities.GRENADE_PROJECTILE.get(), pLevel);
+    private static final SoundEvent[] BOUNCE_SOUNDS = new SoundEvent[]{
+            ModSounds.BOUNCE1.get(), // Замените на ваш первый звук
+            ModSounds.BOUNCE2.get(), // Замените на ваш второй звук
+            ModSounds.BOUNCE3.get()  // Замените на ваш третий звук
+    };
+
+    public GrenadeslimeProjectileEntity(Level pLevel) {
+        super(ModEntities.GRENADESLIME_PROJECTILE.get(), pLevel);
     }
 
-    public GrenadeProjectileEntity(Level pLevel, LivingEntity livingEntity) {
-        super(ModEntities.GRENADE_PROJECTILE.get(), livingEntity, pLevel);
+    public GrenadeslimeProjectileEntity(Level pLevel, LivingEntity livingEntity) {
+        super(ModEntities.GRENADESLIME_PROJECTILE.get(), livingEntity, pLevel);
     }
 
     @Override
     protected Item getDefaultItem() {
-        return ModItems.GRENADE.get();
+        return ModItems.GRENADESLIME.get();
     }
 
     @Override
     protected void onHitBlock(BlockHitResult pResult) {
         // Проверяем, что код выполняется на серверной стороне, чтобы избежать дублирования на клиенте
         if (!this.level().isClientSide) {
+
+            if (!this.level().isClientSide()) {
+                BlockPos blockPos = pResult.getBlockPos(); // Получаем позицию блока, в который попала граната
+
+                // --- Добавленная логика для проигрывания случайного звука ---
+                RandomSource random = this.level().random; // Используем RandomSource из мира для рандома
+                SoundEvent bounceSound = BOUNCE_SOUNDS[random.nextInt(BOUNCE_SOUNDS.length)]; // Выбираем случайный звук
+
+                // Проигрываем звук в позиции гранаты
+                this.level().playSound(
+                        null,         // Игрок, проигрывающий звук (null для звука мира)
+                        blockPos,     // Позиция, где проигрывается звук
+                        bounceSound,  // Выбранный случайный звук
+                        SoundSource.NEUTRAL, // Категория звука (например, NEUTRAL, BLOCKS, PLAYERS)
+                        2.1F,         // Громкость (1.0F - полная громкость)
+                        1.0F          // Высота тона (1.0F - обычная высота тона)
+                );
+
             this.bounceCount++; // Увеличиваем счетчик отскоков
 
             if (this.bounceCount < MAX_BOUNCES) {
@@ -62,8 +89,6 @@ public class GrenadeProjectileEntity extends ThrowableItemProjectile {
                 // Опционально: добавьте небольшой импульс вверх, чтобы граната не "прилипала" к земле
                 // this.setDeltaMovement(this.getDeltaMovement().add(0, 0.1, 0));
 
-                // Опционально: проиграть звук отскока
-                this.level().playSound(null, this.getX(), this.getY(), this.getZ(), SoundEvents.STONE_HIT, SoundSource.NEUTRAL, 0.5F, 1.0F);
 
                 // Важно: не вызываем super.onHitBlock(pResult); чтобы не вызывать стандартное поведение ThrowableItemProjectile
                 // и не даем гранате взорваться до достижения MAX_BOUNCES.
@@ -71,8 +96,8 @@ public class GrenadeProjectileEntity extends ThrowableItemProjectile {
             } else {
                 // Если достигнуто максимальное количество отскоков, граната взрывается
 
-                BlockPos blockPos = pResult.getBlockPos(); // Получаем позицию блока, в который попала граната
-                float power = 5.0F; // Мощность взрыва. Можешь изменить это значение по своему усмотрению.
+                blockPos = pResult.getBlockPos();
+                float power = 6.5F; // Мощность взрыва. Можешь изменить это значение по своему усмотрению.
                 boolean causesFire = false; // Будет ли взрыв вызывать огонь. Установлено в 'false', если огонь не нужен.
 
                 // Используем метод level.explode() для создания взрыва.
@@ -93,4 +118,5 @@ public class GrenadeProjectileEntity extends ThrowableItemProjectile {
             }
         }
     }
+}
 }
