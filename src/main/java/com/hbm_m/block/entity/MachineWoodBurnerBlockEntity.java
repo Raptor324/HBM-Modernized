@@ -92,6 +92,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
     private static final int FUEL_SLOT = 0;
     private static final int ASH_SLOT = 1;
+    private boolean enabled = true;
 
     public MachineWoodBurnerBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.WOOD_BURNER_BE.get(), pPos, pBlockState);
@@ -105,6 +106,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
                     case 2 -> MachineWoodBurnerBlockEntity.this.burnTime;
                     case 3 -> MachineWoodBurnerBlockEntity.this.maxBurnTime;
                     case 4 -> MachineWoodBurnerBlockEntity.this.isLit ? 1 : 0;
+                    case 5 -> MachineWoodBurnerBlockEntity.this.enabled ? 1 : 0;
                     default -> 0;
                 };
             }
@@ -116,12 +118,23 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
                     case 2 -> MachineWoodBurnerBlockEntity.this.burnTime = pValue;
                     case 3 -> MachineWoodBurnerBlockEntity.this.maxBurnTime = pValue;
                     case 4 -> MachineWoodBurnerBlockEntity.this.isLit = pValue != 0;
+                    case 5 -> {
+                        // Обработка переключения
+                        if (pValue == -1) {
+                            // Специальное значение -1 означает "переключить"
+                            MachineWoodBurnerBlockEntity.this.enabled = !MachineWoodBurnerBlockEntity.this.enabled;
+                            MachineWoodBurnerBlockEntity.this.setChanged();
+                        } else {
+                            // Обычная установка значения
+                            MachineWoodBurnerBlockEntity.this.enabled = pValue != 0;
+                        }
+                    }
                 }
             }
 
             @Override
             public int getCount() {
-                return 5;
+                return 6; // Было 5, стало 6
             }
         };
     }
@@ -131,41 +144,50 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
         boolean wasLit = pBlockEntity.isLit;
 
-        // Проверяем, можем ли начать новое горение
-        if (pBlockEntity.burnTime <= 0 && pBlockEntity.canBurn()) {
-            pBlockEntity.startBurning();
-        }
-
-        // Процесс горения
-        if (pBlockEntity.burnTime > 0) {
-            pBlockEntity.burnTime--;
-            pBlockEntity.isLit = true;
-
-            // Генерируем энергию только если есть место в хранилище
-            if (pBlockEntity.energyStorage.getEnergyStored() < pBlockEntity.energyStorage.getMaxEnergyStored()) {
-                pBlockEntity.energyStorage.receiveEnergy(50, false);
-            }
-
-            // Когда топливо полностью сгорает
-            if (pBlockEntity.burnTime <= 0) {
+        // НОВОЕ: Проверяем, включен ли генератор
+        if (!pBlockEntity.enabled) {
+            // Если выключен, тушим огонь
+            if (pBlockEntity.isLit) {
                 pBlockEntity.isLit = false;
-                pBlockEntity.maxBurnTime = 0;
-
-                // Шанс выпадения пепла 50%
-                if (pLevel.random.nextFloat() < 0.5f) {
-                    ItemStack ashSlotStack = pBlockEntity.itemHandler.getStackInSlot(ASH_SLOT);
-                    if (ashSlotStack.isEmpty()) {
-                        pBlockEntity.itemHandler.setStackInSlot(ASH_SLOT, new ItemStack(ModItems.WOOD_ASH_POWDER.get()));
-                    } else if (ashSlotStack.getItem() == ModItems.WOOD_ASH_POWDER.get() && ashSlotStack.getCount() < 64) {
-                        ashSlotStack.grow(1);
-                    }
-                }
+                pBlockEntity.burnTime = 0;
             }
         } else {
-            pBlockEntity.isLit = false;
+            // Проверяем, можем ли начать новое горение
+            if (pBlockEntity.burnTime <= 0 && pBlockEntity.canBurn()) {
+                pBlockEntity.startBurning();
+            }
+
+            // Процесс горения
+            if (pBlockEntity.burnTime > 0) {
+                pBlockEntity.burnTime--;
+                pBlockEntity.isLit = true;
+
+                // Генерируем энергию только если есть место в хранилище
+                if (pBlockEntity.energyStorage.getEnergyStored() < pBlockEntity.energyStorage.getMaxEnergyStored()) {
+                    pBlockEntity.energyStorage.receiveEnergy(50, false);
+                }
+
+                // Когда топливо полностью сгорает
+                if (pBlockEntity.burnTime <= 0) {
+                    pBlockEntity.isLit = false;
+                    pBlockEntity.maxBurnTime = 0;
+
+                    // Шанс выпадения пепла 50%
+                    if (pLevel.random.nextFloat() < 0.5f) {
+                        ItemStack ashSlotStack = pBlockEntity.itemHandler.getStackInSlot(ASH_SLOT);
+                        if (ashSlotStack.isEmpty()) {
+                            pBlockEntity.itemHandler.setStackInSlot(ASH_SLOT, new ItemStack(ModItems.WOOD_ASH_POWDER.get()));
+                        } else if (ashSlotStack.getItem() == ModItems.WOOD_ASH_POWDER.get() && ashSlotStack.getCount() < 64) {
+                            ashSlotStack.grow(1);
+                        }
+                    }
+                }
+            } else {
+                pBlockEntity.isLit = false;
+            }
         }
 
-        // НОВОЕ: Отдаём энергию через ENERGY_CONNECTOR части мультиблока
+        // Отдаём энергию через ENERGY_CONNECTOR части мультиблока
         pBlockEntity.distributeEnergyToConnectors(pLevel, pPos, pState);
 
         // Обновляем состояние блока если изменилось
@@ -278,65 +300,20 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
     }
     public int getBurnTime(Item item) {
         ItemStack stack = new ItemStack(item);
+        // Запрещаем ведро лавы
+        if (item == Items.LAVA_BUCKET) return 0;
+        // Получаем ванильное время горения в тиках
+        int vanillaBurnTime = net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null);
 
-        // КАСТОМНОЕ ТОПЛИВО
-        if (item == ModItems.LIGNITE.get()) return 30; // 400 тиков / 20 = 20 секунд
-
-        // УГОЛЬ
-        if (item == Items.COAL || item == Items.CHARCOAL) return 40; // 1600 тиков
-
-        // ТЕГИ - автоматически покрывают все типы дерева
-        if (stack.is(ItemTags.LOGS) || stack.is(ItemTags.LOGS_THAT_BURN)) return 30;
-        if (stack.is(ItemTags.PLANKS)) return 15; 
-
-        // Деревянные строительные блоки (используем ItemTags вместо BlockTags)
-        if (stack.is(ItemTags.WOODEN_STAIRS)) return 15; // 300 тиков
-        if (stack.is(ItemTags.WOODEN_SLABS)) return 8; // 150 тиков
-        if (stack.is(ItemTags.WOODEN_FENCES)) return 15; // 300 тиков
-        if (stack.is(ItemTags.WOODEN_TRAPDOORS)) return 15; // 300 тиков
-        if (stack.is(ItemTags.WOODEN_DOORS)) return 10; // 200 тиков
-        if (stack.is(ItemTags.WOODEN_BUTTONS)) return 5; // 100 тиков
-        if (stack.is(ItemTags.WOODEN_PRESSURE_PLATES)) return 15; // 300 тиков
-
-        // Таблички
-        if (stack.is(ItemTags.SIGNS)) return 10; // 200 тиков
-        if (stack.is(ItemTags.HANGING_SIGNS)) return 40; // 800 тиков
-
-        // Лодки
-        if (stack.is(ItemTags.BOATS)) return 60; // 1200 тиков
-        if (stack.is(ItemTags.CHEST_BOATS)) return 60; // 1200 тиков
-
-        // Мелочи
-        if (item == Items.STICK) return 5; // 100 тиков
-        if (item == Items.BOWL) return 5; // 100 тиков
-        if (item == Items.BAMBOO) return 3; // 50 тиков
-
-        // Деревянные инструменты
-        if (item == Items.WOODEN_SWORD || item == Items.WOODEN_PICKAXE ||
-                item == Items.WOODEN_AXE || item == Items.WOODEN_SHOVEL ||
-                item == Items.WOODEN_HOE) return 10; // 200 тиков
-
-        // Прочие деревянные блоки
-        if (item == Items.CRAFTING_TABLE || item == Items.CARTOGRAPHY_TABLE ||
-                item == Items.FLETCHING_TABLE || item == Items.SMITHING_TABLE ||
-                item == Items.LOOM || item == Items.BARREL || item == Items.COMPOSTER ||
-                item == Items.CHEST || item == Items.TRAPPED_CHEST ||
-                item == Items.BOOKSHELF || item == Items.CHISELED_BOOKSHELF ||
-                item == Items.LECTERN || item == Items.NOTE_BLOCK ||
-                item == Items.JUKEBOX || item == Items.DAYLIGHT_DETECTOR ||
-                item == Items.LADDER) return 15; // 300 тиков
-
-        // Прочее топливо
-        if (item == Items.BLAZE_ROD) return 120; // 2400 тиков
-        if (item == Items.DRIED_KELP_BLOCK) return 200; // 4000 тиков
-
-        return 0;
+        if (vanillaBurnTime <= 0) return 0;
+        // Конвертируем тики в секунды (делим на 20)
+        return (vanillaBurnTime / 20);
     }
 
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int pContainerId, @Nonnull Inventory pPlayerInventory, @Nonnull Player pPlayer) {
-        return new MachineWoodBurnerMenu(pContainerId, pPlayerInventory, this, this.data);
+        return new MachineWoodBurnerMenu(pContainerId, pPlayerInventory, this, this.data); // ✅ Передаём this.data (с getCount() = 6)
     }
 
     @Override
@@ -373,6 +350,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         pTag.putInt("burnTime", burnTime);
         pTag.putInt("maxBurnTime", maxBurnTime);
         pTag.putBoolean("isLit", isLit);
+        pTag.putBoolean("enabled", enabled); // НОВОЕ
     }
 
     @Override
@@ -383,6 +361,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         burnTime = pTag.getInt("burnTime");
         maxBurnTime = pTag.getInt("maxBurnTime");
         isLit = pTag.getBoolean("isLit");
+        enabled = pTag.getBoolean("enabled"); // НОВОЕ
     }
 
     public void drops() {
@@ -397,6 +376,15 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
     public int getComparatorPower() {
         return (int) Math.floor(((double) this.energyStorage.getEnergyStored() / this.energyStorage.getMaxEnergyStored()) * 15.0);
+    }
+
+    public boolean isEnabled() {
+        return this.enabled;
+    }
+
+    public void setEnabled(boolean enabled) {
+        this.enabled = enabled;
+        this.setChanged();
     }
 
     // Публичный метод для доступа к энергохранилищу (для частей мультиблока)

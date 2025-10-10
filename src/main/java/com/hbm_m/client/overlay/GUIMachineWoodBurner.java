@@ -1,9 +1,9 @@
 package com.hbm_m.client.overlay;
 
-// GUI для дровяной печи. Показывает время горения топлива, уровень энергии,
-// индикатор пламени и подсказки. Основан на AbstractContainerScreen и использует текстуры из ресурсов мода.
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.MachineWoodBurnerMenu;
+import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.network.ToggleWoodBurnerPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -17,11 +17,9 @@ import java.util.List;
 import java.util.Optional;
 
 public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBurnerMenu> {
-    // Основная текстура GUI
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/wood_burner/wood_burner_gui.png");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/wood_burner/345345.png");
 
-    // Текстуры для шкал
     private static final ResourceLocation BURN_TIME_BAR_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/wood_burner/fuel_bar.png");
 
@@ -38,11 +36,22 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
     protected void init() {
         super.init();
 
-        this.topPos -= 20; // поднимаем на 20 пикселей
+        this.topPos -= 20;
         this.leftPos = (this.width - this.imageWidth) / 2;
 
+        // Позиция заголовка (по умолчанию 6)
         this.titleLabelY = 6;
-        this.inventoryLabelY = this.imageHeight - 104;
+        this.titleLabelX = 17;// Можете изменить на нужное значение
+        this.inventoryLabelY = this.imageHeight - 110;
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
+        // Рисуем заголовок белым цветом (0xFFFFFF)
+        pGuiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0xFFFFFF, false);
+
+        // Рисуем надпись инвентаря стандартным цветом
+        pGuiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
     }
 
     @Override
@@ -57,13 +66,12 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
         int x = this.leftPos;
         int y = this.topPos;
 
-        // Рендерим основную текстуру GUI
         RenderSystem.setShaderTexture(0, TEXTURE);
         pGuiGraphics.blit(TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
 
-        // Рендерим шкалы и пламя
         renderBurnTimeBar(pGuiGraphics, x, y);
         renderEnergyBar(pGuiGraphics, x, y);
+        renderToggleButton(pGuiGraphics, x, y);
     }
 
     private void renderBurnTimeBar(GuiGraphics graphics, int x, int y) {
@@ -71,11 +79,8 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
             int totalHeight = 52;
             int barHeight = menu.getBurnTimeScaled(totalHeight);
 
-            // Переключаемся на текстуру шкалы времени горения
             RenderSystem.setShaderTexture(0, BURN_TIME_BAR_TEXTURE);
 
-            // Рендерим заполненную часть шкалы времени горения
-            // Теперь берем с координат (0,0) так как это отдельный файл
             int startY = y + 18 + (totalHeight - barHeight);
             int textureStartY = totalHeight - barHeight;
 
@@ -88,36 +93,74 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
             int totalHeight = 34;
             int barHeight = menu.getEnergyScaled(totalHeight);
 
-            // Переключаемся на текстуру шкалы энергии
             RenderSystem.setShaderTexture(0, ENERGY_BAR_TEXTURE);
 
-            // РЕНДЕРИМ СНИЗУ ВВЕРХ - берём текстуру с НУЛЯ (самый низ)
-            // Позиция на экране: рисуем внизу шкалы и поднимаемся вверх
-            int startY = y + 52 - barHeight;  // 52 = 18 + 34 (низ шкалы минус высота заполнения)
+            // Рисуем снизу вверх
+            int startY = y + 18 + (totalHeight - barHeight); // y + 18 - это начало шкалы
+            int textureStartY = totalHeight - barHeight; // Начинаем с соответствующей позиции в текстуре
 
             graphics.blit(
-                    ENERGY_BAR_TEXTURE,  // текстура
-                    x + 143,              // X на экране
-                    startY,               // Y на экране (верх заполненной части)
-                    0,                    // X в текстуре
-                    0,                    // Y в текстуре - ВСЕГДА берём с нуля (снизу)!
-                    16,                   // ширина
-                    barHeight             // высота (сколько взять от низа текстуры)
+                    ENERGY_BAR_TEXTURE,
+                    x + 143,           // X позиция на экране
+                    startY,            // Y позиция на экране (снизу вверх)
+                    0,                 // X в текстуре
+                    textureStartY,     // Y в текстуре (берём нужную часть градиента)
+                    16,                // Ширина
+                    barHeight          // Высота (сколько рисуем)
             );
         }
+    }
+
+    private void renderToggleButton(GuiGraphics graphics, int x, int y) {
+        // Рендерим текстуру выключенной кнопки ТОЛЬКО если генератор выключен
+        if (!menu.isEnabled()) {
+            RenderSystem.setShaderTexture(0, TEXTURE);
+            // Координаты кнопки: x=47, y=17
+            // Координаты текстуры выключенной кнопки: x=196, y=0
+            graphics.blit(TEXTURE, x + 53, y + 17, 196, 0, 16, 16);
+        }
+        // Если enabled=true, текстура включенной кнопки уже есть в основном GUI
     }
 
 
 
     @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // Проверяем клик по кнопке переключателя (x=47, y=17, размер 16x16)
+        if (isMouseOver((int)mouseX, (int)mouseY, 53, 17, 16, 16)) {
+            // Отправляем пакет на сервер для переключения состояния
+            ModPacketHandler.INSTANCE.sendToServer(
+                    new ToggleWoodBurnerPacket(menu.getBlockEntity().getBlockPos())
+            );
+            return true;
+        }
+
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
     protected void renderTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
         super.renderTooltip(pGuiGraphics, pX, pY);
+
+        // Тултип для кнопки переключателя
+        if (isMouseOver(pX, pY, 53, 17, 16, 16)) {
+            List<Component> tooltip = new ArrayList<>();
+            if (menu.isEnabled()) {
+                tooltip.add(Component.literal("Generator: ON").withStyle(ChatFormatting.GREEN));
+                tooltip.add(Component.literal("Click to turn OFF").withStyle(ChatFormatting.GRAY));
+            } else {
+                tooltip.add(Component.literal("Generator: OFF").withStyle(ChatFormatting.RED));
+                tooltip.add(Component.literal("Click to turn ON").withStyle(ChatFormatting.GRAY));
+            }
+            pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pX, pY);
+            return;
+        }
 
         // Тултип для шкалы времени горения
         if (isMouseOver(pX, pY, 17, 17, 4, 52)) {
             List<Component> tooltip = new ArrayList<>();
             if (menu.isLit()) {
-                int burnTimeSeconds = menu.getBurnTime() / 20; // конвертируем тики в секунды
+                int burnTimeSeconds = menu.getBurnTime() / 20;
                 tooltip.add(Component.literal("Burn Time: " + burnTimeSeconds + "s")
                         .withStyle(ChatFormatting.GOLD));
             } else {
@@ -126,7 +169,7 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
             pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pX, pY);
         }
 
-        // Тултип для шкалы энергии (обновлены координаты под размер 16x34)
+        // Тултип для шкалы энергии
         if (isMouseOver(pX, pY, 143, 18, 16, 34)) {
             List<Component> tooltip = new ArrayList<>();
             tooltip.add(Component.literal(String.format("%,d / %,d FE", menu.getEnergy(), menu.getMaxEnergy()))
@@ -138,7 +181,6 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
                 tooltip.add(Component.literal("Not generating").withStyle(ChatFormatting.GRAY));
             }
 
-            // Показываем процент заполнения
             int percentage = (int) ((float) menu.getEnergy() / menu.getMaxEnergy() * 100);
             tooltip.add(Component.literal(percentage + "%").withStyle(ChatFormatting.AQUA));
 
