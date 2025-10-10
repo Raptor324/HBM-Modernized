@@ -526,7 +526,7 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> LIGNITE = ITEMS.register("lignite",
-            () -> new FuelItem(new Item.Properties(), 400));
+            () -> new FuelItem(new Item.Properties(), 1000));
 
     public static final RegistryObject<Item> CINNABAR = ITEMS.register("cinnabar",
             () -> new Item(new Item.Properties()));

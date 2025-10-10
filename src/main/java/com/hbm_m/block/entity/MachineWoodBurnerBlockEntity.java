@@ -300,59 +300,14 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
     }
     public int getBurnTime(Item item) {
         ItemStack stack = new ItemStack(item);
+        // Запрещаем ведро лавы
+        if (item == Items.LAVA_BUCKET) return 0;
+        // Получаем ванильное время горения в тиках
+        int vanillaBurnTime = net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null);
 
-        // КАСТОМНОЕ ТОПЛИВО
-        if (item == ModItems.LIGNITE.get()) return 30; // 400 тиков / 20 = 20 секунд
-
-        // УГОЛЬ
-        if (item == Items.COAL || item == Items.CHARCOAL) return 40; // 1600 тиков
-
-        // ТЕГИ - автоматически покрывают все типы дерева
-        if (stack.is(ItemTags.LOGS) || stack.is(ItemTags.LOGS_THAT_BURN)) return 30;
-        if (stack.is(ItemTags.PLANKS)) return 15; 
-
-        // Деревянные строительные блоки (используем ItemTags вместо BlockTags)
-        if (stack.is(ItemTags.WOODEN_STAIRS)) return 15; // 300 тиков
-        if (stack.is(ItemTags.WOODEN_SLABS)) return 8; // 150 тиков
-        if (stack.is(ItemTags.WOODEN_FENCES)) return 15; // 300 тиков
-        if (stack.is(ItemTags.WOODEN_TRAPDOORS)) return 15; // 300 тиков
-        if (stack.is(ItemTags.WOODEN_DOORS)) return 10; // 200 тиков
-        if (stack.is(ItemTags.WOODEN_BUTTONS)) return 5; // 100 тиков
-        if (stack.is(ItemTags.WOODEN_PRESSURE_PLATES)) return 15; // 300 тиков
-
-        // Таблички
-        if (stack.is(ItemTags.SIGNS)) return 10; // 200 тиков
-        if (stack.is(ItemTags.HANGING_SIGNS)) return 40; // 800 тиков
-
-        // Лодки
-        if (stack.is(ItemTags.BOATS)) return 60; // 1200 тиков
-        if (stack.is(ItemTags.CHEST_BOATS)) return 60; // 1200 тиков
-
-        // Мелочи
-        if (item == Items.STICK) return 5; // 100 тиков
-        if (item == Items.BOWL) return 5; // 100 тиков
-        if (item == Items.BAMBOO) return 3; // 50 тиков
-
-        // Деревянные инструменты
-        if (item == Items.WOODEN_SWORD || item == Items.WOODEN_PICKAXE ||
-                item == Items.WOODEN_AXE || item == Items.WOODEN_SHOVEL ||
-                item == Items.WOODEN_HOE) return 10; // 200 тиков
-
-        // Прочие деревянные блоки
-        if (item == Items.CRAFTING_TABLE || item == Items.CARTOGRAPHY_TABLE ||
-                item == Items.FLETCHING_TABLE || item == Items.SMITHING_TABLE ||
-                item == Items.LOOM || item == Items.BARREL || item == Items.COMPOSTER ||
-                item == Items.CHEST || item == Items.TRAPPED_CHEST ||
-                item == Items.BOOKSHELF || item == Items.CHISELED_BOOKSHELF ||
-                item == Items.LECTERN || item == Items.NOTE_BLOCK ||
-                item == Items.JUKEBOX || item == Items.DAYLIGHT_DETECTOR ||
-                item == Items.LADDER) return 15; // 300 тиков
-
-        // Прочее топливо
-        if (item == Items.BLAZE_ROD) return 120; // 2400 тиков
-        if (item == Items.DRIED_KELP_BLOCK) return 200; // 4000 тиков
-
-        return 0;
+        if (vanillaBurnTime <= 0) return 0;
+        // Конвертируем тики в секунды (делим на 20)
+        return (vanillaBurnTime / 20);
     }
 
     @Nullable

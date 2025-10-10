@@ -18,7 +18,7 @@ import java.util.Optional;
 
 public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBurnerMenu> {
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/wood_burner/wood_burner_gui.png");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/wood_burner/345345.png");
 
     private static final ResourceLocation BURN_TIME_BAR_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/wood_burner/fuel_bar.png");
@@ -39,8 +39,19 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
         this.topPos -= 20;
         this.leftPos = (this.width - this.imageWidth) / 2;
 
+        // Позиция заголовка (по умолчанию 6)
         this.titleLabelY = 6;
-        this.inventoryLabelY = this.imageHeight - 104;
+        this.titleLabelX = 17;// Можете изменить на нужное значение
+        this.inventoryLabelY = this.imageHeight - 110;
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
+        // Рисуем заголовок белым цветом (0xFFFFFF)
+        pGuiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0xFFFFFF, false);
+
+        // Рисуем надпись инвентаря стандартным цветом
+        pGuiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
     }
 
     @Override
@@ -84,16 +95,18 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
 
             RenderSystem.setShaderTexture(0, ENERGY_BAR_TEXTURE);
 
-            int startY = y + 52 - barHeight;
+            // Рисуем снизу вверх
+            int startY = y + 18 + (totalHeight - barHeight); // y + 18 - это начало шкалы
+            int textureStartY = totalHeight - barHeight; // Начинаем с соответствующей позиции в текстуре
 
             graphics.blit(
                     ENERGY_BAR_TEXTURE,
-                    x + 143,
-                    startY,
-                    0,
-                    0,
-                    16,
-                    barHeight
+                    x + 143,           // X позиция на экране
+                    startY,            // Y позиция на экране (снизу вверх)
+                    0,                 // X в текстуре
+                    textureStartY,     // Y в текстуре (берём нужную часть градиента)
+                    16,                // Ширина
+                    barHeight          // Высота (сколько рисуем)
             );
         }
     }

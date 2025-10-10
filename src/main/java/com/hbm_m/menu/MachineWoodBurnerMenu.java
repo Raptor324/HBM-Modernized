@@ -71,50 +71,14 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
     private boolean isFuel(ItemStack stack) {
         Item item = stack.getItem();
 
-        // КАСТОМНОЕ ТОПЛИВО
+        // Запрещаем ведро лавы
+        if (item == Items.LAVA_BUCKET) return false;
+
+        // Разрешаем кастомное топливо
         if (item == ModItems.LIGNITE.get()) return true;
 
-        // УГОЛЬ
-        if (item == Items.COAL || item == Items.CHARCOAL) return true;
-
-        // ТЕГИ - автоматически покрывают все типы дерева
-        if (stack.is(ItemTags.LOGS) || stack.is(ItemTags.LOGS_THAT_BURN)) return true;
-        if (stack.is(ItemTags.PLANKS)) return true;
-        if (stack.is(ItemTags.WOODEN_STAIRS)) return true;
-
-        if (stack.is(ItemTags.WOODEN_SLABS)) return true;
-        if (stack.is(ItemTags.WOODEN_FENCES)) return true;
-        if (stack.is(ItemTags.WOODEN_TRAPDOORS)) return true;
-        if (stack.is(ItemTags.WOODEN_DOORS)) return true;
-        if (stack.is(ItemTags.WOODEN_BUTTONS)) return true;
-        if (stack.is(ItemTags.WOODEN_PRESSURE_PLATES)) return true;
-        if (stack.is(ItemTags.SIGNS)) return true;
-        if (stack.is(ItemTags.HANGING_SIGNS)) return true;
-        if (stack.is(ItemTags.BOATS)) return true;
-        if (stack.is(ItemTags.CHEST_BOATS)) return true;
-
-        // МЕЛОЧИ
-        if (item == Items.STICK || item == Items.BOWL || item == Items.BAMBOO) return true;
-
-        // ДЕРЕВЯННЫЕ ИНСТРУМЕНТЫ
-        if (item == Items.WOODEN_SWORD || item == Items.WOODEN_PICKAXE ||
-                item == Items.WOODEN_AXE || item == Items.WOODEN_SHOVEL ||
-                item == Items.WOODEN_HOE) return true;
-
-        // ПРОЧИЕ ДЕРЕВЯННЫЕ БЛОКИ
-        if (item == Items.CRAFTING_TABLE || item == Items.CARTOGRAPHY_TABLE ||
-                item == Items.FLETCHING_TABLE || item == Items.SMITHING_TABLE ||
-                item == Items.LOOM || item == Items.BARREL || item == Items.COMPOSTER ||
-                item == Items.CHEST || item == Items.TRAPPED_CHEST ||
-                item == Items.BOOKSHELF || item == Items.CHISELED_BOOKSHELF ||
-                item == Items.LECTERN || item == Items.NOTE_BLOCK ||
-                item == Items.JUKEBOX || item == Items.DAYLIGHT_DETECTOR ||
-                item == Items.LADDER) return true;
-
-        // ПРОЧЕЕ ТОПЛИВО
-        if (item == Items.BLAZE_ROD || item == Items.DRIED_KELP_BLOCK) return true;
-
-        return false;
+        // Используем встроенную систему Forge для определения ванильного топлива
+        return net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null) > 0;
     }
 
     public int getEnergy() {
