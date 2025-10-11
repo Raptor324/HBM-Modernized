@@ -411,6 +411,20 @@ public class MainRegistry {
             event.accept(ModBlocks.CONCRETE_HAZARD);
             event.accept(ModBlocks.CONCRETE_HAZARD_SLAB);
             event.accept(ModBlocks.CONCRETE_HAZARD_STAIRS);
+            event.accept(ModBlocks.BRICK_CONCRETE);
+            event.accept(ModBlocks.BRICK_CONCRETE_SLAB);
+            event.accept(ModBlocks.BRICK_CONCRETE_STAIRS);
+            event.accept(ModBlocks.BRICK_CONCRETE_BROKEN);
+            event.accept(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB);
+            event.accept(ModBlocks.BRICK_CONCRETE_BROKEN_STAIRS);
+            event.accept(ModBlocks.BRICK_CONCRETE_CRACKED);
+            event.accept(ModBlocks.BRICK_CONCRETE_CRACKED_SLAB);
+            event.accept(ModBlocks.BRICK_CONCRETE_CRACKED_STAIRS);
+            event.accept(ModBlocks.BRICK_CONCRETE_MOSSY);
+            event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB);
+            event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS);
+            event.accept(ModBlocks.BRICK_CONCRETE_MARKED);
+
 
             event.accept(ModBlocks.LARGE_VEHICLE_DOOR);
             event.accept(ModBlocks.FREAKY_ALIEN_BLOCK);

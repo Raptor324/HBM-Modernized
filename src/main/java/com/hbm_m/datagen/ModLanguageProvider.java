@@ -37,7 +37,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("itemGroup.hbm_m.ntm_fuel_tab", "Топливо и элементы механизмов NTM");
                 add("itemGroup.hbm_m.ntm_templates_tab", "Шаблоны и штампы NTM");
                 add("itemGroup.hbm_m.ntm_ores_tab", "Руды и блоки NTM");
-                add("itemGroup.hbm_m.ntm_building_tab", "Строительные блоки, двери и люки NTM");
+                add("itemGroup.hbm_m.ntm_building_tab", "Строительные блоки NTM");
                 add("itemGroup.hbm_m.ntm_machines_tab", "Механизмы и станки NTM");
                 add("itemGroup.hbm_m.ntm_instruments_tab", "Инструменты NTM");
                 add("itemGroup.hbm_m.ntm_spareparts_tab", "Запчасти NTM");
@@ -310,6 +310,20 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.large_vehicle_door", "Дверь для крупногабаритного транспорта");
                 add("block.hbm_m.strawberry_bush", "Куст клубники");
                 add("block.hbm_m.strawberry", "Клубника");
+                add("block.hbm_m.brick_concrete", "Бетонные кирпичи");
+                add("block.hbm_m.brick_concrete_slab", "Плита из бетонных кирпичей");
+                add("block.hbm_m.brick_concrete_stairs", "Ступени из бетонных кирпичей");
+                add("block.hbm_m.brick_concrete_broken", "Сломанные бетонные кирпичи");
+                add("block.hbm_m.brick_concrete_broken_slab", "Плита из сломанных бетонных кирпичей");
+                add("block.hbm_m.brick_concrete_broken_stairs", "Ступени из сломанных бетонных кирпичей");
+                add("block.hbm_m.brick_concrete_cracked", "Треснутые Бетонные кирпичи");
+                add("block.hbm_m.brick_concrete_cracked_slab", "Плита из треснутых бетонных кирпичей");
+                add("block.hbm_m.brick_concrete_cracked_stairs", "Ступени из треснутых бетонных кирпичей");
+                add("block.hbm_m.brick_concrete_mossy", "Замшелые бетонные кирпичи");
+                add("block.hbm_m.brick_concrete_mossy_slab", "Плита из замшелых бетонных кирпичей");
+                add("block.hbm_m.brick_concrete_mossy_stairs", "Ступени из замшелых бетонных кирпичей");
+                add("block.hbm_m.brick_concrete_marked", "Помеченные бетонные кирпичи");
+
 
                 // РУДЫ
 
@@ -565,7 +579,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("itemGroup.hbm_m.ntm_consumables_tab", "NTM Consumables and Equipment");
                 add("itemGroup.hbm_m.ntm_spareparts_tab", "NTM Spare Parts");
                 add("itemGroup.hbm_m.ntm_instruments_tab", "NTM Instruments");
-                add("itemGroup.hbm_m.ntm_building_tab", "NTM Building Blocks, Doors and other");
+                add("itemGroup.hbm_m.ntm_building_tab", "NTM Building Blocks");
 
 
                 // EQUIPMENT
@@ -835,6 +849,21 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
                 add("block.hbm_m.blast_furnace", "Blast Furnace");
                 add("block.hbm_m.press", "Press");
+
+                add("block.hbm_m.brick_concrete", "Concrete Bricks");
+                add("block.hbm_m.brick_concrete_slab", "Concrete Bricks Slab");
+                add("block.hbm_m.brick_concrete_stairs", "Concrete Bricks Stairs");
+                add("block.hbm_m.brick_concrete_broken", "Broken Concrete Bricks");
+                add("block.hbm_m.brick_concrete_broken_slab", "Broken Concrete Bricks Slab");
+                add("block.hbm_m.brick_concrete_broken_stairs", "Broken Concrete Bricks Stairs");
+                add("block.hbm_m.brick_concrete_cracked", "Cracked Concrete Bricks");
+                add("block.hbm_m.brick_concrete_cracked_slab", "Cracked Concrete Bricks Slab");
+                add("block.hbm_m.brick_concrete_cracked_stairs", "Cracked Concrete Bricks Stairs");
+                add("block.hbm_m.brick_concrete_mossy", "Mossy Concrete Bricks");
+                add("block.hbm_m.brick_concrete_mossy_slab", "Mossy Concrete Bricks Slab");
+                add("block.hbm_m.brick_concrete_mossy_stairs", "Mossy Concrete Bricks Stairs");
+                add("block.hbm_m.brick_concrete_marked", "Marked Concrete Bricks");
+
                 add("block.hbm_m.concrete_hazard", "Concrete Block with Hazard line");
                 add("block.hbm_m.concrete_hazard_slab", "Concrete Slab with Hazard line");
                 add("block.hbm_m.concrete_hazard_stairs", "Concrete Stairs with Hazard line");

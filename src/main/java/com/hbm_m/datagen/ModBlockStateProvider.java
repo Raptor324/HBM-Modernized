@@ -22,6 +22,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
     @Override
     protected void registerStatesAndModels() {
+
+
         // ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ-РЕСУРСОВ С ПРЕФИКСОМ "block_"
 
         simpleBlockWithItem(ModBlocks.STRAWBERRY_BUSH.get(), models().cross(blockTexture(ModBlocks.STRAWBERRY_BUSH.get()).getPath(),
@@ -36,6 +38,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.WASTE_LEAVES);
         blockWithItem(ModBlocks.REINFORCED_STONE);
         blockWithItem(ModBlocks.CONCRETE_HAZARD);
+        blockWithItem(ModBlocks.BRICK_CONCRETE);
+        blockWithItem(ModBlocks.BRICK_CONCRETE_BROKEN);
+        blockWithItem(ModBlocks.BRICK_CONCRETE_CRACKED);
+        blockWithItem(ModBlocks.BRICK_CONCRETE_MOSSY);
+        blockWithItem(ModBlocks.BRICK_CONCRETE_MARKED);
 
         columnBlockWithItem(
             ModBlocks.WASTE_GRASS, 
@@ -76,6 +83,26 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(ModBlocks.REINFORCED_STONE_STAIRS.get(),
         models().getExistingFile(modLoc("block/reinforced_stone_stairs")));
 
+        stairsBlock((StairBlock) ModBlocks.BRICK_CONCRETE_STAIRS.get(),
+                modLoc("block/brick_concrete"));
+        simpleBlockItem(ModBlocks.BRICK_CONCRETE_STAIRS.get(),
+                models().getExistingFile(modLoc("block/brick_concrete_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.BRICK_CONCRETE_BROKEN_STAIRS.get(),
+                modLoc("block/brick_concrete_broken"));
+        simpleBlockItem(ModBlocks.BRICK_CONCRETE_BROKEN_STAIRS.get(),
+                models().getExistingFile(modLoc("block/brick_concrete_broken_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.BRICK_CONCRETE_CRACKED_STAIRS.get(),
+                modLoc("block/brick_concrete_cracked"));
+        simpleBlockItem(ModBlocks.BRICK_CONCRETE_CRACKED_STAIRS.get(),
+                models().getExistingFile(modLoc("block/brick_concrete_cracked_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS.get(),
+                modLoc("block/brick_concrete_mossy"));
+        simpleBlockItem(ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS.get(),
+                models().getExistingFile(modLoc("block/brick_concrete_mossy")));
+
         stairsBlock((StairBlock) ModBlocks.CONCRETE_HAZARD_STAIRS.get(),
             modLoc("block/concrete_hazard"));
         simpleBlockItem(ModBlocks.CONCRETE_HAZARD_STAIRS.get(),
@@ -93,6 +120,31 @@ public class ModBlockStateProvider extends BlockStateProvider {
             modLoc("block/concrete_hazard"));
         simpleBlockItem(ModBlocks.CONCRETE_HAZARD_SLAB.get(),
             models().getExistingFile(modLoc("block/concrete_hazard_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.BRICK_CONCRETE_SLAB.get(),
+                blockTexture(ModBlocks.BRICK_CONCRETE.get()),
+                modLoc("block/brick_concrete"));
+        simpleBlockItem(ModBlocks.BRICK_CONCRETE_SLAB.get(),
+                models().getExistingFile(modLoc("block/brick_concrete_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.BRICK_CONCRETE_MOSSY_SLAB.get(),
+                blockTexture(ModBlocks.BRICK_CONCRETE_MOSSY.get()),
+                modLoc("block/brick_concrete_mossy"));
+        simpleBlockItem(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB.get(),
+                models().getExistingFile(modLoc("block/brick_concrete_mossy_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.BRICK_CONCRETE_CRACKED_SLAB.get(),
+                blockTexture(ModBlocks.BRICK_CONCRETE_CRACKED.get()),
+                modLoc("block/brick_concrete_cracked"));
+        simpleBlockItem(ModBlocks.BRICK_CONCRETE_CRACKED_SLAB.get(),
+                models().getExistingFile(modLoc("block/brick_concrete_cracked_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.BRICK_CONCRETE_BROKEN_SLAB.get(),
+                blockTexture(ModBlocks.BRICK_CONCRETE_BROKEN.get()),
+                modLoc("block/brick_concrete_broken"));
+        simpleBlockItem(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB.get(),
+                models().getExistingFile(modLoc("block/brick_concrete_broken_slab")));
+
     }
 
     /**
