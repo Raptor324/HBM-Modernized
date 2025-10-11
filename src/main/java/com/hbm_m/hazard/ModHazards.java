@@ -28,12 +28,157 @@ public class ModHazards {
             // Используем switch для явного назначения опасностей
             // Это гораздо чище и гибче, чем хранить данные в enum
             switch (ingot) {
+
+
+
+
+
+                case PU_MIX:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 6.25f)
+                    ));
+                    break;
+                case AM_MIX:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 9f)
+                    ));
+                    break;
+                case MUD:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 1f)
+                    ));
+                    break;
+                case AMERICIUM_FUEL:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 4.75f)
+                    ));
+                    break;
+                case NEPTUNIUM_FUEL:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 1.5f)
+                    ));
+                    break;
+                case PLUTONIUM_FUEL:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 4.25f)
+                    ));
+                    break;
+                case THORIUM_FUEL:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 1.75f)
+                    ));
+                    break;
+                case URANIUM_FUEL:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 0.5f)
+                    ));
+                    break;
+                case SCHRABIDIUM_FUEL:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 5.85f)
+                    ));
+                    break;
+                case MOX_FUEL:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 2.5f)
+                    ));
+                    break;
+                case SR90:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 15f),
+                            new HazardEntry(HazardType.PYROPHORIC, 2.0f)
+                    ));
+                    break;
+                case CO60:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 30f),
+                            new HazardEntry(HazardType.PYROPHORIC, 2.0f)
+                    ));
+                    break;
+                case THORIUM:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 0.1f)
+
+                    ));
+                    break;
+                case RA226:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 7.5f)
+
+                    ));
+                    break;
+                case PB209:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 10000f),
+                            new HazardEntry(HazardType.PYROPHORIC, 5.0f)
+                    ));
+                    break;
+                case AU198:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 500f),
+                            new HazardEntry(HazardType.PYROPHORIC, 3.0f)
+                    ));
+                    break;
+                case SCHRARANIUM:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 1.5f)
+                    ));
+                    break;
+                case SCHRABIDATE:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 1.5f)
+                    ));
+                    break;
+                case TECHNETIUM:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 2.75f)
+                    ));
+                    break;
+                case POLONIUM:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 75f),
+                            new HazardEntry(HazardType.PYROPHORIC, 3.0f)
+                    ));
+                    break;
+                case NEPTUNIUM:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 2.5f)
+                    ));
+                    break;
+                case AM242:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 9.5f)
+                    ));
+                    break;
+                case AM241:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 8.5f)
+                    ));
+                    break;
+                case STRONTIUM:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 15.0f)
+                    ));
+                    break;
+                case CERIUM:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.PYROPHORIC, 3.0f)
+                    ));
+                    break;
+                case SOLINIUM:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.RADIATION, 17.5f)
+                    ));
+                    break;
+                case PHOSPHORUS:
+                    HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
+                            new HazardEntry(HazardType.PYROPHORIC, 1.0f)
+                    ));
                 case URANIUM:
                     HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
                         new HazardEntry(HazardType.RADIATION, 0.35f)
                     ));
                     break;
-                
                 case URANIUM233:
                     HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
                         new HazardEntry(HazardType.RADIATION, 5.0f)
