@@ -232,6 +232,8 @@ public class MainRegistry {
                 }
             }
 
+            event.accept(ModItems.WIRE_RED_COPPER);
+
             event.accept(ModItems.PLATE_IRON);
             event.accept(ModItems.PLATE_STEEL);
             event.accept(ModItems.PLATE_GOLD);
@@ -401,6 +403,42 @@ public class MainRegistry {
         if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get()) {
             
             event.accept(ModItems.TEMPLATE_FOLDER);
+
+            event.accept(ModItems.STAMP_STONE_FLAT);
+            event.accept(ModItems.STAMP_STONE_PLATE);
+            event.accept(ModItems.STAMP_STONE_WIRE);
+            event.accept(ModItems.STAMP_STONE_CIRCUIT);
+            event.accept(ModItems.STAMP_IRON_FLAT);
+            event.accept(ModItems.STAMP_IRON_PLATE);
+            event.accept(ModItems.STAMP_IRON_WIRE);
+            event.accept(ModItems.STAMP_IRON_CIRCUIT);
+            event.accept(ModItems.STAMP_IRON_9);
+            event.accept(ModItems.STAMP_IRON_44);
+            event.accept(ModItems.STAMP_IRON_50);
+            event.accept(ModItems.STAMP_IRON_357);
+            event.accept(ModItems.STAMP_STEEL_FLAT);
+            event.accept(ModItems.STAMP_STEEL_PLATE);
+            event.accept(ModItems.STAMP_STEEL_WIRE);
+            event.accept(ModItems.STAMP_STEEL_CIRCUIT);
+            event.accept(ModItems.STAMP_TITANIUM_FLAT);
+            event.accept(ModItems.STAMP_TITANIUM_PLATE);
+            event.accept(ModItems.STAMP_TITANIUM_WIRE);
+            event.accept(ModItems.STAMP_TITANIUM_FLAT);
+            event.accept(ModItems.STAMP_TITANIUM_PLATE);
+            event.accept(ModItems.STAMP_TITANIUM_WIRE);
+            event.accept(ModItems.STAMP_TITANIUM_CIRCUIT);
+            event.accept(ModItems.STAMP_OBSIDIAN_FLAT);
+            event.accept(ModItems.STAMP_OBSIDIAN_PLATE);
+            event.accept(ModItems.STAMP_OBSIDIAN_WIRE);
+            event.accept(ModItems.STAMP_OBSIDIAN_CIRCUIT);
+            event.accept(ModItems.STAMP_DESH_FLAT);
+            event.accept(ModItems.STAMP_DESH_PLATE);
+            event.accept(ModItems.STAMP_DESH_WIRE);
+            event.accept(ModItems.STAMP_DESH_CIRCUIT);
+            event.accept(ModItems.STAMP_DESH_9);
+            event.accept(ModItems.STAMP_DESH_44);
+            event.accept(ModItems.STAMP_DESH_50);
+            event.accept(ModItems.STAMP_DESH_357);
 
             if (Minecraft.getInstance().level != null) {
                 RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();

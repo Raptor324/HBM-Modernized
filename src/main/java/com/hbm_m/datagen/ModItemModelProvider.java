@@ -103,6 +103,44 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PLATE_FUEL_U233);
         simpleItem(ModItems.PLATE_FUEL_U235);
 
+        simpleItem(ModItems.STAMP_STONE_FLAT);
+        simpleItem(ModItems.STAMP_STONE_PLATE);
+        simpleItem(ModItems.STAMP_STONE_WIRE);
+        simpleItem(ModItems.STAMP_STONE_CIRCUIT);
+        simpleItem(ModItems.STAMP_IRON_FLAT);
+        simpleItem(ModItems.STAMP_IRON_PLATE);
+        simpleItem(ModItems.STAMP_IRON_WIRE);
+        simpleItem(ModItems.STAMP_IRON_CIRCUIT);
+        simpleItem(ModItems.STAMP_IRON_9);
+        simpleItem(ModItems.STAMP_IRON_44);
+        simpleItem(ModItems.STAMP_IRON_50);
+        simpleItem(ModItems.STAMP_IRON_357);
+        simpleItem(ModItems.STAMP_STEEL_FLAT);
+        simpleItem(ModItems.STAMP_STEEL_PLATE);
+        simpleItem(ModItems.STAMP_STEEL_WIRE);
+        simpleItem(ModItems.STAMP_STEEL_CIRCUIT);
+        simpleItem(ModItems.STAMP_TITANIUM_FLAT);
+        simpleItem(ModItems.STAMP_TITANIUM_PLATE);
+        simpleItem(ModItems.STAMP_TITANIUM_WIRE);
+        simpleItem(ModItems.STAMP_TITANIUM_FLAT);
+        simpleItem(ModItems.STAMP_TITANIUM_PLATE);
+        simpleItem(ModItems.STAMP_TITANIUM_WIRE);
+        simpleItem(ModItems.STAMP_TITANIUM_CIRCUIT);
+        simpleItem(ModItems.STAMP_OBSIDIAN_FLAT);
+        simpleItem(ModItems.STAMP_OBSIDIAN_PLATE);
+        simpleItem(ModItems.STAMP_OBSIDIAN_WIRE);
+        simpleItem(ModItems.STAMP_OBSIDIAN_CIRCUIT);
+        simpleItem(ModItems.STAMP_DESH_FLAT);
+        simpleItem(ModItems.STAMP_DESH_PLATE);
+        simpleItem(ModItems.STAMP_DESH_WIRE);
+        simpleItem(ModItems.STAMP_DESH_CIRCUIT);
+        simpleItem(ModItems.STAMP_DESH_9);
+        simpleItem(ModItems.STAMP_DESH_44);
+        simpleItem(ModItems.STAMP_DESH_50);
+        simpleItem(ModItems.STAMP_DESH_357);
+
+        simpleItem(ModItems.WIRE_RED_COPPER);
+
     };
 
     /**
@@ -139,4 +177,5 @@ public class ModItemModelProvider extends ItemModelProvider {
                 // Путь к текстуре теперь использует правильное имя файла и подпапку
                 .texture("layer0", modLoc("item/ingot/" + textureFileName));
     }
+
 }

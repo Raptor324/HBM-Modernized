@@ -208,6 +208,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_FUEL_U233.get(), "Топливная пластина U-233");
                 add(ModItems.PLATE_FUEL_U235.get(), "Топливная пластина U-235");
 
+
                 add("item.hbm_m.firebrick", "Шамотный кирпич");
                 add("item.hbm_m.uranium_raw", "Рудный уран");
                 add("item.hbm_m.tungsten_raw", "Рудный вольфрам");
@@ -350,8 +351,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.machine_battery.charge_speed", "Скорость зарядки: %1$s FE/т");
                 add("tooltip.hbm_m.machine_battery.discharge_speed", "Скорость разрядки: %1$s FE/т");
                 add("tooltip.hbm_m.machine_battery.stored", "Заряжено: %1$s / %2$s FE");
+                add("tooltip.hbm_m.requires", "Требуется");
 
-                
 
                 add("hazard.hbm_m.radiation", "[Радиоактивный]");
                 add("hazard.hbm_m.hydro_reactive", "[Гидрореактивный]");
