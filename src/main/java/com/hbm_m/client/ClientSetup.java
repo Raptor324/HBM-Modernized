@@ -4,6 +4,7 @@ package com.hbm_m.client;
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.overlay.*;
 import com.hbm_m.client.model.*;
+import com.hbm_m.client.model.loader.DoorModelLoader;
 import com.hbm_m.client.model.loader.MachineAdvancedAssemblerModelLoader;
 import com.hbm_m.client.model.loader.ProceduralWireLoader;
 import com.hbm_m.config.ModClothConfig;
@@ -77,7 +78,7 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), GUIShredder::new);
             MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
             
-            // Register BlockEntity renderer for Advanced Assembly Machine
+            // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
         });
@@ -111,7 +112,8 @@ public class ClientSetup {
     public static void onModelRegister(ModelEvent.RegisterGeometryLoaders event) {
         event.register("procedural_wire", new ProceduralWireLoader());
         event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
-    MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader");
+        event.register("door", new DoorModelLoader());
+        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, door");
     }
 
     @SubscribeEvent

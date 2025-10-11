@@ -1,30 +1,30 @@
 {
-    "geiger1": {
+    "item.geiger1": {
         "category": "player",
         "sounds": ["hbm_m:tool/geiger1"],
         "subtitle": "sounds.hbm_m.geiger_counter"
     },
-    "geiger2": {
+    "item.geiger2": {
         "category": "player",
         "sounds": ["hbm_m:tool/geiger2"],
         "subtitle": "sounds.hbm_m.geiger_counter"
     },
-    "geiger3": {
+    "item.geiger3": {
         "category": "player",
         "sounds": ["hbm_m:tool/geiger3"],
         "subtitle": "sounds.hbm_m.geiger_counter"
     },
-    "geiger4": {
+    "item.geiger4": {
         "category": "player",
         "sounds": ["hbm_m:tool/geiger4"],
         "subtitle": "sounds.hbm_m.geiger_counter"
     },
-    "geiger5": {
+    "item.geiger5": {
         "category": "player",
         "sounds": ["hbm_m:tool/geiger5"],
         "subtitle": "sounds.hbm_m.geiger_counter"
     },
-    "geiger6": {
+    "item.geiger6": {
         "category": "player",
         "sounds": ["hbm_m:tool/geiger6"],
         "subtitle": "sounds.hbm_m.geiger_counter"
@@ -132,5 +132,33 @@
     "block.motor": {
         "subtitle": "sounds.hbm_m.subtitle.motor",
         "sounds": [ "hbm_m:block/motor" ]
+    },
+    "item.bounce1": {
+        "subtitle": "sounds.hbm_m.subtitle.bounce",
+        "sounds": [ "hbm_m:item/bounce1" ]
+    },
+    "item.bounce2": {
+        "subtitle": "sounds.hbm_m.subtitle.bounce",
+        "sounds": [ "hbm_m:item/bounce2" ]
+    },
+    "item.bounce3": {
+        "subtitle": "sounds.hbm_m.subtitle.bounce",
+        "sounds": [ "hbm_m:item/bounce3" ]
+    },
+    "item.bounce_random": {
+        "subtitle": "sounds.hbm_m.subtitle.bounce",
+        "sounds": [ 
+            "hbm_m:item/bounce1",
+            "hbm_m:item/bounce2",
+            "hbm_m:item/bounce3"
+        ]
+    },
+    "block.garage_move": {
+        "subtitle": "sounds.hbm_m.subtitle.garage_move",
+        "sounds": [ "hbm_m:block/door/garage_move" ]
+    },
+    "block.garage_stop": {
+        "subtitle": "sounds.hbm_m.subtitle.garage_stop",
+        "sounds": [ "hbm_m:block/door/garage_stop" ]
     }
 }

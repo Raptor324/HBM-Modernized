@@ -33,9 +33,9 @@ public class GrenadeheProjectileEntity extends ThrowableItemProjectile {
     }
 
     private static final SoundEvent[] BOUNCE_SOUNDS = new SoundEvent[]{
-            ModSounds.BOUNCE1.get(), // Замените на ваш первый звук
-            ModSounds.BOUNCE2.get(), // Замените на ваш второй звук
-            ModSounds.BOUNCE3.get()  // Замените на ваш третий звук
+            // ModSounds.BOUNCE1.get(), // Замените на ваш первый звук
+            // ModSounds.BOUNCE2.get(), // Замените на ваш второй звук
+            // ModSounds.BOUNCE3.get()  // Замените на ваш третий звук
     };
 
     public GrenadeheProjectileEntity(Level pLevel) {
