@@ -133,6 +133,9 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
     public static final RegistryObject<Item> GRENADESLIME = ITEMS.register("grenadeslime",
             () -> new GrenadeslimeItem(new Item.Properties()));
 
+    public static final RegistryObject<Item> GRENADEIF = ITEMS.register("grenadeif",
+            () -> new GrenadeheItem(new Item.Properties()));
+
     // БРОНЯ ГОРНЯКА:
     public static final RegistryObject<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet",
             () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.HELMET, new Item.Properties()));
@@ -333,6 +336,10 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
         )
     );
 
+
+
+
+
     public static final RegistryObject<Item> RADAWAY = ITEMS.register("radaway",
             () -> new ItemSimpleConsumable(new Item.Properties(), (player, stack) -> {
                 // Это лямбда-выражение определяет, что произойдет при использовании предмета.
@@ -354,6 +361,86 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
                 }
             })
     );
+
+    public static final RegistryObject<Item> SILICON_CIRCUIT = ITEMS.register("silicon_circuit",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BISMOID_CIRCUIT = ITEMS.register("bismoid_circuit",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> QUANTUM_CHIP = ITEMS.register("quantum_chip",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CAPACITOR_BOARD = ITEMS.register("capacitor_board",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CAPACITOR_TANTALUM = ITEMS.register("capacitor_tantalum",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BISMOID_CHIP = ITEMS.register("bismoid_chip",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CONTROLLER_CHASSIS = ITEMS.register("controller_chassis",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CONTROLLER = ITEMS.register("controller",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CONTROLLER_ADVANCED = ITEMS.register("controller_advanced",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> QUANTUM_COMPUTER = ITEMS.register("quantum_computer",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> QUANTUM_CIRCUIT = ITEMS.register("quantum_circuit",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> ANALOG_CIRCUIT = ITEMS.register("analog_circuit",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> INTEGRATED_CIRCUIT = ITEMS.register("integrated_circuit",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> ADVANCED_CIRCUIT = ITEMS.register("advanced_circuit",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> VACUUM_TUBE = ITEMS.register("vacuum_tube",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CAPACITOR = ITEMS.register("capacitor",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> MICROCHIP = ITEMS.register("microchip",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> ATOMIC_CLOCK = ITEMS.register("atomic_clock",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PCB = ITEMS.register("pcb",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> METAL_ROD = ITEMS.register("metal_rod",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BATTLE_MODULE = ITEMS.register("battle_module",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> BATTLE_GEARS = ITEMS.register("battle_gears",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BATTLE_CASING = ITEMS.register("battle_casing",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BATTLE_SENSOR = ITEMS.register("battle_sensor",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BATTLE_COUNTER = ITEMS.register("battle_counter",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STEEL_COUNTER = ITEMS.register("steel_counter",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STEEL_CASING = ITEMS.register("steel_casing",
+            () -> new Item(new Item.Properties()));
+
+
     public static final RegistryObject<Item> PLATE_IRON = ITEMS.register("plate_iron",
             () -> new Item(new Item.Properties()));
 

@@ -33,15 +33,18 @@ public class ModLanguageProvider extends LanguageProvider {
         switch (this.locale) {
             case "ru_ru":
                 // КРЕАТИВНЫЕ ВКЛАДКИ
-                add("itemGroup.hbm_m.ntm_resources_tab", "Ресурсы и детали NTM");
+                add("itemGroup.hbm_m.ntm_resources_tab", "Слитки и ресурсы NTM");
                 add("itemGroup.hbm_m.ntm_fuel_tab", "Топливо и элементы механизмов NTM");
-                add("itemGroup.hbm_m.ntm_templates_tab", "Шаблоны NTM");
+                add("itemGroup.hbm_m.ntm_templates_tab", "Шаблоны и штампы NTM");
                 add("itemGroup.hbm_m.ntm_ores_tab", "Руды и блоки NTM");
-                add("itemGroup.hbm_m.ntm_machines_tab", "Механизмы NTM");
+                add("itemGroup.hbm_m.ntm_building_tab", "Строительные блоки, двери и люки NTM");
+                add("itemGroup.hbm_m.ntm_machines_tab", "Механизмы и станки NTM");
+                add("itemGroup.hbm_m.ntm_instruments_tab", "Инструменты NTM");
+                add("itemGroup.hbm_m.ntm_spareparts_tab", "Запчасти NTM");
                 add("itemGroup.hbm_m.ntm_bombs_tab", "Бомбы NTM");
                 add("itemGroup.hbm_m.ntm_missiles_tab", "Ракеты и спутники NTM");
                 add("itemGroup.hbm_m.ntm_weapons_tab", "Оружие и турели NTM");
-                add("itemGroup.hbm_m.ntm_consumables_tab", "Расходные материалы и снаряжение NTM");
+                add("itemGroup.hbm_m.ntm_consumables_tab", "Расходники и снаряжение NTM");
                 
                 // СНАРЯГА
                 add("item.hbm_m.alloy_sword", "Меч из продвинутого сплава");
@@ -159,13 +162,48 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.LEAD_CLADDING.get(), "Свинцовая обшивка");
                 add(ModItems.PAINT_CLADDING.get(), "Свинцовая краска");
 
-                add(ModItems.GRENADEHE.get(), "Осколочная граната");
-                add(ModItems.GRENADEFIRE.get(), "Зажигательная граната");
+
+                add(ModItems.GRENADESMART.get(), "УМная отскок граната");
+                add(ModItems.GRENADESLIME.get(), "Отскок-отскок граната");
+                add(ModItems.GRENADE.get(), "Отскок граната");
+                add(ModItems.GRENADEHE.get(), "Мощная отскок граната");
+                add(ModItems.GRENADEFIRE.get(), "Зажигательная Отскок граната");
+
+                add(ModItems.GRENADEIF.get(), "IF граната (WIP)");
 
                 add("item.hbm_m.radaway", "Антирадин");
                 add("item.hbm_m.wood_ash_powder", "Древесный пепел");
                 add("effect.hbm_m.radaway", "Очищение от радиации");
 
+
+                add(ModItems.QUANTUM_CHIP.get(), "Квантовый Чип");
+                add(ModItems.QUANTUM_CIRCUIT.get(), "Квантовая Микросхема");
+                add(ModItems.QUANTUM_COMPUTER.get(), "Квантовый Компьютер");
+                add(ModItems.SILICON_CIRCUIT.get(), "Опечатанная Кремниевая Пластина");
+                add(ModItems.BISMOID_CHIP.get(), "Передовой Микрочип");
+                add(ModItems.BISMOID_CIRCUIT.get(), "Передовая Микросхема");
+                add(ModItems.CONTROLLER_CHASSIS.get(), "Корпус Контроллера");
+                add(ModItems.CONTROLLER.get(), "Контроллер");
+                add(ModItems.CONTROLLER_ADVANCED.get(), "Продвинутый Контроллер");
+                add(ModItems.CAPACITOR_BOARD.get(), "Конденсаторная Плата");
+                add(ModItems.CAPACITOR_TANTALUM.get(), "Танталовый Конденсатор");
+                add(ModItems.ANALOG_CIRCUIT.get(), "Аналоговая Плата");
+                add(ModItems.INTEGRATED_CIRCUIT.get(), "Интегральная Схема");
+                add(ModItems.ADVANCED_CIRCUIT.get(), "Военная Микросхема");
+                add(ModItems.MICROCHIP.get(), "Микрочип");
+                add(ModItems.ATOMIC_CLOCK.get(), "Атомные Часы");
+                add(ModItems.VACUUM_TUBE.get(), "Вакуумная Трубка");
+                add(ModItems.CAPACITOR.get(), "Конденсатор");
+                add(ModItems.PCB.get(), "Печатная Плата");
+
+
+                add(ModItems.BATTLE_GEARS.get(), "Боевые Детали");
+                add(ModItems.BATTLE_CASING.get(), "Боевой Корпус");
+                add(ModItems.BATTLE_COUNTER.get(), "Боевой Блок Управления");
+                add(ModItems.BATTLE_SENSOR.get(), "Боевой Сенсор");
+                add(ModItems.BATTLE_MODULE.get(), "Боевой Модуль");
+                add(ModItems.METAL_ROD.get(), "Металлический стержень");
+                add(ModItems.STRAWBERRY.get(), "Клубника");
                 add(ModItems.PLATE_GOLD.get(), "Золотая пластина");
                 add(ModItems.PLATE_GUNMETAL.get(), "Пластина пушечной бронзы");
                 add(ModItems.PLATE_TITANIUM.get(), "Титановая пластина");
@@ -190,10 +228,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_ARMOR_HEV.get(), "Броневая пластина HEV");
                 add(ModItems.PLATE_ARMOR_LUNAR.get(), "Лунная броневая пластина");
                 add(ModItems.PLATE_ARMOR_TITANIUM.get(), "Титановая броневая пластина");
-                add(ModItems.PLATE_CAST.get(), "Литейная форма");
-                add(ModItems.PLATE_CAST_ALT.get(), "Альтернативная литейная форма");
-                add(ModItems.PLATE_CAST_BISMUTH.get(), "Висмутовая литейная форма");
-                add(ModItems.PLATE_CAST_DARK.get(), "Тёмная литейная форма");
+                add(ModItems.PLATE_CAST.get(), "литая пластина");
+                add(ModItems.PLATE_CAST_ALT.get(), "Альтернативная литая пластина");
+                add(ModItems.PLATE_CAST_BISMUTH.get(), "Висмутовая литая пластина");
+                add(ModItems.PLATE_CAST_DARK.get(), "Тёмная литая пластина");
                 add(ModItems.PLATE_COMBINE_STEEL.get(), "Пластина из комбинированной стали");
                 add(ModItems.PLATE_DURA_STEEL.get(), "Пластина из прочной стали");
                 add(ModItems.PLATE_DALEKANIUM.get(), "Далеканиевая пластина");
@@ -517,7 +555,7 @@ public class ModLanguageProvider extends LanguageProvider {
             case "en_us":
 
                 // TABS
-                add("itemGroup.hbm_m.ntm_resources_tab", "NTM Resources and Parts");
+                add("itemGroup.hbm_m.ntm_resources_tab", "NTM Ingots and resources");
                 add("itemGroup.hbm_m.ntm_fuel_tab", "NTM Fuel and Machine Components");
                 add("itemGroup.hbm_m.ntm_templates_tab", "NTM Templates");
                 add("itemGroup.hbm_m.ntm_ores_tab", "NTM Ores and Blocks");
@@ -526,7 +564,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("itemGroup.hbm_m.ntm_missiles_tab", "NTM Missiles and Satellites");
                 add("itemGroup.hbm_m.ntm_weapons_tab", "NTM Weapons and Turrets");
                 add("itemGroup.hbm_m.ntm_consumables_tab", "NTM Consumables and Equipment");
-                
+                add("itemGroup.hbm_m.ntm_spareparts_tab", "NTM Spare Parts");
+                add("itemGroup.hbm_m.ntm_instruments_tab", "NTM Instruments");
+                add("itemGroup.hbm_m.ntm_building_tab", "NTM Building Blocks, Doors and other");
+
+
                 // EQUIPMENT
                 add("item.hbm_m.alloy_sword", "Alloy Sword");
                 add("item.hbm_m.alloy_pickaxe", "Alloy Pickaxe");
@@ -610,6 +652,46 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_boots", "Starmetal Boots");
 
                 // ITEMS
+
+
+
+                add(ModItems.QUANTUM_CHIP.get(), "Quantum Chip");
+                add(ModItems.QUANTUM_CIRCUIT.get(), "Quantum Circuit");
+                add(ModItems.QUANTUM_COMPUTER.get(), "Quantum Computer");
+                add(ModItems.SILICON_CIRCUIT.get(), "Silicone Circuit");
+                add(ModItems.BISMOID_CHIP.get(), "Bismoid Chip");
+                add(ModItems.BISMOID_CIRCUIT.get(), "Bismoid Circuit");
+                add(ModItems.CONTROLLER_CHASSIS.get(), "Controller Chassis");
+                add(ModItems.CONTROLLER.get(), "Controller");
+                add(ModItems.CONTROLLER_ADVANCED.get(), "Controller Advanced");
+                add(ModItems.CAPACITOR_BOARD.get(), "Capacitor Board");
+                add(ModItems.CAPACITOR_TANTALUM.get(), "Tantalum Capacitor");
+                add(ModItems.ANALOG_CIRCUIT.get(), "Analog Circuit");
+                add(ModItems.INTEGRATED_CIRCUIT.get(), "Integrated Circuit");
+                add(ModItems.ADVANCED_CIRCUIT.get(), "Advancer Circuit");
+                add(ModItems.MICROCHIP.get(), "Microchip");
+                add(ModItems.ATOMIC_CLOCK.get(), "Atomic Clock");
+                add(ModItems.VACUUM_TUBE.get(), "Vacuum Tube");
+                add(ModItems.CAPACITOR.get(), "Capacitor");
+                add(ModItems.PCB.get(), "PCB");
+
+
+
+                add(ModItems.BATTLE_GEARS.get(), "Battle Gears");
+                add(ModItems.BATTLE_CASING.get(), "Battle Casing");
+                add(ModItems.BATTLE_COUNTER.get(), "Battle Counter");
+                add(ModItems.BATTLE_SENSOR.get(), "Battle Sensor");
+                add(ModItems.BATTLE_MODULE.get(), "Battle Module");
+                add(ModItems.METAL_ROD.get(), "Metal Rod");
+                
+
+                add(ModItems.GRENADE.get(), "Bouncing grenade");
+                add(ModItems.GRENADEHE.get(), "Powerful bouncing grenade");
+                add(ModItems.GRENADEFIRE.get(), "Fire bouncing grenade");
+                add(ModItems.GRENADESLIME.get(), "Bouncy bouncing grenade");
+                add(ModItems.GRENADESMART.get(), "Smart bouncing grenade");
+
+                add(ModItems.GRENADEIF.get(), "IF Grenade (WIPр)");
 
                 add("item.hbm_m.geiger_counter", "Geiger Counter");
                 add("item.hbm_m.dosimeter", "Dosimeter");
@@ -696,8 +778,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_FUEL_U233.get(), "U-233 Fuel Plate");
                 add(ModItems.PLATE_FUEL_U235.get(), "U-235 Fuel Plate");
 
-                add(ModItems.GRENADEHE.get(), "Grenade");
-                add(ModItems.GRENADEFIRE.get(), "Incendiary Grenade");
 
                 add("item.hbm_m.firebrick", "Firebrick");
                 add("item.hbm_m.uranium_raw", "Raw Uranium");
