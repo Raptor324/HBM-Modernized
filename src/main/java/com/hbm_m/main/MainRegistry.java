@@ -276,6 +276,28 @@ public class MainRegistry {
         // ЗАПЧАСТИ
         if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get()) {
 
+
+            event.accept(ModItems.SILICON_CIRCUIT);
+            event.accept(ModItems.CONTROLLER_ADVANCED);
+            event.accept(ModItems.CONTROLLER_CHASSIS);
+            event.accept(ModItems.CONTROLLER);
+            event.accept(ModItems.CAPACITOR_TANTALUM);
+            event.accept(ModItems.CAPACITOR_BOARD);
+            event.accept(ModItems.QUANTUM_CIRCUIT);
+            event.accept(ModItems.QUANTUM_COMPUTER);
+            event.accept(ModItems.QUANTUM_CHIP);
+            event.accept(ModItems.BISMOID_CHIP);
+            event.accept(ModItems.BISMOID_CIRCUIT);
+            event.accept(ModItems.VACUUM_TUBE);
+            event.accept(ModItems.CAPACITOR);
+            event.accept(ModItems.MICROCHIP);
+            event.accept(ModItems.ANALOG_CIRCUIT);
+            event.accept(ModItems.INTEGRATED_CIRCUIT);
+            event.accept(ModItems.ADVANCED_CIRCUIT);
+            event.accept(ModItems.ATOMIC_CLOCK);
+
+
+            event.accept(ModItems.BATTLE_GEARS);
             event.accept(ModItems.BATTLE_SENSOR);
             event.accept(ModItems.BATTLE_CASING);
             event.accept(ModItems.BATTLE_COUNTER);
