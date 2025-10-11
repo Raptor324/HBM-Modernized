@@ -61,6 +61,13 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.TEMPLATE_FOLDER);
         simpleItem(ModItems.STRAWBERRY);
 
+        simpleItem(ModItems.BATTLE_SENSOR);
+        simpleItem(ModItems.BATTLE_CASING);
+        simpleItem(ModItems.BATTLE_COUNTER);
+        simpleItem(ModItems.BATTLE_MODULE);
+        simpleItem(ModItems.METAL_ROD);
+
+
         simpleItem(ModItems.PLATE_IRON);
         simpleItem(ModItems.PLATE_STEEL);
         simpleItem(ModItems.PLATE_GOLD);
