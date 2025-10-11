@@ -2,14 +2,14 @@
 	"type": "hbm_m:press",
 	"ingredients": [
 		{
-			"item": "hbm_m:titanium_stamp_plate"
+			"tag": "hbm_m:stamps/plate"
 		},
 		{
 			"item": "minecraft:iron_ingot"
 		}
 	],
 	"output": {
-		"item": "hbm_m:iron_plate",
+		"item": "hbm_m:plate_iron",
 		"count": 1
 	}
 }

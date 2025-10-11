@@ -639,6 +639,83 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
         () -> new MultiblockBlockItem(ModBlocks.LARGE_VEHICLE_DOOR.get(), new Item.Properties()));
 
 
+    //штампы для пресса
+
+    public static final RegistryObject<Item> STAMP_STONE_FLAT = ITEMS.register("stamp_stone_flat",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_STONE_PLATE = ITEMS.register("stamp_stone_plate",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_STONE_WIRE = ITEMS.register("stamp_stone_wire",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_STONE_CIRCUIT = ITEMS.register("stamp_stone_circuit",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> STAMP_IRON_FLAT = ITEMS.register("stamp_iron_flat",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_IRON_PLATE = ITEMS.register("stamp_iron_plate",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_IRON_WIRE = ITEMS.register("stamp_iron_wire",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_IRON_CIRCUIT = ITEMS.register("stamp_iron_circuit",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_IRON_9 = ITEMS.register("stamp_iron_9",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_IRON_44 = ITEMS.register("stamp_iron_44",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_IRON_50 = ITEMS.register("stamp_iron_50",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_IRON_357 = ITEMS.register("stamp_iron_357",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> STAMP_STEEL_FLAT = ITEMS.register("stamp_steel_flat",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_STEEL_PLATE = ITEMS.register("stamp_steel_plate",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_STEEL_WIRE = ITEMS.register("stamp_steel_wire",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_STEEL_CIRCUIT = ITEMS.register("stamp_steel_circuit",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> STAMP_TITANIUM_FLAT = ITEMS.register("stamp_titanium_flat",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_TITANIUM_PLATE = ITEMS.register("stamp_titanium_plate",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_TITANIUM_WIRE = ITEMS.register("stamp_titanium_wire",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_TITANIUM_CIRCUIT = ITEMS.register("stamp_titanium_circuit",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> STAMP_OBSIDIAN_FLAT = ITEMS.register("stamp_obsidian_flat",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_OBSIDIAN_PLATE = ITEMS.register("stamp_obsidian_plate",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_OBSIDIAN_WIRE = ITEMS.register("stamp_obsidian_wire",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_OBSIDIAN_CIRCUIT = ITEMS.register("stamp_obsidian_circuit",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> STAMP_DESH_FLAT = ITEMS.register("stamp_desh_flat",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_DESH_PLATE = ITEMS.register("stamp_desh_plate",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_DESH_WIRE = ITEMS.register("stamp_desh_wire",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_DESH_CIRCUIT = ITEMS.register("stamp_desh_circuit",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_DESH_9 = ITEMS.register("stamp_desh_9",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_DESH_44 = ITEMS.register("stamp_desh_44",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_DESH_50 = ITEMS.register("stamp_desh_50",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_DESH_357 = ITEMS.register("stamp_desh_357",
+            () -> new Item(new Item.Properties()));
+
+
+    public static final RegistryObject<Item> WIRE_RED_COPPER = ITEMS.register("wire_red_copper",
+            () -> new Item(new Item.Properties()));
+
+
     // Здесь мы регистрируем предмет-блок батареи для машин, поддерживающий хранение энергии через Forge Energy
     public static final RegistryObject<Item> MACHINE_BATTERY = ITEMS.register("machine_battery",
             () -> new MachineBatteryBlockItem(ModBlocks.MACHINE_BATTERY.get(), new Item.Properties(), BATTERY_CAPACITY));

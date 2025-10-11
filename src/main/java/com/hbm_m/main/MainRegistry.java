@@ -235,7 +235,59 @@ public class MainRegistry {
                 }
             }
 
+
+            event.accept(ModItems.WIRE_RED_COPPER);
+
+            event.accept(ModItems.PLATE_IRON);
+            event.accept(ModItems.PLATE_STEEL);
+            event.accept(ModItems.PLATE_GOLD);
+            event.accept(ModItems.PLATE_GUNMETAL);
+            event.accept(ModItems.PLATE_GUNSTEEL);
+            event.accept(ModItems.PLATE_TITANIUM);
+            event.accept(ModItems.PLATE_KEVLAR);
+            event.accept(ModItems.PLATE_LEAD);
+            event.accept(ModItems.PLATE_MIXED);
+            event.accept(ModItems.PLATE_PAA);
+            event.accept(ModItems.PLATE_POLYMER);
+            event.accept(ModItems.PLATE_SATURNITE);
+            event.accept(ModItems.PLATE_SCHRABIDIUM);
+            event.accept(ModItems.PLATE_ADVANCED_ALLOY);
+            event.accept(ModItems.PLATE_ALUMINUM);
+            event.accept(ModItems.PLATE_COPPER);
+            event.accept(ModItems.PLATE_BISMUTH);
+            event.accept(ModItems.PLATE_ARMOR_AJR);
+            event.accept(ModItems.PLATE_ARMOR_DNT);
+            event.accept(ModItems.PLATE_ARMOR_DNT_RUSTED);
+            event.accept(ModItems.PLATE_ARMOR_FAU);
+            event.accept(ModItems.PLATE_ARMOR_HEV);
+            event.accept(ModItems.PLATE_ARMOR_LUNAR);
+            event.accept(ModItems.PLATE_ARMOR_TITANIUM);
+            event.accept(ModItems.PLATE_CAST);
+            event.accept(ModItems.PLATE_CAST_ALT);
+            event.accept(ModItems.PLATE_CAST_BISMUTH);
+            event.accept(ModItems.PLATE_CAST_DARK);
+            event.accept(ModItems.PLATE_COMBINE_STEEL);
+            event.accept(ModItems.PLATE_DURA_STEEL);
+            event.accept(ModItems.PLATE_DALEKANIUM);
+            event.accept(ModItems.PLATE_DESH);
+            event.accept(ModItems.PLATE_DINEUTRONIUM);
+            event.accept(ModItems.PLATE_EUPHEMIUM);
+            event.accept(ModItems.PLATE_FUEL_MOX);
+            event.accept(ModItems.PLATE_FUEL_PU238BE);
+            event.accept(ModItems.PLATE_FUEL_PU239);
+            event.accept(ModItems.PLATE_FUEL_RA226BE);
+            event.accept(ModItems.PLATE_FUEL_SA326);
+            event.accept(ModItems.PLATE_FUEL_U233);
+            event.accept(ModItems.PLATE_FUEL_U235);
+
+            event.accept(ModItems.CINNABAR);
+            event.accept(ModItems.ALUMINUM_RAW);
+            event.accept(ModItems.BERYLLIUM_RAW);
+            event.accept(ModItems.COBALT_RAW);
+            event.accept(ModItems.FIRECLAY_BALL);
+
             event.accept(ModItems.SULFUR);
+
             event.accept(ModItems.FLUORITE);
             event.accept(ModItems.RAREGROUND_ORE_CHUNK);
             event.accept(ModItems.CINNABAR);
@@ -479,6 +531,42 @@ public class MainRegistry {
         if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get()) {
 
             event.accept(ModItems.TEMPLATE_FOLDER);
+
+            event.accept(ModItems.STAMP_STONE_FLAT);
+            event.accept(ModItems.STAMP_STONE_PLATE);
+            event.accept(ModItems.STAMP_STONE_WIRE);
+            event.accept(ModItems.STAMP_STONE_CIRCUIT);
+            event.accept(ModItems.STAMP_IRON_FLAT);
+            event.accept(ModItems.STAMP_IRON_PLATE);
+            event.accept(ModItems.STAMP_IRON_WIRE);
+            event.accept(ModItems.STAMP_IRON_CIRCUIT);
+            event.accept(ModItems.STAMP_IRON_9);
+            event.accept(ModItems.STAMP_IRON_44);
+            event.accept(ModItems.STAMP_IRON_50);
+            event.accept(ModItems.STAMP_IRON_357);
+            event.accept(ModItems.STAMP_STEEL_FLAT);
+            event.accept(ModItems.STAMP_STEEL_PLATE);
+            event.accept(ModItems.STAMP_STEEL_WIRE);
+            event.accept(ModItems.STAMP_STEEL_CIRCUIT);
+            event.accept(ModItems.STAMP_TITANIUM_FLAT);
+            event.accept(ModItems.STAMP_TITANIUM_PLATE);
+            event.accept(ModItems.STAMP_TITANIUM_WIRE);
+            event.accept(ModItems.STAMP_TITANIUM_FLAT);
+            event.accept(ModItems.STAMP_TITANIUM_PLATE);
+            event.accept(ModItems.STAMP_TITANIUM_WIRE);
+            event.accept(ModItems.STAMP_TITANIUM_CIRCUIT);
+            event.accept(ModItems.STAMP_OBSIDIAN_FLAT);
+            event.accept(ModItems.STAMP_OBSIDIAN_PLATE);
+            event.accept(ModItems.STAMP_OBSIDIAN_WIRE);
+            event.accept(ModItems.STAMP_OBSIDIAN_CIRCUIT);
+            event.accept(ModItems.STAMP_DESH_FLAT);
+            event.accept(ModItems.STAMP_DESH_PLATE);
+            event.accept(ModItems.STAMP_DESH_WIRE);
+            event.accept(ModItems.STAMP_DESH_CIRCUIT);
+            event.accept(ModItems.STAMP_DESH_9);
+            event.accept(ModItems.STAMP_DESH_44);
+            event.accept(ModItems.STAMP_DESH_50);
+            event.accept(ModItems.STAMP_DESH_357);
 
             if (Minecraft.getInstance().level != null) {
                 RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
