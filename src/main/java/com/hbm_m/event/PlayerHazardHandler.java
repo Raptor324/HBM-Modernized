@@ -45,7 +45,7 @@ public class PlayerHazardHandler {
         // Применение радиации (когда будет система здоровья/радиации)
         if (totalRadiation > 0) {
             // ContaminationUtil.contaminate(player, ..., totalRadiation / 20f);
-            // System.out.println("Player " + player.getName().getString() + " is being irradiated with " + totalRadiation + " RAD/s");
+            // MainRegistry.LOGGER.debug("Player " + player.getName().getString() + " is being irradiated with " + totalRadiation + " RAD/s");
         }
 
         // Применение поджога
