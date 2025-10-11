@@ -61,12 +61,33 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.TEMPLATE_FOLDER);
         simpleItem(ModItems.STRAWBERRY);
 
+
+        simpleItem(ModItems.CAPACITOR_BOARD);
+        simpleItem(ModItems.CAPACITOR_TANTALUM);
+        simpleItem(ModItems.BISMOID_CIRCUIT);
+        simpleItem(ModItems.BISMOID_CHIP);
+        simpleItem(ModItems.SILICON_CIRCUIT);
+        simpleItem(ModItems.CONTROLLER_ADVANCED);
+        simpleItem(ModItems.CONTROLLER);
+        simpleItem(ModItems.CONTROLLER_CHASSIS);
+        simpleItem(ModItems.QUANTUM_COMPUTER);
+        simpleItem(ModItems.QUANTUM_CIRCUIT);
+        simpleItem(ModItems.QUANTUM_CHIP);
+        simpleItem(ModItems.INTEGRATED_CIRCUIT);
+        simpleItem(ModItems.ADVANCED_CIRCUIT);
+        simpleItem(ModItems.ANALOG_CIRCUIT);
+        simpleItem(ModItems.VACUUM_TUBE);
+        simpleItem(ModItems.CAPACITOR);
+        simpleItem(ModItems.PCB);
+        simpleItem(ModItems.ATOMIC_CLOCK);
+        simpleItem(ModItems.MICROCHIP);
+
+        simpleItem(ModItems.BATTLE_GEARS);
         simpleItem(ModItems.BATTLE_SENSOR);
         simpleItem(ModItems.BATTLE_CASING);
         simpleItem(ModItems.BATTLE_COUNTER);
         simpleItem(ModItems.BATTLE_MODULE);
         simpleItem(ModItems.METAL_ROD);
-
 
         simpleItem(ModItems.PLATE_IRON);
         simpleItem(ModItems.PLATE_STEEL);
