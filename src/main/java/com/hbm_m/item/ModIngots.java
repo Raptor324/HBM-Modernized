@@ -97,7 +97,7 @@ public enum ModIngots {
         "en_us", "Polymer Chunk"),
 
     BAKELITE("bakelite",
-        "ru_ru", "Бакелитовый слиток",
+        "ru_ru", "Бакелит",
         "en_us", "Bakelite Ingot"),
 
     RUBBER("rubber",
@@ -105,35 +105,31 @@ public enum ModIngots {
         "en_us", "Rubber Ingot"),
 
     DESH("desh",
-        "ru_ru", "Дешевый слиток",
+        "ru_ru", "Слиток Деш",
         "en_us", "Desh Ingot"),
 
-    FIREBRICK("firebrick",
-        "ru_ru", "Шамотный кирпич",
-        "en_us", "Firebrick"),
-
     GRAPHITE("graphite",
-        "ru_ru", "Графитовый слиток",
+        "ru_ru", "Графит",
         "en_us", "Graphite Ingot"),
 
     PHOSPHORUS("phosphorus",
-        "ru_ru", "Слиток фосфора",
-        "en_us", "Phosphorus Ingot"),
+        "ru_ru", "Белый фосфор",
+        "en_us", "White Phosphorus Ingot"),
 
     LITHIUM_INGOT("les",
-        "ru_ru", "Литиево-оловянный сплав",
-        "en_us", "Lithium-Tin Alloy Ingot"),
+        "ru_ru", "Куб лития",
+        "en_us", "Lithium Cube"),
 
     MAGNETIZED_TUNGSTEN("magnetized_tungsten",
         "ru_ru", "Намагниченный вольфрам",
         "en_us", "Magnetized Tungsten"),
 
     COMBINE_STEEL("combine_steel",
-        "ru_ru", "Слиток комбинированной стали",
-        "en_us", "Combine Steel Ingot"),
+        "ru_ru", "Слиток Стали Альянса",
+        "en_us", "Alliance Steel Ingot"),
 
     DURA_STEEL("dura_steel",
-        "ru_ru", "Слиток прочной стали",
+        "ru_ru", "Слиток высокоскоростной стали",
         "en_us", "Dura Steel Ingot"),
 
     POLYMER_COMPOSITE("pc",
@@ -145,7 +141,7 @@ public enum ModIngots {
         "en_us", "Digamma Ingot"),
 
     EUPHEMIUM("euphemium",
-        "ru_ru", "Эуфемиевый слиток",
+        "ru_ru", "Эвфемиевый слиток",
         "en_us", "Euphemium Ingot"),
 
     DINEUTRONIUM("dineutronium",
@@ -165,7 +161,7 @@ public enum ModIngots {
         "en_us", "Solinium Ingot"),
 
     TANTALIUM("tantalium",
-        "ru_ru", "Танталиевый слиток",
+        "ru_ru", "Танталовый слиток",
         "en_us", "Tantalium Ingot"),
 
     CHAINSSTEEL("chainsteel",
@@ -177,7 +173,7 @@ public enum ModIngots {
         "en_us", "Meteorite Ingot"),
 
     LANTHANIUM("lanthanium",
-        "ru_ru", "Лантаниевый слиток",
+        "ru_ru", "Лантановый слиток",
         "en_us", "Lanthanium Ingot"),
 
     NEODYMIUM("neodymium",
@@ -209,12 +205,12 @@ public enum ModIngots {
         "en_us", "Bromide Ingot"),
 
     TENNESSINE("tennessine",
-        "ru_ru", "Теннессиновый слиток",
+        "ru_ru", "Теннессиевый слиток",
         "en_us", "Tennessine Ingot"),
 
     ZIRCONIUM("zirconium",
-        "ru_ru", "Цирконивый слиток",
-        "en_us", "Zirconium Ingot"),
+        "ru_ru", "Цирконивый куб",
+        "en_us", "Zirconium cube"),
 
     ARSENIC("arsenic",
         "ru_ru", "Мышьяковый слиток",
@@ -225,7 +221,7 @@ public enum ModIngots {
         "en_us", "Iodine Ingot"),
 
     ASTATINE("astatine",
-        "ru_ru", "Астатиновый слиток",
+        "ru_ru", "Астатовый слиток",
         "en_us", "Astatine Ingot"),
 
     AMERICIUM("americium",
@@ -277,7 +273,7 @@ public enum ModIngots {
         "en_us", "Osmiridium Ingot"),
 
     SELENIUM("selenium",
-        "ru_ru", "Селеновый слиток",
+        "ru_ru", "Селениевый слиток",
         "en_us", "Selenium Ingot"),
 
     CO60("co60",
@@ -349,7 +345,7 @@ public enum ModIngots {
         "en_us", "Arsenic Bronze"),
 
     CRYSTALLINE("crystalline",
-        "ru_ru", "Кристаллический слиток",
+        "ru_ru", "Кристаллиниевый слиток",
         "en_us", "Crystalline Ingot"),
 
     MUD("mud",
@@ -357,7 +353,7 @@ public enum ModIngots {
         "en_us", "Mud"),
 
     SILICON("silicon",
-        "ru_ru", "Кремниевый слиток",
+        "ru_ru", "Кремниевый брусок",
         "en_us", "Silicon Ingot"),
 
     FIBERGLASS("fiberglass",
@@ -381,12 +377,12 @@ public enum ModIngots {
         "en_us", "PET Ingot"),
 
     FERROURANIUM("ferrouranium",
-        "ru_ru", "Ферроураниевый слиток",
+        "ru_ru", "Ферроурановый слиток",
         "en_us", "Ferrouranium Ingot"),
 
     PVC("pvc",
-        "ru_ru", "ПВХ слиток",
-        "en_us", "PVC Ingot"),
+        "ru_ru", "ПВХ",
+        "en_us", "PVC"),
 
     BIORUBBER("biorubber",
         "ru_ru", "Биорезиновый слиток",
@@ -404,45 +400,9 @@ public enum ModIngots {
         "ru_ru", "Стабаллой",
         "en_us", "Staballoy"),
 
-    METAL_BEACON("metal.beacon",
-        "ru_ru", "Металлический маяк",
-        "en_us", "Metal Beacon"),
-
     METAL_SCRAP("metal.scrap",
-            "ru_ru", "Металлический лом",
+            "ru_ru", "Металлолом",
             "en_us", "Metal Scrap"),
-
-    METAL_SHEET("metal_sheet",
-            "ru_ru", "Металлический лист",
-            "en_us", "Metal Sheet"),
-
-    METAL_CASING("metal.casing",
-            "ru_ru", "Металлический корпус",
-            "en_us", "Metal Casing"),
-
-    METAL_CLOCKWORK("metal.clockwork",
-            "ru_ru", "Металлический часовой механизм",
-            "en_us", "Metal Clockwork"),
-
-    METAL_COUNTER("metal.counter",
-            "ru_ru", "Металлический счётчик",
-            "en_us", "Metal Counter"),
-
-    METAL_DETECTOR("metal.detector",
-            "ru_ru", "Металлодетектор",
-            "en_us", "Metal Detector"),
-
-    METAL_KEY("metal.key",
-            "ru_ru", "Металлический ключ",
-            "en_us", "Metal Key"),
-
-    METAL_BAR("metal.bar",
-            "ru_ru", "Металлический стержень",
-            "en_us", "Metal Bar"),
-
-    RAW("raw",
-            "ru_ru", "Сырой материал",
-            "en_us", "Raw Material"),
 
     METEORITE_FORGED("meteorite_forged",
             "ru_ru", "Кованый метеоритный слиток",
@@ -460,25 +420,9 @@ public enum ModIngots {
             "ru_ru", "Маленький железный слиток",
             "en_us", "Small Iron Ingot"),
 
-    GRAYSCALE_1_17_COPPER_BASE("grayscale_1_17_copper_base",
-            "ru_ru", "Серый медный слиток 1.17",
-            "en_us", "Grayscale 1.17 Copper Base Ingot"),
-
-    GRAYSCALE("grayscale",
-            "ru_ru", "Серый слиток",
-            "en_us", "Grayscale Ingot"),
-
-    METAL_ALT("metal_alt",
-            "ru_ru", "Альтернативный металлический слиток",
-            "en_us", "Alternative Metal Ingot"),
-
     CHAINSTEEL_HOT("chainsteel_hot",
             "ru_ru", "Горячая цепная сталь",
             "en_us", "Hot Chain Steel"),
-
-    GH336("gh336",
-            "ru_ru", "GH336",
-            "en_us", "GH336"),
 
     STARMETAL_ORION_BASE("starmetal_orion_base",
             "ru_ru", "Базовый звёздный металл Орион",
@@ -505,7 +449,7 @@ public enum ModIngots {
             "en_us", "Star Metal Astra"),
 
     DESH_RAINBOW("desh_rainbow",
-            "ru_ru", "Радужный деш",
+            "ru_ru", "Ненавижу пони.",
             "en_us", "Rainbow Desh"),
 
     TCALLOY("tcalloy",
@@ -533,36 +477,24 @@ public enum ModIngots {
             "en_us", "Tetraneutronium Ingot"),
 
     CFT("cft",
-            "ru_ru", "CFT слиток",
+            "ru_ru", "слиток CFT",
             "en_us", "CFT Ingot"),
-
-    CF_TEST1("cf_test1",
-            "ru_ru", "Тестовый CF1",
-            "en_us", "CF Test1"),
-
-    CF_TEST2("cf_test2",
-            "ru_ru", "Тестовый CF2",
-            "en_us", "CF Test2"),
 
     CDALLOY("cdalloy",
             "ru_ru", "Слиток CDalloy",
             "en_us", "CDalloy Ingot"),
 
     BSCCO("bscco",
-            "ru_ru", "BSCCO слиток",
+            "ru_ru", "слиток BSCCO",
             "en_us", "BSCCO Ingot"),
 
     BESKAR_DOUBLE("beskar_double",
             "ru_ru", "Двойной бескаровый слиток",
             "en_us", "Double Beskar Ingot"),
 
-    BESKAR_SINGLE("beskar_single",
-            "ru_ru", "Одиночный бескаровый слиток",
-            "en_us", "Single Beskar Ingot"),
-
-    BESKAR_SINGLE_ALT("beskar_single_alt",
-            "ru_ru", "Альтернативный одиночный бескаровый слиток",
-            "en_us", "Alternative Single Beskar Ingot");
+    BESKAR("beskar",
+            "ru_ru", "Бескаровый слиток",
+            "en_us", "Beskar Ingot");
 
             
     // Чтобы добавить новый слиток, просто добавьте новую запись с его переводами

@@ -133,6 +133,9 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
     public static final RegistryObject<Item> GRENADESLIME = ITEMS.register("grenadeslime",
             () -> new GrenadeslimeItem(new Item.Properties()));
 
+    public static final RegistryObject<Item> GRENADEIF = ITEMS.register("grenadeif",
+            () -> new GrenadeheItem(new Item.Properties()));
+
     // БРОНЯ ГОРНЯКА:
     public static final RegistryObject<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet",
             () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.HELMET, new Item.Properties()));
@@ -354,6 +357,23 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
                 }
             })
     );
+
+    public static final RegistryObject<Item> METAL_ROD = ITEMS.register("metal_rod",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BATTLE_MODULE = ITEMS.register("battle_module",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BATTLE_CASING = ITEMS.register("battle_casing",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BATTLE_SENSOR = ITEMS.register("battle_sensor",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BATTLE_COUNTER = ITEMS.register("battle_counter",
+            () -> new Item(new Item.Properties()));
+
+
     public static final RegistryObject<Item> PLATE_IRON = ITEMS.register("plate_iron",
             () -> new Item(new Item.Properties()));
 
