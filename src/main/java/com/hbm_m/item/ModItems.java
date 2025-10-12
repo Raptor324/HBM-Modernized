@@ -11,7 +11,10 @@ import com.hbm_m.armormod.item.ItemModHealth;
 import com.hbm_m.armormod.item.ItemModRadProtection;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
+import com.hbm_m.entity.ModEntities;
+import com.hbm_m.entity.grenades.GrenadeType;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
 
@@ -73,8 +76,8 @@ public class ModItems {
     public static final int BATTERY_CAPACITY = 1_000_000;
 
 // ХАВЧИК:
-public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry",
-        () -> new Item(new Item.Properties().food(ModFoods.STRAWBERRY)));
+    public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry",
+            () -> new Item(new Item.Properties().food(ModFoods.STRAWBERRY)));
 
 
 // ИНСТРУМЕНТЫ ГОРНЯКА:
@@ -122,19 +125,25 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
     public static final RegistryObject<Item> TITANIUM_HOE = ITEMS.register("titanium_hoe",
             () -> new HoeItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
 
-    public static final RegistryObject<Item> GRENADEHE = ITEMS.register("grenadehe",
-            () -> new GrenadeheItem(new Item.Properties()));
+
     public static final RegistryObject<Item> GRENADE = ITEMS.register("grenade",
-            () -> new GrenadeItem(new Item.Properties()));
+        () -> new GrenadeItem(new Item.Properties(), GrenadeType.STANDARD, ModEntities.GRENADE_PROJECTILE));
+
+    public static final RegistryObject<Item> GRENADEHE = ITEMS.register("grenadehe",
+        () -> new GrenadeItem(new Item.Properties(), GrenadeType.HE, ModEntities.GRENADEHE_PROJECTILE));
+
     public static final RegistryObject<Item> GRENADEFIRE = ITEMS.register("grenadefire",
-            () -> new GrenadefireItem(new Item.Properties()));
-    public static final RegistryObject<Item> GRENADESMART = ITEMS.register("grenadesmart",
-            () -> new GrenadesmartItem(new Item.Properties()));
+        () -> new GrenadeItem(new Item.Properties(), GrenadeType.FIRE, ModEntities.GRENADEFIRE_PROJECTILE));
+
     public static final RegistryObject<Item> GRENADESLIME = ITEMS.register("grenadeslime",
-            () -> new GrenadeslimeItem(new Item.Properties()));
+        () -> new GrenadeItem(new Item.Properties(), GrenadeType.SLIME, ModEntities.GRENADESLIME_PROJECTILE));
+
+    public static final RegistryObject<Item> GRENADESMART = ITEMS.register("grenadesmart",
+        () -> new GrenadeItem(new Item.Properties(), GrenadeType.SMART, ModEntities.GRENADESMART_PROJECTILE));
 
     public static final RegistryObject<Item> GRENADEIF = ITEMS.register("grenadeif",
-            () -> new GrenadeheItem(new Item.Properties()));
+        () -> new GrenadeItem(new Item.Properties(), GrenadeType.IF, ModEntities.GRENADEIF_PROJECTILE));
+
 
     // БРОНЯ ГОРНЯКА:
     public static final RegistryObject<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet",

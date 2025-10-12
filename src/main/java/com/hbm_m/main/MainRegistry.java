@@ -297,7 +297,6 @@ public class MainRegistry {
         }
 
 
-
         // РАСХОДНИКИ И МОДИФИКАТОРЫ
         if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get()) {
             // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ МОДИФИКАТОРОВ 
@@ -318,16 +317,11 @@ public class MainRegistry {
                     }
                 }
             }
-
-
             event.accept(ModItems.RADAWAY);
-
         }
-
 
         // ЗАПЧАСТИ
         if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get()) {
-
 
             event.accept(ModItems.SILICON_CIRCUIT);
             event.accept(ModItems.CONTROLLER_ADVANCED);
@@ -428,7 +422,6 @@ public class MainRegistry {
             event.accept(ModBlocks.LEAD_ORE);
             event.accept(ModBlocks.LEAD_ORE_DEEPSLATE);
             event.accept(ModBlocks.CINNABAR_ORE);
-            // event.accept(ModBlocks.UNIVERSAL_MACHINE_PART);
             event.accept(ModItems.ALUMINUM_RAW);
             event.accept(ModItems.BERYLLIUM_RAW);
             event.accept(ModItems.COBALT_RAW);
@@ -521,9 +514,6 @@ public class MainRegistry {
 
         // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ
         if (event.getTab() == ModCreativeTabs.NTM_FUEL_TAB.get()) {
-
-
-
             event.accept(ModItems.LIGNITE);
             event.accept(ModItems.PLATE_FUEL_MOX);
             event.accept(ModItems.PLATE_FUEL_PU238BE);
@@ -539,48 +529,9 @@ public class MainRegistry {
             }
         }
 
-
-
-
         if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get()) {
 
             event.accept(ModItems.TEMPLATE_FOLDER);
-
-            event.accept(ModItems.STAMP_STONE_FLAT);
-            event.accept(ModItems.STAMP_STONE_PLATE);
-            event.accept(ModItems.STAMP_STONE_WIRE);
-            event.accept(ModItems.STAMP_STONE_CIRCUIT);
-            event.accept(ModItems.STAMP_IRON_FLAT);
-            event.accept(ModItems.STAMP_IRON_PLATE);
-            event.accept(ModItems.STAMP_IRON_WIRE);
-            event.accept(ModItems.STAMP_IRON_CIRCUIT);
-            event.accept(ModItems.STAMP_IRON_9);
-            event.accept(ModItems.STAMP_IRON_44);
-            event.accept(ModItems.STAMP_IRON_50);
-            event.accept(ModItems.STAMP_IRON_357);
-            event.accept(ModItems.STAMP_STEEL_FLAT);
-            event.accept(ModItems.STAMP_STEEL_PLATE);
-            event.accept(ModItems.STAMP_STEEL_WIRE);
-            event.accept(ModItems.STAMP_STEEL_CIRCUIT);
-            event.accept(ModItems.STAMP_TITANIUM_FLAT);
-            event.accept(ModItems.STAMP_TITANIUM_PLATE);
-            event.accept(ModItems.STAMP_TITANIUM_WIRE);
-            event.accept(ModItems.STAMP_TITANIUM_FLAT);
-            event.accept(ModItems.STAMP_TITANIUM_PLATE);
-            event.accept(ModItems.STAMP_TITANIUM_WIRE);
-            event.accept(ModItems.STAMP_TITANIUM_CIRCUIT);
-            event.accept(ModItems.STAMP_OBSIDIAN_FLAT);
-            event.accept(ModItems.STAMP_OBSIDIAN_PLATE);
-            event.accept(ModItems.STAMP_OBSIDIAN_WIRE);
-            event.accept(ModItems.STAMP_OBSIDIAN_CIRCUIT);
-            event.accept(ModItems.STAMP_DESH_FLAT);
-            event.accept(ModItems.STAMP_DESH_PLATE);
-            event.accept(ModItems.STAMP_DESH_WIRE);
-            event.accept(ModItems.STAMP_DESH_CIRCUIT);
-            event.accept(ModItems.STAMP_DESH_9);
-            event.accept(ModItems.STAMP_DESH_44);
-            event.accept(ModItems.STAMP_DESH_50);
-            event.accept(ModItems.STAMP_DESH_357);
 
             if (Minecraft.getInstance().level != null) {
                 RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
@@ -606,6 +557,42 @@ public class MainRegistry {
                     LOGGER.info("Added {} blueprint folders to NTM Templates tab", blueprintPools.size());
                 }
 
+                event.accept(ModItems.STAMP_STONE_FLAT);
+                event.accept(ModItems.STAMP_STONE_PLATE);
+                event.accept(ModItems.STAMP_STONE_WIRE);
+                event.accept(ModItems.STAMP_STONE_CIRCUIT);
+                event.accept(ModItems.STAMP_IRON_FLAT);
+                event.accept(ModItems.STAMP_IRON_PLATE);
+                event.accept(ModItems.STAMP_IRON_WIRE);
+                event.accept(ModItems.STAMP_IRON_CIRCUIT);
+                event.accept(ModItems.STAMP_IRON_9);
+                event.accept(ModItems.STAMP_IRON_44);
+                event.accept(ModItems.STAMP_IRON_50);
+                event.accept(ModItems.STAMP_IRON_357);
+                event.accept(ModItems.STAMP_STEEL_FLAT);
+                event.accept(ModItems.STAMP_STEEL_PLATE);
+                event.accept(ModItems.STAMP_STEEL_WIRE);
+                event.accept(ModItems.STAMP_STEEL_CIRCUIT);
+                event.accept(ModItems.STAMP_TITANIUM_FLAT);
+                event.accept(ModItems.STAMP_TITANIUM_PLATE);
+                event.accept(ModItems.STAMP_TITANIUM_WIRE);
+                event.accept(ModItems.STAMP_TITANIUM_FLAT);
+                event.accept(ModItems.STAMP_TITANIUM_PLATE);
+                event.accept(ModItems.STAMP_TITANIUM_WIRE);
+                event.accept(ModItems.STAMP_TITANIUM_CIRCUIT);
+                event.accept(ModItems.STAMP_OBSIDIAN_FLAT);
+                event.accept(ModItems.STAMP_OBSIDIAN_PLATE);
+                event.accept(ModItems.STAMP_OBSIDIAN_WIRE);
+                event.accept(ModItems.STAMP_OBSIDIAN_CIRCUIT);
+                event.accept(ModItems.STAMP_DESH_FLAT);
+                event.accept(ModItems.STAMP_DESH_PLATE);
+                event.accept(ModItems.STAMP_DESH_WIRE);
+                event.accept(ModItems.STAMP_DESH_CIRCUIT);
+                event.accept(ModItems.STAMP_DESH_9);
+                event.accept(ModItems.STAMP_DESH_44);
+                event.accept(ModItems.STAMP_DESH_50);
+                event.accept(ModItems.STAMP_DESH_357);
+
                 // Добавляем шаблоны как раньше
                 for (AssemblerRecipe recipe : recipes) {
                     ItemStack templateStack = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
@@ -624,34 +611,4 @@ public class MainRegistry {
         }
 
     }
-        @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-        public static class ClientModEvents {
-            @SubscribeEvent
-            public static void onClientSetup(FMLClientSetupEvent event) {
-                // Регистрируем рендеры для entity — например, для гранаты
-
-                ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-                ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-                ModEntities.GRENADEFIRE_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-                ModEntities.GRENADESMART_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-                ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-
-            }
-        }
-
-
-
-
-
-
 }

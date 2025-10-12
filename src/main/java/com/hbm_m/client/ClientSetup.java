@@ -34,6 +34,8 @@ import net.minecraft.client.gui.screens.MenuScreens;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
+import net.minecraft.client.renderer.entity.EntityRenderers;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -61,6 +63,25 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
+
+        ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
+                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
+                );
+                ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType ->
+                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
+                );
+                ModEntities.GRENADEFIRE_PROJECTILE.ifPresent(entityType ->
+                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
+                );
+                ModEntities.GRENADESMART_PROJECTILE.ifPresent(entityType ->
+                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
+                );
+                ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType ->
+                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
+                );
+                ModEntities.GRENADEIF_PROJECTILE.ifPresent(entityType ->
+                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
+                );
         
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 

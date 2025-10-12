@@ -34,6 +34,10 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> REPAIR_6 = registerSoundEvents("tool.repair6");
     public static final RegistryObject<SoundEvent> REPAIR_7 = registerSoundEvents("tool.repair7");
 
+    public static final RegistryObject<SoundEvent> BOUNCE1 = registerSoundEvents("item.bounce1");
+    public static final RegistryObject<SoundEvent> BOUNCE2 = registerSoundEvents("item.bounce2");
+    public static final RegistryObject<SoundEvent> BOUNCE3 = registerSoundEvents("item.bounce3");
+
     public static final RegistryObject<SoundEvent> EXTRACT_1 = registerSoundEvents("tool.extract1");
     public static final RegistryObject<SoundEvent> EXTRACT_2 = registerSoundEvents("tool.extract2");
 
