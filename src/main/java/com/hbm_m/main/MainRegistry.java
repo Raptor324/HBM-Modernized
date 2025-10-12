@@ -281,9 +281,6 @@ public class MainRegistry {
             event.accept(ModItems.PLATE_FUEL_U235);
 
             event.accept(ModItems.CINNABAR);
-            event.accept(ModItems.ALUMINUM_RAW);
-            event.accept(ModItems.BERYLLIUM_RAW);
-            event.accept(ModItems.COBALT_RAW);
             event.accept(ModItems.FIRECLAY_BALL);
 
             event.accept(ModItems.SULFUR);
@@ -322,6 +319,17 @@ public class MainRegistry {
 
         // ЗАПЧАСТИ
         if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get()) {
+
+            event.accept(ModItems.WIRE_RED_COPPER);
+            event.accept(ModItems.WIRE_COPPER);
+            event.accept(ModItems.WIRE_TUNGSTEN);
+            event.accept(ModItems.WIRE_GOLD);
+            event.accept(ModItems.WIRE_ALUMINIUM);
+            event.accept(ModItems.WIRE_MAGNETIZED_TUNGSTEN);
+            event.accept(ModItems.WIRE_SCHRABIDIUM);
+            event.accept(ModItems.WIRE_FINE);
+            event.accept(ModItems.WIRE_CARBON);
+            event.accept(ModItems.WIRE_ADVANCED_ALLOY);
 
             event.accept(ModItems.SILICON_CIRCUIT);
             event.accept(ModItems.CONTROLLER_ADVANCED);

@@ -135,6 +135,45 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 // ПРЕДМЕТЫ
 
+                add(ModItems.WIRE_RED_COPPER.get(), "Провод из красной меди");
+                add(ModItems.WIRE_COPPER.get(), "Медный провод");
+                add(ModItems.WIRE_ALUMINIUM.get(), "Алюминиевый провод");
+                add(ModItems.WIRE_GOLD.get(), "Золотой провод");
+                add(ModItems.WIRE_TUNGSTEN.get(), "Вольфрамовый провод");
+                add(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), "Провод из намагниченного вольфрама");
+                add(ModItems.WIRE_FINE.get(), "Порядочный провод");
+                add(ModItems.WIRE_CARBON.get(), "Провод из полимера");
+                add(ModItems.WIRE_SCHRABIDIUM.get(), "Шрабидиевый провод");
+                add(ModItems.WIRE_ADVANCED_ALLOY.get(), "Провод из продвинутого сплава");
+
+                add(ModItems.STAMP_STONE_FLAT.get(), "Плоский каменный штамп");
+                add(ModItems.STAMP_STONE_PLATE.get(), "Каменный штамп пластины");
+                add(ModItems.STAMP_STONE_WIRE.get(), "Каменный штамп провода");
+                add(ModItems.STAMP_STONE_CIRCUIT.get(), "Каменный штамп чипа");
+                add(ModItems.STAMP_IRON_FLAT.get(), "Плоский железный штамп");
+                add(ModItems.STAMP_IRON_PLATE.get(), "Железный штамп пластины");
+                add(ModItems.STAMP_IRON_WIRE.get(), "Железный штамп провода");
+                add(ModItems.STAMP_IRON_CIRCUIT.get(), "Железный штамп чипа");
+                add(ModItems.STAMP_STEEL_FLAT.get(), "Плоский стальной штамп");
+                add(ModItems.STAMP_STEEL_PLATE.get(), "Стальной штамп пластины");
+                add(ModItems.STAMP_STEEL_WIRE.get(), "Стальной штамп провода");
+                add(ModItems.STAMP_STEEL_CIRCUIT.get(), "Стальной штамп чипа");
+                add(ModItems.STAMP_TITANIUM_FLAT.get(), "Плоский титановый штамп");
+                add(ModItems.STAMP_TITANIUM_PLATE.get(), "Титановый штамп пластины");
+                add(ModItems.STAMP_TITANIUM_WIRE.get(), "Титановый штамп провода");
+                add(ModItems.STAMP_TITANIUM_CIRCUIT.get(), "Титановый штамп чипа");
+                add(ModItems.STAMP_OBSIDIAN_FLAT.get(), "Плоский обсидиановый штамп");
+                add(ModItems.STAMP_OBSIDIAN_PLATE.get(), "Обсидиановый штамп пластины");
+                add(ModItems.STAMP_OBSIDIAN_WIRE.get(), "Обсидиановый штамп провода");
+                add(ModItems.STAMP_OBSIDIAN_CIRCUIT.get(), "Обсидиановый штамп чипа");
+                add(ModItems.STAMP_DESH_FLAT.get(), "Плоский деш штамп");
+                add(ModItems.STAMP_DESH_PLATE.get(), "Деш штамп пластины");
+                add(ModItems.STAMP_DESH_WIRE.get(), "Деш штамп провода");
+                add(ModItems.STAMP_DESH_CIRCUIT.get(), "Деш штамп чипа");
+
+
+
+
                 add("item.hbm_m.heart_piece", "Частичка сердца");
                 add(ModItems.HEART_CONTAINER.get(), "Контейнер для сердца");
                 add(ModItems.HEART_BOOSTER.get(), "Усилитель сердца");
@@ -666,7 +705,41 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_boots", "Starmetal Boots");
 
                 // ITEMS
+                add(ModItems.WIRE_RED_COPPER.get(), "Red Copper Wire");
+                add(ModItems.WIRE_COPPER.get(), "Copper Wire");
+                add(ModItems.WIRE_ALUMINIUM.get(), "Aluminium Wire");
+                add(ModItems.WIRE_GOLD.get(), "Golden Wire");
+                add(ModItems.WIRE_TUNGSTEN.get(), "Tungsten Wire");
+                add(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), "Magnetized Tungsten Wire");
+                add(ModItems.WIRE_FINE.get(), "Fine Wire");
+                add(ModItems.WIRE_CARBON.get(), "Carbon Wire");
+                add(ModItems.WIRE_SCHRABIDIUM.get(), "Shrabidium Wire");
+                add(ModItems.WIRE_ADVANCED_ALLOY.get(), "Advanced Alloy Wire");
 
+                add(ModItems.STAMP_STONE_FLAT.get(), "Stone Flat Stamp");
+                add(ModItems.STAMP_STONE_PLATE.get(), "Stone Plate Stamp");
+                add(ModItems.STAMP_STONE_WIRE.get(), "Stone Wire Stamp");
+                add(ModItems.STAMP_STONE_CIRCUIT.get(), "Stone Circuit Stamp");
+                add(ModItems.STAMP_IRON_FLAT.get(), "Iron Flat Stamp");
+                add(ModItems.STAMP_IRON_PLATE.get(), "Iron Plate Stamp");
+                add(ModItems.STAMP_IRON_WIRE.get(), "Iron Wire Stamp");
+                add(ModItems.STAMP_IRON_CIRCUIT.get(), "Iron Circuit Stamp");
+                add(ModItems.STAMP_STEEL_FLAT.get(), "Steel Flat Stamp");
+                add(ModItems.STAMP_STEEL_PLATE.get(), "Steel Plate Stamp");
+                add(ModItems.STAMP_STEEL_WIRE.get(), "Steel Wire Stamp");
+                add(ModItems.STAMP_STEEL_CIRCUIT.get(), "Steel Circuit Stamp");
+                add(ModItems.STAMP_TITANIUM_FLAT.get(), "Titanium Flat Stamp");
+                add(ModItems.STAMP_TITANIUM_PLATE.get(), "Titanium Plate Stamp");
+                add(ModItems.STAMP_TITANIUM_WIRE.get(), "Titanium Wire Stamp");
+                add(ModItems.STAMP_TITANIUM_CIRCUIT.get(), "Titanium Circuit Stamp");
+                add(ModItems.STAMP_OBSIDIAN_FLAT.get(), "Obsidian Flat Stamp");
+                add(ModItems.STAMP_OBSIDIAN_PLATE.get(), "Obsidian Plate Stamp");
+                add(ModItems.STAMP_OBSIDIAN_WIRE.get(), "Obsidian Wire Stamp");
+                add(ModItems.STAMP_OBSIDIAN_CIRCUIT.get(), "Obsidian Circuit Stamp");
+                add(ModItems.STAMP_DESH_FLAT.get(), "Desh Flat Stamp");
+                add(ModItems.STAMP_DESH_PLATE.get(), "Desh Plate Stamp");
+                add(ModItems.STAMP_DESH_WIRE.get(), "Desh Wire Stamp");
+                add(ModItems.STAMP_DESH_CIRCUIT.get(), "Desh Circuit Stamp");
 
 
                 add(ModItems.QUANTUM_CHIP.get(), "Quantum Chip");

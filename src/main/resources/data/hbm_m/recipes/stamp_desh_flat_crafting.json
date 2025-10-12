@@ -1,0 +1,27 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "###",
+    "$$$",
+    "   "
+
+  ],
+
+  "key": {
+    "#": {
+      "item": "minecraft:brick"
+    },
+
+    "$": {
+      "item": "hbm_m:desh_ingot"
+    }
+
+  },
+
+  "result": {
+
+    "item": "hbm_m:stamp_desh_flat"
+  }
+
+}

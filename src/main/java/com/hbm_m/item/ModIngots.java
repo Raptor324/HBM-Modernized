@@ -93,15 +93,15 @@ public enum ModIngots {
             "en_us", "Bismuth Ingot"),
 
     POLYMER("polymer",
-        "ru_ru", "Кусок полимера",
-        "en_us", "Polymer Chunk"),
+        "ru_ru", "Полимер",
+        "en_us", "Polymer Ingot"),
 
     BAKELITE("bakelite",
         "ru_ru", "Бакелит",
         "en_us", "Bakelite Ingot"),
 
     RUBBER("rubber",
-        "ru_ru", "Резиновый слиток",
+        "ru_ru", "Резина",
         "en_us", "Rubber Ingot"),
 
     DESH("desh",
@@ -133,7 +133,7 @@ public enum ModIngots {
         "en_us", "Dura Steel Ingot"),
 
     POLYMER_COMPOSITE("pc",
-        "ru_ru", "Полимерный композит",
+        "ru_ru", "Твёрдый пластиковый брусок",
         "en_us", "Polymer Composite"),
 
     DIGAMMA("digamma",

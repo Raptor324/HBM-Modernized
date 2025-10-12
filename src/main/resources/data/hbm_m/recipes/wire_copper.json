@@ -1,0 +1,15 @@
+{
+  "type": "hbm_m:press",
+  "ingredients": [
+    {
+      "tag": "hbm_m:stamps/wire"
+    },
+    {
+      "item": "hbm_m:copper_ingot"
+    }
+  ],
+  "output": {
+    "item": "hbm_m:wire_copper",
+    "count": 8
+  }
+}
