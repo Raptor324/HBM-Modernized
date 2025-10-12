@@ -28,7 +28,27 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         blockWithItem(ModBlocks.CONCRETE_HAZARD);
         stairsBlock(((StairBlock) ModBlocks.CONCRETE_HAZARD_STAIRS.get()), blockTexture(ModBlocks.CONCRETE_HAZARD.get()));
-        slabBlock(((SlabBlock) ModBlocks.CONCRETE_HAZARD_SLAB.get()), blockTexture(ModBlocks.CONCRETE_HAZARD_SLAB.get()), blockTexture(ModBlocks.CONCRETE_HAZARD.get()));
+        slabBlock(((SlabBlock) ModBlocks.CONCRETE_HAZARD_SLAB.get()), blockTexture(ModBlocks.CONCRETE_HAZARD_SLAB.get()), blockTexture(ModBlocks.BRICK_CONCRETE.get()));
+
+        blockWithItem(ModBlocks.BRICK_CONCRETE);
+        stairsBlock(((StairBlock) ModBlocks.BRICK_CONCRETE.get()), blockTexture(ModBlocks.BRICK_CONCRETE.get()));
+        slabBlock(((SlabBlock) ModBlocks.BRICK_CONCRETE_SLAB.get()), blockTexture(ModBlocks.BRICK_CONCRETE_SLAB.get()), blockTexture(ModBlocks.BRICK_CONCRETE.get()));
+
+        blockWithItem(ModBlocks.BRICK_CONCRETE_BROKEN);
+        stairsBlock(((StairBlock) ModBlocks.BRICK_CONCRETE_BROKEN.get()), blockTexture(ModBlocks.BRICK_CONCRETE_BROKEN.get()));
+        slabBlock(((SlabBlock) ModBlocks.BRICK_CONCRETE_BROKEN_SLAB.get()), blockTexture(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB.get()), blockTexture(ModBlocks.BRICK_CONCRETE_BROKEN.get()));
+
+        blockWithItem(ModBlocks.BRICK_CONCRETE_CRACKED);
+        stairsBlock(((StairBlock) ModBlocks.BRICK_CONCRETE_CRACKED.get()), blockTexture(ModBlocks.BRICK_CONCRETE_CRACKED.get()));
+        slabBlock(((SlabBlock) ModBlocks.BRICK_CONCRETE_CRACKED_SLAB.get()), blockTexture(ModBlocks.BRICK_CONCRETE_CRACKED_SLAB.get()), blockTexture(ModBlocks.BRICK_CONCRETE_CRACKED.get()));
+
+        blockWithItem(ModBlocks.BRICK_CONCRETE_MOSSY);
+        stairsBlock(((StairBlock) ModBlocks.BRICK_CONCRETE_MOSSY.get()), blockTexture(ModBlocks.BRICK_CONCRETE_MOSSY.get()));
+        slabBlock(((SlabBlock) ModBlocks.BRICK_CONCRETE_MOSSY_SLAB.get()), blockTexture(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB.get()), blockTexture(ModBlocks.BRICK_CONCRETE_MOSSY.get()));
+
+
+
+
 
 
         simpleBlockWithItem(ModBlocks.SHREDDER.get(),
