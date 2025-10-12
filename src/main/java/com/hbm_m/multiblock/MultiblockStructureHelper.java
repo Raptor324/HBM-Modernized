@@ -5,7 +5,6 @@ package com.hbm_m.multiblock;
 // а также генерировать VoxelShape для всей структуры. Ядро всей мультиблочной логики.
 import com.hbm_m.block.WireBlock;
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.HighlightBlocksPacket;
 import com.hbm_m.network.ModPacketHandler;
 import net.minecraft.core.BlockPos;
@@ -93,28 +92,44 @@ public class MultiblockStructureHelper {
 
     public void placeStructure(Level level, BlockPos controllerPos, Direction facing, IMultiblockController controller) {
         if (level.isClientSide) return;
-
+        
+        List<BlockPos> energyConnectorPositions = new ArrayList<>();
+        
         for (Map.Entry<BlockPos, Supplier<BlockState>> entry : structureMap.entrySet()) {
             BlockPos relativePos = entry.getKey();
             if (relativePos.equals(BlockPos.ZERO)) continue;
-
             BlockPos worldPos = getRotatedPos(controllerPos, relativePos, facing);
             BlockState partState = phantomBlockState.get().setValue(HorizontalDirectionalBlock.FACING, facing);
-
-            // ИСПОЛЬЗУЕМ ФЛАГ 2: Только обновление соседей, без отправки пакета клиенту внутри цикла.
-            // Это предотвратит лишние нагрузки во время постройки.
+            
             level.setBlock(worldPos, partState, 2);
-
             BlockEntity be = level.getBlockEntity(worldPos);
+            
             if (be instanceof IMultiblockPart partBe) {
                 partBe.setControllerPos(controllerPos);
-                partBe.setPartRole(controller.getPartRole(relativePos));
+                PartRole role = controller.getPartRole(relativePos);
+                partBe.setPartRole(role);
+                
+                if (role == PartRole.ENERGY_CONNECTOR) {
+                    energyConnectorPositions.add(worldPos);
+                }
             }
         }
         
-        // ВАЖНО: После того как ВСЯ структура построена, мы один раз проверяем состояние рамки.
-        // Этой проверки достаточно, не нужно делать ее для каждой части.
         updateFrameForController(level, controllerPos);
+        
+        // Обновляем соседние провода после полной инициализации структуры
+        for (BlockPos connectorPos : energyConnectorPositions) {
+            for (Direction dir : Direction.values()) {
+                BlockPos wirePos = connectorPos.relative(dir);
+                BlockState wireState = level.getBlockState(wirePos);
+                if (wireState.getBlock() instanceof WireBlock wireBlock) {
+                    // Пересчитываем состояние провода для направления к коннектору
+                    boolean canConnect = wireBlock.canConnectTo(level, wirePos, dir.getOpposite());
+                    BlockState newWireState = wireState.setValue(WireBlock.PROPERTIES_MAP.get(dir.getOpposite()), canConnect);
+                    level.setBlock(wirePos, newWireState, 3);
+                }
+            }
+        }
     }
 
     public void destroyStructure(Level level, BlockPos controllerPos, Direction facing) {
