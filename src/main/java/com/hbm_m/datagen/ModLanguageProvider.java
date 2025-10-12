@@ -142,7 +142,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.WIRE_TUNGSTEN.get(), "Вольфрамовый провод");
                 add(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), "Провод из намагниченного вольфрама");
                 add(ModItems.WIRE_FINE.get(), "Порядочный провод");
-                add(ModItems.WIRE_CARBON.get(), "Провод из полимера");
+                add(ModItems.WIRE_CARBON.get(), "Провод из свинца");
                 add(ModItems.WIRE_SCHRABIDIUM.get(), "Шрабидиевый провод");
                 add(ModItems.WIRE_ADVANCED_ALLOY.get(), "Провод из продвинутого сплава");
 
@@ -234,7 +234,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.VACUUM_TUBE.get(), "Вакуумная Трубка");
                 add(ModItems.CAPACITOR.get(), "Конденсатор");
                 add(ModItems.PCB.get(), "Печатная Плата");
-
+                add(ModItems.INSULATOR.get(), "Изолятор");
+                add(ModItems.NUGGET_SILICON.get(), "Самородок Кремния");
+                add(ModItems.BILLET_SILICON.get(), "Заготовка Кремния");
 
                 add(ModItems.BATTLE_GEARS.get(), "Боевые Детали");
                 add(ModItems.BATTLE_CASING.get(), "Боевой Корпус");
@@ -252,7 +254,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_LEAD.get(), "Оловянная пластина");
                 add(ModItems.PLATE_MIXED.get(), "Композитная пластина");
                 add(ModItems.PLATE_PAA.get(), "Пластина сплава РаА");
-                add(ModItems.PLATE_POLYMER.get(), "Полимерная пластина");
                 add(ModItems.PLATE_SATURNITE.get(), "Сатурнитовая пластина");
                 add(ModItems.PLATE_SCHRABIDIUM.get(), "Шрабидиевая пластина");
                 add(ModItems.PLATE_STEEL.get(), "Стальная пластина");
@@ -710,7 +711,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.WIRE_TUNGSTEN.get(), "Tungsten Wire");
                 add(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), "Magnetized Tungsten Wire");
                 add(ModItems.WIRE_FINE.get(), "Fine Wire");
-                add(ModItems.WIRE_CARBON.get(), "Carbon Wire");
+                add(ModItems.WIRE_CARBON.get(), "Lead Wire");
                 add(ModItems.WIRE_SCHRABIDIUM.get(), "Shrabidium Wire");
                 add(ModItems.WIRE_ADVANCED_ALLOY.get(), "Advanced Alloy Wire");
 
@@ -821,6 +822,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("desc.gui.template", "Insert Assembly Template");
                 add("desc.gui.assembler.warning", "No valid template!");
 
+
+                add(ModItems.NUGGET_SILICON.get(), "Silicon Nugget");
+                add(ModItems.BILLET_SILICON.get(), "Silicon Billet");
                 add(ModItems.PLATE_GOLD.get(), "Golden Plate");
                 add(ModItems.PLATE_GUNMETAL.get(), "Gunmetal Plate");
                 add(ModItems.PLATE_GUNSTEEL.get(), "Gunsteel Plate");
@@ -830,7 +834,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_LEAD.get(), "Lead Plate");
                 add(ModItems.PLATE_MIXED.get(), "Mixed Plate");
                 add(ModItems.PLATE_PAA.get(), "PAA Plate");
-                add(ModItems.PLATE_POLYMER.get(), "Polymer Plate");
+                add(ModItems.INSULATOR.get(), "Insulator");
                 add(ModItems.PLATE_SATURNITE.get(), "Saturnite Plate");
                 add(ModItems.PLATE_SCHRABIDIUM.get(), "Schrabidium Plate");
                 add(ModItems.PLATE_STEEL.get(), "Steel Plate");

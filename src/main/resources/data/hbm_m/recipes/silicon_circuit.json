@@ -1,0 +1,15 @@
+{
+  "type": "hbm_m:press",
+  "ingredients": [
+    {
+      "tag": "hbm_m:stamps/circuit"
+    },
+    {
+      "item": "hbm_m:billet_silicon"
+    }
+  ],
+  "output": {
+    "item": "hbm_m:silicon_circuit",
+    "count": 1
+  }
+}
