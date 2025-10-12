@@ -327,6 +327,11 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 // БЛОКИ
 
+                add("block.hbm_m.reinforced_glass", "Усиленное стекло");
+                add("block.hbm_m.crate", "Ящик");
+                add("block.hbm_m.crate_lead", "Свинцовый ящик");
+                add("block.hbm_m.crate_metal", "Металлический ящик");
+                add("block.hbm_m.crate_weapon", "Ящик с оружием");
                 add("block.hbm_m.uranium_block", "Урановый блок");
                 add("block.hbm_m.plutonium_block", "Плутониевый блок");
                 add("block.hbm_m.plutonium_fuel_block", "Блок плутониевого топлива");
@@ -912,7 +917,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.armor_table.servos_slot", "Servos");
 
                 // BLOCKS
-                
+
+
+                add("block.hbm_m.reinforced_glass", "Reinforced Glass");
+                add("block.hbm_m.crate", "Crate");
+                add("block.hbm_m.crate_lead", "Lead Crate");
+                add("block.hbm_m.crate_metal", "Metal Crate");
+                add("block.hbm_m.crate_weapon", "Weapon Crate");
                 add("block.hbm_m.uranium_block", "Uranium Block");
                 add("block.hbm_m.plutonium_block", "Plutonium Block");
                 add("block.hbm_m.plutonium_fuel_block", "Plutonium Fuel Block");

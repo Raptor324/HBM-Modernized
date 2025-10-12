@@ -44,6 +44,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.BRICK_CONCRETE_MOSSY);
         blockWithItem(ModBlocks.BRICK_CONCRETE_MARKED);
 
+        resourceBlockWithItem(ModBlocks.CRATE);
+        resourceBlockWithItem(ModBlocks.CRATE_LEAD);
+        resourceBlockWithItem(ModBlocks.CRATE_METAL);
+        resourceBlockWithItem(ModBlocks.CRATE_WEAPON);
+
+        blockWithItem(ModBlocks.REINFORCED_GLASS);
+
         columnBlockWithItem(
             ModBlocks.WASTE_GRASS, 
             modLoc("block/waste_grass_side"), // Текстура из нашего мода
@@ -194,13 +201,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
     }
 
-    /**
-     * Генерирует модель и состояние для блока типа "колонна".
-     * @param blockObject Блок
-     * @param sideTexture Имя файла текстуры для боковых сторон
-     * @param topTexture Имя файла текстуры для верха
-     * @param bottomTexture Имя файла текстуры для низа
-     */
+
     private void columnBlockWithItem(RegistryObject<Block> blockObject, ResourceLocation sideLocation, ResourceLocation topLocation, ResourceLocation bottomLocation) {
         // Создаем модель блока, передавая готовые ResourceLocation
         simpleBlock(blockObject.get(), models().cubeBottomTop(
