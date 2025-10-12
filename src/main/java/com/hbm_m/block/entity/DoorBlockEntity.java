@@ -2,7 +2,6 @@ package com.hbm_m.block.entity;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -10,7 +9,6 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -23,14 +21,13 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.DoorBlock;
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.client.ClientSoundManager;
-import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.IMultiblockPart;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.util.DoorDecl;
-import com.hbm_m.util.LegacyAnimator;
 
 import java.util.List;
 
@@ -140,7 +137,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     }
 
     public byte getState() {
-        return state;
+        return this.state;
     }
 
     public long getAnimStartTime() {
@@ -219,21 +216,46 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             // ОТКРЫВАЕТСЯ
             be.openTicks++;
             be.updatePhantomBlocks(level, pos);
+            
             if (be.openTicks >= be.doorDecl.getOpenTime()) {
                 be.state = 1;
-                be.openTicks = be.doorDecl.getOpenTime(); // Сохраняем максимальное значение
+                be.openTicks = be.doorDecl.getOpenTime();
                 be.syncToClient();
+                
+                // КРИТИЧНО: обновляем блоки ВСЕЙ структуры для пересчета коллизии
+                be.notifyNeighborsOfStateChange(level, pos);
             }
-            
         } else if (be.state == 2) {
             // ЗАКРЫВАЕТСЯ
             be.openTicks--;
             be.updatePhantomBlocks(level, pos);
+            
             if (be.openTicks <= 0) {
                 be.state = 0;
                 be.openTicks = 0;
                 be.syncToClient();
+                
+                // КРИТИЧНО: обновляем блоки ВСЕЙ структуры для пересчета коллизии
+                be.notifyNeighborsOfStateChange(level, pos);
             }
+        }
+    }
+
+    private void notifyNeighborsOfStateChange(Level level, BlockPos controllerPos) {
+        // Получаем structureHelper из блока
+        BlockState blockState = getBlockState();
+        if (!(blockState.getBlock() instanceof DoorBlock doorBlock)) {
+            return;
+        }
+        
+        Direction facing = blockState.getValue(DoorBlock.FACING);
+        MultiblockStructureHelper structureHelper = doorBlock.getStructureHelper();
+        
+        // Обновляем ВСЕ блоки мультиблока
+        for (BlockPos partPos : structureHelper.getAllPartPositions(controllerPos, facing)) {
+            BlockState partState = level.getBlockState(partPos);
+            // Принудительно обновляем блок для пересчета коллизии
+            level.sendBlockUpdated(partPos, partState, partState, 3);
         }
     }
 

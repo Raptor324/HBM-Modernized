@@ -569,7 +569,7 @@ public class ModLanguageProvider extends LanguageProvider {
             case "en_us":
 
                 // TABS
-                add("itemGroup.hbm_m.ntm_resources_tab", "NTM Ingots and resources");
+                add("itemGroup.hbm_m.ntm_resources_tab", "NTM Ingots and Resources");
                 add("itemGroup.hbm_m.ntm_fuel_tab", "NTM Fuel and Machine Components");
                 add("itemGroup.hbm_m.ntm_templates_tab", "NTM Templates");
                 add("itemGroup.hbm_m.ntm_ores_tab", "NTM Ores and Blocks");
@@ -667,8 +667,6 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 // ITEMS
 
-
-
                 add(ModItems.QUANTUM_CHIP.get(), "Quantum Chip");
                 add(ModItems.QUANTUM_CIRCUIT.get(), "Quantum Circuit");
                 add(ModItems.QUANTUM_COMPUTER.get(), "Quantum Computer");
@@ -688,7 +686,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.VACUUM_TUBE.get(), "Vacuum Tube");
                 add(ModItems.CAPACITOR.get(), "Capacitor");
                 add(ModItems.PCB.get(), "PCB");
-
+                add(ModItems.STRAWBERRY.get(), "Strawberry");
 
 
                 add(ModItems.BATTLE_GEARS.get(), "Battle Gears");
@@ -699,13 +697,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.METAL_ROD.get(), "Metal Rod");
                 
 
-                add(ModItems.GRENADE.get(), "Bouncing grenade");
-                add(ModItems.GRENADEHE.get(), "Powerful bouncing grenade");
-                add(ModItems.GRENADEFIRE.get(), "Fire bouncing grenade");
-                add(ModItems.GRENADESLIME.get(), "Bouncy bouncing grenade");
-                add(ModItems.GRENADESMART.get(), "Smart bouncing grenade");
+                add(ModItems.GRENADE.get(), "Bouncing Grenade");
+                add(ModItems.GRENADEHE.get(), "Powerful Bouncing Grenade");
+                add(ModItems.GRENADEFIRE.get(), "Fire Bouncing Grenade");
+                add(ModItems.GRENADESLIME.get(), "Bouncy Bouncing Grenade");
+                add(ModItems.GRENADESMART.get(), "Smart Bouncing Grenade");
 
-                add(ModItems.GRENADEIF.get(), "IF Grenade (WIPр)");
+                add(ModItems.GRENADEIF.get(), "IF Grenade (WIP)");
 
                 add("item.hbm_m.geiger_counter", "Geiger Counter");
                 add("item.hbm_m.dosimeter", "Dosimeter");
@@ -870,7 +868,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_hazard_stairs", "Concrete Stairs with Hazard line");
                 add("block.hbm_m.large_vehicle_door", "Large Vehicle Door");
                 add("block.hbm_m.strawberry_bush", "Strawberry Bush");
-                add("block.hbm_m.strawberry", "Strawberry");
 
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");
                 add("block.hbm_m.wire_coated", "Red Copper Wire");

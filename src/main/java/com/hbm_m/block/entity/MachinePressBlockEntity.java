@@ -209,7 +209,7 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
     }
 
     public void tick(Level level, BlockPos pos, BlockState state) {
-        boolean wasLit = isLit();
+        // boolean wasLit = isLit();
         boolean needsSync = false;
 
         // Добавление топлива

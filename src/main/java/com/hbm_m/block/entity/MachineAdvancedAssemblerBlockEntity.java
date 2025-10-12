@@ -59,11 +59,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
-            
             // При изменении СЛОТА ПАПКИ — проверяем валидность текущего рецепта
             if (slot == BLUEPRINT_FOLDER_SLOT && level != null && !level.isClientSide()) {
                 ItemStack folderStack = getBlueprintFolder();
-                
                 // Если папка извлечена и текущий рецепт требует pool — сбрасываем
                 if (folderStack.isEmpty() && selectedRecipeId != null) {
                     AssemblerRecipe currentRecipe = getSelectedRecipe();
@@ -71,18 +69,24 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
                         String recipePool = currentRecipe.getBlueprintPool();
                         // Если рецепт требует pool, но папки нет — сбрасываем
                         if (recipePool != null && !recipePool.isEmpty()) {
+                            boolean wasCrafting = assemblerModule != null && assemblerModule.isProcessing();
+                            
                             selectedRecipeId = null;
                             if (assemblerModule != null) {
                                 assemblerModule.setPreferredRecipe(null);
                                 assemblerModule.resetProgress();
                             }
+
+                            if (wasCrafting) {
+                                level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
+                                    SoundSource.BLOCKS, 0.5f, 1.0f);
+                            }
+                            
+                            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
                         }
                     }
                 }
-                
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
             }
-            
             // При изменении входных слотов модуль автоматически пересчитает рецепт
             if (level != null && !level.isClientSide()) {
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -266,16 +270,15 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
     
     private void serverTick() {
         chargeMachineFromBattery();
-        
         if (assemblerModule == null && level != null) {
             assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, itemHandler, level);
         }
-        
+
         if (assemblerModule != null) {
             boolean wasCrafting = assemblerModule.isProcessing();
             ItemStack blueprintStack = itemHandler.getStackInSlot(1);
-            
-            // НОВОЕ: Проверяем валидность текущего рецепта относительно папки
+
+            // ПРОВЕРКА ВАЛИДНОСТИ РЕЦЕПТА ПЕРЕД UPDATE
             if (selectedRecipeId != null) {
                 AssemblerRecipe currentRecipe = getSelectedRecipe();
                 if (currentRecipe != null) {
@@ -288,13 +291,21 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
                             selectedRecipeId = null;
                             assemblerModule.setPreferredRecipe(null);
                             assemblerModule.resetProgress();
+                            
+                            // ИСПРАВЛЕНИЕ: Воспроизводим звук остановки ЗДЕСЬ
+                            if (wasCrafting) {
+                                level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
+                                        SoundSource.BLOCKS, 0.5f, 1.0f);
+                            }
+                            
                             setChanged();
                             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+                            return; // ВАЖНО: выходим из метода, чтобы не вызывать update() дальше
                         }
                     }
                 }
             }
-            
+
             // Восстанавливаем preferredRecipe ПЕРЕД update()
             if (selectedRecipeId != null && assemblerModule.getPreferredRecipe() == null) {
                 AssemblerRecipe recipe = getSelectedRecipe();
@@ -302,20 +313,22 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
                     assemblerModule.setPreferredRecipe(recipe);
                 }
             }
-            
+
             assemblerModule.update(1.0, 1.0, true, blueprintStack);
             boolean isCraftingNow = assemblerModule.isProcessing();
-            
+
+            // Звук остановки при обычном завершении/остановке крафта
+            // Убираем проверку selectedRecipeId, так как выше мы уже обработали случай с невалидным рецептом
             if (wasCrafting && !isCraftingNow) {
                 level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
-                    SoundSource.BLOCKS, 0.5f, 1.0f);
+                        SoundSource.BLOCKS, 0.5f, 1.0f);
             }
+
             // Синхронизация selectedRecipeId с модулем (автоматический режим)
             if (selectedRecipeId == null) {
                 ResourceLocation moduleRecipeId = assemblerModule.getCurrentRecipe() != null
                     ? assemblerModule.getCurrentRecipe().getId()
                     : null;
-                
                 if (!Objects.equals(selectedRecipeId, moduleRecipeId)) {
                     selectedRecipeId = moduleRecipeId;
                     setChanged();
@@ -347,7 +360,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
             int currentEnergy = energyStorage.getEnergyStored();
             int totalChange = currentEnergy - previousEnergy;
             energyDelta = totalChange / 20;
-            
             previousEnergy = currentEnergy;
             energyDeltaUpdateCounter = 0;
         }
@@ -359,6 +371,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
             setChanged();
         }
     }
+
 
     public int getEnergyDelta() {
         return energyDelta;
@@ -503,8 +516,10 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
      * Вызывается из сетевого пакета.
      */
     public void setSelectedRecipe(ResourceLocation recipeId) {
+        // ИСПРАВЛЕНИЕ: Сохраняем состояние крафта ДО изменения рецепта
+        boolean wasCrafting = assemblerModule != null && assemblerModule.isProcessing();
+        
         this.selectedRecipeId = recipeId;
-
         if (assemblerModule != null && level != null) {
             AssemblerRecipe recipe = level.getRecipeManager()
                     .byKey(recipeId)
@@ -514,11 +529,14 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
             
             assemblerModule.setPreferredRecipe(recipe);
             
-            // КРИТИЧНО: Сбрасываем прогресс, если рецепт изменился
-            if (assemblerModule.getCurrentRecipe() != null 
-                    && !Objects.equals(assemblerModule.getCurrentRecipe().getId(), recipeId)) {
-                // Рецепт изменился - прерываем текущий крафт
-                assemblerModule.resetProgress();
+            // ИСПРАВЛЕНИЕ: ВСЕГДА сбрасываем прогресс при изменении рецепта
+            // Не важно, был ли предыдущий рецепт или нет
+            assemblerModule.resetProgress();
+            
+            // Воспроизводим звук остановки, если машина крафтила
+            if (wasCrafting) {
+                level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
+                        SoundSource.BLOCKS, 0.5f, 1.0f);
             }
         }
         

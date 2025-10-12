@@ -3,7 +3,6 @@ package com.hbm_m.block;
 import com.hbm_m.block.entity.DoorBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.multiblock.IMultiblockController;
-import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.util.DoorDecl;
@@ -30,6 +29,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import org.jetbrains.annotations.Nullable;
+
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
@@ -127,16 +127,38 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof DoorBlockEntity doorBE) {
-            // Получаем контроллер
             DoorBlockEntity controller = doorBE.getController();
             if (controller != null) {
-                // ВАЖНО: Динамическая коллизия для ВСЕХ блоков структуры
-                return controller.getDynamicCollisionShape(state.getValue(FACING));
+                byte doorState = controller.getState();
+                
+                // Если дверь открыта (1) или открывается (3) - НЕТ коллизии вообще
+                if (doorState == 1 || doorState == 3) {
+                    return Shapes.empty();
+                }
+                
+                // Если дверь закрыта (0) или закрывается (2) - коллизия ТОЛЬКО для контроллера
+                // Фантомные блоки НЕ должны иметь коллизии!
+                if (doorState == 0 || doorState == 2) {
+                    // КРИТИЧНО: коллизия ТОЛЬКО у контроллера (главного блока)
+                    if (controller.getBlockPos().equals(pos)) {
+                        // Возвращаем ПОЛНЫЙ блок только для контроллера
+                        return Shapes.block();
+                    } else {
+                        // Для всех остальных блоков структуры - НЕТ коллизии
+                        return Shapes.empty();
+                    }
+                }
             }
         }
         
-        // Fallback: используем статичный shape от мультиблока
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        // Fallback: если не контроллер - возвращаем полный блок
+        return Shapes.block();
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // НЕ показываем рамку выделения у контроллера - только у фантомов
+        return Shapes.empty();
     }
 
     @Override

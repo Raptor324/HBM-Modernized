@@ -522,7 +522,10 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
         pBlockEntity.energyDeltaUpdateCounter++;
         if (pBlockEntity.energyDeltaUpdateCounter >= 20) {
             int currentEnergy = pBlockEntity.energyStorage.getEnergyStored();
-            pBlockEntity.energyDelta = currentEnergy - pBlockEntity.previousEnergy;
+            // Дельта = текущая энергия - предыдущая энергия
+            // Положительное значение = приход энергии
+            // Отрицательное значение = расход энергии
+            pBlockEntity.energyDelta = (currentEnergy - pBlockEntity.previousEnergy) / 20;
             pBlockEntity.previousEnergy = currentEnergy;
             pBlockEntity.energyDeltaUpdateCounter = 0;
             setChanged(pLevel, pPos, pState);

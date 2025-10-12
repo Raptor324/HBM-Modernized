@@ -333,4 +333,16 @@ public class MultiblockStructureHelper {
             default -> pos; // NORTH
         };
     }
+
+    public List<BlockPos> getAllPartPositions(BlockPos controllerPos, Direction facing) {
+        List<BlockPos> positions = new ArrayList<>();
+        
+        // Используем structureMap вместо partLocations
+        for (BlockPos localOffset : structureMap.keySet()) {
+            BlockPos worldPos = getRotatedPos(controllerPos, localOffset, facing);
+            positions.add(worldPos);
+        }
+        
+        return positions;
+    }
 }
