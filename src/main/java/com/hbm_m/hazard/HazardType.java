@@ -1,22 +1,25 @@
 package com.hbm_m.hazard;
 
-// Перечисление типов опасностей, определяющее их свойства и отображение в подсказках.
 import net.minecraft.ChatFormatting;
 
 public enum HazardType {
-    RADIATION("hazard.hbm_m.radiation", "%s RAD/s", ChatFormatting.GREEN, true),
-    HYDRO_REACTIVE("hazard.hbm_m.hydro_reactive", " Сила взрыва - %s", ChatFormatting.RED, true),
-    EXPLOSIVE_ON_FIRE("hazard.hbm_m.explosive_on_fire", " Сила взрыва - %s", ChatFormatting.RED, true),
+
+    RADIATION("hazard.hbm_m.radiation", "hazard.hbm_m.radiation.format", ChatFormatting.GREEN, true),
+    
+    HYDRO_REACTIVE("hazard.hbm_m.hydro_reactive", "hazard.hbm_m.explosion_strength.format", ChatFormatting.RED, true),
+    
+    EXPLOSIVE_ON_FIRE("hazard.hbm_m.explosive_on_fire", "hazard.hbm_m.explosion_strength.format", ChatFormatting.RED, true),
+    
     PYROPHORIC("hazard.hbm_m.pyrophoric", "", ChatFormatting.GOLD, false);
 
     private final String translationKey;
-    private final String displayFormat;
+    private final String formatTranslationKey;
     private final ChatFormatting color;
     private final boolean showValueInTooltip;
 
-    HazardType(String translationKey, String displayFormat, ChatFormatting color, boolean showValueInTooltip) {
+    HazardType(String translationKey, String formatTranslationKey, ChatFormatting color, boolean showValueInTooltip) {
         this.translationKey = translationKey;
-        this.displayFormat = displayFormat;
+        this.formatTranslationKey = formatTranslationKey;
         this.color = color;
         this.showValueInTooltip = showValueInTooltip;
     }
@@ -25,8 +28,8 @@ public enum HazardType {
         return translationKey;
     }
 
-    public String getDisplayFormat() {
-        return displayFormat;
+    public String getFormatTranslationKey() {
+        return formatTranslationKey;
     }
 
     public ChatFormatting getColor() {

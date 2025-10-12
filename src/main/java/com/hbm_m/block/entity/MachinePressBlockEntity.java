@@ -1,7 +1,7 @@
 package com.hbm_m.block.entity;
 
-// Это блок-энтити для пресса, который может создавать предметы по рецептам с использованием топлива и тепла.
 import com.hbm_m.recipe.PressRecipe;
+import com.hbm_m.sound.ModSounds;
 import com.hbm_m.menu.MachinePressMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -10,6 +10,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
@@ -33,6 +34,7 @@ import org.jetbrains.annotations.Nullable;
 import java.util.Optional;
 
 public class MachinePressBlockEntity extends BlockEntity implements MenuProvider {
+
     private final ItemStackHandler itemHandler = new ItemStackHandler(4) {
         @Override
         protected void onContentsChanged(int slot) {
@@ -50,26 +52,22 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
 
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
 
-    // Система нагрева с 13 состояниями (0-12)
-    private static final int MAX_HEAT_STATES = 13;
-    private static final int WORKING_HEAT_THRESHOLD = 3;
+    // Константы как в 1.7.10
+    private static final int MAX_SPEED = 400;
+    private static final int PROGRESS_AT_MAX = 25;
+    private static final int MAX_PRESS = 200;
+    private static final int FUEL_PER_OPERATION = 200;
 
     // Переменные состояния
-    private int progress = 0;
-    private int maxProgress = 40; // 2 секунды (40 тиков)
-    private int fuelTime = 0;
-    private int maxFuelTime = 0;
-    private int heatLevel = 0; // 0-2400 (увеличено для более медленного нагрева)
-    private int maxHeatLevel = 2400;
-    private int heatState = 0; // 0-12
-    private int pressPosition = 0; // 0-20
-    private int pressingDown = 0; // 0 или 1
-    private int pressAnimationSpeed = 1;
-    private int efficiency = 0;
+    private int speed = 0; // 0-400, как в 1.7.10
+    private int burnTime = 0; // накопленное топливо
+    private int press = 0; // прогресс пресса 0-200
+    private boolean isRetracting = false;
+    private int delay = 0; // задержка между сменами направления
 
-    // Вспомогательные поля
-    private long lastWorkTime = 0;
-    private int pressAnimationTimer = 0; // Таймер для анимации пресса
+    // Для рендера и синхронизации
+    private int heatState = 0;
+    private int pressPosition = 0;
 
     protected final ContainerData data;
 
@@ -79,17 +77,15 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
             @Override
             public int get(int index) {
                 return switch (index) {
-                    case 0 -> MachinePressBlockEntity.this.progress;
-                    case 1 -> MachinePressBlockEntity.this.maxProgress;
-                    case 2 -> MachinePressBlockEntity.this.fuelTime;
-                    case 3 -> MachinePressBlockEntity.this.maxFuelTime;
-                    case 4 -> MachinePressBlockEntity.this.heatLevel;
-                    case 5 -> MachinePressBlockEntity.this.maxHeatLevel;
+                    case 0 -> MachinePressBlockEntity.this.press;
+                    case 1 -> MAX_PRESS;
+                    case 2 -> MachinePressBlockEntity.this.burnTime;
+                    case 3 -> FUEL_PER_OPERATION;
+                    case 4 -> MachinePressBlockEntity.this.speed;
+                    case 5 -> MAX_SPEED;
                     case 6 -> MachinePressBlockEntity.this.heatState;
                     case 7 -> MachinePressBlockEntity.this.pressPosition;
-                    case 8 -> MachinePressBlockEntity.this.pressingDown;
-                    case 9 -> MachinePressBlockEntity.this.efficiency;
-                    case 10 -> MachinePressBlockEntity.this.pressAnimationSpeed;
+                    case 8 -> MachinePressBlockEntity.this.isRetracting ? 1 : 0;
                     default -> 0;
                 };
             }
@@ -97,38 +93,32 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
             @Override
             public void set(int index, int value) {
                 switch (index) {
-                    case 0 -> MachinePressBlockEntity.this.progress = value;
-                    case 1 -> MachinePressBlockEntity.this.maxProgress = value;
-                    case 2 -> MachinePressBlockEntity.this.fuelTime = value;
-                    case 3 -> MachinePressBlockEntity.this.maxFuelTime = value;
-                    case 4 -> MachinePressBlockEntity.this.heatLevel = value;
-                    case 5 -> MachinePressBlockEntity.this.maxHeatLevel = value;
+                    case 0 -> MachinePressBlockEntity.this.press = value;
+                    case 2 -> MachinePressBlockEntity.this.burnTime = value;
+                    case 4 -> MachinePressBlockEntity.this.speed = value;
                     case 6 -> MachinePressBlockEntity.this.heatState = value;
                     case 7 -> MachinePressBlockEntity.this.pressPosition = value;
-                    case 8 -> MachinePressBlockEntity.this.pressingDown = value;
-                    case 9 -> MachinePressBlockEntity.this.efficiency = value;
-                    case 10 -> MachinePressBlockEntity.this.pressAnimationSpeed = value;
+                    case 8 -> MachinePressBlockEntity.this.isRetracting = value == 1;
                 }
             }
 
             @Override
             public int getCount() {
-                return 11;
+                return 9;
             }
         };
     }
 
-    // Геттеры для удобства
     public int getHeatState() {
         return heatState;
     }
 
     public boolean isHeated() {
-        return heatState >= WORKING_HEAT_THRESHOLD;
+        return burnTime >= FUEL_PER_OPERATION;
     }
 
     public boolean isCrafting() {
-        return progress > 0 && hasValidIngredients() && isHeated();
+        return press > 0 || isRetracting;
     }
 
     @Override
@@ -173,19 +163,13 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
     @Override
     protected void saveAdditional(CompoundTag tag) {
         tag.put("inventory", itemHandler.serializeNBT());
-        tag.putInt("press.progress", progress);
-        tag.putInt("press.max_progress", maxProgress);
-        tag.putInt("press.fuel_time", fuelTime);
-        tag.putInt("press.max_fuel_time", maxFuelTime);
-        tag.putInt("press.heat_level", heatLevel);
-        tag.putInt("press.max_heat_level", maxHeatLevel);
-        tag.putInt("press.heat_state", heatState);
-        tag.putInt("press.press_position", pressPosition);
-        tag.putInt("press.pressing_down", pressingDown);
-        tag.putInt("press.efficiency", efficiency);
-        tag.putInt("press.animation_speed", pressAnimationSpeed);
-        tag.putLong("press.last_work_time", lastWorkTime);
-        tag.putInt("press.animation_timer", pressAnimationTimer);
+        tag.putInt("press", press);
+        tag.putInt("burnTime", burnTime);
+        tag.putInt("speed", speed);
+        tag.putBoolean("isRetracting", isRetracting);
+        tag.putInt("delay", delay);
+        tag.putInt("heatState", heatState);
+        tag.putInt("pressPosition", pressPosition);
         super.saveAdditional(tag);
     }
 
@@ -193,198 +177,88 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
     public void load(CompoundTag tag) {
         super.load(tag);
         itemHandler.deserializeNBT(tag.getCompound("inventory"));
-        progress = tag.getInt("press.progress");
-        maxProgress = tag.getInt("press.max_progress");
-        fuelTime = tag.getInt("press.fuel_time");
-        maxFuelTime = tag.getInt("press.max_fuel_time");
-        heatLevel = tag.getInt("press.heat_level");
-        maxHeatLevel = tag.getInt("press.max_heat_level");
-        heatState = tag.getInt("press.heat_state");
-        pressPosition = tag.getInt("press.press_position");
-        pressingDown = tag.getInt("press.pressing_down");
-        efficiency = tag.getInt("press.efficiency");
-        pressAnimationSpeed = tag.getInt("press.animation_speed");
-        lastWorkTime = tag.getLong("press.last_work_time");
-        pressAnimationTimer = tag.getInt("press.animation_timer");
+        press = tag.getInt("press");
+        burnTime = tag.getInt("burnTime");
+        speed = tag.getInt("speed");
+        isRetracting = tag.getBoolean("isRetracting");
+        delay = tag.getInt("delay");
+        heatState = tag.getInt("heatState");
+        pressPosition = tag.getInt("pressPosition");
     }
 
     public void tick(Level level, BlockPos pos, BlockState state) {
-        // boolean wasLit = isLit();
+        if(level.isClientSide) return;
+
         boolean needsSync = false;
 
-        // Добавление топлива
-        if (hasValidIngredients() && canAddFuel()) {
-            addFuel();
-            needsSync = true;
-        }
-
-        boolean hasValidIngredients = hasValidIngredients();
-        boolean hasRecipe = hasRecipe();
-
-        // Нагрев - МЕДЛЕННЕЕ!
-        if (hasValidIngredients && isBurning()) {
-            if (heatLevel < maxHeatLevel) {
-                int heatGain = calculateHeatGain();
-                heatLevel = Math.min(maxHeatLevel, heatLevel + heatGain);
-
-                // Обновляем heatState (теперь каждые 200 единиц вместо 100)
-                int newHeatState = Math.min(MAX_HEAT_STATES - 1, heatLevel / 200);
-                if (this.heatState != newHeatState) {
-                    this.heatState = newHeatState;
-                    needsSync = true;
-                }
-            }
-
-            // Работа - ТЕПЕРЬ РАБОТАЕТ ДАЖЕ ПРИ ОХЛАЖДЕНИИ, ЕСЛИ ЕСТЬ ДОСТАТОЧНО ТЕПЛА
-            if (isHeated() && hasRecipe) {
-                updateWorkingState();
-                updatePressAnimation();
-                updateEfficiency();
-
-                progress++;
-                needsSync = true;
-
-                if (progress >= maxProgress) {
-                    craftItem();
-                    progress = 0;
-                    // Сбрасываем анимацию пресса после создания предмета
-                    pressAnimationTimer = 0;
-                    pressingDown = 0;
-                    pressPosition = 0;
-                    needsSync = true;
-                }
-            }
-        } else {
-            // Остывание - МЕДЛЕННЕЕ!
-            if (heatLevel > 0) {
-                int heatLoss = calculateHeatLoss();
-                heatLevel = Math.max(0, heatLevel - heatLoss);
-
-                // Обновляем heatState
-                int newHeatState = Math.min(MAX_HEAT_STATES - 1, heatLevel / 200);
-                if (this.heatState != newHeatState) {
-                    this.heatState = newHeatState;
-                    needsSync = true;
-                }
-            }
-
-            // ВАЖНО: если есть достаточно тепла, продолжаем работать даже при остывании!
-            if (isHeated() && hasRecipe && hasValidIngredients) {
-                updateWorkingState();
-                updatePressAnimation();
-                updateEfficiency();
-
-                progress++;
-                needsSync = true;
-
-                if (progress >= maxProgress) {
-                    craftItem();
-                    progress = 0;
-                    pressAnimationTimer = 0;
-                    pressingDown = 0;
-                    pressPosition = 0;
-                    needsSync = true;
-                }
-            } else {
-                // Останавливаем работу только если нет достаточного тепла
-                if (efficiency > 0) {
-                    efficiency = Math.max(0, efficiency - 2);
-                    needsSync = true;
-                }
-
-                if (progress > 0 && !isHeated()) {
-                    progress = 0;
-                    pressAnimationTimer = 0;
-                    pressingDown = 0;
-                    pressPosition = 0;
-                    needsSync = true;
-                }
-            }
-        }
-
-
-        // Расходование топлива
-        if (fuelTime > 0) {
-            fuelTime--;
-            needsSync = true;
-        }
-
-        if (needsSync) {
-            setChanged();
-        }
-    }
-
-    private int calculateHeatGain() {
-        // Медленнее нагрев: 1-2 единицы вместо 2-1
-        return heatState > 8 ? 1 : 2;
-    }
-
-    private int calculateHeatLoss() {
-        // Медленнее остывание: 1-2 единицы вместо 3-4
-        return heatState > 8 ? 2 : 1;
-    }
-
-    private void updateWorkingState() {
-        // Новая система скорости: от 2 секунд (40 тиков) до 0.6 секунды (12 тиков)
-        if (heatState <= 3) {
-            maxProgress = 40; // 2 секунды
-        } else if (heatState <= 6) {
-            maxProgress = 30; // 1.5 секунды
-        } else if (heatState <= 9) {
-            maxProgress = 20; // 1 секунда
-        } else {
-            maxProgress = 12; // 0.6 секунды (максимальная скорость)
-        }
-    }
-
-    private void updatePressAnimation() {
-        pressAnimationTimer++;
-
-        // Новая логика анимации: делим время пополам
-        int halfProgress = maxProgress / 2;
-
-        if (pressAnimationTimer <= halfProgress) {
-            // Первая половина: стрелка идет вверх (или остается наверху после создания предмета)
-            pressingDown = 0;
-            pressPosition = Math.max(0, 20 - (pressAnimationTimer * 20 / halfProgress));
-        } else {
-            // Вторая половина: стрелка идет вниз
-            pressingDown = 1;
-            int secondHalfTimer = pressAnimationTimer - halfProgress;
-            pressPosition = Math.min(20, (secondHalfTimer * 20 / halfProgress));
-        }
-
-        // Сбрасываем таймер если достигли максимума
-        if (pressAnimationTimer >= maxProgress) {
-            pressAnimationTimer = 0;
-        }
-    }
-
-    private void updateEfficiency() {
-        if (efficiency < 100) {
-            efficiency = Math.min(100, efficiency + 1);
-        }
-    }
-
-    private boolean isLit() {
-        return fuelTime > 0 && heatLevel > 0;
-    }
-
-    private boolean isBurning() {
-        return fuelTime > 0;
-    }
-
-    private boolean canAddFuel() {
-        ItemStack fuelStack = this.itemHandler.getStackInSlot(FUEL_SLOT);
-        return fuelStack.getItem() == Items.COAL && fuelStack.getCount() > 0 && this.fuelTime <= 0;
-    }
-
-    private void addFuel() {
-        ItemStack fuelStack = this.itemHandler.getStackInSlot(FUEL_SLOT);
-        if (fuelStack.getItem() == Items.COAL) {
-            this.fuelTime = 1600;
-            this.maxFuelTime = this.fuelTime;
+        // Добавление топлива (как в 1.7.10)
+        if(itemHandler.getStackInSlot(FUEL_SLOT).getItem() == Items.COAL && 
+           burnTime < FUEL_PER_OPERATION) {
+            ItemStack fuelStack = itemHandler.getStackInSlot(FUEL_SLOT);
+            burnTime += 1600; // значение угля
             fuelStack.shrink(1);
+            needsSync = true;
+        }
+
+        boolean canProcess = canProcess();
+        boolean preheated = false; // TODO: проверка на press_preheater если нужно
+
+        // Логика ускорения/замедления (как в 1.7.10)
+        if((canProcess || isRetracting) && burnTime >= FUEL_PER_OPERATION) {
+            speed += preheated ? 4 : 1;
+            if(speed > MAX_SPEED) {
+                speed = MAX_SPEED;
+            }
+        } else {
+            speed -= 1;
+            if(speed < 0) {
+                speed = 0;
+            }
+        }
+
+        // Обновляем heatState для визуализации (0-12)
+        heatState = Math.min(12, speed / 33);
+
+        // Логика работы пресса (как в 1.7.10)
+        if(delay <= 0) {
+            int stampSpeed = speed * PROGRESS_AT_MAX / MAX_SPEED;
+            
+            if(isRetracting) {
+                press -= stampSpeed;
+                if(press <= 0) {
+                    press = 0;
+                    isRetracting = false;
+                    delay = 5;
+                }
+            } else if(canProcess) {
+                press += stampSpeed;
+                if(press >= MAX_PRESS) {
+                    // Завершение операции
+                    craftItem();
+                    
+                    isRetracting = true;
+                    delay = 5;
+                    
+                    // ВАЖНО: вычитаем топливо только при успешной операции
+                    if(burnTime >= FUEL_PER_OPERATION) {
+                        burnTime -= FUEL_PER_OPERATION;
+                    }
+                    
+                    needsSync = true;
+                }
+            } else if(press > 0) {
+                isRetracting = true;
+            }
+        } else {
+            delay--;
+        }
+
+        // Обновляем позицию для рендера
+        pressPosition = Math.min(20, (press * 20) / MAX_PRESS);
+
+        if(needsSync) {
+            setChanged();
+            level.sendBlockUpdated(pos, state, state, 3);
         }
     }
 
@@ -392,49 +266,57 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
         Optional<PressRecipe> recipe = getCurrentRecipe();
         if (recipe.isPresent()) {
             ItemStack output = recipe.get().getResultItem(getLevel().registryAccess());
+            
+            // Вычитаем материал
+            itemHandler.extractItem(MATERIAL_SLOT, 1, false);
+            
+            // Добавляем результат
+            ItemStack outputSlot = itemHandler.getStackInSlot(OUTPUT_SLOT);
+            if(outputSlot.isEmpty()) {
+                itemHandler.setStackInSlot(OUTPUT_SLOT, output.copy());
+            } else {
+                outputSlot.grow(output.getCount());
+            }
+            
+            // Изнашиваем штамп если он изнашиваемый
+            ItemStack stamp = itemHandler.getStackInSlot(STAMP_SLOT);
+            if(stamp.getMaxDamage() != 0) {
+                stamp.setDamageValue(stamp.getDamageValue() + 1);
+                if(stamp.getDamageValue() >= stamp.getMaxDamage()) {
+                    itemHandler.setStackInSlot(STAMP_SLOT, ItemStack.EMPTY);
+                }
+            }
 
-            this.itemHandler.extractItem(MATERIAL_SLOT, 1, false);
-            // Штамп НЕ расходуется в процессе работы
-
-            this.itemHandler.setStackInSlot(OUTPUT_SLOT, new ItemStack(output.getItem(),
-                    this.itemHandler.getStackInSlot(OUTPUT_SLOT).getCount() + output.getCount()));
+            // Воспроизведение звука
+            level.playSound(null, worldPosition, ModSounds.PRESS_OPERATE.get(), 
+                          SoundSource.BLOCKS, 1.5f, 1.0f);
         }
     }
 
-    private boolean hasValidIngredients() {
-        return !itemHandler.getStackInSlot(STAMP_SLOT).isEmpty() &&
-                !itemHandler.getStackInSlot(MATERIAL_SLOT).isEmpty();
-    }
+    private boolean canProcess() {
+        if(burnTime < FUEL_PER_OPERATION) return false;
+        if(itemHandler.getStackInSlot(STAMP_SLOT).isEmpty() || 
+           itemHandler.getStackInSlot(MATERIAL_SLOT).isEmpty()) return false;
 
-    private boolean hasRecipe() {
         Optional<PressRecipe> recipe = getCurrentRecipe();
+        if(recipe.isEmpty()) return false;
 
-        if(recipe.isEmpty()) {
-            return false;
-        }
         ItemStack result = recipe.get().getResultItem(getLevel().registryAccess());
-
-        return canInsertAmountIntoOutputSlot(result.getCount()) &&
-                canInsertItemIntoOutputSlot(result.getItem());
+        ItemStack outputSlot = itemHandler.getStackInSlot(OUTPUT_SLOT);
+        
+        if(outputSlot.isEmpty()) return true;
+        
+        return outputSlot.getCount() + result.getCount() <= outputSlot.getMaxStackSize() &&
+               outputSlot.is(result.getItem()) &&
+               outputSlot.getDamageValue() == result.getDamageValue();
     }
 
     private Optional<PressRecipe> getCurrentRecipe() {
-        SimpleContainer inventory = new SimpleContainer(this.itemHandler.getSlots());
+        SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
         for(int i = 0; i < itemHandler.getSlots(); i++) {
-            inventory.setItem(i, this.itemHandler.getStackInSlot(i));
+            inventory.setItem(i, itemHandler.getStackInSlot(i));
         }
-
-        return this.level.getRecipeManager().getRecipeFor(PressRecipe.Type.INSTANCE, inventory, level);
-    }
-
-    private boolean canInsertItemIntoOutputSlot(net.minecraft.world.item.Item item) {
-        return this.itemHandler.getStackInSlot(OUTPUT_SLOT).isEmpty() ||
-                this.itemHandler.getStackInSlot(OUTPUT_SLOT).is(item);
-    }
-
-    private boolean canInsertAmountIntoOutputSlot(int count) {
-        return this.itemHandler.getStackInSlot(OUTPUT_SLOT).getCount() + count <=
-                this.itemHandler.getStackInSlot(OUTPUT_SLOT).getMaxStackSize();
+        return level.getRecipeManager().getRecipeFor(PressRecipe.Type.INSTANCE, inventory, level);
     }
 
     @Nullable

@@ -293,7 +293,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.polonium210_block", "Блок полония-210");
                 add("block.hbm_m.armor_table", "Стол модификации брони");
                 add("block.hbm_m.machine_assembler", "Сборочная машина (Старая)");
-                add("block.hbm_m.advanced_assembly_machine", "Сборочная машина (VERY WIP)");
+                add("block.hbm_m.advanced_assembly_machine", "Сборочная машина");
                 add("block.hbm_m.machine_battery", "Энергохранилище");
                 add("block.hbm_m.wire_coated", "Провод из красной меди");
                 add("block.hbm_m.wood_burner", "Дровяной генератор");
@@ -407,9 +407,12 @@ public class ModLanguageProvider extends LanguageProvider {
 
 
                 add("hazard.hbm_m.radiation", "[Радиоактивный]");
+                add("hazard.hbm_m.radiation.format", "%s РАД/с");
                 add("hazard.hbm_m.hydro_reactive", "[Гидрореактивный]");
                 add("hazard.hbm_m.explosive_on_fire", "[Воспламеняющийся / Взрывоопасный]");
                 add("hazard.hbm_m.pyrophoric", "[Пирофорный / Горячий]");
+                add("hazard.hbm_m.explosion_strength.format", " Сила взрыва - %s");
+                add("hazard.hbm_m.stack", "Стак: %s");
 
                 add("item.hbm_m.meter.geiger_counter.name", "СЧЁТЧИК ГЕЙГЕРА");
                 add("item.hbm_m.meter.dosimeter.name", "ДОЗИМЕТР");
@@ -511,11 +514,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.minRadDecayAmount", "Мин. распад радиации за тик");
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor", "Влияние источников радиации на чанк");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor", "Фактор рандомизации радиации в чанке");
-
-                add("text.autoconfig.hbm_m.category.modifiers", "Модификаторы (WIP)");
-                add("text.autoconfig.hbm_m.option.hazmatMod", "Защита обычного костюма химзащиты");
-                add("text.autoconfig.hbm_m.option.advHazmatMod", "Защита продвинутого костюма химзащиты");
-                add("text.autoconfig.hbm_m.option.paaHazmatMod", "Защита костюма PAA");
 
                 add("text.autoconfig.hbm_m.category.debug", "Отладка");
                 add("text.autoconfig.hbm_m.option.enableDebugRender", "Включить отладочный рендер радиации");
@@ -842,7 +840,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.polonium210_block", "Polonium-210 Block");
                 add("block.hbm_m.armor_table", "Armor Modification Table");
                 add("block.hbm_m.machine_assembler", "Assembly Machine (Legacy)");
-                add("block.hbm_m.advanced_assembly_machine", "Assembly Machine (VERY WIP)");
+                add("block.hbm_m.advanced_assembly_machine", "Assembly Machine");
                 add("block.hbm_m.machine_battery", "Machine Battery");
                 add("block.hbm_m.shredder", "Shredder (WIP)");
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
@@ -944,9 +942,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 // HAZARD TOOLTIPS
 
                 add("hazard.hbm_m.radiation", "[Radioactive]");
+                add("hazard.hbm_m.radiation.format", "%s RAD/s");
                 add("hazard.hbm_m.hydro_reactive", "[Hydro-reactive]");
                 add("hazard.hbm_m.explosive_on_fire", "[Flammable / Explosive]");
                 add("hazard.hbm_m.pyrophoric", "[Pyrophoric / Hot]");
+                add("hazard.hbm_m.explosion_strength.format", " Explosion Strength - %s");
+                add("hazard.hbm_m.stack", "Stack: %s");
 
                 add("item.hbm_m.meter.geiger_counter.name", "GEIGER COUNTER");
                 add("item.hbm_m.meter.dosimeter.name", "DOSIMETER");
@@ -1049,12 +1050,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.minRadDecayAmount", "Min decay per tick");
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor", "Source influence factor");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor", "Chunk radiation randomization factor");
-
-                add("text.autoconfig.hbm_m.category.modifiers", "Modifiers (WIP)");
-
-                add("text.autoconfig.hbm_m.option.hazmatMod", "Hazmat suit protection");
-                add("text.autoconfig.hbm_m.option.advHazmatMod", "Advanced hazmat suit protection");
-                add("text.autoconfig.hbm_m.option.paaHazmatMod", "PAA suit protection");
 
                 add("text.autoconfig.hbm_m.category.debug", "Debug");
 

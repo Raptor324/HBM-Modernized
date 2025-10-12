@@ -1,32 +1,36 @@
 package com.hbm_m.client.overlay;
 
-// GUI для пресса. Отвечает за отрисовку прогресса прессования, состояния нагрева,
-// индикатора топлива и подсказок. Основан на AbstractContainerScreen и использует текстуры из ресурсов мода.
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.MachinePressMenu;
+import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
 public class GUIMachinePress extends AbstractContainerScreen<MachinePressMenu> {
-    private static final ResourceLocation GUI_TEXTURE =
+
+    private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/press/press_gui.png");
-    private static final ResourceLocation PRESS_ARROW_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/press/press_arrow.png");
-    private static final ResourceLocation LIGHT_ON_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/press/light_on.png");
 
-    // Текстуры для 13 состояний индикатора нагрева (0-12)
-    private static final ResourceLocation[] HEAT_INDICATOR_TEXTURES = new ResourceLocation[13];
+    private static final int LIGHT_U = 176;
+    private static final int LIGHT_V = 0;
+    private static final int LIGHT_WIDTH = 14;
+    private static final int LIGHT_HEIGHT = 14;
 
-    static {
-        for (int i = 0; i < 13; i++) {
-            HEAT_INDICATOR_TEXTURES[i] = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,
-                    "textures/gui/press/heat_indicator_" + i + ".png");
-        }
-    }
+    private static final int ARROW_U = 194;
+    private static final int ARROW_V = 0;
+    private static final int ARROW_WIDTH = 19;
+    private static final int ARROW_MAX_HEIGHT = 17;
+
+    private static final int GAUGE_WIDTH = 18;
+    private static final int GAUGE_HEIGHT = 18;
 
     public GUIMachinePress(MachinePressMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -48,80 +52,114 @@ public class GUIMachinePress extends AbstractContainerScreen<MachinePressMenu> {
         int x = (width - imageWidth) / 2;
         int y = (height - imageHeight) / 2;
 
-        // Основная текстура GUI
-        guiGraphics.blit(GUI_TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
-
-        renderPressArrow(guiGraphics, x, y);
-        renderHeatIndicator(guiGraphics, x, y);
+        guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
         renderLight(guiGraphics, x, y);
-    }
-
-    private void renderPressArrow(GuiGraphics guiGraphics, int x, int y) {
-        if (menu.isCrafting() && menu.isHeated()) {
-            int pressPos = menu.getPressPosition(); // 0-20
-            boolean isPressingDown = menu.isPressingDown();
-
-            int arrowX = x + 80;
-            int arrowY = y + 36;
-
-            // Новая логика: рисуем стрелку с высотой в зависимости от позиции
-            // pressPos 0 = стрелка наверху (не видна или минимальная)
-            // pressPos 20 = стрелка максимально вниз
-
-            if (pressPos > 0) {
-                // Высота стрелки зависит от позиции (максимум 16 пикселей)
-                int arrowHeight = Math.min(16, (pressPos * 16) / 20);
-
-                // Рисуем только видимую часть стрелки сверху вниз
-                guiGraphics.blit(PRESS_ARROW_TEXTURE,
-                        arrowX, arrowY,  // позиция на экране
-                        0, 0,           // позиция в текстуре (начинаем сверху)
-                        16, arrowHeight, // размер для отрисовки
-                        16, 16);        // полный размер текстуры
-            }
-        }
-    }
-
-    private void renderHeatIndicator(GuiGraphics guiGraphics, int x, int y) {
-        // Получаем состояние нагрева
-        int heatState = menu.getHeatState();
-
-        // Убеждаемся что значение в допустимых пределах
-        heatState = Math.max(0, Math.min(12, heatState));
-
-        // Позиция индикатора
-        int indicatorX = x + 25;
-        int indicatorY = y + 16;
-
-        // Рисуем текстуру
-        guiGraphics.blit(HEAT_INDICATOR_TEXTURES[heatState],
-                indicatorX, indicatorY, 0, 0, 18, 18, 18, 18);
+        renderGaugeNeedle(guiGraphics, x, y);
+        renderPressArrow(guiGraphics, x, y);
     }
 
     private void renderLight(GuiGraphics guiGraphics, int x, int y) {
-        // Рендерим индикатор топлива (как огонек в печке)
-        if (menu.isBurning()) {
-            int fuelTime = menu.getFuelTime();
-            int maxFuelTime = menu.getMaxFuelTime();
+        int burnTime = menu.getBurnTime();
+        
+        if (burnTime >= 20) {
+            guiGraphics.blit(TEXTURE,
+                    x + 27, y + 36,
+                    LIGHT_U, LIGHT_V,
+                    LIGHT_WIDTH, LIGHT_HEIGHT);
+        }
+    }
 
-            if (maxFuelTime > 0) {
-                int lightX = x + 27;
-                int lightY = y + 36;
+    private void renderGaugeNeedle(GuiGraphics guiGraphics, int x, int y) {
+        int speed = menu.getSpeed();
+        int maxSpeed = menu.getMaxSpeed();
+        
+        double progress = maxSpeed > 0 ? (double) speed / (double) maxSpeed : 0.0;
+        progress = Mth.clamp(progress, 0.0, 1.0);
 
-                // Вычисляем высоту огонька в зависимости от оставшегося топлива
-                int maxFlameHeight = 13; // Максимальная высота огонька
-                int currentFlameHeight = (int) ((double) fuelTime / maxFuelTime * maxFlameHeight);
+        float centerX = x + 25 + GAUGE_WIDTH / 2.0f;
+        float centerY = y + 16 + GAUGE_HEIGHT / 2.0f;
 
-                if (currentFlameHeight > 0) {
-                    // Рисуем огонек снизу вверх (как в ванильной печке)
-                    int flameY = lightY + (maxFlameHeight - currentFlameHeight);
+        // Уменьшенные параметры стрелки
+        double tipLength = 5.5;
+        double backLength = 1.5;
+        double backSide = 0.8;
+        int color = 0x7F0000;
+        int colorOuter = 0x000000;
 
-                    guiGraphics.blit(LIGHT_ON_TEXTURE,
-                            lightX, flameY,              // позиция на экране
-                            0, maxFlameHeight - currentFlameHeight, // откуда в текстуре начинаем
-                            14, currentFlameHeight,      // размер для отрисовки
-                            14, maxFlameHeight);         // полный размер текстуры
-                }
+        // ИСПРАВЛЕНО: начальная точка 45°, конечная 315° (диапазон 270° против часовой)
+        // progress = 0 -> angle = 45° (холодный, стрелка вверху справа)
+        // progress = 1 -> angle = 315° (горячий, стрелка справа, прошла 270° ПРОТИВ часовой)
+        float angle = (float) Math.toRadians(45.0 + progress * 270.0);
+
+        Vector3f tip = new Vector3f(0, (float)tipLength, 0);
+        Vector3f left = new Vector3f((float)backSide, (float)(-backLength), 0);
+        Vector3f right = new Vector3f((float)(-backSide), (float)(-backLength), 0);
+
+        rotateAroundZ(tip, angle);
+        rotateAroundZ(left, angle);
+        rotateAroundZ(right, angle);
+
+        RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
+        RenderSystem.setShader(GameRenderer::getPositionColorShader);
+
+        Matrix4f matrix = guiGraphics.pose().last().pose();
+        BufferBuilder buffer = Tesselator.getInstance().getBuilder();
+        
+        buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+
+        // Внешний слой (темный контур)
+        double mult = 1.3;
+        
+        buffer.vertex(matrix, centerX + (float)(tip.x * mult), centerY + (float)(tip.y * mult), 0)
+              .color((colorOuter >> 16) & 0xFF, (colorOuter >> 8) & 0xFF, colorOuter & 0xFF, 255)
+              .endVertex();
+        buffer.vertex(matrix, centerX + (float)(left.x * mult), centerY + (float)(left.y * mult), 0)
+              .color((colorOuter >> 16) & 0xFF, (colorOuter >> 8) & 0xFF, colorOuter & 0xFF, 255)
+              .endVertex();
+        buffer.vertex(matrix, centerX + (float)(right.x * mult), centerY + (float)(right.y * mult), 0)
+              .color((colorOuter >> 16) & 0xFF, (colorOuter >> 8) & 0xFF, colorOuter & 0xFF, 255)
+              .endVertex();
+
+        // Внутренний слой (красная стрелка)
+        buffer.vertex(matrix, centerX + tip.x, centerY + tip.y, 0)
+              .color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 255)
+              .endVertex();
+        buffer.vertex(matrix, centerX + left.x, centerY + left.y, 0)
+              .color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 255)
+              .endVertex();
+        buffer.vertex(matrix, centerX + right.x, centerY + right.y, 0)
+              .color((color >> 16) & 0xFF, (color >> 8) & 0xFF, color & 0xFF, 255)
+              .endVertex();
+
+        BufferUploader.drawWithShader(buffer.end());
+        RenderSystem.disableBlend();
+    }
+
+    private void rotateAroundZ(Vector3f vec, float angle) {
+        float cos = (float) Math.cos(angle);
+        float sin = (float) Math.sin(angle);
+        
+        float newX = vec.x * cos - vec.y * sin;
+        float newY = vec.x * sin + vec.y * cos;
+        
+        vec.x = newX;
+        vec.y = newY;
+    }
+
+    private void renderPressArrow(GuiGraphics guiGraphics, int x, int y) {
+        int press = menu.getPress();
+        int maxPress = menu.getMaxPress();
+        
+        if (press > 0 && maxPress > 0) {
+            int arrowHeight = (press * ARROW_MAX_HEIGHT) / maxPress;
+            
+            if (arrowHeight > 0) {
+                guiGraphics.blit(TEXTURE,
+                        x + 79, y + 35,
+                        ARROW_U, ARROW_V,
+                        ARROW_WIDTH, arrowHeight,
+                        256, 256);
             }
         }
     }
@@ -132,31 +170,23 @@ public class GUIMachinePress extends AbstractContainerScreen<MachinePressMenu> {
         super.render(guiGraphics, mouseX, mouseY, delta);
         renderTooltip(guiGraphics, mouseX, mouseY);
 
-        // Тултип для индикатора нагрева
         if (isHovering(25, 16, 18, 18, mouseX, mouseY)) {
-            int heatState = menu.getHeatState();
-            int heatLevel = menu.getHeatLevel();
-            int maxHeatLevel = menu.getMaxHeatLevel();
-
-            int heatPercent = maxHeatLevel != 0 ? (heatLevel * 100) / maxHeatLevel : 0;
-            String status = getHeatStatusText(heatState);
-
+            int speed = menu.getSpeed();
+            int maxSpeed = menu.getMaxSpeed();
+            int speedPercent = maxSpeed != 0 ? (speed * 100) / maxSpeed : 0;
+            
             guiGraphics.renderTooltip(this.font,
-                    Component.literal("Heat: " + heatPercent + "% - " + status),
+                    Component.literal(speedPercent + "%"),
                     mouseX, mouseY);
         }
 
-        // Тултип для индикатора топлива
-        if (isHovering(27, 36, 14, 13, mouseX, mouseY)) {
-            int fuelTime = menu.getFuelTime();
-            int maxFuelTime = menu.getMaxFuelTime();
-
-            if (maxFuelTime > 0) {
-                int fuelPercent = (fuelTime * 100) / maxFuelTime;
-                int fuelTimeSeconds = fuelTime / 20; // конвертируем тики в секунды
-
+        if (isHovering(25, 34, 18, 18, mouseX, mouseY)) {
+            int burnTime = menu.getBurnTime();
+            
+            if (burnTime > 0) {
+                int operationsLeft = burnTime / 200;
                 guiGraphics.renderTooltip(this.font,
-                        Component.literal("Fuel: " + fuelPercent + "% (" + fuelTimeSeconds + "s remaining)"),
+                        Component.literal(operationsLeft + " operations left"),
                         mouseX, mouseY);
             } else {
                 guiGraphics.renderTooltip(this.font,
@@ -166,22 +196,13 @@ public class GUIMachinePress extends AbstractContainerScreen<MachinePressMenu> {
         }
     }
 
-    private String getHeatStatusText(int heatState) {
-        return switch (heatState) {
-            case 0 -> "Cold";
-            case 1 -> "Slightly warm";
-            case 2 -> "Warm";
-            case 3 -> "Almost ready";
-            case 4 -> "Working temperature";
-            case 5 -> "Stable heat";
-            case 6 -> "Good heat";
-            case 7 -> "High temperature";
-            case 8 -> "Very hot";
-            case 9 -> "Excellent heat";
-            case 10 -> "High efficiency";
-            case 11 -> "Maximum performance";
-            case 12 -> "Peak efficiency";
-            default -> "Unknown";
-        };
+    private boolean isHovering(int x, int y, int width, int height, int mouseX, int mouseY) {
+        int guiLeft = (this.width - this.imageWidth) / 2;
+        int guiTop = (this.height - this.imageHeight) / 2;
+        
+        mouseX -= guiLeft;
+        mouseY -= guiTop;
+        
+        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
     }
 }
