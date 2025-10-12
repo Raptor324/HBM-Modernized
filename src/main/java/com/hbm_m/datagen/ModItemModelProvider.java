@@ -168,6 +168,15 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.STAMP_DESH_357);
 
         simpleItem(ModItems.WIRE_RED_COPPER);
+        simpleItem(ModItems.WIRE_COPPER);
+        simpleItem(ModItems.WIRE_TUNGSTEN);
+        simpleItem(ModItems.WIRE_ALUMINIUM);
+        simpleItem(ModItems.WIRE_FINE);
+        simpleItem(ModItems.WIRE_SCHRABIDIUM);
+        simpleItem(ModItems.WIRE_ADVANCED_ALLOY);
+        simpleItem(ModItems.WIRE_GOLD);
+        simpleItem(ModItems.WIRE_MAGNETIZED_TUNGSTEN);
+        simpleItem(ModItems.WIRE_CARBON);
 
     };
 

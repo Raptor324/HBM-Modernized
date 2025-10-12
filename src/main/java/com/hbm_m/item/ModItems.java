@@ -723,7 +723,24 @@ public class ModItems {
 
     public static final RegistryObject<Item> WIRE_RED_COPPER = ITEMS.register("wire_red_copper",
             () -> new Item(new Item.Properties()));
-
+    public static final RegistryObject<Item> WIRE_ADVANCED_ALLOY = ITEMS.register("wire_advanced_alloy",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_ALUMINIUM = ITEMS.register("wire_aluminium",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_COPPER = ITEMS.register("wire_copper",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_CARBON = ITEMS.register("wire_carbon",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_FINE = ITEMS.register("wire_fine",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_GOLD = ITEMS.register("wire_gold",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_MAGNETIZED_TUNGSTEN = ITEMS.register("wire_magnetized_tungsten",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_SCHRABIDIUM = ITEMS.register("wire_schrabidium",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_TUNGSTEN = ITEMS.register("wire_tungsten",
+            () -> new Item(new Item.Properties()));
 
     // Здесь мы регистрируем предмет-блок батареи для машин, поддерживающий хранение энергии через Forge Energy
     public static final RegistryObject<Item> MACHINE_BATTERY = ITEMS.register("machine_battery",

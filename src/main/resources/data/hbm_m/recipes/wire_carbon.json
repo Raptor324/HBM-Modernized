@@ -1,0 +1,15 @@
+{
+  "type": "hbm_m:press",
+  "ingredients": [
+    {
+      "tag": "hbm_m:stamps/wire"
+    },
+    {
+      "item": "hbm_m:carbon_ingot"
+    }
+  ],
+  "output": {
+    "item": "hbm_m:wire_carbon",
+    "count": 8
+  }
+}
