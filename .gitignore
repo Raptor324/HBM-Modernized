@@ -53,3 +53,5 @@ natives/
 forge*changelog.txt
 .fake
 .editorconfig
+.github/copilot-instructions.md
+.gitignore
