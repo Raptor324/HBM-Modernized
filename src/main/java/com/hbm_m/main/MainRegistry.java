@@ -290,6 +290,7 @@ public class MainRegistry {
             event.accept(ModItems.CINNABAR);
             event.accept(ModItems.FIRECLAY_BALL);
             event.accept(ModItems.FIREBRICK);
+            event.accept(ModItems.WOOD_ASH_POWDER);
 
         }
 

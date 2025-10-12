@@ -64,24 +64,25 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
 
+        // Register Entity Renders
         ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-                ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-                ModEntities.GRENADEFIRE_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-                ModEntities.GRENADESMART_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-                ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-                ModEntities.GRENADEIF_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADEFIRE_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADESMART_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADEIF_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
         
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 

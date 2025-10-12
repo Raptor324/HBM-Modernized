@@ -175,5 +175,9 @@
     "block.garage_stop": {
         "subtitle": "sounds.hbm_m.subtitle.garage_stop",
         "sounds": [ "hbm_m:block/door/garage_stop" ]
+    },
+    "block.press_operate": {
+        "subtitle": "sounds.hbm_m.subtitle.press",
+        "sounds": [ "hbm_m:block/press_operate" ]
     }
 }

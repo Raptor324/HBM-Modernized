@@ -17,7 +17,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
 import java.util.UUID;
-import java.util.concurrent.atomic.AtomicInteger;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import javax.annotation.Nonnull;
 import com.hbm_m.main.MainRegistry;
