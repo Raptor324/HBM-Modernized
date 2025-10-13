@@ -82,9 +82,9 @@ public class ModItems {
 
 // ИНСТРУМЕНТЫ ГОРНЯКА:
     public static final RegistryObject<Item> STARMETAL_SWORD = ITEMS.register("starmetal_sword",
-            () -> new SwordItem(ModToolTiers.STARMETAL, 7, 3, new Item.Properties()));
+            () -> new SwordItem(ModToolTiers.STARMETAL, 7, -2, new Item.Properties()));
     public static final RegistryObject<Item> STARMETAL_AXE = ITEMS.register("starmetal_axe",
-            () -> new AxeItem(ModToolTiers.STARMETAL, 15, 1, new Item.Properties()));
+            () -> new ModAxeItem(ModToolTiers.STARMETAL, 15, 1, new Item.Properties()));
     public static final RegistryObject<Item> STARMETAL_PICKAXE = ITEMS.register("starmetal_pickaxe",
             () -> new ModPickaxeItem(ModToolTiers.STARMETAL, 3, 1, new Item.Properties(), 6, 3, 1, 5));
     public static final RegistryObject<Item> STARMETAL_SHOVEL = ITEMS.register("starmetal_shovel",
@@ -95,9 +95,9 @@ public class ModItems {
     public static final RegistryObject<Item> ALLOY_SWORD = ITEMS.register("alloy_sword",
         () -> new SwordItem(ModToolTiers.ALLOY, 5, 2, new Item.Properties()));
     public static final RegistryObject<Item> ALLOY_AXE = ITEMS.register("alloy_axe",
-            () -> new AxeItem(ModToolTiers.ALLOY, 9, 1, new Item.Properties()));
+            () -> new ModAxeItem(ModToolTiers.ALLOY, 9, 1, new Item.Properties(), 3, 1));
     public static final RegistryObject<Item> ALLOY_PICKAXE = ITEMS.register("alloy_pickaxe",
-            () -> new ModPickaxeItem(ModToolTiers.ALLOY, 2, 1, new Item.Properties(), 2, 0, 0, 0));
+            () -> new ModPickaxeItem(ModToolTiers.ALLOY, 2, 1, new Item.Properties(), 3, 0, 0, 0));
     public static final RegistryObject<Item> ALLOY_SHOVEL = ITEMS.register("alloy_shovel",
             () -> new ShovelItem(ModToolTiers.ALLOY, 0, 0, new Item.Properties()));
     public static final RegistryObject<Item> ALLOY_HOE = ITEMS.register("alloy_hoe",
