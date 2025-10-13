@@ -146,6 +146,9 @@ public class MainRegistry {
 
             event.accept(ModItems.GRENADEIF);
 
+            event.accept(ModBlocks.DET_MINER);
+            event.accept(ModBlocks.EXPLOSIVE_CHARGE);
+
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");
             }
@@ -459,6 +462,21 @@ public class MainRegistry {
         // СТРОИТЕЛЬНЫЕ БЛОКИ
         if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get()) {
 
+            event.accept(ModBlocks.DOOR_OFFICE);
+            event.accept(ModBlocks.DOOR_BUNKER);
+            event.accept(ModBlocks.METAL_DOOR);
+            event.accept(ModBlocks.CONCRETE_MARKED);
+            event.accept(ModBlocks.CONCRETE_VENT);
+            event.accept(ModBlocks.CONCRETE_FAN);
+            event.accept(ModBlocks.CONCRETE_CRACKED_STAIRS);
+            event.accept(ModBlocks.CONCRETE_CRACKED_SLAB);
+            event.accept(ModBlocks.CONCRETE_CRACKED);
+            event.accept(ModBlocks.CONCRETE_MOSSY_STAIRS);
+            event.accept(ModBlocks.CONCRETE_MOSSY_SLAB);
+            event.accept(ModBlocks.CONCRETE_MOSSY);
+            event.accept(ModBlocks.CONCRETE_STAIRS);
+            event.accept(ModBlocks.CONCRETE_SLAB);
+            event.accept(ModBlocks.CONCRETE);
             event.accept(ModBlocks.CRATE);
             event.accept(ModBlocks.CRATE_LEAD);
             event.accept(ModBlocks.CRATE_METAL);

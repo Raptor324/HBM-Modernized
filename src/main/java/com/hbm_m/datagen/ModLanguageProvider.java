@@ -326,7 +326,18 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.rad_protection.value_short", "%s сопр. радиации.");
 
                 // БЛОКИ
-
+                add("block.hbm_m.door_office", "Офисная Дверь");
+                add("block.hbm_m.door_bunker", "Бункерная Дверь");
+                add("block.hbm_m.metal_door", "Металлическая Дверь");
+                add("block.hbm_m.demon_lamp", "Милая Лампа (WIP)");
+                add("block.hbm_m.explosive_charge", "Заряд Взрывчатки (WIP)");
+                add("block.hbm_m.det_miner", "Шахтёрский Заряд");
+                add("block.hbm_m.concrete_vent", "Вентиляция В Бетоне");
+                add("block.hbm_m.concrete_fan", "Вентилятор В Бетоне");
+                add("block.hbm_m.concrete_marked", "Помеченный Бетон");
+                add("block.hbm_m.concrete_cracked", "Потрескавшийся Бетон");
+                add("block.hbm_m.concrete_mossy", "Замшелый Бетон");
+                add("block.hbm_m.concrete", "Бетон");
                 add("block.hbm_m.reinforced_glass", "Усиленное стекло");
                 add("block.hbm_m.crate", "Ящик");
                 add("block.hbm_m.crate_lead", "Свинцовый ящик");
@@ -917,8 +928,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.armor_table.servos_slot", "Servos");
 
                 // BLOCKS
-
-
+                add("block.hbm_m.door_office", "Office Door");
+                add("block.hbm_m.door_bunker", "Bunker Door");
+                add("block.hbm_m.metal_door", "Metal Door");
+                add("block.hbm_m.demon_lamp", "Demon Lamp (WIP)");
+                add("block.hbm_m.explosive_charge", "Explosive Charge (WIP)");
                 add("block.hbm_m.reinforced_glass", "Reinforced Glass");
                 add("block.hbm_m.crate", "Crate");
                 add("block.hbm_m.crate_lead", "Lead Crate");
@@ -937,6 +951,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.blast_furnace", "Blast Furnace");
                 add("block.hbm_m.press", "Press");
 
+                add("block.hbm_m.det_miner", "Det Miner");
+                add("block.hbm_m.concrete_vent", "Concrete Vent");
+                add("block.hbm_m.concrete_fan", "Concrete Fan");
+                add("block.hbm_m.concrete_marked", "Marked Concrete");
+                add("block.hbm_m.concrete_cracked", "Cracked Concrete");
+                add("block.hbm_m.concrete_mossy", "Mossy Concrete");
+                add("block.hbm_m.concrete", "Concrete");
                 add("block.hbm_m.brick_concrete", "Concrete Bricks");
                 add("block.hbm_m.brick_concrete_slab", "Concrete Bricks Slab");
                 add("block.hbm_m.brick_concrete_stairs", "Concrete Bricks Stairs");

@@ -46,13 +46,29 @@ public class ModBlockStateProvider extends BlockStateProvider {
         stairsBlock(((StairBlock) ModBlocks.BRICK_CONCRETE_MOSSY.get()), blockTexture(ModBlocks.BRICK_CONCRETE_MOSSY.get()));
         slabBlock(((SlabBlock) ModBlocks.BRICK_CONCRETE_MOSSY_SLAB.get()), blockTexture(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB.get()), blockTexture(ModBlocks.BRICK_CONCRETE_MOSSY.get()));
 
+        blockWithItem(ModBlocks.CONCRETE_MOSSY);
+        stairsBlock(((StairBlock) ModBlocks.CONCRETE_MOSSY.get()), blockTexture(ModBlocks.CONCRETE_MOSSY.get()));
+        slabBlock(((SlabBlock) ModBlocks.CONCRETE_MOSSY_SLAB.get()), blockTexture(ModBlocks.CONCRETE_MOSSY_SLAB.get()), blockTexture(ModBlocks.CONCRETE_MOSSY.get()));
+
+        blockWithItem(ModBlocks.CONCRETE);
+        stairsBlock(((StairBlock) ModBlocks.CONCRETE.get()), blockTexture(ModBlocks.CONCRETE.get()));
+        slabBlock(((SlabBlock) ModBlocks.CONCRETE_SLAB.get()), blockTexture(ModBlocks.CONCRETE_SLAB.get()), blockTexture(ModBlocks.CONCRETE.get()));
+
+        blockWithItem(ModBlocks.CONCRETE_CRACKED);
+        stairsBlock(((StairBlock) ModBlocks.CONCRETE_CRACKED.get()), blockTexture(ModBlocks.CONCRETE_CRACKED.get()));
+        slabBlock(((SlabBlock) ModBlocks.CONCRETE_SLAB.get()), blockTexture(ModBlocks.CONCRETE_CRACKED_SLAB.get()), blockTexture(ModBlocks.CONCRETE_CRACKED.get()));
+
+        blockWithItem(ModBlocks.CONCRETE_FAN);
+        blockWithItem(ModBlocks.CONCRETE_MARKED);
+        blockWithItem(ModBlocks.CONCRETE_VENT);
+
         blockWithItem(ModBlocks.CRATE);
         blockWithItem(ModBlocks.CRATE_LEAD);
         blockWithItem(ModBlocks.CRATE_METAL);
         blockWithItem(ModBlocks.CRATE_WEAPON);
 
         blockWithItem(ModBlocks.REINFORCED_GLASS);
-
+        blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
         simpleBlockWithItem(ModBlocks.SHREDDER.get(),
                 new ModelFile.UncheckedModelFile(modLoc("block/shredder")));
 
