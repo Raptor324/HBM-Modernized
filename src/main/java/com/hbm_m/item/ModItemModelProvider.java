@@ -91,7 +91,9 @@ public class ModItemModelProvider extends ItemModelProvider {
 
         evenSimplerBlockItem(ModBlocks.CONCRETE_HAZARD_STAIRS);
         evenSimplerBlockItem(ModBlocks.CONCRETE_HAZARD_SLAB);
-
+        simpleBlockItem(ModBlocks.DOOR_BUNKER);
+        simpleBlockItem(ModBlocks.DOOR_OFFICE);
+        simpleBlockItem(ModBlocks.METAL_DOOR);
         simpleItem(ModItems.GRENADEHE);
         simpleItem(ModItems.GRENADEFIRE);
     }
@@ -148,4 +150,12 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ResourceLocation.parse("item/generated")).texture("layer0",
                 ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
     }
+
+
+    private ItemModelBuilder simpleBlockItem(RegistryObject<Block> item) {
+        return withExistingParent(item.getId().getPath(),
+                new ResourceLocation("item/generated")).texture("layer0",
+                new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
+    }
+
 }

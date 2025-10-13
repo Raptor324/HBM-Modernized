@@ -199,6 +199,11 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("layer0", modLoc("item/" + name));
 
     }
+    private ItemModelBuilder simpleBlockItem(RegistryObject<Block> item) {
+        return withExistingParent(item.getId().getPath(),
+                new ResourceLocation("item/generated")).texture("layer0",
+                new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
+    }
     
     private void ingotItem(RegistryObject<Item> itemObject) {
         // 1. Получаем регистрационное имя (например, "uranium_ingot")

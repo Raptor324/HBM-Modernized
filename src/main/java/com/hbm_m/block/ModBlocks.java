@@ -9,6 +9,7 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.state.BlockBehaviour;
+import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -117,6 +118,65 @@ public class ModBlocks {
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
     public static final RegistryObject<Block> BRICK_CONCRETE_SLAB = registerBlock("brick_concrete_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+
+    public static final RegistryObject<Block> CONCRETE_MOSSY = registerBlock("concrete_mossy",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+    public static final RegistryObject<Block> CONCRETE_MOSSY_STAIRS = registerBlock("concrete_mossy_stairs",
+            () -> new StairBlock(() -> ModBlocks.CONCRETE_MOSSY.get().defaultBlockState(),
+                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+    public static final RegistryObject<Block> CONCRETE_MOSSY_SLAB = registerBlock("concrete_mossy_slab",
+            () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+
+    public static final RegistryObject<Block> CONCRETE  = registerBlock("concrete",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+    public static final RegistryObject<Block> CONCRETE_STAIRS = registerBlock("concrete_stairs",
+            () -> new StairBlock(() -> ModBlocks.CONCRETE.get().defaultBlockState(),
+                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+    public static final RegistryObject<Block> CONCRETE_SLAB = registerBlock("concrete_slab",
+            () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+
+    public static final RegistryObject<Block> CONCRETE_CRACKED  = registerBlock("concrete_cracked",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+    public static final RegistryObject<Block> CONCRETE_CRACKED_STAIRS = registerBlock("concrete_cracked_stairs",
+            () -> new StairBlock(() -> ModBlocks.CONCRETE_CRACKED.get().defaultBlockState(),
+                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+    public static final RegistryObject<Block> CONCRETE_CRACKED_SLAB = registerBlock("concrete_cracked_slab",
+            () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+
+    public static final RegistryObject<Block> CONCRETE_VENT  = registerBlock("concrete_vent",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> DET_MINER = registerBlock("det_miner",
+            () -> new DetMinerBlock(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
+                    .sound(SoundType.STONE) // Звук при разрушении
+                    .requiresCorrectToolForDrops() // Требует правильного инструмента для лута (как руды)
+                    // .noOcclusion() // <--- ЭТО ОЧЕНЬ ВАЖНО! НЕ ИСПОЛЬЗУЙТЕ ЭТО ДЛЯ БЛОКОВ, КОТОРЫЕ ДОЛЖНЫ РЕАГИРОВАТЬ НА РЕДСТОУН
+                    //                    // noOcclusion делает блок "неполным" или "прозрачным" для редстоуна.
+                    //                    // Если ваш блок должен быть твердым и проводить редстоун, то эти свойства должны быть по умолчанию.
+                    // .isRedstoneConductor((state, level, pos) -> true) // Можно явно указать, что блок проводит редстоун
+                    // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
+            ));
+
+    //public static final RegistryObject<Block> DEMON_LAMP  = registerBlock("demon_lamp",
+           // () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+    public static final RegistryObject<Block> DOOR_BUNKER = registerBlock("door_bunker",
+            () -> new net.minecraft.world.level.block.DoorBlock(BlockBehaviour.Properties.copy(Blocks.NETHERITE_BLOCK).sound(SoundType.NETHERITE_BLOCK).noOcclusion(), BlockSetType.STONE));
+
+    public static final RegistryObject<Block> DOOR_OFFICE = registerBlock("door_office",
+            () -> new net.minecraft.world.level.block.DoorBlock(BlockBehaviour.Properties.copy(Blocks.CHERRY_WOOD).sound(SoundType.CHERRY_WOOD).noOcclusion(), BlockSetType.CHERRY));
+
+    public static final RegistryObject<Block> METAL_DOOR = registerBlock("metal_door",
+            () -> new net.minecraft.world.level.block.DoorBlock(BlockBehaviour.Properties.copy(Blocks.CHAIN).sound(SoundType.CHAIN).noOcclusion(), BlockSetType.BIRCH));
+
+    public static final RegistryObject<Block> EXPLOSIVE_CHARGE  = registerBlock("explosive_charge",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> CONCRETE_FAN  = registerBlock("concrete_fan",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> CONCRETE_MARKED  = registerBlock("concrete_marked",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistryObject<Block> BRICK_CONCRETE_BROKEN = registerBlock("brick_concrete_broken",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
