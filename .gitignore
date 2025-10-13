@@ -55,3 +55,4 @@ forge*changelog.txt
 .editorconfig
 .github/copilot-instructions.md
 .gitignore
+desktop.ini
