@@ -1,5 +1,6 @@
 package com.hbm_m.item;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -12,6 +13,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.Tier;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -30,6 +32,7 @@ import java.util.Set;
 public class ModPickaxeItem extends PickaxeItem {
     private static final String NBT_VEIN_MINER = "VeinMinerEnabled";
     private static final String NBT_AOE = "AOEEnabled";
+    private static final String NBT_AOE_LEVEL = "AOELevel";
     private static final String NBT_SILK_TOUCH = "SilkTouchEnabled";
     private static final String NBT_FORTUNE = "FortuneEnabled";
 
@@ -40,18 +43,11 @@ public class ModPickaxeItem extends PickaxeItem {
             Blocks.DEEPSLATE, Blocks.NETHERRACK, Blocks.END_STONE
     );
 
-    private final int veinMinerLevel;  // 0-6
-    private final int aoeLevel;        // 0-3
-    private final int silkTouchLevel;  // 0-1
-    private final int fortuneLevel;    // 0-5
+    private final int veinMinerLevel;
+    private final int aoeLevel;
+    private final int silkTouchLevel;
+    private final int fortuneLevel;
 
-    /**
-     * Универсальный конструктор для кирки со способностями
-     * @param veinMinerLevel - уровень жилкового майнера (0 = нет, 1-6 = радиус 3-8)
-     * @param aoeLevel - уровень зоны действия (0 = нет, 1 = 3x3x3, 2 = 5x5x5, 3 = 7x7x7)
-     * @param silkTouchLevel - шёлковое касание (0 = нет, 1 = есть)
-     * @param fortuneLevel - удача (0 = нет, 1-5 = уровень)
-     */
     public ModPickaxeItem(Tier tier, int attackDamage, float attackSpeed, Properties properties,
                           int veinMinerLevel, int aoeLevel, int silkTouchLevel, int fortuneLevel) {
         super(tier, attackDamage, attackSpeed, properties);
@@ -61,48 +57,151 @@ public class ModPickaxeItem extends PickaxeItem {
         this.fortuneLevel = Math.max(0, Math.min(5, fortuneLevel));
     }
 
-    /**
-     * Конструктор для обычной кирки без способностей
-     */
     public ModPickaxeItem(Tier tier, int attackDamage, float attackSpeed, Properties properties) {
         this(tier, attackDamage, attackSpeed, properties, 0, 0, 0, 0);
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, level, tooltip, flag);
+
+        // Заголовок списка способностей
+        tooltip.add(Component.translatable("tooltip.hbm_m.pickaxe.abilities").withStyle(ChatFormatting.BLUE));
+
+        // Vein Miner
+        if (veinMinerLevel > 0) {
+            boolean isActive = isVeinMinerEnabled(stack);
+            ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
+            tooltip.add(Component.literal("  ")
+                    .append(Component.translatable("tooltip.hbm_m.pickaxe.vein_miner", veinMinerLevel)
+                            .withStyle(color)));
+        }
+
+        // AOE - показываем все уровни вплоть до максимального
+        if (aoeLevel > 0) {
+            for (int i = 1; i <= aoeLevel; i++) {
+                int size = 1 + (i * 2);
+                boolean isActive = isAOEEnabled(stack) && getAOELevelNBT(stack) == i;
+                ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
+                tooltip.add(Component.literal("  ")
+                        .append(Component.translatable("tooltip.hbm_m.pickaxe.aoe", size)
+                                .withStyle(color)));
+            }
+        }
+
+        // Silk Touch
+        if (silkTouchLevel > 0) {
+            boolean isActive = isSilkTouchEnabled(stack);
+            ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
+            tooltip.add(Component.literal("  ")
+                    .append(Component.translatable("tooltip.hbm_m.pickaxe.silk_touch")
+                            .withStyle(color)));
+        }
+
+        // Fortune
+        if (fortuneLevel > 0) {
+            boolean isActive = isFortuneEnabled(stack);
+            ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
+            tooltip.add(Component.literal("  ")
+                    .append(Component.translatable("tooltip.hbm_m.pickaxe.fortune", fortuneLevel)
+                            .withStyle(color)));
+        }
+
+        // Инструкции по использованию
+        tooltip.add(Component.literal(""));
+        tooltip.add(Component.translatable("tooltip.hbm_m.pickaxe.right_click").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.pickaxe.shift_right_click").withStyle(ChatFormatting.GRAY));
+    }
+
+    @Override
+    public boolean isFoil(ItemStack stack) {
+        return isVeinMinerEnabled(stack) || isAOEEnabled(stack) ||
+                isSilkTouchEnabled(stack) || isFortuneEnabled(stack);
     }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (!level.isClientSide() && player.isShiftKeyDown()) {
-            // Цикл переключения: жилковый -> зона -> шёлк -> обычно
-            if (veinMinerLevel > 0 && !isVeinMinerEnabled(stack) && !isAOEEnabled(stack) && !isSilkTouchEnabled(stack)) {
-                toggleVeinMiner(stack, player, true);
-            } else if (veinMinerLevel > 0 && isVeinMinerEnabled(stack)) {
-                toggleVeinMiner(stack, player, false);
-                if (aoeLevel > 0) {
-                    toggleAOE(stack, player, true);
-                }
-            } else if (aoeLevel > 0 && isAOEEnabled(stack)) {
-                toggleAOE(stack, player, false);
-                if (silkTouchLevel > 0) {
-                    toggleSilkTouch(stack, player, true);
-                }
-            } else if (silkTouchLevel > 0 && isSilkTouchEnabled(stack)) {
-                toggleSilkTouch(stack, player, false);
+        if (!level.isClientSide()) {
+            if (player.isShiftKeyDown()) {
+                // Shift + ПКМ = выключить всё
+                disableAllAbilities(stack, player);
             } else {
-                // Сброс - включаем первую доступную способность
-                if (veinMinerLevel > 0) {
-                    toggleVeinMiner(stack, player, true);
-                } else if (aoeLevel > 0) {
-                    toggleAOE(stack, player, true);
-                } else if (silkTouchLevel > 0) {
-                    toggleSilkTouch(stack, player, true);
-                }
+                // Обычный ПКМ = переключить на следующую способность
+                cycleAbilities(stack, player);
             }
-
             return InteractionResultHolder.success(stack);
         }
 
         return InteractionResultHolder.pass(stack);
+    }
+
+    private void cycleAbilities(ItemStack stack, Player player) {
+        boolean anyActive = isVeinMinerEnabled(stack) || isAOEEnabled(stack) ||
+                isSilkTouchEnabled(stack) || isFortuneEnabled(stack);
+
+        if (!anyActive) {
+            // Включаем первую доступную способность
+            if (veinMinerLevel > 0) {
+                toggleVeinMiner(stack, player, true);
+            } else if (aoeLevel > 0) {
+                toggleAOE(stack, player, 1);
+            } else if (silkTouchLevel > 0) {
+                toggleSilkTouch(stack, player, true);
+            } else if (fortuneLevel > 0) {
+                toggleFortune(stack, player, true);
+            }
+        } else if (isVeinMinerEnabled(stack)) {
+            toggleVeinMiner(stack, player, false);
+            if (aoeLevel > 0) {
+                toggleAOE(stack, player, 1);
+            } else if (silkTouchLevel > 0) {
+                toggleSilkTouch(stack, player, true);
+            } else if (fortuneLevel > 0) {
+                toggleFortune(stack, player, true);
+            } else {
+                disableAllAbilities(stack, player);
+            }
+        } else if (isAOEEnabled(stack)) {
+            int currentAOELevel = getAOELevelNBT(stack);
+            if (currentAOELevel < aoeLevel) {
+                // Переключаемся на следующий уровень AOE
+                toggleAOE(stack, player, currentAOELevel + 1);
+            } else {
+                // AOE на максимуме, переходим на следующую способность
+                toggleAOE(stack, player, 0);
+                if (silkTouchLevel > 0) {
+                    toggleSilkTouch(stack, player, true);
+                } else if (fortuneLevel > 0) {
+                    toggleFortune(stack, player, true);
+                } else {
+                    disableAllAbilities(stack, player);
+                }
+            }
+        } else if (isSilkTouchEnabled(stack)) {
+            toggleSilkTouch(stack, player, false);
+            if (fortuneLevel > 0) {
+                toggleFortune(stack, player, true);
+            } else {
+                disableAllAbilities(stack, player);
+            }
+        } else if (isFortuneEnabled(stack)) {
+            disableAllAbilities(stack, player);
+        }
+    }
+
+    private void disableAllAbilities(ItemStack stack, Player player) {
+        stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
+        stack.getOrCreateTag().putBoolean(NBT_AOE, false);
+        stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
+        stack.getOrCreateTag().putBoolean(NBT_FORTUNE, false);
+        removeAllEnchantments(stack);
+        playToggleSound(player, false);
+        player.displayClientMessage(
+                Component.translatable("message.hbm_m.pickaxe.disabled").withStyle(ChatFormatting.RED),
+                true
+        );
     }
 
     @Override
@@ -113,51 +212,59 @@ public class ModPickaxeItem extends PickaxeItem {
 
         Block minedBlock = state.getBlock();
 
-        // Жилковый майнер
         if (veinMinerLevel > 0 && isVeinMinerEnabled(stack) && !EXCLUDED_BLOCKS.contains(minedBlock)) {
-            int radius = 2 + veinMinerLevel; // Уровень 1 = радиус 3, уровень 6 = радиус 8
+            int radius = 2 + veinMinerLevel;
             veinMine(level, pos, minedBlock, stack, entity, radius);
-        }
-        // Зона действия (AOE)
-        else if (aoeLevel > 0 && isAOEEnabled(stack)) {
-            int size = 1 + (aoeLevel * 2); // Уровень 1 = 3, уровень 2 = 5, уровень 3 = 7
+        } else if (aoeLevel > 0 && isAOEEnabled(stack)) {
+            int currentAOELevel = getAOELevelNBT(stack);
+            int size = 1 + (currentAOELevel * 2);
             aoeMine(level, pos, stack, entity, size);
         }
 
         return result;
     }
 
-    // ============================================
-    // ПЕРЕКЛЮЧЕНИЕ РЕЖИМОВ
-    // ============================================
-
     private void toggleVeinMiner(ItemStack stack, Player player, boolean enable) {
         stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, enable);
         if (enable) {
             stack.getOrCreateTag().putBoolean(NBT_AOE, false);
             stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
+            stack.getOrCreateTag().putBoolean(NBT_FORTUNE, false);
+            removeAllEnchantments(stack);
         }
         playToggleSound(player, enable);
         player.displayClientMessage(
-                Component.literal((enable ? "§e" : "§6") + "\"Жилковый майнер " + veinMinerLevel + "\" " +
-                        (enable ? "активирован!" : "деактивирован!")),
+                Component.translatable(
+                        enable ? "message.hbm_m.pickaxe.vein_miner.enabled" : "message.hbm_m.pickaxe.vein_miner.disabled",
+                        veinMinerLevel
+                ).withStyle(enable ? ChatFormatting.YELLOW : ChatFormatting.RED),
                 true
         );
     }
 
-    private void toggleAOE(ItemStack stack, Player player, boolean enable) {
-        stack.getOrCreateTag().putBoolean(NBT_AOE, enable);
-        if (enable) {
+    private void toggleAOE(ItemStack stack, Player player, int level) {
+        if (level > 0) {
+            // Включаем AOE с указанным уровнем
+            stack.getOrCreateTag().putBoolean(NBT_AOE, true);
+            stack.getOrCreateTag().putInt(NBT_AOE_LEVEL, level);
             stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
             stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
+            stack.getOrCreateTag().putBoolean(NBT_FORTUNE, false);
+            removeAllEnchantments(stack);
+            playToggleSound(player, true);
+            int size = 1 + (level * 2);
+            player.displayClientMessage(
+                    Component.translatable(
+                            "message.hbm_m.pickaxe.aoe.enabled",
+                            size
+                    ).withStyle(ChatFormatting.YELLOW),
+                    true
+            );
+        } else {
+            // Выключаем AOE
+            stack.getOrCreateTag().putBoolean(NBT_AOE, false);
+            stack.getOrCreateTag().putInt(NBT_AOE_LEVEL, 0);
         }
-        playToggleSound(player, enable);
-        int size = 1 + (aoeLevel * 2);
-        player.displayClientMessage(
-                Component.literal((enable ? "§e" : "§6") + "\"Зона действия " + size + "x" + size + "x" + size + "\" " +
-                        (enable ? "активирована!" : "деактивирована!")),
-                true
-        );
     }
 
     private void toggleSilkTouch(ItemStack stack, Player player, boolean enable) {
@@ -165,13 +272,46 @@ public class ModPickaxeItem extends PickaxeItem {
         if (enable) {
             stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
             stack.getOrCreateTag().putBoolean(NBT_AOE, false);
+            stack.getOrCreateTag().putBoolean(NBT_FORTUNE, false);
+            removeAllEnchantments(stack);
+            stack.enchant(Enchantments.SILK_TOUCH, 1);
+        } else {
+            removeAllEnchantments(stack);
         }
         playToggleSound(player, enable);
         player.displayClientMessage(
-                Component.literal((enable ? "§e" : "§6") + "\"Шёлковое касание\" " +
-                        (enable ? "активировано!" : "деактивировано!")),
+                Component.translatable(
+                        enable ? "message.hbm_m.pickaxe.silk_touch.enabled" : "message.hbm_m.pickaxe.silk_touch.disabled"
+                ).withStyle(enable ? ChatFormatting.YELLOW : ChatFormatting.RED),
                 true
         );
+    }
+
+    private void toggleFortune(ItemStack stack, Player player, boolean enable) {
+        stack.getOrCreateTag().putBoolean(NBT_FORTUNE, enable);
+        if (enable) {
+            stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
+            stack.getOrCreateTag().putBoolean(NBT_AOE, false);
+            stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
+            removeAllEnchantments(stack);
+            stack.enchant(Enchantments.BLOCK_FORTUNE, 3);
+        } else {
+            removeAllEnchantments(stack);
+        }
+        playToggleSound(player, enable);
+        player.displayClientMessage(
+                Component.translatable(
+                        enable ? "message.hbm_m.pickaxe.fortune.enabled" : "message.hbm_m.pickaxe.fortune.disabled",
+                        fortuneLevel
+                ).withStyle(enable ? ChatFormatting.YELLOW : ChatFormatting.RED),
+                true
+        );
+    }
+
+    private void removeAllEnchantments(ItemStack stack) {
+        if (stack.hasTag() && stack.getTag().contains("Enchantments")) {
+            stack.getTag().remove("Enchantments");
+        }
     }
 
     private void playToggleSound(Player player, boolean enable) {
@@ -192,9 +332,13 @@ public class ModPickaxeItem extends PickaxeItem {
         return stack.hasTag() && stack.getTag().getBoolean(NBT_SILK_TOUCH);
     }
 
-    // ============================================
-    // ЖИЛКОВЫЙ МАЙНЕР
-    // ============================================
+    private boolean isFortuneEnabled(ItemStack stack) {
+        return stack.hasTag() && stack.getTag().getBoolean(NBT_FORTUNE);
+    }
+
+    private int getAOELevelNBT(ItemStack stack) {
+        return stack.hasTag() ? stack.getTag().getInt(NBT_AOE_LEVEL) : 0;
+    }
 
     private void veinMine(Level level, BlockPos startPos, Block targetBlock, ItemStack stack, LivingEntity entity, int radius) {
         Set<BlockPos> visited = new HashSet<>();
@@ -222,7 +366,7 @@ public class ModPickaxeItem extends PickaxeItem {
         }
 
         for (BlockPos pos : toMine) {
-            mineBlockWithEnchantments(level, pos, stack, entity);
+            mineBlockWithFortune(level, pos, stack, entity);
             if (stack.isEmpty()) break;
         }
     }
@@ -245,20 +389,16 @@ public class ModPickaxeItem extends PickaxeItem {
         return neighbors;
     }
 
-    // ============================================
-    // ЗОНА ДЕЙСТВИЯ (AOE)
-    // ============================================
-
     private void aoeMine(Level level, BlockPos centerPos, ItemStack stack, LivingEntity entity, int size) {
         int halfSize = size / 2;
 
         for (int x = -halfSize; x <= halfSize; x++) {
             for (int y = -halfSize; y <= halfSize; y++) {
                 for (int z = -halfSize; z <= halfSize; z++) {
-                    if (x == 0 && y == 0 && z == 0) continue; // Пропускаем центральный блок
+                    if (x == 0 && y == 0 && z == 0) continue;
 
                     BlockPos pos = centerPos.offset(x, y, z);
-                    mineBlockWithEnchantments(level, pos, stack, entity);
+                    mineBlockWithFortune(level, pos, stack, entity);
 
                     if (stack.isEmpty()) return;
                 }
@@ -266,50 +406,33 @@ public class ModPickaxeItem extends PickaxeItem {
         }
     }
 
-    // ============================================
-    // ДОБЫЧА С УЧЁТОМ ЗАЧАРОВАНИЙ
-    // ============================================
-
-    private void mineBlockWithEnchantments(Level level, BlockPos pos, ItemStack stack, LivingEntity entity) {
+    private void mineBlockWithFortune(Level level, BlockPos pos, ItemStack stack, LivingEntity entity) {
         BlockState blockState = level.getBlockState(pos);
 
         if (!stack.isCorrectToolForDrops(blockState)) return;
 
-        // Определяем, использовать ли шёлковое касание
-        boolean useSilk = isSilkTouchEnabled(stack) && silkTouchLevel > 0;
-
-        if (useSilk) {
-            // Шёлковое касание - дропаем сам блок
+        if (level instanceof ServerLevel serverLevel) {
             Block.dropResources(blockState, level, pos, level.getBlockEntity(pos), entity, stack);
-            level.removeBlock(pos, false);
-        } else {
-            // Обычная добыча с удачей
-            if (level instanceof ServerLevel serverLevel) {
-                // Создаём параметры лута с учётом удачи
+
+            if (isFortuneEnabled(stack) && fortuneLevel >= 4) {
                 LootParams.Builder builder = new LootParams.Builder(serverLevel)
                         .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
                         .withParameter(LootContextParams.TOOL, stack)
                         .withOptionalParameter(LootContextParams.BLOCK_ENTITY, serverLevel.getBlockEntity(pos));
 
-                // Применяем удачу (базовая + дополнительная)
-                int totalFortune = fortuneLevel;
                 List<ItemStack> drops = blockState.getDrops(builder);
 
-                // Для уровней удачи 4-5 увеличиваем количество дропа
-                if (totalFortune >= 4) {
-                    for (ItemStack drop : drops) {
-                        drop.setCount(drop.getCount() + (totalFortune - 3));
-                    }
-                }
-
+                int bonusDrops = fortuneLevel - 3;
                 for (ItemStack drop : drops) {
-                    Block.popResource(serverLevel, pos, drop);
+                    ItemStack bonusDrop = drop.copy();
+                    bonusDrop.setCount(bonusDrops);
+                    Block.popResource(serverLevel, pos, bonusDrop);
                 }
             }
+
             level.removeBlock(pos, false);
         }
 
-        // Урон инструменту
         stack.hurtAndBreak(1, entity, (e) -> {
             e.broadcastBreakEvent(InteractionHand.MAIN_HAND);
         });
