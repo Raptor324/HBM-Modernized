@@ -371,6 +371,13 @@ public class ModItems {
             })
     );
 
+
+    public static final RegistryObject<Item> NUGGET_SILICON = ITEMS.register("nugget_silicon",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BILLET_SILICON = ITEMS.register("billet_silicon",
+            () -> new Item(new Item.Properties()));
+
     public static final RegistryObject<Item> SILICON_CIRCUIT = ITEMS.register("silicon_circuit",
             () -> new Item(new Item.Properties()));
 
@@ -444,10 +451,7 @@ public class ModItems {
 
     public static final RegistryObject<Item> BATTLE_COUNTER = ITEMS.register("battle_counter",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> STEEL_COUNTER = ITEMS.register("steel_counter",
-            () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> STEEL_CASING = ITEMS.register("steel_casing",
-            () -> new Item(new Item.Properties()));
+
 
 
     public static final RegistryObject<Item> PLATE_IRON = ITEMS.register("plate_iron",
@@ -480,7 +484,7 @@ public class ModItems {
     public static final RegistryObject<Item> PLATE_PAA = ITEMS.register("plate_paa",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_POLYMER = ITEMS.register("plate_polymer",
+    public static final RegistryObject<Item> INSULATOR = ITEMS.register("insulator",
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> PLATE_SATURNITE = ITEMS.register("plate_saturnite",

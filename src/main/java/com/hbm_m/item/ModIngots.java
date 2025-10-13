@@ -385,8 +385,8 @@ public enum ModIngots {
         "en_us", "PVC"),
 
     BIORUBBER("biorubber",
-        "ru_ru", "Биорезиновый слиток",
-        "en_us", "Biorubber Ingot"),
+        "ru_ru", "Латекс",
+        "en_us", "Latex"),
 
     SEMTEX("semtex",
         "ru_ru", "Семтекс",

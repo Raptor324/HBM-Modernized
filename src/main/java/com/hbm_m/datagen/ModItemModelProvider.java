@@ -99,7 +99,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PLATE_LEAD);
         simpleItem(ModItems.PLATE_MIXED);
         simpleItem(ModItems.PLATE_PAA);
-        simpleItem(ModItems.PLATE_POLYMER);
+        simpleItem(ModItems.INSULATOR);
         simpleItem(ModItems.PLATE_SATURNITE);
         simpleItem(ModItems.PLATE_SCHRABIDIUM);
         simpleItem(ModItems.PLATE_ADVANCED_ALLOY);
@@ -167,6 +167,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.STAMP_DESH_50);
         simpleItem(ModItems.STAMP_DESH_357);
 
+        simpleItem(ModItems.NUGGET_SILICON);
+        simpleItem(ModItems.BILLET_SILICON);
         simpleItem(ModItems.WIRE_RED_COPPER);
         simpleItem(ModItems.WIRE_COPPER);
         simpleItem(ModItems.WIRE_TUNGSTEN);

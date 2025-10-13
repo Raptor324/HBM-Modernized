@@ -46,10 +46,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
         stairsBlock(((StairBlock) ModBlocks.BRICK_CONCRETE_MOSSY.get()), blockTexture(ModBlocks.BRICK_CONCRETE_MOSSY.get()));
         slabBlock(((SlabBlock) ModBlocks.BRICK_CONCRETE_MOSSY_SLAB.get()), blockTexture(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB.get()), blockTexture(ModBlocks.BRICK_CONCRETE_MOSSY.get()));
 
+        blockWithItem(ModBlocks.CRATE);
+        blockWithItem(ModBlocks.CRATE_LEAD);
+        blockWithItem(ModBlocks.CRATE_METAL);
+        blockWithItem(ModBlocks.CRATE_WEAPON);
 
-
-
-
+        blockWithItem(ModBlocks.REINFORCED_GLASS);
 
         simpleBlockWithItem(ModBlocks.SHREDDER.get(),
                 new ModelFile.UncheckedModelFile(modLoc("block/shredder")));

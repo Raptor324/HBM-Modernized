@@ -90,6 +90,18 @@ public class ModBlocks {
     public static final RegistryObject<Block> REINFORCED_STONE = registerBlock("reinforced_stone",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
+    public static final RegistryObject<Block> REINFORCED_GLASS = registerBlock("reinforced_glass",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> CRATE = registerBlock("crate",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.OAK_WOOD).strength(1.0f, 1.0f).requiresCorrectToolForDrops()));
+    public static final RegistryObject<Block> CRATE_LEAD = registerBlock("crate_lead",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.OAK_WOOD).strength(1.0f, 1.0f).requiresCorrectToolForDrops()));
+    public static final RegistryObject<Block> CRATE_METAL = registerBlock("crate_metal",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.OAK_WOOD).strength(1.0f, 1.0f).requiresCorrectToolForDrops()));
+    public static final RegistryObject<Block> CRATE_WEAPON = registerBlock("crate_weapon",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.OAK_WOOD).strength(1.0f, 1.0f).requiresCorrectToolForDrops()));
+
     public static final RegistryObject<Block> CONCRETE_HAZARD = registerBlock("concrete_hazard",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistryObject<Block> CONCRETE_HAZARD_STAIRS = registerBlock("concrete_hazard_stairs",
