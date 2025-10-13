@@ -286,7 +286,6 @@ public class MainRegistry {
         // ЗАПЧАСТИ
         if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get()) {
 
-
             event.accept(ModItems.PLATE_IRON);
             event.accept(ModItems.PLATE_STEEL);
             event.accept(ModItems.PLATE_GOLD);
@@ -347,6 +346,7 @@ public class MainRegistry {
             event.accept(ModItems.QUANTUM_CHIP);
             event.accept(ModItems.BISMOID_CHIP);
             event.accept(ModItems.BISMOID_CIRCUIT);
+            event.accept(ModItems.PCB);
             event.accept(ModItems.VACUUM_TUBE);
             event.accept(ModItems.CAPACITOR);
             event.accept(ModItems.MICROCHIP);
