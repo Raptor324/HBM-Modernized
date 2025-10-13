@@ -3,7 +3,7 @@
   "category": "misc",
   "pattern": [
     " @ ",
-    "$%$",
+    "&%$",
     " # "
 
   ],
@@ -12,6 +12,9 @@
 
     "%": {
       "item": "hbm_m:grenade"
+    },
+    "&": {
+      "item": "hbm_m:phosphorus_ingot"
     },
     "#": {
       "item": "hbm_m:plate_steel"

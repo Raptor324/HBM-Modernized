@@ -256,6 +256,10 @@ public class ModHazards {
             new HazardEntry(HazardType.RADIATION, 42.5f)
         ));
 
+         HazardSystem.register(ModBlocks.DET_MINER.get(), new HazardData(
+                 new HazardEntry(HazardType.EXPLOSIVE_ON_FIRE, 8.0f)
+         ));
+
         // ПРЕДМЕТЫ 
         // Порох взрывается в огне. Сила взрыва 1/4 от ТНТ (4.0f / 4 = 1.0f) за единицу.
         HazardSystem.register(Items.GUNPOWDER, new HazardData(
@@ -279,6 +283,8 @@ public class ModHazards {
         HazardSystem.register(Blocks.TNT.asItem(), new HazardData(
             new HazardEntry(HazardType.EXPLOSIVE_ON_FIRE, 4.0f)
         ));
+
+
 
         HazardSystem.register(Items.TNT_MINECART, new HazardData(
             new HazardEntry(HazardType.EXPLOSIVE_ON_FIRE, 4.0f)

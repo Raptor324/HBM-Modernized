@@ -1,0 +1,32 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    "$$$",
+    "%#%",
+    "%#%"
+
+  ],
+
+  "key": {
+    "%": {
+      "item": "hbm_m:plate_iron"
+    },
+
+
+    "#": {
+      "item": "minecraft:tnt"
+    },
+
+    "$": {
+      "item": "minecraft:flint"
+    }
+
+  },
+
+  "result": {
+
+    "item": "hbm_m:det_miner"
+  }
+
+}

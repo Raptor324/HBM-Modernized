@@ -1,0 +1,9 @@
+{
+	"parent": "block/orientable",
+	"textures": {
+		"top": "hbm_m:block/det_miner_top",
+		"front": "hbm_m:block/det_miner_side",
+		"side": "hbm_m:block/det_miner_side",
+		"bottom": "hbm_m:block/det_miner_top"
+	}
+}

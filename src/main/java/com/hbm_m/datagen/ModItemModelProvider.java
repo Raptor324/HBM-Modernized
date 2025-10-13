@@ -99,7 +99,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PLATE_LEAD);
         simpleItem(ModItems.PLATE_MIXED);
         simpleItem(ModItems.PLATE_PAA);
-        simpleItem(ModItems.PLATE_POLYMER);
+        simpleItem(ModItems.INSULATOR);
         simpleItem(ModItems.PLATE_SATURNITE);
         simpleItem(ModItems.PLATE_SCHRABIDIUM);
         simpleItem(ModItems.PLATE_ADVANCED_ALLOY);
@@ -167,6 +167,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.STAMP_DESH_50);
         simpleItem(ModItems.STAMP_DESH_357);
 
+        simpleItem(ModItems.NUGGET_SILICON);
+        simpleItem(ModItems.BILLET_SILICON);
         simpleItem(ModItems.WIRE_RED_COPPER);
         simpleItem(ModItems.WIRE_COPPER);
         simpleItem(ModItems.WIRE_TUNGSTEN);
@@ -196,6 +198,11 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(name, "item/generated")
                 .texture("layer0", modLoc("item/" + name));
 
+    }
+    private ItemModelBuilder simpleBlockItem(RegistryObject<Block> item) {
+        return withExistingParent(item.getId().getPath(),
+                new ResourceLocation("item/generated")).texture("layer0",
+                new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
     }
     
     private void ingotItem(RegistryObject<Item> itemObject) {
