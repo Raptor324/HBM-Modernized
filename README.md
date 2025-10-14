@@ -57,15 +57,15 @@ Craft complex industrial machines consisting of multiple blocks for efficient re
 
 **Assembly Machines** — two varieties for crafting automation and component production, with an advanced recipe and template system
 
-![Workshop](docs\images\2025-10-14_17.09.12-min.png)
+![Workshop](docs/images/2025-10-14_17.09.12-min.png)
 
 **Press** — creating materials under pressure
 
-![Press](docs\images\2025-10-14_17.18.23-min.png)
+![Press](docs/images/2025-10-14_17.18.23-min.png)
 
 **Wood-Burning Generator** — primary energy source in the early game
 
-![Wood-Burning Generator](docs\images\2025-10-14_17.38.08-min.png)
+![Wood-Burning Generator](docs/images/2025-10-14_17.38.08-min.png)
 
 ### Energy System
 
@@ -93,15 +93,15 @@ Dozens of new ingots and metal blocks for crafting advanced equipment.
 
 **Ores** — new ore types with world generation
 
-![Resources](docs\images\2025-07-21_04.46.43.png)
+![Resources](docs/images/2025-07-21_04.46.43.png)
 
 **Creative Tabs:** Blocks | Consumables | Fuel | Tools | Machines | Ores | Resources | Parts | Templates | Weapons
 
-![Вкладки креатива](docs\images\2025-10-14_08.23.08.png)
+![Creative Tabs](docs/images/2025-10-14_08.23.08.png)
 
-![Вкладки креатива](docs\images\2025-10-14_08.23.24.png)
+![Creative Tabs](docs/images/2025-10-14_08.23.24.png)
 
-![Вкладки креатива](docs\images\2025-10-14_08.23.36.png)
+![Creative Tabs](docs/images/2025-10-14_08.23.36.png)
 
 -----
 
@@ -117,9 +117,9 @@ Advanced armor sets with unique modifiers and abilities.
 
 **Radiation Protection** — special sets for working with hazardous materials
 
-![Armor Modification Table](docs\images\2025-10-14_08.31.49.png)
+![Armor Modification Table](docs/images/2025-10-14_08.31.49.png)
 
-![Armor](docs\images\Screenshot_2025_10_05_05_38_55_75_572064f74bd5f9fa804b05334aa4f912.jpg)
+![Armor](docs/images/Screenshot_2025_10_05_05_38_55_75_572064f74bd5f9fa804b05334aa4f912.jpg)
 
 ### Tools
 
@@ -131,7 +131,7 @@ Powerful tools with unique resource mining mechanics.
 
 **Weapons** — swords and axes from various materials, as well as several types of grenades
 
-![Instruments](docs\images\2025-10-14_08.34.19.png)
+![Instruments](docs/images/2025-10-14_08.34.19.png)
 
 ***
 
@@ -147,7 +147,7 @@ Realistic irradiation mechanics affecting gameplay and the surrounding world.
 
 **Irradiation Effects** — blindness, confusion, weakness, hunger, poisoning, and death at critical doses
 
-![Radiation System](docs\images\2025-10-14_18.01.44-min.png)
+![Radiation System](docs/images/2025-10-14_18.01.44-min.png)
 
 ### World Impact
 
@@ -166,7 +166,7 @@ Realistic irradiation mechanics affecting gameplay and the surrounding world.
 ### Hazard System
 
 **Explosiveness** — don't throw gunpowder and dynamite into fire, or there might be a boom
-![Explosiveness](docs\images\2025-10-14_18.51.27-min.png)
+![Explosiveness](docs/images/2025-10-14_18.51.27-min.png)
 
 **Radioactivity** — corresponding items and blocks emit radiation
 
