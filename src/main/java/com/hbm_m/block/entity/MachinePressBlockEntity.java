@@ -279,10 +279,10 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
         Optional<PressRecipe> recipe = getCurrentRecipe();
         if (recipe.isPresent()) {
             ItemStack output = recipe.get().getResultItem(getLevel().registryAccess());
-            
+
             // Вычитаем материал
             itemHandler.extractItem(MATERIAL_SLOT, 1, false);
-            
+
             // Добавляем результат
             ItemStack outputSlot = itemHandler.getStackInSlot(OUTPUT_SLOT);
             if(outputSlot.isEmpty()) {
@@ -290,19 +290,28 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
             } else {
                 outputSlot.grow(output.getCount());
             }
-            
-            // Изнашиваем штамп если он изнашиваемый
+
+            // Изнашиваем штамп (если он изнашиваемый)
             ItemStack stamp = itemHandler.getStackInSlot(STAMP_SLOT);
-            if(stamp.getMaxDamage() != 0) {
+
+            // Проверяем, что штамп не бесконечный (Desh штампы)
+            if(stamp.isDamageableItem()) {
                 stamp.setDamageValue(stamp.getDamageValue() + 1);
+
+                // Если штамп сломался - удаляем его
                 if(stamp.getDamageValue() >= stamp.getMaxDamage()) {
                     itemHandler.setStackInSlot(STAMP_SLOT, ItemStack.EMPTY);
+
+                    // Можно добавить звук ломающегося предмета
+                    level.playSound(null, worldPosition,
+                            net.minecraft.sounds.SoundEvents.ITEM_BREAK,
+                            SoundSource.BLOCKS, 1.5f, 0.8f);
                 }
             }
 
-            // Воспроизведение звука
-            level.playSound(null, worldPosition, ModSounds.PRESS_OPERATE.get(), 
-                          SoundSource.BLOCKS, 1.5f, 1.0f);
+            // Воспроизведение звука работы пресса
+            level.playSound(null, worldPosition, ModSounds.PRESS_OPERATE.get(),
+                    SoundSource.BLOCKS, 1.5f, 1.0f);
         }
     }
 

@@ -94,12 +94,16 @@ public class ModItems {
 
     public static final RegistryObject<Item> ALLOY_SWORD = ITEMS.register("alloy_sword",
         () -> new SwordItem(ModToolTiers.ALLOY, 5, 2, new Item.Properties()));
+
     public static final RegistryObject<Item> ALLOY_AXE = ITEMS.register("alloy_axe",
             () -> new ModAxeItem(ModToolTiers.ALLOY, 9, 1, new Item.Properties(), 3, 1));
+
     public static final RegistryObject<Item> ALLOY_PICKAXE = ITEMS.register("alloy_pickaxe",
             () -> new ModPickaxeItem(ModToolTiers.ALLOY, 2, 1, new Item.Properties(), 3, 0, 0, 0));
+
     public static final RegistryObject<Item> ALLOY_SHOVEL = ITEMS.register("alloy_shovel",
-            () -> new ShovelItem(ModToolTiers.ALLOY, 0, 0, new Item.Properties()));
+            () -> new ModShovelItem(ModToolTiers.ALLOY, 0, 0, new Item.Properties(), 3, 0, 2));
+
     public static final RegistryObject<Item> ALLOY_HOE = ITEMS.register("alloy_hoe",
             () -> new HoeItem(ModToolTiers.ALLOY, 0, 0f, new Item.Properties()));
 
@@ -652,77 +656,80 @@ public class ModItems {
         () -> new MultiblockBlockItem(ModBlocks.LARGE_VEHICLE_DOOR.get(), new Item.Properties()));
 
 
-    //штампы для пресса
-
     public static final RegistryObject<Item> STAMP_STONE_FLAT = ITEMS.register("stamp_stone_flat",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 32));
     public static final RegistryObject<Item> STAMP_STONE_PLATE = ITEMS.register("stamp_stone_plate",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 32));
     public static final RegistryObject<Item> STAMP_STONE_WIRE = ITEMS.register("stamp_stone_wire",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 32));
     public static final RegistryObject<Item> STAMP_STONE_CIRCUIT = ITEMS.register("stamp_stone_circuit",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 32));
 
+    // Железные штампы (48 использований)
     public static final RegistryObject<Item> STAMP_IRON_FLAT = ITEMS.register("stamp_iron_flat",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 48));
     public static final RegistryObject<Item> STAMP_IRON_PLATE = ITEMS.register("stamp_iron_plate",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 48));
     public static final RegistryObject<Item> STAMP_IRON_WIRE = ITEMS.register("stamp_iron_wire",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 48));
     public static final RegistryObject<Item> STAMP_IRON_CIRCUIT = ITEMS.register("stamp_iron_circuit",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 48));
     public static final RegistryObject<Item> STAMP_IRON_9 = ITEMS.register("stamp_iron_9",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 48));
     public static final RegistryObject<Item> STAMP_IRON_44 = ITEMS.register("stamp_iron_44",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 48));
     public static final RegistryObject<Item> STAMP_IRON_50 = ITEMS.register("stamp_iron_50",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 48));
     public static final RegistryObject<Item> STAMP_IRON_357 = ITEMS.register("stamp_iron_357",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 48));
 
+    // Стальные штампы (64 использования)
     public static final RegistryObject<Item> STAMP_STEEL_FLAT = ITEMS.register("stamp_steel_flat",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 64));
     public static final RegistryObject<Item> STAMP_STEEL_PLATE = ITEMS.register("stamp_steel_plate",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 64));
     public static final RegistryObject<Item> STAMP_STEEL_WIRE = ITEMS.register("stamp_steel_wire",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 64));
     public static final RegistryObject<Item> STAMP_STEEL_CIRCUIT = ITEMS.register("stamp_steel_circuit",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 64));
 
+    // Титановые штампы (80 использований)
     public static final RegistryObject<Item> STAMP_TITANIUM_FLAT = ITEMS.register("stamp_titanium_flat",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 80));
     public static final RegistryObject<Item> STAMP_TITANIUM_PLATE = ITEMS.register("stamp_titanium_plate",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 80));
     public static final RegistryObject<Item> STAMP_TITANIUM_WIRE = ITEMS.register("stamp_titanium_wire",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 80));
     public static final RegistryObject<Item> STAMP_TITANIUM_CIRCUIT = ITEMS.register("stamp_titanium_circuit",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 80));
 
+    // Обсидиановые штампы (96 использований)
     public static final RegistryObject<Item> STAMP_OBSIDIAN_FLAT = ITEMS.register("stamp_obsidian_flat",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 96));
     public static final RegistryObject<Item> STAMP_OBSIDIAN_PLATE = ITEMS.register("stamp_obsidian_plate",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 96));
     public static final RegistryObject<Item> STAMP_OBSIDIAN_WIRE = ITEMS.register("stamp_obsidian_wire",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 96));
     public static final RegistryObject<Item> STAMP_OBSIDIAN_CIRCUIT = ITEMS.register("stamp_obsidian_circuit",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties(), 96));
 
+    // Desh штампы (бесконечная прочность)
     public static final RegistryObject<Item> STAMP_DESH_FLAT = ITEMS.register("stamp_desh_flat",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties()));
     public static final RegistryObject<Item> STAMP_DESH_PLATE = ITEMS.register("stamp_desh_plate",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties()));
     public static final RegistryObject<Item> STAMP_DESH_WIRE = ITEMS.register("stamp_desh_wire",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties()));
     public static final RegistryObject<Item> STAMP_DESH_CIRCUIT = ITEMS.register("stamp_desh_circuit",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties()));
     public static final RegistryObject<Item> STAMP_DESH_9 = ITEMS.register("stamp_desh_9",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties()));
     public static final RegistryObject<Item> STAMP_DESH_44 = ITEMS.register("stamp_desh_44",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties()));
     public static final RegistryObject<Item> STAMP_DESH_50 = ITEMS.register("stamp_desh_50",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties()));
     public static final RegistryObject<Item> STAMP_DESH_357 = ITEMS.register("stamp_desh_357",
-            () -> new Item(new Item.Properties()));
+            () -> new ItemStamp(new Item.Properties()));
 
 
     public static final RegistryObject<Item> WIRE_RED_COPPER = ITEMS.register("wire_red_copper",

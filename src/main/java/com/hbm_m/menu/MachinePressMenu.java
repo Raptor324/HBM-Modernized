@@ -2,6 +2,7 @@ package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.MachinePressBlockEntity;
+import com.hbm_m.item.ItemStamp;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.network.FriendlyByteBuf;
@@ -180,6 +181,11 @@ public class MachinePressMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
+            // Проверяем, является ли предмет штампом через класс
+            if (stack.getItem() instanceof ItemStamp) {
+                return true;
+            }
+            // Оставляем старую проверку для совместимости
             return stack.getItem().toString().contains("stamp");
         }
     }
