@@ -433,6 +433,8 @@ public class MainRegistry {
             event.accept(ModBlocks.FLUORITE_ORE);
             event.accept(ModBlocks.LEAD_ORE);
             event.accept(ModBlocks.LEAD_ORE_DEEPSLATE);
+            event.accept(ModBlocks.COBALT_ORE_DEEPSLATE);
+            event.accept(ModBlocks.CINNABAR_ORE_DEEPSLATE);
             event.accept(ModBlocks.CINNABAR_ORE);
             event.accept(ModItems.ALUMINUM_RAW);
             event.accept(ModItems.BERYLLIUM_RAW);

@@ -58,6 +58,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         stairsBlock(((StairBlock) ModBlocks.CONCRETE_CRACKED.get()), blockTexture(ModBlocks.CONCRETE_CRACKED.get()));
         slabBlock(((SlabBlock) ModBlocks.CONCRETE_SLAB.get()), blockTexture(ModBlocks.CONCRETE_CRACKED_SLAB.get()), blockTexture(ModBlocks.CONCRETE_CRACKED.get()));
 
+        blockWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
+        blockWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);
+
         blockWithItem(ModBlocks.CONCRETE_FAN);
         blockWithItem(ModBlocks.CONCRETE_MARKED);
         blockWithItem(ModBlocks.CONCRETE_VENT);
