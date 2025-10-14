@@ -16,7 +16,6 @@
 
 # <img src="https://cdn-icons-png.flaticon.com/128/5968/5968756.png" height=28 /> <a href="https://discord.gg/kYW4JBtUDn">Discord</a> | <img src="https://cdn2.steamgriddb.com/icon/46bbc4a56de136ad319e59e37ef55644/32/256x256.png" height=30 /> <a href="https://modrinth.com/mod/hbms-nuclear-tech-modernized">Modrinth</a> | <img src="https://cdn2.steamgriddb.com/logo/946b656620286beea9d58a29d1587d10.png" height=23 /> <a href="https://www.curseforge.com/minecraft/mc-mods/hbms-nuclear-tech-modernized">CurseForge</a> | <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/VK_Compact_Logo_%282021-present%29.svg/1200px-VK_Compact_Logo_%282021-present%29.svg.png" height=23 /> <a href="https://vk.com/hbm_modernized">VK</a>
 </div>
----
 
 > [!WARNING]
 > **Мод находится на стадии пре-альфа.**  
