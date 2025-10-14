@@ -54,7 +54,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         resourceBlockWithItem(ModBlocks.CRATE_METAL);
         resourceBlockWithItem(ModBlocks.CRATE_WEAPON);
 
-
+        blockWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
+        blockWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);
         blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
         blockWithItem(ModBlocks.REINFORCED_GLASS);
 
