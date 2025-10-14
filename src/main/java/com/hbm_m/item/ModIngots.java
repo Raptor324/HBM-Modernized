@@ -477,7 +477,7 @@ public enum ModIngots {
             "en_us", "Tetraneutronium Ingot"),
 
     CFT("cft",
-            "ru_ru", "слиток CFT",
+            "ru_ru", "Слиток CFT",
             "en_us", "CFT Ingot"),
 
     CDALLOY("cdalloy",
@@ -485,7 +485,7 @@ public enum ModIngots {
             "en_us", "CDalloy Ingot"),
 
     BSCCO("bscco",
-            "ru_ru", "слиток BSCCO",
+            "ru_ru", "Слиток BSCCO",
             "en_us", "BSCCO Ingot"),
 
     BESKAR_DOUBLE("beskar_double",

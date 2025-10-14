@@ -56,14 +56,14 @@ public class ModAxeItem extends AxeItem {
         super.appendHoverText(stack, level, tooltip, flag);
 
         // Заголовок списка способностей
-        tooltip.add(Component.translatable("tooltip.hbm_m.axe.abilities").withStyle(ChatFormatting.BLUE));
+        tooltip.add(Component.translatable("tooltip.hbm_m.abilities").withStyle(ChatFormatting.BLUE));
 
         // Vein Miner
         if (veinMinerLevel > 0) {
             boolean isActive = isVeinMinerEnabled(stack);
             ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
             tooltip.add(Component.literal("  ")
-                    .append(Component.translatable("tooltip.hbm_m.axe.vein_miner", veinMinerLevel)
+                    .append(Component.translatable("tooltip.hbm_m.vein_miner", veinMinerLevel)
                             .withStyle(color)));
         }
 
@@ -72,14 +72,14 @@ public class ModAxeItem extends AxeItem {
             boolean isActive = isSilkTouchEnabled(stack);
             ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
             tooltip.add(Component.literal("  ")
-                    .append(Component.translatable("tooltip.hbm_m.axe.silk_touch")
+                    .append(Component.translatable("tooltip.hbm_m.silk_touch")
                             .withStyle(color)));
         }
 
         // Инструкции по использованию
         tooltip.add(Component.literal(""));
-        tooltip.add(Component.translatable("tooltip.hbm_m.axe.right_click").withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.hbm_m.axe.shift_right_click").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.right_click").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.shift_right_click").withStyle(ChatFormatting.GRAY));
     }
 
     @Override
@@ -133,7 +133,7 @@ public class ModAxeItem extends AxeItem {
         removeAllEnchantments(stack);
         playToggleSound(player, false);
         player.displayClientMessage(
-                Component.translatable("message.hbm_m.axe.disabled").withStyle(ChatFormatting.RED),
+                Component.translatable("message.hbm_m.disabled").withStyle(ChatFormatting.RED),
                 true
         );
     }
@@ -163,7 +163,7 @@ public class ModAxeItem extends AxeItem {
         playToggleSound(player, enable);
         player.displayClientMessage(
                 Component.translatable(
-                        enable ? "message.hbm_m.axe.vein_miner.enabled" : "message.hbm_m.axe.vein_miner.disabled",
+                        enable ? "message.hbm_m.vein_miner.enabled" : "message.hbm_m.vein_miner.disabled",
                         veinMinerLevel
                 ).withStyle(enable ? ChatFormatting.YELLOW : ChatFormatting.RED),
                 true
@@ -182,7 +182,7 @@ public class ModAxeItem extends AxeItem {
         playToggleSound(player, enable);
         player.displayClientMessage(
                 Component.translatable(
-                        enable ? "message.hbm_m.axe.silk_touch.enabled" : "message.hbm_m.axe.silk_touch.disabled"
+                        enable ? "message.hbm_m.silk_touch.enabled" : "message.hbm_m.silk_touch.disabled"
                 ).withStyle(enable ? ChatFormatting.YELLOW : ChatFormatting.RED),
                 true
         );

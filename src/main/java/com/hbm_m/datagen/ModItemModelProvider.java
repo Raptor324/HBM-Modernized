@@ -41,6 +41,14 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent("large_vehicle_door", 
             modLoc("block/large_vehicle_door"));
 
+        // Door items (flat icons like vanilla doors)
+        withExistingParent(ModBlocks.METAL_DOOR.getId().getPath(), "item/generated")
+            .texture("layer0", modLoc("item/" + ModBlocks.METAL_DOOR.getId().getPath()));
+        withExistingParent(ModBlocks.DOOR_BUNKER.getId().getPath(), "item/generated")
+            .texture("layer0", modLoc("item/" + ModBlocks.DOOR_BUNKER.getId().getPath()));
+        withExistingParent(ModBlocks.DOOR_OFFICE.getId().getPath(), "item/generated")
+            .texture("layer0", modLoc("item/" + ModBlocks.DOOR_OFFICE.getId().getPath()));
+
         // РЕГИСТРАЦИЯ МОДЕЛЕЙ ДЛЯ УНИКАЛЬНЫХ ПРЕДМЕТОВ 
         // Для предметов, зарегистрированных вручную, мы также можем генерировать модели.
         simpleItem(ModItems.ALLOY_SWORD);

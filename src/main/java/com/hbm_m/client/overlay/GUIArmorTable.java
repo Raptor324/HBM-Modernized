@@ -70,6 +70,7 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
      */
     @Override
     public void render(@Nonnull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+        renderBackground(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         // Отдельно вызываем рендер наших кастомных подсказок, чтобы они были поверх всего.
         // Переопределяем рендер подсказок, чтобы они были поверх всего.

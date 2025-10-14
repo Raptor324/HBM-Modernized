@@ -170,6 +170,14 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.STAMP_DESH_PLATE.get(), "Деш штамп пластины");
                 add(ModItems.STAMP_DESH_WIRE.get(), "Деш штамп провода");
                 add(ModItems.STAMP_DESH_CIRCUIT.get(), "Деш штамп чипа");
+                add(ModItems.STAMP_DESH_9.get(), "Деш штамп 9мм");
+                add(ModItems.STAMP_DESH_44.get(), "Деш штамп .44 Magnum");
+                add(ModItems.STAMP_DESH_50.get(), "Деш штамп .50 BMG");
+                add(ModItems.STAMP_DESH_357.get(), "Деш штамп .357 Magnum");
+                add(ModItems.STAMP_IRON_357.get(), "Железный штамп .357 Magnum");
+                add(ModItems.STAMP_IRON_44.get(), "Железный штамп .44 Magnum");
+                add(ModItems.STAMP_IRON_50.get(), "Железный штамп .50 BMG");
+                add(ModItems.STAMP_IRON_9.get(), "Железный штамп 9мм");
 
 
 
@@ -302,41 +310,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.lignite", "Бурый уголь");
                 add("item.hbm_m.fluorite", "Флюорит");
                 add("item.hbm_m.fireclay_ball", "Комок огнеупорной глины");
-
-
-                add("tooltip.hbm_m.pickaxe.abilities", "Способности:");
-                add("tooltip.hbm_m.pickaxe.vein_miner", "Жилковый майнер (%s)");
-                add("tooltip.hbm_m.pickaxe.aoe", "Зона действия %s x %s x %s");
-                add("tooltip.hbm_m.pickaxe.silk_touch", "Шёлковое касание");
-                add("tooltip.hbm_m.pickaxe.fortune", "Удача (%s)");
-                add("tooltip.hbm_m.pickaxe.right_click", "ПКМ - переключить способность");
-                add("tooltip.hbm_m.pickaxe.shift_right_click", "Shift + ПКМ - выключить всё");
-
-                add("message.hbm_m.pickaxe.vein_miner.enabled", "Жилковый майнер %s активирован!");
-                add("message.hbm_m.pickaxe.vein_miner.disabled", "Жилковый майнер %s деактивирован!");
-                add("message.hbm_m.pickaxe.aoe.enabled", "Зона действия %s x %s x %s активирована!");
-                add("message.hbm_m.pickaxe.aoe.disabled", "Зона действия %s x %s x %s деактивирована!");
-                add("message.hbm_m.pickaxe.silk_touch.enabled", "Шёлковое касание активировано!");
-                add("message.hbm_m.pickaxe.silk_touch.disabled", "Шёлковое касание деактивировано!");
-                add("message.hbm_m.pickaxe.fortune.enabled", "Удача %s активирована!");
-                add("message.hbm_m.pickaxe.fortune.disabled", "Удача %s деактивирована!");
-                add("message.hbm_m.pickaxe.disabled", "Все способности выключены!");
-
-            {
-                add("tooltip.hbm_m.axe.abilities", "Способности:");
-                add("tooltip.hbm_m.axe.vein_miner", "Жилковый майнер (%s)");
-                add("tooltip.hbm_m.axe.silk_touch", "Шёлковое касание");
-                add("tooltip.hbm_m.axe.right_click", "ПКМ - переключить способность");
-                add("tooltip.hbm_m.axe.shift_right_click", "Shift + ПКМ - выключить всё");
-
-                add("message.hbm_m.axe.vein_miner.enabled", "Жилковый майнер %s активирован!");
-                add("message.hbm_m.axe.vein_miner.disabled", "Жилковый майнер %s деактивирован!");
-                add("message.hbm_m.axe.silk_touch.enabled", "Шёлковое касание активировано!");
-                add("message.hbm_m.axe.silk_touch.disabled", "Шёлковое касание деактивировано!");
-                add("message.hbm_m.axe.disabled", "Все способности выключены!");
-            }
-
-
+            
                 add("item.hbm_m.blueprint_folder", "Папка шаблонов");
                 add("item.hbm_m.blueprint_folder.named", "Папка шаблонов машин");
                 add("item.hbm_m.blueprint_folder.empty", "Пустая папка");
@@ -360,17 +334,17 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.rad_protection.value_short", "%s сопр. радиации.");
 
                 // БЛОКИ
-                add("block.hbm_m.door_office", "Офисная Дверь");
-                add("block.hbm_m.door_bunker", "Бункерная Дверь");
-                add("block.hbm_m.metal_door", "Металлическая Дверь");
-                add("block.hbm_m.demon_lamp", "Милая Лампа (WIP)");
-                add("block.hbm_m.explosive_charge", "Заряд Взрывчатки (WIP)");
-                add("block.hbm_m.det_miner", "Шахтёрский Заряд");
-                add("block.hbm_m.concrete_vent", "Вентиляция В Бетоне");
-                add("block.hbm_m.concrete_fan", "Вентилятор В Бетоне");
-                add("block.hbm_m.concrete_marked", "Помеченный Бетон");
-                add("block.hbm_m.concrete_cracked", "Потрескавшийся Бетон");
-                add("block.hbm_m.concrete_mossy", "Замшелый Бетон");
+                add("block.hbm_m.door_office", "Офисная дверь");
+                add("block.hbm_m.door_bunker", "Бункерная дверь");
+                add("block.hbm_m.metal_door", "Металлическая дверь");
+                add("block.hbm_m.demon_lamp", "Милая лампа (WIP)");
+                add("block.hbm_m.explosive_charge", "Заряд взрывчатки (WIP)");
+                add("block.hbm_m.det_miner", "Шахтёрский заряд");
+                add("block.hbm_m.concrete_vent", "Вентиляция в бетоне");
+                add("block.hbm_m.concrete_fan", "Вентилятор в бетоне");
+                add("block.hbm_m.concrete_marked", "Помеченный бетон");
+                add("block.hbm_m.concrete_cracked", "Потрескавшийся бетон");
+                add("block.hbm_m.concrete_mossy", "Замшелый бетон");
                 add("block.hbm_m.concrete", "Бетон");
                 add("block.hbm_m.reinforced_glass", "Усиленное стекло");
                 add("block.hbm_m.crate", "Ящик");
@@ -398,6 +372,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_hazard", "Бетон ''Выбор строителя'' - Полоса опасности");
                 add("block.hbm_m.concrete_hazard_slab", "Бетонная плита ''Выбор строителя'' - Полоса опасности");
                 add("block.hbm_m.concrete_hazard_stairs", "Бетонные ступеньки ''Выбор строителя'' - Полоса опасности");
+                add("block.hbm_m.concrete_stairs", "Бетонные ступеньки");
+                add("block.hbm_m.concrete_slab", "Бетонная плита");
+                add("block.hbm_m.concrete_cracked_slab", "Плита из треснутого бетона");
+                add("block.hbm_m.concrete_cracked_stairs", "Ступени из треснутого бетона");
+                add("block.hbm_m.concrete_mossy_slab", "Плита из замшелого бетона");
+                add("block.hbm_m.concrete_mossy_stairs", "Ступени из замшелого бетона");
+
                 add("block.hbm_m.large_vehicle_door", "Дверь для крупногабаритного транспорта");
                 add("block.hbm_m.strawberry_bush", "Куст клубники");
                 add("block.hbm_m.strawberry", "Клубника");
@@ -507,6 +488,24 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.meter.geiger_counter.name", "СЧЁТЧИК ГЕЙГЕРА");
                 add("item.hbm_m.meter.dosimeter.name", "ДОЗИМЕТР");
                 add("item.hbm_m.meter.title_format", "%s");
+
+                add("tooltip.hbm_m.abilities", "Способности:");
+                add("tooltip.hbm_m.vein_miner", "Жилковый майнер (%s)");
+                add("tooltip.hbm_m.aoe", "Зона действия %s x %s x %s");
+                add("tooltip.hbm_m.silk_touch", "Шёлковое касание");
+                add("tooltip.hbm_m.fortune", "Удача (%s)");
+                add("tooltip.hbm_m.right_click", "ПКМ - переключить способность");
+                add("tooltip.hbm_m.shift_right_click", "Shift + ПКМ - выключить всё");
+
+                add("message.hbm_m.vein_miner.enabled", "Жилковый майнер %s активирован!");
+                add("message.hbm_m.vein_miner.disabled", "Жилковый майнер %s деактивирован!");
+                add("message.hbm_m.aoe.enabled", "Зона действия %s x %s x %s активирована!");
+                add("message.hbm_m.aoe.disabled", "Зона действия %s x %s x %s деактивирована!");
+                add("message.hbm_m.silk_touch.enabled", "Шёлковое касание активировано!");
+                add("message.hbm_m.silk_touch.disabled", "Шёлковое касание деактивировано!");
+                add("message.hbm_m.fortune.enabled", "Удача %s активирована!");
+                add("message.hbm_m.fortune.disabled", "Удача %s деактивирована!");
+                add("message.hbm_m.disabled", "Все способности выключены!");
 
                 add("item.hbm_m.meter.chunk_rads", "§eТекущий уровень радиации в чанке: %s\n");
                 add("item.hbm_m.meter.env_rads", "§eОбщее радиационное заражение среды: %s");
@@ -789,6 +788,14 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.STAMP_DESH_PLATE.get(), "Desh Plate Stamp");
                 add(ModItems.STAMP_DESH_WIRE.get(), "Desh Wire Stamp");
                 add(ModItems.STAMP_DESH_CIRCUIT.get(), "Desh Circuit Stamp");
+                add(ModItems.STAMP_DESH_9.get(), "Desh 9mm Stamp");
+                add(ModItems.STAMP_DESH_44.get(), "Desh .44 Magnum Stamp");
+                add(ModItems.STAMP_DESH_50.get(), "Desh .50 BMG Stamp");
+                add(ModItems.STAMP_DESH_357.get(), "Desh .357 Magnum Stamp");
+                add(ModItems.STAMP_IRON_357.get(), "Iron .357 Magnum Stamp");
+                add(ModItems.STAMP_IRON_44.get(), "Iron .44 Magnum Stamp");
+                add(ModItems.STAMP_IRON_50.get(), "Iron .50 BMG Stamp");
+                add(ModItems.STAMP_IRON_9.get(), "Iron 9mm Stamp");
 
 
                 add(ModItems.QUANTUM_CHIP.get(), "Quantum Chip");
@@ -992,6 +999,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_cracked", "Cracked Concrete");
                 add("block.hbm_m.concrete_mossy", "Mossy Concrete");
                 add("block.hbm_m.concrete", "Concrete");
+                add("block.hbm_m.concrete_cracked_stairs", "Concrete Cracked Stairs");
+                add("block.hbm_m.concrete_cracked_slab", "Concrete Cracked Slab");
+                add("block.hbm_m.concrete_mossy_stairs", "Concrete Mossy Stairs");
+                add("block.hbm_m.concrete_mossy_slab", "Concrete Mossy Slab");
                 add("block.hbm_m.brick_concrete", "Concrete Bricks");
                 add("block.hbm_m.brick_concrete_slab", "Concrete Bricks Slab");
                 add("block.hbm_m.brick_concrete_stairs", "Concrete Bricks Stairs");
@@ -1009,6 +1020,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_hazard", "Concrete Block with Hazard line");
                 add("block.hbm_m.concrete_hazard_slab", "Concrete Slab with Hazard line");
                 add("block.hbm_m.concrete_hazard_stairs", "Concrete Stairs with Hazard line");
+                add("block.hbm_m.concrete_stairs", "Concrete Stairs");
+                add("block.hbm_m.concrete_slab", "Concrete Slab");
                 add("block.hbm_m.large_vehicle_door", "Large Vehicle Door");
                 add("block.hbm_m.strawberry_bush", "Strawberry Bush");
 
@@ -1093,6 +1106,24 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("hazard.hbm_m.pyrophoric", "[Pyrophoric / Hot]");
                 add("hazard.hbm_m.explosion_strength.format", " Explosion Strength - %s");
                 add("hazard.hbm_m.stack", "Stack: %s");
+
+                add("tooltip.hbm_m.abilities", "Abilities:");
+                add("tooltip.hbm_m.vein_miner", "Vein Miner (%s)");
+                add("tooltip.hbm_m.aoe", "AOE (%s x %s x %s)");
+                add("tooltip.hbm_m.silk_touch", "Silk Touch");
+                add("tooltip.hbm_m.fortune", "Fortune (%s)");
+                add("tooltip.hbm_m.right_click", "Right click - toggle ability");
+                add("tooltip.hbm_m.shift_right_click", "Shift + Right click - disable all");
+
+                add("message.hbm_m.vein_miner.enabled", "Vein Miner %s enabled!");
+                add("message.hbm_m.vein_miner.disabled", "Vein Miner %s disabled!");
+                add("message.hbm_m.aoe.enabled", "AOE %s x %s x %s enabled!");
+                add("message.hbm_m.aoe.disabled", "AOE %s x %s x %s disabled!");
+                add("message.hbm_m.silk_touch.enabled", "Silk Touch enabled!");
+                add("message.hbm_m.silk_touch.disabled", "Silk Touch disabled!");
+                add("message.hbm_m.fortune.enabled", "Fortune %s enabled!");
+                add("message.hbm_m.fortune.disabled", "Fortune %s disabled!");
+                add("message.hbm_m.disabled", "All abilities disabled!");
 
                 add("item.hbm_m.meter.geiger_counter.name", "GEIGER COUNTER");
                 add("item.hbm_m.meter.dosimeter.name", "DOSIMETER");

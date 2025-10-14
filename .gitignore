@@ -24,7 +24,7 @@ bin/
 
 # Visual Studio Code
 .vscode/
-
+.cursor
 # ================= Generated Files =================
 /src/generated/
 

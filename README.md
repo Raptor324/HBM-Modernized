@@ -1,6 +1,8 @@
-# Hbm's Nuclear Tech Mod Modernized
 
-## ENG Version 🇺🇸 | [RU Версия 🇷🇺](/README.ru.md)
+
+![HBM M Banner](docs/images/20251013_170609.png)
+
+# ENG Version 🇺🇸 | [RU Версия 🇷🇺](/README.ru.md)
 
 **Status:** Pre-Alpha \
 **Minecraft Version:** 1.20.1\
@@ -8,31 +10,33 @@
 
 ---
 
-## ⚠️ Warning
-
+> [!WARNING]
 > **This mod is currently in early alpha stage.**
 > **Do NOT use it in worlds you care about!**
 > There may be bugs, crashes, and potential incompatibilities with other mods.
 > Please report any issues via the [GitHub Issues](../../issues) page.
 
 -----
+## Download
+### 🟢 [Modrinth](https://modrinth.com/mod/hbms-nuclear-tech-modernized) | 🔨 [Curseforge](https://www.curseforge.com/minecraft/mc-mods/hbms-nuclear-tech-modernized)
+
 
 ## About
-This is a modernized rewrite of the classic Hbm's Nuclear Tech Mod, aiming to bring nuclear technology, radiation, and advanced weaponry to Minecraft 1.20.1+ with a fresh codebase and improved architecture. Work in progress!
+This is a modernized rewrite of the classic HBM's Nuclear Tech Mod, aiming to bring nuclear technology, radiation, and advanced weaponry to Minecraft 1.20.1+ with a fresh codebase and improved architecture. Work in progress!
 
 ![HBM_M Preview](docs/images/2025-07-21_04.46.43.png)
 
-### 🟢 [Modrinth](https://modrinth.com/mod/hbms-nuclear-tech-modernized) | 🔨 [Curseforge](https://www.curseforge.com/minecraft/mc-mods/hbms-nuclear-tech-modernized)
+
 
 ## Dependency
 [Cloth Config API v1.11.136](https://www.curseforge.com/minecraft/mc-mods/cloth-config/files?version=1.20)
 
-![Cloth Config Required](https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSS8bhleCTOb7V1wJ3mq33rA1gjUdWOPxBbVxEcHzeMOCeh3PGC_DAWvep3eIWxsavaNFI&usqp=CAU)
+![Cloth Config Required](docs/images/20251013_224324.png)
 
 **Note:**
-I'm new to Minecraft modding, so please don't judge too harshly!
+Our team is new to Minecraft modding, so please don't judge too harshly!
 Constructive feedback and bug reports are very welcome.
-All crafts are currently missing, not playable in survival mode.
+Some crafts are currently missing, not playable in survival mode.
 
 -----
 
@@ -130,7 +134,7 @@ If you want to help, feel free to fork the repository or submit pull requests.
 ## Credits
   - Original Hbm's Nuclear Tech Mod created by **The Bobcat**.
   - The Forge team and Mojang for their work on Minecraft.
-  - Modernization and rewrite by [Raptor324].
+  - Modernization and rewrite by **[Raptor324, Hyperio & Razchexlitiel]**.
 
 -----
 
