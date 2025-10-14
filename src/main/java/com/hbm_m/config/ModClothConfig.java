@@ -186,6 +186,7 @@ public class ModClothConfig implements ConfigData {
 
     @Category("debug")
     @Gui.Tooltip
+    @BoundedDiscrete(min = 1, max = 20)
     public int debugRenderDistance = 4;
 
     @Category("debug")
