@@ -2,6 +2,8 @@ package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.MachinePressBlockEntity;
+import com.hbm_m.item.ItemStamp;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -163,7 +165,12 @@ public class MachinePressMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            return stack.getItem() == Items.COAL;
+            net.minecraft.world.item.Item item = stack.getItem();
+            // Разрешаем кастомное топливо
+            if (item == ModItems.LIGNITE.get()) return true;
+
+            // Используем встроенную систему Forge для определения ванильного топлива
+            return net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null) > 0;
         }
     }
 
@@ -174,6 +181,11 @@ public class MachinePressMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
+            // Проверяем, является ли предмет штампом через класс
+            if (stack.getItem() instanceof ItemStamp) {
+                return true;
+            }
+            // Оставляем старую проверку для совместимости
             return stack.getItem().toString().contains("stamp");
         }
     }

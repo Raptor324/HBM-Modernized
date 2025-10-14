@@ -18,6 +18,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -149,6 +150,16 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
         Containers.dropContents(this.level, this.worldPosition, inventory);
     }
 
+    public int getBurnTime(Item item) {
+        ItemStack stack = new ItemStack(item);
+        // Получаем ванильное время горения в тиках
+        int vanillaBurnTime = net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null);
+
+        if (vanillaBurnTime <= 0) return 0;
+        // Конвертируем тики в секунды (делим на 20)
+        return (vanillaBurnTime / 20);
+    }
+
     @Override
     public Component getDisplayName() {
         return Component.translatable("block.hbm_m.press");
@@ -191,13 +202,15 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
 
         boolean needsSync = false;
 
-        // Добавление топлива (как в 1.7.10)
-        if(itemHandler.getStackInSlot(FUEL_SLOT).getItem() == Items.COAL && 
-           burnTime < FUEL_PER_OPERATION) {
-            ItemStack fuelStack = itemHandler.getStackInSlot(FUEL_SLOT);
-            burnTime += 1600; // значение угля
-            fuelStack.shrink(1);
-            needsSync = true;
+        // Добавление топлива (как у генератора)
+        ItemStack fuelStack = itemHandler.getStackInSlot(FUEL_SLOT);
+        if(!fuelStack.isEmpty() && burnTime < FUEL_PER_OPERATION) {
+            int burnTime = getBurnTime(fuelStack.getItem());
+            if(burnTime > 0) {
+                this.burnTime += burnTime * 20; // Конвертируем секунды обратно в тики для хранения
+                fuelStack.shrink(1);
+                needsSync = true;
+            }
         }
 
         boolean canProcess = canProcess();
@@ -222,7 +235,7 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
         // Логика работы пресса (как в 1.7.10)
         if(delay <= 0) {
             int stampSpeed = speed * PROGRESS_AT_MAX / MAX_SPEED;
-            
+
             if(isRetracting) {
                 press -= stampSpeed;
                 if(press <= 0) {
@@ -235,15 +248,15 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
                 if(press >= MAX_PRESS) {
                     // Завершение операции
                     craftItem();
-                    
+
                     isRetracting = true;
                     delay = 5;
-                    
+
                     // ВАЖНО: вычитаем топливо только при успешной операции
                     if(burnTime >= FUEL_PER_OPERATION) {
                         burnTime -= FUEL_PER_OPERATION;
                     }
-                    
+
                     needsSync = true;
                 }
             } else if(press > 0) {
@@ -266,10 +279,10 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
         Optional<PressRecipe> recipe = getCurrentRecipe();
         if (recipe.isPresent()) {
             ItemStack output = recipe.get().getResultItem(getLevel().registryAccess());
-            
+
             // Вычитаем материал
             itemHandler.extractItem(MATERIAL_SLOT, 1, false);
-            
+
             // Добавляем результат
             ItemStack outputSlot = itemHandler.getStackInSlot(OUTPUT_SLOT);
             if(outputSlot.isEmpty()) {
@@ -277,38 +290,47 @@ public class MachinePressBlockEntity extends BlockEntity implements MenuProvider
             } else {
                 outputSlot.grow(output.getCount());
             }
-            
-            // Изнашиваем штамп если он изнашиваемый
+
+            // Изнашиваем штамп (если он изнашиваемый)
             ItemStack stamp = itemHandler.getStackInSlot(STAMP_SLOT);
-            if(stamp.getMaxDamage() != 0) {
+
+            // Проверяем, что штамп не бесконечный (Desh штампы)
+            if(stamp.isDamageableItem()) {
                 stamp.setDamageValue(stamp.getDamageValue() + 1);
+
+                // Если штамп сломался - удаляем его
                 if(stamp.getDamageValue() >= stamp.getMaxDamage()) {
                     itemHandler.setStackInSlot(STAMP_SLOT, ItemStack.EMPTY);
+
+                    // Можно добавить звук ломающегося предмета
+                    level.playSound(null, worldPosition,
+                            net.minecraft.sounds.SoundEvents.ITEM_BREAK,
+                            SoundSource.BLOCKS, 1.5f, 0.8f);
                 }
             }
 
-            // Воспроизведение звука
-            level.playSound(null, worldPosition, ModSounds.PRESS_OPERATE.get(), 
-                          SoundSource.BLOCKS, 1.5f, 1.0f);
+            // Воспроизведение звука работы пресса
+            level.playSound(null, worldPosition, ModSounds.PRESS_OPERATE.get(),
+                    SoundSource.BLOCKS, 1.5f, 1.0f);
         }
     }
 
     private boolean canProcess() {
         if(burnTime < FUEL_PER_OPERATION) return false;
-        if(itemHandler.getStackInSlot(STAMP_SLOT).isEmpty() || 
-           itemHandler.getStackInSlot(MATERIAL_SLOT).isEmpty()) return false;
+        if(itemHandler.getStackInSlot(STAMP_SLOT).isEmpty() ||
+                itemHandler.getStackInSlot(MATERIAL_SLOT).isEmpty()) return false;
 
         Optional<PressRecipe> recipe = getCurrentRecipe();
         if(recipe.isEmpty()) return false;
 
         ItemStack result = recipe.get().getResultItem(getLevel().registryAccess());
         ItemStack outputSlot = itemHandler.getStackInSlot(OUTPUT_SLOT);
-        
+
         if(outputSlot.isEmpty()) return true;
-        
+
         return outputSlot.getCount() + result.getCount() <= outputSlot.getMaxStackSize() &&
-               outputSlot.is(result.getItem()) &&
-               outputSlot.getDamageValue() == result.getDamageValue();
+                outputSlot.is(result.getItem()) &&
+                outputSlot.getDamageValue() == result.getDamageValue();
     }
 
     private Optional<PressRecipe> getCurrentRecipe() {
