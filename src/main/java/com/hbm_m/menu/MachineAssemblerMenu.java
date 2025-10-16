@@ -102,6 +102,9 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
         return this.data.get(5);
     }
 
+    public MachineAssemblerBlockEntity getBlockEntity() {
+        return this.blockEntity;
+    }
 
     public int getProgressScaled(int width) {
         int progress = this.data.get(0);

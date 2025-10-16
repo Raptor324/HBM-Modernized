@@ -2,7 +2,7 @@ package com.hbm_m.client.model.render;
 
 import com.hbm_m.block.entity.DoorBlockEntity;
 import com.hbm_m.client.model.DoorBakedModel;
-import com.hbm_m.util.DoorDecl;
+import com.hbm_m.block.entity.DoorDecl;
 import com.hbm_m.util.LegacyAnimator;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -12,7 +12,6 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
-import net.minecraft.util.Mth;
 
 public class DoorRenderer implements BlockEntityRenderer<DoorBlockEntity> {
     
@@ -36,7 +35,6 @@ public class DoorRenderer implements BlockEntityRenderer<DoorBlockEntity> {
         LegacyAnimator animator = new LegacyAnimator(poseStack, bufferSource,
                 blockRenderer, packedLight, packedOverlay);
         
-        // ИСПРАВЛЕНО: используем правильный расчёт прогресса
         float openTicks = be.getOpenProgress(partialTick) * doorDecl.getOpenTime();
         
         animator.push();

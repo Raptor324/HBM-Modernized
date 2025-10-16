@@ -27,7 +27,6 @@ import com.hbm_m.client.ClientSoundManager;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import com.hbm_m.util.DoorDecl;
 
 import java.util.List;
 

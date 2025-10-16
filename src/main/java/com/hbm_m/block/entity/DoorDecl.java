@@ -1,4 +1,4 @@
-package com.hbm_m.util;
+package com.hbm_m.block.entity;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.BakedModel;
@@ -15,6 +15,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.util.LegacyAnimator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -134,7 +135,7 @@ public abstract class DoorDecl {
         }
 
         // Fallback: используем blockstate атлас
-        return new ResourceLocation("minecraft", "textures/atlas/blocks.png");
+        return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/atlas/blocks.png");
     }
 
     public ResourceLocation getTextureForPart(String partName) {
@@ -216,7 +217,7 @@ public abstract class DoorDecl {
     public static final DoorDecl LARGE_VEHICLE_DOOR = new DoorDecl() {
         @Override
         protected ResourceLocation getBlockId() {
-            return new ResourceLocation("hbm_m", "large_vehicle_door");
+            return ResourceLocation.fromNamespaceAndPath("hbm_m", "large_vehicle_door");
         }
         
         @Override

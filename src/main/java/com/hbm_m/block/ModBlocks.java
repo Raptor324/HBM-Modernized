@@ -1,7 +1,7 @@
 package com.hbm_m.block;
 
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.util.DoorDecl;
+import com.hbm_m.block.entity.DoorDecl;
 import com.hbm_m.item.ModItems;
 
 import net.minecraft.world.effect.MobEffects;
@@ -82,7 +82,7 @@ public class ModBlocks {
         () -> new UniversalMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
 
     public static final RegistryObject<Block> MACHINE_BATTERY = registerBlockWithoutItem("machine_battery",
-        () -> new MachineBatteryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion()));
+        () -> new MachineBatteryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f)));
 
     // public static final RegistryObject<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
     //     () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -92,7 +92,7 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistryObject<Block> REINFORCED_GLASS = registerBlock("reinforced_glass",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+            () -> new GlassBlock(BlockBehaviour.Properties.copy(Blocks.GLASS).strength(4.0F, 12.0F)));
 
     public static final RegistryObject<Block> CRATE = registerBlock("crate",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.OAK_WOOD).strength(1.0f, 1.0f).requiresCorrectToolForDrops()));
@@ -182,34 +182,34 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistryObject<Block> BRICK_CONCRETE_BROKEN_STAIRS = registerBlock("brick_concrete_broken_stairs",
             () -> new StairBlock(() -> ModBlocks.BRICK_CONCRETE_BROKEN.get().defaultBlockState(),
-                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+                    BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
     public static final RegistryObject<Block> BRICK_CONCRETE_BROKEN_SLAB = registerBlock("brick_concrete_broken_slab",
-            () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+            () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
 
     public static final RegistryObject<Block> BRICK_CONCRETE_CRACKED = registerBlock("brick_concrete_cracked",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistryObject<Block> BRICK_CONCRETE_CRACKED_STAIRS = registerBlock("brick_concrete_cracked_stairs",
             () -> new StairBlock(() -> ModBlocks.BRICK_CONCRETE_CRACKED.get().defaultBlockState(),
-                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+                    BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
     public static final RegistryObject<Block> BRICK_CONCRETE_CRACKED_SLAB = registerBlock("brick_concrete_cracked_slab",
-            () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+            () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
 
     public static final RegistryObject<Block> BRICK_CONCRETE_MOSSY = registerBlock("brick_concrete_mossy",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistryObject<Block> BRICK_CONCRETE_MOSSY_STAIRS = registerBlock("brick_concrete_mossy_stairs",
             () -> new StairBlock(() -> ModBlocks.BRICK_CONCRETE_MOSSY.get().defaultBlockState(),
-                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+                    BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
     public static final RegistryObject<Block> BRICK_CONCRETE_MOSSY_SLAB = registerBlock("brick_concrete_mossy_slab",
-            () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+            () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
 
     public static final RegistryObject<Block> BRICK_CONCRETE_MARKED = registerBlock("brick_concrete_marked",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistryObject<Block> REINFORCED_STONE_STAIRS = registerBlock("reinforced_stone_stairs",
             () -> new StairBlock(() -> ModBlocks.REINFORCED_STONE.get().defaultBlockState(),
-                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+                    BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
     public static final RegistryObject<Block> REINFORCED_STONE_SLAB = registerBlock("reinforced_stone_slab",
-            () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
+            () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
 
     // -----------------------<РАСТЕНИЯ>-----------------------------
     public static final RegistryObject<Block> STRAWBERRY_BUSH = registerBlock("strawberry_bush",

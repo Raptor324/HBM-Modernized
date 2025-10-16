@@ -276,7 +276,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_ARMOR_HEV.get(), "Броневая пластина HEV");
                 add(ModItems.PLATE_ARMOR_LUNAR.get(), "Лунная броневая пластина");
                 add(ModItems.PLATE_ARMOR_TITANIUM.get(), "Титановая броневая пластина");
-                add(ModItems.PLATE_CAST.get(), "литая пластина");
+                add(ModItems.PLATE_CAST.get(), "Литая пластина");
                 add(ModItems.PLATE_CAST_ALT.get(), "Альтернативная литая пластина");
                 add(ModItems.PLATE_CAST_BISMUTH.get(), "Висмутовая литая пластина");
                 add(ModItems.PLATE_CAST_DARK.get(), "Тёмная литая пластина");
@@ -449,6 +449,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.machine_assembler", "Сборочная машина");
                 add("container.hbm_m.advanced_assembly_machine", "Сборочная машина");
                 add("container.hbm_m.wood_burner", "Дровяной генератор");
+                add("container.hbm_m.machine_battery", "Энергохранилище");
+                add("container.hbm_m.press", "Пресс");
 
                 add("gui.hbm_m.battery.priority.0", "Приоритет: Низкий");
                 add("gui.hbm_m.battery.priority.0.desc", "Низший приоритет. Опустошается в первую очередь, заполняется в последнюю");
@@ -1073,6 +1075,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.machine_assembler", "Assembly Machine");
                 add("container.hbm_m.wood_burner", "Wood Burner Generator");
                 add("container.hbm_m.advanced_assembly_machine", "Assembly Machine");
+                add("container.hbm_m.machine_battery", "Machine Battery");
+                add("container.hbm_m.press", "Press");
 
                 add("gui.hbm_m.battery.priority.0", "Priority: Low");
                 add("gui.hbm_m.battery.priority.0.desc", "Lowest priority. Will be drained first and filled last.");

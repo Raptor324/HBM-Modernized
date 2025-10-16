@@ -9,6 +9,7 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.*;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
+import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.RegistryObject;
 
@@ -57,7 +58,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
         blockWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);
         blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
-        blockWithItem(ModBlocks.REINFORCED_GLASS);
+
+        simpleBlockWithItem(ModBlocks.REINFORCED_GLASS.get(), 
+            models().cubeAll(ModBlocks.REINFORCED_GLASS.getId().getPath(), 
+                blockTexture(ModBlocks.REINFORCED_GLASS.get()))
+            .renderType("cutout"));
 
         doorBlockWithRenderType(((DoorBlock) ModBlocks.METAL_DOOR.get()), modLoc("block/metal_door_bottom"), modLoc("block/metal_door_top"), "cutout");
 
@@ -138,7 +143,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         stairsBlock((StairBlock) ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS.get(),
                 modLoc("block/brick_concrete_mossy"));
         simpleBlockItem(ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS.get(),
-                models().getExistingFile(modLoc("block/brick_concrete_mossy")));
+                models().getExistingFile(modLoc("block/brick_concrete_mossy_stairs")));
 
         stairsBlock((StairBlock) ModBlocks.CONCRETE_HAZARD_STAIRS.get(),
             modLoc("block/concrete_hazard"));
@@ -200,6 +205,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/brick_concrete_broken"));
         simpleBlockItem(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB.get(),
                 models().getExistingFile(modLoc("block/brick_concrete_broken_slab")));
+
+        simpleBlockWithItem(ModBlocks.SHREDDER.get(),
+                new ModelFile.UncheckedModelFile(modLoc("block/shredder")));
 
     }
 

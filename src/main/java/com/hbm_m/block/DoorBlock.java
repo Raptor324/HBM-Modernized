@@ -5,7 +5,7 @@ import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import com.hbm_m.util.DoorDecl;
+import com.hbm_m.block.entity.DoorDecl;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
