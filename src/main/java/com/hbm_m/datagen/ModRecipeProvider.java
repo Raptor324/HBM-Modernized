@@ -25,6 +25,11 @@ public class ModRecipeProvider extends RecipeProvider {
     protected void buildRecipes(@Nonnull Consumer<FinishedRecipe> pWriter) {
 
         // Рецепт для алмазного меча
+
+
+
+
+
         AssemblerRecipeBuilder.assemblerRecipe(
                 new ItemStack(Items.DIAMOND_SWORD), 100, 500)
                 .addIngredient(Items.DIAMOND, 2)

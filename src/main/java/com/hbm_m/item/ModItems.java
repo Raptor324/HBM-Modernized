@@ -375,6 +375,11 @@ public class ModItems {
             })
     );
 
+    public static final RegistryObject<Item> SCRAP = ITEMS.register("scrap",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BLADE_TEST = ITEMS.register("blade_test",
+            () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> NUGGET_SILICON = ITEMS.register("nugget_silicon",
             () -> new Item(new Item.Properties()));
