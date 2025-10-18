@@ -22,11 +22,9 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
@@ -39,7 +37,7 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
     private static final int ASH_SLOT = 1;
     
     // Энергия
-    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100_000, 1000, 1000);
+    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100_000, 1000);
     
     // Обертка для IEnergyStorage, которая запрещает приём энергии извне
     private final IEnergyStorage energyWrapper = new IEnergyStorage() {

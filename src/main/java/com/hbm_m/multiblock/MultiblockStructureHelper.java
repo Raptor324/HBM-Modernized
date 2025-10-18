@@ -93,17 +93,20 @@ public class MultiblockStructureHelper {
     public void placeStructure(Level level, BlockPos controllerPos, Direction facing, IMultiblockController controller) {
         if (level.isClientSide) return;
         
+        // Собираем все части СНАЧАЛА, обновления - ПОТОМ
         List<BlockPos> energyConnectorPositions = new ArrayList<>();
         
         for (Map.Entry<BlockPos, Supplier<BlockState>> entry : structureMap.entrySet()) {
             BlockPos relativePos = entry.getKey();
             if (relativePos.equals(BlockPos.ZERO)) continue;
+            
             BlockPos worldPos = getRotatedPos(controllerPos, relativePos, facing);
             BlockState partState = phantomBlockState.get().setValue(HorizontalDirectionalBlock.FACING, facing);
             
+            // Ставим блок с флагом 2 (не отправлять обновления соседям)
             level.setBlock(worldPos, partState, 2);
-            BlockEntity be = level.getBlockEntity(worldPos);
             
+            BlockEntity be = level.getBlockEntity(worldPos);
             if (be instanceof IMultiblockPart partBe) {
                 partBe.setControllerPos(controllerPos);
                 PartRole role = controller.getPartRole(relativePos);
@@ -117,20 +120,19 @@ public class MultiblockStructureHelper {
         
         updateFrameForController(level, controllerPos);
         
-        // Обновляем соседние провода после полной инициализации структуры
+        // ОДНО массовое обновление в конце вместо 156
         for (BlockPos connectorPos : energyConnectorPositions) {
+            // Обновляем ТОЛЬКО провода, НЕ все соседние блоки
             for (Direction dir : Direction.values()) {
                 BlockPos wirePos = connectorPos.relative(dir);
                 BlockState wireState = level.getBlockState(wirePos);
-                if (wireState.getBlock() instanceof WireBlock wireBlock) {
-                    // Пересчитываем состояние провода для направления к коннектору
-                    boolean canConnect = wireBlock.canConnectTo(level, wirePos, dir.getOpposite());
-                    BlockState newWireState = wireState.setValue(WireBlock.PROPERTIES_MAP.get(dir.getOpposite()), canConnect);
-                    level.setBlock(wirePos, newWireState, 3);
+                if (wireState.getBlock() instanceof WireBlock) {
+                    level.updateNeighborsAt(wirePos, wireState.getBlock());
                 }
             }
         }
     }
+    
 
     public void destroyStructure(Level level, BlockPos controllerPos, Direction facing) {
         if (level.isClientSide) return;

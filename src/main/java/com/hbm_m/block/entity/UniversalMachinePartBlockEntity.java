@@ -1,8 +1,5 @@
 package com.hbm_m.block.entity;
 
-// Этот BE представляет собой универсальную часть для всех мультиблочных структур.
-// Он хранит позицию контроллера и свою роль (энергия, предметы и т.д.).
-// Он делегирует запросы способностей (capabilities) контроллеру в зависимости от своей роли.
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.PartRole;
 import net.minecraft.core.BlockPos;
@@ -25,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
 public class UniversalMachinePartBlockEntity extends BlockEntity implements IMultiblockPart {
 
     private BlockPos controllerPos;
-    // Храним свою роль локально
     private PartRole role = PartRole.DEFAULT;
 
     public UniversalMachinePartBlockEntity(BlockPos pPos, BlockState pBlockState) {
@@ -35,27 +31,17 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     @Override
     public void setControllerPos(BlockPos pos) {
         this.controllerPos = pos;
-        setChanged(); // Отмечаем для сохранения
+        setChanged();
     }
-    
+
     @Override
     public void setPartRole(PartRole role) {
-        // Мы обновляем роль только если она действительно изменилась, чтобы избежать лишних пакетов
         if (this.role != role) {
             this.role = role;
             this.setChanged();
             if (level != null && !level.isClientSide()) {
-                // Отправляем полное обновление BlockEntity на клиент
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
-                // NEW: уведомляем соседей, чтобы они пересчитали свои формы/состояния (например, провода)
-                level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
-
-                // NEW: Явно отправляем блок-обновления соседям — это форсит перерисовку/пересчёт моделей проводов
-                for (Direction d : Direction.values()) {
-                    BlockPos neigh = this.worldPosition.relative(d);
-                    BlockState ns = level.getBlockState(neigh);
-                    level.sendBlockUpdated(neigh, ns, ns, 3);
-                }
+                // ТОЛЬКО отправляем обновление BlockEntity, БЕЗ updateNeighborsAt
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
             }
         }
     }
@@ -65,7 +51,6 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         return this.controllerPos;
     }
 
-    // getter для роли, используется клиентом/проводами
     @Override
     public PartRole getPartRole() {
         return this.role;
@@ -78,32 +63,34 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             return super.getCapability(cap, side);
         }
 
-        // Проверяем НАШУ СОБСТВЕННУЮ, сохраненную роль. Никаких запросов к контроллеру!
+        // Делегируем ВСЕ capability запросы контроллеру напрямую
+        // Контроллер сам решит, что вернуть на основании своей логики
         if (cap == ForgeCapabilities.ENERGY && this.role == PartRole.ENERGY_CONNECTOR) {
             BlockEntity controllerBE = this.level.getBlockEntity(this.controllerPos);
             if (controllerBE != null) {
-                // Делегируем запрос напрямую контроллеру. Это надежно.
                 return controllerBE.getCapability(cap, side);
             }
         }
-        // Аналогично для предметов
-        if (cap == ForgeCapabilities.ITEM_HANDLER && (this.role == PartRole.ITEM_INPUT || this.role == PartRole.ITEM_OUTPUT)) {
-            if (level.getBlockEntity(controllerPos) instanceof MachineAssemblerBlockEntity assembler) {
-                return assembler.getItemHandlerForPart(role).cast();
+
+        // Для ITEM_HANDLER просто пробрасываем к контроллеру
+        // Контроллер MachineAdvancedAssemblerBlockEntity уже возвращает правильный itemHandler
+        if (cap == ForgeCapabilities.ITEM_HANDLER && 
+            (this.role == PartRole.ITEM_INPUT || this.role == PartRole.ITEM_OUTPUT)) {
+            BlockEntity controllerBE = this.level.getBlockEntity(this.controllerPos);
+            if (controllerBE != null) {
+                return controllerBE.getCapability(cap, side);
             }
         }
 
         return super.getCapability(cap, side);
-
     }
-    
+
     @Override
     protected void saveAdditional(CompoundTag pTag) {
         super.saveAdditional(pTag);
         if (this.controllerPos != null) {
             pTag.put("ControllerPos", NbtUtils.writeBlockPos(this.controllerPos));
         }
-        // Сохраняем и загружаем роль
         pTag.putString("PartRole", this.role.name());
     }
 
@@ -122,40 +109,20 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         }
     }
 
-    // Этот пакет отправляется методом level.sendBlockUpdated()
     @Nullable
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    // Данные, которые будут в пакете
     @Override
     public CompoundTag getUpdateTag() {
         return this.saveWithoutMetadata();
     }
 
-    // Этот метод вызывается на КЛИЕНТЕ после получения пакета с данными (getUpdatePacket/getUpdateTag)
     @Override
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        // Запоминаем, была ли у нас роль до того, как мы обработаем новые данные
-        boolean wasDefault = this.role == PartRole.DEFAULT;
-
-        // ВАЖНО: Сначала вызываем метод суперкласса.
-        // Он берет NBT из пакета и вызывает наш метод load(), обновляя поля `controllerPos` и `role`.
         super.onDataPacket(net, pkt);
-
-        // Теперь, когда наши поля обновлены, мы выполняем нашу логику.
-        if (this.level != null && this.level.isClientSide() && wasDefault && this.role == PartRole.ENERGY_CONNECTOR) {
-            // Это заставит провод рядом снова запустить свой updateShape -> canConnectTo.
-            this.level.updateNeighborsAt(this.worldPosition, this.getBlockState().getBlock());
-
-            // NEW: явные обновления соседних блоков на клиенте, чтобы форсить обновление моделей/форм
-            for (Direction d : Direction.values()) {
-                BlockPos neigh = this.worldPosition.relative(d);
-                BlockState ns = this.level.getBlockState(neigh);
-                this.level.sendBlockUpdated(neigh, ns, ns, 3);
-            }
-        }
+        // УДАЛЕНЫ все updateNeighborsAt - они вызывают cascade updates
     }
 }

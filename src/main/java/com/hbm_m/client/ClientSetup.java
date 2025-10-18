@@ -3,10 +3,7 @@ package com.hbm_m.client;
 // Основной класс клиентской настройки мода. Здесь регистрируются все клиентские обработчики событий,
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.overlay.*;
-import com.hbm_m.client.model.*;
-import com.hbm_m.client.model.loader.DoorModelLoader;
-import com.hbm_m.client.model.loader.MachineAdvancedAssemblerModelLoader;
-import com.hbm_m.client.model.loader.ProceduralWireLoader;
+import com.hbm_m.client.model.loader.*;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.ModConfigKeybindHandler;
 import com.hbm_m.client.tooltip.ItemTooltipComponent;
@@ -49,6 +46,8 @@ import javax.annotation.Nonnull;
 import java.util.Map;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.client.model.render.DoorRenderer;
+import com.hbm_m.client.model.render.GPUInstancedRenderer;
+import com.hbm_m.client.model.render.GlobalMeshCache;
 import com.hbm_m.client.model.render.MachineAdvancedAssemblerRenderer;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -139,6 +138,33 @@ public class ClientSetup {
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         ModConfigKeybindHandler.onRegisterKeyMappings(event);
         MainRegistry.LOGGER.info("Registered key mappings.");
+    }
+
+    // @SubscribeEvent
+    // public static void onRenderLevelStage(RenderLevelStageEvent event) {
+    //     if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
+    //         // Начинаем инстансированный рендер для каждой части
+    //         GPUInstancedRenderer.beginInstances("Ring");
+    //     } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
+    //         // Завершаем и рисуем ВСЕ кольца ОДНИМ вызовом
+    //         GPUInstancedRenderer.endInstances();
+            
+    //         // Аналогично для каждой части манипуляторов
+    //         // (в полной реализации нужен batch для каждой части)
+    //     }
+    // }
+
+
+    @SubscribeEvent
+    public static void onResourceReload(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener((preparationBarrier, resourceManager, 
+                                     preparationsProfiler, reloadProfiler, 
+                                     backgroundExecutor, gameExecutor) -> {
+            return preparationBarrier.wait(null).thenRunAsync(() -> {
+                // Очищаем глобальный кэш mesh'ей при перезагрузке ресурсов
+                GlobalMeshCache.clear();
+            }, gameExecutor);
+        });
     }
 
     @SubscribeEvent

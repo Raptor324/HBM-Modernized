@@ -49,7 +49,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     private static final int INPUT_SLOT_END = 17;
     
     // Энергия
-    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100000, 250, 250);
+    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100000,  1000);
     
     // Состояние крафта
     private boolean isCrafting = false;

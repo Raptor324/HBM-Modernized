@@ -5,17 +5,14 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.AABB;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.main.MainRegistry;
+import com.hbm_m.client.model.render.LegacyAnimator;
 import com.hbm_m.sound.ModSounds;
-import com.hbm_m.util.LegacyAnimator;
 
 import java.util.ArrayList;
 import java.util.HashMap;

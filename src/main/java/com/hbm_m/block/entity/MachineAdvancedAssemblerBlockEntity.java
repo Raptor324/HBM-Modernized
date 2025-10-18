@@ -126,10 +126,13 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public MachineAdvancedAssemblerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pos, state, SLOT_COUNT);
         
-        if (level != null && level.isClientSide) {
-            for (int i = 0; i < this.arms.length; i++) {
-                this.arms[i] = new AssemblerArm();
-            }
+        initClientAnimations();
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private void initClientAnimations() {
+        for (int i = 0; i < this.arms.length; i++) {
+            this.arms[i] = new AssemblerArm();
         }
     }
     
@@ -265,41 +268,38 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
     
     private void serverTick() {
-        // Зарядка из батареи
-        chargeMachineFromBattery();
+        // Зарядка ТОЛЬКО каждые 5 тиков вместо каждый тик
+        if (level.getGameTime() % 5 == 0) {
+            chargeMachineFromBattery();
+        }
         
-        // Обновление энергетической дельты каждый тик
-        updateEnergyDelta(energyStorage.getEnergyStored());
-        
+        // Энергетическая дельта ТОЛЬКО каждые 10 тиков
+        if (level.getGameTime() % 10 == 0) {
+            updateEnergyDelta(energyStorage.getEnergyStored());
+        }
+    
         // Инициализация модуля
         if (assemblerModule == null && level != null) {
             assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, inventory, level);
         }
-        
+    
         if (assemblerModule != null) {
             boolean wasCrafting = assemblerModule.isProcessing();
             ItemStack blueprintStack = inventory.getStackInSlot(BLUEPRINT_FOLDER_SLOT);
             
-            // ПРОВЕРКА ВАЛИДНОСТИ РЕЦЕПТА ПЕРЕД UPDATE
-            if (selectedRecipeId != null) {
+            // Проверка валидности рецепта ТОЛЬКО если что-то изменилось
+            if (selectedRecipeId != null && wasCrafting) {
                 AssemblerRecipe currentRecipe = getSelectedRecipe();
                 if (currentRecipe != null) {
                     String recipePool = currentRecipe.getBlueprintPool();
-                    
-                    // Если рецепт требует pool, но папка отсутствует или не совпадает
                     if (recipePool != null && !recipePool.isEmpty()) {
                         String currentPool = ItemBlueprintFolder.getBlueprintPool(blueprintStack);
                         if (!recipePool.equals(currentPool)) {
-                            // Папка не подходит — сбрасываем рецепт
                             selectedRecipeId = null;
                             assemblerModule.setPreferredRecipe(null);
                             assemblerModule.resetProgress();
-                            
-                            if (wasCrafting) {
-                                level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
+                            level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
                                     SoundSource.BLOCKS, 0.5f, 1.0f);
-                            }
-                            
                             setChanged();
                             sendUpdateToClient();
                             return;
@@ -308,7 +308,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 }
             }
             
-            // Восстанавливаем preferredRecipe ПЕРЕД update()
+            // Восстанавливаем preferredRecipe
             if (selectedRecipeId != null && assemblerModule.getPreferredRecipe() == null) {
                 AssemblerRecipe recipe = getSelectedRecipe();
                 if (recipe != null) {
@@ -320,35 +320,17 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             assemblerModule.update(1.0, 1.0, true, blueprintStack);
             boolean isCraftingNow = assemblerModule.isProcessing();
             
-            // Звук остановки при обычном завершении/остановке крафта
             if (wasCrafting && !isCraftingNow) {
                 level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
-                    SoundSource.BLOCKS, 0.5f, 1.0f);
+                        SoundSource.BLOCKS, 0.5f, 1.0f);
             }
             
-            // Синхронизация selectedRecipeId с модулем (автоматический режим)
-            if (selectedRecipeId == null) {
-                ResourceLocation moduleRecipeId = assemblerModule.getCurrentRecipe() != null
-                    ? assemblerModule.getCurrentRecipe().getId()
-                    : null;
-                
-                if (!Objects.equals(selectedRecipeId, moduleRecipeId)) {
-                    selectedRecipeId = moduleRecipeId;
-                    setChanged();
-                    sendUpdateToClient();
-                }
-            }
-            
+            // Синхронизация ТОЛЬКО при изменении состояния
             if (wasCrafting != isCraftingNow) {
                 setChanged();
                 sendUpdateToClient();
-            }
-            
-            if (assemblerModule.needsSync) {
-                setChanged();
-            }
-            
-            if (isCraftingNow) {
+            } else if (isCraftingNow && level.getGameTime() % 20 == 0) {
+                // Обновляем прогресс раз в секунду вместо каждого тика
                 setChanged();
             }
         }
