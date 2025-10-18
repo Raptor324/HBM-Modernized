@@ -1,11 +1,14 @@
 package com.hbm_m.block.entity;
-
+import com.hbm_m.item.ItemBlades;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.ShredderMenu;
 import com.hbm_m.recipe.ShredderRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
@@ -50,7 +53,6 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
                 level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
             }
         }
-
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
             // Входные слоты (0-8) - любые предметы
@@ -61,7 +63,7 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
             if (slot >= BLADE_START && slot <= BLADE_END) {
                 // Проверка на BLADE_TEST
                 // return stack.is(ModItems.BLADE_TEST.get());
-                return true; // Временно разрешаем все
+                return stack.is(ModItems.BLADE_TEST.get()); // Временно разрешаем все
             }
             // Выходные слоты (11-28) - ничего нельзя положить
             if (slot >= OUTPUT_START && slot <= OUTPUT_END) {
@@ -226,7 +228,7 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
 
         // Если рецепт не найден, возвращаем металлолом
         // return new ItemStack(ModItems.SCRAP.get(), 1);
-        return ItemStack.EMPTY; // Временно - замените на металлолом
+        return new ItemStack(ModItems.SCRAP.get(), 1); // Временно - замените на металлолом
     }
 
     private boolean canInsertItemIntoOutputSlots(ItemStack result) {
@@ -282,4 +284,6 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
     public int getMaxProgress() {
         return MAX_PROGRESS;
     }
+
+
 }

@@ -18,15 +18,15 @@ public class ShredderScreen extends AbstractContainerScreen<ShredderMenu> {
     // Координаты и размеры прогресс-бара
     private static final int PROGRESS_X = 60;
     private static final int PROGRESS_Y = 120;
-    private static final int PROGRESS_WIDTH = 33;
-    private static final int PROGRESS_HEIGHT = 13;
+    private static final int PROGRESS_WIDTH = 330;
+    private static final int PROGRESS_HEIGHT = 130;
     private static final int PROGRESS_TEXTURE_X = 196;
     private static final int PROGRESS_TEXTURE_Y = 0;
 
     public ShredderScreen(ShredderMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
 
-        this.imageWidth = 175;  // ширина GUI
+        this.imageWidth = 176;  // ширина GUI
         this.imageHeight = 233; // высота GUI
         this.inventoryLabelY = this.imageHeight - 94; // Положение надписи "Инвентарь"
     }

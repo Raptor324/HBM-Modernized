@@ -4,6 +4,7 @@ package com.hbm_m.datagen;
 
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.ModPowders;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
 import net.minecraftforge.common.data.LanguageProvider;
@@ -26,6 +27,15 @@ public class ModLanguageProvider extends LanguageProvider {
             String translation = ingot.getTranslation(this.locale);
             if (translation != null) {
                 add(ModItems.getIngot(ingot).get(), translation);
+            }
+        }
+
+        // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ
+        for (ModPowders powders : ModPowders.values()) {
+            // 3. Теперь мы используем наше поле 'this.locale', к которому у нас есть доступ
+            String translation = powders.getTranslation(this.locale);
+            if (translation != null) {
+                add(ModItems.getPowders(powders).get(), translation);
             }
         }
 

@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.ModPowders;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.data.PackOutput;
@@ -59,6 +60,14 @@ public class ModItemModelProvider extends ItemModelProvider {
             
             // Вызываем наш вспомогательный метод для генерации простой модели
             ingotItem(ingotObject);
+        }
+
+        for (ModPowders powders : ModPowders.values()) {
+            // Получаем объект-обертку предмета
+            RegistryObject<Item> powders1tObject = ModItems.getPowders(powders);
+
+            // Вызываем наш вспомогательный метод для генерации простой модели
+            powdersItem(powders1tObject);
         }
 
         withExistingParent("large_vehicle_door", 
@@ -213,50 +222,50 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.WIRE_MAGNETIZED_TUNGSTEN);
         simpleItem(ModItems.WIRE_CARBON);
 
-        trimmedArmorItem(com.hbm_m.item.ModItems.ALLOY_HELMET);
-        trimmedArmorItem(com.hbm_m.item.ModItems.ALLOY_CHESTPLATE);
-        trimmedArmorItem(com.hbm_m.item.ModItems.ALLOY_LEGGINGS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.ALLOY_BOOTS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.TITANIUM_HELMET);
-        trimmedArmorItem(com.hbm_m.item.ModItems.TITANIUM_CHESTPLATE);
-        trimmedArmorItem(com.hbm_m.item.ModItems.TITANIUM_LEGGINGS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.TITANIUM_BOOTS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.SECURITY_HELMET);
-        trimmedArmorItem(com.hbm_m.item.ModItems.SECURITY_CHESTPLATE);
-        trimmedArmorItem(com.hbm_m.item.ModItems.SECURITY_LEGGINGS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.SECURITY_BOOTS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.ASBESTOS_HELMET);
-        trimmedArmorItem(com.hbm_m.item.ModItems.ASBESTOS_CHESTPLATE);
-        trimmedArmorItem(com.hbm_m.item.ModItems.ASBESTOS_LEGGINGS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.ASBESTOS_BOOTS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.AJR_HELMET);
-        trimmedArmorItem(com.hbm_m.item.ModItems.AJR_CHESTPLATE);
-        trimmedArmorItem(com.hbm_m.item.ModItems.AJR_LEGGINGS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.AJR_BOOTS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.STEEL_HELMET);
-        trimmedArmorItem(com.hbm_m.item.ModItems.STEEL_CHESTPLATE);
-        trimmedArmorItem(com.hbm_m.item.ModItems.STEEL_LEGGINGS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.STEEL_BOOTS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.PAA_HELMET);
-        trimmedArmorItem(com.hbm_m.item.ModItems.PAA_CHESTPLATE);
-        trimmedArmorItem(com.hbm_m.item.ModItems.PAA_LEGGINGS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.PAA_BOOTS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.LIQUIDATOR_HELMET);
-        trimmedArmorItem(com.hbm_m.item.ModItems.LIQUIDATOR_CHESTPLATE);
-        trimmedArmorItem(com.hbm_m.item.ModItems.LIQUIDATOR_LEGGINGS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.LIQUIDATOR_BOOTS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.HAZMAT_HELMET);
-        trimmedArmorItem(com.hbm_m.item.ModItems.HAZMAT_CHESTPLATE);
-        trimmedArmorItem(com.hbm_m.item.ModItems.HAZMAT_LEGGINGS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.HAZMAT_BOOTS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.STARMETAL_HELMET);
-        trimmedArmorItem(com.hbm_m.item.ModItems.STARMETAL_CHESTPLATE);
-        trimmedArmorItem(com.hbm_m.item.ModItems.STARMETAL_LEGGINGS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.STARMETAL_BOOTS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.COBALT_HELMET);
-        trimmedArmorItem(com.hbm_m.item.ModItems.COBALT_CHESTPLATE);
-        trimmedArmorItem(com.hbm_m.item.ModItems.COBALT_LEGGINGS);
-        trimmedArmorItem(com.hbm_m.item.ModItems.COBALT_BOOTS);
+        trimmedArmorItem(ModItems.ALLOY_HELMET);
+        trimmedArmorItem(ModItems.ALLOY_CHESTPLATE);
+        trimmedArmorItem(ModItems.ALLOY_LEGGINGS);
+        trimmedArmorItem(ModItems.ALLOY_BOOTS);
+        trimmedArmorItem(ModItems.TITANIUM_HELMET);
+        trimmedArmorItem(ModItems.TITANIUM_CHESTPLATE);
+        trimmedArmorItem(ModItems.TITANIUM_LEGGINGS);
+        trimmedArmorItem(ModItems.TITANIUM_BOOTS);
+        trimmedArmorItem(ModItems.SECURITY_HELMET);
+        trimmedArmorItem(ModItems.SECURITY_CHESTPLATE);
+        trimmedArmorItem(ModItems.SECURITY_LEGGINGS);
+        trimmedArmorItem(ModItems.SECURITY_BOOTS);
+        trimmedArmorItem(ModItems.ASBESTOS_HELMET);
+        trimmedArmorItem(ModItems.ASBESTOS_CHESTPLATE);
+        trimmedArmorItem(ModItems.ASBESTOS_LEGGINGS);
+        trimmedArmorItem(ModItems.ASBESTOS_BOOTS);
+        trimmedArmorItem(ModItems.AJR_HELMET);
+        trimmedArmorItem(ModItems.AJR_CHESTPLATE);
+        trimmedArmorItem(ModItems.AJR_LEGGINGS);
+        trimmedArmorItem(ModItems.AJR_BOOTS);
+        trimmedArmorItem(ModItems.STEEL_HELMET);
+        trimmedArmorItem(ModItems.STEEL_CHESTPLATE);
+        trimmedArmorItem(ModItems.STEEL_LEGGINGS);
+        trimmedArmorItem(ModItems.STEEL_BOOTS);
+        trimmedArmorItem(ModItems.PAA_HELMET);
+        trimmedArmorItem(ModItems.PAA_CHESTPLATE);
+        trimmedArmorItem(ModItems.PAA_LEGGINGS);
+        trimmedArmorItem(ModItems.PAA_BOOTS);
+        trimmedArmorItem(ModItems.LIQUIDATOR_HELMET);
+        trimmedArmorItem(ModItems.LIQUIDATOR_CHESTPLATE);
+        trimmedArmorItem(ModItems.LIQUIDATOR_LEGGINGS);
+        trimmedArmorItem(ModItems.LIQUIDATOR_BOOTS);
+        trimmedArmorItem(ModItems.HAZMAT_HELMET);
+        trimmedArmorItem(ModItems.HAZMAT_CHESTPLATE);
+        trimmedArmorItem(ModItems.HAZMAT_LEGGINGS);
+        trimmedArmorItem(ModItems.HAZMAT_BOOTS);
+        trimmedArmorItem(ModItems.STARMETAL_HELMET);
+        trimmedArmorItem(ModItems.STARMETAL_CHESTPLATE);
+        trimmedArmorItem(ModItems.STARMETAL_LEGGINGS);
+        trimmedArmorItem(ModItems.STARMETAL_BOOTS);
+        trimmedArmorItem(ModItems.COBALT_HELMET);
+        trimmedArmorItem(ModItems.COBALT_CHESTPLATE);
+        trimmedArmorItem(ModItems.COBALT_LEGGINGS);
+        trimmedArmorItem(ModItems.COBALT_BOOTS);
 
         evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_STAIRS);
         evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_SLAB);
@@ -309,6 +318,23 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(registrationName, "item/generated")
                 // Путь к текстуре теперь использует правильное имя файла и подпапку
                 .texture("layer0", modLoc("item/ingot/" + textureFileName));
+    }
+
+    private void powdersItem(RegistryObject<Item> itemObject) {
+        
+        String registrationName = itemObject.getId().getPath();
+
+        
+        String baseName = registrationName.replace("_powder", "");
+
+        // 3. Формируем ИМЯ ФАЙЛА ТЕКСТУРЫ (например, "ingot_uranium")
+        String textureFileName = "powder_" + baseName;
+
+        // Генерируем .json файл модели
+        // Имя файла модели совпадает с регистрационным именем
+        withExistingParent(registrationName, "item/generated")
+                // Путь к текстуре теперь использует правильное имя файла и подпапку
+                .texture("layer0", modLoc("item/powders/" + textureFileName));
     }
 
     private void trimmedArmorItem(RegistryObject<Item> itemRegistryObject) {

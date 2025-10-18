@@ -14,7 +14,6 @@ import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeType;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
 
@@ -35,7 +34,7 @@ public class ModItems {
     // АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ СЛИТКОВ 
     // 1. Создаем карту для хранения всех RegistryObject'ов наших слитков
     public static final Map<ModIngots, RegistryObject<Item>> INGOTS = new EnumMap<>(ModIngots.class);
-
+    public static final Map<ModPowders, RegistryObject<Item>> POWDERS = new EnumMap<>(ModPowders.class);
     // 2. Используем статический блок для заполнения карты
     static {
         for (ModIngots ingot : ModIngots.values()) {
@@ -56,13 +55,35 @@ public class ModItems {
             INGOTS.put(ingot, registeredItem);
         }
     }
+    static {
+
+        for (ModPowders powders : ModPowders.values()) {
+            // Регистрируем предмет. Имя будет, например, "ingot_uranium"
+            // Важно: мы стандартизируем имена, добавляя префикс "ingot_"
+            RegistryObject<Item> registeredItem;
+
+            // Пример того, как сделать один из слитков особенным
+            if (powders == ModPowders.IRON) {
+                registeredItem = ITEMS.register(powders.getName() + "_powder",
+                        () -> new RadioactiveItem(new Item.Properties()));
+            } else {
+                registeredItem = ITEMS.register(powders.getName() + "_powder",
+                        () -> new Item(new Item.Properties()));
+            }
+
+            // Кладём зарегистрированный объект в нашу карту
+            POWDERS.put(powders, registeredItem);
+        }
+
+    }
+
     
     
     // УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА 
     public static RegistryObject<Item> getIngot(ModIngots ingot) {
         return INGOTS.get(ingot);
     }
-
+    public static RegistryObject<Item> getPowders(ModPowders powders) {return POWDERS.get(powders);}
     public static final int SLOT_HELMET = 0;
     public static final int SLOT_CHEST = 1;
     public static final int SLOT_LEGS = 2;
@@ -378,9 +399,6 @@ public class ModItems {
     public static final RegistryObject<Item> SCRAP = ITEMS.register("scrap",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> BLADE_TEST = ITEMS.register("blade_test",
-            () -> new Item(new Item.Properties()));
-
     public static final RegistryObject<Item> NUGGET_SILICON = ITEMS.register("nugget_silicon",
             () -> new Item(new Item.Properties()));
 
@@ -669,6 +687,10 @@ public class ModItems {
             () -> new ItemStamp(new Item.Properties(), 32));
     public static final RegistryObject<Item> STAMP_STONE_CIRCUIT = ITEMS.register("stamp_stone_circuit",
             () -> new ItemStamp(new Item.Properties(), 32));
+
+
+    public static final RegistryObject<Item> BLADE_TEST = ITEMS.register("blade_test",
+            () -> new ItemBlades(new Item.Properties(), 48));
 
     // Железные штампы (48 использований)
     public static final RegistryObject<Item> STAMP_IRON_FLAT = ITEMS.register("stamp_iron_flat",

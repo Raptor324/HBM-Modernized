@@ -4,7 +4,7 @@
     "item": "minecraft:iron_ingot"
   },
   "result": {
-    "item": "minecraft:iron_nugget",
-    "count": 9
+    "item": "hbm_m:iron_powder",
+    "count": 1
   }
 }
