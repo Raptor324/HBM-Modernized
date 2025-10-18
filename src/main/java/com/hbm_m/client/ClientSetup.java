@@ -64,6 +64,9 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
 
+        event.enqueueWork(() -> {
+            MenuScreens.register(ModMenuTypes.ANVIL_MENU.get(), AnvilScreen::new);
+        });
         // Register Entity Renders
         ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
@@ -96,7 +99,7 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
             MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), ShredderScreen::new);
             MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
-            
+
             // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);

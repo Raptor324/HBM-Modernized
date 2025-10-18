@@ -1,32 +1,40 @@
 package com.hbm_m.block;
 
-import net.minecraft.core.Direction;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.item.context.BlockPlaceContext;
+import com.hbm_m.menu.AnvilMenu;
+import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
+import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import org.jetbrains.annotations.Nullable;
-
-import javax.annotation.Nonnull;
-
-import static com.hbm_m.block.MachineBatteryBlock.FACING;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.network.NetworkHooks;
 
 public class AnvilBlock extends Block {
-    @Override
-    public BlockState getStateForPlacement(@Nonnull BlockPlaceContext pContext) {
-        // Устанавливаем направление блока в зависимости от того, куда смотрел игрок при установке
-        return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection());
+
+    public AnvilBlock(Properties properties) {
+        super(properties);
     }
 
     @Override
-    protected void createBlockStateDefinition(@Nonnull StateDefinition.Builder<Block, BlockState> pBuilder) {
-        pBuilder.add(FACING);
-    }
-
-
-    public AnvilBlock(Properties p_49795_) {
-        super(p_49795_);
+    public InteractionResult use(BlockState state, Level level, BlockPos pos,
+                                 Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide) {
+            // Открываем GUI на сервере
+            NetworkHooks.openScreen((ServerPlayer) player,
+                    new SimpleMenuProvider(
+                            (containerId, playerInventory, playerEntity) ->
+                                    new AnvilMenu(containerId, playerInventory),
+                            Component.translatable("container.hbm_m.anvil")
+                    ),
+                    pos
+            );
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 }

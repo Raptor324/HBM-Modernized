@@ -91,7 +91,7 @@ public class MainRegistry {
         MinecraftForge.EVENT_BUS.register(new PlayerRadiationHandler());
 
 
-        // Регистрация остальных систем
+        // Регистрация остальных систем resources
         // ModPacketHandler.register(); // Регистрация пакетов
 
         // Инстанцируем ClientSetup, чтобы его конструктор вызвал регистрацию на Forge Event Bus
@@ -127,7 +127,6 @@ public class MainRegistry {
             event.addListener(provider.getCapability(ChunkRadiationProvider.CHUNK_RADIATION_CAPABILITY)::invalidate);
         }
     }
-
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
         // Логгирование для отладки
         LOGGER.info("Building creative tab contents for: " + event.getTabKey());

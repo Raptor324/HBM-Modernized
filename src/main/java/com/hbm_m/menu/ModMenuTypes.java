@@ -33,6 +33,9 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<MachinePressMenu>> PRESS_MENU =
             MENUS.register("press_menu", () -> IForgeMenuType.create(MachinePressMenu::new));
 
+    public static final RegistryObject<MenuType<AnvilMenu>> ANVIL_MENU = MENUS.register("anvil_menu",
+            () -> IForgeMenuType.create(AnvilMenu::new));
+
     public static final RegistryObject<MenuType<MachineWoodBurnerMenu>> WOOD_BURNER_MENU =
             MENUS.register("wood_burner_menu", () -> IForgeMenuType.create(MachineWoodBurnerMenu::new));
 
