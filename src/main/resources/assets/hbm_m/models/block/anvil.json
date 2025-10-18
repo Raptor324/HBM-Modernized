@@ -1,0 +1,16 @@
+{
+  "loader": "forge:composite",
+  "textures": {
+    "particle": "hbm_m:block/anvil"
+  },
+  "children": {
+    "anvil_model": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/anvil.obj",
+      "flip_v": true,
+      "textures": {
+        "default": "hbm_m:block/anvil"
+      }
+    }
+  }
+}

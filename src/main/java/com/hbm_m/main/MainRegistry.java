@@ -525,6 +525,7 @@ public class MainRegistry {
             // СТАНКИ
             if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
 
+                event.accept(ModBlocks.ANVIL);
                 event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
                 event.accept(ModBlocks.PRESS);
                 event.accept(ModBlocks.BLAST_FURNACE);
