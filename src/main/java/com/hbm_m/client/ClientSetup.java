@@ -4,6 +4,7 @@ package com.hbm_m.client;
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.overlay.*;
 import com.hbm_m.client.model.*;
+import com.hbm_m.client.model.loader.DoorModelLoader;
 import com.hbm_m.client.model.loader.MachineAdvancedAssemblerModelLoader;
 import com.hbm_m.client.model.loader.ProceduralWireLoader;
 import com.hbm_m.config.ModClothConfig;
@@ -19,6 +20,7 @@ import com.hbm_m.particle.custom.DarkParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
 import com.hbm_m.block.ModBlocks;
 
+import com.hbm_m.recipe.AnvilRecipeManager;
 import net.minecraft.client.renderer.RenderType;
 
 import net.minecraft.client.resources.model.BakedModel;
@@ -33,6 +35,8 @@ import net.minecraft.client.gui.screens.MenuScreens;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
+import net.minecraft.client.renderer.entity.EntityRenderers;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -60,6 +64,28 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
+
+        MenuScreens.register(MainRegistry.ANVIL_MENU.get(), AnvilScreen::new);
+        AnvilRecipeManager.registerRecipes();
+        // Register Entity Renders
+        ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADEFIRE_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADESMART_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADEIF_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
         
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
@@ -71,14 +97,15 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
             MenuScreens.register(ModMenuTypes.BLAST_FURNACE_MENU.get(), GUIBlastFurnace::new);
             MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
-            MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), GUIShredder::new);
+            MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), ShredderScreen::new);
             MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
-            
-            // Register BlockEntity renderer for Advanced Assembly Machine
+
+            // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
         });
     }
+
 
     @SubscribeEvent
     public static void onModelBake(ModelEvent.ModifyBakingResult event) {
@@ -108,7 +135,8 @@ public class ClientSetup {
     public static void onModelRegister(ModelEvent.RegisterGeometryLoaders event) {
         event.register("procedural_wire", new ProceduralWireLoader());
         event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
-    MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader");
+        event.register("door", new DoorModelLoader());
+        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, door");
     }
 
     @SubscribeEvent

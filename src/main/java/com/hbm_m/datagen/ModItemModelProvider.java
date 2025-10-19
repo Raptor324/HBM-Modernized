@@ -3,21 +3,45 @@ package com.hbm_m.datagen;
 // Здесь мы определяем, как будут выглядеть наши предметы в инвентаре и в мире.
 // Используется в классе DataGenerators для регистрации.
 
+import java.util.LinkedHashMap;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.ModPowders;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.data.PackOutput;
+import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.PackType;
+import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.armortrim.TrimMaterial;
+import net.minecraft.world.item.armortrim.TrimMaterials;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.client.model.generators.ItemModelBuilder;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
+import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 public class ModItemModelProvider extends ItemModelProvider {
+
+    private static LinkedHashMap<ResourceKey<TrimMaterial>, Float> trimMaterials = new LinkedHashMap<>();
+    static {
+        trimMaterials.put(TrimMaterials.QUARTZ, 0.1F);
+        trimMaterials.put(TrimMaterials.IRON, 0.2F);
+        trimMaterials.put(TrimMaterials.NETHERITE, 0.3F);
+        trimMaterials.put(TrimMaterials.REDSTONE, 0.4F);
+        trimMaterials.put(TrimMaterials.COPPER, 0.5F);
+        trimMaterials.put(TrimMaterials.GOLD, 0.6F);
+        trimMaterials.put(TrimMaterials.EMERALD, 0.7F);
+        trimMaterials.put(TrimMaterials.DIAMOND, 0.8F);
+        trimMaterials.put(TrimMaterials.LAPIS, 0.9F);
+        trimMaterials.put(TrimMaterials.AMETHYST, 1.0F);
+    }
 
     public ModItemModelProvider(PackOutput output, ExistingFileHelper existingFileHelper) {
         super(output, RefStrings.MODID, existingFileHelper);
@@ -38,11 +62,29 @@ public class ModItemModelProvider extends ItemModelProvider {
             ingotItem(ingotObject);
         }
 
+        for (ModPowders powders : ModPowders.values()) {
+            // Получаем объект-обертку предмета
+            RegistryObject<Item> powders1tObject = ModItems.getPowders(powders);
+
+            // Вызываем наш вспомогательный метод для генерации простой модели
+            powdersItem(powders1tObject);
+        }
+
         withExistingParent("large_vehicle_door", 
             modLoc("block/large_vehicle_door"));
 
+        // Door items (flat icons like vanilla doors)
+        withExistingParent(ModBlocks.METAL_DOOR.getId().getPath(), "item/generated")
+            .texture("layer0", modLoc("item/" + ModBlocks.METAL_DOOR.getId().getPath()));
+        withExistingParent(ModBlocks.DOOR_BUNKER.getId().getPath(), "item/generated")
+            .texture("layer0", modLoc("item/" + ModBlocks.DOOR_BUNKER.getId().getPath()));
+        withExistingParent(ModBlocks.DOOR_OFFICE.getId().getPath(), "item/generated")
+            .texture("layer0", modLoc("item/" + ModBlocks.DOOR_OFFICE.getId().getPath()));
+
         // РЕГИСТРАЦИЯ МОДЕЛЕЙ ДЛЯ УНИКАЛЬНЫХ ПРЕДМЕТОВ 
         // Для предметов, зарегистрированных вручную, мы также можем генерировать модели.
+        simpleItem(ModItems.SCRAP);
+        simpleItem(ModItems.BLADE_TEST);
         simpleItem(ModItems.ALLOY_SWORD);
         simpleItem(ModItems.GEIGER_COUNTER);
         simpleItem(ModItems.DOSIMETER);
@@ -99,7 +141,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PLATE_LEAD);
         simpleItem(ModItems.PLATE_MIXED);
         simpleItem(ModItems.PLATE_PAA);
-        simpleItem(ModItems.PLATE_POLYMER);
+        simpleItem(ModItems.INSULATOR);
         simpleItem(ModItems.PLATE_SATURNITE);
         simpleItem(ModItems.PLATE_SCHRABIDIUM);
         simpleItem(ModItems.PLATE_ADVANCED_ALLOY);
@@ -131,6 +173,112 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PLATE_FUEL_U233);
         simpleItem(ModItems.PLATE_FUEL_U235);
 
+        simpleItem(ModItems.STAMP_STONE_FLAT);
+        simpleItem(ModItems.STAMP_STONE_PLATE);
+        simpleItem(ModItems.STAMP_STONE_WIRE);
+        simpleItem(ModItems.STAMP_STONE_CIRCUIT);
+        simpleItem(ModItems.STAMP_IRON_FLAT);
+        simpleItem(ModItems.STAMP_IRON_PLATE);
+        simpleItem(ModItems.STAMP_IRON_WIRE);
+        simpleItem(ModItems.STAMP_IRON_CIRCUIT);
+        simpleItem(ModItems.STAMP_IRON_9);
+        simpleItem(ModItems.STAMP_IRON_44);
+        simpleItem(ModItems.STAMP_IRON_50);
+        simpleItem(ModItems.STAMP_IRON_357);
+        simpleItem(ModItems.STAMP_STEEL_FLAT);
+        simpleItem(ModItems.STAMP_STEEL_PLATE);
+        simpleItem(ModItems.STAMP_STEEL_WIRE);
+        simpleItem(ModItems.STAMP_STEEL_CIRCUIT);
+        simpleItem(ModItems.STAMP_TITANIUM_FLAT);
+        simpleItem(ModItems.STAMP_TITANIUM_PLATE);
+        simpleItem(ModItems.STAMP_TITANIUM_WIRE);
+        simpleItem(ModItems.STAMP_TITANIUM_FLAT);
+        simpleItem(ModItems.STAMP_TITANIUM_PLATE);
+        simpleItem(ModItems.STAMP_TITANIUM_WIRE);
+        simpleItem(ModItems.STAMP_TITANIUM_CIRCUIT);
+        simpleItem(ModItems.STAMP_OBSIDIAN_FLAT);
+        simpleItem(ModItems.STAMP_OBSIDIAN_PLATE);
+        simpleItem(ModItems.STAMP_OBSIDIAN_WIRE);
+        simpleItem(ModItems.STAMP_OBSIDIAN_CIRCUIT);
+        simpleItem(ModItems.STAMP_DESH_FLAT);
+        simpleItem(ModItems.STAMP_DESH_PLATE);
+        simpleItem(ModItems.STAMP_DESH_WIRE);
+        simpleItem(ModItems.STAMP_DESH_CIRCUIT);
+        simpleItem(ModItems.STAMP_DESH_9);
+        simpleItem(ModItems.STAMP_DESH_44);
+        simpleItem(ModItems.STAMP_DESH_50);
+        simpleItem(ModItems.STAMP_DESH_357);
+
+        simpleItem(ModItems.NUGGET_SILICON);
+        simpleItem(ModItems.BILLET_SILICON);
+        simpleItem(ModItems.WIRE_RED_COPPER);
+        simpleItem(ModItems.WIRE_COPPER);
+        simpleItem(ModItems.WIRE_TUNGSTEN);
+        simpleItem(ModItems.WIRE_ALUMINIUM);
+        simpleItem(ModItems.WIRE_FINE);
+        simpleItem(ModItems.WIRE_SCHRABIDIUM);
+        simpleItem(ModItems.WIRE_ADVANCED_ALLOY);
+        simpleItem(ModItems.WIRE_GOLD);
+        simpleItem(ModItems.WIRE_MAGNETIZED_TUNGSTEN);
+        simpleItem(ModItems.WIRE_CARBON);
+
+        trimmedArmorItem(ModItems.ALLOY_HELMET);
+        trimmedArmorItem(ModItems.ALLOY_CHESTPLATE);
+        trimmedArmorItem(ModItems.ALLOY_LEGGINGS);
+        trimmedArmorItem(ModItems.ALLOY_BOOTS);
+        trimmedArmorItem(ModItems.TITANIUM_HELMET);
+        trimmedArmorItem(ModItems.TITANIUM_CHESTPLATE);
+        trimmedArmorItem(ModItems.TITANIUM_LEGGINGS);
+        trimmedArmorItem(ModItems.TITANIUM_BOOTS);
+        trimmedArmorItem(ModItems.SECURITY_HELMET);
+        trimmedArmorItem(ModItems.SECURITY_CHESTPLATE);
+        trimmedArmorItem(ModItems.SECURITY_LEGGINGS);
+        trimmedArmorItem(ModItems.SECURITY_BOOTS);
+        trimmedArmorItem(ModItems.ASBESTOS_HELMET);
+        trimmedArmorItem(ModItems.ASBESTOS_CHESTPLATE);
+        trimmedArmorItem(ModItems.ASBESTOS_LEGGINGS);
+        trimmedArmorItem(ModItems.ASBESTOS_BOOTS);
+        trimmedArmorItem(ModItems.AJR_HELMET);
+        trimmedArmorItem(ModItems.AJR_CHESTPLATE);
+        trimmedArmorItem(ModItems.AJR_LEGGINGS);
+        trimmedArmorItem(ModItems.AJR_BOOTS);
+        trimmedArmorItem(ModItems.STEEL_HELMET);
+        trimmedArmorItem(ModItems.STEEL_CHESTPLATE);
+        trimmedArmorItem(ModItems.STEEL_LEGGINGS);
+        trimmedArmorItem(ModItems.STEEL_BOOTS);
+        trimmedArmorItem(ModItems.PAA_HELMET);
+        trimmedArmorItem(ModItems.PAA_CHESTPLATE);
+        trimmedArmorItem(ModItems.PAA_LEGGINGS);
+        trimmedArmorItem(ModItems.PAA_BOOTS);
+        trimmedArmorItem(ModItems.LIQUIDATOR_HELMET);
+        trimmedArmorItem(ModItems.LIQUIDATOR_CHESTPLATE);
+        trimmedArmorItem(ModItems.LIQUIDATOR_LEGGINGS);
+        trimmedArmorItem(ModItems.LIQUIDATOR_BOOTS);
+        trimmedArmorItem(ModItems.HAZMAT_HELMET);
+        trimmedArmorItem(ModItems.HAZMAT_CHESTPLATE);
+        trimmedArmorItem(ModItems.HAZMAT_LEGGINGS);
+        trimmedArmorItem(ModItems.HAZMAT_BOOTS);
+        trimmedArmorItem(ModItems.STARMETAL_HELMET);
+        trimmedArmorItem(ModItems.STARMETAL_CHESTPLATE);
+        trimmedArmorItem(ModItems.STARMETAL_LEGGINGS);
+        trimmedArmorItem(ModItems.STARMETAL_BOOTS);
+        trimmedArmorItem(ModItems.COBALT_HELMET);
+        trimmedArmorItem(ModItems.COBALT_CHESTPLATE);
+        trimmedArmorItem(ModItems.COBALT_LEGGINGS);
+        trimmedArmorItem(ModItems.COBALT_BOOTS);
+
+        evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_STAIRS);
+        evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_SLAB);
+
+        evenSimplerBlockItem(ModBlocks.CONCRETE_HAZARD_STAIRS);
+        evenSimplerBlockItem(ModBlocks.CONCRETE_HAZARD_SLAB);
+        simpleBlockItem(ModBlocks.DOOR_BUNKER);
+        simpleBlockItem(ModBlocks.DOOR_OFFICE);
+        simpleBlockItem(ModBlocks.METAL_DOOR);
+        simpleItem(ModItems.GRENADEHE);
+        simpleItem(ModItems.GRENADEFIRE);
+
+        simpleBlockItem(ModBlocks.ANVIL_BLOCK);
     };
 
     /**
@@ -150,6 +298,11 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("layer0", modLoc("item/" + name));
 
     }
+    private ItemModelBuilder simpleBlockItem(RegistryObject<Block> item) {
+        return withExistingParent(item.getId().getPath(),
+                ResourceLocation.parse("item/generated")).texture("layer0",
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
+    }
     
     private void ingotItem(RegistryObject<Item> itemObject) {
         // 1. Получаем регистрационное имя (например, "uranium_ingot")
@@ -167,4 +320,70 @@ public class ModItemModelProvider extends ItemModelProvider {
                 // Путь к текстуре теперь использует правильное имя файла и подпапку
                 .texture("layer0", modLoc("item/ingot/" + textureFileName));
     }
+
+    private void powdersItem(RegistryObject<Item> itemObject) {
+        
+        String registrationName = itemObject.getId().getPath();
+
+        
+        String baseName = registrationName.replace("_powder", "");
+
+        // 3. Формируем ИМЯ ФАЙЛА ТЕКСТУРЫ (например, "ingot_uranium")
+        String textureFileName = "powder_" + baseName;
+
+        // Генерируем .json файл модели
+        // Имя файла модели совпадает с регистрационным именем
+        withExistingParent(registrationName, "item/generated")
+                // Путь к текстуре теперь использует правильное имя файла и подпапку
+                .texture("layer0", modLoc("item/powders/" + textureFileName));
+    }
+
+    private void trimmedArmorItem(RegistryObject<Item> itemRegistryObject) {
+        final String MOD_ID = MainRegistry.MOD_ID; // Change this to your mod id
+
+        if(itemRegistryObject.get() instanceof ArmorItem armorItem) {
+            trimMaterials.entrySet().forEach(entry -> {
+
+                ResourceKey<TrimMaterial> trimMaterial = entry.getKey();
+                float trimValue = entry.getValue();
+
+                String armorType = switch (armorItem.getEquipmentSlot()) {
+                    case HEAD -> "helmet";
+                    case CHEST -> "chestplate";
+                    case LEGS -> "leggings";
+                    case FEET -> "boots";
+                    default -> "";
+                };
+
+                String armorItemPath = "item/" + armorItem;
+                String trimPath = "trims/items/" + armorType + "_trim_" + trimMaterial.location().getPath();
+                String currentTrimName = armorItemPath + "_" + trimMaterial.location().getPath() + "_trim";
+                ResourceLocation armorItemResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, armorItemPath);
+                ResourceLocation trimResLoc = ResourceLocation.parse(trimPath); // minecraft namespace
+                ResourceLocation trimNameResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, currentTrimName);
+
+                existingFileHelper.trackGenerated(trimResLoc, PackType.CLIENT_RESOURCES, ".png", "textures");
+
+                getBuilder(currentTrimName)
+                        .parent(new ModelFile.UncheckedModelFile("item/generated"))
+                        .texture("layer0", armorItemResLoc)
+                        .texture("layer1", trimResLoc);
+
+                this.withExistingParent(itemRegistryObject.getId().getPath(),
+                                mcLoc("item/generated"))
+                        .override()
+                        .model(new ModelFile.UncheckedModelFile(trimNameResLoc))
+                        .predicate(mcLoc("trim_type"), trimValue).end()
+                        .texture("layer0",
+                                ResourceLocation.fromNamespaceAndPath(MOD_ID,
+                                        "item/" + itemRegistryObject.getId().getPath()));
+            });
+        }
+    }
+
+    public void evenSimplerBlockItem(RegistryObject<Block> block) {
+        this.withExistingParent(MainRegistry.MOD_ID + ":" + ForgeRegistries.BLOCKS.getKey(block.get()).getPath(),
+                modLoc("block/" + ForgeRegistries.BLOCKS.getKey(block.get()).getPath()));
+    }
+
 }

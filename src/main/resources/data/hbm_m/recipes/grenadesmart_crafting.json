@@ -1,0 +1,36 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " @ ",
+    "&%$",
+    " # "
+
+  ],
+
+  "key": {
+
+    "%": {
+      "item": "hbm_m:grenade"
+    },
+    "&": {
+      "item": "hbm_m:phosphorus_ingot"
+    },
+    "#": {
+      "item": "hbm_m:plate_steel"
+    },
+    "@": {
+      "item": "hbm_m:microchip"
+    },
+    "$": {
+      "item": "minecraft:tnt"
+    }
+
+  },
+
+  "result": {
+
+    "item": "hbm_m:grenadesmart"
+  }
+
+}

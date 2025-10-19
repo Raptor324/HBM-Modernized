@@ -11,6 +11,8 @@ import com.hbm_m.armormod.item.ItemModHealth;
 import com.hbm_m.armormod.item.ItemModRadProtection;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
+import com.hbm_m.entity.ModEntities;
+import com.hbm_m.entity.grenades.GrenadeType;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
@@ -32,7 +34,7 @@ public class ModItems {
     // АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ СЛИТКОВ 
     // 1. Создаем карту для хранения всех RegistryObject'ов наших слитков
     public static final Map<ModIngots, RegistryObject<Item>> INGOTS = new EnumMap<>(ModIngots.class);
-
+    public static final Map<ModPowders, RegistryObject<Item>> POWDERS = new EnumMap<>(ModPowders.class);
     // 2. Используем статический блок для заполнения карты
     static {
         for (ModIngots ingot : ModIngots.values()) {
@@ -53,13 +55,35 @@ public class ModItems {
             INGOTS.put(ingot, registeredItem);
         }
     }
+    static {
+
+        for (ModPowders powders : ModPowders.values()) {
+            // Регистрируем предмет. Имя будет, например, "ingot_uranium"
+            // Важно: мы стандартизируем имена, добавляя префикс "ingot_"
+            RegistryObject<Item> registeredItem;
+
+            // Пример того, как сделать один из слитков особенным
+            if (powders == ModPowders.IRON) {
+                registeredItem = ITEMS.register(powders.getName() + "_powder",
+                        () -> new RadioactiveItem(new Item.Properties()));
+            } else {
+                registeredItem = ITEMS.register(powders.getName() + "_powder",
+                        () -> new Item(new Item.Properties()));
+            }
+
+            // Кладём зарегистрированный объект в нашу карту
+            POWDERS.put(powders, registeredItem);
+        }
+
+    }
+
     
     
     // УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА 
     public static RegistryObject<Item> getIngot(ModIngots ingot) {
         return INGOTS.get(ingot);
     }
-
+    public static RegistryObject<Item> getPowders(ModPowders powders) {return POWDERS.get(powders);}
     public static final int SLOT_HELMET = 0;
     public static final int SLOT_CHEST = 1;
     public static final int SLOT_LEGS = 2;
@@ -73,17 +97,17 @@ public class ModItems {
     public static final int BATTERY_CAPACITY = 1_000_000;
 
 // ХАВЧИК:
-public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry",
-        () -> new Item(new Item.Properties().food(ModFoods.STRAWBERRY)));
+    public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry",
+            () -> new Item(new Item.Properties().food(ModFoods.STRAWBERRY)));
 
 
 // ИНСТРУМЕНТЫ ГОРНЯКА:
     public static final RegistryObject<Item> STARMETAL_SWORD = ITEMS.register("starmetal_sword",
-            () -> new SwordItem(ModToolTiers.STARMETAL, 7, 3, new Item.Properties()));
+            () -> new SwordItem(ModToolTiers.STARMETAL, 7, -2, new Item.Properties()));
     public static final RegistryObject<Item> STARMETAL_AXE = ITEMS.register("starmetal_axe",
-            () -> new AxeItem(ModToolTiers.STARMETAL, 15, 1, new Item.Properties()));
+            () -> new ModAxeItem(ModToolTiers.STARMETAL, 15, 1, new Item.Properties()));
     public static final RegistryObject<Item> STARMETAL_PICKAXE = ITEMS.register("starmetal_pickaxe",
-            () -> new PickaxeItem(ModToolTiers.STARMETAL, 3, 1, new Item.Properties()));
+            () -> new ModPickaxeItem(ModToolTiers.STARMETAL, 3, 1, new Item.Properties(), 6, 3, 1, 5));
     public static final RegistryObject<Item> STARMETAL_SHOVEL = ITEMS.register("starmetal_shovel",
             () -> new ShovelItem(ModToolTiers.STARMETAL, 0, 0, new Item.Properties()));
     public static final RegistryObject<Item> STARMETAL_HOE = ITEMS.register("starmetal_hoe",
@@ -91,12 +115,16 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
 
     public static final RegistryObject<Item> ALLOY_SWORD = ITEMS.register("alloy_sword",
         () -> new SwordItem(ModToolTiers.ALLOY, 5, 2, new Item.Properties()));
+
     public static final RegistryObject<Item> ALLOY_AXE = ITEMS.register("alloy_axe",
-            () -> new AxeItem(ModToolTiers.ALLOY, 9, 1, new Item.Properties()));
+            () -> new ModAxeItem(ModToolTiers.ALLOY, 9, 1, new Item.Properties(), 3, 1));
+
     public static final RegistryObject<Item> ALLOY_PICKAXE = ITEMS.register("alloy_pickaxe",
-            () -> new PickaxeItem(ModToolTiers.ALLOY, 2, 1, new Item.Properties()));
+            () -> new ModPickaxeItem(ModToolTiers.ALLOY, 2, 1, new Item.Properties(), 3, 0, 0, 0));
+
     public static final RegistryObject<Item> ALLOY_SHOVEL = ITEMS.register("alloy_shovel",
-            () -> new ShovelItem(ModToolTiers.ALLOY, 0, 0, new Item.Properties()));
+            () -> new ModShovelItem(ModToolTiers.ALLOY, 0, 0, new Item.Properties(), 3, 0, 2));
+
     public static final RegistryObject<Item> ALLOY_HOE = ITEMS.register("alloy_hoe",
             () -> new HoeItem(ModToolTiers.ALLOY, 0, 0f, new Item.Properties()));
 
@@ -122,19 +150,25 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
     public static final RegistryObject<Item> TITANIUM_HOE = ITEMS.register("titanium_hoe",
             () -> new HoeItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
 
-    public static final RegistryObject<Item> GRENADEHE = ITEMS.register("grenadehe",
-            () -> new GrenadeheItem(new Item.Properties()));
+
     public static final RegistryObject<Item> GRENADE = ITEMS.register("grenade",
-            () -> new GrenadeItem(new Item.Properties()));
+        () -> new GrenadeItem(new Item.Properties(), GrenadeType.STANDARD, ModEntities.GRENADE_PROJECTILE));
+
+    public static final RegistryObject<Item> GRENADEHE = ITEMS.register("grenadehe",
+        () -> new GrenadeItem(new Item.Properties(), GrenadeType.HE, ModEntities.GRENADEHE_PROJECTILE));
+
     public static final RegistryObject<Item> GRENADEFIRE = ITEMS.register("grenadefire",
-            () -> new GrenadefireItem(new Item.Properties()));
-    public static final RegistryObject<Item> GRENADESMART = ITEMS.register("grenadesmart",
-            () -> new GrenadesmartItem(new Item.Properties()));
+        () -> new GrenadeItem(new Item.Properties(), GrenadeType.FIRE, ModEntities.GRENADEFIRE_PROJECTILE));
+
     public static final RegistryObject<Item> GRENADESLIME = ITEMS.register("grenadeslime",
-            () -> new GrenadeslimeItem(new Item.Properties()));
+        () -> new GrenadeItem(new Item.Properties(), GrenadeType.SLIME, ModEntities.GRENADESLIME_PROJECTILE));
+
+    public static final RegistryObject<Item> GRENADESMART = ITEMS.register("grenadesmart",
+        () -> new GrenadeItem(new Item.Properties(), GrenadeType.SMART, ModEntities.GRENADESMART_PROJECTILE));
 
     public static final RegistryObject<Item> GRENADEIF = ITEMS.register("grenadeif",
-            () -> new GrenadeheItem(new Item.Properties()));
+        () -> new GrenadeItem(new Item.Properties(), GrenadeType.IF, ModEntities.GRENADEIF_PROJECTILE));
+
 
     // БРОНЯ ГОРНЯКА:
     public static final RegistryObject<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet",
@@ -362,6 +396,15 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
             })
     );
 
+    public static final RegistryObject<Item> SCRAP = ITEMS.register("scrap",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> NUGGET_SILICON = ITEMS.register("nugget_silicon",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BILLET_SILICON = ITEMS.register("billet_silicon",
+            () -> new Item(new Item.Properties()));
+
     public static final RegistryObject<Item> SILICON_CIRCUIT = ITEMS.register("silicon_circuit",
             () -> new Item(new Item.Properties()));
 
@@ -435,10 +478,7 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
 
     public static final RegistryObject<Item> BATTLE_COUNTER = ITEMS.register("battle_counter",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> STEEL_COUNTER = ITEMS.register("steel_counter",
-            () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> STEEL_CASING = ITEMS.register("steel_casing",
-            () -> new Item(new Item.Properties()));
+
 
 
     public static final RegistryObject<Item> PLATE_IRON = ITEMS.register("plate_iron",
@@ -471,7 +511,7 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
     public static final RegistryObject<Item> PLATE_PAA = ITEMS.register("plate_paa",
             () -> new Item(new Item.Properties()));
 
-    public static final RegistryObject<Item> PLATE_POLYMER = ITEMS.register("plate_polymer",
+    public static final RegistryObject<Item> INSULATOR = ITEMS.register("insulator",
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> PLATE_SATURNITE = ITEMS.register("plate_saturnite",
@@ -638,6 +678,107 @@ public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry
     public static final RegistryObject<Item> LARGE_VEHICLE_DOOR = ITEMS.register("large_vehicle_door",
         () -> new MultiblockBlockItem(ModBlocks.LARGE_VEHICLE_DOOR.get(), new Item.Properties()));
 
+
+    public static final RegistryObject<Item> STAMP_STONE_FLAT = ITEMS.register("stamp_stone_flat",
+            () -> new ItemStamp(new Item.Properties(), 32));
+    public static final RegistryObject<Item> STAMP_STONE_PLATE = ITEMS.register("stamp_stone_plate",
+            () -> new ItemStamp(new Item.Properties(), 32));
+    public static final RegistryObject<Item> STAMP_STONE_WIRE = ITEMS.register("stamp_stone_wire",
+            () -> new ItemStamp(new Item.Properties(), 32));
+    public static final RegistryObject<Item> STAMP_STONE_CIRCUIT = ITEMS.register("stamp_stone_circuit",
+            () -> new ItemStamp(new Item.Properties(), 32));
+
+
+    public static final RegistryObject<Item> BLADE_TEST = ITEMS.register("blade_test",
+            () -> new ItemBlades(new Item.Properties(), 48));
+
+    // Железные штампы (48 использований)
+    public static final RegistryObject<Item> STAMP_IRON_FLAT = ITEMS.register("stamp_iron_flat",
+            () -> new ItemStamp(new Item.Properties(), 48));
+    public static final RegistryObject<Item> STAMP_IRON_PLATE = ITEMS.register("stamp_iron_plate",
+            () -> new ItemStamp(new Item.Properties(), 48));
+    public static final RegistryObject<Item> STAMP_IRON_WIRE = ITEMS.register("stamp_iron_wire",
+            () -> new ItemStamp(new Item.Properties(), 48));
+    public static final RegistryObject<Item> STAMP_IRON_CIRCUIT = ITEMS.register("stamp_iron_circuit",
+            () -> new ItemStamp(new Item.Properties(), 48));
+    public static final RegistryObject<Item> STAMP_IRON_9 = ITEMS.register("stamp_iron_9",
+            () -> new ItemStamp(new Item.Properties(), 48));
+    public static final RegistryObject<Item> STAMP_IRON_44 = ITEMS.register("stamp_iron_44",
+            () -> new ItemStamp(new Item.Properties(), 48));
+    public static final RegistryObject<Item> STAMP_IRON_50 = ITEMS.register("stamp_iron_50",
+            () -> new ItemStamp(new Item.Properties(), 48));
+    public static final RegistryObject<Item> STAMP_IRON_357 = ITEMS.register("stamp_iron_357",
+            () -> new ItemStamp(new Item.Properties(), 48));
+
+    // Стальные штампы (64 использования)
+    public static final RegistryObject<Item> STAMP_STEEL_FLAT = ITEMS.register("stamp_steel_flat",
+            () -> new ItemStamp(new Item.Properties(), 64));
+    public static final RegistryObject<Item> STAMP_STEEL_PLATE = ITEMS.register("stamp_steel_plate",
+            () -> new ItemStamp(new Item.Properties(), 64));
+    public static final RegistryObject<Item> STAMP_STEEL_WIRE = ITEMS.register("stamp_steel_wire",
+            () -> new ItemStamp(new Item.Properties(), 64));
+    public static final RegistryObject<Item> STAMP_STEEL_CIRCUIT = ITEMS.register("stamp_steel_circuit",
+            () -> new ItemStamp(new Item.Properties(), 64));
+
+    // Титановые штампы (80 использований)
+    public static final RegistryObject<Item> STAMP_TITANIUM_FLAT = ITEMS.register("stamp_titanium_flat",
+            () -> new ItemStamp(new Item.Properties(), 80));
+    public static final RegistryObject<Item> STAMP_TITANIUM_PLATE = ITEMS.register("stamp_titanium_plate",
+            () -> new ItemStamp(new Item.Properties(), 80));
+    public static final RegistryObject<Item> STAMP_TITANIUM_WIRE = ITEMS.register("stamp_titanium_wire",
+            () -> new ItemStamp(new Item.Properties(), 80));
+    public static final RegistryObject<Item> STAMP_TITANIUM_CIRCUIT = ITEMS.register("stamp_titanium_circuit",
+            () -> new ItemStamp(new Item.Properties(), 80));
+
+    // Обсидиановые штампы (96 использований)
+    public static final RegistryObject<Item> STAMP_OBSIDIAN_FLAT = ITEMS.register("stamp_obsidian_flat",
+            () -> new ItemStamp(new Item.Properties(), 96));
+    public static final RegistryObject<Item> STAMP_OBSIDIAN_PLATE = ITEMS.register("stamp_obsidian_plate",
+            () -> new ItemStamp(new Item.Properties(), 96));
+    public static final RegistryObject<Item> STAMP_OBSIDIAN_WIRE = ITEMS.register("stamp_obsidian_wire",
+            () -> new ItemStamp(new Item.Properties(), 96));
+    public static final RegistryObject<Item> STAMP_OBSIDIAN_CIRCUIT = ITEMS.register("stamp_obsidian_circuit",
+            () -> new ItemStamp(new Item.Properties(), 96));
+
+    // Desh штампы (бесконечная прочность)
+    public static final RegistryObject<Item> STAMP_DESH_FLAT = ITEMS.register("stamp_desh_flat",
+            () -> new ItemStamp(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_DESH_PLATE = ITEMS.register("stamp_desh_plate",
+            () -> new ItemStamp(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_DESH_WIRE = ITEMS.register("stamp_desh_wire",
+            () -> new ItemStamp(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_DESH_CIRCUIT = ITEMS.register("stamp_desh_circuit",
+            () -> new ItemStamp(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_DESH_9 = ITEMS.register("stamp_desh_9",
+            () -> new ItemStamp(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_DESH_44 = ITEMS.register("stamp_desh_44",
+            () -> new ItemStamp(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_DESH_50 = ITEMS.register("stamp_desh_50",
+            () -> new ItemStamp(new Item.Properties()));
+    public static final RegistryObject<Item> STAMP_DESH_357 = ITEMS.register("stamp_desh_357",
+            () -> new ItemStamp(new Item.Properties()));
+
+
+    public static final RegistryObject<Item> WIRE_RED_COPPER = ITEMS.register("wire_red_copper",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_ADVANCED_ALLOY = ITEMS.register("wire_advanced_alloy",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_ALUMINIUM = ITEMS.register("wire_aluminium",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_COPPER = ITEMS.register("wire_copper",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_CARBON = ITEMS.register("wire_carbon",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_FINE = ITEMS.register("wire_fine",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_GOLD = ITEMS.register("wire_gold",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_MAGNETIZED_TUNGSTEN = ITEMS.register("wire_magnetized_tungsten",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_SCHRABIDIUM = ITEMS.register("wire_schrabidium",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> WIRE_TUNGSTEN = ITEMS.register("wire_tungsten",
+            () -> new Item(new Item.Properties()));
 
     // Здесь мы регистрируем предмет-блок батареи для машин, поддерживающий хранение энергии через Forge Energy
     public static final RegistryObject<Item> MACHINE_BATTERY = ITEMS.register("machine_battery",

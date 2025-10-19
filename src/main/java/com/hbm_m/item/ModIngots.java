@@ -93,15 +93,15 @@ public enum ModIngots {
             "en_us", "Bismuth Ingot"),
 
     POLYMER("polymer",
-        "ru_ru", "Кусок полимера",
-        "en_us", "Polymer Chunk"),
+        "ru_ru", "Полимер",
+        "en_us", "Polymer Ingot"),
 
     BAKELITE("bakelite",
         "ru_ru", "Бакелит",
         "en_us", "Bakelite Ingot"),
 
     RUBBER("rubber",
-        "ru_ru", "Резиновый слиток",
+        "ru_ru", "Резина",
         "en_us", "Rubber Ingot"),
 
     DESH("desh",
@@ -133,7 +133,7 @@ public enum ModIngots {
         "en_us", "Dura Steel Ingot"),
 
     POLYMER_COMPOSITE("pc",
-        "ru_ru", "Полимерный композит",
+        "ru_ru", "Твёрдый пластиковый брусок",
         "en_us", "Polymer Composite"),
 
     DIGAMMA("digamma",
@@ -385,8 +385,8 @@ public enum ModIngots {
         "en_us", "PVC"),
 
     BIORUBBER("biorubber",
-        "ru_ru", "Биорезиновый слиток",
-        "en_us", "Biorubber Ingot"),
+        "ru_ru", "Латекс",
+        "en_us", "Latex"),
 
     SEMTEX("semtex",
         "ru_ru", "Семтекс",
@@ -477,7 +477,7 @@ public enum ModIngots {
             "en_us", "Tetraneutronium Ingot"),
 
     CFT("cft",
-            "ru_ru", "слиток CFT",
+            "ru_ru", "Слиток CFT",
             "en_us", "CFT Ingot"),
 
     CDALLOY("cdalloy",
@@ -485,7 +485,7 @@ public enum ModIngots {
             "en_us", "CDalloy Ingot"),
 
     BSCCO("bscco",
-            "ru_ru", "слиток BSCCO",
+            "ru_ru", "Слиток BSCCO",
             "en_us", "BSCCO Ingot"),
 
     BESKAR_DOUBLE("beskar_double",

@@ -7,10 +7,9 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.SlabBlock;
-import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.*;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
+import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.RegistryObject;
 
@@ -43,6 +42,34 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.BRICK_CONCRETE_CRACKED);
         blockWithItem(ModBlocks.BRICK_CONCRETE_MOSSY);
         blockWithItem(ModBlocks.BRICK_CONCRETE_MARKED);
+
+        blockWithItem(ModBlocks.CONCRETE_MARKED);
+        blockWithItem(ModBlocks.CONCRETE_FAN);
+        blockWithItem(ModBlocks.CONCRETE_VENT);
+        blockWithItem(ModBlocks.CONCRETE_MOSSY);
+        blockWithItem(ModBlocks.CONCRETE_CRACKED);
+        blockWithItem(ModBlocks.CONCRETE);
+
+        resourceBlockWithItem(ModBlocks.CRATE);
+        resourceBlockWithItem(ModBlocks.CRATE_LEAD);
+        resourceBlockWithItem(ModBlocks.CRATE_METAL);
+        resourceBlockWithItem(ModBlocks.CRATE_WEAPON);
+
+        blockWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
+        blockWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);
+        blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
+
+        simpleBlockWithItem(ModBlocks.REINFORCED_GLASS.get(), 
+            models().cubeAll(ModBlocks.REINFORCED_GLASS.getId().getPath(), 
+                blockTexture(ModBlocks.REINFORCED_GLASS.get()))
+            .renderType("cutout"));
+
+        doorBlockWithRenderType(((DoorBlock) ModBlocks.METAL_DOOR.get()), modLoc("block/metal_door_bottom"), modLoc("block/metal_door_top"), "cutout");
+
+        doorBlockWithRenderType(((DoorBlock) ModBlocks.DOOR_BUNKER.get()), modLoc("block/door_bunker_bottom"), modLoc("block/door_bunker_top"), "cutout");
+
+        doorBlockWithRenderType(((DoorBlock) ModBlocks.DOOR_OFFICE.get()), modLoc("block/door_office_bottom"), modLoc("block/door_office_top"), "cutout");
+
 
         columnBlockWithItem(
             ModBlocks.WASTE_GRASS, 
@@ -88,6 +115,21 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(ModBlocks.BRICK_CONCRETE_STAIRS.get(),
                 models().getExistingFile(modLoc("block/brick_concrete_stairs")));
 
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_STAIRS.get(),
+                modLoc("block/concrete"));
+        simpleBlockItem(ModBlocks.CONCRETE_STAIRS.get(),
+                models().getExistingFile(modLoc("block/concrete_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_CRACKED_STAIRS.get(),
+                modLoc("block/concrete_cracked"));
+        simpleBlockItem(ModBlocks.CONCRETE_CRACKED_STAIRS.get(),
+                models().getExistingFile(modLoc("block/concrete_cracked_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_MOSSY_STAIRS.get(),
+                modLoc("block/concrete_mossy"));
+        simpleBlockItem(ModBlocks.CONCRETE_MOSSY_STAIRS.get(),
+                models().getExistingFile(modLoc("block/concrete_mossy_stairs")));
+
         stairsBlock((StairBlock) ModBlocks.BRICK_CONCRETE_BROKEN_STAIRS.get(),
                 modLoc("block/brick_concrete_broken"));
         simpleBlockItem(ModBlocks.BRICK_CONCRETE_BROKEN_STAIRS.get(),
@@ -101,7 +143,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         stairsBlock((StairBlock) ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS.get(),
                 modLoc("block/brick_concrete_mossy"));
         simpleBlockItem(ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS.get(),
-                models().getExistingFile(modLoc("block/brick_concrete_mossy")));
+                models().getExistingFile(modLoc("block/brick_concrete_mossy_stairs")));
 
         stairsBlock((StairBlock) ModBlocks.CONCRETE_HAZARD_STAIRS.get(),
             modLoc("block/concrete_hazard"));
@@ -109,6 +151,25 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/concrete_hazard_stairs")));
 
         // Генерация моделей для плиты
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE.get()),
+                modLoc("block/concrete"));
+        simpleBlockItem(ModBlocks.CONCRETE_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_MOSSY_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_MOSSY.get()),
+                modLoc("block/concrete_mossy"));
+        simpleBlockItem(ModBlocks.CONCRETE_MOSSY_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_mossy_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_CRACKED_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_CRACKED.get()),
+                modLoc("block/concrete_cracked"));
+        simpleBlockItem(ModBlocks.CONCRETE_CRACKED_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_cracked_slab")));
+
         slabBlock((SlabBlock) ModBlocks.REINFORCED_STONE_SLAB.get(),
             blockTexture(ModBlocks.REINFORCED_STONE.get()),
             modLoc("block/reinforced_stone"));
@@ -144,6 +205,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/brick_concrete_broken"));
         simpleBlockItem(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB.get(),
                 models().getExistingFile(modLoc("block/brick_concrete_broken_slab")));
+
+        simpleBlockWithItem(ModBlocks.SHREDDER.get(),
+                new ModelFile.UncheckedModelFile(modLoc("block/shredder")));
 
     }
 
@@ -194,13 +258,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
     }
 
-    /**
-     * Генерирует модель и состояние для блока типа "колонна".
-     * @param blockObject Блок
-     * @param sideTexture Имя файла текстуры для боковых сторон
-     * @param topTexture Имя файла текстуры для верха
-     * @param bottomTexture Имя файла текстуры для низа
-     */
+
     private void columnBlockWithItem(RegistryObject<Block> blockObject, ResourceLocation sideLocation, ResourceLocation topLocation, ResourceLocation bottomLocation) {
         // Создаем модель блока, передавая готовые ResourceLocation
         simpleBlock(blockObject.get(), models().cubeBottomTop(

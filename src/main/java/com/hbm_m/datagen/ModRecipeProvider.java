@@ -5,9 +5,13 @@ package com.hbm_m.datagen;
 
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.recipe.AnvilRecipe;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -25,6 +29,7 @@ public class ModRecipeProvider extends RecipeProvider {
     protected void buildRecipes(@Nonnull Consumer<FinishedRecipe> pWriter) {
 
         // Рецепт для алмазного меча
+
         AssemblerRecipeBuilder.assemblerRecipe(
                 new ItemStack(Items.DIAMOND_SWORD), 100, 500)
                 .addIngredient(Items.DIAMOND, 2)
@@ -114,7 +119,7 @@ public class ModRecipeProvider extends RecipeProvider {
         AssemblerRecipeBuilder.assemblerRecipe(
                 new ItemStack(ModItems.PLATE_ARMOR_AJR.get(), 1), 100, 200)
                 .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 4)
-                .addIngredient(ModItems.PLATE_POLYMER.get(), 2)
+                .addIngredient(ModItems.INSULATOR.get(), 2)
                 .save(pWriter, "plate_armor_ajr");
 
         // AssemblerRecipeBuilder.assemblerRecipe(
@@ -128,6 +133,31 @@ public class ModRecipeProvider extends RecipeProvider {
                 .addIngredient(ModItems.PLATE_ARMOR_DNT.get(), 1)
                 .addIngredient(Items.WATER_BUCKET, 1)
                 .save(pWriter, "plate_armor_dnt_rusted");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.ANALOG_CIRCUIT.get(), 1), 80, 150)
+                .addIngredient(ModItems.CAPACITOR.get(), 2)
+                .addIngredient(ModItems.VACUUM_TUBE.get(), 3)
+                .addIngredient(ModItems.WIRE_CARBON.get(), 4)
+                .addIngredient(ModItems.PCB.get(), 4)
+                .save(pWriter, "analog_circuit");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.INTEGRATED_CIRCUIT.get(), 1), 80, 150)
+                .addIngredient(ModItems.WIRE_CARBON.get(), 4)
+                .addIngredient(ModItems.CAPACITOR.get(), 2)
+                .addIngredient(ModItems.MICROCHIP.get(), 4)
+                .addIngredient(ModItems.PCB.get(), 4)
+                .save(pWriter, "integrated_circuit");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.ADVANCED_CIRCUIT.get(), 1), 120, 250)
+                .addIngredient(ModItems.WIRE_CARBON.get(), 8)
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 2)
+                .addIngredient(ModItems.CAPACITOR.get(), 4)
+                .addIngredient(ModItems.MICROCHIP.get(), 16)
+                .addIngredient(ModItems.PCB.get(), 8)
+                .save(pWriter, "advanced_circuit");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                 new ItemStack(ModItems.PLATE_ARMOR_FAU.get(), 1), 120, 250)

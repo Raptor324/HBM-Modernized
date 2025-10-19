@@ -4,6 +4,7 @@ package com.hbm_m.datagen;
 
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.ModPowders;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
 import net.minecraftforge.common.data.LanguageProvider;
@@ -26,6 +27,15 @@ public class ModLanguageProvider extends LanguageProvider {
             String translation = ingot.getTranslation(this.locale);
             if (translation != null) {
                 add(ModItems.getIngot(ingot).get(), translation);
+            }
+        }
+
+        // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ
+        for (ModPowders powders : ModPowders.values()) {
+            // 3. Теперь мы используем наше поле 'this.locale', к которому у нас есть доступ
+            String translation = powders.getTranslation(this.locale);
+            if (translation != null) {
+                add(ModItems.getPowders(powders).get(), translation);
             }
         }
 
@@ -135,6 +145,53 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 // ПРЕДМЕТЫ
 
+                add(ModItems.WIRE_RED_COPPER.get(), "Провод из красной меди");
+                add(ModItems.WIRE_COPPER.get(), "Медный провод");
+                add(ModItems.WIRE_ALUMINIUM.get(), "Алюминиевый провод");
+                add(ModItems.WIRE_GOLD.get(), "Золотой провод");
+                add(ModItems.WIRE_TUNGSTEN.get(), "Вольфрамовый провод");
+                add(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), "Провод из намагниченного вольфрама");
+                add(ModItems.WIRE_FINE.get(), "Порядочный провод");
+                add(ModItems.WIRE_CARBON.get(), "Провод из свинца");
+                add(ModItems.WIRE_SCHRABIDIUM.get(), "Шрабидиевый провод");
+                add(ModItems.WIRE_ADVANCED_ALLOY.get(), "Провод из продвинутого сплава");
+
+                add(ModItems.STAMP_STONE_FLAT.get(), "Плоский каменный штамп");
+                add(ModItems.STAMP_STONE_PLATE.get(), "Каменный штамп пластины");
+                add(ModItems.STAMP_STONE_WIRE.get(), "Каменный штамп провода");
+                add(ModItems.STAMP_STONE_CIRCUIT.get(), "Каменный штамп чипа");
+                add(ModItems.STAMP_IRON_FLAT.get(), "Плоский железный штамп");
+                add(ModItems.STAMP_IRON_PLATE.get(), "Железный штамп пластины");
+                add(ModItems.STAMP_IRON_WIRE.get(), "Железный штамп провода");
+                add(ModItems.STAMP_IRON_CIRCUIT.get(), "Железный штамп чипа");
+                add(ModItems.STAMP_STEEL_FLAT.get(), "Плоский стальной штамп");
+                add(ModItems.STAMP_STEEL_PLATE.get(), "Стальной штамп пластины");
+                add(ModItems.STAMP_STEEL_WIRE.get(), "Стальной штамп провода");
+                add(ModItems.STAMP_STEEL_CIRCUIT.get(), "Стальной штамп чипа");
+                add(ModItems.STAMP_TITANIUM_FLAT.get(), "Плоский титановый штамп");
+                add(ModItems.STAMP_TITANIUM_PLATE.get(), "Титановый штамп пластины");
+                add(ModItems.STAMP_TITANIUM_WIRE.get(), "Титановый штамп провода");
+                add(ModItems.STAMP_TITANIUM_CIRCUIT.get(), "Титановый штамп чипа");
+                add(ModItems.STAMP_OBSIDIAN_FLAT.get(), "Плоский обсидиановый штамп");
+                add(ModItems.STAMP_OBSIDIAN_PLATE.get(), "Обсидиановый штамп пластины");
+                add(ModItems.STAMP_OBSIDIAN_WIRE.get(), "Обсидиановый штамп провода");
+                add(ModItems.STAMP_OBSIDIAN_CIRCUIT.get(), "Обсидиановый штамп чипа");
+                add(ModItems.STAMP_DESH_FLAT.get(), "Плоский деш штамп");
+                add(ModItems.STAMP_DESH_PLATE.get(), "Деш штамп пластины");
+                add(ModItems.STAMP_DESH_WIRE.get(), "Деш штамп провода");
+                add(ModItems.STAMP_DESH_CIRCUIT.get(), "Деш штамп чипа");
+                add(ModItems.STAMP_DESH_9.get(), "Деш штамп 9мм");
+                add(ModItems.STAMP_DESH_44.get(), "Деш штамп .44 Magnum");
+                add(ModItems.STAMP_DESH_50.get(), "Деш штамп .50 BMG");
+                add(ModItems.STAMP_DESH_357.get(), "Деш штамп .357 Magnum");
+                add(ModItems.STAMP_IRON_357.get(), "Железный штамп .357 Magnum");
+                add(ModItems.STAMP_IRON_44.get(), "Железный штамп .44 Magnum");
+                add(ModItems.STAMP_IRON_50.get(), "Железный штамп .50 BMG");
+                add(ModItems.STAMP_IRON_9.get(), "Железный штамп 9мм");
+
+
+
+
                 add("item.hbm_m.heart_piece", "Частичка сердца");
                 add(ModItems.HEART_CONTAINER.get(), "Контейнер для сердца");
                 add(ModItems.HEART_BOOSTER.get(), "Усилитель сердца");
@@ -195,7 +252,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.VACUUM_TUBE.get(), "Вакуумная Трубка");
                 add(ModItems.CAPACITOR.get(), "Конденсатор");
                 add(ModItems.PCB.get(), "Печатная Плата");
-
+                add(ModItems.INSULATOR.get(), "Изолятор");
+                add(ModItems.NUGGET_SILICON.get(), "Самородок Кремния");
+                add(ModItems.BILLET_SILICON.get(), "Заготовка Кремния");
 
                 add(ModItems.BATTLE_GEARS.get(), "Боевые Детали");
                 add(ModItems.BATTLE_CASING.get(), "Боевой Корпус");
@@ -213,7 +272,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_LEAD.get(), "Оловянная пластина");
                 add(ModItems.PLATE_MIXED.get(), "Композитная пластина");
                 add(ModItems.PLATE_PAA.get(), "Пластина сплава РаА");
-                add(ModItems.PLATE_POLYMER.get(), "Полимерная пластина");
                 add(ModItems.PLATE_SATURNITE.get(), "Сатурнитовая пластина");
                 add(ModItems.PLATE_SCHRABIDIUM.get(), "Шрабидиевая пластина");
                 add(ModItems.PLATE_STEEL.get(), "Стальная пластина");
@@ -228,7 +286,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_ARMOR_HEV.get(), "Броневая пластина HEV");
                 add(ModItems.PLATE_ARMOR_LUNAR.get(), "Лунная броневая пластина");
                 add(ModItems.PLATE_ARMOR_TITANIUM.get(), "Титановая броневая пластина");
-                add(ModItems.PLATE_CAST.get(), "литая пластина");
+                add(ModItems.PLATE_CAST.get(), "Литая пластина");
                 add(ModItems.PLATE_CAST_ALT.get(), "Альтернативная литая пластина");
                 add(ModItems.PLATE_CAST_BISMUTH.get(), "Висмутовая литая пластина");
                 add(ModItems.PLATE_CAST_DARK.get(), "Тёмная литая пластина");
@@ -246,6 +304,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_FUEL_U233.get(), "Топливная пластина U-233");
                 add(ModItems.PLATE_FUEL_U235.get(), "Топливная пластина U-235");
 
+
                 add("item.hbm_m.firebrick", "Шамотный кирпич");
                 add("item.hbm_m.uranium_raw", "Рудный уран");
                 add("item.hbm_m.tungsten_raw", "Рудный вольфрам");
@@ -261,7 +320,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.lignite", "Бурый уголь");
                 add("item.hbm_m.fluorite", "Флюорит");
                 add("item.hbm_m.fireclay_ball", "Комок огнеупорной глины");
-
+            
                 add("item.hbm_m.blueprint_folder", "Папка шаблонов");
                 add("item.hbm_m.blueprint_folder.named", "Папка шаблонов машин");
                 add("item.hbm_m.blueprint_folder.empty", "Пустая папка");
@@ -285,14 +344,30 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.rad_protection.value_short", "%s сопр. радиации.");
 
                 // БЛОКИ
-
+                add("block.hbm_m.door_office", "Офисная дверь");
+                add("block.hbm_m.door_bunker", "Бункерная дверь");
+                add("block.hbm_m.metal_door", "Металлическая дверь");
+                add("block.hbm_m.demon_lamp", "Милая лампа (WIP)");
+                add("block.hbm_m.explosive_charge", "Заряд взрывчатки (WIP)");
+                add("block.hbm_m.det_miner", "Шахтёрский заряд");
+                add("block.hbm_m.concrete_vent", "Вентиляция в бетоне");
+                add("block.hbm_m.concrete_fan", "Вентилятор в бетоне");
+                add("block.hbm_m.concrete_marked", "Помеченный бетон");
+                add("block.hbm_m.concrete_cracked", "Потрескавшийся бетон");
+                add("block.hbm_m.concrete_mossy", "Замшелый бетон");
+                add("block.hbm_m.concrete", "Бетон");
+                add("block.hbm_m.reinforced_glass", "Усиленное стекло");
+                add("block.hbm_m.crate", "Ящик");
+                add("block.hbm_m.crate_lead", "Свинцовый ящик");
+                add("block.hbm_m.crate_metal", "Металлический ящик");
+                add("block.hbm_m.crate_weapon", "Ящик с оружием");
                 add("block.hbm_m.uranium_block", "Урановый блок");
                 add("block.hbm_m.plutonium_block", "Плутониевый блок");
                 add("block.hbm_m.plutonium_fuel_block", "Блок плутониевого топлива");
                 add("block.hbm_m.polonium210_block", "Блок полония-210");
                 add("block.hbm_m.armor_table", "Стол модификации брони");
                 add("block.hbm_m.machine_assembler", "Сборочная машина (Старая)");
-                add("block.hbm_m.advanced_assembly_machine", "Сборочная машина (VERY WIP)");
+                add("block.hbm_m.advanced_assembly_machine", "Сборочная машина");
                 add("block.hbm_m.machine_battery", "Энергохранилище");
                 add("block.hbm_m.wire_coated", "Провод из красной меди");
                 add("block.hbm_m.wood_burner", "Дровяной генератор");
@@ -307,6 +382,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_hazard", "Бетон ''Выбор строителя'' - Полоса опасности");
                 add("block.hbm_m.concrete_hazard_slab", "Бетонная плита ''Выбор строителя'' - Полоса опасности");
                 add("block.hbm_m.concrete_hazard_stairs", "Бетонные ступеньки ''Выбор строителя'' - Полоса опасности");
+                add("block.hbm_m.concrete_stairs", "Бетонные ступеньки");
+                add("block.hbm_m.concrete_slab", "Бетонная плита");
+                add("block.hbm_m.concrete_cracked_slab", "Плита из треснутого бетона");
+                add("block.hbm_m.concrete_cracked_stairs", "Ступени из треснутого бетона");
+                add("block.hbm_m.concrete_mossy_slab", "Плита из замшелого бетона");
+                add("block.hbm_m.concrete_mossy_stairs", "Ступени из замшелого бетона");
+
                 add("block.hbm_m.large_vehicle_door", "Дверь для крупногабаритного транспорта");
                 add("block.hbm_m.strawberry_bush", "Куст клубники");
                 add("block.hbm_m.strawberry", "Клубника");
@@ -330,6 +412,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.uranium_ore", "Урановая руда");
                 add("block.hbm_m.aluminum_ore", "Алюминиевая руда");
                 add("block.hbm_m.aluminum_ore_deepslate", "Глубинная алюминиевая руда");
+                add("block.hbm_m.cinnabar_ore_deepslate", "Глубинная киноварная руда");
+                add("block.hbm_m.cobalt_ore_deepslate", "Глубинная кобальтовая руда");
                 add("block.hbm_m.titanium_ore", "Титановая руда");
                 add("block.hbm_m.titanium_ore_deepslate", "Глубинная титановая руда");
                 add("block.hbm_m.tungsten_ore", "Вольфрамовая руда");
@@ -375,6 +459,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.machine_assembler", "Сборочная машина");
                 add("container.hbm_m.advanced_assembly_machine", "Сборочная машина");
                 add("container.hbm_m.wood_burner", "Дровяной генератор");
+                add("container.hbm_m.machine_battery", "Энергохранилище");
+                add("container.hbm_m.press", "Пресс");
 
                 add("gui.hbm_m.battery.priority.0", "Приоритет: Низкий");
                 add("gui.hbm_m.battery.priority.0.desc", "Низший приоритет. Опустошается в первую очередь, заполняется в последнюю");
@@ -402,17 +488,38 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.machine_battery.charge_speed", "Скорость зарядки: %1$s FE/т");
                 add("tooltip.hbm_m.machine_battery.discharge_speed", "Скорость разрядки: %1$s FE/т");
                 add("tooltip.hbm_m.machine_battery.stored", "Заряжено: %1$s / %2$s FE");
+                add("tooltip.hbm_m.requires", "Требуется");
 
-                
 
                 add("hazard.hbm_m.radiation", "[Радиоактивный]");
+                add("hazard.hbm_m.radiation.format", "%s РАД/с");
                 add("hazard.hbm_m.hydro_reactive", "[Гидрореактивный]");
                 add("hazard.hbm_m.explosive_on_fire", "[Воспламеняющийся / Взрывоопасный]");
                 add("hazard.hbm_m.pyrophoric", "[Пирофорный / Горячий]");
+                add("hazard.hbm_m.explosion_strength.format", " Сила взрыва - %s");
+                add("hazard.hbm_m.stack", "Стак: %s");
 
                 add("item.hbm_m.meter.geiger_counter.name", "СЧЁТЧИК ГЕЙГЕРА");
                 add("item.hbm_m.meter.dosimeter.name", "ДОЗИМЕТР");
                 add("item.hbm_m.meter.title_format", "%s");
+
+                add("tooltip.hbm_m.abilities", "Способности:");
+                add("tooltip.hbm_m.vein_miner", "Жилковый майнер (%s)");
+                add("tooltip.hbm_m.aoe", "Зона действия %s x %s x %s");
+                add("tooltip.hbm_m.silk_touch", "Шёлковое касание");
+                add("tooltip.hbm_m.fortune", "Удача (%s)");
+                add("tooltip.hbm_m.right_click", "ПКМ - переключить способность");
+                add("tooltip.hbm_m.shift_right_click", "Shift + ПКМ - выключить всё");
+
+                add("message.hbm_m.vein_miner.enabled", "Жилковый майнер %s активирован!");
+                add("message.hbm_m.vein_miner.disabled", "Жилковый майнер %s деактивирован!");
+                add("message.hbm_m.aoe.enabled", "Зона действия %s x %s x %s активирована!");
+                add("message.hbm_m.aoe.disabled", "Зона действия %s x %s x %s деактивирована!");
+                add("message.hbm_m.silk_touch.enabled", "Шёлковое касание активировано!");
+                add("message.hbm_m.silk_touch.disabled", "Шёлковое касание деактивировано!");
+                add("message.hbm_m.fortune.enabled", "Удача %s активирована!");
+                add("message.hbm_m.fortune.disabled", "Удача %s деактивирована!");
+                add("message.hbm_m.disabled", "Все способности выключены!");
 
                 add("item.hbm_m.meter.chunk_rads", "§eТекущий уровень радиации в чанке: %s\n");
                 add("item.hbm_m.meter.env_rads", "§eОбщее радиационное заражение среды: %s");
@@ -511,11 +618,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor", "Влияние источников радиации на чанк");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor", "Фактор рандомизации радиации в чанке");
 
-                add("text.autoconfig.hbm_m.category.modifiers", "Модификаторы (WIP)");
-                add("text.autoconfig.hbm_m.option.hazmatMod", "Защита обычного костюма химзащиты");
-                add("text.autoconfig.hbm_m.option.advHazmatMod", "Защита продвинутого костюма химзащиты");
-                add("text.autoconfig.hbm_m.option.paaHazmatMod", "Защита костюма PAA");
-
                 add("text.autoconfig.hbm_m.category.debug", "Отладка");
                 add("text.autoconfig.hbm_m.option.enableDebugRender", "Включить отладочный рендер радиации");
                 add("text.autoconfig.hbm_m.option.debugRenderTextSize", "Размер текста отладочного рендера");
@@ -568,7 +670,7 @@ public class ModLanguageProvider extends LanguageProvider {
             case "en_us":
 
                 // TABS
-                add("itemGroup.hbm_m.ntm_resources_tab", "NTM Ingots and resources");
+                add("itemGroup.hbm_m.ntm_resources_tab", "NTM Ingots and Resources");
                 add("itemGroup.hbm_m.ntm_fuel_tab", "NTM Fuel and Machine Components");
                 add("itemGroup.hbm_m.ntm_templates_tab", "NTM Templates");
                 add("itemGroup.hbm_m.ntm_ores_tab", "NTM Ores and Blocks");
@@ -665,7 +767,49 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_boots", "Starmetal Boots");
 
                 // ITEMS
+                add(ModItems.WIRE_RED_COPPER.get(), "Red Copper Wire");
+                add(ModItems.WIRE_COPPER.get(), "Copper Wire");
+                add(ModItems.WIRE_ALUMINIUM.get(), "Aluminium Wire");
+                add(ModItems.WIRE_GOLD.get(), "Golden Wire");
+                add(ModItems.WIRE_TUNGSTEN.get(), "Tungsten Wire");
+                add(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), "Magnetized Tungsten Wire");
+                add(ModItems.WIRE_FINE.get(), "Fine Wire");
+                add(ModItems.WIRE_CARBON.get(), "Lead Wire");
+                add(ModItems.WIRE_SCHRABIDIUM.get(), "Shrabidium Wire");
+                add(ModItems.WIRE_ADVANCED_ALLOY.get(), "Advanced Alloy Wire");
 
+                add(ModItems.STAMP_STONE_FLAT.get(), "Stone Flat Stamp");
+                add(ModItems.STAMP_STONE_PLATE.get(), "Stone Plate Stamp");
+                add(ModItems.STAMP_STONE_WIRE.get(), "Stone Wire Stamp");
+                add(ModItems.STAMP_STONE_CIRCUIT.get(), "Stone Circuit Stamp");
+                add(ModItems.STAMP_IRON_FLAT.get(), "Iron Flat Stamp");
+                add(ModItems.STAMP_IRON_PLATE.get(), "Iron Plate Stamp");
+                add(ModItems.STAMP_IRON_WIRE.get(), "Iron Wire Stamp");
+                add(ModItems.STAMP_IRON_CIRCUIT.get(), "Iron Circuit Stamp");
+                add(ModItems.STAMP_STEEL_FLAT.get(), "Steel Flat Stamp");
+                add(ModItems.STAMP_STEEL_PLATE.get(), "Steel Plate Stamp");
+                add(ModItems.STAMP_STEEL_WIRE.get(), "Steel Wire Stamp");
+                add(ModItems.STAMP_STEEL_CIRCUIT.get(), "Steel Circuit Stamp");
+                add(ModItems.STAMP_TITANIUM_FLAT.get(), "Titanium Flat Stamp");
+                add(ModItems.STAMP_TITANIUM_PLATE.get(), "Titanium Plate Stamp");
+                add(ModItems.STAMP_TITANIUM_WIRE.get(), "Titanium Wire Stamp");
+                add(ModItems.STAMP_TITANIUM_CIRCUIT.get(), "Titanium Circuit Stamp");
+                add(ModItems.STAMP_OBSIDIAN_FLAT.get(), "Obsidian Flat Stamp");
+                add(ModItems.STAMP_OBSIDIAN_PLATE.get(), "Obsidian Plate Stamp");
+                add(ModItems.STAMP_OBSIDIAN_WIRE.get(), "Obsidian Wire Stamp");
+                add(ModItems.STAMP_OBSIDIAN_CIRCUIT.get(), "Obsidian Circuit Stamp");
+                add(ModItems.STAMP_DESH_FLAT.get(), "Desh Flat Stamp");
+                add(ModItems.STAMP_DESH_PLATE.get(), "Desh Plate Stamp");
+                add(ModItems.STAMP_DESH_WIRE.get(), "Desh Wire Stamp");
+                add(ModItems.STAMP_DESH_CIRCUIT.get(), "Desh Circuit Stamp");
+                add(ModItems.STAMP_DESH_9.get(), "Desh 9mm Stamp");
+                add(ModItems.STAMP_DESH_44.get(), "Desh .44 Magnum Stamp");
+                add(ModItems.STAMP_DESH_50.get(), "Desh .50 BMG Stamp");
+                add(ModItems.STAMP_DESH_357.get(), "Desh .357 Magnum Stamp");
+                add(ModItems.STAMP_IRON_357.get(), "Iron .357 Magnum Stamp");
+                add(ModItems.STAMP_IRON_44.get(), "Iron .44 Magnum Stamp");
+                add(ModItems.STAMP_IRON_50.get(), "Iron .50 BMG Stamp");
+                add(ModItems.STAMP_IRON_9.get(), "Iron 9mm Stamp");
 
 
                 add(ModItems.QUANTUM_CHIP.get(), "Quantum Chip");
@@ -687,7 +831,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.VACUUM_TUBE.get(), "Vacuum Tube");
                 add(ModItems.CAPACITOR.get(), "Capacitor");
                 add(ModItems.PCB.get(), "PCB");
-
+                add(ModItems.STRAWBERRY.get(), "Strawberry");
 
 
                 add(ModItems.BATTLE_GEARS.get(), "Battle Gears");
@@ -698,13 +842,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.METAL_ROD.get(), "Metal Rod");
                 
 
-                add(ModItems.GRENADE.get(), "Bouncing grenade");
-                add(ModItems.GRENADEHE.get(), "Powerful bouncing grenade");
-                add(ModItems.GRENADEFIRE.get(), "Fire bouncing grenade");
-                add(ModItems.GRENADESLIME.get(), "Bouncy bouncing grenade");
-                add(ModItems.GRENADESMART.get(), "Smart bouncing grenade");
+                add(ModItems.GRENADE.get(), "Bouncing Grenade");
+                add(ModItems.GRENADEHE.get(), "Powerful Bouncing Grenade");
+                add(ModItems.GRENADEFIRE.get(), "Fire Bouncing Grenade");
+                add(ModItems.GRENADESLIME.get(), "Bouncy Bouncing Grenade");
+                add(ModItems.GRENADESMART.get(), "Smart Bouncing Grenade");
 
-                add(ModItems.GRENADEIF.get(), "IF Grenade (WIPр)");
+                add(ModItems.GRENADEIF.get(), "IF Grenade (WIP)");
 
                 add("item.hbm_m.geiger_counter", "Geiger Counter");
                 add("item.hbm_m.dosimeter", "Dosimeter");
@@ -749,6 +893,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("desc.gui.template", "Insert Assembly Template");
                 add("desc.gui.assembler.warning", "No valid template!");
 
+
+                add(ModItems.NUGGET_SILICON.get(), "Silicon Nugget");
+                add(ModItems.BILLET_SILICON.get(), "Silicon Billet");
                 add(ModItems.PLATE_GOLD.get(), "Golden Plate");
                 add(ModItems.PLATE_GUNMETAL.get(), "Gunmetal Plate");
                 add(ModItems.PLATE_GUNSTEEL.get(), "Gunsteel Plate");
@@ -758,7 +905,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_LEAD.get(), "Lead Plate");
                 add(ModItems.PLATE_MIXED.get(), "Mixed Plate");
                 add(ModItems.PLATE_PAA.get(), "PAA Plate");
-                add(ModItems.PLATE_POLYMER.get(), "Polymer Plate");
+                add(ModItems.INSULATOR.get(), "Insulator");
                 add(ModItems.PLATE_SATURNITE.get(), "Saturnite Plate");
                 add(ModItems.PLATE_SCHRABIDIUM.get(), "Schrabidium Plate");
                 add(ModItems.PLATE_STEEL.get(), "Steel Plate");
@@ -836,20 +983,40 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.armor_table.servos_slot", "Servos");
 
                 // BLOCKS
-                
+                add("block.hbm_m.door_office", "Office Door");
+                add("block.hbm_m.door_bunker", "Bunker Door");
+                add("block.hbm_m.metal_door", "Metal Door");
+                add("block.hbm_m.demon_lamp", "Demon Lamp (WIP)");
+                add("block.hbm_m.explosive_charge", "Explosive Charge (WIP)");
+                add("block.hbm_m.reinforced_glass", "Reinforced Glass");
+                add("block.hbm_m.crate", "Crate");
+                add("block.hbm_m.crate_lead", "Lead Crate");
+                add("block.hbm_m.crate_metal", "Metal Crate");
+                add("block.hbm_m.crate_weapon", "Weapon Crate");
                 add("block.hbm_m.uranium_block", "Uranium Block");
                 add("block.hbm_m.plutonium_block", "Plutonium Block");
                 add("block.hbm_m.plutonium_fuel_block", "Plutonium Fuel Block");
                 add("block.hbm_m.polonium210_block", "Polonium-210 Block");
                 add("block.hbm_m.armor_table", "Armor Modification Table");
                 add("block.hbm_m.machine_assembler", "Assembly Machine (Legacy)");
-                add("block.hbm_m.advanced_assembly_machine", "Assembly Machine (VERY WIP)");
+                add("block.hbm_m.advanced_assembly_machine", "Assembly Machine");
                 add("block.hbm_m.machine_battery", "Machine Battery");
                 add("block.hbm_m.shredder", "Shredder (WIP)");
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
                 add("block.hbm_m.blast_furnace", "Blast Furnace");
                 add("block.hbm_m.press", "Press");
 
+                add("block.hbm_m.det_miner", "Det Miner");
+                add("block.hbm_m.concrete_vent", "Concrete Vent");
+                add("block.hbm_m.concrete_fan", "Concrete Fan");
+                add("block.hbm_m.concrete_marked", "Marked Concrete");
+                add("block.hbm_m.concrete_cracked", "Cracked Concrete");
+                add("block.hbm_m.concrete_mossy", "Mossy Concrete");
+                add("block.hbm_m.concrete", "Concrete");
+                add("block.hbm_m.concrete_cracked_stairs", "Concrete Cracked Stairs");
+                add("block.hbm_m.concrete_cracked_slab", "Concrete Cracked Slab");
+                add("block.hbm_m.concrete_mossy_stairs", "Concrete Mossy Stairs");
+                add("block.hbm_m.concrete_mossy_slab", "Concrete Mossy Slab");
                 add("block.hbm_m.brick_concrete", "Concrete Bricks");
                 add("block.hbm_m.brick_concrete_slab", "Concrete Bricks Slab");
                 add("block.hbm_m.brick_concrete_stairs", "Concrete Bricks Stairs");
@@ -867,15 +1034,18 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_hazard", "Concrete Block with Hazard line");
                 add("block.hbm_m.concrete_hazard_slab", "Concrete Slab with Hazard line");
                 add("block.hbm_m.concrete_hazard_stairs", "Concrete Stairs with Hazard line");
+                add("block.hbm_m.concrete_stairs", "Concrete Stairs");
+                add("block.hbm_m.concrete_slab", "Concrete Slab");
                 add("block.hbm_m.large_vehicle_door", "Large Vehicle Door");
                 add("block.hbm_m.strawberry_bush", "Strawberry Bush");
-                add("block.hbm_m.strawberry", "Strawberry");
 
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");
                 add("block.hbm_m.wire_coated", "Red Copper Wire");
 
                 // ORES
 
+                add("block.hbm_m.cinnabar_ore_deepslate", "Deepslate Cinnabar Ore");
+                add("block.hbm_m.cobalt_ore_deepslate", "Deepslate Cobalt Ore");
                 add("block.hbm_m.uranium_ore", "Uranium Ore");
                 add("block.hbm_m.aluminum_ore", "Aluminum Ore");
                 add("block.hbm_m.aluminum_ore_deepslate", "Deepslate Aluminum Ore");
@@ -915,6 +1085,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.machine_assembler", "Assembly Machine");
                 add("container.hbm_m.wood_burner", "Wood Burner Generator");
                 add("container.hbm_m.advanced_assembly_machine", "Assembly Machine");
+                add("container.hbm_m.machine_battery", "Machine Battery");
+                add("container.hbm_m.press", "Press");
 
                 add("gui.hbm_m.battery.priority.0", "Priority: Low");
                 add("gui.hbm_m.battery.priority.0.desc", "Lowest priority. Will be drained first and filled last.");
@@ -946,9 +1118,30 @@ public class ModLanguageProvider extends LanguageProvider {
                 // HAZARD TOOLTIPS
 
                 add("hazard.hbm_m.radiation", "[Radioactive]");
+                add("hazard.hbm_m.radiation.format", "%s RAD/s");
                 add("hazard.hbm_m.hydro_reactive", "[Hydro-reactive]");
                 add("hazard.hbm_m.explosive_on_fire", "[Flammable / Explosive]");
                 add("hazard.hbm_m.pyrophoric", "[Pyrophoric / Hot]");
+                add("hazard.hbm_m.explosion_strength.format", " Explosion Strength - %s");
+                add("hazard.hbm_m.stack", "Stack: %s");
+
+                add("tooltip.hbm_m.abilities", "Abilities:");
+                add("tooltip.hbm_m.vein_miner", "Vein Miner (%s)");
+                add("tooltip.hbm_m.aoe", "AOE (%s x %s x %s)");
+                add("tooltip.hbm_m.silk_touch", "Silk Touch");
+                add("tooltip.hbm_m.fortune", "Fortune (%s)");
+                add("tooltip.hbm_m.right_click", "Right click - toggle ability");
+                add("tooltip.hbm_m.shift_right_click", "Shift + Right click - disable all");
+
+                add("message.hbm_m.vein_miner.enabled", "Vein Miner %s enabled!");
+                add("message.hbm_m.vein_miner.disabled", "Vein Miner %s disabled!");
+                add("message.hbm_m.aoe.enabled", "AOE %s x %s x %s enabled!");
+                add("message.hbm_m.aoe.disabled", "AOE %s x %s x %s disabled!");
+                add("message.hbm_m.silk_touch.enabled", "Silk Touch enabled!");
+                add("message.hbm_m.silk_touch.disabled", "Silk Touch disabled!");
+                add("message.hbm_m.fortune.enabled", "Fortune %s enabled!");
+                add("message.hbm_m.fortune.disabled", "Fortune %s disabled!");
+                add("message.hbm_m.disabled", "All abilities disabled!");
 
                 add("item.hbm_m.meter.geiger_counter.name", "GEIGER COUNTER");
                 add("item.hbm_m.meter.dosimeter.name", "DOSIMETER");
@@ -1051,12 +1244,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.minRadDecayAmount", "Min decay per tick");
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor", "Source influence factor");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor", "Chunk radiation randomization factor");
-
-                add("text.autoconfig.hbm_m.category.modifiers", "Modifiers (WIP)");
-
-                add("text.autoconfig.hbm_m.option.hazmatMod", "Hazmat suit protection");
-                add("text.autoconfig.hbm_m.option.advHazmatMod", "Advanced hazmat suit protection");
-                add("text.autoconfig.hbm_m.option.paaHazmatMod", "PAA suit protection");
 
                 add("text.autoconfig.hbm_m.category.debug", "Debug");
 

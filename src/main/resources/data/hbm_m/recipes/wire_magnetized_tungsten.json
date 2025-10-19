@@ -1,0 +1,15 @@
+{
+  "type": "hbm_m:press",
+  "ingredients": [
+    {
+      "tag": "hbm_m:stamps/wire"
+    },
+    {
+      "item": "hbm_m:magnetized_tungsten_ingot"
+    }
+  ],
+  "output": {
+    "item": "hbm_m:wire_magnetized_tungsten",
+    "count": 8
+  }
+}

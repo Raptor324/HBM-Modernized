@@ -1,0 +1,15 @@
+{
+	"type": "hbm_m:press",
+	"ingredients": [
+		{
+			"tag": "hbm_m:stamps/plate"
+		},
+		{
+			"item": "hbm_m:lead_ingot"
+		}
+	],
+	"output": {
+		"item": "hbm_m:plate_lead",
+		"count": 1
+	}
+}

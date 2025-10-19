@@ -127,7 +127,7 @@ public class MachinePressBlock extends BaseEntityBlock implements IMultiblockCon
         }
 
         return createTickerHelper(blockEntityType, ModBlockEntities.PRESS_BE.get(),
-                (level1, pos, state1, blockEntity) -> blockEntity.tick(level1, pos, state1));
+            MachinePressBlockEntity::tick);
     }
 
     // --- IMultiblockController implementation ---

@@ -1,0 +1,31 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "category": "misc",
+  "pattern": [
+    " # ",
+    "$%$",
+    " # "
+
+  ],
+
+  "key": {
+
+    "%": {
+      "item": "hbm_m:grenade"
+    },
+    "#": {
+      "item": "hbm_m:plate_steel"
+    },
+
+    "$": {
+      "item": "minecraft:tnt"
+    }
+
+  },
+
+  "result": {
+
+    "item": "hbm_m:grenadehe"
+  }
+
+}

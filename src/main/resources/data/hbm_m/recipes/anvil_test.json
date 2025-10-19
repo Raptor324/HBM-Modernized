@@ -1,0 +1,29 @@
+{
+  "type": "hbm_m:anvil_crafting",
+  "inputA": {
+    "item": "minecraft:iron_ingot"
+  },
+  "inputB": {
+    "item": "minecraft:diamond"
+  },
+  "output": {
+    "item": "hbm_m:custom_item",
+    "count": 1
+  },
+  "required": [
+    {
+      "item": "minecraft:coal",
+      "count": 4
+    },
+    {
+      "item": "minecraft:redstone",
+      "count": 2
+    }
+  ],
+  "returned": [
+    {
+      "item": "minecraft:iron_nugget",
+      "count": 3
+    }
+  ]
+}

@@ -1,9 +1,8 @@
 package com.hbm_m.recipe;
 
-// Рецепт для Пресса - машины, которая формует предметы с помощью штампов. Требует штамп и материал.
-
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.mojang.logging.LogUtils;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
@@ -15,8 +14,11 @@ import net.minecraft.world.item.crafting.*;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
 public class PressRecipe implements Recipe<SimpleContainer> {
+    private static final Logger LOGGER = LogUtils.getLogger();
+
     private final NonNullList<Ingredient> inputItems;
     private final ItemStack output;
     private final ResourceLocation id;
@@ -43,6 +45,18 @@ public class PressRecipe implements Recipe<SimpleContainer> {
         // Проверяем что штамп и материал соответствуют рецепту
         boolean stampMatches = inputItems.get(0).test(stamp);
         boolean materialMatches = inputItems.get(1).test(material);
+
+        // ОТЛАДКА
+        LOGGER.info("=== Press Recipe Check ===");
+        LOGGER.info("Recipe ID: {}", id);
+        LOGGER.info("Stamp in slot: {} ({})", stamp.getItem(), stamp.getDisplayName().getString());
+        LOGGER.info("Material in slot: {} ({})", material.getItem(), material.getDisplayName().getString());
+        LOGGER.info("Expected stamp ingredient: {}", inputItems.get(0).toJson());
+        LOGGER.info("Expected material ingredient: {}", inputItems.get(1).toJson());
+        LOGGER.info("Stamp matches: {}", stampMatches);
+        LOGGER.info("Material matches: {}", materialMatches);
+        LOGGER.info("Overall result: {}", stampMatches && materialMatches);
+        LOGGER.info("========================");
 
         return stampMatches && materialMatches;
     }

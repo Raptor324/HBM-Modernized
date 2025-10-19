@@ -102,9 +102,7 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
         }
 
         // Отрисовка "призрачных" предметов в пустых слотах
-        if (recipe != null) {
-            renderGhostItems(guiGraphics, recipe);
-        }
+        renderGhostItems(guiGraphics);
         
         // TODO: Отрисовка жидкостей в танках
         // Когда у BlockEntity будут методы getInputTank() и getOutputTank(), раскомментируйте:
@@ -123,25 +121,27 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
 
     /**
      * Отрисовывает призрачные предметы в пустых входных слотах.
-     * Группирует одинаковые предметы и отображает их с количеством.
+     * Использует группировку из BaseMachineBlockEntity.
      */
-    private void renderGhostItems(GuiGraphics guiGraphics, AssemblerRecipe recipe) {
-        NonNullList<Ingredient> ingredients = recipe.getIngredients();
+    private void renderGhostItems(GuiGraphics guiGraphics) {
+        // ИСПОЛЬЗУЕМ метод из BlockEntity, который получает данные из модуля
+        NonNullList<ItemStack> ghostItems = this.menu.getBlockEntity().getGhostItems();
         
-        // Получаем время для анимации циклической смены предметов
-        long time = System.currentTimeMillis();
-        int cycleIndex = (int) ((time / 1000) % 20); // Меняется каждую секунду, цикл 20 секунд
+        if (ghostItems.isEmpty()) {
+            return;
+        }
         
         // Слоты 4-15 (handler) соответствуют слотам 40-51 в menu
         int inputSlotsStart = 36 + 4; // 40
         int inputSlotsCount = 12;
         
-        // ГРУППИРУЕМ ОДИНАКОВЫЕ ИНГРЕДИЕНТЫ
-        List<IngredientGroup> groupedIngredients = groupIngredients(ingredients);
-        
         // Отрисовываем сгруппированные предметы
-        for (int i = 0; i < Math.min(groupedIngredients.size(), inputSlotsCount); i++) {
-            IngredientGroup group = groupedIngredients.get(i);
+        for (int i = 0; i < Math.min(ghostItems.size(), inputSlotsCount); i++) {
+            ItemStack ghostStack = ghostItems.get(i);
+            
+            if (ghostStack.isEmpty()) {
+                continue;
+            }
             
             // Получаем слот
             int slotIndex = inputSlotsStart + i;
@@ -151,119 +151,31 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             
             // Отрисовываем призрак только если слот пуст
             if (!slot.hasItem()) {
-                ItemStack[] possibleItems = group.ingredient.getItems();
-                if (possibleItems.length > 0) {
-                    // Циклически выбираем предмет для отображения
-                    ItemStack displayStack = possibleItems[cycleIndex % possibleItems.length].copy();
-                    
-                    if (!displayStack.isEmpty()) {
-                        // УСТАНАВЛИВАЕМ ПРАВИЛЬНОЕ КОЛИЧЕСТВО
-                        displayStack.setCount(group.count);
-                        
-                        // Отрисовка призрачного предмета с полупрозрачностью
-                        guiGraphics.pose().pushPose();
-                        guiGraphics.pose().translate(0, 0, 100); // z-level 100
-                        
-                        // Полупрозрачность
-                        RenderSystem.enableBlend();
-                        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.5F);
-                        
-                        int x = this.leftPos + slot.x;
-                        int y = this.topPos + slot.y;
-                        guiGraphics.renderItem(displayStack, x, y);
-                        
-                        // ОТРИСОВКА КОЛИЧЕСТВА (если > 1)
-                        if (group.count > 1) {
-                            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F); // Полная непрозрачность для текста
-                            guiGraphics.renderItemDecorations(this.font, displayStack, x, y);
-                        }
-                        
-                        // Восстанавливаем цвет
-                        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-                        guiGraphics.pose().popPose();
-                    }
-                }
-            }
-        }
-        
-        // ЗАТЕМНЕНИЕ ПУСТЫХ СЛОТОВ
-        guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(0, 0, 150); // z-level 150
-        
-        RenderSystem.enableBlend();
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.5F);
-        
-        for (int i = 0; i < Math.min(groupedIngredients.size(), inputSlotsCount); i++) {
-            int slotIndex = inputSlotsStart + i;
-            if (slotIndex >= this.menu.slots.size()) break;
-            
-            net.minecraft.world.inventory.Slot slot = this.menu.slots.get(slotIndex);
-            
-            if (!slot.hasItem()) {
-                // Наложение полупрозрачной текстуры слота
+                // Отрисовка призрачного предмета с полупрозрачностью
+                guiGraphics.pose().pushPose();
+                guiGraphics.pose().translate(0, 0, 100); // z-level 100
+                
+                // Полупрозрачность
+                RenderSystem.enableBlend();
+                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.5F);
+                
                 int x = this.leftPos + slot.x;
                 int y = this.topPos + slot.y;
-                guiGraphics.blit(TEXTURE, x, y, slot.x, slot.y, 16, 16);
-            }
-        }
-        
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.disableBlend();
-        guiGraphics.pose().popPose();
-    }
-
-    /**
-     * Группирует одинаковые ингредиенты и подсчитывает их количество.
-     */
-    private List<IngredientGroup> groupIngredients(NonNullList<Ingredient> ingredients) {
-        List<IngredientGroup> groups = new ArrayList<>();
-        
-        for (Ingredient ingredient : ingredients) {
-            if (ingredient.isEmpty()) continue;
-            
-            // Проверяем, есть ли уже такой ингредиент в группах
-            boolean found = false;
-            for (IngredientGroup group : groups) {
-                if (ingredientsEqual(group.ingredient, ingredient)) {
-                    group.count++;
-                    found = true;
-                    break;
+                
+                guiGraphics.renderItem(ghostStack, x, y);
+                
+                // ОТРИСОВКА КОЛИЧЕСТВА (если > 1)
+                if (ghostStack.getCount() > 1) {
+                    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F); // Полная непрозрачность для текста
+                    guiGraphics.renderItemDecorations(this.font, ghostStack, x, y);
                 }
+                
+                // Восстанавливаем цвет
+                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+                RenderSystem.disableBlend();
+                
+                guiGraphics.pose().popPose();
             }
-            
-            if (!found) {
-                groups.add(new IngredientGroup(ingredient, 1));
-            }
-        }
-        
-        return groups;
-    }
-
-    /**
-     * Проверяет, являются ли два ингредиента идентичными.
-     */
-    private boolean ingredientsEqual(Ingredient a, Ingredient b) {
-        ItemStack[] itemsA = a.getItems();
-        ItemStack[] itemsB = b.getItems();
-        
-        if (itemsA.length != itemsB.length) return false;
-        if (itemsA.length == 0) return true;
-        
-        // Сравниваем первые предметы (упрощённая проверка)
-        // Для более точной проверки можно сравнить все возможные предметы
-        return ItemStack.isSameItemSameTags(itemsA[0], itemsB[0]);
-    }
-
-    /**
-     * Вспомогательный класс для группировки ингредиентов.
-     */
-    private static class IngredientGroup {
-        Ingredient ingredient;
-        int count;
-        
-        IngredientGroup(Ingredient ingredient, int count) {
-            this.ingredient = ingredient;
-            this.count = count;
         }
     }
 
@@ -278,23 +190,25 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
     protected void renderTooltip(GuiGraphics guiGraphics, int pMouseX, int pMouseY) {
         super.renderTooltip(guiGraphics, pMouseX, pMouseY);
         
-        // ОБНОВЛЕНО: Подсказка для шкалы энергии с дельтой
+        // ИСПРАВЛЕНО: Подсказка для шкалы энергии - используем ContainerData
         if (isMouseOver(pMouseX, pMouseY, 152, 18, 16, 61)) {
             List<Component> tooltip = new ArrayList<>();
             
             // Первая строка: текущая / максимальная энергия
-            tooltip.add(Component.literal(this.menu.getBlockEntity().getEnergyStored() + " / "
-                    + this.menu.getBlockEntity().getMaxEnergyStored() + " FE"));
+            // ИСПОЛЬЗУЕМ MENU вместо прямого доступа к BlockEntity
+            tooltip.add(Component.literal(this.menu.getEnergy() + " / " 
+                + this.menu.getMaxEnergy() + " FE"));
             
-            // НОВОЕ: Вторая строка - изменение энергии в тик
+            // Вторая строка - изменение энергии в тик
             int delta = this.menu.getEnergyDelta();
             String deltaText = (delta >= 0 ? "+" : "") + delta + " FE/t";
-            ChatFormatting deltaColor = delta > 0 ? ChatFormatting.GREEN 
-                                    : (delta < 0 ? ChatFormatting.RED : ChatFormatting.YELLOW);
+            ChatFormatting deltaColor = delta > 0 ? ChatFormatting.GREEN
+                : (delta < 0 ? ChatFormatting.RED : ChatFormatting.YELLOW);
             tooltip.add(Component.literal(deltaText).withStyle(deltaColor));
             
-            guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), 
-                                    pMouseX, pMouseY);
+            guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(),
+                pMouseX, pMouseY);
+            return; // ВАЖНО: выход после отрисовки тултипа
         }
         
         // Подсказка для шкалы энергии

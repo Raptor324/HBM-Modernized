@@ -28,11 +28,6 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
     private final Level level;
     private final ContainerData data;
 
-    private int lastProgress = 0;
-    private int lastMaxProgress = 0;
-    private int lastEnergy = 0;
-    private int lastMaxEnergy = 0;
-
     // Конструктор, вызываемый с сервера
     public MachineAdvancedAssemblerMenu(int pContainerId, Inventory pPlayerInventory, MachineAdvancedAssemblerBlockEntity pBlockEntity, ContainerData pData) {
         super(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), pContainerId);

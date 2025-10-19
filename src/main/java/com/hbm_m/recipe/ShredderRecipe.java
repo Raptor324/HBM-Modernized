@@ -1,56 +1,52 @@
 package com.hbm_m.recipe;
 
-import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.hbm_m.main.MainRegistry;
-import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
-import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.items.wrapper.RecipeWrapper;
 import org.jetbrains.annotations.Nullable;
 
-public class ShredderRecipe implements Recipe<SimpleContainer> {
-    private final NonNullList<Ingredient> inputItems;
-    private final ItemStack output;
-    private final ResourceLocation id;
+public class ShredderRecipe implements Recipe<Container> {
 
-    public ShredderRecipe(NonNullList<Ingredient> inputItems, ItemStack output, ResourceLocation id) {
-        this.inputItems = inputItems;
-        this.output = output;
+    private final ResourceLocation id;
+    private final Ingredient input;
+    private final ItemStack output;
+
+    public ShredderRecipe(ResourceLocation id, Ingredient input, ItemStack output) {
         this.id = id;
+        this.input = input;
+        this.output = output;
     }
 
     @Override
-    public boolean matches(SimpleContainer pContainer, Level pLevel) {
-        if(pLevel.isClientSide()) {
+    public boolean matches(Container container, Level level) {
+        if (level.isClientSide()) {
             return false;
         }
-
-        return inputItems.get(0).test(pContainer.getItem(0));
+        return input.test(container.getItem(0));
     }
 
     @Override
-    public NonNullList<Ingredient> getIngredients() {
-        return inputItems;
-    }
-
-    @Override
-    public ItemStack assemble(SimpleContainer pContainer, RegistryAccess pRegistryAccess) {
+    public ItemStack assemble(Container container, RegistryAccess registryAccess) {
         return output.copy();
     }
 
     @Override
-    public boolean canCraftInDimensions(int pWidth, int pHeight) {
+    public boolean canCraftInDimensions(int width, int height) {
         return true;
     }
 
     @Override
-    public ItemStack getResultItem(RegistryAccess pRegistryAccess) {
+    public ItemStack getResultItem(RegistryAccess registryAccess) {
         return output.copy();
     }
 
@@ -69,50 +65,46 @@ public class ShredderRecipe implements Recipe<SimpleContainer> {
         return Type.INSTANCE;
     }
 
+    public Ingredient getInput() {
+        return input;
+    }
+
+    public ItemStack getOutput() {
+        return output.copy();
+    }
+
     public static class Type implements RecipeType<ShredderRecipe> {
         public static final Type INSTANCE = new Type();
-        public static final String ID = "shredder";
+        public static final String ID = "shredding";
     }
 
     public static class Serializer implements RecipeSerializer<ShredderRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shredder");
+        public static final ResourceLocation ID = new ResourceLocation("hbm_m", "shredding");
 
         @Override
-        public ShredderRecipe fromJson(ResourceLocation pRecipeId, JsonObject pSerializedRecipe) {
-            ItemStack output = ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(pSerializedRecipe, "output"));
+        public ShredderRecipe fromJson(ResourceLocation recipeId, JsonObject json) {
+            Ingredient input = Ingredient.fromJson(GsonHelper.getAsJsonObject(json, "ingredient"));
+            JsonObject result = GsonHelper.getAsJsonObject(json, "result");
+            ItemStack output = new ItemStack(
+                    GsonHelper.getAsItem(result, "item"),
+                    GsonHelper.getAsInt(result, "count", 1)
+            );
 
-            JsonArray ingredients = GsonHelper.getAsJsonArray(pSerializedRecipe, "ingredients");
-            NonNullList<Ingredient> inputs = NonNullList.withSize(1, Ingredient.EMPTY);
-
-            for(int i = 0; i < inputs.size(); i++) {
-                inputs.set(i, Ingredient.fromJson(ingredients.get(i)));
-            }
-
-            return new ShredderRecipe(inputs, output, pRecipeId);
+            return new ShredderRecipe(recipeId, input, output);
         }
 
         @Override
-        public @Nullable ShredderRecipe fromNetwork(ResourceLocation pRecipeId, FriendlyByteBuf pBuffer) {
-            NonNullList<Ingredient> inputs = NonNullList.withSize(pBuffer.readInt(), Ingredient.EMPTY);
-
-            for(int i = 0; i < inputs.size(); i++) {
-                inputs.set(i, Ingredient.fromNetwork(pBuffer));
-            }
-
-            ItemStack output = pBuffer.readItem();
-            return new ShredderRecipe(inputs, output, pRecipeId);
+        public @Nullable ShredderRecipe fromNetwork(ResourceLocation recipeId, FriendlyByteBuf buffer) {
+            Ingredient input = Ingredient.fromNetwork(buffer);
+            ItemStack output = buffer.readItem();
+            return new ShredderRecipe(recipeId, input, output);
         }
 
         @Override
-        public void toNetwork(FriendlyByteBuf pBuffer, ShredderRecipe pRecipe) {
-            pBuffer.writeInt(pRecipe.inputItems.size());
-
-            for (Ingredient ingredient : pRecipe.getIngredients()) {
-                ingredient.toNetwork(pBuffer);
-            }
-
-            pBuffer.writeItemStack(pRecipe.getResultItem(null), false);
+        public void toNetwork(FriendlyByteBuf buffer, ShredderRecipe recipe) {
+            recipe.input.toNetwork(buffer);
+            buffer.writeItem(recipe.output);
         }
     }
 }

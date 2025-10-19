@@ -2,8 +2,10 @@ package com.hbm_m.block;
 
 import com.hbm_m.block.entity.DoorBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.multiblock.*;
-import com.hbm_m.util.DoorDecl;
+import com.hbm_m.multiblock.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.block.entity.DoorDecl;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -33,14 +35,14 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 public class DoorBlock extends BaseEntityBlock implements IMultiblockController {
-    
+
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<PartRole> PART_ROLE = EnumProperty.create("part_role", PartRole.class);
     public static final BooleanProperty OPEN = BooleanProperty.create("open");
-    
+
     private final DoorDecl doorDecl;
     private final MultiblockStructureHelper structureHelper;
-    
+
     public DoorBlock(Properties properties, DoorDecl doorDecl) {
         super(properties);
         this.doorDecl = doorDecl;
@@ -57,49 +59,62 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
         }
         
         this.structureHelper = new MultiblockStructureHelper(structureMap, phantomSupplier);
-        
         registerDefaultState(stateDefinition.any()
-            .setValue(FACING, Direction.NORTH)
-            .setValue(PART_ROLE, PartRole.DEFAULT)
-            .setValue(OPEN, false));
+                .setValue(FACING, Direction.NORTH)
+                .setValue(PART_ROLE, PartRole.DEFAULT)
+                .setValue(OPEN, false));
     }
-    
+
     @Override
     public MultiblockStructureHelper getStructureHelper() {
         return structureHelper;
     }
-    
+
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
         return PartRole.DEFAULT;
     }
-    
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new DoorBlockEntity(pos, state, doorDecl);
     }
-    
+
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return level.isClientSide ? null : createTickerHelper(type, ModBlockEntities.DOOR_ENTITY.get(),
-            DoorBlockEntity::serverTick);
+        if (level.isClientSide) {
+            return null;
+        }
+        return createTickerHelper(type, ModBlockEntities.DOOR_ENTITY.get(), 
+                (world, pos, blockState, blockEntity) -> DoorBlockEntity.serverTick(world, pos, blockState, (DoorBlockEntity) blockEntity));
     }
-    
+
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
-                                 InteractionHand hand, BlockHitResult hit) {
-        if (level.isClientSide) return InteractionResult.SUCCESS;
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
         
+        // На сервере меняем состояние
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof DoorBlockEntity doorBE) {
             DoorBlockEntity controller = doorBE.getController();
             if (controller != null) {
+                // Проверка на блокировку
                 if (controller.isLocked()) {
                     player.displayClientMessage(doorDecl.getLockedMessage(), true);
                     return InteractionResult.FAIL;
                 }
+                
+                // ИСПРАВЛЕНО: Проверка на движение
+                if (controller.isMoving()) {
+                    // Опционально: можно показать сообщение игроку
+                    // player.displayClientMessage(Component.translatable("door.moving"), true);
+                    return InteractionResult.CONSUME; // Поглощаем клик но ничего не делаем
+                }
+                
                 controller.toggle();
                 return InteractionResult.SUCCESS;
             }
@@ -107,43 +122,66 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
         
         return InteractionResult.PASS;
     }
-    
+
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         BlockEntity be = level.getBlockEntity(pos);
-        
         if (be instanceof DoorBlockEntity doorBE) {
             DoorBlockEntity controller = doorBE.getController();
             if (controller != null) {
-                return controller.getDynamicCollisionShape(state.getValue(FACING));
+                byte doorState = controller.getState();
+                
+                // Если дверь открыта (1) или открывается (3) - НЕТ коллизии вообще
+                if (doorState == 1 || doorState == 3) {
+                    return Shapes.empty();
+                }
+                
+                // Если дверь закрыта (0) или закрывается (2) - коллизия ТОЛЬКО для контроллера
+                // Фантомные блоки НЕ должны иметь коллизии!
+                if (doorState == 0 || doorState == 2) {
+                    // КРИТИЧНО: коллизия ТОЛЬКО у контроллера (главного блока)
+                    if (controller.getBlockPos().equals(pos)) {
+                        // Возвращаем ПОЛНЫЙ блок только для контроллера
+                        return Shapes.block();
+                    } else {
+                        // Для всех остальных блоков структуры - НЕТ коллизии
+                        return Shapes.empty();
+                    }
+                }
             }
         }
         
+        // Fallback: если не контроллер - возвращаем полный блок
         return Shapes.block();
     }
-    
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // НЕ показываем рамку выделения у контроллера - только у фантомов
+        return Shapes.empty();
+    }
+
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.ENTITYBLOCK_ANIMATED;
     }
-    
+
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         return defaultBlockState()
-            .setValue(FACING, context.getHorizontalDirection().getOpposite());
+                .setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
-    
+
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, PART_ROLE, OPEN);
     }
-    
+
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         if (!level.isClientSide && !oldState.is(this)) {
             Direction facing = state.getValue(FACING);
             structureHelper.placeStructure(level, pos, facing, this);
-            
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof DoorBlockEntity doorBE) {
                 doorBE.setControllerPos(pos);
@@ -152,7 +190,7 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
         }
         super.onPlace(state, level, pos, oldState, isMoving);
     }
-    
+
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide) {

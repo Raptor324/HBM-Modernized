@@ -1,13 +1,10 @@
 package com.hbm_m.menu;
 
-// Меню для пресс-машины.
-// Имеет слоты для топлива, штампа, материала и выхода.
-// Содержит логику для обработки Shift-клика и отображения прогресса прессовки, уровня топлива и нагрева.
-
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.MachinePressBlockEntity;
+import com.hbm_m.item.ItemStamp;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
-
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -20,12 +17,13 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
 
 public class MachinePressMenu extends AbstractContainerMenu {
+
     public final MachinePressBlockEntity blockEntity;
     private final Level level;
     private final ContainerData data;
 
     public MachinePressMenu(int containerId, Inventory inv, FriendlyByteBuf extraData) {
-        this(containerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(11));
+        this(containerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(9));
     }
 
     public MachinePressMenu(int containerId, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -39,37 +37,37 @@ public class MachinePressMenu extends AbstractContainerMenu {
         addPlayerHotbar(inv);
 
         this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(iItemHandler -> {
-            this.addSlot(new FuelSlot(iItemHandler, 0, 26, 53));     // Топливо (уголь)
-            this.addSlot(new StampSlot(iItemHandler, 1, 80, 17));     // Штамп
-            this.addSlot(new MaterialSlot(iItemHandler, 2, 80, 53));  // Материал
-            this.addSlot(new OutputSlot(iItemHandler, 3, 139, 34));   // Выходной слот
+            this.addSlot(new FuelSlot(iItemHandler, 0, 26, 53));
+            this.addSlot(new StampSlot(iItemHandler, 1, 80, 17));
+            this.addSlot(new MaterialSlot(iItemHandler, 2, 80, 53));
+            this.addSlot(new OutputSlot(iItemHandler, 3, 139, 34));
         });
 
         addDataSlots(data);
     }
 
-    // Методы доступа к данным
-    public int getProgress() {
+    // Методы доступа к данным (как в 1.7.10)
+    public int getPress() {
         return this.data.get(0);
     }
 
-    public int getMaxProgress() {
+    public int getMaxPress() {
         return this.data.get(1);
     }
 
-    public int getFuelTime() {
+    public int getBurnTime() {
         return this.data.get(2);
     }
 
-    public int getMaxFuelTime() {
+    public int getFuelPerOperation() {
         return this.data.get(3);
     }
 
-    public int getHeatLevel() {
+    public int getSpeed() {
         return this.data.get(4);
     }
 
-    public int getMaxHeatLevel() {
+    public int getMaxSpeed() {
         return this.data.get(5);
     }
 
@@ -81,32 +79,23 @@ public class MachinePressMenu extends AbstractContainerMenu {
         return this.data.get(7);
     }
 
-    public boolean isPressingDown() {
+    public boolean isRetracting() {
         return this.data.get(8) == 1;
-    }
-
-    public int getEfficiency() {
-        return this.data.get(9);
-    }
-
-    public int getAnimationSpeed() {
-        return this.data.get(10);
     }
 
     // Методы состояния
     public boolean isCrafting() {
-        return getProgress() > 0 && isHeated();
+        return getPress() > 0 || isRetracting();
     }
 
     public boolean isHeated() {
-        return getHeatState() >= 3;
+        return getBurnTime() >= getFuelPerOperation();
     }
 
     public boolean isBurning() {
-        return getFuelTime() > 0;
+        return getBurnTime() >= 20;
     }
 
-    // CREDIT GOES TO: diesieben07 | https://github.com/diesieben07/SevenCommons
     private static final int HOTBAR_SLOT_COUNT = 9;
     private static final int PLAYER_INVENTORY_ROW_COUNT = 3;
     private static final int PLAYER_INVENTORY_COLUMN_COUNT = 9;
@@ -120,18 +109,16 @@ public class MachinePressMenu extends AbstractContainerMenu {
     public ItemStack quickMoveStack(Player playerIn, int index) {
         Slot sourceSlot = slots.get(index);
         if (sourceSlot == null || !sourceSlot.hasItem()) return ItemStack.EMPTY;
+
         ItemStack sourceStack = sourceSlot.getItem();
         ItemStack copyOfSourceStack = sourceStack.copy();
 
-        // Check if the slot clicked is one of the vanilla container slots
         if (index < VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT) {
-            // This is a vanilla container slot so merge the stack into the tile inventory
             if (!moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX
                     + TE_INVENTORY_SLOT_COUNT, false)) {
                 return ItemStack.EMPTY;
             }
         } else if (index < TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT) {
-            // This is a TE slot so merge the stack into the players inventory
             if (!moveItemStackTo(sourceStack, VANILLA_FIRST_SLOT_INDEX, VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT, false)) {
                 return ItemStack.EMPTY;
             }
@@ -140,12 +127,12 @@ public class MachinePressMenu extends AbstractContainerMenu {
             return ItemStack.EMPTY;
         }
 
-        // If stack size == 0 (the entire stack was moved) set slot contents to null
         if (sourceStack.getCount() == 0) {
             sourceSlot.set(ItemStack.EMPTY);
         } else {
             sourceSlot.setChanged();
         }
+
         sourceSlot.onTake(playerIn, sourceStack);
         return copyOfSourceStack;
     }
@@ -178,7 +165,12 @@ public class MachinePressMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            return stack.getItem() == Items.COAL;
+            net.minecraft.world.item.Item item = stack.getItem();
+            // Разрешаем кастомное топливо
+            if (item == ModItems.LIGNITE.get()) return true;
+
+            // Используем встроенную систему Forge для определения ванильного топлива
+            return net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null) > 0;
         }
     }
 
@@ -189,7 +181,11 @@ public class MachinePressMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            // Проверяем на штампы по названию предмета
+            // Проверяем, является ли предмет штампом через класс
+            if (stack.getItem() instanceof ItemStamp) {
+                return true;
+            }
+            // Оставляем старую проверку для совместимости
             return stack.getItem().toString().contains("stamp");
         }
     }
@@ -201,7 +197,6 @@ public class MachinePressMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            // Проверяем на слитки и металлы по названию предмета
             String itemName = stack.getItem().toString();
             return itemName.contains("ingot") || itemName.contains("metal");
         }

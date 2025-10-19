@@ -14,6 +14,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
 
+import static com.hbm_m.item.ModItems.WIRE_SCHRABIDIUM;
+
 public class ModHazards {
 
     public static final TagKey<Item> URANIUM_INGOTS = TagKey.create(Registries.ITEM,
@@ -121,7 +123,7 @@ public class ModHazards {
                     break;
                 case SCHRARANIUM:
                     HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
-                            new HazardEntry(HazardType.RADIATION, 1.5f)
+                            new HazardEntry(HazardType.RADIATION, 15f)
                     ));
                     break;
                 case SCHRABIDATE:
@@ -174,6 +176,7 @@ public class ModHazards {
                     HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
                             new HazardEntry(HazardType.PYROPHORIC, 1.0f)
                     ));
+                    break;
                 case URANIUM:
                     HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
                         new HazardEntry(HazardType.RADIATION, 0.35f)
@@ -230,8 +233,7 @@ public class ModHazards {
                         new HazardEntry(HazardType.RADIATION, 30.0f)
                     ));
                     break;
-                
-                
+
 
                 // Для STEEL и TECHNELLOY мы ничего не делаем, поэтому они проваливаются в default
                 default:
@@ -254,11 +256,19 @@ public class ModHazards {
             new HazardEntry(HazardType.RADIATION, 42.5f)
         ));
 
+         HazardSystem.register(ModBlocks.DET_MINER.get(), new HazardData(
+                 new HazardEntry(HazardType.EXPLOSIVE_ON_FIRE, 8.0f)
+         ));
+
         // ПРЕДМЕТЫ 
         // Порох взрывается в огне. Сила взрыва 1/4 от ТНТ (4.0f / 4 = 1.0f) за единицу.
         HazardSystem.register(Items.GUNPOWDER, new HazardData(
             new HazardEntry(HazardType.EXPLOSIVE_ON_FIRE, 1.0f)
         ));
+
+         HazardSystem.register(ModItems.WIRE_SCHRABIDIUM.get(), new HazardData(
+                 new HazardEntry(HazardType.RADIATION, 0.5f)
+         ));
 
         HazardSystem.register(ModItems.PLATE_SCHRABIDIUM.get(), new HazardData(
             new HazardEntry(HazardType.RADIATION, 15.0f)
@@ -273,6 +283,8 @@ public class ModHazards {
         HazardSystem.register(Blocks.TNT.asItem(), new HazardData(
             new HazardEntry(HazardType.EXPLOSIVE_ON_FIRE, 4.0f)
         ));
+
+
 
         HazardSystem.register(Items.TNT_MINECART, new HazardData(
             new HazardEntry(HazardType.EXPLOSIVE_ON_FIRE, 4.0f)

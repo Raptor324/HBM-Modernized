@@ -1,0 +1,13 @@
+{
+	"type": "minecraft:blasting",
+
+	"cookingtime": 100,
+
+	"ingredient": {
+		"item": "hbm_m:gold_powder"
+	},
+
+	"result": {
+		"item": "minecraft:gold_ingot"
+	}
+}

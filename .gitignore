@@ -24,7 +24,7 @@ bin/
 
 # Visual Studio Code
 .vscode/
-
+.cursor
 # ================= Generated Files =================
 /src/generated/
 
@@ -56,3 +56,4 @@ forge*changelog.txt
 .github/copilot-instructions.md
 .gitignore
 .cursor/
+desktop.ini

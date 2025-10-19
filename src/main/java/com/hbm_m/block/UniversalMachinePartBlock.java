@@ -1,15 +1,14 @@
 package com.hbm_m.block;
 
+import com.hbm_m.block.entity.DoorBlockEntity;
 // Этот класс реализует фантомный блок, который является частью каждой мультиблочной структуры.
 // Фантомные блоки невидимы и не имеют коллизии, но позволяют игроку взаимодействовать с контроллером структуры,
 // наведя курсор на любую часть структуры. Форма фантомного блока определяется формой всей структуры, сдвинутой так,
 // чтобы правильно отображаться на позиции этой части.
 import com.hbm_m.block.entity.UniversalMachinePartBlockEntity;
-import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -65,7 +64,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
         // 1. Get the BlockEntity of this part
         if (!(pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part)) {
-            // Если у BE нет привязки — возвращаем маленький хитбокс, чтобы по фантому можно было кликнуть
             return SMALL_INTERACT_SHAPE;
         }
 
@@ -81,19 +79,29 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
             return SMALL_INTERACT_SHAPE;
         }
 
-        // 4. Ask the controller for its "master shape"
+        if (controller instanceof DoorBlock) {
+            VoxelShape masterShape = controller.getStructureHelper()
+                .generateShapeFromParts(controllerState.getValue(DoorBlock.FACING));
+            
+            if (masterShape.isEmpty()) {
+                return SMALL_INTERACT_SHAPE;
+            }
+            
+            // Сдвигаем форму структуры относительно этого фантома
+            BlockPos offset = pPos.subtract(controllerPos);
+            return masterShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
+        }
+
+        // 4. Для обычных мультиблоков - показываем полную форму
         VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState);
         if (masterShape == null) {
-            // If no custom shape is defined, generate one from the structure's parts
             masterShape = controller.getStructureHelper().generateShapeFromParts(controllerState.getValue(FACING));
         }
 
-        // 5. If masterShape is empty, return small interact shape so player can still target the part
         if (masterShape.isEmpty()) {
             return SMALL_INTERACT_SHAPE;
         }
 
-        // 6. Move the master shape so it's correctly positioned relative to this phantom block
         BlockPos offset = pPos.subtract(controllerPos);
         return masterShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
     }
@@ -118,19 +126,40 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
             return Shapes.empty();
         }
 
-        // 4. Ask the controller for its "master shape"
+        if (controller instanceof DoorBlock) {
+            BlockEntity controllerBE = pLevel.getBlockEntity(controllerPos);
+            if (controllerBE instanceof DoorBlockEntity doorBE) {
+                byte doorState = doorBE.getState();
+                
+                // Если дверь открыта или открывается - НЕТ коллизии
+                if (doorState == 1 || doorState == 3) {
+                    return Shapes.empty();
+                }
+                
+                // Если дверь закрыта или закрывается - полная коллизия структуры
+                VoxelShape masterShape = controller.getStructureHelper()
+                    .generateShapeFromParts(controllerState.getValue(DoorBlock.FACING));
+                
+                if (masterShape.isEmpty()) {
+                    return Shapes.empty();
+                }
+                
+                BlockPos offset = pPos.subtract(controllerPos);
+                return masterShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
+            }
+            return Shapes.empty();
+        }
+
+        // 4. Для обычных мультиблоков (не дверей) - используем стандартную логику
         VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState);
         if (masterShape == null) {
-            // If no custom shape is defined, generate one from the structure's parts
             masterShape = controller.getStructureHelper().generateShapeFromParts(controllerState.getValue(FACING));
         }
-        
-        // 5. If masterShape is empty, there is no collision
+
         if (masterShape.isEmpty()) {
             return Shapes.empty();
         }
 
-        // 6. Move the master shape so it's correctly positioned relative to this phantom block
         BlockPos offset = pPos.subtract(controllerPos);
         return masterShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
     }

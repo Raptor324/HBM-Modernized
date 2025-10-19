@@ -3,6 +3,11 @@ package com.hbm_m.main;
 // Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
+import com.hbm_m.block.entity.AnvilBlockEntity;
+import com.hbm_m.menu.AnvilMenu;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
@@ -28,21 +33,18 @@ import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.worldgen.ModWorldGen;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.renderer.entity.EntityRenderers;
-import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.fml.common.Mod;
@@ -56,6 +58,9 @@ import java.util.stream.Collectors;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import static com.hbm_m.block.ModBlocks.ANVIL_BLOCK;
+import static com.hbm_m.block.entity.ModBlockEntities.BLOCK_ENTITIES;
+
 @Mod(RefStrings.MODID)
 public class MainRegistry {
 
@@ -68,11 +73,12 @@ public class MainRegistry {
         ModClothConfig.register();
     }
 
+    //ingot
     public MainRegistry(FMLJavaModLoadingContext context) {
         LOGGER.info("Initializing " + RefStrings.NAME);
 
         IEventBus modEventBus = context.getModEventBus();
-        // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS 
+        // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS
         ModBlocks.BLOCKS.register(modEventBus); // Регистрация наших блоков
         ModEntities.ENTITY_TYPES.register(modEventBus);
         ModItems.ITEMS.register(modEventBus); // Регистрация наших предметов
@@ -88,13 +94,15 @@ public class MainRegistry {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
 
+
+
         // Регистрация обработчиков событий Forge (игровых)
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new PlayerRadiationHandler());
 
 
-        // Регистрация остальных систем
+        // Регистрация остальных систем resources
         // ModPacketHandler.register(); // Регистрация пакетов
 
         // Инстанцируем ClientSetup, чтобы его конструктор вызвал регистрацию на Forge Event Bus
@@ -104,6 +112,7 @@ public class MainRegistry {
         LOGGER.info("Registered event listeners for Radiation System.");
         LOGGER.info("!!! MainRegistry: ClientSetup instance created, its Forge listeners should now be registered !!!");
     }
+
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
@@ -129,7 +138,6 @@ public class MainRegistry {
             event.addListener(provider.getCapability(ChunkRadiationProvider.CHUNK_RADIATION_CAPABILITY)::invalidate);
         }
     }
-
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
         // Логгирование для отладки
         LOGGER.info("Building creative tab contents for: " + event.getTabKey());
@@ -145,6 +153,9 @@ public class MainRegistry {
             event.accept(ModItems.GRENADESLIME);
 
             event.accept(ModItems.GRENADEIF);
+
+            event.accept(ModBlocks.DET_MINER);
+            event.accept(ModBlocks.EXPLOSIVE_CHARGE);
 
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");
@@ -229,341 +240,433 @@ public class MainRegistry {
         if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
             // Проходимся циклом по ВСЕМ слиткам
             for (RegistryObject<Item> ingotObject : ModItems.INGOTS.values()) {
+
                 event.accept(ingotObject.get());
                 if (ModClothConfig.get().enableDebugLogging) {
                     LOGGER.info("Added {} to NTM Resources tab", ingotObject.get());
                 }
             }
+            if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
+                for (RegistryObject<Item> powdersObject : ModItems.POWDERS.values()) {
+                    event.accept(powdersObject.get());
+                }
 
-            event.accept(ModItems.SULFUR);
-            event.accept(ModItems.FLUORITE);
-            event.accept(ModItems.RAREGROUND_ORE_CHUNK);
-            event.accept(ModItems.CINNABAR);
-            event.accept(ModItems.FIRECLAY_BALL);
-            event.accept(ModItems.FIREBRICK);
+
+                event.accept(ModItems.CINNABAR);
+                event.accept(ModItems.FIRECLAY_BALL);
+
+                event.accept(ModItems.SULFUR);
+
+                event.accept(ModItems.FLUORITE);
+                event.accept(ModItems.RAREGROUND_ORE_CHUNK);
+                event.accept(ModItems.CINNABAR);
+                event.accept(ModItems.FIRECLAY_BALL);
+                event.accept(ModItems.FIREBRICK);
+                event.accept(ModItems.WOOD_ASH_POWDER);
+
+            }
 
         }
+            // РАСХОДНИКИ И МОДИФИКАТОРЫ
+            if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get()) {
+                // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ МОДИФИКАТОРОВ
+
+                // 1. Получаем все зарегистрированные предметы из вашего мода
+                List<RegistryObject<Item>> allModItems = ForgeRegistries.ITEMS.getEntries().stream()
+                        .filter(entry -> entry.getKey().location().getNamespace().equals(RefStrings.MODID))
+                        .map(entry -> RegistryObject.create(entry.getKey().location(), ForgeRegistries.ITEMS))
+                        .collect(Collectors.toList());
+
+                // 2. Проходимся по всем предметам и добавляем те, которые являются модификаторами
+                for (RegistryObject<Item> itemObject : allModItems) {
+                    Item item = itemObject.get();
+                    if (item instanceof ItemArmorMod) { // Проверяем, является ли предмет наследником ItemArmorMod
+                        event.accept(item);
+                        if (ModClothConfig.get().enableDebugLogging) {
+                            LOGGER.info("Automatically added Armor Mod [{}] to NTM Consumables tab", itemObject.getId());
+                        }
+                    }
+                }
+                event.accept(ModItems.RADAWAY);
+            }
+
+            // ЗАПЧАСТИ
+            if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get()) {
 
 
+                event.accept(ModItems.BLADE_TEST);
+                event.accept(ModItems.SCRAP);
+                event.accept(ModItems.PLATE_IRON);
+                event.accept(ModItems.PLATE_STEEL);
+                event.accept(ModItems.PLATE_GOLD);
+                event.accept(ModItems.PLATE_GUNMETAL);
+                event.accept(ModItems.PLATE_GUNSTEEL);
+                event.accept(ModItems.PLATE_TITANIUM);
+                event.accept(ModItems.PLATE_KEVLAR);
+                event.accept(ModItems.PLATE_LEAD);
+                event.accept(ModItems.PLATE_MIXED);
+                event.accept(ModItems.PLATE_PAA);
+                event.accept(ModItems.PLATE_SATURNITE);
+                event.accept(ModItems.PLATE_SCHRABIDIUM);
+                event.accept(ModItems.PLATE_ADVANCED_ALLOY);
+                event.accept(ModItems.PLATE_ALUMINUM);
+                event.accept(ModItems.PLATE_COPPER);
+                event.accept(ModItems.PLATE_BISMUTH);
+                event.accept(ModItems.PLATE_ARMOR_AJR);
+                event.accept(ModItems.PLATE_ARMOR_DNT);
+                event.accept(ModItems.PLATE_ARMOR_DNT_RUSTED);
+                event.accept(ModItems.PLATE_ARMOR_FAU);
+                event.accept(ModItems.PLATE_ARMOR_HEV);
+                event.accept(ModItems.PLATE_ARMOR_LUNAR);
+                event.accept(ModItems.PLATE_ARMOR_TITANIUM);
+                event.accept(ModItems.PLATE_CAST);
+                event.accept(ModItems.PLATE_CAST_ALT);
+                event.accept(ModItems.PLATE_CAST_BISMUTH);
+                event.accept(ModItems.PLATE_CAST_DARK);
+                event.accept(ModItems.PLATE_COMBINE_STEEL);
+                event.accept(ModItems.PLATE_DURA_STEEL);
+                event.accept(ModItems.PLATE_DALEKANIUM);
+                event.accept(ModItems.PLATE_DESH);
+                event.accept(ModItems.PLATE_DINEUTRONIUM);
+                event.accept(ModItems.PLATE_EUPHEMIUM);
 
-        // РАСХОДНИКИ И МОДИФИКАТОРЫ
-        if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get()) {
-            // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ МОДИФИКАТОРОВ 
 
-            // 1. Получаем все зарегистрированные предметы из вашего мода
-            List<RegistryObject<Item>> allModItems = ForgeRegistries.ITEMS.getEntries().stream()
-                    .filter(entry -> entry.getKey().location().getNamespace().equals(RefStrings.MODID))
-                    .map(entry -> RegistryObject.create(entry.getKey().location(), ForgeRegistries.ITEMS))
-                    .collect(Collectors.toList());
+                event.accept(ModItems.WIRE_RED_COPPER);
+                event.accept(ModItems.WIRE_COPPER);
+                event.accept(ModItems.WIRE_TUNGSTEN);
+                event.accept(ModItems.WIRE_GOLD);
+                event.accept(ModItems.WIRE_ALUMINIUM);
+                event.accept(ModItems.WIRE_MAGNETIZED_TUNGSTEN);
+                event.accept(ModItems.WIRE_SCHRABIDIUM);
+                event.accept(ModItems.WIRE_FINE);
+                event.accept(ModItems.WIRE_CARBON);
+                event.accept(ModItems.WIRE_ADVANCED_ALLOY);
 
-            // 2. Проходимся по всем предметам и добавляем те, которые являются модификаторами
-            for (RegistryObject<Item> itemObject : allModItems) {
-                Item item = itemObject.get();
-                if (item instanceof ItemArmorMod) { // Проверяем, является ли предмет наследником ItemArmorMod
-                    event.accept(item);
+                event.accept(ModItems.NUGGET_SILICON);
+                event.accept(ModItems.BILLET_SILICON);
+                event.accept(ModItems.INSULATOR);
+                event.accept(ModItems.SILICON_CIRCUIT);
+                event.accept(ModItems.CONTROLLER_ADVANCED);
+                event.accept(ModItems.CONTROLLER_CHASSIS);
+                event.accept(ModItems.CONTROLLER);
+                event.accept(ModItems.CAPACITOR_TANTALUM);
+                event.accept(ModItems.CAPACITOR_BOARD);
+                event.accept(ModItems.QUANTUM_CIRCUIT);
+                event.accept(ModItems.QUANTUM_COMPUTER);
+                event.accept(ModItems.QUANTUM_CHIP);
+                event.accept(ModItems.BISMOID_CHIP);
+                event.accept(ModItems.BISMOID_CIRCUIT);
+                event.accept(ModItems.PCB);
+                event.accept(ModItems.VACUUM_TUBE);
+                event.accept(ModItems.CAPACITOR);
+                event.accept(ModItems.MICROCHIP);
+                event.accept(ModItems.ANALOG_CIRCUIT);
+                event.accept(ModItems.INTEGRATED_CIRCUIT);
+                event.accept(ModItems.ADVANCED_CIRCUIT);
+                event.accept(ModItems.ATOMIC_CLOCK);
+
+
+                event.accept(ModItems.BATTLE_GEARS);
+                event.accept(ModItems.BATTLE_SENSOR);
+                event.accept(ModItems.BATTLE_CASING);
+                event.accept(ModItems.BATTLE_COUNTER);
+                event.accept(ModItems.BATTLE_MODULE);
+                event.accept(ModItems.METAL_ROD);
+
+
+                event.accept(ModItems.PLATE_ARMOR_AJR);
+                event.accept(ModItems.PLATE_ARMOR_DNT);
+                event.accept(ModItems.PLATE_ARMOR_DNT_RUSTED);
+                event.accept(ModItems.PLATE_ARMOR_FAU);
+                event.accept(ModItems.PLATE_ARMOR_HEV);
+                event.accept(ModItems.PLATE_ARMOR_LUNAR);
+                event.accept(ModItems.PLATE_ARMOR_TITANIUM);
+
+                event.accept(ModItems.PLATE_DALEKANIUM);
+                event.accept(ModItems.PLATE_DESH);
+                event.accept(ModItems.PLATE_DINEUTRONIUM);
+                event.accept(ModItems.PLATE_EUPHEMIUM);
+                event.accept(ModItems.PLATE_COMBINE_STEEL);
+                event.accept(ModItems.PLATE_BISMUTH);
+                event.accept(ModItems.PLATE_MIXED);
+
+                event.accept(ModItems.PLATE_IRON);
+                event.accept(ModItems.PLATE_STEEL);
+                event.accept(ModItems.PLATE_GOLD);
+                event.accept(ModItems.PLATE_GUNMETAL);
+                event.accept(ModItems.PLATE_GUNSTEEL);
+                event.accept(ModItems.PLATE_TITANIUM);
+                event.accept(ModItems.PLATE_KEVLAR);
+                event.accept(ModItems.PLATE_LEAD);
+                event.accept(ModItems.PLATE_PAA);
+                event.accept(ModItems.PLATE_SATURNITE);
+                event.accept(ModItems.PLATE_SCHRABIDIUM);
+                event.accept(ModItems.PLATE_ADVANCED_ALLOY);
+                event.accept(ModItems.PLATE_ALUMINUM);
+                event.accept(ModItems.PLATE_COPPER);
+                event.accept(ModItems.PLATE_DURA_STEEL);
+
+                event.accept(ModItems.PLATE_CAST);
+                event.accept(ModItems.PLATE_CAST_ALT);
+                event.accept(ModItems.PLATE_CAST_BISMUTH);
+                event.accept(ModItems.PLATE_CAST_DARK);
+
+            }
+            // РУДЫ
+            if (event.getTab() == ModCreativeTabs.NTM_ORES_TAB.get()) {
+
+                event.accept(ModBlocks.URANIUM_BLOCK);
+                event.accept(ModBlocks.POLONIUM210_BLOCK);
+                event.accept(ModBlocks.PLUTONIUM_BLOCK);
+                event.accept(ModBlocks.PLUTONIUM_FUEL_BLOCK);
+                event.accept(ModBlocks.URANIUM_ORE);
+                event.accept(ModBlocks.WASTE_GRASS);
+                event.accept(ModBlocks.WASTE_LEAVES);
+
+                event.accept(ModBlocks.ALUMINUM_ORE);
+                event.accept(ModBlocks.ALUMINUM_ORE_DEEPSLATE);
+                event.accept(ModBlocks.LIGNITE_ORE);
+                event.accept(ModBlocks.TITANIUM_ORE);
+                event.accept(ModBlocks.TITANIUM_ORE_DEEPSLATE);
+                event.accept(ModBlocks.TUNGSTEN_ORE);
+                event.accept(ModBlocks.ASBESTOS_ORE);
+                event.accept(ModBlocks.SULFUR_ORE);
+                event.accept(ModBlocks.COBALT_ORE);
+                event.accept(ModBlocks.URANIUM_ORE_H);
+                event.accept(ModBlocks.URANIUM_ORE_DEEPSLATE);
+                event.accept(ModBlocks.THORIUM_ORE);
+                event.accept(ModBlocks.THORIUM_ORE_DEEPSLATE);
+                event.accept(ModBlocks.RAREGROUND_ORE);
+                event.accept(ModBlocks.RAREGROUND_ORE_DEEPSLATE);
+                event.accept(ModBlocks.BERYLLIUM_ORE);
+                event.accept(ModBlocks.BERYLLIUM_ORE_DEEPSLATE);
+                event.accept(ModBlocks.FLUORITE_ORE);
+                event.accept(ModBlocks.LEAD_ORE);
+                event.accept(ModBlocks.LEAD_ORE_DEEPSLATE);
+                event.accept(ModBlocks.COBALT_ORE_DEEPSLATE);
+                event.accept(ModBlocks.CINNABAR_ORE_DEEPSLATE);
+                event.accept(ModBlocks.CINNABAR_ORE);
+                event.accept(ModItems.ALUMINUM_RAW);
+                event.accept(ModItems.BERYLLIUM_RAW);
+                event.accept(ModItems.COBALT_RAW);
+                event.accept(ModItems.LEAD_RAW);
+                event.accept(ModItems.THORIUM_RAW);
+                event.accept(ModItems.TITANIUM_RAW);
+                event.accept(ModItems.TUNGSTEN_RAW);
+                event.accept(ModItems.URANIUM_RAW);
+                event.accept(ModItems.STRAWBERRY);
+                event.accept(ModBlocks.STRAWBERRY_BUSH);
+
+
+                if (ModClothConfig.get().enableDebugLogging) {
+                    LOGGER.info("Added uranium block to NTM Resources tab");
+                    LOGGER.info("Added polonium210 block to NTM Resources tab");
+                    LOGGER.info("Added plutonium block to NTM Resources tab");
+                    LOGGER.info("Added plutonium fuel block to NTM Resources tab");
+                    LOGGER.info("Added uranium ore to NTM Resources tab");
+                    LOGGER.info("Added waste leaves block to NTM Resources tab");
+                    LOGGER.info("Added waste grass block to NTM Resources tab");
+                }
+            }
+
+
+            // СТРОИТЕЛЬНЫЕ БЛОКИ
+            if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get()) {
+
+                event.accept(ModBlocks.DOOR_OFFICE);
+                event.accept(ModBlocks.DOOR_BUNKER);
+                event.accept(ModBlocks.METAL_DOOR);
+                event.accept(ModBlocks.CONCRETE_MARKED);
+                event.accept(ModBlocks.CONCRETE_VENT);
+                event.accept(ModBlocks.CONCRETE_FAN);
+                event.accept(ModBlocks.CONCRETE_CRACKED_STAIRS);
+                event.accept(ModBlocks.CONCRETE_CRACKED_SLAB);
+                event.accept(ModBlocks.CONCRETE_CRACKED);
+                event.accept(ModBlocks.CONCRETE_MOSSY_STAIRS);
+                event.accept(ModBlocks.CONCRETE_MOSSY_SLAB);
+                event.accept(ModBlocks.CONCRETE_MOSSY);
+                event.accept(ModBlocks.CONCRETE_STAIRS);
+                event.accept(ModBlocks.CONCRETE_SLAB);
+                event.accept(ModBlocks.CONCRETE);
+                event.accept(ModBlocks.CRATE);
+                event.accept(ModBlocks.CRATE_LEAD);
+                event.accept(ModBlocks.CRATE_METAL);
+                event.accept(ModBlocks.CRATE_WEAPON);
+                event.accept(ModBlocks.REINFORCED_STONE);
+                event.accept(ModBlocks.REINFORCED_GLASS);
+                event.accept(ModBlocks.REINFORCED_STONE_SLAB);
+                event.accept(ModBlocks.REINFORCED_STONE_STAIRS);
+                event.accept(ModBlocks.CONCRETE_HAZARD);
+                event.accept(ModBlocks.CONCRETE_HAZARD_SLAB);
+                event.accept(ModBlocks.CONCRETE_HAZARD_STAIRS);
+                event.accept(ModBlocks.BRICK_CONCRETE);
+                event.accept(ModBlocks.BRICK_CONCRETE_SLAB);
+                event.accept(ModBlocks.BRICK_CONCRETE_STAIRS);
+                event.accept(ModBlocks.BRICK_CONCRETE_BROKEN);
+                event.accept(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB);
+                event.accept(ModBlocks.BRICK_CONCRETE_BROKEN_STAIRS);
+                event.accept(ModBlocks.BRICK_CONCRETE_CRACKED);
+                event.accept(ModBlocks.BRICK_CONCRETE_CRACKED_SLAB);
+                event.accept(ModBlocks.BRICK_CONCRETE_CRACKED_STAIRS);
+                event.accept(ModBlocks.BRICK_CONCRETE_MOSSY);
+                event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB);
+                event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS);
+                event.accept(ModBlocks.BRICK_CONCRETE_MARKED);
+
+
+                event.accept(ModBlocks.LARGE_VEHICLE_DOOR);
+                event.accept(ModBlocks.FREAKY_ALIEN_BLOCK);
+
+                if (ModClothConfig.get().enableDebugLogging) {
+                    LOGGER.info("Added concrete hazard to NTM Resources tab");
+                }
+            }
+
+
+            // ИНСТРУМЕНТЫ
+            if (event.getTab() == ModCreativeTabs.NTM_INSTRUMENTS_TAB.get()) {
+
+                event.accept(ModItems.DOSIMETER);
+                event.accept(ModItems.GEIGER_COUNTER);
+
+            }
+
+
+            // СТАНКИ
+            if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
+
+                event.accept(ModBlocks.ANVIL_BLOCK);
+                event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
+                event.accept(ModBlocks.PRESS);
+                event.accept(ModBlocks.BLAST_FURNACE);
+                event.accept(ModBlocks.SHREDDER);
+                event.accept(ModBlocks.WOOD_BURNER);
+                event.accept(ModBlocks.MACHINE_ASSEMBLER);
+                event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
+                event.accept(ModBlocks.ARMOR_TABLE);
+                // event.accept(ModBlocks.FLUID_TANK);
+                event.accept(ModBlocks.MACHINE_BATTERY);
+                event.accept(ModBlocks.WIRE_COATED);
+                if (ModClothConfig.get().enableDebugLogging) {
+                    LOGGER.info("Added geiger counter BLOCK to NTM Machines tab");
+                    LOGGER.info("Added assembly machine BLOCK to NTM Machines tab");
+                    LOGGER.info("Added advanced assembly machine BLOCK to NTM Machines tab");
+                    LOGGER.info("Added battery machine BLOCK to NTM Machines tab");
+                    LOGGER.info("Added wire coated BLOCK to NTM Machines tab");
+                }
+            }
+
+            // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ
+            if (event.getTab() == ModCreativeTabs.NTM_FUEL_TAB.get()) {
+                event.accept(ModItems.LIGNITE);
+                event.accept(ModItems.PLATE_FUEL_MOX);
+                event.accept(ModItems.PLATE_FUEL_PU238BE);
+                event.accept(ModItems.PLATE_FUEL_PU239);
+                event.accept(ModItems.PLATE_FUEL_RA226BE);
+                event.accept(ModItems.PLATE_FUEL_SA326);
+                event.accept(ModItems.PLATE_FUEL_U233);
+                event.accept(ModItems.PLATE_FUEL_U235);
+                event.accept(ModItems.CREATIVE_BATTERY);
+
+                if (ModClothConfig.get().enableDebugLogging) {
+                    LOGGER.info("Added creative battery ITEM to NTM Fuel tab");
+                }
+            }
+
+            if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get()) {
+
+                event.accept(ModItems.TEMPLATE_FOLDER);
+
+                if (Minecraft.getInstance().level != null) {
+                    RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
+                    List<AssemblerRecipe> recipes = recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
+
+                    // Собираем уникальные blueprintPool из всех рецептов
+                    Set<String> blueprintPools = new HashSet<>();
+                    for (AssemblerRecipe recipe : recipes) {
+                        String pool = recipe.getBlueprintPool();
+                        if (pool != null && !pool.isEmpty()) {
+                            blueprintPools.add(pool);
+                        }
+                    }
+
+                    // Создаём папку для каждого уникального пула
+                    for (String pool : blueprintPools) {
+                        ItemStack folderStack = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
+                        ItemBlueprintFolder.writeBlueprintPool(folderStack, pool);
+                        event.accept(folderStack);
+                    }
+
                     if (ModClothConfig.get().enableDebugLogging) {
-                        LOGGER.info("Automatically added Armor Mod [{}] to NTM Consumables tab", itemObject.getId());
+                        LOGGER.info("Added {} blueprint folders to NTM Templates tab", blueprintPools.size());
+                    }
+
+                    event.accept(ModItems.STAMP_STONE_FLAT);
+                    event.accept(ModItems.STAMP_STONE_PLATE);
+                    event.accept(ModItems.STAMP_STONE_WIRE);
+                    event.accept(ModItems.STAMP_STONE_CIRCUIT);
+                    event.accept(ModItems.STAMP_IRON_FLAT);
+                    event.accept(ModItems.STAMP_IRON_PLATE);
+                    event.accept(ModItems.STAMP_IRON_WIRE);
+                    event.accept(ModItems.STAMP_IRON_CIRCUIT);
+                    event.accept(ModItems.STAMP_IRON_9);
+                    event.accept(ModItems.STAMP_IRON_44);
+                    event.accept(ModItems.STAMP_IRON_50);
+                    event.accept(ModItems.STAMP_IRON_357);
+                    event.accept(ModItems.STAMP_STEEL_FLAT);
+                    event.accept(ModItems.STAMP_STEEL_PLATE);
+                    event.accept(ModItems.STAMP_STEEL_WIRE);
+                    event.accept(ModItems.STAMP_STEEL_CIRCUIT);
+                    event.accept(ModItems.STAMP_TITANIUM_FLAT);
+                    event.accept(ModItems.STAMP_TITANIUM_PLATE);
+                    event.accept(ModItems.STAMP_TITANIUM_WIRE);
+                    event.accept(ModItems.STAMP_TITANIUM_FLAT);
+                    event.accept(ModItems.STAMP_TITANIUM_PLATE);
+                    event.accept(ModItems.STAMP_TITANIUM_WIRE);
+                    event.accept(ModItems.STAMP_TITANIUM_CIRCUIT);
+                    event.accept(ModItems.STAMP_OBSIDIAN_FLAT);
+                    event.accept(ModItems.STAMP_OBSIDIAN_PLATE);
+                    event.accept(ModItems.STAMP_OBSIDIAN_WIRE);
+                    event.accept(ModItems.STAMP_OBSIDIAN_CIRCUIT);
+                    event.accept(ModItems.STAMP_DESH_FLAT);
+                    event.accept(ModItems.STAMP_DESH_PLATE);
+                    event.accept(ModItems.STAMP_DESH_WIRE);
+                    event.accept(ModItems.STAMP_DESH_CIRCUIT);
+                    event.accept(ModItems.STAMP_DESH_9);
+                    event.accept(ModItems.STAMP_DESH_44);
+                    event.accept(ModItems.STAMP_DESH_50);
+                    event.accept(ModItems.STAMP_DESH_357);
+
+                    // Добавляем шаблоны как раньше
+                    for (AssemblerRecipe recipe : recipes) {
+                        ItemStack templateStack = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
+                        ItemAssemblyTemplate.writeRecipeOutput(templateStack, recipe.getResultItem(null));
+                        event.accept(templateStack);
+                    }
+
+                    if (ModClothConfig.get().enableDebugLogging) {
+                        LOGGER.info("Added {} templates to NTM Templates tab", recipes.size());
+                    }
+                } else {
+                    if (ModClothConfig.get().enableDebugLogging) {
+                        LOGGER.warn("Could not populate templates tab: Minecraft level is null.");
                     }
                 }
             }
 
+        }// BlockEntity
+    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
+            DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MOD_ID);
 
-            event.accept(ModItems.RADAWAY);
+    public static final RegistryObject<BlockEntityType<AnvilBlockEntity>> ANVIL_BLOCK_ENTITY =
+            BLOCK_ENTITIES.register("anvil_block_entity", () ->
+                    BlockEntityType.Builder.of(AnvilBlockEntity::new, ANVIL_BLOCK.get()).build(null));
 
-        }
+    // Menu
+    public static final DeferredRegister<MenuType<?>> MENUS =
+            DeferredRegister.create(ForgeRegistries.MENU_TYPES, MOD_ID);
 
-
-        // ЗАПЧАСТИ
-        if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get()) {
-
-
-            event.accept(ModItems.SILICON_CIRCUIT);
-            event.accept(ModItems.CONTROLLER_ADVANCED);
-            event.accept(ModItems.CONTROLLER_CHASSIS);
-            event.accept(ModItems.CONTROLLER);
-            event.accept(ModItems.CAPACITOR_TANTALUM);
-            event.accept(ModItems.CAPACITOR_BOARD);
-            event.accept(ModItems.QUANTUM_CIRCUIT);
-            event.accept(ModItems.QUANTUM_COMPUTER);
-            event.accept(ModItems.QUANTUM_CHIP);
-            event.accept(ModItems.BISMOID_CHIP);
-            event.accept(ModItems.BISMOID_CIRCUIT);
-            event.accept(ModItems.VACUUM_TUBE);
-            event.accept(ModItems.CAPACITOR);
-            event.accept(ModItems.MICROCHIP);
-            event.accept(ModItems.ANALOG_CIRCUIT);
-            event.accept(ModItems.INTEGRATED_CIRCUIT);
-            event.accept(ModItems.ADVANCED_CIRCUIT);
-            event.accept(ModItems.ATOMIC_CLOCK);
-
-
-            event.accept(ModItems.BATTLE_GEARS);
-            event.accept(ModItems.BATTLE_SENSOR);
-            event.accept(ModItems.BATTLE_CASING);
-            event.accept(ModItems.BATTLE_COUNTER);
-            event.accept(ModItems.BATTLE_MODULE);
-            event.accept(ModItems.METAL_ROD);
-
-
-            event.accept(ModItems.PLATE_ARMOR_AJR);
-            event.accept(ModItems.PLATE_ARMOR_DNT);
-            event.accept(ModItems.PLATE_ARMOR_DNT_RUSTED);
-            event.accept(ModItems.PLATE_ARMOR_FAU);
-            event.accept(ModItems.PLATE_ARMOR_HEV);
-            event.accept(ModItems.PLATE_ARMOR_LUNAR);
-            event.accept(ModItems.PLATE_ARMOR_TITANIUM);
-
-            event.accept(ModItems.PLATE_DALEKANIUM);
-            event.accept(ModItems.PLATE_DESH);
-            event.accept(ModItems.PLATE_DINEUTRONIUM);
-            event.accept(ModItems.PLATE_EUPHEMIUM);
-            event.accept(ModItems.PLATE_COMBINE_STEEL);
-            event.accept(ModItems.PLATE_POLYMER);
-            event.accept(ModItems.PLATE_BISMUTH);
-            event.accept(ModItems.PLATE_MIXED);
-
-            event.accept(ModItems.PLATE_IRON);
-            event.accept(ModItems.PLATE_STEEL);
-            event.accept(ModItems.PLATE_GOLD);
-            event.accept(ModItems.PLATE_GUNMETAL);
-            event.accept(ModItems.PLATE_GUNSTEEL);
-            event.accept(ModItems.PLATE_TITANIUM);
-            event.accept(ModItems.PLATE_KEVLAR);
-            event.accept(ModItems.PLATE_LEAD);
-            event.accept(ModItems.PLATE_PAA);
-            event.accept(ModItems.PLATE_SATURNITE);
-            event.accept(ModItems.PLATE_SCHRABIDIUM);
-            event.accept(ModItems.PLATE_ADVANCED_ALLOY);
-            event.accept(ModItems.PLATE_ALUMINUM);
-            event.accept(ModItems.PLATE_COPPER);
-            event.accept(ModItems.PLATE_DURA_STEEL);
-
-            event.accept(ModItems.PLATE_CAST);
-            event.accept(ModItems.PLATE_CAST_ALT);
-            event.accept(ModItems.PLATE_CAST_BISMUTH);
-            event.accept(ModItems.PLATE_CAST_DARK);
-
-        }
-        // РУДЫ
-        if (event.getTab() == ModCreativeTabs.NTM_ORES_TAB.get()) {
-
-            event.accept(ModBlocks.URANIUM_BLOCK);
-            event.accept(ModBlocks.POLONIUM210_BLOCK);
-            event.accept(ModBlocks.PLUTONIUM_BLOCK);
-            event.accept(ModBlocks.PLUTONIUM_FUEL_BLOCK);
-            event.accept(ModBlocks.URANIUM_ORE);
-            event.accept(ModBlocks.WASTE_GRASS);
-            event.accept(ModBlocks.WASTE_LEAVES);
-
-            event.accept(ModBlocks.ALUMINUM_ORE);
-            event.accept(ModBlocks.ALUMINUM_ORE_DEEPSLATE);
-            event.accept(ModBlocks.LIGNITE_ORE);
-            event.accept(ModBlocks.TITANIUM_ORE);
-            event.accept(ModBlocks.TITANIUM_ORE_DEEPSLATE);
-            event.accept(ModBlocks.TUNGSTEN_ORE);
-            event.accept(ModBlocks.ASBESTOS_ORE);
-            event.accept(ModBlocks.SULFUR_ORE);
-            event.accept(ModBlocks.COBALT_ORE);
-            event.accept(ModBlocks.URANIUM_ORE_H);
-            event.accept(ModBlocks.URANIUM_ORE_DEEPSLATE);
-            event.accept(ModBlocks.THORIUM_ORE);
-            event.accept(ModBlocks.THORIUM_ORE_DEEPSLATE);
-            event.accept(ModBlocks.RAREGROUND_ORE);
-            event.accept(ModBlocks.RAREGROUND_ORE_DEEPSLATE);
-            event.accept(ModBlocks.BERYLLIUM_ORE);
-            event.accept(ModBlocks.BERYLLIUM_ORE_DEEPSLATE);
-            event.accept(ModBlocks.FLUORITE_ORE);
-            event.accept(ModBlocks.LEAD_ORE);
-            event.accept(ModBlocks.LEAD_ORE_DEEPSLATE);
-            event.accept(ModBlocks.CINNABAR_ORE);
-            // event.accept(ModBlocks.UNIVERSAL_MACHINE_PART);
-            event.accept(ModItems.ALUMINUM_RAW);
-            event.accept(ModItems.BERYLLIUM_RAW);
-            event.accept(ModItems.COBALT_RAW);
-            event.accept(ModItems.LEAD_RAW);
-            event.accept(ModItems.THORIUM_RAW);
-            event.accept(ModItems.TITANIUM_RAW);
-            event.accept(ModItems.TUNGSTEN_RAW);
-            event.accept(ModItems.URANIUM_RAW);
-            event.accept(ModItems.STRAWBERRY);
-            event.accept(ModBlocks.STRAWBERRY_BUSH);
-
-
-            if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added uranium block to NTM Resources tab");
-                LOGGER.info("Added polonium210 block to NTM Resources tab");
-                LOGGER.info("Added plutonium block to NTM Resources tab");
-                LOGGER.info("Added plutonium fuel block to NTM Resources tab");
-                LOGGER.info("Added uranium ore to NTM Resources tab");
-                LOGGER.info("Added waste leaves block to NTM Resources tab");
-                LOGGER.info("Added waste grass block to NTM Resources tab");
-            }
-        }
-
-
-
-        // СТРОИТЕЛЬНЫЕ БЛОКИ
-        if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get()) {
-
-            event.accept(ModBlocks.REINFORCED_STONE);
-            event.accept(ModBlocks.REINFORCED_STONE_SLAB);
-            event.accept(ModBlocks.REINFORCED_STONE_STAIRS);
-            event.accept(ModBlocks.CONCRETE_HAZARD);
-            event.accept(ModBlocks.CONCRETE_HAZARD_SLAB);
-            event.accept(ModBlocks.CONCRETE_HAZARD_STAIRS);
-            event.accept(ModBlocks.BRICK_CONCRETE);
-            event.accept(ModBlocks.BRICK_CONCRETE_SLAB);
-            event.accept(ModBlocks.BRICK_CONCRETE_STAIRS);
-            event.accept(ModBlocks.BRICK_CONCRETE_BROKEN);
-            event.accept(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB);
-            event.accept(ModBlocks.BRICK_CONCRETE_BROKEN_STAIRS);
-            event.accept(ModBlocks.BRICK_CONCRETE_CRACKED);
-            event.accept(ModBlocks.BRICK_CONCRETE_CRACKED_SLAB);
-            event.accept(ModBlocks.BRICK_CONCRETE_CRACKED_STAIRS);
-            event.accept(ModBlocks.BRICK_CONCRETE_MOSSY);
-            event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB);
-            event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS);
-            event.accept(ModBlocks.BRICK_CONCRETE_MARKED);
-
-
-            event.accept(ModBlocks.LARGE_VEHICLE_DOOR);
-            event.accept(ModBlocks.FREAKY_ALIEN_BLOCK);
-
-            if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added concrete hazard to NTM Resources tab");
-        }
-       }
-
-
-        // ИНСТРУМЕНТЫ
-        if (event.getTab() == ModCreativeTabs.NTM_INSTRUMENTS_TAB.get()) {
-
-            event.accept(ModItems.DOSIMETER);
-            event.accept(ModItems.GEIGER_COUNTER);
-
-        }
-
-
-        // СТАНКИ
-        if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
-
-            event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
-            event.accept(ModBlocks.PRESS);
-            event.accept(ModBlocks.BLAST_FURNACE);
-            event.accept(ModBlocks.SHREDDER);
-            event.accept(ModBlocks.WOOD_BURNER);
-            event.accept(ModBlocks.MACHINE_ASSEMBLER);
-            event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
-            event.accept(ModBlocks.ARMOR_TABLE);
-            // event.accept(ModBlocks.FLUID_TANK);
-            event.accept(ModBlocks.MACHINE_BATTERY);
-            event.accept(ModBlocks.WIRE_COATED);
-            if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added geiger counter BLOCK to NTM Machines tab");
-                LOGGER.info("Added assembly machine BLOCK to NTM Machines tab");
-                LOGGER.info("Added advanced assembly machine BLOCK to NTM Machines tab");
-                LOGGER.info("Added battery machine BLOCK to NTM Machines tab");
-                LOGGER.info("Added wire coated BLOCK to NTM Machines tab");
-            }
-        }
-
-        // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ
-        if (event.getTab() == ModCreativeTabs.NTM_FUEL_TAB.get()) {
-
-
-
-            event.accept(ModItems.LIGNITE);
-            event.accept(ModItems.PLATE_FUEL_MOX);
-            event.accept(ModItems.PLATE_FUEL_PU238BE);
-            event.accept(ModItems.PLATE_FUEL_PU239);
-            event.accept(ModItems.PLATE_FUEL_RA226BE);
-            event.accept(ModItems.PLATE_FUEL_SA326);
-            event.accept(ModItems.PLATE_FUEL_U233);
-            event.accept(ModItems.PLATE_FUEL_U235);
-            event.accept(ModItems.CREATIVE_BATTERY);
-
-            if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added creative battery ITEM to NTM Fuel tab");
-            }
-        }
-
-
-
-
-        if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get()) {
-
-            event.accept(ModItems.TEMPLATE_FOLDER);
-
-            if (Minecraft.getInstance().level != null) {
-                RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
-                List<AssemblerRecipe> recipes = recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
-
-                // Собираем уникальные blueprintPool из всех рецептов
-                Set<String> blueprintPools = new HashSet<>();
-                for (AssemblerRecipe recipe : recipes) {
-                    String pool = recipe.getBlueprintPool();
-                    if (pool != null && !pool.isEmpty()) {
-                        blueprintPools.add(pool);
-                    }
-                }
-
-                // Создаём папку для каждого уникального пула
-                for (String pool : blueprintPools) {
-                    ItemStack folderStack = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
-                    ItemBlueprintFolder.writeBlueprintPool(folderStack, pool);
-                    event.accept(folderStack);
-                }
-
-                if (ModClothConfig.get().enableDebugLogging) {
-                    LOGGER.info("Added {} blueprint folders to NTM Templates tab", blueprintPools.size());
-                }
-
-                // Добавляем шаблоны как раньше
-                for (AssemblerRecipe recipe : recipes) {
-                    ItemStack templateStack = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
-                    ItemAssemblyTemplate.writeRecipeOutput(templateStack, recipe.getResultItem(null));
-                    event.accept(templateStack);
-                }
-
-                if (ModClothConfig.get().enableDebugLogging) {
-                    LOGGER.info("Added {} templates to NTM Templates tab", recipes.size());
-                }
-            } else {
-                if (ModClothConfig.get().enableDebugLogging) {
-                    LOGGER.warn("Could not populate templates tab: Minecraft level is null.");
-                }
-            }
-        }
-
-    }
-        @Mod.EventBusSubscriber(modid = MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-        public static class ClientModEvents {
-            @SubscribeEvent
-            public static void onClientSetup(FMLClientSetupEvent event) {
-                // Регистрируем рендеры для entity — например, для гранаты
-
-                ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-                ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-                ModEntities.GRENADEFIRE_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-                ModEntities.GRENADESMART_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-                ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType ->
-                        EntityRenderers.register(entityType, ThrownItemRenderer::new)
-                );
-
-            }
-        }
-
-
-
-
-
-
+    public static final RegistryObject<MenuType<AnvilMenu>> ANVIL_MENU =
+            MENUS.register("anvil_menu", () ->
+                    IForgeMenuType.create(AnvilMenu::new));
 }
