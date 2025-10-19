@@ -16,6 +16,8 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraftforge.network.NetworkHooks;
+
 import org.jetbrains.annotations.Nullable;
 
 public class AnvilBlock extends BaseEntityBlock {
@@ -37,16 +39,11 @@ public class AnvilBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
-    // Обработка правого клика - открытие GUI
+    
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos,
-                                 Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide()) {
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof AnvilBlockEntity anvilBlockEntity) {
-                // Открытие меню на серверной стороне
-                player.openMenu(anvilBlockEntity);
-            }
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof AnvilBlockEntity be) {
+            NetworkHooks.openScreen((ServerPlayer) player, be, pos);
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }

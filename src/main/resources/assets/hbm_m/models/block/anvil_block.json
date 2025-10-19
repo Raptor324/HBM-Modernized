@@ -1,7 +1,7 @@
 {
   "loader": "forge:composite",
   "textures": {
-    "particle": "hbm_m:block/anvil_block"
+    "particle": "hbm_m:block/anvil_schrabidate"
   },
   "children": {
     "anvil_model": {
@@ -9,7 +9,7 @@
       "model": "hbm_m:models/block/anvil_block.obj",
       "flip_v": true,
       "textures": {
-        "default": "hbm_m:block/anvil_block"
+        "default": "hbm_m:block/anvil_schrabidate"
       }
     }
   }

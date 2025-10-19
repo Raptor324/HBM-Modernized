@@ -1,11 +1,11 @@
 package com.hbm_m.block.entity;
 
-import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.AnvilMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
@@ -20,6 +20,8 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.network.NetworkHooks;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -39,7 +41,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
 
     public AnvilBlockEntity(BlockPos pos, BlockState state) {
-        super(MainRegistry.ANVIL_BLOCK_ENTITY.get(), pos, state);
+        super(ModBlockEntities.ANVIL_BE.get(), pos, state);
     }
 
     @Override
@@ -91,6 +93,10 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new AnvilMenu(containerId, playerInventory, this);
+    }
+
+    public void openGui(ServerPlayer player) {
+        NetworkHooks.openScreen(player, this, this.worldPosition);
     }
 
     public ItemStackHandler getItemHandler() {
