@@ -1,11 +1,13 @@
 package com.hbm_m.block;
 
+import com.hbm_m.particle.ModParticleTypes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -23,7 +25,7 @@ import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-public class DetMinerBlock extends Block {
+public class DetMinerBlock extends Block implements IDetonatable {
 
     // Свойство блока, показывающее, активирован ли он редстоуном
     public static final BooleanProperty POWERED = BooleanProperty.create("powered");
@@ -91,6 +93,74 @@ public class DetMinerBlock extends Block {
      * @param level Мир, в котором происходит взрыв.
      * @param pos Позиция блока взрывчатки.
      */
+
+    @Override
+    public boolean onDetonate(Level level, BlockPos pos, BlockState state, Player player) {
+
+        ServerLevel serverLevel = (ServerLevel) level;
+            List<ItemStack> collectedDrops = new ArrayList<>();
+            Set<BlockPos> blocksToDestroy = getBlocksInSphere(pos, EXPLOSION_RADIUS);
+
+            // 1. Собираем лут со всех блоков, которые будут уничтожены
+            for (BlockPos blockPos : blocksToDestroy) {
+                BlockState blockState = serverLevel.getBlockState(blockPos);
+                // Исключаем воздух, бедро и сам шахтёрский заряд из сбора лута и разрушения
+                if (!blockState.isAir() && !blockState.is(Blocks.BEDROCK) && !blockState.is(this)) {
+                    // Создаем LootParams для получения лута.
+                    // Использование ItemStack.EMPTY в качестве инструмента означает, что лут будет
+                    // собран так, как если бы блок был разрушен без конкретного инструмента
+                    // (например, "разбито рукой", что обычно сохраняет весь лут, если нет специальных условий).
+                    LootParams.Builder lootParamsBuilder = new LootParams.Builder(serverLevel)
+                            .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(blockPos))
+                            .withParameter(LootContextParams.TOOL, ItemStack.EMPTY);
+
+                    // Получаем лут и добавляем его в наш список
+                    collectedDrops.addAll(blockState.getDrops(lootParamsBuilder));
+                }
+            }
+
+            // 2. Уничтожаем блоки в радиусе и заменяем их воздухом
+            for (BlockPos blockPos : blocksToDestroy) {
+                // Убеждаемся, что не удаляем сам блок шахтёрского заряда в этом цикле.
+                // Он будет удалён в конце метода, чтобы избежать двойного удаления и проблем с состоянием.
+                if (!blockPos.equals(pos)) { // Пропускаем позицию самого заряда
+                    serverLevel.setBlockAndUpdate(blockPos, Blocks.AIR.defaultBlockState());
+                    // Генерируем игровое событие GameEvent.BLOCK_DESTROY для наблюдателей и других механизмов
+                    serverLevel.gameEvent(null, GameEvent.BLOCK_DESTROY, blockPos);
+                }
+            }        // 3. Спавним весь собранный лут в центре взрыва
+            for (ItemStack itemStack : collectedDrops) {
+                ItemEntity itemEntity = new ItemEntity(serverLevel, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, itemStack);
+                // Добавляем небольшой случайный разброс для более естественного вида выпадения предметов
+                itemEntity.setDeltaMovement(
+                        (level.random.nextDouble() - 0.5D) * 0.2D,
+                        (level.random.nextDouble() * 0.2D) + 0.1D,
+                        (level.random.nextDouble() - 0.5D) * 0.2D
+                );
+                serverLevel.addFreshEntity(itemEntity); // Добавляем предмет в мир
+            }
+
+            // 4. Воспроизводим звуки и частицы взрыва
+            // Звук взрыва (без урона)
+            level.playSound(null, pos, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 4.0F, (1.0F + (level.random.nextFloat() - level.random.nextFloat()) * 0.2F) * 0.7F);
+            // Частицы взрыва (EXPLOSION_EMITTER для более заметного эффекта)
+            ((ServerLevel) level).sendParticles(ParticleTypes.EXPLOSION_EMITTER, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+
+            // 5. Удаляем сам блок шахтёрского заряда (если он еще не был удален)
+            level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+
+
+        /**
+         * Вспомогательный метод для получения всех позиций блоков в сферическом радиусе.
+         * Возвращает Set<BlockPos> для обеспечения уникальности позиций.
+         *
+         * @param center Центр сферы.
+         * @param radius Радиус сферы.
+         * @return Множество позиций блоков в сфере.
+         */
+
+        return false;
+    }
     private void triggerMiningExplosion(Level level, BlockPos pos) {
         // Взрыв обрабатывается только на сервере
         if (level.isClientSide) {
@@ -148,6 +218,9 @@ public class DetMinerBlock extends Block {
 
         // 5. Удаляем сам блок шахтёрского заряда (если он еще не был удален)
         level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
+
+        // Запускаем эффект дыма
+        spawnSmokeColumn((ServerLevel) level, pos);
     }
 
     /**
@@ -166,4 +239,74 @@ public class DetMinerBlock extends Block {
                 .map(BlockPos::immutable) // Преобразуем mutable BlockPos в immutable для безопасности
                 .collect(Collectors.toSet()); // Собираем в Set
     }
+
+    /**
+     * Создает столб дыма на 10 секунд
+     */
+    private void spawnSmokeColumn(ServerLevel level, BlockPos explosionPos) {
+        // Создаем задачу, которая будет спавнить дым в течение 10 секунд
+        int duration = 200; // 10 секунд (20 тиков = 1 секунда)
+
+        // Запускаем повторяющуюся задачу
+        scheduleSmoke(level, explosionPos, duration, 0);
+    }
+
+    /**
+     * Рекурсивный метод для создания дыма
+     */
+    private void scheduleSmoke(ServerLevel level, BlockPos pos, int remainingTicks, int currentTick) {
+        if (remainingTicks <= 0) {
+            return;
+        }
+
+        // Спавним частицы каждые 2 тика
+        if (currentTick % 2 == 0) {
+            spawnSmokeParticles(level, pos);
+        }
+
+        // Планируем следующий тик
+        level.getServer().tell(new net.minecraft.server.TickTask(
+                level.getServer().getTickCount() + 1,
+                () -> scheduleSmoke(level, pos, remainingTicks - 1, currentTick + 1)
+        ));
+    }
+
+    /**
+     * Спавнит пучок частиц дыма
+     */
+    private void spawnSmokeParticles(ServerLevel level, BlockPos pos) {
+        double centerX = pos.getX() + 0.5;
+        double centerY = pos.getY() + 0.5;
+        double centerZ = pos.getZ() + 0.5;
+
+        // Спавним 5-10 частиц за раз
+        int particleCount = 5 + level.random.nextInt(6);
+
+        for (int i = 0; i < particleCount; i++) {
+            // Случайное смещение от центра взрыва
+            double offsetX = (level.random.nextDouble() - 0.5) * 2.0;
+            double offsetZ = (level.random.nextDouble() - 0.5) * 2.0;
+            double offsetY = level.random.nextDouble() * 0.5;
+
+            // Скорость частиц - в основном вверх
+            double velocityX = (level.random.nextDouble() - 0.5) * 0.1;
+            double velocityY = 0.1 + level.random.nextDouble() * 0.1;
+            double velocityZ = (level.random.nextDouble() - 0.5) * 0.1;
+
+            level.sendParticles(
+                    ModParticleTypes.SMOKE_COLUMN.get(),
+                    centerX + offsetX,
+                    centerY + offsetY,
+                    centerZ + offsetZ,
+                    1, // количество
+                    velocityX,
+                    velocityY,
+                    velocityZ,
+                    0.0 // скорость
+            );
+        }
+    }
+
+
+
 }

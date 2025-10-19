@@ -38,8 +38,8 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
         this.level = inv.player.level();
         this.data = data;
 
-        addPlayerInventory(inv);
-        addPlayerHotbar(inv);
+            addPlayerInventory(inv);
+            addPlayerHotbar(inv);
 
         this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
             // Слот для батареи (0)

@@ -2,6 +2,7 @@ package com.hbm_m.datagen;
 
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.ModPowders;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
@@ -41,6 +42,8 @@ public class ModItemTagProvider extends ItemTagsProvider {
     public static final TagKey<Item> REQUIRES_LEGGINGS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_leggings"));
     public static final TagKey<Item> REQUIRES_BOOTS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_boots"));
 
+    public static final TagKey<Item> BLADES = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blades"));
+
     // Теги для штампов пресса
     public static final TagKey<Item> STAMPS_PLATE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "stamps/plate"));
     public static final TagKey<Item> STAMPS_WIRE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "stamps/wire"));
@@ -63,6 +66,17 @@ public class ModItemTagProvider extends ItemTagsProvider {
             this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots/" + ingotName)))
                     .add(ingotObject.get());
             ingotsTagBuilder.add(ingotObject.getKey());
+        }
+
+        TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders")));
+
+        for (ModPowders powders : ModPowders.values()) {
+            RegistryObject<Item> powdersObject = ModItems.getPowders(powders);
+            String powdersName = powders.getName();
+
+            this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + powdersName)))
+                    .add(powdersObject.get());
+            powdersTagBuilder.add(powdersObject.getKey());
         }
 
         // АВТОМАТИЧЕСКОЕ КОПИРОВАНИЕ ТЕГОВ ИЗ БЛОКОВ
@@ -88,6 +102,8 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.RUBBER_CLADDING.get())
                 .add(ModItems.PAINT_CLADDING.get());
 
+        this.tag(BLADES)
+                .add(ModItems.BLADE_TEST.get());
         // ТЕГИ ДЛЯ ШТАМПОВ ПРЕССА
 
         // Все штампы пластин

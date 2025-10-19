@@ -56,6 +56,10 @@ public class ModBlocks {
 
 
     //---------------------------<СТАНКИ>-------------------------------------
+
+    public static final RegistryObject<Block> ANVIL_BLOCK = registerBlock("anvil_block",
+            () -> new AnvilBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+
     public static final RegistryObject<Block> BLAST_FURNACE = registerBlock("blast_furnace",
             () -> new BlastFurnaceBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL)));
 
@@ -158,6 +162,30 @@ public class ModBlocks {
                     // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
             ));
 
+    public static final RegistryObject<Block> EXPLOSIVE_CHARGE = registerBlock("explosive_charge",
+            () -> new ExplosiveChargeBlock(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
+                    .sound(SoundType.STONE) // Звук при разрушении
+                    .requiresCorrectToolForDrops() // Требует правильного инструмента для лута (как руды)
+                    // .noOcclusion() // <--- ЭТО ОЧЕНЬ ВАЖНО! НЕ ИСПОЛЬЗУЙТЕ ЭТО ДЛЯ БЛОКОВ, КОТОРЫЕ ДОЛЖНЫ РЕАГИРОВАТЬ НА РЕДСТОУН
+                    //                    // noOcclusion делает блок "неполным" или "прозрачным" для редстоуна.
+                    //                    // Если ваш блок должен быть твердым и проводить редстоун, то эти свойства должны быть по умолчанию.
+                    // .isRedstoneConductor((state, level, pos) -> true) // Можно явно указать, что блок проводит редстоун
+                    // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
+            ));
+
+    public static final RegistryObject<Block> SMOKE_BOMB = registerBlock("smoke_bomb",
+            () -> new SmokeBombBlock(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
+                    .sound(SoundType.CHERRY_LEAVES) // Звук при разрушении
+                    .requiresCorrectToolForDrops() // Требует правильного инструмента для лута (как руды)
+                    // .noOcclusion() // <--- ЭТО ОЧЕНЬ ВАЖНО! НЕ ИСПОЛЬЗУЙТЕ ЭТО ДЛЯ БЛОКОВ, КОТОРЫЕ ДОЛЖНЫ РЕАГИРОВАТЬ НА РЕДСТОУН
+                    //                    // noOcclusion делает блок "неполным" или "прозрачным" для редстоуна.
+                    //                    // Если ваш блок должен быть твердым и проводить редстоун, то эти свойства должны быть по умолчанию.
+                    // .isRedstoneConductor((state, level, pos) -> true) // Можно явно указать, что блок проводит редстоун
+                    // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
+            ));
+
     //public static final RegistryObject<Block> DEMON_LAMP  = registerBlock("demon_lamp",
            // () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistryObject<Block> DOOR_BUNKER = registerBlock("door_bunker",
@@ -169,8 +197,10 @@ public class ModBlocks {
     public static final RegistryObject<Block> METAL_DOOR = registerBlock("metal_door",
             () -> new net.minecraft.world.level.block.DoorBlock(BlockBehaviour.Properties.copy(Blocks.CHAIN).sound(SoundType.CHAIN).noOcclusion(), BlockSetType.BIRCH));
 
-    public static final RegistryObject<Block> EXPLOSIVE_CHARGE  = registerBlock("explosive_charge",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+    //public static final RegistryObject<Block> EXPLOSIVE_CHARGE = BLOCKS.register("explosive_charge",
+     //   () -> new ExplosiveChargeBlock(BlockBehaviour.Properties.of()
+        //    .strength(0.5f)
+             //    .sound(SoundType.METAL)));
 
     public static final RegistryObject<Block> CONCRETE_FAN  = registerBlock("concrete_fan",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));

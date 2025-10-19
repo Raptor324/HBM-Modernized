@@ -16,7 +16,8 @@ public class ModParticleTypes {
     // Регистрируем нашу частицу как SimpleParticleType (без доп. данных)
     public static final RegistryObject<SimpleParticleType> DARK_PARTICLE = PARTICLES.register("dark_particle",
             () -> new SimpleParticleType(true)); // true означает, что она всегда будет отрисовываться
-
+    public static final RegistryObject<SimpleParticleType> SMOKE_COLUMN = PARTICLES.register("smoke_column",
+            () -> new SimpleParticleType(false));
     public static final RegistryObject<SimpleParticleType> RAD_FOG_PARTICLE = PARTICLES.register("rad_fog",
             () -> new SimpleParticleType(true));
 
