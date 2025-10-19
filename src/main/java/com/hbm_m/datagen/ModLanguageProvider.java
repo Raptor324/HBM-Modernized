@@ -146,6 +146,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.WIRE_SCHRABIDIUM.get(), "Шрабидиевый провод");
                 add(ModItems.WIRE_ADVANCED_ALLOY.get(), "Провод из продвинутого сплава");
 
+                add(ModItems.BATTERY_SCHRABIDIUM.get(), "Шрабидиевая батарейка");
+
                 add(ModItems.STAMP_STONE_FLAT.get(), "Плоский каменный штамп");
                 add(ModItems.STAMP_STONE_PLATE.get(), "Каменный штамп пластины");
                 add(ModItems.STAMP_STONE_WIRE.get(), "Каменный штамп провода");
@@ -469,6 +471,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.battery.mode.locked.desc", "Все операции с энергией отключены.");
 
                 add("gui.recipe.setRecipe", "Выбрать рецепт");
+
+                add("tooltip.hbm_m.battery.stored", "Хранится энергии:");
+                add("tooltip.hbm_m.battery.transfer_rate", "Скорость зарядки: %s FE/t");
+                add("tooltip.hbm_m.battery.discharge_rate", "Скорость разрядки: %s FE/t");
 
                 add("tooltip.hbm_m.machine_battery.capacity", "Ёмкость: %1$s FE");
                 add("tooltip.hbm_m.machine_battery.charge_speed", "Скорость зарядки: %1$s FE/т");

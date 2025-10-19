@@ -69,6 +69,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.TEMPLATE_FOLDER);
         simpleItem(ModItems.STRAWBERRY);
 
+        simpleItem(ModItems.BATTERY_SCHRABIDIUM);
+
 
         simpleItem(ModItems.CAPACITOR_BOARD);
         simpleItem(ModItems.CAPACITOR_TANTALUM);

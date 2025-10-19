@@ -732,6 +732,18 @@ public class ModItems {
             () -> new ItemStamp(new Item.Properties()));
 
 
+    //батарейки
+
+    public static final RegistryObject<Item> BATTERY_SCHRABIDIUM = ITEMS.register("battery_schrabidium",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    500_000,    // ёмкость
+                    25_000,     // скорость зарядки
+                    25_000      // скорость разрядки
+            ));
+
+
+
     public static final RegistryObject<Item> WIRE_RED_COPPER = ITEMS.register("wire_red_copper",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> WIRE_ADVANCED_ALLOY = ITEMS.register("wire_advanced_alloy",
