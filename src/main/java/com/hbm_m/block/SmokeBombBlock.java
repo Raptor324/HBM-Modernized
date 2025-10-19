@@ -9,12 +9,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class ExplosiveChargeBlock extends Block implements IDetonatable {
+public class SmokeBombBlock extends Block implements IDetonatable {
 
-    // Более сильный взрыв для горного дела
-    private static final float EXPLOSION_POWER = 15.0F;
+    private static final float EXPLOSION_POWER = 25.0F;
 
-    public ExplosiveChargeBlock(Properties properties) {
+    public SmokeBombBlock(Properties properties) {
         super(properties);
     }
 
@@ -24,14 +23,14 @@ public class ExplosiveChargeBlock extends Block implements IDetonatable {
             // Удаляем блок
             level.removeBlock(pos, false);
 
-            // Создаем мощный взрыв
+            // Создаем взрыв
             level.explode(
                     null,
                     pos.getX() + 0.5,
                     pos.getY() + 0.5,
                     pos.getZ() + 0.5,
                     EXPLOSION_POWER,
-                    Level.ExplosionInteraction.BLOCK
+                    Level.ExplosionInteraction.TNT
             );
 
             // Запускаем эффект дыма

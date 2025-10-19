@@ -154,7 +154,7 @@ public class MainRegistry {
             event.accept(ModItems.GRENADESMART);
             event.accept(ModItems.GRENADESLIME);
 
-
+            event.accept(ModBlocks.SMOKE_BOMB);
             event.accept(ModBlocks.EXPLOSIVE_CHARGE);
             event.accept(ModItems.GRENADEIF);
 

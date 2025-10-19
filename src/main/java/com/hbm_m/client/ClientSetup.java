@@ -20,6 +20,7 @@ import com.hbm_m.particle.custom.DarkParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
 import com.hbm_m.block.ModBlocks;
 
+import com.hbm_m.particle.custom.SmokeColumnParticle;
 import com.hbm_m.recipe.AnvilRecipeManager;
 import net.minecraft.client.renderer.RenderType;
 
@@ -84,7 +85,7 @@ public class ClientSetup {
         ModEntities.GRENADEIF_PROJECTILE.ifPresent(entityType ->
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
         );
-        
+
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
         event.enqueueWork(() -> {
@@ -105,7 +106,11 @@ public class ClientSetup {
         });
     }
 
-
+    @SubscribeEvent
+    public static void registerParticleFactories(RegisterParticleProvidersEvent event) {
+        event.registerSpriteSet(ModParticleTypes.SMOKE_COLUMN.get(),
+                SmokeColumnParticle.Provider::new);
+    }
     @SubscribeEvent
     public static void onModelBake(ModelEvent.ModifyBakingResult event) {
         Map<ResourceLocation, BakedModel> modelRegistry = event.getModels();
