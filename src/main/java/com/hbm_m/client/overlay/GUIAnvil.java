@@ -34,8 +34,8 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
 
     public GUIAnvil(AnvilMenu menu, Inventory inventory, Component component) {
         super(menu, inventory, component);
-        this.imageWidth = 256;
-        this.imageHeight = 166;
+        this.imageWidth = 176;
+        this.imageHeight = 222;
         displayedRecipes = AnvilRecipeManager.getAllRecipes();
     }
 
@@ -46,7 +46,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         int y = (height - imageHeight) / 2;
 
         // Поле поиска
-        searchBox = new EditBox(this.font, x + 20, y + 65, 100, 16, Component.literal("Search"));
+        searchBox = new EditBox(this.font, x + 9, y + 109, 86, 14, Component.literal("Search"));
         searchBox.setMaxLength(50);
         searchBox.setBordered(true);
         searchBox.setVisible(true);
@@ -55,33 +55,33 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         this.addRenderableWidget(searchBox);
 
         // Кнопка крафта
-        craftButton = Button.builder(Component.literal("Craft"), button -> {
+        craftButton = Button.builder(Component.literal(" "), button -> {
             boolean shiftPressed = hasShiftDown();
             menu.tryCraft(minecraft.player, shiftPressed);
         })
-        .bounds(x + 50, y + 45, 50, 20)
+        .bounds(x + 52, y + 53, 18, 18)
         .build();
         this.addRenderableWidget(craftButton);
 
         // Кнопка влево
-        leftButton = Button.builder(Component.literal("<"), button -> {
+        leftButton = Button.builder(Component.literal(" "), button -> {
             if (recipeScrollIndex > 0) {
                 recipeScrollIndex -= 10;
                 updateSelectedRecipe();
             }
         })
-        .bounds(x + 20, y + 30, 20, 20)
+        .bounds(x + 7, y + 71, 9, 36)
         .build();
         this.addRenderableWidget(leftButton);
 
         // Кнопка вправо
-        rightButton = Button.builder(Component.literal(">"), button -> {
+        rightButton = Button.builder(Component.literal(" "), button -> {
             if (recipeScrollIndex + 10 < displayedRecipes.size()) {
                 recipeScrollIndex += 10;
                 updateSelectedRecipe();
             }
         })
-        .bounds(x + 100, y + 30, 20, 20)
+        .bounds(x + 106, y + 71, 9, 36)
         .build();
         this.addRenderableWidget(rightButton);
 

@@ -51,13 +51,13 @@ public class AnvilMenu extends AbstractContainerMenu {
         addPlayerHotbar(inv);
 
         // Слот A (вход 1)
-        this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 0, 27, 17));
+        this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 0, 17, 27));
         
         // Слот B (вход 2)
-        this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 1, 76, 17));
+        this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 1, 53, 27));
         
         // Слот C (выход) - только для извлечения
-        this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 2, 134, 17) {
+        this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 2, 89, 27) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
                 return false;
@@ -176,14 +176,14 @@ public class AnvilMenu extends AbstractContainerMenu {
     private void addPlayerInventory(Inventory playerInventory) {
         for (int i = 0; i < 3; ++i) {
             for (int l = 0; l < 9; ++l) {
-                this.addSlot(new Slot(playerInventory, l + i * 9 + 9, 8 + l * 18, 84 + i * 18));
+                this.addSlot(new Slot(playerInventory, l + i * 9 + 9, 8 + l * 18, 140 + i * 18));
             }
         }
     }
 
     private void addPlayerHotbar(Inventory playerInventory) {
         for (int i = 0; i < 9; ++i) {
-            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 142));
+            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 198));
         }
     }
 }
