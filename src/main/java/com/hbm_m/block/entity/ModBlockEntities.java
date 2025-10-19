@@ -27,9 +27,9 @@ public class ModBlockEntities {
 			BlockEntityType.Builder.<MachineAdvancedAssemblerBlockEntity>of(MachineAdvancedAssemblerBlockEntity::new, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get())
 				.build(null));
 
-    public static final RegistryObject<BlockEntityType<AnvilBlockEntity>> ANVIL_BLOCK =
-            BLOCK_ENTITIES.register("anvil_block", () ->
-                    BlockEntityType.Builder.of(AnvilBlockEntity::new,
+    public static final RegistryObject<BlockEntityType<AnvilBlockEntity>> ANVIL_BE =
+        BLOCK_ENTITIES.register("anvil_be", () ->
+            BlockEntityType.Builder.<AnvilBlockEntity>of(AnvilBlockEntity::new,
                             ModBlocks.ANVIL_BLOCK.get()).build(null));
 
     public static final RegistryObject<BlockEntityType<ShredderBlockEntity>> SHREDDER =

@@ -2,9 +2,11 @@ package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.AnvilBlockEntity;
-import com.hbm_m.main.MainRegistry;
+import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -15,31 +17,45 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Optional;
+
 public class AnvilMenu extends AbstractContainerMenu {
+
     public final AnvilBlockEntity blockEntity;
     private final Level level;
-    private ContainerData data;
 
+    // Конструктор для клиента
     public AnvilMenu(int containerId, Inventory inv, FriendlyByteBuf extraData) {
-        this(containerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()));
+        this(containerId, inv, extraData.readBlockPos());
     }
 
-    public AnvilMenu(int containerId, Inventory inv, BlockEntity entity) {
-        super(MainRegistry.ANVIL_MENU.get(), containerId);
-        checkContainerSize(inv, 3);
-        blockEntity = ((AnvilBlockEntity) entity);
-        this.level = inv.player.level();
-        this.data = data;
+    // Конструктор для клиента с BlockPos
+    private AnvilMenu(int containerId, Inventory inv, BlockPos pos) {
+        this(containerId, inv, inv.player.level().getBlockEntity(pos));
+    }
 
+    // Основной конструктор
+    public AnvilMenu(int containerId, Inventory inv, BlockEntity entity) {
+        super(ModMenuTypes.ANVIL_MENU.get(), containerId);
+        
+        if (entity instanceof AnvilBlockEntity) {
+            blockEntity = (AnvilBlockEntity) entity;
+        } else {
+            // Создаём временную заглушку для клиента если entity == null
+            blockEntity = new AnvilBlockEntity(BlockPos.ZERO, ModBlocks.ANVIL_BLOCK.get().defaultBlockState());
+        }
+        
+        this.level = inv.player.level();
+        
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
 
-        this.blockEntity.getItemHandler().setSize(3);
-
         // Слот A (вход 1)
         this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 0, 27, 17));
+        
         // Слот B (вход 2)
         this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 1, 76, 17));
+        
         // Слот C (выход) - только для извлечения
         this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 2, 134, 17) {
             @Override
@@ -47,57 +63,55 @@ public class AnvilMenu extends AbstractContainerMenu {
                 return false;
             }
         });
-
-        addDataSlots(data);
     }
 
     // Метод для крафта
     public boolean tryCraft(Player player, boolean craftMax) {
         ItemStack slotA = blockEntity.getItemHandler().getStackInSlot(0);
         ItemStack slotB = blockEntity.getItemHandler().getStackInSlot(1);
-
-        AnvilRecipe recipe = AnvilRecipeManager.findRecipe(slotA, slotB);
-        if (recipe == null) {
+        
+        Optional<AnvilRecipe> recipeOpt = AnvilRecipeManager.findRecipe(level, slotA, slotB);
+        
+        if (recipeOpt.isEmpty()) {
             return false;
         }
-
+        
+        AnvilRecipe recipe = recipeOpt.get();
         int craftCount = craftMax ? 64 : 1;
-
+        
         // Проверяем, сколько раз можем скрафтить
         int maxCrafts = Math.min(
-                slotA.getCount() / recipe.getInputA().getCount(),
-                slotB.getCount() / recipe.getInputB().getCount()
+            slotA.getCount() / recipe.getInputA().getCount(),
+            slotB.getCount() / recipe.getInputB().getCount()
         );
-
+        
         // Проверяем наличие ресурсов в инвентаре игрока
         for (ItemStack required : recipe.getRequiredItems()) {
             int available = countItemInInventory(player, required);
             maxCrafts = Math.min(maxCrafts, available / required.getCount());
         }
-
+        
         craftCount = Math.min(craftCount, maxCrafts);
-
         if (craftCount <= 0) {
             return false;
         }
-
+        
         // Забираем ресурсы из инвентаря
         for (ItemStack required : recipe.getRequiredItems()) {
             removeItemFromInventory(player, required, required.getCount() * craftCount);
         }
-
+        
         // Забираем из слотов
         slotA.shrink(recipe.getInputA().getCount() * craftCount);
         slotB.shrink(recipe.getInputB().getCount() * craftCount);
-
-        // Выдаём результат
-        ItemStack result = recipe.getOutput().copy();
+        
+        ItemStack result = recipe.getResultItem(RegistryAccess.EMPTY).copy();
         result.setCount(result.getCount() * craftCount);
-
+        
         if (!player.getInventory().add(result)) {
             player.drop(result, false);
         }
-
+        
         return true;
     }
 

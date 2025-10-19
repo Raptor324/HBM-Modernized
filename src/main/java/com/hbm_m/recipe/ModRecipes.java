@@ -48,6 +48,14 @@ public class ModRecipes {
     public static final RegistryObject<RecipeSerializer<ShredderRecipe>> SHREDDER_SERIALIZER =
             SERIALIZERS.register("shredding", () -> ShredderRecipe.Serializer.INSTANCE);
 
+    public static final RegistryObject<RecipeSerializer<AnvilRecipe>> ANVIL_SERIALIZER =
+            SERIALIZERS.register("anvil", () -> AnvilRecipe.Serializer.INSTANCE);
+
+    public static final RegistryObject<RecipeType<AnvilRecipe>> ANVIL_TYPE =
+            RECIPE_TYPES.register("anvil", () -> AnvilRecipe.Type.INSTANCE);
+
+
+
     public static void register(IEventBus eventBus) {
         SERIALIZERS.register(eventBus);
         RECIPE_TYPES.register(eventBus);

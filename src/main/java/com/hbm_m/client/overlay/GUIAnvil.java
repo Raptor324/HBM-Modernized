@@ -1,5 +1,6 @@
 package com.hbm_m.client.overlay;
 
+import com.hbm_m.lib.RefStrings;
 import com.hbm_m.menu.AnvilMenu;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
@@ -9,6 +10,7 @@ import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -17,11 +19,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
-public class AnvilScreen extends AbstractContainerScreen<AnvilMenu> {
-    private static final ResourceLocation TEXTURE =
-            new ResourceLocation("hbm_m", "textures/gui/anvil_gui.png");
+public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
 
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/anvil_gui.png");
     private List<AnvilRecipe> displayedRecipes = new ArrayList<>();
     private int recipeScrollIndex = 0;
     private AnvilRecipe selectedRecipe = null;
@@ -30,7 +32,7 @@ public class AnvilScreen extends AbstractContainerScreen<AnvilMenu> {
     private Button leftButton;
     private Button rightButton;
 
-    public AnvilScreen(AnvilMenu menu, Inventory inventory, Component component) {
+    public GUIAnvil(AnvilMenu menu, Inventory inventory, Component component) {
         super(menu, inventory, component);
         this.imageWidth = 256;
         this.imageHeight = 166;
@@ -40,11 +42,10 @@ public class AnvilScreen extends AbstractContainerScreen<AnvilMenu> {
     @Override
     protected void init() {
         super.init();
-
         int x = (width - imageWidth) / 2;
         int y = (height - imageHeight) / 2;
 
-        // Поле поиска (8)
+        // Поле поиска
         searchBox = new EditBox(this.font, x + 20, y + 65, 100, 16, Component.literal("Search"));
         searchBox.setMaxLength(50);
         searchBox.setBordered(true);
@@ -53,42 +54,54 @@ public class AnvilScreen extends AbstractContainerScreen<AnvilMenu> {
         searchBox.setResponder(this::onSearchChanged);
         this.addRenderableWidget(searchBox);
 
-        // Кнопка крафта (5)
+        // Кнопка крафта
         craftButton = Button.builder(Component.literal("Craft"), button -> {
-                    boolean shiftPressed = hasShiftDown();
-                    menu.tryCraft(minecraft.player, shiftPressed);
-                })
-                .bounds(x + 50, y + 45, 50, 20)
-                .build();
+            boolean shiftPressed = hasShiftDown();
+            menu.tryCraft(minecraft.player, shiftPressed);
+        })
+        .bounds(x + 50, y + 45, 50, 20)
+        .build();
         this.addRenderableWidget(craftButton);
 
-        // Кнопка влево (6)
+        // Кнопка влево
         leftButton = Button.builder(Component.literal("<"), button -> {
-                    if (recipeScrollIndex > 0) {
-                        recipeScrollIndex -= 2;
-                        updateSelectedRecipe();
-                    }
-                })
-                .bounds(x + 20, y + 30, 20, 20)
-                .build();
+            if (recipeScrollIndex > 0) {
+                recipeScrollIndex -= 10;
+                updateSelectedRecipe();
+            }
+        })
+        .bounds(x + 20, y + 30, 20, 20)
+        .build();
         this.addRenderableWidget(leftButton);
 
-        // Кнопка вправо (7)
+        // Кнопка вправо
         rightButton = Button.builder(Component.literal(">"), button -> {
-                    if (recipeScrollIndex + 10 < displayedRecipes.size()) {
-                        recipeScrollIndex += 2;
-                        updateSelectedRecipe();
-                    }
-                })
-                .bounds(x + 100, y + 30, 20, 20)
-                .build();
+            if (recipeScrollIndex + 10 < displayedRecipes.size()) {
+                recipeScrollIndex += 10;
+                updateSelectedRecipe();
+            }
+        })
+        .bounds(x + 100, y + 30, 20, 20)
+        .build();
         this.addRenderableWidget(rightButton);
 
         updateSelectedRecipe();
     }
 
+    // ИСПРАВЛЕНО: добавлен метод поиска с фильтрацией по имени предмета
     private void onSearchChanged(String query) {
-        displayedRecipes = AnvilRecipeManager.searchRecipes(query);
+        if (query == null || query.trim().isEmpty()) {
+            displayedRecipes = AnvilRecipeManager.getAllRecipes();
+        } else {
+            String lowerQuery = query.toLowerCase();
+            displayedRecipes = AnvilRecipeManager.getAllRecipes().stream()
+                .filter(recipe -> {
+                    ItemStack output = recipe.getResultItem(RegistryAccess.EMPTY);
+                    String itemName = output.getHoverName().getString().toLowerCase();
+                    return itemName.contains(lowerQuery);
+                })
+                .collect(Collectors.toList());
+        }
         recipeScrollIndex = 0;
         updateSelectedRecipe();
     }
@@ -106,16 +119,15 @@ public class AnvilScreen extends AbstractContainerScreen<AnvilMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.setShaderTexture(0, TEXTURE);
-
         int x = (width - imageWidth) / 2;
         int y = (height - imageHeight) / 2;
 
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        // Рисуем список рецептов (центральная область)
+        // Рисуем список рецептов
         renderRecipeList(guiGraphics, x, y);
 
-        // Рисуем требуемые ресурсы (синяя область справа - 4)
+        // Рисуем требуемые ресурсы
         renderRequiredResources(guiGraphics, x, y);
     }
 
@@ -129,14 +141,13 @@ public class AnvilScreen extends AbstractContainerScreen<AnvilMenu> {
             for (int col = 0; col < 5; col++) {
                 if (index < displayedRecipes.size()) {
                     AnvilRecipe recipe = displayedRecipes.get(index);
-                    ItemStack output = recipe.getOutput();
-
+                    // ИСПРАВЛЕНО: использование getResultItem вместо getOutput
+                    ItemStack output = recipe.getResultItem(RegistryAccess.EMPTY);
                     int posX = startX + col * 18;
                     int posY = startY + row * 18;
 
                     guiGraphics.renderItem(output, posX, posY);
                     guiGraphics.renderItemDecorations(this.font, output, posX, posY);
-
                     index++;
                 }
             }
@@ -161,7 +172,6 @@ public class AnvilScreen extends AbstractContainerScreen<AnvilMenu> {
 
             guiGraphics.renderItem(required, posX, posY);
             guiGraphics.renderItemDecorations(this.font, required, posX, posY);
-
             index++;
         }
 
@@ -171,8 +181,8 @@ public class AnvilScreen extends AbstractContainerScreen<AnvilMenu> {
         guiGraphics.drawString(this.font, "Outputs:", startX, startY, 0xFFFFFF, false);
         startY += 12;
 
-        // Рисуем результат
-        ItemStack output = selectedRecipe.getOutput();
+        // ИСПРАВЛЕНО: использование getResultItem вместо getOutput
+        ItemStack output = selectedRecipe.getResultItem(RegistryAccess.EMPTY);
         guiGraphics.renderItem(output, startX, startY);
         guiGraphics.renderItemDecorations(this.font, output, startX, startY);
     }
