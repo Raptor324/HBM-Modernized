@@ -2,198 +2,211 @@ package com.hbm_m.client.overlay;
 
 import com.hbm_m.menu.AnvilMenu;
 import com.hbm_m.recipe.AnvilRecipe;
+import com.hbm_m.recipe.AnvilRecipeManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
+import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+import org.jetbrains.annotations.NotNull;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class AnvilScreen extends AbstractContainerScreen<AnvilMenu> {
-    private static final ResourceLocation TEXTURE = new ResourceLocation("hbm_m", "textures/gui/anvil_gui.png");
-    private EditBox searchBox;
-    private int selectedRecipeIndex = -1;
+    private static final ResourceLocation TEXTURE =
+            new ResourceLocation("hbm_m", "textures/gui/anvil_gui.png");
 
-    public AnvilScreen(AnvilMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title);
-        this.imageWidth = 176;
-        this.imageHeight = 222;
+    private List<AnvilRecipe> displayedRecipes = new ArrayList<>();
+    private int recipeScrollIndex = 0;
+    private AnvilRecipe selectedRecipe = null;
+    private EditBox searchBox;
+    private Button craftButton;
+    private Button leftButton;
+    private Button rightButton;
+
+    public AnvilScreen(AnvilMenu menu, Inventory inventory, Component component) {
+        super(menu, inventory, component);
+        this.imageWidth = 256;
+        this.imageHeight = 166;
+        displayedRecipes = AnvilRecipeManager.getAllRecipes();
     }
 
     @Override
     protected void init() {
         super.init();
 
-        // Поле поиска (слот 9)
-        int searchX = this.leftPos + 9;
-        int searchY = this.topPos + 109;
-        searchBox = new EditBox(this.font, searchX, searchY, 86, 14, Component.literal("Search"));
+        int x = (width - imageWidth) / 2;
+        int y = (height - imageHeight) / 2;
+
+        // Поле поиска (8)
+        searchBox = new EditBox(this.font, x + 20, y + 65, 100, 16, Component.literal("Search"));
         searchBox.setMaxLength(50);
         searchBox.setBordered(true);
         searchBox.setVisible(true);
         searchBox.setTextColor(0xFFFFFF);
+        searchBox.setResponder(this::onSearchChanged);
         this.addRenderableWidget(searchBox);
+
+        // Кнопка крафта (5)
+        craftButton = Button.builder(Component.literal("Craft"), button -> {
+                    boolean shiftPressed = hasShiftDown();
+                    menu.tryCraft(minecraft.player, shiftPressed);
+                })
+                .bounds(x + 50, y + 45, 50, 20)
+                .build();
+        this.addRenderableWidget(craftButton);
+
+        // Кнопка влево (6)
+        leftButton = Button.builder(Component.literal("<"), button -> {
+                    if (recipeScrollIndex > 0) {
+                        recipeScrollIndex -= 2;
+                        updateSelectedRecipe();
+                    }
+                })
+                .bounds(x + 20, y + 30, 20, 20)
+                .build();
+        this.addRenderableWidget(leftButton);
+
+        // Кнопка вправо (7)
+        rightButton = Button.builder(Component.literal(">"), button -> {
+                    if (recipeScrollIndex + 10 < displayedRecipes.size()) {
+                        recipeScrollIndex += 2;
+                        updateSelectedRecipe();
+                    }
+                })
+                .bounds(x + 100, y + 30, 20, 20)
+                .build();
+        this.addRenderableWidget(rightButton);
+
+        updateSelectedRecipe();
+    }
+
+    private void onSearchChanged(String query) {
+        displayedRecipes = AnvilRecipeManager.searchRecipes(query);
+        recipeScrollIndex = 0;
+        updateSelectedRecipe();
+    }
+
+    private void updateSelectedRecipe() {
+        if (!displayedRecipes.isEmpty() && recipeScrollIndex < displayedRecipes.size()) {
+            selectedRecipe = displayedRecipes.get(recipeScrollIndex);
+        } else {
+            selectedRecipe = null;
+        }
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
-    }
-
-    @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        RenderSystem.setShaderTexture(0, TEXTURE);
 
-        // Рендерим список рецептов (2 ряда по 5)
-        renderRecipeList(guiGraphics);
+        int x = (width - imageWidth) / 2;
+        int y = (height - imageHeight) / 2;
 
-        // Рендерим панель с требуемыми предметами (синее поле)
-        renderRequiredItems(guiGraphics);
+        guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+
+        // Рисуем список рецептов (центральная область)
+        renderRecipeList(guiGraphics, x, y);
+
+        // Рисуем требуемые ресурсы (синяя область справа - 4)
+        renderRequiredResources(guiGraphics, x, y);
     }
 
-    private void renderRecipeList(GuiGraphics guiGraphics) {
-        List<AnvilRecipe> visibleRecipes = menu.getVisibleRecipes();
+    private void renderRecipeList(GuiGraphics guiGraphics, int x, int y) {
+        int startX = x + 45;
+        int startY = y + 30;
+        int index = recipeScrollIndex;
 
-        int startX = this.leftPos + 60;
-        int startY = this.topPos + 82;
-        int slotSize = 18;
-
+        // Рисуем 2 ряда по 5 рецептов
         for (int row = 0; row < 2; row++) {
             for (int col = 0; col < 5; col++) {
-                int index = row * 5 + col;
-                if (index < visibleRecipes.size()) {
-                    AnvilRecipe recipe = visibleRecipes.get(index);
+                if (index < displayedRecipes.size()) {
+                    AnvilRecipe recipe = displayedRecipes.get(index);
                     ItemStack output = recipe.getOutput();
 
-                    int x = startX + col * slotSize;
-                    int y = startY + row * slotSize;
+                    int posX = startX + col * 18;
+                    int posY = startY + row * 18;
 
-                    guiGraphics.renderItem(output, x, y);
-                    guiGraphics.renderItemDecorations(this.font, output, x, y);
+                    guiGraphics.renderItem(output, posX, posY);
+                    guiGraphics.renderItemDecorations(this.font, output, posX, posY);
+
+                    index++;
                 }
             }
         }
     }
 
-    private void renderRequiredItems(GuiGraphics guiGraphics) {
-        if (selectedRecipeIndex >= 0) {
-            List<AnvilRecipe> visibleRecipes = menu.getVisibleRecipes();
-            if (selectedRecipeIndex < visibleRecipes.size()) {
-                AnvilRecipe recipe = visibleRecipes.get(selectedRecipeIndex);
+    private void renderRequiredResources(GuiGraphics guiGraphics, int x, int y) {
+        if (selectedRecipe == null) return;
 
-                // Синяя панель (поле 5)
-                int panelX = this.leftPos + 150;
-                int panelY = this.topPos + 20;
+        int startX = x + 180;
+        int startY = y + 20;
 
-                // Inputs
-                guiGraphics.drawString(this.font, "Inputs:", panelX + 5, panelY + 5, 0xFFFFFF);
+        // Заголовок "Inputs:"
+        guiGraphics.drawString(this.font, "Inputs:", startX, startY, 0xFFFFFF, false);
+        startY += 12;
 
-                int yOffset = 20;
-                guiGraphics.renderItem(recipe.getInputA(), panelX + 10, panelY + yOffset);
-                guiGraphics.renderItem(recipe.getInputB(), panelX + 30, panelY + yOffset);
+        // Рисуем требуемые ресурсы
+        int index = 0;
+        for (ItemStack required : selectedRecipe.getRequiredItems()) {
+            int posX = startX + (index % 3) * 18;
+            int posY = startY + (index / 3) * 18;
 
-                // Required items
-                yOffset += 25;
-                for (ItemStack required : recipe.getRequiredItems()) {
-                    guiGraphics.renderItem(required, panelX + 10, panelY + yOffset);
-                    yOffset += 20;
-                }
+            guiGraphics.renderItem(required, posX, posY);
+            guiGraphics.renderItemDecorations(this.font, required, posX, posY);
 
-                // Outputs
-                yOffset += 10;
-                guiGraphics.drawString(this.font, "Outputs:", panelX + 5, panelY + yOffset, 0xFFFFFF);
-                yOffset += 15;
-                guiGraphics.renderItem(recipe.getOutput(), panelX + 10, panelY + yOffset);
-            }
+            index++;
         }
+
+        startY += ((index / 3) + 1) * 18 + 10;
+
+        // Заголовок "Outputs:"
+        guiGraphics.drawString(this.font, "Outputs:", startX, startY, 0xFFFFFF, false);
+        startY += 12;
+
+        // Рисуем результат
+        ItemStack output = selectedRecipe.getOutput();
+        guiGraphics.renderItem(output, startX, startY);
+        guiGraphics.renderItemDecorations(this.font, output, startX, startY);
+    }
+
+    @Override
+    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+        renderBackground(guiGraphics);
+        super.render(guiGraphics, mouseX, mouseY, delta);
+        renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Проверка клика по стрелкам навигации (7 и 8)
-        int leftArrowX = this.leftPos + 1;
-        int leftArrowY = this.topPos + 92;
-        int rightArrowX = this.leftPos + 90;
-        int rightArrowY = this.topPos + 92;
-
-        if (isHovering(leftArrowX, leftArrowY, 10, 36, mouseX, mouseY)) {
-            menu.scrollLeft();
-            return true;
-        }
-
-        if (isHovering(rightArrowX, rightArrowY, 10, 36, mouseX, mouseY)) {
-            menu.scrollRight();
-            return true;
-        }
-
-        // Проверка клика по рецептам
-        if (handleRecipeClick(mouseX, mouseY)) {
-            return true;
-        }
-
-        // Проверка клика по кнопке крафта (6)
-        int craftButtonX = this.leftPos + 235;
-        int craftButtonY = this.topPos + 92;
-
-        if (isHovering(craftButtonX, craftButtonY, 16, 16, mouseX, mouseY)) {
-            if (selectedRecipeIndex >= 0) {
-                List<AnvilRecipe> visibleRecipes = menu.getVisibleRecipes();
-                if (selectedRecipeIndex < visibleRecipes.size()) {
-                    AnvilRecipe recipe = visibleRecipes.get(selectedRecipeIndex);
-                    boolean craftAll = hasShiftDown();
-                    menu.craftItem(recipe, craftAll);
-                }
-            }
-            return true;
-        }
-
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    private boolean handleRecipeClick(double mouseX, double mouseY) {
-        int startX = this.leftPos + 60;
-        int startY = this.topPos + 82;
-        int slotSize = 18;
-
-        List<AnvilRecipe> visibleRecipes = menu.getVisibleRecipes();
+        // Проверяем клик по рецептам
+        int x = (width - imageWidth) / 2;
+        int y = (height - imageHeight) / 2;
+        int startX = x + 45;
+        int startY = y + 30;
 
         for (int row = 0; row < 2; row++) {
             for (int col = 0; col < 5; col++) {
-                int index = row * 5 + col;
-                if (index < visibleRecipes.size()) {
-                    int x = startX + col * slotSize;
-                    int y = startY + row * slotSize;
+                int index = recipeScrollIndex + row * 5 + col;
+                if (index < displayedRecipes.size()) {
+                    int posX = startX + col * 18;
+                    int posY = startY + row * 18;
 
-                    if (isHovering(x, y, 16, 16, mouseX, mouseY)) {
-                        selectedRecipeIndex = index;
+                    if (mouseX >= posX && mouseX < posX + 16 && mouseY >= posY && mouseY < posY + 16) {
+                        selectedRecipe = displayedRecipes.get(index);
                         return true;
                     }
                 }
             }
         }
 
-        return false;
-    }
-
-    public boolean isHovering(int x, int y, int width, int height, double mouseX, double mouseY) {
-        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
-    }
-
-    @Override
-    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        // Обработка Enter в поле поиска
-        if (keyCode == 257 && searchBox.isFocused()) { // 257 = Enter
-            menu.setSearchQuery(searchBox.getValue());
-            return true;
-        }
-
-        return super.keyPressed(keyCode, scanCode, modifiers);
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 }

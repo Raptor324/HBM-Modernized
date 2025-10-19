@@ -3,6 +3,11 @@ package com.hbm_m.main;
 // Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
+import com.hbm_m.block.entity.AnvilBlockEntity;
+import com.hbm_m.menu.AnvilMenu;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
@@ -39,6 +44,7 @@ import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.fml.common.Mod;
@@ -51,6 +57,9 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import static com.hbm_m.block.ModBlocks.ANVIL_BLOCK;
+import static com.hbm_m.block.entity.ModBlockEntities.BLOCK_ENTITIES;
 
 @Mod(RefStrings.MODID)
 public class MainRegistry {
@@ -69,7 +78,7 @@ public class MainRegistry {
         LOGGER.info("Initializing " + RefStrings.NAME);
 
         IEventBus modEventBus = context.getModEventBus();
-        // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS 
+        // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS
         ModBlocks.BLOCKS.register(modEventBus); // Регистрация наших блоков
         ModEntities.ENTITY_TYPES.register(modEventBus);
         ModItems.ITEMS.register(modEventBus); // Регистрация наших предметов
@@ -84,6 +93,8 @@ public class MainRegistry {
         // Регистрация обработчиков событий мода
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
+
+
 
         // Регистрация обработчиков событий Forge (игровых)
         MinecraftForge.EVENT_BUS.register(this);
@@ -524,7 +535,7 @@ public class MainRegistry {
             // СТАНКИ
             if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
 
-                event.accept(ModBlocks.ANVIL);
+                event.accept(ModBlocks.ANVIL_BLOCK);
                 event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
                 event.accept(ModBlocks.PRESS);
                 event.accept(ModBlocks.BLAST_FURNACE);
@@ -643,5 +654,19 @@ public class MainRegistry {
                 }
             }
 
-        }
-    }
+        }// BlockEntity
+    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
+            DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, MOD_ID);
+
+    public static final RegistryObject<BlockEntityType<AnvilBlockEntity>> ANVIL_BLOCK_ENTITY =
+            BLOCK_ENTITIES.register("anvil_block_entity", () ->
+                    BlockEntityType.Builder.of(AnvilBlockEntity::new, ANVIL_BLOCK.get()).build(null));
+
+    // Menu
+    public static final DeferredRegister<MenuType<?>> MENUS =
+            DeferredRegister.create(ForgeRegistries.MENU_TYPES, MOD_ID);
+
+    public static final RegistryObject<MenuType<AnvilMenu>> ANVIL_MENU =
+            MENUS.register("anvil_menu", () ->
+                    IForgeMenuType.create(AnvilMenu::new));
+}

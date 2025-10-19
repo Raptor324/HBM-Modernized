@@ -278,7 +278,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.GRENADEHE);
         simpleItem(ModItems.GRENADEFIRE);
 
-        simpleBlockItem(ModBlocks.ANVIL);
+        simpleBlockItem(ModBlocks.ANVIL_BLOCK);
     };
 
     /**

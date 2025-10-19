@@ -1,249 +1,175 @@
 package com.hbm_m.menu;
 
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.AnvilBlockEntity;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.recipe.AnvilRecipe;
-import com.hbm_m.recipe.ModRecipes;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.item.ItemStack;
+import com.hbm_m.recipe.AnvilRecipeManager;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.*;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-
-import java.util.List;
-import java.util.ArrayList;
-import java.util.stream.Collectors;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.items.SlotItemHandler;
+import org.jetbrains.annotations.NotNull;
 
 public class AnvilMenu extends AbstractContainerMenu {
-    private final SimpleContainer anvilInventory = new SimpleContainer(3); // Слоты 0, 1, 2
+    public final AnvilBlockEntity blockEntity;
     private final Level level;
-    private List<AnvilRecipe> allRecipes;
-    private List<AnvilRecipe> filteredRecipes;
-    private int scrollPosition = 0;
-    private String searchQuery = "";
+    private ContainerData data;
 
-    // Конструктор для сервера
-    public AnvilMenu(int containerId, Inventory playerInventory) {
-        this(containerId, playerInventory, playerInventory.player.level());
+    public AnvilMenu(int containerId, Inventory inv, FriendlyByteBuf extraData) {
+        this(containerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()));
     }
 
-    // Конструктор для клиента (из пакета)
-    public AnvilMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
-        this(containerId, playerInventory, playerInventory.player.level());
-    }
+    public AnvilMenu(int containerId, Inventory inv, BlockEntity entity) {
+        super(MainRegistry.ANVIL_MENU.get(), containerId);
+        checkContainerSize(inv, 3);
+        blockEntity = ((AnvilBlockEntity) entity);
+        this.level = inv.player.level();
+        this.data = data;
 
-    private AnvilMenu(int containerId, Inventory playerInventory, Level level) {
-        super(ModMenuTypes.ANVIL_MENU.get(), containerId);
-        this.level = level;
+        addPlayerInventory(inv);
+        addPlayerHotbar(inv);
 
-        // Слоты наковальни
-        this.addSlot(new Slot(anvilInventory, 0, 10, 116)); // Слот A (inputA)
-        this.addSlot(new Slot(anvilInventory, 1, 46, 116)); // Слот B (inputB)
-        this.addSlot(new Slot(anvilInventory, 2, 60, 116) { // Слот C (output)
+        this.blockEntity.getItemHandler().setSize(3);
+
+        // Слот A (вход 1)
+        this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 0, 27, 17));
+        // Слот B (вход 2)
+        this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 1, 76, 17));
+        // Слот C (выход) - только для извлечения
+        this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 2, 134, 17) {
             @Override
-            public boolean mayPlace(ItemStack stack) {
-                return false; // Только вывод
+            public boolean mayPlace(@NotNull ItemStack stack) {
+                return false;
             }
         });
 
-        // Инвентарь игрока
-        for (int i = 0; i < 3; ++i) {
-            for (int j = 0; j < 9; ++j) {
-                this.addSlot(new Slot(playerInventory, j + i * 9 + 9, 8 + j * 18, 154 + i * 18));
-            }
-        }
-
-        // Хотбар игрока
-        for (int k = 0; k < 9; ++k) {
-            this.addSlot(new Slot(playerInventory, k, 8 + k * 18, 209));
-        }
-
-        // Загрузка рецептов
-        loadRecipes();
+        addDataSlots(data);
     }
 
-    private void loadRecipes() {
-        if (level != null) {
-            allRecipes = level.getRecipeManager()
-                    .getAllRecipesFor(ModRecipes.ANVIL_RECIPE_TYPE.get());
-            filteredRecipes = new ArrayList<>(allRecipes);
-        } else {
-            allRecipes = new ArrayList<>();
-            filteredRecipes = new ArrayList<>();
-        }
-    }
+    // Метод для крафта
+    public boolean tryCraft(Player player, boolean craftMax) {
+        ItemStack slotA = blockEntity.getItemHandler().getStackInSlot(0);
+        ItemStack slotB = blockEntity.getItemHandler().getStackInSlot(1);
 
-    public List<AnvilRecipe> getVisibleRecipes() {
-        int startIndex = scrollPosition * 5; // 2 ряда по 5 = 10 предметов
-        int endIndex = Math.min(startIndex + 10, filteredRecipes.size());
-
-        if (startIndex >= filteredRecipes.size()) {
-            return new ArrayList<>();
+        AnvilRecipe recipe = AnvilRecipeManager.findRecipe(slotA, slotB);
+        if (recipe == null) {
+            return false;
         }
 
-        return filteredRecipes.subList(startIndex, endIndex);
-    }
-
-    public void scrollLeft() {
-        if (scrollPosition > 0) {
-            scrollPosition--;
-        }
-    }
-
-    public void scrollRight() {
-        int maxScroll = (filteredRecipes.size() - 1) / 10;
-        if (scrollPosition < maxScroll) {
-            scrollPosition++;
-        }
-    }
-
-    public void setSearchQuery(String query) {
-        this.searchQuery = query.toLowerCase();
-        filterRecipes();
-        scrollPosition = 0;
-    }
-
-    private void filterRecipes() {
-        if (searchQuery.isEmpty()) {
-            filteredRecipes = new ArrayList<>(allRecipes);
-        } else {
-            filteredRecipes = allRecipes.stream()
-                    .filter(recipe -> {
-                        String inputAName = recipe.getInputA().getHoverName().getString().toLowerCase();
-                        String inputBName = recipe.getInputB().getHoverName().getString().toLowerCase();
-                        String outputName = recipe.getOutput().getHoverName().getString().toLowerCase();
-
-                        return inputAName.contains(searchQuery) ||
-                                inputBName.contains(searchQuery) ||
-                                outputName.contains(searchQuery);
-                    })
-                    .collect(Collectors.toList());
-        }
-    }
-
-    public void craftItem(AnvilRecipe recipe, boolean craftAll) {
-        Player player = level.players().stream()
-                .filter(p -> p.containerMenu == this)
-                .findFirst()
-                .orElse(null);
-
-        if (player == null) return;
-
-        int maxCrafts = craftAll ? 64 : 1;
-        int actualCrafts = 0;
+        int craftCount = craftMax ? 64 : 1;
 
         // Проверяем, сколько раз можем скрафтить
-        for (int i = 0; i < maxCrafts; i++) {
-            if (canCraft(player, recipe)) {
-                actualCrafts++;
-            } else {
-                break;
-            }
-        }
+        int maxCrafts = Math.min(
+                slotA.getCount() / recipe.getInputA().getCount(),
+                slotB.getCount() / recipe.getInputB().getCount()
+        );
 
-        // Выполняем крафты
-        for (int i = 0; i < actualCrafts; i++) {
-            performCraft(player, recipe);
-        }
-    }
-
-    private boolean canCraft(Player player, AnvilRecipe recipe) {
-        // Проверяем наличие всех требуемых предметов
+        // Проверяем наличие ресурсов в инвентаре игрока
         for (ItemStack required : recipe.getRequiredItems()) {
-            if (!hasItem(player, required)) {
-                return false;
-            }
+            int available = countItemInInventory(player, required);
+            maxCrafts = Math.min(maxCrafts, available / required.getCount());
         }
-        return true;
-    }
 
-    private boolean hasItem(Player player, ItemStack required) {
-        int count = 0;
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            ItemStack stack = player.getInventory().getItem(i);
-            if (ItemStack.isSameItemSameTags(stack, required)) {
-                count += stack.getCount();
-                if (count >= required.getCount()) {
-                    return true;
-                }
-            }
+        craftCount = Math.min(craftCount, maxCrafts);
+
+        if (craftCount <= 0) {
+            return false;
         }
-        return false;
-    }
 
-    private void performCraft(Player player, AnvilRecipe recipe) {
-        // Удаляем требуемые предметы
+        // Забираем ресурсы из инвентаря
         for (ItemStack required : recipe.getRequiredItems()) {
-            removeItem(player, required);
+            removeItemFromInventory(player, required, required.getCount() * craftCount);
         }
 
-        // Добавляем результат
+        // Забираем из слотов
+        slotA.shrink(recipe.getInputA().getCount() * craftCount);
+        slotB.shrink(recipe.getInputB().getCount() * craftCount);
+
+        // Выдаём результат
         ItemStack result = recipe.getOutput().copy();
+        result.setCount(result.getCount() * craftCount);
+
         if (!player.getInventory().add(result)) {
             player.drop(result, false);
         }
+
+        return true;
     }
 
-    private void removeItem(Player player, ItemStack toRemove) {
-        int remaining = toRemove.getCount();
+    private int countItemInInventory(Player player, ItemStack stack) {
+        int count = 0;
+        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
+            ItemStack invStack = player.getInventory().getItem(i);
+            if (ItemStack.isSameItemSameTags(invStack, stack)) {
+                count += invStack.getCount();
+            }
+        }
+        return count;
+    }
+
+    private void removeItemFromInventory(Player player, ItemStack stack, int amount) {
+        int remaining = amount;
         for (int i = 0; i < player.getInventory().getContainerSize() && remaining > 0; i++) {
-            ItemStack stack = player.getInventory().getItem(i);
-            if (ItemStack.isSameItemSameTags(stack, toRemove)) {
-                int removeCount = Math.min(remaining, stack.getCount());
-                stack.shrink(removeCount);
-                remaining -= removeCount;
+            ItemStack invStack = player.getInventory().getItem(i);
+            if (ItemStack.isSameItemSameTags(invStack, stack)) {
+                int toRemove = Math.min(remaining, invStack.getCount());
+                invStack.shrink(toRemove);
+                remaining -= toRemove;
             }
         }
     }
 
     @Override
-    public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack itemstack = ItemStack.EMPTY;
-        Slot slot = this.slots.get(index);
+    public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
+        Slot sourceSlot = slots.get(index);
+        if (!sourceSlot.hasItem()) return ItemStack.EMPTY;
 
-        if (slot != null && slot.hasItem()) {
-            ItemStack slotStack = slot.getItem();
-            itemstack = slotStack.copy();
+        ItemStack sourceStack = sourceSlot.getItem();
+        ItemStack copyOfSourceStack = sourceStack.copy();
 
-            if (index < 3) {
-                // Из наковальни в инвентарь
-                if (!this.moveItemStackTo(slotStack, 3, this.slots.size(), true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-                // Из инвентаря в наковальню
-                if (!this.moveItemStackTo(slotStack, 0, 2, false)) {
-                    return ItemStack.EMPTY;
-                }
+        if (index < 36) {
+            // Из инвентаря в наковальню
+            if (!this.moveItemStackTo(sourceStack, 36, 38, false)) {
+                return ItemStack.EMPTY;
             }
-
-            if (slotStack.isEmpty()) {
-                slot.set(ItemStack.EMPTY);
-            } else {
-                slot.setChanged();
+        } else if (index < 39) {
+            // Из наковальни в инвентарь
+            if (!this.moveItemStackTo(sourceStack, 0, 36, false)) {
+                return ItemStack.EMPTY;
             }
         }
 
-        return itemstack;
+        if (sourceStack.getCount() == 0) {
+            sourceSlot.set(ItemStack.EMPTY);
+        } else {
+            sourceSlot.setChanged();
+        }
+
+        sourceSlot.onTake(player, sourceStack);
+        return copyOfSourceStack;
     }
 
     @Override
-    public boolean stillValid(Player player) {
-        return true; // Добавьте проверку расстояния до блока если нужно
+    public boolean stillValid(@NotNull Player player) {
+        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.ANVIL_BLOCK.get());
     }
 
-    @Override
-    public void removed(Player player) {
-        super.removed(player);
-        if (!player.level().isClientSide) {
-            // Возвращаем предметы из слотов A и B
-            for (int i = 0; i < 2; i++) {
-                ItemStack stack = anvilInventory.removeItemNoUpdate(i);
-                if (!stack.isEmpty()) {
-                    player.getInventory().placeItemBackInInventory(stack);
-                }
+    private void addPlayerInventory(Inventory playerInventory) {
+        for (int i = 0; i < 3; ++i) {
+            for (int l = 0; l < 9; ++l) {
+                this.addSlot(new Slot(playerInventory, l + i * 9 + 9, 8 + l * 18, 84 + i * 18));
             }
+        }
+    }
+
+    private void addPlayerHotbar(Inventory playerInventory) {
+        for (int i = 0; i < 9; ++i) {
+            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 142));
         }
     }
 }

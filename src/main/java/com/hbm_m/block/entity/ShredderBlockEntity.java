@@ -1,8 +1,9 @@
 package com.hbm_m.block.entity;
-import com.hbm_m.item.ItemBlades;
+
 import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.ShredderMenu;
 import com.hbm_m.recipe.ShredderRecipe;
+import com.hbm_m.sound.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -22,6 +23,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.energy.EnergyStorage;
+import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
@@ -31,13 +34,11 @@ import java.util.Optional;
 
 public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
 
-    // Индексы слотов
     private static final int INPUT_SLOTS = 9;
     private static final int BLADE_SLOTS = 2;
     private static final int OUTPUT_SLOTS = 18;
     private static final int TOTAL_SLOTS = INPUT_SLOTS + BLADE_SLOTS + OUTPUT_SLOTS;
 
-    // Диапазоны слотов
     private static final int INPUT_START = 0;
     private static final int INPUT_END = 8;
     private static final int BLADE_START = 9;
@@ -53,19 +54,15 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
                 level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
             }
         }
+
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            // Входные слоты (0-8) - любые предметы
             if (slot >= INPUT_START && slot <= INPUT_END) {
                 return true;
             }
-            // Слоты для лезвий (9-10) - только BLADE_TEST
             if (slot >= BLADE_START && slot <= BLADE_END) {
-                // Проверка на BLADE_TEST
-                // return stack.is(ModItems.BLADE_TEST.get());
-                return stack.is(ModItems.BLADE_TEST.get()); // Временно разрешаем все
+                return stack.is(ModItems.BLADE_TEST.get()); // замените на ваш предмет лезвия
             }
-            // Выходные слоты (11-28) - ничего нельзя положить
             if (slot >= OUTPUT_START && slot <= OUTPUT_END) {
                 return false;
             }
@@ -74,12 +71,7 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
 
         @Override
         public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
-            // Из входных слотов и слотов лезвий можно извлекать
-            if (slot >= INPUT_START && slot <= BLADE_END) {
-                return super.extractItem(slot, amount, simulate);
-            }
-            // Из выходных слотов можно извлекать
-            if (slot >= OUTPUT_START && slot <= OUTPUT_END) {
+            if ((slot >= INPUT_START && slot <= BLADE_END) || (slot >= OUTPUT_START && slot <= OUTPUT_END)) {
                 return super.extractItem(slot, amount, simulate);
             }
             return ItemStack.EMPTY;
@@ -88,8 +80,23 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
 
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
 
+    // Энергия
+    private final EnergyStorage energyStorage = new EnergyStorage(100000, 1000, 0) {
+        @Override
+        public int receiveEnergy(int maxReceive, boolean simulate) {
+            int received = super.receiveEnergy(maxReceive, simulate);
+            if (received > 0 && !simulate) {
+                setChanged();
+            }
+            return received;
+        }
+    };
+
+    private LazyOptional<IEnergyStorage> lazyEnergyHandler = LazyOptional.empty();
+    private static final int ENERGY_PER_TICK = 200;
+
     private int progressTime = 0;
-    private static final int MAX_PROGRESS = 100; // Время обработки в тиках
+    private static final int MAX_PROGRESS = 100; // время обработки в тиках
 
     public ShredderBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.SHREDDER.get(), pos, state);
@@ -111,6 +118,9 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return lazyItemHandler.cast();
         }
+        if (cap == ForgeCapabilities.ENERGY) {
+            return lazyEnergyHandler.cast();
+        }
         return super.getCapability(cap, side);
     }
 
@@ -118,18 +128,21 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
     public void onLoad() {
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
+        lazyEnergyHandler = LazyOptional.of(() -> energyStorage);
     }
 
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
         lazyItemHandler.invalidate();
+        lazyEnergyHandler.invalidate();
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
         tag.put("inventory", itemHandler.serializeNBT());
         tag.putInt("progress", progressTime);
+        tag.putInt("energy", energyStorage.getEnergyStored());
         super.saveAdditional(tag);
     }
 
@@ -138,6 +151,9 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
         super.load(tag);
         itemHandler.deserializeNBT(tag.getCompound("inventory"));
         progressTime = tag.getInt("progress");
+        if (tag.contains("energy")) {
+            energyStorage.receiveEnergy(tag.getInt("energy"), false);
+        }
     }
 
     public void drops() {
@@ -153,20 +169,19 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
             return;
         }
 
-        // Проверяем наличие двух лезвий
         if (!blockEntity.hasTwoBlades()) {
             blockEntity.progressTime = 0;
             return;
         }
 
-        // Проверяем, есть ли предметы для обработки
-        if (blockEntity.hasItemsToProcess()) {
+        if (blockEntity.hasItemsToProcess() && blockEntity.hasEnoughEnergy()) {
+            blockEntity.energyStorage.extractEnergy(ENERGY_PER_TICK, false);
             blockEntity.progressTime++;
-
             if (blockEntity.progressTime >= MAX_PROGRESS) {
                 blockEntity.processItems();
                 blockEntity.progressTime = 0;
             }
+
 
             setChanged(level, pos, state);
         } else {
@@ -179,11 +194,9 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
         for (int i = BLADE_START; i <= BLADE_END; i++) {
             ItemStack stack = itemHandler.getStackInSlot(i);
             if (!stack.isEmpty()) {
-                // Проверка на BLADE_TEST
-                // if (stack.is(ModItems.BLADE_TEST.get())) {
-                //     bladeCount++;
-                // }
-                bladeCount++; // Временно считаем все предметы
+                if (stack.is(ModItems.BLADE_TEST.get())) {
+                    bladeCount++;
+                }
             }
         }
         return bladeCount >= 2;
@@ -198,73 +211,59 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
         return false;
     }
 
+    private boolean hasEnoughEnergy() {
+        return energyStorage.getEnergyStored() >= ENERGY_PER_TICK;
+    }
+
     private void processItems() {
         for (int i = INPUT_START; i <= INPUT_END; i++) {
             ItemStack inputStack = itemHandler.getStackInSlot(i);
             if (!inputStack.isEmpty()) {
-                // Получаем результат для этого предмета
                 ItemStack result = getRecipeResult(inputStack);
-
-                // Пытаемся поместить результат в выходные слоты
                 if (canInsertItemIntoOutputSlots(result)) {
                     insertItemIntoOutputSlots(result);
                     itemHandler.extractItem(i, 1, false);
                 }
             }
         }
+        // Можно добавить звуки или эффекты сюда если нужно
     }
 
     private ItemStack getRecipeResult(ItemStack input) {
-        // Проверяем рецепты
         SimpleContainer container = new SimpleContainer(1);
         container.setItem(0, input);
-
         Optional<ShredderRecipe> recipe = level.getRecipeManager()
                 .getRecipeFor(ShredderRecipe.Type.INSTANCE, container, level);
-
         if (recipe.isPresent()) {
             return recipe.get().getResultItem(level.registryAccess()).copy();
         }
-
-        // Если рецепт не найден, возвращаем металлолом
-        // return new ItemStack(ModItems.SCRAP.get(), 1);
-        return new ItemStack(ModItems.SCRAP.get(), 1); // Временно - замените на металлолом
+        return new ItemStack(ModItems.SCRAP.get(), 1);
     }
 
     private boolean canInsertItemIntoOutputSlots(ItemStack result) {
         if (result.isEmpty()) {
             return false;
         }
-
         for (int i = OUTPUT_START; i <= OUTPUT_END; i++) {
             ItemStack slotStack = itemHandler.getStackInSlot(i);
-
-            // Пустой слот
             if (slotStack.isEmpty()) {
                 return true;
             }
-
-            // Слот с таким же предметом и есть место
             if (ItemStack.isSameItemSameTags(slotStack, result) &&
                     slotStack.getCount() + result.getCount() <= slotStack.getMaxStackSize()) {
                 return true;
             }
         }
-
         return false;
     }
 
     private void insertItemIntoOutputSlots(ItemStack result) {
         for (int i = OUTPUT_START; i <= OUTPUT_END; i++) {
             ItemStack slotStack = itemHandler.getStackInSlot(i);
-
-            // Пустой слот
             if (slotStack.isEmpty()) {
                 itemHandler.setStackInSlot(i, result.copy());
                 return;
             }
-
-            // Слот с таким же предметом
             if (ItemStack.isSameItemSameTags(slotStack, result) &&
                     slotStack.getCount() + result.getCount() <= slotStack.getMaxStackSize()) {
                 slotStack.grow(result.getCount());
@@ -285,5 +284,15 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
         return MAX_PROGRESS;
     }
 
+    public IEnergyStorage getEnergyStorage() {
+        return energyStorage;
+    }
 
+    public int getEnergy() {
+        return energyStorage.getEnergyStored();
+    }
+
+    public int getMaxEnergy() {
+        return energyStorage.getMaxEnergyStored();
+    }
 }

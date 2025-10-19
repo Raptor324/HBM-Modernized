@@ -11,6 +11,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegisterEvent;
 import net.minecraftforge.registries.RegistryObject;
 
+
+
 public class ModRecipes {
     public static final DeferredRegister<RecipeSerializer<?>> SERIALIZERS =
             DeferredRegister.create(ForgeRegistries.RECIPE_SERIALIZERS, RefStrings.MODID);
@@ -22,17 +24,8 @@ public class ModRecipes {
     public static final DeferredRegister<RecipeType<?>> RECIPE_TYPES =
             DeferredRegister.create(ForgeRegistries.RECIPE_TYPES, RefStrings.MODID);
 
-    // Регистрация типа рецепта наковальни
-    public static final RegistryObject<RecipeType<AnvilRecipe>> ANVIL_RECIPE_TYPE =
-            RECIPE_TYPES.register("anvil_crafting", () -> new RecipeType<AnvilRecipe>() {
-                @Override
-                public String toString() {
-                    return "anvil_crafting";
-                }
-            });
-    // Регистрация сериализатора рецепта наковальни
-    public static final RegistryObject<RecipeSerializer<AnvilRecipe>> ANVIL_RECIPE_SERIALIZER =
-            RECIPE_SERIALIZERS.register("anvil_crafting", AnvilRecipe.AnvilRecipeSerializer::new);
+
+
 
     public static final RegistryObject<RecipeSerializer<AssemblerRecipe>> ASSEMBLER_SERIALIZER =
             SERIALIZERS.register("assembler", () -> AssemblerRecipe.Serializer.INSTANCE);
@@ -58,6 +51,7 @@ public class ModRecipes {
     public static void register(IEventBus eventBus) {
         SERIALIZERS.register(eventBus);
         RECIPE_TYPES.register(eventBus);
+
 
     }
 }

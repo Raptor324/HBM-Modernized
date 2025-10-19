@@ -57,7 +57,7 @@ public class ModBlocks {
 
     //---------------------------<СТАНКИ>-------------------------------------
 
-    public static final RegistryObject<Block> ANVIL = registerBlock("anvil",
+    public static final RegistryObject<Block> ANVIL_BLOCK = registerBlock("anvil_block",
             () -> new AnvilBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL)));
 
     public static final RegistryObject<Block> BLAST_FURNACE = registerBlock("blast_furnace",

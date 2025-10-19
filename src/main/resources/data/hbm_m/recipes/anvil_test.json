@@ -1,15 +1,13 @@
 {
   "type": "hbm_m:anvil_crafting",
   "inputA": {
-    "item": "minecraft:iron_ingot",
-    "count": 2
+    "item": "minecraft:iron_ingot"
   },
   "inputB": {
-    "item": "minecraft:stick",
-    "count": 1
+    "item": "minecraft:diamond"
   },
   "output": {
-    "item": "minecraft:iron_sword",
+    "item": "hbm_m:custom_item",
     "count": 1
   },
   "required": [
@@ -18,8 +16,14 @@
       "count": 4
     },
     {
-      "item": "minecraft:flint",
-      "count": 1
+      "item": "minecraft:redstone",
+      "count": 2
+    }
+  ],
+  "returned": [
+    {
+      "item": "minecraft:iron_nugget",
+      "count": 3
     }
   ]
 }

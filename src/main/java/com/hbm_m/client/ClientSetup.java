@@ -20,6 +20,7 @@ import com.hbm_m.particle.custom.DarkParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
 import com.hbm_m.block.ModBlocks;
 
+import com.hbm_m.recipe.AnvilRecipeManager;
 import net.minecraft.client.renderer.RenderType;
 
 import net.minecraft.client.resources.model.BakedModel;
@@ -64,9 +65,8 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
 
-        event.enqueueWork(() -> {
-            MenuScreens.register(ModMenuTypes.ANVIL_MENU.get(), AnvilScreen::new);
-        });
+        MenuScreens.register(MainRegistry.ANVIL_MENU.get(), AnvilScreen::new);
+        AnvilRecipeManager.registerRecipes();
         // Register Entity Renders
         ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
@@ -105,6 +105,7 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
         });
     }
+
 
     @SubscribeEvent
     public static void onModelBake(ModelEvent.ModifyBakingResult event) {
