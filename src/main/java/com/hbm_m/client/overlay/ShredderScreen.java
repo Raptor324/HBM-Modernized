@@ -1,3 +1,4 @@
+// ShredderScreen.java
 package com.hbm_m.client.overlay;
 
 import com.hbm_m.block.entity.ShredderBlockEntity;
@@ -15,20 +16,33 @@ public class ShredderScreen extends AbstractContainerScreen<ShredderMenu> {
     private static final ResourceLocation TEXTURE =
             new ResourceLocation("hbm_m", "textures/gui/shredder_gui.png");
 
-    // Координаты и размеры прогресс-бара
-    private static final int PROGRESS_X = 60;
-    private static final int PROGRESS_Y = 120;
-    private static final int PROGRESS_WIDTH = 330;
-    private static final int PROGRESS_HEIGHT = 130;
-    private static final int PROGRESS_TEXTURE_X = 196;
-    private static final int PROGRESS_TEXTURE_Y = 0;
+    // Corrected Progress Bar constants (based on typical arrow size and position)
+    // Adjust these if your texture's arrow is different or positioned elsewhere.
+    private static final int PROGRESS_X = 79; // Relative X position on the GUI for the arrow
+    private static final int PROGRESS_Y = 40; // Relative Y position on the GUI for the arrow
+    private static final int PROGRESS_WIDTH = 24; // Actual width of the arrow texture
+    private static final int PROGRESS_HEIGHT = 17; // Actual height of the arrow texture
+    private static final int PROGRESS_TEXTURE_X = 196; // Source X on texture for the arrow
+    private static final int PROGRESS_TEXTURE_Y = 0; // Source Y on texture for the arrow
+
+    // Coordinates and dimensions for the energy bar (assuming it's vertical and fills upwards)
+    private static final int ENERGY_BAR_X = 7; // Relative X position on the GUI
+    private static final int ENERGY_BAR_Y = 17; // Relative Y position on the GUI
+    private static final int ENERGY_BAR_WIDTH = 16; // Width of the energy bar
+    private static final int ENERGY_BAR_HEIGHT = 96; // Height of the energy bar
+
+    // Texture coordinates for the filled part of the energy bar on shredder_gui.png
+    // This assumes the gradient is located at (196, 17) with a width of 12 and height of 52 on your texture.
+    private static final int ENERGY_TEXTURE_X = 196; // Source X on texture for the energy fill (start of the gradient)
+    private static final int ENERGY_TEXTURE_Y = 17; // Source Y on texture for the energy fill (top of the gradient)
+
 
     public ShredderScreen(ShredderMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
 
-        this.imageWidth = 176;  // ширина GUI
-        this.imageHeight = 233; // высота GUI
-        this.inventoryLabelY = this.imageHeight - 94; // Положение надписи "Инвентарь"
+        this.imageWidth = 176;  // GUI width
+        this.imageHeight = 233; // GUI height
+        this.inventoryLabelY = this.imageHeight - 94; // Position of "Inventory" label
     }
 
     @Override
@@ -46,11 +60,14 @@ public class ShredderScreen extends AbstractContainerScreen<ShredderMenu> {
         int x = (width - imageWidth) / 2;
         int y = (height - imageHeight) / 2;
 
-        // Отрисовка фона GUI
+        // Render GUI background
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        // Отрисовка прогресс-бара
+        // Render progress bar
         renderProgressArrow(guiGraphics, x, y);
+
+        // Render energy bar
+        renderEnergyBar(guiGraphics, x, y);
     }
 
     private void renderProgressArrow(GuiGraphics guiGraphics, int x, int y) {
@@ -71,6 +88,34 @@ public class ShredderScreen extends AbstractContainerScreen<ShredderMenu> {
         }
     }
 
+    private void renderEnergyBar(GuiGraphics guiGraphics, int x, int y) {
+        ShredderBlockEntity blockEntity = menu.getBlockEntity();
+
+        int currentEnergy = blockEntity.getEnergy();
+        int maxEnergy = blockEntity.getMaxEnergy();
+
+        if (maxEnergy <= 0) return;
+
+        // Вычисляем процент и пиксели
+        float fillPercent = (float) currentEnergy / maxEnergy;
+        int energyPixels = Math.round(fillPercent * ENERGY_BAR_HEIGHT);
+        energyPixels = Math.max(0, Math.min(energyPixels, ENERGY_BAR_HEIGHT));
+
+        if (energyPixels > 0) {
+            // КЛЮЧ К РЕШЕНИЮ: смещаем обе координаты одинаково
+            int yOffset = ENERGY_BAR_HEIGHT - energyPixels;
+
+            guiGraphics.blit(
+                    TEXTURE,
+                    x + ENERGY_BAR_X,           // X на экране
+                    y + ENERGY_BAR_Y + yOffset, // Y на экране (со смещением)
+                    ENERGY_TEXTURE_X,           // X в текстуре
+                    ENERGY_TEXTURE_Y + yOffset, // Y в текстуре (со смещением)
+                    ENERGY_BAR_WIDTH,           // Ширина
+                    energyPixels                // Высота заполнения
+            );
+        }
+    }
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
         renderBackground(guiGraphics);
@@ -89,7 +134,7 @@ public class ShredderScreen extends AbstractContainerScreen<ShredderMenu> {
         int relativeX = mouseX - leftPos;
         int relativeY = mouseY - topPos;
 
-        // Тултип прогресса
+        // Tooltip for progress bar
         if (isHovering(PROGRESS_X, PROGRESS_Y, PROGRESS_WIDTH, PROGRESS_HEIGHT, relativeX, relativeY)) {
             ShredderBlockEntity blockEntity = menu.getBlockEntity();
             if (blockEntity.getProgress() > 0) {
@@ -100,9 +145,12 @@ public class ShredderScreen extends AbstractContainerScreen<ShredderMenu> {
             }
         }
 
-        // Удалены жестко закодированные тултипы для слотов, так как они не соответствуют новому расположению
-        // и Minecraft автоматически обрабатывает тултипы для предметов в слотах.
-        // Если необходимы специальные тултипы для пустых слотов, их следует реализовать более универсально.
+        // Tooltip for energy bar
+        if (isHovering(ENERGY_BAR_X, ENERGY_BAR_Y, ENERGY_BAR_WIDTH, ENERGY_BAR_HEIGHT, relativeX, relativeY)) {
+            ShredderBlockEntity blockEntity = menu.getBlockEntity();
+            Component tooltip = Component.literal("Energy: " + blockEntity.getEnergy() + "/" + blockEntity.getMaxEnergy() + " FE");
+            guiGraphics.renderTooltip(this.font, tooltip, mouseX, mouseY);
+        }
     }
 
     private boolean isHovering(int x, int y, int width, int height, int mouseX, int mouseY) {

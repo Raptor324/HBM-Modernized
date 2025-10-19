@@ -1,3 +1,4 @@
+// ShredderBlockEntity.java
 package com.hbm_m.block.entity;
 
 import com.hbm_m.item.ModItems;
@@ -61,7 +62,7 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
                 return true;
             }
             if (slot >= BLADE_START && slot <= BLADE_END) {
-                return stack.is(ModItems.BLADE_TEST.get()); // замените на ваш предмет лезвия
+                return stack.is(ModItems.BLADE_TEST.get()); // replace with your blade item
             }
             if (slot >= OUTPUT_START && slot <= OUTPUT_END) {
                 return false;
@@ -80,7 +81,7 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
 
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
 
-    // Энергия
+    // Energy
     private final EnergyStorage energyStorage = new EnergyStorage(100000, 1000, 0) {
         @Override
         public int receiveEnergy(int maxReceive, boolean simulate) {
@@ -96,7 +97,7 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
     private static final int ENERGY_PER_TICK = 200;
 
     private int progressTime = 0;
-    private static final int MAX_PROGRESS = 100; // время обработки в тиках
+    private static final int MAX_PROGRESS = 100; // processing time in ticks
 
     public ShredderBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.SHREDDER.get(), pos, state);
@@ -156,6 +157,20 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
+    // Add these methods for client-side synchronization
+    @Override
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = super.getUpdateTag();
+        saveAdditional(tag); // Saves inventory, progress, and energy
+        return tag;
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        super.handleUpdateTag(tag);
+        load(tag); // Loads inventory, progress, and energy
+    }
+
     public void drops() {
         SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
         for (int i = 0; i < itemHandler.getSlots(); i++) {
@@ -169,23 +184,40 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
             return;
         }
 
+        boolean changed = false;
+
         if (!blockEntity.hasTwoBlades()) {
-            blockEntity.progressTime = 0;
-            return;
+            if (blockEntity.progressTime != 0) {
+                blockEntity.progressTime = 0;
+                changed = true;
+            }
         }
 
         if (blockEntity.hasItemsToProcess() && blockEntity.hasEnoughEnergy()) {
+            int energyBefore = blockEntity.energyStorage.getEnergyStored();
             blockEntity.energyStorage.extractEnergy(ENERGY_PER_TICK, false);
+            if (blockEntity.energyStorage.getEnergyStored() != energyBefore) {
+                changed = true;
+            }
+
             blockEntity.progressTime++;
+            changed = true;
+
             if (blockEntity.progressTime >= MAX_PROGRESS) {
                 blockEntity.processItems();
                 blockEntity.progressTime = 0;
+                changed = true;
             }
-
-
-            setChanged(level, pos, state);
         } else {
-            blockEntity.progressTime = 0;
+            if (blockEntity.progressTime != 0) {
+                blockEntity.progressTime = 0;
+                changed = true;
+            }
+        }
+
+        if (changed) {
+            setChanged(level, pos, state);
+            // setChanged() internally calls level.sendBlockUpdated() for client updates
         }
     }
 
@@ -226,7 +258,7 @@ public class ShredderBlockEntity extends BlockEntity implements MenuProvider {
                 }
             }
         }
-        // Можно добавить звуки или эффекты сюда если нужно
+        // You can add sounds or effects here if needed
     }
 
     private ItemStack getRecipeResult(ItemStack input) {
