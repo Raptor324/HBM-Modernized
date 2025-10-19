@@ -396,6 +396,9 @@ public class ModItems {
             })
     );
 
+    public static final RegistryObject<Item> DETONATOR = ITEMS.register("detonator",
+            () -> new DetonatorItem(new Item.Properties()));
+
     public static final RegistryObject<Item> SCRAP = ITEMS.register("scrap",
             () -> new Item(new Item.Properties()));
 

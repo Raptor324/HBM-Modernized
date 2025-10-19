@@ -57,7 +57,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         blockWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
         blockWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);
-        blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
+        resourceBlockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
 
         simpleBlockWithItem(ModBlocks.REINFORCED_GLASS.get(), 
             models().cubeAll(ModBlocks.REINFORCED_GLASS.getId().getPath(), 
