@@ -5,6 +5,8 @@ package com.hbm_m.main;
 // Также здесь настраиваются обработчики событий и системы радиации.
 import com.hbm_m.block.entity.AnvilBlockEntity;
 import com.hbm_m.menu.AnvilMenu;
+import com.hbm_m.network.ModNetwork;
+import com.hbm_m.particle.ModExplosionParticles;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.common.extensions.IForgeMenuType;
@@ -81,6 +83,7 @@ public class MainRegistry {
         // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS
         ModBlocks.BLOCKS.register(modEventBus); // Регистрация наших блоков
         ModEntities.ENTITY_TYPES.register(modEventBus);
+        ModExplosionParticles.PARTICLE_TYPES.register(modEventBus);
         ModItems.ITEMS.register(modEventBus); // Регистрация наших предметов
         ModMenuTypes.MENUS.register(modEventBus); // Регистрация меню
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus); // Регистрация наших вкладок креативного режима
@@ -93,7 +96,7 @@ public class MainRegistry {
         // Регистрация обработчиков событий мода
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
-
+      
 
 
         // Регистрация обработчиков событий Forge (игровых)
