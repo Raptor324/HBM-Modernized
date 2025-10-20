@@ -62,4 +62,11 @@ public class ClientModEvents {
     //         MachineAdvancedAssemblerRenderer.resetTextureBindingFlag();
     //     }
     // }
+    @SubscribeEvent
+    public static void onRenderLevelLast(RenderLevelStageEvent event) {
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
+            // Флашим все накопленные instanced батчи
+            MachineAdvancedAssemblerRenderer.flushInstancedBatches();
+        }
+    }
 }

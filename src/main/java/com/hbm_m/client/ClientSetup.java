@@ -220,7 +220,6 @@ public class ClientSetup {
         );
         MainRegistry.LOGGER.info("Successfully registered block_lit shader with custom vertex format");
     }
-
     private static class LeavesModelWrapper extends BakedModelWrapper<BakedModel> {
 
         public LeavesModelWrapper(BakedModel originalModel) {

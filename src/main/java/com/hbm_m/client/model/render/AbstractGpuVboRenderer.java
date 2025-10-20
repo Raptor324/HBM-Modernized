@@ -138,6 +138,9 @@ public abstract class AbstractGpuVboRenderer {
         shader.apply();
 
         TextureBinder.bindForAssemblerIfNeeded(shader);
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
 
         RenderSystem.enableDepthTest();
         RenderSystem.depthFunc(GL11.GL_LEQUAL);

@@ -20,6 +20,11 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
     private MachineAdvancedAssemblerVboRenderer gpu;
     private MachineAdvancedAssemblerBakedModel cachedModel;
+    
+    // НОВОЕ: Instanced рендереры для статических частей
+    private static InstancedStaticPartRenderer instancedBase;
+    private static InstancedStaticPartRenderer instancedFrame;
+    private static boolean instancersInitialized = false;
 
     public MachineAdvancedAssemblerRenderer(BlockEntityRendererProvider.Context ctx) {}
 
@@ -43,98 +48,121 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                                PoseStack poseStack,
                                MultiBufferSource bufferSource) {
         
-        // Сбрасываем флаг привязки текстур для этой машины
+        // Сбрасываем флаг привязки текстур
         AbstractGpuVboRenderer.TextureBinder.resetForAssembler();
 
-        // Создаём/обновляем GPU рендерер
+        // Инициализируем instanced рендереры (один раз)
+        if (!instancersInitialized) {
+            initializeInstancedRenderers(model);
+        }
+
+        // Создаём/обновляем GPU рендерер для анимированных частей
         if (cachedModel != model || gpu == null) {
             cachedModel = model;
             gpu = new MachineAdvancedAssemblerVboRenderer(model);
         }
 
-        // Неподвижная база/рама
-        gpu.renderStaticBase(poseStack, packedLight);
+        // ОПТИМИЗАЦИЯ: Добавляем Base в батч вместо немедленного рендера
+        if (instancedBase != null) {
+            instancedBase.addInstance(poseStack, packedLight);
+        } else {
+            // Fallback если instancing не работает
+            gpu.renderStaticBase(poseStack, packedLight);
+        }
+        
+        // УСЛОВНЫЙ РЕНДЕР: Frame только если be.frame == true
         if (be.frame) {
-            gpu.renderStaticFrame(poseStack, packedLight);
+            if (instancedFrame != null) {
+                instancedFrame.addInstance(poseStack, packedLight);
+            } else {
+                gpu.renderStaticFrame(poseStack, packedLight);
+            }
         }
 
-        // Анимация: кольцо + руки (руки ВНУТРИ вращения кольца!)
+        // Анимированные части рендерятся как обычно
         renderAnimated(be, partialTick, poseStack, packedLight);
-
-        // Иконка рецепта CPU-рендером
         renderRecipeIcon(be, poseStack, bufferSource, packedLight, packedOverlay);
     }
 
+    /**
+     * Инициализация instanced рендереров (вызывается один раз)
+     */
+    private void initializeInstancedRenderers(MachineAdvancedAssemblerBakedModel model) {
+        if (instancersInitialized) return;
+
+        try {
+            // Создаём VBO для Base
+            BakedModel baseModel = model.getPart("Base");
+            if (baseModel != null) {
+                var baseData = ObjModelVboBuilder.buildSinglePart(baseModel);
+                instancedBase = new InstancedStaticPartRenderer(baseData);
+            }
+
+            // Создаём VBO для Frame
+            BakedModel frameModel = model.getPart("Frame");
+            if (frameModel != null) {
+                var frameData = ObjModelVboBuilder.buildSinglePart(frameModel);
+                instancedFrame = new InstancedStaticPartRenderer(frameData);
+            }
+
+            instancersInitialized = true;
+        } catch (Exception e) {
+            // При ошибке используем обычный рендер
+            instancedBase = null;
+            instancedFrame = null;
+        }
+    }
+
+    /**
+     * ВАЖНО: Вызывать в конце рендера ВСЕХ машин для флаша батчей
+     */
+    public static void flushInstancedBatches() {
+        if (instancedBase != null) instancedBase.flush();
+        if (instancedFrame != null) instancedFrame.flush();
+    }
+
     private void renderAnimated(MachineAdvancedAssemblerBlockEntity be, float pt, PoseStack pose, int packedLight) {
-        // Кольцо (вращение вокруг Y)
         float ring = Mth.lerp(pt, be.prevRingAngle, be.ringAngle);
-        
-        // КРИТИЧНО: Создаём базовую матрицу вращения кольца
         Matrix4f ringMat = new Matrix4f().rotateY((float) Math.toRadians(ring));
-        
-        // Рендерим кольцо с его вращением
         gpu.renderPart(pose, packedLight, "Ring", ringMat);
 
-        // ИСПРАВЛЕНО: Руки НАСЛЕДУЮТ вращение кольца!
-        // Передаём ringMat как базовую трансформацию
         renderArm(be.arms[0], false, pt, pose, packedLight, ringMat);
         renderArm(be.arms[1], true, pt, pose, packedLight, ringMat);
     }
 
-    /**
-     * Рендер одной руки. Точная копия логики из старого CPU-рендера.
-     * @param arm - данные руки (углы)
-     * @param inverted - false для руки 1, true для руки 2 (инвертирует углы и Z)
-     * @param pt - partial tick
-     * @param pose - PoseStack (не используется, так как трансформации в Matrix4f)
-     * @param packedLight - освещение
-     * @param baseTransform - БАЗОВАЯ трансформация (вращение кольца), которую наследуют все части руки
-     */
     private void renderArm(MachineAdvancedAssemblerBlockEntity.AssemblerArm arm, boolean inverted,
                            float pt, PoseStack pose, int packedLight, Matrix4f baseTransform) {
-        
-        // Интерполируем углы
-        float a0 = Mth.lerp(pt, arm.prevAngles[0], arm.angles[0]); // Lower arm
-        float a1 = Mth.lerp(pt, arm.prevAngles[1], arm.angles[1]); // Upper arm
-        float a2 = Mth.lerp(pt, arm.prevAngles[2], arm.angles[2]); // Head
-        float a3 = Mth.lerp(pt, arm.prevAngles[3], arm.angles[3]); // Spike (linear offset)
+        float a0 = Mth.lerp(pt, arm.prevAngles[0], arm.angles[0]);
+        float a1 = Mth.lerp(pt, arm.prevAngles[1], arm.angles[1]);
+        float a2 = Mth.lerp(pt, arm.prevAngles[2], arm.angles[2]);
+        float a3 = Mth.lerp(pt, arm.prevAngles[3], arm.angles[3]);
 
-        // Для руки 2: инвертируем углы и Z-координату
         float angleSign = inverted ? -1f : 1f;
         float zBase = inverted ? -0.9375f : 0.9375f;
         
-        // Имена частей
         String lowerName = inverted ? "ArmLower2" : "ArmLower1";
         String upperName = inverted ? "ArmUpper2" : "ArmUpper1";
         String headName = inverted ? "Head2" : "Head1";
         String spikeName = inverted ? "Spike2" : "Spike1";
 
-        // === LOWER ARM ===
-        // ИСПРАВЛЕНО: Начинаем с baseTransform (вращение кольца), затем добавляем локальные трансформации
-        Matrix4f lowerMat = new Matrix4f(baseTransform)  // НАСЛЕДУЕМ вращение кольца!
+        Matrix4f lowerMat = new Matrix4f(baseTransform)
                 .translate(0, 1.625f, zBase)
                 .rotateX((float) Math.toRadians(angleSign * a0))
                 .translate(0, -1.625f, -zBase);
         gpu.renderPart(pose, packedLight, lowerName, lowerMat);
 
-        // === UPPER ARM ===
-        // Накопляем: baseTransform → lower → upper
         Matrix4f upperMat = new Matrix4f(lowerMat)
                 .translate(0, 2.375f, zBase)
                 .rotateX((float) Math.toRadians(angleSign * a1))
                 .translate(0, -2.375f, -zBase);
         gpu.renderPart(pose, packedLight, upperName, upperMat);
 
-        // === HEAD ===
-        // Накопляем: baseTransform → lower → upper → head
         Matrix4f headMat = new Matrix4f(upperMat)
                 .translate(0, 2.375f, zBase * 0.4667f)
                 .rotateX((float) Math.toRadians(angleSign * a2))
                 .translate(0, -2.375f, -zBase * 0.4667f);
         gpu.renderPart(pose, packedLight, headName, headMat);
 
-        // === SPIKE ===
-        // Накопляем: baseTransform → lower → upper → head → spike
         Matrix4f spikeMat = new Matrix4f(headMat)
                 .translate(0, a3, 0);
         gpu.renderPart(pose, packedLight, spikeName, spikeMat);
@@ -199,5 +227,17 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     @Override 
     public int getViewDistance() { 
         return 128; 
+    }
+    
+    public void onResourceManagerReload() {
+        if (instancedBase != null) instancedBase.cleanup();
+        if (instancedFrame != null) instancedFrame.cleanup();
+        instancedBase = null;
+        instancedFrame = null;
+        instancersInitialized = false;
+        
+        MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
+        gpu = null;
+        cachedModel = null;
     }
 }
