@@ -37,6 +37,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
@@ -109,6 +110,7 @@ public class MainRegistry {
         event.enqueueWork(() -> {
             ModPacketHandler.register();
             ModHazards.registerHazards(); // Регистрация опасностей (радиация, биологическая опасность в будущем и тд)
+            // MinecraftForge.EVENT_BUS.addListener(this::onRenderLevelStage);
             LOGGER.info("HazardSystem initialized successfully");
         });
     }
@@ -129,6 +131,15 @@ public class MainRegistry {
             event.addListener(provider.getCapability(ChunkRadiationProvider.CHUNK_RADIATION_CAPABILITY)::invalidate);
         }
     }
+
+    // private void onRenderLevelStage(RenderLevelStageEvent event) {
+    //     if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
+    //         GPUInstancedRenderer.beginInstances("Ring");
+    //     }
+    //     else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+    //         GPUInstancedRenderer.endInstances();
+    //     }
+    // }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
         // Логгирование для отладки

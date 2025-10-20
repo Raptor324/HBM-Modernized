@@ -10,4 +10,5 @@ public class ModRenderTypes extends RenderType {
                            Runnable setupState, Runnable clearState) {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
     }
+    
 }

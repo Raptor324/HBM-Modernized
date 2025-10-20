@@ -102,7 +102,7 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
 
     @Override
     public boolean usesBlockLight() {
-        return false;
+        return true;
     }
 
     @Override

@@ -15,10 +15,14 @@ import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.DarkParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
+import com.google.common.collect.ImmutableMap;
 import com.hbm_m.block.ModBlocks;
 
 import net.minecraft.client.renderer.RenderType;
-
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
@@ -33,6 +37,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -43,12 +48,15 @@ import net.minecraft.client.GraphicsStatus;
 import net.minecraftforge.client.ChunkRenderTypeSet;
 
 import javax.annotation.Nonnull;
+
+import java.io.IOException;
 import java.util.Map;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.client.model.render.DoorRenderer;
-import com.hbm_m.client.model.render.GPUInstancedRenderer;
 import com.hbm_m.client.model.render.GlobalMeshCache;
 import com.hbm_m.client.model.render.MachineAdvancedAssemblerRenderer;
+import com.hbm_m.client.model.render.MachineAdvancedAssemblerVboRenderer;
+import com.hbm_m.client.model.render.ModShaders;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientSetup {
@@ -62,6 +70,7 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
+        // MinecraftForge.EVENT_BUS.register(ClientSetup.class);
 
         // Register Entity Renders
         ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
@@ -140,32 +149,18 @@ public class ClientSetup {
         MainRegistry.LOGGER.info("Registered key mappings.");
     }
 
-    // @SubscribeEvent
-    // public static void onRenderLevelStage(RenderLevelStageEvent event) {
-    //     if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
-    //         // Начинаем инстансированный рендер для каждой части
-    //         GPUInstancedRenderer.beginInstances("Ring");
-    //     } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
-    //         // Завершаем и рисуем ВСЕ кольца ОДНИМ вызовом
-    //         GPUInstancedRenderer.endInstances();
-            
-    //         // Аналогично для каждой части манипуляторов
-    //         // (в полной реализации нужен batch для каждой части)
-    //     }
-    // }
-
-
     @SubscribeEvent
     public static void onResourceReload(RegisterClientReloadListenersEvent event) {
-        event.registerReloadListener((preparationBarrier, resourceManager, 
-                                     preparationsProfiler, reloadProfiler, 
-                                     backgroundExecutor, gameExecutor) -> {
+        event.registerReloadListener((preparationBarrier, resourceManager,
+                                    preparationsProfiler, reloadProfiler,
+                                    backgroundExecutor, gameExecutor) -> {
             return preparationBarrier.wait(null).thenRunAsync(() -> {
-                // Очищаем глобальный кэш mesh'ей при перезагрузке ресурсов
-                GlobalMeshCache.clear();
+                // ✅ Очищаем глобальный кэш VBO
+                MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
             }, gameExecutor);
         });
     }
+
 
     @SubscribeEvent
     public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
@@ -200,6 +195,31 @@ public class ClientSetup {
         event.register("template_loader", new TemplateModelLoader());
     }
 
+    @SubscribeEvent
+    public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
+        MainRegistry.LOGGER.info("Registering custom shaders...");
+        
+        // ✅ ИСПРАВЛЕНИЕ: Используем конструктор VertexFormat напрямую (API 1.20.1)
+        // Формат: Position (vec3) + Normal (vec3) + UV0 (vec2) + UV2 (vec2 lightmap)
+        VertexFormat blockLitFormat = new VertexFormat(
+            ImmutableMap.<String, VertexFormatElement>builder()
+                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
+                .put("Normal", DefaultVertexFormat.ELEMENT_NORMAL)
+                .put("UV0", DefaultVertexFormat.ELEMENT_UV0)
+                .put("UV2", DefaultVertexFormat.ELEMENT_UV2)
+                .build()
+        );
+
+        event.registerShader(
+            new ShaderInstance(
+                event.getResourceProvider(),
+                new ResourceLocation("hbm_m", "block_lit"),
+                blockLitFormat
+            ),
+            ModShaders::setBlockLitShader
+        );
+        MainRegistry.LOGGER.info("Successfully registered block_lit shader with custom vertex format");
+    }
 
     private static class LeavesModelWrapper extends BakedModelWrapper<BakedModel> {
 

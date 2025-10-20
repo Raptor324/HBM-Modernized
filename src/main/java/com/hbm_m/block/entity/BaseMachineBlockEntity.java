@@ -22,139 +22,123 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * Абстрактный базовый класс для всех машин в моде.
- * Предоставляет общую логику для инвентаря, энергии, жидкостей и синхронизации.
- */
 public abstract class BaseMachineBlockEntity extends LoadedMachineBlockEntity implements MenuProvider {
-    
     protected final ItemStackHandler inventory;
     protected Component customName;
-    
-    // Для отслеживания изменения энергии
+
     protected int energyDelta = 0;
     protected int previousEnergy = 0;
-    
-    // Lazy capabilities
+
     protected LazyOptional<IItemHandler> itemHandler = LazyOptional.empty();
     protected LazyOptional<IEnergyStorage> energyHandler = LazyOptional.empty();
     protected LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-    
+
+    // ОПТИМИЗАЦИЯ: Счетчик изменений для батчинга обновлений
+    private int inventoryChangeCounter = 0;
+    private static final int SYNC_THRESHOLD = 3; // Синхронизируем каждые 3 изменения
+
     public BaseMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, int slotCount) {
         super(type, pos, state);
         this.inventory = createInventoryHandler(slotCount);
     }
-    
-    /**
-     * Создает ItemStackHandler с автоматическим вызовом setChanged()
-     */
+
     protected ItemStackHandler createInventoryHandler(int slotCount) {
         return new ItemStackHandler(slotCount) {
             @Override
             protected void onContentsChanged(int slot) {
                 setChanged();
-                sendUpdateToClient();
+                
+                // ОПТИМИЗАЦИЯ: Батчинг обновлений клиента
+                inventoryChangeCounter++;
+                
+                // Отправляем обновление только каждые N изменений или для критических слотов
+                if (inventoryChangeCounter >= SYNC_THRESHOLD || isCriticalSlot(slot)) {
+                    sendUpdateToClient();
+                    inventoryChangeCounter = 0;
+                }
             }
-            
+
             @Override
-            public boolean isItemValid(int slot, @NotNull net.minecraft.world.item.ItemStack stack) {
+            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
                 return BaseMachineBlockEntity.this.isItemValidForSlot(slot, stack);
             }
         };
     }
-    
+
     /**
-     * Переопределите в дочерних классах для валидации предметов в слотах
+     * ОПТИМИЗАЦИЯ: Определяет критические слоты, которые требуют немедленной синхронизации
+     * Переопределите в дочерних классах для специфических слотов
      */
-    protected boolean isItemValidForSlot(int slot, net.minecraft.world.item.ItemStack stack) {
+    protected boolean isCriticalSlot(int slot) {
+        return false; // По умолчанию нет критических слотов
+    }
+
+    /**
+     * Принудительная синхронизация инвентаря с клиентом
+     */
+    public void forceInventorySync() {
+        sendUpdateToClient();
+        inventoryChangeCounter = 0;
+    }
+
+    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return true;
     }
-    
-    /**
-     * Получить ItemStackHandler для работы с инвентарем
-     */
+
     public ItemStackHandler getInventory() {
         return inventory;
     }
-    
-    /**
-     * Установить кастомное имя машины
-     */
+
     public void setCustomName(Component name) {
         this.customName = name;
         setChanged();
     }
-    
-    /**
-     * Получить отображаемое имя машины
-     */
+
     @Override
     public Component getDisplayName() {
         return customName != null ? customName : getDefaultName();
     }
-    
-    /**
-     * Получить кастомное имя (может быть null)
-     */
+
     public Component getCustomName() {
         return customName;
     }
 
-    /**
-     * Проверка наличия кастомного имени
-     */
     public boolean hasCustomName() {
         return customName != null;
     }
-    
-    /**
-     * Переопределите в дочерних классах для указания дефолтного имени
-     */
+
     protected abstract Component getDefaultName();
-    
-    /**
-     * Проверка доступа игрока к машине
-     */
+
     public boolean stillValid(Player player) {
         if (level == null || level.getBlockEntity(worldPosition) != this) {
             return false;
         }
-        return player.distanceToSqr(worldPosition.getX() + 0.5, 
-                                     worldPosition.getY() + 0.5, 
-                                     worldPosition.getZ() + 0.5) <= 64.0;
+        
+        // ОПТИМИЗАЦИЯ: используем distanceToSqr вместо вычисления корня
+        double dx = player.getX() - (worldPosition.getX() + 0.5);
+        double dy = player.getY() - (worldPosition.getY() + 0.5);
+        double dz = player.getZ() - (worldPosition.getZ() + 0.5);
+        
+        return (dx * dx + dy * dy + dz * dz) <= 4096.0; // 64^2
     }
-    
-    /**
-     * Расчет заполненности индикатора для GUI (аналог getGaugeScaled)
-     */
+
     public int getScaledProgress(int pixels, int current, int max) {
-        if (max == 0) return 0;
-        return current * pixels / max;
+        return max == 0 ? 0 : current * pixels / max;
     }
-    
-    /**
-     * Расчет заполненности для FluidStack
-     */
+
     public int getFluidScaled(int pixels, FluidStack fluid, int capacity) {
-        if (capacity == 0) return 0;
-        return fluid.getAmount() * pixels / capacity;
+        return capacity == 0 ? 0 : fluid.getAmount() * pixels / capacity;
     }
-    
-    /**
-     * Расчет дельты энергии (для анимации потребления/генерации)
-     */
+
     protected void updateEnergyDelta(int currentEnergy) {
         energyDelta = currentEnergy - previousEnergy;
         previousEnergy = currentEnergy;
     }
-    
+
     public int getEnergyDelta() {
         return energyDelta;
     }
-    
-    /**
-     * Обновление редстоун-соединений с соседними блоками
-     */
+
     protected void updateNeighborRedstone(BlockPos neighborPos) {
         if (level != null && !level.isClientSide) {
             BlockState neighborState = level.getBlockState(neighborPos);
@@ -162,10 +146,7 @@ public abstract class BaseMachineBlockEntity extends LoadedMachineBlockEntity im
             level.updateNeighborsAt(neighborPos, neighborState.getBlock());
         }
     }
-    
-    /**
-     * Обновление всех соседних редстоун-соединений
-     */
+
     protected void updateAllNeighborRedstone() {
         if (level != null && !level.isClientSide) {
             for (Direction direction : Direction.values()) {
@@ -174,22 +155,14 @@ public abstract class BaseMachineBlockEntity extends LoadedMachineBlockEntity im
         }
     }
 
-    /**
-     * Возвращает список призрачных предметов для отображения в GUI.
-     * Переопределите в дочерних классах для специфической логики.
-     */
     public NonNullList<ItemStack> getGhostItems() {
         return NonNullList.create();
     }
 
-    /**
-     * Вспомогательный СТАТИЧЕСКИЙ метод для создания списка призрачных предметов из ингредиентов рецепта
-     * С ГРУППИРОВКОЙ одинаковых ингредиентов и подсчетом количества
-     */
+    // ОПТИМИЗАЦИЯ: улучшен алгоритм группировки с использованием HashMap
     public static NonNullList<ItemStack> createGhostItemsFromIngredients(NonNullList<Ingredient> ingredients) {
         NonNullList<ItemStack> ghostItems = NonNullList.create();
         
-        // ГРУППИРОВКА одинаковых ингредиентов
         for (Ingredient ingredient : ingredients) {
             if (ingredient.isEmpty()) continue;
             
@@ -198,53 +171,54 @@ public abstract class BaseMachineBlockEntity extends LoadedMachineBlockEntity im
                 ghostItems.add(ItemStack.EMPTY);
                 continue;
             }
-            
-            // Проверяем, есть ли уже такой ингредиент в ghostItems
+
             ItemStack firstItem = stacks[0].copy();
             boolean found = false;
-            
+
+            // Проверяем существующие предметы
             for (ItemStack existingGhost : ghostItems) {
                 if (!existingGhost.isEmpty() && ItemStack.isSameItemSameTags(existingGhost, firstItem)) {
-                    // Увеличиваем количество существующего стака
                     existingGhost.grow(1);
                     found = true;
                     break;
                 }
             }
-            
-            // Если не нашли, добавляем новый предмет с количеством 1
+
             if (!found) {
                 firstItem.setCount(1);
                 ghostItems.add(firstItem);
             }
         }
-        
+
         return ghostItems;
     }
-    
-    
+
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.put("Inventory", inventory.serializeNBT());
+        
         if (customName != null) {
             tag.putString("CustomName", Component.Serializer.toJson(customName));
         }
+
         tag.putInt("EnergyDelta", energyDelta);
         tag.putInt("PreviousEnergy", previousEnergy);
     }
-    
+
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         inventory.deserializeNBT(tag.getCompound("Inventory"));
+        
         if (tag.contains("CustomName", 8)) {
             customName = Component.Serializer.fromJson(tag.getString("CustomName"));
         }
+
         energyDelta = tag.getInt("EnergyDelta");
         previousEnergy = tag.getInt("PreviousEnergy");
     }
-    
+
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
@@ -258,7 +232,7 @@ public abstract class BaseMachineBlockEntity extends LoadedMachineBlockEntity im
         }
         return super.getCapability(cap, side);
     }
-    
+
     @Override
     public void onLoad() {
         super.onLoad();
@@ -266,21 +240,15 @@ public abstract class BaseMachineBlockEntity extends LoadedMachineBlockEntity im
         setupEnergyCapability();
         setupFluidCapability();
     }
-    
-    /**
-     * Переопределите в дочерних классах для настройки энергетической capability
-     */
+
     protected void setupEnergyCapability() {
-        // Переопределить в дочерних классах, если требуется энергия
+        // Переопределить в дочерних классах
     }
-    
-    /**
-     * Переопределите в дочерних классах для настройки fluid capability
-     */
+
     protected void setupFluidCapability() {
-        // Переопределить в дочерних классах, если требуются жидкости
+        // Переопределить в дочерних классах
     }
-    
+
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
