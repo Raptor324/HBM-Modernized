@@ -4,6 +4,10 @@
         "type": "directory",
         "source": "block/machine",
         "prefix": "block/machine/"
+      },
+      {
+        "type": "single",
+        "resource": "hbm_m:block/machine/assembly_machine"
       }
     ]
   }

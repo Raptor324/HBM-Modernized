@@ -1,4 +1,5 @@
 #version 150
+
 in vec3 Position;
 in vec3 Normal;
 in vec2 UV0;
@@ -10,12 +11,16 @@ uniform vec2 PackedLight; // 0..15
 out vec3 fragNormal;
 out vec2 texCoord;
 out vec2 lightCoord;
+out float vertexDistance;
 
 void main() {
     vec4 viewPos = ModelViewMat * vec4(Position, 1.0);
     gl_Position = ProjMat * viewPos;
 
-    // Нормали без «желе»: не трогаем позы камеры дополнительными матрицами
+    // ✅ Вычисляем расстояние до вершины (для fog и других эффектов)
+    vertexDistance = length(viewPos.xyz);
+
+    // Нормали
     fragNormal = normalize(mat3(ModelViewMat) * Normal);
 
     texCoord = UV0;

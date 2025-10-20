@@ -2,10 +2,7 @@ package com.hbm_m.client.model.render;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.ShaderInstance;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
@@ -23,6 +20,9 @@ public abstract class AbstractGpuVboRenderer {
     protected boolean initialized = false;
 
     protected abstract VboData buildVboData();
+    
+    // ✅ Переопределяемый метод для настройки текстур в дочернем классе
+    protected abstract void setupTextures(ShaderInstance shader);
 
     protected void initVbo() {
         if (initialized) return;
@@ -69,30 +69,36 @@ public abstract class AbstractGpuVboRenderer {
         ShaderInstance shader = ModShaders.getBlockLitShader();
         if (shader == null) return;
     
-        // Шейдер и текстуры
+        // Устанавливаем шейдер
         RenderSystem.setShader(() -> shader);
-        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
-        // Включаем лайтмап для Sampler2
-        Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
+        
+        // Устанавливаем матрицы
+        if (shader.MODEL_VIEW_MATRIX != null) 
+            shader.MODEL_VIEW_MATRIX.set(poseStack.last().pose());
+        if (shader.PROJECTION_MATRIX != null)  
+            shader.PROJECTION_MATRIX.set(RenderSystem.getProjectionMatrix());
+    
+        // Применяем шейдер
+        shader.apply();
+        
+        // ✅ КРИТИЧНО: Настройка текстур ПОСЛЕ apply() в дочернем классе
+        setupTextures(shader);
+        
+        // Передаем освещение
+        var u = shader.getUniform("PackedLight");
+        if (u != null) {
+            int bl = net.minecraft.client.renderer.LightTexture.block(packedLight);
+            int sl = net.minecraft.client.renderer.LightTexture.sky(packedLight);
+            u.set((float) bl, (float) sl);
+            u.upload();
+        }
     
         // Глубина
         RenderSystem.enableDepthTest();
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
         RenderSystem.depthMask(true);
-    
-        // Применить и загрузить юниформы
-        shader.apply();
-        if (shader.MODEL_VIEW_MATRIX != null) shader.MODEL_VIEW_MATRIX.set(poseStack.last().pose());
-        if (shader.PROJECTION_MATRIX != null)  shader.PROJECTION_MATRIX.set(RenderSystem.getProjectionMatrix());
-    
-        var u = shader.getUniform("PackedLight");
-        if (u != null) {
-            int bl = net.minecraft.client.renderer.LightTexture.block(packedLight); // 0..15
-            int sl = net.minecraft.client.renderer.LightTexture.sky(packedLight);   // 0..15
-            u.set((float) bl, (float) sl);
-            u.upload();
-        }
-    
+        
+        // Рисуем
         GL30.glBindVertexArray(vaoId);
         if (eboId != -1) {
             GL11.glDrawElements(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0);
@@ -111,6 +117,7 @@ public abstract class AbstractGpuVboRenderer {
     public static class VboData {
         public final ByteBuffer byteBuffer;
         public final IntBuffer indices;
+        
         public VboData(ByteBuffer byteBuffer, IntBuffer indices) {
             this.byteBuffer = byteBuffer;
             this.indices = indices;

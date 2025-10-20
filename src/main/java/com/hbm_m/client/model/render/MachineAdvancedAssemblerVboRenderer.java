@@ -1,7 +1,11 @@
 package com.hbm_m.client.model.render;
 
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.BakedModel;
 import org.joml.Matrix4f;
 
@@ -22,7 +26,6 @@ public class MachineAdvancedAssemblerVboRenderer {
     private static final String HEAD_2 = "Head2";
     private static final String SPK_2 = "Spike2";
 
-    // ✅ ГЛОБАЛЬНЫЙ КЭШ VBO - один VBO на все машины одного типа!
     private static final Map<BakedModel, PartVbo> GLOBAL_VBO_CACHE = new ConcurrentHashMap<>();
     
     private final Map<String, PartVbo> parts = new HashMap<>();
@@ -44,7 +47,6 @@ public class MachineAdvancedAssemblerVboRenderer {
     private void putIfPresent(MachineAdvancedAssemblerBakedModel model, String name) {
         BakedModel m = model.getPart(name);
         if (m != null) {
-            // ✅ Используем глобальный кэш - один VBO переиспользуется всеми машинами
             parts.put(name, GLOBAL_VBO_CACHE.computeIfAbsent(m, PartVbo::new));
         }
     }
@@ -69,12 +71,12 @@ public class MachineAdvancedAssemblerVboRenderer {
         poseStack.popPose();
     }
 
-    // ✅ Глобальная очистка всех VBO (вызывается при перезагрузке ресурсов)
     public static void clearGlobalCache() {
         GLOBAL_VBO_CACHE.values().forEach(PartVbo::cleanup);
         GLOBAL_VBO_CACHE.clear();
     }
 
+    // ✅ ВСЯ ЛОГИКА ТЕКСТУР В ДОЧЕРНЕМ КЛАССЕ
     private static class PartVbo extends AbstractGpuVboRenderer {
         private final BakedModel modelPart;
 
@@ -85,6 +87,28 @@ public class MachineAdvancedAssemblerVboRenderer {
         @Override
         protected VboData buildVboData() {
             return ObjModelVboBuilder.buildSinglePart(modelPart);
+        }
+
+        @Override
+        protected void setupTextures(ShaderInstance shader) {
+            // ✅ Привязываем текстуру блоков к unit 0
+            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+            
+            // ✅ Включаем lightmap (он уже связан с unit 2 внутри Minecraft)
+            Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
+            
+            // ✅ Настраиваем uniform'ы для sampler'ов
+            var sampler0 = shader.getUniform("Sampler0");
+            if (sampler0 != null) {
+                sampler0.set(0);  // texture unit 0 - блоки
+                sampler0.upload();
+            }
+            
+            var sampler2 = shader.getUniform("Sampler2");
+            if (sampler2 != null) {
+                sampler2.set(2);  // texture unit 2 - lightmap (по умолчанию у Minecraft)
+                sampler2.upload();
+            }
         }
     }
 }

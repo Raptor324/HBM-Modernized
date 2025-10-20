@@ -32,12 +32,12 @@ public class ObjModelVboBuilder {
                 float x = Float.intBitsToFloat(raw[base + 0]);
                 float y = Float.intBitsToFloat(raw[base + 1]);
                 float z = Float.intBitsToFloat(raw[base + 2]);
-                float u = Float.intBitsToFloat(raw[base + 4]); // UV0.u
-                float v = Float.intBitsToFloat(raw[base + 5]); // UV0.v
+                float u = Float.intBitsToFloat(raw[base + 4]);
+                float v = Float.intBitsToFloat(raw[base + 5]);
 
-                vertices.add(x); vertices.add(y); vertices.add(z);      // Position
-                vertices.add(nx); vertices.add(ny); vertices.add(nz);   // Normal (by face)
-                vertices.add(u); vertices.add(v);                       // UV0
+                vertices.add(x); vertices.add(y); vertices.add(z);
+                vertices.add(nx); vertices.add(ny); vertices.add(nz);
+                vertices.add(u); vertices.add(v);
             }
 
             indices.add(indexOffset + 0);
