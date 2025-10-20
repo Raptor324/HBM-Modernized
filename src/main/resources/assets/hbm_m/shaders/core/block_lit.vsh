@@ -6,7 +6,7 @@ in vec2 UV0;
 
 uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;
-uniform vec2 PackedLight; // 0..15
+uniform vec2 PackedLight;  // (blockLight, skyLight) в диапазоне 0-240
 
 out vec3 fragNormal;
 out vec2 texCoord;
@@ -17,14 +17,15 @@ void main() {
     vec4 viewPos = ModelViewMat * vec4(Position, 1.0);
     gl_Position = ProjMat * viewPos;
 
-    // ✅ Вычисляем расстояние до вершины (для fog и других эффектов)
+    // Расстояние до вершины (для тумана)
     vertexDistance = length(viewPos.xyz);
-
-    // Нормали
+    
+    // Нормали (для возможного использования в освещении)
     fragNormal = normalize(mat3(ModelViewMat) * Normal);
-
+    
+    // UV текстуры
     texCoord = UV0;
 
-    // Перевод 0..15 в координаты 16×16 c центрированием к центру субпикселя
-    lightCoord = (PackedLight + vec2(0.5)) / 16.0;
+    // Координаты lightmap: нормализуем 0-240 → [0, 1]
+    lightCoord = PackedLight / 240.0;
 }

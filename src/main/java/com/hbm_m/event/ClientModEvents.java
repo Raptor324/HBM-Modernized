@@ -1,5 +1,6 @@
 package com.hbm_m.event;
 
+import com.hbm_m.client.model.render.MachineAdvancedAssemblerRenderer;
 // Обработчик событий клиента, добавляющий подсказки к предметам (опасности, OreDict теги).
 // Подсказки показываются при наведении на предмет в инвентаре.
 import com.hbm_m.lib.RefStrings;
@@ -57,8 +58,8 @@ public class ClientModEvents {
     // Регистрируем рендер на GPU
     // @SubscribeEvent
     // public static void onRenderLevelStage(RenderLevelStageEvent event) {
-    //     if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
-    //         GPUInstancedRenderer.flushAllBatches();
+    //     if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
+    //         MachineAdvancedAssemblerRenderer.resetTextureBindingFlag();
     //     }
     // }
 }

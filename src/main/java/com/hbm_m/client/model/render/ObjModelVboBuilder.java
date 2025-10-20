@@ -7,6 +7,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraftforge.client.model.data.ModelData;
 import org.lwjgl.system.MemoryUtil;
+import com.hbm_m.main.MainRegistry;
 
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
@@ -19,6 +20,8 @@ public class ObjModelVboBuilder {
         List<Float> vertices = new ArrayList<>();
         List<Integer> indices = new ArrayList<>();
         int indexOffset = 0;
+
+        MainRegistry.LOGGER.debug("=== Building VBO for model, quad count: {} ===", quads.size());
 
         for (BakedQuad quad : quads) {
             int[] raw = quad.getVertices();
@@ -34,10 +37,20 @@ public class ObjModelVboBuilder {
                 float z = Float.intBitsToFloat(raw[base + 2]);
                 float u = Float.intBitsToFloat(raw[base + 4]);
                 float v = Float.intBitsToFloat(raw[base + 5]);
-
-                vertices.add(x); vertices.add(y); vertices.add(z);
-                vertices.add(nx); vertices.add(ny); vertices.add(nz);
-                vertices.add(u); vertices.add(v);
+            
+                // ✅ Отладка ПЕРЕД записью в VBO
+                if (indexOffset == 0 && i == 0) {
+                    MainRegistry.LOGGER.debug("BEFORE VBO WRITE: u={}, v={}", u, v);
+                }
+            
+                vertices.add(x); vertices.add(y); vertices.add(z);      // 0,1,2
+                vertices.add(nx); vertices.add(ny); vertices.add(nz);   // 3,4,5
+                vertices.add(u); vertices.add(v);                       // 6,7
+                
+                if (indexOffset == 0 && i == 0) {
+                    MainRegistry.LOGGER.debug("VBO layout: pos({},{},{}), norm({},{},{}), uv({},{})", 
+                        x,y,z, nx,ny,nz, u,v);
+                }
             }
 
             indices.add(indexOffset + 0);
