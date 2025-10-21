@@ -163,6 +163,7 @@ public class MainRegistry {
             event.accept(ModItems.GRENADEIF);
 
             event.accept(ModBlocks.DET_MINER);
+            event.accept(ModBlocks.C4);
             event.accept(ModBlocks.GIGA_DET);
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");
@@ -419,7 +420,10 @@ public class MainRegistry {
         }
         // РУДЫ
         if (event.getTab() == ModCreativeTabs.NTM_ORES_TAB.get()) {
-
+            event.accept(ModBlocks.SELLAFIELD_SLAKED);
+            event.accept(ModBlocks.SELLAFIELD_SLAKED1);
+            event.accept(ModBlocks.SELLAFIELD_SLAKED2);
+            event.accept(ModBlocks.SELLAFIELD_SLAKED3);
             event.accept(ModBlocks.URANIUM_BLOCK);
             event.accept(ModBlocks.POLONIUM210_BLOCK);
             event.accept(ModBlocks.PLUTONIUM_BLOCK);
