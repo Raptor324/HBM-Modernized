@@ -117,6 +117,10 @@ public class DetMinerBlock extends Block implements IDetonatable {
                     // Получаем лут и добавляем его в наш список
                     collectedDrops.addAll(blockState.getDrops(lootParamsBuilder));
                 }
+
+                // Запускаем эффект дыма
+                spawnExplosionWave((ServerLevel) level, pos);
+
             }
 
             // 2. Уничтожаем блоки в радиусе и заменяем их воздухом
@@ -127,6 +131,8 @@ public class DetMinerBlock extends Block implements IDetonatable {
                     serverLevel.setBlockAndUpdate(blockPos, Blocks.AIR.defaultBlockState());
                     // Генерируем игровое событие GameEvent.BLOCK_DESTROY для наблюдателей и других механизмов
                     serverLevel.gameEvent(null, GameEvent.BLOCK_DESTROY, blockPos);
+
+
                 }
             }        // 3. Спавним весь собранный лут в центре взрыва
             for (ItemStack itemStack : collectedDrops) {
@@ -187,6 +193,12 @@ public class DetMinerBlock extends Block implements IDetonatable {
                 // Получаем лут и добавляем его в наш список
                 collectedDrops.addAll(blockState.getDrops(lootParamsBuilder));
             }
+
+            // Запускаем эффект дыма
+            spawnExplosionWave((ServerLevel) level, pos);
+
+
+
         }
 
         // 2. Уничтожаем блоки в радиусе и заменяем их воздухом
@@ -197,6 +209,7 @@ public class DetMinerBlock extends Block implements IDetonatable {
                 serverLevel.setBlockAndUpdate(blockPos, Blocks.AIR.defaultBlockState());
                 // Генерируем игровое событие GameEvent.BLOCK_DESTROY для наблюдателей и других механизмов
                 serverLevel.gameEvent(null, GameEvent.BLOCK_DESTROY, blockPos);
+
             }
         }        // 3. Спавним весь собранный лут в центре взрыва
         for (ItemStack itemStack : collectedDrops) {
@@ -219,8 +232,7 @@ public class DetMinerBlock extends Block implements IDetonatable {
         // 5. Удаляем сам блок шахтёрского заряда (если он еще не был удален)
         level.setBlockAndUpdate(pos, Blocks.AIR.defaultBlockState());
 
-        // Запускаем эффект дыма
-        spawnSmokeColumn((ServerLevel) level, pos);
+
     }
 
     /**
@@ -240,72 +252,39 @@ public class DetMinerBlock extends Block implements IDetonatable {
                 .collect(Collectors.toSet()); // Собираем в Set
     }
 
-    /**
-     * Создает столб дыма на 10 секунд
-     */
-    private void spawnSmokeColumn(ServerLevel level, BlockPos explosionPos) {
-        // Создаем задачу, которая будет спавнить дым в течение 10 секунд
-        int duration = 200; // 10 секунд (20 тиков = 1 секунда)
-
-        // Запускаем повторяющуюся задачу
-        scheduleSmoke(level, explosionPos, duration, 0);
-    }
-
-    /**
-     * Рекурсивный метод для создания дыма
-     */
-    private void scheduleSmoke(ServerLevel level, BlockPos pos, int remainingTicks, int currentTick) {
-        if (remainingTicks <= 0) {
-            return;
-        }
-
-        // Спавним частицы каждые 2 тика
-        if (currentTick % 2 == 0) {
-            spawnSmokeParticles(level, pos);
-        }
-
-        // Планируем следующий тик
+    //ЭФФЕКТЫ ВЗРЫВНОЙ ВОЛНЫ---------------------------------------------------------------------------------------------------------
+    private void spawnExplosionWave(ServerLevel level, BlockPos explosionPos) {
+        int duration = 120; //ВРЕМЯ ЖИЗНИ ЭФФЕКТА
+        scheduleExplosionWave(level, explosionPos, duration, 0);}
+    private void scheduleExplosionWave(ServerLevel level, BlockPos pos, int remainingTicks, int currentTick) {
+        if (remainingTicks <= 0) {return;}
+        if (currentTick % 5 == 0) {
+            spawnExplosionWaveParticles(level, pos);}
         level.getServer().tell(new net.minecraft.server.TickTask(
                 level.getServer().getTickCount() + 1,
-                () -> scheduleSmoke(level, pos, remainingTicks - 1, currentTick + 1)
-        ));
-    }
-
-    /**
-     * Спавнит пучок частиц дыма
-     */
-    private void spawnSmokeParticles(ServerLevel level, BlockPos pos) {
+                () -> scheduleExplosionWave(level, pos, remainingTicks - 1, currentTick + 1)));}
+    private void spawnExplosionWaveParticles(ServerLevel level, BlockPos pos) {
         double centerX = pos.getX() + 0.5;
         double centerY = pos.getY() + 0.5;
         double centerZ = pos.getZ() + 0.5;
-
-        // Спавним 5-10 частиц за раз
-        int particleCount = 5 + level.random.nextInt(6);
-
+        int particleCount = 1 + level.random.nextInt(3);  //КОЛИЧЕСТВО ЧАСТИЦ (ОТ 5 ДО 8)
         for (int i = 0; i < particleCount; i++) {
-            // Случайное смещение от центра взрыва
             double offsetX = (level.random.nextDouble() - 0.5) * 2.0;
             double offsetZ = (level.random.nextDouble() - 0.5) * 2.0;
             double offsetY = level.random.nextDouble() * 0.5;
-
-            // Скорость частиц - в основном вверх
             double velocityX = (level.random.nextDouble() - 0.5) * 0.1;
             double velocityY = 0.1 + level.random.nextDouble() * 0.1;
             double velocityZ = (level.random.nextDouble() - 0.5) * 0.1;
-
             level.sendParticles(
-                    ModParticleTypes.SMOKE_COLUMN.get(),
+                    ModParticleTypes.EXPLOSION_WAVE.get(), //ТИП ЧАСТИЦЫ
                     centerX + offsetX,
                     centerY + offsetY,
                     centerZ + offsetZ,
-                    1, // количество
+                    1, //КОЛИЧЕСТВО ГРУПП ЧАСТИЦ
                     velocityX,
                     velocityY,
                     velocityZ,
-                    0.0 // скорость
-            );
-        }
-    }
+                    0.0);}} //ОБЩАЯ СКОРОСТЬ ЧАСТИЦ
 
 
 

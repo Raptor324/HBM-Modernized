@@ -1,0 +1,9 @@
+{
+	"parent": "block/orientable",
+	"textures": {
+		"top": "hbm_m:block/nuclear_charge_top",
+		"front": "hbm_m:block/nuclear_charge",
+		"side": "hbm_m:block/nuclear_charge",
+		"bottom": "hbm_m:block/nuclear_charge"
+	}
+}

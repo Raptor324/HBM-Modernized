@@ -1,7 +1,7 @@
 package com.hbm_m.block;
 
-
 import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.util.MessGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
@@ -9,12 +9,21 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.util.RandomSource; // Import for RandomSource
 
-public class SmokeBombBlock extends Block implements IDetonatable {
+public class GigaDetBlock extends Block implements IDetonatable {
     private static final float EXPLOSION_POWER = 25.0F;
+    private static final double PARTICLE_VIEW_DISTANCE = 512.0;
 
-    public SmokeBombBlock(Properties properties) {
+    // Параметры воронки
+    private static final int CRATER_RADIUS = 30; // Радиус воронки в блоках
+    private static final int CRATER_DEPTH = 20; // Глубина воронки в блоках
+
+    // Блоки для поверхности воронки (замени на свои)
+    private static final Block BLOCK1 = Blocks.STONE; // Замени на свой
+    private static final Block BLOCK2 = Blocks.COBBLESTONE; // Замени на свой
+    private static final Block BLOCK3 = Blocks.GRAVEL; // Замени на свой
+
+    public GigaDetBlock(Properties properties) {
         super(properties);
     }
 
@@ -26,38 +35,41 @@ public class SmokeBombBlock extends Block implements IDetonatable {
             double y = pos.getY() + 0.5;
             double z = pos.getZ() + 0.5;
 
-            // Удаляем блок
             level.removeBlock(pos, false);
 
-            // Создаем взрыв (без частиц по умолчанию)
-            level.explode(null, x, y, z, EXPLOSION_POWER, Level.ExplosionInteraction.TNT);
-
-            // Генерируем огонь вокруг места взрыва
-            spawnFire(serverLevel, pos, 7); // Радиус 7 блоков
+            // Взрыв (без разрушения блоков - за это отвечает воронка)
+            level.explode(null, x, y, z, EXPLOSION_POWER,
+                    Level.ExplosionInteraction.NONE); // NONE = не разрушает блоки
 
             // Запускаем поэтапную систему частиц
             scheduleExplosionEffects(serverLevel, x, y, z);
 
+            // ИСПРАВЛЕНИЕ: Проверка на null для сервера
+            if (serverLevel.getServer() != null) {
+                // Создаём воронку с задержкой (после взрывной волны)
+                serverLevel.getServer().tell(new net.minecraft.server.TickTask(30, () -> {
+                    // Анимированная версия (2 секунды)
+                    MessGenerator.generateCrater(
+                            serverLevel,
+                            pos,
+                            CRATER_RADIUS,
+                            CRATER_DEPTH,
+                            BLOCK1,
+                            BLOCK2,
+                            BLOCK3
+                    );
+
+                    // ИЛИ мгновенная версия (раскомментируй если нужна)
+                    // CraterGenerator.generateCraterInstant(
+                    //     serverLevel, pos, CRATER_RADIUS, CRATER_DEPTH,
+                    //     BLOCK1, BLOCK2, BLOCK3
+                    // );
+                }));
+            }
+
             return true;
         }
         return false;
-    }
-
-    private void spawnFire(ServerLevel level, BlockPos centerPos, int radius) {
-        RandomSource random = level.random;
-        for (int x = -radius; x <= radius; x++) {
-            for (int y = -radius; y <= radius; y++) {
-                for (int z = -radius; z <= radius; z++) {
-                    BlockPos currentPos = centerPos.offset(x, y, z);
-                    // Проверяем, что блок является воздухом и есть блок под ним
-                    if (level.getBlockState(currentPos).isAir() && level.getBlockState(currentPos.below()).isSolidRender(level, currentPos.below())) {
-                        if (random.nextFloat() < 0.3F) { // 30% шанс создания огня
-                            level.setBlockAndUpdate(currentPos, Blocks.FIRE.defaultBlockState());
-                        }
-                    }
-                }
-            }
-        }
     }
 
     private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
