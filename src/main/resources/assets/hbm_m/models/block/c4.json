@@ -1,0 +1,9 @@
+{
+  "parent": "block/orientable",
+  "textures": {
+    "top": "hbm_m:block/c4",
+    "front": "hbm_m:block/c4block_front",
+    "side": "hbm_m:block/c4",
+    "bottom": "hbm_m:block/c4"
+  }
+}

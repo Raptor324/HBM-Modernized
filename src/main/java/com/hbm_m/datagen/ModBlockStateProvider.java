@@ -50,6 +50,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.CONCRETE_CRACKED);
         blockWithItem(ModBlocks.CONCRETE);
 
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED);
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED1);
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED2);
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED3);
+
         resourceBlockWithItem(ModBlocks.CRATE);
         resourceBlockWithItem(ModBlocks.CRATE_LEAD);
         resourceBlockWithItem(ModBlocks.CRATE_METAL);
