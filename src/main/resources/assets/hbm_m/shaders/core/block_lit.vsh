@@ -1,31 +1,52 @@
-#version 150
+#version 330 core
 
-in vec3 Position;
-in vec3 Normal;
-in vec2 UV0;
+// Per-vertex attributes
+layout(location = 0) in vec3 Position;
+layout(location = 1) in vec3 Normal;
+layout(location = 2) in vec2 UV0;
 
+// Instance attributes (используются только если UseInstancing == 1)
+layout(location = 3) in vec4 InstMatRow0;
+layout(location = 4) in vec4 InstMatRow1;
+layout(location = 5) in vec4 InstMatRow2;
+layout(location = 6) in vec4 InstMatRow3;
+layout(location = 7) in vec2 InstLight;
+
+// Uniforms
 uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;
-uniform vec2 PackedLight;  // (blockLight, skyLight) в диапазоне 0-240
+uniform vec2 PackedLight;
+uniform int UseInstancing; // 0 = uniform mode, 1 = instanced mode
 
-out vec3 fragNormal;
+// Output
 out vec2 texCoord;
 out vec2 lightCoord;
 out float vertexDistance;
+out vec3 fragNormal;
 
 void main() {
-    vec4 viewPos = ModelViewMat * vec4(Position, 1.0);
+    mat4 modelView;
+    vec2 light;
+    
+    if (UseInstancing == 1) {
+        // Instanced rendering: используем instance attributes
+        modelView = mat4(InstMatRow0, InstMatRow1, InstMatRow2, InstMatRow3);
+        light = InstLight;
+    } else {
+        // Non-instanced rendering: используем uniforms
+        modelView = ModelViewMat;
+        light = PackedLight;
+    }
+    
+    // Трансформация
+    vec4 viewPos = modelView * vec4(Position, 1.0);
     gl_Position = ProjMat * viewPos;
-
-    // Расстояние до вершины (для тумана)
     vertexDistance = length(viewPos.xyz);
-    
-    // Нормали (для возможного использования в освещении)
-    fragNormal = normalize(mat3(ModelViewMat) * Normal);
-    
-    // UV текстуры
     texCoord = UV0;
-
-    // Координаты lightmap: нормализуем 0-240 → [0, 1]
-    lightCoord = PackedLight / 240.0;
+    
+    // ИСПРАВЛЕНО: light уже в диапазоне [0,1], используем напрямую
+    // Minecraft передаёт координаты в виде (blockLight, skyLight) в [0,1]
+    lightCoord = clamp(light, 0.0005, 0.9995);
+    
+    fragNormal = normalize(mat3(modelView) * Normal);
 }

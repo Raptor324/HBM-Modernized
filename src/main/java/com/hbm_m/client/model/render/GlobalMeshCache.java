@@ -9,10 +9,12 @@ import net.minecraftforge.client.model.data.ModelData;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
+import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class GlobalMeshCache {
+    private static final ConcurrentHashMap<String, WeakReference<AbstractGpuVboRenderer>> PART_RENDERERS = new ConcurrentHashMap<>();
 
     private static final Map<String, List<BakedQuad>> COMPILED_QUADS = new ConcurrentHashMap<>();
     private static final Map<String, VertexBuffer> GPU_BUFFERS = new ConcurrentHashMap<>();
@@ -76,5 +78,44 @@ public class GlobalMeshCache {
         COMPILED_QUADS.clear();
         GPU_BUFFERS.values().forEach(vb -> { if (vb != null) vb.close(); });
         GPU_BUFFERS.clear();
+    }
+    public static AbstractGpuVboRenderer getOrCreateRenderer(String partKey, BakedModel model) {
+        WeakReference<AbstractGpuVboRenderer> ref = PART_RENDERERS.get(partKey);
+        AbstractGpuVboRenderer renderer = (ref != null) ? ref.get() : null;
+        
+        if (renderer == null) {
+            // Создаём новый рендерер и кэшируем
+            renderer = createRendererForPart(model);
+            PART_RENDERERS.put(partKey, new WeakReference<>(renderer));
+        }
+        
+        return renderer;
+    }
+    
+    private static AbstractGpuVboRenderer createRendererForPart(BakedModel model) {
+        return new AbstractGpuVboRenderer() {
+            private VboData cachedData;
+            
+            @Override
+            protected VboData buildVboData() {
+                if (cachedData == null) {
+                    cachedData = ObjModelVboBuilder.buildSinglePart(model);
+                }
+                return cachedData;
+            }
+        };
+    }
+    
+    /**
+     * Очистить весь кэш (вызывать при reload ресурсов)
+     */
+    public static void clearAll() {
+        for (WeakReference<AbstractGpuVboRenderer> ref : PART_RENDERERS.values()) {
+            AbstractGpuVboRenderer renderer = ref.get();
+            if (renderer != null) {
+                renderer.cleanup();
+            }
+        }
+        PART_RENDERERS.clear();
     }
 }

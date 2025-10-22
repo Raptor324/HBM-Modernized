@@ -14,7 +14,7 @@ public class ModShaders {
         dynamicCutoutShader = shader;
     }
 
-    // ✅ ИСПРАВЛЕНИЕ: Добавляем геттер и сеттер для blockLitShader
+
     public static ShaderInstance getBlockLitShader() {
         return blockLitShader;
     }

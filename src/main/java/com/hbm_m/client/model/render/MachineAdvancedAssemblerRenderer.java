@@ -40,48 +40,59 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
     @Override
     protected void renderParts(MachineAdvancedAssemblerBlockEntity be,
-                               MachineAdvancedAssemblerBakedModel model,
-                               LegacyAnimator animator,
-                               float partialTick,
-                               int packedLight,
-                               int packedOverlay,
-                               PoseStack poseStack,
-                               MultiBufferSource bufferSource) {
+            MachineAdvancedAssemblerBakedModel model,
+            LegacyAnimator animator,
+            float partialTick,
+            int packedLight,
+            int packedOverlay,
+            PoseStack poseStack,
+            MultiBufferSource bufferSource) {
+        
+        // КРИТИЧЕСКИ ВАЖНО: получаем РЕАЛЬНОЕ освещение из мира
+        int blockLight = be.getLevel() != null 
+            ? be.getLevel().getBrightness(net.minecraft.world.level.LightLayer.BLOCK, be.getBlockPos())
+            : net.minecraft.client.renderer.LightTexture.block(packedLight);
+        
+        int skyLight = be.getLevel() != null 
+            ? be.getLevel().getBrightness(net.minecraft.world.level.LightLayer.SKY, be.getBlockPos())
+            : net.minecraft.client.renderer.LightTexture.sky(packedLight);
+        
+        // Упаковываем обратно в packedLight формат
+        int dynamicLight = net.minecraft.client.renderer.LightTexture.pack(blockLight, skyLight);
         
         // Сбрасываем флаг привязки текстур
         AbstractGpuVboRenderer.TextureBinder.resetForAssembler();
-
+        
         // Инициализируем instanced рендереры (один раз)
         if (!instancersInitialized) {
             initializeInstancedRenderers(model);
         }
-
+        
         // Создаём/обновляем GPU рендерер для анимированных частей
         if (cachedModel != model || gpu == null) {
             cachedModel = model;
             gpu = new MachineAdvancedAssemblerVboRenderer(model);
         }
-
-        // ОПТИМИЗАЦИЯ: Добавляем Base в батч вместо немедленного рендера
+        
+        // ОПТИМИЗАЦИЯ: Добавляем Base в батч
         if (instancedBase != null) {
-            instancedBase.addInstance(poseStack, packedLight);
+            instancedBase.addInstance(poseStack, dynamicLight);
         } else {
-            // Fallback если instancing не работает
-            gpu.renderStaticBase(poseStack, packedLight);
+            gpu.renderStaticBase(poseStack, dynamicLight);
         }
         
         // УСЛОВНЫЙ РЕНДЕР: Frame только если be.frame == true
         if (be.frame) {
             if (instancedFrame != null) {
-                instancedFrame.addInstance(poseStack, packedLight);
+                instancedFrame.addInstance(poseStack, dynamicLight);
             } else {
-                gpu.renderStaticFrame(poseStack, packedLight);
+                gpu.renderStaticFrame(poseStack, dynamicLight);
             }
         }
-
-        // Анимированные части рендерятся как обычно
-        renderAnimated(be, partialTick, poseStack, packedLight);
-        renderRecipeIcon(be, poseStack, bufferSource, packedLight, packedOverlay);
+        
+        // Анимированные части — тот же шейдер, но через uniform
+        renderAnimated(be, partialTick, poseStack, dynamicLight);
+        renderRecipeIcon(be, poseStack, bufferSource, dynamicLight, packedOverlay);
     }
 
     /**
@@ -121,17 +132,17 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         if (instancedFrame != null) instancedFrame.flush();
     }
 
-    private void renderAnimated(MachineAdvancedAssemblerBlockEntity be, float pt, PoseStack pose, int packedLight) {
+    private void renderAnimated(MachineAdvancedAssemblerBlockEntity be, float pt, PoseStack pose, int blockLight) {
         float ring = Mth.lerp(pt, be.prevRingAngle, be.ringAngle);
         Matrix4f ringMat = new Matrix4f().rotateY((float) Math.toRadians(ring));
-        gpu.renderPart(pose, packedLight, "Ring", ringMat);
+        gpu.renderPart(pose, blockLight, "Ring", ringMat);
 
-        renderArm(be.arms[0], false, pt, pose, packedLight, ringMat);
-        renderArm(be.arms[1], true, pt, pose, packedLight, ringMat);
+        renderArm(be.arms[0], false, pt, pose, blockLight, ringMat);
+        renderArm(be.arms[1], true, pt, pose, blockLight, ringMat);
     }
 
     private void renderArm(MachineAdvancedAssemblerBlockEntity.AssemblerArm arm, boolean inverted,
-                           float pt, PoseStack pose, int packedLight, Matrix4f baseTransform) {
+                           float pt, PoseStack pose, int blockLight, Matrix4f baseTransform) {
         float a0 = Mth.lerp(pt, arm.prevAngles[0], arm.angles[0]);
         float a1 = Mth.lerp(pt, arm.prevAngles[1], arm.angles[1]);
         float a2 = Mth.lerp(pt, arm.prevAngles[2], arm.angles[2]);
@@ -149,23 +160,23 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                 .translate(0, 1.625f, zBase)
                 .rotateX((float) Math.toRadians(angleSign * a0))
                 .translate(0, -1.625f, -zBase);
-        gpu.renderPart(pose, packedLight, lowerName, lowerMat);
+        gpu.renderPart(pose, blockLight, lowerName, lowerMat);
 
         Matrix4f upperMat = new Matrix4f(lowerMat)
                 .translate(0, 2.375f, zBase)
                 .rotateX((float) Math.toRadians(angleSign * a1))
                 .translate(0, -2.375f, -zBase);
-        gpu.renderPart(pose, packedLight, upperName, upperMat);
+        gpu.renderPart(pose, blockLight, upperName, upperMat);
 
         Matrix4f headMat = new Matrix4f(upperMat)
                 .translate(0, 2.375f, zBase * 0.4667f)
                 .rotateX((float) Math.toRadians(angleSign * a2))
                 .translate(0, -2.375f, -zBase * 0.4667f);
-        gpu.renderPart(pose, packedLight, headName, headMat);
+        gpu.renderPart(pose, blockLight, headName, headMat);
 
         Matrix4f spikeMat = new Matrix4f(headMat)
                 .translate(0, a3, 0);
-        gpu.renderPart(pose, packedLight, spikeName, spikeMat);
+        gpu.renderPart(pose, blockLight, spikeName, spikeMat);
     }
 
     private void renderRecipeIcon(MachineAdvancedAssemblerBlockEntity be,

@@ -198,18 +198,18 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
         MainRegistry.LOGGER.info("Registering custom shaders...");
-        
-        // ✅ ИСПРАВЛЕНИЕ: Используем конструктор VertexFormat напрямую (API 1.20.1)
-        // Формат: Position (vec3) + Normal (vec3) + UV0 (vec2) + UV2 (vec2 lightmap)
         VertexFormat blockLitFormat = new VertexFormat(
             ImmutableMap.<String, VertexFormatElement>builder()
                 .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
-                .put("Normal", DefaultVertexFormat.ELEMENT_NORMAL)
-                .put("UV0", DefaultVertexFormat.ELEMENT_UV0)
-                .put("UV2", DefaultVertexFormat.ELEMENT_UV2)
+                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
+                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
+                .put("InstMatRow0", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
+                .put("InstMatRow1", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
+                .put("InstMatRow2", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
+                .put("InstMatRow3", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
+                .put("InstLight",   DefaultVertexFormat.ELEMENT_UV2)    // vec2
                 .build()
         );
-
         event.registerShader(
             new ShaderInstance(
                 event.getResourceProvider(),
@@ -218,8 +218,9 @@ public class ClientSetup {
             ),
             ModShaders::setBlockLitShader
         );
-        MainRegistry.LOGGER.info("Successfully registered block_lit shader with custom vertex format");
+        MainRegistry.LOGGER.info("Successfully registered block_lit shader");
     }
+
     private static class LeavesModelWrapper extends BakedModelWrapper<BakedModel> {
 
         public LeavesModelWrapper(BakedModel originalModel) {

@@ -26,26 +26,36 @@ public abstract class AbstractGpuVboRenderer {
 
     static final class TextureBinder {
         private static boolean boundForThisAssembler = false;
-
+    
         static void resetForAssembler() {
             boundForThisAssembler = false;
         }
-
+    
         static void bindForAssemblerIfNeeded(ShaderInstance shader) {
             if (boundForThisAssembler) return;
-
-            var textureManager = Minecraft.getInstance().getTextureManager();
-            var blockAtlas = textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS);
-            int blockAtlasId = blockAtlas.getId();
-
+            
+            var minecraft = Minecraft.getInstance();
+            var textureManager = minecraft.getTextureManager();
+            
+            // ШАГ 1: Привязываем block atlas к TEXTURE0
             GL13.glActiveTexture(GL13.GL_TEXTURE0);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, blockAtlasId);
-
-            Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
-
+            var blockAtlas = textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS);
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, blockAtlas.getId());
+            
+            // ШАГ 2: Обновляем и привязываем lightmap к TEXTURE2
+            GL13.glActiveTexture(GL13.GL_TEXTURE2);
+            var lightTexture = minecraft.gameRenderer.lightTexture();
+            lightTexture.turnOnLightLayer(); // Это привязывает lightmap к текущему активному unit (TEXTURE2)
+            
+            // ШАГ 3: КРИТИЧЕСКИ ВАЖНО - возвращаем активный unit на TEXTURE0
+            // и ПОВТОРНО привязываем block atlas, т.к. turnOnLightLayer() мог изменить state
+            GL13.glActiveTexture(GL13.GL_TEXTURE0);
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, blockAtlas.getId());
+            
             boundForThisAssembler = true;
-        }
+        }        
     }
+    
 
     protected abstract VboData buildVboData();
 
@@ -89,69 +99,86 @@ public abstract class AbstractGpuVboRenderer {
     public void render(PoseStack poseStack, int packedLight) {
         if (!initialized) initVbo();
         if (vaoId == -1) return;
-
+        
         ShaderInstance shader = ModShaders.getBlockLitShader();
         if (shader == null) {
             MainRegistry.LOGGER.error("BlockLit shader is null");
             return;
         }
-
+        
         RenderSystem.setShader(() -> shader);
-
+        
         // Матрицы
         if (shader.MODEL_VIEW_MATRIX != null)
             shader.MODEL_VIEW_MATRIX.set(poseStack.last().pose());
         if (shader.PROJECTION_MATRIX != null)
             shader.PROJECTION_MATRIX.set(RenderSystem.getProjectionMatrix());
+        
+        // Свет
+        int blockLight = net.minecraft.client.renderer.LightTexture.block(packedLight);
+        int skyLight = net.minecraft.client.renderer.LightTexture.sky(packedLight);
 
-        // ИСПРАВЛЕНО: Правильное извлечение света
-        int blI = net.minecraft.client.renderer.LightTexture.block(packedLight);
-        int slI = net.minecraft.client.renderer.LightTexture.sky(packedLight);
-
-        // ВАЖНО: НЕ масштабируем, используем напрямую (уже в диапазоне 0-240)
-        float bl = (float) blI;
-        float sl = (float) slI;
-
-        // PackedLight uniform
         var lightUniform = shader.getUniform("PackedLight");
         if (lightUniform != null) {
-            lightUniform.set(bl, sl);
+            // КРИТИЧЕСКИ ВАЖНО: Minecraft lightmap использует координаты:
+            // X (blockLight): (value + 0.5) / 16.0
+            // Y (skyLight): (value + 0.5) / 16.0
+            float u = (blockLight + 0.5f) / 16.0f;
+            float v = (skyLight + 0.5f) / 16.0f;
+            lightUniform.set(u, v);
         }
-
-        // ДОБАВЛЕНО: Fog uniforms (автоматически берутся из RenderSystem)
+        
+        // UseInstancing = 0 для обычного рендера
+        var useInstancingUniform = shader.getUniform("UseInstancing");
+        if (useInstancingUniform != null) {
+            useInstancingUniform.set(0);
+        }
+        
+        // Fog
         var fogStartUniform = shader.getUniform("FogStart");
-        if (fogStartUniform != null) {
-            fogStartUniform.set(RenderSystem.getShaderFogStart());
-        }
-
+        if (fogStartUniform != null) fogStartUniform.set(RenderSystem.getShaderFogStart());
         var fogEndUniform = shader.getUniform("FogEnd");
-        if (fogEndUniform != null) {
-            fogEndUniform.set(RenderSystem.getShaderFogEnd());
-        }
-
+        if (fogEndUniform != null) fogEndUniform.set(RenderSystem.getShaderFogEnd());
         var fogColorUniform = shader.getUniform("FogColor");
         if (fogColorUniform != null) {
             float[] fogColor = RenderSystem.getShaderFogColor();
             fogColorUniform.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
         }
-
+        
         shader.apply();
-
+        
         TextureBinder.bindForAssemblerIfNeeded(shader);
+        var sampler0 = shader.getUniform("Sampler0");
+        if (sampler0 != null) {
+            sampler0.set(0); // texture unit 0
+        }
+
+        var sampler2 = shader.getUniform("Sampler2");
+        if (sampler2 != null) {
+            sampler2.set(2); // texture unit 2
+        }
+
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-
+        
         RenderSystem.enableDepthTest();
         RenderSystem.depthFunc(GL11.GL_LEQUAL);
         RenderSystem.depthMask(true);
-
+        
+        // КРИТИЧЕСКИ ВАЖНО: отключаем culling для двусторонних граней
+        GL11.glDisable(GL11.GL_CULL_FACE);
+        
         GL30.glBindVertexArray(vaoId);
         if (eboId != -1) {
             GL11.glDrawElements(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0);
         }
         GL30.glBindVertexArray(0);
+        
+        // Восстанавливаем culling для других рендереров
+        GL11.glEnable(GL11.GL_CULL_FACE);
     }
+    
 
     public void cleanup() {
         if (!initialized) return;

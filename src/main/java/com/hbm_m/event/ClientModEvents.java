@@ -67,6 +67,7 @@ public class ClientModEvents {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             // Флашим все накопленные instanced батчи
             MachineAdvancedAssemblerRenderer.flushInstancedBatches();
+            
         }
     }
 }
