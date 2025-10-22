@@ -7,6 +7,9 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import com.hbm_m.block.entity.IronCrateBlockEntity;
+import com.hbm_m.block.entity.SteelCrateBlockEntity;
+import com.hbm_m.block.entity.DeshCrateBlockEntity;
 
 public class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
@@ -72,6 +75,26 @@ public class ModBlockEntities {
                 BlockEntityType.Builder.of(DoorBlockEntity::new,
                 // Все блоки дверей, которые используют этот BlockEntity
                         ModBlocks.LARGE_VEHICLE_DOOR.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<IronCrateBlockEntity>> IRON_CRATE_BE =
+            BLOCK_ENTITIES.register("iron_crate_be", () ->
+                    BlockEntityType.Builder.<IronCrateBlockEntity>of(
+                            IronCrateBlockEntity::new,
+                            ModBlocks.CRATE_IRON.get()
+                    ).build(null));
+
+    public static final RegistryObject<BlockEntityType<SteelCrateBlockEntity>> STEEL_CRATE_BE =
+            BLOCK_ENTITIES.register("steel_crate_be", () ->
+                    BlockEntityType.Builder.<SteelCrateBlockEntity>of(
+                            SteelCrateBlockEntity::new,
+                            ModBlocks.CRATE_STEEL.get()
+                    ).build(null));
+    public static final RegistryObject<BlockEntityType<DeshCrateBlockEntity>> DESH_CRATE_BE =
+            BLOCK_ENTITIES.register("desh_crate_be", () ->
+                    BlockEntityType.Builder.<DeshCrateBlockEntity>of(
+                            DeshCrateBlockEntity::new,
+                            ModBlocks.CRATE_DESH.get()
+                    ).build(null));
         
 
     public static void register(IEventBus eventBus) {

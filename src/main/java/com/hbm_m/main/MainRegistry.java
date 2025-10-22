@@ -513,6 +513,9 @@ public class MainRegistry {
             event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB);
             event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS);
             event.accept(ModBlocks.BRICK_CONCRETE_MARKED);
+            event.accept(ModBlocks.CRATE_IRON);
+            event.accept(ModBlocks.CRATE_STEEL);
+            event.accept(ModBlocks.CRATE_DESH);
 
 
             event.accept(ModBlocks.LARGE_VEHICLE_DOOR);
