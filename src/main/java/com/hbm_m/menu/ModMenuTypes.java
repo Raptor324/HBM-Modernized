@@ -8,6 +8,9 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import com.hbm_m.menu.IronCrateMenu;
+import com.hbm_m.menu.SteelCrateMenu;
+import com.hbm_m.menu.DeshCrateMenu;
 
 public class ModMenuTypes {
     public static final DeferredRegister<MenuType<?>> MENUS =
@@ -39,6 +42,15 @@ public class ModMenuTypes {
 
     public static final RegistryObject<MenuType<ShredderMenu>> SHREDDER_MENU =
             MENUS.register("shredder_menu", () -> IForgeMenuType.create(ShredderMenu::new));
+
+
+    public static final RegistryObject<MenuType<IronCrateMenu>> IRON_CRATE_MENU =
+            MENUS.register("iron_crate_menu", () -> IForgeMenuType.create(IronCrateMenu::new));
+
+    public static final RegistryObject<MenuType<SteelCrateMenu>> STEEL_CRATE_MENU =
+            MENUS.register("steel_crate_menu", () -> IForgeMenuType.create(SteelCrateMenu::new));
+    public static final RegistryObject<MenuType<DeshCrateMenu>> DESH_CRATE_MENU =
+            MENUS.register("desh_crate_menu", () -> IForgeMenuType.create(DeshCrateMenu::new));
 
 
     public static void register(IEventBus eventBus) {

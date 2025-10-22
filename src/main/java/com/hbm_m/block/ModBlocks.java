@@ -288,6 +288,12 @@ public class ModBlocks {
                     BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
     public static final RegistryObject<Block> REINFORCED_STONE_SLAB = registerBlock("reinforced_stone_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
+    public static final RegistryObject<Block> CRATE_IRON = registerBlock("crate_iron",
+            () -> new IronCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+    public static final RegistryObject<Block> CRATE_STEEL = registerBlock("crate_steel",
+            () -> new SteelCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+    public static final RegistryObject<Block> CRATE_DESH = registerBlock("crate_desh",
+            () -> new DeshCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     // -----------------------<РАСТЕНИЯ>-----------------------------
     public static final RegistryObject<Block> STRAWBERRY_BUSH = registerBlock("strawberry_bush",

@@ -59,6 +59,31 @@ public class ModBlockStateProvider extends BlockStateProvider {
         resourceBlockWithItem(ModBlocks.CRATE_LEAD);
         resourceBlockWithItem(ModBlocks.CRATE_METAL);
         resourceBlockWithItem(ModBlocks.CRATE_WEAPON);
+        simpleBlockWithItem(ModBlocks.CRATE_IRON.get(),
+                models().cubeBottomTop(
+                        ModBlocks.CRATE_IRON.getId().getPath(),
+                        modLoc("block/crate_iron_side"),      // Текстура боков
+                        modLoc("block/crate_iron_top"),       // Текстура низа
+                        modLoc("block/crate_iron_top")        // Текстура верха
+                )
+
+        );
+        simpleBlockWithItem(ModBlocks.CRATE_STEEL.get(),
+                models().cubeBottomTop(
+                        ModBlocks.CRATE_STEEL.getId().getPath(),
+                        modLoc("block/crate_steel_side"),
+                        modLoc("block/crate_steel_top"),
+                        modLoc("block/crate_steel_top")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.CRATE_DESH.get(),
+                models().cubeBottomTop(
+                        ModBlocks.CRATE_DESH.getId().getPath(),
+                        modLoc("block/crate_desh_side"),
+                        modLoc("block/crate_desh_top"),
+                        modLoc("block/crate_desh_top")
+                )
+        );
 
         blockWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
         blockWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);

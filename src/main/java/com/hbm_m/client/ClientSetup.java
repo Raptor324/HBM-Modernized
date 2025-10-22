@@ -55,6 +55,9 @@ import java.util.Map;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.client.model.render.DoorRenderer;
 import com.hbm_m.client.model.render.MachineAdvancedAssemblerRenderer;
+import com.hbm_m.client.overlay.GUIIronCrate;
+import com.hbm_m.client.overlay.GUISteelCrate;
+import com.hbm_m.client.overlay.GUIDeshCrate;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientSetup {
@@ -102,6 +105,9 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), ShredderScreen::new);
             MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
             MenuScreens.register(ModMenuTypes.ANVIL_MENU.get(), GUIAnvil::new);
+            MenuScreens.register(ModMenuTypes.IRON_CRATE_MENU.get(), GUIIronCrate::new);
+            MenuScreens.register(ModMenuTypes.STEEL_CRATE_MENU.get(), GUISteelCrate::new);
+            MenuScreens.register(ModMenuTypes.DESH_CRATE_MENU.get(), GUIDeshCrate::new);
 
             // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
