@@ -558,6 +558,33 @@ public class MainRegistry {
             event.accept(ModItems.PLATE_FUEL_U235);
             event.accept(ModItems.CREATIVE_BATTERY);
 
+            event.accept(ModItems.BATTERY_POTATO);
+            event.accept(ModItems.BATTERY);
+            event.accept(ModItems.BATTERY_RED_CELL);
+            event.accept(ModItems.BATTERY_RED_CELL_6);
+            event.accept(ModItems.BATTERY_RED_CELL_24);
+            event.accept(ModItems.BATTERY_ADVANCED);
+            event.accept(ModItems.BATTERY_ADVANCED_CELL);
+            event.accept(ModItems.BATTERY_ADVANCED_CELL_4);
+            event.accept(ModItems.BATTERY_ADVANCED_CELL_12);
+            event.accept(ModItems.BATTERY_LITHIUM);
+            event.accept(ModItems.BATTERY_LITHIUM_CELL);
+            event.accept(ModItems.BATTERY_LITHIUM_CELL_3);
+            event.accept(ModItems.BATTERY_LITHIUM_CELL_6);
+            event.accept(ModItems.BATTERY_SCHRABIDIUM);
+            event.accept(ModItems.BATTERY_SCHRABIDIUM_CELL);
+            event.accept(ModItems.BATTERY_SCHRABIDIUM_CELL_2);
+            event.accept(ModItems.BATTERY_SCHRABIDIUM_CELL_4);
+            event.accept(ModItems.BATTERY_SPARK);
+            event.accept(ModItems.BATTERY_TRIXITE);
+            event.accept(ModItems.BATTERY_SPARK_CELL_6);
+            event.accept(ModItems.BATTERY_SPARK_CELL_25);
+            event.accept(ModItems.BATTERY_SPARK_CELL_100);
+            event.accept(ModItems.BATTERY_SPARK_CELL_1000);
+            event.accept(ModItems.BATTERY_SPARK_CELL_2500);
+            event.accept(ModItems.BATTERY_SPARK_CELL_10000);
+            event.accept(ModItems.BATTERY_SPARK_CELL_POWER);
+
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added creative battery ITEM to NTM Fuel tab");
             }

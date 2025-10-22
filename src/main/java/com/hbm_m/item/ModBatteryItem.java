@@ -1,6 +1,7 @@
 package com.hbm_m.item;
 
 import com.hbm_m.capability.EnergyCapabilityProvider;
+import com.hbm_m.util.EnergyFormatter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -108,24 +109,26 @@ public class ModBatteryItem extends Item {
             int stored = energy.getEnergyStored();
             int max = energy.getMaxEnergyStored();
 
-            // Хранится энергии (серый цвет)
+            // Хранится энергии (тёмно-синий цвет)
             tooltip.add(Component.translatable("tooltip.hbm_m.battery.stored")
                     .withStyle(ChatFormatting.DARK_BLUE));
 
-            // Текущая энергия / Максимальная (золотой цвет)
-            tooltip.add(Component.literal(String.format("%,d / %,d FE", stored, max))
+            // Текущая энергия / Максимальная (с приставками СИ, золотой цвет)
+            tooltip.add(Component.literal(
+                            String.format("%s / %s FE",
+                                    EnergyFormatter.format(stored),
+                                    EnergyFormatter.format(max)))
                     .withStyle(ChatFormatting.GOLD));
 
-            // Скорость зарядки/разрядки
+            // Скорость зарядки/разрядки (с приставками СИ)
             if (maxReceive > 0 && maxExtract > 0) {
                 tooltip.add(Component.translatable("tooltip.hbm_m.battery.transfer_rate",
-                        Component.literal(String.format("%,d", maxReceive)).withStyle(ChatFormatting.YELLOW),
-                        Component.literal(String.format("%,d", maxExtract)).withStyle(ChatFormatting.YELLOW)
-                ).withStyle(ChatFormatting.GRAY));
-            } else if (maxExtract > 0) {
+                        Component.literal(EnergyFormatter.format(maxReceive)).withStyle(ChatFormatting.YELLOW),
+                        Component.literal(EnergyFormatter.format(maxExtract)).withStyle(ChatFormatting.YELLOW)
+                ).withStyle(ChatFormatting.WHITE));
                 tooltip.add(Component.translatable("tooltip.hbm_m.battery.discharge_rate",
-                        Component.literal(String.format("%,d", maxExtract)).withStyle(ChatFormatting.LIGHT_PURPLE)
-                ).withStyle(ChatFormatting.GRAY));
+                        Component.literal(EnergyFormatter.format(maxExtract)).withStyle(ChatFormatting.YELLOW)
+                ).withStyle(ChatFormatting.WHITE));
             }
         });
 
@@ -133,7 +136,7 @@ public class ModBatteryItem extends Item {
     }
 
     // Геттеры для получения параметров батарейки
-    public int getCapacity() {
+    public long getCapacity() {
         return capacity;
     }
 
