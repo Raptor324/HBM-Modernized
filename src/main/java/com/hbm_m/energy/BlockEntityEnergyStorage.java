@@ -1,69 +1,89 @@
 package com.hbm_m.energy;
 
-// Универсальный класс для хранения энергии в блоках, реализующий EnergyStorage с возможностью настройки и отладки.
-import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.main.MainRegistry;
+import com.hbm_m.config.ModClothConfig; // (Если нужно)
+import com.hbm_m.main.MainRegistry; // (Если нужно)
 
-import net.minecraftforge.energy.EnergyStorage;
+// (Убери import net.minecraftforge.energy.EnergyStorage;)
 
-public class BlockEntityEnergyStorage extends EnergyStorage {
+public class BlockEntityEnergyStorage implements ILongEnergyStorage { // Имплементируем новый интерфейс
 
-    public BlockEntityEnergyStorage(int capacity, int maxTransfer) {
-        super(capacity, maxTransfer, maxTransfer, 0);
+    protected long energy; // <-- ТИП LONG
+    protected final long capacity;
+    protected final long maxReceive;
+    protected final long maxExtract;
+
+    public BlockEntityEnergyStorage(long capacity, long maxReceive, long maxExtract) {
+        this.capacity = capacity;
+        this.maxReceive = maxReceive;
+        this.maxExtract = maxExtract;
+        this.energy = 0;
     }
 
-    public BlockEntityEnergyStorage(int capacity, int maxReceive, int maxExtract) {
-        super(capacity, maxReceive, maxExtract, 0);
+    // (Этот конструктор был у тебя, можешь оставить)
+    public BlockEntityEnergyStorage(long capacity, long maxTransfer) {
+        this(capacity, maxTransfer, maxTransfer);
     }
 
     @Override
-    public int receiveEnergy(int maxReceive, boolean simulate) {
-        int energyReceived = super.receiveEnergy(maxReceive, simulate);
-        if (energyReceived > 0 && !simulate) {
-            if (ModClothConfig.get().enableDebugLogging) {
+    public long receiveEnergy(long maxReceive, boolean simulate) {
+        long energyReceived = Math.min(capacity - energy, Math.min(this.maxReceive, maxReceive));
+        if (energyReceived < 0) {
+            energyReceived = 0; // Безопасность
+        }
+        if (!simulate) {
+            this.energy += energyReceived;
+            // (Твоя логика дебага)
+            if (energyReceived > 0 && ModClothConfig.get().enableDebugLogging) {
                 MainRegistry.LOGGER.debug("[EnergyStorage]: Received {} FE (now {})", energyReceived, this.energy);
             }
         }
         return energyReceived;
     }
-    
+
     @Override
-    public int extractEnergy(int maxExtract, boolean simulate) {
-        int energyExtracted = super.extractEnergy(maxExtract, simulate);
-        if (energyExtracted > 0 && !simulate) {
-            if (ModClothConfig.get().enableDebugLogging) {
+    public long extractEnergy(long maxExtract, boolean simulate) {
+        long energyExtracted = Math.min(energy, Math.min(this.maxExtract, maxExtract));
+        if (energyExtracted < 0) {
+            energyExtracted = 0; // Безопасность
+        }
+        if (!simulate) {
+            this.energy -= energyExtracted;
+            // (Твоя логика дебага)
+            if (energyExtracted > 0 && ModClothConfig.get().enableDebugLogging) {
                 MainRegistry.LOGGER.debug("[EnergyStorage]: Extracted {} FE (now {})", energyExtracted, this.energy);
             }
         }
         return energyExtracted;
     }
 
-    // Этот метод нужен для загрузки из NBT
-    public void setEnergy(int energy) {
-        if (energy < 0) {
-            energy = 0;
-        }
-        if (energy > this.capacity) {
-            energy = this.capacity;
-        }
+    @Override
+    public long getEnergyStored() {
+        return this.energy;
+    }
+
+    @Override
+    public long getMaxEnergyStored() {
+        return this.capacity;
+    }
+
+    @Override
+    public boolean canExtract() {
+        return this.maxExtract > 0;
+    }
+
+    @Override
+    public boolean canReceive() {
+        return this.maxReceive > 0;
+    }
+
+    // Твой метод для NBT, теперь принимает long
+    public void setEnergy(long energy) {
+        if (energy < 0L) energy = 0L;
+        if (energy > this.capacity) energy = this.capacity;
         this.energy = energy;
     }
 
-    // НОВЫЕ МЕТОДЫ-ГЕТТЕРЫ 
-
-    /**
-     * Возвращает максимальное количество энергии, которое можно принять за один тик.
-     * @return Максимальная скорость приема.
-     */
-    public int getMaxReceive() {
-        return this.maxReceive;
-    }
-
-    /**
-     * Возвращает максимальное количество энергии, которое можно извлечь за один тик.
-     * @return Максимальная скорость извлечения.
-     */
-    public int getMaxExtract() {
-        return this.maxExtract;
-    }
+    // Геттеры для maxReceive/maxExtract
+    public long getMaxReceive() { return this.maxReceive; }
+    public long getMaxExtract() { return this.maxExtract; }
 }

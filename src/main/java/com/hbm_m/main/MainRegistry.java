@@ -3,6 +3,7 @@ package com.hbm_m.main;
 // Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
@@ -83,7 +84,8 @@ public class MainRegistry {
         ModBlockEntities.register(modEventBus); // Регистрация блочных сущностей
         ModWorldGen.BIOME_MODIFIERS.register(modEventBus); // Регистрация модификаторов биомов (руды, структуры и тд)
         ModEffects.register(modEventBus); // Регистрация эффектов
-        ModRecipes.register(modEventBus); // Регистрация рецептов
+        ModRecipes.register(modEventBus);
+        ModCapabilities.register(modEventBus);// Регистрация рецептов
         // Регистрация обработчиков событий мода
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);

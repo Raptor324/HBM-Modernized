@@ -2,7 +2,6 @@ package com.hbm_m.block.entity;
 
 import com.hbm_m.block.MachineWoodBurnerBlock;
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.energy.BlockEntityEnergyStorage;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.MachineWoodBurnerMenu;
