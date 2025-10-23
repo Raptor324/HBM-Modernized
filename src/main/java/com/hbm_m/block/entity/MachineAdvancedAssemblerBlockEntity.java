@@ -8,7 +8,7 @@ import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
 import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.recipe.AssemblerRecipe;
-import com.hbm_m.sound.AdvancedAssemblerSoundInstance;
+
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.core.BlockPos;
@@ -110,15 +110,15 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     public MachineAdvancedAssemblerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pos, state, SLOT_COUNT);
-        initClientAnimations();
+        // initClientAnimations();
     }
 
-    @OnlyIn(Dist.CLIENT)
-    private void initClientAnimations() {
-        for (int i = 0; i < this.arms.length; i++) {
-            this.arms[i] = new AssemblerArm();
-        }
-    }
+    // @OnlyIn(Dist.CLIENT)
+    // private void initClientAnimations() {
+    //     for (int i = 0; i < this.arms.length; i++) {
+    //         this.arms[i] = new AssemblerArm();
+    //     }
+    // }
 
     @Override
     protected Component getDefaultName() {
@@ -204,8 +204,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @OnlyIn(Dist.CLIENT)
     public void clientTick(Level level, BlockPos pos, BlockState state) {
-        ClientSoundManager.updateSound(this, this.isCrafting(),
-            () -> new AdvancedAssemblerSoundInstance(this.getBlockPos()));
+        ClientSoundManager.updateSound(this, this.isCrafting(), 
+            () -> new com.hbm_m.sound.AdvancedAssemblerSoundInstance(this.getBlockPos()));
         
         this.prevRingAngle = this.ringAngle;
         

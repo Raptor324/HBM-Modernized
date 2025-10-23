@@ -9,6 +9,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.phys.AABB;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.Dist;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.client.model.render.LegacyAnimator;
@@ -23,6 +26,7 @@ import java.util.Map;
  * Декларативный класс параметров двери.
  * Модели загружаются автоматически из blockstate JSON файлов.
  */
+@OnlyIn(Dist.CLIENT)
 public abstract class DoorDecl {
     // Кеш загруженных моделей
     private final Map<String, BakedModel> modelCache = new HashMap<>();

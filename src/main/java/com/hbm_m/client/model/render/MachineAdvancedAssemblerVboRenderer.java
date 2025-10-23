@@ -3,6 +3,8 @@ package com.hbm_m.client.model.render;
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.BlockPos;
+
 import org.joml.Matrix4f;
 
 import java.util.HashMap;
@@ -30,26 +32,26 @@ public class MachineAdvancedAssemblerVboRenderer {
         this.model = model;
     }
 
-    public void renderStaticBase(PoseStack poseStack, int packedLight) {
+    public void renderStaticBase(PoseStack poseStack, int packedLight, BlockPos blockPos) {
         BakedModel part = model.getPart(BASE);
         if (part != null) {
-            GlobalMeshCache.getOrCreateRenderer("assembler_" + BASE, part).render(poseStack, packedLight);
+            GlobalMeshCache.getOrCreateRenderer("assembler_" + BASE, part).render(poseStack, packedLight, blockPos);
         }
     }
 
-    public void renderStaticFrame(PoseStack poseStack, int packedLight) {
+    public void renderStaticFrame(PoseStack poseStack, int packedLight, BlockPos blockPos) {
         BakedModel part = model.getPart(FRAME);
         if (part != null) {
-            GlobalMeshCache.getOrCreateRenderer("assembler_" + FRAME, part).render(poseStack, packedLight);
+            GlobalMeshCache.getOrCreateRenderer("assembler_" + FRAME, part).render(poseStack, packedLight, blockPos);
         }
     }
 
-    public void renderPart(PoseStack poseStack, int packedLight, String partName, Matrix4f transform) {
+    public void renderPart(PoseStack poseStack, int packedLight, String partName, Matrix4f transform, BlockPos blockPos) {
         BakedModel part = model.getPart(partName);
         if (part != null) {
             poseStack.pushPose();
             poseStack.last().pose().mul(transform);
-            GlobalMeshCache.getOrCreateRenderer("assembler_" + partName, part).render(poseStack, packedLight);
+            GlobalMeshCache.getOrCreateRenderer("assembler_" + partName, part).render(poseStack, packedLight, blockPos);
             poseStack.popPose();
         }
     }

@@ -1,11 +1,16 @@
 package com.hbm_m.client.model.render;
 
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.LightLayer;
+
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
@@ -23,163 +28,254 @@ public abstract class AbstractGpuVboRenderer {
     protected int eboId = -1;
     protected int indexCount = 0;
     protected boolean initialized = false;
+    protected abstract VboData buildVboData();
+
+    private static final float TEXTURE_FILTER_DISTANCE_THRESHOLD = 32.0f;
 
     static final class TextureBinder {
-        private static boolean boundForThisAssembler = false;
-    
-        static void resetForAssembler() {
-            boundForThisAssembler = false;
-        }
-    
         static void bindForAssemblerIfNeeded(ShaderInstance shader) {
-            if (boundForThisAssembler) return;
-            
             var minecraft = Minecraft.getInstance();
             var textureManager = minecraft.getTextureManager();
             
-            // ШАГ 1: Привязываем block atlas к TEXTURE0
+            // ✅ Только текстура атласа, без lightmap
             GL13.glActiveTexture(GL13.GL_TEXTURE0);
             var blockAtlas = textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, blockAtlas.getId());
+            int textureId = blockAtlas.getId();
+            GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
             
-            // ШАГ 2: Обновляем и привязываем lightmap к TEXTURE2
-            GL13.glActiveTexture(GL13.GL_TEXTURE2);
-            var lightTexture = minecraft.gameRenderer.lightTexture();
-            lightTexture.turnOnLightLayer(); // Это привязывает lightmap к текущему активному unit (TEXTURE2)
-            
-            // ШАГ 3: КРИТИЧЕСКИ ВАЖНО - возвращаем активный unit на TEXTURE0
-            // и ПОВТОРНО привязываем block atlas, т.к. turnOnLightLayer() мог изменить state
-            GL13.glActiveTexture(GL13.GL_TEXTURE0);
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, blockAtlas.getId());
-            
-            boundForThisAssembler = true;
-        }        
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+        }
     }
-    
-
-    protected abstract VboData buildVboData();
 
     protected void initVbo() {
         if (initialized) return;
-
-        vaoId = GL30.glGenVertexArrays();
-        vboId = GL15.glGenBuffers();
-
-        VboData data = buildVboData();
-        indexCount = data.indices != null ? data.indices.remaining() : 0;
-
-        GL30.glBindVertexArray(vaoId);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
-        GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data.byteBuffer, GL15.GL_STATIC_DRAW);
-
-        GL20.glEnableVertexAttribArray(0);
-        GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 32, 0);
-
-        GL20.glEnableVertexAttribArray(1);
-        GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 32, 12);
-
-        GL20.glEnableVertexAttribArray(2);
-        GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, 32, 24);
-
-        if (data.indices != null && data.indices.remaining() > 0) {
-            eboId = GL15.glGenBuffers();
-            GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, eboId);
-            GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, data.indices, GL15.GL_STATIC_DRAW);
+    
+        // Сохраняем текущее состояние OpenGL перед инициализацией
+        int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
+        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
+        int previousElementArrayBuffer = GL11.glGetInteger(GL15.GL_ELEMENT_ARRAY_BUFFER_BINDING);
+    
+        VboData data = null;
+        
+        try {
+            // Генерируем идентификаторы для VAO и VBO
+            vaoId = GL30.glGenVertexArrays();
+            vboId = GL15.glGenBuffers();
+    
+            // Билдим данные для VBO
+            data = buildVboData();
+            indexCount = data.indices != null ? data.indices.remaining() : 0;
+    
+            // Конфигурируем VAO
+            GL30.glBindVertexArray(vaoId);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data.byteBuffer, GL15.GL_STATIC_DRAW);
+    
+            // Атрибут 0: Position (3 float, offset 0)
+            GL20.glEnableVertexAttribArray(0);
+            GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 32, 0);
+    
+            // Атрибут 1: Normal (3 float, offset 12)
+            GL20.glEnableVertexAttribArray(1);
+            GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 32, 12);
+    
+            // Атрибут 2: TexCoord (2 float, offset 24)
+            GL20.glEnableVertexAttribArray(2);
+            GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, 32, 24);
+    
+            // Если есть индексы, создаем EBO
+            if (data.indices != null && data.indices.remaining() > 0) {
+                eboId = GL15.glGenBuffers();
+                GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, eboId);
+                GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, data.indices, GL15.GL_STATIC_DRAW);
+                // ✅ НЕ отвязываем EBO здесь - он должен остаться частью VAO!
+            }
+    
+            // ✅ КРИТИЧНО: Отвязываем VAO ПЕРЕД восстановлением EBO
+            GL30.glBindVertexArray(0);
+    
+            // Освобождаем нативную память
+            MemoryUtil.memFree(data.byteBuffer);
+            if (data.indices != null) {
+                MemoryUtil.memFree(data.indices);
+            }
+    
+            initialized = true;
+    
+        } catch (Exception e) {
+            // В случае ошибки освобождаем ресурсы
+            if (data != null) {
+                if (data.byteBuffer != null) {
+                    MemoryUtil.memFree(data.byteBuffer);
+                }
+                if (data.indices != null) {
+                    MemoryUtil.memFree(data.indices);
+                }
+            }
+            
+            // Удаляем созданные GL объекты при ошибке
+            if (vaoId != -1) {
+                GL30.glDeleteVertexArrays(vaoId);
+                vaoId = -1;
+            }
+            if (vboId != -1) {
+                GL15.glDeleteBuffers(vboId);
+                vboId = -1;
+            }
+            if (eboId != -1) {
+                GL15.glDeleteBuffers(eboId);
+                eboId = -1;
+            }
+            
+            throw e;
+            
+        } finally {
+            // ✅ КРИТИЧНО: Сначала восстанавливаем VBO, потом VAO, потом EBO
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+            GL30.glBindVertexArray(previousVao);
+            
+            // ✅ EBO восстанавливаем ПОСЛЕ отвязки VAO
+            // Если previousVao != 0, то его EBO восстановится автоматически
+            // Если previousVao == 0, восстанавливаем явно
+            if (previousVao == 0) {
+                GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, previousElementArrayBuffer);
+            }
         }
-
-        GL30.glBindVertexArray(0);
-        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-
-        MemoryUtil.memFree(data.byteBuffer);
-        if (data.indices != null) MemoryUtil.memFree(data.indices);
-
-        initialized = true;
     }
 
-    public void render(PoseStack poseStack, int packedLight) {
-        if (!initialized) initVbo();
-        if (vaoId == -1) return;
+    private void applyTextureFilterBasedOnDistance(BlockPos blockPos) {
+        var minecraft = Minecraft.getInstance();
+        var camera = minecraft.gameRenderer.getMainCamera();
+        var cameraPos = camera.getPosition();
         
-        ShaderInstance shader = ModShaders.getBlockLitShader();
-        if (shader == null) {
-            MainRegistry.LOGGER.error("BlockLit shader is null");
+        // Вычисляем расстояние от камеры до блока
+        double dx = blockPos.getX() + 0.5 - cameraPos.x;
+        double dy = blockPos.getY() + 0.5 - cameraPos.y;
+        double dz = blockPos.getZ() + 0.5 - cameraPos.z;
+        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        
+        // ✅ Конвертируем чанки в блоки (1 чанк = 16 блоков)
+        int thresholdChunks = ModClothConfig.get().textureFilterDistanceChunks;
+        double thresholdBlocks = thresholdChunks * 16.0;
+        
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        
+        if (distance > thresholdBlocks) {
+            // На большом расстоянии - размытая текстура (LINEAR)
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+        } else {
+            // Вблизи - попиксельная текстура (NEAREST)
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+        }
+    }
+
+    public void render(PoseStack poseStack, int packedLight, BlockPos blockPos) {
+        if (!initialized) {
+            try {
+                initVbo();
+            } catch (Exception e) {
+                MainRegistry.LOGGER.error("Failed to initialize VBO", e);
+                vaoId = -1;
+                vboId = -1;
+                eboId = -1;
+                return;
+            }
+        }
+        if (!initialized || vaoId <= 0 || vboId <= 0) {
             return;
         }
-        
-        RenderSystem.setShader(() -> shader);
-        
-        // Матрицы
-        if (shader.MODEL_VIEW_MATRIX != null)
-            shader.MODEL_VIEW_MATRIX.set(poseStack.last().pose());
-        if (shader.PROJECTION_MATRIX != null)
-            shader.PROJECTION_MATRIX.set(RenderSystem.getProjectionMatrix());
-        
-        // Свет
-        int blockLight = net.minecraft.client.renderer.LightTexture.block(packedLight);
-        int skyLight = net.minecraft.client.renderer.LightTexture.sky(packedLight);
-
-        var lightUniform = shader.getUniform("PackedLight");
-        if (lightUniform != null) {
-            // КРИТИЧЕСКИ ВАЖНО: Minecraft lightmap использует координаты:
-            // X (blockLight): (value + 0.5) / 16.0
-            // Y (skyLight): (value + 0.5) / 16.0
-            float u = (blockLight + 0.5f) / 16.0f;
-            float v = (skyLight + 0.5f) / 16.0f;
-            lightUniform.set(u, v);
+        if (eboId <= 0 || indexCount <= 0) {
+            return;
         }
-        
-        // UseInstancing = 0 для обычного рендера
-        var useInstancingUniform = shader.getUniform("UseInstancing");
-        if (useInstancingUniform != null) {
-            useInstancingUniform.set(0);
+    
+        ShaderInstance shader = ModShaders.getBlockLitShader();
+        if (shader == null) {
+            return;
         }
-        
-        // Fog
-        var fogStartUniform = shader.getUniform("FogStart");
-        if (fogStartUniform != null) fogStartUniform.set(RenderSystem.getShaderFogStart());
-        var fogEndUniform = shader.getUniform("FogEnd");
-        if (fogEndUniform != null) fogEndUniform.set(RenderSystem.getShaderFogEnd());
-        var fogColorUniform = shader.getUniform("FogColor");
-        if (fogColorUniform != null) {
-            float[] fogColor = RenderSystem.getShaderFogColor();
-            fogColorUniform.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
-        }
-        
-        shader.apply();
-        
-        TextureBinder.bindForAssemblerIfNeeded(shader);
-        var sampler0 = shader.getUniform("Sampler0");
-        if (sampler0 != null) {
-            sampler0.set(0); // texture unit 0
-        }
-
-        var sampler2 = shader.getUniform("Sampler2");
-        if (sampler2 != null) {
-            sampler2.set(2); // texture unit 2
-        }
-
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-        GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-        
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthFunc(GL11.GL_LEQUAL);
-        RenderSystem.depthMask(true);
-        
-        // КРИТИЧЕСКИ ВАЖНО: отключаем culling для двусторонних граней
-        GL11.glDisable(GL11.GL_CULL_FACE);
-        
-        GL30.glBindVertexArray(vaoId);
-        if (eboId != -1) {
+    
+        int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
+        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
+    
+        try {
+            RenderSystem.setShader(() -> shader);
+            if (shader.MODEL_VIEW_MATRIX != null)
+                shader.MODEL_VIEW_MATRIX.set(poseStack.last().pose());
+            if (shader.PROJECTION_MATRIX != null)
+                shader.PROJECTION_MATRIX.set(RenderSystem.getProjectionMatrix());
+    
+            float brightness = calculateBrightness(packedLight);
+            var brightnessUniform = shader.getUniform("Brightness");
+            if (brightnessUniform != null) {
+                brightnessUniform.set(brightness);
+            }
+    
+            var useInstancingUniform = shader.getUniform("UseInstancing");
+            if (useInstancingUniform != null) {
+                useInstancingUniform.set(0);
+            }
+    
+            var fogStartUniform = shader.getUniform("FogStart");
+            if (fogStartUniform != null) fogStartUniform.set(RenderSystem.getShaderFogStart());
+            var fogEndUniform = shader.getUniform("FogEnd");
+            if (fogEndUniform != null) fogEndUniform.set(RenderSystem.getShaderFogEnd());
+            var fogColorUniform = shader.getUniform("FogColor");
+            if (fogColorUniform != null) {
+                float[] fogColor = RenderSystem.getShaderFogColor();
+                fogColorUniform.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
+            }
+    
+            shader.apply();
+            TextureBinder.bindForAssemblerIfNeeded(shader);
+            
+            // ✅ Применяем фильтр на основе расстояния
+            applyTextureFilterBasedOnDistance(blockPos);
+            
+            var sampler0 = shader.getUniform("Sampler0");
+            if (sampler0 != null) sampler0.set(0);
+            RenderSystem.enableDepthTest();
+            RenderSystem.depthFunc(GL11.GL_LEQUAL);
+            RenderSystem.depthMask(true);
+            GL11.glDisable(GL11.GL_CULL_FACE);
+    
+            GL30.glBindVertexArray(vaoId);
             GL11.glDrawElements(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0);
+    
+        } catch (Exception e) {
+            MainRegistry.LOGGER.error("Error during VBO render", e);
+        } finally {
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+            GL30.glBindVertexArray(previousVao);
+            GL11.glEnable(GL11.GL_CULL_FACE);
         }
-        GL30.glBindVertexArray(0);
-        
-        // Восстанавливаем culling для других рендереров
-        GL11.glEnable(GL11.GL_CULL_FACE);
     }
     
+    private float calculateBrightness(int packedLight) {
+        int blockLight = LightTexture.block(packedLight);
+        int skyLight = LightTexture.sky(packedLight);
+        
+        var level = Minecraft.getInstance().level;
+        if (level == null) {
+            return Math.max(0.05f, Math.max(blockLight, skyLight) / 15.0f);
+        }
 
+        float skyDarken = level.getSkyDarken(1.0f);
+        float skyBrightness = 0.05f + (skyDarken * 0.95f);
+        
+        // ✅ Применяем к sky light
+        float effectiveSkyLight = skyLight * skyBrightness;
+        
+        // ✅ Берём максимум из block и modified sky
+        float maxLight = Math.max(blockLight, effectiveSkyLight);
+        
+        // ✅ Нормализуем [0.05, 1.0]
+        float brightness = 0.05f + (maxLight / 15.0f) * 0.95f;
+        
+        return brightness;
+    }    
+    
     public void cleanup() {
         if (!initialized) return;
         if (vboId != -1) { GL15.glDeleteBuffers(vboId); vboId = -1; }

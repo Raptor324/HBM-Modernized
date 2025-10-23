@@ -171,6 +171,11 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public float radRandomizationFactor = 1.0F;
 
+    @Category("rendering")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 0, max = 20)
+    public int textureFilterDistanceChunks = 3;
+
     // Отладка 
     @Category("debug")
     @Gui.Tooltip

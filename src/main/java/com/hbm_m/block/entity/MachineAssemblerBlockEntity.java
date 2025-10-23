@@ -9,7 +9,7 @@ import com.hbm_m.menu.MachineAssemblerMenu;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.recipe.AssemblerRecipe;
-import com.hbm_m.sound.AssemblerSoundInstance;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -241,7 +241,9 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     
     @OnlyIn(Dist.CLIENT)
     private void clientTick() {
-        ClientSoundManager.updateSound(this, this.isCrafting, () -> new AssemblerSoundInstance(this.getBlockPos()));
+        // ИСПРАВЛЕНО: Используй полное имя класса вместо импорта
+        ClientSoundManager.updateSound(this, this.isCrafting(), 
+            () -> new com.hbm_m.sound.AssemblerSoundInstance(this.getBlockPos()));
     }
     
     private void serverTick() {

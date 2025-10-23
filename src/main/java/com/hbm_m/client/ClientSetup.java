@@ -9,12 +9,16 @@ import com.hbm_m.config.ModConfigKeybindHandler;
 import com.hbm_m.client.tooltip.ItemTooltipComponent;
 import com.hbm_m.client.tooltip.ItemTooltipComponentRenderer;
 import com.hbm_m.entity.ModEntities;
+import com.hbm_m.item.ItemAssemblyTemplate;
+import com.hbm_m.item.ItemBlueprintFolder;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.DarkParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
+import com.hbm_m.recipe.AssemblerRecipe;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
@@ -27,6 +31,8 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
@@ -37,23 +43,26 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.entity.EntityRenderers;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraft.client.GraphicsStatus;
 import net.minecraftforge.client.ChunkRenderTypeSet;
 
 import javax.annotation.Nonnull;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
+
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.client.model.render.DoorRenderer;
-import com.hbm_m.client.model.render.GlobalMeshCache;
 import com.hbm_m.client.model.render.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.model.render.MachineAdvancedAssemblerVboRenderer;
 import com.hbm_m.client.model.render.ModShaders;
@@ -92,7 +101,7 @@ public class ClientSetup {
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
         );
         
-        // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
+        DoorDeclRegistry.init();
 
         event.enqueueWork(() -> {
             // Здесь мы связываем наш тип меню с классом экрана
@@ -237,6 +246,48 @@ public class ClientSetup {
             }
             
             return ChunkRenderTypeSet.of(RenderType.solid());
+        }
+    }
+    
+    public static void addTemplatesClient(BuildCreativeModeTabContentsEvent event) {
+        if (Minecraft.getInstance().level != null) {
+            RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
+            List<AssemblerRecipe> recipes = recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
+            
+            // Собираем уникальные blueprintPool из всех рецептов
+            Set<String> blueprintPools = new HashSet<>();
+            for (AssemblerRecipe recipe : recipes) {
+                String pool = recipe.getBlueprintPool();
+                if (pool != null && !pool.isEmpty()) {
+                    blueprintPools.add(pool);
+                }
+            }
+            
+            // Создаём папку для каждого уникального пула
+            for (String pool : blueprintPools) {
+                ItemStack folderStack = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
+                ItemBlueprintFolder.writeBlueprintPool(folderStack, pool);
+                event.accept(folderStack);
+            }
+            
+            if (ModClothConfig.get().enableDebugLogging) {
+                MainRegistry.LOGGER.info("Added {} blueprint folders to NTM Templates tab", blueprintPools.size());
+            }
+            
+            // Добавляем шаблоны
+            for (AssemblerRecipe recipe : recipes) {
+                ItemStack templateStack = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
+                ItemAssemblyTemplate.writeRecipeOutput(templateStack, recipe.getResultItem(null));
+                event.accept(templateStack);
+            }
+            
+            if (ModClothConfig.get().enableDebugLogging) {
+                MainRegistry.LOGGER.info("Added {} templates to NTM Templates tab", recipes.size());
+            }
+        } else {
+            if (ModClothConfig.get().enableDebugLogging) {
+                MainRegistry.LOGGER.warn("Could not populate templates tab: Minecraft level is null.");
+            }
         }
     }
 }
