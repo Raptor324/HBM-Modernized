@@ -1,5 +1,6 @@
 package com.hbm_m.block;
 
+import com.hbm_m.item.CrateItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.block.entity.DoorDecl;
 import com.hbm_m.item.ModItems;
@@ -162,6 +163,9 @@ public class ModBlocks {
                     // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
             ));
 
+
+
+
     public static final RegistryObject<Block> GIGA_DET = registerBlock("giga_det",
             () -> new GigaDetBlock(BlockBehaviour.Properties.of()
                     .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
@@ -173,6 +177,7 @@ public class ModBlocks {
                     // .isRedstoneConductor((state, level, pos) -> true) // Можно явно указать, что блок проводит редстоун
                     // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
             ));
+
 
     public static final RegistryObject<Block> EXPLOSIVE_CHARGE = registerBlock("explosive_charge",
             () -> new ExplosiveChargeBlock(BlockBehaviour.Properties.of()
@@ -289,11 +294,11 @@ public class ModBlocks {
     public static final RegistryObject<Block> REINFORCED_STONE_SLAB = registerBlock("reinforced_stone_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
     public static final RegistryObject<Block> CRATE_IRON = registerBlock("crate_iron",
-            () -> new IronCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+            () -> new IronCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops()));
     public static final RegistryObject<Block> CRATE_STEEL = registerBlock("crate_steel",
-            () -> new SteelCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+            () -> new SteelCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(1f, 1.5f).requiresCorrectToolForDrops()));
     public static final RegistryObject<Block> CRATE_DESH = registerBlock("crate_desh",
-            () -> new DeshCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+            () -> new DeshCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(1.5f, 2f).requiresCorrectToolForDrops()));
 
     // -----------------------<РАСТЕНИЯ>-----------------------------
     public static final RegistryObject<Block> STRAWBERRY_BUSH = registerBlock("strawberry_bush",
@@ -374,6 +379,7 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> CINNABAR_ORE_DEEPSLATE = registerBlock("cinnabar_ore_deepslate",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.DEEPSLATE).strength(5.0f, 5.0f).requiresCorrectToolForDrops()));
+
 
     // ДВЕРИ
     

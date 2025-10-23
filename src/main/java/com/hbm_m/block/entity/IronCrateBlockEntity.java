@@ -1,14 +1,11 @@
 package com.hbm_m.block.entity;
 
 import com.hbm_m.menu.IronCrateMenu;
-import com.hbm_m.block.entity.ModBlockEntities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -23,12 +20,9 @@ import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-
 public class IronCrateBlockEntity extends BlockEntity implements MenuProvider {
 
-
     private static final int SLOTS = 36;
-
 
     private final ItemStackHandler itemHandler = new ItemStackHandler(SLOTS) {
         @Override
@@ -47,9 +41,6 @@ public class IronCrateBlockEntity extends BlockEntity implements MenuProvider {
     public IronCrateBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.IRON_CRATE_BE.get(), pos, state);
     }
-
-    // ==================== CAPABILITY SYSTEM ====================
-
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
@@ -71,63 +62,53 @@ public class IronCrateBlockEntity extends BlockEntity implements MenuProvider {
         lazyItemHandler.invalidate();
     }
 
-    // ==================== NBT SERIALIZATION ====================
-
-    /**
-     * Сохранение инвентаря в NBT (при сохранении мира)
-     */
     @Override
     protected void saveAdditional(CompoundTag tag) {
         tag.put("inventory", itemHandler.serializeNBT());
         super.saveAdditional(tag);
     }
 
-    /**
-     * Загрузка инвентаря из NBT (при загрузке мира)
-     */
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         itemHandler.deserializeNBT(tag.getCompound("inventory"));
     }
 
-    // ==================== ITEM DROPPING ====================
-
     /**
-     * Выбрасывает все предметы в мир при разрушении блока
+     * Проверяет пустой ли крейт
      */
-    public void drops() {
-        SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
+    public boolean isEmpty() {
         for (int i = 0; i < itemHandler.getSlots(); i++) {
-            inventory.setItem(i, itemHandler.getStackInSlot(i));
+            if (!itemHandler.getStackInSlot(i).isEmpty()) {
+                return false;
+            }
         }
-        Containers.dropContents(this.level, this.worldPosition, inventory);
+        return true;
     }
 
-    // ==================== MENU PROVIDER ====================
-
     /**
-     * Название для GUI (будет переведено через локализацию)
+     * Сохраняет содержимое в ItemStack
      */
+    public void saveToItem(ItemStack stack) {
+        CompoundTag tag = new CompoundTag();
+        this.saveAdditional(tag);
+
+        if (!tag.isEmpty()) {
+            stack.addTagElement("BlockEntityTag", tag);
+        }
+    }
+
     @Override
     public Component getDisplayName() {
         return Component.translatable("container.hbm_m.crate_iron");
     }
 
-    /**
-     * Создаёт Menu для GUI
-     */
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new IronCrateMenu(containerId, playerInventory, this);
     }
 
-    // ==================== GETTERS ====================
-
-    /**
-     * Доступ к ItemHandler для Menu
-     */
     public ItemStackHandler getItemHandler() {
         return itemHandler;
     }

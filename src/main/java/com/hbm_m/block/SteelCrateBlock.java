@@ -2,10 +2,13 @@ package com.hbm_m.block;
 
 import com.hbm_m.block.entity.SteelCrateBlockEntity;
 import net.minecraft.core.BlockPos;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.RenderShape;
@@ -16,7 +19,8 @@ import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Steel Crate - блок с инвентарём на 54 слота (6 рядов × 9 колонок)
+ * Steel Crate - блок с инвентарём на 54 слота
+ * Работает как Shulker Box - сохраняет содержимое при разрушении
  */
 public class SteelCrateBlock extends BaseEntityBlock {
 
@@ -45,14 +49,41 @@ public class SteelCrateBlock extends BaseEntityBlock {
     }
 
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos,
-                         BlockState newState, boolean isMoving) {
-        if (state.getBlock() != newState.getBlock()) {
+    public void setPlacedBy(Level level, BlockPos pos, BlockState state,
+                            @Nullable LivingEntity placer, ItemStack stack) {
+        if (stack.hasTag()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof SteelCrateBlockEntity crateEntity) {
-                crateEntity.drops();
+                CompoundTag tag = stack.getTag();
+                if (tag != null && tag.contains("BlockEntityTag")) {
+                    CompoundTag beTag = tag.getCompound("BlockEntityTag");
+                    crateEntity.load(beTag);
+                }
             }
         }
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos,
+                         BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock())) {
+            // Не дропаем содержимое - оно сохранится в блоке
+        }
         super.onRemove(state, level, pos, newState, isMoving);
+    }
+
+    @Override
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        BlockEntity blockEntity = level.getBlockEntity(pos);
+
+        if (blockEntity instanceof SteelCrateBlockEntity crateEntity) {
+            if (!level.isClientSide) {
+                ItemStack stack = new ItemStack(this);
+                crateEntity.saveToItem(stack);
+                popResource(level, pos, stack);
+            }
+        }
+
+        super.playerWillDestroy(level, pos, state, player);
     }
 }
