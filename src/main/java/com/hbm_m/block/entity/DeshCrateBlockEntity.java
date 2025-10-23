@@ -5,9 +5,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -25,10 +23,10 @@ import org.jetbrains.annotations.Nullable;
 /**
  * BlockEntity для Desh Crate
  * Хранит инвентарь на 104 слота (8 рядов × 13 колонок)
+ * Сохраняет содержимое при разрушении как Shulker Box
  */
 public class DeshCrateBlockEntity extends BlockEntity implements MenuProvider {
 
-    // 8 рядов × 13 колонок = 104 слота
     private static final int SLOTS = 104;
 
     private final ItemStackHandler itemHandler = new ItemStackHandler(SLOTS) {
@@ -81,12 +79,28 @@ public class DeshCrateBlockEntity extends BlockEntity implements MenuProvider {
         itemHandler.deserializeNBT(tag.getCompound("inventory"));
     }
 
-    public void drops() {
-        SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
+    /**
+     * Проверяет пустой ли крейт
+     */
+    public boolean isEmpty() {
         for (int i = 0; i < itemHandler.getSlots(); i++) {
-            inventory.setItem(i, itemHandler.getStackInSlot(i));
+            if (!itemHandler.getStackInSlot(i).isEmpty()) {
+                return false;
+            }
         }
-        Containers.dropContents(this.level, this.worldPosition, inventory);
+        return true;
+    }
+
+    /**
+     * Сохраняет содержимое в ItemStack (для дропа блока с содержимым)
+     */
+    public void saveToItem(ItemStack stack) {
+        CompoundTag tag = new CompoundTag();
+        this.saveAdditional(tag);
+
+        if (!tag.isEmpty()) {
+            stack.addTagElement("BlockEntityTag", tag);
+        }
     }
 
     @Override
