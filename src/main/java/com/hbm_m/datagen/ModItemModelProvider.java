@@ -105,6 +105,33 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.TEMPLATE_FOLDER);
         simpleItem(ModItems.STRAWBERRY);
 
+        simpleItem(ModItems.BATTERY_SCHRABIDIUM);
+        simpleItem(ModItems.BATTERY_POTATO);
+        simpleItem(ModItems.BATTERY);
+        simpleItem(ModItems.BATTERY_RED_CELL);
+        simpleItem(ModItems.BATTERY_RED_CELL_6);
+        simpleItem(ModItems.BATTERY_RED_CELL_24);
+        simpleItem(ModItems.BATTERY_ADVANCED);
+        simpleItem(ModItems.BATTERY_ADVANCED_CELL);
+        simpleItem(ModItems.BATTERY_ADVANCED_CELL_4);
+        simpleItem(ModItems.BATTERY_ADVANCED_CELL_12);
+        simpleItem(ModItems.BATTERY_LITHIUM);
+        simpleItem(ModItems.BATTERY_LITHIUM_CELL);
+        simpleItem(ModItems.BATTERY_LITHIUM_CELL_3);
+        simpleItem(ModItems.BATTERY_LITHIUM_CELL_6);
+        simpleItem(ModItems.BATTERY_SCHRABIDIUM_CELL);
+        simpleItem(ModItems.BATTERY_SCHRABIDIUM_CELL_2);
+        simpleItem(ModItems.BATTERY_SCHRABIDIUM_CELL_4);
+        simpleItem(ModItems.BATTERY_SPARK);
+        simpleItem(ModItems.BATTERY_TRIXITE);
+        simpleItem(ModItems.BATTERY_SPARK_CELL_6);
+        simpleItem(ModItems.BATTERY_SPARK_CELL_25);
+        simpleItem(ModItems.BATTERY_SPARK_CELL_100);
+        simpleItem(ModItems.BATTERY_SPARK_CELL_1000);
+        simpleItem(ModItems.BATTERY_SPARK_CELL_2500);
+        simpleItem(ModItems.BATTERY_SPARK_CELL_10000);
+        simpleItem(ModItems.BATTERY_SPARK_CELL_POWER);
+
 
         simpleItem(ModItems.CAPACITOR_BOARD);
         simpleItem(ModItems.CAPACITOR_TANTALUM);

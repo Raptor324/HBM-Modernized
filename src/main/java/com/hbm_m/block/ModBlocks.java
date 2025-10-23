@@ -165,6 +165,20 @@ public class ModBlocks {
 
 
 
+
+    public static final RegistryObject<Block> GIGA_DET = registerBlock("giga_det",
+            () -> new GigaDetBlock(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
+                    .sound(SoundType.WOOD) // Звук при разрушении
+                    .requiresCorrectToolForDrops() // Требует правильного инструмента для лута (как руды)
+                    // .noOcclusion() // <--- ЭТО ОЧЕНЬ ВАЖНО! НЕ ИСПОЛЬЗУЙТЕ ЭТО ДЛЯ БЛОКОВ, КОТОРЫЕ ДОЛЖНЫ РЕАГИРОВАТЬ НА РЕДСТОУН
+                    //                    // noOcclusion делает блок "неполным" или "прозрачным" для редстоуна.
+                    //                    // Если ваш блок должен быть твердым и проводить редстоун, то эти свойства должны быть по умолчанию.
+                    // .isRedstoneConductor((state, level, pos) -> true) // Можно явно указать, что блок проводит редстоун
+                    // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
+            ));
+
+
     public static final RegistryObject<Block> EXPLOSIVE_CHARGE = registerBlock("explosive_charge",
             () -> new ExplosiveChargeBlock(BlockBehaviour.Properties.of()
                     .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
@@ -189,6 +203,30 @@ public class ModBlocks {
                     // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
             ));
 
+    public static final RegistryObject<Block> NUCLEAR_CHARGE = registerBlock("nuclear_charge",
+            () -> new NuclearChargeBlock(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
+                    .sound(SoundType.STONE) // Звук при разрушении
+                    .requiresCorrectToolForDrops() // Требует правильного инструмента для лута (как руды)
+                    // .noOcclusion() // <--- ЭТО ОЧЕНЬ ВАЖНО! НЕ ИСПОЛЬЗУЙТЕ ЭТО ДЛЯ БЛОКОВ, КОТОРЫЕ ДОЛЖНЫ РЕАГИРОВАТЬ НА РЕДСТОУН
+                    //                    // noOcclusion делает блок "неполным" или "прозрачным" для редстоуна.
+                    //                    // Если ваш блок должен быть твердым и проводить редстоун, то эти свойства должны быть по умолчанию.
+                    // .isRedstoneConductor((state, level, pos) -> true) // Можно явно указать, что блок проводит редстоун
+                    // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
+            ));
+
+    public static final RegistryObject<Block> C4 = registerBlock("c4",
+            () -> new C4Block(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
+                    .sound(SoundType.STONE) // Звук при разрушении
+                    .requiresCorrectToolForDrops() // Требует правильного инструмента для лута (как руды)
+                    // .noOcclusion() // <--- ЭТО ОЧЕНЬ ВАЖНО! НЕ ИСПОЛЬЗУЙТЕ ЭТО ДЛЯ БЛОКОВ, КОТОРЫЕ ДОЛЖНЫ РЕАГИРОВАТЬ НА РЕДСТОУН
+                    //                    // noOcclusion делает блок "неполным" или "прозрачным" для редстоуна.
+                    //                    // Если ваш блок должен быть твердым и проводить редстоун, то эти свойства должны быть по умолчанию.
+                    // .isRedstoneConductor((state, level, pos) -> true) // Можно явно указать, что блок проводит редстоун
+                    // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
+            ));
+
     //public static final RegistryObject<Block> DEMON_LAMP  = registerBlock("demon_lamp",
            // () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistryObject<Block> DOOR_BUNKER = registerBlock("door_bunker",
@@ -204,6 +242,18 @@ public class ModBlocks {
      //   () -> new ExplosiveChargeBlock(BlockBehaviour.Properties.of()
         //    .strength(0.5f)
              //    .sound(SoundType.METAL)));
+
+    public static final RegistryObject<Block> SELLAFIELD_SLAKED  = registerBlock("sellafield_slaked",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> SELLAFIELD_SLAKED1  = registerBlock("sellafield_slaked1",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> SELLAFIELD_SLAKED2  = registerBlock("sellafield_slaked2",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> SELLAFIELD_SLAKED3  = registerBlock("sellafield_slaked3",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistryObject<Block> CONCRETE_FAN  = registerBlock("concrete_fan",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));

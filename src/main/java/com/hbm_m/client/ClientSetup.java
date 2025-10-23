@@ -15,12 +15,15 @@ import com.hbm_m.entity.ModEntities;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.ModMenuTypes;
+import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
-import com.hbm_m.particle.custom.DarkParticle;
-import com.hbm_m.particle.custom.RadFogParticle;
+import com.hbm_m.particle.custom.*;
 import com.hbm_m.block.ModBlocks;
 
-import com.hbm_m.particle.custom.SmokeColumnParticle;
+import com.hbm_m.particle.explosions.ExplosionSparkParticle;
+import com.hbm_m.particle.explosions.FlashParticle;
+import com.hbm_m.particle.explosions.MushroomSmokeParticle;
+import com.hbm_m.particle.explosions.ShockwaveParticle;
 import com.hbm_m.recipe.AnvilRecipeManager;
 import net.minecraft.client.renderer.RenderType;
 
@@ -114,9 +117,22 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void registerParticleFactories(RegisterParticleProvidersEvent event) {
-        event.registerSpriteSet(ModParticleTypes.SMOKE_COLUMN.get(),
-                SmokeColumnParticle.Provider::new);
+
+        event.registerSpriteSet(ModParticleTypes.EXPLOSION_WAVE.get(),
+                ExplosionWaveParticle.Provider::new);
+
+        event.registerSpriteSet(ModExplosionParticles.FLASH.get(),
+                FlashParticle.Provider::new);
+        event.registerSpriteSet(ModExplosionParticles.SHOCKWAVE.get(),
+                ShockwaveParticle.Provider::new);
+        event.registerSpriteSet(ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                MushroomSmokeParticle.Provider::new);
+        event.registerSpriteSet(ModExplosionParticles.EXPLOSION_SPARK.get(),
+                ExplosionSparkParticle.Provider::new);
     }
+
+
+
     @SubscribeEvent
     public static void onModelBake(ModelEvent.ModifyBakingResult event) {
         Map<ResourceLocation, BakedModel> modelRegistry = event.getModels();

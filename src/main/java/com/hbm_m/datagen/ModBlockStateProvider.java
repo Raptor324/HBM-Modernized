@@ -50,6 +50,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.CONCRETE_CRACKED);
         blockWithItem(ModBlocks.CONCRETE);
 
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED);
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED1);
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED2);
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED3);
+
         resourceBlockWithItem(ModBlocks.CRATE);
         resourceBlockWithItem(ModBlocks.CRATE_LEAD);
         resourceBlockWithItem(ModBlocks.CRATE_METAL);
@@ -83,7 +88,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
         blockWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);
         resourceBlockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
-
+        resourceBlockWithItem(ModBlocks.GIGA_DET);
         simpleBlockWithItem(ModBlocks.REINFORCED_GLASS.get(), 
             models().cubeAll(ModBlocks.REINFORCED_GLASS.getId().getPath(), 
                 blockTexture(ModBlocks.REINFORCED_GLASS.get()))

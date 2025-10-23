@@ -5,6 +5,8 @@ package com.hbm_m.main;
 // Также здесь настраиваются обработчики событий и системы радиации.
 import com.hbm_m.block.entity.AnvilBlockEntity;
 import com.hbm_m.menu.AnvilMenu;
+import com.hbm_m.network.ModNetwork;
+import com.hbm_m.particle.ModExplosionParticles;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.common.extensions.IForgeMenuType;
@@ -81,6 +83,7 @@ public class MainRegistry {
         // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS
         ModBlocks.BLOCKS.register(modEventBus); // Регистрация наших блоков
         ModEntities.ENTITY_TYPES.register(modEventBus);
+        ModExplosionParticles.PARTICLE_TYPES.register(modEventBus);
         ModItems.ITEMS.register(modEventBus); // Регистрация наших предметов
         ModMenuTypes.MENUS.register(modEventBus); // Регистрация меню
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus); // Регистрация наших вкладок креативного режима
@@ -156,10 +159,12 @@ public class MainRegistry {
 
             event.accept(ModBlocks.SMOKE_BOMB);
             event.accept(ModBlocks.EXPLOSIVE_CHARGE);
+            event.accept(ModBlocks.NUCLEAR_CHARGE);
             event.accept(ModItems.GRENADEIF);
 
             event.accept(ModBlocks.DET_MINER);
-
+            event.accept(ModBlocks.C4);
+            event.accept(ModBlocks.GIGA_DET);
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");
             }
@@ -415,7 +420,10 @@ public class MainRegistry {
         }
         // РУДЫ
         if (event.getTab() == ModCreativeTabs.NTM_ORES_TAB.get()) {
-
+            event.accept(ModBlocks.SELLAFIELD_SLAKED);
+            event.accept(ModBlocks.SELLAFIELD_SLAKED1);
+            event.accept(ModBlocks.SELLAFIELD_SLAKED2);
+            event.accept(ModBlocks.SELLAFIELD_SLAKED3);
             event.accept(ModBlocks.URANIUM_BLOCK);
             event.accept(ModBlocks.POLONIUM210_BLOCK);
             event.accept(ModBlocks.PLUTONIUM_BLOCK);
@@ -548,6 +556,8 @@ public class MainRegistry {
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.ARMOR_TABLE);
+            event.accept(ModItems.BATTERY_SCHRABIDIUM);
+
             // event.accept(ModBlocks.FLUID_TANK);
             event.accept(ModBlocks.MACHINE_BATTERY);
             event.accept(ModBlocks.WIRE_COATED);
@@ -571,6 +581,33 @@ public class MainRegistry {
             event.accept(ModItems.PLATE_FUEL_U233);
             event.accept(ModItems.PLATE_FUEL_U235);
             event.accept(ModItems.CREATIVE_BATTERY);
+
+            event.accept(ModItems.BATTERY_POTATO);
+            event.accept(ModItems.BATTERY);
+            event.accept(ModItems.BATTERY_RED_CELL);
+            event.accept(ModItems.BATTERY_RED_CELL_6);
+            event.accept(ModItems.BATTERY_RED_CELL_24);
+            event.accept(ModItems.BATTERY_ADVANCED);
+            event.accept(ModItems.BATTERY_ADVANCED_CELL);
+            event.accept(ModItems.BATTERY_ADVANCED_CELL_4);
+            event.accept(ModItems.BATTERY_ADVANCED_CELL_12);
+            event.accept(ModItems.BATTERY_LITHIUM);
+            event.accept(ModItems.BATTERY_LITHIUM_CELL);
+            event.accept(ModItems.BATTERY_LITHIUM_CELL_3);
+            event.accept(ModItems.BATTERY_LITHIUM_CELL_6);
+            event.accept(ModItems.BATTERY_SCHRABIDIUM);
+            event.accept(ModItems.BATTERY_SCHRABIDIUM_CELL);
+            event.accept(ModItems.BATTERY_SCHRABIDIUM_CELL_2);
+            event.accept(ModItems.BATTERY_SCHRABIDIUM_CELL_4);
+            event.accept(ModItems.BATTERY_SPARK);
+            event.accept(ModItems.BATTERY_TRIXITE);
+            event.accept(ModItems.BATTERY_SPARK_CELL_6);
+            event.accept(ModItems.BATTERY_SPARK_CELL_25);
+            event.accept(ModItems.BATTERY_SPARK_CELL_100);
+            event.accept(ModItems.BATTERY_SPARK_CELL_1000);
+            event.accept(ModItems.BATTERY_SPARK_CELL_2500);
+            event.accept(ModItems.BATTERY_SPARK_CELL_10000);
+            event.accept(ModItems.BATTERY_SPARK_CELL_POWER);
 
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added creative battery ITEM to NTM Fuel tab");
