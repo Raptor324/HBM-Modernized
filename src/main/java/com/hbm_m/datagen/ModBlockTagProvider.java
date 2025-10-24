@@ -9,7 +9,10 @@ import com.hbm_m.lib.RefStrings;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.common.Tags;
+
 import net.minecraftforge.common.data.BlockTagsProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 
@@ -83,7 +86,53 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.LIGNITE_ORE.get())
                 .add(ModBlocks.ALUMINUM_ORE.get());
 
+        // ============ ✅ ТЕГ ДЛЯ OCCLUSION CULLING ============
+        // Блоки, через которые можно видеть (не блокируют рендеринг машин)
+        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "non_occluding")))
+            // ✅ Части машин
+            .add(ModBlocks.UNIVERSAL_MACHINE_PART.get())
+            // ✅ Стекло и прозрачные блоки
+            .addTag(Tags.Blocks.GLASS)
+            .addTag(Tags.Blocks.GLASS_PANES)
 
+            // ✅ Частичные блоки
+            .addTag(BlockTags.FENCES)
+            .addTag(BlockTags.FENCE_GATES)
+            .addTag(BlockTags.WALLS)
+            .addTag(BlockTags.DOORS)
+            .addTag(BlockTags.TRAPDOORS)
+            .addTag(BlockTags.BUTTONS)
+            .addTag(BlockTags.PRESSURE_PLATES)
+            .addTag(BlockTags.RAILS)
+            .addTag(BlockTags.STAIRS)
+            .addTag(BlockTags.SLABS)
+            .addTag(BlockTags.CORAL_PLANTS)
+            .addTag(BlockTags.LEAVES)
+            .addTag(BlockTags.SAPLINGS)
+            .addTag(BlockTags.FLOWERS)
+            .addTag(BlockTags.SIGNS)
+            .addTag(BlockTags.BANNERS)
+            .addTag(BlockTags.CANDLES)
+            .addTag(BlockTags.CLIMBABLE)
+            // ✅ Декоративные
+            .add(Blocks.IRON_BARS)
+            .add(Blocks.CHAIN)
+            .add(Blocks.LANTERN)
+            .add(Blocks.SOUL_LANTERN)
+            .add(Blocks.TORCH)
+            .add(Blocks.SOUL_TORCH)
+            .add(Blocks.REDSTONE_TORCH)
+            .add(Blocks.BREWING_STAND)
+            .add(Blocks.ENCHANTING_TABLE)
+            .add(Blocks.END_ROD)
+            .add(Blocks.LIGHTNING_ROD)
+            .add(Blocks.HOPPER)
+            .add(Blocks.COBWEB)
+            .add(Blocks.SCAFFOLDING)
+            .add(Blocks.LEVER)
+            .add(Blocks.TRIPWIRE)
+            .add(Blocks.TRIPWIRE_HOOK)
+            .add(Blocks.CAMPFIRE);
 
         // Создаем теги для совместимости с другими модами (например, для систем хранения)
         this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")))

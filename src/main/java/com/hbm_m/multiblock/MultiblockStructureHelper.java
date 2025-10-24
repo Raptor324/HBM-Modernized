@@ -5,6 +5,7 @@ package com.hbm_m.multiblock;
 // а также генерировать VoxelShape для всей структуры. Ядро всей мультиблочной логики.
 import com.hbm_m.block.WireBlock;
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.HighlightBlocksPacket;
 import com.hbm_m.network.ModPacketHandler;
 import net.minecraft.core.BlockPos;
@@ -35,7 +36,7 @@ public class MultiblockStructureHelper {
     private final Supplier<BlockState> phantomBlockState;
 
     public MultiblockStructureHelper(Map<BlockPos, Supplier<BlockState>> structureMap, Supplier<BlockState> phantomBlockState) {
-        this.structureMap = structureMap;
+        this.structureMap = Map.copyOf(structureMap);
         this.phantomBlockState = phantomBlockState;
     }
 
@@ -90,7 +91,7 @@ public class MultiblockStructureHelper {
         return this.structureMap.keySet();
     }
 
-    public void placeStructure(Level level, BlockPos controllerPos, Direction facing, IMultiblockController controller) {
+    public synchronized void placeStructure(Level level, BlockPos controllerPos, Direction facing, IMultiblockController controller) {
         if (level.isClientSide) return;
         
         // Собираем все части СНАЧАЛА, обновления - ПОТОМ
@@ -105,6 +106,8 @@ public class MultiblockStructureHelper {
             
             // Ставим блок с флагом 2 (не отправлять обновления соседям)
             level.setBlock(worldPos, partState, 2);
+            MainRegistry.LOGGER.info("Player {} placed multiblock at {}", 
+                controller, controllerPos);
             
             BlockEntity be = level.getBlockEntity(worldPos);
             if (be instanceof IMultiblockPart partBe) {
@@ -167,6 +170,10 @@ public class MultiblockStructureHelper {
             }
         }
         return maxY;
+    }
+
+    public Map<BlockPos, Supplier<BlockState>> getStructureMap() {
+        return structureMap;
     }
 
     /**
@@ -287,8 +294,9 @@ public class MultiblockStructureHelper {
             
             // Вместо прямого вызова, планируем задачу на следующий тик сервера.
             level.getServer().execute(() -> {
-                // Проверяем, что контроллер все еще на месте, перед выполнением
-                if (level.getBlockState(ctrlPos).is(controllerBlock)) {
+                BlockEntity be = level.getBlockEntity(ctrlPos);
+                if (be != null && be.isRemoved() == false && 
+                    level.getBlockState(ctrlPos).is(controllerBlock)) {
                     updateFrameForController(level, ctrlPos);
                 }
             });

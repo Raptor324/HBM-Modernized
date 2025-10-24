@@ -1,7 +1,10 @@
 package com.hbm_m.client.model.render;
 
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+@OnlyIn(Dist.CLIENT)
 public class ModShaders {
     private static ShaderInstance dynamicCutoutShader;
     private static ShaderInstance blockLitShader;

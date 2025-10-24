@@ -7,10 +7,14 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
 import org.joml.Matrix4f;
 
 import java.util.List;
 
+@OnlyIn(Dist.CLIENT)
 public class LegacyAnimator {
 
     protected final PoseStack poseStack;

@@ -3,6 +3,7 @@ package com.hbm_m.client.model.render;
 import com.hbm_m.block.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.entity.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
+import com.hbm_m.config.ModClothConfig;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
@@ -16,19 +17,54 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.AABB;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
 import org.joml.Matrix4f;
 
+@OnlyIn(Dist.CLIENT)
 public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<MachineAdvancedAssemblerBlockEntity, MachineAdvancedAssemblerBakedModel> {
 
     private MachineAdvancedAssemblerVboRenderer gpu;
     private MachineAdvancedAssemblerBakedModel cachedModel;
     
     // НОВОЕ: Instanced рендереры для статических частей
-    private static InstancedStaticPartRenderer instancedBase;
-    private static InstancedStaticPartRenderer instancedFrame;
-    private static boolean instancersInitialized = false;
+    private static volatile InstancedStaticPartRenderer instancedBase;
+    private static volatile InstancedStaticPartRenderer instancedFrame;
+    private static volatile boolean instancersInitialized = false;
 
     public MachineAdvancedAssemblerRenderer(BlockEntityRendererProvider.Context ctx) {}
+
+    private static synchronized void initializeInstancedRenderersSync(MachineAdvancedAssemblerBakedModel model) {
+        if (instancersInitialized) return;  // Double-check pattern
+        
+        try {
+            BakedModel baseModel = model.getPart("Base");
+            if (baseModel != null) {
+                var baseData = ObjModelVboBuilder.buildSinglePart(baseModel);
+                instancedBase = new InstancedStaticPartRenderer(baseData);
+            }
+            
+            BakedModel frameModel = model.getPart("Frame");
+            if (frameModel != null) {
+                var frameData = ObjModelVboBuilder.buildSinglePart(frameModel);
+                instancedFrame = new InstancedStaticPartRenderer(frameData);
+            }
+            
+            instancersInitialized = true;
+        } catch (Exception e) {
+            instancedBase = null;
+            instancedFrame = null;
+        }
+    }
+    
+    // ✅ Wrapper с double-check locking
+    private void initializeInstancedRenderers(MachineAdvancedAssemblerBakedModel model) {
+        if (!instancersInitialized) {  // Первая проверка без лока
+            initializeInstancedRenderersSync(model);
+        }
+    }
 
     @Override
     protected MachineAdvancedAssemblerBakedModel getModelType(BakedModel rawModel) {
@@ -49,70 +85,83 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                             int packedOverlay,
                             PoseStack poseStack,
                             MultiBufferSource bufferSource) {
+        
+        BlockPos blockPos = be.getBlockPos();
         int blockLight = LightTexture.block(packedLight);
         int skyLight = LightTexture.sky(packedLight);
         int dynamicLight = LightTexture.pack(blockLight, skyLight);
         
-        // ✅ Получаем позицию блока
-        BlockPos blockPos = be.getBlockPos();
-
+        // ✅ КРИТИЧНО: Проверяем occlusion ДО добавления в instanced batch!
+        var minecraft = Minecraft.getInstance();
+        AABB renderBounds = be.getRenderBoundingBox();
+        if (!OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
+            return; // Машина полностью заблокирована - пропускаем ВСЕ части
+        }
+        
         if (!instancersInitialized) {
             initializeInstancedRenderers(model);
         }
-
+        
         if (cachedModel != model || gpu == null) {
             cachedModel = model;
             gpu = new MachineAdvancedAssemblerVboRenderer(model);
         }
-
-        // ✅ Передаем BlockPos в addInstance
+        
+        boolean shouldUpdateAnimation = !shouldSkipAnimationUpdate(blockPos);
+        
+        // Рендер статических частей (ТОЛЬКО если прошли occlusion check)
         if (instancedBase != null) {
-            instancedBase.addInstance(poseStack, dynamicLight, blockPos);
+            instancedBase.addInstance(poseStack, dynamicLight, blockPos, be);
         } else {
             gpu.renderStaticBase(poseStack, dynamicLight, blockPos);
         }
-
+        
         if (be.frame) {
-            // ✅ Передаем BlockPos в addInstance
             if (instancedFrame != null) {
-                instancedFrame.addInstance(poseStack, dynamicLight, blockPos);
+                instancedFrame.addInstance(poseStack, dynamicLight, blockPos, be);
             } else {
                 gpu.renderStaticFrame(poseStack, dynamicLight, blockPos);
             }
         }
-
-        // ✅ Передаем BlockPos в renderAnimated
-        renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos);
+        
+        // Анимация обновляется реже для дальних машин
+        if (shouldUpdateAnimation) {
+            renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos);
+        }
+        
         renderRecipeIcon(be, poseStack, bufferSource, dynamicLight, packedOverlay);
     }
 
     /**
-     * Инициализация instanced рендереров (вызывается один раз)
+     * ✅ НОВОЕ: Проверка, нужно ли пропустить фрейм на основе дистанции
      */
-    private void initializeInstancedRenderers(MachineAdvancedAssemblerBakedModel model) {
-        if (instancersInitialized) return;
-
-        try {
-            // Создаём VBO для Base
-            BakedModel baseModel = model.getPart("Base");
-            if (baseModel != null) {
-                var baseData = ObjModelVboBuilder.buildSinglePart(baseModel);
-                instancedBase = new InstancedStaticPartRenderer(baseData);
-            }
-
-            // Создаём VBO для Frame
-            BakedModel frameModel = model.getPart("Frame");
-            if (frameModel != null) {
-                var frameData = ObjModelVboBuilder.buildSinglePart(frameModel);
-                instancedFrame = new InstancedStaticPartRenderer(frameData);
-            }
-
-            instancersInitialized = true;
-        } catch (Exception e) {
-            // При ошибке используем обычный рендер
-            instancedBase = null;
-            instancedFrame = null;
+    private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
+        var minecraft = Minecraft.getInstance();
+        var camera = minecraft.gameRenderer.getMainCamera();
+        var cameraPos = camera.getPosition();
+        
+        double dx = blockPos.getX() + 0.5 - cameraPos.x;
+        double dy = blockPos.getY() + 0.5 - cameraPos.y;
+        double dz = blockPos.getZ() + 0.5 - cameraPos.z;
+        double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        
+        int thresholdChunks = ModClothConfig.get().modelUpdateDistance;
+        double thresholdBlocks = thresholdChunks * 16.0;
+        
+        // ✅ Ближние машины: анимация каждый фрейм
+        if (distance <= thresholdBlocks) {
+            return false;
         }
+        
+        // ✅ Дальние машины: вообще без анимации (статичные)
+        if (distance > thresholdBlocks * 1.5) {
+            return true; // Полностью отключаем анимацию
+        }
+        
+        // ✅ Средняя дистанция: анимация через фрейм
+        long frameTime = minecraft.getFrameTimeNs();
+        long posHash = blockPos.asLong();
+        return (posHash + frameTime) % 2 != 0;
     }
 
     /**

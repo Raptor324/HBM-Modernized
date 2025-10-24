@@ -12,6 +12,7 @@ import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ItemAssemblyTemplate;
 import com.hbm_m.item.ItemBlueprintFolder;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.ModTags;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.ModMenuTypes;
@@ -50,6 +51,7 @@ import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraft.client.GraphicsStatus;
 import net.minecraftforge.client.ChunkRenderTypeSet;
 
@@ -66,6 +68,7 @@ import com.hbm_m.client.model.render.DoorRenderer;
 import com.hbm_m.client.model.render.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.model.render.MachineAdvancedAssemblerVboRenderer;
 import com.hbm_m.client.model.render.ModShaders;
+import com.hbm_m.client.model.render.OcclusionCullingHelper;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientSetup {
@@ -117,6 +120,8 @@ public class ClientSetup {
             // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
+
+            OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
         });
     }
 

@@ -9,8 +9,12 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+
 import org.joml.Matrix4f;
 
+@OnlyIn(Dist.CLIENT)
 public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends BakedModel>
         implements BlockEntityRenderer<T> {
 
@@ -19,18 +23,20 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     protected abstract void renderParts(T blockEntity, M model, LegacyAnimator animator, float partialTick,
                                         int packedLight, int packedOverlay, PoseStack poseStack, MultiBufferSource bufferSource);
 
-    private static Matrix4f currentModelViewMatrix = new Matrix4f();
-    private static boolean gpuStateSetup = false;
-    private static final net.minecraft.client.renderer.RenderType RT_SOLID = net.minecraft.client.renderer.RenderType.solid();
-
-    public static Matrix4f getCurrentModelViewMatrix() {
+    private Matrix4f currentModelViewMatrix = new Matrix4f();
+    private boolean gpuStateSetup = false;
+    
+    private static final net.minecraft.client.renderer.RenderType RT_SOLID = 
+        net.minecraft.client.renderer.RenderType.solid();
+    
+    // ✅ Убрать статический getter
+    public Matrix4f getCurrentModelViewMatrix() {
         return new Matrix4f(currentModelViewMatrix);
     }
 
     @Override
     public void render(T blockEntity, float partialTick, PoseStack poseStack,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        beginBatch();
         currentModelViewMatrix = poseStack.last().pose();
         
         if (!isInViewFrustum(blockEntity)) {
@@ -39,6 +45,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
 
         if (!gpuStateSetup) {
             RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+            RT_SOLID.setupRenderState();
             gpuStateSetup = true;
         }
         
@@ -57,18 +64,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         renderParts(blockEntity, model, animator, partialTick, packedLight, packedOverlay, poseStack, bufferSource);
 
         poseStack.popPose();
-        endBatch();
-    }
 
-    public static void beginBatch() {
-        if (!gpuStateSetup) {
-            com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS);
-            RT_SOLID.setupRenderState();
-            gpuStateSetup = true;
-        }
-    }
-    
-    public static void endBatch() {
         if (gpuStateSetup) {
             RT_SOLID.clearRenderState();
             net.minecraft.client.Minecraft.getInstance().gameRenderer.lightTexture().turnOffLightLayer();

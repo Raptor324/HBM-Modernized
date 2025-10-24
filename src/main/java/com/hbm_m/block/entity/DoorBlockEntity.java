@@ -62,7 +62,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     // ==================== IMultiblockPart ====================
 
     @Override
-    public void setControllerPos(BlockPos controllerPos) {
+    public synchronized void setControllerPos(BlockPos pos) {
         this.controllerPos = controllerPos;
         setChanged();
     }

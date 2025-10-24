@@ -5,6 +5,8 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
@@ -13,6 +15,7 @@ import java.lang.ref.WeakReference;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+@OnlyIn(Dist.CLIENT)
 public class GlobalMeshCache {
     private static final ConcurrentHashMap<String, WeakReference<AbstractGpuVboRenderer>> PART_RENDERERS = new ConcurrentHashMap<>();
 
@@ -80,16 +83,14 @@ public class GlobalMeshCache {
         GPU_BUFFERS.clear();
     }
     public static AbstractGpuVboRenderer getOrCreateRenderer(String partKey, BakedModel model) {
-        WeakReference<AbstractGpuVboRenderer> ref = PART_RENDERERS.get(partKey);
-        AbstractGpuVboRenderer renderer = (ref != null) ? ref.get() : null;
-        
-        if (renderer == null) {
-            // Создаём новый рендерер и кэшируем
-            renderer = createRendererForPart(model);
-            PART_RENDERERS.put(partKey, new WeakReference<>(renderer));
-        }
-        
-        return renderer;
+        return PART_RENDERERS.compute(partKey, (key, existingRef) -> {
+            AbstractGpuVboRenderer renderer = (existingRef != null) ? existingRef.get() : null;
+            if (renderer == null) {
+                renderer = createRendererForPart(model);
+                return new WeakReference<>(renderer);
+            }
+            return existingRef;
+        }).get();
     }
     
     private static AbstractGpuVboRenderer createRendererForPart(BakedModel model) {

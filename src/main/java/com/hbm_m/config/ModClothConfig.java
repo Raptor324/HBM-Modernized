@@ -174,7 +174,11 @@ public class ModClothConfig implements ConfigData {
     @Category("rendering")
     @Gui.Tooltip
     @BoundedDiscrete(min = 0, max = 20)
-    public int textureFilterDistanceChunks = 3;
+    public int modelUpdateDistance = 3;
+
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean enableOcclusionCulling = true;
 
     // Отладка 
     @Category("debug")

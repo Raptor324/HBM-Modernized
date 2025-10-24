@@ -4,6 +4,8 @@ import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 import org.joml.Matrix4f;
 
@@ -11,6 +13,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@OnlyIn(Dist.CLIENT)
 public class MachineAdvancedAssemblerVboRenderer {
     private static final String BASE = "Base";
     private static final String FRAME = "Frame";

@@ -8,8 +8,14 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.culling.Frustum;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.*;
 import org.lwjgl.system.MemoryUtil;
@@ -22,12 +28,9 @@ import java.util.List;
  * Instanced Renderer для статических частей (Base/Frame).
  * Рендерит все машины одного типа одним draw call через glDrawElementsInstanced.
  */
+@OnlyIn(Dist.CLIENT)
 public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
     private static final int MAX_INSTANCES = 1024;
-    
-    private final List<Matrix4f> instanceTransforms = new ArrayList<>();
-    private final List<Integer> instanceLights = new ArrayList<>();
-    private final List<BlockPos> instancePositions = new ArrayList<>();
 
     private final List<Matrix4f> nearInstanceTransforms = new ArrayList<>();
     private final List<Integer> nearInstanceLights = new ArrayList<>();
@@ -147,35 +150,39 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
         }
     }
 
+    public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos) {
+        addInstance(poseStack, packedLight, blockPos, null);
+    }
+
     /**
      * Добавить инстанс для батча
      */
-    public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos) {
+    public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos,
+                        @Nullable BlockEntity blockEntity) {
         var minecraft = Minecraft.getInstance();
         var camera = minecraft.gameRenderer.getMainCamera();
         var cameraPos = camera.getPosition();
         
-        // ✅ Вычисляем расстояние для КАЖДОГО инстанса
         double dx = blockPos.getX() + 0.5 - cameraPos.x;
         double dy = blockPos.getY() + 0.5 - cameraPos.y;
         double dz = blockPos.getZ() + 0.5 - cameraPos.z;
         double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
         
-        int thresholdChunks = ModClothConfig.get().textureFilterDistanceChunks;
+        // ✅ УБРАЛИ проверку occlusion - она теперь в renderParts()
+        // if (!OcclusionCullingHelper.shouldRender(...)) return;
+        
+        int thresholdChunks = ModClothConfig.get().modelUpdateDistance;
         double thresholdBlocks = thresholdChunks * 16.0;
         
         Matrix4f transform = new Matrix4f(poseStack.last().pose());
         
-        // ✅ Сортируем инстансы по дистанции
         if (distance > thresholdBlocks) {
-            // Дальний батч
             if (farInstanceTransforms.size() >= MAX_INSTANCES) {
                 flushFarBatch();
             }
             farInstanceTransforms.add(transform);
             farInstanceLights.add(packedLight);
         } else {
-            // Ближний батч
             if (nearInstanceTransforms.size() >= MAX_INSTANCES) {
                 flushNearBatch();
             }
@@ -224,6 +231,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
         
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
+        int previousCullFace = GL11.glGetInteger(GL11.GL_CULL_FACE);
         
         try {
             instanceBuffer.clear();
@@ -284,6 +292,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
             RenderSystem.depthMask(true);
             GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
             GL11.glPolygonOffset(1.0f, 1.0f);
+
             GL11.glDisable(GL11.GL_CULL_FACE);
             
             if (indexCount > 0) {
@@ -303,6 +312,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
             GL30.glBindVertexArray(previousVao);
             GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);
             GL11.glEnable(GL11.GL_CULL_FACE);
+            if (previousCullFace == GL11.GL_TRUE) {
+                GL11.glEnable(GL11.GL_CULL_FACE);
+            }
         }
     }
 

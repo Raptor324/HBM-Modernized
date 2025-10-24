@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity;
 
+import com.hbm_m.block.MachineAdvancedAssemblerBlock;
 import com.hbm_m.client.ClientSoundManager;
 import com.hbm_m.energy.BlockEntityEnergyStorage;
 import com.hbm_m.item.ItemBlueprintFolder;
@@ -138,9 +139,45 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public AABB getRenderBoundingBox() {
+        BlockState state = getBlockState();
+        if (!(state.getBlock() instanceof MachineAdvancedAssemblerBlock block)) {
+            // Fallback на стандартный AABB с запасом
+            return new AABB(worldPosition.offset(-2, -1, -2), worldPosition.offset(3, 4, 3));
+        }
+        
+        // ✅ Получаем структуру через правильное имя метода
+        var structureHelper = block.getStructureHelper();
+        var structureMap = structureHelper.getStructureMap();
+        
+        if (structureMap == null || structureMap.isEmpty()) {
+            // Fallback для 3x3x3 структуры
+            return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 3, 2));
+        }
+        
+        // Находим минимальные и максимальные координаты из структуры
+        int minX = 0, minY = 0, minZ = 0;
+        int maxX = 0, maxY = 0, maxZ = 0;
+        
+        for (BlockPos offset : structureMap.keySet()) {
+            minX = Math.min(minX, offset.getX());
+            minY = Math.min(minY, offset.getY());
+            minZ = Math.min(minZ, offset.getZ());
+            maxX = Math.max(maxX, offset.getX());
+            maxY = Math.max(maxY, offset.getY());
+            maxZ = Math.max(maxZ, offset.getZ());
+        }
+        
+        // ✅ Добавляем запас для анимированных частей (кольцо, руки, головы)
+        // Кольцо вращается и выходит за пределы на ~1.5 блока
+        double margin = 1.5;
+        
         return new AABB(
-            worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
-            worldPosition.getX() + 2, worldPosition.getY() + 3, worldPosition.getZ() + 2
+            worldPosition.getX() + minX - margin,
+            worldPosition.getY() + minY - margin,
+            worldPosition.getZ() + minZ - margin,
+            worldPosition.getX() + maxX + 1 + margin,
+            worldPosition.getY() + maxY + 1 + margin,
+            worldPosition.getZ() + maxZ + 1 + margin
         );
     }
 
@@ -315,16 +352,25 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             assemblerModule.update(1.0, 1.0, true, blueprintStack);
             boolean isCraftingNow = assemblerModule.isProcessing();
     
-            // ИСПРАВЛЕНИЕ: Синхронизируем автоматически выбранный рецепт
             if (isCraftingNow && assemblerModule.getPreferredRecipe() != null) {
                 ResourceLocation autoSelectedRecipeId = assemblerModule.getPreferredRecipe().getId();
-                
                 // Если модуль автоматически выбрал рецепт, а мы его ещё не знаем
                 if (selectedRecipeId == null || !selectedRecipeId.equals(autoSelectedRecipeId)) {
                     selectedRecipeId = autoSelectedRecipeId;
                     cachedRecipe = assemblerModule.getPreferredRecipe();
                     recipeCacheDirty = false;
                     needsClientSync = true; // Отправляем обновление клиенту
+                }
+            }
+            
+            // ДОПОЛНИТЕЛЬНО: Синхронизируем рецепт модуля с кешем BE
+            if (assemblerModule.getCurrentRecipe() != null) {
+                ResourceLocation currentRecipeId = assemblerModule.getCurrentRecipe().getId();
+                if (selectedRecipeId == null || !selectedRecipeId.equals(currentRecipeId)) {
+                    selectedRecipeId = currentRecipeId;
+                    cachedRecipe = assemblerModule.getCurrentRecipe();
+                    recipeCacheDirty = false;
+                    needsClientSync = true;
                 }
             }
     
@@ -570,14 +616,28 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public void onLoad() {
         super.onLoad();
         
+        // ✅ ИСПРАВЛЕНИЕ 1: Инициализация arms только на клиенте с проверкой null
         if (level != null && level.isClientSide && arms[0] == null) {
-            for (int i = 0; i < arms.length; i++) {
-                arms[i] = new AssemblerArm();
-            }
+            // ✅ Используем DistExecutor для безопасности
+            net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(
+                net.minecraftforge.api.distmarker.Dist.CLIENT, 
+                () -> () -> initClientArms()
+            );
         }
 
-        if (level != null && assemblerModule == null) {
+        // ✅ ИСПРАВЛЕНИЕ 2: Инициализация assemblerModule только на сервере
+        if (level != null && !level.isClientSide && assemblerModule == null) {
             assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, inventory, level);
+        }
+    }
+
+    /**
+     * Инициализация клиентских рук (будет вызвана только на клиенте)
+     */
+    @OnlyIn(Dist.CLIENT)
+    private void initClientArms() {
+        for (int i = 0; i < arms.length; i++) {
+            arms[i] = new AssemblerArm();
         }
     }
 

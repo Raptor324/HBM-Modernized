@@ -1,6 +1,7 @@
 package com.hbm_m.event;
 
 import com.hbm_m.client.model.render.MachineAdvancedAssemblerRenderer;
+import com.hbm_m.client.model.render.OcclusionCullingHelper;
 // Обработчик событий клиента, добавляющий подсказки к предметам (опасности, OreDict теги).
 // Подсказки показываются при наведении на предмет в инвентаре.
 import com.hbm_m.lib.RefStrings;
@@ -14,6 +15,7 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -68,6 +70,14 @@ public class ClientModEvents {
             // Флашим все накопленные instanced батчи
             MachineAdvancedAssemblerRenderer.flushInstancedBatches();
             
+        }
+    }
+
+    @SubscribeEvent
+    public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) {
+            // Очистка старого кеша culling
+            OcclusionCullingHelper.onFrameStart();
         }
     }
 }

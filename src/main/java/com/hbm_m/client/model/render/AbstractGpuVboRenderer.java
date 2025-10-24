@@ -4,13 +4,18 @@ import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.LightLayer;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
+import org.jetbrains.annotations.Nullable;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
@@ -21,6 +26,7 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
+@OnlyIn(Dist.CLIENT)
 public abstract class AbstractGpuVboRenderer {
 
     protected int vaoId = -1;
@@ -30,7 +36,6 @@ public abstract class AbstractGpuVboRenderer {
     protected boolean initialized = false;
     protected abstract VboData buildVboData();
 
-    private static final float TEXTURE_FILTER_DISTANCE_THRESHOLD = 32.0f;
 
     static final class TextureBinder {
         static void bindForAssemblerIfNeeded(ShaderInstance shader) {
@@ -46,6 +51,23 @@ public abstract class AbstractGpuVboRenderer {
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
         }
+    }
+
+    /**
+     * Проверка видимости перед рендерингом с использованием occlusion culling
+     */
+    protected boolean shouldRenderWithCulling(BlockPos blockPos, @Nullable BlockEntity blockEntity) {
+        var minecraft = Minecraft.getInstance();
+        
+        // ✅ ПРАВИЛЬНАЯ СИГНАТУРА: всегда передаем (BlockPos, Level, AABB)
+        AABB renderBounds;
+        if (blockEntity != null) {
+            renderBounds = blockEntity.getRenderBoundingBox();
+        } else {
+            renderBounds = new AABB(blockPos).inflate(2.0);
+        }
+        
+        return OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds);
     }
 
     protected void initVbo() {
@@ -156,7 +178,7 @@ public abstract class AbstractGpuVboRenderer {
         double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
         
         // ✅ Конвертируем чанки в блоки (1 чанк = 16 блоков)
-        int thresholdChunks = ModClothConfig.get().textureFilterDistanceChunks;
+        int thresholdChunks = ModClothConfig.get().modelUpdateDistance;
         double thresholdBlocks = thresholdChunks * 16.0;
         
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
@@ -173,6 +195,15 @@ public abstract class AbstractGpuVboRenderer {
     }
 
     public void render(PoseStack poseStack, int packedLight, BlockPos blockPos) {
+        render(poseStack, packedLight, blockPos, null);
+    }
+
+    public void render(PoseStack poseStack, int packedLight, BlockPos blockPos, 
+                    @Nullable BlockEntity blockEntity) {
+        // ✅ CULLING CHECK - ранний выход
+        if (!shouldRenderWithCulling(blockPos, blockEntity)) {
+            return;
+        }
         if (!initialized) {
             try {
                 initVbo();
@@ -198,6 +229,7 @@ public abstract class AbstractGpuVboRenderer {
     
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
+        int previousCullFace = GL11.glGetInteger(GL11.GL_CULL_FACE);
     
         try {
             RenderSystem.setShader(() -> shader);
@@ -235,6 +267,7 @@ public abstract class AbstractGpuVboRenderer {
             
             var sampler0 = shader.getUniform("Sampler0");
             if (sampler0 != null) sampler0.set(0);
+
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
@@ -249,6 +282,9 @@ public abstract class AbstractGpuVboRenderer {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             GL30.glBindVertexArray(previousVao);
             GL11.glEnable(GL11.GL_CULL_FACE);
+            if (previousCullFace == GL11.GL_TRUE) {
+                GL11.glEnable(GL11.GL_CULL_FACE);
+            }
         }
     }
     

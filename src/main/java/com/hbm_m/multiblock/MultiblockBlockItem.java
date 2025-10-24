@@ -43,7 +43,15 @@ public class MultiblockBlockItem extends BlockItem {
             // Для простоты оставим как есть, но в будущем это можно доработать.
         }
         
+        if (!pState.hasProperty(HorizontalDirectionalBlock.FACING)) {
+            return false; // Вместо пустого if
+        }
+        
         Direction facing = pState.getValue(HorizontalDirectionalBlock.FACING);
+        if (facing == null || facing.getAxis() == Direction.Axis.Y) {
+            // Защита от вертикальных направлений для горизонтальных структур
+            return false;
+        }
 
         // Выполняем проверку ДО вызова родительского метода placeBlock
         if (controller.getStructureHelper().checkPlacement(level, pContext.getClickedPos(), facing, player)) {

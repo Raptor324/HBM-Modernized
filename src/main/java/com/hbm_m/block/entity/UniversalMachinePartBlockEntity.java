@@ -29,7 +29,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     }
 
     @Override
-    public void setControllerPos(BlockPos pos) {
+    public synchronized void setControllerPos(BlockPos pos) {
         this.controllerPos = pos;
         setChanged();
     }
