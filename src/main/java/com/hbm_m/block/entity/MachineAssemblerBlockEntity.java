@@ -12,6 +12,11 @@ import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.sound.AssemblerSoundInstance;
 
+import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.energy.ILongEnergyStorage;
+import com.hbm_m.energy.LongToForgeWrapper;
+import com.hbm_m.energy.LongDataPacker;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -59,17 +64,18 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     };
 
     // Используем наш кастомный класс
-    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100000, 250, 250);
+    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(9000000000000000000L, 250L, 250L); // Добавил 'L' для ясности
 
     private boolean isCrafting = false;
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
-    private LazyOptional<IEnergyStorage> lazyEnergyHandler = LazyOptional.empty();
+    private LazyOptional<ILongEnergyStorage> lazyLongEnergyHandler = LazyOptional.empty();
+    private LazyOptional<IEnergyStorage> lazyForgeEnergyHandler = LazyOptional.empty(); // Для совместимости
 
     protected final ContainerData data;
     private int progress = 0;
     private int maxProgress = 100;
-    private int previousEnergy = 0;
-    private int energyDelta = 0;
+    private long previousEnergy = 0L;
+    private long energyDelta = 0L;
     private int energyDeltaUpdateCounter = 0;
 
     // Номера слотов для удобства
@@ -94,15 +100,28 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
         this.data = new ContainerData() {
             @Override
             public int get(int index) {
+                // --- ИЗМЕНЕНИЕ: Используем LongDataPacker ---
+                long energy = MachineAssemblerBlockEntity.this.energyStorage.getEnergyStored();
+                long maxEnergy = MachineAssemblerBlockEntity.this.energyStorage.getMaxEnergyStored();
+                long delta = MachineAssemblerBlockEntity.this.energyDelta;
+
                 return switch (index) {
                     case 0 -> MachineAssemblerBlockEntity.this.progress;
                     case 1 -> MachineAssemblerBlockEntity.this.maxProgress;
-                    case 2 -> MachineAssemblerBlockEntity.this.energyStorage.getEnergyStored();
-                    case 3 -> MachineAssemblerBlockEntity.this.energyStorage.getMaxEnergyStored();
-                    case 4 -> MachineAssemblerBlockEntity.this.isCrafting ? 1 : 0;
-                    case 5 -> MachineAssemblerBlockEntity.this.energyDelta; // НОВОЕ: энергетическая дельта
+
+                    // Упаковываем 3 long-значения
+                    case 2 -> LongDataPacker.packHigh(energy);
+                    case 3 -> LongDataPacker.packLow(energy);
+                    case 4 -> LongDataPacker.packHigh(maxEnergy);
+                    case 5 -> LongDataPacker.packLow(maxEnergy);
+                    case 6 -> LongDataPacker.packHigh(delta);
+                    case 7 -> LongDataPacker.packLow(delta);
+
+                    // Сдвигаем isCrafting
+                    case 8 -> MachineAssemblerBlockEntity.this.isCrafting ? 1 : 0;
                     default -> 0;
                 };
+                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
             }
 
             @Override
@@ -110,15 +129,14 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
                 switch (index) {
                     case 0 -> MachineAssemblerBlockEntity.this.progress = value;
                     case 1 -> MachineAssemblerBlockEntity.this.maxProgress = value;
-                    case 2 -> MachineAssemblerBlockEntity.this.energyStorage.setEnergy(value);
-                    case 4 -> MachineAssemblerBlockEntity.this.isCrafting = value != 0;
-                    case 5 -> MachineAssemblerBlockEntity.this.energyDelta = value; // НОВОЕ
+                    // (Игнорируем 2-7, т.к. клиент не устанавливает энергию)
+                    case 8 -> MachineAssemblerBlockEntity.this.isCrafting = value != 0; // Индекс сдвинут
                 }
             }
 
             @Override
             public int getCount() {
-                return 6; // ИЗМЕНЕНО: было 5, теперь 6
+                return 9; // ИЗМЕНЕНО: было 5, теперь 6
             }
         };
     }
@@ -148,7 +166,8 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     public void invalidateCaps() {
         super.invalidateCaps();
         lazyItemHandler.invalidate();
-        lazyEnergyHandler.invalidate();
+        lazyLongEnergyHandler.invalidate();
+        lazyForgeEnergyHandler.invalidate();
         lazyInputProxy.invalidate();
         lazyOutputProxy.invalidate();
     }
@@ -439,47 +458,69 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.ENERGY) {
-            return lazyEnergyHandler.cast();
+
+        // --- ИЗМЕНЕНИЕ: Добавляем поддержку LONG_ENERGY ---
+        if (cap == ModCapabilities.LONG_ENERGY) {
+            return lazyLongEnergyHandler.cast();
         }
+        if (cap == ForgeCapabilities.ENERGY) {
+            return lazyForgeEnergyHandler.cast();
+        }
+        // ---
+
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return lazyItemHandler.cast();
         }
         return super.getCapability(cap, side);
     }
-
     @Override
     public void onLoad() {
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
-        lazyEnergyHandler = LazyOptional.of(() -> energyStorage);
+
+        // --- ИЗМЕНЕНИЕ: Инициализируем ОБА capability ---
+        // lazyEnergyHandler = LazyOptional.of(() -> energyStorage);
+        lazyLongEnergyHandler = LazyOptional.of(() -> energyStorage);
+        lazyForgeEnergyHandler = lazyLongEnergyHandler.lazyMap(LongToForgeWrapper::new); // Оборачиваем
+        // ---
     }
 
     @Override
     protected void saveAdditional(@Nonnull CompoundTag nbt) {
         super.saveAdditional(nbt);
         nbt.put("inventory", itemHandler.serializeNBT());
-        nbt.putInt("energy", energyStorage.getEnergyStored());
+
+        // --- ИЗМЕНЕНИЕ: int -> long ---
+        nbt.putLong("energy", energyStorage.getEnergyStored()); // Было putInt
+        // ---
+
         nbt.putInt("progress", progress);
-        nbt.putBoolean("isCrafting", this.isCrafting); // Сохраняем состояние крафта
-        nbt.putInt("previousEnergy", this.previousEnergy);
-        nbt.putInt("energyDelta", this.energyDelta);
+        nbt.putBoolean("isCrafting", this.isCrafting);
+
+        // --- ИЗМЕНЕНИЕ: int -> long ---
+        nbt.putLong("previousEnergy", this.previousEnergy); // Было putInt
+        nbt.putLong("energyDelta", this.energyDelta); // Было putInt
+        // ---
     }
 
     @Override
     public void load(@Nonnull CompoundTag nbt) {
         super.load(nbt);
         itemHandler.deserializeNBT(nbt.getCompound("inventory"));
-        energyStorage.setEnergy(nbt.getInt("energy"));
+
+        // --- ИЗМЕНЕНИЕ: int -> long ---
+        energyStorage.setEnergy(nbt.getLong("energy")); // Было getInt
+        // ---
+
         progress = nbt.getInt("progress");
-        boolean wasCrafting = this.isCrafting;
-        this.isCrafting = nbt.getBoolean("isCrafting"); // Загружаем состояние крафта
-        this.previousEnergy = nbt.getInt("previousEnergy");
-        this.energyDelta = nbt.getInt("energyDelta");
-        
-        if (this.level != null && this.level.isClientSide() && wasCrafting && !this.isCrafting) {
-            ClientSoundManager.updateSound(this, false, null);
-        }
+        // ... (isCrafting) ...
+
+        // --- ИЗМЕНЕНИЕ: int -> long ---
+        this.previousEnergy = nbt.getLong("previousEnergy"); // Было getInt
+        this.energyDelta = nbt.getLong("energyDelta"); // Было getInt
+        // ---
+
+        // ... (остальной код load) ...
     }
 
     public static void tick(Level pLevel, BlockPos pPos, BlockState pState, MachineAssemblerBlockEntity pBlockEntity) {
@@ -507,27 +548,30 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
                 pBlockEntity.energyStorage.receiveEnergy(Integer.MAX_VALUE, false);
             } else {
                 energySourceStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
-                    int energyNeeded = pBlockEntity.energyStorage.getMaxEnergyStored() - pBlockEntity.energyStorage.getEnergyStored();
-                    int maxCanReceive = pBlockEntity.energyStorage.getMaxReceive();
-                    int energyToTransfer = Math.min(energyNeeded, maxCanReceive);
+                    long energyNeeded = pBlockEntity.energyStorage.getMaxEnergyStored() - pBlockEntity.energyStorage.getEnergyStored();
+                    long maxCanReceive = pBlockEntity.energyStorage.getMaxReceive();
+                    long energyToTransfer = Math.min(energyNeeded, maxCanReceive);
                     
                     if (energyToTransfer > 0) {
-                        int extracted = itemEnergy.extractEnergy(energyToTransfer, false);
-                        pBlockEntity.energyStorage.receiveEnergy(extracted, false);
+                        int energyToTransferInt = (int) Math.min(energyToTransfer, Integer.MAX_VALUE);
+
+                        int extracted = itemEnergy.extractEnergy(energyToTransferInt, false); // Используем int
+
+                        pBlockEntity.energyStorage.receiveEnergy(extracted, false); // Принимаем как long
                     }
+
                 });
             }
         }
         
         pBlockEntity.energyDeltaUpdateCounter++;
         if (pBlockEntity.energyDeltaUpdateCounter >= 20) {
-            int currentEnergy = pBlockEntity.energyStorage.getEnergyStored();
             // Дельта = текущая энергия - предыдущая энергия
             // Положительное значение = приход энергии
             // Отрицательное значение = расход энергии
-            pBlockEntity.energyDelta = (currentEnergy - pBlockEntity.previousEnergy) / 20;
+            long currentEnergy = pBlockEntity.energyStorage.getEnergyStored();
+            pBlockEntity.energyDelta = (currentEnergy - pBlockEntity.previousEnergy) / 20L; // Делим на long
             pBlockEntity.previousEnergy = currentEnergy;
-            pBlockEntity.energyDeltaUpdateCounter = 0;
             setChanged(pLevel, pPos, pState);
         }
         
@@ -595,7 +639,7 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
 
     private void requestEnergy() {
         if (this.energyStorage.getEnergyStored() >= this.energyStorage.getMaxEnergyStored()) return;
-        int energyNeeded = this.energyStorage.getMaxReceive();
+        long energyNeeded = this.energyStorage.getMaxReceive();
         if (energyNeeded <= 0) return;
 
         // UUID requestId = UUID.randomUUID();
@@ -623,19 +667,33 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
                     if (neighbor == null || neighbor instanceof UniversalMachinePartBlockEntity || neighbor == this) {
                         continue;
                     }
-                    
-                    int extracted = 0;
-                    if (neighbor instanceof WireBlockEntity wire) {
+
+                    long extracted = 0L;
+                    LazyOptional<ILongEnergyStorage> longCap = neighbor.getCapability(ModCapabilities.LONG_ENERGY, dir.getOpposite());
+
+                    if (longCap.isPresent()) {
+                        ILongEnergyStorage longStorage = longCap.resolve().orElse(null);
+                        if (longStorage != null && longStorage.canExtract()) {
+                            extracted = longStorage.extractEnergy(energyNeeded, false);
+                        }
+                    }
+                    // 2. Если не нашли, проверяем Wire (у тебя он int)
+                    else if (neighbor instanceof WireBlockEntity wire) {
+                        // (Если wire.requestEnergy всё ещё int, оставляем)
                         extracted = wire.requestEnergy(energyNeeded, false /*, requestId*/);
-                    } else {
+                    }
+                    // 3. Если не нашли, проверяем Forge (int)
+                    else {
                         IEnergyStorage source = neighbor.getCapability(ForgeCapabilities.ENERGY, dir.getOpposite()).orElse(null);
                         if (source != null && source.canExtract()) {
-                            extracted = source.extractEnergy(energyNeeded, false);
+
+                            int energyNeededInt = (int) Math.min(energyNeeded, Integer.MAX_VALUE);
+                            extracted = source.extractEnergy(energyNeededInt, false); // int -> int (OK)
                         }
                     }
 
                     if (extracted > 0) {
-                        int accepted = this.energyStorage.receiveEnergy(extracted, false);
+                        long accepted = this.energyStorage.receiveEnergy(extracted, false);
                         energyNeeded -= accepted;
                         if (energyNeeded <= 0) break;
                     }

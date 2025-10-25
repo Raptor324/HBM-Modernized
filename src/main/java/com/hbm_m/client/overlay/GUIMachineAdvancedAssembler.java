@@ -24,6 +24,8 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
+import com.hbm_m.util.EnergyFormatter;
+
 
 // TODO: Нужен утилитарный класс для отрисовки подсказок и жидкостей.
 // Этот функционал сейчас встроен в этот класс
@@ -54,10 +56,12 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
         // Отрисовка энергии
-        int energyStored = this.menu.getEnergy();
-        int maxEnergy = this.menu.getMaxEnergy();
+        long energyStored = this.menu.getEnergyLong();
+        long maxEnergy = this.menu.getMaxEnergyLong();
         if (maxEnergy > 0) {
-            int energyBarHeight = (int) ((long)energyStored * 61 / maxEnergy);
+            int energyBarHeight = (int) (energyStored * 61L / maxEnergy);
+            if (energyBarHeight > 61) energyBarHeight = 61; // Защита
+
             guiGraphics.blit(TEXTURE, this.leftPos + 152, this.topPos + 79 - energyBarHeight,
                     176, 61 - energyBarHeight, 16, energyBarHeight);
         }
@@ -281,20 +285,30 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
         // ОБНОВЛЕНО: Подсказка для шкалы энергии с дельтой
         if (isMouseOver(pMouseX, pMouseY, 152, 18, 16, 61)) {
             List<Component> tooltip = new ArrayList<>();
-            
+
+            // Получаем long значения
+            long energy = this.menu.getEnergyLong();
+            long maxEnergy = this.menu.getMaxEnergyLong();
+            long delta = this.menu.getEnergyDeltaLong();
+
+            // Форматируем их
+            String energyStr = EnergyFormatter.format(energy);
+            String maxEnergyStr = EnergyFormatter.format(maxEnergy);
+
             // Первая строка: текущая / максимальная энергия
-            tooltip.add(Component.literal(this.menu.getBlockEntity().getEnergyStored() + " / "
-                    + this.menu.getBlockEntity().getMaxEnergyStored() + " FE"));
-            
-            // НОВОЕ: Вторая строка - изменение энергии в тик
-            int delta = this.menu.getEnergyDelta();
-            String deltaText = (delta >= 0 ? "+" : "") + delta + " FE/t";
-            ChatFormatting deltaColor = delta > 0 ? ChatFormatting.GREEN 
-                                    : (delta < 0 ? ChatFormatting.RED : ChatFormatting.YELLOW);
-            tooltip.add(Component.literal(deltaText).withStyle(deltaColor));
-            
-            guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), 
-                                    pMouseX, pMouseY);
+            tooltip.add(Component.literal(energyStr + " / " + maxEnergyStr + " FE")
+                    .withStyle(ChatFormatting.GREEN));
+
+            // Вторая строка: изменение энергии в тик
+            String deltaStr = EnergyFormatter.formatRate(delta); // (уже добавляет /t)
+            ChatFormatting deltaColor = delta > 0 ? ChatFormatting.YELLOW
+                    : (delta < 0 ? ChatFormatting.RED : ChatFormatting.GRAY);
+
+            tooltip.add(Component.literal(delta > 0 ? ("+" + deltaStr) : deltaStr)
+                    .withStyle(deltaColor));
+
+            guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(),
+                    pMouseX, pMouseY);
         }
         
         // Подсказка для шкалы энергии

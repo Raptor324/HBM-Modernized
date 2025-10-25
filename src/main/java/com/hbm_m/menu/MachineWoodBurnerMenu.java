@@ -6,6 +6,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.MachineWoodBurnerBlockEntity;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.energy.LongDataPacker;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.tags.BlockTags;
@@ -81,12 +82,18 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
         return net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null) > 0;
     }
 
-    public int getEnergy() {
-        return this.data.get(0);
+    public long getEnergyLong() {
+        int high = this.data.get(0);
+        int low = this.data.get(1);
+        // --- ИСПОЛЬЗУЕМ РАСПАКОВЩИК ---
+        return LongDataPacker.unpack(high, low);
     }
 
-    public int getMaxEnergy() {
-        return this.data.get(1);
+    public long getMaxEnergyLong() {
+        int high = this.data.get(2);
+        int low = this.data.get(3);
+        // --- ИСПОЛЬЗUЕМ РАСПАКОВЩИК ---
+        return LongDataPacker.unpack(high, low);
     }
 
     public int getBurnTime() {

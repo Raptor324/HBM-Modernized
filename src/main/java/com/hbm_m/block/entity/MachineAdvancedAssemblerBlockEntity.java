@@ -1,6 +1,7 @@
 package com.hbm_m.block.entity;
 
 import com.hbm_m.client.ClientSoundManager;
+import com.hbm_m.energy.*;
 import com.hbm_m.item.ItemBlueprintFolder;
 import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
@@ -44,10 +45,6 @@ import net.minecraftforge.items.ItemStackHandler;
 
 // НОВЫЕ ИМПОРТЫ для long-энергии
 import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.energy.ILongEnergyStorage;
-import com.hbm_m.energy.LongToForgeWrapper;
-import com.hbm_m.energy.BlockEntityEnergyStorage;
-import com.hbm_m.energy.ForgeToLongWrapper;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -181,15 +178,34 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         this.data = new ContainerData() {
             @Override
             public int get(int pIndex) {
+
+                // --- ИЗМЕНЕНИЕ: ИСПОЛЬЗУЕМ УПАКОВЩИК ---
+
+                // Получаем значения 1 раз
+                long currentEnergy = energyStorage.getEnergyStored();
+                long maxEnergy = energyStorage.getMaxEnergyStored();
+                long delta = energyDelta; // energyDelta у тебя уже long
+
                 return switch (pIndex) {
+                    // Прогресс (остаётся int)
                     case 0 -> assemblerModule != null ? assemblerModule.getProgressInt() : 0;
                     case 1 -> assemblerModule != null ? assemblerModule.getMaxProgress() : 0;
-                    // ИЗМЕНЕНИЕ: Безопасное преобразование long -> int для GUI
-                    case 2 -> (int) Math.min(Integer.MAX_VALUE, energyStorage.getEnergyStored());
-                    case 3 -> (int) Math.min(Integer.MAX_VALUE, energyStorage.getMaxEnergyStored());
-                    case 4 -> (int) Math.min(Integer.MAX_VALUE, Math.max(Integer.MIN_VALUE, energyDelta));
+
+                    // Текущая энергия (long -> 2x int)
+                    case 2 -> LongDataPacker.packHigh(currentEnergy);
+                    case 3 -> LongDataPacker.packLow(currentEnergy);
+
+                    // Макс. энергия (long -> 2x int)
+                    case 4 -> LongDataPacker.packHigh(maxEnergy);
+                    case 5 -> LongDataPacker.packLow(maxEnergy);
+
+                    // Дельта энергии (long -> 2x int)
+                    case 6 -> LongDataPacker.packHigh(delta);
+                    case 7 -> LongDataPacker.packLow(delta);
+
                     default -> 0;
                 };
+                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
             }
 
             @Override
@@ -199,7 +215,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
 
             @Override
             public int getCount() {
-                return 5;
+                return 8;
             }
         };
     }

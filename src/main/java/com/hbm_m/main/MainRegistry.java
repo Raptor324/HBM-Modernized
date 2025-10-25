@@ -63,6 +63,9 @@ public class MainRegistry {
     // Добавляем логгер для отладки
     public static final Logger LOGGER = LogManager.getLogger(RefStrings.MODID);
     public static final String MOD_ID = "hbm_m";
+    private void registerCapabilities(IEventBus modEventBus) {
+        modEventBus.addListener(ModCapabilities::register);
+    }
 
     static {
         // Регистрируем конфиг до любых обращений к нему!
@@ -85,7 +88,7 @@ public class MainRegistry {
         ModWorldGen.BIOME_MODIFIERS.register(modEventBus); // Регистрация модификаторов биомов (руды, структуры и тд)
         ModEffects.register(modEventBus); // Регистрация эффектов
         ModRecipes.register(modEventBus);
-        ModCapabilities.register(modEventBus);// Регистрация рецептов
+        registerCapabilities(modEventBus);
         // Регистрация обработчиков событий мода
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);

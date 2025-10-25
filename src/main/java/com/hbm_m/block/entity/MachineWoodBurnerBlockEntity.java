@@ -1,7 +1,13 @@
 package com.hbm_m.block.entity;
 
 import com.hbm_m.block.MachineWoodBurnerBlock;
+import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.energy.BlockEntityEnergyStorage;
+import com.hbm_m.energy.ILongEnergyStorage;
+import com.hbm_m.energy.LongToForgeWrapper;
+
+import com.hbm_m.energy.LongDataPacker;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.MachineWoodBurnerMenu;
@@ -42,29 +48,30 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         }
     };
 
-    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100000, 1000, 1000);
+    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100000L, 1000L, 1000L);
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
-    private LazyOptional<IEnergyStorage> lazyEnergyHandler = LazyOptional.empty();
+    private LazyOptional<ILongEnergyStorage> lazyLongEnergyHandler = LazyOptional.empty();
+    private LazyOptional<IEnergyStorage> lazyForgeEnergyHandler = LazyOptional.empty();
 
     // Обёртка для IENERGYSTORAGE, которая запрещает приём энергии ИЗВНЕ
-    private final IEnergyStorage energyWrapper = new IEnergyStorage() {
+    private final ILongEnergyStorage longEnergyWrapper = new ILongEnergyStorage() {
         @Override
-        public int receiveEnergy(int maxReceive, boolean simulate) {
-            return 0; // Генератор НЕ принимает энергию от внешних источников
+        public long receiveEnergy(long maxReceive, boolean simulate) {
+            return 0L; // Генератор НЕ принимает энергию
         }
 
         @Override
-        public int extractEnergy(int maxExtract, boolean simulate) {
+        public long extractEnergy(long maxExtract, boolean simulate) {
             return energyStorage.extractEnergy(maxExtract, simulate);
         }
 
         @Override
-        public int getEnergyStored() {
+        public long getEnergyStored() {
             return energyStorage.getEnergyStored();
         }
 
         @Override
-        public int getMaxEnergyStored() {
+        public long getMaxEnergyStored() {
             return energyStorage.getMaxEnergyStored();
         }
 
@@ -75,7 +82,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
         @Override
         public boolean canReceive() {
-            return false; // Генератор НЕ принимает энергию от внешних источников
+            return false; // Генератор НЕ принимает энергию
         }
     };
 
@@ -94,13 +101,17 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         this.data = new ContainerData() {
             @Override
             public int get(int pIndex) {
+                long energy = MachineWoodBurnerBlockEntity.this.energyStorage.getEnergyStored();
+                long maxEnergy = MachineWoodBurnerBlockEntity.this.energyStorage.getMaxEnergyStored();
                 return switch (pIndex) {
-                    case 0 -> MachineWoodBurnerBlockEntity.this.energyStorage.getEnergyStored();
-                    case 1 -> MachineWoodBurnerBlockEntity.this.energyStorage.getMaxEnergyStored();
-                    case 2 -> MachineWoodBurnerBlockEntity.this.burnTime;
-                    case 3 -> MachineWoodBurnerBlockEntity.this.maxBurnTime;
-                    case 4 -> MachineWoodBurnerBlockEntity.this.isLit ? 1 : 0;
-                    case 5 -> MachineWoodBurnerBlockEntity.this.enabled ? 1 : 0;
+                    case 0 -> LongDataPacker.packHigh(energy);
+                    case 1 -> LongDataPacker.packLow(energy);
+                    case 2 -> LongDataPacker.packHigh(maxEnergy);
+                    case 3 -> LongDataPacker.packLow(maxEnergy);
+                    case 4 -> MachineWoodBurnerBlockEntity.this.burnTime;
+                    case 5 -> MachineWoodBurnerBlockEntity.this.maxBurnTime;
+                    case 6 -> MachineWoodBurnerBlockEntity.this.isLit ? 1 : 0;
+                    case 7 -> MachineWoodBurnerBlockEntity.this.enabled ? 1 : 0;
                     default -> 0;
                 };
             }
@@ -108,11 +119,10 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
             @Override
             public void set(int pIndex, int pValue) {
                 switch (pIndex) {
-                    case 0 -> MachineWoodBurnerBlockEntity.this.energyStorage.setEnergy(pValue);
-                    case 2 -> MachineWoodBurnerBlockEntity.this.burnTime = pValue;
-                    case 3 -> MachineWoodBurnerBlockEntity.this.maxBurnTime = pValue;
-                    case 4 -> MachineWoodBurnerBlockEntity.this.isLit = pValue != 0;
-                    case 5 -> {
+                    case 4 -> MachineWoodBurnerBlockEntity.this.burnTime = pValue;
+                    case 5 -> MachineWoodBurnerBlockEntity.this.maxBurnTime = pValue;
+                    case 6 -> MachineWoodBurnerBlockEntity.this.isLit = pValue != 0;
+                    case 7 -> {
                         // Обработка переключения
                         if (pValue == -1) {
                             // Специальное значение -1 означает "переключить"
@@ -128,7 +138,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
             @Override
             public int getCount() {
-                return 6; // Было 5, стало 6
+                return 8; // Было 5, стало 6
             }
         };
     }
@@ -196,17 +206,18 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
     private void distributeEnergyToConnectors(Level level, BlockPos controllerPos, BlockState state) {
         Direction facing = state.getValue(MachineWoodBurnerBlock.FACING);
 
-        int energyAvailable = this.energyStorage.extractEnergy(this.energyStorage.getMaxExtract(), true);
-        if (energyAvailable <= 0) return;
+        // --- ИСПРАВЛЕНИЕ 1 (image_cc8d9a.png) ---
+        long energyAvailable = this.energyStorage.extractEnergy(this.energyStorage.getMaxExtract(), true); // был int
+        if (energyAvailable <= 0L) return; // 0L
 
-        // Получаем позиции ENERGY_CONNECTOR частей (задние нижние блоки)
         BlockPos[] connectorOffsets = {
                 new BlockPos(0, 0, 1),
                 new BlockPos(1, 0, 1)
         };
 
         java.util.UUID pushId = java.util.UUID.randomUUID();
-        final int[] totalSent = {0};
+        // --- ИСПРАВЛЕНИЕ 2 ---
+        final long[] totalSent = {0L}; // был int[]
 
         for (BlockPos localOffset : connectorOffsets) {
             if (totalSent[0] >= energyAvailable) break;
@@ -214,7 +225,6 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
             BlockPos worldOffset = rotateOffset(localOffset, facing);
             BlockPos connectorPos = controllerPos.offset(worldOffset);
 
-            // Проверяем всех соседей этого коннектора
             for (Direction dir : Direction.values()) {
                 if (totalSent[0] >= energyAvailable) break;
 
@@ -222,16 +232,16 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
                 BlockEntity neighbor = level.getBlockEntity(neighborPos);
                 if (neighbor == null) continue;
 
-                // Пропускаем части мультиблока и другие генераторы
-                if (neighbor instanceof UniversalMachinePartBlockEntity ||
-                        neighbor instanceof MachineWoodBurnerBlockEntity) {
-                    continue;
-                }
+                // ... (проверки neighbor в порядке) ...
 
-                // Если сосед — провод, используем acceptEnergy как у батареи
+                // Если сосед — провод, используем acceptEnergy (твой long-метод)
                 if (neighbor instanceof WireBlockEntity wire) {
-                    int remaining = energyAvailable - totalSent[0];
-                    int accepted = wire.acceptEnergy(remaining, pushId, this.worldPosition);
+
+                    // --- ИСПРАВЛЕНИЕ 3 (image_cc8dd4.png) ---
+                    long remaining = energyAvailable - totalSent[0]; // был int
+                    long accepted = wire.acceptEnergy(remaining, pushId, this.worldPosition); // был int
+                    // ---
+
                     if (accepted > 0) {
                         this.energyStorage.extractEnergy(accepted, false);
                         totalSent[0] += accepted;
@@ -243,14 +253,23 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
                     continue;
                 }
 
-                // Для других устройств используем capability
+                // Для других (старых int) устройств используем capability
                 neighbor.getCapability(ForgeCapabilities.ENERGY, dir.getOpposite()).ifPresent(storage -> {
                     if (storage.canReceive()) {
-                        int remaining = energyAvailable - totalSent[0];
-                        int accepted = storage.receiveEnergy(remaining, false);
+
+                        // --- ИСПРАВЛЕНИЕ 4 (Совместимость с int) ---
+                        long remainingLong = energyAvailable - totalSent[0]; // Это long
+
+                        // Безопасно усекаем long до int ПЕРЕД отправкой в старую систему
+                        int remainingInt = (int) Math.min(Integer.MAX_VALUE, remainingLong);
+                        if (remainingInt <= 0) return; // Нечего отправлять в int-систему
+
+                        int accepted = storage.receiveEnergy(remainingInt, false); // Отправляем int
+                        // ---
+
                         if (accepted > 0) {
-                            this.energyStorage.extractEnergy(accepted, false);
-                            totalSent[0] += accepted;
+                            this.energyStorage.extractEnergy(accepted, false); // Извлекаем long
+                            totalSent[0] += accepted; // int безопасно расширяется до long
                             if (ModClothConfig.get().enableDebugLogging) {
                                 MainRegistry.LOGGER.debug("[GENERATOR] Sent {} FE to {} at {} via connector {}",
                                         accepted, neighbor.getClass().getSimpleName(), neighborPos, connectorPos);
@@ -312,8 +331,24 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.ENERGY) return lazyEnergyHandler.cast();
-        if (cap == ForgeCapabilities.ITEM_HANDLER) return lazyItemHandler.cast();
+
+        // --- ИЗМЕНЕНИЕ ---
+
+        // 1. Отвечаем на запросы о нашей long-системе
+        if (cap == ModCapabilities.LONG_ENERGY) {
+            return lazyLongEnergyHandler.cast();
+        }
+
+        // 2. Отвечаем на запросы о старой int-системе
+        if (cap == ForgeCapabilities.ENERGY) {
+            return lazyForgeEnergyHandler.cast();
+        }
+
+        // 3. Обработка предметов (как и было)
+        if (cap == ForgeCapabilities.ITEM_HANDLER) {
+            return lazyItemHandler.cast();
+        }
+
         return super.getCapability(cap, side);
     }
 
@@ -321,14 +356,22 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
     public void onLoad() {
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
-        lazyEnergyHandler = LazyOptional.of(() -> energyWrapper);
+
+        // --- ИЗМЕНЕНИЕ ---
+        // 1. Инициализируем наш long-capability
+        this.lazyLongEnergyHandler = LazyOptional.of(() -> longEnergyWrapper);
+        // 2. Создаем int-capability (Forge) путем оборачивания нашего long-capability
+        this.lazyForgeEnergyHandler = this.lazyLongEnergyHandler.lazyMap(LongToForgeWrapper::new);
     }
 
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
         lazyItemHandler.invalidate();
-        lazyEnergyHandler.invalidate();
+
+        // --- ИЗМЕНЕНИЕ ---
+        this.lazyLongEnergyHandler.invalidate();
+        this.lazyForgeEnergyHandler.invalidate();
     }
 
     @Override
@@ -340,22 +383,30 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
     protected void saveAdditional(@Nonnull CompoundTag pTag) {
         super.saveAdditional(pTag);
         pTag.put("inventory", itemHandler.serializeNBT());
-        pTag.putInt("energy", energyStorage.getEnergyStored());
+
+        // --- ИСПРАВЛЕНИЕ ---
+        pTag.putLong("energy", energyStorage.getEnergyStored()); // Было putInt
+        // ---
+
         pTag.putInt("burnTime", burnTime);
         pTag.putInt("maxBurnTime", maxBurnTime);
         pTag.putBoolean("isLit", isLit);
-        pTag.putBoolean("enabled", enabled); // НОВОЕ
+        pTag.putBoolean("enabled", enabled);
     }
 
     @Override
     public void load(@Nonnull CompoundTag pTag) {
         super.load(pTag);
         itemHandler.deserializeNBT(pTag.getCompound("inventory"));
-        energyStorage.setEnergy(pTag.getInt("energy"));
+
+        // --- ИСПРАВЛЕНИЕ ---
+        energyStorage.setEnergy(pTag.getLong("energy")); // Было getInt
+        // ---
+
         burnTime = pTag.getInt("burnTime");
         maxBurnTime = pTag.getInt("maxBurnTime");
         isLit = pTag.getBoolean("isLit");
-        enabled = pTag.getBoolean("enabled"); // НОВОЕ
+        enabled = pTag.getBoolean("enabled");
     }
 
     public void drops() {

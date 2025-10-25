@@ -9,6 +9,8 @@ import com.hbm_m.block.entity.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.item.ItemBlueprintFolder;
 import com.hbm_m.item.ItemTemplateFolder;
 
+import com.hbm_m.energy.LongDataPacker;
+
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -41,6 +43,7 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
         this.level = pPlayerInventory.player.level();
         this.data = pData;
 
+        addDataSlots(pData);
         addPlayerInventory(pPlayerInventory);
         addPlayerHotbar(pPlayerInventory);
 
@@ -97,7 +100,7 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
 
     // Конструктор, вызываемый с клиента
     public MachineAdvancedAssemblerMenu(int pContainerId, Inventory pPlayerInventory, FriendlyByteBuf pExtraData) {
-        this(pContainerId, pPlayerInventory, getBlockEntity(pPlayerInventory, pExtraData), new SimpleContainerData(5));
+        this(pContainerId, pPlayerInventory, getBlockEntity(pPlayerInventory, pExtraData), new SimpleContainerData(8));
     }
 
     private static MachineAdvancedAssemblerBlockEntity getBlockEntity(final Inventory playerInventory, final FriendlyByteBuf data) {
@@ -117,8 +120,10 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
         return data.get(0) > 0;
     }
 
-    public int getEnergyDelta() {
-        return this.data.get(4);
+    public long getEnergyDeltaLong() {
+        int high = this.data.get(6);
+        int low = this.data.get(7);
+        return LongDataPacker.unpack(high, low);
     }
 
     public MachineAdvancedAssemblerBlockEntity getBlockEntity() {
@@ -140,12 +145,16 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
         return this.data.get(1);
     }
 
-    public int getEnergy() {
-        return this.data.get(2);
+    public long getEnergyLong() {
+        int high = this.data.get(2);
+        int low = this.data.get(3);
+        return LongDataPacker.unpack(high, low);
     }
 
-    public int getMaxEnergy() {
-        return this.data.get(3);
+    public long getMaxEnergyLong() {
+        int high = this.data.get(4);
+        int low = this.data.get(5);
+        return LongDataPacker.unpack(high, low);
     }
 
     @Override
