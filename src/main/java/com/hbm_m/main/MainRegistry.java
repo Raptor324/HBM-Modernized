@@ -13,7 +13,7 @@ import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.radiation.ChunkRadiationManager;
-import com.hbm_m.radiation.PlayerRadiationHandler;
+import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.network.ModPacketHandler;
@@ -81,7 +81,7 @@ public class MainRegistry {
         // Регистрация обработчиков событий Forge (игровых)
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
-        MinecraftForge.EVENT_BUS.register(new PlayerRadiationHandler());
+        MinecraftForge.EVENT_BUS.register(new PlayerHandler());
 
 
         // Регистрация остальных систем

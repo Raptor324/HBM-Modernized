@@ -8,7 +8,7 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.radiation.PlayerRadiationHandler;
+import com.hbm_m.radiation.PlayerHandler;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen;
@@ -46,7 +46,7 @@ public class RadawayEffect extends MobEffect {
             // Вызываем ваш метод для уменьшения радиации.
             // (amplifier + 1) чтобы уровень I (amplifier 0) уже имел силу.
             float amountToRemove = (amplifier + 1) * RADAWAY_POWER;
-            PlayerRadiationHandler.decrementPlayerRads(player, amountToRemove);
+            PlayerHandler.decrementPlayerRads(player, amountToRemove);
         }
     }
 

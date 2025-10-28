@@ -1,4 +1,4 @@
-package com.hbm_m.client.model.render;
+package com.hbm_m.client.render;
 
 import com.hbm_m.block.entity.DoorBlockEntity;
 import com.hbm_m.client.model.DoorBakedModel;

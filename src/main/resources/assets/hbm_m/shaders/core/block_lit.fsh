@@ -15,8 +15,8 @@ out vec4 fragColor;
 void main() {
     vec4 baseColor = texture(Sampler0, texCoord);
     
-    // ✅ ПРОСТОЕ РЕШЕНИЕ: умножаем цвет на яркость
-    vec3 lit = baseColor.rgb * brightness;
+    vec3 lit = baseColor.rgb * brightness;  // Сначала применяем освещение
+    lit *= 0.6; 
     
     if (baseColor.a < 0.1) {
         discard;

@@ -14,7 +14,7 @@ import net.minecraftforge.api.distmarker.Dist;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.client.model.render.LegacyAnimator;
+import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.sound.ModSounds;
 
 import java.util.ArrayList;

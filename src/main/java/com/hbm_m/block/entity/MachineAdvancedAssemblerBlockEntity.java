@@ -145,7 +145,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             return new AABB(worldPosition.offset(-2, -1, -2), worldPosition.offset(3, 4, 3));
         }
         
-        // ✅ Получаем структуру через правильное имя метода
+        //  Получаем структуру через правильное имя метода
         var structureHelper = block.getStructureHelper();
         var structureMap = structureHelper.getStructureMap();
         
@@ -167,7 +167,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             maxZ = Math.max(maxZ, offset.getZ());
         }
         
-        // ✅ Добавляем запас для анимированных частей (кольцо, руки, головы)
+        //  Добавляем запас для анимированных частей (кольцо, руки, головы)
         // Кольцо вращается и выходит за пределы на ~1.5 блока
         double margin = 1.5;
         
@@ -616,16 +616,16 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public void onLoad() {
         super.onLoad();
         
-        // ✅ ИСПРАВЛЕНИЕ 1: Инициализация arms только на клиенте с проверкой null
+        //  ИСПРАВЛЕНИЕ 1: Инициализация arms только на клиенте с проверкой null
         if (level != null && level.isClientSide && arms[0] == null) {
-            // ✅ Используем DistExecutor для безопасности
+            //  Используем DistExecutor для безопасности
             net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(
                 net.minecraftforge.api.distmarker.Dist.CLIENT, 
                 () -> () -> initClientArms()
             );
         }
 
-        // ✅ ИСПРАВЛЕНИЕ 2: Инициализация assemblerModule только на сервере
+        //  ИСПРАВЛЕНИЕ 2: Инициализация assemblerModule только на сервере
         if (level != null && !level.isClientSide && assemblerModule == null) {
             assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, inventory, level);
         }

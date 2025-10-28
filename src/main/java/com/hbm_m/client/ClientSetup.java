@@ -3,7 +3,11 @@ package com.hbm_m.client;
 // Основной класс клиентской настройки мода. Здесь регистрируются все клиентские обработчики событий,
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.overlay.*;
-import com.hbm_m.client.model.loader.*;
+import com.hbm_m.client.loader.*;
+import com.hbm_m.client.model.*;
+import com.hbm_m.client.render.*;
+import com.hbm_m.client.render.shader.RenderPathManager;
+import com.hbm_m.client.render.shader.ShaderReloadListener;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.ModConfigKeybindHandler;
 import com.hbm_m.client.tooltip.ItemTooltipComponent;
@@ -25,6 +29,7 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.ModBlockEntities;
 
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
@@ -63,12 +68,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.client.model.render.DoorRenderer;
-import com.hbm_m.client.model.render.MachineAdvancedAssemblerRenderer;
-import com.hbm_m.client.model.render.MachineAdvancedAssemblerVboRenderer;
-import com.hbm_m.client.model.render.ModShaders;
-import com.hbm_m.client.model.render.OcclusionCullingHelper;
+
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientSetup {
@@ -122,6 +122,8 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
 
             OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
+            RenderPathManager.updateRenderPath();
+            MainRegistry.LOGGER.info("Initial render path check completed");
         });
     }
 
@@ -165,16 +167,17 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onResourceReload(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener(new ShaderReloadListener());
+
         event.registerReloadListener((preparationBarrier, resourceManager,
                                     preparationsProfiler, reloadProfiler,
                                     backgroundExecutor, gameExecutor) -> {
             return preparationBarrier.wait(null).thenRunAsync(() -> {
-                // ✅ Очищаем глобальный кэш VBO
+                //  Очищаем глобальный кэш VBO
                 MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
             }, gameExecutor);
         });
     }
-
 
     @SubscribeEvent
     public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {

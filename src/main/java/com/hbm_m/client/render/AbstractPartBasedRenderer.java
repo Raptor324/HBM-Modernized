@@ -1,4 +1,4 @@
-package com.hbm_m.client.model.render;
+package com.hbm_m.client.render;
 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -29,7 +29,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     private static final net.minecraft.client.renderer.RenderType RT_SOLID = 
         net.minecraft.client.renderer.RenderType.solid();
     
-    // ✅ Убрать статический getter
+    //  Убрать статический getter
     public Matrix4f getCurrentModelViewMatrix() {
         return new Matrix4f(currentModelViewMatrix);
     }

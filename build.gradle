@@ -138,6 +138,13 @@ repositories {
             includeGroup "maven.modrinth"
         }
     }
+    maven {
+        name = "CurseForge"
+        url = "https://cursemaven.com"
+        content {
+            includeGroup "curse.maven"
+        }
+    }
     
     // maven {
     //     name = 'SpongePowered'
@@ -157,12 +164,17 @@ dependencies {
     // If the group id is "net.minecraft" and the artifact id is one of ["client", "server", "joined"],
     // then special handling is done to allow a setup of a vanilla dependency without the use of an external repository.
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
+
     runtimeOnly fg.deobf("maven.modrinth:spark:1.10.53-forge")
-    // runtimeOnly fg.deobf("me.lucko:spark:1.10.53-forge")
+    runtimeOnly fg.deobf("curse.maven:oculus-581495:6020952")
+    runtimeOnly fg.deobf("curse.maven:embeddium-908741:5681725")
     
     api(fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.136"))
 
-    // implementation fg.deobf("net.minecraftforge:forge-obj-loader-ng:1.20.1-8.0.0")
+    // Oculus/Iris API (optional, только для compile-time)
+    // compileOnly("curse.maven:oculus-581495:6020952") {
+    //     transitive = false
+    // }
     
     // implementation 'org.spongepowered:mixin:0.8.5'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'

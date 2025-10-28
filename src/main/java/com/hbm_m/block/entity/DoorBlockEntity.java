@@ -473,7 +473,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             
             @Override
             public void tick() {
-                Level level = net.minecraft.client.Minecraft.getInstance().level; // ✅ Полное имя
+                Level level = net.minecraft.client.Minecraft.getInstance().level; //  Полное имя
                 if (level == null) {
                     this.stop();
                     return;

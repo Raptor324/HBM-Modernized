@@ -1,4 +1,4 @@
-package com.hbm_m.client.model.loader;
+package com.hbm_m.client.loader;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;

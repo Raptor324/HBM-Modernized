@@ -1,4 +1,4 @@
-package com.hbm_m.client.model.render;
+package com.hbm_m.client.render;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
@@ -101,7 +101,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
             GL20.glVertexAttribPointer(7, 1, GL11.GL_FLOAT, false, stride, 16 * 4);
             GL33.glVertexAttribDivisor(7, 1);
 
-            // ✅ ОТВЯЗЫВАЕМ VAO ВНУТРИ TRY
+            //  ОТВЯЗЫВАЕМ VAO ВНУТРИ TRY
             GL30.glBindVertexArray(0);
 
             instanceBuffer = MemoryUtil.memAllocFloat(MAX_INSTANCES * 17);
@@ -144,7 +144,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
             initialized = false;
 
         } finally {
-            // ✅ ТОЛЬКО восстанавливаем VBO и VAO, не трогаем EBO
+            //  ТОЛЬКО восстанавливаем VBO и VAO, не трогаем EBO
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             GL30.glBindVertexArray(previousVao);
         }
@@ -167,9 +167,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
         double dy = blockPos.getY() + 0.5 - cameraPos.y;
         double dz = blockPos.getZ() + 0.5 - cameraPos.z;
         double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
-        
-        // ✅ УБРАЛИ проверку occlusion - она теперь в renderParts()
-        // if (!OcclusionCullingHelper.shouldRender(...)) return;
         
         int thresholdChunks = ModClothConfig.get().modelUpdateDistance;
         double thresholdBlocks = thresholdChunks * 16.0;
@@ -278,7 +275,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
             
             GL13.glActiveTexture(GL13.GL_TEXTURE0);
             
-            // ✅ Применяем нужный фильтр для этого батча
+            //  Применяем нужный фильтр для этого батча
             if (useLinearFilter) {
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
                 GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);

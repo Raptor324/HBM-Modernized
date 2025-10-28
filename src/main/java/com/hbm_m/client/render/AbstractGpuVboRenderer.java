@@ -1,4 +1,4 @@
-package com.hbm_m.client.model.render;
+package com.hbm_m.client.render;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
@@ -42,7 +42,7 @@ public abstract class AbstractGpuVboRenderer {
             var minecraft = Minecraft.getInstance();
             var textureManager = minecraft.getTextureManager();
             
-            // ✅ Только текстура атласа, без lightmap
+            //  Только текстура атласа, без lightmap
             GL13.glActiveTexture(GL13.GL_TEXTURE0);
             var blockAtlas = textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS);
             int textureId = blockAtlas.getId();
@@ -59,7 +59,7 @@ public abstract class AbstractGpuVboRenderer {
     protected boolean shouldRenderWithCulling(BlockPos blockPos, @Nullable BlockEntity blockEntity) {
         var minecraft = Minecraft.getInstance();
         
-        // ✅ ПРАВИЛЬНАЯ СИГНАТУРА: всегда передаем (BlockPos, Level, AABB)
+        //  ПРАВИЛЬНАЯ СИГНАТУРА: всегда передаем (BlockPos, Level, AABB)
         AABB renderBounds;
         if (blockEntity != null) {
             renderBounds = blockEntity.getRenderBoundingBox();
@@ -111,10 +111,10 @@ public abstract class AbstractGpuVboRenderer {
                 eboId = GL15.glGenBuffers();
                 GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, eboId);
                 GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, data.indices, GL15.GL_STATIC_DRAW);
-                // ✅ НЕ отвязываем EBO здесь - он должен остаться частью VAO!
+                //  НЕ отвязываем EBO здесь - он должен остаться частью VAO!
             }
     
-            // ✅ КРИТИЧНО: Отвязываем VAO ПЕРЕД восстановлением EBO
+            //  КРИТИЧНО: Отвязываем VAO ПЕРЕД восстановлением EBO
             GL30.glBindVertexArray(0);
     
             // Освобождаем нативную память
@@ -153,11 +153,11 @@ public abstract class AbstractGpuVboRenderer {
             throw e;
             
         } finally {
-            // ✅ КРИТИЧНО: Сначала восстанавливаем VBO, потом VAO, потом EBO
+            //  КРИТИЧНО: Сначала восстанавливаем VBO, потом VAO, потом EBO
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             GL30.glBindVertexArray(previousVao);
             
-            // ✅ EBO восстанавливаем ПОСЛЕ отвязки VAO
+            //  EBO восстанавливаем ПОСЛЕ отвязки VAO
             // Если previousVao != 0, то его EBO восстановится автоматически
             // Если previousVao == 0, восстанавливаем явно
             if (previousVao == 0) {
@@ -177,7 +177,7 @@ public abstract class AbstractGpuVboRenderer {
         double dz = blockPos.getZ() + 0.5 - cameraPos.z;
         double distance = Math.sqrt(dx * dx + dy * dy + dz * dz);
         
-        // ✅ Конвертируем чанки в блоки (1 чанк = 16 блоков)
+        //  Конвертируем чанки в блоки (1 чанк = 16 блоков)
         int thresholdChunks = ModClothConfig.get().modelUpdateDistance;
         double thresholdBlocks = thresholdChunks * 16.0;
         
@@ -200,7 +200,7 @@ public abstract class AbstractGpuVboRenderer {
 
     public void render(PoseStack poseStack, int packedLight, BlockPos blockPos, 
                     @Nullable BlockEntity blockEntity) {
-        // ✅ CULLING CHECK - ранний выход
+        //  CULLING CHECK - ранний выход
         if (!shouldRenderWithCulling(blockPos, blockEntity)) {
             return;
         }
@@ -230,7 +230,13 @@ public abstract class AbstractGpuVboRenderer {
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         int previousCullFace = GL11.glGetInteger(GL11.GL_CULL_FACE);
-    
+        ShaderInstance previousShader = RenderSystem.getShader();
+        
+        //  КРИТИЧНО: Сохраняем ТЕКУЩИЕ texture parameters ПЕРЕД их изменением!
+        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        int previousMinFilter = GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER);
+        int previousMagFilter = GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER);
+
         try {
             RenderSystem.setShader(() -> shader);
             if (shader.MODEL_VIEW_MATRIX != null)
@@ -262,7 +268,7 @@ public abstract class AbstractGpuVboRenderer {
             shader.apply();
             TextureBinder.bindForAssemblerIfNeeded(shader);
             
-            // ✅ Применяем фильтр на основе расстояния
+            //  Применяем фильтр на основе расстояния
             applyTextureFilterBasedOnDistance(blockPos);
             
             var sampler0 = shader.getUniform("Sampler0");
@@ -279,12 +285,21 @@ public abstract class AbstractGpuVboRenderer {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during VBO render", e);
         } finally {
+
+            GL30.glBindVertexArray(0);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             GL30.glBindVertexArray(previousVao);
-            GL11.glEnable(GL11.GL_CULL_FACE);
+            
+            // Восстанавливаем culling
             if (previousCullFace == GL11.GL_TRUE) {
                 GL11.glEnable(GL11.GL_CULL_FACE);
             }
+            
+            RenderSystem.setShader(() -> null);
+            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+            GL13.glActiveTexture(GL13.GL_TEXTURE0);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, previousMinFilter);
+            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, previousMagFilter);
         }
     }
     
@@ -300,13 +315,13 @@ public abstract class AbstractGpuVboRenderer {
         float skyDarken = level.getSkyDarken(1.0f);
         float skyBrightness = 0.05f + (skyDarken * 0.95f);
         
-        // ✅ Применяем к sky light
+        //  Применяем к sky light
         float effectiveSkyLight = skyLight * skyBrightness;
         
-        // ✅ Берём максимум из block и modified sky
+        //  Берём максимум из block и modified sky
         float maxLight = Math.max(blockLight, effectiveSkyLight);
         
-        // ✅ Нормализуем [0.05, 1.0]
+        //  Нормализуем [0.05, 1.0]
         float brightness = 0.05f + (maxLight / 15.0f) * 0.95f;
         
         return brightness;

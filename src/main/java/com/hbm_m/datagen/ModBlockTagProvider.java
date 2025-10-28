@@ -86,16 +86,16 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.LIGNITE_ORE.get())
                 .add(ModBlocks.ALUMINUM_ORE.get());
 
-        // ============ ✅ ТЕГ ДЛЯ OCCLUSION CULLING ============
+        // ============  ТЕГ ДЛЯ OCCLUSION CULLING ============
         // Блоки, через которые можно видеть (не блокируют рендеринг машин)
         this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "non_occluding")))
-            // ✅ Части машин
+            //  Части машин
             .add(ModBlocks.UNIVERSAL_MACHINE_PART.get())
-            // ✅ Стекло и прозрачные блоки
+            //  Стекло и прозрачные блоки
             .addTag(Tags.Blocks.GLASS)
             .addTag(Tags.Blocks.GLASS_PANES)
 
-            // ✅ Частичные блоки
+            //  Частичные блоки
             .addTag(BlockTags.FENCES)
             .addTag(BlockTags.FENCE_GATES)
             .addTag(BlockTags.WALLS)
@@ -114,7 +114,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
             .addTag(BlockTags.BANNERS)
             .addTag(BlockTags.CANDLES)
             .addTag(BlockTags.CLIMBABLE)
-            // ✅ Декоративные
+            //  Декоративные
             .add(Blocks.IRON_BARS)
             .add(Blocks.CHAIN)
             .add(Blocks.LANTERN)

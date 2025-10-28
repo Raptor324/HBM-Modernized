@@ -1,4 +1,4 @@
-package com.hbm_m.client.model.render;
+package com.hbm_m.client.render;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
@@ -26,7 +26,7 @@ public final class OcclusionCullingHelper {
     private static final ConcurrentHashMap<BlockPos, CachedResult> occlusionCache = new ConcurrentHashMap<>();
     private static long currentFrame = 0;
     
-    // ✅ Только нужные константы
+    //  Только нужные константы
     private static final double NEAR_DISTANCE = 24.0;
     private static final double MID_DISTANCE = 48.0;
     
@@ -51,7 +51,7 @@ public final class OcclusionCullingHelper {
         }
         
         boolean isValid(long currentFrame, double currentDistance) {
-            // ✅ ИСПОЛЬЗУЕМ distance для адаптивного TTL
+            //  ИСПОЛЬЗУЕМ distance для адаптивного TTL
             int ttl;
             if (this.distance < NEAR_DISTANCE) {
                 ttl = 2; // Ближние: короткий кеш
@@ -113,7 +113,7 @@ public final class OcclusionCullingHelper {
             return false;
         }
         
-        // ✅ Определяем количество точек по квадрату дистанции (быстрее)
+        //  Определяем количество точек по квадрату дистанции (быстрее)
         int numPoints;
         double nearSq = NEAR_DISTANCE * NEAR_DISTANCE;
         double midSq = MID_DISTANCE * MID_DISTANCE;

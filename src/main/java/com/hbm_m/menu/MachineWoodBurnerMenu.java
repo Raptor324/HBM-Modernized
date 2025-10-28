@@ -33,7 +33,7 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
     private final ContainerData data;
 
     public MachineWoodBurnerMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
-        this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(6)); // ✅ Было 5, стало 6
+        this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(6)); //  Было 5, стало 6
     }
 
     public MachineWoodBurnerMenu(int pContainerId, Inventory inv, BlockEntity entity, ContainerData data) {

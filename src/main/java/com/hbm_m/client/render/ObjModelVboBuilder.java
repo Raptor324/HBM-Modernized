@@ -1,4 +1,4 @@
-package com.hbm_m.client.model.render;
+package com.hbm_m.client.render;
 
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -22,7 +22,7 @@ public class ObjModelVboBuilder {
     public static AbstractGpuVboRenderer.VboData buildSinglePart(BakedModel modelPart) {
         List<BakedQuad> quads = new ArrayList<>();
         
-        // ✅ ИСПРАВЛЕНИЕ 1: Загружаем квады для ВСЕХ направлений + null
+        //  ИСПРАВЛЕНИЕ 1: Загружаем квады для ВСЕХ направлений + null
         quads.addAll(modelPart.getQuads(null, null, RandomSource.create(42), ModelData.EMPTY, RenderType.solid()));
         for (Direction direction : Direction.values()) {
             quads.addAll(modelPart.getQuads(null, direction, RandomSource.create(42), ModelData.EMPTY, RenderType.solid()));
@@ -37,7 +37,7 @@ public class ObjModelVboBuilder {
         for (BakedQuad quad : quads) {
             int[] raw = quad.getVertices();
             
-            // ✅ ИСПРАВЛЕНИЕ 2: Извлекаем нормали из вершинных данных
+            //  ИСПРАВЛЕНИЕ 2: Извлекаем нормали из вершинных данных
             for (int i = 0; i < 4; i++) {
                 int base = i * 8;
                 
@@ -50,7 +50,7 @@ public class ObjModelVboBuilder {
                 float u = Float.intBitsToFloat(raw[base + 4]);
                 float v = Float.intBitsToFloat(raw[base + 5]);
                 
-                // ✅ Normal (offset 6) - декодируем из packed int
+                //  Normal (offset 6) - декодируем из packed int
                 int normalPacked = raw[base + 6];
                 float nx = ((byte) (normalPacked & 0xFF)) / 127.0f;
                 float ny = ((byte) ((normalPacked >> 8) & 0xFF)) / 127.0f;
@@ -64,7 +64,7 @@ public class ObjModelVboBuilder {
                     nz /= len;
                 }
                 
-                // ✅ Отладка первой вершины
+                //  Отладка первой вершины
                 if (indexOffset == 0 && i == 0) {
                     MainRegistry.LOGGER.debug("VBO layout: pos({},{},{}), norm({},{},{}), uv({},{})",
                         x, y, z, nx, ny, nz, u, v);
@@ -76,7 +76,7 @@ public class ObjModelVboBuilder {
                 vertices.add(u); vertices.add(v);                        // 6,7
             }
             
-            // ✅ Индексы для триангуляции квада (0-1-2, 2-3-0)
+            //  Индексы для триангуляции квада (0-1-2, 2-3-0)
             indices.add(indexOffset + 0);
             indices.add(indexOffset + 1);
             indices.add(indexOffset + 2);
@@ -87,7 +87,7 @@ public class ObjModelVboBuilder {
             indexOffset += 4;
         }
         
-        // ✅ Аллоцируем буферы
+        //  Аллоцируем буферы
         ByteBuffer vb = MemoryUtil.memAlloc(vertices.size() * 4);
         for (float f : vertices) vb.putFloat(f);
         vb.flip();

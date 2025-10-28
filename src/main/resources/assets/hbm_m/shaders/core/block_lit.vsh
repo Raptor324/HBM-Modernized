@@ -9,15 +9,15 @@ layout(location = 3) in vec4 InstMatRow0;
 layout(location = 4) in vec4 InstMatRow1;
 layout(location = 5) in vec4 InstMatRow2;
 layout(location = 6) in vec4 InstMatRow3;
-layout(location = 7) in float InstBrightness; // ✅ ИЗМЕНЕНО: теперь просто яркость
+layout(location = 7) in float InstBrightness; //  ИЗМЕНЕНО: теперь просто яркость
 
 uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;
-uniform float Brightness; // ✅ НОВОЕ: для non-instanced
+uniform float Brightness; //  НОВОЕ: для non-instanced
 uniform int UseInstancing;
 
 out vec2 texCoord;
-out float brightness; // ✅ ИЗМЕНЕНО: передаем яркость
+out float brightness; //  ИЗМЕНЕНО: передаем яркость
 out float vertexDistance;
 out vec3 fragNormal;
 
