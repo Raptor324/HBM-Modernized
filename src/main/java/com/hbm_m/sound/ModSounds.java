@@ -52,7 +52,11 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> GARAGE_MOVE = registerSoundEvents("block.garage_move");
     public static final RegistryObject<SoundEvent> GARAGE_STOP = registerSoundEvents("block.garage_stop");
     public static final RegistryObject<SoundEvent> PRESS_OPERATE = registerSoundEvents("block.press_operate");
+    public static final RegistryObject<SoundEvent> SHREDDER = registerSoundEvent("block.shredder");
 
+    private static RegistryObject<SoundEvent> registerSoundEvent(String name) {
+        return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(MainRegistry.MOD_ID, name)));
+    }
     // РЕГИСТРАЦИЯ АБСТРАКТНОГО СОБЫТИЯ 
     // Это тот самый звук, который мы будем вызывать в коде.
     // Minecraft сам выберет один из 7 реальных звуков случайным образом.

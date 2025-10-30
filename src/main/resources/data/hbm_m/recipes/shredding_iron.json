@@ -1,0 +1,10 @@
+{
+  "type": "hbm_m:shredding",
+  "ingredient": {
+    "item": "minecraft:iron_ingot"
+  },
+  "result": {
+    "item": "hbm_m:iron_powder",
+    "count": 1
+  }
+}

@@ -4,6 +4,7 @@ package com.hbm_m.datagen;
 
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.ModPowders;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
 import net.minecraftforge.common.data.LanguageProvider;
@@ -26,6 +27,15 @@ public class ModLanguageProvider extends LanguageProvider {
             String translation = ingot.getTranslation(this.locale);
             if (translation != null) {
                 add(ModItems.getIngot(ingot).get(), translation);
+            }
+        }
+
+        // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ
+        for (ModPowders powders : ModPowders.values()) {
+            // 3. Теперь мы используем наше поле 'this.locale', к которому у нас есть доступ
+            String translation = powders.getTranslation(this.locale);
+            if (translation != null) {
+                add(ModItems.getPowders(powders).get(), translation);
             }
         }
 
@@ -135,6 +145,32 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 // ПРЕДМЕТЫ
 
+                add(ModItems.BATTERY_POTATO.get(), "Картофельная батарейка");
+                add(ModItems.BATTERY.get(), "Батарейка");
+                add(ModItems.BATTERY_RED_CELL.get(), "Красная энергоячейка");
+                add(ModItems.BATTERY_RED_CELL_6.get(), "Красная энергоячейка x6");
+                add(ModItems.BATTERY_RED_CELL_24.get(), "Красная энергоячейка x24");
+                add(ModItems.BATTERY_ADVANCED.get(), "Продвинутая батарея");
+                add(ModItems.BATTERY_ADVANCED_CELL.get(), "Продвинутая энергоячейка");
+                add(ModItems.BATTERY_ADVANCED_CELL_4.get(), "Продвинутая энергоячейка x4");
+                add(ModItems.BATTERY_ADVANCED_CELL_12.get(), "Продвинутая энергоячейка x12");
+                add(ModItems.BATTERY_LITHIUM.get(), "Литиевая батарея");
+                add(ModItems.BATTERY_LITHIUM_CELL.get(), "Литиевая энергоячейка");
+                add(ModItems.BATTERY_LITHIUM_CELL_3.get(), "Литиевая энергоячейка x3");
+                add(ModItems.BATTERY_LITHIUM_CELL_6.get(), "Литиевая энергоячейка x6");
+                add(ModItems.BATTERY_SCHRABIDIUM_CELL.get(), "Шрабидиевая энергоячейка");
+                add(ModItems.BATTERY_SCHRABIDIUM_CELL_2.get(), "Шрабидиевая энергоячейка x2");
+                add(ModItems.BATTERY_SCHRABIDIUM_CELL_4.get(), "Шрабидиевая энергоячейка x4");
+                add(ModItems.BATTERY_SPARK.get(), "Искровая батарея");
+                add(ModItems.BATTERY_TRIXITE.get(), "Триксайтовая батарея");
+                add(ModItems.BATTERY_SPARK_CELL_6.get(), "Искровая энергоячейка x6");
+                add(ModItems.BATTERY_SPARK_CELL_25.get(), "Искровая энергоячейка x25");
+                add(ModItems.BATTERY_SPARK_CELL_100.get(), "Искровая энергоячейка x100");
+                add(ModItems.BATTERY_SPARK_CELL_1000.get(), "Искровая энергоячейка x1000");
+                add(ModItems.BATTERY_SPARK_CELL_2500.get(), "Искровая энергоячейка x2500");
+                add(ModItems.BATTERY_SPARK_CELL_10000.get(), "Искровая энергоячейка x10000");
+                add(ModItems.BATTERY_SPARK_CELL_POWER.get(), "Искровая силовая ячейка");
+
                 add(ModItems.WIRE_RED_COPPER.get(), "Провод из красной меди");
                 add(ModItems.WIRE_COPPER.get(), "Медный провод");
                 add(ModItems.WIRE_ALUMINIUM.get(), "Алюминиевый провод");
@@ -145,6 +181,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.WIRE_CARBON.get(), "Провод из свинца");
                 add(ModItems.WIRE_SCHRABIDIUM.get(), "Шрабидиевый провод");
                 add(ModItems.WIRE_ADVANCED_ALLOY.get(), "Провод из продвинутого сплава");
+
+                add(ModItems.BATTERY_SCHRABIDIUM.get(), "Шрабидиевая батарейка");
 
                 add(ModItems.STAMP_STONE_FLAT.get(), "Плоский каменный штамп");
                 add(ModItems.STAMP_STONE_PLATE.get(), "Каменный штамп пластины");
@@ -423,6 +461,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.lead_ore", "Свинцовая руда");
                 add("block.hbm_m.lead_ore_deepslate", "Глубинная свинцовая руда");
                 add("block.hbm_m.cinnabar_ore", "Киноварная руда");
+                add("block.hbm_m.crate_iron", "Железный ящик");
+                add("block.hbm_m.crate_steel", "Стальной ящик");
+                add("block.hbm_m.crate_desh", "Деш ящик");
 
 
                 add("block.hbm_m.waste_grass", "Мёртвая трава");
@@ -451,6 +492,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.wood_burner", "Дровяной генератор");
                 add("container.hbm_m.machine_battery", "Энергохранилище");
                 add("container.hbm_m.press", "Пресс");
+                add("container.hbm_m.crate_iron", "Железный ящик");
+                add("container.hbm_m.crate_steel", "Стальной ящик");
+                add("container.hbm_m.crate_desh", "Душ ящик");
 
                 add("gui.hbm_m.battery.priority.0", "Приоритет: Низкий");
                 add("gui.hbm_m.battery.priority.0.desc", "Низший приоритет. Опустошается в первую очередь, заполняется в последнюю");
@@ -473,6 +517,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.battery.mode.locked.desc", "Все операции с энергией отключены.");
 
                 add("gui.recipe.setRecipe", "Выбрать рецепт");
+
+                add("tooltip.hbm_m.battery.stored", "Хранится энергии:");
+                add("tooltip.hbm_m.battery.transfer_rate", "Скорость зарядки: %1$s FE/t");
+                add("tooltip.hbm_m.battery.discharge_rate", "Скорость разрядки: %1$s FE/t");
 
                 add("tooltip.hbm_m.machine_battery.capacity", "Ёмкость: %1$s FE");
                 add("tooltip.hbm_m.machine_battery.charge_speed", "Скорость зарядки: %1$s FE/т");
@@ -761,6 +809,34 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_boots", "Starmetal Boots");
 
                 // ITEMS
+
+                add(ModItems.BATTERY_POTATO.get(), "Potato Battery");
+                add(ModItems.BATTERY.get(), "Battery");
+                add(ModItems.BATTERY_RED_CELL.get(), "Red Energy Cell");
+                add(ModItems.BATTERY_RED_CELL_6.get(), "Red Energy Cell x6");
+                add(ModItems.BATTERY_RED_CELL_24.get(), "Red Energy Cell x24");
+                add(ModItems.BATTERY_ADVANCED.get(), "Advanced Battery");
+                add(ModItems.BATTERY_ADVANCED_CELL.get(), "Advanced Energy Cell");
+                add(ModItems.BATTERY_ADVANCED_CELL_4.get(), "Advanced Energy Cell x4");
+                add(ModItems.BATTERY_ADVANCED_CELL_12.get(), "Advanced Energy Cell x12");
+                add(ModItems.BATTERY_LITHIUM.get(), "Lithium Battery");
+                add(ModItems.BATTERY_LITHIUM_CELL.get(), "Lithium Energy Cell");
+                add(ModItems.BATTERY_LITHIUM_CELL_3.get(), "Lithium Energy Cell x3");
+                add(ModItems.BATTERY_LITHIUM_CELL_6.get(), "Lithium Energy Cell x6");
+                add(ModItems.BATTERY_SCHRABIDIUM.get(), "Schrabidium Battery");
+                add(ModItems.BATTERY_SCHRABIDIUM_CELL.get(), "Schrabidium Energy Cell");
+                add(ModItems.BATTERY_SCHRABIDIUM_CELL_2.get(), "Schrabidium Energy Cell x2");
+                add(ModItems.BATTERY_SCHRABIDIUM_CELL_4.get(), "Schrabidium Energy Cell x4");
+                add(ModItems.BATTERY_SPARK.get(), "Spark Battery");
+                add(ModItems.BATTERY_TRIXITE.get(), "Trixite Battery");
+                add(ModItems.BATTERY_SPARK_CELL_6.get(), "Spark Energy Cell x6");
+                add(ModItems.BATTERY_SPARK_CELL_25.get(), "Spark Energy Cell x25");
+                add(ModItems.BATTERY_SPARK_CELL_100.get(), "Spark Energy Cell x100");
+                add(ModItems.BATTERY_SPARK_CELL_1000.get(), "Spark Energy Cell x1000");
+                add(ModItems.BATTERY_SPARK_CELL_2500.get(), "Spark Energy Cell x2500");
+                add(ModItems.BATTERY_SPARK_CELL_10000.get(), "Spark Energy Cell x10000");
+                add(ModItems.BATTERY_SPARK_CELL_POWER.get(), "Spark Power Cell");
+
                 add(ModItems.WIRE_RED_COPPER.get(), "Red Copper Wire");
                 add(ModItems.WIRE_COPPER.get(), "Copper Wire");
                 add(ModItems.WIRE_ALUMINIUM.get(), "Aluminium Wire");
@@ -999,6 +1075,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
                 add("block.hbm_m.blast_furnace", "Blast Furnace");
                 add("block.hbm_m.press", "Press");
+                add("block.hbm_m.crate_iron", "Iron Crate");
+                add("block.hbm_m.crate_steel", "Steel Crate");
+                add("block.hbm_m.crate_desh", "Desh Crate");
 
                 add("block.hbm_m.det_miner", "Det Miner");
                 add("block.hbm_m.concrete_vent", "Concrete Vent");
@@ -1081,7 +1160,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.advanced_assembly_machine", "Assembly Machine");
                 add("container.hbm_m.machine_battery", "Machine Battery");
                 add("container.hbm_m.press", "Press");
-
+                add("container.hbm_m.crate_iron", "Iron Crate");
+                add("container.hbm_m.crate_steel", "Steel Crate");
+                add("container.hbm_m.crate_desh", "Desh Crate");
                 add("gui.hbm_m.battery.priority.0", "Priority: Low");
                 add("gui.hbm_m.battery.priority.0.desc", "Lowest priority. Will be drained first and filled last.");
                 add("gui.hbm_m.battery.priority.1", "Priority: Normal");

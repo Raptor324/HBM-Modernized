@@ -21,6 +21,7 @@ import com.hbm_m.item.ModTags;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.ModMenuTypes;
+import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.DarkParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
@@ -29,9 +30,15 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.google.common.collect.ImmutableMap;
+import com.hbm_m.particle.custom.*;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 
+import com.hbm_m.particle.explosions.ExplosionSparkParticle;
+import com.hbm_m.particle.explosions.FlashParticle;
+import com.hbm_m.particle.explosions.MushroomSmokeParticle;
+import com.hbm_m.particle.explosions.ShockwaveParticle;
+import com.hbm_m.recipe.AnvilRecipeManager;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.resources.model.BakedModel;
@@ -70,6 +77,12 @@ import java.util.Map;
 import java.util.Set;
 
 
+import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.client.model.render.DoorRenderer;
+import com.hbm_m.client.model.render.MachineAdvancedAssemblerRenderer;
+import com.hbm_m.client.overlay.GUIIronCrate;
+import com.hbm_m.client.overlay.GUISteelCrate;
+import com.hbm_m.client.overlay.GUIDeshCrate;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientSetup {
@@ -107,6 +120,8 @@ public class ClientSetup {
         
         DoorDeclRegistry.init();
 
+        // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
+
         event.enqueueWork(() -> {
             // Здесь мы связываем наш тип меню с классом экрана
             MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
@@ -115,9 +130,13 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
             MenuScreens.register(ModMenuTypes.BLAST_FURNACE_MENU.get(), GUIBlastFurnace::new);
             MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
-            MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), GUIShredder::new);
+            MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), ShredderScreen::new);
             MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
-            
+            MenuScreens.register(ModMenuTypes.ANVIL_MENU.get(), GUIAnvil::new);
+            MenuScreens.register(ModMenuTypes.IRON_CRATE_MENU.get(), GUIIronCrate::new);
+            MenuScreens.register(ModMenuTypes.STEEL_CRATE_MENU.get(), GUISteelCrate::new);
+            MenuScreens.register(ModMenuTypes.DESH_CRATE_MENU.get(), GUIDeshCrate::new);
+
             // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
@@ -135,6 +154,24 @@ public class ClientSetup {
             MainRegistry.LOGGER.info("Initial render path check completed");
         });
     }
+
+    @SubscribeEvent
+    public static void registerParticleFactories(RegisterParticleProvidersEvent event) {
+
+        event.registerSpriteSet(ModParticleTypes.EXPLOSION_WAVE.get(),
+                ExplosionWaveParticle.Provider::new);
+
+        event.registerSpriteSet(ModExplosionParticles.FLASH.get(),
+                FlashParticle.Provider::new);
+        event.registerSpriteSet(ModExplosionParticles.SHOCKWAVE.get(),
+                ShockwaveParticle.Provider::new);
+        event.registerSpriteSet(ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                MushroomSmokeParticle.Provider::new);
+        event.registerSpriteSet(ModExplosionParticles.EXPLOSION_SPARK.get(),
+                ExplosionSparkParticle.Provider::new);
+    }
+
+
 
     @SubscribeEvent
     public static void onModelBake(ModelEvent.ModifyBakingResult event) {

@@ -3,6 +3,13 @@ package com.hbm_m.main;
 // Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
+import com.hbm_m.block.entity.AnvilBlockEntity;
+import com.hbm_m.menu.AnvilMenu;
+import com.hbm_m.network.ModNetwork;
+import com.hbm_m.particle.ModExplosionParticles;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
@@ -24,16 +31,17 @@ import com.hbm_m.effect.ModEffects;
 import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.worldgen.ModWorldGen;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.chunk.LevelChunk;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.fml.DistExecutor;
@@ -45,6 +53,9 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
+import static com.hbm_m.block.ModBlocks.ANVIL_BLOCK;
+import static com.hbm_m.block.entity.ModBlockEntities.BLOCK_ENTITIES;
 
 @Mod(RefStrings.MODID)
 public class MainRegistry {
@@ -58,13 +69,15 @@ public class MainRegistry {
         ModClothConfig.register();
     }
 
+    //ingot
     public MainRegistry(FMLJavaModLoadingContext context) {
         LOGGER.info("Initializing " + RefStrings.NAME);
 
         IEventBus modEventBus = context.getModEventBus();
-        // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS 
+        // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS
         ModBlocks.BLOCKS.register(modEventBus); // Регистрация наших блоков
         ModEntities.ENTITY_TYPES.register(modEventBus);
+        ModExplosionParticles.PARTICLE_TYPES.register(modEventBus);
         ModItems.ITEMS.register(modEventBus); // Регистрация наших предметов
         ModMenuTypes.MENUS.register(modEventBus); // Регистрация меню
         ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus); // Регистрация наших вкладок креативного режима
@@ -78,13 +91,15 @@ public class MainRegistry {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
 
+
+
         // Регистрация обработчиков событий Forge (игровых)
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new PlayerHandler());
 
 
-        // Регистрация остальных систем
+        // Регистрация остальных систем resources
         // ModPacketHandler.register(); // Регистрация пакетов
 
         // Инстанцируем ClientSetup, чтобы его конструктор вызвал регистрацию на Forge Event Bus
@@ -94,6 +109,7 @@ public class MainRegistry {
         LOGGER.info("Registered event listeners for Radiation System.");
         LOGGER.info("!!! MainRegistry: ClientSetup instance created, its Forge listeners should now be registered !!!");
     }
+
 
     private void commonSetup(final FMLCommonSetupEvent event) {
         event.enqueueWork(() -> {
@@ -138,17 +154,22 @@ public class MainRegistry {
         // ТАЙМЕР ЗАКАНЧИВАЕТСЯ, ВЗРЫВЕМСЯ!
         if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get()) {
 
+            event.accept(ModItems.DETONATOR);
+
             event.accept(ModItems.GRENADE);
             event.accept(ModItems.GRENADEHE);
             event.accept(ModItems.GRENADEFIRE);
             event.accept(ModItems.GRENADESMART);
             event.accept(ModItems.GRENADESLIME);
 
+            event.accept(ModBlocks.SMOKE_BOMB);
+            event.accept(ModBlocks.EXPLOSIVE_CHARGE);
+            event.accept(ModBlocks.NUCLEAR_CHARGE);
             event.accept(ModItems.GRENADEIF);
 
             event.accept(ModBlocks.DET_MINER);
-            event.accept(ModBlocks.EXPLOSIVE_CHARGE);
-
+            event.accept(ModBlocks.C4);
+            event.accept(ModBlocks.GIGA_DET);
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");
             }
@@ -232,6 +253,7 @@ public class MainRegistry {
         if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
             // Проходимся циклом по ВСЕМ слиткам
             for (RegistryObject<Item> ingotObject : ModItems.INGOTS.values()) {
+
                 event.accept(ingotObject.get());
                 if (ModClothConfig.get().enableDebugLogging) {
                     LOGGER.info("Added {} to NTM Resources tab", ingotObject.get());
@@ -249,11 +271,9 @@ public class MainRegistry {
             event.accept(ModItems.FIREBRICK);
             event.accept(ModItems.WOOD_ASH_POWDER);
         }
-
-
         // РАСХОДНИКИ И МОДИФИКАТОРЫ
         if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get()) {
-            // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ МОДИФИКАТОРОВ 
+            // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ МОДИФИКАТОРОВ
 
             // 1. Получаем все зарегистрированные предметы из вашего мода
             List<RegistryObject<Item>> allModItems = ForgeRegistries.ITEMS.getEntries().stream()
@@ -277,6 +297,9 @@ public class MainRegistry {
         // ЗАПЧАСТИ
         if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get()) {
 
+
+            event.accept(ModItems.BLADE_TEST);
+            event.accept(ModItems.SCRAP);
             event.accept(ModItems.PLATE_IRON);
             event.accept(ModItems.PLATE_STEEL);
             event.accept(ModItems.PLATE_GOLD);
@@ -395,7 +418,10 @@ public class MainRegistry {
         }
         // РУДЫ
         if (event.getTab() == ModCreativeTabs.NTM_ORES_TAB.get()) {
-
+            event.accept(ModBlocks.SELLAFIELD_SLAKED);
+            event.accept(ModBlocks.SELLAFIELD_SLAKED1);
+            event.accept(ModBlocks.SELLAFIELD_SLAKED2);
+            event.accept(ModBlocks.SELLAFIELD_SLAKED3);
             event.accept(ModBlocks.URANIUM_BLOCK);
             event.accept(ModBlocks.POLONIUM210_BLOCK);
             event.accept(ModBlocks.PLUTONIUM_BLOCK);
@@ -451,7 +477,6 @@ public class MainRegistry {
         }
 
 
-
         // СТРОИТЕЛЬНЫЕ БЛОКИ
         if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get()) {
 
@@ -494,6 +519,9 @@ public class MainRegistry {
             event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB);
             event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS);
             event.accept(ModBlocks.BRICK_CONCRETE_MARKED);
+            event.accept(ModBlocks.CRATE_IRON);
+            event.accept(ModBlocks.CRATE_STEEL);
+            event.accept(ModBlocks.CRATE_DESH);
 
 
             event.accept(ModBlocks.LARGE_VEHICLE_DOOR);
@@ -501,8 +529,8 @@ public class MainRegistry {
 
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added concrete hazard to NTM Resources tab");
+            }
         }
-       }
 
 
         // ИНСТРУМЕНТЫ
@@ -517,6 +545,7 @@ public class MainRegistry {
         // СТАНКИ
         if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
 
+            event.accept(ModBlocks.ANVIL_BLOCK);
             event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
             event.accept(ModBlocks.PRESS);
             event.accept(ModBlocks.BLAST_FURNACE);
@@ -525,6 +554,8 @@ public class MainRegistry {
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.ARMOR_TABLE);
+            event.accept(ModItems.BATTERY_SCHRABIDIUM);
+
             // event.accept(ModBlocks.FLUID_TANK);
             event.accept(ModBlocks.MACHINE_BATTERY);
             event.accept(ModBlocks.WIRE_COATED);
@@ -548,6 +579,33 @@ public class MainRegistry {
             event.accept(ModItems.PLATE_FUEL_U233);
             event.accept(ModItems.PLATE_FUEL_U235);
             event.accept(ModItems.CREATIVE_BATTERY);
+
+            event.accept(ModItems.BATTERY_POTATO);
+            event.accept(ModItems.BATTERY);
+            event.accept(ModItems.BATTERY_RED_CELL);
+            event.accept(ModItems.BATTERY_RED_CELL_6);
+            event.accept(ModItems.BATTERY_RED_CELL_24);
+            event.accept(ModItems.BATTERY_ADVANCED);
+            event.accept(ModItems.BATTERY_ADVANCED_CELL);
+            event.accept(ModItems.BATTERY_ADVANCED_CELL_4);
+            event.accept(ModItems.BATTERY_ADVANCED_CELL_12);
+            event.accept(ModItems.BATTERY_LITHIUM);
+            event.accept(ModItems.BATTERY_LITHIUM_CELL);
+            event.accept(ModItems.BATTERY_LITHIUM_CELL_3);
+            event.accept(ModItems.BATTERY_LITHIUM_CELL_6);
+            event.accept(ModItems.BATTERY_SCHRABIDIUM);
+            event.accept(ModItems.BATTERY_SCHRABIDIUM_CELL);
+            event.accept(ModItems.BATTERY_SCHRABIDIUM_CELL_2);
+            event.accept(ModItems.BATTERY_SCHRABIDIUM_CELL_4);
+            event.accept(ModItems.BATTERY_SPARK);
+            event.accept(ModItems.BATTERY_TRIXITE);
+            event.accept(ModItems.BATTERY_SPARK_CELL_6);
+            event.accept(ModItems.BATTERY_SPARK_CELL_25);
+            event.accept(ModItems.BATTERY_SPARK_CELL_100);
+            event.accept(ModItems.BATTERY_SPARK_CELL_1000);
+            event.accept(ModItems.BATTERY_SPARK_CELL_2500);
+            event.accept(ModItems.BATTERY_SPARK_CELL_10000);
+            event.accept(ModItems.BATTERY_SPARK_CELL_POWER);
 
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added creative battery ITEM to NTM Fuel tab");

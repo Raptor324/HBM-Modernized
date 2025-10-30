@@ -50,15 +50,45 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.CONCRETE_CRACKED);
         blockWithItem(ModBlocks.CONCRETE);
 
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED);
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED1);
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED2);
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED3);
+
         resourceBlockWithItem(ModBlocks.CRATE);
         resourceBlockWithItem(ModBlocks.CRATE_LEAD);
         resourceBlockWithItem(ModBlocks.CRATE_METAL);
         resourceBlockWithItem(ModBlocks.CRATE_WEAPON);
+        simpleBlockWithItem(ModBlocks.CRATE_IRON.get(),
+                models().cubeBottomTop(
+                        ModBlocks.CRATE_IRON.getId().getPath(),
+                        modLoc("block/crate_iron_side"),      // Текстура боков
+                        modLoc("block/crate_iron_top"),       // Текстура низа
+                        modLoc("block/crate_iron_top")        // Текстура верха
+                )
+
+        );
+        simpleBlockWithItem(ModBlocks.CRATE_STEEL.get(),
+                models().cubeBottomTop(
+                        ModBlocks.CRATE_STEEL.getId().getPath(),
+                        modLoc("block/crate_steel_side"),
+                        modLoc("block/crate_steel_top"),
+                        modLoc("block/crate_steel_top")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.CRATE_DESH.get(),
+                models().cubeBottomTop(
+                        ModBlocks.CRATE_DESH.getId().getPath(),
+                        modLoc("block/crate_desh_side"),
+                        modLoc("block/crate_desh_top"),
+                        modLoc("block/crate_desh_top")
+                )
+        );
 
         blockWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
         blockWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);
-        blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
-
+        resourceBlockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
+        resourceBlockWithItem(ModBlocks.GIGA_DET);
         simpleBlockWithItem(ModBlocks.REINFORCED_GLASS.get(), 
             models().cubeAll(ModBlocks.REINFORCED_GLASS.getId().getPath(), 
                 blockTexture(ModBlocks.REINFORCED_GLASS.get()))

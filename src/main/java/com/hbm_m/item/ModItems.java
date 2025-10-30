@@ -14,7 +14,6 @@ import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeType;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
 
@@ -35,7 +34,7 @@ public class ModItems {
     // АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ СЛИТКОВ 
     // 1. Создаем карту для хранения всех RegistryObject'ов наших слитков
     public static final Map<ModIngots, RegistryObject<Item>> INGOTS = new EnumMap<>(ModIngots.class);
-
+    public static final Map<ModPowders, RegistryObject<Item>> POWDERS = new EnumMap<>(ModPowders.class);
     // 2. Используем статический блок для заполнения карты
     static {
         for (ModIngots ingot : ModIngots.values()) {
@@ -56,13 +55,35 @@ public class ModItems {
             INGOTS.put(ingot, registeredItem);
         }
     }
+    static {
+
+        for (ModPowders powders : ModPowders.values()) {
+            // Регистрируем предмет. Имя будет, например, "ingot_uranium"
+            // Важно: мы стандартизируем имена, добавляя префикс "ingot_"
+            RegistryObject<Item> registeredItem;
+
+            // Пример того, как сделать один из слитков особенным
+            if (powders == ModPowders.IRON) {
+                registeredItem = ITEMS.register(powders.getName() + "_powder",
+                        () -> new RadioactiveItem(new Item.Properties()));
+            } else {
+                registeredItem = ITEMS.register(powders.getName() + "_powder",
+                        () -> new Item(new Item.Properties()));
+            }
+
+            // Кладём зарегистрированный объект в нашу карту
+            POWDERS.put(powders, registeredItem);
+        }
+
+    }
+
     
     
     // УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА 
     public static RegistryObject<Item> getIngot(ModIngots ingot) {
         return INGOTS.get(ingot);
     }
-
+    public static RegistryObject<Item> getPowders(ModPowders powders) {return POWDERS.get(powders);}
     public static final int SLOT_HELMET = 0;
     public static final int SLOT_CHEST = 1;
     public static final int SLOT_LEGS = 2;
@@ -375,6 +396,11 @@ public class ModItems {
             })
     );
 
+    public static final RegistryObject<Item> DETONATOR = ITEMS.register("detonator",
+            () -> new DetonatorItem(new Item.Properties()));
+
+    public static final RegistryObject<Item> SCRAP = ITEMS.register("scrap",
+            () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> NUGGET_SILICON = ITEMS.register("nugget_silicon",
             () -> new Item(new Item.Properties()));
@@ -665,6 +691,10 @@ public class ModItems {
     public static final RegistryObject<Item> STAMP_STONE_CIRCUIT = ITEMS.register("stamp_stone_circuit",
             () -> new ItemStamp(new Item.Properties(), 32));
 
+
+    public static final RegistryObject<Item> BLADE_TEST = ITEMS.register("blade_test",
+            () -> new ItemBlades(new Item.Properties(), 48));
+
     // Железные штампы (48 использований)
     public static final RegistryObject<Item> STAMP_IRON_FLAT = ITEMS.register("stamp_iron_flat",
             () -> new ItemStamp(new Item.Properties(), 48));
@@ -730,6 +760,225 @@ public class ModItems {
             () -> new ItemStamp(new Item.Properties()));
     public static final RegistryObject<Item> STAMP_DESH_357 = ITEMS.register("stamp_desh_357",
             () -> new ItemStamp(new Item.Properties()));
+
+
+    //батарейки
+
+    public static final RegistryObject<Item> BATTERY_SCHRABIDIUM = ITEMS.register("battery_schrabidium",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    1000000,
+                    5000,
+                    5000
+            ));
+
+    // ========== КАРТОФЕЛЬНАЯ И БАЗОВЫЕ ==========
+    public static final RegistryObject<Item> BATTERY_POTATO = ITEMS.register("battery_potato",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    1_000,
+                    100,
+                    100
+            ));
+
+    public static final RegistryObject<Item> BATTERY = ITEMS.register("battery",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    5000,
+                    100,
+                    100
+            ));
+
+    // ========== КРАСНЫЕ БАТАРЕЙКИ (RED CELL) ==========
+    public static final RegistryObject<Item> BATTERY_RED_CELL = ITEMS.register("battery_red_cell",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    15000,
+                    100,
+                    100
+            ));
+
+    public static final RegistryObject<Item> BATTERY_RED_CELL_6 = ITEMS.register("battery_red_cell_6",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    90000,
+                    100,
+                    100
+            ));
+
+    public static final RegistryObject<Item> BATTERY_RED_CELL_24 = ITEMS.register("battery_red_cell_24",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    240000,
+                    100,
+                    100
+            ));
+
+    // ========== ПРОДВИНУТЫЕ БАТАРЕЙКИ (ADVANCED) ==========
+    public static final RegistryObject<Item> BATTERY_ADVANCED = ITEMS.register("battery_advanced",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    20000,
+                    500,
+                    500
+            ));
+
+    public static final RegistryObject<Item> BATTERY_ADVANCED_CELL = ITEMS.register("battery_advanced_cell",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    60000,
+                    500,
+                    500
+            ));
+
+    public static final RegistryObject<Item> BATTERY_ADVANCED_CELL_4 = ITEMS.register("battery_advanced_cell_4",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    240000,
+                    500,
+                    500
+            ));
+
+    public static final RegistryObject<Item> BATTERY_ADVANCED_CELL_12 = ITEMS.register("battery_advanced_cell_12",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    720000,
+                    500,
+                    500
+            ));
+
+    // ========== ЛИТИЕВЫЕ БАТАРЕЙКИ (LITHIUM) ==========
+    public static final RegistryObject<Item> BATTERY_LITHIUM = ITEMS.register("battery_lithium",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    250000,
+                    1000,
+                    1000
+            ));
+
+    public static final RegistryObject<Item> BATTERY_LITHIUM_CELL = ITEMS.register("battery_lithium_cell",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    750000,
+                    1000,
+                    1000
+            ));
+
+    public static final RegistryObject<Item> BATTERY_LITHIUM_CELL_3 = ITEMS.register("battery_lithium_cell_3",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    2250000,
+                    1000,
+                    1000
+            ));
+
+    public static final RegistryObject<Item> BATTERY_LITHIUM_CELL_6 = ITEMS.register("battery_lithium_cell_6",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    4500000,
+                    1000,
+                    1000
+            ));
+
+// ========== ШРАБИДИЕВЫЕ БАТАРЕЙКИ (SCHRABIDIUM) - уже есть ==========
+
+    public static final RegistryObject<Item> BATTERY_SCHRABIDIUM_CELL = ITEMS.register("battery_schrabidium_cell",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    3000000,
+                    5000,
+                    5000
+            ));
+
+    public static final RegistryObject<Item> BATTERY_SCHRABIDIUM_CELL_2 = ITEMS.register("battery_schrabidium_cell_2",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    6000000,
+                    5000,
+                    5000
+            ));
+
+    public static final RegistryObject<Item> BATTERY_SCHRABIDIUM_CELL_4 = ITEMS.register("battery_schrabidium_cell_4",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    12000000,
+                    5000,
+                    5000
+            ));
+
+    // ========== ИСКРОВЫЕ БАТАРЕЙКИ (SPARK) - ЭКСТРЕМАЛЬНЫЕ ==========
+    public static final RegistryObject<Item> BATTERY_SPARK = ITEMS.register("battery_spark",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    100000000,
+                    2000000,
+                    2000000
+            ));
+
+    public static final RegistryObject<Item> BATTERY_TRIXITE = ITEMS.register("battery_trixite",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    5000000,
+                    40000,
+                    200000
+            ));
+
+    public static final RegistryObject<Item> BATTERY_SPARK_CELL_6 = ITEMS.register("battery_spark_cell_6",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    Integer.MAX_VALUE,
+                    2000000,
+                    2000000
+            ));
+
+    public static final RegistryObject<Item> BATTERY_SPARK_CELL_25 = ITEMS.register("battery_spark_cell_25",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    Integer.MAX_VALUE,
+                    2000000,
+                    2000000
+            ));
+
+    public static final RegistryObject<Item> BATTERY_SPARK_CELL_100 = ITEMS.register("battery_spark_cell_100",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    Integer.MAX_VALUE,
+                    20000000,
+                    20000000
+            ));
+
+    public static final RegistryObject<Item> BATTERY_SPARK_CELL_1000 = ITEMS.register("battery_spark_cell_1000",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    Integer.MAX_VALUE,
+                    20000000,
+                    20000000
+            ));
+
+    public static final RegistryObject<Item> BATTERY_SPARK_CELL_2500 = ITEMS.register("battery_spark_cell_2500",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    Integer.MAX_VALUE,
+                    200000000,
+                    200000000
+            ));
+
+    public static final RegistryObject<Item> BATTERY_SPARK_CELL_10000 = ITEMS.register("battery_spark_cell_10000",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    Integer.MAX_VALUE,
+                    2000000000,
+                    2000000000
+            ));
+
+    public static final RegistryObject<Item> BATTERY_SPARK_CELL_POWER = ITEMS.register("battery_spark_cell_power",
+            () -> new ModBatteryItem(
+                    new Item.Properties(),
+                    Integer.MAX_VALUE,
+                    2000000000,
+                    2000000000
+            ));
+
 
 
     public static final RegistryObject<Item> WIRE_RED_COPPER = ITEMS.register("wire_red_copper",
