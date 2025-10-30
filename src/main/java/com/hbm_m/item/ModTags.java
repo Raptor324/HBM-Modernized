@@ -1,5 +1,7 @@
 package com.hbm_m.item;
 import com.hbm_m.main.MainRegistry;
+
+import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.tags.ItemTags;
@@ -18,8 +20,15 @@ public class ModTags {
 
         public static final TagKey<Block> NEEDS_TITANIUM_TOOL = tag("needs_steel_tool");
 
+        public static final TagKey<Block> NON_OCCLUDING = create("non_occluding");
+
         private static TagKey<Block> tag(String name) {
             return BlockTags.create(ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
+        }
+
+        private static TagKey<Block> create(String name) {
+            return TagKey.create(Registries.BLOCK, 
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
         }
     }
 

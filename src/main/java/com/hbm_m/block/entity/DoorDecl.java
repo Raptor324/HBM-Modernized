@@ -5,17 +5,19 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.AABB;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.api.distmarker.Dist;
+
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.client.model.DoorBakedModel;
+import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.sound.ModSounds;
-import com.hbm_m.util.LegacyAnimator;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -26,6 +28,7 @@ import java.util.Map;
  * Декларативный класс параметров двери.
  * Модели загружаются автоматически из blockstate JSON файлов.
  */
+@OnlyIn(Dist.CLIENT)
 public abstract class DoorDecl {
     // Кеш загруженных моделей
     private final Map<String, BakedModel> modelCache = new HashMap<>();
@@ -85,28 +88,33 @@ public abstract class DoorDecl {
             return cachedModelParts;
         }
 
-        ModelManager modelManager = Minecraft.getInstance().getModelManager();
-        String[] partNames = getPartNames();
-        cachedModelParts = new BakedModel[partNames.length];
-        for (int i = 0; i < partNames.length; i++) {
-            String partName = partNames[i];
-            // Создаем ModelResourceLocation из blockstate
-            // Формат: "modid:block_name#variant"
-            ModelResourceLocation modelLocation;
-            if ("main".equals(partName)) {
-                // Основная модель из blockstate JSON
-                modelLocation = new ModelResourceLocation(getBlockId(), "");
+        try {
+            ModelManager modelManager = Minecraft.getInstance().getModelManager();
+            ModelResourceLocation modelLocation = new ModelResourceLocation(getBlockId(), "");
+            BakedModel baseModel = modelManager.getModel(modelLocation);
+            
+            if (baseModel instanceof DoorBakedModel doorModel) {
+                String[] partNames = getPartNames();
+                cachedModelParts = new BakedModel[partNames.length];
+                
+                for (int i = 0; i < partNames.length; i++) {
+                    String partName = partNames[i];
+                    BakedModel partModel = doorModel.getPart(partName);
+                    cachedModelParts[i] = partModel;
+                    modelCache.put(partName, partModel);
+                }
+                
+                return cachedModelParts;
             } else {
-                // Дополнительные части как варианты
-                modelLocation = new ModelResourceLocation(getBlockId(), "part=" + partName);
+                MainRegistry.LOGGER.error("Expected DoorBakedModel but got: {}", 
+                    baseModel != null ? baseModel.getClass().getSimpleName() : "null");
             }
-
-            // Получаем BakedModel из ModelManager
-            BakedModel model = modelManager.getModel(modelLocation);
-            cachedModelParts[i] = model;
-            modelCache.put(partName, model);
+            
+        } catch (Exception e) {
+            MainRegistry.LOGGER.error("Error loading door model parts", e);
         }
-        return cachedModelParts;
+        
+        return null;
     }
 
     /**
@@ -118,9 +126,27 @@ public abstract class DoorDecl {
             return modelCache.get(partName);
         }
 
-        // Ленивая загрузка
-        getModelParts();
-        return modelCache.get(partName);
+        // Для дверей используем DoorBakedModel напрямую
+        try {
+            ModelManager modelManager = Minecraft.getInstance().getModelManager();
+            ModelResourceLocation modelLocation = new ModelResourceLocation(getBlockId(), "");
+            BakedModel baseModel = modelManager.getModel(modelLocation);
+            
+            if (baseModel instanceof DoorBakedModel doorModel) {
+                BakedModel partModel = doorModel.getPart(partName);
+                if (partModel != null) {
+                    modelCache.put(partName, partModel);
+                    return partModel;
+                }
+            }
+            
+            MainRegistry.LOGGER.warn("Could not find part '{}' in door model", partName);
+            return null;
+            
+        } catch (Exception e) {
+            MainRegistry.LOGGER.error("Error loading door part model for '{}'", partName, e);
+            return null;
+        }
     }
 
     /**

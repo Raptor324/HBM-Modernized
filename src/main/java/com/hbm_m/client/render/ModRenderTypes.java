@@ -1,8 +1,6 @@
-package com.hbm_m.client.model.render;
+package com.hbm_m.client.render;
 
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
-import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 
 public class ModRenderTypes extends RenderType {
@@ -12,4 +10,5 @@ public class ModRenderTypes extends RenderType {
                            Runnable setupState, Runnable clearState) {
         super(name, format, mode, bufferSize, affectsCrumbling, sortOnUpload, setupState, clearState);
     }
+    
 }

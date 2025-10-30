@@ -2,7 +2,6 @@ package com.hbm_m.block;
 
 import com.hbm_m.item.CrateItem;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.block.entity.DoorDecl;
 import com.hbm_m.item.ModItems;
 
 import net.minecraft.world.effect.MobEffects;
@@ -391,7 +390,7 @@ public class ModBlocks {
                 .requiresCorrectToolForDrops()
                 .sound(SoundType.METAL)
                 .noOcclusion(),
-            DoorDecl.LARGE_VEHICLE_DOOR
+            "large_vehicle_door"
         ));
     
     // ==================== Helper Methods ====================

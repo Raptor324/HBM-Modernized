@@ -1,13 +1,14 @@
 package com.hbm_m.block;
 
 import com.hbm_m.block.entity.DoorBlockEntity;
+import com.hbm_m.block.entity.DoorDecl;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import com.hbm_m.block.entity.DoorDecl;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -40,12 +41,12 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     public static final EnumProperty<PartRole> PART_ROLE = EnumProperty.create("part_role", PartRole.class);
     public static final BooleanProperty OPEN = BooleanProperty.create("open");
 
-    private final DoorDecl doorDecl;
+    private final String doorDeclId;
     private final MultiblockStructureHelper structureHelper;
 
-    public DoorBlock(Properties properties, DoorDecl doorDecl) {
+    public DoorBlock(Properties properties, String doorDeclId) {
         super(properties);
-        this.doorDecl = doorDecl;
+        this.doorDeclId = doorDeclId;
         
         // Создаём структуру 7x6x1 для двери
         Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
@@ -75,10 +76,14 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
         return PartRole.DEFAULT;
     }
 
+    public String getDoorDeclId() {
+        return doorDeclId;
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new DoorBlockEntity(pos, state, doorDecl);
+        return new DoorBlockEntity(pos, state, doorDeclId);
     }
 
     @Nullable
@@ -97,29 +102,25 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
             return InteractionResult.SUCCESS;
         }
         
-        // На сервере меняем состояние
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof DoorBlockEntity doorBE) {
             DoorBlockEntity controller = doorBE.getController();
             if (controller != null) {
-                // Проверка на блокировку
+                // ИСПРАВЛЕНО: Получаем DoorDecl ТОЛЬКО на клиенте
                 if (controller.isLocked()) {
-                    player.displayClientMessage(doorDecl.getLockedMessage(), true);
+                    // Для сервера используем простое сообщение
+                    player.displayClientMessage(Component.translatable("door.locked"), true);
                     return InteractionResult.FAIL;
                 }
                 
-                // ИСПРАВЛЕНО: Проверка на движение
                 if (controller.isMoving()) {
-                    // Опционально: можно показать сообщение игроку
-                    // player.displayClientMessage(Component.translatable("door.moving"), true);
-                    return InteractionResult.CONSUME; // Поглощаем клик но ничего не делаем
+                    return InteractionResult.CONSUME;
                 }
                 
                 controller.toggle();
                 return InteractionResult.SUCCESS;
             }
         }
-        
         return InteractionResult.PASS;
     }
 
@@ -199,4 +200,6 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
+
+    
 }

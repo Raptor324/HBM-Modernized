@@ -540,6 +540,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.meter.geiger_counter.name", "СЧЁТЧИК ГЕЙГЕРА");
                 add("item.hbm_m.meter.dosimeter.name", "ДОЗИМЕТР");
                 add("item.hbm_m.meter.title_format", "%s");
+                add("hbm_m.render.shader_detected", "§e[HBM] §7Обнаружен активный шейдер. Переключение на совместимый рендер...");
+                add("hbm_m.render.shader_disabled", "§a[HBM] §7Шейдер отключен. Возврат к оптимизированному VBO рендеру.");
+                add("hbm_m.render.path_changed", "§e[HBM] §7Путь рендера установлен: %s");
+                add("hbm_m.render.status", "§e[HBM] §7Текущий путь рендера: §f%s\n§7Внешний шейдер обнаружен: §f%s");
 
                 add("tooltip.hbm_m.abilities", "Способности:");
                 add("tooltip.hbm_m.vein_miner", "Жилковый майнер (%s)");
@@ -1217,6 +1221,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.meter.geiger_counter.name", "GEIGER COUNTER");
                 add("item.hbm_m.meter.dosimeter.name", "DOSIMETER");
                 add("item.hbm_m.meter.title_format", "%s");
+                add("hbm_m.render.shader_detected", "§e[HBM] §7External shader detected. Switching to compatible renderer...");
+                add("hbm_m.render.shader_disabled", "§a[HBM] §7Shader disabled. Returning to optimized VBO renderer.");
+                add("hbm_m.render.path_changed", "§e[HBM] §7Render path set to: %s");
+                add("hbm_m.render.status", "§e[HBM] §7Current render path: §f%s\n§7External shader detected: §f%s");
 
                 add("item.hbm_m.meter.chunk_rads", "§eCurrent chunk radiation: %s\n");
                 add("item.hbm_m.meter.env_rads", "§eTotal environment contamination: %s");

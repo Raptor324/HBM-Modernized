@@ -15,15 +15,12 @@ import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.item.ItemAssemblyTemplate;
-import com.hbm_m.item.ItemBlueprintFolder;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.radiation.ChunkRadiationManager;
-import com.hbm_m.radiation.PlayerRadiationHandler;
-import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.network.ModPacketHandler;
@@ -38,8 +35,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
@@ -49,12 +44,11 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
@@ -102,14 +96,14 @@ public class MainRegistry {
         // Регистрация обработчиков событий Forge (игровых)
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
-        MinecraftForge.EVENT_BUS.register(new PlayerRadiationHandler());
+        MinecraftForge.EVENT_BUS.register(new PlayerHandler());
 
 
         // Регистрация остальных систем resources
         // ModPacketHandler.register(); // Регистрация пакетов
 
         // Инстанцируем ClientSetup, чтобы его конструктор вызвал регистрацию на Forge Event Bus
-        new ClientSetup();
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> new ClientSetup());
 
         LOGGER.info("Radiation handlers registered. Using {}.", ModClothConfig.get().usePrismSystem ? "ChunkRadiationHandlerPRISM" : "ChunkRadiationHandlerSimple");
         LOGGER.info("Registered event listeners for Radiation System.");
@@ -121,6 +115,7 @@ public class MainRegistry {
         event.enqueueWork(() -> {
             ModPacketHandler.register();
             ModHazards.registerHazards(); // Регистрация опасностей (радиация, биологическая опасность в будущем и тд)
+            // MinecraftForge.EVENT_BUS.addListener(this::onRenderLevelStage);
             LOGGER.info("HazardSystem initialized successfully");
         });
     }
@@ -141,6 +136,16 @@ public class MainRegistry {
             event.addListener(provider.getCapability(ChunkRadiationProvider.CHUNK_RADIATION_CAPABILITY)::invalidate);
         }
     }
+
+    // private void onRenderLevelStage(RenderLevelStageEvent event) {
+    //     if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
+    //         GPUInstancedRenderer.beginInstances("Ring");
+    //     }
+    //     else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+    //         GPUInstancedRenderer.endInstances();
+    //     }
+    // }
+
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
         // Логгирование для отладки
         LOGGER.info("Building creative tab contents for: " + event.getTabKey());
@@ -254,24 +259,17 @@ public class MainRegistry {
                     LOGGER.info("Added {} to NTM Resources tab", ingotObject.get());
                 }
             }
-            if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
-                for (RegistryObject<Item> powdersObject : ModItems.POWDERS.values()) {
-                    event.accept(powdersObject.get());
-                }
+            event.accept(ModItems.CINNABAR);
+            event.accept(ModItems.FIRECLAY_BALL);
 
+            event.accept(ModItems.SULFUR);
 
-                event.accept(ModItems.CINNABAR);
-                event.accept(ModItems.FIRECLAY_BALL);
-
-                event.accept(ModItems.SULFUR);
-
-                event.accept(ModItems.FLUORITE);
-                event.accept(ModItems.RAREGROUND_ORE_CHUNK);
-                event.accept(ModItems.CINNABAR);
-                event.accept(ModItems.FIRECLAY_BALL);
-                event.accept(ModItems.FIREBRICK);
-                event.accept(ModItems.WOOD_ASH_POWDER);
-            }
+            event.accept(ModItems.FLUORITE);
+            event.accept(ModItems.RAREGROUND_ORE_CHUNK);
+            event.accept(ModItems.CINNABAR);
+            event.accept(ModItems.FIRECLAY_BALL);
+            event.accept(ModItems.FIREBRICK);
+            event.accept(ModItems.WOOD_ASH_POWDER);
         }
         // РАСХОДНИКИ И МОДИФИКАТОРЫ
         if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get()) {
@@ -618,81 +616,46 @@ public class MainRegistry {
 
             event.accept(ModItems.TEMPLATE_FOLDER);
 
-            if (Minecraft.getInstance().level != null) {
-                RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
-                List<AssemblerRecipe> recipes = recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                ClientSetup.addTemplatesClient(event);
+            });
 
-                // Собираем уникальные blueprintPool из всех рецептов
-                Set<String> blueprintPools = new HashSet<>();
-                for (AssemblerRecipe recipe : recipes) {
-                    String pool = recipe.getBlueprintPool();
-                    if (pool != null && !pool.isEmpty()) {
-                        blueprintPools.add(pool);
-                    }
-                }
-
-                // Создаём папку для каждого уникального пула
-                for (String pool : blueprintPools) {
-                    ItemStack folderStack = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
-                    ItemBlueprintFolder.writeBlueprintPool(folderStack, pool);
-                    event.accept(folderStack);
-                }
-
-                if (ModClothConfig.get().enableDebugLogging) {
-                    LOGGER.info("Added {} blueprint folders to NTM Templates tab", blueprintPools.size());
-                }
-
-                event.accept(ModItems.STAMP_STONE_FLAT);
-                event.accept(ModItems.STAMP_STONE_PLATE);
-                event.accept(ModItems.STAMP_STONE_WIRE);
-                event.accept(ModItems.STAMP_STONE_CIRCUIT);
-                event.accept(ModItems.STAMP_IRON_FLAT);
-                event.accept(ModItems.STAMP_IRON_PLATE);
-                event.accept(ModItems.STAMP_IRON_WIRE);
-                event.accept(ModItems.STAMP_IRON_CIRCUIT);
-                event.accept(ModItems.STAMP_IRON_9);
-                event.accept(ModItems.STAMP_IRON_44);
-                event.accept(ModItems.STAMP_IRON_50);
-                event.accept(ModItems.STAMP_IRON_357);
-                event.accept(ModItems.STAMP_STEEL_FLAT);
-                event.accept(ModItems.STAMP_STEEL_PLATE);
-                event.accept(ModItems.STAMP_STEEL_WIRE);
-                event.accept(ModItems.STAMP_STEEL_CIRCUIT);
-                event.accept(ModItems.STAMP_TITANIUM_FLAT);
-                event.accept(ModItems.STAMP_TITANIUM_PLATE);
-                event.accept(ModItems.STAMP_TITANIUM_WIRE);
-                event.accept(ModItems.STAMP_TITANIUM_FLAT);
-                event.accept(ModItems.STAMP_TITANIUM_PLATE);
-                event.accept(ModItems.STAMP_TITANIUM_WIRE);
-                event.accept(ModItems.STAMP_TITANIUM_CIRCUIT);
-                event.accept(ModItems.STAMP_OBSIDIAN_FLAT);
-                event.accept(ModItems.STAMP_OBSIDIAN_PLATE);
-                event.accept(ModItems.STAMP_OBSIDIAN_WIRE);
-                event.accept(ModItems.STAMP_OBSIDIAN_CIRCUIT);
-                event.accept(ModItems.STAMP_DESH_FLAT);
-                event.accept(ModItems.STAMP_DESH_PLATE);
-                event.accept(ModItems.STAMP_DESH_WIRE);
-                event.accept(ModItems.STAMP_DESH_CIRCUIT);
-                event.accept(ModItems.STAMP_DESH_9);
-                event.accept(ModItems.STAMP_DESH_44);
-                event.accept(ModItems.STAMP_DESH_50);
-                event.accept(ModItems.STAMP_DESH_357);
-
-                // Добавляем шаблоны как раньше
-                for (AssemblerRecipe recipe : recipes) {
-                    ItemStack templateStack = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
-                    ItemAssemblyTemplate.writeRecipeOutput(templateStack, recipe.getResultItem(null));
-                    event.accept(templateStack);
-                }
-
-                if (ModClothConfig.get().enableDebugLogging) {
-                    LOGGER.info("Added {} templates to NTM Templates tab", recipes.size());
-                }
-            } else {
-                if (ModClothConfig.get().enableDebugLogging) {
-                    LOGGER.warn("Could not populate templates tab: Minecraft level is null.");
-                }
-            }
+            event.accept(ModItems.STAMP_STONE_FLAT);
+            event.accept(ModItems.STAMP_STONE_PLATE);
+            event.accept(ModItems.STAMP_STONE_WIRE);
+            event.accept(ModItems.STAMP_STONE_CIRCUIT);
+            event.accept(ModItems.STAMP_IRON_FLAT);
+            event.accept(ModItems.STAMP_IRON_PLATE);
+            event.accept(ModItems.STAMP_IRON_WIRE);
+            event.accept(ModItems.STAMP_IRON_CIRCUIT);
+            event.accept(ModItems.STAMP_IRON_9);
+            event.accept(ModItems.STAMP_IRON_44);
+            event.accept(ModItems.STAMP_IRON_50);
+            event.accept(ModItems.STAMP_IRON_357);
+            event.accept(ModItems.STAMP_STEEL_FLAT);
+            event.accept(ModItems.STAMP_STEEL_PLATE);
+            event.accept(ModItems.STAMP_STEEL_WIRE);
+            event.accept(ModItems.STAMP_STEEL_CIRCUIT);
+            event.accept(ModItems.STAMP_TITANIUM_FLAT);
+            event.accept(ModItems.STAMP_TITANIUM_PLATE);
+            event.accept(ModItems.STAMP_TITANIUM_WIRE);
+            event.accept(ModItems.STAMP_TITANIUM_FLAT);
+            event.accept(ModItems.STAMP_TITANIUM_PLATE);
+            event.accept(ModItems.STAMP_TITANIUM_WIRE);
+            event.accept(ModItems.STAMP_TITANIUM_CIRCUIT);
+            event.accept(ModItems.STAMP_OBSIDIAN_FLAT);
+            event.accept(ModItems.STAMP_OBSIDIAN_PLATE);
+            event.accept(ModItems.STAMP_OBSIDIAN_WIRE);
+            event.accept(ModItems.STAMP_OBSIDIAN_CIRCUIT);
+            event.accept(ModItems.STAMP_DESH_FLAT);
+            event.accept(ModItems.STAMP_DESH_PLATE);
+            event.accept(ModItems.STAMP_DESH_WIRE);
+            event.accept(ModItems.STAMP_DESH_CIRCUIT);
+            event.accept(ModItems.STAMP_DESH_9);
+            event.accept(ModItems.STAMP_DESH_44);
+            event.accept(ModItems.STAMP_DESH_50);
+            event.accept(ModItems.STAMP_DESH_357);
         }
     }
 }
+

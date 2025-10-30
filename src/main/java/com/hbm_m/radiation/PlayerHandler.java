@@ -25,6 +25,9 @@ import net.minecraft.world.entity.Entity;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.loading.FMLEnvironment;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraft.commands.Commands;
 import net.minecraft.commands.arguments.EntityArgument;
@@ -37,7 +40,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.UUID;
 
-public class PlayerRadiationHandler {
+public class PlayerHandler {
     
     // Хранит текущий уровень радиации для каждого игрока
     private static final HashMap<UUID, Float> playerRads = new HashMap<>();
@@ -355,6 +358,9 @@ public class PlayerRadiationHandler {
      */
     @SubscribeEvent
     public void onRegisterCommands(RegisterCommandsEvent event) {
+        // ═══════════════════════════════════════════════════════
+        // СЕРВЕРНЫЕ КОМАНДЫ: Команды радиации (работают везде)
+        // ═══════════════════════════════════════════════════════
         event.getDispatcher().register(
             Commands.literal("hbm_m")
                 .then(Commands.literal("rad")
@@ -450,5 +456,115 @@ public class PlayerRadiationHandler {
                     )
                 )
         );
+        
+        // ═══════════════════════════════════════════════════════
+        // КЛИЕНТСКИЕ КОМАНДЫ: Команды рендера (только на клиенте)
+        // ═══════════════════════════════════════════════════════
+        
+        //  КРИТИЧНО: Проверяем что мы на физическом клиенте
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            registerClientRenderCommands(event);
+        }
+    }
+    
+    /**
+     *  НОВОЕ: Регистрация клиентских команд рендера
+     * Помечено @OnlyIn для защиты от загрузки на сервере
+     * 
+     * СЕРВЕРНАЯ БЕЗОПАСНОСТЬ:
+     * - Вызывается только если FMLEnvironment.dist == Dist.CLIENT
+     * - @OnlyIn гарантирует что код не загрузится на сервере
+     * - Все клиентские классы изолированы в этом методе
+     */
+    @OnlyIn(Dist.CLIENT)
+    private static void registerClientRenderCommands(RegisterCommandsEvent event) {
+        event.getDispatcher().register(
+            Commands.literal("hbm_m")
+                .then(Commands.literal("render")
+                    .then(Commands.literal("toggle")
+                        .executes(context -> {
+                            return executeClientRenderToggle(context);
+                        })
+                    )
+                    .then(Commands.literal("status")
+                        .executes(context -> {
+                            return executeClientRenderStatus(context);
+                        })
+                    )
+                )
+        );
+    }
+    
+    /**
+     *  НОВОЕ: Обработчик команды toggle (только клиент)
+     */
+    @OnlyIn(Dist.CLIENT)
+    private static int executeClientRenderToggle(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack> context) {
+        try {
+            var current = com.hbm_m.client.render.shader.RenderPathManager.getCurrentPath();
+            boolean shaderActive = com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive();
+            
+            // Проверяем попытку включить VBO при активном шейдере
+            if (current == com.hbm_m.client.render.shader.RenderPathManager.RenderPath.IMMEDIATE_FALLBACK && shaderActive) {
+                context.getSource().sendFailure(
+                    Component.literal("§c[HBM] §7Cannot switch to VBO mode: External shader is active!\n" +
+                                    "§7VBO rendering is incompatible with shader packs.\n" +
+                                    "§7Please disable the shader pack first.")
+                );
+                return 0;
+            }
+            
+            // Определяем новый путь
+            var newPath = current == com.hbm_m.client.render.shader.RenderPathManager.RenderPath.VBO_OPTIMIZED
+                ? com.hbm_m.client.render.shader.RenderPathManager.RenderPath.IMMEDIATE_FALLBACK
+                : com.hbm_m.client.render.shader.RenderPathManager.RenderPath.VBO_OPTIMIZED;
+            
+            com.hbm_m.client.render.shader.RenderPathManager.forceSetPath(newPath);
+            
+            context.getSource().sendSuccess(
+                () -> Component.literal("§a[HBM] §7Render path set to: §f" + newPath),
+                false
+            );
+            return 1;
+        } catch (Exception e) {
+            MainRegistry.LOGGER.error("Error executing render toggle command", e);
+            context.getSource().sendFailure(
+                Component.literal("§c[HBM] §7Error: " + e.getMessage())
+            );
+            return 0;
+        }
+    }
+    
+    /**
+     *  НОВОЕ: Обработчик команды status (только клиент)
+     */
+    @OnlyIn(Dist.CLIENT)
+    private static int executeClientRenderStatus(com.mojang.brigadier.context.CommandContext<net.minecraft.commands.CommandSourceStack> context) {
+        try {
+            var current = com.hbm_m.client.render.shader.RenderPathManager.getCurrentPath();
+            boolean shaderActive = com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive();
+            
+            String statusMessage = String.format(
+                "§e[HBM] §7Render Status:\n" +
+                "§7├─ Current path: §f%s\n" +
+                "§7├─ External shader: §f%s\n" +
+                "§7└─ VBO available: §f%s",
+                current,
+                shaderActive ? "§aActive" : "§cInactive",
+                shaderActive ? "§cNo (incompatible)" : "§aYes"
+            );
+            
+            context.getSource().sendSuccess(
+                () -> Component.literal(statusMessage),
+                false
+            );
+            return 1;
+        } catch (Exception e) {
+            MainRegistry.LOGGER.error("Error executing render status command", e);
+            context.getSource().sendFailure(
+                Component.literal("§c[HBM] §7Error: " + e.getMessage())
+            );
+            return 0;
+        }
     }
 }

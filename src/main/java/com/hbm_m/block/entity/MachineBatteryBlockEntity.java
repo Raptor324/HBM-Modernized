@@ -17,11 +17,9 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
@@ -35,7 +33,7 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
     
     // Энергия
     private final BlockEntityEnergyStorage energyStorage = 
-        new BlockEntityEnergyStorage(com.hbm_m.item.ModItems.BATTERY_CAPACITY, 5000, 5000);
+        new BlockEntityEnergyStorage(com.hbm_m.item.ModItems.BATTERY_CAPACITY,  5000);
     
     // Режимы работы
     public int modeOnNoSignal = 0; // Режим, когда НЕТ сигнала (настраивается верхней кнопкой)

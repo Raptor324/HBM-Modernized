@@ -171,6 +171,15 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public float radRandomizationFactor = 1.0F;
 
+    @Category("rendering")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 0, max = 20)
+    public int modelUpdateDistance = 3;
+
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean enableOcclusionCulling = true;
+
     // Отладка 
     @Category("debug")
     @Gui.Tooltip
