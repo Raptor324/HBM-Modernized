@@ -43,6 +43,7 @@ public class RenderPathManager {
         if (oldPath != newPath) {
             notifyPathChange(newPath);
             MainRegistry.LOGGER.info("Render path changed: {} -> {}", oldPath, newPath);
+            ImmediateFallbackRenderer.onShaderReload();
         }
     }
     

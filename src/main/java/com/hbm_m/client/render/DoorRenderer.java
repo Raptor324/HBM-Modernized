@@ -16,6 +16,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -85,26 +86,18 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
 
     @Override
     protected void renderParts(DoorBlockEntity be, DoorBakedModel model, LegacyAnimator animator,
-                            float partialTick, int packedLight, int packedOverlay,
-                            PoseStack poseStack, MultiBufferSource bufferSource) {
-        // MainRegistry.LOGGER.debug("DoorRenderer.renderParts called for controller: {}", be.isController());
-        
+                             float partialTick, int packedLight, int packedOverlay,
+                             PoseStack poseStack, MultiBufferSource bufferSource) {
         if (!be.isController()) return;
-        
         DoorDecl doorDecl = be.getDoorDecl();
-        // MainRegistry.LOGGER.debug("DoorDecl: {}", doorDecl != null ? "found" : "null");
-        
         if (doorDecl == null) return;
-        
-        // String[] partNames = model.getPartNames();
-        // MainRegistry.LOGGER.debug("Part names: {}", Arrays.toString(partNames));
 
         BlockPos blockPos = be.getBlockPos();
-
-        // Occlusion culling check
+        
+        // ИСПРАВЛЕНО: Используем правильный вызов OcclusionCullingHelper
         var minecraft = Minecraft.getInstance();
         AABB renderBounds = be.getRenderBoundingBox();
-        if (!shouldRender(blockPos, minecraft.level, renderBounds)) {
+        if (!OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
             return;
         }
 
@@ -114,18 +107,14 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         // Применяем базовое смещение модели
         doorDecl.doOffsetTransform(animator);
 
-        // Определяем путь рендеринга на основе совместимости
-        boolean useFallback = RenderPathManager.shouldUseFallback();
+        // КРИТИЧНО: Проверяем shadow pass
+        boolean isShadowPass = isShadowPassActive();
         
-        if (useFallback) {
-            // ═══════════════════════════════════════════════════════
-            // FALLBACK PATH: Immediate mode рендер (совместим с шейдерами)
-            // ═══════════════════════════════════════════════════════
+        if (isShadowPass || RenderPathManager.shouldUseFallback()) {
+            // В shadow pass ВСЕГДА используем fallback
             renderWithFallback(be, model, doorDecl, openTicks, isOpen, poseStack, packedLight);
         } else {
-            // ═══════════════════════════════════════════════════════
-            // OPTIMIZED PATH: VBO рендер с кастомным шейдером
-            // ═══════════════════════════════════════════════════════
+            // VBO рендер только в обычном режиме
             renderWithVBO(be, model, doorDecl, openTicks, isOpen, poseStack, packedLight, blockPos);
         }
     }
@@ -181,7 +170,8 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
      * Fallback рендеринг для совместимости с шейдерами
      */
     private void renderWithFallback(DoorBlockEntity be, DoorBakedModel model, DoorDecl doorDecl,
-                                    float openTicks, boolean isOpen, PoseStack poseStack, int packedLight) {
+                                float openTicks, boolean isOpen, PoseStack poseStack, int packedLight) {
+        
         // Используем кэшированный массив из DoorBakedModel
         String[] partNames = model.getPartNames();
         BlockPos blockPos = be.getBlockPos();
@@ -189,18 +179,20 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         
         for (String partName : partNames) {
             if (!doorDecl.doesRender(partName, isOpen)) continue;
-
+            
             poseStack.pushPose();
-
+            
             // Применяем трансформации части
             doPartTransform(poseStack, doorDecl, partName, openTicks, isOpen);
-
+            
             // ИСПРАВЛЕНО: Рендерим через fallback рендерер с culling поддержкой
             renderFallbackPart(partName, model.getPart(partName), poseStack, packedLight, blockPos, level, be);
-
+            
             poseStack.popPose();
-            ImmediateFallbackRenderer.endBatch();
         }
+        
+        // КРИТИЧНО: Завершаем batch ПОСЛЕ всех частей, а не после каждой
+        ImmediateFallbackRenderer.endBatch();
     }
 
     /**
@@ -226,10 +218,10 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
     /**
      * Рендерит часть модели через fallback рендерер
      */
-    private void renderFallbackPart(String partName, BakedModel partModel, PoseStack poseStack, 
+    private void renderFallbackPart(String partName, BakedModel partModel, PoseStack poseStack,
                                 int packedLight, BlockPos blockPos, Level level, BlockEntity blockEntity) {
         if (partModel == null) return;
-
+        
         try {
             // Получаем/создаем fallback рендерер для этой части
             ImmediateFallbackRenderer renderer = fallbackRenderers.computeIfAbsent(
@@ -239,7 +231,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
 
             // ИСПРАВЛЕНО: Рендерим с occlusion culling поддержкой
             renderer.render(poseStack, packedLight, null, blockPos, level, blockEntity);
-
+            
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error rendering fallback door part {}: {}", partName, e.getMessage());
             // Удаляем проблемный рендерер из кэша для повторного создания
@@ -247,17 +239,46 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         }
     }
 
-    private boolean shouldRender(BlockPos blockPos, net.minecraft.world.level.Level level, AABB renderBounds) {
-        // Сначала используем продвинутый occlusion culling
-        if (!OcclusionCullingHelper.shouldRender(blockPos, level, renderBounds)) {
-            return false;
+    @Override  
+    public boolean shouldRender(DoorBlockEntity blockEntity, Vec3 cameraPos) {
+        // Проверяем shadow pass через Oculus API
+        if (isShadowPassActive()) {
+            // В shadow pass рендерим всё в пределах shadow distance
+            return blockEntity.getBlockPos().distSqr(new BlockPos((int)cameraPos.x, (int)cameraPos.y, (int)cameraPos.z)) <= 
+                   getShadowRenderDistance() * getShadowRenderDistance();
         }
         
-        // Дополнительная проверка по дистанции как fallback
-        var camera = Minecraft.getInstance().gameRenderer.getMainCamera();
-        double distanceSq = camera.getPosition().distanceToSqr(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5);
-        double maxDistance = getViewDistance();
-        return distanceSq <= maxDistance * maxDistance;
+        // Обычная проверка
+        return super.shouldRender(blockEntity, cameraPos);
+    }
+
+    @Override 
+    public boolean shouldRenderOffScreen(DoorBlockEntity be) { 
+        return true; 
+    }
+
+    private static double getShadowRenderDistance() {
+        try {
+            Class<?> shadowRenderingClass = Class.forName("net.irisshaders.iris.shadows.ShadowRenderingState");
+            var method = shadowRenderingClass.getDeclaredMethod("getRenderDistance");
+            method.setAccessible(true);
+            Integer distance = (Integer) method.invoke(null);
+            return distance != null ? distance : 128;
+        } catch (Exception e) {
+            return 128; // Fallback distance
+        }
+    }
+
+    private static boolean isShadowPassActive() {
+        try {
+            Class<?> shadowRenderingClass = Class.forName("net.irisshaders.iris.shadows.ShadowRenderingState");
+            var method = shadowRenderingClass.getDeclaredMethod("areShadowsCurrentlyBeingRendered");
+            method.setAccessible(true);
+            Boolean result = (Boolean) method.invoke(null);
+            return result != null && result;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     /**

@@ -518,7 +518,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
     @Override 
     public boolean shouldRenderOffScreen(MachineAdvancedAssemblerBlockEntity be) { 
-        return false; 
+        return true; 
     }
 
     @Override 
