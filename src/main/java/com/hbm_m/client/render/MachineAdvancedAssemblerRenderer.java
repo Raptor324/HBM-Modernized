@@ -8,7 +8,6 @@ import com.hbm_m.client.render.shader.RenderPathManager;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 import net.minecraft.client.Minecraft;
@@ -20,16 +19,16 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.data.ModelData;
 
 import java.util.concurrent.ConcurrentHashMap;
+
+import javax.annotation.Nullable;
 
 import org.joml.Matrix4f;
 
@@ -43,7 +42,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     private static volatile InstancedStaticPartRenderer instancedBase;
     private static volatile InstancedStaticPartRenderer instancedFrame;
     private static volatile boolean instancersInitialized = false;
-    private static MultiBufferSource.BufferSource cachedIconBuffer = null;
+    // private static MultiBufferSource.BufferSource cachedIconBuffer = null;
     private static final ConcurrentHashMap<String, ImmediateFallbackRenderer> fallbackRenderers = new ConcurrentHashMap<>();
 
 
@@ -141,27 +140,33 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     }
 
     private void renderWithFallback(MachineAdvancedAssemblerBlockEntity be,
-        MachineAdvancedAssemblerBakedModel model,
-        float partialTick,
-        PoseStack poseStack,
-        int packedLight) {
-    
+                                    MachineAdvancedAssemblerBakedModel model,
+                                    float partialTick,
+                                    PoseStack poseStack,
+                                    int packedLight) {
         try {
+            BlockPos blockPos = be.getBlockPos();
+            
             // Рендер статических частей - каждая часть рендерится НЕЗАВИСИМО
-            renderFallbackPart("Base", model.getPart("Base"), poseStack, packedLight, null);
+            renderFallbackPart("Base", model.getPart("Base"), poseStack, packedLight, 
+                            null, blockPos, be.getLevel(), be);
             
             if (be.frame) {
-                renderFallbackPart("Frame", model.getPart("Frame"), poseStack, packedLight, null);
+                renderFallbackPart("Frame", model.getPart("Frame"), poseStack, packedLight, 
+                                null, blockPos, be.getLevel(), be);
             }
-            
-            // Рендер анимированных частей
+
+            // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Рендер анимированных частей с трансформациями
             boolean shouldUpdateAnimation = !shouldSkipAnimationUpdate(be.getBlockPos());
             if (shouldUpdateAnimation) {
-                renderAnimatedFallback(be, model, partialTick, poseStack, packedLight);
+                renderAnimatedFallback(be, model, partialTick, poseStack, packedLight, blockPos);
             }
-            
+
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error in fallback render", e);
+        } finally {
+            // КРИТИЧНО: Завершаем batch как в DoorRenderer
+            ImmediateFallbackRenderer.endBatch();
         }
     }
 
@@ -197,18 +202,61 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
      *  НОВЫЙ МЕТОД: Анимированный рендер в fallback режиме
      */
     private void renderAnimatedFallback(MachineAdvancedAssemblerBlockEntity be,
-                                    MachineAdvancedAssemblerBakedModel model,
-                                    float partialTick,
-                                    PoseStack poseStack,
-                                    int packedLight) {
-        // Кольцо с вращением
-        float ring = Mth.lerp(partialTick, be.prevRingAngle, be.ringAngle);
-        Matrix4f ringMat = new Matrix4f().rotateY((float) Math.toRadians(ring));
-        renderFallbackPart("Ring", model.getPart("Ring"), poseStack, packedLight, ringMat);
-        
-        // Руки с анимацией
-        renderArmFallback(be.arms[0], false, model, partialTick, poseStack, packedLight, ringMat);
-        renderArmFallback(be.arms[1], true, model, partialTick, poseStack, packedLight, ringMat);
+                                   MachineAdvancedAssemblerBakedModel model,
+                                   float partialTick,
+                                   PoseStack poseStack,
+                                   int packedLight,
+                                   BlockPos blockPos) {
+    
+    // Кольцо с вращением
+    float ring = Mth.lerp(partialTick, be.prevRingAngle, be.ringAngle);
+    Matrix4f ringMat = new Matrix4f().rotateY((float) Math.toRadians(ring));
+    renderFallbackPart("Ring", model.getPart("Ring"), poseStack, packedLight, 
+                      ringMat, blockPos, be.getLevel(), be);
+
+    // Руки с анимацией
+    renderArmFallback(be.arms[0], false, model, partialTick, poseStack, packedLight, 
+                     ringMat, blockPos, be);
+    renderArmFallback(be.arms[1], true, model, partialTick, poseStack, packedLight, 
+                     ringMat, blockPos, be);
+}
+
+    // ИСПРАВЛЕНИЕ: Рендер одной части с трансформацией (по образцу DoorRenderer)
+    private void renderFallbackPart(String partName, BakedModel partModel,
+                                    PoseStack poseStack, int packedLight,
+                                    @Nullable Matrix4f additionalTransform,
+                                    BlockPos blockPos, 
+                                    net.minecraft.world.level.Level level,
+                                    MachineAdvancedAssemblerBlockEntity blockEntity) {
+        if (partModel == null) {
+            return;
+        }
+
+        try {      
+            // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Применяем трансформации через PoseStack
+            poseStack.pushPose();
+            
+            if (additionalTransform != null) {
+                // Применяем трансформацию к PoseStack ПЕРЕД рендерингом
+                poseStack.last().pose().mul(additionalTransform);
+            }
+            
+            // Получаем/создаем рендер для этой части
+            ImmediateFallbackRenderer renderer = fallbackRenderers.computeIfAbsent(
+                    partName,
+                    k -> new ImmediateFallbackRenderer(partModel)
+            );
+
+            // КРИТИЧНО: Передаем все параметры для корректного освещения и текстур
+            renderer.render(poseStack, packedLight, null, blockPos, level, blockEntity);
+            
+            poseStack.popPose();
+
+        } catch (Exception e) {
+            MainRegistry.LOGGER.error("Error rendering fallback part {}: {}", partName, e.getMessage());
+            // Удаляем проблемный рендер из кэша для повторного создания
+            fallbackRenderers.remove(partName);
+        }
     }
 
     /**
@@ -220,7 +268,10 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                                 float partialTick,
                                 PoseStack poseStack,
                                 int packedLight,
-                                Matrix4f baseTransform) {
+                                Matrix4f baseTransform,
+                                BlockPos blockPos,
+                                MachineAdvancedAssemblerBlockEntity blockEntity) {
+        
         float a0 = Mth.lerp(partialTick, arm.prevAngles[0], arm.angles[0]);
         float a1 = Mth.lerp(partialTick, arm.prevAngles[1], arm.angles[1]);
         float a2 = Mth.lerp(partialTick, arm.prevAngles[2], arm.angles[2]);
@@ -233,32 +284,36 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         String upperName = inverted ? "ArmUpper2" : "ArmUpper1";
         String headName = inverted ? "Head2" : "Head1";
         String spikeName = inverted ? "Spike2" : "Spike1";
-        
-        // Нижняя часть
+
+        // Нижняя часть - применяем трансформации последовательно
         Matrix4f lowerMat = new Matrix4f(baseTransform)
-            .translate(0, 1.625f, zBase)
-            .rotateX((float) Math.toRadians(angleSign * a0))
-            .translate(0, -1.625f, -zBase);
-        renderFallbackPart(lowerName, model.getPart(lowerName), poseStack, packedLight, lowerMat);
-        
+                .translate(0, 1.625f, zBase)
+                .rotateX((float) Math.toRadians(angleSign * a0))
+                .translate(0, -1.625f, -zBase);
+        renderFallbackPart(lowerName, model.getPart(lowerName), poseStack, packedLight, 
+                        lowerMat, blockPos, blockEntity.getLevel(), blockEntity);
+
         // Верхняя часть
         Matrix4f upperMat = new Matrix4f(lowerMat)
-            .translate(0, 2.375f, zBase)
-            .rotateX((float) Math.toRadians(angleSign * a1))
-            .translate(0, -2.375f, -zBase);
-        renderFallbackPart(upperName, model.getPart(upperName), poseStack, packedLight, upperMat);
-        
+                .translate(0, 2.375f, zBase)
+                .rotateX((float) Math.toRadians(angleSign * a1))
+                .translate(0, -2.375f, -zBase);
+        renderFallbackPart(upperName, model.getPart(upperName), poseStack, packedLight, 
+                        upperMat, blockPos, blockEntity.getLevel(), blockEntity);
+
         // Голова
         Matrix4f headMat = new Matrix4f(upperMat)
-            .translate(0, 2.375f, zBase * 0.4667f)
-            .rotateX((float) Math.toRadians(angleSign * a2))
-            .translate(0, -2.375f, -zBase * 0.4667f);
-        renderFallbackPart(headName, model.getPart(headName), poseStack, packedLight, headMat);
-        
+                .translate(0, 2.375f, zBase * 0.4667f)
+                .rotateX((float) Math.toRadians(angleSign * a2))
+                .translate(0, -2.375f, -zBase * 0.4667f);
+        renderFallbackPart(headName, model.getPart(headName), poseStack, packedLight, 
+                        headMat, blockPos, blockEntity.getLevel(), blockEntity);
+
         // Шип
         Matrix4f spikeMat = new Matrix4f(headMat)
-            .translate(0, a3, 0);
-        renderFallbackPart(spikeName, model.getPart(spikeName), poseStack, packedLight, spikeMat);
+                .translate(0, a3, 0);
+        renderFallbackPart(spikeName, model.getPart(spikeName), poseStack, packedLight, 
+                        spikeMat, blockPos, blockEntity.getLevel(), blockEntity);
     }
 
     @Override
@@ -272,41 +327,40 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         renderRecipeIconDirect(be, poseStack, packedLight, packedOverlay);
     }
 
-    /**
-     *  СУЩЕСТВУЮЩИЙ МЕТОД: VBO рендер (без изменений)
-     */
     private void renderWithVBO(MachineAdvancedAssemblerBlockEntity be,
                             MachineAdvancedAssemblerBakedModel model,
                             float partialTick,
                             PoseStack poseStack,
                             int dynamicLight,
                             BlockPos blockPos) {
-        // Существующий код VBO рендера
+        
+        // Существующий код инициализации...
         if (!instancersInitialized) {
             initializeInstancedRenderers(model);
         }
-        
+
         if (cachedModel != model || gpu == null) {
             cachedModel = model;
             gpu = new MachineAdvancedAssemblerVboRenderer(model);
         }
-        
+
         boolean shouldUpdateAnimation = !shouldSkipAnimationUpdate(blockPos);
         
+        // ИСПРАВЛЕНИЕ: Передаем blockEntity для корректной работы culling и освещения
         if (instancedBase != null) {
             instancedBase.addInstance(poseStack, dynamicLight, blockPos, be);
         } else {
-            gpu.renderStaticBase(poseStack, dynamicLight, blockPos);
+            gpu.renderStaticBase(poseStack, dynamicLight, blockPos, be);
         }
-        
+
         if (be.frame) {
             if (instancedFrame != null) {
                 instancedFrame.addInstance(poseStack, dynamicLight, blockPos, be);
             } else {
-                gpu.renderStaticFrame(poseStack, dynamicLight, blockPos);
+                gpu.renderStaticFrame(poseStack, dynamicLight, blockPos, be);
             }
         }
-        
+
         if (shouldUpdateAnimation) {
             renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos);
         }
@@ -343,22 +397,28 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         if (instancedFrame != null) instancedFrame.flush();
     }
 
-    private void renderAnimated(MachineAdvancedAssemblerBlockEntity be, float pt, PoseStack pose, int blockLight, BlockPos blockPos) {
+    private void renderAnimated(MachineAdvancedAssemblerBlockEntity be, float pt, 
+                            PoseStack pose, int blockLight, BlockPos blockPos) {
+        
         float ring = Mth.lerp(pt, be.prevRingAngle, be.ringAngle);
         Matrix4f ringMat = new Matrix4f().rotateY((float) Math.toRadians(ring));
-        gpu.renderPart(pose, blockLight, "Ring", ringMat, blockPos);
-
-        renderArm(be.arms[0], false, pt, pose, blockLight, ringMat, blockPos);
-        renderArm(be.arms[1], true, pt, pose, blockLight, ringMat, blockPos);
+        
+        // ИСПРАВЛЕНИЕ: Используем новый метод с передачей blockEntity
+        gpu.renderAnimatedPart(pose, blockLight, "Ring", ringMat, blockPos, be);
+        
+        renderArm(be.arms[0], false, pt, pose, blockLight, ringMat, blockPos, be);
+        renderArm(be.arms[1], true, pt, pose, blockLight, ringMat, blockPos, be);
     }
 
     private void renderArm(MachineAdvancedAssemblerBlockEntity.AssemblerArm arm, boolean inverted,
-                      float pt, PoseStack pose, int blockLight, Matrix4f baseTransform, BlockPos blockPos) {
+                        float pt, PoseStack pose, int blockLight, Matrix4f baseTransform, 
+                        BlockPos blockPos, MachineAdvancedAssemblerBlockEntity be) {
+        
         float a0 = Mth.lerp(pt, arm.prevAngles[0], arm.angles[0]);
         float a1 = Mth.lerp(pt, arm.prevAngles[1], arm.angles[1]);
         float a2 = Mth.lerp(pt, arm.prevAngles[2], arm.angles[2]);
         float a3 = Mth.lerp(pt, arm.prevAngles[3], arm.angles[3]);
-
+        
         float angleSign = inverted ? -1f : 1f;
         float zBase = inverted ? -0.9375f : 0.9375f;
         
@@ -371,23 +431,23 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                 .translate(0, 1.625f, zBase)
                 .rotateX((float) Math.toRadians(angleSign * a0))
                 .translate(0, -1.625f, -zBase);
-        gpu.renderPart(pose, blockLight, lowerName, lowerMat, blockPos);
+        gpu.renderAnimatedPart(pose, blockLight, lowerName, lowerMat, blockPos, be);
 
         Matrix4f upperMat = new Matrix4f(lowerMat)
                 .translate(0, 2.375f, zBase)
                 .rotateX((float) Math.toRadians(angleSign * a1))
                 .translate(0, -2.375f, -zBase);
-        gpu.renderPart(pose, blockLight, upperName, upperMat, blockPos);
+        gpu.renderAnimatedPart(pose, blockLight, upperName, upperMat, blockPos, be);
 
         Matrix4f headMat = new Matrix4f(upperMat)
                 .translate(0, 2.375f, zBase * 0.4667f)
                 .rotateX((float) Math.toRadians(angleSign * a2))
                 .translate(0, -2.375f, -zBase * 0.4667f);
-        gpu.renderPart(pose, blockLight, headName, headMat, blockPos);
+        gpu.renderAnimatedPart(pose, blockLight, headName, headMat, blockPos, be);
 
         Matrix4f spikeMat = new Matrix4f(headMat)
                 .translate(0, a3, 0);
-        gpu.renderPart(pose, blockLight, spikeName, spikeMat, blockPos);
+        gpu.renderAnimatedPart(pose, blockLight, spikeName, spikeMat, blockPos, be);
     }
 
     private void renderRecipeIconDirect(MachineAdvancedAssemblerBlockEntity be,
@@ -483,7 +543,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
         gpu = null;
         cachedModel = null;
-        cachedIconBuffer = null;
+        // cachedIconBuffer = null;
         
         RenderPathManager.reset();
     }
