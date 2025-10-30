@@ -70,6 +70,9 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
             net.minecraft.client.Minecraft.getInstance().gameRenderer.lightTexture().turnOffLightLayer();
             gpuStateSetup = false;
         }
+        if (com.hbm_m.client.render.shader.RenderPathManager.shouldUseFallback()) {
+            com.hbm_m.client.render.shader.ImmediateFallbackRenderer.endBatch();
+        }
     }
 
     protected final Minecraft getMinecraft() {

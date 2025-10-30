@@ -6,6 +6,7 @@ import com.hbm_m.client.overlay.*;
 import com.hbm_m.client.loader.*;
 import com.hbm_m.client.model.*;
 import com.hbm_m.client.render.*;
+import com.hbm_m.client.render.shader.ImmediateFallbackRenderer;
 import com.hbm_m.client.render.shader.RenderPathManager;
 import com.hbm_m.client.render.shader.ShaderReloadListener;
 import com.hbm_m.config.ModClothConfig;
@@ -122,7 +123,15 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
 
             OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
-            RenderPathManager.updateRenderPath();
+            try {
+                RenderPathManager.updateRenderPath();
+                MainRegistry.LOGGER.info("VBO render system initialized successfully");
+            } catch (Exception e) {
+                MainRegistry.LOGGER.error("Failed to initialize VBO render system", e);
+            }
+            
+            // ДОБАВИТЬ: Регистрация обработчика отключения от сервера
+            MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
             MainRegistry.LOGGER.info("Initial render path check completed");
         });
     }
@@ -175,8 +184,19 @@ public class ClientSetup {
             return preparationBarrier.wait(null).thenRunAsync(() -> {
                 //  Очищаем глобальный кэш VBO
                 MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
+                ImmediateFallbackRenderer.clearGlobalCache();
+                DoorRenderer.clearAllCaches();
+                RenderPathManager.reset();
+                MainRegistry.LOGGER.info("VBO cache cleanup completed");
             }, gameExecutor);
         });
+    }
+
+    public static void onClientDisconnect(net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
+        MainRegistry.LOGGER.info("Client disconnecting, clearing VBO caches...");
+        DoorRenderer.clearAllCaches();
+        MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
+        com.hbm_m.client.render.shader.ImmediateFallbackRenderer.forceReset();
     }
 
     @SubscribeEvent

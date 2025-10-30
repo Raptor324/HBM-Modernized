@@ -38,7 +38,7 @@ public abstract class AbstractGpuVboRenderer {
 
 
     static final class TextureBinder {
-        static void bindForAssemblerIfNeeded(ShaderInstance shader) {
+        static void bindForModelIfNeeded(ShaderInstance shader) {
             var minecraft = Minecraft.getInstance();
             var textureManager = minecraft.getTextureManager();
             
@@ -56,18 +56,14 @@ public abstract class AbstractGpuVboRenderer {
     /**
      * Проверка видимости перед рендерингом с использованием occlusion culling
      */
-    protected boolean shouldRenderWithCulling(BlockPos blockPos, @Nullable BlockEntity blockEntity) {
-        var minecraft = Minecraft.getInstance();
-        
-        //  ПРАВИЛЬНАЯ СИГНАТУРА: всегда передаем (BlockPos, Level, AABB)
-        AABB renderBounds;
-        if (blockEntity != null) {
-            renderBounds = blockEntity.getRenderBoundingBox();
-        } else {
-            renderBounds = new AABB(blockPos).inflate(2.0);
+    private boolean shouldRenderWithCulling(BlockPos blockPos, @Nullable BlockEntity blockEntity) {
+        if (blockEntity == null || blockEntity.getLevel() == null) {
+            return false;
         }
-        
-        return OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds);
+    
+        // Используем продвинутый occlusion culling
+        AABB renderBounds = blockEntity.getRenderBoundingBox();
+        return OcclusionCullingHelper.shouldRender(blockPos, blockEntity.getLevel(), renderBounds);
     }
 
     protected void initVbo() {
@@ -87,6 +83,10 @@ public abstract class AbstractGpuVboRenderer {
     
             // Билдим данные для VBO
             data = buildVboData();
+            if (data == null) {
+                MainRegistry.LOGGER.warn("VboData is null, cannot initialize VBO");
+                throw new IllegalStateException("VboData is null");
+            }
             indexCount = data.indices != null ? data.indices.remaining() : 0;
     
             // Конфигурируем VAO
@@ -218,6 +218,7 @@ public abstract class AbstractGpuVboRenderer {
         if (!initialized || vaoId <= 0 || vboId <= 0) {
             return;
         }
+
         if (eboId <= 0 || indexCount <= 0) {
             return;
         }
@@ -230,7 +231,6 @@ public abstract class AbstractGpuVboRenderer {
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         int previousCullFace = GL11.glGetInteger(GL11.GL_CULL_FACE);
-        ShaderInstance previousShader = RenderSystem.getShader();
         
         //  КРИТИЧНО: Сохраняем ТЕКУЩИЕ texture parameters ПЕРЕД их изменением!
         GL13.glActiveTexture(GL13.GL_TEXTURE0);
@@ -266,7 +266,7 @@ public abstract class AbstractGpuVboRenderer {
             }
     
             shader.apply();
-            TextureBinder.bindForAssemblerIfNeeded(shader);
+            TextureBinder.bindForModelIfNeeded(shader);
             
             //  Применяем фильтр на основе расстояния
             applyTextureFilterBasedOnDistance(blockPos);

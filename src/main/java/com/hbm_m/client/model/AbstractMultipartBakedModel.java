@@ -18,10 +18,13 @@ import java.util.List;
 import java.util.Map;
 
 public abstract class AbstractMultipartBakedModel implements BakedModel {
+
     protected final Map<String, BakedModel> parts;
     protected final ItemTransforms transforms;
-    
     private TextureAtlasSprite cachedParticleIcon;
+    
+    // УДАЛЕНО: Опасная рефлексия, которая вызывает краш JVM
+    // Теперь используем только безопасные методы
 
     protected AbstractMultipartBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
         this.parts = parts;
@@ -31,52 +34,81 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     public BakedModel getPart(String name) {
         return parts.get(name);
     }
+    
+    /**
+     * БЕЗОПАСНАЯ ВЕРСИЯ: Получает список названий частей только из подклассов
+     * БЕЗ рефлексии для избежания краша JVM
+     */
+    protected String[] getPartNamesInternal() {
+        // Прямая проверка типа без рефлексии
+        if (this instanceof PartNamesProvider provider) {
+            return provider.getPartNames();
+        }
+        
+        // Fallback: используем ключи Map в алфавитном порядке
+        return parts.keySet().stream()
+            .sorted()
+            .toArray(String[]::new);
+    }
+    
+    /**
+     * Интерфейс для безопасного получения названий частей
+     */
+    public interface PartNamesProvider {
+        String[] getPartNames();
+    }
 
     @Override
     public TextureAtlasSprite getParticleIcon(ModelData data) {
         if (cachedParticleIcon == null) {
-            BakedModel base = parts.get("Base");
-            if (base != null) {
-                cachedParticleIcon = base.getParticleIcon(data);
-            } else {
-                BakedModel frame = parts.get("frame");
-                if (frame != null) {
-                    cachedParticleIcon = frame.getParticleIcon(data);
-                } else if (!parts.isEmpty()) {
-                    cachedParticleIcon = parts.values().iterator().next().getParticleIcon(data);
-                } else {
-                    cachedParticleIcon = Minecraft.getInstance()
-                            .getModelManager()
-                            .getMissingModel()
-                            .getParticleIcon(data);
+            // Используем getPartNamesInternal() для получения приоритетного порядка
+            String[] partNames = getPartNamesInternal();
+            
+            // Сначала пробуем стандартные имена частей для иконки
+            String[] iconParts = {"Base", "base", "frame", "Frame", "main", "Main"};
+            
+            for (String partName : iconParts) {
+                BakedModel part = parts.get(partName);
+                if (part != null) {
+                    cachedParticleIcon = part.getParticleIcon(data);
+                    break;
                 }
+            }
+            
+            // Если не нашли стандартные, используем первую часть из getPartNames()
+            if (cachedParticleIcon == null && partNames.length > 0) {
+                BakedModel part = parts.get(partNames[0]);
+                if (part != null) {
+                    cachedParticleIcon = part.getParticleIcon(data);
+                }
+            }
+            
+            // Если не нашли, берём первую доступную часть
+            if (cachedParticleIcon == null && !parts.isEmpty()) {
+                cachedParticleIcon = parts.values().iterator().next().getParticleIcon(data);
+            }
+            
+            // Последний fallback - missing model
+            if (cachedParticleIcon == null) {
+                cachedParticleIcon = Minecraft.getInstance()
+                    .getModelManager()
+                    .getMissingModel()
+                    .getParticleIcon(data);
             }
         }
         return cachedParticleIcon;
     }
 
-    /**
-     * КРИТИЧНО: Возвращаем ПУСТОЙ список для мира!
-     * Рендер происходит через BlockEntityRenderer, НЕ через chunk mesh.
-     */
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
-                                     RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
-        // Если state != null - это запрос для мира (chunk mesh)
-        // BlockEntity рендерится через TESR, поэтому НЕ добавляем квады в chunk
+                                   RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
+        
+        // WORLD RENDER: state != null означает запрос от chunk mesh
         if (shouldSkipWorldRendering(state)) {
             return Collections.emptyList();
         }
         
-        // Если state == null - это запрос для Item/GUI рендера
-        // Возвращаем только Base часть для иконки в инвентаре
-        if (state == null) {
-            BakedModel base = parts.get("Base");
-            if (base != null) {
-                return base.getQuads(null, side, rand, modelData, renderType);
-            }
-        }
-        
+        // ITEM RENDER: state == null означает запрос для item/GUI рендера
         return Collections.emptyList();
     }
 
@@ -88,6 +120,31 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
 
     protected BlockState getStateForPart(@Nullable BlockState state) {
         return state;
+    }
+    
+    protected List<String> getItemRenderPartNames() {
+        String[] allPartNames = getPartNamesInternal();
+        
+        // Стандартный приоритетный порядок для item рендера
+        String[] priorityParts = {"frame", "Frame", "doorLeft", "doorRight", "Base", "base", "main", "Main"};
+        
+        List<String> result = new java.util.ArrayList<>();
+        
+        // Сначала добавляем приоритетные части в нужном порядке
+        for (String priorityPart : priorityParts) {
+            if (parts.containsKey(priorityPart)) {
+                result.add(priorityPart);
+            }
+        }
+        
+        // Затем добавляем остальные части
+        for (String partName : allPartNames) {
+            if (!result.contains(partName) && parts.containsKey(partName)) {
+                result.add(partName);
+            }
+        }
+        
+        return result;
     }
 
     @Override
@@ -118,5 +175,9 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     @Override
     public ItemTransforms getTransforms() {
         return this.transforms;
+    }
+    
+    public void clearCaches() {
+        cachedParticleIcon = null;
     }
 }

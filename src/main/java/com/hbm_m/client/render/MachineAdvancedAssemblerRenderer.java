@@ -166,7 +166,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     }
 
     /**
-     * ✅ УПРОЩЕННЫЙ: Рендер одной части модели
+     *  УПРОЩЕННЫЙ: Рендер одной части модели
      */
     private void renderFallbackPart(String partName, BakedModel partModel,
             PoseStack poseStack, int packedLight,
@@ -394,67 +394,67 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                                     PoseStack poseStack,
                                     int packedLight, int packedOverlay) {
     
-    var selectedRecipeId = be.getSelectedRecipeId();
-    if (selectedRecipeId == null) return;
-    
-    var mc = Minecraft.getInstance();
-    if (mc.player == null) return;
-    
-    var recipe = be.getLevel() == null ? null : be.getLevel().getRecipeManager()
-            .byKey(selectedRecipeId)
-            .filter(r -> r instanceof com.hbm_m.recipe.AssemblerRecipe)
-            .map(r -> (com.hbm_m.recipe.AssemblerRecipe) r)
-            .orElse(null);
-    
-    if (recipe == null) return;
-    
-    ItemStack icon = recipe.getResultItem(null);
-    if (icon.isEmpty()) return;
+        var selectedRecipeId = be.getSelectedRecipeId();
+        if (selectedRecipeId == null) return;
+        
+        var mc = Minecraft.getInstance();
+        if (mc.player == null) return;
+        
+        var recipe = be.getLevel() == null ? null : be.getLevel().getRecipeManager()
+                .byKey(selectedRecipeId)
+                .filter(r -> r instanceof com.hbm_m.recipe.AssemblerRecipe)
+                .map(r -> (com.hbm_m.recipe.AssemblerRecipe) r)
+                .orElse(null);
+        
+        if (recipe == null) return;
+        
+        ItemStack icon = recipe.getResultItem(null);
+        if (icon.isEmpty()) return;
 
-    //  Используем СТАНДАРТНЫЙ vanilla buffers напрямую, БЕЗ immediate!
-    // Создаём в самом конце цикла рендера, когда Embeddium уже закончил свою оптимизацию
-    poseStack.pushPose();
-    poseStack.mulPose(Axis.YP.rotationDegrees(90));
-    poseStack.translate(0, 1.0625, 0);
-    
-    if (icon.getItem() instanceof BlockItem bi) {
-        var blockModel = mc.getBlockRenderer().getBlockModel(bi.getBlock().defaultBlockState());
-        if (blockModel.isGui3d()) {
-            poseStack.translate(0, -0.0625, 0);
+        //  Используем СТАНДАРТНЫЙ vanilla buffers напрямую, БЕЗ immediate!
+        // Создаём в самом конце цикла рендера, когда Embeddium уже закончил свою оптимизацию
+        poseStack.pushPose();
+        poseStack.mulPose(Axis.YP.rotationDegrees(90));
+        poseStack.translate(0, 1.0625, 0);
+        
+        if (icon.getItem() instanceof BlockItem bi) {
+            var blockModel = mc.getBlockRenderer().getBlockModel(bi.getBlock().defaultBlockState());
+            if (blockModel.isGui3d()) {
+                poseStack.translate(0, -0.0625, 0);
+            } else {
+                poseStack.translate(0, -0.125, 0);
+                poseStack.scale(0.5F, 0.5F, 0.5F);
+            }
         } else {
-            poseStack.translate(0, -0.125, 0);
-            poseStack.scale(0.5F, 0.5F, 0.5F);
+            poseStack.mulPose(Axis.XP.rotationDegrees(-90));
+            poseStack.translate(-0.5, -0.5, -0.03);
         }
-    } else {
-        poseStack.mulPose(Axis.XP.rotationDegrees(-90));
-        poseStack.translate(-0.5, -0.5, -0.03);
+        
+        //  КРИТИЧНО: Используем ГЛОБАЛЬНЫЙ mc.renderBuffers().bufferSource()
+        // Это гарантирует, что все батчи Embeddium УЖЕ завершены!
+        MultiBufferSource bufferSource = mc.renderBuffers().bufferSource();
+        
+        //  Привязываем TextureAtlas ПЕРЕД КАЖДЫМ ИСПОЛЬЗОВАНИЕМ
+        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+        
+        mc.getItemRenderer().renderStatic(
+                icon,
+                ItemDisplayContext.FIXED,
+                packedLight,
+                packedOverlay,
+                poseStack,
+                bufferSource,
+                be.getLevel(),
+                0
+        );
+        
+        //  Флашим СРАЗУ же после renderStatic
+        if (bufferSource instanceof MultiBufferSource.BufferSource bufferSrc) {
+            bufferSrc.endBatch();
+        }
+        
+        poseStack.popPose();
     }
-    
-    //  КРИТИЧНО: Используем ГЛОБАЛЬНЫЙ mc.renderBuffers().bufferSource()
-    // Это гарантирует, что все батчи Embeddium УЖЕ завершены!
-    MultiBufferSource bufferSource = mc.renderBuffers().bufferSource();
-    
-    //  Привязываем TextureAtlas ПЕРЕД КАЖДЫМ ИСПОЛЬЗОВАНИЕМ
-    RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
-    
-    mc.getItemRenderer().renderStatic(
-            icon,
-            ItemDisplayContext.FIXED,
-            packedLight,
-            packedOverlay,
-            poseStack,
-            bufferSource,
-            be.getLevel(),
-            0
-    );
-    
-    //  Флашим СРАЗУ же после renderStatic
-    if (bufferSource instanceof MultiBufferSource.BufferSource bufferSrc) {
-        bufferSrc.endBatch();
-    }
-    
-    poseStack.popPose();
-}
 
     @Override 
     public boolean shouldRenderOffScreen(MachineAdvancedAssemblerBlockEntity be) { 
@@ -487,34 +487,4 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         
         RenderPathManager.reset();
     }
-
-    // private void resetGLStateForItemRender() {
-    //     // 1. Отвязываем любые кастомные VAO/VBO
-    //     GL30.glBindVertexArray(0);
-    //     GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-    //     GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-        
-    //     // 2. Сбрасываем шейдер на null (Minecraft установит правильный)
-    //     RenderSystem.setShader(() -> null);
-        
-    //     // 3. Восстанавливаем дефолтные текстурные параметры
-    //     GL13.glActiveTexture(GL13.GL_TEXTURE0);
-    //     int currentTexture = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
-    //     if (currentTexture != 0) {
-    //         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST_MIPMAP_LINEAR);
-    //         GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-    //     }
-        
-    //     // 4. Восстанавливаем стандартное состояние рендеринга
-    //     RenderSystem.enableDepthTest();
-    //     RenderSystem.depthFunc(GL11.GL_LEQUAL);
-    //     RenderSystem.enableBlend();
-    //     RenderSystem.defaultBlendFunc();
-    //     RenderSystem.enableCull();
-        
-    //     // 5. Сбрасываем любые активные атрибуты вертексов
-    //     for (int i = 0; i < 16; i++) {
-    //         GL20.glDisableVertexAttribArray(i);
-    //     }
-    // }
 }

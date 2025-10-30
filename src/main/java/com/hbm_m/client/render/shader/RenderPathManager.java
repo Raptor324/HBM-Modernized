@@ -8,7 +8,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import java.util.concurrent.atomic.AtomicReference;
 
 /**
- * ✅ УПРОЩЕННЫЙ: Менеджер путей рендера для простого immediate рендера
+ *  УПРОЩЕННЫЙ: Менеджер путей рендера для простого immediate рендера
  * 
  * УПРОЩЕНИЯ:
  * - Убрана сложная очистка состояния
@@ -30,7 +30,7 @@ public class RenderPathManager {
     private static final long CHECK_INTERVAL_MS = 1000;
     
     /**
-     * ✅ УПРОЩЕННЫЙ: Обновление пути рендера
+     *  УПРОЩЕННЫЙ: Обновление пути рендера
      */
     public static void updateRenderPath() {
         boolean shaderActive = ShaderCompatibilityDetector.isExternalShaderActive();
@@ -47,7 +47,7 @@ public class RenderPathManager {
     }
     
     /**
-     * ✅ УПРОЩЕННАЯ: Проверка и обновление
+     *  УПРОЩЕННАЯ: Проверка и обновление
      */
     public static void checkAndUpdate() {
         long currentTime = System.currentTimeMillis();
@@ -75,7 +75,7 @@ public class RenderPathManager {
     }
     
     /**
-     * ✅ УПРОЩЕННАЯ: Принудительная установка пути
+     *  УПРОЩЕННАЯ: Принудительная установка пути
      */
     public static void forceSetPath(RenderPath path) {
         RenderPath oldPath = currentPath.getAndSet(path);
@@ -96,7 +96,7 @@ public class RenderPathManager {
     }
     
     /**
-     * ✅ УПРОЩЕННОЕ: Уведомление о смене пути
+     *  УПРОЩЕННОЕ: Уведомление о смене пути
      */
     private static void notifyPathChange(RenderPath newPath) {
         Minecraft minecraft = Minecraft.getInstance();
@@ -122,7 +122,7 @@ public class RenderPathManager {
     }
     
     /**
-     * ✅ УПРОЩЕННЫЙ: Простой сброс
+     *  УПРОЩЕННЫЙ: Простой сброс
      */
     public static void reset() {
         currentPath.set(RenderPath.VBO_OPTIMIZED);

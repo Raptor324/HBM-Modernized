@@ -267,7 +267,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
             }
             
             shader.apply();
-            TextureBinder.bindForAssemblerIfNeeded(shader);
+            TextureBinder.bindForModelIfNeeded(shader);
             var sampler0 = shader.getUniform("Sampler0");
             if (sampler0 != null) sampler0.set(0);
             var sampler2 = shader.getUniform("Sampler2");

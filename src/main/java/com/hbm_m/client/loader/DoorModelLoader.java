@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 
 public class DoorModelLoader extends AbstractObjPartModelLoader<DoorBakedModel> {
 
-    private static final Set<String> DEFAULT_PART_NAMES = Set.of(
+    private static final Set<String> PART_NAMES = Set.of(
         "frame", "doorLeft", "doorRight"
     );
 
@@ -25,7 +25,7 @@ public class DoorModelLoader extends AbstractObjPartModelLoader<DoorBakedModel> 
                 .map(JsonElement::getAsString)
                 .collect(Collectors.toSet());
         }
-        return DEFAULT_PART_NAMES;
+        return PART_NAMES;
     }
 
     @Override

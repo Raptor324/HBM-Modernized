@@ -1,5 +1,6 @@
 package com.hbm_m.event;
 
+import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.ImmediateFallbackRenderer;
@@ -63,13 +64,13 @@ public class ClientModEvents {
             }
         }
     }
-    /**
-     *  ИСПРАВЛЕНО: Управляем батчами для ВСЕХ машин
-     */
+
+    // Управляем батчами для ВСЕХ машин
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             MachineAdvancedAssemblerRenderer.flushInstancedBatches();
+            DoorRenderer.flushInstancedBatches();
         } 
     }
 
@@ -81,10 +82,12 @@ public class ClientModEvents {
         } else if (event.phase == TickEvent.Phase.END) {
             RenderPathManager.checkAndUpdate();
             
-            // ✅ ДОБАВЛЕНО: Периодическая очистка памяти immediate рендера
+            //  ДОБАВЛЕНО: Периодическая очистка памяти immediate рендера
             memoryCleanupCounter++;
             if (memoryCleanupCounter >= MEMORY_CLEANUP_INTERVAL) {
                 memoryCleanupCounter = 0;
+
+                DoorRenderer.clearAllCaches();
                 
                 // Принудительно очищаем состояние Tesselator
                 ImmediateFallbackRenderer.forceReset();
