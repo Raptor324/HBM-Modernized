@@ -39,19 +39,25 @@ public class DoorVboRenderer extends AbstractGpuVboRenderer {
      * Получает или создает VBO рендерер для указанной анимированной части двери
      * ВАЖНО: НЕ используется для статической части "frame"!
      */
-    public static DoorVboRenderer getOrCreate(DoorBakedModel model, String partName) {
+    public static DoorVboRenderer getOrCreate(DoorBakedModel model, String partName, String doorType) {
         // Защита от создания VBO рендерера для статических частей
         if ("frame".equals(partName)) {
             throw new IllegalArgumentException("Frame part should use InstancedStaticPartRenderer, not DoorVboRenderer!");
         }
         
-        // ИСПРАВЛЕНИЕ: Также пропускаем пустую часть "Base"
         if ("Base".equals(partName)) {
             throw new IllegalArgumentException("Base part is empty and should not be rendered!");
         }
     
-        String key = "door_" + partName + "_" + System.identityHashCode(model);
+        // ИСПРАВЛЕНИЕ: Включаем тип двери в ключ кэша
+        String key = "door_" + doorType + "_" + partName + "_" + System.identityHashCode(model);
         return partRenderers.computeIfAbsent(key, k -> new DoorVboRenderer(model, partName));
+    }
+
+    public static DoorVboRenderer getOrCreate(DoorBakedModel model, String partName) {
+        // Пытаемся определить тип двери по модели
+        String doorType = "unknown_" + System.identityHashCode(model);
+        return getOrCreate(model, partName, doorType);
     }
 
     @Override

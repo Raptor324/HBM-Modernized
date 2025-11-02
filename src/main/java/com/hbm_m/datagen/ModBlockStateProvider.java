@@ -120,8 +120,19 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
         customObjBlock(ModBlocks.MACHINE_ASSEMBLER);
         // customObjBlock(ModBlocks.FLUID_TANK);
-        // customObjBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
+
         customObjBlock(ModBlocks.LARGE_VEHICLE_DOOR);
+        customObjBlock(ModBlocks.ROUND_AIRLOCK_DOOR);
+        customObjBlock(ModBlocks.TRANSITION_SEAL);
+        customObjBlock(ModBlocks.SILO_HATCH);
+        customObjBlock(ModBlocks.SILO_HATCH_LARGE);
+        customObjBlock(ModBlocks.QE_SLIDING);
+        customObjBlock(ModBlocks.QE_CONTAINMENT);
+        customObjBlock(ModBlocks.WATER_DOOR);
+        customObjBlock(ModBlocks.FIRE_DOOR);
+        customObjBlock(ModBlocks.SLIDE_DOOR);
+        customObjBlock(ModBlocks.SLIDING_SEAL_DOOR);
+        customObjBlock(ModBlocks.SECURE_ACCESS_DOOR);
 
         simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath()));
 

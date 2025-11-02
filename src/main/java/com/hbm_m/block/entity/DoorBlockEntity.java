@@ -10,6 +10,7 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -36,6 +37,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     private int openTicks = 0;
     public long animStartTime = 0;
     private boolean locked = false;
+    private static final float COLLISION_UPDATE_THRESHOLD = 0.05f;
 
     private final String doorDeclId;
     
@@ -237,29 +239,51 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     // ==================== Server Tick ====================
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, DoorBlockEntity be) {
-        // ИСПРАВЛЕНО: Используем фиксированное время открытия для сервера
-        int openTime = 60; // Fallback значение для всех дверей
+        int openTime = 60;
+        boolean shouldSync = false;
         
-        if (be.state == 3) {
+        if (be.state == 3) { // Открывается
             be.openTicks++;
             be.updatePhantomBlocks(level, pos, openTime);
+            
+            // ДОБАВЛЕНО: Обновляем коллизию каждый тик
+            be.updateCollisionShape(level, pos);
+            
             if (be.openTicks >= openTime) {
                 be.state = 1;
                 be.openTicks = openTime;
-                be.syncToClient();
+                shouldSync = true;
                 be.notifyNeighborsOfStateChange(level, pos);
             }
-        } else if (be.state == 2) {
+        } else if (be.state == 2) { // Закрывается
             be.openTicks--;
             be.updatePhantomBlocks(level, pos, openTime);
+            
+            // ДОБАВЛЕНО: Обновляем коллизию каждый тик
+            be.updateCollisionShape(level, pos);
+            
             if (be.openTicks <= 0) {
                 be.state = 0;
                 be.openTicks = 0;
-                be.syncToClient();
+                shouldSync = true;
                 be.notifyNeighborsOfStateChange(level, pos);
             }
         }
+        
+        if (shouldSync) {
+            be.syncToClient();
+        }
     }
+    
+    // НОВЫЙ МЕТОД: Принудительное обновление коллизии
+    private void updateCollisionShape(Level level, BlockPos pos) {
+        // Сбрасываем кеш коллизии
+        this.lastCollisionProgress = -1f;
+        
+        // Уведомляем клиент и сервер о необходимости пересчета коллизии
+        BlockState currentState = level.getBlockState(pos);
+        level.sendBlockUpdated(pos, currentState, currentState, Block.UPDATE_CLIENTS);
+    }    
 
     private void notifyNeighborsOfStateChange(Level level, BlockPos controllerPos) {
         // Получаем structureHelper из блока
@@ -284,19 +308,19 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     public VoxelShape getDynamicCollisionShape(Direction facing) {
         float progress = getOpenProgress(0);
         
-        if (Math.abs(progress - lastCollisionProgress) < 0.01f) {
+        // Обновляем только если прогресс изменился значительно
+        if (Math.abs(progress - lastCollisionProgress) < COLLISION_UPDATE_THRESHOLD) {
             return cachedCollisionShape;
         }
         
         lastCollisionProgress = progress;
         
-        // ИСПРАВЛЕНО: На сервере используем упрощенную коллизию
+        // Получаем bounds из DoorDecl (на клиенте) или серверной логики
         List<AABB> bounds;
         if (level != null && level.isClientSide) {
             DoorDecl decl = getDoorDecl();
             bounds = decl != null ? decl.getCollisionBounds(progress, facing) : List.of();
         } else {
-            // Упрощенная коллизия для сервера
             bounds = getServerCollisionBounds(progress, facing);
         }
         

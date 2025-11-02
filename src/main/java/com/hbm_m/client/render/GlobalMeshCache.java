@@ -9,7 +9,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 
 import java.lang.ref.WeakReference;
 import java.util.*;
@@ -21,16 +20,25 @@ public class GlobalMeshCache {
     // ИСПРАВЛЕНИЕ: Ограничиваем размер кэша
     private static final int MAX_CACHE_SIZE = 256;
     
+    // Отдельные кэши для разных типов контента
     private static final ConcurrentHashMap<String, WeakReference<AbstractGpuVboRenderer>> PART_RENDERERS = new ConcurrentHashMap<>();
     private static final Map<String, List<BakedQuad>> COMPILED_QUADS = new ConcurrentHashMap<>();
     private static final Map<String, VertexBuffer> GPU_BUFFERS = new ConcurrentHashMap<>();
     private static final RandomSource RANDOM_SOURCE = RandomSource.create(0);
 
+    // ==================== ОБРАТНАЯ СОВМЕСТИМОСТЬ: Старые методы ====================
+    
+    /**
+     * УСТАРЕВШИЕ МЕТОДЫ для обратной совместимости с существующими рендерерами
+     * Автоматически генерируют простые ключи без типов
+     */
+    
     public static List<BakedQuad> getOrCompile(String cacheKey, BakedModel modelPart) {
         // ИСПРАВЛЕНИЕ: Проверяем размер кэша
         if (COMPILED_QUADS.size() > MAX_CACHE_SIZE) {
             clearOldestQuads();
         }
+        
         return COMPILED_QUADS.computeIfAbsent(cacheKey, k -> compileMesh(modelPart));
     }
 
@@ -39,6 +47,58 @@ public class GlobalMeshCache {
         return getOrCompile(cacheKey, modelPart);
     }
 
+    public static VertexBuffer getOrCreateGPUBuffer(String cacheKey, BakedModel modelPart) {
+        // ИСПРАВЛЕНИЕ: Проверяем размер кэша
+        if (GPU_BUFFERS.size() > MAX_CACHE_SIZE) {
+            clearOldestBuffers();
+        }
+        
+        return GPU_BUFFERS.computeIfAbsent(cacheKey, k -> {
+            List<BakedQuad> quads = getOrCompile(cacheKey, modelPart);
+            return uploadToGPU(quads);
+        });
+    }
+
+    public static AbstractGpuVboRenderer getOrCreateRenderer(String partKey, BakedModel model) {
+        // ИСПРАВЛЕНИЕ: Проверяем размер кэша рендереров
+        if (PART_RENDERERS.size() > MAX_CACHE_SIZE) {
+            cleanupDeadRenderers();
+        }
+        
+        return PART_RENDERERS.compute(partKey, (key, existingRef) -> {
+            AbstractGpuVboRenderer renderer = (existingRef != null) ? existingRef.get() : null;
+            if (renderer == null) {
+                renderer = createRendererForPart(model);
+                return new WeakReference<>(renderer);
+            }
+            return existingRef;
+        }).get();
+    }
+
+    // ==================== НОВЫЕ МЕТОДЫ: Поддержка типов для дверей ====================
+    
+    /**
+     * НОВЫЕ МЕТОДЫ с поддержкой типов для систем, которые требуют разделения кэша
+     * (например, двери с разными типами)
+     */
+    
+    public static List<BakedQuad> getOrCompile(String entityType, String partName, BakedModel modelPart) {
+        String cacheKey = entityType + ":" + partName;
+        return getOrCompile(cacheKey, modelPart);
+    }
+
+    public static VertexBuffer getOrCreateGPUBuffer(String entityType, String partName, BakedModel modelPart) {
+        String cacheKey = entityType + ":" + partName;
+        return getOrCreateGPUBuffer(cacheKey, modelPart);
+    }
+
+    public static AbstractGpuVboRenderer getOrCreateRenderer(String entityType, String partName, BakedModel model) {
+        String partKey = entityType + ":" + partName;
+        return getOrCreateRenderer(partKey, model);
+    }
+
+    // ==================== ВНУТРЕННИЕ МЕТОДЫ ====================
+    
     private static List<BakedQuad> compileMesh(BakedModel modelPart) {
         if (modelPart == null) return Collections.emptyList();
         
@@ -70,19 +130,6 @@ public class GlobalMeshCache {
                 vb.close();
             }
         }
-    }
-
-    // ==================== GPU MESH БЕЗ запечённого света! ====================
-    public static VertexBuffer getOrCreateGPUBuffer(String cacheKey, BakedModel modelPart) {
-        // ИСПРАВЛЕНИЕ: Проверяем размер кэша
-        if (GPU_BUFFERS.size() > MAX_CACHE_SIZE) {
-            clearOldestBuffers();
-        }
-        
-        return GPU_BUFFERS.computeIfAbsent(cacheKey, k -> {
-            List<BakedQuad> quads = getOrCompile(cacheKey, modelPart);
-            return uploadToGPU(quads);
-        });
     }
 
     // ИСПРАВЛЕНИЕ: Добавлена очистка старых буферов
@@ -121,32 +168,8 @@ public class GlobalMeshCache {
         vbo.bind();
         vbo.upload(renderedBuffer);
         VertexBuffer.unbind();
-
-        return vbo;
-    }
-
-    public static void clear() {
-        COMPILED_QUADS.clear();
-        GPU_BUFFERS.values().forEach(vb -> { if (vb != null) vb.close(); });
-        GPU_BUFFERS.clear();
-    }
-
-    public static AbstractGpuVboRenderer getOrCreateRenderer(String partKey, BakedModel model) {
-        // ИСПРАВЛЕНИЕ: Проверяем размер кэша рендереров
-        if (PART_RENDERERS.size() > MAX_CACHE_SIZE) {
-            cleanupDeadRenderers();
-        }
         
-        return PART_RENDERERS.compute(partKey, (key, existingRef) -> {
-            AbstractGpuVboRenderer renderer = (existingRef != null) ? existingRef.get() : null;
-            
-            if (renderer == null) {
-                renderer = createRendererForPart(model);
-                return new WeakReference<>(renderer);
-            }
-            
-            return existingRef;
-        }).get();
+        return vbo;
     }
 
     // ИСПРАВЛЕНИЕ: Добавлена очистка мёртвых WeakReference
@@ -174,6 +197,14 @@ public class GlobalMeshCache {
         };
     }
 
+    // ==================== ОЧИСТКА КЭША ====================
+    
+    public static void clear() {
+        COMPILED_QUADS.clear();
+        GPU_BUFFERS.values().forEach(vb -> { if (vb != null) vb.close(); });
+        GPU_BUFFERS.clear();
+    }
+
     /**
      * Очистить весь кэш (вызывать при reload ресурсов)
      */
@@ -186,5 +217,26 @@ public class GlobalMeshCache {
         }
         PART_RENDERERS.clear();
         clear(); // Очищаем также quads и buffers
+    }
+
+    // ==================== МЕТОДЫ ДЛЯ СТАТИСТИКИ И ОТЛАДКИ ====================
+    
+    public static int getCachedQuadsCount() {
+        return COMPILED_QUADS.size();
+    }
+
+    public static int getCachedBuffersCount() {
+        return GPU_BUFFERS.size();
+    }
+
+    public static int getCachedRenderersCount() {
+        return PART_RENDERERS.size();
+    }
+
+    public static void logCacheStats() {
+        System.out.println("GlobalMeshCache stats:");
+        System.out.println("  Compiled quads: " + getCachedQuadsCount());
+        System.out.println("  GPU buffers: " + getCachedBuffersCount());
+        System.out.println("  Renderers: " + getCachedRenderersCount());
     }
 }

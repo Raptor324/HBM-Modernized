@@ -30,8 +30,8 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
     private static final ConcurrentHashMap<String, ImmediateFallbackRenderer> fallbackRenderers = new ConcurrentHashMap<>();
 
     // НОВОЕ: Instanced рендерер для статической части frame
-    private static volatile InstancedStaticPartRenderer instancedFrame;
-    private static volatile boolean frameInstancerInitialized = false;
+    private static final ConcurrentHashMap<String, InstancedStaticPartRenderer> instancedFrameCache = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, Boolean> frameInitializationFlags = new ConcurrentHashMap<>();
 
     // ОПТИМИЗАЦИЯ: Переиспользуемые буферы для трансформаций (legacy режим)
     private final float[] translation = new float[3];
@@ -43,34 +43,22 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
     }
 
     // Инициализация instanced рендерера для frame
-    private static synchronized void initializeFrameInstancerSync(DoorBakedModel model) {
-        if (frameInstancerInitialized) return;
-
+    private synchronized void initializeFrameInstancerForType(DoorBakedModel model, String doorType) {
+        String frameKey = "frame_" + doorType;
+        
+        if (frameInitializationFlags.getOrDefault(frameKey, false)) return;
+        
         try {
             BakedModel frameModel = model.getPart("frame");
-            InstancedStaticPartRenderer tempFrame = null;
-            
             if (frameModel != null) {
                 var frameData = ObjModelVboBuilder.buildSinglePart(frameModel);
-                tempFrame = new InstancedStaticPartRenderer(frameData);
+                InstancedStaticPartRenderer frameRenderer = new InstancedStaticPartRenderer(frameData);
+                instancedFrameCache.put(frameKey, frameRenderer);
             }
-
-            // КРИТИЧНО: Устанавливаем поля ДО флага
-            instancedFrame = tempFrame;
-            
-            // Memory barrier: все записи видны после этого
-            frameInstancerInitialized = true;
-
+            frameInitializationFlags.put(frameKey, true);
         } catch (Exception e) {
-            MainRegistry.LOGGER.error("Failed to initialize door frame instanced renderer", e);
-            instancedFrame = null;
-        }
-    }
-
-    // Wrapper с double-check locking
-    private void initializeFrameInstancer(DoorBakedModel model) {
-        if (!frameInstancerInitialized) { // Первая проверка без лока
-            initializeFrameInstancerSync(model);
+            MainRegistry.LOGGER.error("Failed to initialize door frame instanced renderer for type: " + doorType, e);
+            frameInitializationFlags.put(frameKey, false);
         }
     }
 
@@ -126,44 +114,53 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                             float openTicks, boolean isOpen, PoseStack poseStack,
                             int packedLight, BlockPos blockPos) {
         try {
-            // Инициализируем instanced рендерер для frame если нужно
-            if (!frameInstancerInitialized) {
-                initializeFrameInstancer(model);
+            // ИСПРАВЛЕНИЕ: Генерируем уникальный ключ на основе типа двери
+            String doorType = getDoorTypeKey(doorDecl);
+            String frameKey = "frame_" + doorType;
+            
+            // Инициализируем frame рендерер для конкретного типа двери
+            if (!frameInitializationFlags.getOrDefault(frameKey, false)) {
+                initializeFrameInstancerForType(model, doorType);
             }
 
-            // Получаем кэшированный массив имён частей из модели
             String[] partNames = model.getPartNames();
             Level level = be.getLevel();
             
             for (String partName : partNames) {
                 if (!doorDecl.doesRender(partName, isOpen)) continue;
 
-                // Статическая часть frame рендерится через InstancedStaticPartRenderer
                 if ("frame".equals(partName)) {
-                    if (instancedFrame != null) {
-                        instancedFrame.addInstance(poseStack, packedLight, blockPos, be);
+                    InstancedStaticPartRenderer frameRenderer = instancedFrameCache.get(frameKey);
+                    if (frameRenderer != null) {
+                        frameRenderer.addInstance(poseStack, packedLight, blockPos, be);
                     } else {
-                        // Fallback на immediate рендерер если instanced не удалось создать
                         renderFallbackPart(partName, model.getPart(partName), poseStack, packedLight, blockPos, level, be);
                     }
-                } else if (!"Base".equals(partName)) { 
-                    // Подвижные части (doorLeft, doorRight) рендерятся через обычный DoorVboRenderer
+                } else if (!"Base".equals(partName)) {
                     try {
-                        DoorVboRenderer partRenderer = DoorVboRenderer.getOrCreate(model, partName);
+                        // ИСПРАВЛЕНИЕ: Передаем тип двери в VBO рендерер
+                        DoorVboRenderer partRenderer = DoorVboRenderer.getOrCreate(model, partName, doorType);
                         partRenderer.renderPart(poseStack, packedLight, blockPos, be, doorDecl, openTicks, isOpen);
                     } catch (IllegalArgumentException e) {
                         MainRegistry.LOGGER.warn("Cannot create VBO renderer for part {}: {}", partName, e.getMessage());
-                        // Fallback на immediate режим для этой части
                         renderFallbackPart(partName, model.getPart(partName), poseStack, packedLight, blockPos, level, be);
                     }
                 }
             }
-
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error in VBO door render", e);
-            // Fallback на immediate режим при ошибке
             renderWithFallback(be, model, doorDecl, openTicks, isOpen, poseStack, packedLight);
         }
+    }
+
+    private String getDoorTypeKey(DoorDecl doorDecl) {
+        if (doorDecl == DoorDecl.LARGE_VEHICLE_DOOR) {
+            return "large_vehicle_door";
+        } else if (doorDecl == DoorDecl.ROUND_AIRLOCK_DOOR) {
+            return "round_airlock_door";
+        }
+        // Для других типов используем класс
+        return doorDecl.getClass().getSimpleName();
     }
 
     /**
@@ -223,19 +220,20 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         if (partModel == null) return;
         
         try {
-            // Получаем/создаем fallback рендерер для этой части
-            ImmediateFallbackRenderer renderer = fallbackRenderers.computeIfAbsent(
-                    "door_" + partName,
-                    k -> new ImmediateFallbackRenderer(partModel)
-            );
-
-            // ИСПРАВЛЕНО: Рендерим с occlusion culling поддержкой
-            renderer.render(poseStack, packedLight, null, blockPos, level, blockEntity);
+            String doorType = getDoorTypeKey(((DoorBlockEntity) blockEntity).getDoorDecl());
             
+            // ИСПРАВЛЕНИЕ: Включаем тип двери в ключ кэша fallback рендерера
+            ImmediateFallbackRenderer renderer = fallbackRenderers.computeIfAbsent(
+                "door_" + doorType + "_" + partName,
+                k -> new ImmediateFallbackRenderer(partModel)
+            );
+            
+            renderer.render(poseStack, packedLight, null, blockPos, level, blockEntity);
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error rendering fallback door part {}: {}", partName, e.getMessage());
             // Удаляем проблемный рендерер из кэша для повторного создания
-            fallbackRenderers.remove("door_" + partName);
+            String doorType = getDoorTypeKey(((DoorBlockEntity) blockEntity).getDoorDecl());
+            fallbackRenderers.remove("door_" + doorType + "_" + partName);
         }
     }
 
@@ -285,7 +283,11 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
      * ВАЖНО: Вызывать в конце рендера ВСЕХ дверей для флаша батчей
      */
     public static void flushInstancedBatches() {
-        if (instancedFrame != null) instancedFrame.flush();
+        for (InstancedStaticPartRenderer renderer : instancedFrameCache.values()) {
+            if (renderer != null) {
+                renderer.flush();
+            }
+        }
     }
 
     @Override
@@ -298,38 +300,21 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
      */
     public void onResourceManagerReload() {
         // Очищаем instanced кэш
-        if (instancedFrame != null) {
-            instancedFrame.cleanup();
-            instancedFrame = null;
-        }
-        frameInstancerInitialized = false;
-
-        // Очищаем VBO кэш
-        DoorVboRenderer.clearCache();
-
-        // ИСПРАВЛЕНО: Правильная очистка fallback кэша
-        // ImmediateFallbackRenderer не имеет метода cleanup() - просто очищаем карту
-        fallbackRenderers.clear();
-        ImmediateFallbackRenderer.clearGlobalCache(); // вместо ImmediateFallbackRenderer.clearCache()
-        ImmediateFallbackRenderer.endFrame();
-
-        // Принудительно сбрасываем глобальный Tesselator если нужно
-        ImmediateFallbackRenderer.ensureBatchClosed();
-
-        // Сбрасываем путь рендеринга
-        RenderPathManager.reset();
+        clearAllCaches();
     }
 
     /**
      * Статический метод для глобальной очистки (вызывается из регистрации событий)
      */
     public static void clearAllCaches() {
-        // Очищаем instanced кэш
-        if (instancedFrame != null) {
-            instancedFrame.cleanup();
-            instancedFrame = null;
+        // Очищаем instanced кэш для всех типов дверей
+        for (InstancedStaticPartRenderer renderer : instancedFrameCache.values()) {
+            if (renderer != null) {
+                renderer.cleanup();
+            }
         }
-        frameInstancerInitialized = false;
+        instancedFrameCache.clear();
+        frameInitializationFlags.clear();
 
         // Очищаем VBO кэш
         DoorVboRenderer.clearCache();
@@ -340,5 +325,11 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         // Принудительно сбрасываем Tesselator
         ImmediateFallbackRenderer.clearGlobalCache();
         ImmediateFallbackRenderer.endFrame();
+
+        // Очищаем глобальный кэш мешей
+        GlobalMeshCache.clearAll();
+
+        // Сбрасываем путь рендеринга
+        RenderPathManager.reset();
     }
 }

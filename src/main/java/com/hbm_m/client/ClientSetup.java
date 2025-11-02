@@ -110,7 +110,7 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
             MenuScreens.register(ModMenuTypes.BLAST_FURNACE_MENU.get(), GUIBlastFurnace::new);
             MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
-            MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), ShredderScreen::new);
+            MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), GUIShredder::new);
             MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
             MenuScreens.register(ModMenuTypes.ANVIL_MENU.get(), GUIAnvil::new);
             MenuScreens.register(ModMenuTypes.IRON_CRATE_MENU.get(), GUIIronCrate::new);

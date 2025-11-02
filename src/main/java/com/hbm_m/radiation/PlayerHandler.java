@@ -10,6 +10,7 @@ import com.hbm_m.network.RadiationDataPacket;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;
+import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -282,7 +283,7 @@ public class PlayerHandler {
                 ServerAdvancementManager advancementManager = server.getAdvancements();
 
                 // Достижение "Ура, Радиация!" (200 РАД)
-                Advancement rad200Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath("hbm_m", "radiation_200"));
+                Advancement rad200Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_200"));
                 if (rad200Advancement != null) {
                     AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(rad200Advancement);
                     if (!progress.isDone()) {
@@ -301,7 +302,7 @@ public class PlayerHandler {
                 }
 
                 // Испытание "Ай, Радиация!" (1000 РАД)
-                Advancement rad1000Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath("hbm_m", "radiation_1000"));
+                Advancement rad1000Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_1000"));
                 if (rad1000Advancement != null) {
                     AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(rad1000Advancement);
                     if (!progress.isDone()) {
@@ -362,7 +363,7 @@ public class PlayerHandler {
         // СЕРВЕРНЫЕ КОМАНДЫ: Команды радиации (работают везде)
         // ═══════════════════════════════════════════════════════
         event.getDispatcher().register(
-            Commands.literal("hbm_m")
+            Commands.literal(RefStrings.MODID)
                 .then(Commands.literal("rad")
                     .then(Commands.argument("targets", EntityArgument.entities())
                         .then(Commands.literal("clear")
@@ -479,7 +480,7 @@ public class PlayerHandler {
     @OnlyIn(Dist.CLIENT)
     private static void registerClientRenderCommands(RegisterCommandsEvent event) {
         event.getDispatcher().register(
-            Commands.literal("hbm_m")
+            Commands.literal(RefStrings.MODID)
                 .then(Commands.literal("render")
                     .then(Commands.literal("toggle")
                         .executes(context -> {

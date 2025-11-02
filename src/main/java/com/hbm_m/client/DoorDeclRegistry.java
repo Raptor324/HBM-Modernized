@@ -22,6 +22,7 @@ public class DoorDeclRegistry {
     // Вызывается из ClientSetup
     public static void init() {
         register("large_vehicle_door", DoorDecl.LARGE_VEHICLE_DOOR);
+        register("round_airlock_door", DoorDecl.ROUND_AIRLOCK_DOOR);
         // Добавь другие двери здесь
     }
 }

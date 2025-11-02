@@ -16,6 +16,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.client.model.DoorBakedModel;
 import com.hbm_m.client.render.LegacyAnimator;
+import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.sound.ModSounds;
 
@@ -238,22 +239,38 @@ public abstract class DoorDecl {
         array[0] = x; array[1] = y; array[2] = z;
     }
 
-    // ==================== Пример реализации ====================
+    protected AABB rotateAABB(AABB aabb, Direction facing) {
+        double minX = aabb.minX;
+        double minY = aabb.minY;
+        double minZ = aabb.minZ;
+        double maxX = aabb.maxX;
+        double maxY = aabb.maxY;
+        double maxZ = aabb.maxZ;
+
+        return switch (facing) {
+            case NORTH -> aabb; // Без поворота
+            case SOUTH -> new AABB(-maxX, minY, -maxZ, -minX, maxY, -minZ);
+            case WEST -> new AABB(-maxZ, minY, minX, -minZ, maxY, maxX);
+            case EAST -> new AABB(minZ, minY, -maxX, maxZ, maxY, -minX);
+            default -> aabb;
+        };
+    }
+
+    // ==================== Реализации ====================
 
     public static final DoorDecl LARGE_VEHICLE_DOOR = new DoorDecl() {
         @Override
         protected ResourceLocation getBlockId() {
-            return ResourceLocation.fromNamespaceAndPath("hbm_m", "large_vehicle_door");
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "large_vehicle_door");
         }
-        
+
         @Override
         public String[] getPartNames() {
             return new String[] { "frame", "doorLeft", "doorRight" };
         }
-        
-        @Override
-        public int getOpenTime() { return 60; }
-        
+
+        @Override public int getOpenTime() { return 60; }
+
         @Override
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
             if ("doorLeft".equals(partName)) {
@@ -264,121 +281,698 @@ public abstract class DoorDecl {
                 super.getTranslation(partName, openTicks, child, trans);
             }
         }
-        
-        @Override
-        public double[][] getClippingPlanes() {
+
+        @Override public double[][] getClippingPlanes() {
             return new double[][] {
                 { 1.0, 0.0, 0.0, 3.5 },
                 { -1.0, 0.0, 0.0, 3.5 }
             };
         }
-        
-        @Override
-        public int[][] getDoorOpenRanges() {
+
+        @Override public int[][] getDoorOpenRanges() {
             return new int[][] { { 0, 0, 0, -4, 6, 2 }, { 0, 0, 0, 4, 6, 2 } };
         }
-        
-        @Override
-        public int[] getDimensions() {
+
+        @Override public int[] getDimensions() {
             return new int[] { 5, 0, 0, 0, 3, 3 };
         }
-        
-        @Override
-    public List<AABB> getCollisionBounds(float progress, Direction facing) {
-        List<AABB> bounds = new ArrayList<>();
-        
-        if (progress >= 0.99f) {
-            return bounds; // Полностью открыта
-        }
-        
-        // ==================== ЛЕВАЯ СТВОРКА (3 блока шириной) ====================
-        // Координаты ОТНОСИТЕЛЬНО контроллера
-        // Занимает блоки X=-3,-2,-1 (3 блока влево от центра)
-        // Высота Y=0..6 (6 блоков вверх)
-        
-        double leftMovement = progress * 3.0;
-        double leftDepth = Math.max(0.0, 1.0 - leftMovement);
-        
-        if (leftDepth > 0.05) {
-            // Один большой AABB для всей левой створки
-            AABB leftDoor = new AABB(
-                -3.0, 0.0, 0.0,
-                0.0, 6.0, leftDepth
-            );
-            bounds.add(rotateAABB(leftDoor, facing));
-        }
-        
-        // ==================== ПРАВАЯ СТВОРКА (3 блока шириной) ====================
-        // Занимает блоки X=0,1,2 (3 блока вправо от центра)
-        
-        double rightMovement = progress * 3.0;
-        double rightOffset = Math.min(1.0, rightMovement);
-        
-        if (1.0 - rightOffset > 0.05) {
-            // Один большой AABB для всей правой створки
-            AABB rightDoor = new AABB(
-                0.0, 0.0, rightOffset,
-                3.0, 6.0, 1.0
-            );
-            bounds.add(rotateAABB(rightDoor, facing));
-        }
-        
-        return bounds;
-    }
 
-        /**
-         * Поворачивает AABB относительно центра блока в соответствии с направлением
-         */
-        private AABB rotateAABB(AABB aabb, Direction facing) {
-            double minX = aabb.minX;
-            double minY = aabb.minY;
-            double minZ = aabb.minZ;
-            double maxX = aabb.maxX;
-            double maxY = aabb.maxY;
-            double maxZ = aabb.maxZ;
-            
-            return switch (facing) {
-                case NORTH -> aabb; // Без поворота
-                case SOUTH -> new AABB(-maxX, minY, -maxZ, -minX, maxY, -minZ);
-                case WEST -> new AABB(-maxZ, minY, minX, -minZ, maxY, maxX);
-                case EAST -> new AABB(minZ, minY, -maxX, maxZ, maxY, -minX);
-                default -> aabb;
+        @Override
+        public List<AABB> getCollisionBounds(float progress, Direction facing) {
+            List<AABB> bounds = new ArrayList<>();
+            if (progress >= 0.99f) {
+                return bounds; // Полностью открыта
+            }
+
+            // Левая створка (3 блока шириной)
+            double leftMovement = progress * 3.0;
+            double leftDepth = Math.max(0.0, 1.0 - leftMovement);
+            if (leftDepth > 0.05) {
+                AABB leftDoor = new AABB(-3.0, 0.0, 0.0, 0.0, 6.0, leftDepth);
+                bounds.add(rotateAABB(leftDoor, facing));
+            }
+
+            // Правая створка (3 блока шириной)
+            double rightMovement = progress * 3.0;
+            double rightOffset = Math.min(1.0, rightMovement);
+            if (1.0 - rightOffset > 0.05) {
+                AABB rightDoor = new AABB(0.0, 0.0, rightOffset, 3.0, 6.0, 1.0);
+                bounds.add(rotateAABB(rightDoor, facing));
+            }
+
+            return bounds;
+        }
+
+        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
+        @Override public SoundEvent getOpenSoundLoop() { return ModSounds.GARAGE_MOVE.get(); }
+        @Override public SoundEvent getCloseSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
+        @Override public SoundEvent getCloseSoundLoop() { return ModSounds.GARAGE_MOVE.get(); }
+        @Override public float getSoundVolume() { return 2.0f; }
+    };
+
+    public static final DoorDecl ROUND_AIRLOCK_DOOR = new DoorDecl() {
+        @Override
+        protected ResourceLocation getBlockId() {
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "round_airlock_door");
+        }
+
+        @Override
+        public String[] getPartNames() {
+            return new String[] { "frame", "doorLeft", "doorRight" };
+        }
+
+        @Override public int getOpenTime() { return 60; }
+
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            if ("doorLeft".equals(partName)) {
+                set(trans, 0, 0, 1.5F * getNormTime(openTicks));
+            } else if ("doorRight".equals(partName)) {
+                set(trans, 0, 0, -1.5F * getNormTime(openTicks));
+            } else {
+                super.getTranslation(partName, openTicks, child, trans);
+            }
+        }
+
+        @Override public double[][] getClippingPlanes() {
+            return new double[][] {
+                { 0.0, 0.0, 1.0, 2.0001 },
+                { 0.0, 0.0, -1.0, 2.0001 }
             };
         }
-        
-        @Override
-        public SoundEvent getOpenSoundStart() {
-            return null; // НЕ ИСПОЛЬЗУЕМ start звук для открытия
+
+        @Override public int[][] getDoorOpenRanges() {
+            return new int[][] { { 0, 0, 0, -2, 4, 2 }, { 0, 0, 0, 3, 4, 2 } };
         }
-        
-        @Override
-        public SoundEvent getOpenSoundEnd() {
-            return ModSounds.GARAGE_STOP.get();
+
+        @Override public int[] getDimensions() {
+            return new int[] { 4, 0, 0, 0, 1, 1 };
         }
-        
+
         @Override
-        public SoundEvent getOpenSoundLoop() {
-            return ModSounds.GARAGE_MOVE.get(); // ТОЛЬКО loop звук
+        public List<AABB> getCollisionBounds(float progress, Direction facing) {
+            List<AABB> bounds = new ArrayList<>();
+            if (progress >= 0.99f) {
+                return bounds; // Полностью открыта
+            }
+
+            // Левая створка
+            double leftMovement = progress * 1.5;
+            double leftDepth = Math.max(0.0, 1.0 - leftMovement);
+            if (leftDepth > 0.05) {
+                AABB leftDoor = new AABB(-1.0, 0.0, 0.0, 0.0, 4.0, leftDepth);
+                bounds.add(rotateAABB(leftDoor, facing));
+            }
+
+            // Правая створка
+            double rightMovement = progress * 1.5;
+            double rightOffset = Math.min(1.0, rightMovement);
+            if (1.0 - rightOffset > 0.05) {
+                AABB rightDoor = new AABB(0.0, 0.0, rightOffset, 1.0, 4.0, 1.0);
+                bounds.add(rotateAABB(rightDoor, facing));
+            }
+
+            return bounds;
         }
-        
+
+        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
+        @Override public SoundEvent getOpenSoundLoop() { return ModSounds.GARAGE_MOVE.get(); }
+        @Override public SoundEvent getCloseSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
+        @Override public SoundEvent getCloseSoundLoop() { return ModSounds.GARAGE_MOVE.get(); }
+        @Override public float getSoundVolume() { return 2.0f; }
+    };
+    
+    public static final DoorDecl TRANSITION_SEAL = new DoorDecl() {
         @Override
-        public SoundEvent getCloseSoundStart() {
-            return null; // НЕ ИСПОЛЬЗУЕМ start звук для закрытия
+        protected ResourceLocation getBlockId() {
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "transition_seal");
         }
-        
+
+        @Override public String[] getPartNames() { return new String[] { "frame", "door" }; }
+        @Override public int getOpenTime() { return 480; }
+
         @Override
-        public SoundEvent getCloseSoundEnd() {
-            return ModSounds.GARAGE_STOP.get();
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            if (!"frame".equals(partName)) {
+                set(trans, 0, 3.5F * getNormTime(openTicks), 0);
+            } else {
+                super.getTranslation(partName, openTicks, child, trans);
+            }
         }
-        
+
+        @Override public int[][] getDoorOpenRanges() {
+            return new int[][] { { -9, 2, 0, 20, 20, 1 } };
+        }
+
+        @Override public int[] getDimensions() {
+            return new int[] { 23, 0, 0, 0, 13, 12 };
+        }
+
         @Override
-        public SoundEvent getCloseSoundLoop() {
-            return ModSounds.GARAGE_MOVE.get(); // ТОЛЬКО loop звук
+        public List<AABB> getCollisionBounds(float progress, Direction facing) {
+            List<AABB> bounds = new ArrayList<>();
+            if (progress >= 0.99f) return bounds;
+            
+            // Огромная дверь, движется вверх
+            double movement = progress * 3.5;
+            AABB door = new AABB(-9.0, 0.0, 0.0, 11.0, Math.max(0.5, 20.0 - movement), 1.0);
+
+            // Fix: Using DoorDecl's static rotateAABB if accessible, or provide local implementation as fallback
+            bounds.add(rotateAABB(door, facing)); // Assuming rotateAABB exists statically, else implement here
+
+            return bounds;
         }
-        
+
+        @Override public SoundEvent getOpenSoundStart() { return ModSounds.TRANSITION_SEAL_OPEN.get(); }
+        @Override public float getSoundVolume() { return 6.0f; }
+    };
+
+    public static final DoorDecl FIRE_DOOR = new DoorDecl() {
         @Override
-        public float getSoundVolume() {
-            return 2.0f;
+        protected ResourceLocation getBlockId() {
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "fire_door");
         }
+
+        @Override public String[] getPartNames() { return new String[] { "frame", "door" }; }
+        @Override public int getOpenTime() { return 160; }
+
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            if (!"frame".equals(partName)) {
+                set(trans, 0, 3.0F * getNormTime(openTicks), 0);
+            } else {
+                super.getTranslation(partName, openTicks, child, trans);
+            }
+        }
+
+        @Override public double[][] getClippingPlanes() {
+            return new double[][] { { 0, -1, 0, 3.0001 } };
+        }
+
+        @Override public int[][] getDoorOpenRanges() {
+            return new int[][] { { -1, 0, 0, 3, 4, 1 } };
+        }
+
+        @Override public int[] getDimensions() {
+            return new int[] { 2, 0, 0, 0, 2, 1 };
+        }
+
+        @Override
+        public List<AABB> getCollisionBounds(float progress, Direction facing) {
+            List<AABB> bounds = new ArrayList<>();
+            if (progress >= 0.99f) return bounds;
+            
+            // Противопожарная дверь, движется вверх
+            double movement = progress * 3.0;
+            AABB door = new AABB(-1.0, 0.0, 0.0, 2.0, Math.max(0.1, 4.0 - movement), 1.0);
+            bounds.add(rotateAABB(door, facing));
+            return bounds;
+        }
+
+        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.WGH_STOP.get(); }
+        @Override public SoundEvent getOpenSoundLoop() { return ModSounds.WGH_START.get(); }
+        @Override public SoundEvent getSoundLoop2() { return ModSounds.ALARM_6.get(); }
+        @Override public float getSoundVolume() { return 2.0f; }
+    };
+
+    public static final DoorDecl SLIDE_DOOR = new DoorDecl() {
+        @Override
+        protected ResourceLocation getBlockId() {
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_blast_door");
+        }
+
+        @Override public String[] getPartNames() { return new String[] { "frame", "doorLeft", "doorRight" }; }
+        @Override public int getOpenTime() { return 24; }
+
+        @Override public double[][] getClippingPlanes() {
+            return new double[][] { { -1, 0, 0, 3.50001 }, { 1, 0, 0, 3.50001 } };
+        }
+
+        @Override public int[][] getDoorOpenRanges() {
+            return new int[][] { { -2, 0, 0, 4, 5, 1 } };
+        }
+
+        @Override public int[] getDimensions() {
+            return new int[] { 3, 0, 0, 0, 3, 3 };
+        }
+
+        @Override public boolean hasSkins() { return true; }
+        @Override public int getSkinCount() { return 3; }
+
+        @Override
+        public List<AABB> getCollisionBounds(float progress, Direction facing) {
+            List<AABB> bounds = new ArrayList<>();
+            if (progress >= 0.99f) return bounds;
+            
+            // Раздвижная дверь
+            double movement = progress * 1.5;
+            if (movement < 1.0) {
+                AABB door = new AABB(-2.0, 0.0, 0.0, 3.0, 5.0, 1.0 - movement);
+                bounds.add(rotateAABB(door, facing));
+            }
+            return bounds;
+        }
+
+        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.SLIDING_DOOR_OPENED.get(); }
+        @Override public SoundEvent getCloseSoundEnd() { return ModSounds.SLIDING_DOOR_SHUT.get(); }
+        @Override public SoundEvent getOpenSoundLoop() { return ModSounds.SLIDING_DOOR_OPENING.get(); }
+        @Override public SoundEvent getSoundLoop2() { return ModSounds.SLIDING_DOOR_OPENING.get(); }
+        @Override public float getSoundVolume() { return 2.0f; }
+    };
+
+    public static final DoorDecl SLIDING_SEAL_DOOR = new DoorDecl() {
+        @Override
+        protected ResourceLocation getBlockId() {
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_seal_door");
+        }
+
+        @Override public String[] getPartNames() { return new String[] { "frame", "door" }; }
+        @Override public int getOpenTime() { return 20; }
+
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            if (partName.startsWith("door")) {
+                set(trans, 0, 0, getNormTime(openTicks));
+            } else {
+                set(trans, 0, 0, 0);
+            }
+        }
+
+        @Override public double[][] getClippingPlanes() {
+            return new double[][] { { 0, 0, -1, 0.5001 } };
+        }
+
+        @Override public int[][] getDoorOpenRanges() {
+            return new int[][] { { 0, 0, 0, 1, 2, 2 } };
+        }
+
+        @Override public int[] getDimensions() {
+            return new int[] { 1, 0, 0, 0, 0, 0 };
+        }
+
+        @Override
+        public List<AABB> getCollisionBounds(float progress, Direction facing) {
+            List<AABB> bounds = new ArrayList<>();
+            if (progress >= 0.99f) return bounds;
+            
+            // Герметичная раздвижная дверь
+            double movement = progress * 1.0;
+            if (movement < 1.0) {
+                AABB door = new AABB(0.0, 0.0, 1.0 - 0.25, 1.0, 2.0, 1.0);
+                bounds.add(rotateAABB(door, facing));
+            }
+            return bounds;
+        }
+
+        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.SLIDING_DOOR_OPENED.get(); }
+        @Override public SoundEvent getOpenSoundStart() { return ModSounds.SLIDING_DOOR_OPENING.get(); }
+        @Override public float getSoundVolume() { return 2.0f; }
+    };
+
+    public static final DoorDecl SECURE_ACCESS_DOOR = new DoorDecl() {
+        @Override
+        protected ResourceLocation getBlockId() {
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "secure_access_door");
+        }
+
+        @Override public String[] getPartNames() { return new String[] { "frame", "door" }; }
+        @Override public int getOpenTime() { return 120; }
+
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            if (!"frame".equals(partName)) {
+                set(trans, 0, 3.5F * getNormTime(openTicks), 0);
+            } else {
+                super.getTranslation(partName, openTicks, child, trans);
+            }
+        }
+
+        @Override public double[][] getClippingPlanes() {
+            return new double[][] { { 0, -1, 0, 5 } };
+        }
+
+        @Override public int[][] getDoorOpenRanges() {
+            return new int[][] { { -2, 1, 0, 4, 5, 1 } };
+        }
+
+        @Override public int[] getDimensions() {
+            return new int[] { 4, 0, 0, 0, 2, 2 };
+        }
+
+        @Override
+        public List<AABB> getCollisionBounds(float progress, Direction facing) {
+            List<AABB> bounds = new ArrayList<>();
+            if (progress >= 0.99f) return bounds;
+            
+            // Дверь безопасного доступа, движется вверх
+            double movement = progress * 3.5;
+            AABB door = new AABB(-2.0, 0.0, 0.0, 3.0, Math.max(0.0625, 5.0 - movement), 1.0);
+            bounds.add(rotateAABB(door, facing));
+            return bounds;
+        }
+
+        @Override public SoundEvent getCloseSoundLoop() { return ModSounds.GARAGE_MOVE.get(); }
+        @Override public SoundEvent getCloseSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
+        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
+        @Override public SoundEvent getOpenSoundLoop() { return ModSounds.GARAGE_MOVE.get(); }
+        @Override public float getSoundVolume() { return 2.0f; }
+    };
+
+    public static final DoorDecl QE_SLIDING = new DoorDecl() {
+        @Override
+        protected ResourceLocation getBlockId() {
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "qe_sliding_door");
+        }
+
+        @Override public String[] getPartNames() { return new String[] { "frame", "left", "right" }; }
+        @Override public int getOpenTime() { return 10; }
+
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            if (partName.startsWith("left")) {
+                set(trans, 0, 0, 0.99F * getNormTime(openTicks));
+            } else if (partName.startsWith("right")) {
+                set(trans, 0, 0, -0.99F * getNormTime(openTicks));
+            }
+        }
+
+        @Override public int[][] getDoorOpenRanges() {
+            return new int[][] { { 0, 0, 0, 2, 2, 2 } };
+        }
+
+        @Override public int[] getDimensions() {
+            return new int[] { 1, 0, 0, 0, 1, 0 };
+        }
+
+        @Override
+        public List<AABB> getCollisionBounds(float progress, Direction facing) {
+            List<AABB> bounds = new ArrayList<>();
+            if (progress >= 0.99f) return bounds;
+            
+            // Быстрая раздвижная дверь
+            double movement = progress * 0.99;
+            if (movement < 0.99) {
+                AABB door = new AABB(0.0, 0.0, 1.0 - 0.1875, 2.0, 2.0, 1.0);
+                bounds.add(rotateAABB(door, facing));
+            }
+            return bounds;
+        }
+
+        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.SLIDING_DOOR_OPENED.get(); }
+        @Override public SoundEvent getCloseSoundEnd() { return ModSounds.SLIDING_DOOR_SHUT.get(); }
+        @Override public SoundEvent getOpenSoundLoop() { return ModSounds.SLIDING_DOOR_OPENING.get(); }
+        @Override public float getSoundVolume() { return 2.0f; }
+    };
+
+    public static final DoorDecl QE_CONTAINMENT = new DoorDecl() {
+        @Override
+        protected ResourceLocation getBlockId() {
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "qe_containment_door");
+        }
+
+        @Override public String[] getPartNames() { return new String[] { "frame", "door", "decal" }; }
+        @Override public int getOpenTime() { return 160; }
+
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            if (!"frame".equals(partName)) {
+                set(trans, 0, 3.0F * getNormTime(openTicks), 0);
+            } else {
+                super.getTranslation(partName, openTicks, child, trans);
+            }
+        }
+
+        @Override public double[][] getClippingPlanes() {
+            return new double[][] { { 0, -1, 0, 3.0001 } };
+        }
+
+        @Override public int[][] getDoorOpenRanges() {
+            return new int[][] { { -1, 0, 0, 3, 3, 1 } };
+        }
+
+        @Override public int[] getDimensions() {
+            return new int[] { 2, 0, 0, 0, 1, 1 };
+        }
+
+        @Override
+        public List<AABB> getCollisionBounds(float progress, Direction facing) {
+            List<AABB> bounds = new ArrayList<>();
+            if (progress >= 0.99f) return bounds;
+            
+            // Дверь изоляционной камеры, движется вверх
+            double movement = progress * 3.0;
+            AABB door = new AABB(-1.0, 0.0, 0.5, 2.0, Math.max(0.1, 3.0 - movement), 1.0);
+            bounds.add(rotateAABB(door, facing));
+            return bounds;
+        }
+
+        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.WGH_STOP.get(); }
+        @Override public SoundEvent getOpenSoundLoop() { return ModSounds.WGH_START.get(); }
+        @Override public float getSoundVolume() { return 2.0f; }
+    };
+
+    public static final DoorDecl WATER_DOOR = new DoorDecl() {
+        @Override
+        protected ResourceLocation getBlockId() {
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "water_door");
+        }
+
+        @Override public String[] getPartNames() { 
+            return new String[] { "frame", "door", "bolt", "spinny_upper", "spinny_lower" }; 
+        }
+        @Override public int getOpenTime() { return 60; }
+
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            if ("bolt".equals(partName)) {
+                set(trans, 0, 0, 0.4F * smoothstep(getNormTime(openTicks, 0, 30)));
+            } else {
+                set(trans, 0, 0, 0);
+            }
+        }
+
+        @Override
+        public void getOrigin(String partName, float[] orig) {
+            if ("door".equals(partName) || "bolt".equals(partName)) {
+                set(orig, 0.125F, 1.5F, 1.18F);
+            } else if ("spinny_upper".equals(partName)) {
+                set(orig, 0.041499F, 2.43569F, -0.587849F);
+            } else if ("spinny_lower".equals(partName)) {
+                set(orig, 0.041499F, 0.571054F, -0.587849F);
+            } else {
+                super.getOrigin(partName, orig);
+            }
+        }
+
+        @Override
+        public void getRotation(String partName, float openTicks, float[] rot) {
+            if (partName.startsWith("spinny")) {
+                set(rot, smoothstep(getNormTime(openTicks, 0, 30)) * 360, 0, 0);
+            } else if ("door".equals(partName) || "bolt".equals(partName)) {
+                set(rot, 0, smoothstep(getNormTime(openTicks, 30, 60)) * -134, 0);
+            } else {
+                super.getRotation(partName, openTicks, rot);
+            }
+        }
+
+        @Override
+        public boolean doesRender(String partName, boolean child) {
+            return child || !partName.startsWith("spinny");
+        }
+
+        @Override
+        public String[] getChildren(String partName) {
+            if ("door".equals(partName))
+                return new String[] { "spinny_lower", "spinny_upper" };
+            return super.getChildren(partName);
+        }
+
+        @Override public float getDoorRangeOpenTime(int ticks, int idx) {
+            return getNormTime(ticks, 35, 40);
+        }
+
+        @Override public int[][] getDoorOpenRanges() {
+            return new int[][] { { 1, 0, 0, -3, 3, 2 } };
+        }
+
+        @Override public int[] getDimensions() {
+            return new int[] { 2, 0, 0, 0, 1, 1 };
+        }
+
+        @Override
+        public List<AABB> getCollisionBounds(float progress, Direction facing) {
+            List<AABB> bounds = new ArrayList<>();
+            if (progress >= 0.99f) return bounds;
+            
+            // Водонепроницаемая дверь со сложной анимацией
+            AABB door = new AABB(0.0, 0.0, 0.75, 1.0, 3.0, 1.0);
+            bounds.add(rotateAABB(door, facing));
+            return bounds;
+        }
+
+        private float smoothstep(float t) {
+            return t * t * (3.0f - 2.0f * t);
+        }
+
+        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.WGH_STOP.get(); }
+        @Override public SoundEvent getOpenSoundLoop() { return ModSounds.WGH_START.get(); }
+        @Override public SoundEvent getOpenSoundStart() { return ModSounds.LEVER_1.get(); }
+        @Override public SoundEvent getCloseSoundEnd() { return ModSounds.LEVER_1.get(); }
+        @Override public float getSoundVolume() { return 2.0f; }
+    };
+
+    public static final DoorDecl SILO_HATCH = new DoorDecl() {
+        @Override
+        protected ResourceLocation getBlockId() {
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silo_hatch");
+        }
+
+        @Override public String[] getPartNames() { return new String[] { "frame", "hatch" }; }
+        @Override public int getOpenTime() { return 60; }
+        @Override public boolean remoteControllable() { return true; }
+
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            if ("hatch".equals(partName)) {
+                float smoothTime = smoothstep(getNormTime(openTicks, 0, 10));
+                set(trans, 0, 0.25F * smoothTime, 0);
+            } else {
+                set(trans, 0, 0, 0);
+            }
+        }
+
+        @Override
+        public void getOrigin(String partName, float[] orig) {
+            if ("hatch".equals(partName)) {
+                set(orig, 0F, 0.875F, -1.875F);
+            } else {
+                set(orig, 0, 0, 0);
+            }
+        }
+
+        @Override
+        public void getRotation(String partName, float openTicks, float[] rot) {
+            if ("hatch".equals(partName)) {
+                float smoothTime = smoothstep(getNormTime(openTicks, 20, 100));
+                set(rot, smoothTime * -240, 0, 0);
+            } else {
+                super.getRotation(partName, openTicks, rot);
+            }
+        }
+
+        @Override public float getDoorRangeOpenTime(int ticks, int idx) {
+            return getNormTime(ticks, 20, 20);
+        }
+
+        @Override public int getBlockOffset() { return 2; }
+
+        @Override public int[][] getDoorOpenRanges() {
+            return new int[][] { { 1, 0, 1, -3, 3, 0 }, { 0, 0, 1, -3, 3, 0 }, { -1, 0, 1, -3, 3, 0 } };
+        }
+
+        @Override public int[] getDimensions() {
+            return new int[] { 0, 0, 2, 2, 2, 2 };
+        }
+
+        @Override
+        public List<AABB> getCollisionBounds(float progress, Direction facing) {
+            List<AABB> bounds = new ArrayList<>();
+            if (progress >= 0.99f) return bounds;
+            
+            // Люк силоса
+            if (progress < 0.5) { // Люк еще не открыт полностью
+                AABB hatch = new AABB(-1.0, 2.0, -1.0, 2.0, 3.0, 2.0);
+                bounds.add(rotateAABB(hatch, facing));
+            }
+            return bounds;
+        }
+
+        private float smoothstep(float t) {
+            return t * t * (3.0f - 2.0f * t);
+        }
+
+        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.WGH_STOP.get(); }
+        @Override public SoundEvent getOpenSoundLoop() { return ModSounds.WGH_START.get(); }
+        @Override public SoundEvent getCloseSoundEnd() { return ModSounds.WGH_STOP.get(); }
+        @Override public float getSoundVolume() { return 2.0f; }
+    };
+
+    public static final DoorDecl SILO_HATCH_LARGE = new DoorDecl() {
+        @Override
+        protected ResourceLocation getBlockId() {
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silo_hatch_large");
+        }
+
+        @Override public String[] getPartNames() { return new String[] { "frame", "hatch" }; }
+        @Override public int getOpenTime() { return 60; }
+        @Override public boolean remoteControllable() { return true; }
+
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            if ("hatch".equals(partName)) {
+                float smoothTime = smoothstep(getNormTime(openTicks, 0, 10));
+                set(trans, 0, 0.25F * smoothTime, 0);
+            } else {
+                set(trans, 0, 0, 0);
+            }
+        }
+
+        @Override
+        public void getOrigin(String partName, float[] orig) {
+            if ("hatch".equals(partName)) {
+                set(orig, 0F, 0.875F, -2.875F);
+            } else {
+                set(orig, 0, 0, 0);
+            }
+        }
+
+        @Override
+        public void getRotation(String partName, float openTicks, float[] rot) {
+            if ("hatch".equals(partName)) {
+                float smoothTime = smoothstep(getNormTime(openTicks, 20, 100));
+                set(rot, smoothTime * -240, 0, 0);
+            } else {
+                super.getRotation(partName, openTicks, rot);
+            }
+        }
+
+        @Override public float getDoorRangeOpenTime(int ticks, int idx) {
+            return getNormTime(ticks, 20, 20);
+        }
+
+        @Override public int getBlockOffset() { return 3; }
+
+        @Override public int[][] getDoorOpenRanges() {
+            return new int[][] { 
+                { 2, 0, 1, -3, 3, 0 }, { 1, 0, 2, -5, 3, 0 }, { 0, 0, 2, -5, 3, 0 }, 
+                { -1, 0, 2, -5, 3, 0 }, { -2, 0, 1, -3, 3, 0 } 
+            };
+        }
+
+        @Override public int[] getDimensions() {
+            return new int[] { 0, 0, 3, 3, 3, 3 };
+        }
+
+        @Override
+        public List<AABB> getCollisionBounds(float progress, Direction facing) {
+            List<AABB> bounds = new ArrayList<>();
+            if (progress >= 0.99f) return bounds;
+            
+            // Большой люк силоса
+            if (progress < 0.5) { // Люк еще не открыт полностью
+                AABB hatch = new AABB(-2.0, 3.0, -2.0, 3.0, 4.0, 3.0);
+                bounds.add(rotateAABB(hatch, facing));
+            }
+            return bounds;
+        }
+
+        private float smoothstep(float t) {
+            return t * t * (3.0f - 2.0f * t);
+        }
+
+        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.WGH_STOP.get(); }
+        @Override public SoundEvent getOpenSoundLoop() { return ModSounds.WGH_START.get(); }
+        @Override public SoundEvent getCloseSoundEnd() { return ModSounds.WGH_STOP.get(); }
+        @Override public float getSoundVolume() { return 2.0f; }
     };
 }

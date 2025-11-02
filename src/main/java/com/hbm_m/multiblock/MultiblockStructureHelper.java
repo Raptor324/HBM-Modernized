@@ -25,6 +25,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.PacketDistributor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,9 +36,18 @@ public class MultiblockStructureHelper {
     private final Map<BlockPos, Supplier<BlockState>> structureMap;
     private final Supplier<BlockState> phantomBlockState;
 
-    public MultiblockStructureHelper(Map<BlockPos, Supplier<BlockState>> structureMap, Supplier<BlockState> phantomBlockState) {
-        this.structureMap = Map.copyOf(structureMap);
+    private final Set<BlockPos> partOffsets;
+    private final int maxY;
+
+    public MultiblockStructureHelper(Map<BlockPos, Supplier<BlockState>> structureMap, 
+                                   Supplier<BlockState> phantomBlockState) {
+        // Используем unmodifiableMap вместо copyOf для экономии памяти
+        this.structureMap = Collections.unmodifiableMap(structureMap);
         this.phantomBlockState = phantomBlockState;
+        
+        // Предвычисляем значения
+        this.partOffsets = Collections.unmodifiableSet(structureMap.keySet());
+        this.maxY = computeMaxY();
     }
 
     private final Set<Block> replaceableBlocks = Set.of(
@@ -55,6 +65,13 @@ public class MultiblockStructureHelper {
         return state.is(BlockTags.REPLACEABLE_BY_TREES) || // Трава, папоротники
                state.is(BlockTags.FLOWERS) ||            // Все виды цветов
                state.is(BlockTags.SAPLINGS);             // Саженцы деревьев
+    }
+
+    private int computeMaxY() {
+        return structureMap.keySet().stream()
+            .mapToInt(BlockPos::getY)
+            .max()
+            .orElse(0);
     }
 
     public boolean checkPlacement(Level level, BlockPos controllerPos, Direction facing, Player player) {
@@ -88,7 +105,7 @@ public class MultiblockStructureHelper {
      * @return A Set of all local offsets for the multiblock parts, relative to the controller.
      */
     public Set<BlockPos> getPartOffsets() {
-        return this.structureMap.keySet();
+        return this.partOffsets; // Возвращаем уже созданный Set
     }
 
     public synchronized void placeStructure(Level level, BlockPos controllerPos, Direction facing, IMultiblockController controller) {

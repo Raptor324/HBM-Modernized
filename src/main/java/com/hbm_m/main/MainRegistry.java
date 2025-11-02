@@ -3,13 +3,7 @@ package com.hbm_m.main;
 // Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
-import com.hbm_m.block.entity.AnvilBlockEntity;
-import com.hbm_m.menu.AnvilMenu;
-import com.hbm_m.network.ModNetwork;
 import com.hbm_m.particle.ModExplosionParticles;
-import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
@@ -31,7 +25,6 @@ import com.hbm_m.effect.ModEffects;
 import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.worldgen.ModWorldGen;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
@@ -42,7 +35,6 @@ import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.fml.DistExecutor;
@@ -54,9 +46,6 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import static com.hbm_m.block.ModBlocks.ANVIL_BLOCK;
-import static com.hbm_m.block.entity.ModBlockEntities.BLOCK_ENTITIES;
 
 @Mod(RefStrings.MODID)
 public class MainRegistry {
@@ -137,15 +126,6 @@ public class MainRegistry {
             event.addListener(provider.getCapability(ChunkRadiationProvider.CHUNK_RADIATION_CAPABILITY)::invalidate);
         }
     }
-
-    // private void onRenderLevelStage(RenderLevelStageEvent event) {
-    //     if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
-    //         GPUInstancedRenderer.beginInstances("Ring");
-    //     }
-    //     else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
-    //         GPUInstancedRenderer.endInstances();
-    //     }
-    // }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
         // Логгирование для отладки
@@ -526,7 +506,16 @@ public class MainRegistry {
 
 
             event.accept(ModBlocks.LARGE_VEHICLE_DOOR);
-            event.accept(ModBlocks.FREAKY_ALIEN_BLOCK);
+            event.accept(ModBlocks.ROUND_AIRLOCK_DOOR);
+            event.accept(ModBlocks.TRANSITION_SEAL);
+            event.accept(ModBlocks.SLIDE_DOOR);
+            event.accept(ModBlocks.SLIDING_SEAL_DOOR);
+            event.accept(ModBlocks.SECURE_ACCESS_DOOR);
+            event.accept(ModBlocks.QE_CONTAINMENT);
+            event.accept(ModBlocks.QE_SLIDING);
+            event.accept(ModBlocks.WATER_DOOR);
+            event.accept(ModBlocks.SILO_HATCH);
+            event.accept(ModBlocks.SILO_HATCH_LARGE);
 
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added concrete hazard to NTM Resources tab");
