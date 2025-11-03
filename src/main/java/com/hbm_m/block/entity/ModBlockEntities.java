@@ -77,7 +77,17 @@ public class ModBlockEntities {
                 BlockEntityType.Builder.of(DoorBlockEntity::new,
                 // Все блоки дверей, которые используют этот BlockEntity
                         ModBlocks.LARGE_VEHICLE_DOOR.get(),
-                        ModBlocks.ROUND_AIRLOCK_DOOR.get())
+                        ModBlocks.ROUND_AIRLOCK_DOOR.get(),
+                        ModBlocks.TRANSITION_SEAL.get(),
+                        ModBlocks.FIRE_DOOR.get(),
+                        ModBlocks.SLIDE_DOOR.get(),
+                        ModBlocks.SLIDING_SEAL_DOOR.get(),
+                        ModBlocks.SECURE_ACCESS_DOOR.get(),
+                        ModBlocks.QE_SLIDING.get(),
+                        ModBlocks.QE_CONTAINMENT.get(),
+                        ModBlocks.WATER_DOOR.get(),
+                        ModBlocks.SILO_HATCH.get(),
+                        ModBlocks.SILO_HATCH_LARGE.get())
                     .build(null));
 
     public static final RegistryObject<BlockEntityType<IronCrateBlockEntity>> IRON_CRATE_BE =

@@ -158,10 +158,31 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             return "large_vehicle_door";
         } else if (doorDecl == DoorDecl.ROUND_AIRLOCK_DOOR) {
             return "round_airlock_door";
+        } else if (doorDecl == DoorDecl.TRANSITION_SEAL) {
+            return "transition_seal";
+        } else if (doorDecl == DoorDecl.FIRE_DOOR) {
+            return "fire_door";
+        } else if (doorDecl == DoorDecl.SLIDE_DOOR) {
+            return "sliding_blast_door";
+        } else if (doorDecl == DoorDecl.SLIDING_SEAL_DOOR) {
+            return "sliding_seal_door";
+        } else if (doorDecl == DoorDecl.SECURE_ACCESS_DOOR) {
+            return "secure_access_door";
+        } else if (doorDecl == DoorDecl.QE_SLIDING) {
+            return "qe_sliding_door";
+        } else if (doorDecl == DoorDecl.QE_CONTAINMENT) {
+            return "qe_containment_door";
+        } else if (doorDecl == DoorDecl.WATER_DOOR) {
+            return "water_door";
+        } else if (doorDecl == DoorDecl.SILO_HATCH) {
+            return "silo_hatch";
+        } else if (doorDecl == DoorDecl.SILO_HATCH_LARGE) {
+            return "silo_hatch_large";
         }
-        // Для других типов используем класс
-        return doorDecl.getClass().getSimpleName();
+        // Fallback для неизвестных типов
+        throw new IllegalStateException("Unknown door type: " + doorDecl.getClass().getName());
     }
+    
 
     /**
      * Fallback рендеринг для совместимости с шейдерами

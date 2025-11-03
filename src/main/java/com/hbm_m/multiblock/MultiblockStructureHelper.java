@@ -111,8 +111,8 @@ public class MultiblockStructureHelper {
     public synchronized void placeStructure(Level level, BlockPos controllerPos, Direction facing, IMultiblockController controller) {
         if (level.isClientSide) return;
         
-        // Собираем все части СНАЧАЛА, обновления - ПОТОМ
         List<BlockPos> energyConnectorPositions = new ArrayList<>();
+        List<BlockPos> allPlacedPositions = new ArrayList<>();  // Собираем все координаты
         
         for (Map.Entry<BlockPos, Supplier<BlockState>> entry : structureMap.entrySet()) {
             BlockPos relativePos = entry.getKey();
@@ -123,8 +123,9 @@ public class MultiblockStructureHelper {
             
             // Ставим блок с флагом 2 (не отправлять обновления соседям)
             level.setBlock(worldPos, partState, 2);
-            MainRegistry.LOGGER.info("Player {} placed multiblock at {}", 
-                controller, controllerPos);
+            
+            // Добавляем в список для логирования
+            allPlacedPositions.add(worldPos);
             
             BlockEntity be = level.getBlockEntity(worldPos);
             if (be instanceof IMultiblockPart partBe) {
@@ -138,11 +139,14 @@ public class MultiblockStructureHelper {
             }
         }
         
+        // ОДНО сообщение со всеми координатами
+        MainRegistry.LOGGER.info("Player {} placed multiblock at {} with {} parts: {}", 
+            controller, controllerPos, allPlacedPositions.size(), formatPositions(allPlacedPositions));
+        
         updateFrameForController(level, controllerPos);
         
         // ОДНО массовое обновление в конце вместо 156
         for (BlockPos connectorPos : energyConnectorPositions) {
-            // Обновляем ТОЛЬКО провода, НЕ все соседние блоки
             for (Direction dir : Direction.values()) {
                 BlockPos wirePos = connectorPos.relative(dir);
                 BlockState wireState = level.getBlockState(wirePos);
@@ -153,7 +157,22 @@ public class MultiblockStructureHelper {
         }
     }
     
-
+    // Вспомогательный метод для красивого форматирования координат
+    private String formatPositions(List<BlockPos> positions) {
+        if (positions.isEmpty()) return "[]";
+        
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < positions.size(); i++) {
+            BlockPos pos = positions.get(i);
+            sb.append(String.format("(%d,%d,%d)", pos.getX(), pos.getY(), pos.getZ()));
+            if (i < positions.size() - 1) {
+                sb.append(", ");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
+    }    
+    
     public void destroyStructure(Level level, BlockPos controllerPos, Direction facing) {
         if (level.isClientSide) return;
 

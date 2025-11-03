@@ -76,6 +76,7 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
+        MinecraftForge.EVENT_BUS.register(DoorDebugRenderer.class);
         // MinecraftForge.EVENT_BUS.register(ClientSetup.class);
 
         // Register Entity Renders
@@ -99,6 +100,7 @@ public class ClientSetup {
         );
         
         DoorDeclRegistry.init();
+        
 
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 

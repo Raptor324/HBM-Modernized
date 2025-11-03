@@ -240,21 +240,44 @@ public abstract class DoorDecl {
     }
 
     protected AABB rotateAABB(AABB aabb, Direction facing) {
-        double minX = aabb.minX;
-        double minY = aabb.minY;
-        double minZ = aabb.minZ;
-        double maxX = aabb.maxX;
-        double maxY = aabb.maxY;
-        double maxZ = aabb.maxZ;
-
-        return switch (facing) {
-            case NORTH -> aabb; // Без поворота
-            case SOUTH -> new AABB(-maxX, minY, -maxZ, -minX, maxY, -minZ);
-            case WEST -> new AABB(-maxZ, minY, minX, -minZ, maxY, maxX);
-            case EAST -> new AABB(minZ, minY, -maxX, maxZ, maxY, -minX);
-            default -> aabb;
-        };
+        switch (facing) {
+            // NORTH: базовая ориентация + разворот на 180°
+            case NORTH:
+                return new AABB(
+                    aabb.maxX, aabb.minY, aabb.maxZ,
+                    aabb.minX, aabb.maxY, aabb.minZ
+                );
+            
+            // WEST: исходная трансформация + разворот на 180°
+            case WEST:
+                return new AABB(
+                    -aabb.maxZ, aabb.minY, aabb.maxX,
+                    -aabb.minZ, aabb.maxY, aabb.minX
+                );
+            
+            // SOUTH: исходная трансформация + разворот на 180°
+            case SOUTH:
+                return new AABB(
+                    aabb.maxX, aabb.minY, -aabb.maxZ,
+                    aabb.minX, aabb.maxY, -aabb.minZ
+                );
+            
+            // EAST: исходная трансформация + разворот на 180°
+            case EAST:
+                return new AABB(
+                    aabb.maxZ, aabb.minY, -aabb.maxX,
+                    aabb.minZ, aabb.maxY, -aabb.minX
+                );
+            
+            default:
+                return new AABB(
+                    -aabb.maxX, aabb.minY, -aabb.maxZ,
+                    -aabb.minX, aabb.maxY, -aabb.minZ
+                );
+        }
     }
+    
+    
 
     // ==================== Реализации ====================
 
@@ -304,19 +327,23 @@ public abstract class DoorDecl {
                 return bounds; // Полностью открыта
             }
 
-            // Левая створка (3 блока шириной)
-            double leftMovement = progress * 3.0;
-            double leftDepth = Math.max(0.0, 1.0 - leftMovement);
-            if (leftDepth > 0.05) {
-                AABB leftDoor = new AABB(-3.0, 0.0, 0.0, 0.0, 6.0, leftDepth);
+            // ИСПРАВЛЕНО: Базовые коллизии для EAST направления
+            // Левая створка (движется влево по оси X, а не Z)
+            double leftMovement = progress * 3.0; // сдвиг по ходу анимации (как у вас)
+            double leftWidth = Math.max(0.0, 3.5 - leftMovement);
+            if (leftWidth > 0.05) {
+                // Стартуем не с -3, а с -3.5
+                AABB leftDoor = new AABB(-3.5, 0.0, 0.0, -3.5 + leftWidth, 6.0, 1.0);
                 bounds.add(rotateAABB(leftDoor, facing));
             }
 
-            // Правая створка (3 блока шириной)
+            // Правая створка: от rightOffset до rightOffset + dynamicWidth
             double rightMovement = progress * 3.0;
-            double rightOffset = Math.min(1.0, rightMovement);
-            if (1.0 - rightOffset > 0.05) {
-                AABB rightDoor = new AABB(0.0, 0.0, rightOffset, 3.0, 6.0, 1.0);
+            double rightOffset = rightMovement;
+            double rightWidth = Math.max(0.0, 3.5 - rightOffset);
+            if (rightWidth > 0.05) {
+                // Увеличиваем maxX на +0.5
+                AABB rightDoor = new AABB(rightOffset, 0.0, 0.0, rightOffset + rightWidth, 6.0, 1.0);
                 bounds.add(rotateAABB(rightDoor, facing));
             }
 
@@ -346,9 +373,11 @@ public abstract class DoorDecl {
         @Override
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
             if ("doorLeft".equals(partName)) {
-                set(trans, 0, 0, 1.5F * getNormTime(openTicks));
+                // ИСПРАВЛЕНО: Движение по X, чтобы соответствовать коллизиям
+                set(trans, -3.0F * getNormTime(openTicks), 0, 0); // Левая створка влево по X
             } else if ("doorRight".equals(partName)) {
-                set(trans, 0, 0, -1.5F * getNormTime(openTicks));
+                // ИСПРАВЛЕНО: Движение по X, чтобы соответствовать коллизиям
+                set(trans, 3.0F * getNormTime(openTicks), 0, 0);  // Правая створка вправо по X
             } else {
                 super.getTranslation(partName, openTicks, child, trans);
             }

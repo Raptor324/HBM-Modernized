@@ -1,5 +1,6 @@
 package com.hbm_m.event;
 
+import com.hbm_m.client.render.DoorDebugRenderer;
 import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.OcclusionCullingHelper;
@@ -11,19 +12,24 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+// @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientModEvents {
 
@@ -72,6 +78,25 @@ public class ClientModEvents {
             MachineAdvancedAssemblerRenderer.flushInstancedBatches();
             DoorRenderer.flushInstancedBatches();
         } 
+        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_TRANSLUCENT_BLOCKS) {
+            // ИСПРАВЛЕНО: Получаем MultiBufferSource из RenderLevelStageEvent
+            try {
+                // В 1.20.1 MultiBufferSource недоступен напрямую из RenderLevelStageEvent
+                // Нужно создать собственный или получить через другой способ
+                Minecraft mc = Minecraft.getInstance();
+                MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
+                
+                DoorDebugRenderer.render(
+                    event.getPoseStack(),
+                    bufferSource,
+                    event.getCamera().getPosition().x,
+                    event.getCamera().getPosition().y,
+                    event.getCamera().getPosition().z
+                );
+            } catch (Exception e) {
+                MainRegistry.LOGGER.error("Ошибка при рендере DoorDebugRenderer", e);
+            }
+        }
     }
 
     @SubscribeEvent

@@ -344,31 +344,72 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         if (progress >= 0.99f) {
             return bounds; // Полностью открыта
         }
-        
-        // Левая створка
+    
+        // ИСПРАВЛЕНО: Используем ту же логику, что и в DoorDecl.LARGE_VEHICLE_DOOR
+        // Левая створка (движется влево по оси X, а не Z)
         double leftMovement = progress * 3.0;
-        double leftDepth = Math.max(0.0, 1.0 - leftMovement);
-        if (leftDepth > 0.05) {
-            bounds.add(new AABB(-3.0, 0.0, 0.0, 0.0, 6.0, leftDepth));
+        double leftWidth = Math.max(0.0, 3.0 - leftMovement);
+        if (leftWidth > 0.05) {
+            AABB leftDoor = new AABB(-3.0, 0.0, 0.0, -3.0 + leftWidth, 6.0, 1.0);
+            bounds.add(rotateAABBServer(leftDoor, facing));
         }
-        
-        // Правая створка
+    
+        // Правая створка (движется вправо по оси X, а не Z)
         double rightMovement = progress * 3.0;
-        double rightOffset = Math.min(1.0, rightMovement);
-        if (1.0 - rightOffset > 0.05) {
-            bounds.add(new AABB(0.0, 0.0, rightOffset, 3.0, 6.0, 1.0));
+        double rightOffset = rightMovement;
+        if (3.0 - rightOffset > 0.05) {
+            AABB rightDoor = new AABB(rightOffset, 0.0, 0.0, 3.0, 6.0, 1.0);
+            bounds.add(rotateAABBServer(rightDoor, facing));
         }
-        
+    
         return bounds;
     }
-
+    
+    protected AABB rotateAABBServer(AABB aabb, Direction facing) {
+        switch (facing) {
+            // NORTH: базовая ориентация + разворот на 180°
+            case NORTH:
+                return new AABB(
+                    aabb.maxX, aabb.minY, aabb.maxZ,
+                    aabb.minX, aabb.maxY, aabb.minZ
+                );
+            
+            // WEST: исходная трансформация + разворот на 180°
+            case WEST:
+                return new AABB(
+                    -aabb.maxZ, aabb.minY, aabb.maxX,
+                    -aabb.minZ, aabb.maxY, aabb.minX
+                );
+            
+            // SOUTH: исходная трансформация + разворот на 180°
+            case SOUTH:
+                return new AABB(
+                    aabb.maxX, aabb.minY, -aabb.maxZ,
+                    aabb.minX, aabb.maxY, -aabb.minZ
+                );
+            
+            // EAST: исходная трансформация + разворот на 180°
+            case EAST:
+                return new AABB(
+                    aabb.maxZ, aabb.minY, -aabb.maxX,
+                    aabb.minZ, aabb.maxY, -aabb.minX
+                );
+            
+            default:
+                return new AABB(
+                    -aabb.maxX, aabb.minY, -aabb.maxZ,
+                    -aabb.minX, aabb.maxY, -aabb.minZ
+                );
+        }
+    }
+    
     private void updatePhantomBlocks(Level level, BlockPos controllerPos, int openTime) {
         Direction facing = getFacing();
         
         // ИСПРАВЛЕНО: Используем фиксированные значения для сервера
         // Для клиента можно получить из DoorDecl, но для сервера используем стандартные
         int[][] ranges = {
-            {0, 0, 0, -4, 6, 2},  // Левая створка
+            {0, 0, 0, -5, 6, 2},  // Левая створка
             {0, 0, 0, 4, 6, 2}    // Правая створка
         };
         
