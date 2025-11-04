@@ -4,6 +4,7 @@ package com.hbm_m.main;
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.item.ModBatteryItem;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
@@ -552,7 +553,9 @@ public class MainRegistry {
         }
 
         // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ
+        // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ
         if (event.getTab() == ModCreativeTabs.NTM_FUEL_TAB.get()) {
+            // Сначала добавляем предметы, которые НЕ батарейки
             event.accept(ModItems.LIGNITE);
             event.accept(ModItems.PLATE_FUEL_MOX);
             event.accept(ModItems.PLATE_FUEL_PU238BE);
@@ -561,39 +564,66 @@ public class MainRegistry {
             event.accept(ModItems.PLATE_FUEL_SA326);
             event.accept(ModItems.PLATE_FUEL_U233);
             event.accept(ModItems.PLATE_FUEL_U235);
+
+            // Креативная батарейка - отдельный класс, добавляем ее 1 раз
             event.accept(ModItems.CREATIVE_BATTERY);
 
-            event.accept(ModItems.BATTERY_POTATO);
-            event.accept(ModItems.BATTERY);
-            event.accept(ModItems.BATTERY_RED_CELL);
-            event.accept(ModItems.BATTERY_RED_CELL_6);
-            event.accept(ModItems.BATTERY_RED_CELL_24);
-            event.accept(ModItems.BATTERY_ADVANCED);
-            event.accept(ModItems.BATTERY_ADVANCED_CELL);
-            event.accept(ModItems.BATTERY_ADVANCED_CELL_4);
-            event.accept(ModItems.BATTERY_ADVANCED_CELL_12);
-            event.accept(ModItems.BATTERY_LITHIUM);
-            event.accept(ModItems.BATTERY_LITHIUM_CELL);
-            event.accept(ModItems.BATTERY_LITHIUM_CELL_3);
-            event.accept(ModItems.BATTERY_LITHIUM_CELL_6);
-            event.accept(ModItems.BATTERY_SCHRABIDIUM);
-            event.accept(ModItems.BATTERY_SCHRABIDIUM_CELL);
-            event.accept(ModItems.BATTERY_SCHRABIDIUM_CELL_2);
-            event.accept(ModItems.BATTERY_SCHRABIDIUM_CELL_4);
-            event.accept(ModItems.BATTERY_SPARK);
-            event.accept(ModItems.BATTERY_TRIXITE);
-            event.accept(ModItems.BATTERY_SPARK_CELL_6);
-            event.accept(ModItems.BATTERY_SPARK_CELL_25);
-            event.accept(ModItems.BATTERY_SPARK_CELL_100);
-            event.accept(ModItems.BATTERY_SPARK_CELL_1000);
-            event.accept(ModItems.BATTERY_SPARK_CELL_2500);
-            event.accept(ModItems.BATTERY_SPARK_CELL_10000);
-            event.accept(ModItems.BATTERY_SPARK_CELL_POWER);
+            // --- Новая логика для всех ModBatteryItem ---
+
+            // 1. Создаем список всех батареек
+            List<RegistryObject<Item>> batteriesToAdd = List.of(
+                    ModItems.BATTERY_POTATO,
+                    ModItems.BATTERY,
+                    ModItems.BATTERY_RED_CELL,
+                    ModItems.BATTERY_RED_CELL_6,
+                    ModItems.BATTERY_RED_CELL_24,
+                    ModItems.BATTERY_ADVANCED,
+                    ModItems.BATTERY_ADVANCED_CELL,
+                    ModItems.BATTERY_ADVANCED_CELL_4,
+                    ModItems.BATTERY_ADVANCED_CELL_12,
+                    ModItems.BATTERY_LITHIUM,
+                    ModItems.BATTERY_LITHIUM_CELL,
+                    ModItems.BATTERY_LITHIUM_CELL_3,
+                    ModItems.BATTERY_LITHIUM_CELL_6,
+                    ModItems.BATTERY_SCHRABIDIUM,
+                    ModItems.BATTERY_SCHRABIDIUM_CELL,
+                    ModItems.BATTERY_SCHRABIDIUM_CELL_2,
+                    ModItems.BATTERY_SCHRABIDIUM_CELL_4,
+                    ModItems.BATTERY_SPARK,
+                    ModItems.BATTERY_TRIXITE,
+                    ModItems.BATTERY_SPARK_CELL_6,
+                    ModItems.BATTERY_SPARK_CELL_25,
+                    ModItems.BATTERY_SPARK_CELL_100,
+                    ModItems.BATTERY_SPARK_CELL_1000,
+                    ModItems.BATTERY_SPARK_CELL_2500,
+                    ModItems.BATTERY_SPARK_CELL_10000,
+                    ModItems.BATTERY_SPARK_CELL_POWER
+            );
+
+            // 2. Проходимся по списку и добавляем 2 версии каждой
+            for (RegistryObject<Item> batteryRegObj : batteriesToAdd) {
+                Item item = batteryRegObj.get();
+                // (Проверка, что это ModBatteryItem, для безопасности)
+                if (item instanceof ModBatteryItem batteryItem) {
+                    // Добавляем пустую
+                    event.accept(batteryItem);
+
+                    // Создаем, заряжаем и добавляем полную
+                    ItemStack chargedStack = new ItemStack(batteryItem);
+                    ModBatteryItem.setEnergy(chargedStack, batteryItem.getCapacity());
+                    event.accept(chargedStack);
+                } else {
+                    // На всякий случай, если что-то не то в списке
+                    event.accept(item);
+                }
+            }
+            // --- [Конец новой логики] ---
 
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added creative battery ITEM to NTM Fuel tab");
             }
         }
+        // --- [КОНЕЦ БЛОКА С ИЗМЕНЕНИЯМИ] ---
 
         if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get()) {
 

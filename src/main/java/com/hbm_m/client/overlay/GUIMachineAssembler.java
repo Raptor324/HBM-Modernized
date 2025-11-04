@@ -143,12 +143,8 @@ public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemble
             String maxEnergyStr = EnergyFormatter.format(maxEnergy);
             String deltaStr = EnergyFormatter.formatRate(delta); // (уже добавляет /t)
 
-            tooltip.add(Component.literal(energyStr + " / " + maxEnergyStr + " FE"));
+            tooltip.add(Component.literal(energyStr + " / " + maxEnergyStr + " HE"));
 
-            ChatFormatting deltaColor = delta > 0 ? ChatFormatting.GREEN
-                    : (delta < 0 ? ChatFormatting.RED : ChatFormatting.YELLOW);
-            tooltip.add(Component.literal(delta > 0 ? ("+" + deltaStr) : deltaStr)
-                    .withStyle(deltaColor));
             // ---
 
             pGuiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), pX, pY);

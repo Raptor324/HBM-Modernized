@@ -108,7 +108,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
     };
 
     // ИЗМЕНЕНИЕ: Теперь используем BlockEntityEnergyStorage с long (уже реализован в твоих файлах)
-    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100_000_000L, 1_000_000L) {
+    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100_000L, 100000L) {
         @Override
         public long receiveEnergy(long maxReceive, boolean simulate) {
             long received = super.receiveEnergy(maxReceive, simulate);

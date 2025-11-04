@@ -296,28 +296,12 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             String maxEnergyStr = EnergyFormatter.format(maxEnergy);
 
             // Первая строка: текущая / максимальная энергия
-            tooltip.add(Component.literal(energyStr + " / " + maxEnergyStr + " FE")
+            tooltip.add(Component.literal(energyStr + " / " + maxEnergyStr + " HE")
                     .withStyle(ChatFormatting.GREEN));
 
-            // Вторая строка: изменение энергии в тик
-            String deltaStr = EnergyFormatter.formatRate(delta); // (уже добавляет /t)
-            ChatFormatting deltaColor = delta > 0 ? ChatFormatting.YELLOW
-                    : (delta < 0 ? ChatFormatting.RED : ChatFormatting.GRAY);
-
-            tooltip.add(Component.literal(delta > 0 ? ("+" + deltaStr) : deltaStr)
-                    .withStyle(deltaColor));
-
-            guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(),
-                    pMouseX, pMouseY);
         }
         
-        // Подсказка для шкалы энергии
-        if (isMouseOver(pMouseX, pMouseY, 152, 18, 16, 61)) {
-            guiGraphics.renderTooltip(this.font,
-                Component.literal(this.menu.getBlockEntity().getEnergyStored() + " / " 
-                                + this.menu.getBlockEntity().getMaxEnergyStored() + " FE"),
-                pMouseX, pMouseY);
-        }
+        // Подсказка для шкалы энерги
         
         // ПРОДВИНУТАЯ ПОДСКАЗКА ДЛЯ КНОПКИ ВЫБОРА РЕЦЕПТА
         if (isMouseOver(pMouseX, pMouseY, 7, 125, 18, 18)) {

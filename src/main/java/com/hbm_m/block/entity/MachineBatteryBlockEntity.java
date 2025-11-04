@@ -147,7 +147,7 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         boolean hasSignal = pLevel.hasNeighborSignal(pPos);
 
         // 1. Определяем, какой режим активен СЕЙЧАС, в зависимости от сигнала
-        int activeMode = hasSignal ? pBlockEntity.modeOnSignal : pBlockEntity.modeOnNoSignal;
+        int activeMode = hasSignal ? pBlockEntity.modeOnNoSignal : pBlockEntity.modeOnSignal;
 
         // 2. Определяем, какие операции разрешены в этом режиме
         boolean canInput = false;

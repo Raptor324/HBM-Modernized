@@ -93,12 +93,8 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
     }
 
     private void renderEnergyBar(GuiGraphics graphics, int x, int y) {
-        // --- ИСПРАВЛЕНИЕ 1 ---
-        // Используем getEnergyLong() для проверки
         if (menu.getEnergyLong() > 0) {
-            // ---
             int totalHeight = 34;
-            // menu.getEnergyScaled() УЖЕ должен использовать long внутри
             int barHeight = menu.getEnergyScaled(totalHeight);
 
             RenderSystem.setShaderTexture(0, ENERGY_BAR_TEXTURE);
@@ -177,31 +173,37 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
             pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pX, pY);
         }
 
-        // --- ИСПРАВЛЕНИЕ 2 ---
+        // --- ИЗМЕНЕННЫЙ БЛОК ---
         // Тултип для шкалы энергии
         if (isMouseOver(pX, pY, 143, 18, 16, 34)) {
             List<Component> tooltip = new ArrayList<>();
 
-            // 1. Получаем полные long значения
             long energy = menu.getEnergyLong();
             long maxEnergy = menu.getMaxEnergyLong();
 
-            // 2. Форматируем их с помощью EnergyFormatter
             String energyStr = EnergyFormatter.format(energy);
             String maxEnergyStr = EnergyFormatter.format(maxEnergy);
 
-            // 3. Отображаем
-            tooltip.add(Component.literal(energyStr + " / " + maxEnergyStr + " FE")
+            // 1. Отображаем "1.2k / 10M HE"
+            tooltip.add(Component.literal(energyStr + " / " + maxEnergyStr + " HE")
                     .withStyle(ChatFormatting.GREEN));
 
             if (menu.isLit()) {
-                // Тоже используем форматер
+                // 2. Отображаем "+50 HE/t"
                 tooltip.add(Component.literal("+" + EnergyFormatter.formatRate(50)).withStyle(ChatFormatting.YELLOW));
+
+                // --- [НОВЫЕ СТРОКИ] ---
+                // 3. Рассчитываем и отображаем "+1k HE/s"
+                long deltaPerSecond = 50 * 20; // (50 HE/t * 20 ticks)
+                String deltaPerSecondText = "+" + EnergyFormatter.formatWithUnit(deltaPerSecond, "HE/s");
+                tooltip.add(Component.literal(deltaPerSecondText).withStyle(ChatFormatting.YELLOW));
+                // --- [КОНЕЦ НОВЫХ СТРОК] ---
+
             } else {
                 tooltip.add(Component.literal("Not generating").withStyle(ChatFormatting.GRAY));
             }
 
-            // 4. Считаем процент через long
+            // 4. Считаем процент
             long percentage = maxEnergy > 0 ? (energy * 100 / maxEnergy) : 0;
             tooltip.add(Component.literal(percentage + "%").withStyle(ChatFormatting.AQUA));
 

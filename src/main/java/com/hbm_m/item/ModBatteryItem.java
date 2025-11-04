@@ -13,6 +13,7 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 
+
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
@@ -86,7 +87,7 @@ public class ModBatteryItem extends Item {
                     } else if (ratio <= 0.75f) {
                         return 0xFFFF00; // Жёлтый (средний)
                     } else {
-                        return 0x44B027; // Зелёный (высокий)
+                        return 0x55FF55; // Зелёный (высокий)
                     }
                 })
                 .orElse(0xFF0000);
@@ -102,11 +103,11 @@ public class ModBatteryItem extends Item {
 
             // Заголовок
             tooltip.add(Component.translatable("tooltip.hbm_m.battery.stored")
-                    .withStyle(ChatFormatting.DARK_BLUE));
+                    .withStyle(ChatFormatting.AQUA));
 
             // Текущая энергия / Максимальная (с приставками СИ)
             tooltip.add(Component.literal(
-                            String.format("%s / %s FE",
+                            String.format("%s / %s HE",
                                     EnergyFormatter.format(stored),
                                     EnergyFormatter.format(max)))
                     .withStyle(ChatFormatting.GOLD));
@@ -116,18 +117,18 @@ public class ModBatteryItem extends Item {
                 // Перезаряжаемая батарея
                 tooltip.add(Component.translatable("tooltip.hbm_m.battery.transfer_rate",
                         Component.literal(EnergyFormatter.format(maxReceive)).withStyle(ChatFormatting.GREEN)
-                ).withStyle(ChatFormatting.WHITE));
+                ).withStyle(ChatFormatting.GREEN));
 
                 tooltip.add(Component.translatable("tooltip.hbm_m.battery.discharge_rate",
-                        Component.literal(EnergyFormatter.format(maxExtract)).withStyle(ChatFormatting.YELLOW)
-                ).withStyle(ChatFormatting.WHITE));
+                        Component.literal(EnergyFormatter.format(maxExtract)).withStyle(ChatFormatting.GREEN)
+                ).withStyle(ChatFormatting.GREEN));
             }
 
             // Процент заряда
             float percent = max > 0 ? (stored * 100.0f / max) : 0;
             ChatFormatting percentColor = percent > 75 ? ChatFormatting.GREEN :
-                    percent > 50 ? ChatFormatting.YELLOW :
-                            percent > 25 ? ChatFormatting.GOLD : ChatFormatting.RED;
+                    percent > 50 ? ChatFormatting.GREEN :
+                            percent > 25 ? ChatFormatting.GREEN : ChatFormatting.GREEN;
 
             tooltip.add(Component.literal(String.format("%.1f%%", percent))
                     .withStyle(percentColor));

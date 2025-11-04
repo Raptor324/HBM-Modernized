@@ -64,7 +64,7 @@ public class MachineAssemblerBlockEntity extends BlockEntity implements MenuProv
     };
 
     // Используем наш кастомный класс
-    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(9000000000000000000L, 250L, 250L); // Добавил 'L' для ясности
+    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100000L, 100000L, 100000L); // Добавил 'L' для ясности
 
     private boolean isCrafting = false;
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
