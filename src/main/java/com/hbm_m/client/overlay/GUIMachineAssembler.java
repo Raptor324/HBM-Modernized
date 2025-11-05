@@ -12,11 +12,13 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.menu.MachineAssemblerMenu;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.hbm_m.util.EnergyFormatter;
+import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
@@ -63,6 +65,7 @@ public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemble
         // Информационные панели (ВАЖНО: привязываем текстуру заново)
         RenderSystem.setShaderTexture(0, TEXTURE);
         drawInfoPanels(guiGraphics, x, y);
+        renderGhostItems(guiGraphics);
     }
 
     /**
@@ -76,6 +79,65 @@ public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemble
         ItemStack templateStack = menu.getSlot(TEMPLATE_SLOT_GUI_INDEX).getItem();
         if (templateStack.isEmpty() || !(templateStack.getItem() instanceof ItemAssemblyTemplate)) {
             drawInfoPanel(guiGraphics, x - 16, y + 36, 16, 16, 6);
+        }
+    }
+
+    private void renderGhostItems(GuiGraphics guiGraphics) {
+        NonNullList<ItemStack> ghostItems = this.menu.getBlockEntity().getGhostItems();
+        
+        if (ghostItems.isEmpty()) {
+            return;
+        }
+        
+        // Получаем время для анимации циклической смены предметов (для Ingredient с несколькими вариантами)
+        long time = System.currentTimeMillis();
+        int cycleIndex = (int) ((time / 1000) % 20); // Меняется каждую секунду
+        
+        // Слоты 6-17 (handler) соответствуют слотам 42-53 в menu (36 слотов игрока + 6 машины)
+        int inputSlotsStart = 36 + 6; // 42
+        int inputSlotsCount = 12;
+        
+        // Отрисовываем сгруппированные предметы
+        for (int i = 0; i < Math.min(ghostItems.size(), inputSlotsCount); i++) {
+            ItemStack ghostStack = ghostItems.get(i);
+            
+            if (ghostStack.isEmpty()) {
+                continue;
+            }
+            
+            // Получаем слот
+            int slotIndex = inputSlotsStart + i;
+            if (slotIndex >= this.menu.slots.size()) break;
+            
+            net.minecraft.world.inventory.Slot slot = this.menu.slots.get(slotIndex);
+            
+            // Отрисовываем призрак только если слот пуст
+            if (!slot.hasItem()) {
+                // Отрисовка призрачного предмета с полупрозрачностью
+                guiGraphics.pose().pushPose();
+                guiGraphics.pose().translate(0, 0, 100); // z-level 100
+                
+                // Полупрозрачность
+                RenderSystem.enableBlend();
+                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.5F);
+                
+                int x = this.leftPos + slot.x;
+                int y = this.topPos + slot.y;
+                
+                guiGraphics.renderItem(ghostStack, x, y);
+                
+                // ОТРИСОВКА КОЛИЧЕСТВА (если > 1)
+                if (ghostStack.getCount() > 1) {
+                    RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F); // Полная непрозрачность для текста
+                    guiGraphics.renderItemDecorations(this.font, ghostStack, x, y);
+                }
+                
+                // Восстанавливаем цвет
+                RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+                RenderSystem.disableBlend();
+                
+                guiGraphics.pose().popPose();
+            }
         }
     }
 

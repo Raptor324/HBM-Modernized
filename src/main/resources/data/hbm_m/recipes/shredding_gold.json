@@ -1,0 +1,10 @@
+{
+  "type": "hbm_m:shredding",
+  "ingredient": {
+    "item": "minecraft:gold_ingot"
+  },
+  "result": {
+    "item": "hbm_m:gold_powder",
+    "count": 1
+  }
+}

@@ -39,8 +39,8 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
         this.level = inv.player.level();
         this.data = data;
 
-        addPlayerInventory(inv);
-        addPlayerHotbar(inv);
+            addPlayerInventory(inv);
+            addPlayerHotbar(inv);
 
         this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
             // Слот для батареи (0)
@@ -104,6 +104,9 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
         return LongDataPacker.unpack(this.data.get(6), this.data.get(7));
     }
 
+    public MachineAssemblerBlockEntity getBlockEntity() {
+        return this.blockEntity;
+    }
 
     public int getProgressScaled(int width) {
         int progress = this.data.get(0);

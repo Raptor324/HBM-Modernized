@@ -173,12 +173,8 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pBlockEntityType) {
-        if (pLevel.isClientSide()) {
-            return createTickerHelper(pBlockEntityType, ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(),
-                (level1, pos, state1, blockEntity) -> blockEntity.clientTick(level1, pos, state1));
-        }
-        
+        // Используем ОДИН универсальный ticker и для клиента, и для сервера
         return createTickerHelper(pBlockEntityType, ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(),
-            (level1, pos, state1, blockEntity) -> MachineAdvancedAssemblerBlockEntity.tick(level1, pos, state1, blockEntity));
+            MachineAdvancedAssemblerBlockEntity::tick);
     }
 }

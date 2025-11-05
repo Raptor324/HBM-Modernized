@@ -5,9 +5,13 @@ package com.hbm_m.datagen;
 
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.recipe.AnvilRecipe;
+import net.minecraft.core.Registry;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -25,6 +29,14 @@ public class ModRecipeProvider extends RecipeProvider {
     protected void buildRecipes(@Nonnull Consumer<FinishedRecipe> pWriter) {
 
         // Рецепт для алмазного меча
+
+        new AnvilRecipe(
+                new ResourceLocation("hbm_m", "iron_sword_anvil"),
+                new ItemStack(Items.IRON_INGOT, 0), // Вход A: 2 железных слитка
+                new ItemStack(Items.STICK, 1),      // Вход B: 1 палка
+                new ItemStack(Items.IRON_SWORD, 2), // Выход: 1 железный меч
+                java.util.List.of(new ItemStack(Items.IRON_INGOT, 2), new ItemStack(Items.STICK, 1)) // Требуемые предметы
+        );
         AssemblerRecipeBuilder.assemblerRecipe(
                 new ItemStack(Items.DIAMOND_SWORD), 100, 500)
                 .addIngredient(Items.DIAMOND, 2)

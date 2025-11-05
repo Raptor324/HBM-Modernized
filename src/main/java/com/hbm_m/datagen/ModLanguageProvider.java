@@ -4,6 +4,7 @@ package com.hbm_m.datagen;
 
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.ModPowders;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
 import net.minecraftforge.common.data.LanguageProvider;
@@ -26,6 +27,15 @@ public class ModLanguageProvider extends LanguageProvider {
             String translation = ingot.getTranslation(this.locale);
             if (translation != null) {
                 add(ModItems.getIngot(ingot).get(), translation);
+            }
+        }
+
+        // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ
+        for (ModPowders powders : ModPowders.values()) {
+            // 3. Теперь мы используем наше поле 'this.locale', к которому у нас есть доступ
+            String translation = powders.getTranslation(this.locale);
+            if (translation != null) {
+                add(ModItems.getPowders(powders).get(), translation);
             }
         }
 
@@ -304,7 +314,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_ARMOR_HEV.get(), "Броневая пластина HEV");
                 add(ModItems.PLATE_ARMOR_LUNAR.get(), "Лунная броневая пластина");
                 add(ModItems.PLATE_ARMOR_TITANIUM.get(), "Титановая броневая пластина");
-                add(ModItems.PLATE_CAST.get(), "литая пластина");
+                add(ModItems.PLATE_CAST.get(), "Литая пластина");
                 add(ModItems.PLATE_CAST_ALT.get(), "Альтернативная литая пластина");
                 add(ModItems.PLATE_CAST_BISMUTH.get(), "Висмутовая литая пластина");
                 add(ModItems.PLATE_CAST_DARK.get(), "Тёмная литая пластина");
@@ -430,6 +440,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.uranium_ore", "Урановая руда");
                 add("block.hbm_m.aluminum_ore", "Алюминиевая руда");
                 add("block.hbm_m.aluminum_ore_deepslate", "Глубинная алюминиевая руда");
+                add("block.hbm_m.cinnabar_ore_deepslate", "Глубинная киноварная руда");
+                add("block.hbm_m.cobalt_ore_deepslate", "Глубинная кобальтовая руда");
                 add("block.hbm_m.titanium_ore", "Титановая руда");
                 add("block.hbm_m.titanium_ore_deepslate", "Глубинная титановая руда");
                 add("block.hbm_m.tungsten_ore", "Вольфрамовая руда");
@@ -449,6 +461,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.lead_ore", "Свинцовая руда");
                 add("block.hbm_m.lead_ore_deepslate", "Глубинная свинцовая руда");
                 add("block.hbm_m.cinnabar_ore", "Киноварная руда");
+                add("block.hbm_m.crate_iron", "Железный ящик");
+                add("block.hbm_m.crate_steel", "Стальной ящик");
+                add("block.hbm_m.crate_desh", "Деш ящик");
 
 
                 add("block.hbm_m.waste_grass", "Мёртвая трава");
@@ -475,6 +490,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.machine_assembler", "Сборочная машина");
                 add("container.hbm_m.advanced_assembly_machine", "Сборочная машина");
                 add("container.hbm_m.wood_burner", "Дровяной генератор");
+                add("container.hbm_m.machine_battery", "Энергохранилище");
+                add("container.hbm_m.press", "Пресс");
+                add("container.hbm_m.crate_iron", "Железный ящик");
+                add("container.hbm_m.crate_steel", "Стальной ящик");
+                add("container.hbm_m.crate_desh", "Душ ящик");
 
                 add("gui.hbm_m.battery.priority.0", "Приоритет: Низкий");
                 add("gui.hbm_m.battery.priority.0.desc", "Низший приоритет. Опустошается в первую очередь, заполняется в последнюю");
@@ -520,6 +540,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.meter.geiger_counter.name", "СЧЁТЧИК ГЕЙГЕРА");
                 add("item.hbm_m.meter.dosimeter.name", "ДОЗИМЕТР");
                 add("item.hbm_m.meter.title_format", "%s");
+                add("hbm_m.render.shader_detected", "§e[HBM] §7Обнаружен активный шейдер. Переключение на совместимый рендер...");
+                add("hbm_m.render.shader_disabled", "§a[HBM] §7Шейдер отключен. Возврат к оптимизированному VBO рендеру.");
+                add("hbm_m.render.path_changed", "§e[HBM] §7Путь рендера установлен: %s");
+                add("hbm_m.render.status", "§e[HBM] §7Текущий путь рендера: §f%s\n§7Внешний шейдер обнаружен: §f%s");
 
                 add("tooltip.hbm_m.abilities", "Способности:");
                 add("tooltip.hbm_m.vein_miner", "Жилковый майнер (%s)");
@@ -1051,6 +1075,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
                 add("block.hbm_m.blast_furnace", "Blast Furnace");
                 add("block.hbm_m.press", "Press");
+                add("block.hbm_m.crate_iron", "Iron Crate");
+                add("block.hbm_m.crate_steel", "Steel Crate");
+                add("block.hbm_m.crate_desh", "Desh Crate");
 
                 add("block.hbm_m.det_miner", "Det Miner");
                 add("block.hbm_m.concrete_vent", "Concrete Vent");
@@ -1090,6 +1117,8 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 // ORES
 
+                add("block.hbm_m.cinnabar_ore_deepslate", "Deepslate Cinnabar Ore");
+                add("block.hbm_m.cobalt_ore_deepslate", "Deepslate Cobalt Ore");
                 add("block.hbm_m.uranium_ore", "Uranium Ore");
                 add("block.hbm_m.aluminum_ore", "Aluminum Ore");
                 add("block.hbm_m.aluminum_ore_deepslate", "Deepslate Aluminum Ore");
@@ -1129,7 +1158,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.machine_assembler", "Assembly Machine");
                 add("container.hbm_m.wood_burner", "Wood Burner Generator");
                 add("container.hbm_m.advanced_assembly_machine", "Assembly Machine");
-
+                add("container.hbm_m.machine_battery", "Machine Battery");
+                add("container.hbm_m.press", "Press");
+                add("container.hbm_m.crate_iron", "Iron Crate");
+                add("container.hbm_m.crate_steel", "Steel Crate");
+                add("container.hbm_m.crate_desh", "Desh Crate");
                 add("gui.hbm_m.battery.priority.0", "Priority: Low");
                 add("gui.hbm_m.battery.priority.0.desc", "Lowest priority. Will be drained first and filled last.");
                 add("gui.hbm_m.battery.priority.1", "Priority: Normal");
@@ -1188,6 +1221,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.meter.geiger_counter.name", "GEIGER COUNTER");
                 add("item.hbm_m.meter.dosimeter.name", "DOSIMETER");
                 add("item.hbm_m.meter.title_format", "%s");
+                add("hbm_m.render.shader_detected", "§e[HBM] §7External shader detected. Switching to compatible renderer...");
+                add("hbm_m.render.shader_disabled", "§a[HBM] §7Shader disabled. Returning to optimized VBO renderer.");
+                add("hbm_m.render.path_changed", "§e[HBM] §7Render path set to: %s");
+                add("hbm_m.render.status", "§e[HBM] §7Current render path: §f%s\n§7External shader detected: §f%s");
 
                 add("item.hbm_m.meter.chunk_rads", "§eCurrent chunk radiation: %s\n");
                 add("item.hbm_m.meter.env_rads", "§eTotal environment contamination: %s");

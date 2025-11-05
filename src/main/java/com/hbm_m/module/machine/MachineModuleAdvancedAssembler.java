@@ -1,5 +1,6 @@
 package com.hbm_m.module.machine;
 
+import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.recipe.AssemblerRecipe;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -149,6 +150,26 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
         return matchesRecipe(recipe);
     }
 
+    /**
+     * Возвращает список призрачных предметов для отображения в GUI
+     */
+    @Override
+    public NonNullList<ItemStack> getGhostItems() {
+        AssemblerRecipe recipe = getCurrentRecipe();
+        
+        // Если есть выбранный preferredRecipe, используем его
+        if (recipe == null && preferredRecipe != null) {
+            recipe = preferredRecipe;
+        }
+        
+        if (recipe == null) {
+            return NonNullList.create();
+        }
+        
+        // Используем СТАТИЧЕСКИЙ метод из BaseMachineBlockEntity
+        return BaseMachineBlockEntity.createGhostItemsFromIngredients(recipe.getIngredients());
+    }
+    
     @Override
     public boolean canProcess(AssemblerRecipe recipe) {
         if (recipe == null) return false;

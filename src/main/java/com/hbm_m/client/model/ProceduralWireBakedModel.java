@@ -8,10 +8,7 @@ import com.hbm_m.client.model.ModelHelper.UVBox;
 import com.hbm_m.client.model.ModelHelper.UVSpec;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.ItemOverrides;
-import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
@@ -22,20 +19,21 @@ import org.joml.Vector3f;
 
 import java.util.*;
 
-public class ProceduralWireBakedModel implements BakedModel {
-
-    private final TextureAtlasSprite sprite;
+public class ProceduralWireBakedModel extends AbstractProceduralBakedModel {
     
-    // Базовые текстуры
     private static final UVSpec BODY_SPEC = new UVSpec(new UVBox(2, 0, 7, 5));
     private static final UVSpec BODY_ROTATED_SPEC = new UVSpec(new UVBox(2, 0, 7, 5), true);
     private static final UVSpec END_CONTACT_SPEC = new UVSpec(new UVBox(7, 13, 10, 16));
     private static final UVSpec CORNER_CONTACT_SPEC = new UVSpec(new UVBox(4, 11, 9, 16));
 
-    public ProceduralWireBakedModel(TextureAtlasSprite sprite) { this.sprite = sprite; }
+    public ProceduralWireBakedModel(TextureAtlasSprite sprite) {
+        super(sprite);
+    }
 
     @Override
-    public @NotNull List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull RandomSource rand, @NotNull ModelData data, @Nullable RenderType renderType) {
+    public @NotNull List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, 
+                                              @NotNull RandomSource rand, @NotNull ModelData data, 
+                                              @Nullable RenderType renderType) {
         List<BakedQuad> quads = new ArrayList<>();
         float min = 5.5f, max = 10.5f;
 
@@ -119,8 +117,9 @@ public class ProceduralWireBakedModel implements BakedModel {
         }
     }
 
-    @Override public @NotNull List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, @NotNull RandomSource rand) { return getQuads(state, side, rand, ModelData.EMPTY, null); }
-    @Override public boolean useAmbientOcclusion() { return true; } @Override public boolean isGui3d() { return false; } @Override public boolean usesBlockLight() { return false; }
-    @Override public boolean isCustomRenderer() { return false; } @Override public TextureAtlasSprite getParticleIcon() { return this.sprite; }
-    @Override public ItemOverrides getOverrides() { return ItemOverrides.EMPTY; } @Override public ItemTransforms getTransforms() { return ItemTransforms.NO_TRANSFORMS; }
+    @Override
+    public @NotNull List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, 
+                                              @NotNull RandomSource rand) {
+        return getQuads(state, side, rand, ModelData.EMPTY, null);
+    }
 }

@@ -9,6 +9,7 @@ import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.*;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
+import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.RegistryObject;
 
@@ -49,14 +50,49 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.CONCRETE_CRACKED);
         blockWithItem(ModBlocks.CONCRETE);
 
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED);
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED1);
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED2);
+        blockWithItem(ModBlocks.SELLAFIELD_SLAKED3);
+
         resourceBlockWithItem(ModBlocks.CRATE);
         resourceBlockWithItem(ModBlocks.CRATE_LEAD);
         resourceBlockWithItem(ModBlocks.CRATE_METAL);
         resourceBlockWithItem(ModBlocks.CRATE_WEAPON);
+        simpleBlockWithItem(ModBlocks.CRATE_IRON.get(),
+                models().cubeBottomTop(
+                        ModBlocks.CRATE_IRON.getId().getPath(),
+                        modLoc("block/crate_iron_side"),      // Текстура боков
+                        modLoc("block/crate_iron_top"),       // Текстура низа
+                        modLoc("block/crate_iron_top")        // Текстура верха
+                )
 
+        );
+        simpleBlockWithItem(ModBlocks.CRATE_STEEL.get(),
+                models().cubeBottomTop(
+                        ModBlocks.CRATE_STEEL.getId().getPath(),
+                        modLoc("block/crate_steel_side"),
+                        modLoc("block/crate_steel_top"),
+                        modLoc("block/crate_steel_top")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.CRATE_DESH.get(),
+                models().cubeBottomTop(
+                        ModBlocks.CRATE_DESH.getId().getPath(),
+                        modLoc("block/crate_desh_side"),
+                        modLoc("block/crate_desh_top"),
+                        modLoc("block/crate_desh_top")
+                )
+        );
 
-        blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
-        blockWithItem(ModBlocks.REINFORCED_GLASS);
+        blockWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
+        blockWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);
+        resourceBlockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
+        resourceBlockWithItem(ModBlocks.GIGA_DET);
+        simpleBlockWithItem(ModBlocks.REINFORCED_GLASS.get(), 
+            models().cubeAll(ModBlocks.REINFORCED_GLASS.getId().getPath(), 
+                blockTexture(ModBlocks.REINFORCED_GLASS.get()))
+            .renderType("cutout"));
 
         doorBlockWithRenderType(((DoorBlock) ModBlocks.METAL_DOOR.get()), modLoc("block/metal_door_bottom"), modLoc("block/metal_door_top"), "cutout");
 
@@ -137,7 +173,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         stairsBlock((StairBlock) ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS.get(),
                 modLoc("block/brick_concrete_mossy"));
         simpleBlockItem(ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS.get(),
-                models().getExistingFile(modLoc("block/brick_concrete_mossy")));
+                models().getExistingFile(modLoc("block/brick_concrete_mossy_stairs")));
 
         stairsBlock((StairBlock) ModBlocks.CONCRETE_HAZARD_STAIRS.get(),
             modLoc("block/concrete_hazard"));
@@ -199,6 +235,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/brick_concrete_broken"));
         simpleBlockItem(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB.get(),
                 models().getExistingFile(modLoc("block/brick_concrete_broken_slab")));
+
+        simpleBlockWithItem(ModBlocks.SHREDDER.get(),
+                new ModelFile.UncheckedModelFile(modLoc("block/shredder")));
 
     }
 

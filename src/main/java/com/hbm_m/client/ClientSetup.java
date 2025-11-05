@@ -3,29 +3,39 @@ package com.hbm_m.client;
 // Основной класс клиентской настройки мода. Здесь регистрируются все клиентские обработчики событий,
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.overlay.*;
-import com.hbm_m.client.model.*;
-import com.hbm_m.client.model.loader.DoorModelLoader;
-import com.hbm_m.client.model.loader.MachineAdvancedAssemblerModelLoader;
-import com.hbm_m.client.model.loader.ProceduralWireLoader;
-import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.config.ModConfigKeybindHandler;
-import com.hbm_m.client.tooltip.ItemTooltipComponent;
-import com.hbm_m.client.tooltip.ItemTooltipComponentRenderer;
+import com.hbm_m.client.loader.*;
+import com.hbm_m.client.render.*;
+import com.hbm_m.client.render.shader.*;
+import com.hbm_m.config.*;
+import com.hbm_m.client.tooltip.*;
 import com.hbm_m.entity.ModEntities;
+import com.hbm_m.item.ItemAssemblyTemplate;
+import com.hbm_m.item.ItemBlueprintFolder;
+import com.hbm_m.item.ModItems;
+import com.hbm_m.item.ModTags;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.ModMenuTypes;
+import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
-import com.hbm_m.particle.custom.DarkParticle;
-import com.hbm_m.particle.custom.RadFogParticle;
+import com.hbm_m.recipe.AssemblerRecipe;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
+import com.google.common.collect.ImmutableMap;
+import com.hbm_m.particle.custom.*;
+import com.hbm_m.particle.explosions.*;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.ModBlockEntities;
 
 import net.minecraft.client.renderer.RenderType;
-
+import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
@@ -42,14 +52,17 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraft.client.GraphicsStatus;
 import net.minecraftforge.client.ChunkRenderTypeSet;
 
 import javax.annotation.Nonnull;
+
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.client.model.render.DoorRenderer;
-import com.hbm_m.client.model.render.MachineAdvancedAssemblerRenderer;
+import java.util.Set;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientSetup {
@@ -63,6 +76,7 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
+        // MinecraftForge.EVENT_BUS.register(ClientSetup.class);
 
         // Register Entity Renders
         ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
@@ -84,6 +98,8 @@ public class ClientSetup {
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
         );
         
+        DoorDeclRegistry.init();
+
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
         event.enqueueWork(() -> {
@@ -94,14 +110,48 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
             MenuScreens.register(ModMenuTypes.BLAST_FURNACE_MENU.get(), GUIBlastFurnace::new);
             MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
-            MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), GUIShredder::new);
+            MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), ShredderScreen::new);
             MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
-            
+            MenuScreens.register(ModMenuTypes.ANVIL_MENU.get(), GUIAnvil::new);
+            MenuScreens.register(ModMenuTypes.IRON_CRATE_MENU.get(), GUIIronCrate::new);
+            MenuScreens.register(ModMenuTypes.STEEL_CRATE_MENU.get(), GUISteelCrate::new);
+            MenuScreens.register(ModMenuTypes.DESH_CRATE_MENU.get(), GUIDeshCrate::new);
+
             // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
+
+            OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
+            try {
+                RenderPathManager.updateRenderPath();
+                MainRegistry.LOGGER.info("VBO render system initialized successfully");
+            } catch (Exception e) {
+                MainRegistry.LOGGER.error("Failed to initialize VBO render system", e);
+            }
+            
+            // ДОБАВИТЬ: Регистрация обработчика отключения от сервера
+            MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
+            MainRegistry.LOGGER.info("Initial render path check completed");
         });
     }
+
+    @SubscribeEvent
+    public static void registerParticleFactories(RegisterParticleProvidersEvent event) {
+
+        event.registerSpriteSet(ModParticleTypes.EXPLOSION_WAVE.get(),
+                ExplosionWaveParticle.Provider::new);
+
+        event.registerSpriteSet(ModExplosionParticles.FLASH.get(),
+                FlashParticle.Provider::new);
+        event.registerSpriteSet(ModExplosionParticles.SHOCKWAVE.get(),
+                ShockwaveParticle.Provider::new);
+        event.registerSpriteSet(ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                MushroomSmokeParticle.Provider::new);
+        event.registerSpriteSet(ModExplosionParticles.EXPLOSION_SPARK.get(),
+                ExplosionSparkParticle.Provider::new);
+    }
+
+
 
     @SubscribeEvent
     public static void onModelBake(ModelEvent.ModifyBakingResult event) {
@@ -142,6 +192,31 @@ public class ClientSetup {
     }
 
     @SubscribeEvent
+    public static void onResourceReload(RegisterClientReloadListenersEvent event) {
+        event.registerReloadListener(new ShaderReloadListener());
+
+        event.registerReloadListener((preparationBarrier, resourceManager,
+                                    preparationsProfiler, reloadProfiler,
+                                    backgroundExecutor, gameExecutor) -> {
+            return preparationBarrier.wait(null).thenRunAsync(() -> {
+                //  Очищаем глобальный кэш VBO
+                MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
+                ImmediateFallbackRenderer.clearGlobalCache();
+                DoorRenderer.clearAllCaches();
+                RenderPathManager.reset();
+                MainRegistry.LOGGER.info("VBO cache cleanup completed");
+            }, gameExecutor);
+        });
+    }
+
+    public static void onClientDisconnect(net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
+        MainRegistry.LOGGER.info("Client disconnecting, clearing VBO caches...");
+        DoorRenderer.clearAllCaches();
+        MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
+        com.hbm_m.client.render.shader.ImmediateFallbackRenderer.forceReset();
+    }
+
+    @SubscribeEvent
     public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
         // Связываем наш ТИП частицы с ее ФАБРИКОЙ.
         event.registerSpriteSet(ModParticleTypes.DARK_PARTICLE.get(), DarkParticle.Provider::new);
@@ -174,6 +249,31 @@ public class ClientSetup {
         event.register("template_loader", new TemplateModelLoader());
     }
 
+    @SubscribeEvent
+    public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
+        MainRegistry.LOGGER.info("Registering custom shaders...");
+        VertexFormat blockLitFormat = new VertexFormat(
+            ImmutableMap.<String, VertexFormatElement>builder()
+                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
+                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
+                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
+                .put("InstMatRow0", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
+                .put("InstMatRow1", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
+                .put("InstMatRow2", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
+                .put("InstMatRow3", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
+                .put("InstLight",   DefaultVertexFormat.ELEMENT_UV2)    // vec2
+                .build()
+        );
+        event.registerShader(
+            new ShaderInstance(
+                event.getResourceProvider(),
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit"),
+                blockLitFormat
+            ),
+            ModShaders::setBlockLitShader
+        );
+        MainRegistry.LOGGER.info("Successfully registered block_lit shader");
+    }
 
     private static class LeavesModelWrapper extends BakedModelWrapper<BakedModel> {
 
@@ -191,6 +291,48 @@ public class ClientSetup {
             }
             
             return ChunkRenderTypeSet.of(RenderType.solid());
+        }
+    }
+    
+    public static void addTemplatesClient(BuildCreativeModeTabContentsEvent event) {
+        if (Minecraft.getInstance().level != null) {
+            RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
+            List<AssemblerRecipe> recipes = recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
+            
+            // Собираем уникальные blueprintPool из всех рецептов
+            Set<String> blueprintPools = new HashSet<>();
+            for (AssemblerRecipe recipe : recipes) {
+                String pool = recipe.getBlueprintPool();
+                if (pool != null && !pool.isEmpty()) {
+                    blueprintPools.add(pool);
+                }
+            }
+            
+            // Создаём папку для каждого уникального пула
+            for (String pool : blueprintPools) {
+                ItemStack folderStack = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
+                ItemBlueprintFolder.writeBlueprintPool(folderStack, pool);
+                event.accept(folderStack);
+            }
+            
+            if (ModClothConfig.get().enableDebugLogging) {
+                MainRegistry.LOGGER.info("Added {} blueprint folders to NTM Templates tab", blueprintPools.size());
+            }
+            
+            // Добавляем шаблоны
+            for (AssemblerRecipe recipe : recipes) {
+                ItemStack templateStack = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
+                ItemAssemblyTemplate.writeRecipeOutput(templateStack, recipe.getResultItem(null));
+                event.accept(templateStack);
+            }
+            
+            if (ModClothConfig.get().enableDebugLogging) {
+                MainRegistry.LOGGER.info("Added {} templates to NTM Templates tab", recipes.size());
+            }
+        } else {
+            if (ModClothConfig.get().enableDebugLogging) {
+                MainRegistry.LOGGER.warn("Could not populate templates tab: Minecraft level is null.");
+            }
         }
     }
 }
