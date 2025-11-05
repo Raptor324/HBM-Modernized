@@ -1,9 +1,13 @@
 package com.hbm_m.client.overlay;
 
+// ИМПОРТЫ
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.MachineWoodBurnerMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.ToggleWoodBurnerPacket;
+// --- ДОБАВЛЕННЫЙ ИМПОРТ ---
+import com.hbm_m.util.EnergyFormatter;
+// ---
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -89,7 +93,7 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
     }
 
     private void renderEnergyBar(GuiGraphics graphics, int x, int y) {
-        if (menu.getEnergy() > 0) {
+        if (menu.getEnergyLong() > 0) {
             int totalHeight = 34;
             int barHeight = menu.getEnergyScaled(totalHeight);
 
@@ -142,7 +146,7 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
     protected void renderTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
         super.renderTooltip(pGuiGraphics, pX, pY);
 
-        // Тултип для кнопки переключателя
+        // (Тултип для кнопки переключателя - без изменений)
         if (isMouseOver(pX, pY, 53, 17, 16, 16)) {
             List<Component> tooltip = new ArrayList<>();
             if (menu.isEnabled()) {
@@ -156,7 +160,7 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
             return;
         }
 
-        // Тултип для шкалы времени горения
+        // (Тултип для шкалы времени горения - без изменений)
         if (isMouseOver(pX, pY, 17, 17, 4, 52)) {
             List<Component> tooltip = new ArrayList<>();
             if (menu.isLit()) {
@@ -169,25 +173,45 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
             pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pX, pY);
         }
 
+        // --- ИЗМЕНЕННЫЙ БЛОК ---
         // Тултип для шкалы энергии
         if (isMouseOver(pX, pY, 143, 18, 16, 34)) {
             List<Component> tooltip = new ArrayList<>();
-            tooltip.add(Component.literal(String.format("%,d / %,d FE", menu.getEnergy(), menu.getMaxEnergy()))
+
+            long energy = menu.getEnergyLong();
+            long maxEnergy = menu.getMaxEnergyLong();
+
+            String energyStr = EnergyFormatter.format(energy);
+            String maxEnergyStr = EnergyFormatter.format(maxEnergy);
+
+            // 1. Отображаем "1.2k / 10M HE"
+            tooltip.add(Component.literal(energyStr + " / " + maxEnergyStr + " HE")
                     .withStyle(ChatFormatting.GREEN));
 
             if (menu.isLit()) {
-                tooltip.add(Component.literal("+50 FE/t").withStyle(ChatFormatting.YELLOW));
+                // 2. Отображаем "+50 HE/t"
+                tooltip.add(Component.literal("+" + EnergyFormatter.formatRate(50)).withStyle(ChatFormatting.YELLOW));
+
+                // --- [НОВЫЕ СТРОКИ] ---
+                // 3. Рассчитываем и отображаем "+1k HE/s"
+                long deltaPerSecond = 50 * 20; // (50 HE/t * 20 ticks)
+                String deltaPerSecondText = "+" + EnergyFormatter.formatWithUnit(deltaPerSecond, "HE/s");
+                tooltip.add(Component.literal(deltaPerSecondText).withStyle(ChatFormatting.YELLOW));
+                // --- [КОНЕЦ НОВЫХ СТРОК] ---
+
             } else {
                 tooltip.add(Component.literal("Not generating").withStyle(ChatFormatting.GRAY));
             }
 
-            int percentage = (int) ((float) menu.getEnergy() / menu.getMaxEnergy() * 100);
+            // 4. Считаем процент
+            long percentage = maxEnergy > 0 ? (energy * 100 / maxEnergy) : 0;
             tooltip.add(Component.literal(percentage + "%").withStyle(ChatFormatting.AQUA));
 
             pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pX, pY);
         }
+        // ---
 
-        // Тултип для области пламени
+        // (Тултип для пламени - без изменений)
         if (isMouseOver(pX, pY, 56, 36, 14, 14)) {
             if (menu.isLit()) {
                 List<Component> tooltip = new ArrayList<>();

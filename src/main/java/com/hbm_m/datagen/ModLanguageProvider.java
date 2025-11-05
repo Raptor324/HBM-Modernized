@@ -161,15 +161,15 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.BATTERY_SCHRABIDIUM_CELL.get(), "Шрабидиевая энергоячейка");
                 add(ModItems.BATTERY_SCHRABIDIUM_CELL_2.get(), "Шрабидиевая энергоячейка x2");
                 add(ModItems.BATTERY_SCHRABIDIUM_CELL_4.get(), "Шрабидиевая энергоячейка x4");
-                add(ModItems.BATTERY_SPARK.get(), "Искровая батарея");
-                add(ModItems.BATTERY_TRIXITE.get(), "Триксайтовая батарея");
-                add(ModItems.BATTERY_SPARK_CELL_6.get(), "Искровая энергоячейка x6");
-                add(ModItems.BATTERY_SPARK_CELL_25.get(), "Искровая энергоячейка x25");
-                add(ModItems.BATTERY_SPARK_CELL_100.get(), "Искровая энергоячейка x100");
-                add(ModItems.BATTERY_SPARK_CELL_1000.get(), "Искровая энергоячейка x1000");
-                add(ModItems.BATTERY_SPARK_CELL_2500.get(), "Искровая энергоячейка x2500");
-                add(ModItems.BATTERY_SPARK_CELL_10000.get(), "Искровая энергоячейка x10000");
-                add(ModItems.BATTERY_SPARK_CELL_POWER.get(), "Искровая силовая ячейка");
+                add(ModItems.BATTERY_SPARK.get(), "Спарк батарея");
+                add(ModItems.BATTERY_TRIXITE.get(), "Безымянная спарк батарея");
+                add(ModItems.BATTERY_SPARK_CELL_6.get(), "Спарк энергоячейка");
+                add(ModItems.BATTERY_SPARK_CELL_25.get(), "Спарк магический аккумулятор");
+                add(ModItems.BATTERY_SPARK_CELL_100.get(), "Спарк магический массив хранения энергии");
+                add(ModItems.BATTERY_SPARK_CELL_1000.get(), "Спарк магическая масс-энергитическая пустота");
+                add(ModItems.BATTERY_SPARK_CELL_2500.get(), "Спарк магическое море Дирака");
+                add(ModItems.BATTERY_SPARK_CELL_10000.get(), "Устойчивый пространственно-временной спарк кристалл");
+                add(ModItems.BATTERY_SPARK_CELL_POWER.get(), "Абсурдный физический спарк блок накопления энергии");
 
                 add(ModItems.WIRE_RED_COPPER.get(), "Провод из красной меди");
                 add(ModItems.WIRE_COPPER.get(), "Медный провод");

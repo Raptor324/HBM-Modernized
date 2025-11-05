@@ -70,10 +70,10 @@ public class EnergyFormatter {
     }
 
     public static String formatFE(long energy) {
-        return formatWithUnit(energy, "FE");
+        return formatWithUnit(energy, "HE");
     }
 
     public static String formatRate(long rate) {
-        return formatWithUnit(rate, "FE/t");
+        return formatWithUnit(rate, "HE/t");
     }
 }

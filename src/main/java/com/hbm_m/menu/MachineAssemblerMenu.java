@@ -7,6 +7,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.MachineAssemblerBlockEntity;
 import com.hbm_m.item.ItemAssemblyTemplate;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.energy.LongDataPacker;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -28,7 +29,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
     private final ContainerData data;
 
     public MachineAssemblerMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
-        this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(6));
+        this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(9));
     }
 
     public MachineAssemblerMenu(int pContainerId, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -86,20 +87,21 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
 
         addDataSlots(data);
     }
-    
-    public int getEnergy() {
-        return this.data.get(2);
+
+    public long getEnergyLong() {
+        return LongDataPacker.unpack(this.data.get(2), this.data.get(3));
     }
-    public int getMaxEnergy() {
-        return this.data.get(3);
+
+    public long getMaxEnergyLong() {
+        return LongDataPacker.unpack(this.data.get(4), this.data.get(5));
     }
 
     public boolean isCrafting() {
-        return data.get(0) > 0;
+        return data.get(8) > 0; // <-- ИНДЕКС СДВИНУТ НА 8
     }
 
-    public int getEnergyDelta() {
-        return this.data.get(5);
+    public long getEnergyDeltaLong() {
+        return LongDataPacker.unpack(this.data.get(6), this.data.get(7));
     }
 
     public MachineAssemblerBlockEntity getBlockEntity() {
@@ -112,12 +114,14 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
 
         return maxProgress != 0 && progress != 0 ? progress * width / maxProgress : 0;
     }
-    
+
     public int getEnergyScaled(int height) {
-        int energy = this.data.get(2);
-        int maxEnergy = this.data.get(3);
-        
-        return maxEnergy != 0 ? energy * height / maxEnergy : 0;
+        // --- ИЗМЕНЕНИЕ: Используем long-геттеры ---
+        long energy = getEnergyLong();
+        long maxEnergy = getMaxEnergyLong();
+
+        return maxEnergy != 0 ? (int)(energy * (long)height / maxEnergy) : 0; // (добавил long-каст к height для безопасности)
+        // ---
     }
 
     public int getScaledProgress() {

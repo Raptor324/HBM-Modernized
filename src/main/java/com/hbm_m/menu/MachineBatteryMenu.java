@@ -6,6 +6,8 @@ package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.MachineBatteryBlockEntity;
+// [ИСПРАВЛЕНО] Добавляем импорт LongDataPacker
+import com.hbm_m.energy.LongDataPacker;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -43,17 +45,57 @@ public class MachineBatteryMenu extends AbstractContainerMenu {
     }
 
     public MachineBatteryMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
-        this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(6));
+        // [ИСПРАВЛЕНО] Устанавливаем правильный размер ContainerData (8)
+        this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(8));
     }
 
-    // Геттеры
-    public int getEnergy() { return this.data.get(0); }
-    public int getMaxEnergy() { return this.data.get(1); }
-    public int getEnergyDelta() { return this.data.get(2); }
-    public int getModeOnNoSignal() { return this.data.get(3); }
-    public int getModeOnSignal() { return this.data.get(4); }
-    public int getPriorityOrdinal() { return this.data.get(5); }
-    public boolean isTransferLocked() { return this.data.get(6) == 1; }
+    // --- [ИСПРАВЛЕНО] Геттеры ---
+
+    /**
+     * @return Текущее кол-во энергии (long), собранное из двух int.
+     */
+    public long getEnergy() {
+        // high = data.get(1), low = data.get(0)
+        return LongDataPacker.unpack(this.data.get(1), this.data.get(0));
+    }
+
+    /**
+     * @return Максимальная ёмкость (long), собранная из двух int.
+     */
+    public long getMaxEnergy() {
+        // high = data.get(3), low = data.get(2)
+        return LongDataPacker.unpack(this.data.get(3), this.data.get(2));
+    }
+
+    /**
+     * @return Изменение энергии за тик (int).
+     */
+    public int getEnergyDelta() {
+        return this.data.get(4);
+    }
+
+    /**
+     * @return Режим работы при отсутствии redstone-сигнала (int).
+     */
+    public int getModeOnNoSignal() {
+        return this.data.get(5);
+    }
+
+    /**
+     * @return Режим работы при наличии redstone-сигнала (int).
+     */
+    public int getModeOnSignal() {
+        return this.data.get(6);
+    }
+
+    /**
+     * @return Порядковый номер приоритета (int).
+     */
+    public int getPriorityOrdinal() {
+        return this.data.get(7);
+    }
+
+    // [ИСПРАВЛЕНО] Удален isTransferLocked(), т.к. его больше нет в data
 
     @Override
     public boolean stillValid(Player pPlayer) {
@@ -62,6 +104,7 @@ public class MachineBatteryMenu extends AbstractContainerMenu {
     }
 
     // --- КОНСТАНТЫ ДЛЯ QUICKMOVE ---
+    // (Логика QuickMove оставлена из твоего файла, она корректна для перемещения предметов)
     private static final int PLAYER_INVENTORY_START_INDEX = 0;
     private static final int PLAYER_INVENTORY_END_INDEX = 36; // 9 hotbar + 27 inventory
     private static final int TE_INPUT_SLOT_INDEX = 36;
@@ -95,10 +138,10 @@ public class MachineBatteryMenu extends AbstractContainerMenu {
                         moved = true;
                     }
                 }
-                
+
                 // Если перемещение не удалось ни в один из слотов
                 if (!moved) {
-                     return ItemStack.EMPTY;
+                    return ItemStack.EMPTY;
                 }
 
             } else {
@@ -106,7 +149,7 @@ public class MachineBatteryMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
 
-        // Перемещение из BlockEntity в инвентарь игрока
+            // Перемещение из BlockEntity в инвентарь игрока
         } else if (index == TE_INPUT_SLOT_INDEX || index == TE_OUTPUT_SLOT_INDEX) {
             if (!moveItemStackTo(sourceStack, PLAYER_INVENTORY_START_INDEX, PLAYER_INVENTORY_END_INDEX, false)) {
                 return ItemStack.EMPTY;

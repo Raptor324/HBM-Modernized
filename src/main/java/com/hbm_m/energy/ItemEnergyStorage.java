@@ -1,33 +1,34 @@
 package com.hbm_m.energy;
 
-// Этот класс реализует хранение энергии в предметах, используя IEnergyStorage.
-// Энергия хранится в NBT-теге "energy". Можно настроить ёмкость, скорость приёма и отдачи.
-// Методы setEnergy, receiveEnergy и extractEnergy позволяют управлять энергией.
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.energy.IEnergyStorage;
 
-public class ItemEnergyStorage implements IEnergyStorage {
+// (Импортируй свой новый интерфейс)
+import com.hbm_m.energy.ILongEnergyStorage;
+
+public class ItemEnergyStorage implements ILongEnergyStorage { // <-- МЕНЯЕМ ИНТЕРФЕЙС
     private final ItemStack stack;
-    private final int capacity;
-    private final int maxReceive;
-    private final int maxExtract;
+    private final long capacity; // <-- long
+    private final long maxReceive; // <-- long
+    private final long maxExtract; // <-- long
 
-    public ItemEnergyStorage(ItemStack stack, int capacity, int maxReceive, int maxExtract) {
+    public ItemEnergyStorage(ItemStack stack, long capacity, long maxReceive, long maxExtract) {
         this.stack = stack;
         this.capacity = capacity;
         this.maxReceive = maxReceive;
         this.maxExtract = maxExtract;
     }
 
-    public void setEnergy(int energy) {
-        this.stack.getOrCreateTag().putInt("energy", energy);
+    public void setEnergy(long energy) { // <-- long
+        this.stack.getOrCreateTag().putLong("energy", energy); // <-- putLong
     }
 
     @Override
-    public int receiveEnergy(int maxReceive, boolean simulate) {
-        int energy = getEnergyStored();
-        int energyReceived = Math.min(capacity - energy, Math.min(this.maxReceive, maxReceive));
-
+    public long receiveEnergy(long maxReceive, boolean simulate) { // <-- long
+        long energy = getEnergyStored();
+        long energyReceived = Math.min(capacity - energy, Math.min(this.maxReceive, maxReceive)); // <-- long
+        if (energyReceived < 0) {
+            energyReceived = 0;
+        }
         if (!simulate) {
             setEnergy(energy + energyReceived);
         }
@@ -35,10 +36,12 @@ public class ItemEnergyStorage implements IEnergyStorage {
     }
 
     @Override
-    public int extractEnergy(int maxExtract, boolean simulate) {
-        int energy = getEnergyStored();
-        int energyExtracted = Math.min(energy, Math.min(this.maxExtract, maxExtract));
-
+    public long extractEnergy(long maxExtract, boolean simulate) { // <-- long
+        long energy = getEnergyStored();
+        long energyExtracted = Math.min(energy, Math.min(this.maxExtract, maxExtract)); // <-- long
+        if (energyExtracted < 0) {
+            energyExtracted = 0;
+        }
         if (!simulate) {
             setEnergy(energy - energyExtracted);
         }
@@ -46,12 +49,12 @@ public class ItemEnergyStorage implements IEnergyStorage {
     }
 
     @Override
-    public int getEnergyStored() {
-        return this.stack.hasTag() ? this.stack.getTag().getInt("energy") : 0;
+    public long getEnergyStored() { // <-- long
+        return this.stack.hasTag() ? this.stack.getTag().getLong("energy") : 0L; // <-- getLong
     }
 
     @Override
-    public int getMaxEnergyStored() {
+    public long getMaxEnergyStored() { // <-- long
         return this.capacity;
     }
 
