@@ -1,8 +1,11 @@
 package com.hbm_m.capability;
 
-//Данный класс предоставляет capability для хранения энергии (FE) в предмете.
-//Он реализует ICapabilityProvider и INBTSerializable для интеграции с системой capability Minecraft Forge.
-//Энергия хранится в ItemEnergyStorage, который привязан к ItemStack, позволяя сохранять энергию вместе с предметом.
+// Импорты твоих новых классов
+import com.hbm_m.energy.ILongEnergyStorage;
+import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.energy.LongToForgeWrapper;
+// ИЗМЕНЕНИЕ: Импортируем НОВЫЙ ItemEnergyStorage
+import com.hbm_m.energy.ItemEnergyStorage;
 
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -17,36 +20,57 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 public class EnergyCapabilityProvider implements ICapabilityProvider, INBTSerializable<CompoundTag> {
-    private final ItemEnergyStorage energyStorage;
-    private final LazyOptional<IEnergyStorage> lazyEnergyStorage;
 
-    public EnergyCapabilityProvider(ItemStack stack, int capacity, int maxTransfer) {
-        this.energyStorage = new ItemEnergyStorage(stack, capacity, maxTransfer, maxTransfer);
-        this.lazyEnergyStorage = LazyOptional.of(() -> this.energyStorage);
+    // ИЗМЕНЕНИЕ: Тип поля теперь - новый ItemEnergyStorage
+    private final ItemEnergyStorage energyStorage;
+    private final LazyOptional<ILongEnergyStorage> lazyLongEnergyStorage;
+    private final LazyOptional<IEnergyStorage> lazyForgeEnergyStorage;
+
+    // Конструкторы теперь принимают long
+    public EnergyCapabilityProvider(ItemStack stack, long capacity, long maxTransfer) {
+        this(stack, capacity, maxTransfer, maxTransfer);
     }
 
-    public EnergyCapabilityProvider(ItemStack stack, int capacity, int maxReceive, int maxExtract) {
+    public EnergyCapabilityProvider(ItemStack stack, long capacity, long maxReceive, long maxExtract) {
+        // Теперь этот вызов корректен, так как ItemEnergyStorage принимает long
         this.energyStorage = new ItemEnergyStorage(stack, capacity, maxReceive, maxExtract);
-        this.lazyEnergyStorage = LazyOptional.of(() -> this.energyStorage);
+        this.lazyLongEnergyStorage = LazyOptional.of(() -> this.energyStorage);
+
+        // Создаем адаптер LongToForgeWrapper для совместимости
+        this.lazyForgeEnergyStorage = this.lazyLongEnergyStorage.lazyMap(LongToForgeWrapper::new);
     }
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.ENERGY) {
-            return lazyEnergyStorage.cast();
+        // (Отвечаем на запросы о нашей long-системе)
+        if (cap == ModCapabilities.LONG_ENERGY) {
+            return lazyLongEnergyStorage.cast();
         }
+
+        // (Отвечаем на запросы о старой int-системе)
+        if (cap == ForgeCapabilities.ENERGY) {
+            return lazyForgeEnergyStorage.cast();
+        }
+
         return LazyOptional.empty();
     }
 
     @Override
     public CompoundTag serializeNBT() {
         CompoundTag nbt = new CompoundTag();
-        nbt.putInt("energy", energyStorage.getEnergyStored());
+        nbt.putLong("energy", energyStorage.getEnergyStored()); // <-- putLong (уже было)
         return nbt;
     }
 
     @Override
     public void deserializeNBT(CompoundTag nbt) {
-        energyStorage.setEnergy(nbt.getInt("energy"));
+        // Теперь этот вызов корректен, т.к. у нового ItemEnergyStorage есть setEnergy(long)
+        energyStorage.setEnergy(nbt.getLong("energy")); // <-- getLong (уже было)
+    }
+
+    // (Можно добавить этот метод, чтобы инвалидировать из предмета)
+    public void invalidate() {
+        lazyLongEnergyStorage.invalidate();
+        lazyForgeEnergyStorage.invalidate();
     }
 }

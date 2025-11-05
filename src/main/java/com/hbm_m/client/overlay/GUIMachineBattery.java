@@ -6,6 +6,8 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.menu.MachineBatteryMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.UpdateBatteryC2SPacket;
+// [ИЗМЕНЕНО] Добавляем импорт твоего форматтера
+import com.hbm_m.util.EnergyFormatter;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -25,7 +27,7 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
 
     public GUIMachineBattery(MachineBatteryMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);
-        
+
         // Устанавливаем размеры GUI из старого кода
         this.imageWidth = 176;
         this.imageHeight = 166;
@@ -38,7 +40,7 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
         this.titleLabelX = -9999;
         this.inventoryLabelY = this.imageHeight - 94;
     }
-    
+
     // --- ОСНОВНОЙ РЕНДЕР ---
 
     @Override
@@ -64,24 +66,29 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
     @Override
     protected void renderLabels(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
         // --- Воссоздаем динамический заголовок из оригинала ---
-        String titleText = this.title.getString() + " (" + menu.getEnergy() + " FE)";
+
+        // [ИЗМЕНЕНО] Используем EnergyFormatter.formatFE() для красивого отображения
+        String formattedEnergy = EnergyFormatter.formatFE(menu.getEnergy()); // "5k FE", "1.2M FE"
+        String titleText = this.title.getString() + " (" + formattedEnergy + ")";
+
         pGuiGraphics.drawString(this.font, titleText, (this.imageWidth - this.font.width(titleText)) / 2, 6, 4210752, false);
-        
+
         // --- Стандартная надпись "Инвентарь" ---
         pGuiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
     }
-    
+
     // --- РЕНДЕР КОМПОНЕНТОВ ---
 
     private void renderEnergyBar(GuiGraphics graphics, int x, int y) {
         if (menu.getEnergy() > 0) {
             int totalHeight = 52;
             int barHeight = (int) (totalHeight * ((float)menu.getEnergy() / menu.getMaxEnergy()));
-            // Координата Y в старом коде была (guiTop + 69 - i), адаптируем
+            if (barHeight > totalHeight) barHeight = totalHeight; // Защита от переполнения
+
             graphics.blit(TEXTURE, x + 62, y + 17 + (totalHeight - barHeight), 176, totalHeight - barHeight, 52, barHeight);
         }
     }
-    
+
     // Хелпер для получения V-координаты иконки по режиму
     private int getVForMode(int mode) {
         return switch (mode) {
@@ -112,48 +119,62 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
     @Override
     protected void renderTooltip(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
         super.renderTooltip(pGuiGraphics, pMouseX, pMouseY);
-        
+
         // Тултип для энергии
         if (isMouseOver(pMouseX, pMouseY, 62, 17, 52, 52)) {
             List<Component> tooltip = new ArrayList<>();
-            tooltip.add(Component.literal(menu.getEnergy() + " / " + menu.getMaxEnergy() + " FE"));
-            
-            String deltaText = (menu.getEnergyDelta() >= 0 ? "+" : "") + menu.getEnergyDelta() + " FE/t";
-            ChatFormatting deltaColor = menu.getEnergyDelta() > 0 ? ChatFormatting.GREEN : (menu.getEnergyDelta() < 0 ? ChatFormatting.RED : ChatFormatting.YELLOW);
+
+            // [ИЗМЕНЕНО] Форматируем оба значения для тултипа (например "5.2k / 10M FE")
+            String energy = EnergyFormatter.format(menu.getEnergy());
+            String maxEnergy = EnergyFormatter.format(menu.getMaxEnergy());
+            tooltip.add(Component.literal(energy + " / " + maxEnergy + " HE"));
+
+            // [ИЗМЕНЕНО] Форматируем дельту (например "+500 FE/t" или "-1.1k FE/t")
+            long delta = menu.getEnergyDelta();
+            String deltaText = (delta > 0 ? "+" : "") + EnergyFormatter.formatRate(delta);
+
+            ChatFormatting deltaColor = delta > 0 ? ChatFormatting.GREEN : (delta < 0 ? ChatFormatting.RED : ChatFormatting.YELLOW);
             tooltip.add(Component.literal(deltaText).withStyle(deltaColor));
-            
+
+            // --- [НОВЫЕ СТРОКИ] ---
+            // Рассчитываем и форматируем дельту в секунду (FE/t * 20)
+            long deltaPerSecond = delta * 20;
+            String deltaPerSecondText = (deltaPerSecond > 0 ? "+" : "") + EnergyFormatter.formatWithUnit(deltaPerSecond, "HE/s");
+            // Добавляем в тултип с тем же цветом
+            tooltip.add(Component.literal(deltaPerSecondText).withStyle(deltaColor));
+            // --- [КОНЕЦ НОВЫХ СТРОК] ---
+
             pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pMouseX, pMouseY);
         }
-        
+
         // Тултип для Priority
         if (isMouseOver(pMouseX, pMouseY, 152, 35, 16, 16)) {
-             List<Component> tooltip = new ArrayList<>();
-             String priorityKey = "gui.hbm_m.battery.priority." + menu.getPriorityOrdinal();
-             tooltip.add(Component.translatable(priorityKey));
-             tooltip.add(Component.translatable("gui.hbm_m.battery.priority.recommended").withStyle(ChatFormatting.DARK_GRAY));
-             tooltip.add(Component.translatable(priorityKey + ".desc").withStyle(ChatFormatting.GRAY));
-             
-             pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pMouseX, pMouseY);
+            List<Component> tooltip = new ArrayList<>();
+            String priorityKey = "gui.hbm_m.battery.priority." + menu.getPriorityOrdinal();
+            tooltip.add(Component.translatable(priorityKey));
+            tooltip.add(Component.translatable("gui.hbm_m.battery.priority.recommended").withStyle(ChatFormatting.DARK_GRAY));
+            tooltip.add(Component.translatable(priorityKey + ".desc").withStyle(ChatFormatting.GRAY));
+
+            pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pMouseX, pMouseY);
         }
 
         if (isMouseOver(pMouseX, pMouseY, 133, 16, 18, 18)) {
             renderRedstoneTooltip(pGuiGraphics, pMouseX, pMouseY, menu.getModeOnNoSignal(), "no_signal");
         }
-        
-        // Тултип для нижней кнопки (Есть сигнал)
+
         if (isMouseOver(pMouseX, pMouseY, 133, 52, 18, 18)) {
             renderRedstoneTooltip(pGuiGraphics, pMouseX, pMouseY, menu.getModeOnSignal(), "with_signal");
         }
     }
-    
+
     // --- ОБРАБОТКА КЛИКОВ ---
 
     private void renderRedstoneTooltip(GuiGraphics graphics, int mouseX, int mouseY, int mode, String conditionKey) {
         List<Component> tooltip = new ArrayList<>();
-        
+
         // 1. Добавляем заголовок, описывающий УСЛОВИЕ
         tooltip.add(Component.translatable("gui.hbm_m.battery.condition." + conditionKey));
-        
+
         String modeKey;
         switch (mode) {
             case 0 -> modeKey = "both";
@@ -166,13 +187,13 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
         // 2. Добавляем название и описание РЕЖИМА
         String titleKey = "gui.hbm_m.battery.mode." + modeKey;
         String descKey = "gui.hbm_m.battery.mode." + modeKey + ".desc";
-        
+
         tooltip.add(Component.translatable(titleKey).withStyle(ChatFormatting.AQUA));
         tooltip.add(Component.translatable(descKey).withStyle(ChatFormatting.GRAY));
 
         graphics.renderTooltip(this.font, tooltip, Optional.empty(), mouseX, mouseY);
     }
-    
+
     @Override
     public boolean mouseClicked(double pMouseX, double pMouseY, int pButton) {
         if (pButton == 0) { // Только левая кнопка мыши

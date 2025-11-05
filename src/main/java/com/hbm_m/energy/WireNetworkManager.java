@@ -5,20 +5,22 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+// ПРАВИЛЬНО
+import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
 import com.hbm_m.block.entity.WireBlockEntity;
+
+// --- ДОБАВЛЕННЫЕ ИМПОРТЫ ---
+import com.hbm_m.energy.ILongEnergyStorage;
+import com.hbm_m.energy.ForgeToLongWrapper;
+import com.hbm_m.capability.ModCapabilities;
+// ---
 
 import java.util.*;
 
 /**
  * Инкрементальный менеджер сетей проводов.
- * Поддерживает:
- * - граф проводов (adjacency),
- * - остовный лес (spanning tree) для каждой компоненты,
- * - списки источников энергии (pos + side) для каждой компоненты.
- *
- * При удалении остовного ребра пытается найти заменяющее ребро через локальный BFS;
- * если замены нет — пересобирает компоненты локально (только для старой компоненты).
+ * (Описание...)
  */
 public class WireNetworkManager {
 
@@ -46,9 +48,10 @@ public class WireNetworkManager {
         }
     }
 
-    public int requestEnergy(Level level, BlockPos start, int maxRequest, boolean simulate) {
+    // ИЗМЕНЕНИЕ: Принимает и возвращает long
+    public long requestEnergy(Level level, BlockPos start, long maxRequest, boolean simulate) {
         PerLevel pl = levels.get(level);
-        if (pl == null) return 0;
+        if (pl == null) return 0L;
         return pl.requestEnergy(level, start, maxRequest, simulate);
     }
 
@@ -206,11 +209,20 @@ public class WireNetworkManager {
                 BlockPos a = removed.a;
                 BlockPos b = removed.b;
                 if (a.equals(pos) || b.equals(pos)) {
-                    continue;
+                    continue; // (pos уже удален, это ребро обрабатывать не нужно)
                 }
+
+                // Проверяем, достижимы ли 'a' и 'b' (которые были соединены) в графе БЕЗ удаленного ребра
                 boolean stillConnected = isReachableExcludingEdge(a, b, removed);
                 if (stillConnected) {
+                    // Они все еще соединены другим путем (не-остовным ребром)
+                    // Нам нужно найти этот путь и добавить его в остов
+
+                    // (ПРИМЕЧАНИЕ: для 100% корректности здесь нужен сложный поиск заменяющего ребра.
+                    // Но для простоты мы можем просто перестроить компоненту,
+                    // если isReachableExcludingEdge вернет false, как сделано ниже)
                     continue;
+
                 } else {
                     // ребро действительно разрезало компоненту -> нужно разделить старую component на несколько
                     // Соберём оставшиеся вершины старой компоненты (используем снимок compSnapshot)
@@ -227,11 +239,24 @@ public class WireNetworkManager {
 
                     // Rebuild components from leftover nodes by BFS on adj graph (adj currently содержит связи без pos)
                     rebuildComponents(level, leftover);
-                    // обработали разделение — остальные удалённыеTreeEdges уже учтём по мере итерации
+                    // обработали разделение — выходим из цикла, т.к. rebuildComponents сделала всю работу
+                    return;
                 }
             }
-            // Наконец — обновим источники для компонента(й), которые остались
-            // (rebuildComponents уже вызовет updateSourcesForRoot)
+
+            // Если мы дошли сюда, значит удаление pos не разрезало граф (или pos был один)
+            // Нам все равно нужно перестроить остов и источники для оставшихся членов
+            Set<BlockPos> leftover = new HashSet<>(compSnapshot);
+            leftover.remove(pos);
+
+            if (!leftover.isEmpty()) {
+                for (BlockPos p : compSnapshot) {
+                    parent.remove(p);
+                    members.remove(p);
+                }
+                treeEdges.removeIf(e -> compSnapshot.contains(e.a) || compSnapshot.contains(e.b));
+                rebuildComponents(level, leftover);
+            }
         }
 
         // Попытка определения достижимости b из a при исключении конкретного ребра
@@ -257,54 +282,44 @@ public class WireNetworkManager {
             Set<BlockPos> visited = new HashSet<>();
             for (BlockPos start : nodes) {
                 if (visited.contains(start)) continue;
+
+                // Используем BFS для поиска всех достижимых узлов в этой новой компоненте
                 ArrayDeque<BlockPos> q = new ArrayDeque<>();
                 Set<BlockPos> comp = new HashSet<>();
                 q.add(start);
                 visited.add(start);
                 comp.add(start);
+
+                // Выбираем корень (первый узел)
+                BlockPos root = start;
+                makeSet(root); // Создаем новую компоненту с 'start' как корнем
+                members.put(root, comp); // Убедимся, что members инициализирован
+
                 while (!q.isEmpty()) {
                     BlockPos cur = q.poll();
                     for (BlockPos nb : adj.getOrDefault(cur, Collections.emptySet())) {
                         if (!nodes.contains(nb)) continue; // только внутри leftover
+
                         if (visited.add(nb)) {
-                            visited.add(nb);
+                            // nb - новый узел
                             q.add(nb);
                             comp.add(nb);
+
+                            // Логика построения остовного дерева (Spanning Tree) прямо здесь:
+                            // Так как мы нашли nb из cur, ребро (cur, nb) - остовное
+                            treeEdges.add(new Edge(cur, nb));
+                            parent.put(nb, root); // Присоединяем к корню новой компоненты
                         }
                     }
                 }
-                // создаём новый корень
-                BlockPos root = comp.iterator().next();
-                for (BlockPos p : comp) parent.put(p, root);
+                // Обновляем members для корня
                 members.put(root, comp);
-                // восстановим дерево ребёр (создаём spanning tree простым BFS)
-                buildSpanningTreeForComponent(root, comp);
                 // обновим источники
                 updateSourcesForRoot(level, root);
             }
         }
 
-        // Построение остовного дерева для компоненты (root, members) простым BFS; помечаем treeEdges
-        private void buildSpanningTreeForComponent(BlockPos root, Set<BlockPos> comp) {
-            ArrayDeque<BlockPos> q = new ArrayDeque<>();
-            Set<BlockPos> vis = new HashSet<>();
-            q.add(root);
-            vis.add(root);
-            while (!q.isEmpty()) {
-                BlockPos cur = q.poll();
-                for (BlockPos nb : adj.getOrDefault(cur, Collections.emptySet())) {
-                    if (!comp.contains(nb) || vis.contains(nb)) continue;
-                    // добавляем ребро в остов
-                    treeEdges.add(new Edge(cur, nb));
-                    parent.put(nb, root); // временно указываем на корень — find реализует path compression позже
-                    members.get(root).add(nb);
-                    q.add(nb);
-                    vis.add(nb);
-                }
-            }
-            // корректируем parent для корня
-            parent.put(root, root);
-        }
+        // (Метод buildSpanningTreeForComponent больше не нужен, т.к. логика встроена в rebuildComponents)
 
         private void updateSourcesForComponent(Level level, BlockPos anyMember) {
             BlockPos r = find(anyMember);
@@ -321,7 +336,12 @@ public class WireNetworkManager {
                     BlockEntity nbe = level.getBlockEntity(np);
                     if (nbe == null) continue;
                     if (!(nbe instanceof WireBlockEntity)) {
-                        if (nbe.getCapability(ForgeCapabilities.ENERGY, d.getOpposite()).isPresent()) {
+
+                        // ИЗМЕНЕНИЕ: Проверяем ЛЮБУЮ из двух capability
+                        boolean hasEnergyCap = nbe.getCapability(ModCapabilities.LONG_ENERGY, d.getOpposite()).isPresent() ||
+                                nbe.getCapability(ForgeCapabilities.ENERGY, d.getOpposite()).isPresent();
+
+                        if (hasEnergyCap) {
                             if (list.size() < MAX_SOURCES_PER_COMPONENT) {
                                 // DETERMINE PRIORITY: check if neighbor is MachineBatteryBlockEntity
                                 int pr = 1; // default NORMAL
@@ -339,34 +359,58 @@ public class WireNetworkManager {
             sources.put(root, list);
         }
 
-        int requestEnergy(Level level, BlockPos start, int need, boolean simulate) {
+        // ИЗМЕНЕНИЕ: Принимает и возвращает long
+        long requestEnergy(Level level, BlockPos start, long need, boolean simulate) {
             BlockPos root = find(start);
             if (root == null) {
                 // fallback: быстрая локальная BFS-запрос (в редких случаях)
                 return bfsRequest(level, start, need, simulate, 2000);
             }
             List<EnergySource> list = sources.get(root);
-            if (list == null || list.isEmpty()) return 0;
+            if (list == null || list.isEmpty()) return 0L;
 
             // NEW: сортируем по приоритету (HIGH -> NORMAL -> LOW)
             list.sort(Comparator.comparingInt((EnergySource es) -> es.priority()).reversed());
 
-            int taken = 0;
+            long taken = 0L; // ИЗМЕНЕНИЕ: long
             for (EnergySource es : list) {
                 if (taken >= need) break;
                 BlockEntity be = level.getBlockEntity(es.pos());
                 if (be == null) continue;
-                IEnergyStorage storage = be.getCapability(ForgeCapabilities.ENERGY, es.side()).resolve().orElse(null);
+
+                // --- НОВАЯ ЛОГИКА ПОИСКА CAPABILITY ---
+                ILongEnergyStorage storage = null;
+
+                // 1. Пытаемся найти нашу long-систему
+                LazyOptional<ILongEnergyStorage> longCap = be.getCapability(ModCapabilities.LONG_ENERGY, es.side());
+                if (longCap.isPresent()) {
+                    storage = longCap.resolve().orElse(null);
+                } else {
+                    // 2. Если не нашли, ищем старую Forge-систему
+                    LazyOptional<IEnergyStorage> forgeCap = be.getCapability(ForgeCapabilities.ENERGY, es.side());
+                    if (forgeCap.isPresent()) {
+                        // 3. Оборачиваем int-хранилище в long-обертку
+                        IEnergyStorage intStorage = forgeCap.resolve().orElse(null);
+                        if(intStorage != null) {
+                            storage = new ForgeToLongWrapper(intStorage);
+                        }
+                    }
+                }
+                // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+
                 if (storage == null || !storage.canExtract()) continue;
+
                 try {
-                    int got = storage.extractEnergy(need - taken, simulate);
+                    // ИЗМЕНЕНИЕ: long
+                    long got = storage.extractEnergy(need - taken, simulate);
                     if (got > 0) taken += got;
                 } catch (Exception ignored) { }
             }
             return taken;
         }
 
-        private int bfsRequest(Level level, BlockPos start, int need, boolean simulate, int maxNodes) {
+        // ИЗМЕНЕНИЕ: Принимает и возвращает long
+        private long bfsRequest(Level level, BlockPos start, long need, boolean simulate, int maxNodes) {
             ArrayDeque<BlockPos> q = new ArrayDeque<>();
             Set<BlockPos> visited = new HashSet<>();
             List<EnergySource> found = new ArrayList<>();
@@ -385,7 +429,12 @@ public class WireNetworkManager {
                         q.add(np);
                         continue;
                     }
-                    if (nbe.getCapability(ForgeCapabilities.ENERGY, d.getOpposite()).isPresent()) {
+
+                    // ИЗМЕНЕНИЕ: Проверяем ЛЮБУЮ из двух capability
+                    boolean hasEnergyCap = nbe.getCapability(ModCapabilities.LONG_ENERGY, d.getOpposite()).isPresent() ||
+                            nbe.getCapability(ForgeCapabilities.ENERGY, d.getOpposite()).isPresent();
+
+                    if (hasEnergyCap) {
                         // determine priority if battery
                         int pr = 1;
                         if (nbe instanceof com.hbm_m.block.entity.MachineBatteryBlockEntity mb) {
@@ -399,15 +448,32 @@ public class WireNetworkManager {
             // NEW: сортировка по приоритету перед извлечением
             found.sort(Comparator.comparingInt((EnergySource es) -> es.priority()).reversed());
 
-            int taken = 0;
+            long taken = 0L; // ИЗМЕНЕНИЕ: long
             for (EnergySource es : found) {
                 if (taken >= need) break;
                 BlockEntity be = level.getBlockEntity(es.pos());
                 if (be == null) continue;
-                IEnergyStorage storage = be.getCapability(ForgeCapabilities.ENERGY, es.side()).resolve().orElse(null);
+
+                // --- НОВАЯ ЛОГИКА ПОИСКА CAPABILITY (такая же, как в requestEnergy) ---
+                ILongEnergyStorage storage = null;
+                LazyOptional<ILongEnergyStorage> longCap = be.getCapability(ModCapabilities.LONG_ENERGY, es.side());
+                if (longCap.isPresent()) {
+                    storage = longCap.resolve().orElse(null);
+                } else {
+                    LazyOptional<IEnergyStorage> forgeCap = be.getCapability(ForgeCapabilities.ENERGY, es.side());
+                    if (forgeCap.isPresent()) {
+                        IEnergyStorage intStorage = forgeCap.resolve().orElse(null);
+                        if(intStorage != null) {
+                            storage = new ForgeToLongWrapper(intStorage);
+                        }
+                    }
+                }
+                // --- КОНЕЦ НОВОЙ ЛОГИКИ ---
+
                 if (storage == null || !storage.canExtract()) continue;
                 try {
-                    int got = storage.extractEnergy(need - taken, simulate);
+                    // ИЗМЕНЕНИЕ: long
+                    long got = storage.extractEnergy(need - taken, simulate);
                     if (got > 0) taken += got;
                 } catch (Exception ignored) { }
             }

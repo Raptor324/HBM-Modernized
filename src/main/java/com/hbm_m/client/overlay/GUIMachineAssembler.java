@@ -11,6 +11,7 @@ import com.hbm_m.item.ItemAssemblyTemplate;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.menu.MachineAssemblerMenu;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.hbm_m.util.EnergyFormatter;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.ChatFormatting;
@@ -191,17 +192,22 @@ public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemble
         int energyBarHeight = 52;
 
         if (pX >= energyBarX && pX < energyBarX + energyBarWidth &&
-            pY >= energyBarY && pY < energyBarY + energyBarHeight) {
-            
-            List<Component> tooltip = new ArrayList<>();
-            tooltip.add(Component.literal(this.menu.getEnergy() + " / "
-                    + this.menu.getMaxEnergy() + " FE"));
+                pY >= energyBarY && pY < energyBarY + energyBarHeight) {
 
-            int delta = this.menu.getEnergyDelta();
-            String deltaText = (delta >= 0 ? "+" : "") + delta + " FE/t";
-            ChatFormatting deltaColor = delta > 0 ? ChatFormatting.GREEN
-                    : (delta < 0 ? ChatFormatting.RED : ChatFormatting.YELLOW);
-            tooltip.add(Component.literal(deltaText).withStyle(deltaColor));
+            List<Component> tooltip = new ArrayList<>();
+
+            // --- ИЗМЕНЕНИЕ: Используем Long-геттеры и Форматер ---
+            long energy = this.menu.getEnergyLong();
+            long maxEnergy = this.menu.getMaxEnergyLong();
+            long delta = this.menu.getEnergyDeltaLong();
+
+            String energyStr = EnergyFormatter.format(energy);
+            String maxEnergyStr = EnergyFormatter.format(maxEnergy);
+            String deltaStr = EnergyFormatter.formatRate(delta); // (уже добавляет /t)
+
+            tooltip.add(Component.literal(energyStr + " / " + maxEnergyStr + " HE"));
+
+            // ---
 
             pGuiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), pX, pY);
         }

@@ -2,7 +2,7 @@ package com.hbm_m.block.entity;
 
 import com.hbm_m.block.MachineAdvancedAssemblerBlock;
 import com.hbm_m.client.ClientSoundManager;
-import com.hbm_m.energy.BlockEntityEnergyStorage;
+import com.hbm_m.energy.*;
 import com.hbm_m.item.ItemBlueprintFolder;
 import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
@@ -34,13 +34,100 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.fluids.capability.templates.FluidTank;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
+
+// НОВЫЕ ИМПОРТЫ для long-энергии
+import com.hbm_m.capability.ModCapabilities;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.Objects;
+
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import java.util.*;
 
-public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity implements IFrameSupportable {
+public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements MenuProvider, IFrameSupportable {
+
+    private final ItemStackHandler itemHandler = new ItemStackHandler(17) {
+        @Override
+        protected void onContentsChanged(int slot) {
+            setChanged();
+            if (slot == BLUEPRINT_FOLDER_SLOT && level != null && !level.isClientSide()) {
+                ItemStack folderStack = getBlueprintFolder();
+                if (folderStack.isEmpty() && selectedRecipeId != null) {
+                    AssemblerRecipe currentRecipe = getSelectedRecipe();
+                    if (currentRecipe != null) {
+                        String recipePool = currentRecipe.getBlueprintPool();
+                        if (recipePool != null && !recipePool.isEmpty()) {
+                            boolean wasCrafting = assemblerModule != null && assemblerModule.isProcessing();
+
+                            selectedRecipeId = null;
+                            if (assemblerModule != null) {
+                                assemblerModule.setPreferredRecipe(null);
+                                assemblerModule.resetProgress();
+                            }
+
+                            if (wasCrafting) {
+                                level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
+                                        SoundSource.BLOCKS, 0.5f, 1.0f);
+                            }
+
+                            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+                        }
+                    }
+                }
+            }
+            if (level != null && !level.isClientSide()) {
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            }
+        }
+
+        @Override
+        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+            if (slot == 0) return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+            if (slot >= 4 && slot <= 15) {
+                return assemblerModule == null || assemblerModule.isItemValidForSlot(slot, stack);
+            }
+            return super.isItemValid(slot, stack);
+        }
+
+        @Override
+        @NotNull
+        public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+            return super.insertItem(slot, stack, simulate);
+        }
+    };
+
+    // ИЗМЕНЕНИЕ: Теперь используем BlockEntityEnergyStorage с long (уже реализован в твоих файлах)
+    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100_000L, 100000L) {
+        @Override
+        public long receiveEnergy(long maxReceive, boolean simulate) {
+            long received = super.receiveEnergy(maxReceive, simulate);
+            if (received > 0 && !simulate) {
+                setChanged();
+                syncEnergyToClients();
+            }
+            return received;
+        }
+
+        @Override
+        public long extractEnergy(long maxExtract, boolean simulate) {
+            long extracted = super.extractEnergy(maxExtract, simulate);
+            if (extracted > 0 && !simulate) {
+                setChanged();
+                syncEnergyToClients();
+            }
+            return extracted;
+        }
+    };
 
     private static final int SLOT_COUNT = 17;
     private static final int ENERGY_SLOT = 0;
@@ -54,6 +141,21 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100_000, 1000);
     private final FluidTank inputTank = new FluidTank(4000);
     private final FluidTank outputTank = new FluidTank(4000);
+
+    private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
+    // ИЗМЕНЕНИЕ: Добавляем LazyOptional для ILongEnergyStorage
+    private LazyOptional<ILongEnergyStorage> lazyLongEnergyHandler = LazyOptional.empty();
+    // ИЗМЕНЕНИЕ: Создаём wrapper для обратной совместимости с Forge Energy
+    private LazyOptional<IEnergyStorage> lazyForgeEnergyHandler = LazyOptional.empty();
+    private LazyOptional<FluidTank> lazyFluidHandler = LazyOptional.empty();
+
+    private ResourceLocation selectedRecipeId = null;
+
+    private int syncCounter = 0;
+    // ИЗМЕНЕНИЕ: Переводим на long для корректного отображения больших значений
+    private long previousEnergy = 0L;
+    private long energyDelta = 0L;
+    private int energyDeltaUpdateCounter = 0;
 
     public boolean frame = false;
     private ResourceLocation selectedRecipeId = null;
@@ -87,6 +189,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             };
         }
 
+    @OnlyIn(Dist.CLIENT)
+    private AdvancedAssemblerSoundInstance soundInstance;
+
         @Override
         public void set(int index, int value) {}
 
@@ -109,110 +214,74 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @OnlyIn(Dist.CLIENT)
     private int ringDelay;
 
-    public MachineAdvancedAssemblerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pos, state, SLOT_COUNT);
-        // initClientAnimations();
+    public MachineAdvancedAssemblerBlockEntity(BlockPos pPos, BlockState pBlockState) {
+        super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pPos, pBlockState);
+        for (int i = 0; i < this.arms.length; i++) {
+            this.arms[i] = new AssemblerArm();
+        }
+
+        this.data = new ContainerData() {
+            @Override
+            public int get(int pIndex) {
+
+                // --- ИЗМЕНЕНИЕ: ИСПОЛЬЗУЕМ УПАКОВЩИК ---
+
+                // Получаем значения 1 раз
+                long currentEnergy = energyStorage.getEnergyStored();
+                long maxEnergy = energyStorage.getMaxEnergyStored();
+                long delta = energyDelta; // energyDelta у тебя уже long
+
+                return switch (pIndex) {
+                    // Прогресс (остаётся int)
+                    case 0 -> assemblerModule != null ? assemblerModule.getProgressInt() : 0;
+                    case 1 -> assemblerModule != null ? assemblerModule.getMaxProgress() : 0;
+
+                    // Текущая энергия (long -> 2x int)
+                    case 2 -> LongDataPacker.packHigh(currentEnergy);
+                    case 3 -> LongDataPacker.packLow(currentEnergy);
+
+                    // Макс. энергия (long -> 2x int)
+                    case 4 -> LongDataPacker.packHigh(maxEnergy);
+                    case 5 -> LongDataPacker.packLow(maxEnergy);
+
+                    // Дельта энергии (long -> 2x int)
+                    case 6 -> LongDataPacker.packHigh(delta);
+                    case 7 -> LongDataPacker.packLow(delta);
+
+                    default -> 0;
+                };
+                // --- КОНЕЦ ИЗМЕНЕНИЙ ---
+            }
+
+            @Override
+            public void set(int pIndex, int pValue) {
+                // Только для чтения на клиенте
+            }
+
+            @Override
+            public int getCount() {
+                return 8;
+            }
+        };
     }
 
-    // @OnlyIn(Dist.CLIENT)
-    // private void initClientAnimations() {
-    //     for (int i = 0; i < this.arms.length; i++) {
-    //         this.arms[i] = new AssemblerArm();
-    //     }
-    // }
+    // ИЗМЕНЕНИЕ: Методы теперь возвращают long
+    public long getEnergyStored() { return this.energyStorage.getEnergyStored(); }
+    public long getMaxEnergyStored() { return this.energyStorage.getMaxEnergyStored(); }
 
-    @Override
-    protected Component getDefaultName() {
-        return Component.translatable("container.hbm_m.advanced_assembly_machine");
-    }
-
-    @Override
-    protected void setupEnergyCapability() {
-        energyHandler = LazyOptional.of(() -> energyStorage);
-    }
-
-    @Override
-    protected void setupFluidCapability() {
-        fluidInputHandler = LazyOptional.of(() -> inputTank);
-        fluidOutputHandler = LazyOptional.of(() -> outputTank);
-    }
-
-    @Override
-    public AABB getRenderBoundingBox() {
-        BlockState state = getBlockState();
-        if (!(state.getBlock() instanceof MachineAdvancedAssemblerBlock block)) {
-            // Fallback на стандартный AABB с запасом
-            return new AABB(worldPosition.offset(-2, -1, -2), worldPosition.offset(3, 4, 3));
-        }
-        
-        //  Получаем структуру через правильное имя метода
-        var structureHelper = block.getStructureHelper();
-        var structureMap = structureHelper.getStructureMap();
-        
-        if (structureMap == null || structureMap.isEmpty()) {
-            // Fallback для 3x3x3 структуры
-            return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 3, 2));
-        }
-        
-        // Находим минимальные и максимальные координаты из структуры
-        int minX = 0, minY = 0, minZ = 0;
-        int maxX = 0, maxY = 0, maxZ = 0;
-        
-        for (BlockPos offset : structureMap.keySet()) {
-            minX = Math.min(minX, offset.getX());
-            minY = Math.min(minY, offset.getY());
-            minZ = Math.min(minZ, offset.getZ());
-            maxX = Math.max(maxX, offset.getX());
-            maxY = Math.max(maxY, offset.getY());
-            maxZ = Math.max(maxZ, offset.getZ());
-        }
-        
-        //  Добавляем запас для анимированных частей (кольцо, руки, головы)
-        // Кольцо вращается и выходит за пределы на ~1.5 блока
-        double margin = 1.5;
-        
-        return new AABB(
-            worldPosition.getX() + minX - margin,
-            worldPosition.getY() + minY - margin,
-            worldPosition.getZ() + minZ - margin,
-            worldPosition.getX() + maxX + 1 + margin,
-            worldPosition.getY() + maxY + 1 + margin,
-            worldPosition.getZ() + maxZ + 1 + margin
-        );
-    }
-
-    @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (slot == ENERGY_SLOT) {
-            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-        }
-        if (slot == BLUEPRINT_FOLDER_SLOT) {
-            return stack.getItem() instanceof ItemBlueprintFolder;
-        }
-        if (slot >= OUTPUT_SLOT_START && slot <= OUTPUT_SLOT_END) {
-            return false;
-        }
-        if (slot >= INPUT_SLOT_START && slot <= INPUT_SLOT_END) {
-            return assemblerModule == null || assemblerModule.isItemValidForSlot(slot, stack);
-        }
-        return slot == STAMPING_SLOT;
-    }
-
-    @Nullable
-    @Override
-    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        sendUpdateToClient();
-        return new MachineAdvancedAssemblerMenu(containerId, playerInventory, this, this.data);
+    public int getMaxProgress() {
+        return assemblerModule != null ? assemblerModule.getMaxProgress() : 100;
     }
 
     @Override
     public boolean setFrameVisible(boolean visible) {
         if (this.frame != visible) {
             this.frame = visible;
-            setChanged();
-            if (level != null && !level.isClientSide) {
-                sendUpdateToClient();
-                MainRegistry.LOGGER.debug("[FRAME SET] Состояние рамки изменено на " + visible);
+            this.setChanged();
+
+            if (this.level != null && !this.level.isClientSide()) {
+                this.level.sendBlockUpdated(this.worldPosition, this.getBlockState(), this.getBlockState(), 3);
+                MainRegistry.LOGGER.debug("[FRAME SET] Состояние рамки изменено на " + visible + ". Отправлен пакет клиенту.");
             }
             return true;
         }
@@ -226,104 +295,43 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public void checkForFrame() {
-        if (level != null && !level.isClientSide) {
-            MultiblockStructureHelper.updateFrameForController(level, worldPosition);
+        if (this.level != null && !this.level.isClientSide()) {
+            MultiblockStructureHelper.updateFrameForController(this.level, this.worldPosition);
         }
     }
 
-    public static void tick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
-        if (level.isClientSide) {
-            entity.clientTick(level, pos, state);
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity pEntity) {
+        if (level.isClientSide()) {
+            pEntity.clientTick(level, pos, state);
         } else {
             entity.serverTick();
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public void clientTick(Level level, BlockPos pos, BlockState state) {
-        ClientSoundManager.updateSound(this, this.isCrafting(), 
-            () -> new com.hbm_m.sound.AdvancedAssemblerSoundInstance(this.getBlockPos()));
-        
-        this.prevRingAngle = this.ringAngle;
-        
-        boolean craftingNow = isCrafting();
-        
-        if (craftingNow) {
-            for (AssemblerArm arm : arms) {
-                arm.updateInterp();
-                arm.updateArm(level, pos, level.random);
-            }
-        } else {
-            for (AssemblerArm arm : arms) {
-                arm.updateInterp();
-                arm.returnToNullPos();
-            }
-        }
-
-        if (craftingNow && !wasCraftingLastTick) {
-            this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
-            this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
-            this.ringDelay = 0;
-            level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.5f, 1.0f, false);
-        }
-
-        wasCraftingLastTick = craftingNow;
-
-        if (craftingNow) {
-            if (this.ringAngle != this.ringTarget) {
-                float ringDelta = Mth.wrapDegrees(this.ringTarget - this.ringAngle);
-                float absDelta = Math.abs(ringDelta);
-                
-                if (absDelta <= this.ringSpeed) {
-                    this.ringAngle = this.ringTarget;
-                    this.ringDelay = 20 + level.random.nextInt(21);
-                } else {
-                    this.ringAngle += Math.signum(ringDelta) * this.ringSpeed;
-                }
-            } else if (this.ringDelay > 0) {
-                this.ringDelay--;
-                if (this.ringDelay == 0) {
-                    level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                        ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.3f, 1.0f, false);
-                    this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
-                    this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
-                }
-            }
-        } else {
-            if (Math.abs(this.ringAngle) > 0.1f) {
-                this.ringAngle = Mth.lerp(0.1f, this.ringAngle, 0);
-            } else {
-                this.ringAngle = 0;
-            }
+    public boolean isCrafting() {
+        if (level != null && level.isClientSide()) {
+            return clientIsCrafting;
         }
     }
 
+    public int getProgress() {
+        return assemblerModule != null ? assemblerModule.getProgressInt() : 0;
+    }
+
     private void serverTick() {
-        long gameTime = level.getGameTime();
-        
-        if (gameTime % 5 == 0) {
-            chargeMachineFromBattery();
-        }
-    
-        if (gameTime % 10 == 0) {
-            updateEnergyDelta(energyStorage.getEnergyStored());
-        }
-    
+        chargeMachineFromBattery();
         if (assemblerModule == null && level != null) {
             assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, inventory, level);
         }
     
         if (assemblerModule != null) {
             boolean wasCrafting = assemblerModule.isProcessing();
-            ItemStack blueprintStack = inventory.getStackInSlot(BLUEPRINT_FOLDER_SLOT);
-    
-            if (selectedRecipeId != null && (recipeCacheDirty || gameTime % 20 == 0)) {
-                AssemblerRecipe currentRecipe = getCachedRecipe();
-                
-                if (currentRecipe != null && wasCrafting) {
+            ItemStack blueprintStack = itemHandler.getStackInSlot(1);
+
+            if (selectedRecipeId != null) {
+                AssemblerRecipe currentRecipe = getSelectedRecipe();
+                if (currentRecipe != null) {
                     String recipePool = currentRecipe.getBlueprintPool();
-                    
                     if (recipePool != null && !recipePool.isEmpty()) {
                         String currentPool = ItemBlueprintFolder.getBlueprintPool(blueprintStack);
                         
@@ -332,16 +340,21 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                             cachedRecipe = null;
                             assemblerModule.setPreferredRecipe(null);
                             assemblerModule.resetProgress();
-                            level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
-                                SoundSource.BLOCKS, 0.5f, 1.0f);
-                            needsClientSync = true;
+
+                            if (wasCrafting) {
+                                level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
+                                        SoundSource.BLOCKS, 0.5f, 1.0f);
+                            }
+
+                            setChanged();
+                            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
                             return;
                         }
                     }
                 }
                 recipeCacheDirty = false;
             }
-    
+
             if (selectedRecipeId != null && assemblerModule.getPreferredRecipe() == null) {
                 AssemblerRecipe recipe = getCachedRecipe();
                 if (recipe != null) {
@@ -351,26 +364,22 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     
             assemblerModule.update(1.0, 1.0, true, blueprintStack);
             boolean isCraftingNow = assemblerModule.isProcessing();
-    
-            if (isCraftingNow && assemblerModule.getPreferredRecipe() != null) {
-                ResourceLocation autoSelectedRecipeId = assemblerModule.getPreferredRecipe().getId();
-                // Если модуль автоматически выбрал рецепт, а мы его ещё не знаем
-                if (selectedRecipeId == null || !selectedRecipeId.equals(autoSelectedRecipeId)) {
-                    selectedRecipeId = autoSelectedRecipeId;
-                    cachedRecipe = assemblerModule.getPreferredRecipe();
-                    recipeCacheDirty = false;
-                    needsClientSync = true; // Отправляем обновление клиенту
-                }
+
+            if (wasCrafting && !isCraftingNow) {
+                level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
+                        SoundSource.BLOCKS, 0.5f, 1.0f);
             }
-            
-            // ДОПОЛНИТЕЛЬНО: Синхронизируем рецепт модуля с кешем BE
-            if (assemblerModule.getCurrentRecipe() != null) {
-                ResourceLocation currentRecipeId = assemblerModule.getCurrentRecipe().getId();
-                if (selectedRecipeId == null || !selectedRecipeId.equals(currentRecipeId)) {
-                    selectedRecipeId = currentRecipeId;
-                    cachedRecipe = assemblerModule.getCurrentRecipe();
-                    recipeCacheDirty = false;
-                    needsClientSync = true;
+
+            if (selectedRecipeId == null) {
+                ResourceLocation moduleRecipeId = assemblerModule.getCurrentRecipe() != null
+                        ? assemblerModule.getCurrentRecipe().getId()
+                        : null;
+                if (!Objects.equals(selectedRecipeId, moduleRecipeId)) {
+                    selectedRecipeId = moduleRecipeId;
+                    setChanged();
+                    if (level != null) {
+                        level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+                    }
                 }
             }
     
@@ -397,57 +406,155 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
     }    
 
-    private void chargeMachineFromBattery() {
-        ItemStack batteryStack = inventory.getStackInSlot(ENERGY_SLOT);
-        if (batteryStack.isEmpty()) return;
+        // ИЗМЕНЕНИЕ: energyDelta теперь long
+        energyDeltaUpdateCounter++;
+        if (energyDeltaUpdateCounter >= 20) {
+            long currentEnergy = energyStorage.getEnergyStored();
+            long totalChange = currentEnergy - previousEnergy;
+            energyDelta = totalChange / 20;
+            previousEnergy = currentEnergy;
+            energyDeltaUpdateCounter = 0;
+        }
 
-        batteryStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(batteryEnergy -> {
-            int spaceAvailable = energyStorage.getMaxEnergyStored() - energyStorage.getEnergyStored();
-            if (spaceAvailable <= 0) return;
-
-            int maxTransfer = Math.min(spaceAvailable, energyStorage.getMaxReceive());
-            int extracted = batteryEnergy.extractEnergy(maxTransfer, false);
-            
-            if (extracted > 0) {
-                energyStorage.receiveEnergy(extracted, false);
-                setChanged();
-            }
-        });
+        syncCounter++;
+        if (syncCounter >= 5) {
+            syncCounter = 0;
+            setChanged();
+        }
     }
 
-    @Nullable
-    private AssemblerRecipe getCachedRecipe() {
-        if (selectedRecipeId == null || level == null) {
-            cachedRecipe = null;
-            return null;
+    // ИЗМЕНЕНИЕ: Метод возвращает long
+    public long getEnergyDelta() {
+        return energyDelta;
+    }
+
+    private void syncEnergyToClients() {
+        if (level != null && !level.isClientSide()) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
-        
-        if (cachedRecipe == null || recipeCacheDirty) {
-            cachedRecipe = level.getRecipeManager()
-                .byKey(selectedRecipeId)
-                .filter(recipe -> recipe instanceof AssemblerRecipe)
-                .map(recipe -> (AssemblerRecipe) recipe)
-                .orElse(null);
-            recipeCacheDirty = false;
-        }
-        
-        return cachedRecipe;
+    }
+
+    public ItemStack getBlueprintFolder() {
+        return this.itemHandler.getStackInSlot(BLUEPRINT_FOLDER_SLOT);
     }
 
     public List<AssemblerRecipe> getAvailableRecipes() {
-        if (level == null) return List.of();
+        if (this.level == null) return List.of();
 
         ItemStack folderStack = getBlueprintFolder();
         String activePool = ItemBlueprintFolder.getBlueprintPool(folderStack);
 
-        List<AssemblerRecipe> allRecipes = level.getRecipeManager()
-            .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
+        List<AssemblerRecipe> allRecipes = this.level.getRecipeManager()
+                .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
 
-        return allRecipes.stream()
-            .filter(recipe -> {
-                String recipePool = recipe.getBlueprintPool();
-                if (recipePool == null || recipePool.isEmpty()) {
-                    return true;
+        List<AssemblerRecipe> result = new ArrayList<>();
+
+        for (AssemblerRecipe recipe : allRecipes) {
+            String recipePool = recipe.getBlueprintPool();
+
+            if (recipePool == null || recipePool.isEmpty()) {
+                result.add(recipe);
+                continue;
+            }
+
+            if (activePool != null && !activePool.isEmpty() && activePool.equals(recipePool)) {
+                result.add(recipe);
+            }
+        }
+
+        return result;
+    }
+
+    /**
+     * ИЗМЕНЕНИЕ: Обновлённый метод для зарядки от батареи
+     * Теперь поддерживает как ILongEnergyStorage, так и IEnergyStorage
+     */
+    private void chargeMachineFromBattery() {
+        ItemStack batteryStack = inventory.getStackInSlot(ENERGY_SLOT);
+        if (batteryStack.isEmpty()) return;
+
+        long spaceAvailable = energyStorage.getMaxEnergyStored() - energyStorage.getEnergyStored();
+        if (spaceAvailable <= 0) return;
+
+        // Пытаемся получить long-capability
+        LazyOptional<ILongEnergyStorage> longCap = batteryStack.getCapability(ModCapabilities.LONG_ENERGY);
+        if (longCap.isPresent()) {
+            longCap.ifPresent(batteryEnergy -> {
+                long maxTransfer = Math.min(spaceAvailable, energyStorage.getMaxReceive());
+                long extracted = batteryEnergy.extractEnergy(maxTransfer, false);
+
+                if (extracted > 0) {
+                    energyStorage.receiveEnergy(extracted, false);
+                    setChanged();
+                }
+            });
+        } else {
+            // Fallback на старую Forge Energy (int)
+            batteryStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(batteryEnergy -> {
+                int spaceInt = (int) Math.min(Integer.MAX_VALUE, spaceAvailable);
+                int maxTransferInt = (int) Math.min(Integer.MAX_VALUE, energyStorage.getMaxReceive());
+                int maxTransfer = Math.min(spaceInt, maxTransferInt);
+                int extracted = batteryEnergy.extractEnergy(maxTransfer, false);
+
+                if (extracted > 0) {
+                    energyStorage.receiveEnergy(extracted, false);
+                    setChanged();
+                }
+            });
+        }
+    }
+
+    @Override
+    public void setRemoved() {
+        if (level.isClientSide) {
+            ClientSoundManager.updateSound(this, false, null);
+        }
+        super.setRemoved();
+    }
+
+    public void clientTick(Level level, BlockPos pos, BlockState state) {
+        ClientSoundManager.updateSound(this, this.isCrafting(), () -> new AdvancedAssemblerSoundInstance(this.getBlockPos()));
+
+        this.prevRingAngle = this.ringAngle;
+
+        for (AssemblerArm arm : arms) {
+            arm.updateInterp();
+            if (isCrafting()) {
+                arm.updateArm(level, pos, level.random);
+            } else {
+                arm.returnToNullPos();
+            }
+        }
+
+        boolean craftingNow = isCrafting();
+
+        if (craftingNow && !wasCraftingLastTick) {
+            this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
+            this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
+            this.ringDelay = 0;
+
+            level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                    ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.5f, 1.0f, false);
+        }
+
+        wasCraftingLastTick = craftingNow;
+
+        if (craftingNow) {
+            if (this.ringAngle != this.ringTarget) {
+                float ringDelta = Mth.wrapDegrees(this.ringTarget - this.ringAngle);
+                if (Math.abs(ringDelta) <= this.ringSpeed) {
+                    this.ringAngle = this.ringTarget;
+                    this.ringDelay = 20 + level.random.nextInt(21);
+                } else {
+                    this.ringAngle += Math.signum(ringDelta) * this.ringSpeed;
+                }
+            } else if (this.ringDelay > 0) {
+                this.ringDelay--;
+                if (this.ringDelay == 0) {
+                    level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                            ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.3f, 1.0f, false);
+                    this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
+                    this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
                 }
                 return activePool != null && !activePool.isEmpty() && activePool.equals(recipePool);
             })
@@ -456,12 +563,18 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     public void setSelectedRecipe(ResourceLocation recipeId) {
         boolean wasCrafting = assemblerModule != null && assemblerModule.isProcessing();
+
         this.selectedRecipeId = recipeId;
         this.recipeCacheDirty = true;
         this.cachedRecipe = null;
 
         if (assemblerModule != null && level != null) {
-            AssemblerRecipe recipe = getCachedRecipe();
+            AssemblerRecipe recipe = level.getRecipeManager()
+                    .byKey(recipeId)
+                    .filter(r -> r instanceof AssemblerRecipe)
+                    .map(r -> (AssemblerRecipe) r)
+                    .orElse(null);
+
             assemblerModule.setPreferredRecipe(recipe);
             assemblerModule.resetProgress();
 
@@ -471,25 +584,37 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             }
         }
 
-        setChanged();
-        if (level != null && !level.isClientSide) {
-            sendUpdateToClient();
+        this.setChanged();
+        if (level != null && !level.isClientSide()) {
+            level.sendBlockUpdated(this.worldPosition, getBlockState(), getBlockState(), 3);
         }
-    }
-
-    @Nullable
-    public AssemblerRecipe getSelectedRecipe() {
-        return getCachedRecipe();
     }
 
     public ResourceLocation getSelectedRecipeId() {
         return selectedRecipeId;
     }
 
+    @Nullable
+    public AssemblerRecipe getSelectedRecipe() {
+        if (selectedRecipeId == null || level == null) return null;
+
+        return level.getRecipeManager()
+                .byKey(selectedRecipeId)
+                .filter(recipe -> recipe instanceof AssemblerRecipe)
+                .map(recipe -> (AssemblerRecipe) recipe)
+                .orElse(null);
+    }
+
+    // ИЗМЕНЕНИЕ: Обновляем getCapability для поддержки обеих систем
     @Override
-    public NonNullList<ItemStack> getGhostItems() {
-        if (assemblerModule != null && assemblerModule.getPreferredRecipe() != null) {
-            return assemblerModule.getGhostItems();
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        // Приоритет: сначала наша long-система
+        if (cap == ModCapabilities.LONG_ENERGY) {
+            return lazyLongEnergyHandler.cast();
+        }
+        // Затем Forge Energy для обратной совместимости
+        if (cap == ForgeCapabilities.ENERGY) {
+            return lazyForgeEnergyHandler.cast();
         }
         
         // Затем проверяем selectedRecipeId
@@ -503,13 +628,18 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         return NonNullList.create();
     }
 
-    public ItemStack getBlueprintFolder() {
-        return inventory.getStackInSlot(BLUEPRINT_FOLDER_SLOT);
-    }
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        lazyItemHandler = LazyOptional.of(() -> itemHandler);
+        // ИЗМЕНЕНИЕ: Инициализируем long-capability
+        lazyLongEnergyHandler = LazyOptional.of(() -> energyStorage);
+        // ИЗМЕНЕНИЕ: Создаём wrapper для Forge Energy
+        lazyForgeEnergyHandler = lazyLongEnergyHandler.lazyMap(LongToForgeWrapper::new);
+        lazyFluidHandler = LazyOptional.of(() -> inputTank);
 
-    public boolean isCrafting() {
-        if (level != null && level.isClientSide) {
-            return clientIsCrafting;
+        if (level != null && assemblerModule == null) {
+            assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, itemHandler, level);
         }
         return assemblerModule != null && assemblerModule.isProcessing();
     }
@@ -531,21 +661,26 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
 
     @Override
-    protected boolean isCriticalSlot(int slot) {
-        // Слоты ввода ресурсов критичны для синхронизации, чтобы ghost items обновлялись быстрее
-        return slot >= INPUT_SLOT_START && slot <= INPUT_SLOT_END;
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        lazyItemHandler.invalidate();
+        lazyLongEnergyHandler.invalidate();
+        lazyForgeEnergyHandler.invalidate();
+        lazyFluidHandler.invalidate();
     }
 
+    // ИЗМЕНЕНИЕ: Обновляем NBT для работы с long
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putInt("energy", energyStorage.getEnergyStored());
-        tag.put("input_tank", inputTank.writeToNBT(new CompoundTag()));
-        tag.put("output_tank", outputTank.writeToNBT(new CompoundTag()));
-        tag.putLong("last_use_tick", lastUseTick);
-        tag.putBoolean("hasFrame", frame);
-        tag.putBoolean("HasRecipe", selectedRecipeId != null);
-        
+    protected void saveAdditional(CompoundTag nbt) {
+        nbt.put("inventory", itemHandler.serializeNBT());
+        nbt.putLong("energy", energyStorage.getEnergyStored()); // long вместо int
+        nbt.put("input_tank", inputTank.writeToNBT(new CompoundTag()));
+        nbt.put("output_tank", outputTank.writeToNBT(new CompoundTag()));
+        nbt.putLong("last_use_tick", this.lastUseTick);
+        nbt.putBoolean("hasFrame", this.frame);
+        nbt.putLong("PreviousEnergy", previousEnergy); // long
+        nbt.putLong("EnergyDelta", energyDelta); // long
+        nbt.putBoolean("HasRecipe", selectedRecipeId != null);
         if (selectedRecipeId != null) {
             tag.putString("SelectedRecipe", selectedRecipeId.toString());
         }
@@ -555,46 +690,63 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             assemblerModule.writeToNBT(moduleTag);
             tag.put("AssemblerModule", moduleTag);
         }
+
+        super.saveAdditional(nbt);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        energyStorage.setEnergy(tag.getInt("energy"));
-        inputTank.readFromNBT(tag.getCompound("input_tank"));
-        outputTank.readFromNBT(tag.getCompound("output_tank"));
-        lastUseTick = tag.getLong("last_use_tick");
-        frame = tag.getBoolean("hasFrame");
-        clientIsCrafting = tag.getBoolean("is_crafting");
+    public void load(CompoundTag nbt) {
+        super.load(nbt);
+        itemHandler.deserializeNBT(nbt.getCompound("inventory"));
 
-        if (tag.contains("HasRecipe") && tag.getBoolean("HasRecipe")) {
-            selectedRecipeId = ResourceLocation.tryParse(tag.getString("SelectedRecipe"));
-            recipeCacheDirty = true;
+        if (nbt.contains("folder_data")) {
+            CompoundTag folderTag = nbt.getCompound("folder_data");
+            ItemStack folderStack = getBlueprintFolder();
+            if (!folderStack.isEmpty()) {
+                String pool = folderTag.getString("blueprintPool");
+                ItemBlueprintFolder.writeBlueprintPool(folderStack, pool);
+            }
+        }
+
+        energyStorage.setEnergy(nbt.getLong("energy")); // long
+        inputTank.readFromNBT(nbt.getCompound("input_tank"));
+        outputTank.readFromNBT(nbt.getCompound("output_tank"));
+        this.frame = nbt.getBoolean("hasFrame");
+        this.clientIsCrafting = nbt.getBoolean("is_crafting");
+        this.previousEnergy = nbt.getLong("PreviousEnergy"); // long
+        this.energyDelta = nbt.getLong("EnergyDelta"); // long
+
+        if (nbt.contains("HasRecipe") && nbt.getBoolean("HasRecipe")) {
+            this.selectedRecipeId = ResourceLocation.tryParse(nbt.getString("SelectedRecipe"));
         } else {
             selectedRecipeId = null;
             cachedRecipe = null;
         }
 
-        if (tag.contains("AssemblerModule") && level != null) {
+        if (nbt.contains("AssemblerModule") && level != null) {
             if (assemblerModule == null) {
                 assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, inventory, level);
             }
             assemblerModule.readFromNBT(tag.getCompound("AssemblerModule"));
         }
+
+        this.lastUseTick = nbt.getLong("last_use_tick");
     }
 
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
+
         tag.putBoolean("HasRecipe", selectedRecipeId != null);
         
         if (selectedRecipeId != null) {
             tag.putString("SelectedRecipe", selectedRecipeId.toString());
         }
+        tag.putBoolean("is_crafting", this.isCrafting());
+        tag.putBoolean("hasFrame", this.frame);
+        tag.put("inventory", itemHandler.serializeNBT());
+        tag.putLong("energy", energyStorage.getEnergyStored()); // long
 
-        tag.putBoolean("is_crafting", isCrafting());
-        tag.putBoolean("hasFrame", frame);
-        tag.putInt("energy", energyStorage.getEnergyStored());
         return tag;
     }
 
@@ -613,21 +765,14 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
 
     @Override
-    public void onLoad() {
-        super.onLoad();
-        
-        //  ИСПРАВЛЕНИЕ 1: Инициализация arms только на клиенте с проверкой null
-        if (level != null && level.isClientSide && arms[0] == null) {
-            //  Используем DistExecutor для безопасности
-            net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(
-                net.minecraftforge.api.distmarker.Dist.CLIENT, 
-                () -> () -> initClientArms()
-            );
-        }
-
-        //  ИСПРАВЛЕНИЕ 2: Инициализация assemblerModule только на сервере
-        if (level != null && !level.isClientSide && assemblerModule == null) {
-            assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, inventory, level);
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
+        CompoundTag nbt = pkt.getTag();
+        if (nbt != null) {
+            boolean wasCrafting = this.isCrafting();
+            handleUpdateTag(nbt);
+            if (this.level != null && this.level.isClientSide && wasCrafting && !this.isCrafting()) {
+                level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(), SoundSource.BLOCKS, 0.25f, 1.5F);
+            }
         }
     }
 
@@ -712,7 +857,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 case EXTEND_STRIKER:
                     if (move()) {
                         level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                            ModSounds.ASSEMBLER_STRIKE_RANDOM.get(), SoundSource.BLOCKS, 0.5f, 1.0F, false);
+                                ModSounds.ASSEMBLER_STRIKE_RANDOM.get(), SoundSource.BLOCKS, 0.5f, 1.0F, false);
                         state = ArmActionState.RETRACT_STRIKER;
                         targetAngles[3] = 0f;
                     }
@@ -759,8 +904,24 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                     angles[i] += Math.signum(delta) * speed[i];
                 }
             }
-            
-            return allReached;
+            return !didMove;
+        }
+    }
+
+    public class AssemblerRecipeConfig {
+        private static final Set<ResourceLocation> DISABLED_BASE_RECIPES = new HashSet<>();
+
+        static {
+            // Пример: отключаем алмазный меч из базовых рецептов
+            // DISABLED_BASE_RECIPES.add(new ResourceLocation("hbm_m", "diamond_sword_from_assembler"));
+        }
+
+        public static boolean isRecipeEnabled(ResourceLocation recipeId) {
+            return !DISABLED_BASE_RECIPES.contains(recipeId);
+        }
+
+        public static void loadConfig() {
+            // TODO: Реализовать чтение из config файла
         }
     }
 }
