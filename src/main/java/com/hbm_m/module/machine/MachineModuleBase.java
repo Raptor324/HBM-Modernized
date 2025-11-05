@@ -1,5 +1,6 @@
 package com.hbm_m.module.machine;
 
+import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.item.ItemStack;
@@ -155,6 +156,14 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             }
         }
         return false;
+    }
+
+    /**
+     * Возвращает список призрачных предметов для GUI
+     * Переопределите в дочерних классах для специфической логики
+     */
+    public NonNullList<ItemStack> getGhostItems() {
+        return NonNullList.create();
     }
 
     /**

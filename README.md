@@ -1,143 +1,245 @@
-
-
 ![HBM M Banner](docs/images/20251013_170609.png)
 
-# ENG Version 🇺🇸 | [RU Версия 🇷🇺](/README.ru.md)
+***
+
+## ENG Version 🇺🇸 | [RU Версия 🇷🇺](/README.ru.md)
 
 **Status:** Pre-Alpha \
-**Minecraft Version:** 1.20.1\
+**Minecraft Version:** 1.20.1 \
 **Mod ID:** `hbm_m`
+
+***
+
+## 📥 Official Platforms
+
+<div align="center">
+
+# <img src="https://cdn-icons-png.flaticon.com/128/5968/5968756.png" height=28 /> <a href="https://discord.gg/kYW4JBtUDn">Discord</a> | <img src="https://cdn2.steamgriddb.com/icon/46bbc4a56de136ad319e59e37ef55644/32/256x256.png" height=30 /> <a href="https://modrinth.com/mod/hbms-nuclear-tech-modernized">Modrinth</a> | <img src="https://cdn2.steamgriddb.com/logo/946b656620286beea9d58a29d1587d10.png" height=23 /> <a href="https://www.curseforge.com/minecraft/mc-mods/hbms-nuclear-tech-modernized">CurseForge</a> 
+</div>
+
+
+
+> [!WARNING]
+> **This mod is in pre-alpha stage.**
+> **DO NOT use it in your important worlds!**
+> Bugs, crashes, and mod incompatibilities are possible.
+> Report issues at [GitHub Issues](../../issues)
+
+***
+
+## About the Mod
+
+A modern reimagining of the legendary HBM's Nuclear Tech Mod for Minecraft 1.20.1. Nuclear technologies, radiation, advanced weaponry, and industrial automation with a rewritten codebase and improved architecture.
+
+![Mod Preview](https://cdn.modrinth.com/data/cached_images/64f225c1d254b31c0ae52724a5eaec45fe6a2d7c.png)
+
+***
+
+## ⚡ Key Features
+
+**Radiation System** — realistic irradiation mechanics with chunk-based spread, player accumulation, and dangerous effects
+
+**Industrial Automation** — multiblock machines for resource processing and energy production
+
+**Advanced Equipment** — armor and tools with unique perks and modifiers
+
+**Energy System** — generation, storage, and transmission of electricity between machines
+
+**Hazard System** — includes radioactivity, pyrophoricity, explosiveness, and more
+
+***
+
+## 🏭 Industry and Machines
+
+### Multiblock Structures
+
+Craft complex industrial machines consisting of multiple blocks for efficient resource processing.
+
+**Assembly Machines** — two varieties for crafting automation and component production, with an advanced recipe and template system
+
+![Workshop](docs/images/2025-10-14_17.09.12-min.png)
+
+**Press** — creating materials under pressure
+
+![Press](docs/images/2025-10-14_17.18.23-min.png)
+
+**Wood-Burning Generator** — primary energy source in the early game
+
+![Wood-Burning Generator](docs/images/2025-10-14_17.38.08-min.png)
+
+### Energy System
+
+A complete system for generating, storing, and transmitting electricity to power industrial machines.
+
+**Generators** — various methods of obtaining energy from wood to radioactive fuel
+
+**Energy Storage** — accumulators for electricity backup
+
+**Cables** — energy transmission between devices
+
+![Energy System](https://cdn.modrinth.com/data/cached_images/e4928ba19a50edf84fb1e4a78db955827048108a.png)
+
+***
+
+## 🛠️ Materials and Resources
+
+### Metallurgy
+
+Dozens of new ingots and metal blocks for crafting advanced equipment.
+
+**Radioactive Materials** — uranium, plutonium, polonium, and many others for nuclear technologies
+
+**Advanced Alloys** — special materials for powerful equipment
+
+**Ores** — new ore types with world generation
+
+![Resources](docs/images/2025-07-21_04.46.43.png)
+
+**Creative Tabs:** Blocks | Consumables | Fuel | Tools | Machines | Ores | Resources | Parts | Templates | Weapons
+
+![Creative Tabs](docs/images/2025-10-14_08.23.08.png)
+
+![Creative Tabs](docs/images/2025-10-14_08.23.24.png)
+
+![Creative Tabs](docs/images/2025-10-14_08.23.36.png)
+
+-----
+
+***
+
+## ⚔️ Equipment and Gear
+
+### Armor with Perks
+
+Advanced armor sets with unique modifiers and abilities.
+
+**Perk System** — upgrade armor through the modification table to gain special effects
+
+**Radiation Protection** — special sets for working with hazardous materials
+
+![Armor Modification Table](docs/images/2025-10-14_08.31.49.png)
+
+![Armor](docs/images/Screenshot_2025_10_05_05_38_55_75_572064f74bd5f9fa804b05334aa4f912.jpg)
+
+### Tools
+
+Powerful tools with unique resource mining mechanics.
+
+**Vein Miner** — mines entire ore veins at once
+
+**Advanced Tools** — increased efficiency and durability
+
+**Weapons** — swords and axes from various materials, as well as several types of grenades
+
+![Instruments](docs/images/2025-10-14_08.34.19.png)
+
+***
+
+## ☢️ Radiation System
+
+Realistic irradiation mechanics affecting gameplay and the surrounding world.
+
+### Irradiation Mechanics
+
+**Radiation Accumulation** — from the environment and radioactive items in inventory
+
+**Chunk-based Spread** — radiation spreads and slowly dissipates over time
+
+**Irradiation Effects** — blindness, confusion, weakness, hunger, poisoning, and death at critical doses
+
+![Radiation System](docs/images/2025-10-14_18.01.44-min.png)
+
+### World Impact
+
+**Block Mutations** — grass and foliage transform into dead variants at high radiation levels
+
+**Radioactive Blocks** — emit radiation into surrounding chunks
+
+![Block Mutations](docs/images/GIF_20250721_062913_819.gif)
+
+### Measuring Devices
+
+**Geiger Counter** — precise radiation measurement with sound accompaniment and HUD indication
+
+**Dosimeter** — simple device for quick radiation level assessment
+
+### Hazard System
+
+**Explosiveness** — don't throw gunpowder and dynamite into fire, or there might be a boom
+![Explosiveness](docs/images/2025-10-14_18.51.27-min.png)
+
+**Radioactivity** — corresponding items and blocks emit radiation
+
+**Pyrophoricity** — don't handle this without fire protection
+
+***
+
+## 🎮 Game Systems
+
+### Commands
+
+`/hbm_m rad` — manage player radiation level (add/remove/clear)
+
+
+### Settings
+
+Deep integration with Cloth Config API for fine-tuning mod parameters.
+
+![Mod Tweaks](docs/images/2025-07-21_06.38.23.png)
+***
+
+## 📦 Installation
+
+**Requirements:**
+
+- Minecraft 1.20.1
+- Forge 1.20.1
+- [Cloth Config API v1.11.136+](https://www.curseforge.com/minecraft/mc-mods/cloth-config/files?version=1.20)
+
+**Steps:**
+
+1. Download the latest version from [Releases](../../releases)
+2. Install Cloth Config API for version 1.20.1
+3. Place both `.jar` files in the `mods` folder
+4. Launch Minecraft with Forge 1.20.1
+
+***
+
+## ⚠️ Known Issues
+
+**Pre-alpha version** — expect bugs, incomplete features, and possible world corruption
+
+**Compatibility** — not tested with most mods, conflicts are possible
+
+**Crafting** — some recipes are missing, survival is temporarily unavailable
+
+Report issues at [Issues](../../issues) with detailed descriptions.
+
+***
+
+## 🤝 Contributing
+
+Pull requests, suggestions, and bug reports are welcome!
+
+Fork the repository and propose improvements.
+
+***
+
+## 💝 Acknowledgments
+
+**The Bobcat** — author of the original HBM's Nuclear Tech Mod
+
+**Raptor324, Hyperio \& Razchexlitiel** — modernization and rework
+
+The Forge team and Mojang for development tools
+
+***
+
+## 📝 Note
+
+We are learning as we develop, please be patient!
+Thank you for your interest in the mod and constructive feedback.
 
 ---
 
-> [!WARNING]
-> **This mod is currently in early alpha stage.**
-> **Do NOT use it in worlds you care about!**
-> There may be bugs, crashes, and potential incompatibilities with other mods.
-> Please report any issues via the [GitHub Issues](../../issues) page.
 
------
-## Download
-### 🟢 [Modrinth](https://modrinth.com/mod/hbms-nuclear-tech-modernized) | 🔨 [Curseforge](https://www.curseforge.com/minecraft/mc-mods/hbms-nuclear-tech-modernized)
-
-
-## About
-This is a modernized rewrite of the classic HBM's Nuclear Tech Mod, aiming to bring nuclear technology, radiation, and advanced weaponry to Minecraft 1.20.1+ with a fresh codebase and improved architecture. Work in progress!
-
-![HBM_M Preview](docs/images/2025-07-21_04.46.43.png)
-
-
-
-## Dependency
-[Cloth Config API v1.11.136](https://www.curseforge.com/minecraft/mc-mods/cloth-config/files?version=1.20)
-
-![Cloth Config Required](docs/images/20251013_224324.png)
-
-**Note:**
-Our team is new to Minecraft modding, so please don't judge too harshly!
-Constructive feedback and bug reports are very welcome.
-Some crafts are currently missing, not playable in survival mode.
-
------
-
-## Features (Alpha Preview)
-
-  - **Custom Creative Tabs:**
-      - Resources, Fuel, Templates, Ores, Machines, Bombs, Missiles, Weapons, Consumables. (Not all of them are filled, so there are gaps in the creative menu)
-
-      ![Creative Tab](docs/images/2025-07-21_05.26.00.png)
-
-  - **Items:**
-      - **Advanced Alloy Sword:** A powerful custom sword.
-      - **Uranium Ingot:** Radioactive material.
-      - **Geiger Counter:** Detects environmental and inventory radiation, with sound and HUD overlay (WIP).
-      - **Dosimeter:** A simpler device compared to the Geiger counter. It only shows the approximate environmental radiation.
-
-  - **Blocks:**
-    - **Uranium Block**
-    - **Plutonium Block**
-    - **Plutonium Fuel Block**
-    - **Polonium-210 Block**
-        - Emit radiation into the chunk
-    - **Dead Grass and Foliage** - Part of the world destruction system
-
-    ![Mod Blocks](docs/images/GIF_20250721_062357_193.gif)
-    - **Armor Modification Table** - WIP. The block itself and a correct GUI are implemented.
-
-    ![Armor Modification Table GUI](docs/images/2025-07-21_05.17.46.png)
-
-    - **Uranium Ore** - Generates naturally in the world.
-
-    ![Naturally generated Uranium Ore](docs/images/2025-07-21_05.20.20.png)
-
-
-  - **Radiation System:**
-      - Players accumulate radiation from the environment and inventory.
-      - Radiation effects: blindness, confusion, weakness, hunger, poison, and even death at high doses.
-      - Radiation is persistent and saved per player.
-      - Chunk-based radiation system with spread and decay.
-      - Radioactive blocks increase chunk radiation.
-      - Debug overlay for chunk radiation (creative/spectator mode by default).
-      - Mutation and block decay system - at high radiation doses in a chunk, foliage and grass blocks will be replaced with their dead counterparts.
-
-      ![Radiation System](docs/images/2025-07-21_04.55.27.png)
-      
-      ![Radiation System (GIF)](docs/images/GIF_20250721_062913_819.gif)
-
-  - **Sounds:**
-      - Geiger counter clicks when there is radiation around.
-
-  - **Commands:**
-      - `/hbm_m rad` for manipulating player radiation (add, remove, clear).
-      ![Player rad cleanup command](docs\images\20250721_480p_15f_20250721_064516.gif)
-
-  - **Advancements**
-    - **Hooray, Radiation!** Reach a radiation level of 200 RAD.
-    - **Ouch, Radiation!** Die from radiation sickness.
-      ![Advancements](docs\images\2025-07-21_06.49.19.png)
-
-  - **Client Features:**
-      - Debug chunk radiation renderer (toggleable).
-
-      ![Chunk Radiation Renderer](docs/images/2025-07-21_04.56.36.png)
-      - Deep Cloth Config API integration, so you can easily tweak core mod settings. (This is a required dependency for now, but I might make it optional in the future.)
-
-      ![Cloth Config Screen](docs\images\2025-07-21_06.38.23.png)
------
-
-## Installation
-
-1.  Download the latest version from [Releases](../../releases).
-2.  Download the [Cloth Config API](https://www.curseforge.com/minecraft/mc-mods/cloth-config/files?version=1.20).
-      - Make sure you download the version compatible with Minecraft 1.20.1.
-3.  Place both `.jar` files into your Minecraft `mods` folder.
-4.  Launch Minecraft with Forge 1.20.1.
-
------
-
-## Known Issues & Compatibility
-
-  - **Alpha quality:** Expect bugs, missing features, and possible world corruption.
-  - **Mod compatibility:** Not tested with other mods. Conflicts may occur.
-
-If you encounter any problems, please report them on the [Issues](../../issues) page with details.
-
------
-
-## Contributing
-
-Pull requests, suggestions, and bug reports are welcome!
-If you want to help, feel free to fork the repository or submit pull requests.
-
------
-
-## Credits
-  - Original Hbm's Nuclear Tech Mod created by **The Bobcat**.
-  - The Forge team and Mojang for their work on Minecraft.
-  - Modernization and rewrite by **[Raptor324, Hyperio & Razchexlitiel]**.
-
------
-
-## Final Note
-Please be patient and understanding—I'm learning as I go!
-Thank you for trying out the mod and helping with feedback.

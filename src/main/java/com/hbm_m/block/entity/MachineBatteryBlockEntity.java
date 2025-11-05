@@ -1,33 +1,25 @@
 package com.hbm_m.block.entity;
 
-// Это блок-энтити для энергохранилища, которое может заряжать предметы и машины по проводам
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.energy.BlockEntityEnergyStorage;
 import com.hbm_m.menu.MachineBatteryMenu;
+import com.hbm_m.main.MainRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
-import java.util.UUID;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import javax.annotation.Nonnull;
-import com.hbm_m.main.MainRegistry;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 // [ИЗМЕНЕНИЕ] Импортируем твои новые классы
@@ -71,7 +63,7 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
                 // Режимы, разрешающие ПРИЁМ: 0 (Приём и Передача), 1 (Только Приём)
                 return activeMode == 0 || activeMode == 1;
             }
-
+            
             private boolean isOutputAllowed() {
                 if (level == null) return false;
                 boolean hasSignal = level.hasNeighborSignal(worldPosition);
@@ -140,10 +132,12 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
             public int getCount() { return 8; } // [ИЗМЕНЕНИЕ] Увеличили кол-во
         };
     }
-
+    
+    // ==================== TICK LOGIC ====================
+    
     public static void tick(Level pLevel, BlockPos pPos, BlockState pState, MachineBatteryBlockEntity pBlockEntity) {
         if (pLevel.isClientSide()) return;
-
+        
         boolean hasSignal = pLevel.hasNeighborSignal(pPos);
 
         // 1. Определяем, какой режим активен СЕЙЧАС, в зависимости от сигнала
@@ -152,18 +146,19 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         // 2. Определяем, какие операции разрешены в этом режиме
         boolean canInput = false;
         boolean canOutput = false;
-
+        
         switch (activeMode) {
             case 0: canInput = true; canOutput = true; break;
             case 1: canInput = true; canOutput = false; break;
             case 2: canInput = false; canOutput = true; break;
             case 3: canInput = false; canOutput = false; break;
         }
-
-        // 3. Выполняем разрешенные операции
+        
+        // Выполняем разрешенные операции
         if (canInput) {
             pBlockEntity.chargeFromItem();
         }
+        
         if (canOutput) {
             pBlockEntity.dischargeToItem();
             pBlockEntity.pushEnergyToNeighbors();
@@ -247,7 +242,8 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     // [ИЗМЕНЕНИЕ] Логика передачи соседям (с поддержкой long и fallback'ом на int)
     private void pushEnergyToNeighbors() {
         if (ModClothConfig.get().enableDebugLogging) {
-            MainRegistry.LOGGER.debug("[BATTERY >>>] pushEnergyToNeighbors at {} currentEnergy={}", this.worldPosition, this.energyStorage.getEnergyStored());
+            MainRegistry.LOGGER.debug("[BATTERY >>>] pushEnergyToNeighbors at {} currentEnergy={}", 
+                this.worldPosition, this.energyStorage.getEnergyStored());
         }
 
         // [ИЗМЕНЕНИЕ] long. Используем longEnergyWrapper для redstone
@@ -257,7 +253,7 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         if (energyToSend <= 0L) {
             return;
         }
-
+        
         Level lvl = this.level;
         if (lvl == null) return;
 
@@ -265,11 +261,11 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
 
         for (Direction direction : Direction.values()) {
             if (totalSent[0] >= energyToSend) break;
-
+            
             BlockEntity neighbor = lvl.getBlockEntity(worldPosition.relative(direction));
             if (neighbor == null) continue;
-
-            // НОВОЕ: Пропускаем другие батареи чтобы избежать взаимной перекачки
+            
+            // Пропускаем другие батареи для избежания взаимной перекачки
             if (neighbor instanceof MachineBatteryBlockEntity otherBattery) {
                 // [ИЗМЕНЕНИЕ] long
                 long myEnergy = this.energyStorage.getEnergyStored();
@@ -295,7 +291,7 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
                 }
                 continue;
             }
-
+            
             // Для проводов используем acceptEnergy
             if (neighbor instanceof WireBlockEntity wire) {
                 // [ИЗМЕНЕНИЕ] long. (Предполагаем, что acceptEnergy теперь принимает long)
@@ -341,7 +337,9 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
             }
         }
     }
-
+    
+    // ==================== BUTTON HANDLING ====================
+    
     public void handleButtonPress(int buttonId) {
         // ... (эта логика не меняется)
         switch (buttonId) {
@@ -349,6 +347,7 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
             case 1: modeOnSignal = (modeOnSignal + 1) % 4; break;
             case 2: priority = Priority.values()[(priority.ordinal() + 1) % Priority.values().length]; break;
         }
+        
         setChanged();
     }
 
@@ -408,11 +407,8 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         pTag.putInt("modeOnNoSignal", modeOnNoSignal);
         pTag.putInt("modeOnSignal", modeOnSignal);
         pTag.putInt("priority", priority.ordinal());
-        if (this.customName != null) {
-            pTag.putString("CustomName", Component.Serializer.toJson(this.customName));
-        }
     }
-
+    
     @Override
     public void load(@Nonnull CompoundTag pTag) {
         super.load(pTag);
@@ -435,11 +431,12 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         for (int i = 0; i < itemHandler.getSlots(); i++) {
             inventory.setItem(i, itemHandler.getStackInSlot(i));
         }
+        
         if (this.level != null) {
-            Containers.dropContents(this.level, this.worldPosition, inventory);
+            Containers.dropContents(this.level, this.worldPosition, container);
         }
     }
-
+    
     public int getComparatorPower() {
         // [ИЗМЕНЕНИЕ] Приводим long к double для корректного деления
         return (int) Math.floor(((double)this.energyStorage.getEnergyStored() / this.energyStorage.getMaxEnergyStored()) * 15.0);

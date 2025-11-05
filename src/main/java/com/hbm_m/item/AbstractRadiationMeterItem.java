@@ -5,7 +5,7 @@ import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.sounds.GeigerSoundPacket;
 import com.hbm_m.radiation.ChunkRadiationManager;
-import com.hbm_m.radiation.PlayerRadiationHandler;
+import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -54,10 +54,10 @@ public abstract class AbstractRadiationMeterItem extends Item {
                 (int)Math.floor(player.getY() + player.getBbHeight() * 0.5),
                 player.getBlockZ()
             );
-            invRad = PlayerRadiationHandler.getInventoryRadiation(player);
+            invRad = PlayerHandler.getInventoryRadiation(player);
         }
         
-        float playerRads = PlayerRadiationHandler.getPlayerRads(player);
+        float playerRads = PlayerHandler.getPlayerRads(player);
         float totalAbsoluteProtection = 0f;
         for (ItemStack armorStack : player.getArmorSlots()) {
             totalAbsoluteProtection += ArmorModificationHelper.getTotalAbsoluteRadProtection(armorStack);

@@ -1,14 +1,13 @@
 package com.hbm_m.client.model;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.client.model.data.ModelData;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -16,73 +15,139 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
-public class DoorBakedModel implements BakedModel {
-    private final Map<String, BakedModel> parts;
-    private final ItemTransforms transforms;
+public class DoorBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
+
+    // КРИТИЧНАЯ ОПТИМИЗАЦИЯ: Кэш массива имён частей
+    private final String[] cachedPartNames;
     
+    // Кэш квадов для item рендера (инвентарь, рука, земля)
+    private List<BakedQuad> cachedItemQuads;
+    private boolean itemQuadsCached = false;
+
     public DoorBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
-        this.parts = parts;
-        this.transforms = transforms;
+        super(parts, transforms);
+        // Определяем приоритетный порядок частей для двери
+        this.cachedPartNames = parts.keySet().stream()
+            .sorted((a, b) -> {
+                // Приоритетный порядок для двери
+                String[] priority = {"frame", "doorLeft", "doorRight"};
+                
+                int aIndex = indexOf(priority, a);
+                int bIndex = indexOf(priority, b);
+                
+                if (aIndex != -1 && bIndex != -1) {
+                    return Integer.compare(aIndex, bIndex);
+                } else if (aIndex != -1) {
+                    return -1;
+                } else if (bIndex != -1) {
+                    return 1;
+                } else {
+                    return a.compareTo(b);
+                }
+            })
+            .toArray(String[]::new);
     }
     
-    public BakedModel getPart(String name) {
-        return parts.get(name);
+    private static int indexOf(String[] array, String value) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i].equals(value)) {
+                return i;
+            }
+        }
+        return -1;
     }
-    
+
+    /**
+     * БЕЗОПАСНАЯ РЕАЛИЗАЦИЯ: Через интерфейс, а не рефлексию
+     */
+    @Override
     public String[] getPartNames() {
-        return parts.keySet().toArray(new String[0]);
+        return cachedPartNames;
+    }
+
+    @Override
+    protected boolean shouldSkipWorldRendering(@Nullable BlockState state) {
+        // Пропускаем ТОЛЬКО world рендер (когда state НЕ null)
+        return state != null;
+    }
+
+    @Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
+        return getQuads(state, side, rand, ModelData.EMPTY, null);
     }
     
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
-                                    RandomSource rand) {
-        // state == null означает рендер в инвентаре/GUI
-        // state != null означает рендер в мире - используем BER
-        if (state != null) {
-            // Блок в мире - отключаем стандартный рендер, используем BlockEntityRenderer
+                                   RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
+        
+        // WORLD RENDER: Пропускаем (рендерится через BlockEntityRenderer)
+        if (shouldSkipWorldRendering(state)) {
             return Collections.emptyList();
         }
         
-        // Рендер в инвентаре/GUI - показываем все части
-        // ИСПРАВЛЕНО: Собираем квады только для side == null (общая геометрия)
-        if (side != null) {
-            return Collections.emptyList();
+        // ITEM RENDER: Рендерим для GUI, руки, земли и тд
+        if (state == null) {
+            return getItemQuads(side, rand, modelData, renderType);
         }
         
-        List<BakedQuad> quads = new ArrayList<>();
-        for (BakedModel part : parts.values()) {
-            // Запрашиваем квады с side = null для получения всей геометрии части
-            quads.addAll(part.getQuads(null, null, rand));
-        }
-        
-        return quads;
+        return Collections.emptyList();
     }
     
-    @Override public boolean useAmbientOcclusion() { return true; }
-    @Override public boolean isGui3d() { return true; }
-    @Override public boolean usesBlockLight() { return false; }
-    @Override public boolean isCustomRenderer() { return false; }
+    private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand, 
+                                        ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
+        
+        // Кэшируем квады для item рендера
+        if (!itemQuadsCached) {
+            buildItemQuads(rand, modelData, renderType);
+            itemQuadsCached = true;
+        }
+        
+        // Фильтруем по стороне если нужно
+        if (side != null) {
+            return cachedItemQuads.stream()
+                .filter(quad -> quad.getDirection() == side)
+                .toList();
+        }
+        
+        return cachedItemQuads;
+    }
     
+    private void buildItemQuads(RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
+        List<BakedQuad> allQuads = new ArrayList<>();
+        
+        // Используем правильный порядок частей из базового класса
+        List<String> itemRenderParts = getItemRenderPartNames();
+        
+        for (String partName : itemRenderParts) {
+            BakedModel part = parts.get(partName);
+            if (part != null) {
+                // Добавляем все квады этой части
+                for (Direction dir : Direction.values()) {
+                    List<BakedQuad> partQuads = part.getQuads(null, dir, rand, modelData, renderType);
+                    allQuads.addAll(partQuads);
+                }
+                // Добавляем квады без направления (cullface == null)
+                List<BakedQuad> generalQuads = part.getQuads(null, null, rand, modelData, renderType);
+                allQuads.addAll(generalQuads);
+            }
+        }
+        
+        this.cachedItemQuads = allQuads;
+    }
+
     @Override
     public TextureAtlasSprite getParticleIcon() {
-        // Приоритет: Base -> frame -> первая доступная часть
-        BakedModel base = parts.get("Base");
-        if (base != null) {
-            return base.getParticleIcon();
-        }
-        
-        BakedModel frame = parts.get("frame");
-        if (frame != null) {
-            return frame.getParticleIcon();
-        }
-        
-        if (!parts.isEmpty()) {
-            return parts.values().iterator().next().getParticleIcon();
-        }
-        
-        return Minecraft.getInstance().getModelManager().getMissingModel().getParticleIcon();
+        return getParticleIcon(ModelData.EMPTY);
     }
     
-    @Override public ItemOverrides getOverrides() { return ItemOverrides.EMPTY; }
-    @Override public ItemTransforms getTransforms() { return this.transforms; }
+    @Override
+    public void clearCaches() {
+        super.clearCaches();
+        clearItemQuadCache();
+    }
+    
+    public void clearItemQuadCache() {
+        this.itemQuadsCached = false;
+        this.cachedItemQuads = null;
+    }
 }

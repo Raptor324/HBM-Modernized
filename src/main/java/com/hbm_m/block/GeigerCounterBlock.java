@@ -8,7 +8,7 @@ import com.hbm_m.block.entity.GeigerCounterBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.sounds.GeigerSoundPacket;
-import com.hbm_m.radiation.PlayerRadiationHandler;
+import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.core.BlockPos;
@@ -80,11 +80,11 @@ public class GeigerCounterBlock extends BaseEntityBlock {
                  chunkRad = geiger.getLastMeasuredRads();
             }
             // Радиация инвентаря кликнувшего игрока
-            float invRad = PlayerRadiationHandler.getInventoryRadiation(pPlayer);
+            float invRad = PlayerHandler.getInventoryRadiation(pPlayer);
             float totalEnvironmentRad = chunkRad + invRad;
 
             // 2. Радиация самого игрока
-            float playerRads = PlayerRadiationHandler.getPlayerRads(pPlayer);
+            float playerRads = PlayerHandler.getPlayerRads(pPlayer);
             
             // 3. Защита игрока
             float totalAbsoluteProtection = 0f;
