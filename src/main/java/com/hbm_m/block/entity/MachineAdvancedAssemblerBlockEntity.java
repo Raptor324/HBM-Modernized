@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity;
 
+import com.hbm_m.block.MachineAdvancedAssemblerBlock;
 import com.hbm_m.client.ClientSoundManager;
 import com.hbm_m.energy.*;
 import com.hbm_m.item.ItemBlueprintFolder;
@@ -8,31 +9,26 @@ import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
 import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.recipe.AssemblerRecipe;
-import com.hbm_m.sound.AdvancedAssemblerSoundInstance;
+
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.main.MainRegistry;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
@@ -54,6 +50,7 @@ import java.util.Objects;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import java.util.*;
 
 public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements MenuProvider, IFrameSupportable {
 
@@ -130,8 +127,16 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         }
     };
 
-    public boolean frame = false;
+    private static final int SLOT_COUNT = 17;
+    private static final int ENERGY_SLOT = 0;
+    private static final int BLUEPRINT_FOLDER_SLOT = 1;
+    private static final int OUTPUT_SLOT_START = 2;
+    private static final int OUTPUT_SLOT_END = 3;
+    private static final int INPUT_SLOT_START = 4;
+    private static final int INPUT_SLOT_END = 15;
+    private static final int STAMPING_SLOT = 16;
 
+    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100_000, 1000);
     private final FluidTank inputTank = new FluidTank(4000);
     private final FluidTank outputTank = new FluidTank(4000);
 
@@ -152,21 +157,41 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
 
     private boolean clientIsCrafting = false;
     private boolean wasCraftingLastTick = false;
+    public long lastUseTick = 0;
 
-    private MachineModuleAdvancedAssembler assemblerModule;
+    // ИСПРАВЛЕНИЕ: добавлена параметризация типа для LazyOptional
+    protected LazyOptional<IFluidHandler> fluidInputHandler = LazyOptional.empty();
+    protected LazyOptional<IFluidHandler> fluidOutputHandler = LazyOptional.empty();
 
-    protected final ContainerData data;
+    private boolean needsClientSync = false;
+    private int ticksSinceLastSync = 0;
 
-    private static final int BLUEPRINT_FOLDER_SLOT = 1;
+    protected final ContainerData data = new ContainerData() {
+        @Override
+        public int get(int index) {
+            return switch (index) {
+                case 0 -> assemblerModule != null ? assemblerModule.getProgressInt() : 0;
+                case 1 -> assemblerModule != null ? assemblerModule.getMaxProgress() : 0;
+                case 2 -> energyStorage.getEnergyStored();
+                case 3 -> energyStorage.getMaxEnergyStored();
+                case 4 -> energyDelta;
+                default -> 0;
+            };
+        }
 
     @OnlyIn(Dist.CLIENT)
     private AdvancedAssemblerSoundInstance soundInstance;
 
     public final AssemblerArm[] arms = new AssemblerArm[2];
+    @OnlyIn(Dist.CLIENT)
     public float ringAngle;
+    @OnlyIn(Dist.CLIENT)
     public float prevRingAngle;
+    @OnlyIn(Dist.CLIENT)
     private float ringTarget;
+    @OnlyIn(Dist.CLIENT)
     private float ringSpeed;
+    @OnlyIn(Dist.CLIENT)
     private int ringDelay;
 
     public MachineAdvancedAssemblerBlockEntity(BlockPos pPos, BlockState pBlockState) {
@@ -227,7 +252,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
     public int getMaxProgress() {
         return assemblerModule != null ? assemblerModule.getMaxProgress() : 100;
     }
-    public long lastUseTick = 0;
 
     @Override
     public boolean setFrameVisible(boolean visible) {
@@ -260,7 +284,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         if (level.isClientSide()) {
             pEntity.clientTick(level, pos, state);
         } else {
-            pEntity.serverTick();
+            entity.serverTick();
         }
     }
 
@@ -268,7 +292,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         if (level != null && level.isClientSide()) {
             return clientIsCrafting;
         }
-        return assemblerModule != null && assemblerModule.isProcessing();
     }
 
     public int getProgress() {
@@ -278,9 +301,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
     private void serverTick() {
         chargeMachineFromBattery();
         if (assemblerModule == null && level != null) {
-            assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, itemHandler, level);
+            assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, inventory, level);
         }
-
+    
         if (assemblerModule != null) {
             boolean wasCrafting = assemblerModule.isProcessing();
             ItemStack blueprintStack = itemHandler.getStackInSlot(1);
@@ -291,8 +314,10 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
                     String recipePool = currentRecipe.getBlueprintPool();
                     if (recipePool != null && !recipePool.isEmpty()) {
                         String currentPool = ItemBlueprintFolder.getBlueprintPool(blueprintStack);
+                        
                         if (!recipePool.equals(currentPool)) {
                             selectedRecipeId = null;
+                            cachedRecipe = null;
                             assemblerModule.setPreferredRecipe(null);
                             assemblerModule.resetProgress();
 
@@ -307,15 +332,16 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
                         }
                     }
                 }
+                recipeCacheDirty = false;
             }
 
             if (selectedRecipeId != null && assemblerModule.getPreferredRecipe() == null) {
-                AssemblerRecipe recipe = getSelectedRecipe();
+                AssemblerRecipe recipe = getCachedRecipe();
                 if (recipe != null) {
                     assemblerModule.setPreferredRecipe(recipe);
                 }
             }
-
+    
             assemblerModule.update(1.0, 1.0, true, blueprintStack);
             boolean isCraftingNow = assemblerModule.isProcessing();
 
@@ -336,22 +362,29 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
                     }
                 }
             }
-
+    
+            if (wasCrafting && !isCraftingNow) {
+                level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
+                    SoundSource.BLOCKS, 0.5f, 1.0f);
+            }
+    
             if (wasCrafting != isCraftingNow) {
-                setChanged();
-                if (level != null) {
-                    level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+                needsClientSync = true;
+            } else if (isCraftingNow) {
+                ticksSinceLastSync++;
+                if (ticksSinceLastSync >= 40) {
+                    needsClientSync = true;
                 }
             }
-
-            if (assemblerModule.needsSync) {
+    
+            if (needsClientSync) {
                 setChanged();
-            }
-
-            if (isCraftingNow) {
-                setChanged();
+                sendUpdateToClient();
+                needsClientSync = false;
+                ticksSinceLastSync = 0;
             }
         }
+    }    
 
         // ИЗМЕНЕНИЕ: energyDelta теперь long
         energyDeltaUpdateCounter++;
@@ -417,7 +450,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
      * Теперь поддерживает как ILongEnergyStorage, так и IEnergyStorage
      */
     private void chargeMachineFromBattery() {
-        ItemStack batteryStack = itemHandler.getStackInSlot(0);
+        ItemStack batteryStack = inventory.getStackInSlot(ENERGY_SLOT);
         if (batteryStack.isEmpty()) return;
 
         long spaceAvailable = energyStorage.getMaxEnergyStored() - energyStorage.getEnergyStored();
@@ -503,16 +536,18 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
                     this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
                     this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
                 }
-            }
-        } else {
-            this.ringAngle = Mth.lerp(0.1f, this.ringAngle, 0);
-        }
+                return activePool != null && !activePool.isEmpty() && activePool.equals(recipePool);
+            })
+            .toList();
     }
 
     public void setSelectedRecipe(ResourceLocation recipeId) {
         boolean wasCrafting = assemblerModule != null && assemblerModule.isProcessing();
 
         this.selectedRecipeId = recipeId;
+        this.recipeCacheDirty = true;
+        this.cachedRecipe = null;
+
         if (assemblerModule != null && level != null) {
             AssemblerRecipe recipe = level.getRecipeManager()
                     .byKey(recipeId)
@@ -525,7 +560,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
 
             if (wasCrafting) {
                 level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
-                        SoundSource.BLOCKS, 0.5f, 1.0f);
+                    SoundSource.BLOCKS, 0.5f, 1.0f);
             }
         }
 
@@ -561,13 +596,16 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         if (cap == ForgeCapabilities.ENERGY) {
             return lazyForgeEnergyHandler.cast();
         }
-        if (cap == ForgeCapabilities.ITEM_HANDLER) {
-            return lazyItemHandler.cast();
+        
+        // Затем проверяем selectedRecipeId
+        if (selectedRecipeId != null && level != null) {
+            AssemblerRecipe recipe = getCachedRecipe();
+            if (recipe != null) {
+                return BaseMachineBlockEntity.createGhostItemsFromIngredients(recipe.getIngredients());
+            }
         }
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            return lazyFluidHandler.cast();
-        }
-        return super.getCapability(cap, side);
+
+        return NonNullList.create();
     }
 
     @Override
@@ -583,6 +621,23 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         if (level != null && assemblerModule == null) {
             assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, itemHandler, level);
         }
+        return assemblerModule != null && assemblerModule.isProcessing();
+    }
+
+    public int getProgress() {
+        return assemblerModule != null ? assemblerModule.getProgressInt() : 0;
+    }
+
+    public int getMaxProgress() {
+        return assemblerModule != null ? assemblerModule.getMaxProgress() : 100;
+    }
+
+    public int getEnergyStored() {
+        return energyStorage.getEnergyStored();
+    }
+
+    public int getMaxEnergyStored() {
+        return energyStorage.getMaxEnergyStored();
     }
 
     @Override
@@ -607,12 +662,13 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         nbt.putLong("EnergyDelta", energyDelta); // long
         nbt.putBoolean("HasRecipe", selectedRecipeId != null);
         if (selectedRecipeId != null) {
-            nbt.putString("SelectedRecipe", selectedRecipeId.toString());
+            tag.putString("SelectedRecipe", selectedRecipeId.toString());
         }
+
         if (assemblerModule != null) {
             CompoundTag moduleTag = new CompoundTag();
             assemblerModule.writeToNBT(moduleTag);
-            nbt.put("AssemblerModule", moduleTag);
+            tag.put("AssemblerModule", moduleTag);
         }
 
         super.saveAdditional(nbt);
@@ -643,14 +699,15 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         if (nbt.contains("HasRecipe") && nbt.getBoolean("HasRecipe")) {
             this.selectedRecipeId = ResourceLocation.tryParse(nbt.getString("SelectedRecipe"));
         } else {
-            this.selectedRecipeId = null;
+            selectedRecipeId = null;
+            cachedRecipe = null;
         }
 
         if (nbt.contains("AssemblerModule") && level != null) {
             if (assemblerModule == null) {
-                assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, itemHandler, level);
+                assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, inventory, level);
             }
-            assemblerModule.readFromNBT(nbt.getCompound("AssemblerModule"));
+            assemblerModule.readFromNBT(tag.getCompound("AssemblerModule"));
         }
 
         this.lastUseTick = nbt.getLong("last_use_tick");
@@ -661,6 +718,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         CompoundTag tag = super.getUpdateTag();
 
         tag.putBoolean("HasRecipe", selectedRecipeId != null);
+        
         if (selectedRecipeId != null) {
             tag.putString("SelectedRecipe", selectedRecipeId.toString());
         }
@@ -673,8 +731,17 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        load(tag);
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == ForgeCapabilities.ITEM_HANDLER) {
+            return itemHandler.cast();
+        }
+        if (cap == ForgeCapabilities.ENERGY) {
+            return energyHandler.cast();
+        }
+        if (cap == ForgeCapabilities.FLUID_HANDLER) {
+            return fluidInputHandler.cast();
+        }
+        return super.getCapability(cap, side);
     }
 
     @Override
@@ -687,24 +754,31 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
                 level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(), SoundSource.BLOCKS, 0.25f, 1.5F);
             }
         }
-        super.onDataPacket(net, pkt);
     }
 
-    @Nullable
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
+    /**
+     * Инициализация клиентских рук (будет вызвана только на клиенте)
+     */
+    @OnlyIn(Dist.CLIENT)
+    private void initClientArms() {
+        for (int i = 0; i < arms.length; i++) {
+            arms[i] = new AssemblerArm();
+        }
     }
 
     @Override
-    public Component getDisplayName() {
-        return Component.translatable("container.hbm_m.advanced_assembly_machine");
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        fluidInputHandler.invalidate();
+        fluidOutputHandler.invalidate();
     }
 
-    @Nullable
     @Override
-    public AbstractContainerMenu createMenu(int pContainerId, Inventory pPlayerInventory, Player pPlayer) {
-        return new MachineAdvancedAssemblerMenu(pContainerId, pPlayerInventory, this, this.data);
+    public void setRemoved() {
+        if (level != null && level.isClientSide) {
+            ClientSoundManager.updateSound(this, false, null);
+        }
+        super.setRemoved();
     }
 
     // Классы для анимации
@@ -713,7 +787,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         public float[] prevAngles = new float[4];
         private float[] targetAngles = new float[4];
         private float[] speed = new float[4];
-
         private ArmActionState state = ArmActionState.ASSUME_POSITION;
         private int actionDelay = 0;
 
@@ -730,19 +803,23 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
         }
 
         public void returnToNullPos() {
-            for (int i = 0; i < 4; i++) this.targetAngles[i] = 0;
-            for (int i = 0; i < 3; i++) this.speed[i] = 3;
-            this.speed[3] = 0.25f;
-            this.state = ArmActionState.RETRACT_STRIKER;
-            this.move();
+            Arrays.fill(targetAngles, 0);
+            speed[0] = speed[1] = speed[2] = 3;
+            speed[3] = 0.25f;
+            state = ArmActionState.RETRACT_STRIKER;
+            move();
         }
 
         private void resetSpeed() {
-            speed[0] = 15; speed[1] = 15; speed[2] = 15; speed[3] = 0.5f;
+            speed[0] = 15; 
+            speed[1] = 15; 
+            speed[2] = 15; 
+            speed[3] = 0.5f;
         }
 
         public void updateArm(Level level, BlockPos pos, RandomSource random) {
             resetSpeed();
+            
             if (actionDelay > 0) {
                 actionDelay--;
                 return;
@@ -756,6 +833,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
                         targetAngles[3] = -0.75f;
                     }
                     break;
+                    
                 case EXTEND_STRIKER:
                     if (move()) {
                         level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
@@ -764,6 +842,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
                         targetAngles[3] = 0f;
                     }
                     break;
+                    
                 case RETRACT_STRIKER:
                     if (move()) {
                         actionDelay = 2 + random.nextInt(5);
@@ -774,28 +853,36 @@ public class MachineAdvancedAssemblerBlockEntity extends BlockEntity implements 
             }
         }
 
-        private static final float[][] POSITIONS = new float[][]{
-                {45, -15, -5}, {15, 15, -15}, {25, 10, -15}, {30, 0, -10}, {70, -10, -25},
+        private static final float[][] POSITIONS = {
+            {45, -15, -5}, {15, 15, -15}, {25, 10, -15}, 
+            {30, 0, -10}, {70, -10, -25}
         };
 
         public void chooseNewArmPosition(RandomSource random) {
             int chosen = random.nextInt(POSITIONS.length);
-            this.targetAngles[0] = POSITIONS[chosen][0];
-            this.targetAngles[1] = POSITIONS[chosen][1];
-            this.targetAngles[2] = POSITIONS[chosen][2];
+            targetAngles[0] = POSITIONS[chosen][0];
+            targetAngles[1] = POSITIONS[chosen][1];
+            targetAngles[2] = POSITIONS[chosen][2];
         }
 
         private boolean move() {
-            boolean didMove = false;
+            boolean allReached = true;
+            
             for (int i = 0; i < angles.length; i++) {
-                if (angles[i] == targetAngles[i]) continue;
-                didMove = true;
-                float delta = Math.abs(angles[i] - targetAngles[i]);
-                if (delta <= speed[i]) {
-                    angles[i] = targetAngles[i];
-                    continue;
+                float current = angles[i];
+                float target = targetAngles[i];
+                
+                if (current == target) continue;
+                
+                allReached = false;
+                float delta = target - current;
+                float absDelta = Math.abs(delta);
+                
+                if (absDelta <= speed[i]) {
+                    angles[i] = target;
+                } else {
+                    angles[i] += Math.signum(delta) * speed[i];
                 }
-                angles[i] += Math.signum(targetAngles[i] - angles[i]) * speed[i];
             }
             return !didMove;
         }

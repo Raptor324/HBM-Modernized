@@ -16,7 +16,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -28,16 +27,12 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import javax.annotation.Nonnull;
+import java.util.UUID;
 
 public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -59,40 +54,37 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         public long receiveEnergy(long maxReceive, boolean simulate) {
             return 0L; // Генератор НЕ принимает энергию
         }
-
+        
         @Override
         public long extractEnergy(long maxExtract, boolean simulate) {
             return energyStorage.extractEnergy(maxExtract, simulate);
         }
-
+        
         @Override
         public long getEnergyStored() {
             return energyStorage.getEnergyStored();
         }
-
+        
         @Override
         public long getMaxEnergyStored() {
             return energyStorage.getMaxEnergyStored();
         }
-
+        
         @Override
         public boolean canExtract() {
             return energyStorage.canExtract();
         }
-
+        
         @Override
         public boolean canReceive() {
             return false; // Генератор НЕ принимает энергию
         }
     };
-
-    protected final ContainerData data;
+    
+    // Переменные состояния
     private int burnTime = 0;
     private int maxBurnTime = 0;
     private boolean isLit = false;
-
-    private static final int FUEL_SLOT = 0;
-    private static final int ASH_SLOT = 1;
     private boolean enabled = true;
 
     public MachineWoodBurnerBlockEntity(BlockPos pPos, BlockState pBlockState) {
@@ -134,6 +126,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
                         }
                     }
                 }
+                case 6 -> energyDelta = value;
             }
 
             @Override
@@ -142,67 +135,77 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
             }
         };
     }
-
-    public static void tick(Level pLevel, BlockPos pPos, BlockState pState, MachineWoodBurnerBlockEntity pBlockEntity) {
-        if (pLevel.isClientSide()) return;
-
-        boolean wasLit = pBlockEntity.isLit;
-
-        // НОВОЕ: Проверяем, включен ли генератор
-        if (!pBlockEntity.enabled) {
+    
+    @Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+        return new MachineWoodBurnerMenu(containerId, playerInventory, this, this.data);
+    }
+    
+    // ==================== TICK LOGIC ====================
+    
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineWoodBurnerBlockEntity entity) {
+        if (level.isClientSide()) return;
+        
+        boolean wasLit = entity.isLit;
+        
+        // Проверяем, включен ли генератор
+        if (!entity.enabled) {
             // Если выключен, тушим огонь
-            if (pBlockEntity.isLit) {
-                pBlockEntity.isLit = false;
-                pBlockEntity.burnTime = 0;
+            if (entity.isLit) {
+                entity.isLit = false;
+                entity.burnTime = 0;
             }
         } else {
             // Проверяем, можем ли начать новое горение
-            if (pBlockEntity.burnTime <= 0 && pBlockEntity.canBurn()) {
-                pBlockEntity.startBurning();
+            if (entity.burnTime <= 0 && entity.canBurn()) {
+                entity.startBurning();
             }
-
+            
             // Процесс горения
-            if (pBlockEntity.burnTime > 0) {
-                pBlockEntity.burnTime--;
-                pBlockEntity.isLit = true;
-
+            if (entity.burnTime > 0) {
+                entity.burnTime--;
+                entity.isLit = true;
+                
                 // Генерируем энергию только если есть место в хранилище
-                if (pBlockEntity.energyStorage.getEnergyStored() < pBlockEntity.energyStorage.getMaxEnergyStored()) {
-                    pBlockEntity.energyStorage.receiveEnergy(50, false);
+                if (entity.energyStorage.getEnergyStored() < entity.energyStorage.getMaxEnergyStored()) {
+                    entity.energyStorage.receiveEnergy(50, false);
                 }
-
+                
                 // Когда топливо полностью сгорает
-                if (pBlockEntity.burnTime <= 0) {
-                    pBlockEntity.isLit = false;
-                    pBlockEntity.maxBurnTime = 0;
-
+                if (entity.burnTime <= 0) {
+                    entity.isLit = false;
+                    entity.maxBurnTime = 0;
+                    
                     // Шанс выпадения пепла 50%
-                    if (pLevel.random.nextFloat() < 0.5f) {
-                        ItemStack ashSlotStack = pBlockEntity.itemHandler.getStackInSlot(ASH_SLOT);
+                    if (level.random.nextFloat() < 0.5f) {
+                        ItemStack ashSlotStack = entity.inventory.getStackInSlot(ASH_SLOT);
                         if (ashSlotStack.isEmpty()) {
-                            pBlockEntity.itemHandler.setStackInSlot(ASH_SLOT, new ItemStack(ModItems.WOOD_ASH_POWDER.get()));
+                            entity.inventory.setStackInSlot(ASH_SLOT, new ItemStack(ModItems.WOOD_ASH_POWDER.get()));
                         } else if (ashSlotStack.getItem() == ModItems.WOOD_ASH_POWDER.get() && ashSlotStack.getCount() < 64) {
                             ashSlotStack.grow(1);
                         }
                     }
                 }
             } else {
-                pBlockEntity.isLit = false;
+                entity.isLit = false;
             }
         }
-
+        
         // Отдаём энергию через ENERGY_CONNECTOR части мультиблока
-        pBlockEntity.distributeEnergyToConnectors(pLevel, pPos, pState);
-
+        entity.distributeEnergyToConnectors(level, pos, state);
+        
+        // Обновление энергетической дельты каждый тик
+        entity.updateEnergyDelta(entity.energyStorage.getEnergyStored());
+        
         // Обновляем состояние блока если изменилось
-        if (wasLit != pBlockEntity.isLit) {
-            pLevel.setBlock(pPos, pState.setValue(MachineWoodBurnerBlock.LIT, pBlockEntity.isLit), 3);
+        if (wasLit != entity.isLit) {
+            level.setBlock(pos, state.setValue(MachineWoodBurnerBlock.LIT, entity.isLit), 3);
         }
-
-        setChanged(pLevel, pPos, pState);
+        
+        entity.setChanged();
     }
-
-    // НОВЫЙ МЕТОД: Распределение энергии через части мультиблока (унифицировано с батареей)
+    
     private void distributeEnergyToConnectors(Level level, BlockPos controllerPos, BlockState state) {
         Direction facing = state.getValue(MachineWoodBurnerBlock.FACING);
 
@@ -211,8 +214,8 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         if (energyAvailable <= 0L) return; // 0L
 
         BlockPos[] connectorOffsets = {
-                new BlockPos(0, 0, 1),
-                new BlockPos(1, 0, 1)
+            new BlockPos(0, 0, 1),
+            new BlockPos(1, 0, 1)
         };
 
         java.util.UUID pushId = java.util.UUID.randomUUID();
@@ -221,15 +224,16 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
         for (BlockPos localOffset : connectorOffsets) {
             if (totalSent[0] >= energyAvailable) break;
-
+            
             BlockPos worldOffset = rotateOffset(localOffset, facing);
             BlockPos connectorPos = controllerPos.offset(worldOffset);
 
             for (Direction dir : Direction.values()) {
                 if (totalSent[0] >= energyAvailable) break;
-
+                
                 BlockPos neighborPos = connectorPos.relative(dir);
                 BlockEntity neighbor = level.getBlockEntity(neighborPos);
+                
                 if (neighbor == null) continue;
 
                 // ... (проверки neighbor в порядке) ...
@@ -247,7 +251,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
                         totalSent[0] += accepted;
                         if (ModClothConfig.get().enableDebugLogging) {
                             MainRegistry.LOGGER.debug("[GENERATOR] Sent {} FE to wire at {} via connector {}",
-                                    accepted, neighborPos, connectorPos);
+                                accepted, neighborPos, connectorPos);
                         }
                     }
                     continue;
@@ -272,7 +276,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
                             totalSent[0] += accepted; // int безопасно расширяется до long
                             if (ModClothConfig.get().enableDebugLogging) {
                                 MainRegistry.LOGGER.debug("[GENERATOR] Sent {} FE to {} at {} via connector {}",
-                                        accepted, neighbor.getClass().getSimpleName(), neighborPos, connectorPos);
+                                    accepted, neighbor.getClass().getSimpleName(), neighborPos, connectorPos);
                             }
                         }
                     }
@@ -280,13 +284,12 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
             }
         }
     }
-
-    // Вспомогательный метод для поворота локальных координат
+    
     private BlockPos rotateOffset(BlockPos local, Direction facing) {
         int x = local.getX();
         int y = local.getY();
         int z = local.getZ();
-
+        
         return switch (facing) {
             case NORTH -> new BlockPos(x, y, z);
             case SOUTH -> new BlockPos(-x, y, -z);
@@ -295,30 +298,33 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
             default -> local;
         };
     }
-
+    
     private boolean canBurn() {
-        ItemStack fuelStack = itemHandler.getStackInSlot(FUEL_SLOT);
+        ItemStack fuelStack = inventory.getStackInSlot(FUEL_SLOT);
         return !fuelStack.isEmpty() &&
-                getBurnTime(fuelStack.getItem()) > 0 &&
-                energyStorage.getEnergyStored() < energyStorage.getMaxEnergyStored();
+               getBurnTime(fuelStack.getItem()) > 0 &&
+               energyStorage.getEnergyStored() < energyStorage.getMaxEnergyStored();
     }
-
+    
     private void startBurning() {
-        ItemStack fuelStack = itemHandler.getStackInSlot(FUEL_SLOT);
+        ItemStack fuelStack = inventory.getStackInSlot(FUEL_SLOT);
         if (!fuelStack.isEmpty()) {
             maxBurnTime = getBurnTime(fuelStack.getItem()) * 20;
             burnTime = maxBurnTime;
             fuelStack.shrink(1);
         }
     }
+    
     public int getBurnTime(Item item) {
         ItemStack stack = new ItemStack(item);
+        
         // Запрещаем ведро лавы
         if (item == Items.LAVA_BUCKET) return 0;
+        
         // Получаем ванильное время горения в тиках
         int vanillaBurnTime = net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null);
-
         if (vanillaBurnTime <= 0) return 0;
+        
         // Конвертируем тики в секунды (делим на 20)
         return (vanillaBurnTime / 20);
     }
@@ -410,30 +416,53 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
     }
 
     public void drops() {
-        SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
-        for (int i = 0; i < itemHandler.getSlots(); i++) {
-            inventory.setItem(i, itemHandler.getStackInSlot(i));
+        SimpleContainer container = new SimpleContainer(inventory.getSlots());
+        for (int i = 0; i < inventory.getSlots(); i++) {
+            container.setItem(i, inventory.getStackInSlot(i));
         }
+        
         if (this.level != null) {
-            Containers.dropContents(this.level, this.worldPosition, inventory);
+            Containers.dropContents(this.level, this.worldPosition, container);
         }
     }
-
+    
     public int getComparatorPower() {
-        return (int) Math.floor(((double) this.energyStorage.getEnergyStored() / this.energyStorage.getMaxEnergyStored()) * 15.0);
+        return (int) Math.floor(((double)this.energyStorage.getEnergyStored() / 
+            this.energyStorage.getMaxEnergyStored()) * 15.0);
     }
-
+    
     public boolean isEnabled() {
         return this.enabled;
     }
-
+    
     public void setEnabled(boolean enabled) {
         this.enabled = enabled;
         this.setChanged();
     }
-
-    // Публичный метод для доступа к энергохранилищу (для частей мультиблока)
+    
     public BlockEntityEnergyStorage getEnergyStorage() {
         return this.energyStorage;
+    }
+    
+    // ==================== NBT ====================
+    
+    @Override
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag); // ОБЯЗАТЕЛЬНО ПЕРВЫМ
+        tag.putInt("energy", energyStorage.getEnergyStored());
+        tag.putInt("burnTime", burnTime);
+        tag.putInt("maxBurnTime", maxBurnTime);
+        tag.putBoolean("isLit", isLit);
+        tag.putBoolean("enabled", enabled);
+    }
+    
+    @Override
+    public void load(CompoundTag tag) {
+        super.load(tag); // ОБЯЗАТЕЛЬНО ПЕРВЫМ
+        energyStorage.setEnergy(tag.getInt("energy"));
+        burnTime = tag.getInt("burnTime");
+        maxBurnTime = tag.getInt("maxBurnTime");
+        isLit = tag.getBoolean("isLit");
+        enabled = tag.getBoolean("enabled");
     }
 }

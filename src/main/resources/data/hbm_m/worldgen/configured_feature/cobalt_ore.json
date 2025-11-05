@@ -1,4 +1,4 @@
-{
+ {
   "type": "minecraft:ore",
   "config": {
     "discard_chance_on_air_exposure": 0.0,
@@ -15,7 +15,7 @@
       },
       {
         "state": {
-          "Name": "hbm_m:cobalt_ore"
+          "Name": "hbm_m:cobalt_ore_deepslate"
         },
         "target": {
           "predicate_type": "minecraft:tag_match",
