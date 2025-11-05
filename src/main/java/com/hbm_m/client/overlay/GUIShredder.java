@@ -11,7 +11,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-public class ShredderScreen extends AbstractContainerScreen<ShredderMenu> {
+public class GUIShredder extends AbstractContainerScreen<ShredderMenu> {
 
     private static final ResourceLocation TEXTURE =
             new ResourceLocation("hbm_m", "textures/gui/shredder_gui.png");
@@ -37,7 +37,7 @@ public class ShredderScreen extends AbstractContainerScreen<ShredderMenu> {
     private static final int ENERGY_TEXTURE_Y = 17; // Source Y on texture for the energy fill (top of the gradient)
 
 
-    public ShredderScreen(ShredderMenu menu, Inventory inventory, Component title) {
+    public GUIShredder(ShredderMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
 
         this.imageWidth = 176;  // GUI width
