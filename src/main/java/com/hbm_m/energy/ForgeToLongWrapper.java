@@ -1,6 +1,8 @@
 package com.hbm_m.energy; // (или com.hbm_m.energy)
 
 import com.hbm_m.energy.ILongEnergyStorage;
+import com.hbm_m.main.MainRegistry;
+
 import net.minecraftforge.energy.IEnergyStorage;
 
 // Обертка, которая реализует ILongEnergyStorage (long) поверх IEnergyStorage (int)
@@ -18,12 +20,22 @@ public class ForgeToLongWrapper implements ILongEnergyStorage {
         return this.forgeStorage.receiveEnergy(intReceive, simulate);
     }
 
-    @Override
     public long extractEnergy(long maxExtract, boolean simulate) {
-        // Принимаем long, усекаем до int
+        if (maxExtract < 0) {
+            MainRegistry.LOGGER.warn("Negative energy extraction requested: {}", maxExtract);
+            return 0L;
+        }
+        
         int intExtract = (int) Math.min(Integer.MAX_VALUE, maxExtract);
-        return this.forgeStorage.extractEnergy(intExtract, simulate);
+        long result = this.forgeStorage.extractEnergy(intExtract, simulate);
+        
+        if (result < 0) {
+            MainRegistry.LOGGER.error("Negative energy returned: {}", result);
+            return 0L;
+        }
+        return result;
     }
+    
 
     // Здесь усечение не нужно, int безопасно превращается в long
     @Override

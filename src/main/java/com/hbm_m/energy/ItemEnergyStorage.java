@@ -2,16 +2,18 @@ package com.hbm_m.energy;
 
 import net.minecraft.world.item.ItemStack;
 
-// (Импортируй свой новый интерфейс)
-import com.hbm_m.energy.ILongEnergyStorage;
 
 public class ItemEnergyStorage implements ILongEnergyStorage { // <-- МЕНЯЕМ ИНТЕРФЕЙС
     private final ItemStack stack;
     private final long capacity; // <-- long
     private final long maxReceive; // <-- long
     private final long maxExtract; // <-- long
+    private final Object stackLock = new Object();
 
     public ItemEnergyStorage(ItemStack stack, long capacity, long maxReceive, long maxExtract) {
+        if (stack == null || stack.isEmpty()) {
+            throw new IllegalArgumentException("ItemStack cannot be null or empty");
+        }
         this.stack = stack;
         this.capacity = capacity;
         this.maxReceive = maxReceive;
@@ -22,35 +24,35 @@ public class ItemEnergyStorage implements ILongEnergyStorage { // <-- МЕНЯЕ
         this.stack.getOrCreateTag().putLong("energy", energy); // <-- putLong
     }
 
-    @Override
-    public long receiveEnergy(long maxReceive, boolean simulate) { // <-- long
-        long energy = getEnergyStored();
-        long energyReceived = Math.min(capacity - energy, Math.min(this.maxReceive, maxReceive)); // <-- long
-        if (energyReceived < 0) {
-            energyReceived = 0;
+    public long receiveEnergy(long maxReceive, boolean simulate) {
+        synchronized(stackLock) { 
+            long energy = getEnergyStored();
+            long energyReceived = Math.min(capacity - energy, Math.min(this.maxReceive, maxReceive));
+            if (energyReceived < 0) energyReceived = 0;
+            
+            if (!simulate) {
+                setEnergy(energy + energyReceived);
+            }
+            return energyReceived;
         }
-        if (!simulate) {
-            setEnergy(energy + energyReceived);
+    }
+    
+    public long extractEnergy(long maxExtract, boolean simulate) {
+        synchronized(stackLock) {
+            long energy = getEnergyStored();
+            long energyExtracted = Math.min(energy, Math.min(this.maxExtract, maxExtract));
+            if (energyExtracted < 0) energyExtracted = 0;
+            
+            if (!simulate) {
+                setEnergy(energy - energyExtracted);
+            }
+            return energyExtracted;
         }
-        return energyReceived;
     }
 
-    @Override
-    public long extractEnergy(long maxExtract, boolean simulate) { // <-- long
-        long energy = getEnergyStored();
-        long energyExtracted = Math.min(energy, Math.min(this.maxExtract, maxExtract)); // <-- long
-        if (energyExtracted < 0) {
-            energyExtracted = 0;
-        }
-        if (!simulate) {
-            setEnergy(energy - energyExtracted);
-        }
-        return energyExtracted;
-    }
-
-    @Override
-    public long getEnergyStored() { // <-- long
-        return this.stack.hasTag() ? this.stack.getTag().getLong("energy") : 0L; // <-- getLong
+    public long getEnergyStored() {
+        if (this.stack == null || this.stack.isEmpty()) return 0L;
+        return this.stack.hasTag() ? this.stack.getTag().getLong("energy") : 0L;
     }
 
     @Override
