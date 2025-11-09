@@ -1,9 +1,18 @@
-plugins {
-    id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '[6.0,6.3)'
-    id 'java-library'
-    id 'org.spongepowered.mixin' version '0.7.+'
+buildscript {
+    repositories {
+        maven { url = 'https://maven.minecraftforge.net/' }
+        mavenCentral()
+    }
+    dependencies {
+        classpath group: 'net.minecraftforge.gradle', name: 'ForgeGradle', version: '6.0.+', changing: false
+        classpath 'org.spongepowered:mixingradle:0.7.+'
+    }
 }
+
+apply plugin: 'net.minecraftforge.gradle'
+apply plugin: 'java-library'
+apply plugin: 'maven-publish'
+apply plugin: 'org.spongepowered.mixingradle'
 
 group = mod_group_id
 version = mod_version
@@ -124,10 +133,6 @@ sourceSets.main.resources { srcDir 'src/generated/resources' }
 repositories {
     // Put repositories for dependencies here
     // ForgeGradle automatically adds the Forge maven and Maven Central for you
-    mavenLocal()
-    // maven {
-    //     url 'file:///C:/local-maven-repo' 
-    // }
     mavenCentral()
     maven { url = 'https://maven.minecraftforge.net/' }
     maven { url = "https://maven.shedaniel.me/" }
