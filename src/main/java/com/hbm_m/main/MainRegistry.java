@@ -508,6 +508,7 @@ public class MainRegistry {
             event.accept(ModBlocks.LARGE_VEHICLE_DOOR);
             event.accept(ModBlocks.ROUND_AIRLOCK_DOOR);
             event.accept(ModBlocks.TRANSITION_SEAL);
+            event.accept(ModBlocks.FIRE_DOOR);
             event.accept(ModBlocks.SLIDE_DOOR);
             event.accept(ModBlocks.SLIDING_SEAL_DOOR);
             event.accept(ModBlocks.SECURE_ACCESS_DOOR);
@@ -518,7 +519,7 @@ public class MainRegistry {
             event.accept(ModBlocks.SILO_HATCH_LARGE);
 
             if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added concrete hazard to NTM Resources tab");
+                // LOGGER.info("Added concrete hazard to NTM Resources tab");
             }
         }
 

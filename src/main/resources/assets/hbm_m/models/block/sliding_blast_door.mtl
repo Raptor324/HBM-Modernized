@@ -7,7 +7,7 @@ Kd 1.0 1.0 1.0
 Ka 0.0 0.0 0.0
 Ks 0.1 0.1 0.1
 Ke 0.0 0.0 0.0
-map_Kd hbm_m:block/sliding_blast_door
+map_Kd hbm_m:block/sliding_blast_door_variant1
 
 newmtl default
 Ns 19.999999999999996
@@ -17,4 +17,4 @@ Kd 0.8333333333333334 0.7428571428571428 0.6444444444444445
 Ka 0.0 0.0 0.0
 Ks 0.17333333333333334 0.16428571428571428 0.15444444444444447
 Ke 0.0 0.0 0.0
-
+map_Kd hbm_m:block/sliding_blast_door

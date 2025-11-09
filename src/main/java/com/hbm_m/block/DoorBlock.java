@@ -91,7 +91,7 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
      * Получение размеров дверей для генерации структуры
      * Размеры берутся из DoorDecl, но статически, чтобы избежать проблем инициализации
      */
-    private static int[] getDoorDimensions(String doorDeclId) {
+    public static int[] getDoorDimensions(String doorDeclId) {
         return switch (doorDeclId) {
             // Существующие двери
             case "large_vehicle_door" -> new int[] { -3, 0, 0, 6, 5, 0 }; // 7x6x1

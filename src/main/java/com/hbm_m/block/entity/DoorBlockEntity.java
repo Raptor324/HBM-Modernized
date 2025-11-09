@@ -308,20 +308,21 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     public VoxelShape getDynamicCollisionShape(Direction facing) {
         float progress = getOpenProgress(0);
         
-        // Обновляем только если прогресс изменился значительно
         if (Math.abs(progress - lastCollisionProgress) < COLLISION_UPDATE_THRESHOLD) {
             return cachedCollisionShape;
         }
         
         lastCollisionProgress = progress;
         
-        // Получаем bounds из DoorDecl (на клиенте) или серверной логики
+        // ИСПОЛЬЗУЕМ getCollisionBounds из DoorDecl!
         List<AABB> bounds;
         if (level != null && level.isClientSide) {
             DoorDecl decl = getDoorDecl();
-            bounds = decl != null ? decl.getCollisionBounds(progress, facing) : List.of();
+            bounds = (decl != null) ? decl.getCollisionBounds(progress, facing) : List.of();
         } else {
-            bounds = getServerCollisionBounds(progress, facing);
+            // На сервере тоже используем DoorDecl!
+            DoorDecl decl = getDoorDecl();
+            bounds = (decl != null) ? decl.getCollisionBounds(progress, facing) : List.of();
         }
         
         if (bounds.isEmpty()) {
@@ -338,69 +339,32 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         return cachedCollisionShape;
     }
 
-    // Упрощенная серверная коллизия
-    private List<AABB> getServerCollisionBounds(float progress, Direction facing) {
-        List<AABB> bounds = new ArrayList<>();
-        if (progress >= 0.99f) {
-            return bounds; // Полностью открыта
-        }
-    
-        // ИСПРАВЛЕНО: Используем ту же логику, что и в DoorDecl.LARGE_VEHICLE_DOOR
-        // Левая створка (движется влево по оси X, а не Z)
-        double leftMovement = progress * 3.0;
-        double leftWidth = Math.max(0.0, 3.0 - leftMovement);
-        if (leftWidth > 0.05) {
-            AABB leftDoor = new AABB(-3.0, 0.0, 0.0, -3.0 + leftWidth, 6.0, 1.0);
-            bounds.add(rotateAABBServer(leftDoor, facing));
-        }
-    
-        // Правая створка (движется вправо по оси X, а не Z)
-        double rightMovement = progress * 3.0;
-        double rightOffset = rightMovement;
-        if (3.0 - rightOffset > 0.05) {
-            AABB rightDoor = new AABB(rightOffset, 0.0, 0.0, 3.0, 6.0, 1.0);
-            bounds.add(rotateAABBServer(rightDoor, facing));
-        }
-    
-        return bounds;
+    private int[] getDoorDims() {
+        // Например, через DoorBlock статический провайдер по declId
+        return DoorBlock.getDoorDimensions(getDoorDeclId()); // тот же метод, что используют при построении[file:13]
     }
     
-    protected AABB rotateAABBServer(AABB aabb, Direction facing) {
-        switch (facing) {
-            // NORTH: базовая ориентация + разворот на 180°
-            case NORTH:
-                return new AABB(
-                    aabb.maxX, aabb.minY, aabb.maxZ,
-                    aabb.minX, aabb.maxY, aabb.minZ
-                );
-            
-            // WEST: исходная трансформация + разворот на 180°
-            case WEST:
-                return new AABB(
-                    -aabb.maxZ, aabb.minY, aabb.maxX,
-                    -aabb.minZ, aabb.maxY, aabb.minX
-                );
-            
-            // SOUTH: исходная трансформация + разворот на 180°
-            case SOUTH:
-                return new AABB(
-                    aabb.maxX, aabb.minY, -aabb.maxZ,
-                    aabb.minX, aabb.maxY, -aabb.minZ
-                );
-            
-            // EAST: исходная трансформация + разворот на 180°
-            case EAST:
-                return new AABB(
-                    aabb.maxZ, aabb.minY, -aabb.maxX,
-                    aabb.minZ, aabb.maxY, -aabb.minX
-                );
-            
-            default:
-                return new AABB(
-                    -aabb.maxX, aabb.minY, -aabb.maxZ,
-                    -aabb.minX, aabb.maxY, -aabb.minZ
-                );
+    private static AABB rotateAABBFromOrigin(AABB bb, Direction facing) {
+        // Собираем четыре горизонтальные вершины (Y не влияет на поворот вокруг Y)
+        double[][] pts = {
+            {bb.minX, bb.minZ}, {bb.maxX, bb.minZ}, {bb.minX, bb.maxZ}, {bb.maxX, bb.maxZ}
+        };
+        double minX = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
+    
+        for (double[] p : pts) {
+            double x = p[0], z = p[1];
+            double rx, rz;
+            switch (facing) { // Точно как MultiblockStructureHelper.rotate
+                case SOUTH -> { rx = -x; rz = -z; }  // (−x, −z)[file:12]
+                case WEST  -> { rx =  z; rz = -x; }  // ( z, −x)[file:12]
+                case EAST  -> { rx = -z; rz =  x; }  // (−z,  x)[file:12]
+                default    -> { rx =  x; rz =  z; }  // ( x,  z)[file:12]
+            }
+            if (rx < minX) minX = rx; if (rx > maxX) maxX = rx;
+            if (rz < minZ) minZ = rz; if (rz > maxZ) maxZ = rz;
         }
+        return new AABB(minX, bb.minY, minZ, maxX, bb.maxY, maxZ);
     }
     
     private void updatePhantomBlocks(Level level, BlockPos controllerPos, int openTime) {

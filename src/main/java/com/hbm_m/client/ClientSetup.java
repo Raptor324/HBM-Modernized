@@ -4,6 +4,7 @@ package com.hbm_m.client;
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.overlay.*;
 import com.hbm_m.client.loader.*;
+import com.hbm_m.client.model.DoorBakedModel;
 import com.hbm_m.client.render.*;
 import com.hbm_m.client.render.shader.*;
 import com.hbm_m.config.*;
@@ -26,11 +27,13 @@ import com.google.common.collect.ImmutableMap;
 import com.hbm_m.particle.custom.*;
 import com.hbm_m.particle.explosions.*;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.DoorDecl;
 import com.hbm_m.block.entity.ModBlockEntities;
 
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
@@ -98,9 +101,6 @@ public class ClientSetup {
         ModEntities.GRENADEIF_PROJECTILE.ifPresent(entityType ->
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
         );
-        
-        DoorDeclRegistry.init();
-        
 
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
@@ -181,10 +181,15 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onModelRegister(ModelEvent.RegisterGeometryLoaders event) {
+        DoorDeclRegistry.init();
+        MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
+
         event.register("procedural_wire", new ProceduralWireLoader());
         event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
         event.register("door", new DoorModelLoader());
-        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, door");
+        event.register("template_loader", new TemplateModelLoader());
+
+        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, template_loader, door");
     }
 
     @SubscribeEvent
@@ -243,12 +248,6 @@ public class ClientSetup {
     @SubscribeEvent
     public static void registerTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
         event.register(ItemTooltipComponent.class, ItemTooltipComponentRenderer::new);
-    }
-
-    @SubscribeEvent
-    public static void onRegisterGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {
-
-        event.register("template_loader", new TemplateModelLoader());
     }
 
     @SubscribeEvent

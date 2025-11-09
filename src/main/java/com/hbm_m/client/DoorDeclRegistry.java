@@ -4,6 +4,7 @@ import com.hbm_m.block.entity.DoorDecl;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -13,6 +14,14 @@ public class DoorDeclRegistry {
     
     public static void register(String id, DoorDecl decl) {
         REGISTRY.put(id, decl);
+    }
+
+    public static Map<String, DoorDecl> getAll() {
+        return Collections.unmodifiableMap(REGISTRY);
+    }
+
+    public static boolean contains(String id) {
+        return REGISTRY.containsKey(id);
     }
     
     public static DoorDecl getById(String id) {
