@@ -1,167 +1,140 @@
 package com.hbm_m.block;
 
-// Блок провода для передачи энергии между машинами и устройствами.
-// Провод может соединяться с другими проводами, с машинами и с блоками, у которых есть энергия (FE) capability.
-// Форма провода динамически меняется в зависимости от того, с чем он соединён.
-// Логика соединения реализована в методе canConnectTo().
-import com.google.common.collect.ImmutableMap;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.UniversalMachinePartBlockEntity;
+import com.hbm_m.api.energy.IEnergyConnector;
 import com.hbm_m.block.entity.WireBlockEntity;
-import com.hbm_m.multiblock.PartRole;
-
+import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.api.energy.EnergyNetworkManager;
+import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
+import org.slf4j.Logger;
 
-import java.util.Map;
-
-import javax.annotation.Nonnull;
-
-import org.jetbrains.annotations.Nullable;
+import javax.annotation.Nullable;
 
 public class WireBlock extends BaseEntityBlock {
+    private static final Logger LOGGER = LogUtils.getLogger();
 
-    public static final BooleanProperty NORTH = BooleanProperty.create("north");
-    public static final BooleanProperty SOUTH = BooleanProperty.create("south");
-    public static final BooleanProperty WEST = BooleanProperty.create("west");
-    public static final BooleanProperty EAST = BooleanProperty.create("east");
-    public static final BooleanProperty UP = BooleanProperty.create("up");
-    public static final BooleanProperty DOWN = BooleanProperty.create("down");
+    public static final BooleanProperty NORTH = BlockStateProperties.NORTH;
+    public static final BooleanProperty EAST = BlockStateProperties.EAST;
+    public static final BooleanProperty SOUTH = BlockStateProperties.SOUTH;
+    public static final BooleanProperty WEST = BlockStateProperties.WEST;
+    public static final BooleanProperty UP = BlockStateProperties.UP;
+    public static final BooleanProperty DOWN = BlockStateProperties.DOWN;
 
-    public static final Map<Direction, BooleanProperty> PROPERTIES_MAP =
-        ImmutableMap.of(
-            Direction.NORTH, NORTH, Direction.SOUTH, SOUTH,
-            Direction.WEST, WEST, Direction.EAST, EAST,
-            Direction.UP, UP, Direction.DOWN, DOWN
-        );
-
-    private static final VoxelShape CORE_SHAPE = Block.box(5.5, 5.5, 5.5, 10.5, 10.5, 10.5);
-    private static final Map<Direction, VoxelShape> ARM_SHAPES =
-        ImmutableMap.of(
-            Direction.NORTH, Block.box(5.5, 5.5, 0, 10.5, 10.5, 5.5),
-            Direction.SOUTH, Block.box(5.5, 5.5, 10.5, 10.5, 10.5, 16),
-            Direction.WEST, Block.box(0, 5.5, 5.5, 5.5, 10.5, 10.5),
-            Direction.EAST, Block.box(10.5, 5.5, 5.5, 16, 10.5, 10.5),
-            Direction.UP, Block.box(5.5, 10.5, 5.5, 10.5, 16, 10.5),
-            Direction.DOWN, Block.box(5.5, 0, 5.5, 10.5, 5.5, 10.5)
-        );
-    
-    public WireBlock(Properties pProperties) {
-        super(pProperties);
-        BlockState defaultState = this.stateDefinition.any();
-        for (BooleanProperty property : PROPERTIES_MAP.values()) {
-            defaultState = defaultState.setValue(property, false);
-        }
-        this.registerDefaultState(defaultState);
+    public WireBlock(Properties properties) {
+        super(properties);
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(NORTH, false).setValue(EAST, false).setValue(SOUTH, false)
+                .setValue(WEST, false).setValue(UP, false).setValue(DOWN, false));
     }
 
     @Override
-    public VoxelShape getShape(@Nonnull BlockState pState, @Nonnull BlockGetter pLevel, @Nonnull BlockPos pPos, @Nonnull CollisionContext pContext) {
-        VoxelShape shape = CORE_SHAPE;
-        for (Direction dir : Direction.values()) {
-            if (pState.getValue(PROPERTIES_MAP.get(dir))) {
-                shape = Shapes.or(shape, ARM_SHAPES.get(dir));
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(NORTH, EAST, SOUTH, WEST, UP, DOWN);
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.getConnectionState(context.getLevel(), context.getClickedPos());
+    }
+
+    @Override
+    public BlockState updateShape(BlockState state, Direction facing, BlockState facingState,
+                                  LevelAccessor level, BlockPos currentPos, BlockPos facingPos) {
+        BooleanProperty property = getProperty(facing);
+        boolean canConnect = canVisuallyConnectTo(level, facingPos, facing.getOpposite());
+        return state.setValue(property, canConnect);
+    }
+
+    private BlockState getConnectionState(LevelAccessor level, BlockPos pos) {
+        return this.defaultBlockState()
+                .setValue(DOWN,  canVisuallyConnectTo(level, pos.relative(Direction.DOWN),  Direction.UP))
+                .setValue(UP,    canVisuallyConnectTo(level, pos.relative(Direction.UP),    Direction.DOWN))
+                .setValue(NORTH, canVisuallyConnectTo(level, pos.relative(Direction.NORTH), Direction.SOUTH))
+                .setValue(SOUTH, canVisuallyConnectTo(level, pos.relative(Direction.SOUTH), Direction.NORTH))
+                .setValue(WEST,  canVisuallyConnectTo(level, pos.relative(Direction.WEST),  Direction.EAST))
+                .setValue(EAST,  canVisuallyConnectTo(level, pos.relative(Direction.EAST),  Direction.WEST));
+    }
+
+    private boolean canVisuallyConnectTo(LevelAccessor world, BlockPos neighborPos, Direction sideFromNeighbor) {
+        BlockEntity be = world.getBlockEntity(neighborPos);
+        if (be == null) return false;
+
+        LazyOptional<IEnergyConnector> hbmCap = be.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, sideFromNeighbor);
+        if (hbmCap.isPresent()) {
+            return hbmCap.resolve().map(connector -> connector.canConnectEnergy(sideFromNeighbor)).orElse(false);
+        }
+
+        return be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY, sideFromNeighbor).isPresent();
+    }
+
+    public static BooleanProperty getProperty(Direction direction) {
+        return switch (direction) {
+            case NORTH -> NORTH;
+            case EAST -> EAST;
+            case SOUTH -> SOUTH;
+            case WEST -> WEST;
+            case UP -> UP;
+            case DOWN -> DOWN;
+        };
+    }
+
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        if (!level.isClientSide && !oldState.is(this)) {
+            LOGGER.info("[WIRE] Block placed at {}, adding to network immediately", pos);
+            // УБИРАЕМ: level.scheduleTick(pos, this, 1);
+            // ДОБАВЛЯЕМ СРАЗУ:
+            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
+        }
+        super.onPlace(state, level, pos, oldState, isMoving);
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!level.isClientSide && !state.is(newState.getBlock())) {
+            LOGGER.info("[WIRE] Block removed at {}, removing from network", pos);
+            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
+
+
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return level.isClientSide ? null : (lvl, pos, st, be) -> {
+            if (be instanceof WireBlockEntity wire) {
+                WireBlockEntity.tick(lvl, pos, st, wire);
             }
-        }
-        return shape;
-    }
-    
-    @Override
-    public BlockState getStateForPlacement(@Nonnull BlockPlaceContext pContext) {
-        BlockGetter level = pContext.getLevel();
-        BlockPos pos = pContext.getClickedPos();
-        BlockState state = this.defaultBlockState();
-        for (Direction dir : Direction.values()) {
-            state = state.setValue(PROPERTIES_MAP.get(dir), this.canConnectTo(level, pos, dir));
-        }
-        return state;
+        };
     }
 
     @Override
-    public BlockState updateShape(@Nonnull BlockState pState, @Nonnull Direction pFacing, @Nonnull BlockState pFacingState, @Nonnull LevelAccessor pLevel, @Nonnull BlockPos pCurrentPos, @Nonnull BlockPos pFacingPos) {
-        if (pLevel.isClientSide() && pFacingState.getBlock() instanceof UniversalMachinePartBlock) {
-            if (pLevel.getBlockEntity(pCurrentPos) instanceof WireBlockEntity wire) {
-                wire.scheduleRecheck();
-            }
-        }
-
-        // на сервере уведомляем менеджер о том, что провод поменялся,
-        // чтобы он инвалидировал/пересчитал соответствующие кэши.
-        if (pLevel instanceof Level lvl && !lvl.isClientSide()) {
-            com.hbm_m.energy.WireNetworkManager.get().onWireChanged(lvl, pCurrentPos);
-        }
-
-        boolean canConnect = this.canConnectTo(pLevel, pCurrentPos, pFacing);
-        return pState.setValue(PROPERTIES_MAP.get(pFacing), canConnect);
-    }
-    
-    /**
-     * Логика проверки соединения.
-     */
-    public boolean canConnectTo(BlockGetter level, BlockPos pos, Direction direction) {
-        BlockPos neighborPos = pos.relative(direction);
-        BlockState neighborState = level.getBlockState(neighborPos);
-
-        // 1. Подключаемся к другим проводам
-        if (neighborState.is(this)) {
-            return true;
-        }
-
-        BlockEntity be = level.getBlockEntity(neighborPos);
-        if (be == null) {
-            return false;
-        }
-
-        // если это наша фантомная часть — прочитать её роль напрямую (работает и на клиенте)
-        if (be instanceof UniversalMachinePartBlockEntity partBe) {
-            if (partBe.getPartRole() == PartRole.ENERGY_CONNECTOR) {
-                return true;
-            }
-        }
-        
-        // 2. Для ВСЕ остальных блоков используем проверку через Forge Capabilities.
-        return be.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite()).isPresent();
-    }
-
-    @Override
-    protected void createBlockStateDefinition(@Nonnull StateDefinition.Builder<Block, BlockState> pBuilder) {
-        pBuilder.add(NORTH, SOUTH, WEST, EAST, UP, DOWN);
-    }
-
-    @Override
-    public RenderShape getRenderShape(@Nonnull BlockState pState) {
+    public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
 
     @Nullable
     @Override
-    public BlockEntity newBlockEntity(@Nonnull BlockPos pPos, @Nonnull BlockState pState) {
-        return new WireBlockEntity(pPos, pState);
-    }
-
-    @Nullable
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@Nonnull Level pLevel, @Nonnull BlockState pState, @Nonnull BlockEntityType<T> pBlockEntityType) {
-        if (pLevel.isClientSide()) {
-            return createTickerHelper(pBlockEntityType, ModBlockEntities.WIRE_BE.get(), WireBlockEntity::clientTick);
-        }
-        return null;
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new WireBlockEntity(pos, state);
     }
 }

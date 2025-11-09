@@ -1,19 +1,22 @@
 package com.hbm_m.block;
 
-import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.MachineWoodBurnerBlockEntity;
+import com.hbm_m.block.entity.ModBlockEntities; // ЗАМЕНИ НА СВОЙ КЛАСС
+import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.*;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -24,12 +27,10 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.network.NetworkHooks;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -38,30 +39,11 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty LIT = BooleanProperty.create("lit");
 
-    private static final VoxelShape SHAPE = Shapes.box(0.0, 0.0, 0.0, 2.0, 2.0, 2.0);
-
     public MachineWoodBurnerBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(FACING, Direction.NORTH)
-                .setValue(LIT, Boolean.FALSE));
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        VoxelShape master = getCustomMasterVoxelShape(pState);
-        return master == null ? SHAPE : master;
-    }
-
-    @Override
-    public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        VoxelShape master = getCustomMasterVoxelShape(pState);
-        return master == null ? SHAPE : master;
-    }
-
-    @Override
-    public VoxelShape getCustomMasterVoxelShape(BlockState state) {
-        return getStructureHelper().generateShapeFromParts(state.getValue(FACING));
+                .setValue(LIT, false));
     }
 
     @Override
@@ -80,15 +62,60 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
         return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection().getOpposite());
     }
 
+    // --- Логика мультиблока и сети ---
+
     @Override
     public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
         super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
-        if (!pState.is(pOldState.getBlock())) {
-            if (!pLevel.isClientSide) {
-                getStructureHelper().placeStructure(pLevel, pPos, pState.getValue(FACING), this);
+        if (!pState.is(pOldState.getBlock()) && !pLevel.isClientSide()) {
+            MultiblockStructureHelper helper = getStructureHelper();
+            Direction facing = pState.getValue(FACING);
+
+            helper.placeStructure(pLevel, pPos, facing, this);
+
+            for (BlockPos localPos : helper.getStructureMap().keySet()) {
+                if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
+                    BlockPos worldPos = helper.getRotatedPos(pPos, localPos, facing);
+                    EnergyNetworkManager.get((ServerLevel) pLevel).addNode(worldPos);
+                }
             }
         }
     }
+
+
+    @Override
+    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
+        if (pState.getBlock() != pNewState.getBlock()) {
+            if (!pLevel.isClientSide()) {
+                MultiblockStructureHelper helper = getStructureHelper();
+                Direction facing = pState.getValue(FACING);
+
+                // Удаляем из энергосети
+                for (BlockPos localPos : helper.getStructureMap().keySet()) {
+                    if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
+                        BlockPos worldPos = helper.getRotatedPos(pPos, localPos, facing);
+                        EnergyNetworkManager.get((ServerLevel) pLevel).removeNode(worldPos);
+                    }
+                }
+
+                // --- ИСПРАВЛЕННАЯ ЛОГИКА ДРОПА ---
+                BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
+                if (blockEntity instanceof MachineWoodBurnerBlockEntity) {
+                    blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
+                        for (int i = 0; i < handler.getSlots(); i++) {
+                            Containers.dropItemStack(pLevel, pPos.getX(), pPos.getY(), pPos.getZ(), handler.getStackInSlot(i));
+                        }
+                    });
+                }
+                // ------------------------------------
+
+                helper.destroyStructure(pLevel, pPos, facing);
+            }
+        }
+        super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
+    }
+
+    // --- Связь с BlockEntity ---
 
     @Nullable
     @Override
@@ -97,25 +124,10 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
     }
 
     @Override
-    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
-        if (pState.getBlock() != pNewState.getBlock()) {
-            BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
-            if (blockEntity instanceof MachineWoodBurnerBlockEntity) {
-                ((MachineWoodBurnerBlockEntity) blockEntity).drops();
-            }
-            this.getStructureHelper().destroyStructure(pLevel, pPos, pState.getValue(FACING));
-        }
-        super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
-    }
-
-    @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
-            BlockEntity entity = pLevel.getBlockEntity(pPos);
-            if (entity instanceof MachineWoodBurnerBlockEntity) {
-                NetworkHooks.openScreen(((ServerPlayer) pPlayer), (MachineWoodBurnerBlockEntity) entity, pPos);
-            } else {
-                throw new IllegalStateException("Our Container provider is missing!");
+            if (pLevel.getBlockEntity(pPos) instanceof MenuProvider provider) {
+                NetworkHooks.openScreen((ServerPlayer) pPlayer, provider, pPos);
             }
         }
         return InteractionResult.sidedSuccess(pLevel.isClientSide());
@@ -127,38 +139,9 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
         return createTickerHelper(pBlockEntityType, ModBlockEntities.WOOD_BURNER_BE.get(), MachineWoodBurnerBlockEntity::tick);
     }
 
-    @Override
-    public boolean hasAnalogOutputSignal(BlockState pState) {
-        return true;
-    }
-
-    @Override
-    public int getAnalogOutputSignal(BlockState pState, Level pLevel, BlockPos pPos) {
-        BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
-        if (blockEntity instanceof MachineWoodBurnerBlockEntity burner) {
-            return burner.getComparatorPower();
-        }
-        return 0;
-    }
-
     // --- IMultiblockController implementation ---
 
     private static MultiblockStructureHelper STRUCTURE_HELPER;
-
-    private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
-        ImmutableMap.Builder<BlockPos, Supplier<BlockState>> builder = ImmutableMap.builder();
-        // 2x2x2 cube: x=0..1, y=0..1, z=0..1, skip controller at (0,0,0)
-        for (int y = 0; y <= 1; y++) {
-            for (int x = 0; x <= 1; x++) {
-                for (int z = 0; z <= 1; z++) {
-                    if (x == 0 && y == 0 && z == 0) continue;
-                    final int fx = x, fy = y, fz = z;
-                    builder.put(new BlockPos(fx, fy, fz), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
-                }
-            }
-        }
-        return builder.build();
-    }
 
     @Override
     public MultiblockStructureHelper getStructureHelper() {
@@ -168,21 +151,19 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
         return STRUCTURE_HELPER;
     }
 
+    private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
+        ImmutableMap.Builder<BlockPos, Supplier<BlockState>> builder = ImmutableMap.builder();
+        for (int y = 0; y <= 1; y++) for (int x = 0; x <= 1; x++) for (int z = 0; z <= 1; z++) {
+            if (x == 0 && y == 0 && z == 0) continue;
+            builder.put(new BlockPos(x, y, z), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+        }
+        return builder.build();
+    }
+
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
-        // Задняя нижняя грань: y=0, z=1 (задняя по локальной оси Z), x=0 или 1
-        // FACING определяет вращение, но localOffset всегда в локальных координатах
-        int x = localOffset.getX();
-        int y = localOffset.getY();
-        int z = localOffset.getZ();
-
-        // Задние нижние блоки (2 блока)
-        boolean isEnergyConnector = (y == 0) && (z == 1) && (x == 0 || x == 1);
-
-        if (isEnergyConnector) {
-            return PartRole.ENERGY_CONNECTOR;
-        }
-
-        return PartRole.DEFAULT;
+        return (localOffset.getY() == 0 && localOffset.getZ() == 1 && (localOffset.getX() == 0 || localOffset.getX() == 1))
+                ? PartRole.ENERGY_CONNECTOR
+                : PartRole.DEFAULT;
     }
 }

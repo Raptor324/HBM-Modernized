@@ -82,14 +82,25 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             return 9;
         }
     };
-    
+
     public MachinePressBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.PRESS_BE.get(), pos, state, SLOT_COUNT);
+        // ИСПРАВЬ: добавь capacity и transferRate
+        super(ModBlockEntities.PRESS_BE.get(), pos, state,
+                SLOT_COUNT,   // inventorySize
+                50_000L,      // capacity (энергия)
+                1000L);       // transferRate (скорость приёма/отдачи)
     }
+
+
     
     @Override
     protected Component getDefaultName() {
         return Component.translatable("container.hbm_m.press");
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return getDefaultName();
     }
     
     @Override

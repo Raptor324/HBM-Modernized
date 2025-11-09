@@ -4,6 +4,7 @@ import com.hbm_m.item.CrateItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.item.ModItems;
 
+import net.minecraft.client.resources.model.Material;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -85,8 +86,9 @@ public class ModBlocks {
     public static final RegistryObject<Block> UNIVERSAL_MACHINE_PART = registerBlockWithoutItem("universal_machine_part",
         () -> new UniversalMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
 
-    public static final RegistryObject<Block> MACHINE_BATTERY = registerBlockWithoutItem("machine_battery",
-        () -> new MachineBatteryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f)));
+    public static final RegistryObject<Block> MACHINE_BATTERY = BLOCKS.register("machine_battery",
+            () -> new MachineBatteryBlock(Block.Properties.of().strength(5.0f), 1_000_000L) // Емкость 1М
+    );
 
     // public static final RegistryObject<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
     //     () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));

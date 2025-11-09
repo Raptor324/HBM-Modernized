@@ -1,18 +1,15 @@
 package com.hbm_m.block.entity;
 
 import com.hbm_m.block.MachineAssemblerBlock;
-import com.hbm_m.client.ClientSoundManager;
-import com.hbm_m.energy.BlockEntityEnergyStorage;
-import com.hbm_m.energy.ILongEnergyStorage;
-import com.hbm_m.energy.LongToForgeWrapper;
-import com.hbm_m.energy.LongDataPacker;
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.client.ClientSoundManager;
 import com.hbm_m.item.ItemAssemblyTemplate;
 import com.hbm_m.item.ItemCreativeBattery;
 import com.hbm_m.menu.MachineAssemblerMenu;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.util.LongDataPacker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -54,10 +51,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     private static final int OUTPUT_SLOT = 5;
     private static final int INPUT_SLOT_START = 6;
     private static final int INPUT_SLOT_END = 17;
-    
-    // Long-энергия
-    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100_000L, 100_000L);
-    
+
     // Состояние крафта
     private boolean isCrafting = false;
     private int progress = 0;
@@ -74,8 +68,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     protected final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
-            long energy = energyStorage.getEnergyStored();
-            long maxEnergy = energyStorage.getMaxEnergyStored();
+            long energy = MachineAssemblerBlockEntity.this.getEnergyStored();
+            long maxEnergy = MachineAssemblerBlockEntity.this.getMaxEnergyStored();
             long delta = getEnergyDelta();
             return switch (index) {
                 case 0 -> progress;
@@ -90,7 +84,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                 default -> 0;
             };
         }
-        
+
         @Override
         public void set(int index, int value) {
             switch (index) {
@@ -99,28 +93,33 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                 case 8 -> isCrafting = value != 0;
             }
         }
-        
+
         @Override
         public int getCount() {
             return 9;
         }
     };
-    
+
+    // НОВЫЙ КОНСТРУКТОР
     public MachineAssemblerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), pos, state, SLOT_COUNT);
+        // Вызываем конструктор родителя с параметрами: (..., inventorySize, capacity, receiveRate)
+        super(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), pos, state,
+                SLOT_COUNT, // 18
+                100_000L,   // Емкость
+                100_000L);  // Скорость приема
     }
     
     @Override
     protected Component getDefaultName() {
         return Component.translatable("container.hbm_m.machine_assembler");
     }
-    
+
     @Override
-    protected void setupEnergyCapability() {
-        longEnergyHandler = LazyOptional.of(() -> energyStorage);
-        forgeEnergyHandler = longEnergyHandler.lazyMap(LongToForgeWrapper::new);
+    public Component getDisplayName() {
+        return getDefaultName();
     }
-    
+
+
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == ENERGY_SLOT) {
@@ -257,12 +256,11 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         long gameTime = level.getGameTime();
         
         if (gameTime % 5 == 0) {
-            requestEnergy();
             chargeFromEnergySlot();
         }
         
         if (gameTime % 10 == 0) {
-            updateEnergyDelta(energyStorage.getEnergyStored());
+            updateEnergyDelta(this.getEnergyStored());
         }
         
         Optional<AssemblerRecipe> recipeOpt = getRecipeFromTemplate();
@@ -279,15 +277,15 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             AssemblerRecipe recipe = recipeOpt.get();
             long energyPerTick = recipe.getPowerConsumption();
             
-            if (energyStorage.getEnergyStored() >= energyPerTick) {
+            if (this.getEnergyStored() >= energyPerTick) {
                 if (!isCrafting) {
                     isCrafting = true;
                     maxProgress = recipe.getDuration();
                     setChanged();
                     sendUpdateToClient();
                 }
-                
-                energyStorage.extractEnergy(energyPerTick, false);
+
+                this.setEnergyStored(this.getEnergyStored() - energyPerTick);
                 progress++;
                 setChanged();
                 
@@ -315,85 +313,56 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     }
     
     // ==================== ENERGY ====================
-    
+
+    // В методе chargeFromEnergySlot():
+
     private void chargeFromEnergySlot() {
         ItemStack energySourceStack = inventory.getStackInSlot(ENERGY_SLOT);
         if (energySourceStack.isEmpty()) return;
-        
+
+        // Креативная батарея
         if (energySourceStack.getItem() instanceof ItemCreativeBattery) {
-            energyStorage.receiveEnergy(Long.MAX_VALUE, false);
-        } else {
+            this.setEnergyStored(this.getMaxEnergyStored());
+            return;
+        }
+
+        // Обычная батарея через HBM capability
+        energySourceStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(itemEnergy -> {
+            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
+            if (energyNeeded <= 0) return;
+
+            long maxCanReceive = this.getReceiveSpeed();
+            long energyToTransfer = Math.min(energyNeeded, maxCanReceive);
+
+            if (energyToTransfer > 0) {
+                // ПРАВИЛЬНО: используем extractEnergy вместо прямого доступа
+                long extracted = itemEnergy.extractEnergy(energyToTransfer, false);
+
+                if (extracted > 0) {
+                    this.setEnergyStored(this.getEnergyStored() + extracted);
+                    setChanged();
+                }
+            }
+        });
+
+        // Fallback на Forge Energy для совместимости
+        if (!energySourceStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
             energySourceStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
-                long energyNeeded = energyStorage.getMaxEnergyStored() - energyStorage.getEnergyStored();
-                long maxCanReceive = energyStorage.getMaxReceive();
-                long energyToTransfer = Math.min(energyNeeded, maxCanReceive);
-                
-                if (energyToTransfer > 0) {
-                    int energyToTransferInt = (int) Math.min(energyToTransfer, Integer.MAX_VALUE);
-                    int extracted = itemEnergy.extractEnergy(energyToTransferInt, false);
-                    energyStorage.receiveEnergy(extracted, false);
+                long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
+                if (energyNeeded <= 0) return;
+
+                int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
+                int extracted = itemEnergy.extractEnergy(maxTransfer, false);
+
+                if (extracted > 0) {
+                    this.setEnergyStored(this.getEnergyStored() + extracted);
+                    setChanged();
                 }
             });
         }
     }
     
-    private void requestEnergy() {
-        if (energyStorage.getEnergyStored() >= energyStorage.getMaxEnergyStored()) return;
-        
-        long energyNeeded = energyStorage.getMaxReceive();
-        if (energyNeeded <= 0) return;
-        
-        Direction facing = getBlockState().getValue(MachineAssemblerBlock.FACING);
-        MultiblockStructureHelper helper = ((MachineAssemblerBlock) getBlockState().getBlock()).getStructureHelper();
-        
-        for (BlockPos localOffset : helper.getPartOffsets()) {
-            int x = localOffset.getX();
-            int y = localOffset.getY();
-            int z = localOffset.getZ();
-            boolean isEnergyConnector = (y == 0) && (x == 0 || x == 1) && (z == -1 || z == 2);
-            
-            if (!isEnergyConnector) continue;
-            
-            BlockPos partPos = helper.getRotatedPos(worldPosition, localOffset, facing);
-            BlockEntity partBE = level.getBlockEntity(partPos);
-            
-            if (!(partBE instanceof UniversalMachinePartBlockEntity)) continue;
-            
-            for (Direction dir : Direction.values()) {
-                BlockEntity neighbor = level.getBlockEntity(partPos.relative(dir));
-                if (neighbor == null || neighbor instanceof UniversalMachinePartBlockEntity || neighbor == this) {
-                    continue;
-                }
-                
-                long extracted = 0L;
-                
-                LazyOptional<ILongEnergyStorage> longCap = neighbor.getCapability(ModCapabilities.LONG_ENERGY, dir.getOpposite());
-                if (longCap.isPresent()) {
-                    ILongEnergyStorage longStorage = longCap.resolve().orElse(null);
-                    if (longStorage != null && longStorage.canExtract()) {
-                        extracted = longStorage.extractEnergy(energyNeeded, false);
-                    }
-                } else if (neighbor instanceof WireBlockEntity wire) {
-                    int energyNeededInt = (int) Math.min(energyNeeded, Integer.MAX_VALUE);
-                    extracted = wire.requestEnergy(energyNeededInt, false);
-                } else {
-                    IEnergyStorage source = neighbor.getCapability(ForgeCapabilities.ENERGY, dir.getOpposite()).orElse(null);
-                    if (source != null && source.canExtract()) {
-                        int energyNeededInt = (int) Math.min(energyNeeded, Integer.MAX_VALUE);
-                        extracted = source.extractEnergy(energyNeededInt, false);
-                    }
-                }
-                
-                if (extracted > 0) {
-                    long accepted = energyStorage.receiveEnergy(extracted, false);
-                    energyNeeded -= accepted;
-                    if (energyNeeded <= 0) break;
-                }
-            }
-            
-            if (energyNeeded <= 0) break;
-        }
-    }
+
     
     // ==================== CRAFTING ====================
     
@@ -614,27 +583,26 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     }
     
     // ==================== NBT ====================
-    
+
     @Override
     protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putLong("EnergyStored", energyStorage.getEnergyStored());
+        super.saveAdditional(tag); // Сохраняет инвентарь и ЭНЕРГИЮ
+        // Сохраняем только то, чего нет в родителе
         tag.putInt("progress", progress);
         tag.putInt("maxProgress", maxProgress);
         tag.putBoolean("isCrafting", isCrafting);
     }
-    
+
     @Override
     public void load(CompoundTag tag) {
-        super.load(tag);
-        energyStorage.setEnergy(tag.getLong("EnergyStored"));
+        super.load(tag); // Загружает инвентарь и ЭНЕРГИЮ
+        // Загружаем только то, чего нет в родителе
         progress = tag.getInt("progress");
         maxProgress = tag.getInt("maxProgress");
-        
-        boolean wasCrafting = isCrafting;
         isCrafting = tag.getBoolean("isCrafting");
-        
-        if (level != null && level.isClientSide && wasCrafting && !isCrafting) {
+
+        // Эту клиентскую логику можно оставить
+        if (level != null && level.isClientSide && !isCrafting) {
             ClientSoundManager.updateSound(this, false, null);
         }
     }
@@ -645,23 +613,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         tag.putBoolean("isCrafting", isCrafting);
         return tag;
     }
-    
-    // ==================== CAPABILITIES ====================
-    
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.ITEM_HANDLER) {
-            return itemHandler.cast();
-        }
-        if (cap == ModCapabilities.LONG_ENERGY) {
-            return longEnergyHandler.cast();
-        }
-        if (cap == ForgeCapabilities.ENERGY) {
-            return forgeEnergyHandler.cast();
-        }
-        return super.getCapability(cap, side);
-    }
-    
+
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
@@ -687,4 +639,5 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
         super.setRemoved();
     }
+
 }

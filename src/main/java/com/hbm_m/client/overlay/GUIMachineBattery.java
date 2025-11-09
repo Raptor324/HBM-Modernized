@@ -1,229 +1,199 @@
 package com.hbm_m.client.overlay;
 
-// GUI для энергохранилища. Показывает уровень энергии, режимы работы по красному камню и приоритет.
-// Основан на AbstractContainerScreen и использует текстуры из ресурсов мода.
-import com.hbm_m.lib.RefStrings;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.MachineBatteryMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.UpdateBatteryC2SPacket;
-// [ИЗМЕНЕНО] Добавляем импорт твоего форматтера
 import com.hbm_m.util.EnergyFormatter;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
+/**
+ * GUI для энергохранилища MachineBattery.
+ * Отображает энергию, режимы работы и приоритет.
+ */
 public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMenu> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/storage/gui_battery.png");
 
-    public GUIMachineBattery(MachineBatteryMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
-        super(pMenu, pPlayerInventory, pTitle);
+    // ✅ ИСПРАВЛЕНО: Используем современный конструктор ResourceLocation
+    private static final ResourceLocation TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_battery.png");
 
-        // Устанавливаем размеры GUI из старого кода
-        this.imageWidth = 176;
+    public GUIMachineBattery(MachineBatteryMenu menu, Inventory inv, Component title) {
+        super(menu, inv, title);
         this.imageHeight = 166;
+        this.imageWidth = 176;
     }
 
     @Override
     protected void init() {
         super.init();
-        // Убираем рендеринг стандартного заголовка, так как у нас будет свой, динамический
-        this.titleLabelX = -9999;
+        this.titleLabelY = 6;
         this.inventoryLabelY = this.imageHeight - 94;
     }
 
-    // --- ОСНОВНОЙ РЕНДЕР ---
-
     @Override
-    public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        this.renderBackground(pGuiGraphics);
-        super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
-        this.renderTooltip(pGuiGraphics, pMouseX, pMouseY);
-    }
-
-    @Override
-    protected void renderBg(GuiGraphics pGuiGraphics, float pPartialTick, int pMouseX, int pMouseY) {
-        // Убираем renderBackground() отсюда, оставляем только логику отрисовки вашей текстуры
+    protected void renderBg(GuiGraphics gui, float partialTick, int mouseX, int mouseY) {
         RenderSystem.setShaderTexture(0, TEXTURE);
         int x = this.leftPos;
         int y = this.topPos;
 
-        pGuiGraphics.blit(TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
+        // Основной фон
+        gui.blit(TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
 
-        renderEnergyBar(pGuiGraphics, x, y);
-        renderButtons(pGuiGraphics, x, y);
-    }
+        // ✅ Отрисовка шкалы энергии
+        long energy = this.menu.getEnergy();
+        long maxEnergy = this.menu.getMaxEnergy();
 
-    @Override
-    protected void renderLabels(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
-        // --- Воссоздаем динамический заголовок из оригинала ---
+        if (energy > 0 && maxEnergy > 0) {
+            int barHeight = (int)(52 * ((double)energy / maxEnergy));
+            gui.blit(TEXTURE, x + 62, y + 69 - barHeight, 176, 52 - barHeight, 52, barHeight);
+        }
 
-        // [ИЗМЕНЕНО] Используем EnergyFormatter.formatFE() для красивого отображения
-        String formattedEnergy = EnergyFormatter.formatFE(menu.getEnergy()); // "5k FE", "1.2M FE"
-        String titleText = this.title.getString() + " (" + formattedEnergy + ")";
+        // ✅ Кнопка режима БЕЗ редстоуна
+        int modeNoSignal = this.menu.getModeOnNoSignal();
+        gui.blit(TEXTURE, x + 133, y + 16, 176, 52 + modeNoSignal * 18, 18, 18);
 
-        pGuiGraphics.drawString(this.font, titleText, (this.imageWidth - this.font.width(titleText)) / 2, 6, 4210752, false);
+        // ✅ Кнопка режима С редстоуном
+        int modeSignal = this.menu.getModeOnSignal();
+        gui.blit(TEXTURE, x + 133, y + 52, 176, 52 + modeSignal * 18, 18, 18);
 
-        // --- Стандартная надпись "Инвентарь" ---
-        pGuiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
-    }
-
-    // --- РЕНДЕР КОМПОНЕНТОВ ---
-
-    private void renderEnergyBar(GuiGraphics graphics, int x, int y) {
-        if (menu.getEnergy() > 0) {
-            int totalHeight = 52;
-            int barHeight = (int) (totalHeight * ((float)menu.getEnergy() / menu.getMaxEnergy()));
-            if (barHeight > totalHeight) barHeight = totalHeight; // Защита от переполнения
-
-            graphics.blit(TEXTURE, x + 62, y + 17 + (totalHeight - barHeight), 176, totalHeight - barHeight, 52, barHeight);
+        // ✅ Кнопка приоритета (отображаем иконку в зависимости от уровня)
+        int priorityOrdinal = this.menu.getPriorityOrdinal();
+        if (priorityOrdinal > 0) { // Только если не VERY_LOW
+            gui.blit(TEXTURE, x + 152, y + 35, 194, 52 + (priorityOrdinal - 1) * 16, 16, 16);
         }
     }
 
-    // Хелпер для получения V-координаты иконки по режиму
-    private int getVForMode(int mode) {
+    @Override
+    public void render(GuiGraphics gui, int mouseX, int mouseY, float delta) {
+        // ✅ ИСПРАВЛЕНО: renderBackground() принимает только GuiGraphics
+        this.renderBackground(gui);
+        super.render(gui, mouseX, mouseY, delta);
+        this.renderTooltip(gui, mouseX, mouseY);
+    }
+
+    @Override
+    protected void renderTooltip(GuiGraphics gui, int mouseX, int mouseY) {
+        super.renderTooltip(gui, mouseX, mouseY);
+
+        // ✅ Тултип для шкалы энергии
+        if (isHovering(62, 17, 52, 52, mouseX, mouseY)) {
+            List<Component> tooltip = new ArrayList<>();
+
+            long energy = this.menu.getEnergy();
+            long maxEnergy = this.menu.getMaxEnergy();
+            int delta = this.menu.getEnergyDelta();
+
+            // Форматированная энергия
+            String energyStr = EnergyFormatter.formatFE(energy);
+            String maxEnergyStr = EnergyFormatter.formatFE(maxEnergy);
+
+            tooltip.add(Component.literal(energyStr + " / " + maxEnergyStr)
+                    .withStyle(ChatFormatting.GREEN));
+
+            // Дельта энергии (прирост/убыль)
+            if (delta != 0) {
+                String deltaStr = (delta > 0 ? "+" : "") + EnergyFormatter.formatRate(delta);
+                ChatFormatting color = delta > 0 ? ChatFormatting.GREEN : ChatFormatting.RED;
+                tooltip.add(Component.literal(deltaStr).withStyle(color));
+            }
+
+            gui.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+        }
+
+        // ✅ Тултип для кнопки режима БЕЗ редстоуна
+        if (isHovering(133, 16, 18, 18, mouseX, mouseY)) {
+            int mode = this.menu.getModeOnNoSignal();
+            String modeText = getModeText(mode);
+            gui.renderTooltip(this.font,
+                    Component.literal("No Signal: " + modeText).withStyle(ChatFormatting.YELLOW),
+                    mouseX, mouseY);
+        }
+
+        // ✅ Тултип для кнопки режима С редстоуном
+        if (isHovering(133, 52, 18, 18, mouseX, mouseY)) {
+            int mode = this.menu.getModeOnSignal();
+            String modeText = getModeText(mode);
+            gui.renderTooltip(this.font,
+                    Component.literal("With Signal: " + modeText).withStyle(ChatFormatting.YELLOW),
+                    mouseX, mouseY);
+        }
+
+        // ✅ Тултип для кнопки приоритета
+        if (isHovering(152, 35, 16, 16, mouseX, mouseY)) {
+            int priorityOrdinal = this.menu.getPriorityOrdinal();
+            String priorityText = getPriorityText(priorityOrdinal);
+            gui.renderTooltip(this.font,
+                    Component.literal("Priority: " + priorityText).withStyle(ChatFormatting.AQUA),
+                    mouseX, mouseY);
+        }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button == 0) { // Левая кнопка мыши
+            // ✅ Клик по кнопке режима БЕЗ редстоуна
+            if (isHovering(133, 16, 18, 18, (int)mouseX, (int)mouseY)) {
+                ModPacketHandler.INSTANCE.sendToServer(
+                        new UpdateBatteryC2SPacket(menu.blockEntity.getBlockPos(), 0)
+                );
+                return true;
+            }
+
+            // ✅ Клик по кнопке режима С редстоуном
+            if (isHovering(133, 52, 18, 18, (int)mouseX, (int)mouseY)) {
+                ModPacketHandler.INSTANCE.sendToServer(
+                        new UpdateBatteryC2SPacket(menu.blockEntity.getBlockPos(), 1)
+                );
+                return true;
+            }
+
+            // ✅ Клик по кнопке приоритета
+            if (isHovering(152, 35, 16, 16, (int)mouseX, (int)mouseY)) {
+                ModPacketHandler.INSTANCE.sendToServer(
+                        new UpdateBatteryC2SPacket(menu.blockEntity.getBlockPos(), 2)
+                );
+                return true;
+            }
+        }
+
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    /**
+     * Возвращает текст режима работы
+     * @param mode 0 = BOTH, 1 = INPUT, 2 = OUTPUT, 3 = DISABLED
+     */
+    private String getModeText(int mode) {
         return switch (mode) {
-            case 0 -> 70;  // Игнор (Приём+Передача)
-            case 1 -> 52;  // Пыль (Только приём)
-            case 2 -> 88;  // Факел (Только передача)
-            case 3 -> 106; // Замок (Заблокировано)
-            default -> 52;
+            case 0 -> "BOTH";
+            case 1 -> "INPUT";
+            case 2 -> "OUTPUT";
+            case 3 -> "DISABLED";
+            default -> "UNKNOWN";
         };
     }
 
-    private void renderButtons(GuiGraphics graphics, int x, int y) {
-        // Верхняя кнопка (Нет сигнала)
-        int vOnNoSignal = getVForMode(menu.getModeOnNoSignal());
-        graphics.blit(TEXTURE, x + 133, y + 16, 176, vOnNoSignal, 18, 18);
-
-        // Нижняя кнопка (Есть сигнал)
-        int vOnSignal = getVForMode(menu.getModeOnSignal());
-        graphics.blit(TEXTURE, x + 133, y + 52, 176, vOnSignal, 18, 18);
-
-        // Кнопка приоритета
-        int priorityV = 52 + menu.getPriorityOrdinal() * 16;
-        graphics.blit(TEXTURE, x + 152, y + 35, 194, priorityV, 16, 16);
-    }
-
-    // --- ТУЛТИПЫ ---
-
-    @Override
-    protected void renderTooltip(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
-        super.renderTooltip(pGuiGraphics, pMouseX, pMouseY);
-
-        // Тултип для энергии
-        if (isMouseOver(pMouseX, pMouseY, 62, 17, 52, 52)) {
-            List<Component> tooltip = new ArrayList<>();
-
-            // [ИЗМЕНЕНО] Форматируем оба значения для тултипа (например "5.2k / 10M FE")
-            String energy = EnergyFormatter.format(menu.getEnergy());
-            String maxEnergy = EnergyFormatter.format(menu.getMaxEnergy());
-            tooltip.add(Component.literal(energy + " / " + maxEnergy + " HE"));
-
-            // [ИЗМЕНЕНО] Форматируем дельту (например "+500 FE/t" или "-1.1k FE/t")
-            long delta = menu.getEnergyDelta();
-            String deltaText = (delta > 0 ? "+" : "") + EnergyFormatter.formatRate(delta);
-
-            ChatFormatting deltaColor = delta > 0 ? ChatFormatting.GREEN : (delta < 0 ? ChatFormatting.RED : ChatFormatting.YELLOW);
-            tooltip.add(Component.literal(deltaText).withStyle(deltaColor));
-
-            // --- [НОВЫЕ СТРОКИ] ---
-            // Рассчитываем и форматируем дельту в секунду (FE/t * 20)
-            long deltaPerSecond = delta * 20;
-            String deltaPerSecondText = (deltaPerSecond > 0 ? "+" : "") + EnergyFormatter.formatWithUnit(deltaPerSecond, "HE/s");
-            // Добавляем в тултип с тем же цветом
-            tooltip.add(Component.literal(deltaPerSecondText).withStyle(deltaColor));
-            // --- [КОНЕЦ НОВЫХ СТРОК] ---
-
-            pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pMouseX, pMouseY);
-        }
-
-        // Тултип для Priority
-        if (isMouseOver(pMouseX, pMouseY, 152, 35, 16, 16)) {
-            List<Component> tooltip = new ArrayList<>();
-            String priorityKey = "gui.hbm_m.battery.priority." + menu.getPriorityOrdinal();
-            tooltip.add(Component.translatable(priorityKey));
-            tooltip.add(Component.translatable("gui.hbm_m.battery.priority.recommended").withStyle(ChatFormatting.DARK_GRAY));
-            tooltip.add(Component.translatable(priorityKey + ".desc").withStyle(ChatFormatting.GRAY));
-
-            pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pMouseX, pMouseY);
-        }
-
-        if (isMouseOver(pMouseX, pMouseY, 133, 16, 18, 18)) {
-            renderRedstoneTooltip(pGuiGraphics, pMouseX, pMouseY, menu.getModeOnNoSignal(), "no_signal");
-        }
-
-        if (isMouseOver(pMouseX, pMouseY, 133, 52, 18, 18)) {
-            renderRedstoneTooltip(pGuiGraphics, pMouseX, pMouseY, menu.getModeOnSignal(), "with_signal");
-        }
-    }
-
-    // --- ОБРАБОТКА КЛИКОВ ---
-
-    private void renderRedstoneTooltip(GuiGraphics graphics, int mouseX, int mouseY, int mode, String conditionKey) {
-        List<Component> tooltip = new ArrayList<>();
-
-        // 1. Добавляем заголовок, описывающий УСЛОВИЕ
-        tooltip.add(Component.translatable("gui.hbm_m.battery.condition." + conditionKey));
-
-        String modeKey;
-        switch (mode) {
-            case 0 -> modeKey = "both";
-            case 1 -> modeKey = "input";
-            case 2 -> modeKey = "output";
-            case 3 -> modeKey = "locked";
-            default -> modeKey = "both";
-        }
-
-        // 2. Добавляем название и описание РЕЖИМА
-        String titleKey = "gui.hbm_m.battery.mode." + modeKey;
-        String descKey = "gui.hbm_m.battery.mode." + modeKey + ".desc";
-
-        tooltip.add(Component.translatable(titleKey).withStyle(ChatFormatting.AQUA));
-        tooltip.add(Component.translatable(descKey).withStyle(ChatFormatting.GRAY));
-
-        graphics.renderTooltip(this.font, tooltip, Optional.empty(), mouseX, mouseY);
-    }
-
-    @Override
-    public boolean mouseClicked(double pMouseX, double pMouseY, int pButton) {
-        if (pButton == 0) { // Только левая кнопка мыши
-            if (isMouseOver(pMouseX, pMouseY, 133, 16, 18, 18)) { // Кнопка входа
-                playSound();
-                ModPacketHandler.INSTANCE.sendToServer(new UpdateBatteryC2SPacket(this.menu.blockEntity.getBlockPos(), 0));
-                return true;
-            }
-            if (isMouseOver(pMouseX, pMouseY, 133, 52, 18, 18)) { // Кнопка выхода
-                playSound();
-                ModPacketHandler.INSTANCE.sendToServer(new UpdateBatteryC2SPacket(this.menu.blockEntity.getBlockPos(), 1));
-                return true;
-            }
-            if (isMouseOver(pMouseX, pMouseY, 152, 35, 16, 16)) { // Кнопка приоритета
-                playSound();
-                ModPacketHandler.INSTANCE.sendToServer(new UpdateBatteryC2SPacket(this.menu.blockEntity.getBlockPos(), 2));
-                return true;
-            }
-        }
-        return super.mouseClicked(pMouseX, pMouseY, pButton);
-    }
-
-    // --- ХЕЛПЕРЫ ---
-
-    private boolean isMouseOver(double mouseX, double mouseY, int x, int y, int sizeX, int sizeY) {
-        return (mouseX >= this.leftPos + x && mouseX <= this.leftPos + x + sizeX &&
-                mouseY >= this.topPos + y && mouseY <= this.topPos + y + sizeY);
-    }
-
-    private void playSound() {
-        this.minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+    /**
+     * Возвращает текст приоритета
+     * @param ordinal 0 = VERY_LOW, 1 = LOW, 2 = NORMAL, 3 = HIGH, 4 = VERY_HIGH
+     */
+    private String getPriorityText(int ordinal) {
+        return switch (ordinal) {
+            case 0 -> "VERY LOW";
+            case 1 -> "LOW";
+            case 2 -> "NORMAL";
+            case 3 -> "HIGH";
+            case 4 -> "VERY HIGH";
+            default -> "UNKNOWN";
+        };
     }
 }

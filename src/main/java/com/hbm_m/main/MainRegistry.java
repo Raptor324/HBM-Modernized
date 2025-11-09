@@ -3,15 +3,13 @@ package com.hbm_m.main;
 // Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
+import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.item.ModBatteryItem;
-import com.hbm_m.block.entity.AnvilBlockEntity;
-import com.hbm_m.menu.AnvilMenu;
-import com.hbm_m.network.ModNetwork;
 import com.hbm_m.particle.ModExplosionParticles;
-import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraftforge.common.extensions.IForgeMenuType;
+import com.mojang.logging.LogUtils;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
@@ -33,7 +31,6 @@ import com.hbm_m.effect.ModEffects;
 import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.worldgen.ModWorldGen;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
@@ -45,7 +42,6 @@ import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.fml.DistExecutor;
@@ -56,20 +52,21 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
-import static com.hbm_m.block.ModBlocks.ANVIL_BLOCK;
-import static com.hbm_m.block.entity.ModBlockEntities.BLOCK_ENTITIES;
+import org.slf4j.Logger;
 
 @Mod(RefStrings.MODID)
 public class MainRegistry {
 
     // Добавляем логгер для отладки
-    public static final Logger LOGGER = LogManager.getLogger(RefStrings.MODID);
+    public static final Logger LOGGER = LogUtils.getLogger();
     public static final String MOD_ID = "hbm_m";
+
+
+
     private void registerCapabilities(IEventBus modEventBus) {
         modEventBus.addListener(ModCapabilities::register);
     }
+
 
     static {
         // Регистрируем конфиг до любых обращений к нему!
@@ -144,6 +141,17 @@ public class MainRegistry {
             event.addListener(provider.getCapability(ChunkRadiationProvider.CHUNK_RADIATION_CAPABILITY)::invalidate);
         }
     }
+
+
+
+    @SubscribeEvent
+    public static void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) {
+            ServerLevel level = event.getServer().overworld(); // или через все миры
+            EnergyNetworkManager.get(level).tick();
+        }
+    }
+
 
     // private void onRenderLevelStage(RenderLevelStageEvent event) {
     //     if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
@@ -592,9 +600,9 @@ public class MainRegistry {
             // Креативная батарейка - отдельный класс, добавляем ее 1 раз
             event.accept(ModItems.CREATIVE_BATTERY);
 
-            // --- Новая логика для всех ModBatteryItem ---
+// --- Новая логика для всех ModBatteryItem ---
 
-            // 1. Создаем список всех батареек
+// 1. Создаем список всех батареек
             List<RegistryObject<Item>> batteriesToAdd = List.of(
                     ModItems.BATTERY_POTATO,
                     ModItems.BATTERY,
@@ -624,27 +632,36 @@ public class MainRegistry {
                     ModItems.BATTERY_SPARK_CELL_POWER
             );
 
-            // 2. Проходимся по списку и добавляем 2 версии каждой
+// 2. Проходимся по списку и добавляем 2 версии каждой
             for (RegistryObject<Item> batteryRegObj : batteriesToAdd) {
                 Item item = batteryRegObj.get();
-                // (Проверка, что это ModBatteryItem, для безопасности)
-                if (item instanceof ModBatteryItem batteryItem) {
-                    // Добавляем пустую
-                    event.accept(batteryItem);
 
-                    // Создаем, заряжаем и добавляем полную
+                // Проверка, что это ModBatteryItem
+                if (item instanceof ModBatteryItem batteryItem) {
+                    // Добавляем пустую батарею
+                    ItemStack emptyStack = new ItemStack(batteryItem);
+                    event.accept(emptyStack);
+
+                    // Создаем заряженную батарею
                     ItemStack chargedStack = new ItemStack(batteryItem);
                     ModBatteryItem.setEnergy(chargedStack, batteryItem.getCapacity());
                     event.accept(chargedStack);
+
+                    if (ModClothConfig.get().enableDebugLogging) {
+                        LOGGER.debug("Added empty and charged variants of {} to creative tab",
+                                batteryRegObj.getId());
+                    }
                 } else {
-                    // На всякий случай, если что-то не то в списке
+                    // На всякий случай, если в списке что-то не ModBatteryItem
                     event.accept(item);
+                    LOGGER.warn("Item {} is not a ModBatteryItem, added as regular item",
+                            batteryRegObj.getId());
                 }
             }
-            // --- [Конец новой логики] ---
+// --- [Конец новой логики] ---
 
             if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added creative battery ITEM to NTM Fuel tab");
+                LOGGER.info("Added {} battery variants to NTM Fuel tab", batteriesToAdd.size() * 2);
             }
         }
         // --- [КОНЕЦ БЛОКА С ИЗМЕНЕНИЯМИ] ---

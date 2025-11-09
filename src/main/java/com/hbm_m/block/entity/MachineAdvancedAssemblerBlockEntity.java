@@ -1,11 +1,10 @@
 package com.hbm_m.block.entity;
 
 import com.hbm_m.block.MachineAdvancedAssemblerBlock;
+import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.client.ClientSoundManager;
-import com.hbm_m.energy.BlockEntityEnergyStorage;
-import com.hbm_m.energy.LongDataPacker;
-import com.hbm_m.energy.LongToForgeWrapper;
 import com.hbm_m.item.ItemBlueprintFolder;
+import com.hbm_m.item.ItemCreativeBattery;
 import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
 import com.hbm_m.multiblock.IFrameSupportable;
@@ -13,6 +12,7 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.util.LongDataPacker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -24,7 +24,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -63,8 +62,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     private static final int INPUT_SLOT_END = 15;
     private static final int STAMPING_SLOT = 16;
 
-    // Long-энергия хранилища
-    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100_000L, 100_000L);
+
     // Флюиды
     private final FluidTank inputTank = new FluidTank(4000);
     private final FluidTank outputTank = new FluidTank(4000);
@@ -94,8 +92,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     protected final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
-            long currentEnergy = energyStorage.getEnergyStored();
-            long maxEnergy = energyStorage.getMaxEnergyStored();
+            // Используем унаследованные методы!
+            long currentEnergy = MachineAdvancedAssemblerBlockEntity.this.getEnergyStored();
+            long maxEnergy = MachineAdvancedAssemblerBlockEntity.this.getMaxEnergyStored();
             long delta = getEnergyDelta();
             return switch (index) {
                 case 0 -> assemblerModule != null ? assemblerModule.getProgressInt() : 0;
@@ -128,7 +127,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @OnlyIn(Dist.CLIENT) private int ringDelay;
 
     public MachineAdvancedAssemblerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pos, state, SLOT_COUNT);
+        super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pos, state, 17, 100_000L, 100_000L);
+
+        // Инициализируем модуль здесь, передавая СЕБЯ (this) как IEnergyReceiver
+        if (this.level != null && !this.level.isClientSide) {
+            this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level);
+        }
         // Клиентские руки инициализируются на клиенте в onLoad для безопасности
     }
 
@@ -138,11 +142,11 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
 
     @Override
-    protected void setupEnergyCapability() {
-        // Экспорт long-энергии через базовый capability long и обёртку для Forge Energy
-        this.longEnergyHandler = LazyOptional.of(() -> energyStorage);
-        this.forgeEnergyHandler = longEnergyHandler.lazyMap(LongToForgeWrapper::new);
+    public Component getDisplayName() {
+        return getDefaultName();
     }
+
+
 
     @Override
     protected void setupFluidCapability() {
@@ -192,12 +196,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
         double margin = 1.5;
         return new AABB(
-            worldPosition.getX() + minX - margin,
-            worldPosition.getY() + minY - margin,
-            worldPosition.getZ() + minZ - margin,
-            worldPosition.getX() + maxX + 1 + margin,
-            worldPosition.getY() + maxY + 1 + margin,
-            worldPosition.getZ() + maxZ + 1 + margin
+                worldPosition.getX() + minX - margin,
+                worldPosition.getY() + minY - margin,
+                worldPosition.getZ() + minZ - margin,
+                worldPosition.getX() + maxX + 1 + margin,
+                worldPosition.getY() + maxY + 1 + margin,
+                worldPosition.getZ() + maxZ + 1 + margin
         );
     }
 
@@ -248,7 +252,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @OnlyIn(Dist.CLIENT)
     public void clientTick(Level level, BlockPos pos, BlockState state) {
         ClientSoundManager.updateSound(this, this.isCrafting(),
-            () -> new com.hbm_m.sound.AdvancedAssemblerSoundInstance(this.getBlockPos()));
+                () -> new com.hbm_m.sound.AdvancedAssemblerSoundInstance(this.getBlockPos()));
         this.prevRingAngle = this.ringAngle;
         boolean craftingNow = isCrafting();
         if (craftingNow) {
@@ -267,7 +271,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
             this.ringDelay = 0;
             level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.5f, 1.0f, false);
+                    ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.5f, 1.0f, false);
         }
         wasCraftingLastTick = craftingNow;
         if (craftingNow) {
@@ -284,7 +288,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 this.ringDelay--;
                 if (this.ringDelay == 0) {
                     level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                        ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.3f, 1.0f, false);
+                            ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.3f, 1.0f, false);
                     this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
                     this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
                 }
@@ -304,10 +308,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             chargeMachineFromBattery();
         }
         if (gameTime % 10 == 0) {
-            updateEnergyDelta(energyStorage.getEnergyStored());
+            // НОВАЯ ПРАВИЛЬНАЯ СТРОКА
+            updateEnergyDelta(this.getEnergyStored());
         }
         if (assemblerModule == null && level != null) {
-            assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, inventory, level);
+            // Передаем 'this' как IEnergyReceiver
+            assemblerModule = new MachineModuleAdvancedAssembler(0, this, inventory, level);
         }
         if (assemblerModule != null) {
             boolean wasCrafting = assemblerModule.isProcessing();
@@ -325,7 +331,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                             assemblerModule.setPreferredRecipe(null);
                             assemblerModule.resetProgress();
                             level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
-                                SoundSource.BLOCKS, 0.5f, 1.0f);
+                                    SoundSource.BLOCKS, 0.5f, 1.0f);
                             needsClientSync = true;
                             return;
                         }
@@ -366,7 +372,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
             if (wasCrafting && !isCraftingNow) {
                 level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
-                    SoundSource.BLOCKS, 0.5f, 1.0f);
+                        SoundSource.BLOCKS, 0.5f, 1.0f);
             }
 
             if (wasCrafting != isCraftingNow) {
@@ -388,18 +394,49 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
 
     private void chargeMachineFromBattery() {
-        ItemStack batteryStack = inventory.getStackInSlot(ENERGY_SLOT);
-        if (batteryStack.isEmpty()) return;
-        batteryStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(batteryEnergy -> {
-            long spaceAvailable = energyStorage.getMaxEnergyStored() - energyStorage.getEnergyStored();
-            if (spaceAvailable <= 0L) return;
-            int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(spaceAvailable, energyStorage.getMaxReceive()));
-            int extracted = batteryEnergy.extractEnergy(maxTransfer, false);
-            if (extracted > 0) {
-                energyStorage.receiveEnergy(extracted, false);
-                setChanged();
+        ItemStack energySourceStack = inventory.getStackInSlot(ENERGY_SLOT);
+        if (energySourceStack.isEmpty()) return;
+
+        // Креативная батарея
+        if (energySourceStack.getItem() instanceof ItemCreativeBattery) {
+            this.setEnergyStored(this.getMaxEnergyStored());
+            return;
+        }
+
+        // Обычная батарея через HBM capability
+        energySourceStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(itemEnergy -> {
+            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
+            if (energyNeeded <= 0) return;
+
+            long maxCanReceive = this.getReceiveSpeed();
+            long energyToTransfer = Math.min(energyNeeded, maxCanReceive);
+
+            if (energyToTransfer > 0) {
+                // ПРАВИЛЬНО: используем extractEnergy вместо прямого доступа
+                long extracted = itemEnergy.extractEnergy(energyToTransfer, false);
+
+                if (extracted > 0) {
+                    this.setEnergyStored(this.getEnergyStored() + extracted);
+                    setChanged();
+                }
             }
         });
+
+        // Fallback на Forge Energy для совместимости
+        if (!energySourceStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
+            energySourceStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
+                long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
+                if (energyNeeded <= 0) return;
+
+                int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
+                int extracted = itemEnergy.extractEnergy(maxTransfer, false);
+
+                if (extracted > 0) {
+                    this.setEnergyStored(this.getEnergyStored() + extracted);
+                    setChanged();
+                }
+            });
+        }
     }
 
     // Рецепты и ghost-предметы
@@ -411,10 +448,10 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
         if (cachedRecipe == null || recipeCacheDirty) {
             cachedRecipe = level.getRecipeManager()
-                .byKey(selectedRecipeId)
-                .filter(recipe -> recipe instanceof AssemblerRecipe)
-                .map(recipe -> (AssemblerRecipe) recipe)
-                .orElse(null);
+                    .byKey(selectedRecipeId)
+                    .filter(recipe -> recipe instanceof AssemblerRecipe)
+                    .map(recipe -> (AssemblerRecipe) recipe)
+                    .orElse(null);
             recipeCacheDirty = false;
         }
         return cachedRecipe;
@@ -425,16 +462,16 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         ItemStack folderStack = getBlueprintFolder();
         String activePool = ItemBlueprintFolder.getBlueprintPool(folderStack);
         List<AssemblerRecipe> allRecipes = level.getRecipeManager()
-            .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
+                .getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
         return allRecipes.stream()
-            .filter(recipe -> {
-                String recipePool = recipe.getBlueprintPool();
-                if (recipePool == null || recipePool.isEmpty()) {
-                    return true;
-                }
-                return activePool != null && !activePool.isEmpty() && activePool.equals(recipePool);
-            })
-            .toList();
+                .filter(recipe -> {
+                    String recipePool = recipe.getBlueprintPool();
+                    if (recipePool == null || recipePool.isEmpty()) {
+                        return true;
+                    }
+                    return activePool != null && !activePool.isEmpty() && activePool.equals(recipePool);
+                })
+                .toList();
     }
 
     public void setSelectedRecipe(ResourceLocation recipeId) {
@@ -448,7 +485,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             assemblerModule.resetProgress();
             if (wasCrafting) {
                 level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
-                    SoundSource.BLOCKS, 0.5f, 1.0f);
+                        SoundSource.BLOCKS, 0.5f, 1.0f);
             }
         }
         setChanged();
@@ -499,13 +536,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         return assemblerModule != null ? assemblerModule.getMaxProgress() : 100;
     }
 
-    public long getEnergyStored() {
-        return energyStorage.getEnergyStored();
-    }
-
-    public long getMaxEnergyStored() {
-        return energyStorage.getMaxEnergyStored();
-    }
 
     @Override
     protected boolean isCriticalSlot(int slot) {
@@ -517,7 +547,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.putLong("EnergyStored", energyStorage.getEnergyStored());
         tag.put("input_tank", inputTank.writeToNBT(new CompoundTag()));
         tag.put("output_tank", outputTank.writeToNBT(new CompoundTag()));
         tag.putLong("last_use_tick", lastUseTick);
@@ -537,9 +566,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        if (tag.contains("EnergyStored")) {
-            this.energyStorage.setEnergy(tag.getLong("EnergyStored"));
-        }
+
         inputTank.readFromNBT(tag.getCompound("input_tank"));
         outputTank.readFromNBT(tag.getCompound("output_tank"));
         lastUseTick = tag.getLong("last_use_tick");
@@ -552,12 +579,15 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             selectedRecipeId = null;
             cachedRecipe = null;
         }
+
         if (tag.contains("AssemblerModule") && level != null) {
             if (assemblerModule == null) {
-                assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, inventory, level);
+                // НОВЫЙ ПРАВИЛЬНЫЙ СПОСОБ
+                assemblerModule = new MachineModuleAdvancedAssembler(0, this, inventory, level);
             }
             assemblerModule.readFromNBT(tag.getCompound("AssemblerModule"));
         }
+
     }
 
     // Пакеты синхронизации
@@ -586,9 +616,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return itemHandler.cast();
         }
-        if (cap == ForgeCapabilities.ENERGY) {
-            return forgeEnergyHandler.cast();
-        }
+
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
             // По умолчанию экспонируем входной бак; при необходимости добавьте роутинг по side
             return fluidInputHandler.cast();
@@ -602,12 +630,13 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         // Инициализация клиентских рук безопасно на клиенте
         if (level != null && level.isClientSide && arms[0] == null) {
             net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(
-                Dist.CLIENT, () -> () -> initClientArms()
+                    Dist.CLIENT, () -> () -> initClientArms()
             );
         }
         // Модуль крафта — только сервер
         if (level != null && !level.isClientSide && assemblerModule == null) {
-            assemblerModule = new MachineModuleAdvancedAssembler(0, energyStorage, inventory, level);
+            // ПЕРЕДАЕМ 'this' КАК IEnergyReceiver
+            this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level);
         }
     }
 
@@ -687,7 +716,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 case EXTEND_STRIKER:
                     if (move()) {
                         level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                            ModSounds.ASSEMBLER_STRIKE_RANDOM.get(), SoundSource.BLOCKS, 0.5f, 1.0F, false);
+                                ModSounds.ASSEMBLER_STRIKE_RANDOM.get(), SoundSource.BLOCKS, 0.5f, 1.0F, false);
                         state = ArmActionState.RETRACT_STRIKER;
                         targetAngles[3] = 0f;
                     }
@@ -703,8 +732,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
 
         private static final float[][] POSITIONS = {
-            {45, -15, -5}, {15, 15, -15}, {25, 10, -15},
-            {30, 0, -10}, {70, -10, -25}
+                {45, -15, -5}, {15, 15, -15}, {25, 10, -15},
+                {30, 0, -10}, {70, -10, -25}
         };
 
         public void chooseNewArmPosition(RandomSource random) {
