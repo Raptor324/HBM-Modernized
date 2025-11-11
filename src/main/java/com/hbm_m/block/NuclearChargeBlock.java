@@ -19,10 +19,6 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
     private static final int CRATER_RADIUS = 60; // Радиус воронки в блоках
     private static final int CRATER_DEPTH = 20; // Глубина воронки в блоках
 
-    // Блоки для поверхности воронки (замени на свои)
-    private static final Block BLOCK1 = Blocks.BLACK_CONCRETE_POWDER; // Замени на свой
-    private static final Block BLOCK2 = Blocks.GRAY_CONCRETE_POWDER; // Замени на свой
-    private static final Block BLOCK3 = Blocks.BLACK_CONCRETE; // Замени на свой
 
     public NuclearChargeBlock(Properties properties) {
         super(properties);
@@ -49,15 +45,12 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
             if (serverLevel.getServer() != null) {
                 // Создаём воронку с задержкой (после взрывной волны)
                 serverLevel.getServer().tell(new net.minecraft.server.TickTask(30, () -> {
-                    // Анимированная версия (2 секунды)
                     CraterGenerator.generateCrater(
-                            serverLevel,
-                            pos,
-                            CRATER_RADIUS,
-                            CRATER_DEPTH,
-                            BLOCK1,
-                            BLOCK2,
-                            BLOCK3
+                            serverLevel, pos, CRATER_RADIUS, CRATER_DEPTH,
+                            ModBlocks.SELLAFIELD_SLAKED.get(),
+                            ModBlocks.SELLAFIELD_SLAKED1.get(),
+                            ModBlocks.SELLAFIELD_SLAKED2.get(),
+                            ModBlocks.SELLAFIELD_SLAKED3.get()
                     );
 
                     // ИЛИ мгновенная версия (раскомментируй если нужна)
