@@ -10,6 +10,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.TickTask;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NuclearChargeBlock extends Block implements IDetonatable {
     private static final float EXPLOSION_POWER = 25.0F;
@@ -41,23 +46,21 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
             // Запускаем поэтапную систему частиц
             scheduleExplosionEffects(serverLevel, x, y, z);
 
-            // ИСПРАВЛЕНИЕ: Проверка на null для сервера
             if (serverLevel.getServer() != null) {
-                // Создаём воронку с задержкой (после взрывной волны)
                 serverLevel.getServer().tell(new net.minecraft.server.TickTask(30, () -> {
                     CraterGenerator.generateCrater(
                             serverLevel, pos, CRATER_RADIUS, CRATER_DEPTH,
+                            // ТВЁРДЫЕ ВЕРСИИ
                             ModBlocks.SELLAFIELD_SLAKED.get(),
                             ModBlocks.SELLAFIELD_SLAKED1.get(),
                             ModBlocks.SELLAFIELD_SLAKED2.get(),
-                            ModBlocks.SELLAFIELD_SLAKED3.get()
+                            ModBlocks.SELLAFIELD_SLAKED3.get(),
+                            // ГРАВИТИРУЮЩИЕ ВЕРСИИ (НОВОЕ!)
+                            ModBlocks.FALLING_SELLAFIT1.get(),
+                            ModBlocks.FALLING_SELLAFIT2.get(),
+                            ModBlocks.FALLING_SELLAFIT3.get(),
+                            ModBlocks.FALLING_SELLAFIT4.get()
                     );
-
-                    // ИЛИ мгновенная версия (раскомментируй если нужна)
-                    // CraterGenerator.generateCraterInstant(
-                    //     serverLevel, pos, CRATER_RADIUS, CRATER_DEPTH,
-                    //     BLOCK1, BLOCK2, BLOCK3
-                    // );
                 }));
             }
 
