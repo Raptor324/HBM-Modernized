@@ -6,13 +6,14 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+
 import java.util.*;
 
 /**
  * Продвинутый генератор кратеров с системой прочности блоков HBM Nuclear Tech
  * Блоки могут защищать более слабые блоки позади них
  */
-public class CraterGenerator {
+public class WasteBlastGenerator {
 
     // Параметры системы разрушения
     private static final int SURFACE_LAYER_DEPTH = 4;

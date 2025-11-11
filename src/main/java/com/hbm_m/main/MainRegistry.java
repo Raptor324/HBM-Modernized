@@ -173,6 +173,7 @@ public class MainRegistry {
             event.accept(ModBlocks.SMOKE_BOMB);
             event.accept(ModBlocks.EXPLOSIVE_CHARGE);
             event.accept(ModBlocks.NUCLEAR_CHARGE);
+            event.accept(ModBlocks.WASTE_CHARGE);
             event.accept(ModItems.GRENADEIF);
 
             event.accept(ModBlocks.DET_MINER);

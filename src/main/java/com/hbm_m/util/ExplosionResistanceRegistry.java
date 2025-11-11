@@ -112,9 +112,9 @@ public class ExplosionResistanceRegistry {
         registerBlock(Blocks.GREEN_CONCRETE, 1);
         registerBlock(Blocks.RED_CONCRETE, 1);
         registerBlock(Blocks.BLACK_CONCRETE, 1);
-        registerBlock(Blocks.GRASS_BLOCK, 0);
-        registerBlock(Blocks.PODZOL, 0);
-        registerBlock(Blocks.MYCELIUM, 0);
+        registerBlock(Blocks.GRASS_BLOCK, 1);
+        registerBlock(Blocks.PODZOL, 1);
+        registerBlock(Blocks.MYCELIUM, 1);
         registerBlock(Blocks.TALL_GRASS, 0);
         registerBlock(Blocks.SNOW, 0);
         registerBlock(Blocks.TALL_SEAGRASS, 0);

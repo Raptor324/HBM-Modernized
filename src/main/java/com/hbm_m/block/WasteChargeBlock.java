@@ -1,18 +1,16 @@
 package com.hbm_m.block;
 
 import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.util.CraterGenerator;
-import com.hbm_m.util.MessGenerator;
-import com.hbm_m.main.MainRegistry;
+
+import com.hbm_m.util.WasteBlastGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class NuclearChargeBlock extends Block implements IDetonatable {
+public class WasteChargeBlock extends Block implements IDetonatable {
 
     private static final float EXPLOSION_POWER = 25.0F;
     private static final double PARTICLE_VIEW_DISTANCE = 512.0;
@@ -21,7 +19,7 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
     private static final int CRATER_RADIUS = 60; // Радиус воронки в блоках
     private static final int CRATER_DEPTH = 20; // Глубина воронки в блоках
 
-    public NuclearChargeBlock(Properties properties) {
+    public WasteChargeBlock(Properties properties) {
         super(properties);
     }
 
@@ -55,7 +53,7 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
                     };
 
                     // Анимированная версия (2 секунды)
-                    CraterGenerator.generateCrater(
+                    WasteBlastGenerator.generateCrater(
                             serverLevel,
                             pos,
                             CRATER_RADIUS,

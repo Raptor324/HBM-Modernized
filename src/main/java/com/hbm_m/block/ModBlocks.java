@@ -214,6 +214,18 @@ public class ModBlocks {
                     // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
             ));
 
+    public static final RegistryObject<Block> WASTE_CHARGE = registerBlock("waste_charge",
+            () -> new WasteChargeBlock(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
+                    .sound(SoundType.STONE) // Звук при разрушении
+                    .requiresCorrectToolForDrops() // Требует правильного инструмента для лута (как руды)
+                    // .noOcclusion() // <--- ЭТО ОЧЕНЬ ВАЖНО! НЕ ИСПОЛЬЗУЙТЕ ЭТО ДЛЯ БЛОКОВ, КОТОРЫЕ ДОЛЖНЫ РЕАГИРОВАТЬ НА РЕДСТОУН
+                    //                    // noOcclusion делает блок "неполным" или "прозрачным" для редстоуна.
+                    //                    // Если ваш блок должен быть твердым и проводить редстоун, то эти свойства должны быть по умолчанию.
+                    // .isRedstoneConductor((state, level, pos) -> true) // Можно явно указать, что блок проводит редстоун
+                    // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
+            ));
+
     public static final RegistryObject<Block> C4 = registerBlock("c4",
             () -> new C4Block(BlockBehaviour.Properties.of()
                     .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)

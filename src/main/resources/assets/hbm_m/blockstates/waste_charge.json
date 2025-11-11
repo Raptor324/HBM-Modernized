@@ -1,5 +1,5 @@
 {
   "variants": {
-    "": { "model": "hbm_m:block/nuclear_charge" }
+    "": { "model": "hbm_m:block/waste_charge" }
   }
 }

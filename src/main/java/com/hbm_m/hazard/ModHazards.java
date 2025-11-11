@@ -252,6 +252,23 @@ public class ModHazards {
         HazardSystem.register(ModBlocks.PLUTONIUM_BLOCK.get(), new HazardData(
             new HazardEntry(HazardType.RADIATION, 75f)
         ));
+
+         HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED.get(), new HazardData(
+                 new HazardEntry(HazardType.RADIATION, 5f)
+         ));
+
+         HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED1.get(), new HazardData(
+                 new HazardEntry(HazardType.RADIATION, 5f)
+         ));
+
+         HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED2.get(), new HazardData(
+                 new HazardEntry(HazardType.RADIATION, 5f)
+         ));
+
+         HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED3.get(), new HazardData(
+                 new HazardEntry(HazardType.RADIATION, 5f)
+         ));
+
         HazardSystem.register(ModBlocks.PLUTONIUM_FUEL_BLOCK.get(), new HazardData(
             new HazardEntry(HazardType.RADIATION, 42.5f)
         ));
