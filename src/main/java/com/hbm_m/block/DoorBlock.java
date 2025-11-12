@@ -97,7 +97,7 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
             case "large_vehicle_door" -> new int[] { -3, 0, 0, 6, 5, 0 }; // 7x6x1
             case "round_airlock_door" -> new int[] { -1, 0, 0, 3, 3, 0 }; // 4x4x1
             
-            case "transition_seal" -> new int[] { -11, 0, 0, 22, 19, 0 }; // 23x20x1 (огромная дверь)
+            case "transition_seal" -> new int[] { 23, 0, 0, 0, 13, 12 }; // 23x20x1 (огромная дверь)
             case "fire_door" -> new int[] { -1, 0, 0, 3, 2, 0 }; // 3x4x1
             case "sliding_blast_door" -> new int[] { -2, 0, 0, 4, 4, 0 }; // 5x5x1
             case "sliding_seal_door" -> new int[] { 0, 0, 0, 0, 1, 0 }; // 1x2x1
@@ -173,16 +173,14 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        // ДЕЛЕГИРУЕМ коллизию фантомным частям, чтобы избежать дублирования
-        // У контроллера НЕТ коллизии, только у частей
         return Shapes.empty();
     }
 
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        // ДЕЛЕГИРУЕМ рамку фантомным частям — у контроллера НЕТ своей рамки
-        // Это избежит "малюсенькой рамки" перед контроллером
-        return Shapes.empty();
+        // Используем НЕСТАТИЧЕСКИЙ кэш
+        return this.shapeCache.computeIfAbsent(pState.getValue(FACING),
+                facing -> getStructureHelper().generateShapeFromParts(facing));
     }
 
     @Override

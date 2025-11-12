@@ -7,6 +7,8 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -14,6 +16,7 @@ import net.minecraftforge.api.distmarker.Dist;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.client.loader.ColladaAnimationParser;
 import com.hbm_m.client.model.DoorBakedModel;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.lib.RefStrings;
@@ -60,7 +63,7 @@ public abstract class DoorDecl {
         return switch (getBlockId().getPath()) {
             case "large_vehicle_door" -> new int[] { -3, 0, 0, 6, 5, 0 };
             case "round_airlock_door" -> new int[] { -1, 0, 0, 3, 3, 0 };
-            case "transition_seal" -> new int[] { -11, 0, 0, 22, 19, 0 };
+            case "transition_seal" -> new int[] { 23, 0, 0, 0, 13, 12 };
             case "fire_door" -> new int[] { -1, 0, 0, 2, 3, 0 };
             case "sliding_blast_door" -> new int[] { -2, 0, 0, 4, 4, 0 };
             case "sliding_seal_door" -> new int[] { 0, 0, 0, 0, 1, 0 };
@@ -510,10 +513,6 @@ public abstract class DoorDecl {
             return new int[][] { { 0, 0, 0, -2, 4, 2 }, { 0, 0, 0, 3, 4, 2 } };
         }
 
-        // @Override public int[] getDimensions() {
-        //     return new int[] { 4, 0, 0, 0, 1, 1 };
-        // }
-
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
             List<AABB> bounds = new ArrayList<>();
@@ -568,44 +567,106 @@ public abstract class DoorDecl {
         public ResourceLocation getBlockId() {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "transition_seal");
         }
-
-        @Override public int getOpenTime() { return 480; }
-
-        @Override
-        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-            if (!"frame".equals(partName)) {
-                set(trans, 0, 3.5F * getNormTime(openTicks), 0);
-            } else {
-                super.getTranslation(partName, openTicks, child, trans);
+    
+        @Override 
+        public int getOpenTime() { 
+            return 480; 
+        }
+        
+        private Map<String, List<ColladaAnimationParser.AnimationChannel>> animations;
+    
+        {
+            try {
+                ResourceManager rm = Minecraft.getInstance().getResourceManager();
+                Resource resource = rm.getResource(new ResourceLocation(RefStrings.MODID, "models/doors/sliding_blast_door.dae")).orElseThrow();
+                animations = ColladaAnimationParser.parse(resource.open());
+            } catch (Exception e) {
+                e.printStackTrace();
+                animations = Collections.emptyMap();
             }
         }
-
-        @Override public int[][] getDoorOpenRanges() {
+        
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            if (!animations.containsKey(partName)) {
+                super.getTranslation(partName, openTicks, child, trans);
+                return;
+            }
+            
+            float progress = getNormTime(openTicks);
+            float time = progress * (getOpenTime() / 20.0f); // Конвертируем в секунды
+            
+            for (ColladaAnimationParser.AnimationChannel channel : animations.get(partName)) {
+                if (channel.property.startsWith("location")) {
+                    float value = channel.getValue(time);
+                    
+                    if (channel.property.endsWith(".X")) trans[0] = value;
+                    else if (channel.property.endsWith(".Y")) trans[1] = value;
+                    else if (channel.property.endsWith(".Z")) trans[2] = value;
+                }
+            }
+        }
+        
+        @Override
+        public void getRotation(String partName, float openTicks, float[] rot) {
+            if (!animations.containsKey(partName)) {
+                super.getRotation(partName, openTicks, rot);
+                return;
+            }
+            
+            float progress = getNormTime(openTicks);
+            float time = progress * (getOpenTime() / 20.0f);
+            
+            for (ColladaAnimationParser.AnimationChannel channel : animations.get(partName)) {
+                if (channel.property.startsWith("rotation")) {
+                    float value = (float) Math.toDegrees(channel.getValue(time)); // COLLADA в радианах
+                    
+                    if (channel.property.endsWith(".X")) rot[0] = value;
+                    else if (channel.property.endsWith(".Y")) rot[1] = value;
+                    else if (channel.property.endsWith(".Z")) rot[2] = value;
+                }
+            }
+        }
+        
+        @Override
+        public void doOffsetTransform(LegacyAnimator animator) {
+            animator.translate(0.0f, 0.0f, 0.5f);
+        }
+        
+        // ИСПРАВЛЕНО: правильный формат dimensions
+        // Старый: {23, 0, 0, 0, 13, 12} -> Новый: {minX, minY, minZ, sizeX, sizeY, sizeZ}
+        @Override
+        public int[] getDimensions() {
+            return new int[] { -11, 0, 0, 22, 19, 0 };
+        }
+        
+        @Override 
+        public int[][] getDoorOpenRanges() {
             return new int[][] { { -9, 2, 0, 20, 20, 1 } };
         }
-
-        // @Override public int[] getDimensions() {
-        //     return new int[] { 23, 0, 0, 0, 13, 12 };
-        // }
-
+    
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
             List<AABB> bounds = new ArrayList<>();
             if (progress >= 0.99f) return bounds;
             
-            // Огромная дверь, движется вверх
             double movement = progress * 3.5;
             AABB door = new AABB(-9.0, 0.0, 0.0, 11.0, Math.max(0.5, 20.0 - movement), 1.0);
-
-            // Fix: Using DoorDecl's static rotateAABB if accessible, or provide local implementation as fallback
-            bounds.add(rotateAABB(door, facing)); // Assuming rotateAABB exists statically, else implement here
-
+            bounds.add(rotateAABB(door, facing));
             return bounds;
         }
-
-        @Override public SoundEvent getOpenSoundStart() { return ModSounds.TRANSITION_SEAL_OPEN.get(); }
-        @Override public float getSoundVolume() { return 6.0f; }
+    
+        @Override 
+        public SoundEvent getOpenSoundStart() { 
+            return ModSounds.TRANSITION_SEAL_OPEN.get(); 
+        }
+        
+        @Override 
+        public float getSoundVolume() { 
+            return 6.0f; 
+        }
     };
+    
 
     public static final DoorDecl FIRE_DOOR = new DoorDecl() {
         @Override
@@ -659,30 +720,160 @@ public abstract class DoorDecl {
         public ResourceLocation getBlockId() {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_blast_door");
         }
-
-        @Override public int getOpenTime() { return 24; }
-
-        @Override public double[][] getClippingPlanes() {
-            return new double[][] { { -1, 0, 0, 3.50001 }, { 1, 0, 0, 3.50001 } };
+    
+        // Кеш загруженных анимаций - ПОТОКОБЕЗОПАСНЫЙ
+        private volatile Map<String, List<ColladaAnimationParser.AnimationChannel>> animations = null;
+        private final Object animationLock = new Object();
+        private volatile Float cachedAnimationDuration = null;
+    
+        // Ленивая загрузка анимаций с потокобезопасностью
+        private Map<String, List<ColladaAnimationParser.AnimationChannel>> getAnimations() {
+            if (animations == null) {
+                synchronized (animationLock) {
+                    if (animations == null) { // Double-checked locking
+                        try {
+                            ResourceManager rm = Minecraft.getInstance().getResourceManager();
+                            Resource resource = rm.getResource(
+                                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/doors/sliding_blast_door.dae")
+                            ).orElseThrow();
+                            animations = ColladaAnimationParser.parse(resource.open());
+                            
+                            // Вычисляем максимальную длительность анимации
+                            float maxTime = 0f;
+                            for (List<ColladaAnimationParser.AnimationChannel> channels : animations.values()) {
+                                for (ColladaAnimationParser.AnimationChannel channel : channels) {
+                                    if (channel.times != null && channel.times.length > 0) {
+                                        maxTime = Math.max(maxTime, channel.times[channel.times.length - 1]);
+                                    }
+                                }
+                            }
+                            cachedAnimationDuration = maxTime > 0 ? maxTime : 1.2f; // fallback 1.2 секунды
+                            
+                            MainRegistry.LOGGER.info("Loaded animations for SLIDE_DOOR: {} parts, duration: {}s", 
+                                animations.size(), cachedAnimationDuration);
+                        } catch (Exception e) {
+                            MainRegistry.LOGGER.error("Failed to load SLIDE_DOOR animations", e);
+                            animations = Collections.emptyMap();
+                            cachedAnimationDuration = 1.2f;
+                        }
+                    }
+                }
+            }
+            return animations;
         }
-
-        @Override public int[][] getDoorOpenRanges() {
+    
+        @Override
+        public int getOpenTime() {
+            // КРИТИЧНО: конвертируем секунды в тики
+            Map<String, List<ColladaAnimationParser.AnimationChannel>> anims = getAnimations();
+            if (cachedAnimationDuration != null && cachedAnimationDuration > 0) {
+                return Math.round(cachedAnimationDuration * 20f); // секунды -> тики
+            }
+            return 24; // fallback
+        }
+    
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            Map<String, List<ColladaAnimationParser.AnimationChannel>> anims = getAnimations();
+            
+            // Инициализируем нулями (закрытое состояние)
+            trans[0] = 0f;
+            trans[1] = 0f;
+            trans[2] = 0f;
+            
+            if (anims.isEmpty() || !anims.containsKey(partName)) {
+                return; // Часть без анимации остается на месте
+            }
+    
+            // Вычисляем прогресс анимации
+            float progress = getNormTime(openTicks);
+            float time = progress * cachedAnimationDuration; // в секундах
+    
+            // Применяем все каналы анимации для этой части
+            for (ColladaAnimationParser.AnimationChannel channel : anims.get(partName)) {
+                String prop = channel.property;
+                
+                if (prop.startsWith("location")) {
+                    float value = channel.getValue(time);
+                    
+                    if (prop.endsWith(".X")) {
+                        trans[0] = value;
+                    } else if (prop.endsWith(".Y")) {
+                        trans[1] = value;
+                    } else if (prop.endsWith(".Z")) {
+                        trans[2] = value;
+                    }
+                }
+            }
+        }
+    
+        @Override
+        public void getRotation(String partName, float openTicks, float[] rot) {
+            Map<String, List<ColladaAnimationParser.AnimationChannel>> anims = getAnimations();
+            
+            // Инициализируем нулями
+            rot[0] = 0f;
+            rot[1] = 0f;
+            rot[2] = 0f;
+            
+            if (anims.isEmpty() || !anims.containsKey(partName)) {
+                return;
+            }
+    
+            float progress = getNormTime(openTicks);
+            float time = progress * cachedAnimationDuration;
+    
+            for (ColladaAnimationParser.AnimationChannel channel : anims.get(partName)) {
+                String prop = channel.property;
+                
+                if (prop.startsWith("rotation")) {
+                    // COLLADA хранит вращения в радианах, конвертируем в градусы
+                    float value = (float) Math.toDegrees(channel.getValue(time));
+                    
+                    if (prop.endsWith(".X")) {
+                        rot[0] = value;
+                    } else if (prop.endsWith(".Y")) {
+                        rot[1] = value;
+                    } else if (prop.endsWith(".Z")) {
+                        rot[2] = value;
+                    }
+                }
+            }
+        }
+    
+        @Override
+        public void doOffsetTransform(LegacyAnimator animator) {
+            animator.rotate(-90.0f, 0.0f, 1.0f, 0.0f);
+        }
+    
+        @Override
+        public double[][] getClippingPlanes() {
+            return new double[][] { 
+                { -1, 0, 0, 3.50001 }, 
+                { 1, 0, 0, 3.50001 } 
+            };
+        }
+    
+        @Override
+        public int[][] getDoorOpenRanges() {
             return new int[][] { { -2, 0, 0, 4, 5, 1 } };
         }
-
-        // @Override public int[] getDimensions() {
-        //     return new int[] { 3, 0, 0, 0, 3, 3 };
-        // }
-
-        @Override public boolean hasSkins() { return true; }
-        @Override public int getSkinCount() { return 3; }
-
+    
+        @Override
+        public boolean hasSkins() {
+            return true;
+        }
+    
+        @Override
+        public int getSkinCount() {
+            return 3;
+        }
+    
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
             List<AABB> bounds = new ArrayList<>();
             if (progress >= 0.99f) return bounds;
             
-            // Раздвижная дверь
             double movement = progress * 1.5;
             if (movement < 1.0) {
                 AABB door = new AABB(-2.0, 0.0, 0.0, 3.0, 5.0, 1.0 - movement);
@@ -690,13 +881,28 @@ public abstract class DoorDecl {
             }
             return bounds;
         }
-
-        @Override public SoundEvent getOpenSoundEnd() { return ModSounds.SLIDING_DOOR_OPENED.get(); }
-        @Override public SoundEvent getCloseSoundEnd() { return ModSounds.SLIDING_DOOR_SHUT.get(); }
-        @Override public SoundEvent getOpenSoundLoop() { return ModSounds.SLIDING_DOOR_OPENING.get(); }
-        @Override public SoundEvent getSoundLoop2() { return ModSounds.SLIDING_DOOR_OPENING.get(); }
-        @Override public float getSoundVolume() { return 2.0f; }
+    
+        @Override
+        public SoundEvent getOpenSoundEnd() {
+            return ModSounds.SLIDING_DOOR_OPENED.get();
+        }
+    
+        @Override
+        public SoundEvent getCloseSoundEnd() {
+            return ModSounds.SLIDING_DOOR_SHUT.get();
+        }
+    
+        @Override
+        public SoundEvent getOpenSoundLoop() {
+            return ModSounds.SLIDING_DOOR_OPENING.get();
+        }
+    
+        @Override
+        public float getSoundVolume() {
+            return 2.0f;
+        }
     };
+    
 
     public static final DoorDecl SLIDING_SEAL_DOOR = new DoorDecl() {
         @Override
@@ -751,30 +957,34 @@ public abstract class DoorDecl {
         public ResourceLocation getBlockId() {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "secure_access_door");
         }
-
+    
         @Override public int getOpenTime() { return 120; }
-
+        
         @Override
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-            if (!"frame".equals(partName)) {
+            // ИСПРАВЛЕНО: "base" вместо "frame" - соответствует старой логике
+            if(!partName.equals("base")) {
                 set(trans, 0, 3.5F * getNormTime(openTicks), 0);
             } else {
                 super.getTranslation(partName, openTicks, child, trans);
             }
         }
-
+        
+        // ДОБАВЛЕНО: отсутствующий метод трансформации координат
+        @Override
+        public void doOffsetTransform(LegacyAnimator animator) {
+            // Поворот на 90° вокруг оси Y (как в старой версии)
+            animator.rotate(90.0f, 0.0f, 1.0f, 0.0f);
+        }
+        
         @Override public double[][] getClippingPlanes() {
             return new double[][] { { 0, -1, 0, 5 } };
         }
-
+    
         @Override public int[][] getDoorOpenRanges() {
             return new int[][] { { -2, 1, 0, 4, 5, 1 } };
         }
-
-        // @Override public int[] getDimensions() {
-        //     return new int[] { 4, 0, 0, 0, 2, 2 };
-        // }
-
+    
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
             List<AABB> bounds = new ArrayList<>();
@@ -786,13 +996,13 @@ public abstract class DoorDecl {
             bounds.add(rotateAABB(door, facing));
             return bounds;
         }
-
+    
         @Override public SoundEvent getCloseSoundLoop() { return ModSounds.GARAGE_MOVE.get(); }
         @Override public SoundEvent getCloseSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
         @Override public SoundEvent getOpenSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
         @Override public SoundEvent getOpenSoundLoop() { return ModSounds.GARAGE_MOVE.get(); }
         @Override public float getSoundVolume() { return 2.0f; }
-    };
+    };    
 
     public static final DoorDecl QE_SLIDING = new DoorDecl() {
         @Override
@@ -1006,76 +1216,74 @@ public abstract class DoorDecl {
         public ResourceLocation getBlockId() {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silo_hatch");
         }
-
+    
         @Override public int getOpenTime() { return 60; }
-
         @Override public boolean remoteControllable() { return true; }
-
+        
         @Override
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-            if ("hatch".equals(partName)) {
+            // ИСПРАВЛЕНО: "Hatch" с ЗАГЛАВНОЙ буквы!
+            if ("Hatch".equals(partName)) {
                 float smoothTime = smoothstep(getNormTime(openTicks, 0, 10));
                 set(trans, 0, 0.25F * smoothTime, 0);
             } else {
                 set(trans, 0, 0, 0);
             }
         }
-
+        
         @Override
         public void getOrigin(String partName, float[] orig) {
-            if ("hatch".equals(partName)) {
+            // ИСПРАВЛЕНО: "Hatch" с ЗАГЛАВНОЙ буквы!
+            if ("Hatch".equals(partName)) {
                 set(orig, 0F, 0.875F, -1.875F);
             } else {
                 set(orig, 0, 0, 0);
             }
         }
-
+        
         @Override
         public void getRotation(String partName, float openTicks, float[] rot) {
-            if ("hatch".equals(partName)) {
+            // ИСПРАВЛЕНО: "Hatch" с ЗАГЛАВНОЙ буквы!
+            if ("Hatch".equals(partName)) {
                 float smoothTime = smoothstep(getNormTime(openTicks, 20, 100));
                 set(rot, smoothTime * -240, 0, 0);
             } else {
                 super.getRotation(partName, openTicks, rot);
             }
         }
-
+        
         @Override public float getDoorRangeOpenTime(int ticks, int idx) {
             return getNormTime(ticks, 20, 20);
         }
-
+        
         @Override public int getBlockOffset() { return 2; }
-
+        
         @Override public int[][] getDoorOpenRanges() {
             return new int[][] { { 1, 0, 1, -3, 3, 0 }, { 0, 0, 1, -3, 3, 0 }, { -1, 0, 1, -3, 3, 0 } };
         }
-
-        // @Override public int[] getDimensions() {
-        //     return new int[] { 0, 0, 2, 2, 2, 2 };
-        // }
-
+        
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
             List<AABB> bounds = new ArrayList<>();
             if (progress >= 0.99f) return bounds;
             
-            // Люк силоса
-            if (progress < 0.5) { // Люк еще не открыт полностью
+            if (progress < 0.5) {
                 AABB hatch = new AABB(-1.0, 2.0, -1.0, 2.0, 3.0, 2.0);
                 bounds.add(rotateAABB(hatch, facing));
             }
             return bounds;
         }
-
+        
         private float smoothstep(float t) {
             return t * t * (3.0f - 2.0f * t);
         }
-
+        
         @Override public SoundEvent getOpenSoundEnd() { return ModSounds.WGH_STOP.get(); }
         @Override public SoundEvent getOpenSoundLoop() { return ModSounds.WGH_START.get(); }
         @Override public SoundEvent getCloseSoundEnd() { return ModSounds.WGH_STOP.get(); }
         @Override public float getSoundVolume() { return 2.0f; }
     };
+    
 
     public static final DoorDecl SILO_HATCH_LARGE = new DoorDecl() {
         @Override

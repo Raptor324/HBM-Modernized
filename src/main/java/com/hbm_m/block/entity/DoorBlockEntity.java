@@ -144,6 +144,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         return switch (doorDeclId) {
             case "qe_sliding_door" -> 10;
             case "sliding_seal_door" -> 20;
+            case "sliding_blast_door" -> 24;
             case "secure_access_door" -> 120;
             case "qe_containment_door" -> 160;
             case "water_door" -> 60;

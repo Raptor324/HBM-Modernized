@@ -7,8 +7,8 @@
     "particle": "hbm_m:block/secure_access_door"
   },
   "transform": {
-        "rotation": [0, 90, 0],
-        "translation": [ 0, 0, -3 ],
+        "rotation": [0, 0, 0],
+        "translation": [ 0, 0, 0 ],
         "scale": 1.0
     },
   "display": {
