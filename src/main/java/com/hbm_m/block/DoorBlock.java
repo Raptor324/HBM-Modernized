@@ -97,17 +97,16 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
             case "large_vehicle_door" -> new int[] { -3, 0, 0, 6, 5, 0 }; // 7x6x1
             case "round_airlock_door" -> new int[] { -1, 0, 0, 3, 3, 0 }; // 4x4x1
             
-            // Новые двери из старого кода
             case "transition_seal" -> new int[] { -11, 0, 0, 22, 19, 0 }; // 23x20x1 (огромная дверь)
-            case "fire_door" -> new int[] { -1, 0, 0, 2, 3, 0 }; // 3x4x1
+            case "fire_door" -> new int[] { -1, 0, 0, 3, 2, 0 }; // 3x4x1
             case "sliding_blast_door" -> new int[] { -2, 0, 0, 4, 4, 0 }; // 5x5x1
             case "sliding_seal_door" -> new int[] { 0, 0, 0, 0, 1, 0 }; // 1x2x1
             case "secure_access_door" -> new int[] { -2, 0, 0, 4, 4, 0 }; // 5x5x1
             case "qe_sliding_door" -> new int[] { 0, 0, 0, 1, 1, 0 }; // 2x2x1
             case "qe_containment_door" -> new int[] { -1, 0, 0, 2, 2, 0 }; // 3x3x1
             case "water_door" -> new int[] { 0, 0, 0, 1, 2, 0 }; // 2x3x1
-            case "silo_hatch" -> new int[] { -1, 0, -1, 2, 2, 2 }; // 3x3x3 (люк силоса)
-            case "silo_hatch_large" -> new int[] { -2, 0, -2, 4, 3, 4 }; // 5x4x5 (большой люк силоса)
+            case "silo_hatch" -> new int[] { -1, 0, -1, 3, 0, 3 }; // 3x3x3 (люк силоса)
+            case "silo_hatch_large" -> new int[] { -2, 0, -2, 5, 0, 5 }; // 5x4x5 (большой люк силоса)
             
             // Дефолт для неизвестных дверей
             default -> new int[] { 0, 0, 0, 0, 1, 0 }; // 1x2x1
@@ -174,49 +173,16 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof DoorBlockEntity doorBE) {
-            DoorBlockEntity controller = doorBE.getController();
-            if (controller != null) {
-                byte doorState = controller.getState();
-                Direction facing = state.getValue(FACING);
-                
-                // Дверь полностью открыта - НЕТ коллизии
-                if (doorState == 1) {
-                    return Shapes.empty();
-                }
-                
-                // Дверь полностью закрыта - ПОЛНАЯ коллизия только у контроллера
-                if (doorState == 0) {
-                    if (controller.getBlockPos().equals(pos)) {
-                        return Shapes.block();
-                    } else {
-                        return Shapes.empty();
-                    }
-                }
-                
-                // КЛЮЧЕВОЕ ИЗМЕНЕНИЕ: для состояний 2 (закрывается) и 3 (открывается)
-                // используем ДИНАМИЧЕСКУЮ коллизию
-                if (doorState == 2 || doorState == 3) {
-                    // Коллизия ТОЛЬКО у контроллера
-                    if (controller.getBlockPos().equals(pos)) {
-                        return controller.getDynamicCollisionShape(facing);
-                    } else {
-                        return Shapes.empty();
-                    }
-                }
-            }
-        }
-        
-        // Fallback: если не контроллер - возвращаем полный блок
-        return Shapes.block();
+        // ДЕЛЕГИРУЕМ коллизию фантомным частям, чтобы избежать дублирования
+        // У контроллера НЕТ коллизии, только у частей
+        return Shapes.empty();
     }
 
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        // Используем НЕСТАТИЧЕСКИЙ кэш
-        return this.shapeCache.computeIfAbsent(pState.getValue(FACING),
-                facing -> getStructureHelper().generateShapeFromParts(facing));
+        // ДЕЛЕГИРУЕМ рамку фантомным частям — у контроллера НЕТ своей рамки
+        // Это избежит "малюсенькой рамки" перед контроллером
+        return Shapes.empty();
     }
 
     @Override

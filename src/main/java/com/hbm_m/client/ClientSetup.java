@@ -17,6 +17,7 @@ import com.hbm_m.item.ModTags;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.ModMenuTypes;
+import com.hbm_m.multiblock.DoorPartAABBRegistry;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.recipe.AssemblerRecipe;
@@ -79,7 +80,8 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
-        MinecraftForge.EVENT_BUS.register(DoorDebugRenderer.class);
+        MinecraftForge.EVENT_BUS.register(DoorOutlineRenderer.class);
+        // MinecraftForge.EVENT_BUS.register(DoorDebugRenderer.class);
         // MinecraftForge.EVENT_BUS.register(ClientSetup.class);
 
         // Register Entity Renders
@@ -201,17 +203,27 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onResourceReload(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(new ShaderReloadListener());
-
         event.registerReloadListener((preparationBarrier, resourceManager,
-                                    preparationsProfiler, reloadProfiler,
-                                    backgroundExecutor, gameExecutor) -> {
+                preparationsProfiler, reloadProfiler,
+                backgroundExecutor, gameExecutor) -> {
             return preparationBarrier.wait(null).thenRunAsync(() -> {
-                //  Очищаем глобальный кэш VBO
+                // Очищаем глобальный кэш VBO
                 MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
                 ImmediateFallbackRenderer.clearGlobalCache();
                 DoorRenderer.clearAllCaches();
-                RenderPathManager.reset();
-                MainRegistry.LOGGER.info("VBO cache cleanup completed");
+                
+                // ИСПРАВЛЕНО: НЕ вызываем reset(), вместо этого очищаем только кеши
+                GlobalMeshCache.clearAll();
+                DoorPartAABBRegistry.clear();
+                
+                // Переинициализируем immediate рендер после очистки
+                ImmediateFallbackRenderer.onShaderReload();
+                
+                // ИСПРАВЛЕНО: Вместо reset() просто обновляем путь на основе текущего состояния
+                // Это сохранит ручное переключение, если оно было активно
+                RenderPathManager.updateRenderPath();
+                
+                MainRegistry.LOGGER.info("VBO cache cleanup completed, render path preserved");
             }, gameExecutor);
         });
     }

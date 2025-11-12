@@ -9,11 +9,13 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
@@ -37,17 +39,12 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     private int openTicks = 0;
     public long animStartTime = 0;
     private boolean locked = false;
-    private static final float COLLISION_UPDATE_THRESHOLD = 0.05f;
 
     private final String doorDeclId;
     
     // Мультиблок данные
     private BlockPos controllerPos = null;
     private PartRole partRole = PartRole.DEFAULT;
-    
-    // Оптимизация коллизии
-    private VoxelShape cachedCollisionShape = Shapes.block();
-    private float lastCollisionProgress = -1f;
     
     @OnlyIn(Dist.CLIENT)
     private Object loopingSound;
@@ -113,8 +110,19 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
 
     @OnlyIn(Dist.CLIENT)
     public DoorDecl getDoorDecl() {
-        return DoorDeclRegistry.getById(doorDeclId);
+        if (level == null) return null;
+        
+        BlockState state = getBlockState();
+        Block block = state.getBlock();
+        
+        if (block instanceof DoorBlock doorBlock) {
+            // КРИТИЧНО: убедитесь, что getDoorDeclId() возвращает правильный ID!
+            String declId = doorBlock.getDoorDeclId();
+            return DoorDeclRegistry.getById(declId);
+        }
+        return null;
     }
+    
     
     // Для серверной логики используем строковый ID
     public String getDoorDeclId() {
@@ -128,28 +136,43 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             : Direction.NORTH;
     }
 
+    /**
+     * Получает время открытия двери в тиках (серверная версия без клиентских зависимостей).
+     */
+    private int getServerOpenTime() {
+        // Базовая таблица времён открытия для каждой двери (миллисекунды / 50 = тики)
+        return switch (doorDeclId) {
+            case "qe_sliding_door" -> 10;
+            case "sliding_seal_door" -> 20;
+            case "secure_access_door" -> 120;
+            case "qe_containment_door" -> 160;
+            case "water_door" -> 60;
+            case "large_vehicle_door" -> 100;
+            case "silo_hatch" -> 40;
+            case "silo_hatch_large" -> 60;
+            default -> 60; // Fallback
+        };
+    }
+
+    // ОБНОВИТЕ существующий метод getOpenProgress(float):
     public float getOpenProgress(float partialTick) {
-        // ИСПРАВЛЕНО: Не используем doorDecl на сервере
-        if (level != null && level.isClientSide) {
-            DoorDecl decl = getDoorDecl();
-            if (decl != null && decl.getOpenTime() == 0) {
-                return state == 1 || state == 3 ? 1f : 0f;
-            }
-        }
+        int openTime = getServerOpenTime(); // Используем серверную таблицу
         
-        // Для сервера используем фиксированное время
-        int openTime = 60; // Fallback значение
+        // ИСПРАВЛЕНО: Не используем doorDecl на сервере
         if (level != null && level.isClientSide) {
             DoorDecl decl = getDoorDecl();
             if (decl != null) {
                 openTime = decl.getOpenTime();
+                if (openTime == 0) {
+                    return state == 1 || state == 3 ? 1f : 0f;
+                }
             }
         }
-        
+
         long currentTime = System.currentTimeMillis();
         long elapsedTime = currentTime - animStartTime;
-        int totalTime = openTime * 50;
-        
+        int totalTime = openTime * 50; // тики в миллисекунды
+
         return switch (state) {
             case 0 -> 0f;
             case 1 -> 1f;
@@ -157,6 +180,14 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             case 3 -> Math.min(1f, (float) elapsedTime / totalTime);
             default -> 0f;
         };
+    }
+
+    /**
+     * Получает прогресс открытия БЕЗ партиальных тиков (для серверного использования).
+     * @return прогресс от 0.0 до 1.0
+     */
+    public float getOpenProgress() {
+        return getOpenProgress(0f); // Используем 0 партиальных тиков для сервера
     }
     
     public byte getState() {
@@ -207,24 +238,13 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     }
 
     private void setState(byte newState) {
-
         this.state = newState;
         this.animStartTime = System.currentTimeMillis();
-        
         if (newState == 3) {
-        this.openTicks = 0;
+            this.openTicks = 0;
         } else if (newState == 2) {
-            // ИСПРАВЛЕНО: Используем фиксированное значение или получаем на клиенте
-            int openTime = 60; // Fallback для сервера
-            if (level != null && level.isClientSide) {
-                DoorDecl decl = getDoorDecl();
-                if (decl != null) {
-                    openTime = decl.getOpenTime();
-                }
-            }
-            this.openTicks = openTime;
+            this.openTicks = getServerOpenTime(); // Используем серверный метод
         }
-        
         syncToClient();
     }
 
@@ -239,16 +259,12 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     // ==================== Server Tick ====================
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, DoorBlockEntity be) {
-        int openTime = 60;
+        int openTime = be.getServerOpenTime(); // Используем серверный метод
         boolean shouldSync = false;
-        
+    
         if (be.state == 3) { // Открывается
             be.openTicks++;
             be.updatePhantomBlocks(level, pos, openTime);
-            
-            // ДОБАВЛЕНО: Обновляем коллизию каждый тик
-            be.updateCollisionShape(level, pos);
-            
             if (be.openTicks >= openTime) {
                 be.state = 1;
                 be.openTicks = openTime;
@@ -258,10 +274,6 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         } else if (be.state == 2) { // Закрывается
             be.openTicks--;
             be.updatePhantomBlocks(level, pos, openTime);
-            
-            // ДОБАВЛЕНО: Обновляем коллизию каждый тик
-            be.updateCollisionShape(level, pos);
-            
             if (be.openTicks <= 0) {
                 be.state = 0;
                 be.openTicks = 0;
@@ -269,21 +281,11 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
                 be.notifyNeighborsOfStateChange(level, pos);
             }
         }
-        
+    
         if (shouldSync) {
             be.syncToClient();
         }
     }
-    
-    // НОВЫЙ МЕТОД: Принудительное обновление коллизии
-    private void updateCollisionShape(Level level, BlockPos pos) {
-        // Сбрасываем кеш коллизии
-        this.lastCollisionProgress = -1f;
-        
-        // Уведомляем клиент и сервер о необходимости пересчета коллизии
-        BlockState currentState = level.getBlockState(pos);
-        level.sendBlockUpdated(pos, currentState, currentState, Block.UPDATE_CLIENTS);
-    }    
 
     private void notifyNeighborsOfStateChange(Level level, BlockPos controllerPos) {
         // Получаем structureHelper из блока
@@ -303,70 +305,6 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         }
     }
 
-    // ==================== Dynamic Collision ====================
-
-    public VoxelShape getDynamicCollisionShape(Direction facing) {
-        float progress = getOpenProgress(0);
-        
-        if (Math.abs(progress - lastCollisionProgress) < COLLISION_UPDATE_THRESHOLD) {
-            return cachedCollisionShape;
-        }
-        
-        lastCollisionProgress = progress;
-        
-        // ИСПОЛЬЗУЕМ getCollisionBounds из DoorDecl!
-        List<AABB> bounds;
-        if (level != null && level.isClientSide) {
-            DoorDecl decl = getDoorDecl();
-            bounds = (decl != null) ? decl.getCollisionBounds(progress, facing) : List.of();
-        } else {
-            // На сервере тоже используем DoorDecl!
-            DoorDecl decl = getDoorDecl();
-            bounds = (decl != null) ? decl.getCollisionBounds(progress, facing) : List.of();
-        }
-        
-        if (bounds.isEmpty()) {
-            cachedCollisionShape = Shapes.empty();
-            return cachedCollisionShape;
-        }
-        
-        VoxelShape shape = Shapes.empty();
-        for (AABB aabb : bounds) {
-            shape = Shapes.or(shape, Shapes.create(aabb));
-        }
-        
-        cachedCollisionShape = shape.optimize();
-        return cachedCollisionShape;
-    }
-
-    private int[] getDoorDims() {
-        // Например, через DoorBlock статический провайдер по declId
-        return DoorBlock.getDoorDimensions(getDoorDeclId()); // тот же метод, что используют при построении[file:13]
-    }
-    
-    private static AABB rotateAABBFromOrigin(AABB bb, Direction facing) {
-        // Собираем четыре горизонтальные вершины (Y не влияет на поворот вокруг Y)
-        double[][] pts = {
-            {bb.minX, bb.minZ}, {bb.maxX, bb.minZ}, {bb.minX, bb.maxZ}, {bb.maxX, bb.maxZ}
-        };
-        double minX = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
-        double maxX = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
-    
-        for (double[] p : pts) {
-            double x = p[0], z = p[1];
-            double rx, rz;
-            switch (facing) { // Точно как MultiblockStructureHelper.rotate
-                case SOUTH -> { rx = -x; rz = -z; }  // (−x, −z)[file:12]
-                case WEST  -> { rx =  z; rz = -x; }  // ( z, −x)[file:12]
-                case EAST  -> { rx = -z; rz =  x; }  // (−z,  x)[file:12]
-                default    -> { rx =  x; rz =  z; }  // ( x,  z)[file:12]
-            }
-            if (rx < minX) minX = rx; if (rx > maxX) maxX = rx;
-            if (rz < minZ) minZ = rz; if (rz > maxZ) maxZ = rz;
-        }
-        return new AABB(minX, bb.minY, minZ, maxX, bb.maxY, maxZ);
-    }
-    
     private void updatePhantomBlocks(Level level, BlockPos controllerPos, int openTime) {
         Direction facing = getFacing();
         

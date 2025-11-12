@@ -6,6 +6,11 @@
     "texture0": "hbm_m:block/qe_sliding_door",
     "particle": "hbm_m:block/qe_sliding_door"
   },
+  "transform": {
+        "rotation": [0, 0, 0],
+        "translation": [ 0, 0, 0.5 ],
+        "scale": 1.0
+    },
   "display": {
     "gui": {
       "rotation": [ 30, 225, 0 ],

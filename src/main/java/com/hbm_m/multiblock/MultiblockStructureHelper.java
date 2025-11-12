@@ -20,6 +20,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.PacketDistributor;
@@ -379,6 +380,116 @@ public class MultiblockStructureHelper {
         }
 
         return finalShape.optimize();
+    }
+
+    /**
+     * Получает базовые AABB частей двери из реестра (автоматически извлечены из OBJ).
+     * @param doorId ID двери (например, "qe_sliding_door")
+     * @return Карта partName -> AABB или пустая если не зарегистрирована
+     */
+    public static Map<String, AABB> getDoorPartAABBs(String doorId) {
+        return DoorPartAABBRegistry.getAll(doorId);
+    }
+
+    /**
+     * Генерирует VoxelShape для двери на основе зарегистрированных AABB частей.
+     * @param doorId ID двери
+     * @param visibleParts Список имён видимых частей
+     * @param facing Направление двери
+     * @return Объединённая VoxelShape или пустая если нет данных
+     */
+    public static VoxelShape generateShapeFromDoorParts(String doorId, 
+                                                        java.util.List<String> visibleParts,
+                                                        Direction facing) {
+        Map<String, AABB> allAABBs = getDoorPartAABBs(doorId);
+        if (allAABBs.isEmpty()) return Shapes.empty();
+
+        // Получаем размеры мультиблока
+        int[] dims = com.hbm_m.block.DoorBlock.getDoorDimensions(doorId);
+        double widthBlocks = dims[3] + 1.0;   // X
+        double heightBlocks = dims[4] + 1.0;  // Y
+        double depthBlocks = dims[5] + 1.0;   // Z
+        double offsetX = dims[0];
+        double offsetY = dims[1];
+        double offsetZ = dims[2];
+
+        VoxelShape finalShape = Shapes.empty();
+        for (String partName : visibleParts) {
+            AABB raw = allAABBs.get(partName);
+            if (raw == null) continue;
+
+            // ИСПРАВЛЕНИЕ: OBJ модели дверей ориентированы вертикально (Y - высота створки)
+            // Но мультиблок large_vehicle_door горизонтальный (X - ширина створки)
+            // Поэтому ПОВОРАЧИВАЕМ модель на 90°: Y_obj → X_multiblock, X_obj → Y_multiblock
+            // Для вертикальных дверей (qe_sliding_door и т.д.) поворот не нужен
+            
+            boolean needsRotation = needsModelRotation(doorId);
+            
+            AABB scaled;
+            if (needsRotation) {
+                // Поворот: Y модели → X мультиблока, X модели → Y мультиблока
+                scaled = new AABB(
+                    raw.minY * widthBlocks + offsetX,    // Y_obj -> X_world
+                    raw.minX * heightBlocks + offsetY,   // X_obj -> Y_world
+                    raw.minZ * depthBlocks + offsetZ,
+                    raw.maxY * widthBlocks + offsetX,
+                    raw.maxX * heightBlocks + offsetY,
+                    raw.maxZ * depthBlocks + offsetZ
+                );
+            } else {
+                // Обычное масштабирование без поворота
+                scaled = new AABB(
+                    raw.minX * widthBlocks + offsetX,
+                    raw.minY * heightBlocks + offsetY,
+                    raw.minZ * depthBlocks + offsetZ,
+                    raw.maxX * widthBlocks + offsetX,
+                    raw.maxY * heightBlocks + offsetY,
+                    raw.maxZ * depthBlocks + offsetZ
+                );
+            }
+
+            // Поворачиваем по facing
+            AABB rotated = rotateAABBByFacing(scaled, facing);
+
+            // Конвертируем в VoxelShape (координаты в пикселях 0..16)
+            VoxelShape partShape = Block.box(
+                rotated.minX * 16.0, rotated.minY * 16.0, rotated.minZ * 16.0,
+                rotated.maxX * 16.0, rotated.maxY * 16.0, rotated.maxZ * 16.0
+            );
+
+            finalShape = Shapes.or(finalShape, partShape);
+        }
+
+        return finalShape.optimize();
+    }
+
+    /**
+     * Определяет, нужно ли поворачивать OBJ модель на 90° для соответствия мультиблоку.
+     * Горизонтальные двери (large_vehicle_door и т.д.) требуют поворота.
+     */
+    private static boolean needsModelRotation(String doorId) {
+        return switch (doorId) {
+            case "large_vehicle_door", 
+                "sliding_blast_door",
+                "secure_access_door",
+                "transition_seal",
+                "round_airlock_door",
+                "fire_door" -> true; // Горизонтальные двери
+            default -> false; // Вертикальные двери
+        };
+    }
+
+    /**
+     * Поворачивает AABB вокруг оси Y в зависимости от facing двери.
+     */
+    public static AABB rotateAABBByFacing(AABB aabb, Direction facing) {
+        // Используем тот же алгоритм поворота, что и у rotate(BlockPos)
+        return switch (facing) {
+            case SOUTH -> new AABB(-aabb.maxX, aabb.minY, -aabb.maxZ, -aabb.minX, aabb.maxY, -aabb.minZ);
+            case WEST  -> new AABB(-aabb.maxZ, aabb.minY,  aabb.minX, -aabb.minZ, aabb.maxY,  aabb.maxX);
+            case EAST  -> new AABB( aabb.minZ, aabb.minY, -aabb.maxX,  aabb.maxZ, aabb.maxY, -aabb.minX);
+            default    -> aabb; // NORTH — без изменений
+        };
     }
 
 

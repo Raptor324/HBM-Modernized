@@ -21,6 +21,7 @@ import com.hbm_m.main.MainRegistry;
 import com.hbm_m.sound.ModSounds;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +36,9 @@ public abstract class DoorDecl {
     private final Map<String, BakedModel> modelCache = new HashMap<>();
     private BakedModel[] cachedModelParts = null;
     private String[] cachedPartNames = null;
+
+    // Кэш извлечённых AABB частей из OBJ модели (клиентский доступ)
+    private Map<String, AABB> cachedPartAABBs = new HashMap<>();
 
     // ==================== Основные абстрактные методы ====================
 
@@ -69,11 +73,6 @@ public abstract class DoorDecl {
             default -> new int[] { 0, 0, 0, 0, 1, 0 };
         };
     }
-
-    /**
-     * УДАЛЕНО: getModelLocation() - больше не нужно!
-     * УДАЛЕНО: getTextureLocation() - больше не нужно!
-     */
 
     /**
      * ID блока для автоматической загрузки модели
@@ -153,6 +152,35 @@ public abstract class DoorDecl {
         }
         
         return null;
+    }
+
+    /**
+     * Сохраняет извлечённые AABB (вызывается из DoorBakedModel).
+     */
+    public void setPartAABBs(Map<String, AABB> aabbs) {
+        this.cachedPartAABBs = new HashMap<>(aabbs);
+    }
+
+    /**
+     * Получает базовый AABB для части (клиентский доступ).
+     */
+    @Nullable
+    public AABB getPartAABB(String partName) {
+        return cachedPartAABBs.get(partName);
+    }
+
+    /**
+     * Получает все базовые AABB (клиентский доступ).
+     */
+    public Map<String, AABB> getAllPartAABBs() {
+        return Collections.unmodifiableMap(cachedPartAABBs);
+    }
+
+    /**
+     * Проверяет, загружены ли AABB для этой двери.
+     */
+    public boolean hasPartAABBs() {
+        return !cachedPartAABBs.isEmpty();
     }
 
     /**
@@ -293,39 +321,79 @@ public abstract class DoorDecl {
     }    
 
     protected static AABB rotateAABB(AABB bb, Direction facing) {
-        // Собираем четыре горизонтальные вершины (Y не влияет на поворот вокруг Y)
         double[][] pts = {
-            {bb.minX, bb.minZ}, 
-            {bb.maxX, bb.minZ}, 
-            {bb.minX, bb.maxZ}, 
-            {bb.maxX, bb.maxZ}
+            {bb.minX, bb.minZ}, {bb.maxX, bb.minZ},
+            {bb.minX, bb.maxZ}, {bb.maxX, bb.maxZ}
         };
+        double minX = Double.POSITIVE_INFINITY, minZ = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY, maxZ = Double.NEGATIVE_INFINITY;
         
-        double minX = Double.POSITIVE_INFINITY;
-        double minZ = Double.POSITIVE_INFINITY;
-        double maxX = Double.NEGATIVE_INFINITY;
-        double maxZ = Double.NEGATIVE_INFINITY;
-    
         for (double[] p : pts) {
             double x = p[0], z = p[1];
             double rx, rz;
             
-            // ТОЧНО как MultiblockStructureHelper.rotate()
+            // ИСПРАВЛЕНО: используем ТУ ЖЕ логику, что и в MultiblockStructureHelper.rotate()
             switch (facing) {
-                case SOUTH -> { rx = -x; rz = -z; }  // (-x, -z)
-                case WEST  -> { rx =  z; rz = -x; }  // ( z, -x)
-                case EAST  -> { rx = -z; rz =  x; }  // (-z,  x)
-                default    -> { rx =  x; rz =  z; }  // ( x,  z) NORTH
+                case SOUTH -> { rx = -x; rz = -z; }
+                case WEST  -> { rx = z; rz = -x; }  // ИСПРАВЛЕНО
+                case EAST  -> { rx = -z; rz = x; }  // ИСПРАВЛЕНО
+                default    -> { rx = x; rz = z; }   // NORTH
             }
             
-            if (rx < minX) minX = rx;
-            if (rx > maxX) maxX = rx;
-            if (rz < minZ) minZ = rz;
-            if (rz > maxZ) maxZ = rz;
+            if (rx < minX) minX = rx; if (rx > maxX) maxX = rx;
+            if (rz < minZ) minZ = rz; if (rz > maxZ) maxZ = rz;
         }
         
         return new AABB(minX, bb.minY, minZ, maxX, bb.maxY, maxZ);
     }
+    
+
+    // Возвращает локальные AABB створок относительно контроллера (без поворота/переноса)
+    public List<AABB> getLocalDynamicBoxes(float progress) {
+        int[] d = getDimensions();
+        final double ox = d[0], oy = d[1], oz = d[2];
+        final int sx = d[3], sy = d[4], sz = d[5];
+        
+        // ИСПРАВЛЕНО: учитываем, что структура создается с <=
+        final double minX = ox;
+        final double maxX = ox + sx + 1;  // +1 из-за <= в createStructureForDoor
+        final double minY = oy;
+        final double maxY = oy + sy + 1;  // +1 из-за <=
+        final double minZ = oz;
+        final double maxZ = oz + (sz == 0 ? 1 : sz + 1);  // +1 для толщины или из-за <=
+        
+        final double totalWidth = maxX - minX;
+        final double half = totalWidth / 2.0;
+        final double centerX = minX + half;
+        
+        final double move = Math.min(Math.max(progress, 0f), 1f) * half;
+        
+        // Пороги разъезда створок
+        final double cutLeft = centerX - move;
+        final double cutRight = centerX + move;
+        
+        List<AABB> boxes = new ArrayList<>();
+        
+        // Создаем коллижн боксы для створок
+        for (double x = minX; x < maxX; x += 1.0) {
+            double cellMinX = x;
+            double cellMaxX = x + 1.0;
+            
+            // Левая створка: часть ячейки слева от cutLeft
+            double leftPartMaxX = Math.min(cellMaxX, cutLeft);
+            if (leftPartMaxX - cellMinX > 1e-6) {
+                boxes.add(new AABB(cellMinX, minY, minZ, leftPartMaxX, maxY, maxZ));
+            }
+            
+            // Правая створка: часть ячейки справа от cutRight
+            double rightPartMinX = Math.max(cellMinX, cutRight);
+            if (cellMaxX - rightPartMinX > 1e-6) {
+                boxes.add(new AABB(rightPartMinX, minY, minZ, cellMaxX, maxY, maxZ));
+            }
+        }
+        
+        return boxes;
+    }    
 
     // ==================== Реализации ====================
 
@@ -359,9 +427,9 @@ public abstract class DoorDecl {
             return new int[][] { { 0, 0, 0, -4, 6, 2 }, { 0, 0, 0, 4, 6, 2 } };
         }
 
-        @Override public int[] getDimensions() {
-            return new int[] { 5, 0, 0, 0, 3, 3 };
-        }
+        // @Override public int[] getDimensions() {
+        //     return new int[] { 5, 0, 0, 0, 3, 3 };
+        // }
 
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
@@ -369,33 +437,39 @@ public abstract class DoorDecl {
             if (progress >= 0.99f) {
                 return bounds;
             }
-
-            // Получаем РЕАЛЬНЫЕ dimensions: [-3, 0, 0, 6, 5, 0]
+            
+            // ИСПРАВЛЕНО: используем правильные границы структуры
             int[] d = getDimensions();
-            double ox = d[0];  // -3
-            double oy = d[1];  // 0
-            double oz = d[2];  // 0
-            double sx = d[3];  // 6 (итого 7 блоков: -3, -2, -1, 0, 1, 2, 3)
-            double sy = d[4];  // 5 (итого 6 блоков высоты)
-            double sz = d[5];  // 0 (итого 1 блок глубины)
-
-            double half = sx / 2.0;  // 3.0
-            double move = Math.min(progress, 1.0) * half;  // максимум 3.0 блока
-
-            // Левая створка: X от ox до (ox + half - move)
-            double leftMaxX = Math.max(ox, ox + half - move);
-            if (leftMaxX - ox > 0.05) {
-                AABB leftDoor = new AABB(ox, oy, oz, leftMaxX, oy + sy, oz + sz + 1.0);
+            double minX = d[0];           // -3
+            double minY = d[1];           // 0
+            double minZ = d[2];           // 0
+            double maxX = d[0] + d[3];    // -3 + 6 = 3 (но реально 7 блоков из-за <=)
+            double maxY = d[1] + d[4];    // 0 + 5 = 5
+            double maxZ = d[2] + (d[5] == 0 ? 1 : d[5]); // 0 + 1 = 1
+            
+            // ВАЖНО: структура создается с <=, поэтому добавляем +1 к maxX
+            maxX += 1;  // теперь maxX = 4, что соответствует реальным блокам [-3..3]
+            
+            double totalWidth = maxX - minX;  // 7 блоков
+            double half = totalWidth / 2.0;   // 3.5
+            double centerX = minX + half;     // -3 + 3.5 = 0.5
+            
+            double move = Math.min(progress, 1.0) * half;
+            
+            // Левая створка: от minX до (centerX - move)
+            double leftMaxX = centerX - move;
+            if (leftMaxX > minX + 0.05) {
+                AABB leftDoor = new AABB(minX, minY, minZ, leftMaxX, maxY, maxZ);
                 bounds.add(rotateAABB(leftDoor, facing));
             }
-
-            // Правая створка: X от (ox + half + move) до (ox + sx)
-            double rightMinX = Math.min(ox + sx, ox + half + move);
-            if (ox + sx - rightMinX > 0.05) {
-                AABB rightDoor = new AABB(rightMinX, oy, oz, ox + sx, oy + sy, oz + sz + 1.0);
+            
+            // Правая створка: от (centerX + move) до maxX
+            double rightMinX = centerX + move;
+            if (rightMinX < maxX - 0.05) {
+                AABB rightDoor = new AABB(rightMinX, minY, minZ, maxX, maxY, maxZ);
                 bounds.add(rotateAABB(rightDoor, facing));
             }
-
+            
             return bounds;
         }
 
@@ -436,9 +510,9 @@ public abstract class DoorDecl {
             return new int[][] { { 0, 0, 0, -2, 4, 2 }, { 0, 0, 0, 3, 4, 2 } };
         }
 
-        @Override public int[] getDimensions() {
-            return new int[] { 4, 0, 0, 0, 1, 1 };
-        }
+        // @Override public int[] getDimensions() {
+        //     return new int[] { 4, 0, 0, 0, 1, 1 };
+        // }
 
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
@@ -510,9 +584,9 @@ public abstract class DoorDecl {
             return new int[][] { { -9, 2, 0, 20, 20, 1 } };
         }
 
-        @Override public int[] getDimensions() {
-            return new int[] { 23, 0, 0, 0, 13, 12 };
-        }
+        // @Override public int[] getDimensions() {
+        //     return new int[] { 23, 0, 0, 0, 13, 12 };
+        // }
 
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
@@ -558,9 +632,9 @@ public abstract class DoorDecl {
             return new int[][] { { -1, 0, 0, 3, 4, 1 } };
         }
 
-        @Override public int[] getDimensions() {
-            return new int[] { 2, 0, 0, 0, 2, 1 };
-        }
+        // @Override public int[] getDimensions() {
+        //     return new int[] { 2, 0, 0, 0, 2, 1 };
+        // }
 
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
@@ -596,9 +670,9 @@ public abstract class DoorDecl {
             return new int[][] { { -2, 0, 0, 4, 5, 1 } };
         }
 
-        @Override public int[] getDimensions() {
-            return new int[] { 3, 0, 0, 0, 3, 3 };
-        }
+        // @Override public int[] getDimensions() {
+        //     return new int[] { 3, 0, 0, 0, 3, 3 };
+        // }
 
         @Override public boolean hasSkins() { return true; }
         @Override public int getSkinCount() { return 3; }
@@ -649,9 +723,9 @@ public abstract class DoorDecl {
             return new int[][] { { 0, 0, 0, 1, 2, 2 } };
         }
 
-        @Override public int[] getDimensions() {
-            return new int[] { 1, 0, 0, 0, 0, 0 };
-        }
+        // @Override public int[] getDimensions() {
+        //     return new int[] { 1, 0, 0, 0, 0, 0 };
+        // }
 
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
@@ -697,9 +771,9 @@ public abstract class DoorDecl {
             return new int[][] { { -2, 1, 0, 4, 5, 1 } };
         }
 
-        @Override public int[] getDimensions() {
-            return new int[] { 4, 0, 0, 0, 2, 2 };
-        }
+        // @Override public int[] getDimensions() {
+        //     return new int[] { 4, 0, 0, 0, 2, 2 };
+        // }
 
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
@@ -741,9 +815,9 @@ public abstract class DoorDecl {
             return new int[][] { { 0, 0, 0, 2, 2, 2 } };
         }
 
-        @Override public int[] getDimensions() {
-            return new int[] { 1, 0, 0, 0, 1, 0 };
-        }
+        // @Override public int[] getDimensions() {
+        //     return new int[] { 1, 0, 0, 0, 1, 0 };
+        // }
 
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
@@ -808,10 +882,10 @@ public abstract class DoorDecl {
             return new int[][] { { -1, 0, 0, 3, 3, 1 } };
         }
     
-        @Override 
-        public int[] getDimensions() {
-            return new int[] { 2, 0, 0, 0, 1, 1 };
-        }
+        // @Override 
+        // public int[] getDimensions() {
+        //     return new int[] { 2, 0, 0, 0, 1, 1 };
+        // }
     
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
@@ -901,9 +975,9 @@ public abstract class DoorDecl {
             return new int[][] { { 1, 0, 0, -3, 3, 2 } };
         }
 
-        @Override public int[] getDimensions() {
-            return new int[] { 3, 0, 0, 0, 1, 1 };
-        }
+        // @Override public int[] getDimensions() {
+        //     return new int[] { 3, 0, 0, 0, 1, 1 };
+        // }
 
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
@@ -976,9 +1050,9 @@ public abstract class DoorDecl {
             return new int[][] { { 1, 0, 1, -3, 3, 0 }, { 0, 0, 1, -3, 3, 0 }, { -1, 0, 1, -3, 3, 0 } };
         }
 
-        @Override public int[] getDimensions() {
-            return new int[] { 0, 0, 2, 2, 2, 2 };
-        }
+        // @Override public int[] getDimensions() {
+        //     return new int[] { 0, 0, 2, 2, 2, 2 };
+        // }
 
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {
@@ -1055,9 +1129,9 @@ public abstract class DoorDecl {
             };
         }
 
-        @Override public int[] getDimensions() {
-            return new int[] { 0, 0, 3, 3, 3, 3 };
-        }
+        // @Override public int[] getDimensions() {
+        //     return new int[] { 0, 0, 3, 3, 3, 3 };
+        // }
 
         @Override
         public List<AABB> getCollisionBounds(float progress, Direction facing) {

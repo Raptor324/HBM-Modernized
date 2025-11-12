@@ -8,12 +8,15 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.client.model.data.ModelData;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.DoorDecl;
 import com.hbm_m.client.DoorDeclRegistry;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.multiblock.DoorPartAABBRegistry;
+import com.hbm_m.physics.PartAABBExtractor;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -38,6 +41,39 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         
         // Инициализируем DoorDecl сразу при создании модели
         initializeDoorDecl();
+        extractAndRegisterAABBs();
+    }
+
+    private void extractAndRegisterAABBs() {
+        String doorIdStr = extractDoorId(doorId.getPath());
+        
+        // Извлекаем AABB БЕЗ масштабирования (в нормализованных координатах 0..1)
+        Map<String, AABB> partAABBs = PartAABBExtractor.extractAll(parts);
+        
+        if (!partAABBs.isEmpty()) {
+            DoorPartAABBRegistry.register(doorIdStr, partAABBs);
+            
+            if (DoorDeclRegistry.contains(doorIdStr)) {
+                DoorDecl decl = DoorDeclRegistry.getById(doorIdStr);
+                if (decl != null) {
+                    decl.setPartAABBs(partAABBs);
+                }
+            }
+            
+            MainRegistry.LOGGER.info("DoorBakedModel: Extracted {} part AABBs for door {}",
+                    partAABBs.size(), doorIdStr);
+        } else {
+            MainRegistry.LOGGER.warn("DoorBakedModel: No AABBs extracted for door {}", doorIdStr);
+        }
+    }
+
+    private String extractDoorId(String path) {
+        String pathWithoutDir = path.contains("/") 
+            ? path.substring(path.lastIndexOf('/') + 1) 
+            : path;
+        return pathWithoutDir.endsWith(".obj") 
+            ? pathWithoutDir.substring(0, pathWithoutDir.length() - 4) 
+            : pathWithoutDir;
     }
     
     /**
