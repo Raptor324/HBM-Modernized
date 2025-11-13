@@ -31,19 +31,20 @@ public class CraterGenerator {
 
     private static final float BASE_HARDNESS_THRESHOLD = 5.0F;
     private static final float MAX_HARDNESS_THRESHOLD = 50.0F;
-    private static final int SURFACE_LAYER_DEPTH = 3;
+    private static final int SURFACE_LAYER_DEPTH = 1;
     private static final float STRETCH_FACTOR = 1.5F;
     private static final int REMOVAL_HEIGHT_ABOVE = 60;
     private static final float TOP_REMOVAL_RADIUS_MULTIPLIER = 1.3F;
     private static final int RING_COUNT = 6;
-    private static final int TICKS_BETWEEN_RINGS = 30;
+    private static final int TICKS_BETWEEN_RINGS = 20;
     private static final int SELLAFIT_SPAWN_HEIGHT = 0;
     private static final int SELLAFIT_SPAWN_DELAY = 1;
 
     // Зоны повреждения согласно схеме
     private static final int ZONE_3_RADIUS = 150;        // Зона уничтожения деревьев
     private static final int ZONE_4_RADIUS = 200;        // Зона частичного урона
-    private static final int DAMAGE_ZONE_HEIGHT = 40;   // Высота обработки по Y
+    private static final int DAMAGE_ZONE_HEIGHT = 80;   // Высота обработки по Y
+    private static BlockPos checkPos;
 
     public static void generateCrater(ServerLevel level, BlockPos centerPos,
                                       int radius, int depth,
@@ -172,6 +173,8 @@ public class CraterGenerator {
             level.getServer().tell(new net.minecraft.server.TickTask(TICKS_BETWEEN_RINGS, () -> {
                 processRingAtIndex(level, centerPos, rings, craterBlocksSet,
                         fallingBlocks, topRemovalRadius, random, nextRingIndex, wasteLogBlock, wastePlanksBlock);
+
+
             }));
         }
     }
@@ -182,13 +185,32 @@ public class CraterGenerator {
                                                      Set<BlockPos> craterBlocksSet,
                                                      Block[] fallingBlocks,
                                                      RandomSource random) {
+
         Set<BlockPos> bottomBlocksInRing = new HashSet<>();
 
         for (BlockPos pos : ringBlocks) {
             BlockPos below = pos.below();
+
+            // ИСПРАВЛЕНИЕ: Селлафит спаунится если:
+            // 1. Блок ниже НЕ входит в множество удаляемых блоков кратера (это база, на которую падает селлафит)
+            // 2. Если блок ниже - воздух, но ещё ниже есть земля - селлафит всё равно спаунится (над пещерами)
             if (!craterBlocksSet.contains(below)) {
-                BlockState stateBelow = level.getBlockState(below);
-                if (!stateBelow.isAir()) {
+                // Проверяем, есть ли ЛЮБОЙ твёрдый блок где-то ниже этой позиции
+                // (чтобы селлафит падал на что-то, а не в бесконечность)
+                boolean hasSolidBlockBelow = false;
+
+                for (int checkY = -30; checkY <= 0; checkY++) {
+                    BlockPos checkPos = below.above(checkY);
+                    BlockState checkState = level.getBlockState(checkPos);
+
+                    if (!checkState.isAir() && checkState.getDestroySpeed(level, checkPos) >= 0) {
+                        hasSolidBlockBelow = true;
+                        break;
+                    }
+                }
+
+                // Спаунить селлафит только если под ним есть твёрдый блок
+                if (hasSolidBlockBelow) {
                     bottomBlocksInRing.add(pos);
                 }
             }
@@ -206,7 +228,6 @@ public class CraterGenerator {
                     blockState);
 
             BlockPos currentPos = bottomPos.above();
-
             for (int layer = 1; layer < SURFACE_LAYER_DEPTH; layer++) {
                 if (craterBlocksSet.contains(currentPos)) {
                     blockIndex = random.nextInt(fallingBlocks.length);
@@ -218,6 +239,7 @@ public class CraterGenerator {
                             currentPos.getY() + SELLAFIT_SPAWN_HEIGHT,
                             currentPos.getZ() + 0.5,
                             layerBlockState);
+
                     currentPos = currentPos.above();
                 } else {
                     break;
@@ -225,6 +247,7 @@ public class CraterGenerator {
             }
         }
     }
+
 
     /**
      * КЛЮЧЕВОЙ МЕТОД: Применяет зоны повреждения согласно схеме
@@ -242,7 +265,7 @@ public class CraterGenerator {
 
         int searchRadius = ZONE_4_RADIUS;
         int topSearchHeight = DAMAGE_ZONE_HEIGHT + 40; // увеличил для надёжности
-        int bottomSearchHeight = 20;
+        int bottomSearchHeight = 60;
 
         RandomSource random = level.random;
 
@@ -298,17 +321,13 @@ public class CraterGenerator {
                                 level.removeBlock(checkPos, false);
                             }
 
-
                             if (state.is(BlockTags.LEAVES)) {
                                 if (random.nextFloat() < 0.1F) {
                                     level.setBlock(checkPos, Blocks.FIRE.defaultBlockState(), 3);
                                 }
                                 continue;
                             }
-
-
                         }
-
                             // Удаляем траву и снег с вероятностью 100%
                             if (state.is(Blocks.GRASS) || state.is(Blocks.TALL_GRASS) ||
                                     state.is(Blocks.SEAGRASS) || state.is(Blocks.TALL_SEAGRASS) ||

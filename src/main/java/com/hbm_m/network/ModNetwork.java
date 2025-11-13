@@ -29,6 +29,12 @@ public class ModNetwork {
                 .decoder(SpawnAlwaysVisibleParticlePacket::new)
                 .consumerMainThread(SpawnAlwaysVisibleParticlePacket::handle)
                 .add();
+
+        CHANNEL.messageBuilder(DetonateAllPacket.class, packetId++)
+                .decoder(DetonateAllPacket::decode)
+                .encoder(DetonateAllPacket::encode)
+                .consumerNetworkThread(DetonateAllPacket::handle)
+                .add();
     }
 
     // Утилитный метод для отправки пакета всем игрокам в радиусе

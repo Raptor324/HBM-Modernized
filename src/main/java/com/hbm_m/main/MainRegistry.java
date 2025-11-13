@@ -4,13 +4,17 @@ package com.hbm_m.main;
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.client.overlay.MultiDetonatorScreen;
 import com.hbm_m.item.ModBatteryItem;
 import com.hbm_m.block.entity.AnvilBlockEntity;
+import com.hbm_m.item.MultiDetonatorItem;
 import com.hbm_m.menu.AnvilMenu;
 import com.hbm_m.network.ModNetwork;
 import com.hbm_m.particle.ModExplosionParticles;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
@@ -57,6 +61,7 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.glfw.GLFW;
 
 import static com.hbm_m.block.ModBlocks.ANVIL_BLOCK;
 import static com.hbm_m.block.entity.ModBlockEntities.BLOCK_ENTITIES;
@@ -127,7 +132,6 @@ public class MainRegistry {
             LOGGER.info("HazardSystem initialized successfully");
         });
     }
-
     @SubscribeEvent
     public void onAttachCapabilitiesChunk(AttachCapabilitiesEvent<LevelChunk> event) {
         final ResourceLocation key = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "chunk_radiation");
@@ -162,6 +166,7 @@ public class MainRegistry {
         // ТАЙМЕР ЗАКАНЧИВАЕТСЯ, ВЗРЫВЕМСЯ!
         if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get()) {
 
+            event.accept(ModItems.MULTI_DETONATOR);
             event.accept(ModItems.DETONATOR);
 
             event.accept(ModItems.GRENADE);
