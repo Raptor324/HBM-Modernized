@@ -24,6 +24,7 @@ public class ModSounds {
 
     public static final RegistryObject<SoundEvent> RADAWAY_USE = registerSoundEvents("radaway_use");
 
+    public static final RegistryObject<SoundEvent> TOOL_TECH_BLEEP = registerSoundEvents("techbleep");
     public static final RegistryObject<SoundEvent> TOOL_TECH_BOOP = registerSoundEvents("techboop");
 
     public static final RegistryObject<SoundEvent> REPAIR_1 = registerSoundEvents("tool.repair1");

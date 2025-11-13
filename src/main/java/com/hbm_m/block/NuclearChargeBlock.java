@@ -49,17 +49,23 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
             if (serverLevel.getServer() != null) {
                 serverLevel.getServer().tell(new net.minecraft.server.TickTask(30, () -> {
                     CraterGenerator.generateCrater(
-                            serverLevel, pos, CRATER_RADIUS, CRATER_DEPTH,
-                            // ТВЁРДЫЕ ВЕРСИИ
+                            serverLevel,
+                            pos,
+                            CRATER_RADIUS,
+                            CRATER_DEPTH,
+                            // ТВЁРДЫЕ ВЕРСИИ (поверхность кратера)
                             ModBlocks.SELLAFIELD_SLAKED.get(),
                             ModBlocks.SELLAFIELD_SLAKED1.get(),
                             ModBlocks.SELLAFIELD_SLAKED2.get(),
                             ModBlocks.SELLAFIELD_SLAKED3.get(),
-                            // ГРАВИТИРУЮЩИЕ ВЕРСИИ (НОВОЕ!)
+                            // ГРАВИТИРУЮЩИЕ ВЕРСИИ (падающий селлафит)
                             ModBlocks.FALLING_SELLAFIT1.get(),
                             ModBlocks.FALLING_SELLAFIT2.get(),
                             ModBlocks.FALLING_SELLAFIT3.get(),
-                            ModBlocks.FALLING_SELLAFIT4.get()
+                            ModBlocks.FALLING_SELLAFIT4.get(),
+                            // === НОВОЕ: Блоки для ЗОН ПОВРЕЖДЕНИЯ ===
+                            ModBlocks.WASTE_LOG.get(),      // Обугленное бревно
+                            ModBlocks.WASTE_PLANKS.get()    // Обугленные доски
                     );
                 }));
             }

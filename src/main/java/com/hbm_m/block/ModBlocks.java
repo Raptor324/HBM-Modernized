@@ -324,6 +324,13 @@ public class ModBlocks {
     public static final RegistryObject<Block> CRATE_DESH = registerBlock("crate_desh",
             () -> new DeshCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(1.5f, 2f).requiresCorrectToolForDrops()));
 
+    public static final RegistryObject<Block> WASTE_PLANKS = registerBlock("waste_planks",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.OAK_WOOD).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> WASTE_LOG = registerBlock("waste_log",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.COAL_BLOCK).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+
     // -----------------------<РАСТЕНИЯ>-----------------------------
     public static final RegistryObject<Block> STRAWBERRY_BUSH = registerBlock("strawberry_bush",
             () -> new FlowerBlock(() -> MobEffects.LUCK, 5,

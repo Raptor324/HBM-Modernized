@@ -438,6 +438,8 @@ public class MainRegistry {
             event.accept(ModBlocks.URANIUM_ORE);
             event.accept(ModBlocks.WASTE_GRASS);
             event.accept(ModBlocks.WASTE_LEAVES);
+            event.accept(ModBlocks.WASTE_LOG);
+            event.accept(ModBlocks.WASTE_PLANKS);
 
             event.accept(ModBlocks.ALUMINUM_ORE);
             event.accept(ModBlocks.ALUMINUM_ORE_DEEPSLATE);
