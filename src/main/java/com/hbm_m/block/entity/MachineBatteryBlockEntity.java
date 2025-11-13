@@ -243,6 +243,15 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
             return lazyItemHandler.cast();
         }
 
+        // [ИЗМЕНЕНО] Сначала проверяем базовый коннектор.
+        // Батарея - это *всегда* узел сети, даже в режиме "DISABLED".
+        // Это не дает сети "потерять" узел, когда он выключен.
+        if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
+            // Мы реализуем IEnergyProvider/IEnergyReceiver, которые наследуют IEnergyConnector,
+            // поэтому 'this' кастуется безопасно.
+            return LazyOptional.of(() -> this).cast();
+        }
+
         int mode = getCurrentMode();
 
         // HBM Provider (только если режим BOTH или OUTPUT)
@@ -322,6 +331,34 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        // [ВАЖНО!] Сообщаем сети, что мы удалены
+        if (this.level != null && !this.level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+        }
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        // [ВАЖНО!] Также сообщаем при выгрузке чанка
+        if (this.level != null && !this.level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+        }
+    }
+
+    // И при загрузке/установке блока:
+    @Override
+    public void setLevel(Level pLevel) {
+        super.setLevel(pLevel);
+        if (!pLevel.isClientSide) {
+            // [ВАЖНО!] Сообщаем сети, что мы добавлены
+            EnergyNetworkManager.get((ServerLevel) pLevel).addNode(this.getBlockPos());
         }
     }
 

@@ -84,7 +84,6 @@ public class MachineBatteryBlock extends BaseEntityBlock {
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         if (!level.isClientSide && !state.is(oldState.getBlock())) {
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
         }
         super.onPlace(state, level, pos, oldState, isMoving);
     }
@@ -92,7 +91,6 @@ public class MachineBatteryBlock extends BaseEntityBlock {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!level.isClientSide && !state.is(newState.getBlock())) {
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }

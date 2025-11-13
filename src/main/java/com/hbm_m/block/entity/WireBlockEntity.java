@@ -67,4 +67,32 @@ public class WireBlockEntity extends BlockEntity implements IEnergyConnector {
         super.invalidateCaps();
         hbmConnector.invalidate();
     }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        // [ВАЖНО!] Сообщаем сети, что мы удалены
+        if (this.level != null && !this.level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+        }
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        // [ВАЖНО!] Также сообщаем при выгрузке чанка
+        if (this.level != null && !this.level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+        }
+    }
+
+    // И при загрузке/установке блока:
+    @Override
+    public void setLevel(Level pLevel) {
+        super.setLevel(pLevel);
+        if (!pLevel.isClientSide) {
+            // [ВАЖНО!] Сообщаем сети, что мы добавлены
+            EnergyNetworkManager.get((ServerLevel) pLevel).addNode(this.getBlockPos());
+        }
+    }
 }

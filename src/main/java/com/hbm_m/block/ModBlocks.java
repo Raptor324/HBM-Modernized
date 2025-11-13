@@ -87,7 +87,7 @@ public class ModBlocks {
         () -> new UniversalMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
 
     public static final RegistryObject<Block> MACHINE_BATTERY = BLOCKS.register("machine_battery",
-            () -> new MachineBatteryBlock(Block.Properties.of().strength(5.0f), 9_000_000_000_000_000_000L) // Емкость 1М
+            () -> new MachineBatteryBlock(Block.Properties.of().strength(5.0f), 1000000L) // Емкость 1М
     );
 
     // public static final RegistryObject<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",

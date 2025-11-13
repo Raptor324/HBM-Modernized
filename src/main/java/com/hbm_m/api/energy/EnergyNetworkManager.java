@@ -112,11 +112,34 @@ public class EnergyNetworkManager extends SavedData {
     }
 
     public void removeNode(BlockPos pos) {
-        EnergyNode node = allNodes.remove(pos.asLong());
-        if (node != null && node.getNetwork() != null) {
-            node.getNetwork().removeNode(node);
+        long posLong = pos.asLong();
+        EnergyNode node = allNodes.remove(posLong); // <--- Удаляем из глобальной карты
+
+        if (node == null) {
+            // LOGGER.debug("[NETWORK] Node {} was not in the manager", pos);
+            return;
         }
+
+        EnergyNetwork network = node.getNetwork();
+        if (network != null) {
+            network.removeNode(node); // <--- Говорим сети, что узел удален
+            LOGGER.debug("[NETWORK] Removed node {} from network {}", pos, network.getId());
+        }
+
         setDirty();
+    }
+
+    void reAddNode(BlockPos pos) {
+        // Мы не удаляем его из allNodes, он там все еще есть,
+        // но он потерял свою сеть.
+        EnergyNode node = allNodes.get(pos.asLong());
+        if (node != null) {
+            node.setNetwork(null);
+        }
+
+        // Удаляем и добавляем, чтобы сработала логика поиска соседей
+        allNodes.remove(pos.asLong());
+        addNode(pos);
     }
 
     @Override
