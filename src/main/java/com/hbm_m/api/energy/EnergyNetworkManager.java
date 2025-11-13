@@ -22,20 +22,15 @@ public class EnergyNetworkManager extends SavedData {
 
     public EnergyNetworkManager(ServerLevel level, CompoundTag nbt) {
         this(level);
-        // ✅ ИЗМЕНЕНО: Загрузка теперь вызывает полную перестройку
         if (nbt.contains("nodes")) {
             long[] nodePositions = nbt.getLongArray("nodes");
-            LOGGER.info("[NETWORK] Rebuilding networks from {} saved nodes for dimension {}", nodePositions.length, level.dimension().location());
-            // Мы не вызываем addNode здесь, а просто запоминаем позиции.
-            // Полная перестройка произойдет при первом тике мира.
+            LOGGER.info("[NETWORK] Loading {} nodes for dimension {}", nodePositions.length, level.dimension().location());
             for (long posLong : nodePositions) {
                 BlockPos pos = BlockPos.of(posLong);
                 if (level.isLoaded(pos)) {
-                    // Просто добавляем узел без создания сети
                     allNodes.put(pos.asLong(), new EnergyNode(pos));
                 }
             }
-            // Сама перестройка будет вызвана извне после загрузки мира
         }
     }
 
@@ -55,22 +50,70 @@ public class EnergyNetworkManager extends SavedData {
      * ✅ НОВЫЙ МЕТОД: Полностью перестраивает все сети.
      * Вызывается при загрузке мира, чтобы исправить любые сломанные состояния.
      */
+
+    
     public void rebuildAllNetworks() {
         LOGGER.info("[NETWORK] Starting full network rebuild for dimension {}...", level.dimension().location());
-        // Сохраняем копию узлов, так как addNode будет изменять allNodes
-        Long2ObjectMap<EnergyNode> nodesToProcess = new Long2ObjectOpenHashMap<>(allNodes);
 
-        // Очищаем всё
+        // 1. Очищаем старые сети и сбрасываем узлы
         networks.clear();
-        allNodes.clear();
+        for (EnergyNode node : allNodes.values()) {
+            node.setNetwork(null);
+        }
 
-        for (EnergyNode node : nodesToProcess.values()) {
-            // Заново добавляем каждый узел, что заставит его найти соседей и создать/присоединиться к сети
-            if (node.isValid(level)) {
-                addNode(node.getPos());
+        LOGGER.info("[NETWORK] Rebuilding from {} loaded nodes.", allNodes.size());
+
+        // 2. Используем Set для отслеживания *уже* обработанных узлов
+        Set<EnergyNode> processedNodes = new HashSet<>();
+
+        // 3. Проходим по КАЖДОМУ узлу, который мы загрузили из NBT
+        for (EnergyNode startNode : allNodes.values()) {
+
+            // Если узел уже обработан (т.е. мы нашли его как соседа), пропускаем
+            if (processedNodes.contains(startNode)) {
+                continue;
+            }
+
+            // [🔥 ИЗМЕНЕНИЕ 🔥]
+            // Мы начинаем новую сеть ТОЛЬКО с ВАЛИДНОГО узла.
+            // (Н-р, 'WoodBurner' (контроллер), 'Wire' или 'Battery')
+            if (startNode.isValid(level)) {
+
+                EnergyNetwork newNetwork = new EnergyNetwork(this);
+                networks.add(newNetwork);
+
+                Queue<EnergyNode> queue = new LinkedList<>();
+                queue.add(startNode);
+                processedNodes.add(startNode); // Помечаем как обработанный
+
+                while (!queue.isEmpty()) {
+                    EnergyNode currentNode = queue.poll();
+                    newNetwork.addNode(currentNode); // Добавляем в новую сеть
+
+                    // Ищем соседей
+                    for (Direction dir : Direction.values()) {
+                        EnergyNode neighbor = allNodes.get(currentNode.getPos().relative(dir).asLong());
+
+                        // [🔥 ГЛАВНЫЙ ФИКС 🔥]
+                        // Если сосед существует в нашем списке (allNodes)
+                        // и мы его еще не обработали, мы ДОЛЖНЫ его присоединить.
+                        // Мы НЕ проверяем neighbor.isValid()!
+                        // Невалидные части (как от мультиблоков)
+                        // *должны* быть в сети, чтобы соединять валидные части.
+                        if (neighbor != null && !processedNodes.contains(neighbor)) {
+                            processedNodes.add(neighbor); // Помечаем
+                            queue.add(neighbor); // Добавляем в очередь на поиск
+                        }
+                    }
+                }
+            } else {
+                // Если startNode невалиден (н-р, это 'ghost' узел),
+                // мы его тоже помечаем, чтобы не проверять его снова.
+                processedNodes.add(startNode);
             }
         }
-        LOGGER.info("[NETWORK] Full network rebuild completed. Found {} networks.", networks.size());
+
+        LOGGER.info("[NETWORK] Rebuild completed. Found {} networks.", networks.size());
         setDirty();
     }
 

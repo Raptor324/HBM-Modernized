@@ -132,7 +132,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
 
     @Override
     public IEnergyReceiver.Priority getPriority() {
-        return IEnergyReceiver.Priority.NORMAL;
+        return Priority.NORMAL;
     }
 
     @Override

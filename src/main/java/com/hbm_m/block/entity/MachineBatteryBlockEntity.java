@@ -40,7 +40,7 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     // Режимы работы (0 = BOTH, 1 = INPUT, 2 = OUTPUT, 3 = DISABLED)
     public int modeOnNoSignal = 0; // По умолчанию BOTH
     public int modeOnSignal = 0;   // По умолчанию BOTH
-    private Priority priority = Priority.NORMAL;
+    private Priority priority = Priority.LOW;
 
     // Инвентарь для предметов (2 слота)
     private final ItemStackHandler itemHandler = new ItemStackHandler(2) {
@@ -335,6 +335,15 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     }
 
     @Override
+    public void setLevel(Level pLevel) {
+        super.setLevel(pLevel);
+        if (!pLevel.isClientSide) {
+            // [ВАЖНО!] Сообщаем сети, что мы добавлены (при загрузке чанка/мира)
+            EnergyNetworkManager.get((ServerLevel) pLevel).addNode(this.getBlockPos());
+        }
+    }
+
+    @Override
     public void setRemoved() {
         super.setRemoved();
         // [ВАЖНО!] Сообщаем сети, что мы удалены
@@ -351,16 +360,6 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
             EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
         }
     }
-
-    // И при загрузке/установке блока:
-    @Override
-    public void setLevel(Level pLevel) {
-        super.setLevel(pLevel);
-        if (!pLevel.isClientSide) {
-            // [ВАЖНО!] Сообщаем сети, что мы добавлены
-            EnergyNetworkManager.get((ServerLevel) pLevel).addNode(this.getBlockPos());
-        }
-    }
-
-
 }
+
+

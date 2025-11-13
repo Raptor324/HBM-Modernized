@@ -100,11 +100,11 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
                     .withStyle(ChatFormatting.GREEN));
 
             // Дельта энергии (прирост/убыль)
-            if (delta != 0) {
-                String deltaStr = (delta > 0 ? "+" : "") + EnergyFormatter.formatRate(delta);
+
+                String deltaStr = (delta > 0 ? "+" : "-") + EnergyFormatter.formatRate(delta);
                 ChatFormatting color = delta > 0 ? ChatFormatting.GREEN : ChatFormatting.RED;
                 tooltip.add(Component.literal(deltaStr).withStyle(color));
-            }
+
 
             gui.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
         }
@@ -188,11 +188,9 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
      */
     private String getPriorityText(int ordinal) {
         return switch (ordinal) {
-            case 0 -> "VERY LOW";
-            case 1 -> "LOW";
-            case 2 -> "NORMAL";
-            case 3 -> "HIGH";
-            case 4 -> "VERY HIGH";
+            case 0 -> "LOW";
+            case 1 -> "NORMAL";
+            case 2 -> "HIGH";
             default -> "UNKNOWN";
         };
     }

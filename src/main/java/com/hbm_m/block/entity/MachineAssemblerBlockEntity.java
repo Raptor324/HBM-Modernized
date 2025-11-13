@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity;
 
+import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.MachineAssemblerBlock;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.client.ClientSoundManager;
@@ -15,6 +16,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -632,13 +634,34 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     public boolean isCrafting() {
         return isCrafting;
     }
-    
+
     @Override
-    public void setRemoved() {
-        if (level != null && level.isClientSide) {
-            ClientSoundManager.updateSound(this, false, null);
+    public void setLevel(Level pLevel) {
+        super.setLevel(pLevel);
+        if (!pLevel.isClientSide) {
+            // [ВАЖНО!] Сообщаем сети, что мы добавлены (при загрузке чанка/мира)
+            EnergyNetworkManager.get((ServerLevel) pLevel).addNode(this.getBlockPos());
         }
-        super.setRemoved();
     }
 
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        // [ВАЖНО!] Сообщаем сети, что мы удалены
+        if (this.level != null && !this.level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+        }
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        // [ВАЖНО!] Также сообщаем при выгрузке чанка
+        if (this.level != null && !this.level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+        }
+    }
 }
+
+
+

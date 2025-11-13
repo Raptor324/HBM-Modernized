@@ -30,10 +30,9 @@ public interface IEnergyReceiver extends IEnergyConnector {
     boolean canReceive();
 
     enum Priority {
-        VERY_LOW,   // Самый низкий приоритет
         LOW,        // Низкий приоритет
         NORMAL,     // Обычный приоритет (по умолчанию)
         HIGH,       // Высокий приоритет
-        VERY_HIGH   // Самый высокий приоритет
+
     }
 }

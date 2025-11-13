@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity;
 
+import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.MachineWoodBurnerBlock;
 import com.hbm_m.api.energy.IEnergyProvider;
 import com.hbm_m.capability.ModCapabilities;
@@ -296,6 +297,33 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    @Override
+    public void setLevel(Level pLevel) {
+        super.setLevel(pLevel);
+        if (!pLevel.isClientSide) {
+            // [ВАЖНО!] Сообщаем сети, что мы добавлены (при загрузке чанка/мира)
+            EnergyNetworkManager.get((ServerLevel) pLevel).addNode(this.getBlockPos());
+        }
+    }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        // [ВАЖНО!] Сообщаем сети, что мы удалены
+        if (this.level != null && !this.level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+        }
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        // [ВАЖНО!] Также сообщаем при выгрузке чанка
+        if (this.level != null && !this.level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
         }
     }
 }
