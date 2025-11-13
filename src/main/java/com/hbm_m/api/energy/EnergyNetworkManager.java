@@ -12,16 +12,9 @@ import org.slf4j.Logger;
 
 import java.util.*;
 
-/**
- * Менеджер энергетических сетей.
- * Управляет созданием, объединением и разделением сетей.
- * Сохраняется как SavedData для каждого измерения.
- */
 public class EnergyNetworkManager extends SavedData {
     private static final Logger LOGGER = LogUtils.getLogger();
     private static final String DATA_NAME = "hbm_modernized_energy_networks";
-    private static final int TICK_INTERVAL = 20; // Тикать раз в секунду (20 тиков)
-    private int tickCounter = 0; // ДОБАВЬ ЭТО
 
     private final ServerLevel level;
     private final Long2ObjectMap<EnergyNode> allNodes = new Long2ObjectOpenHashMap<>();
@@ -29,7 +22,21 @@ public class EnergyNetworkManager extends SavedData {
 
     public EnergyNetworkManager(ServerLevel level, CompoundTag nbt) {
         this(level);
-        load(nbt);
+        // ✅ ИЗМЕНЕНО: Загрузка теперь вызывает полную перестройку
+        if (nbt.contains("nodes")) {
+            long[] nodePositions = nbt.getLongArray("nodes");
+            LOGGER.info("[NETWORK] Rebuilding networks from {} saved nodes for dimension {}", nodePositions.length, level.dimension().location());
+            // Мы не вызываем addNode здесь, а просто запоминаем позиции.
+            // Полная перестройка произойдет при первом тике мира.
+            for (long posLong : nodePositions) {
+                BlockPos pos = BlockPos.of(posLong);
+                if (level.isLoaded(pos)) {
+                    // Просто добавляем узел без создания сети
+                    allNodes.put(pos.asLong(), new EnergyNode(pos));
+                }
+            }
+            // Сама перестройка будет вызвана извне после загрузки мира
+        }
     }
 
     public EnergyNetworkManager(ServerLevel level) {
@@ -45,73 +52,66 @@ public class EnergyNetworkManager extends SavedData {
     }
 
     /**
-     * Тикает все сети. Вызывается из события ServerTickEvent.
+     * ✅ НОВЫЙ МЕТОД: Полностью перестраивает все сети.
+     * Вызывается при загрузке мира, чтобы исправить любые сломанные состояния.
      */
-    public void tick() {
-        tickCounter++;
+    public void rebuildAllNetworks() {
+        LOGGER.info("[NETWORK] Starting full network rebuild for dimension {}...", level.dimension().location());
+        // Сохраняем копию узлов, так как addNode будет изменять allNodes
+        Long2ObjectMap<EnergyNode> nodesToProcess = new Long2ObjectOpenHashMap<>(allNodes);
 
-        // Тикаем только каждые 20 тиков (1 раз в секунду)
-        if (tickCounter < TICK_INTERVAL) {
-            return;
+        // Очищаем всё
+        networks.clear();
+        allNodes.clear();
+
+        for (EnergyNode node : nodesToProcess.values()) {
+            // Заново добавляем каждый узел, что заставит его найти соседей и создать/присоединиться к сети
+            if (node.isValid(level)) {
+                addNode(node.getPos());
+            }
         }
-
-        tickCounter = 0; // Сбрасываем счетчик
-
-        if (!networks.isEmpty()) {
-            LOGGER.info("[NETWORK] Ticking {} networks with {} total nodes",
-                    networks.size(), allNodes.size());
-            new HashSet<>(networks).forEach(network -> network.tick(level));
-        }
+        LOGGER.info("[NETWORK] Full network rebuild completed. Found {} networks.", networks.size());
+        setDirty();
     }
 
-    /**
-     * Добавляет узел (провод или машину) в сеть
-     */
+
+    public void tick() {
+        // Копируем, чтобы избежать ConcurrentModificationException
+        new HashSet<>(networks).forEach(network -> network.tick(level));
+    }
+
     public void addNode(BlockPos pos) {
         if (allNodes.containsKey(pos.asLong())) {
-            LOGGER.debug("[NETWORK] Node already exists at {}, removing old", pos);
-            removeNode(pos);
+            return; // Узел уже существует и находится в сети
         }
 
-        LOGGER.info("[NETWORK] Adding node at {}", pos);
         EnergyNode newNode = new EnergyNode(pos);
         allNodes.put(pos.asLong(), newNode);
 
-        // Ищем соседние сети
         Set<EnergyNetwork> adjacentNetworks = new HashSet<>();
         for (Direction dir : Direction.values()) {
             EnergyNode neighbor = allNodes.get(pos.relative(dir).asLong());
             if (neighbor != null && neighbor.getNetwork() != null) {
                 adjacentNetworks.add(neighbor.getNetwork());
-                LOGGER.debug("[NETWORK]   Found adjacent network in direction {}", dir);
             }
         }
 
         if (adjacentNetworks.isEmpty()) {
-            // Создаем новую сеть
-            LOGGER.info("[NETWORK]   Creating NEW network for node at {}", pos);
             EnergyNetwork newNetwork = new EnergyNetwork(this);
             networks.add(newNetwork);
             newNetwork.addNode(newNode);
         } else {
-            // Объединяем с существующими
-            LOGGER.info("[NETWORK]   Merging with {} existing network(s)", adjacentNetworks.size());
-            EnergyNetwork main = adjacentNetworks.iterator().next();
-            adjacentNetworks.remove(main);
+            Iterator<EnergyNetwork> it = adjacentNetworks.iterator();
+            EnergyNetwork main = it.next();
             main.addNode(newNode);
-
-            // Объединяем все соседние сети в одну
-            adjacentNetworks.forEach(main::merge);
+            while (it.hasNext()) {
+                main.merge(it.next());
+            }
         }
-
         setDirty();
     }
 
-    /**
-     * Удаляет узел из сети
-     */
     public void removeNode(BlockPos pos) {
-        LOGGER.info("[NETWORK] Removing node at {}", pos);
         EnergyNode node = allNodes.remove(pos.asLong());
         if (node != null && node.getNetwork() != null) {
             node.getNetwork().removeNode(node);
@@ -119,52 +119,17 @@ public class EnergyNetworkManager extends SavedData {
         setDirty();
     }
 
-    /**
-     * Проверяет, есть ли узел в сети
-     */
-    public boolean hasNode(BlockPos pos) {
-        return allNodes.containsKey(pos.asLong());
-    }
-
-    /**
-     * Получить узел по позиции (для использования в EnergyNetwork)
-     */
-    public EnergyNode getNode(BlockPos pos) {
-        return allNodes.get(pos.asLong());
-    }
-
-    void addNetwork(EnergyNetwork network) {
-        networks.add(network);
-        LOGGER.debug("[NETWORK] Network {} registered in manager", network.getId());
-    }
-
-    void removeNetwork(EnergyNetwork network) {
-        networks.remove(network);
-        LOGGER.debug("[NETWORK] Network {} removed from manager", network.getId());
-    }
-
-    // --- NBT СОХРАНЕНИЕ ---
     @Override
     public CompoundTag save(CompoundTag nbt) {
+        // Сохраняем только позиции узлов
         long[] nodePositions = allNodes.keySet().toLongArray();
         nbt.putLongArray("nodes", nodePositions);
-        nbt.putInt("network_count", networks.size());
-
-        LOGGER.info("[NETWORK] Saved {} nodes and {} networks", nodePositions.length, networks.size());
         return nbt;
     }
 
-    private void load(CompoundTag nbt) {
-        if (!nbt.contains("nodes")) return;
-
-        long[] nodePositions = nbt.getLongArray("nodes");
-        LOGGER.info("[NETWORK] Loading {} nodes from NBT", nodePositions.length);
-
-        for (long posLong : nodePositions) {
-            BlockPos pos = BlockPos.of(posLong);
-            if (level.isLoaded(pos)) {
-                addNode(pos);
-            }
-        }
-    }
+    // Остальные методы (hasNode, getNode, addNetwork, removeNetwork) без изменений
+    public boolean hasNode(BlockPos pos) { return allNodes.containsKey(pos.asLong()); }
+    public EnergyNode getNode(BlockPos pos) { return allNodes.get(pos.asLong()); }
+    void addNetwork(EnergyNetwork network) { networks.add(network); }
+    void removeNetwork(EnergyNetwork network) { networks.remove(network); }
 }

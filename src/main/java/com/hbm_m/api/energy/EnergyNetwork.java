@@ -9,11 +9,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import org.slf4j.Logger;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
-/**
- * Энергетическая сеть HBM.
- * Содержит узлы (провода и машины) и управляет передачей энергии между ними.
- */
 public class EnergyNetwork {
     private static final Logger LOGGER = LogUtils.getLogger();
 
@@ -23,305 +20,192 @@ public class EnergyNetwork {
 
     public EnergyNetwork(EnergyNetworkManager manager) {
         this.manager = manager;
-        LOGGER.debug("[NETWORK] Created new network with ID {}", id);
+        //LOGGER.debug("[NETWORK] Created network {}", id);
     }
 
-    /**
-     * Тик сети - передача энергии от провайдеров к приемникам
-     */
+    // ✅ Метод tick остается таким же, как в предыдущем ответе (v3, исправленный)
     public void tick(ServerLevel level) {
-        // Удаляем невалидные узлы
         nodes.removeIf(node -> !node.isValid(level) || node.getNetwork() != this);
-
-        if (nodes.size() < 2) {
-            LOGGER.debug("[NETWORK] Network {} has {} nodes, skipping tick", id, nodes.size());
-            return;
-        }
-
-        LOGGER.info("[NETWORK] Network {} ticking with {} nodes", id, nodes.size());
-
-        // Собираем валидные BlockEntity
-        List<BlockEntity> validEntities = new ArrayList<>();
+        if (nodes.size() < 2) return;
+        List<IEnergyReceiver> consumers = new ArrayList<>();
+        List<BatteryInfo> batteries = new ArrayList<>();
+        List<IEnergyProvider> generators = new ArrayList<>();
         for (EnergyNode node : nodes) {
             BlockEntity be = level.getBlockEntity(node.getPos());
-            if (be != null) {
-                validEntities.add(be);
+            if (be == null) continue;
+            Optional<IEnergyProvider> providerCap = be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).resolve();
+            Optional<IEnergyReceiver> receiverCap = be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).resolve();
+            if (providerCap.isPresent() && receiverCap.isPresent()) {
+                batteries.add(new BatteryInfo(receiverCap.get(), providerCap.get()));
+            } else if (providerCap.isPresent()) {
+                generators.add(providerCap.get());
+            } else if (receiverCap.isPresent()) {
+                consumers.add(receiverCap.get());
             }
         }
-
-        if (validEntities.isEmpty()) {
-            LOGGER.debug("[NETWORK]   No valid block entities found");
-            return;
-        }
-
-        // Разделяем на провайдеров и приемников
-        List<IEnergyProvider> providers = new ArrayList<>();
-        List<IEnergyReceiver> receivers = new ArrayList<>();
-
-        for (BlockEntity be : validEntities) {
-            be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(p -> {
-                providers.add(p);
-                LOGGER.debug("[NETWORK]   Found provider at {} with {} HE", be.getBlockPos(), p.getEnergyStored());
-            });
-            be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).ifPresent(r -> {
-                receivers.add(r);
-                LOGGER.debug("[NETWORK]   Found receiver at {} ({}/{})", be.getBlockPos(), r.getEnergyStored(), r.getMaxEnergyStored());
-            });
-        }
-
-        if (providers.isEmpty() || receivers.isEmpty()) {
-            LOGGER.debug("[NETWORK]   Providers: {}, Receivers: {} - cannot transfer", providers.size(), receivers.size());
-            return;
-        }
-
-        // ШАГ 1: ИЗВЛЕКАЕМ энергию из провайдеров
-        long totalExtracted = 0;
-        Map<IEnergyProvider, Long> extractedMap = new IdentityHashMap<>();
-
-        for (IEnergyProvider provider : providers) {
-            if (!provider.canExtract()) continue;
-
-            long canProvide = Math.min(provider.getEnergyStored(), provider.getProvideSpeed());
-            if (canProvide > 0) {
-                long extracted = provider.extractEnergy(canProvide, false);
-                if (extracted > 0) {
-                    extractedMap.put(provider, extracted);
-                    totalExtracted += extracted;
-                    LOGGER.debug("[NETWORK]   Extracted {} HE from provider", extracted);
+        long energyPool = 0;
+        Map<IEnergyProvider, Long> extractedFrom = new IdentityHashMap<>();
+        for (IEnergyProvider generator : generators) {
+            if (generator.canExtract()) {
+                long canExtract = Math.min(generator.getEnergyStored(), generator.getProvideSpeed());
+                if (canExtract > 0) {
+                    long extracted = generator.extractEnergy(canExtract, false);
+                    energyPool += extracted;
+                    extractedFrom.put(generator, extracted);
                 }
             }
         }
-
-        if (totalExtracted == 0) {
-            LOGGER.debug("[NETWORK]   No energy extracted");
-            return;
+        for (BatteryInfo battery : batteries) {
+            if (battery.provider.canExtract()) {
+                long canExtract = Math.min(battery.provider.getEnergyStored(), battery.provider.getProvideSpeed());
+                if (canExtract > 0) {
+                    long extracted = battery.provider.extractEnergy(canExtract, false);
+                    energyPool += extracted;
+                    extractedFrom.put(battery.provider, extractedFrom.getOrDefault(battery.provider, 0L) + extracted);
+                }
+            }
         }
+        if (energyPool == 0) return;
+        consumers.sort(Comparator.comparing(IEnergyReceiver::getPriority).reversed());
+        for (IEnergyReceiver consumer : consumers) {
+            if (energyPool <= 0) break;
+            if (consumer.canReceive()) {
+                long needed = Math.min(consumer.getMaxEnergyStored() - consumer.getEnergyStored(), consumer.getReceiveSpeed());
+                long toGive = Math.min(energyPool, needed);
+                if (toGive > 0) {
+                    long received = consumer.receiveEnergy(toGive, false);
+                    energyPool -= received;
+                }
+            }
+        }
+        List<BatteryInfo> chargeableBatteries = batteries.stream().filter(b -> b.receiver.canReceive()).sorted(Comparator.comparingDouble(BatteryInfo::getStoredPercentage)).collect(Collectors.toList());
+        if (energyPool > 0 && !chargeableBatteries.isEmpty()) {
+            while(energyPool > 0){
+                long totalReceivedInLoop = 0;
+                long amountPerBattery = Math.max(1, energyPool / chargeableBatteries.size());
+                for(BatteryInfo battery : chargeableBatteries) {
+                    if(energyPool <= 0) break;
+                    long toGive = Math.min(amountPerBattery, energyPool);
+                    long received = battery.receiver.receiveEnergy(toGive, false);
+                    energyPool -= received;
+                    totalReceivedInLoop += received;
+                }
+                if(totalReceivedInLoop == 0) break;
+            }
+        }
+        if (energyPool > 0) returnToSources(extractedFrom, energyPool);
+    }
 
-        LOGGER.info("[NETWORK]   Total extracted: {} HE", totalExtracted);
-
-        // ШАГ 2: РАЗДАЕМ энергию приемникам по приоритету
-        receivers.sort(Comparator.comparing(IEnergyReceiver::getPriority).reversed());
-
-        long remaining = totalExtracted;
-        for (IEnergyReceiver receiver : receivers) {
+    // ... вспомогательные классы и методы для tick ...
+    private void returnToSources(Map<IEnergyProvider, Long> contributions, long remaining) {
+        if (remaining <= 0 || contributions.isEmpty()) return;
+        long totalContributed = contributions.values().stream().mapToLong(Long::longValue).sum();
+        if (totalContributed == 0) return;
+        for (Map.Entry<IEnergyProvider, Long> entry : contributions.entrySet()) {
             if (remaining <= 0) break;
-            if (!receiver.canReceive()) continue;
-
-            long needed = Math.min(
-                    receiver.getMaxEnergyStored() - receiver.getEnergyStored(),
-                    receiver.getReceiveSpeed()
-            );
-
-            if (needed <= 0) continue;
-
-            long toGive = Math.min(remaining, needed);
-            long actuallyReceived = receiver.receiveEnergy(toGive, false);
-            remaining -= actuallyReceived;
-
-            LOGGER.debug("[NETWORK]   Transferred {} HE to receiver (needed: {})", actuallyReceived, needed);
-        }
-
-        LOGGER.info("[NETWORK]   Transfer complete. Remaining: {} HE", remaining);
-
-        // ШАГ 3: Если осталась энергия - возвращаем провайдерам пропорционально
-        if (remaining > 0) {
-            LOGGER.debug("[NETWORK]   Returning {} HE to providers", remaining);
-            for (Map.Entry<IEnergyProvider, Long> entry : extractedMap.entrySet()) {
-                IEnergyProvider provider = entry.getKey();
-
-                if (provider instanceof IEnergyReceiver receiverProvider) {
-                    double share = (double) entry.getValue() / totalExtracted;
-                    long toReturn = (long)(remaining * share);
-
-                    if (toReturn > 0) {
-                        receiverProvider.receiveEnergy(toReturn, false);
-                        LOGGER.debug("[NETWORK]   Returned {} HE to provider", toReturn);
-                    }
+            IEnergyProvider source = entry.getKey();
+            if (source instanceof IEnergyReceiver receiver && receiver.canReceive()) {
+                double share = (double) entry.getValue() / totalContributed;
+                long toReturn = (long) (remaining * share);
+                if (toReturn > 0) {
+                    long returned = receiver.receiveEnergy(toReturn, false);
+                    remaining -= returned;
                 }
             }
         }
     }
+    private static class BatteryInfo {
+        final IEnergyReceiver receiver; final IEnergyProvider provider;
+        BatteryInfo(IEnergyReceiver r, IEnergyProvider p) { this.receiver = r; this.provider = p; }
+        double getStoredPercentage() { long max = provider.getMaxEnergyStored(); return max == 0 ? 0 : (double) provider.getEnergyStored() / max; }
+    }
 
-    /**
-     * Добавляет узел в сеть
-     */
+
+    // --- НОВАЯ, БОЛЕЕ НАДЁЖНАЯ ЛОГИКА УПРАВЛЕНИЯ УЗЛАМИ ---
+
     public void addNode(EnergyNode node) {
-        if (nodes.contains(node)) {
-            LOGGER.debug("[NETWORK] Node at {} already in network {}", node.getPos(), id);
-            return;
-        }
-
-        LOGGER.info("[NETWORK] Adding node at {} to network {}", node.getPos(), id);
-        nodes.add(node);
-        node.setNetwork(this);
-
-        // Ищем соседние сети
-        Set<EnergyNetwork> neighborNetworks = new HashSet<>();
-        for (Direction dir : Direction.values()) {
-            BlockPos neighborPos = node.getPos().relative(dir);
-            EnergyNode neighborNode = manager.getNode(neighborPos);
-
-            if (neighborNode != null && neighborNode.getNetwork() != null && neighborNode.getNetwork() != this) {
-                neighborNetworks.add(neighborNode.getNetwork());
-                LOGGER.debug("[NETWORK]   Found neighbor network {} in direction {}", neighborNode.getNetwork().getId(), dir);
-            }
-        }
-
-        // Объединяем найденные сети
-        for (EnergyNetwork netToMerge : neighborNetworks) {
-            if (netToMerge != this) {
-                merge(netToMerge);
-            }
+        if (nodes.add(node)) {
+            node.setNetwork(this);
         }
     }
 
-    /**
-     * Удаляет узел из сети
-     */
     public void removeNode(EnergyNode node) {
-        if (!nodes.remove(node)) {
-            LOGGER.debug("[NETWORK] Node at {} not in network {}", node.getPos(), id);
-            return;
-        }
+        if (!nodes.remove(node)) return; // Если узла и не было, выходим
 
-        LOGGER.info("[NETWORK] Removing node at {} from network {}", node.getPos(), id);
-        node.setNetwork(null);
+        node.setNetwork(null); // Очищаем ссылку
 
-        if (nodes.isEmpty()) {
-            LOGGER.info("[NETWORK] Network {} is now empty, removing", id);
+        if (nodes.size() < 2) {
+            // Если осталось 0 или 1 узел, сеть больше не нужна
+            LOGGER.debug("[NETWORK] Network {} dissolved (size < 2).", id);
+            for (EnergyNode remainingNode : nodes) {
+                remainingNode.setNetwork(null); // Очищаем ссылку у последнего узла
+            }
+            nodes.clear();
             manager.removeNetwork(this);
-            return;
+        } else {
+            // ✅ ИЗМЕНЕНО: Проверяем связность сети после удаления узла
+            verifyConnectivity();
         }
+    }
 
-        // BFS проверка связности
-        Set<EnergyNode> visited = new HashSet<>();
+    private void verifyConnectivity() {
+        Set<EnergyNode> allReachableNodes = new HashSet<>();
         Queue<EnergyNode> queue = new LinkedList<>();
 
-        EnergyNode start = nodes.iterator().next();
-        queue.add(start);
-        visited.add(start);
+        // Начинаем поиск с произвольного узла
+        EnergyNode startNode = nodes.iterator().next();
+        queue.add(startNode);
+        allReachableNodes.add(startNode);
 
         while (!queue.isEmpty()) {
             EnergyNode current = queue.poll();
-
             for (Direction dir : Direction.values()) {
-                BlockPos neighborPos = current.getPos().relative(dir);
-                EnergyNode neighborNode = manager.getNode(neighborPos);
-
-                if (neighborNode != null && nodes.contains(neighborNode) && !visited.contains(neighborNode)) {
-                    visited.add(neighborNode);
-                    queue.add(neighborNode);
+                // Ищем соседа в глобальном менеджере, но проверяем, что он принадлежит НАШЕЙ сети
+                EnergyNode neighbor = manager.getNode(current.getPos().relative(dir));
+                if (neighbor != null && nodes.contains(neighbor) && allReachableNodes.add(neighbor)) {
+                    queue.add(neighbor);
                 }
             }
         }
 
-        // Если не все узлы достижимы - разбиваем сеть
-        if (visited.size() < nodes.size()) {
-            LOGGER.warn("[NETWORK] Network {} split detected! Visited: {}, Total: {}", id, visited.size(), nodes.size());
-            split();
+        // Если количество достижимых узлов меньше, чем всего узлов в сети, значит, произошло разделение
+        if (allReachableNodes.size() < nodes.size()) {
+            LOGGER.warn("[NETWORK] Network split detected in network {}! Initiating rebuild.", id);
+
+            // ✅ НОВАЯ ЛОГИКА SPLIT:
+            // 1. Собираем все узлы, которые "откололись"
+            Set<EnergyNode> lostNodes = new HashSet<>(nodes);
+            lostNodes.removeAll(allReachableNodes);
+
+            // 2. Удаляем их из текущей сети
+            nodes.removeAll(lostNodes);
+            for (EnergyNode lostNode : lostNodes) {
+                lostNode.setNetwork(null);
+                // 3. Заставляем менеджер полностью пересоздать для них сеть
+                manager.removeNode(lostNode.getPos()); // Удаляем из менеджера
+                manager.addNode(lostNode.getPos());    // И тут же добавляем заново
+            }
         }
     }
 
-    /**
-     * Объединяет две сети в одну
-     */
     public void merge(EnergyNetwork other) {
-        if (this == other || other.nodes.isEmpty()) {
-            LOGGER.debug("[NETWORK] Cannot merge network {} with itself or empty network", id);
-            return;
-        }
+        if (this == other) return;
 
-        LOGGER.info("[NETWORK] Merging network {} ({} nodes) into {} ({} nodes)",
-                other.id, other.nodes.size(), this.id, this.nodes.size());
-
-        Set<EnergyNode> nodesToMove = new HashSet<>(other.nodes);
-
-        for (EnergyNode node : nodesToMove) {
-            other.nodes.remove(node);
-            this.nodes.add(node);
+        // Перемещаем все узлы из другой сети в эту
+        for (EnergyNode node : other.nodes) {
             node.setNetwork(this);
+            this.nodes.add(node);
         }
 
+        // Очищаем и удаляем старую сеть
+        other.nodes.clear();
         manager.removeNetwork(other);
-        LOGGER.info("[NETWORK] Merge complete. Network {} now has {} nodes", id, nodes.size());
     }
 
-    /**
-     * Разделяет сеть на несколько независимых сетей (после удаления узла)
-     */
-    private void split() {
-        LOGGER.info("[NETWORK] Splitting network {} ({} nodes)", id, nodes.size());
+    // Старый метод split() больше не нужен, его логика теперь в verifyConnectivity()
 
-        Set<EnergyNode> remaining = new HashSet<>(nodes);
-        List<Set<EnergyNode>> islands = new ArrayList<>();
-
-        // Находим изолированные группы узлов (BFS)
-        while (!remaining.isEmpty()) {
-            EnergyNode start = remaining.iterator().next();
-            Set<EnergyNode> island = new HashSet<>();
-            Queue<EnergyNode> queue = new LinkedList<>();
-
-            queue.add(start);
-            island.add(start);
-            remaining.remove(start);
-
-            while (!queue.isEmpty()) {
-                EnergyNode current = queue.poll();
-
-                for (Direction dir : Direction.values()) {
-                    BlockPos neighborPos = current.getPos().relative(dir);
-                    EnergyNode neighborNode = manager.getNode(neighborPos);
-
-                    if (neighborNode != null && remaining.contains(neighborNode)) {
-                        island.add(neighborNode);
-                        queue.add(neighborNode);
-                        remaining.remove(neighborNode);
-                    }
-                }
-            }
-
-            islands.add(island);
-            LOGGER.debug("[NETWORK]   Found island with {} nodes", island.size());
-        }
-
-        // Очищаем текущую сеть
-        for (EnergyNode node : nodes) {
-            node.setNetwork(null);
-        }
-        nodes.clear();
-        manager.removeNetwork(this);
-
-        // Создаем новые сети для каждого "острова"
-        for (Set<EnergyNode> island : islands) {
-            EnergyNetwork newNet = new EnergyNetwork(manager);
-            manager.addNetwork(newNet);
-
-            for (EnergyNode node : island) {
-                newNet.nodes.add(node);
-                node.setNetwork(newNet);
-            }
-
-            LOGGER.info("[NETWORK] Created new network {} with {} nodes after split", newNet.id, island.size());
-        }
-    }
-
-    // --- GETTERS ---
-
-    public UUID getId() {
-        return id;
-    }
-
-    public int getNodeCount() {
-        return nodes.size();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-        return this == o || (o instanceof EnergyNetwork that && id.equals(that.id));
-    }
-
-    @Override
-    public int hashCode() {
-        return id.hashCode();
-    }
+    // --- Геттеры ---
+    public UUID getId() { return id; }
+    @Override public boolean equals(Object o) { return this == o || (o instanceof EnergyNetwork that && id.equals(that.id)); }
+    @Override public int hashCode() { return id.hashCode(); }
 }

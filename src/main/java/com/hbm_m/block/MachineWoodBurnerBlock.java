@@ -1,7 +1,7 @@
 package com.hbm_m.block;
 
 import com.hbm_m.block.entity.MachineWoodBurnerBlockEntity;
-import com.hbm_m.block.entity.ModBlockEntities; // ЗАМЕНИ НА СВОЙ КЛАСС
+import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -34,6 +34,10 @@ import javax.annotation.Nullable;
 import java.util.Map;
 import java.util.function.Supplier;
 
+/**
+ * Дровяной генератор энергии (мультиблок 2x2x2).
+ * ✅ Корректно интегрирован в энергосеть HBM.
+ */
 public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
@@ -47,96 +51,100 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
     }
 
     @Override
-    public RenderShape getRenderShape(BlockState pState) {
+    public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
-        pBuilder.add(FACING, LIT);
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING, LIT);
     }
 
     @Nullable
     @Override
-    public BlockState getStateForPlacement(BlockPlaceContext pContext) {
-        return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection().getOpposite());
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
-    // --- Логика мультиблока и сети ---
-
+    // ✅ ИСПРАВЛЕНО: Регистрация ВСЕХ блоков структуры в энергосети
     @Override
-    public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
-        super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
-        if (!pState.is(pOldState.getBlock()) && !pLevel.isClientSide()) {
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+
+        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
             MultiblockStructureHelper helper = getStructureHelper();
-            Direction facing = pState.getValue(FACING);
+            Direction facing = state.getValue(FACING);
 
-            helper.placeStructure(pLevel, pPos, facing, this);
+            // Строим структуру
+            helper.placeStructure(level, pos, facing, this);
 
+            // ✅ Регистрируем КОНТРОЛЛЕР в сети (он IEnergyProvider)
+            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
+
+            // ✅ Регистрируем энергетические коннекторы (parts с PartRole.ENERGY_CONNECTOR)
             for (BlockPos localPos : helper.getStructureMap().keySet()) {
                 if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                    BlockPos worldPos = helper.getRotatedPos(pPos, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) pLevel).addNode(worldPos);
+                    BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
+                    EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
                 }
             }
         }
     }
 
-
+    // ✅ ИСПРАВЛЕНО: Удаление из сети при разрушении
     @Override
-    public void onRemove(BlockState pState, Level pLevel, BlockPos pPos, BlockState pNewState, boolean pIsMoving) {
-        if (pState.getBlock() != pNewState.getBlock()) {
-            if (!pLevel.isClientSide()) {
-                MultiblockStructureHelper helper = getStructureHelper();
-                Direction facing = pState.getValue(FACING);
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (state.getBlock() != newState.getBlock() && !level.isClientSide()) {
+            MultiblockStructureHelper helper = getStructureHelper();
+            Direction facing = state.getValue(FACING);
 
-                // Удаляем из энергосети
-                for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                    if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                        BlockPos worldPos = helper.getRotatedPos(pPos, localPos, facing);
-                        EnergyNetworkManager.get((ServerLevel) pLevel).removeNode(worldPos);
+            // ✅ Удаляем контроллер из сети
+            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
+
+            // ✅ Удаляем энергетические коннекторы
+            for (BlockPos localPos : helper.getStructureMap().keySet()) {
+                if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
+                    BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
+                    EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
+                }
+            }
+
+            // Дроп предметов
+            BlockEntity blockEntity = level.getBlockEntity(pos);
+            if (blockEntity instanceof MachineWoodBurnerBlockEntity) {
+                blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
+                    for (int i = 0; i < handler.getSlots(); i++) {
+                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), handler.getStackInSlot(i));
                     }
-                }
-
-                // --- ИСПРАВЛЕННАЯ ЛОГИКА ДРОПА ---
-                BlockEntity blockEntity = pLevel.getBlockEntity(pPos);
-                if (blockEntity instanceof MachineWoodBurnerBlockEntity) {
-                    blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-                        for (int i = 0; i < handler.getSlots(); i++) {
-                            Containers.dropItemStack(pLevel, pPos.getX(), pPos.getY(), pPos.getZ(), handler.getStackInSlot(i));
-                        }
-                    });
-                }
-                // ------------------------------------
-
-                helper.destroyStructure(pLevel, pPos, facing);
+                });
             }
+
+            // Разрушаем структуру
+            helper.destroyStructure(level, pos, facing);
         }
-        super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
-    }
-
-    // --- Связь с BlockEntity ---
-
-    @Nullable
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) {
-        return new MachineWoodBurnerBlockEntity(pPos, pState);
-    }
-
-    @Override
-    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        if (!pLevel.isClientSide()) {
-            if (pLevel.getBlockEntity(pPos) instanceof MenuProvider provider) {
-                NetworkHooks.openScreen((ServerPlayer) pPlayer, provider, pPos);
-            }
-        }
-        return InteractionResult.sidedSuccess(pLevel.isClientSide());
+        super.onRemove(state, level, pos, newState, isMoving);
     }
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pBlockEntityType) {
-        return createTickerHelper(pBlockEntityType, ModBlockEntities.WOOD_BURNER_BE.get(), MachineWoodBurnerBlockEntity::tick);
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new MachineWoodBurnerBlockEntity(pos, state);
+    }
+
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide()) {
+            if (level.getBlockEntity(pos) instanceof MenuProvider provider) {
+                NetworkHooks.openScreen((ServerPlayer) player, provider, pos);
+            }
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(type, ModBlockEntities.WOOD_BURNER_BE.get(), MachineWoodBurnerBlockEntity::tick);
     }
 
     // --- IMultiblockController implementation ---
@@ -153,15 +161,18 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
 
     private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
         ImmutableMap.Builder<BlockPos, Supplier<BlockState>> builder = ImmutableMap.builder();
-        for (int y = 0; y <= 1; y++) for (int x = 0; x <= 1; x++) for (int z = 0; z <= 1; z++) {
-            if (x == 0 && y == 0 && z == 0) continue;
-            builder.put(new BlockPos(x, y, z), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
-        }
+        for (int y = 0; y <= 1; y++)
+            for (int x = 0; x <= 1; x++)
+                for (int z = 0; z <= 1; z++) {
+                    if (x == 0 && y == 0 && z == 0) continue; // Пропускаем контроллер
+                    builder.put(new BlockPos(x, y, z), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+                }
         return builder.build();
     }
 
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
+        // Энергетические коннекторы: нижний ряд (y=0), задняя стенка (z=1)
         return (localOffset.getY() == 0 && localOffset.getZ() == 1 && (localOffset.getX() == 0 || localOffset.getX() == 1))
                 ? PartRole.ENERGY_CONNECTOR
                 : PartRole.DEFAULT;

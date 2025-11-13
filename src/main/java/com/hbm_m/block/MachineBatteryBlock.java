@@ -9,7 +9,6 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
@@ -28,7 +27,7 @@ import javax.annotation.Nullable;
 
 /**
  * Универсальный класс блока для всех энергохранилищ.
- * Регистрируется несколько раз с разной емкостью.
+ * ✅ Корректно интегрирован в энергосеть HBM.
  */
 public class MachineBatteryBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
@@ -44,7 +43,6 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         return this.capacity;
     }
 
-    // --- Boilerplate блока ---
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
         return this.defaultBlockState().setValue(FACING, ctx.getHorizontalDirection().getOpposite());
@@ -70,7 +68,6 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
-    // --- Связь с BlockEntity ---
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -83,7 +80,7 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         return createTickerHelper(type, ModBlockEntities.MACHINE_BATTERY_BE.get(), MachineBatteryBlockEntity::tick);
     }
 
-    // --- Связь с энергосетью HBM ---
+    // ✅ Регистрация в энергосети
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         if (!level.isClientSide && !state.is(oldState.getBlock())) {
@@ -100,14 +97,12 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
-    // ✅ ИСПРАВЛЕНО: Открытие GUI с отправкой BlockPos клиенту
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MachineBatteryBlockEntity battery) {
-                // ✅ КРИТИЧНО: NetworkHooks отправляет BlockPos клиенту!
                 NetworkHooks.openScreen((ServerPlayer) player, battery, pos);
             }
             return InteractionResult.CONSUME;

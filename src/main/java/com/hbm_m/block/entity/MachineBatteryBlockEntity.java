@@ -1,16 +1,15 @@
 package com.hbm_m.block.entity;
 
-import com.hbm_m.api.energy.IEnergyProvider;
-import com.hbm_m.api.energy.IEnergyReceiver;
+import com.hbm_m.api.energy.*;
 import com.hbm_m.block.MachineBatteryBlock;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.menu.MachineBatteryMenu;
-import com.hbm_m.api.energy.PackedEnergyCapabilityProvider;
 import com.hbm_m.util.LongDataPacker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -65,8 +64,8 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
 
     public MachineBatteryBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_BATTERY_BE.get(), pos, state);
-        this.capacity = state.getBlock() instanceof MachineBatteryBlock b ? b.getCapacity() : 1_000_000L;
-        this.transferRate = this.capacity / 200; // 0.5% за тик
+        this.capacity = state.getBlock() instanceof MachineBatteryBlock b ? b.getCapacity() : 9_000_000_000_000_000_000L;
+        this.transferRate = 100_000_000_000L; // 0.5% за тик
         this.feCapabilityProvider = new PackedEnergyCapabilityProvider(this);
 
         this.data = new ContainerData() {
@@ -325,4 +324,6 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
+
+
 }

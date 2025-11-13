@@ -10,6 +10,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
@@ -112,6 +113,8 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         // Процесс горения
         if (be.isBurning() && be.enabled) {
             be.burnTime--;
+
+            // Просто генерируем энергию. Сеть сама её заберёт.
             be.energy = Math.min(be.capacity, be.energy + be.generationRate);
 
             // Топливо закончилось
@@ -284,7 +287,6 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         }
     }
 
-    // ДОБАВЬ эти методы:
     public boolean isEnabled() {
         return this.enabled;
     }

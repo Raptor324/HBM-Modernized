@@ -1,9 +1,7 @@
 package com.hbm_m.block.entity;
 
-import com.hbm_m.api.energy.IEnergyProvider;
-import com.hbm_m.api.energy.IEnergyReceiver;
+import com.hbm_m.api.energy.*;
 import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.api.energy.PackedEnergyCapabilityProvider;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -11,6 +9,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
@@ -53,7 +52,19 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     private final PackedEnergyCapabilityProvider feCapabilityProvider;
 
     /**
-     * Конструктор с явным указанием maxReceive и maxExtract
+     * ✅ ОСНОВНОЙ КОНСТРУКТОР для машин-потребителей.
+     * По умолчанию, maxExtract = 0, потому что нехуй высасывать энергию из того, что
+     * должно её жрать. Машина - не батарейка. Запомни это, или я приду к тебе во сне.
+     */
+    public BaseMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state,
+                                  int inventorySize, long capacity, long receiveRate) {
+        this(type, pos, state, inventorySize, capacity, receiveRate, 0L);
+    }
+
+    /**
+     * ✅ ПОЛНЫЙ КОНСТРУКТОР. Используй это только для тех ебанутых случаев, когда
+     * машина должна ВДРУГ начать отдавать энергию. Для батарей, например.
+     * Хотя ты же сказал, что они ничего не наследуют. Ну, пусть будет. На всякий.
      */
     public BaseMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state,
                                   int inventorySize, long capacity, long maxReceive, long maxExtract) {
@@ -63,14 +74,6 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         this.maxReceive = maxReceive;
         this.maxExtract = maxExtract;
         this.feCapabilityProvider = new PackedEnergyCapabilityProvider(this);
-    }
-
-    /**
-     * Упрощенный конструктор: maxReceive = maxExtract = transferRate
-     */
-    public BaseMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state,
-                                  int inventorySize, long capacity, long transferRate) {
-        this(type, pos, state, inventorySize, capacity, transferRate, transferRate);
     }
 
     protected ItemStackHandler createInventoryHandler(int size) {
@@ -92,6 +95,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
 
     // --- Абстрактные методы ---
     protected abstract Component getDefaultName();
+
     protected abstract boolean isItemValidForSlot(int slot, ItemStack stack);
 
     protected boolean isCriticalSlot(int slot) {
@@ -283,4 +287,6 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         hbmReceiver.invalidate();
         feCapabilityProvider.invalidate();
     }
+
+
 }

@@ -10,6 +10,7 @@ import com.hbm_m.particle.ModExplosionParticles;
 import com.mojang.logging.LogUtils;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
@@ -149,6 +150,13 @@ public class MainRegistry {
         if (event.phase == TickEvent.Phase.END) {
             ServerLevel level = event.getServer().overworld(); // или через все миры
             EnergyNetworkManager.get(level).tick();
+        }
+    }
+
+    @SubscribeEvent
+    public static void onServerWorldLoad(LevelEvent.Load event) {
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+            EnergyNetworkManager.get(serverLevel).rebuildAllNetworks();
         }
     }
 

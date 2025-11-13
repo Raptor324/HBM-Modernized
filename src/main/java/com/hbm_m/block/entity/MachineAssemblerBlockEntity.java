@@ -251,32 +251,32 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         ClientSoundManager.updateSound(this, this.isCrafting(), 
             () -> new com.hbm_m.sound.AssemblerSoundInstance(this.getBlockPos()));
     }
-    
+
     private void serverTick() {
         long gameTime = level.getGameTime();
-        
+
         if (gameTime % 5 == 0) {
             chargeFromEnergySlot();
         }
-        
+
         if (gameTime % 10 == 0) {
             updateEnergyDelta(this.getEnergyStored());
         }
-        
+
         Optional<AssemblerRecipe> recipeOpt = getRecipeFromTemplate();
-        
+
         if (recipeOpt.isPresent()) {
             pullIngredientsForOneCraft(recipeOpt.get());
         }
-        
+
         boolean hasRecipe = recipeOpt.isPresent();
         boolean hasResources = hasRecipe && hasResources(recipeOpt.get());
         boolean canInsert = hasRecipe && canInsertResult(recipeOpt.get().getResultItem(null));
-        
+
         if (hasRecipe && hasResources && canInsert) {
             AssemblerRecipe recipe = recipeOpt.get();
             long energyPerTick = recipe.getPowerConsumption();
-            
+
             if (this.getEnergyStored() >= energyPerTick) {
                 if (!isCrafting) {
                     isCrafting = true;
@@ -285,10 +285,11 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                     sendUpdateToClient();
                 }
 
+                // ✅ ИЗМЕНЕНО: Используем setEnergyStored для автоматического пробуждения
                 this.setEnergyStored(this.getEnergyStored() - energyPerTick);
                 progress++;
                 setChanged();
-                
+
                 if (progress >= maxProgress) {
                     craftItem(recipe);
                     progress = 0;
