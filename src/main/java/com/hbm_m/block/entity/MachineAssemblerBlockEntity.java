@@ -3,13 +3,16 @@ package com.hbm_m.block.entity;
 import com.hbm_m.block.MachineAssemblerBlock;
 import com.hbm_m.client.ClientSoundManager;
 import com.hbm_m.energy.BlockEntityEnergyStorage;
+import com.hbm_m.energy.ILongEnergyStorage;
+import com.hbm_m.energy.LongToForgeWrapper;
+import com.hbm_m.energy.LongDataPacker;
+import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.item.ItemAssemblyTemplate;
 import com.hbm_m.item.ItemCreativeBattery;
 import com.hbm_m.menu.MachineAssemblerMenu;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.recipe.AssemblerRecipe;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -38,6 +41,10 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.*;
 
+/**
+ * Сборочная машина (Assembler) - мультиблочная структура для автоматизированного крафта.
+ * Адаптировано для long-энергосистемы с наследованием от BaseMachineBlockEntity.
+ */
 public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     
     // Слоты
@@ -48,8 +55,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     private static final int INPUT_SLOT_START = 6;
     private static final int INPUT_SLOT_END = 17;
     
-    // Энергия
-    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100000,  1000);
+    // Long-энергия
+    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(100_000L, 100_000L);
     
     // Состояние крафта
     private boolean isCrafting = false;
@@ -63,17 +70,23 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     // Отслеживание источников предметов
     private final Set<BlockPos> lastPullSources = new HashSet<>();
     
-    // ContainerData для GUI
+    // ContainerData для GUI с упаковкой long
     protected final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
+            long energy = energyStorage.getEnergyStored();
+            long maxEnergy = energyStorage.getMaxEnergyStored();
+            long delta = getEnergyDelta();
             return switch (index) {
                 case 0 -> progress;
                 case 1 -> maxProgress;
-                case 2 -> energyStorage.getEnergyStored();
-                case 3 -> energyStorage.getMaxEnergyStored();
-                case 4 -> isCrafting ? 1 : 0;
-                case 5 -> energyDelta;
+                case 2 -> LongDataPacker.packHigh(energy);
+                case 3 -> LongDataPacker.packLow(energy);
+                case 4 -> LongDataPacker.packHigh(maxEnergy);
+                case 5 -> LongDataPacker.packLow(maxEnergy);
+                case 6 -> LongDataPacker.packHigh(delta);
+                case 7 -> LongDataPacker.packLow(delta);
+                case 8 -> isCrafting ? 1 : 0;
                 default -> 0;
             };
         }
@@ -83,15 +96,13 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             switch (index) {
                 case 0 -> progress = value;
                 case 1 -> maxProgress = value;
-                case 2 -> energyStorage.setEnergy(value);
-                case 4 -> isCrafting = value != 0;
-                case 5 -> energyDelta = value;
+                case 8 -> isCrafting = value != 0;
             }
         }
         
         @Override
         public int getCount() {
-            return 6;
+            return 9;
         }
     };
     
@@ -106,13 +117,13 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     
     @Override
     protected void setupEnergyCapability() {
-        energyHandler = LazyOptional.of(() -> energyStorage);
+        longEnergyHandler = LazyOptional.of(() -> energyStorage);
+        forgeEnergyHandler = longEnergyHandler.lazyMap(LongToForgeWrapper::new);
     }
     
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == ENERGY_SLOT) {
-            // Проверка на энергетические предметы
             return stack.getCapability(ForgeCapabilities.ENERGY).isPresent() || 
                    stack.getItem() instanceof ItemCreativeBattery;
         }
@@ -120,7 +131,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             return stack.getItem() instanceof ItemAssemblyTemplate;
         }
         if (slot == OUTPUT_SLOT) {
-            return false; // Выходной слот - только для результатов
+            return false;
         }
         return slot >= INPUT_SLOT_START && slot <= INPUT_SLOT_END;
     }
@@ -134,9 +145,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     
     // ==================== MULTIBLOCK PART SUPPORT ====================
     
-    /**
-     * Предоставляет специализированный handler для частей мультиблока
-     */
     public LazyOptional<IItemHandler> getItemHandlerForPart(PartRole role) {
         if (role == PartRole.ITEM_INPUT) {
             if (!lazyInputProxy.isPresent()) {
@@ -176,7 +184,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             @NotNull
             @Override
             public ItemStack extractItem(int slot, int amount, boolean simulate) {
-                return ItemStack.EMPTY; // Запрет извлечения через входные части
+                return ItemStack.EMPTY;
             }
             
             @Override
@@ -208,7 +216,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             @NotNull
             @Override
             public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
-                return stack; // Запрет вставки через выходные части
+                return stack;
             }
             
             @NotNull
@@ -241,22 +249,22 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     
     @OnlyIn(Dist.CLIENT)
     private void clientTick() {
-        // ИСПРАВЛЕНО: Используй полное имя класса вместо импорта
         ClientSoundManager.updateSound(this, this.isCrafting(), 
             () -> new com.hbm_m.sound.AssemblerSoundInstance(this.getBlockPos()));
     }
     
     private void serverTick() {
-        // Запрос энергии из сети
-        requestEnergy();
+        long gameTime = level.getGameTime();
         
-        // Зарядка из слота энергии
-        chargeFromEnergySlot();
+        if (gameTime % 5 == 0) {
+            requestEnergy();
+            chargeFromEnergySlot();
+        }
         
-        // Обновление энергетической дельты
-        updateEnergyDelta(energyStorage.getEnergyStored());
+        if (gameTime % 10 == 0) {
+            updateEnergyDelta(energyStorage.getEnergyStored());
+        }
         
-        // Логика крафта
         Optional<AssemblerRecipe> recipeOpt = getRecipeFromTemplate();
         
         if (recipeOpt.isPresent()) {
@@ -269,10 +277,9 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         
         if (hasRecipe && hasResources && canInsert) {
             AssemblerRecipe recipe = recipeOpt.get();
-            int energyPerTick = recipe.getPowerConsumption();
+            long energyPerTick = recipe.getPowerConsumption();
             
             if (energyStorage.getEnergyStored() >= energyPerTick) {
-                // Начало крафта
                 if (!isCrafting) {
                     isCrafting = true;
                     maxProgress = recipe.getDuration();
@@ -280,12 +287,10 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                     sendUpdateToClient();
                 }
                 
-                // Процесс крафта
                 energyStorage.extractEnergy(energyPerTick, false);
                 progress++;
                 setChanged();
                 
-                // Завершение крафта
                 if (progress >= maxProgress) {
                     craftItem(recipe);
                     progress = 0;
@@ -293,11 +298,9 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                     getRecipeFromTemplate().ifPresent(this::pullIngredientsForOneCraft);
                 }
             } else {
-                // Недостаточно энергии
                 stopCrafting();
             }
         } else {
-            // Условия не выполнены
             stopCrafting();
         }
     }
@@ -318,15 +321,16 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         if (energySourceStack.isEmpty()) return;
         
         if (energySourceStack.getItem() instanceof ItemCreativeBattery) {
-            energyStorage.receiveEnergy(Integer.MAX_VALUE, false);
+            energyStorage.receiveEnergy(Long.MAX_VALUE, false);
         } else {
             energySourceStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
-                int energyNeeded = energyStorage.getMaxEnergyStored() - energyStorage.getEnergyStored();
-                int maxCanReceive = energyStorage.getMaxReceive();
-                int energyToTransfer = Math.min(energyNeeded, maxCanReceive);
+                long energyNeeded = energyStorage.getMaxEnergyStored() - energyStorage.getEnergyStored();
+                long maxCanReceive = energyStorage.getMaxReceive();
+                long energyToTransfer = Math.min(energyNeeded, maxCanReceive);
                 
                 if (energyToTransfer > 0) {
-                    int extracted = itemEnergy.extractEnergy(energyToTransfer, false);
+                    int energyToTransferInt = (int) Math.min(energyToTransfer, Integer.MAX_VALUE);
+                    int extracted = itemEnergy.extractEnergy(energyToTransferInt, false);
                     energyStorage.receiveEnergy(extracted, false);
                 }
             });
@@ -336,7 +340,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     private void requestEnergy() {
         if (energyStorage.getEnergyStored() >= energyStorage.getMaxEnergyStored()) return;
         
-        int energyNeeded = energyStorage.getMaxReceive();
+        long energyNeeded = energyStorage.getMaxReceive();
         if (energyNeeded <= 0) return;
         
         Direction facing = getBlockState().getValue(MachineAssemblerBlock.FACING);
@@ -361,19 +365,27 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                     continue;
                 }
                 
-                int extracted = 0;
+                long extracted = 0L;
                 
-                if (neighbor instanceof WireBlockEntity wire) {
-                    extracted = wire.requestEnergy(energyNeeded, false);
+                LazyOptional<ILongEnergyStorage> longCap = neighbor.getCapability(ModCapabilities.LONG_ENERGY, dir.getOpposite());
+                if (longCap.isPresent()) {
+                    ILongEnergyStorage longStorage = longCap.resolve().orElse(null);
+                    if (longStorage != null && longStorage.canExtract()) {
+                        extracted = longStorage.extractEnergy(energyNeeded, false);
+                    }
+                } else if (neighbor instanceof WireBlockEntity wire) {
+                    int energyNeededInt = (int) Math.min(energyNeeded, Integer.MAX_VALUE);
+                    extracted = wire.requestEnergy(energyNeededInt, false);
                 } else {
                     IEnergyStorage source = neighbor.getCapability(ForgeCapabilities.ENERGY, dir.getOpposite()).orElse(null);
                     if (source != null && source.canExtract()) {
-                        extracted = source.extractEnergy(energyNeeded, false);
+                        int energyNeededInt = (int) Math.min(energyNeeded, Integer.MAX_VALUE);
+                        extracted = source.extractEnergy(energyNeededInt, false);
                     }
                 }
                 
                 if (extracted > 0) {
-                    int accepted = energyStorage.receiveEnergy(extracted, false);
+                    long accepted = energyStorage.receiveEnergy(extracted, false);
                     energyNeeded -= accepted;
                     if (energyNeeded <= 0) break;
                 }
@@ -403,9 +415,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                 .findFirst();
     }
 
-    /**
-     * Возвращает список призрачных предметов для отображения в GUI
-     */
     @Override
     public NonNullList<ItemStack> getGhostItems() {
         Optional<AssemblerRecipe> recipeOpt = getRecipeFromTemplate();
@@ -437,7 +446,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         NonNullList<Ingredient> ingredients = recipe.getIngredients();
         ItemStack result = recipe.getResultItem(null).copy();
         
-        // Потребление ингредиентов
         for (Ingredient ingredient : ingredients) {
             for (int i = INPUT_SLOT_START; i <= INPUT_SLOT_END; i++) {
                 ItemStack stackInSlot = inventory.getStackInSlot(i);
@@ -448,7 +456,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
         }
         
-        // Вставка результата - ИСПРАВЛЕНО
         ItemStack outputSlot = inventory.getStackInSlot(OUTPUT_SLOT);
         if (outputSlot.isEmpty()) {
             inventory.setStackInSlot(OUTPUT_SLOT, result);
@@ -611,7 +618,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.putInt("energy", energyStorage.getEnergyStored());
+        tag.putLong("EnergyStored", energyStorage.getEnergyStored());
         tag.putInt("progress", progress);
         tag.putInt("maxProgress", maxProgress);
         tag.putBoolean("isCrafting", isCrafting);
@@ -620,7 +627,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        energyStorage.setEnergy(tag.getInt("energy"));
+        energyStorage.setEnergy(tag.getLong("EnergyStored"));
         progress = tag.getInt("progress");
         maxProgress = tag.getInt("maxProgress");
         
@@ -646,8 +653,11 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return itemHandler.cast();
         }
+        if (cap == ModCapabilities.LONG_ENERGY) {
+            return longEnergyHandler.cast();
+        }
         if (cap == ForgeCapabilities.ENERGY) {
-            return energyHandler.cast();
+            return forgeEnergyHandler.cast();
         }
         return super.getCapability(cap, side);
     }

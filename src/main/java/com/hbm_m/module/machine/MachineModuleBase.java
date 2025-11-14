@@ -7,24 +7,27 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.items.IItemHandler;
+
+// ИЗМЕНЕНИЕ: Импортируем нашу long-систему вместо Forge Energy
+import com.hbm_m.energy.ILongEnergyStorage;
 
 import javax.annotation.Nullable;
 
 /**
  * Базовый модуль машины, инкапсулирующий логику крафта.
  * Вдохновлён оригинальным ModuleMachineBase из HBM 1.7.10.
- * 
+ *
  * Адаптирован для 1.20.1:
  * - Использует RecipeManager вместо GenericRecipes
  * - Работает с IItemHandler вместо массива слотов
- * - Использует Forge Energy API (IEnergyStorage)
+ * - ОБНОВЛЕНО: Использует ILongEnergyStorage для поддержки больших значений энергии
  */
 public abstract class MachineModuleBase<T extends Recipe<?>> {
     // === CONFIGURATION ===
     protected final int moduleIndex;
-    protected final IEnergyStorage energyStorage;
+    // ИЗМЕНЕНИЕ: Теперь используем ILongEnergyStorage вместо IEnergyStorage
+    protected final ILongEnergyStorage energyStorage;
     protected final IItemHandler itemHandler;
     protected final Level level;
     protected int[] inputSlots;
@@ -35,12 +38,13 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     protected int maxProgress = 100;
     @Nullable
     protected T currentRecipe = null;
-    
+
     // === SIGNALS ===
     public boolean didProcess = false;
     public boolean needsSync = false;
 
-    public MachineModuleBase(int moduleIndex, IEnergyStorage energyStorage, IItemHandler itemHandler, Level level) {
+    // ИЗМЕНЕНИЕ: Конструктор теперь принимает ILongEnergyStorage
+    public MachineModuleBase(int moduleIndex, ILongEnergyStorage energyStorage, IItemHandler itemHandler, Level level) {
         this.moduleIndex = moduleIndex;
         this.energyStorage = energyStorage;
         this.itemHandler = itemHandler;
@@ -48,20 +52,21 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     }
 
     protected abstract RecipeType<T> getRecipeType();
-    
+
     @Nullable
     protected abstract T findRecipeForInputs();
-    
+
     protected abstract boolean canProcess(@Nullable T recipe);
-    
+
     protected abstract void processCraft(T recipe);
-    
+
     protected abstract boolean matchesCurrentRecipe(T recipe);
-    
+
     protected abstract int getRecipeDuration(T recipe);
-    
-    protected abstract int getRecipeEnergyCost(T recipe);
-    
+
+    // ИЗМЕНЕНИЕ: Возвращаем long вместо int
+    protected abstract long getRecipeEnergyCost(T recipe);
+
     @Nullable
     protected abstract T findRecipeForItem(ItemStack stack);
 
@@ -81,23 +86,23 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
 
         // Обработка крафта
         if (extraCondition && currentRecipe != null && canProcess(currentRecipe)) {
-            // Вычисляем полную стоимость энергии за тик (как в 1.7.10)
-            int energyPerTick = (int) (getRecipeEnergyCost(currentRecipe) * powerMultiplier);
-            
-            // НОВОЕ: Проверяем, хватит ли энергии на весь крафт перед началом
-            long totalEnergyRequired = (long) energyPerTick * maxProgress;
-            
+            // ИЗМЕНЕНИЕ: Используем long для энергии
+            long energyPerTick = (long) (getRecipeEnergyCost(currentRecipe) * powerMultiplier);
+
+            // Проверяем, хватит ли энергии на весь крафт перед началом
+            long totalEnergyRequired = energyPerTick * maxProgress;
+
             // Если крафт только начинается (progress == 0), проверяем полную стоимость
             if (progress == 0.0 && energyStorage.getEnergyStored() < totalEnergyRequired) {
                 // Недостаточно энергии для полного крафта - не начинаем
                 return;
             }
-            
+
             // Проверяем наличие энергии для ЭТОГО тика
             if (energyStorage.getEnergyStored() >= energyPerTick) {
                 // Потребляем энергию ПЕРЕД увеличением прогресса (как в оригинале)
                 energyStorage.extractEnergy(energyPerTick, false);
-                
+
                 double step = Math.min(speedMultiplier, 1.0);
                 this.progress += step;
                 this.didProcess = true;
@@ -177,7 +182,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     public int getMaxProgress() { return maxProgress; }
     public int getProgressInt() { return (int) progress; }
     public double getProgressPercent() { return maxProgress > 0 ? (progress / maxProgress) : 0.0; }
-    
+
     @Nullable
     public T getCurrentRecipe() { return currentRecipe; }
     public boolean isProcessing() { return didProcess; }
@@ -208,8 +213,10 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
      * Должен быть реализован в подклассах, которые используют blueprint систему
      */
     protected abstract boolean isRecipeValidForBlueprint(T recipe, ItemStack blueprint);
-    
 
+    /**
+     * Обновление с поддержкой blueprint
+     */
     public void update(double speedMultiplier, double powerMultiplier, boolean extraCondition, ItemStack blueprint) {
         this.didProcess = false;
         this.needsSync = false;
@@ -235,23 +242,23 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
 
         // Обработка крафта
         if (extraCondition && currentRecipe != null && canProcess(currentRecipe)) {
-            // Вычисляем полную стоимость энергии за тик (как в 1.7.10)
-            int energyPerTick = (int) (getRecipeEnergyCost(currentRecipe) * powerMultiplier);
-            
-            // НОВОЕ: Проверяем, хватит ли энергии на весь крафт перед началом
-            long totalEnergyRequired = (long) energyPerTick * maxProgress;
-            
+            // ИЗМЕНЕНИЕ: Используем long для энергии
+            long energyPerTick = (long) (getRecipeEnergyCost(currentRecipe) * powerMultiplier);
+
+            // Проверяем, хватит ли энергии на весь крафт перед началом
+            long totalEnergyRequired = energyPerTick * maxProgress;
+
             // Если крафт только начинается (progress == 0), проверяем полную стоимость
             if (progress == 0.0 && energyStorage.getEnergyStored() < totalEnergyRequired) {
                 // Недостаточно энергии для полного крафта - не начинаем
                 return;
             }
-            
+
             // Проверяем наличие энергии для ЭТОГО тика
             if (energyStorage.getEnergyStored() >= energyPerTick) {
                 // Потребляем энергию ПЕРЕД увеличением прогресса (как в оригинале)
                 energyStorage.extractEnergy(energyPerTick, false);
-                
+
                 double step = Math.min(speedMultiplier, 1.0);
                 this.progress += step;
                 this.didProcess = true;

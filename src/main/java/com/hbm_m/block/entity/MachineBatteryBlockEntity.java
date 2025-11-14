@@ -2,6 +2,9 @@ package com.hbm_m.block.entity;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.energy.BlockEntityEnergyStorage;
+import com.hbm_m.energy.ILongEnergyStorage;
+import com.hbm_m.energy.LongToForgeWrapper;
+import com.hbm_m.energy.LongDataPacker;
 import com.hbm_m.menu.MachineBatteryMenu;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.core.BlockPos;
@@ -17,13 +20,20 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.UUID;
 
+/**
+ * Батарея машины - аккумулятор энергии для мультиблочной системы.
+ * Адаптирована для long-энергосистемы с поддержкой редстоун-управления.
+ */
 public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
     
     // Слоты
@@ -31,32 +41,37 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
     private static final int CHARGE_SLOT = 0;
     private static final int DISCHARGE_SLOT = 1;
     
-    // Энергия
+    // Long-энергия
     private final BlockEntityEnergyStorage energyStorage = 
-        new BlockEntityEnergyStorage(com.hbm_m.item.ModItems.BATTERY_CAPACITY,  5000);
+        new BlockEntityEnergyStorage(com.hbm_m.item.ModItems.BATTERY_CAPACITY, 100_000L);
     
     // Режимы работы
-    public int modeOnNoSignal = 0; // Режим, когда НЕТ сигнала (настраивается верхней кнопкой)
-    public int modeOnSignal = 0;   // Режим, когда ЕСТЬ сигнал (настраивается нижней кнопкой)
+    public int modeOnNoSignal = 0;
+    public int modeOnSignal = 0;
     public Priority priority = Priority.NORMAL;
     
-    // Режимы: 0 = Приём и Передача, 1 = Только Приём, 2 = Только Передача, 3 = Заблокировано
     public enum Priority { LOW, NORMAL, HIGH }
     
-    // Обертка для IEnergyStorage, учитывающая редстоун-режимы
+    // Обёртка IEnergyStorage с поддержкой редстоун-режимов
     private final IEnergyStorage energyWrapper = createEnergyWrapper();
     
-    // ContainerData для GUI
+    // ContainerData с упаковкой long для энергии
     protected final ContainerData data = new ContainerData() {
         @Override
         public int get(int pIndex) {
+            long currentEnergy = energyStorage.getEnergyStored();
+            long maxEnergy = energyStorage.getMaxEnergyStored();
+            long delta = getEnergyDelta();
             return switch (pIndex) {
-                case 0 -> energyStorage.getEnergyStored();
-                case 1 -> energyStorage.getMaxEnergyStored();
-                case 2 -> energyDelta;
-                case 3 -> modeOnNoSignal;
-                case 4 -> modeOnSignal;
-                case 5 -> priority.ordinal();
+                case 0 -> LongDataPacker.packHigh(currentEnergy);
+                case 1 -> LongDataPacker.packLow(currentEnergy);
+                case 2 -> LongDataPacker.packHigh(maxEnergy);
+                case 3 -> LongDataPacker.packLow(maxEnergy);
+                case 4 -> LongDataPacker.packHigh(delta);
+                case 5 -> LongDataPacker.packLow(delta);
+                case 6 -> modeOnNoSignal;
+                case 7 -> modeOnSignal;
+                case 8 -> priority.ordinal();
                 default -> 0;
             };
         }
@@ -64,16 +79,16 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
         @Override
         public void set(int pIndex, int pValue) {
             switch (pIndex) {
-                case 0 -> energyStorage.setEnergy(pValue);
-                case 2 -> energyDelta = pValue;
-                case 3 -> modeOnNoSignal = pValue;
-                case 4 -> modeOnSignal = pValue;
-                case 5 -> priority = Priority.values()[pValue];
+                case 6 -> modeOnNoSignal = pValue;
+                case 7 -> modeOnSignal = pValue;
+                case 8 -> priority = Priority.values()[pValue];
             }
         }
         
         @Override
-        public int getCount() { return 6; }
+        public int getCount() { 
+            return 9; 
+        }
     };
     
     public MachineBatteryBlockEntity(BlockPos pPos, BlockState pBlockState) {
@@ -87,13 +102,14 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
     
     @Override
     protected void setupEnergyCapability() {
-        // Используем обертку вместо прямого energyStorage
-        energyHandler = LazyOptional.of(() -> energyWrapper);
+        // Используем long-энергохранилище с обёрткой редстоун-управления
+        longEnergyHandler = LazyOptional.of(() -> energyStorage);
+        // Обёртка Forge Energy поверх long-хранилища с поддержкой редстоун-режимов
+        forgeEnergyHandler = LazyOptional.of(() -> energyWrapper);
     }
     
     @Override
-    protected boolean isItemValidForSlot(int slot, net.minecraft.world.item.ItemStack stack) {
-        // Разрешаем предметы с energy capability в обоих слотах
+    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
     }
     
@@ -103,7 +119,7 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
         return new MachineBatteryMenu(pContainerId, pPlayerInventory, this, this.data);
     }
     
-    // ==================== ENERGY WRAPPER ====================
+    // ==================== ENERGY WRAPPER (Redstone-aware) ====================
     
     private IEnergyStorage createEnergyWrapper() {
         return new IEnergyStorage() {
@@ -111,7 +127,6 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
                 if (level == null) return false;
                 boolean hasSignal = level.hasNeighborSignal(worldPosition);
                 int activeMode = hasSignal ? modeOnSignal : modeOnNoSignal;
-                // Режимы, разрешающие ПРИЁМ: 0 (Приём и Передача), 1 (Только Приём)
                 return activeMode == 0 || activeMode == 1;
             }
             
@@ -119,28 +134,31 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
                 if (level == null) return false;
                 boolean hasSignal = level.hasNeighborSignal(worldPosition);
                 int activeMode = hasSignal ? modeOnSignal : modeOnNoSignal;
-                // Режимы, разрешающие ПЕРЕДАЧУ: 0 (Приём и Передача), 2 (Только Передача)
                 return activeMode == 0 || activeMode == 2;
             }
             
             @Override 
             public int receiveEnergy(int maxReceive, boolean simulate) { 
-                return !isInputAllowed() ? 0 : energyStorage.receiveEnergy(maxReceive, simulate); 
+                if (!isInputAllowed()) return 0;
+                long maxReceiveLong = Math.min(maxReceive, Integer.MAX_VALUE);
+                return (int) energyStorage.receiveEnergy(maxReceiveLong, simulate); 
             }
             
             @Override 
             public int extractEnergy(int maxExtract, boolean simulate) { 
-                return !isOutputAllowed() ? 0 : energyStorage.extractEnergy(maxExtract, simulate); 
+                if (!isOutputAllowed()) return 0;
+                long maxExtractLong = Math.min(maxExtract, Integer.MAX_VALUE);
+                return (int) energyStorage.extractEnergy(maxExtractLong, simulate); 
             }
             
             @Override 
             public int getEnergyStored() { 
-                return energyStorage.getEnergyStored(); 
+                return (int) Math.min(energyStorage.getEnergyStored(), Integer.MAX_VALUE); 
             }
             
             @Override 
             public int getMaxEnergyStored() { 
-                return energyStorage.getMaxEnergyStored(); 
+                return (int) Math.min(energyStorage.getMaxEnergyStored(), Integer.MAX_VALUE); 
             }
             
             @Override 
@@ -160,66 +178,74 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
     public static void tick(Level pLevel, BlockPos pPos, BlockState pState, MachineBatteryBlockEntity pBlockEntity) {
         if (pLevel.isClientSide()) return;
         
-        boolean hasSignal = pLevel.hasNeighborSignal(pPos);
+        long gameTime = pLevel.getGameTime();
         
-        // Определяем активный режим в зависимости от сигнала
-        int activeMode = hasSignal ? pBlockEntity.modeOnSignal : pBlockEntity.modeOnNoSignal;
-        
-        // Определяем разрешенные операции
-        boolean canInput = false;
-        boolean canOutput = false;
-        
-        switch (activeMode) {
-            case 0: // Приём и Передача
-                canInput = true;
-                canOutput = true;
-                break;
-            case 1: // Только Приём
-                canInput = true;
-                canOutput = false;
-                break;
-            case 2: // Только Передача
-                canInput = false;
-                canOutput = true;
-                break;
-            case 3: // Заблокировано
-                canInput = false;
-                canOutput = false;
-                break;
+        // Ежедневная обработка энергии
+        if (gameTime % 1 == 0) {
+            boolean hasSignal = pLevel.hasNeighborSignal(pPos);
+            int activeMode = hasSignal ? pBlockEntity.modeOnSignal : pBlockEntity.modeOnNoSignal;
+            
+            boolean canInput = activeMode == 0 || activeMode == 1;
+            boolean canOutput = activeMode == 0 || activeMode == 2;
+            
+            if (canInput) {
+                pBlockEntity.chargeFromItem();
+            }
+            
+            if (canOutput) {
+                pBlockEntity.dischargeToItem();
+                pBlockEntity.pushEnergyToNeighbors();
+            }
         }
         
-        // Выполняем разрешенные операции
-        if (canInput) {
-            pBlockEntity.chargeFromItem();
+        // Обновление энергетической дельты
+        if (gameTime % 10 == 0) {
+            pBlockEntity.updateEnergyDelta(pBlockEntity.energyStorage.getEnergyStored());
         }
-        
-        if (canOutput) {
-            pBlockEntity.dischargeToItem();
-            pBlockEntity.pushEnergyToNeighbors();
-        }
-        
-        // Обновление энергетической дельты (каждый тик)
-        pBlockEntity.updateEnergyDelta(pBlockEntity.energyStorage.getEnergyStored());
         
         pBlockEntity.setChanged();
     }
     
     private void chargeFromItem() {
-        inventory.getStackInSlot(CHARGE_SLOT).getCapability(ForgeCapabilities.ENERGY).ifPresent(source -> {
-            int canExtract = source.extractEnergy(energyStorage.getMaxReceive(), true);
-            if (canExtract > 0) {
-                int received = energyStorage.receiveEnergy(canExtract, false);
-                source.extractEnergy(received, false);
+        ItemStack chargeStack = inventory.getStackInSlot(CHARGE_SLOT);
+        if (chargeStack.isEmpty()) return;
+        
+        chargeStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(source -> {
+            if (!source.canExtract()) return;
+            
+            long spaceAvailable = energyStorage.getMaxEnergyStored() - energyStorage.getEnergyStored();
+            if (spaceAvailable <= 0) return;
+            
+            int maxCanExtract = (int) Math.min(energyStorage.getMaxReceive(), spaceAvailable);
+            if (maxCanExtract <= 0) return;
+            
+            int extracted = source.extractEnergy(maxCanExtract, true);
+            if (extracted > 0) {
+                long received = energyStorage.receiveEnergy(extracted, false);
+                source.extractEnergy((int) received, false);
+                setChanged();
             }
         });
     }
     
     private void dischargeToItem() {
-        inventory.getStackInSlot(DISCHARGE_SLOT).getCapability(ForgeCapabilities.ENERGY).ifPresent(target -> {
-            int canReceive = target.receiveEnergy(energyStorage.getMaxExtract(), true);
+        ItemStack dischargeStack = inventory.getStackInSlot(DISCHARGE_SLOT);
+        if (dischargeStack.isEmpty()) return;
+        
+        dischargeStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(target -> {
+            if (!target.canReceive()) return;
+            
+            long availableEnergy = energyStorage.getEnergyStored();
+            if (availableEnergy <= 0) return;
+            
+            int maxCanTransfer = (int) Math.min(energyStorage.getMaxExtract(), availableEnergy);
+            if (maxCanTransfer <= 0) return;
+            
+            int canReceive = target.receiveEnergy(maxCanTransfer, true);
             if (canReceive > 0) {
-                int extracted = energyStorage.extractEnergy(canReceive, false);
-                target.receiveEnergy(extracted, false);
+                long extracted = energyStorage.extractEnergy(canReceive, false);
+                target.receiveEnergy((int) extracted, false);
+                setChanged();
             }
         });
     }
@@ -230,7 +256,7 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
                 this.worldPosition, this.energyStorage.getEnergyStored());
         }
         
-        int energyToSend = this.energyStorage.extractEnergy(this.energyStorage.getMaxExtract(), true);
+        long energyToSend = Math.min(energyStorage.getMaxExtract(), energyStorage.getEnergyStored());
         UUID pushId = UUID.randomUUID();
         
         if (energyToSend <= 0) {
@@ -240,7 +266,7 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
         Level lvl = this.level;
         if (lvl == null) return;
         
-        final int[] totalSent = {0};
+        final long[] totalSent = {0};
         
         for (Direction direction : Direction.values()) {
             if (totalSent[0] >= energyToSend) break;
@@ -248,10 +274,10 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
             BlockEntity neighbor = lvl.getBlockEntity(worldPosition.relative(direction));
             if (neighbor == null) continue;
             
-            // Пропускаем другие батареи для избежания взаимной перекачки
+            // Балансировка между батареями
             if (neighbor instanceof MachineBatteryBlockEntity otherBattery) {
-                int myEnergy = this.energyStorage.getEnergyStored();
-                int theirEnergy = otherBattery.energyStorage.getEnergyStored();
+                long myEnergy = this.energyStorage.getEnergyStored();
+                long theirEnergy = otherBattery.energyStorage.getEnergyStored();
                 
                 if (myEnergy <= theirEnergy) {
                     if (ModClothConfig.get().enableDebugLogging) {
@@ -261,12 +287,12 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
                     continue;
                 }
                 
-                // Отдаём только половину разницы для плавного выравнивания
-                int difference = myEnergy - theirEnergy;
-                int toSend = Math.min(difference / 2, energyToSend - totalSent[0]);
+                long difference = myEnergy - theirEnergy;
+                long toSend = Math.min(difference / 2, energyToSend - totalSent[0]);
                 
                 if (toSend > 0) {
-                    int accepted = otherBattery.energyWrapper.receiveEnergy(toSend, false);
+                    int toSendInt = (int) Math.min(toSend, Integer.MAX_VALUE);
+                    long accepted = otherBattery.energyStorage.receiveEnergy(toSendInt, false);
                     if (accepted > 0) {
                         this.energyStorage.extractEnergy(accepted, false);
                         totalSent[0] += accepted;
@@ -279,10 +305,11 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
                 continue;
             }
             
-            // Для проводов используем acceptEnergy
+            // Для проводов
             if (neighbor instanceof WireBlockEntity wire) {
-                int remaining = energyToSend - totalSent[0];
-                int accepted = wire.acceptEnergy(remaining, pushId, this.worldPosition);
+                long remaining = energyToSend - totalSent[0];
+                int remainingInt = (int) Math.min(remaining, Integer.MAX_VALUE);
+                long accepted = wire.acceptEnergy(remainingInt, pushId, this.worldPosition);
                 if (accepted > 0) {
                     this.energyStorage.extractEnergy(accepted, false);
                     totalSent[0] += accepted;
@@ -290,14 +317,15 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
                 continue;
             }
             
-            // Для остальных устройств используем capability
+            // Для остальных устройств
             LazyOptional<IEnergyStorage> neighborCapability = 
                 neighbor.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite());
             
             neighborCapability.ifPresent(neighborStorage -> {
                 if (neighborStorage.canReceive()) {
-                    int remaining = energyToSend - totalSent[0];
-                    int accepted = neighborStorage.receiveEnergy(remaining, false);
+                    long remaining = energyToSend - totalSent[0];
+                    int remainingInt = (int) Math.min(remaining, Integer.MAX_VALUE);
+                    int accepted = neighborStorage.receiveEnergy(remainingInt, false);
                     if (accepted > 0) {
                         this.energyStorage.extractEnergy(accepted, false);
                         totalSent[0] += accepted;
@@ -311,13 +339,13 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
     
     public void handleButtonPress(int buttonId) {
         switch (buttonId) {
-            case 0: // Верхняя кнопка (нет сигнала)
+            case 0:
                 modeOnNoSignal = (modeOnNoSignal + 1) % 4;
                 break;
-            case 1: // Нижняя кнопка (есть сигнал)
+            case 1:
                 modeOnSignal = (modeOnSignal + 1) % 4;
                 break;
-            case 2: // Кнопка приоритета
+            case 2:
                 priority = Priority.values()[(priority.ordinal() + 1) % Priority.values().length];
                 break;
         }
@@ -332,8 +360,8 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
     
     @Override
     protected void saveAdditional(CompoundTag pTag) {
-        super.saveAdditional(pTag); // ОБЯЗАТЕЛЬНО ПЕРВЫМ
-        pTag.putInt("energy", energyStorage.getEnergyStored());
+        super.saveAdditional(pTag);
+        pTag.putLong("EnergyStored", energyStorage.getEnergyStored());
         pTag.putInt("modeOnNoSignal", modeOnNoSignal);
         pTag.putInt("modeOnSignal", modeOnSignal);
         pTag.putInt("priority", priority.ordinal());
@@ -341,11 +369,34 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
     
     @Override
     public void load(CompoundTag pTag) {
-        super.load(pTag); // ОБЯЗАТЕЛЬНО ПЕРВЫМ
-        energyStorage.setEnergy(pTag.getInt("energy"));
+        super.load(pTag);
+        energyStorage.setEnergy(pTag.getLong("EnergyStored"));
         modeOnNoSignal = pTag.getInt("modeOnNoSignal");
         modeOnSignal = pTag.getInt("modeOnSignal");
         priority = Priority.values()[pTag.getInt("priority")];
+    }
+    
+    @Override
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = super.getUpdateTag();
+        tag.putLong("EnergyStored", energyStorage.getEnergyStored());
+        tag.putInt("modeOnNoSignal", modeOnNoSignal);
+        tag.putInt("modeOnSignal", modeOnSignal);
+        tag.putInt("priority", priority.ordinal());
+        return tag;
+    }
+    
+    // ==================== CAPABILITY ====================
+    
+    @Override
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == ForgeCapabilities.ITEM_HANDLER) {
+            return itemHandler.cast();
+        }
+        if (cap == ForgeCapabilities.ENERGY) {
+            return forgeEnergyHandler.cast();
+        }
+        return super.getCapability(cap, side);
     }
     
     // ==================== UTILITY ====================
@@ -362,7 +413,8 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
     }
     
     public int getComparatorPower() {
-        return (int) Math.floor(((double)this.energyStorage.getEnergyStored() / 
-            this.energyStorage.getMaxEnergyStored()) * 15.0);
+        long energy = this.energyStorage.getEnergyStored();
+        long maxEnergy = this.energyStorage.getMaxEnergyStored();
+        return (int) Math.floor(((double) energy / (double) maxEnergy) * 15.0);
     }
 }

@@ -6,6 +6,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.MachineWoodBurnerBlockEntity;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.energy.LongDataPacker;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.tags.BlockTags;
@@ -33,7 +34,8 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
     private final ContainerData data;
 
     public MachineWoodBurnerMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
-        this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(6)); //  Было 5, стало 6
+        // [ИСПРАВЛЕНО] Убедимся, что размер 8
+        this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(8));
     }
 
     public MachineWoodBurnerMenu(int pContainerId, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -47,20 +49,20 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
         addPlayerHotbar(inv);
 
         this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
+            // (Слоты остались на тех же координатах, как в старом файле)
             // Слот для топлива (0)
             this.addSlot(new SlotItemHandler(handler, 0, 26, 18) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
-                    // Проверяем, является ли предмет топливом
                     return isFuel(stack);
                 }
             });
 
-            // Слот для пепла (1) - только вывод
+            // Слот для пепла (1)
             this.addSlot(new SlotItemHandler(handler, 1, 26, 54) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
-                    return false; // Запрещаем помещать что-либо в слот пепла
+                    return false;
                 }
             });
         });
@@ -70,61 +72,73 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
 
     private boolean isFuel(ItemStack stack) {
         Item item = stack.getItem();
-
-        // Запрещаем ведро лавы
         if (item == Items.LAVA_BUCKET) return false;
-
-        // Разрешаем кастомное топливо
         if (item == ModItems.LIGNITE.get()) return true;
-
-        // Используем встроенную систему Forge для определения ванильного топлива
         return net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null) > 0;
     }
 
-    public int getEnergy() {
-        return this.data.get(0);
+    // --- [НАЧАЛО ИСПРАВЛЕНИЙ] ---
+
+    public long getEnergyLong() {
+        // (ПРАВИЛЬНО) Читаем 0 и 1
+        int high = this.data.get(0);
+        int low = this.data.get(1);
+        return LongDataPacker.unpack(high, low);
     }
 
-    public int getMaxEnergy() {
-        return this.data.get(1);
+    public long getMaxEnergyLong() {
+        // (ПРАВИЛЬНО) Читаем 2 и 3
+        int high = this.data.get(2);
+        int low = this.data.get(3);
+        return LongDataPacker.unpack(high, low);
     }
 
     public int getBurnTime() {
-        return this.data.get(2);
+        // [ИСПРАВЛЕНО] BlockEntity пишет в ячейку 4
+        return this.data.get(4);
     }
 
     public int getMaxBurnTime() {
-        return this.data.get(3);
+        // [ИСПРАВЛЕНО] BlockEntity пишет в ячейку 5
+        return this.data.get(5);
     }
 
     public boolean isLit() {
-        return this.data.get(4) != 0;
+        // [ИСПРАВЛЕНО] BlockEntity пишет в ячейку 6
+        return this.data.get(6) != 0;
     }
 
     public void toggleEnabled() {
-        // Отправляем специальное значение -1 для переключения
-        this.data.set(5, -1);
+        // [ИСПРАВЛЕНО] BlockEntity слушает ячейку 7
+        this.data.set(7, -1);
     }
 
     public boolean isEnabled() {
-        return data.get(5) != 0;
+        // [ИСПРАВЛЕНО] BlockEntity пишет в ячейку 7
+        return data.get(7) != 0;
     }
 
     public int getBurnTimeScaled(int scale) {
-        int maxBurnTime = this.data.get(3);
-        int burnTime = this.data.get(2);
+        // [ИСПРАВЛЕНО] Используем исправленные геттеры
+        int maxBurnTime = this.getMaxBurnTime();
+        int burnTime = this.getBurnTime();
 
         return maxBurnTime != 0 ? burnTime * scale / maxBurnTime : 0;
     }
 
     public int getEnergyScaled(int scale) {
-        int energy = this.data.get(0);
-        int maxEnergy = this.data.get(1);
+        // [ИСПРАВЛЕНО] Используем long-геттеры для long-логики
+        long energy = this.getEnergyLong();
+        long maxEnergy = this.getMaxEnergyLong();
 
-        return maxEnergy != 0 ? energy * scale / maxEnergy : 0;
+        // Используем double, чтобы избежать переполнения и получить точный int для GUI
+        return maxEnergy != 0 ? (int) ((double)energy / maxEnergy * scale) : 0;
     }
 
-    // Константы для quickMove логики
+    // --- [КОНЕЦ ИСПРАВЛЕНИЙ] ---
+
+
+    // (Логика quickMoveStack, stillValid и addPlayer... не изменилась)
     private static final int VANILLA_SLOT_COUNT = 36;
     private static final int VANILLA_FIRST_SLOT_INDEX = 0;
     private static final int TE_INVENTORY_FIRST_SLOT_INDEX = 36;
@@ -138,19 +152,14 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
         ItemStack copyOfSourceStack = sourceStack.copy();
 
         if (pIndex < VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT) {
-            // Перемещение из инвентаря игрока в машину
             boolean moved = false;
-
-            // Если это топливо, пытаемся поместить в слот топлива (0)
             if (isFuel(sourceStack)) {
                 moved = this.moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX + 1, false);
             }
-
             if (!moved) {
                 return ItemStack.EMPTY;
             }
         } else if (pIndex < TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT) {
-            // Перемещение из машины в инвентарь игрока
             if (!this.moveItemStackTo(sourceStack, VANILLA_FIRST_SLOT_INDEX, VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT, false)) {
                 return ItemStack.EMPTY;
             }
@@ -177,7 +186,6 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
     private void addPlayerInventory(Inventory playerInventory) {
         for (int i = 0; i < 3; ++i) {
             for (int l = 0; l < 9; ++l) {
-                // ИЗМЕНЕНО: было 84 + i * 18, стало 120 + i * 18 (опустили на 36 пикселей)
                 this.addSlot(new Slot(playerInventory, l + i * 9 + 9, 8 + l * 18, 104 + i * 18));
             }
         }
@@ -185,7 +193,6 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
 
     private void addPlayerHotbar(Inventory playerInventory) {
         for (int i = 0; i < 9; ++i) {
-            // ИЗМЕНЕНО: было 142, стало 178 (опустили на 36 пикселей)
             this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 162));
         }
     }

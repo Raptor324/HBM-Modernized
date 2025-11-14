@@ -22,14 +22,23 @@ import com.hbm_m.block.WireBlock;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 
+// [ИЗМЕНЕНИЕ] Импортируем твои новые классы
+import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.energy.ILongEnergyStorage;
+import com.hbm_m.energy.LongToForgeWrapper;
+import com.hbm_m.energy.ForgeToLongWrapper;
+
 import java.util.UUID;
 
 public class WireBlockEntity extends BlockEntity {
 
     private int recheckTimer = 0;
 
-    private final IEnergyStorage energyProxy = createEnergyProxy();
-    private final LazyOptional<IEnergyStorage> lazyProxy = LazyOptional.of(() -> energyProxy);
+    // [ИЗМЕНЕНИЕ] Создаем прокси для ОБЕИХ систем
+    private final ILongEnergyStorage longEnergyProxy = createLongProxy();
+    private final IEnergyStorage forgeEnergyProxy = createForgeProxy(); // Это будет обертка
+    private final LazyOptional<ILongEnergyStorage> lazyLongProxy = LazyOptional.of(() -> longEnergyProxy);
+    private final LazyOptional<IEnergyStorage> lazyForgeProxy = LazyOptional.of(() -> forgeEnergyProxy);
 
     public WireBlockEntity(BlockPos pPos, BlockState pState) {
         super(ModBlockEntities.WIRE_BE.get(), pPos, pState);
@@ -80,8 +89,8 @@ public class WireBlockEntity extends BlockEntity {
             BlockState correctState = wireBlock.defaultBlockState();
             for (Direction dir : Direction.values()) {
                 correctState = correctState.setValue(
-                    WireBlock.PROPERTIES_MAP.get(dir),
-                    wireBlock.canConnectTo(level, pos, dir)
+                        WireBlock.PROPERTIES_MAP.get(dir),
+                        wireBlock.canConnectTo(level, pos, dir)
                 );
             }
 
@@ -94,19 +103,21 @@ public class WireBlockEntity extends BlockEntity {
 
     /**
      * Публичный метод для начала запроса энергии из этой точки сети.
+     * [ИЗМЕНЕНИЕ] Используем long
      */
-    public int requestEnergy(int maxRequest, boolean simulate) {
+    public long requestEnergy(long maxRequest, boolean simulate) {
         Level lvl = this.level;
-        if (lvl == null) return 0;
+        if (lvl == null) return 0L;
         // делегируем сложный обход в центральный менеджер (union-find / incremental)
         return com.hbm_m.energy.WireNetworkManager.get().requestEnergy(lvl, this.worldPosition, maxRequest, simulate);
     }
-    
+
     // Принимает энергию от источника и проксирует её дальше по проводам/соседям.
     // Возвращает количество реально принятое целевыми хранилищами.
-    public int acceptEnergy(int amount, UUID pushId) {
+    // [ИЗМЕНЕНИЕ] Используем long
+    public long acceptEnergy(long amount, UUID pushId) {
         Level lvl = this.level;
-        if (lvl == null) return 0;
+        if (lvl == null) return 0L;
         if (ModClothConfig.get().enableDebugLogging) {
             MainRegistry.LOGGER.debug("[WIRE <<<] acceptEnergy id={} pos={} amount={}", pushId, this.worldPosition, amount);
         }
@@ -117,9 +128,10 @@ public class WireBlockEntity extends BlockEntity {
     }
 
     // acceptEnergy с указанием позиции источника — чтобы не возвращать энергию обратно к origin
-    public int acceptEnergy(int amount, UUID pushId, BlockPos origin) {
+    // [ИЗМЕНЕНИЕ] Используем long
+    public long acceptEnergy(long amount, UUID pushId, BlockPos origin) {
         Level lvl = this.level;
-        if (lvl == null) return 0;
+        if (lvl == null) return 0L;
 
         if (ModClothConfig.get().enableDebugLogging) {
             MainRegistry.LOGGER.debug("[WIRE <<<] acceptEnergy id={} pos={} amount={} origin={}", pushId, this.worldPosition, amount, origin);
@@ -130,14 +142,15 @@ public class WireBlockEntity extends BlockEntity {
     }
 
     // Internal recursive worker that carries a visited set to avoid infinite loops.
-    private int acceptEnergyInternal(int amount, UUID pushId, BlockPos origin, java.util.Set<BlockPos> visited) {
+    // [ИЗМЕНЕНИЕ] Используем long
+    private long acceptEnergyInternal(long amount, UUID pushId, BlockPos origin, java.util.Set<BlockPos> visited) {
         Level lvl = this.level;
-        if (lvl == null) return 0;
+        if (lvl == null) return 0L;
 
         // Mark this position as visited. If already visited, bail out.
-        if (!visited.add(this.worldPosition)) return 0;
+        if (!visited.add(this.worldPosition)) return 0L;
 
-        int totalAccepted = 0;
+        long totalAccepted = 0L; // [ИЗМЕНЕНИЕ] long
 
         for (Direction dir : Direction.values()) {
             if (totalAccepted >= amount) break;
@@ -151,17 +164,35 @@ public class WireBlockEntity extends BlockEntity {
                 if (visited.contains(wireNeighbor.worldPosition)) continue;
                 totalAccepted += wireNeighbor.acceptEnergyInternal(amount - totalAccepted, pushId, origin, visited);
             } else {
-                LazyOptional<IEnergyStorage> cap = neighbor.getCapability(ForgeCapabilities.ENERGY, dir.getOpposite());
-                if (cap.isPresent()) {
-                    IEnergyStorage target = cap.resolve().orElse(null);
-                    if (target != null && target.canReceive()) {
-                        int accepted = target.receiveEnergy(amount - totalAccepted, false);
-                        if (accepted > 0) {
-                            if (ModClothConfig.get().enableDebugLogging) {
-                                MainRegistry.LOGGER.debug("[WIRE <<<] Delivered {} FE to {} at {}", accepted, target.getClass().getSimpleName(), neighbor.getBlockPos());
-                            }
-                            totalAccepted += accepted;
+                // [ИЗМЕНЕНИЕ] --- Новая логика поиска Capability ---
+                ILongEnergyStorage targetStorage = null;
+
+                // 1. Пытаемся найти нашу ILongEnergyStorage
+                LazyOptional<ILongEnergyStorage> longCap = neighbor.getCapability(ModCapabilities.LONG_ENERGY, dir.getOpposite());
+                if (longCap.isPresent()) {
+                    targetStorage = longCap.resolve().orElse(null);
+                } else {
+                    // 2. Если не нашли, ищем старую IEnergyStorage
+                    LazyOptional<IEnergyStorage> forgeCap = neighbor.getCapability(ForgeCapabilities.ENERGY, dir.getOpposite());
+                    if (forgeCap.isPresent()) {
+                        IEnergyStorage intStorage = forgeCap.resolve().orElse(null);
+                        // 3. Оборачиваем int-хранилище в long-обертку
+                        if (intStorage != null) {
+                            targetStorage = new ForgeToLongWrapper(intStorage);
                         }
+                    }
+                }
+
+                // --- Конец новой логики ---
+
+                if (targetStorage != null && targetStorage.canReceive()) {
+                    // [ИЗМЕНЕНИЕ] Используем long
+                    long accepted = targetStorage.receiveEnergy(amount - totalAccepted, false);
+                    if (accepted > 0) {
+                        if (ModClothConfig.get().enableDebugLogging) {
+                            MainRegistry.LOGGER.debug("[WIRE <<<] Delivered {} FE to {} at {}", accepted, targetStorage.getClass().getSimpleName(), neighbor.getBlockPos());
+                        }
+                        totalAccepted += accepted;
                     }
                 }
             }
@@ -171,40 +202,67 @@ public class WireBlockEntity extends BlockEntity {
     }
 
     // Удобная перегрузка с указанием origin
-    public int acceptEnergy(int amount, BlockPos origin) {
+    // [ИЗМЕНЕНИЕ] Используем long
+    public long acceptEnergy(long amount, BlockPos origin) {
         return acceptEnergy(amount, UUID.randomUUID(), origin);
     }
 
     // Удобный перегруз: если вызывающий не хочет сам генерировать UUID.
-    public int acceptEnergy(int amount) {
+    // [ИЗМЕНЕНИЕ] Используем long
+    public long acceptEnergy(long amount) {
         return acceptEnergy(amount, UUID.randomUUID());
     }
-    
-    private IEnergyStorage createEnergyProxy() {
-        return new IEnergyStorage() {
-            // Провода сами по себе не хранят и не отдают энергию, они только передают запросы.
-            // Поэтому стандартные методы возвращают 0.
-            @Override public int receiveEnergy(int maxReceive, boolean simulate) { return 0; }
-            @Override public int extractEnergy(int maxExtract, boolean simulate) { return 0; }
-            @Override public int getEnergyStored() { return 0; }
-            @Override public int getMaxEnergyStored() { return 0; }
-            @Override public boolean canExtract() { return true; } // Говорим, что можем "извлекать", чтобы к нам могли подключаться.
-            @Override public boolean canReceive() { return true; } // Говорим, что можем "принимать".
+
+    // [ИЗМЕНЕНИЕ] Создаем "главный" прокси, реализующий ILongEnergyStorage
+    private ILongEnergyStorage createLongProxy() {
+        return new ILongEnergyStorage() {
+            @Override
+            public long receiveEnergy(long maxReceive, boolean simulate) {
+                // Машины извне, использующие capability, вызывают этот метод.
+                // Мы перенаправляем его в наш 'acceptEnergy'.
+                // (Примечание: 'simulate' здесь игнорируется, т.к. 'acceptEnergy' не симулируемый)
+                // (Передаем null как origin, т.к. это "внешний" пуш)
+                if (simulate) return 0L; // Наша логика accept не поддерживает симуляцию
+                return WireBlockEntity.this.acceptEnergy(maxReceive, (BlockPos) null);
+            }
+
+            @Override
+            public long extractEnergy(long maxExtract, boolean simulate) {
+                // Машины извне, "тянущие" энергию, вызывают этот метод.
+                // Мы перенаправляем его в 'requestEnergy', который обращается к WireNetworkManager.
+                return WireBlockEntity.this.requestEnergy(maxExtract, simulate);
+            }
+
+            @Override public long getEnergyStored() { return 0L; }
+            @Override public long getMaxEnergyStored() { return 0L; }
+            @Override public boolean canExtract() { return true; } // Говорим, что можем "извлекать"
+            @Override public boolean canReceive() { return true; } // Говорим, что можем "принимать"
         };
     }
 
+    // [ИЗМЕНЕНИЕ] Создаем прокси для Forge, который просто оборачивает наш long-прокси
+    private IEnergyStorage createForgeProxy() {
+        return new LongToForgeWrapper(this.longEnergyProxy);
+    }
+
+    // [ИЗМЕНЕНИЕ] Предоставляем ОБА capability
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == ModCapabilities.LONG_ENERGY) {
+            return lazyLongProxy.cast();
+        }
         if (cap == ForgeCapabilities.ENERGY) {
-            return lazyProxy.cast();
+            return lazyForgeProxy.cast();
         }
         return super.getCapability(cap, side);
     }
-    
+
+    // [ИZМЕНЕНИЕ] Инвалидируем ОБА прокси
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
-        lazyProxy.invalidate();
+        lazyLongProxy.invalidate();
+        lazyForgeProxy.invalidate();
     }
 
     // Сохранение и загрузка не нужны, так как у провода нет состояния.

@@ -958,7 +958,7 @@ public class ModItems {
     public static final RegistryObject<Item> BATTERY_SPARK_CELL_6 = ITEMS.register("battery_spark_cell_6",
             () -> new ModBatteryItem(
                     new Item.Properties(),
-                    Integer.MAX_VALUE,
+                    600_000_000L,
                     2000000,
                     2000000
             ));
@@ -966,7 +966,7 @@ public class ModItems {
     public static final RegistryObject<Item> BATTERY_SPARK_CELL_25 = ITEMS.register("battery_spark_cell_25",
             () -> new ModBatteryItem(
                     new Item.Properties(),
-                    Integer.MAX_VALUE,
+                    2_500_000_000L,
                     2000000,
                     2000000
             ));
@@ -974,15 +974,15 @@ public class ModItems {
     public static final RegistryObject<Item> BATTERY_SPARK_CELL_100 = ITEMS.register("battery_spark_cell_100",
             () -> new ModBatteryItem(
                     new Item.Properties(),
-                    Integer.MAX_VALUE,
+                    10_000_000_000L,
                     20000000,
-                    20000000
+                    2000000
             ));
 
     public static final RegistryObject<Item> BATTERY_SPARK_CELL_1000 = ITEMS.register("battery_spark_cell_1000",
             () -> new ModBatteryItem(
                     new Item.Properties(),
-                    Integer.MAX_VALUE,
+                    100_000_000_000L,
                     20000000,
                     20000000
             ));
@@ -990,25 +990,25 @@ public class ModItems {
     public static final RegistryObject<Item> BATTERY_SPARK_CELL_2500 = ITEMS.register("battery_spark_cell_2500",
             () -> new ModBatteryItem(
                     new Item.Properties(),
-                    Integer.MAX_VALUE,
-                    200000000,
-                    200000000
+                    250_000_000_000L,
+                    20000000,
+                    20000000
             ));
 
     public static final RegistryObject<Item> BATTERY_SPARK_CELL_10000 = ITEMS.register("battery_spark_cell_10000",
             () -> new ModBatteryItem(
                     new Item.Properties(),
-                    Integer.MAX_VALUE,
-                    2000000000,
-                    2000000000
+                    1_000_000_000_000L,
+                    200000000,
+                    200000000
             ));
 
     public static final RegistryObject<Item> BATTERY_SPARK_CELL_POWER = ITEMS.register("battery_spark_cell_power",
             () -> new ModBatteryItem(
                     new Item.Properties(),
-                    Integer.MAX_VALUE,
-                    2000000000,
-                    2000000000
+                    100_000_000_000_000L,
+                    200000000,
+                    200000000
             ));
 
 
