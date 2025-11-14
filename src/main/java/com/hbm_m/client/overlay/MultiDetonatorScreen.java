@@ -1,14 +1,11 @@
 package com.hbm_m.client.overlay;
 
-import com.hbm_m.network.DetonateAllPacket;
-import com.hbm_m.network.ModNetwork;
-import com.mojang.blaze3d.vertex.PoseStack;
+import com.hbm_m.network.*;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import com.hbm_m.item.MultiDetonatorItem;
@@ -17,12 +14,11 @@ import net.minecraft.ChatFormatting;
 
 /**
  * GUI для мульти-детонатора
- * Показывает 6 кнопок для выбора точки, координаты и поле для имени
+ * Показывает 4 кнопки для выбора точки, координаты и поле для имени
  * При нажатии "Detonate All" активирует все точки и выводит отчет
  */
 public class MultiDetonatorScreen extends Screen {
 
-    private static final int POINTS_COUNT = 4;
     private static final int BUTTON_WIDTH = 150;
     private static final int BUTTON_HEIGHT = 20;
     private static final int COORDS_TEXT_WIDTH = 100;
@@ -32,23 +28,27 @@ public class MultiDetonatorScreen extends Screen {
 
     private ItemStack detonatorStack;
     private MultiDetonatorItem detonatorItem;
-    private int selectedPoint = 0;
-
-    private EditBox[] nameInputs = new EditBox[POINTS_COUNT];
-    private Button[] pointButtons = new Button[POINTS_COUNT];
+    private int selectedPoint = 0; // Текущий выбор в GUI
+    private EditBox[] nameInputs;
+    private Button[] pointButtons;
     private Button detonateAllButton;
+    private int pointsCount;
 
     public MultiDetonatorScreen(ItemStack stack) {
         super(Component.literal("Multi-Detonator"));
         this.detonatorStack = stack;
         this.detonatorItem = (MultiDetonatorItem) stack.getItem();
+
+        // ВАЖНО: Загружаем активную точку из NBT - это гарантирует синхронизацию
         this.selectedPoint = detonatorItem.getActivePoint(stack);
+        this.pointsCount = detonatorItem.getMaxPoints();
+        this.nameInputs = new EditBox[pointsCount];
+        this.pointButtons = new Button[pointsCount];
     }
 
     @Override
     protected void init() {
         super.init();
-
         this.clearWidgets();
 
         int centerX = this.width / 2;
@@ -56,7 +56,7 @@ public class MultiDetonatorScreen extends Screen {
         int yOffset = 0;
 
         // Создаем кнопки для каждой точки
-        for (int i = 0; i < POINTS_COUNT; i++) {
+        for (int i = 0; i < pointsCount; i++) {
             final int pointIndex = i;
             int buttonY = startY + yOffset;
 
@@ -83,18 +83,40 @@ public class MultiDetonatorScreen extends Screen {
                     Component.literal("Name"));
 
             PointData pointData = detonatorItem.getPointData(detonatorStack, i);
-            if (pointData != null) {
-                nameInput.setValue(pointData.name);
+            String currentName = "";
+            int currentX = 0, currentY = 0, currentZ = 0;
+            boolean hasTarget = false;
+
+            if (pointData != null && !pointData.name.isEmpty()) {
+                currentName = pointData.name;
+                currentX = pointData.x;
+                currentY = pointData.y;
+                currentZ = pointData.z;
+                hasTarget = pointData.hasTarget;
             } else {
-                nameInput.setValue("Point " + (i + 1));
+                currentName = "Point " + (i + 1);
             }
 
+            nameInput.setValue(currentName);
             nameInput.setMaxLength(16);
 
             final int finalI = i;
+            final String finalCurrentName = currentName;
+            final int finalX = currentX;
+            final int finalY = currentY;
+            final int finalZ = currentZ;
+            final boolean finalHasTarget = hasTarget;
+
+// ⭐ КРИТИЧНО: На каждое изменение имени отправляем ПОЛНЫЕ данные на сервер
             nameInput.setResponder(name -> {
                 if (!name.isEmpty()) {
+                    // Сохраняем локально на клиенте
                     detonatorItem.setPointName(detonatorStack, finalI, name);
+
+                    // ⭐ ГЛАВНОЕ: Отправляем пакет на сервер с ПОЛНЫМИ данными
+                    ModNetwork.CHANNEL.sendToServer(
+                            new SyncPointPacket(finalI, name, finalX, finalY, finalZ, finalHasTarget)
+                    );
                 }
             });
 
@@ -120,31 +142,40 @@ public class MultiDetonatorScreen extends Screen {
                         Component.literal("Detonate All"),
                         btn -> detonateAllPoints()
                 )
-                .pos(centerX - 55, this.height - 60)
-                .size(100, 20)
+                .pos(centerX - 55, this.height - 51)
+                .size(110, 20)
                 .build();
 
         this.addRenderableWidget(detonateAllButton);
-
-
     }
 
     private void selectPoint(int pointIndex) {
         selectedPoint = pointIndex;
+
+        // Сохраняем на клиенте
         detonatorItem.setActivePoint(detonatorStack, pointIndex);
+
+        // ⭐ КРИТИЧНО: Отправляем пакет на сервер для синхронизации
+        ModNetwork.CHANNEL.sendToServer(new SetActivePointPacket(pointIndex));
+
         this.init();
     }
 
     private void clearPoint(int pointIndex) {
+        // Очищаем на клиенте (только координаты, имя сохраняется)
         detonatorItem.clearPoint(detonatorStack, pointIndex);
+
+        // ⭐ КРИТИЧНО: Отправляем пакет на сервер для синхронизации
+        ModNetwork.CHANNEL.sendToServer(new ClearPointPacket(pointIndex));
+
+        // Обновляем GUI без изменения текущего состояния
         this.init();
     }
 
     /**
      * Детонировать все точки и вывести отчет в чат
-     */
-    /**
-     * Детонировать все точки и вывести отчет в чат
+     * ✓ Исправлено: Не вызывает ModNetwork.registerChannels() на клиенте
+     * ✓ Исправлено: Проверяет что канал инициализирован перед отправкой
      */
     private void detonateAllPoints() {
         Player player = Minecraft.getInstance().player;
@@ -153,12 +184,20 @@ public class MultiDetonatorScreen extends Screen {
         ItemStack stack = detonatorStack;
         if (stack.isEmpty() || !(stack.getItem() instanceof MultiDetonatorItem)) return;
 
-        // Отправка пакета на сервер (пример)
-        ModNetwork.CHANNEL.sendToServer(new DetonateAllPacket());
+        // Проверяем что канал инициализирован
+        if (ModNetwork.CHANNEL == null) {
+            player.displayClientMessage(
+                    Component.literal("Сетевой канал не инициализирован!")
+                            .withStyle(ChatFormatting.RED),
+                    true
+            );
+            return;
+        }
 
+        // Отправка пакета на сервер
+        ModNetwork.CHANNEL.sendToServer(new DetonateAllPacket());
         this.minecraft.setScreen(null); // закрыть GUI
     }
-
 
     @Override
     public void render(net.minecraft.client.gui.GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
@@ -169,12 +208,13 @@ public class MultiDetonatorScreen extends Screen {
         int startY = 30;
         int yOffset = 0;
 
-        guiGraphics.drawString(this.font, "Multi-Detonator", centerX - 57, 10, 0xFFFFFF, false);
+        guiGraphics.drawString(this.font, "Multi-Detonator", centerX - 37, 10, 0xFFFFFF, false);
 
-        for (int i = 0; i < POINTS_COUNT; i++) {
+        for (int i = 0; i < pointsCount; i++) {
             int textY = startY + yOffset + 2;
 
             PointData pointData = detonatorItem.getPointData(detonatorStack, i);
+
             String coordText = "----";
             int textColor = 0xFF0000; // Красный - нет координат
 
@@ -189,7 +229,6 @@ public class MultiDetonatorScreen extends Screen {
         }
     }
 
-
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         for (EditBox input : nameInputs) {
@@ -197,6 +236,7 @@ public class MultiDetonatorScreen extends Screen {
                 return true;
             }
         }
+
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
@@ -207,12 +247,14 @@ public class MultiDetonatorScreen extends Screen {
                 return true;
             }
         }
+
         return super.charTyped(codePoint, modifiers);
     }
 
     @Override
     public void tick() {
         super.tick();
+
         for (EditBox input : nameInputs) {
             input.tick();
         }

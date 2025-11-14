@@ -11,6 +11,11 @@ import com.hbm_m.item.MultiDetonatorItem;
 import com.hbm_m.client.overlay.MultiDetonatorScreen;
 import org.lwjgl.glfw.GLFW;
 
+/**
+ * Обработчик входных событий для открытия GUI мульти-детонатора по нажатию R
+ * ✓ Совместимо с MultiDetonatorItem версии 4 точек
+ * ✓ Совместимо с MultiDetonatorScreen версии 4 точек
+ */
 @Mod.EventBusSubscriber(modid = "hbm_m", bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class MultiDetonatorKeyInputHandler {
 
@@ -19,6 +24,7 @@ public class MultiDetonatorKeyInputHandler {
         Minecraft minecraft = Minecraft.getInstance();
         Player player = minecraft.player;
 
+        // Проверяем, что игрок существует и никакой GUI не открыт
         if (player == null || minecraft.screen != null) {
             return;
         }
@@ -28,13 +34,14 @@ public class MultiDetonatorKeyInputHandler {
             ItemStack mainItem = player.getMainHandItem();
             ItemStack offItem = player.getOffhandItem();
 
-            // Проверяем обе руки
+            // Проверяем предмет в основной руке
             if (mainItem.getItem() instanceof MultiDetonatorItem) {
                 minecraft.setScreen(new MultiDetonatorScreen(mainItem));
                 // НЕ вызываем event.setCanceled(true); - это вызовет крах!
                 return;
             }
 
+            // Проверяем предмет в руке со щитом
             if (offItem.getItem() instanceof MultiDetonatorItem) {
                 minecraft.setScreen(new MultiDetonatorScreen(offItem));
                 // НЕ вызываем event.setCanceled(true); - это вызовет крах!

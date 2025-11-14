@@ -1,11 +1,13 @@
 package com.hbm_m.item;
 
+import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -19,7 +21,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import com.hbm_m.block.IDetonatable;
 
 /**
- * Мульти-детонатор: позволяет сохранять до 6 точек детонации
+ * Мульти-детонатор: позволяет сохранять до 4 точек детонации
  * Каждая точка может быть названа (макс. 16 символов)
  * При нажатии R открывается GUI для выбора активной точки
  * При ПКМ (без Shift) активирует текущую выбранную точку
@@ -27,7 +29,7 @@ import com.hbm_m.block.IDetonatable;
 public class MultiDetonatorItem extends Item {
 
     // NBT константы для основных данных
-    private static final String NBT_ACTIVE_POINT = "ActivePoint"; // 0-5
+    private static final String NBT_ACTIVE_POINT = "ActivePoint"; // 0-3
     private static final String NBT_POINTS_TAG = "Points"; // Список точек
 
     // Константы для каждой точки в ListTag
@@ -37,8 +39,23 @@ public class MultiDetonatorItem extends Item {
     private static final String NBT_POINT_NAME = "Name";
     private static final String NBT_POINT_HAS_TARGET = "HasTarget";
 
-    private static final int MAX_POINTS = 6;
+    private static final int MAX_POINTS = 4;
     private static final int MAX_NAME_LENGTH = 16;
+
+    // Класс для хранения данных точки
+    public static class PointData {
+        public int x, y, z;
+        public String name;
+        public boolean hasTarget;
+
+        public PointData(int x, int y, int z, String name, boolean hasTarget) {
+            this.x = x;
+            this.y = y;
+            this.z = z;
+            this.name = name;
+            this.hasTarget = hasTarget;
+        }
+    }
 
     public MultiDetonatorItem(Properties properties) {
         super(properties.stacksTo(1));
@@ -66,46 +83,54 @@ public class MultiDetonatorItem extends Item {
 
             CompoundTag nbt = stack.getTag();
 
-            // Получаем активную точку (по умолчанию 0)
             int activePoint = nbt.getInt(NBT_ACTIVE_POINT);
-            if (activePoint >= MAX_POINTS) {
+            if (activePoint < 0 || activePoint >= MAX_POINTS) {
                 activePoint = 0;
             }
 
-            // Инициализируем список точек, если его еще нет
             if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
                 nbt.put(NBT_POINTS_TAG, new ListTag());
             }
 
             ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
 
-            // Расширяем список до нужного размера
+            // ⭐ Расширяем список, сохраняя существующие точки
             while (pointsList.size() <= activePoint) {
-                pointsList.add(createEmptyPointTag());
+                CompoundTag newPointTag = createEmptyPointTag();
+                pointsList.add(newPointTag);
             }
 
-            // Получаем текущую точку и обновляем координаты
+            // ⭐ ГЛАВНОЕ: Получаем существующую точку и сохраняем ЕЁ ИМЯ
             CompoundTag pointTag = pointsList.getCompound(activePoint);
+            String savedName = pointTag.getString(NBT_POINT_NAME);
+
+            // Обновляем координаты
             pointTag.putInt(NBT_POINT_X, pos.getX());
             pointTag.putInt(NBT_POINT_Y, pos.getY());
             pointTag.putInt(NBT_POINT_Z, pos.getZ());
             pointTag.putBoolean(NBT_POINT_HAS_TARGET, true);
 
-            // Если имя пусто, генерируем дефолтное
-            if (!pointTag.contains(NBT_POINT_NAME)) {
-                pointTag.putString(NBT_POINT_NAME, "Point " + (activePoint + 1));
-            }
+            // ⭐ КРИТИЧНО: Возвращаем сохранённое имя
+            pointTag.putString(NBT_POINT_NAME, savedName.isEmpty() ?
+                    "Point " + (activePoint + 1) : savedName);
 
             pointsList.set(activePoint, pointTag);
             nbt.put(NBT_POINTS_TAG, pointsList);
 
             if (!level.isClientSide) {
+                String finalName = pointTag.getString(NBT_POINT_NAME);
                 player.displayClientMessage(
-                        Component.literal("Позиция сохранена в точку " + (activePoint + 1) + ": "
+                        Component.literal("Позиция '" + finalName + "' сохранена: "
                                         + pos.getX() + ", " + pos.getY() + ", " + pos.getZ())
                                 .withStyle(ChatFormatting.GREEN),
                         true
                 );
+
+                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
+                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                            soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                }
             }
 
             return InteractionResult.SUCCESS;
@@ -114,9 +139,10 @@ public class MultiDetonatorItem extends Item {
         return InteractionResult.PASS;
     }
 
+
     /**
      * use: активация текущей выбранной точки при ПКМ в воздухе (без Shift)
-     * GUI открывается при нажатии клавиши R (см. MultiDetonatorKeyInputHandler)
+     * GUI открывается при нажатии клавиши R
      */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
@@ -130,227 +156,274 @@ public class MultiDetonatorItem extends Item {
         // На сервере: активируем текущую выбранную точку при ПКМ в воздухе
         if (!level.isClientSide) {
             if (!stack.hasTag()) {
-                if (!level.isClientSide) {
-                    player.displayClientMessage(
-                            Component.literal("Нет сохраненных точек!")
-                                    .withStyle(ChatFormatting.RED),
-                            true
-                    );
+                player.displayClientMessage(
+                        Component.literal("Нет заданных координат!")
+                                .withStyle(ChatFormatting.RED),
+                        true
+                );
+
+                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
+                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
                 }
+
                 return InteractionResultHolder.fail(stack);
             }
 
             CompoundTag nbt = stack.getTag();
             int activePoint = nbt.getInt(NBT_ACTIVE_POINT);
 
-            if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
-                player.displayClientMessage(
-                        Component.literal("Нет сохраненных точек!")
-                                .withStyle(ChatFormatting.RED),
-                        true
-                );
-                return InteractionResultHolder.fail(stack);
+            if (activePoint >= MAX_POINTS) {
+                activePoint = 0;
             }
 
-            ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
+            PointData pointData = getPointData(stack, activePoint);
 
-            if (activePoint >= pointsList.size()) {
-                player.displayClientMessage(
-                        Component.literal("Неверная точка!")
-                                .withStyle(ChatFormatting.RED),
-                        true
-                );
-                return InteractionResultHolder.fail(stack);
-            }
-
-            CompoundTag pointTag = pointsList.getCompound(activePoint);
-
-            if (!pointTag.getBoolean(NBT_POINT_HAS_TARGET)) {
+            if (pointData == null || !pointData.hasTarget) {
                 player.displayClientMessage(
                         Component.literal("Точка " + (activePoint + 1) + " не установлена!")
                                 .withStyle(ChatFormatting.RED),
                         true
                 );
+
+                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
+                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                }
+
                 return InteractionResultHolder.fail(stack);
             }
 
-            // Получаем координаты точки и активируем ее
-            int x = pointTag.getInt(NBT_POINT_X);
-            int y = pointTag.getInt(NBT_POINT_Y);
-            int z = pointTag.getInt(NBT_POINT_Z);
-            BlockPos targetPos = new BlockPos(x, y, z);
+            BlockPos targetPos = new BlockPos(pointData.x, pointData.y, pointData.z);
 
-            // Проверяем, загружен ли чанк
             if (!level.isLoaded(targetPos)) {
                 player.displayClientMessage(
                         Component.literal("Позиция не загружена!")
                                 .withStyle(ChatFormatting.RED),
                         true
                 );
+
+                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
+                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                }
+
                 return InteractionResultHolder.fail(stack);
             }
 
             BlockState state = level.getBlockState(targetPos);
             Block block = state.getBlock();
 
-            // Проверяем поддержку IDetonatable
             if (block instanceof IDetonatable) {
                 IDetonatable detonatable = (IDetonatable) block;
-                boolean success = detonatable.onDetonate(level, targetPos, state, player);
 
-                if (success) {
+                try {
+                    boolean success = detonatable.onDetonate(level, targetPos, state, player);
+
+                    if (success) {
+                        // ⭐ ИСПРАВЛЕНО: Теперь выводим ИМЯ точки в сообщение при детонации
+                        player.displayClientMessage(
+                                Component.literal(pointData.name + " активирован!")
+                                        .withStyle(ChatFormatting.GREEN),
+                                true
+                        );
+
+                        if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
+                            SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
+                            level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                        }
+                    }
+                } catch (Exception e) {
                     player.displayClientMessage(
-                            Component.literal("Точка " + (activePoint + 1) + " успешно активирована!")
-                                    .withStyle(ChatFormatting.GREEN),
-                            true
-                    );
-                    return InteractionResultHolder.success(stack);
-                } else {
-                    player.displayClientMessage(
-                            Component.literal("Блок не поддерживает детонацию или не готов!")
+                            Component.literal("Ошибка при активации!")
                                     .withStyle(ChatFormatting.RED),
                             true
                     );
-                    return InteractionResultHolder.fail(stack);
+
+                    if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
+                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
+                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                    }
+
+                    e.printStackTrace();
                 }
             } else {
                 player.displayClientMessage(
-                        Component.literal("На позиции нет совместимого блока!")
+                        Component.literal("Блок несовместим!")
                                 .withStyle(ChatFormatting.RED),
                         true
                 );
-                return InteractionResultHolder.fail(stack);
+
+                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
+                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                }
             }
         }
 
-        return InteractionResultHolder.pass(stack);
+        return InteractionResultHolder.success(stack);
     }
 
+    // ====== Методы для работы с NBT данными ======
+
     /**
-     * Получить текущую активную точку
+     * Получить данные точки по индексу
      */
-    public int getActivePoint(ItemStack stack) {
-        if (!stack.hasTag()) return 0;
-        return stack.getTag().getInt(NBT_ACTIVE_POINT);
+    public PointData getPointData(ItemStack stack, int pointIndex) {
+        if (!stack.hasTag() || pointIndex < 0 || pointIndex >= MAX_POINTS) {
+            return null;
+        }
+
+        CompoundTag nbt = stack.getTag();
+
+        if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
+            return null;
+        }
+
+        ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
+
+        if (pointIndex >= pointsList.size()) {
+            return null;
+        }
+
+        CompoundTag pointTag = pointsList.getCompound(pointIndex);
+
+        if (pointTag.isEmpty()) {
+            return null;
+        }
+
+        String name = pointTag.getString(NBT_POINT_NAME);
+
+        if (name.isEmpty()) {
+            name = "Point " + (pointIndex + 1);
+        }
+
+        return new PointData(
+                pointTag.getInt(NBT_POINT_X),
+                pointTag.getInt(NBT_POINT_Y),
+                pointTag.getInt(NBT_POINT_Z),
+                name,
+                pointTag.getBoolean(NBT_POINT_HAS_TARGET)
+        );
     }
 
     /**
      * Установить активную точку
      */
     public void setActivePoint(ItemStack stack, int pointIndex) {
-        if (pointIndex < 0 || pointIndex >= MAX_POINTS) return;
-
         if (!stack.hasTag()) {
             stack.setTag(new CompoundTag());
         }
 
-        stack.getTag().putInt(NBT_ACTIVE_POINT, pointIndex);
+        CompoundTag nbt = stack.getTag();
+
+        if (pointIndex >= 0 && pointIndex < MAX_POINTS) {
+            nbt.putInt(NBT_ACTIVE_POINT, pointIndex);
+        }
     }
 
     /**
-     * Получить информацию о точке (x, y, z, имя, hasTarget)
+     * Получить активную точку
      */
-    public PointData getPointData(ItemStack stack, int pointIndex) {
-        if (pointIndex < 0 || pointIndex >= MAX_POINTS) return null;
+    public int getActivePoint(ItemStack stack) {
+        if (!stack.hasTag()) {
+            return 0;
+        }
 
-        if (!stack.hasTag()) return null;
-
-        CompoundTag nbt = stack.getTag();
-        if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) return null;
-
-        ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
-        if (pointIndex >= pointsList.size()) return null;
-
-        CompoundTag pointTag = pointsList.getCompound(pointIndex);
-
-        return new PointData(
-                pointTag.getInt(NBT_POINT_X),
-                pointTag.getInt(NBT_POINT_Y),
-                pointTag.getInt(NBT_POINT_Z),
-                pointTag.getString(NBT_POINT_NAME),
-                pointTag.getBoolean(NBT_POINT_HAS_TARGET)
-        );
+        int activePoint = stack.getTag().getInt(NBT_ACTIVE_POINT);
+        return (activePoint >= 0 && activePoint < MAX_POINTS) ? activePoint : 0;
     }
 
     /**
      * Установить имя точки
      */
     public void setPointName(ItemStack stack, int pointIndex, String name) {
-        if (pointIndex < 0 || pointIndex >= MAX_POINTS) return;
-        if (name.length() > MAX_NAME_LENGTH) {
-            name = name.substring(0, MAX_NAME_LENGTH);
-        }
-
         if (!stack.hasTag()) {
             stack.setTag(new CompoundTag());
         }
 
+        if (pointIndex < 0 || pointIndex >= MAX_POINTS) {
+            return;
+        }
+
         CompoundTag nbt = stack.getTag();
+
+        // Инициализируем список точек
         if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
             nbt.put(NBT_POINTS_TAG, new ListTag());
         }
 
         ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
 
-        // Расширяем список до нужного размера
+        // ⭐ ФИХ: При расширении списка - копируем имена существующих точек
         while (pointsList.size() <= pointIndex) {
-            pointsList.add(createEmptyPointTag());
+            CompoundTag newPointTag = createEmptyPointTag();
+            pointsList.add(newPointTag);
         }
 
         CompoundTag pointTag = pointsList.getCompound(pointIndex);
-        pointTag.putString(NBT_POINT_NAME, name);
+
+        // Ограничиваем длину имени
+        String limitedName = name.length() > MAX_NAME_LENGTH ?
+                name.substring(0, MAX_NAME_LENGTH) : name;
+
+        pointTag.putString(NBT_POINT_NAME, limitedName);
         pointsList.set(pointIndex, pointTag);
         nbt.put(NBT_POINTS_TAG, pointsList);
     }
 
     /**
-     * Очистить точку
+     * Очистить точку (только координаты, имя сохраняется!)
      */
     public void clearPoint(ItemStack stack, int pointIndex) {
-        if (pointIndex < 0 || pointIndex >= MAX_POINTS) return;
-
-        if (!stack.hasTag()) return;
+        if (!stack.hasTag() || pointIndex < 0 || pointIndex >= MAX_POINTS) {
+            return;
+        }
 
         CompoundTag nbt = stack.getTag();
-        if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) return;
+
+        if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
+            return;
+        }
 
         ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
-        if (pointIndex >= pointsList.size()) return;
 
-        CompoundTag pointTag = pointsList.getCompound(pointIndex);
-        pointTag.putBoolean(NBT_POINT_HAS_TARGET, false);
-        pointTag.putString(NBT_POINT_NAME, "Point " + (pointIndex + 1));
-        pointsList.set(pointIndex, pointTag);
-        nbt.put(NBT_POINTS_TAG, pointsList);
+        if (pointIndex < pointsList.size()) {
+            CompoundTag pointTag = pointsList.getCompound(pointIndex);
+
+            // ⭐ РЕШЕНИЕ: Очищаем ТОЛЬКО координаты и флаг hasTarget, оставляем имя!
+            String savedName = pointTag.getString(NBT_POINT_NAME);
+
+            // Создаём очищенный тег с сохранённым именем
+            CompoundTag clearedTag = new CompoundTag();
+            clearedTag.putInt(NBT_POINT_X, 0);
+            clearedTag.putInt(NBT_POINT_Y, 0);
+            clearedTag.putInt(NBT_POINT_Z, 0);
+            clearedTag.putBoolean(NBT_POINT_HAS_TARGET, false);
+            clearedTag.putString(NBT_POINT_NAME, savedName); // ⭐ Сохраняем имя!
+
+            pointsList.set(pointIndex, clearedTag);
+            nbt.put(NBT_POINTS_TAG, pointsList);
+        }
     }
 
     /**
-     * Вспомогательный метод: создание пустого тега точки
+     * Получить максимум точек
+     */
+    public int getMaxPoints() {
+        return MAX_POINTS;
+    }
+
+    /**
+     * Создать пустой тег точки
      */
     private static CompoundTag createEmptyPointTag() {
         CompoundTag tag = new CompoundTag();
         tag.putInt(NBT_POINT_X, 0);
         tag.putInt(NBT_POINT_Y, 0);
         tag.putInt(NBT_POINT_Z, 0);
-        tag.putString(NBT_POINT_NAME, "Point");
+        tag.putString(NBT_POINT_NAME, "");
         tag.putBoolean(NBT_POINT_HAS_TARGET, false);
         return tag;
-    }
-
-    /**
-     * Структура данных для хранения информации о точке
-     */
-    public static class PointData {
-        public int x, y, z;
-        public String name;
-        public boolean hasTarget;
-
-        public PointData(int x, int y, int z, String name, boolean hasTarget) {
-            this.x = x;
-            this.y = y;
-            this.z = z;
-            this.name = name;
-            this.hasTarget = hasTarget;
-        }
     }
 }

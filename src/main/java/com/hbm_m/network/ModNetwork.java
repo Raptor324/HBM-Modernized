@@ -1,52 +1,58 @@
 package com.hbm_m.network;
 
-import com.hbm_m.lib.RefStrings;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.NetworkDirection;
 import net.minecraftforge.network.NetworkRegistry;
-import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.network.simple.SimpleChannel;
 
+@Mod.EventBusSubscriber(modid = "hbm_m", bus = Mod.EventBusSubscriber.Bus.MOD)
 public class ModNetwork {
-    private static final String PROTOCOL_VERSION = "1";
-    public static final SimpleChannel CHANNEL = NetworkRegistry.newSimpleChannel(
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "main"),
-            () -> PROTOCOL_VERSION,
-            PROTOCOL_VERSION::equals,
-            PROTOCOL_VERSION::equals
-    );
 
-    private static int packetId = 0;
+    public static final String PROTOCOL_VERSION = "1";
+    public static SimpleChannel CHANNEL = null;
 
-    private static int id() {
-        return packetId++;
-    }
+    // Инициализировать канал нужно в setup события, а не в статическом блоке!
+    public static void registerChannels() {
+        if (CHANNEL != null) {
+            return; // Уже инициализирован
+        }
 
-    public static void register() {
-        CHANNEL.messageBuilder(SpawnAlwaysVisibleParticlePacket.class, id(), NetworkDirection.PLAY_TO_CLIENT)
-                .encoder(SpawnAlwaysVisibleParticlePacket::encode)
-                .decoder(SpawnAlwaysVisibleParticlePacket::new)
-                .consumerMainThread(SpawnAlwaysVisibleParticlePacket::handle)
-                .add();
+        CHANNEL = NetworkRegistry.newSimpleChannel(
+                new ResourceLocation("hbm_m", "main"),
+                () -> PROTOCOL_VERSION,
+                PROTOCOL_VERSION::equals,
+                PROTOCOL_VERSION::equals
+        );
 
-        CHANNEL.messageBuilder(DetonateAllPacket.class, packetId++)
+        int packetId = 0;
+
+        // Регистрируем пакет DetonateAllPacket
+        CHANNEL.messageBuilder(DetonateAllPacket.class, packetId++, NetworkDirection.PLAY_TO_SERVER)
                 .decoder(DetonateAllPacket::decode)
                 .encoder(DetonateAllPacket::encode)
-                .consumerNetworkThread(DetonateAllPacket::handle)
+                .consumerMainThread(DetonateAllPacket::handle)
                 .add();
-    }
 
-    // Утилитный метод для отправки пакета всем игрокам в радиусе
-    public static void sendToAllNearby(SpawnAlwaysVisibleParticlePacket packet,
-                                       net.minecraft.server.level.ServerLevel level,
-                                       double x, double y, double z,
-                                       double radius) {
-        CHANNEL.send(
-                PacketDistributor.NEAR.with(() -> new PacketDistributor.TargetPoint(
-                        x, y, z, radius, level.dimension()
-                )),
-                packet
-        );
+        CHANNEL.messageBuilder(SetActivePointPacket.class, packetId++)
+                .decoder(SetActivePointPacket::decode)
+                .encoder(SetActivePointPacket::encode)
+                .consumerMainThread(SetActivePointPacket::handle)
+                .add();
+
+        ModNetwork.CHANNEL.messageBuilder(ClearPointPacket.class, packetId++)
+                .decoder(ClearPointPacket::decode)
+                .encoder(ClearPointPacket::encode)
+                .consumerMainThread(ClearPointPacket::handle)
+                .add();
+
+        CHANNEL.messageBuilder(SyncPointPacket.class, packetId++)
+                .decoder(SyncPointPacket::decode)
+                .encoder(SyncPointPacket::encode)
+                .consumerMainThread(SyncPointPacket::handle)
+                .add();
+
     }
 }

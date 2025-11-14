@@ -1,9 +1,11 @@
 package com.hbm_m.item;
 
+import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -52,10 +54,15 @@ public class DetonatorItem extends Item {
 
             if (!level.isClientSide) {
                 player.displayClientMessage(
+
                         Component.literal("Позиция сохранена: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ())
                                 .withStyle(ChatFormatting.GREEN),
                         true
                 );
+                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
+                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                }
             }
 
             return InteractionResult.SUCCESS;
@@ -77,6 +84,11 @@ public class DetonatorItem extends Item {
                                     .withStyle(ChatFormatting.RED),
                             true
                     );
+
+                    if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
+                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
+                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                    }
                 }
                 return InteractionResultHolder.fail(stack);
             }
@@ -90,6 +102,11 @@ public class DetonatorItem extends Item {
                                     .withStyle(ChatFormatting.RED),
                             true
                     );
+                    if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
+                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
+                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                    }
+
                 }
                 return InteractionResultHolder.fail(stack);
             }
@@ -107,6 +124,11 @@ public class DetonatorItem extends Item {
                                     .withStyle(ChatFormatting.RED),
                             true
                     );
+
+                    if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
+                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
+                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                    }
                     return InteractionResultHolder.fail(stack);
                 }
 
@@ -124,6 +146,11 @@ public class DetonatorItem extends Item {
                                         .withStyle(ChatFormatting.GREEN),
                                 true
                         );
+                        if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
+                            SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
+                            level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                        }
+
                         return InteractionResultHolder.success(stack);
                     } else {
                         player.displayClientMessage(
@@ -131,14 +158,26 @@ public class DetonatorItem extends Item {
                                         .withStyle(ChatFormatting.RED),
                                 true
                         );
+                        if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
+                            SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
+                            level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                        }
+
                         return InteractionResultHolder.fail(stack);
                     }
+
+
                 } else {
                     player.displayClientMessage(
                             Component.literal("Позиция не совместима или не прогружена")
                                     .withStyle(ChatFormatting.RED),
                             true
                     );
+                    if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
+                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
+                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                    }
+
                     return InteractionResultHolder.fail(stack);
                 }
             }

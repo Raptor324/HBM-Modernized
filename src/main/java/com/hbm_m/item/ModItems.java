@@ -396,6 +396,9 @@ public class ModItems {
             })
     );
 
+    public static final RegistryObject<Item> RANGE_DETONATOR = ITEMS.register("range_detonator",
+            () -> new RangeDetonatorItem(new Item.Properties()));
+
     public static final RegistryObject<Item> MULTI_DETONATOR = ITEMS.register("multi_detonator",
             () -> new MultiDetonatorItem(new Item.Properties()));
 

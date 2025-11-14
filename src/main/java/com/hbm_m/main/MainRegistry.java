@@ -166,24 +166,26 @@ public class MainRegistry {
         // ТАЙМЕР ЗАКАНЧИВАЕТСЯ, ВЗРЫВЕМСЯ!
         if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get()) {
 
-            event.accept(ModItems.MULTI_DETONATOR);
             event.accept(ModItems.DETONATOR);
-
+            event.accept(ModItems.MULTI_DETONATOR);
+            event.accept(ModItems.RANGE_DETONATOR);
             event.accept(ModItems.GRENADE);
             event.accept(ModItems.GRENADEHE);
             event.accept(ModItems.GRENADEFIRE);
             event.accept(ModItems.GRENADESMART);
             event.accept(ModItems.GRENADESLIME);
 
-            event.accept(ModBlocks.SMOKE_BOMB);
-            event.accept(ModBlocks.EXPLOSIVE_CHARGE);
-            event.accept(ModBlocks.NUCLEAR_CHARGE);
-            event.accept(ModBlocks.WASTE_CHARGE);
             event.accept(ModItems.GRENADEIF);
 
             event.accept(ModBlocks.DET_MINER);
-            event.accept(ModBlocks.C4);
             event.accept(ModBlocks.GIGA_DET);
+            event.accept(ModBlocks.WASTE_CHARGE);
+
+            event.accept(ModBlocks.SMOKE_BOMB);
+            event.accept(ModBlocks.EXPLOSIVE_CHARGE);
+            event.accept(ModBlocks.NUCLEAR_CHARGE);
+            event.accept(ModBlocks.C4);
+
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");
             }
