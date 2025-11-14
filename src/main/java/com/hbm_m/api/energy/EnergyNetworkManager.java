@@ -51,7 +51,7 @@ public class EnergyNetworkManager extends SavedData {
      * Вызывается при загрузке мира, чтобы исправить любые сломанные состояния.
      */
 
-    
+
     public void rebuildAllNetworks() {
         LOGGER.info("[NETWORK] Starting full network rebuild for dimension {}...", level.dimension().location());
 

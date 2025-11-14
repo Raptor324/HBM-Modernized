@@ -41,6 +41,7 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     public int modeOnNoSignal = 0; // По умолчанию BOTH
     public int modeOnSignal = 0;   // По умолчанию BOTH
     private Priority priority = Priority.LOW;
+    private long energyDelta = 0; // [🔥 ДОБАВЬ ЭТО ПОЛЕ 🔥]
 
     // Инвентарь для предметов (2 слота)
     private final ItemStackHandler itemHandler = new ItemStackHandler(2) {
@@ -71,13 +72,12 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         this.data = new ContainerData() {
             @Override
             public int get(int index) {
-                long delta = energy - lastEnergy;
                 return switch (index) {
                     case 0 -> LongDataPacker.packHigh(energy);      // energy high
                     case 1 -> LongDataPacker.packLow(energy);       // energy low
                     case 2 -> LongDataPacker.packHigh(capacity);    // capacity high
                     case 3 -> LongDataPacker.packLow(capacity);     // capacity low
-                    case 4 -> (int) delta;                          // energy delta
+                    case 4 -> (int) energyDelta;                          // energy delta
                     case 5 -> modeOnNoSignal;
                     case 6 -> modeOnSignal;
                     case 7 -> priority.ordinal();
@@ -114,6 +114,9 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
 
         // Обновление дельты энергии каждые 10 тиков
         if (gameTime % 10 == 0) {
+            // [ИЗМЕНЕНО] Рассчитываем среднюю дельту за последние 10 тиков
+            be.energyDelta = (be.energy - be.lastEnergy) / 10;
+            // Сохраняем текущую энергию для *следующего* расчета
             be.lastEnergy = be.energy;
         }
 
@@ -285,6 +288,8 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     public void load(CompoundTag tag) {
         super.load(tag);
         this.energy = tag.getLong("Energy");
+        this.lastEnergy = tag.getLong("lastEnergy");
+        this.energyDelta = tag.getLong("energyDelta");
         this.modeOnNoSignal = tag.getInt("modeOnNoSignal");
         this.modeOnSignal = tag.getInt("modeOnSignal");
         if (tag.contains("priority")) {
@@ -301,6 +306,8 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         super.saveAdditional(tag);
         tag.putLong("Energy", this.energy);
         tag.putInt("modeOnNoSignal", this.modeOnNoSignal);
+        tag.putLong("lastEnergy", this.lastEnergy);
+        tag.putLong("energyDelta", this.energyDelta);
         tag.putInt("modeOnSignal", this.modeOnSignal);
         tag.putInt("priority", this.priority.ordinal());
         tag.put("Inventory", itemHandler.serializeNBT());
@@ -320,14 +327,20 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
 
     public void handleButtonPress(int buttonId) {
         switch (buttonId) {
-            case 0 -> modeOnNoSignal = (modeOnNoSignal + 1) % 4;
-            case 1 -> modeOnSignal = (modeOnSignal + 1) % 4;
+            // [ФИКС] Меняем значения через this.data.set(...)
+            case 0 -> this.data.set(5, (this.modeOnNoSignal + 1) % 4);
+            case 1 -> this.data.set(6, (this.modeOnSignal + 1) % 4);
+
+            // [ФИКС] Теперь мы меняем data, которую видит GUI
             case 2 -> {
                 Priority[] priorities = Priority.values();
-                int currentIndex = priority.ordinal();
-                priority = priorities[(currentIndex + 1) % priorities.length];
+                int currentIndex = this.priority.ordinal();
+                int nextIndex = (currentIndex + 1) % priorities.length;
+                this.data.set(7, nextIndex); // <-- Вот и всё
             }
         }
+
+        // Эти строки нужны для NBT, оставляем их
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
