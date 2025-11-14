@@ -28,10 +28,23 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
     @Override
     protected void init() {
         super.init();
-        this.topPos = (this.height - this.imageHeight) / 2;
+
+        this.topPos -= 20;
         this.leftPos = (this.width - this.imageWidth) / 2;
+
+        // Позиция заголовка (по умолчанию 6)
         this.titleLabelY = 6;
-        this.inventoryLabelY = this.imageHeight - 94;
+        this.titleLabelX = 17;// Можете изменить на нужное значение
+        this.inventoryLabelY = this.imageHeight - 110;
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
+        // Рисуем заголовок белым цветом (0xFFFFFF)
+        pGuiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0xFFFFFF, false);
+
+        // Рисуем надпись инвентаря стандартным цветом
+        pGuiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
     }
 
     @Override
@@ -42,17 +55,17 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
         gui.blit(TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
 
         if (menu.isLit()) {
-            gui.blit(TEXTURE, x + 56, y + 36, 176, 0, 14, 14); // Flame
+            gui.blit(TEXTURE, x +46, y +37, 206, 72, 30, 14); // Flame
         }
 
         int burnHeight = menu.getBurnTimeScaled(52);
         if (burnHeight > 0) {
-            gui.blit(TEXTURE, x + 17, y + 18 + 52 - burnHeight, 176, 14 + 52 - burnHeight, 4, burnHeight); // Fuel bar
+            gui.blit(TEXTURE, x + 17, y + 18 + 52 - burnHeight, 192, 52 - burnHeight, 4, burnHeight); // Fuel bar
         }
 
         int energyHeight = menu.getEnergyScaled(34);
         if (energyHeight > 0) {
-            gui.blit(TEXTURE, x + 143, y + 18 + 34 - energyHeight, 180, 34 - energyHeight, 16, energyHeight); // Energy bar
+            gui.blit(TEXTURE, x + 143, y + 18 + 34 - energyHeight, 176, 34 - energyHeight, 16, energyHeight); // Energy bar
         }
 
         if (!menu.isEnabled()) {

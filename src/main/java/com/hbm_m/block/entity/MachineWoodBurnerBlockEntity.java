@@ -40,7 +40,7 @@ import javax.annotation.Nullable;
  */
 public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuProvider, IEnergyProvider {
 
-    private final ItemStackHandler itemHandler = new ItemStackHandler(2) {
+    private final ItemStackHandler itemHandler = new ItemStackHandler(3) {
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
