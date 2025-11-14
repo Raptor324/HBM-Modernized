@@ -15,7 +15,7 @@ import org.jetbrains.annotations.NotNull;
 public class GUIDeshCrate extends AbstractContainerScreen<DeshCrateMenu> {
 
     private static final ResourceLocation TEXTURE =
-            new ResourceLocation("minecraft", "textures/gui/container/generic_54.png");
+            ResourceLocation.fromNamespaceAndPath("minecraft", "textures/gui/container/generic_54.png");
 
     public GUIDeshCrate(DeshCrateMenu menu, Inventory inventory, Component component) {
         super(menu, inventory, component);

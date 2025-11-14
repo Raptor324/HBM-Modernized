@@ -34,6 +34,11 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     public BakedModel getPart(String name) {
         return parts.get(name);
     }
+
+    public Map<String, BakedModel> getPartModels() {
+        return Collections.unmodifiableMap(parts);
+    }
+    
     
     /**
      * БЕЗОПАСНАЯ ВЕРСИЯ: Получает список названий частей только из подклассов

@@ -543,8 +543,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
         gpu = null;
         cachedModel = null;
-        // cachedIconBuffer = null;
         
-        RenderPathManager.reset();
+        MainRegistry.LOGGER.debug("Assembler renderer resources reloaded");
     }
 }

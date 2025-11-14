@@ -58,9 +58,7 @@ public class ClientRenderHandler {
         Minecraft mc = Minecraft.getInstance();
         Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
         long currentTime = System.currentTimeMillis();
-
         VertexConsumer fillConsumer = mc.renderBuffers().bufferSource().getBuffer(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
-        
         Color color = Color.RED;
         float alpha = ModClothConfig.get().obstructionHighlightAlpha / 100.0f;
 
@@ -69,13 +67,17 @@ public class ClientRenderHandler {
             return;
         }
 
+        poseStack.pushPose();
+        // Переводим в camera-relative координаты один раз
+        poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+
         highlightedBlocks.entrySet().removeIf(entry -> {
             BlockPos pos = entry.getKey();
             if (currentTime > entry.getValue()) {
                 return true;
             }
-            
-            // Проверяем соседей, чтобы не рисовать внутренние грани
+
+            // Проверяем соседей
             boolean drawDown = !highlightedBlocks.containsKey(pos.below());
             boolean drawUp = !highlightedBlocks.containsKey(pos.above());
             boolean drawNorth = !highlightedBlocks.containsKey(pos.north());
@@ -83,14 +85,15 @@ public class ClientRenderHandler {
             boolean drawWest = !highlightedBlocks.containsKey(pos.west());
             boolean drawEast = !highlightedBlocks.containsKey(pos.east());
 
-            // Слегка "раздуваем" AABB, чтобы избежать Z-fighting
-            AABB boundingBox = new AABB(pos).inflate(0.002D).move(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+            // Раздуваем в camera-relative пространстве
+            AABB boundingBox = new AABB(pos).inflate(0.002D);
             
-            renderFilledBox(poseStack, fillConsumer, boundingBox, color, alpha, drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast);
-
+            renderFilledBox(poseStack, fillConsumer, boundingBox, color, alpha, 
+                        drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast);
             return false;
         });
-        
+
+        poseStack.popPose();
         mc.renderBuffers().bufferSource().endBatch(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
     }
 

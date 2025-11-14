@@ -418,6 +418,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_mossy_stairs", "Ступени из замшелого бетона");
 
                 add("block.hbm_m.large_vehicle_door", "Дверь для крупногабаритного транспорта");
+                add("block.hbm_m.round_airlock_door", "Круглая воздушная дверь");
                 add("block.hbm_m.strawberry_bush", "Куст клубники");
                 add("block.hbm_m.strawberry", "Клубника");
                 add("block.hbm_m.brick_concrete", "Бетонные кирпичи");
@@ -1110,6 +1111,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_stairs", "Concrete Stairs");
                 add("block.hbm_m.concrete_slab", "Concrete Slab");
                 add("block.hbm_m.large_vehicle_door", "Large Vehicle Door");
+                add("block.hbm_m.round_airlock_door", "Round Airlock Door");
                 add("block.hbm_m.strawberry_bush", "Strawberry Bush");
 
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");

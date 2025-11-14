@@ -70,11 +70,25 @@ public class ModBlockEntities {
 					BlockEntityType.Builder.of(MachineWoodBurnerBlockEntity::new,
 							ModBlocks.WOOD_BURNER.get()).build(null));
 
+    // ДВЕРИ
+
     public static final RegistryObject<BlockEntityType<DoorBlockEntity>> DOOR_ENTITY = 
         BLOCK_ENTITIES.register("door", () -> 
                 BlockEntityType.Builder.of(DoorBlockEntity::new,
                 // Все блоки дверей, которые используют этот BlockEntity
-                        ModBlocks.LARGE_VEHICLE_DOOR.get()).build(null));
+                        ModBlocks.LARGE_VEHICLE_DOOR.get(),
+                        ModBlocks.ROUND_AIRLOCK_DOOR.get(),
+                        ModBlocks.TRANSITION_SEAL.get(),
+                        ModBlocks.FIRE_DOOR.get(),
+                        ModBlocks.SLIDE_DOOR.get(),
+                        ModBlocks.SLIDING_SEAL_DOOR.get(),
+                        ModBlocks.SECURE_ACCESS_DOOR.get(),
+                        ModBlocks.QE_SLIDING.get(),
+                        ModBlocks.QE_CONTAINMENT.get(),
+                        ModBlocks.WATER_DOOR.get(),
+                        ModBlocks.SILO_HATCH.get(),
+                        ModBlocks.SILO_HATCH_LARGE.get())
+                    .build(null));
 
     public static final RegistryObject<BlockEntityType<IronCrateBlockEntity>> IRON_CRATE_BE =
             BLOCK_ENTITIES.register("iron_crate_be", () ->

@@ -1,0 +1,36 @@
+{
+  "loader": "hbm_m:door",
+  "model": "hbm_m:models/block/transition_seal.obj",
+  "parts": ["frame", "door", "Cylinder.001", "Cylinder.003", "Cylinder.005", "Cube.006", "Cylinder.007", "Cylinder.008", "Circle", "Cylinder.009", "Cylinder.010", "Cylinder.011", "door.005", "door.002", "door.008", "ring.001", "door.003", "door.004", "ring.002", "door.006"],
+  "textures": {
+    "texture0": "hbm_m:block/transition_seal",
+    "particle": "hbm_m:block/transition_seal"
+  },
+  "transform": {
+        "rotation": [0, 0, 0],
+        "translation": [ 0, 0, 0 ],
+        "scale": 1.0
+    },
+  "display": {
+    "gui": {
+      "rotation": [ 30, 225, 0 ],
+      "translation": [ -1, -4.5, 0 ],
+      "scale": [ 0.02, 0.02, 0.02 ]
+    },
+    "ground": {
+      "rotation": [ 0, 0, 0 ],
+      "translation": [ 0, 3, 0 ],
+      "scale": [ 0.25, 0.25, 0.25 ]
+    },
+    "thirdperson_righthand": {
+            "rotation": [ 75, 45, 0 ],
+            "translation": [ 0, 2.5, 0 ],
+            "scale": [ 0.05, 0.05, 0.05 ]
+        },
+    "firstperson_righthand": {
+        "rotation": [ 0, 45, 0 ],
+        "translation": [ 2, -3, 0 ],
+        "scale": [ 0.05, 0.05, 0.05 ]
+    }
+  }
+}

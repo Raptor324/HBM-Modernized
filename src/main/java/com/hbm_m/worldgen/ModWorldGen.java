@@ -26,7 +26,7 @@ public class ModWorldGen {
         public static final ResourceKey<PlacedFeature> STRAWBERRY_BUSH_PLACED =
                 ResourceKey.create(
                         Registries.PLACED_FEATURE,
-                        ResourceLocation.fromNamespaceAndPath("hbm_m", "strawberry_bush_placed")
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "strawberry_bush_placed")
                 );
 
 }

@@ -4,6 +4,7 @@ package com.hbm_m.client;
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.overlay.*;
 import com.hbm_m.client.loader.*;
+import com.hbm_m.client.model.DoorBakedModel;
 import com.hbm_m.client.render.*;
 import com.hbm_m.client.render.shader.*;
 import com.hbm_m.config.*;
@@ -16,6 +17,7 @@ import com.hbm_m.item.ModTags;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.ModMenuTypes;
+import com.hbm_m.multiblock.DoorPartAABBRegistry;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.recipe.AssemblerRecipe;
@@ -26,11 +28,14 @@ import com.google.common.collect.ImmutableMap;
 import com.hbm_m.particle.custom.*;
 import com.hbm_m.particle.explosions.*;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.DoorDecl;
+import com.hbm_m.block.entity.DoorDeclRegistry;
 import com.hbm_m.block.entity.ModBlockEntities;
 
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
@@ -76,6 +81,8 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
+        MinecraftForge.EVENT_BUS.register(DoorOutlineRenderer.class);
+        // MinecraftForge.EVENT_BUS.register(DoorDebugRenderer.class);
         // MinecraftForge.EVENT_BUS.register(ClientSetup.class);
 
         // Register Entity Renders
@@ -97,8 +104,6 @@ public class ClientSetup {
         ModEntities.GRENADEIF_PROJECTILE.ifPresent(entityType ->
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
         );
-        
-        DoorDeclRegistry.init();
 
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
@@ -179,10 +184,15 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onModelRegister(ModelEvent.RegisterGeometryLoaders event) {
+        DoorDeclRegistry.init();
+        MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
+
         event.register("procedural_wire", new ProceduralWireLoader());
         event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
         event.register("door", new DoorModelLoader());
-        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, door");
+        event.register("template_loader", new TemplateModelLoader());
+
+        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, template_loader, door");
     }
 
     @SubscribeEvent
@@ -194,17 +204,27 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onResourceReload(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(new ShaderReloadListener());
-
         event.registerReloadListener((preparationBarrier, resourceManager,
-                                    preparationsProfiler, reloadProfiler,
-                                    backgroundExecutor, gameExecutor) -> {
+                preparationsProfiler, reloadProfiler,
+                backgroundExecutor, gameExecutor) -> {
             return preparationBarrier.wait(null).thenRunAsync(() -> {
-                //  Очищаем глобальный кэш VBO
+                // Очищаем глобальный кэш VBO
                 MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
                 ImmediateFallbackRenderer.clearGlobalCache();
                 DoorRenderer.clearAllCaches();
-                RenderPathManager.reset();
-                MainRegistry.LOGGER.info("VBO cache cleanup completed");
+                
+                // ИСПРАВЛЕНО: НЕ вызываем reset(), вместо этого очищаем только кеши
+                GlobalMeshCache.clearAll();
+                DoorPartAABBRegistry.clear();
+                
+                // Переинициализируем immediate рендер после очистки
+                ImmediateFallbackRenderer.onShaderReload();
+                
+                // ИСПРАВЛЕНО: Вместо reset() просто обновляем путь на основе текущего состояния
+                // Это сохранит ручное переключение, если оно было активно
+                RenderPathManager.updateRenderPath();
+                
+                MainRegistry.LOGGER.info("VBO cache cleanup completed, render path preserved");
             }, gameExecutor);
         });
     }
@@ -241,12 +261,6 @@ public class ClientSetup {
     @SubscribeEvent
     public static void registerTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
         event.register(ItemTooltipComponent.class, ItemTooltipComponentRenderer::new);
-    }
-
-    @SubscribeEvent
-    public static void onRegisterGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {
-
-        event.register("template_loader", new TemplateModelLoader());
     }
 
     @SubscribeEvent
