@@ -24,7 +24,6 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.DoorBlock;
 import com.hbm_m.client.ClientSoundManager;
-import com.hbm_m.client.DoorDeclRegistry;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -40,7 +39,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     public long animStartTime = 0;
     private boolean locked = false;
 
-    private final String doorDeclId;
+    private String doorDeclId;
     
     // Мультиблок данные
     private BlockPos controllerPos = null;
@@ -140,7 +139,6 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
      * Получает время открытия двери в тиках (серверная версия без клиентских зависимостей).
      */
     private int getServerOpenTime() {
-        // Базовая таблица времён открытия для каждой двери (миллисекунды / 50 = тики)
         return switch (doorDeclId) {
             case "qe_sliding_door" -> 10;
             case "sliding_seal_door" -> 20;
@@ -148,12 +146,13 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             case "secure_access_door" -> 120;
             case "qe_containment_door" -> 160;
             case "water_door" -> 60;
-            case "large_vehicle_door" -> 100;
-            case "silo_hatch" -> 40;
+            case "large_vehicle_door" -> 60;
+            case "fire_door" -> 160;
+            case "silo_hatch" -> 60;
             case "silo_hatch_large" -> 60;
-            default -> 60; // Fallback
+            default -> 60;
         };
-    }
+    }    
 
     // ОБНОВИТЕ существующий метод getOpenProgress(float):
     public float getOpenProgress(float partialTick) {
@@ -471,6 +470,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         tag.putByte("state", state);
         tag.putInt("openTicks", openTicks);
         tag.putLong("animStartTime", animStartTime);
+        tag.putString("doorDeclId", doorDeclId);
         tag.putBoolean("locked", locked);
         if (controllerPos != null) {
             tag.putLong("controllerPos", controllerPos.asLong());
@@ -491,6 +491,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         if (tag.contains("controllerPos")) {
             this.controllerPos = BlockPos.of(tag.getLong("controllerPos"));
         }
+
+        if (tag.contains("doorDeclId")) {
+            this.doorDeclId = tag.getString("doorDeclId");
+        }        
         
         if (tag.contains("partRole")) {
             try {
@@ -499,8 +503,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
                 this.partRole = PartRole.DEFAULT;
             }
         }
-        
-        // ИСПРАВЛЕНО: Вызываем handleNewState ТОЛЬКО на клиенте при РЕАЛЬНОМ изменении
+
         if (level != null && level.isClientSide && oldState != this.state) {
             handleNewState(oldState, this.state);
         }
@@ -515,7 +518,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
 
     @Override
     public void handleUpdateTag(CompoundTag tag) {
-        load(tag); // load() уже отследит изменение state и вызовет handleNewState
+        load(tag);
     }
 
     @Nullable
@@ -528,7 +531,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
-            load(tag); // load() уже отследит изменение state и вызовет handleNewState
+            load(tag);
         }
     }
 
@@ -541,7 +544,6 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
 
     @Override
     public AABB getRenderBoundingBox() {
-        // ИСПРАВЛЕНО: Используем фиксированный радиус или получаем на клиенте
         double radius = 8.0; // Fallback
         if (level != null && level.isClientSide) {
             DoorDecl decl = getDoorDecl();

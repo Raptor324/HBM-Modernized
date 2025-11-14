@@ -105,16 +105,16 @@ public class ColladaAnimationParser {
     }
     
     public static class AnimationChannel {
-        public String property;  // "location.X", "location.Y", "rotation_euler.Z", "transform"
-        public float[] times;    // Время в секундах
-        public float[] values;   // Значения
-        
+        public String property; // "location.X", "rotation_euler.Z", "transform"
+        public float[] times; // Время в секундах
+        public float[] values; // Значения
+    
         // Линейная интерполяция
         public float getValue(float time) {
             if (times.length == 0) return 0;
             if (time <= times[0]) return values[0];
             if (time >= times[times.length - 1]) return values[values.length - 1];
-            
+    
             for (int i = 0; i < times.length - 1; i++) {
                 if (time >= times[i] && time <= times[i + 1]) {
                     float alpha = (time - times[i]) / (times[i + 1] - times[i]);
@@ -123,7 +123,7 @@ public class ColladaAnimationParser {
             }
             return values[values.length - 1];
         }
-        
+    
         // Для матриц 4x4 (property == "transform")
         public float[] getMatrix(float time) {
             if (!property.equals("transform")) return null;
@@ -132,16 +132,36 @@ public class ColladaAnimationParser {
             int frameIndex = 0;
             for (int i = 0; i < times.length - 1; i++) {
                 if (time >= times[i] && time <= times[i + 1]) {
-                    // Можно добавить интерполяцию матриц
-                    frameIndex = i;
+                    // ИНТЕРПОЛЯЦИЯ МАТРИЦ - берем ближайший keyframe
+                    float alpha = (time - times[i]) / (times[i + 1] - times[i]);
+                    frameIndex = alpha < 0.5f ? i : i + 1;
                     break;
                 }
+            }
+            if (time >= times[times.length - 1]) {
+                frameIndex = times.length - 1;
             }
             
             // Извлечь матрицу 4x4 (16 float)
             float[] matrix = new float[16];
-            System.arraycopy(values, frameIndex * 16, matrix, 0, 16);
+            int offset = frameIndex * 16;
+            if (offset + 16 <= values.length) {
+                System.arraycopy(values, offset, matrix, 0, 16);
+            }
             return matrix;
         }
-    }
+        
+        // НОВЫЙ МЕТОД: Извлечь translation из матрицы 4x4
+        public float[] getTranslationFromMatrix(float time) {
+            float[] matrix = getMatrix(time);
+            if (matrix == null) return new float[]{0, 0, 0};
+            
+            // В COLLADA матрицы column-major, translation в последней колонке
+            return new float[]{
+                matrix[12], // X
+                matrix[13], // Y
+                matrix[14]  // Z
+            };
+        }
+    }    
 }

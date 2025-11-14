@@ -6,11 +6,12 @@
     "texture0": "hbm_m:block/water_door",
     "particle": "hbm_m:block/water_door"
   },
+  
   "display": {
     "gui": {
       "rotation": [ 30, 225, 0 ],
-      "translation": [ -1.2, -3.6, 0 ],
-      "scale": [ 0.12, 0.12, 0.12 ]
+      "translation": [ -2.5, -3.3, 0 ],
+      "scale": [ 0.245, 0.245, 0.245 ]
     },
     "ground": {
       "rotation": [ 0, 0, 0 ],
@@ -25,7 +26,7 @@
     "firstperson_righthand": {
         "rotation": [ 0, 45, 0 ],
         "translation": [ 2, -1, 0 ],
-        "scale": [ 0.1, 0.1, 0.1 ]
+        "scale": [ 0.13, 0.13, 0.13 ]
     }
   }
 }

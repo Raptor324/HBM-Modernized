@@ -13,7 +13,7 @@ import net.minecraftforge.client.model.data.ModelData;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.DoorDecl;
-import com.hbm_m.client.DoorDeclRegistry;
+import com.hbm_m.block.entity.DoorDeclRegistry;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.DoorPartAABBRegistry;
 import com.hbm_m.physics.PartAABBExtractor;

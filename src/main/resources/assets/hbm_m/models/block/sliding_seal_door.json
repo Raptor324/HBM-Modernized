@@ -9,8 +9,8 @@
   "display": {
     "gui": {
       "rotation": [ 30, 225, 0 ],
-      "translation": [ -1.2, -3.6, 0 ],
-      "scale": [ 0.12, 0.12, 0.12 ]
+      "translation": [ -2.7, -2.7, 0 ],
+      "scale": [ 0.3, 0.3, 0.3 ]
     },
     "ground": {
       "rotation": [ 0, 0, 0 ],
@@ -24,8 +24,8 @@
         },
     "firstperson_righthand": {
         "rotation": [ 0, 45, 0 ],
-        "translation": [ 2, -1, 0 ],
-        "scale": [ 0.1, 0.1, 0.1 ]
+        "translation": [ 3, -1, 0 ],
+        "scale": [ 0.3, 0.3, 0.3 ]
     }
   }
 }

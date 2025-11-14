@@ -7,6 +7,7 @@ import com.hbm_m.particle.ModExplosionParticles;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.DoorDeclRegistry;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
@@ -81,7 +82,7 @@ public class MainRegistry {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
 
-
+        DoorDeclRegistry.init();
 
         // Регистрация обработчиков событий Forge (игровых)
         MinecraftForge.EVENT_BUS.register(this);

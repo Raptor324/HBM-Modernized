@@ -43,17 +43,29 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
     }
 
     // Инициализация instanced рендерера для frame
-    private synchronized void initializeFrameInstancerForType(DoorBakedModel model, String doorType) {
+    private synchronized void initializeFrameInstancerForType(DoorBakedModel model,
+                                                            String doorType,
+                                                            String framePartName) {
         String frameKey = "frame_" + doorType;
-        
         if (frameInitializationFlags.getOrDefault(frameKey, false)) return;
-        
+
         try {
-            BakedModel frameModel = model.getPart("frame");
+            BakedModel frameModel = model.getPart(framePartName);
             if (frameModel != null) {
                 var frameData = ObjModelVboBuilder.buildSinglePart(frameModel);
-                InstancedStaticPartRenderer frameRenderer = new InstancedStaticPartRenderer(frameData);
-                instancedFrameCache.put(frameKey, frameRenderer);
+                if (frameData != null) {
+                    InstancedStaticPartRenderer frameRenderer = new InstancedStaticPartRenderer(frameData);
+                    instancedFrameCache.put(frameKey, frameRenderer);
+                    MainRegistry.LOGGER.debug("Initialized frame renderer for {} part '{}' ",
+                                            doorType, framePartName);
+                } else {
+                    MainRegistry.LOGGER.warn("Frame model for {} / part '{}' has no geometry",
+                                            doorType, framePartName);
+                }
+            } else {
+                // Если detectFramePart вернул имя, но model.getPart(...) дал null — это уже странно
+                MainRegistry.LOGGER.warn("Frame part '{}' not found in model for door type: {}",
+                                        framePartName, doorType);
             }
             frameInitializationFlags.put(frameKey, true);
         } catch (Exception e) {
@@ -114,43 +126,71 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                             float openTicks, boolean isOpen, PoseStack poseStack,
                             int packedLight, BlockPos blockPos) {
         try {
-            // ИСПРАВЛЕНИЕ: Генерируем уникальный ключ на основе типа двери
             String doorType = getDoorTypeKey(doorDecl);
             String frameKey = "frame_" + doorType;
-            
-            // Инициализируем frame рендерер для конкретного типа двери
-            if (!frameInitializationFlags.getOrDefault(frameKey, false)) {
-                initializeFrameInstancerForType(model, doorType);
-            }
 
+            // Определяем имя статической рамки для этого типа двери
             String[] partNames = model.getPartNames();
-            Level level = be.getLevel();
-            
-            for (String partName : partNames) {
-                if (!doorDecl.doesRender(partName, isOpen)) continue;
+            String staticFramePart = detectFramePart(partNames); // см. ниже
 
-                if ("frame".equals(partName)) {
-                    InstancedStaticPartRenderer frameRenderer = instancedFrameCache.get(frameKey);
-                    if (frameRenderer != null) {
-                        frameRenderer.addInstance(poseStack, packedLight, blockPos, be);
-                    } else {
-                        renderFallbackPart(partName, model.getPart(partName), poseStack, packedLight, blockPos, level, be);
-                    }
-                } else if (!"Base".equals(partName)) {
-                    try {
-                        // ИСПРАВЛЕНИЕ: Передаем тип двери в VBO рендерер
-                        DoorVboRenderer partRenderer = DoorVboRenderer.getOrCreate(model, partName, doorType);
-                        partRenderer.renderPart(poseStack, packedLight, blockPos, be, doorDecl, openTicks, isOpen);
-                    } catch (IllegalArgumentException e) {
-                        MainRegistry.LOGGER.warn("Cannot create VBO renderer for part {}: {}", partName, e.getMessage());
-                        renderFallbackPart(partName, model.getPart(partName), poseStack, packedLight, blockPos, level, be);
-                    }
+            // 1. Пытаемся отрендерить рамку инстансами, если она есть
+            if (staticFramePart != null) {
+                if (!frameInitializationFlags.getOrDefault(frameKey, false)) {
+                    initializeFrameInstancerForType(model, doorType, staticFramePart);
+                }
+                InstancedStaticPartRenderer frameRenderer = instancedFrameCache.get(frameKey);
+                if (frameRenderer != null) {
+                    poseStack.pushPose();
+                    frameRenderer.render(poseStack, packedLight, blockPos, be);
+                    poseStack.popPose();
                 }
             }
+
+            // 2. Рисуем ВСЕ части из JSON, кроме той, что ушла в instanced-frame
+            for (String partName : partNames) {
+                if (staticFramePart != null && staticFramePart.equals(partName)) {
+                    continue; // рамку уже нарисовали
+                }
+                renderHierarchyVbo(partName, false, be, model, doorDecl,
+                                openTicks, poseStack, packedLight, blockPos);
+            }
+
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error in VBO door render", e);
             renderWithFallback(be, model, doorDecl, openTicks, isOpen, poseStack, packedLight);
         }
+    }
+
+    private void renderHierarchyVbo(String partName, boolean child, DoorBlockEntity be, DoorBakedModel model, DoorDecl doorDecl,
+                                float openTicks, PoseStack poseStack, int packedLight, BlockPos blockPos) {
+        if (!doorDecl.doesRender(partName, child)) return;
+        
+        poseStack.pushPose();
+        doPartTransform(poseStack, doorDecl, partName, openTicks, child);
+        
+        // ИСПРАВЛЕНИЕ: Рендерим текущую часть ТОЛЬКО если у неё есть mesh
+        if (!"frame".equals(partName) && !"Base".equals(partName)) {
+            BakedModel partModel = model.getPart(partName);
+            if (partModel != null) { // проверка перед созданием VBO рендерера
+                try {
+                    DoorVboRenderer partRenderer = DoorVboRenderer.getOrCreate(model, partName, getDoorTypeKey(doorDecl));
+                    partRenderer.renderPart(poseStack, packedLight, blockPos, be, doorDecl, openTicks, child);
+                } catch (IllegalStateException e) {
+                    // Если mesh отсутствует, логируем и пропускаем
+                    MainRegistry.LOGGER.debug("No mesh for part {}, skipping render: {}", partName, e.getMessage());
+                }
+            } else {
+                // Партия не содержит меша — нормально для контейнерных узлов типа "door"
+                MainRegistry.LOGGER.trace("Part {} has no mesh, acting as container only", partName);
+            }
+        }
+        
+        // Рекурсивно дети с child=true
+        for (String c : doorDecl.getChildren(partName)) {
+            renderHierarchyVbo(c, true, be, model, doorDecl, openTicks, poseStack, packedLight, blockPos);
+        }
+        
+        poseStack.popPose();
     }
 
     private String getDoorTypeKey(DoorDecl doorDecl) {
@@ -182,54 +222,102 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         // Fallback для неизвестных типов
         throw new IllegalStateException("Unknown door type: " + doorDecl.getClass().getName());
     }
-    
 
-    /**
-     * Fallback рендеринг для совместимости с шейдерами
-     */
+    private String detectFramePart(String[] partNames) {
+        // приоритет: "frame" -> "Frame" -> "DoorFrame"
+        for (String p : partNames) {
+            if ("frame".equals(p)) return "frame";
+        }
+        for (String p : partNames) {
+            if ("Frame".equals(p)) return "Frame";
+        }
+        for (String p : partNames) {
+            if ("DoorFrame".equals(p)) return "DoorFrame";
+        }
+        // у secure_access_door и qe_sliding_door рамки просто нет
+        return null;
+    }
+
+
+    // Fallback рендеринг для совместимости с шейдерами
     private void renderWithFallback(DoorBlockEntity be, DoorBakedModel model, DoorDecl doorDecl,
-                                float openTicks, boolean isOpen, PoseStack poseStack, int packedLight) {
-        
-        // Используем кэшированный массив из DoorBakedModel
+                                    float openTicks, boolean isOpen, PoseStack poseStack, int packedLight) {
         String[] partNames = model.getPartNames();
         BlockPos blockPos = be.getBlockPos();
         Level level = be.getLevel();
-        
-        for (String partName : partNames) {
-            if (!doorDecl.doesRender(partName, isOpen)) continue;
-            
-            poseStack.pushPose();
-            
-            // Применяем трансформации части
-            doPartTransform(poseStack, doorDecl, partName, openTicks, isOpen);
-            
-            // ИСПРАВЛЕНО: Рендерим через fallback рендерер с culling поддержкой
-            renderFallbackPart(partName, model.getPart(partName), poseStack, packedLight, blockPos, level, be);
-            
-            poseStack.popPose();
+
+        // Определяем имя статической рамки (та же логика, что в VBO)
+        String staticFramePart = detectFramePart(partNames);
+
+        // 1. Если есть рамка — рисуем её отдельно как статичную часть
+        if (staticFramePart != null) {
+            BakedModel frameModel = model.getPart(staticFramePart);
+            if (frameModel != null) {
+                poseStack.pushPose();
+                // Рамка обычно без анимаций, но если в DoorDecl для неё есть смещение,
+                // можно при желании вызвать doPartTransform(staticFramePart, child=false)
+                renderFallbackPart(staticFramePart, frameModel, poseStack,
+                                packedLight, blockPos, level, be);
+                poseStack.popPose();
+            }
         }
-        
-        // КРИТИЧНО: Завершаем batch ПОСЛЕ всех частей, а не после каждой
+
+        // 2. Обходим ВСЕ части из JSON, кроме той, что уже ушла в "статическую" рамку
+        for (String partName : partNames) {
+            if (staticFramePart != null && staticFramePart.equals(partName)) {
+                continue; // рамку уже нарисовали
+            }
+            renderHierarchyFallback(partName, false, be, model, doorDecl,
+                                    openTicks, poseStack, packedLight);
+        }
+
+        // Флашим батч ImmediateFallbackRenderer
         ImmediateFallbackRenderer.endBatch();
+    }
+
+
+    private void renderHierarchyFallback(String partName, boolean child,
+                                        DoorBlockEntity be,
+                                        DoorBakedModel model, DoorDecl doorDecl,
+                                        float openTicks, PoseStack poseStack, int packedLight) {
+        // Фильтруем по декларации двери
+        if (!doorDecl.doesRender(partName, child)) return;
+
+        poseStack.pushPose();
+
+        // Применяем анимацию/смещения части
+        doPartTransform(poseStack, doorDecl, partName, openTicks, child);
+
+        // Рисуем саму часть, если у неё есть меш
+        BakedModel partModel = model.getPart(partName);
+        if (partModel != null) {
+            // Не исключаем "frame" здесь — она уже исключена на уровне renderWithFallback,
+            // чтобы не нарисовать её дважды
+            renderFallbackPart(partName, partModel, poseStack,
+                            packedLight, be.getBlockPos(), be.getLevel(), be);
+        }
+
+        // Рекурсивно рисуем всех детей с child = true (они наследуют матрицу родителя)
+        for (String c : doorDecl.getChildren(partName)) {
+            renderHierarchyFallback(c, true, be, model, doorDecl,
+                                    openTicks, poseStack, packedLight);
+        }
+
+        poseStack.popPose();
     }
 
     /**
      * Применяет трансформации части двери (legacy режим)
      */
     private void doPartTransform(PoseStack poseStack, DoorDecl doorDecl,
-                                String partName, float openTicks, boolean isOpen) {
-        // ВАЖНО: DoorDecl методы НЕ создают новые массивы, а заполняют переданные
-        doorDecl.getTranslation(partName, openTicks, isOpen, translation);
+                                String partName, float openTicks, boolean child) {
+        doorDecl.getTranslation(partName, openTicks, child, translation);
         doorDecl.getOrigin(partName, origin);
         doorDecl.getRotation(partName, openTicks, rotation);
-
         poseStack.translate(origin[0], origin[1], origin[2]);
-
-        // Условные проверки оптимальны для CPU branch prediction
         if (rotation[0] != 0) poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(rotation[0]));
         if (rotation[1] != 0) poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(rotation[1]));
         if (rotation[2] != 0) poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(rotation[2]));
-
         poseStack.translate(-origin[0] + translation[0], -origin[1] + translation[1], -origin[2] + translation[2]);
     }
 

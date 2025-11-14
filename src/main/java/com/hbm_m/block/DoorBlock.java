@@ -1,6 +1,7 @@
 package com.hbm_m.block;
 
 import com.hbm_m.block.entity.DoorBlockEntity;
+import com.hbm_m.block.entity.DoorDeclRegistry;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -91,27 +92,10 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
      * Получение размеров дверей для генерации структуры
      * Размеры берутся из DoorDecl, но статически, чтобы избежать проблем инициализации
      */
-    public static int[] getDoorDimensions(String doorDeclId) {
-        return switch (doorDeclId) {
-            // Существующие двери
-            case "large_vehicle_door" -> new int[] { -3, 0, 0, 6, 5, 0 }; // 7x6x1
-            case "round_airlock_door" -> new int[] { -1, 0, 0, 3, 3, 0 }; // 4x4x1
-            
-            case "transition_seal" -> new int[] { 23, 0, 0, 0, 13, 12 }; // 23x20x1 (огромная дверь)
-            case "fire_door" -> new int[] { -1, 0, 0, 3, 2, 0 }; // 3x4x1
-            case "sliding_blast_door" -> new int[] { -2, 0, 0, 4, 4, 0 }; // 5x5x1
-            case "sliding_seal_door" -> new int[] { 0, 0, 0, 0, 1, 0 }; // 1x2x1
-            case "secure_access_door" -> new int[] { -2, 0, 0, 4, 4, 0 }; // 5x5x1
-            case "qe_sliding_door" -> new int[] { 0, 0, 0, 1, 1, 0 }; // 2x2x1
-            case "qe_containment_door" -> new int[] { -1, 0, 0, 2, 2, 0 }; // 3x3x1
-            case "water_door" -> new int[] { 0, 0, 0, 1, 2, 0 }; // 2x3x1
-            case "silo_hatch" -> new int[] { -1, 0, -1, 3, 0, 3 }; // 3x3x3 (люк силоса)
-            case "silo_hatch_large" -> new int[] { -2, 0, -2, 5, 0, 5 }; // 5x4x5 (большой люк силоса)
-            
-            // Дефолт для неизвестных дверей
-            default -> new int[] { 0, 0, 0, 0, 1, 0 }; // 1x2x1
-        };
-    }
+    
+     public static int[] getDoorDimensions(String doorDeclId) {
+        return DoorDeclRegistry.getById(doorDeclId).getDimensions();
+    }    
 
     @Override
     public MultiblockStructureHelper getStructureHelper() {

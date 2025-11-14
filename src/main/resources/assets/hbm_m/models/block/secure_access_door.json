@@ -14,8 +14,8 @@
   "display": {
     "gui": {
       "rotation": [ 30, 315, 0 ],
-      "translation": [ 1.2, -3.6, 0 ],
-      "scale": [ 0.12, 0.12, 0.12 ]
+      "translation": [ 0, -4, 0 ],
+      "scale": [ 0.14, 0.14, 0.14 ]
     },
     "ground": {
       "rotation": [ 0, 0, 0 ],
@@ -28,7 +28,7 @@
             "scale": [ 0.2, 0.2, 0.2 ]
         },
     "firstperson_righthand": {
-        "rotation": [ 0, 45, 0 ],
+        "rotation": [ 0, 135, 0 ],
         "translation": [ 2, -1, 0 ],
         "scale": [ 0.1, 0.1, 0.1 ]
     }

@@ -29,6 +29,7 @@ import com.hbm_m.particle.custom.*;
 import com.hbm_m.particle.explosions.*;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.DoorDecl;
+import com.hbm_m.block.entity.DoorDeclRegistry;
 import com.hbm_m.block.entity.ModBlockEntities;
 
 import net.minecraft.client.renderer.RenderType;

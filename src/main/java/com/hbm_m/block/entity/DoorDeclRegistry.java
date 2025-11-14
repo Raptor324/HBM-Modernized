@@ -1,14 +1,9 @@
-package com.hbm_m.client;
-
-import com.hbm_m.block.entity.DoorDecl;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+package com.hbm_m.block.entity;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
-@OnlyIn(Dist.CLIENT)
 public class DoorDeclRegistry {
     private static final Map<String, DoorDecl> REGISTRY = new HashMap<>();
     
