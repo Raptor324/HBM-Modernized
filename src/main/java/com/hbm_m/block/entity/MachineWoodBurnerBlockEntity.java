@@ -45,6 +45,23 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         protected void onContentsChanged(int slot) {
             setChanged();
         }
+
+        @Override
+        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+            if (slot == FUEL_SLOT) {
+                // Только топливо в слот топлива
+                return ForgeHooks.getBurnTime(stack, null) > 0;
+            }
+            if (slot == ASH_SLOT) {
+                // Ничего нельзя положить в слот пепла
+                return false;
+            }
+            if (slot == CHARGE_SLOT) {
+                // Только заряжаемые предметы в слот зарядки
+                return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+            }
+            return false;
+        }
     };
 
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
@@ -69,6 +86,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
     private static final int FUEL_SLOT = 0;
     private static final int ASH_SLOT = 1;
+    private static final int CHARGE_SLOT = 2;
 
     public MachineWoodBurnerBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.WOOD_BURNER_BE.get(), pPos, pBlockState);
@@ -119,6 +137,8 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
             // Просто генерируем энергию. Сеть сама её заберёт.
             be.energy = Math.min(be.capacity, be.energy + be.generationRate);
+
+            be.chargeItem();
 
             // Топливо закончилось
             if (be.burnTime == 0) {
@@ -333,6 +353,62 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         // [ВАЖНО!] Также сообщаем при выгрузке чанка
         if (this.level != null && !this.level.isClientSide) {
             EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+        }
+    }
+
+
+
+    private void chargeItem() {
+        if (this.energy <= 0) return; // Нечего заряжать
+
+        ItemStack itemToCharge = this.itemHandler.getStackInSlot(CHARGE_SLOT);
+        if (itemToCharge.isEmpty()) return;
+
+        // === 1. ПРОВЕРКА HBM API (Твои батарейки) ===
+        // Сначала пытаемся зарядить через нашу "родную" HBM-систему (которая использует long)
+        LazyOptional<com.hbm_m.api.energy.IEnergyReceiver> hbmEnergy =
+                itemToCharge.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER);
+
+        if (hbmEnergy.isPresent()) {
+            com.hbm_m.api.energy.IEnergyReceiver itemReceiver = hbmEnergy.resolve().get();
+
+            if (itemReceiver.canReceive()) {
+                long maxTransfer = Math.min(this.energy, getProvideSpeed());
+
+                // Наша HBM API работает с long, что идеально
+                long accepted = itemReceiver.receiveEnergy(maxTransfer, false);
+
+                if (accepted > 0) {
+                    this.setEnergyStored(this.energy - accepted);
+                    setChanged();
+                }
+            }
+            // Мы нашли HBM-совместимый предмет, выходим, даже если он полный
+            return;
+        }
+
+        // === 2. ПРОВЕРКА FORGE API (Для модов) ===
+        // Если HBM API не найдено, ищем Forge Energy
+        LazyOptional<net.minecraftforge.energy.IEnergyStorage> forgeEnergy =
+                itemToCharge.getCapability(ForgeCapabilities.ENERGY);
+
+        if (forgeEnergy.isPresent()) {
+            net.minecraftforge.energy.IEnergyStorage itemEnergy = forgeEnergy.resolve().get();
+
+            if (itemEnergy.canReceive()) {
+                long maxTransfer = Math.min(this.energy, getProvideSpeed());
+
+                // Конвертируем long в int для Forge API
+                int transferInt = (int) Math.min(Integer.MAX_VALUE, maxTransfer);
+                if (transferInt <= 0) return;
+
+                int accepted = itemEnergy.receiveEnergy(transferInt, false);
+
+                if (accepted > 0) {
+                    this.setEnergyStored(this.energy - accepted);
+                    setChanged();
+                }
+            }
         }
     }
 }

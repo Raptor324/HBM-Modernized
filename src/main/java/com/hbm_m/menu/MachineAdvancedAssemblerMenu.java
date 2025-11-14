@@ -76,20 +76,20 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
     }
 
     public long getEnergyLong() {
-        int high = this.data.get(3); // Индекс 3: energy high
-        int low = this.data.get(2);  // Индекс 2: energy low
+        int high = this.data.get(2); // Индекс 3: energy high
+        int low = this.data.get(3);  // Индекс 2: energy low
         return LongDataPacker.unpack(high, low);
     }
 
     public long getMaxEnergyLong() {
-        int high = this.data.get(5); // Индекс 5: maxEnergy high
-        int low = this.data.get(4);  // Индекс 4: maxEnergy low
+        int high = this.data.get(4); // Индекс 5: maxEnergy high
+        int low = this.data.get(5);  // Индекс 4: maxEnergy low
         return LongDataPacker.unpack(high, low);
     }
 
     public long getEnergyDeltaLong() {
-        int high = this.data.get(7); // Индекс 7: delta high
-        int low = this.data.get(6);  // Индекс 6: delta low
+        int high = this.data.get(6); // Индекс 7: delta high
+        int low = this.data.get(7);  // Индекс 6: delta low
         return LongDataPacker.unpack(high, low);
     }
 

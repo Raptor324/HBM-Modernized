@@ -505,15 +505,25 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public NonNullList<ItemStack> getGhostItems() {
+        AssemblerRecipe recipe = null;
+
+        // 1. Сначала пытаемся получить рецепт из работающего модуля
         if (assemblerModule != null && assemblerModule.getPreferredRecipe() != null) {
-            return assemblerModule.getGhostItems();
+            recipe = assemblerModule.getPreferredRecipe();
         }
-        if (selectedRecipeId != null && level != null) {
-            AssemblerRecipe recipe = getCachedRecipe();
-            if (recipe != null) {
-                return BaseMachineBlockEntity.createGhostItemsFromIngredients(recipe.getIngredients());
-            }
+
+        // 2. Если не вышло (или модуль не запущен), берем выбранный рецепт из кэша
+        if (recipe == null && selectedRecipeId != null && level != null) {
+            recipe = getCachedRecipe();
         }
+
+        // 3. Если у нас есть *хоть какой-то* рецепт, ИСПОЛЬЗУЕМ "СТАКАЮЩУЮ" ЛОГИКУ
+        if (recipe != null) {
+            // Этот метод (из BaseMachineBlockEntity) должен стакать ингредиенты
+            return BaseMachineBlockEntity.createGhostItemsFromIngredients(recipe.getIngredients());
+        }
+
+        // 4. Иначе возвращаем пустой список
         return NonNullList.create();
     }
 

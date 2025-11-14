@@ -101,34 +101,31 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
         }
     }
 
-    // Хелпер из старого GUI
+    // [🔥 ИЗМЕНЕННЫЙ ХЕЛПЕР 🔥]
     private int getVForMode(int mode) {
         return switch (mode) {
-            case 0 -> 52;  // BOTH (Иконка из нового GUI - 52)
-            case 1 -> 70;  // INPUT (Иконка из нового GUI - 70)
-            case 2 -> 88;  // OUTPUT (Иконка из нового GUI - 88)
-            case 3 -> 106; // DISABLED (Иконка из нового GUI - 106)
-            default -> 52;
+            case 0 -> 70;  // BOTH (Теперь V=70)
+            case 1 -> 52;  // INPUT (Теперь V=52)
+            case 2 -> 88;  // OUTPUT
+            case 3 -> 106; // DISABLED
+            default -> 70; // По умолчанию BOTH
         };
     }
 
-    // Логика V-координат для режимов (0,1,2,3) и приоритета (0,1,2)
-    // взята из твоих старых файлов
+    // [🔥 ИЗМЕНЕННЫЙ МЕТОД 🔥]
     private void renderButtons(GuiGraphics graphics, int x, int y) {
         // Верхняя кнопка (Нет сигнала)
-        int modeNoSignal = menu.getModeOnNoSignal(); //
-        int vOnNoSignal = 52 + modeNoSignal * 18; // Используем V-координаты из нового GUI
+        int modeNoSignal = menu.getModeOnNoSignal();
+        int vOnNoSignal = getVForMode(modeNoSignal); // <-- Используем хелпер
         graphics.blit(TEXTURE, x + 133, y + 16, 176, vOnNoSignal, 18, 18);
 
         // Нижняя кнопка (Есть сигнал)
-        int modeSignal = menu.getModeOnSignal(); //
-        int vOnSignal = 52 + modeSignal * 18; // Используем V-координаты из нового GUI
+        int modeSignal = menu.getModeOnSignal();
+        int vOnSignal = getVForMode(modeSignal); // <-- Используем хелпер
         graphics.blit(TEXTURE, x + 133, y + 52, 176, vOnSignal, 18, 18);
 
         // Кнопка приоритета
-        int priorityOrdinal = menu.getPriorityOrdinal(); //
-        // U=194, V=52 + (ordinal * 16) - адаптировано из
-        // (Мы убрали VERY_LOW, поэтому ординалы 0, 1, 2 подходят)
+        int priorityOrdinal = menu.getPriorityOrdinal();
         int priorityV = 52 + priorityOrdinal * 16;
         graphics.blit(TEXTURE, x + 152, y + 35, 194, priorityV, 16, 16);
     }
@@ -143,9 +140,9 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
         if (isMouseOver(pMouseX, pMouseY, 62, 17, 52, 52)) {
             List<Component> tooltip = new ArrayList<>();
 
-            long energy = menu.getEnergy(); //
-            long maxEnergy = menu.getMaxEnergy(); //
-            long delta = menu.getEnergyDelta(); //
+            long energy = menu.getEnergy();
+            long maxEnergy = menu.getMaxEnergy();
+            long delta = menu.getEnergyDelta();
 
             String energyStr = EnergyFormatter.format(energy);
             String maxEnergyStr = EnergyFormatter.format(maxEnergy);
@@ -167,7 +164,7 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
         if (isMouseOver(pMouseX, pMouseY, 152, 35, 16, 16)) {
             List<Component> tooltip = new ArrayList<>();
             // Мы убрали VERY_LOW/VERY_HIGH, поэтому ординалы 0, 1, 2 (LOW, NORMAL, HIGH)
-            int priorityOrdinal = menu.getPriorityOrdinal(); //
+            int priorityOrdinal = menu.getPriorityOrdinal();
             String priorityKey = "gui.hbm_m.battery.priority." + priorityOrdinal;
 
             tooltip.add(Component.translatable(priorityKey));
