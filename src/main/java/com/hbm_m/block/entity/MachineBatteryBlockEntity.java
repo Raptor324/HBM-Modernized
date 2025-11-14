@@ -59,6 +59,7 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
     private final LazyOptional<IEnergyProvider> hbmProvider = LazyOptional.of(() -> this);
     private final LazyOptional<IEnergyReceiver> hbmReceiver = LazyOptional.of(() -> this);
+    private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
     private final PackedEnergyCapabilityProvider feCapabilityProvider;
 
     protected final ContainerData data;
@@ -250,9 +251,7 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         // Батарея - это *всегда* узел сети, даже в режиме "DISABLED".
         // Это не дает сети "потерять" узел, когда он выключен.
         if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
-            // Мы реализуем IEnergyProvider/IEnergyReceiver, которые наследуют IEnergyConnector,
-            // поэтому 'this' кастуется безопасно.
-            return LazyOptional.of(() -> this).cast();
+            return hbmConnector.cast(); // <-- Теперь мы возвращаем кэшированное поле
         }
 
         int mode = getCurrentMode();
@@ -277,6 +276,7 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
+        hbmConnector.invalidate();
         lazyItemHandler.invalidate();
         hbmProvider.invalidate();
         hbmReceiver.invalidate();

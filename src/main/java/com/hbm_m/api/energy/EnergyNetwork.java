@@ -13,7 +13,7 @@ import java.util.*;
 
 /**
  * ===================================================================
- * EnergyNetwork.java - ВЕРСИЯ 6.0
+ * EnergyNetwork.java - ВЕРСИЯ 6.2
  * * - Приоритеты: LOW, NORMAL, HIGH
  * - Распределение: Пропорционально внутри групп по приоритету
  * - Батареи (Input/Both) и Машины конкурируют в одних группах
@@ -215,13 +215,26 @@ public class EnergyNetwork {
      * (Код из v5.1, он здесь работает отлично)
      */
     private void balanceBatteries(List<BatteryInfo> batteries) {
-        List<BatteryInfo> balancingBatteries = batteries.stream()
-                .filter(b -> b.mode == 0) // только режим "BOTH"
-                .toList();
+        // 1. Группируем все 'BOTH' батареи по их приоритету
+        Map<IEnergyReceiver.Priority, List<BatteryInfo>> batteriesByPriority = new EnumMap<>(IEnergyReceiver.Priority.class);
+        for (BatteryInfo battery : batteries) {
+            if (battery.mode == 0) { // Только режим "BOTH"
+                batteriesByPriority
+                        .computeIfAbsent(battery.receiver.getPriority(), k -> new ArrayList<>())
+                        .add(battery);
+            }
+        }
 
+        // 2. Запускаем логику балансировки для *каждой* группы отдельно
+        for (List<BatteryInfo> priorityGroup : batteriesByPriority.values()) {
+            balanceSinglePriorityGroup(priorityGroup);
+        }
+    }
+
+    private void balanceSinglePriorityGroup(List<BatteryInfo> balancingBatteries) {
         if (balancingBatteries.size() < 2) return;
 
-        // Вычисляем среднее заполнение
+        // Вычисляем среднее заполнение *только для этой группы*
         long totalEnergy = 0;
         long totalCapacity = 0;
 

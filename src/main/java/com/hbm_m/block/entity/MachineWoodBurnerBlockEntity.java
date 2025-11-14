@@ -1,6 +1,7 @@
 package com.hbm_m.block.entity;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
+import com.hbm_m.api.energy.IEnergyConnector;
 import com.hbm_m.block.MachineWoodBurnerBlock;
 import com.hbm_m.api.energy.IEnergyProvider;
 import com.hbm_m.capability.ModCapabilities;
@@ -55,6 +56,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
     // Capabilities
     private final LazyOptional<IEnergyProvider> hbmProvider = LazyOptional.of(() -> this);
+    private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
     private final PackedEnergyCapabilityProvider feCapabilityProvider;
 
     // GUI данные
@@ -221,6 +223,11 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         if (cap == ModCapabilities.HBM_ENERGY_PROVIDER) {
             return hbmProvider.cast();
         }
+
+        if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
+            return hbmConnector.cast();
+        }
+
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return lazyItemHandler.cast();
         }
@@ -243,6 +250,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         lazyItemHandler.invalidate();
         hbmProvider.invalidate();
         feCapabilityProvider.invalidate();
+        hbmConnector.invalidate();
     }
 
     // --- NBT ---
@@ -253,6 +261,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         tag.putInt("burnTime", burnTime);
         tag.putInt("maxBurnTime", maxBurnTime);
         tag.putBoolean("enabled", enabled);
+
         super.saveAdditional(tag);
     }
 
