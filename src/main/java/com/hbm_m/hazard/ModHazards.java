@@ -31,10 +31,6 @@ public class ModHazards {
             // Это гораздо чище и гибче, чем хранить данные в enum
             switch (ingot) {
 
-
-
-
-
                 case PU_MIX:
                     HazardSystem.register(ModItems.getIngot(ingot).get(), new HazardData(
                             new HazardEntry(HazardType.RADIATION, 6.25f)
