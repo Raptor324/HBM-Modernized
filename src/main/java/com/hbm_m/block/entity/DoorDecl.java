@@ -571,8 +571,16 @@ public abstract class DoorDecl {
         {
             try {
                 ResourceManager rm = Minecraft.getInstance().getResourceManager();
-                Resource resource = rm.getResource(new ResourceLocation(RefStrings.MODID, "models/block/sliding_blast_door.dae")).orElseThrow();
-                animations = ColladaAnimationParser.parse(resource.open());
+                Resource resource = rm.getResource(
+                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/sliding_blast_door.dae")
+                ).orElse(null);
+
+                if (resource == null) {
+                    MainRegistry.LOGGER.error("DoorDecl: missing sliding_blast_door.dae for {}", getBlockId());
+                    animations = Collections.emptyMap();
+                } else {
+                    animations = ColladaAnimationParser.parse(resource.open());
+                }
             } catch (Exception e) {
                 e.printStackTrace();
                 animations = Collections.emptyMap();
