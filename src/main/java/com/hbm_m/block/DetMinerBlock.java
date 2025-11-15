@@ -194,11 +194,6 @@ public class DetMinerBlock extends Block implements IDetonatable {
                 collectedDrops.addAll(blockState.getDrops(lootParamsBuilder));
             }
 
-            // Запускаем эффект дыма
-            spawnExplosionWave((ServerLevel) level, pos);
-
-
-
         }
 
         // 2. Уничтожаем блоки в радиусе и заменяем их воздухом

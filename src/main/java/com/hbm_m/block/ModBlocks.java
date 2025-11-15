@@ -214,6 +214,18 @@ public class ModBlocks {
                     // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
             ));
 
+    public static final RegistryObject<Block> WASTE_CHARGE = registerBlock("waste_charge",
+            () -> new WasteChargeBlock(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
+                    .sound(SoundType.STONE) // Звук при разрушении
+                    .requiresCorrectToolForDrops() // Требует правильного инструмента для лута (как руды)
+                    // .noOcclusion() // <--- ЭТО ОЧЕНЬ ВАЖНО! НЕ ИСПОЛЬЗУЙТЕ ЭТО ДЛЯ БЛОКОВ, КОТОРЫЕ ДОЛЖНЫ РЕАГИРОВАТЬ НА РЕДСТОУН
+                    //                    // noOcclusion делает блок "неполным" или "прозрачным" для редстоуна.
+                    //                    // Если ваш блок должен быть твердым и проводить редстоун, то эти свойства должны быть по умолчанию.
+                    // .isRedstoneConductor((state, level, pos) -> true) // Можно явно указать, что блок проводит редстоун
+                    // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
+            ));
+
     public static final RegistryObject<Block> C4 = registerBlock("c4",
             () -> new C4Block(BlockBehaviour.Properties.of()
                     .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
@@ -253,6 +265,19 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> SELLAFIELD_SLAKED3  = registerBlock("sellafield_slaked3",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+    // ГРАВИТИРУЮЩИЕ ВЕРСИИ СЕЛЛАФИТА (NEW!)
+    public static final RegistryObject<Block> FALLING_SELLAFIT1 = BLOCKS.register("falling_sellafit1",
+            () -> new FallingSellafit(SELLAFIELD_SLAKED.get()));
+
+    public static final RegistryObject<Block> FALLING_SELLAFIT2 = BLOCKS.register("falling_sellafit2",
+            () -> new FallingSellafit(SELLAFIELD_SLAKED1.get()));
+
+    public static final RegistryObject<Block> FALLING_SELLAFIT3 = BLOCKS.register("falling_sellafit3",
+            () -> new FallingSellafit(SELLAFIELD_SLAKED2.get()));
+
+    public static final RegistryObject<Block> FALLING_SELLAFIT4 = BLOCKS.register("falling_sellafit4",
+            () -> new FallingSellafit(SELLAFIELD_SLAKED3.get()));
 
     public static final RegistryObject<Block> CONCRETE_FAN  = registerBlock("concrete_fan",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
@@ -298,6 +323,13 @@ public class ModBlocks {
             () -> new SteelCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(1f, 1.5f).requiresCorrectToolForDrops()));
     public static final RegistryObject<Block> CRATE_DESH = registerBlock("crate_desh",
             () -> new DeshCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(1.5f, 2f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> WASTE_PLANKS = registerBlock("waste_planks",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.OAK_WOOD).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> WASTE_LOG = registerBlock("waste_log",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.COAL_BLOCK).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
 
     // -----------------------<РАСТЕНИЯ>-----------------------------
     public static final RegistryObject<Block> STRAWBERRY_BUSH = registerBlock("strawberry_bush",

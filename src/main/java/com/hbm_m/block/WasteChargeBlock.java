@@ -1,22 +1,17 @@
 package com.hbm_m.block;
 
 import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.util.CraterGenerator;
-import com.hbm_m.util.MessGenerator;
+
+import com.hbm_m.util.WasteBlastGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.core.BlockPos;
-import net.minecraft.server.TickTask;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-public class NuclearChargeBlock extends Block implements IDetonatable {
+public class WasteChargeBlock extends Block implements IDetonatable {
+
     private static final float EXPLOSION_POWER = 25.0F;
     private static final double PARTICLE_VIEW_DISTANCE = 512.0;
 
@@ -24,8 +19,7 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
     private static final int CRATER_RADIUS = 60; // Радиус воронки в блоках
     private static final int CRATER_DEPTH = 20; // Глубина воронки в блоках
 
-
-    public NuclearChargeBlock(Properties properties) {
+    public WasteChargeBlock(Properties properties) {
         super(properties);
     }
 
@@ -46,32 +40,38 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
             // Запускаем поэтапную систему частиц
             scheduleExplosionEffects(serverLevel, x, y, z);
 
+            // ИСПРАВЛЕНИЕ: Проверка на null для сервера
             if (serverLevel.getServer() != null) {
+                // Создаём воронку с задержкой (после взрывной волны)
                 serverLevel.getServer().tell(new net.minecraft.server.TickTask(30, () -> {
-                    CraterGenerator.generateCrater(
+                    // НОВОЕ: Используем массив из 4 вариантов селлафита
+                    Block[] sellafieldBlocks = {
+                            ModBlocks.SELLAFIELD_SLAKED.get(),
+                            ModBlocks.SELLAFIELD_SLAKED1.get(),
+                            ModBlocks.SELLAFIELD_SLAKED2.get(),
+                            ModBlocks.SELLAFIELD_SLAKED3.get()
+                    };
+
+                    // Анимированная версия (2 секунды)
+                    WasteBlastGenerator.generateCrater(
                             serverLevel,
                             pos,
                             CRATER_RADIUS,
                             CRATER_DEPTH,
-                            // ТВЁРДЫЕ ВЕРСИИ (поверхность кратера)
-                            ModBlocks.SELLAFIELD_SLAKED.get(),
-                            ModBlocks.SELLAFIELD_SLAKED1.get(),
-                            ModBlocks.SELLAFIELD_SLAKED2.get(),
-                            ModBlocks.SELLAFIELD_SLAKED3.get(),
-                            // ГРАВИТИРУЮЩИЕ ВЕРСИИ (падающий селлафит)
-                            ModBlocks.FALLING_SELLAFIT1.get(),
-                            ModBlocks.FALLING_SELLAFIT2.get(),
-                            ModBlocks.FALLING_SELLAFIT3.get(),
-                            ModBlocks.FALLING_SELLAFIT4.get(),
-                            // === НОВОЕ: Блоки для ЗОН ПОВРЕЖДЕНИЯ ===
-                            ModBlocks.WASTE_LOG.get(),      // Обугленное бревно
-                            ModBlocks.WASTE_PLANKS.get()    // Обугленные доски
+                            sellafieldBlocks
                     );
+
+                    // ИЛИ мгновенная версия (раскомментируй если нужна)
+                    // CraterGenerator.generateCraterInstant(
+                    //         serverLevel, pos, CRATER_RADIUS, CRATER_DEPTH,
+                    //         sellafieldBlocks
+                    // );
                 }));
             }
 
             return true;
         }
+
         return false;
     }
 
@@ -125,7 +125,6 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
         // 3 кольца взрывной волны на разной высоте
         for (int ring = 0; ring < 3; ring++) {
             double ringY = y + (ring * 0.5);
-
             level.sendParticles(
                     ModExplosionParticles.SHOCKWAVE.get(),
                     x, ringY, z,

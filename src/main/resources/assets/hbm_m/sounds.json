@@ -41,6 +41,13 @@
     ],
     "subtitle": "sounds.hbm_m.geiger_counter"
   },
+  "techbleep": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.techbleep",
+    "sounds": [
+      "hbm_m:techbleep"
+    ]
+  },
   "techboop": {
     "category": "player",
     "subtitle": "sounds.hbm_m.techboop",

@@ -55,10 +55,28 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED2);
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED3);
 
+        blockWithItem(ModBlocks.FALLING_SELLAFIT1);
+        blockWithItem(ModBlocks.FALLING_SELLAFIT2);
+        blockWithItem(ModBlocks.FALLING_SELLAFIT3);
+        blockWithItem(ModBlocks.FALLING_SELLAFIT4);
+
         resourceBlockWithItem(ModBlocks.CRATE);
         resourceBlockWithItem(ModBlocks.CRATE_LEAD);
         resourceBlockWithItem(ModBlocks.CRATE_METAL);
         resourceBlockWithItem(ModBlocks.CRATE_WEAPON);
+
+        blockWithItem(ModBlocks.WASTE_PLANKS);
+
+        simpleBlockWithItem(ModBlocks.WASTE_LOG.get(),
+                models().cubeBottomTop(
+                        ModBlocks.WASTE_LOG.getId().getPath(),
+                        modLoc("block/waste_log_side"),
+                        modLoc("block/waste_log_top"),
+                        modLoc("block/waste_log_top")
+                )
+        );
+
+
         simpleBlockWithItem(ModBlocks.CRATE_IRON.get(),
                 models().cubeBottomTop(
                         ModBlocks.CRATE_IRON.getId().getPath(),

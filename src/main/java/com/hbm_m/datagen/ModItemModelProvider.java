@@ -116,7 +116,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 
         // РЕГИСТРАЦИЯ МОДЕЛЕЙ ДЛЯ УНИКАЛЬНЫХ ПРЕДМЕТОВ 
         // Для предметов, зарегистрированных вручную, мы также можем генерировать модели.
-
+        simpleItem(ModItems.MULTI_DETONATOR);
         simpleItem(ModItems.DETONATOR);
         simpleItem(ModItems.SCRAP);
         simpleItem(ModItems.BLADE_TEST);

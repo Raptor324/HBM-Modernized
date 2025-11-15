@@ -3,6 +3,20 @@ package com.hbm_m.main;
 // Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
+import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.client.overlay.MultiDetonatorScreen;
+import com.hbm_m.item.ModBatteryItem;
+import com.hbm_m.block.entity.AnvilBlockEntity;
+import com.hbm_m.item.MultiDetonatorItem;
+import com.hbm_m.menu.AnvilMenu;
+import com.hbm_m.network.ModNetwork;
+import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.world.biome.ModBiomes;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.common.extensions.IForgeMenuType;
 import com.hbm_m.particle.ModExplosionParticles;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
@@ -50,6 +64,7 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+import org.lwjgl.glfw.GLFW;
 
 @Mod(RefStrings.MODID)
 public class MainRegistry {
@@ -117,7 +132,6 @@ public class MainRegistry {
             LOGGER.info("HazardSystem initialized successfully");
         });
     }
-
     @SubscribeEvent
     public void onAttachCapabilitiesChunk(AttachCapabilitiesEvent<LevelChunk> event) {
         final ResourceLocation key = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "chunk_radiation");
@@ -144,21 +158,25 @@ public class MainRegistry {
         if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get()) {
 
             event.accept(ModItems.DETONATOR);
-
+            event.accept(ModItems.MULTI_DETONATOR);
+            event.accept(ModItems.RANGE_DETONATOR);
             event.accept(ModItems.GRENADE);
             event.accept(ModItems.GRENADEHE);
             event.accept(ModItems.GRENADEFIRE);
             event.accept(ModItems.GRENADESMART);
             event.accept(ModItems.GRENADESLIME);
 
-            event.accept(ModBlocks.SMOKE_BOMB);
-            event.accept(ModBlocks.EXPLOSIVE_CHARGE);
-            event.accept(ModBlocks.NUCLEAR_CHARGE);
             event.accept(ModItems.GRENADEIF);
 
             event.accept(ModBlocks.DET_MINER);
-            event.accept(ModBlocks.C4);
             event.accept(ModBlocks.GIGA_DET);
+            event.accept(ModBlocks.WASTE_CHARGE);
+
+            event.accept(ModBlocks.SMOKE_BOMB);
+            event.accept(ModBlocks.EXPLOSIVE_CHARGE);
+            event.accept(ModBlocks.NUCLEAR_CHARGE);
+            event.accept(ModBlocks.C4);
+
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");
             }
@@ -418,6 +436,8 @@ public class MainRegistry {
             event.accept(ModBlocks.URANIUM_ORE);
             event.accept(ModBlocks.WASTE_GRASS);
             event.accept(ModBlocks.WASTE_LEAVES);
+            event.accept(ModBlocks.WASTE_LOG);
+            event.accept(ModBlocks.WASTE_PLANKS);
 
             event.accept(ModBlocks.ALUMINUM_ORE);
             event.accept(ModBlocks.ALUMINUM_ORE_DEEPSLATE);
