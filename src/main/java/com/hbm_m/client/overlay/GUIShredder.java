@@ -1,7 +1,7 @@
-// ShredderScreen.java
 package com.hbm_m.client.overlay;
 
 import com.hbm_m.block.entity.ShredderBlockEntity;
+import com.hbm_m.lib.RefStrings;
 import com.hbm_m.menu.ShredderMenu;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.gui.GuiGraphics;
@@ -14,7 +14,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUIShredder extends AbstractContainerScreen<ShredderMenu> {
 
     private static final ResourceLocation TEXTURE =
-            new ResourceLocation("hbm_m", "textures/gui/shredder_gui.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/shredder_gui.png");
 
     // Corrected Progress Bar constants (based on typical arrow size and position)
     // Adjust these if your texture's arrow is different or positioned elsewhere.

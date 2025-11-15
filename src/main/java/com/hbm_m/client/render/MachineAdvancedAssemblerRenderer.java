@@ -119,7 +119,6 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
             return;
         }
         
-        //  НОВОЕ: Определяем путь рендера
         boolean useFallback = RenderPathManager.shouldUseFallback();
         
         if (useFallback) {
@@ -171,97 +170,54 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     }
 
     /**
-     *  УПРОЩЕННЫЙ: Рендер одной части модели
-     */
-    private void renderFallbackPart(String partName, BakedModel partModel,
-            PoseStack poseStack, int packedLight,
-            Matrix4f additionalTransform) {
-        
-        if (partModel == null) {
-            return;
-        }
-        
-        try {
-            // Получаем/создаем рендер для этой части
-            ImmediateFallbackRenderer renderer = fallbackRenderers.computeIfAbsent(
-                partName,
-                k -> new ImmediateFallbackRenderer(partModel)
-            );
-            
-            // Рендерим - просто и надежно
-            renderer.render(poseStack, packedLight, additionalTransform);
-            
-        } catch (Exception e) {
-            MainRegistry.LOGGER.error("Error rendering fallback part {}: {}", partName, e.getMessage());
-            // Удаляем проблемный рендер из кэша для повторного создания
-            fallbackRenderers.remove(partName);
-        }
-    }
-
-    /**
      *  НОВЫЙ МЕТОД: Анимированный рендер в fallback режиме
      */
     private void renderAnimatedFallback(MachineAdvancedAssemblerBlockEntity be,
-                                   MachineAdvancedAssemblerBakedModel model,
-                                   float partialTick,
-                                   PoseStack poseStack,
-                                   int packedLight,
-                                   BlockPos blockPos) {
-    
-    // Кольцо с вращением
-    float ring = Mth.lerp(partialTick, be.prevRingAngle, be.ringAngle);
-    Matrix4f ringMat = new Matrix4f().rotateY((float) Math.toRadians(ring));
-    renderFallbackPart("Ring", model.getPart("Ring"), poseStack, packedLight, 
-                      ringMat, blockPos, be.getLevel(), be);
+                                    MachineAdvancedAssemblerBakedModel model,
+                                    float partialTick,
+                                    PoseStack poseStack,
+                                    int packedLight,
+                                    BlockPos blockPos) {
+        
+        // Кольцо с вращением
+        float ring = Mth.lerp(partialTick, be.prevRingAngle, be.ringAngle);
+        Matrix4f ringMat = new Matrix4f().rotateY((float) Math.toRadians(ring));
+        renderFallbackPart("Ring", model.getPart("Ring"), poseStack, packedLight, 
+                        ringMat, blockPos, be.getLevel(), be);
 
-    // Руки с анимацией
-    renderArmFallback(be.arms[0], false, model, partialTick, poseStack, packedLight, 
-                     ringMat, blockPos, be);
-    renderArmFallback(be.arms[1], true, model, partialTick, poseStack, packedLight, 
-                     ringMat, blockPos, be);
-}
+        // Руки с анимацией
+        renderArmFallback(be.arms[0], false, model, partialTick, poseStack, packedLight, 
+                        ringMat, blockPos, be);
+        renderArmFallback(be.arms[1], true, model, partialTick, poseStack, packedLight, 
+                        ringMat, blockPos, be);
+    }
 
-    // ИСПРАВЛЕНИЕ: Рендер одной части с трансформацией (по образцу DoorRenderer)
     private void renderFallbackPart(String partName, BakedModel partModel,
                                     PoseStack poseStack, int packedLight,
                                     @Nullable Matrix4f additionalTransform,
-                                    BlockPos blockPos, 
+                                    BlockPos blockPos,
                                     net.minecraft.world.level.Level level,
                                     MachineAdvancedAssemblerBlockEntity blockEntity) {
         if (partModel == null) {
             return;
         }
-
-        try {      
-            // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Применяем трансформации через PoseStack
+        try {
             poseStack.pushPose();
-            
             if (additionalTransform != null) {
-                // Применяем трансформацию к PoseStack ПЕРЕД рендерингом
                 poseStack.last().pose().mul(additionalTransform);
             }
-            
-            // Получаем/создаем рендер для этой части
             ImmediateFallbackRenderer renderer = fallbackRenderers.computeIfAbsent(
-                    partName,
-                    k -> new ImmediateFallbackRenderer(partModel)
+                partName,
+                k -> new ImmediateFallbackRenderer(partModel)
             );
-
-            // КРИТИЧНО: Передаем все параметры для корректного освещения и текстур
             renderer.render(poseStack, packedLight, null, blockPos, level, blockEntity);
-            
             poseStack.popPose();
-
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error rendering fallback part {}: {}", partName, e.getMessage());
-            // Удаляем проблемный рендер из кэша для повторного создания
             fallbackRenderers.remove(partName);
         }
     }
 
-    /**
-     *  НОВЫЙ МЕТОД: Рендер руки в fallback режиме
-     */
     private void renderArmFallback(MachineAdvancedAssemblerBlockEntity.AssemblerArm arm,
                                 boolean inverted,
                                 MachineAdvancedAssemblerBakedModel model,
@@ -324,7 +280,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         super.render(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
         
         //  Рендерим иконку ОТДЕЛЬНО с immediate buffer
-        renderRecipeIconDirect(be, poseStack, packedLight, packedOverlay);
+        renderRecipeIconDirect(be, poseStack, bufferSource, packedLight, packedOverlay);
     }
 
     private void renderWithVBO(MachineAdvancedAssemblerBlockEntity be,
@@ -451,32 +407,29 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     }
 
     private void renderRecipeIconDirect(MachineAdvancedAssemblerBlockEntity be,
-                                    PoseStack poseStack,
-                                    int packedLight, int packedOverlay) {
-    
+                                        PoseStack poseStack,
+                                        MultiBufferSource bufferSource,
+                                        int packedLight, int packedOverlay) {
         var selectedRecipeId = be.getSelectedRecipeId();
         if (selectedRecipeId == null) return;
-        
+
         var mc = Minecraft.getInstance();
         if (mc.player == null) return;
-        
+
         var recipe = be.getLevel() == null ? null : be.getLevel().getRecipeManager()
                 .byKey(selectedRecipeId)
                 .filter(r -> r instanceof com.hbm_m.recipe.AssemblerRecipe)
                 .map(r -> (com.hbm_m.recipe.AssemblerRecipe) r)
                 .orElse(null);
-        
         if (recipe == null) return;
-        
+
         ItemStack icon = recipe.getResultItem(null);
         if (icon.isEmpty()) return;
 
-        //  Используем СТАНДАРТНЫЙ vanilla buffers напрямую, БЕЗ immediate!
-        // Создаём в самом конце цикла рендера, когда Embeddium уже закончил свою оптимизацию
         poseStack.pushPose();
         poseStack.mulPose(Axis.YP.rotationDegrees(90));
         poseStack.translate(0, 1.0625, 0);
-        
+
         if (icon.getItem() instanceof BlockItem bi) {
             var blockModel = mc.getBlockRenderer().getBlockModel(bi.getBlock().defaultBlockState());
             if (blockModel.isGui3d()) {
@@ -489,14 +442,9 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
             poseStack.mulPose(Axis.XP.rotationDegrees(-90));
             poseStack.translate(-0.5, -0.5, -0.03);
         }
-        
-        //  КРИТИЧНО: Используем ГЛОБАЛЬНЫЙ mc.renderBuffers().bufferSource()
-        // Это гарантирует, что все батчи Embeddium УЖЕ завершены!
-        MultiBufferSource bufferSource = mc.renderBuffers().bufferSource();
-        
-        //  Привязываем TextureAtlas ПЕРЕД КАЖДЫМ ИСПОЛЬЗОВАНИЕМ
+
+        // ВАЖНО: просто используем существующий bufferSource, не создаём новый и не вызываем endBatch()
         RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
-        
         mc.getItemRenderer().renderStatic(
                 icon,
                 ItemDisplayContext.FIXED,
@@ -507,12 +455,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                 be.getLevel(),
                 0
         );
-        
-        //  Флашим СРАЗУ же после renderStatic
-        if (bufferSource instanceof MultiBufferSource.BufferSource bufferSrc) {
-            bufferSrc.endBatch();
-        }
-        
+
         poseStack.popPose();
     }
 
@@ -543,8 +486,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
         gpu = null;
         cachedModel = null;
-        // cachedIconBuffer = null;
         
-        RenderPathManager.reset();
+        MainRegistry.LOGGER.debug("Assembler renderer resources reloaded");
     }
 }

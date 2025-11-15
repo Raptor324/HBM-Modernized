@@ -4,6 +4,7 @@ import com.google.gson.JsonObject;
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.resources.ResourceLocation;
 
 import java.util.HashMap;
 import java.util.Set;
@@ -21,7 +22,7 @@ public class MachineAdvancedAssemblerModelLoader extends AbstractObjPartModelLoa
     }
 
     @Override
-    protected MachineAdvancedAssemblerBakedModel createBakedModel(HashMap<String, BakedModel> bakedParts, ItemTransforms transforms) {
+    protected MachineAdvancedAssemblerBakedModel createBakedModel(HashMap<String, BakedModel> bakedParts, ItemTransforms transforms, ResourceLocation modelLocation) {
         return new MachineAdvancedAssemblerBakedModel(bakedParts, transforms);
     }
 }

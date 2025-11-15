@@ -39,19 +39,25 @@ public class DoorVboRenderer extends AbstractGpuVboRenderer {
      * Получает или создает VBO рендерер для указанной анимированной части двери
      * ВАЖНО: НЕ используется для статической части "frame"!
      */
-    public static DoorVboRenderer getOrCreate(DoorBakedModel model, String partName) {
+    public static DoorVboRenderer getOrCreate(DoorBakedModel model, String partName, String doorType) {
         // Защита от создания VBO рендерера для статических частей
         if ("frame".equals(partName)) {
             throw new IllegalArgumentException("Frame part should use InstancedStaticPartRenderer, not DoorVboRenderer!");
         }
         
-        // ИСПРАВЛЕНИЕ: Также пропускаем пустую часть "Base"
         if ("Base".equals(partName)) {
             throw new IllegalArgumentException("Base part is empty and should not be rendered!");
         }
     
-        String key = "door_" + partName + "_" + System.identityHashCode(model);
+        // ИСПРАВЛЕНИЕ: Включаем тип двери в ключ кэша
+        String key = "door_" + doorType + "_" + partName + "_" + System.identityHashCode(model);
         return partRenderers.computeIfAbsent(key, k -> new DoorVboRenderer(model, partName));
+    }
+
+    public static DoorVboRenderer getOrCreate(DoorBakedModel model, String partName) {
+        // Пытаемся определить тип двери по модели
+        String doorType = "unknown_" + System.identityHashCode(model);
+        return getOrCreate(model, partName, doorType);
     }
 
     @Override
@@ -70,54 +76,18 @@ public class DoorVboRenderer extends AbstractGpuVboRenderer {
         return vboData;
     }
 
-    /**
-     * Рендерит анимированную часть двери с трансформациями
-     */
+    // Рендер геометрии в текущей позе.
     public void renderPart(PoseStack poseStack, int packedLight, BlockPos blockPos,
-                          @Nullable BlockEntity blockEntity, DoorDecl doorDecl,
-                          float openTicks, boolean isOpen) {
-        
-        if (!doorDecl.doesRender(partName, isOpen)) {
-            return;
-        }
+                        @Nullable BlockEntity blockEntity, DoorDecl doorDecl,
+                        float openTicks, boolean child) {
+        // Всё ещё уважаем doesRender, чтобы не рисовать скрытые части
+        if (!doorDecl.doesRender(partName, child)) return;
 
-        if (blockEntity instanceof DoorBlockEntity doorBE) {
-            AABB renderBounds = doorBE.getRenderBoundingBox();
-            if (!OcclusionCullingHelper.shouldRender(blockPos, 
-                blockEntity.getLevel(), renderBounds)) {
-                return;
-            }
-        }
-
-        // Используем ThreadLocal буферы для потокобезопасности
-        float[] translation = translationBuffer.get();
-        float[] origin = originBuffer.get();
-        float[] rotation = rotationBuffer.get();
-
-        // Получаем трансформации для текущего состояния двери
-        doorDecl.getTranslation(partName, openTicks, isOpen, translation);
-        doorDecl.getOrigin(partName, origin);
-        doorDecl.getRotation(partName, openTicks, rotation);
-
-        // Применяем трансформации через матрицу
-        poseStack.pushPose();
-
-        // Смещение к точке вращения
-        poseStack.translate(origin[0], origin[1], origin[2]);
-
-        // Применяем повороты (оптимизированные условные проверки)
-        if (rotation[0] != 0) poseStack.mulPose(com.mojang.math.Axis.XP.rotationDegrees(rotation[0]));
-        if (rotation[1] != 0) poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(rotation[1]));
-        if (rotation[2] != 0) poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(rotation[2]));
-
-        // Применяем смещение с учетом трансляции
-        poseStack.translate(-origin[0] + translation[0], -origin[1] + translation[1], -origin[2] + translation[2]);
-
-        // Рендерим с VBO
+        // НИКАКИХ дополнительных трансформаций: PoseStack уже содержит
+        // origin/rotation/translation из DoorRenderer.renderHierarchyVbo(...)
         super.render(poseStack, packedLight, blockPos, blockEntity);
-
-        poseStack.popPose();
     }
+
 
     /**
      * Очищает кэш VBO рендереров при перезагрузке ресурсов

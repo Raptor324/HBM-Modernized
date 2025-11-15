@@ -35,16 +35,12 @@ public class ImmediateFallbackRenderer {
     private final int quadCount;
     private final int modelHash;
 
-    // ═══ ПОДДЕРЖКА ТЕНЕЙ ═══
-    private static volatile boolean shadowModeActive = false;
+    // ═══ ПОДДЕРЖКА ТЕНЕЙ (TODO) ═══
     private static final ThreadLocal<Boolean> RENDERING_SHADOWS = ThreadLocal.withInitial(() -> false);
-    private static final long SHADOW_CHECK_INTERVAL_MS = 100; // Проверяем раз в 100мс
-    private static volatile long lastShadowCheck = 0;
 
 
     // ═══ BATCHING СИСТЕМА ═══
     private static final ThreadLocal<BatchRenderer> THREAD_BATCH = ThreadLocal.withInitial(BatchRenderer::new);
-    private static volatile long lastFrameId = -1;
 
     // ═══ КЭШИРОВАНИЕ ═══
     private static final ThreadLocal<RandomSource> RANDOM_CACHE = ThreadLocal.withInitial(() -> {
@@ -54,20 +50,16 @@ public class ImmediateFallbackRenderer {
     });
     
     private static final ConcurrentHashMap<Integer, List<OptimizedQuad>> QUAD_CACHE = new ConcurrentHashMap<>();
-    private static Class<?> shadowRendererClass = null;
-    private static java.lang.reflect.Field activeField = null;
 
     // ═══ ОПТИМИЗИРОВАННЫЙ QUAD ═══
     private static class OptimizedQuad {
         final BakedQuad quad;
         final int[] vertexData;
-        final boolean hasComplexGeometry;
         final int estimatedCost;
 
         OptimizedQuad(BakedQuad quad) {
             this.quad = quad;
             this.vertexData = quad.getVertices();
-            this.hasComplexGeometry = vertexData.length > 32;
             this.estimatedCost = vertexData.length / 8;
         }
     }
@@ -75,24 +67,19 @@ public class ImmediateFallbackRenderer {
     // ═══ BATCH РЕНДЕРЕР С ПОДДЕРЖКОЙ ТЕНЕЙ ═══
     private static class BatchRenderer {
         private final List<RenderTask> pendingTasks = new ArrayList<>(64);
-        private boolean glStateInitialized = false;
-        private long lastFlushFrame = -1;
+
         
 
         private static class RenderTask {
             final List<OptimizedQuad> quads;
             final PoseStack.Pose pose;
             final int packedLight;
-            final BlockPos blockPos;
-            final AABB bounds;
 
             RenderTask(List<OptimizedQuad> quads, PoseStack.Pose pose, int packedLight,
                       BlockPos blockPos, AABB bounds) {
                 this.quads = quads;
                 this.pose = pose;
                 this.packedLight = packedLight;
-                this.blockPos = blockPos;
-                this.bounds = bounds;
             }
         }
 
@@ -107,24 +94,19 @@ public class ImmediateFallbackRenderer {
 
         void flushBatch() {
             if (pendingTasks.isEmpty()) return;
-            
-            long currentFrame = getCurrentFrameId();
+
             try {
-                // ИСПРАВЛЕНИЕ: Проверяем shadow mode
+                // всегда обновляем shadow state
                 updateShadowState();
-                
-                if (!glStateInitialized || lastFlushFrame != currentFrame) {
-                    if (isShadowPass()) {
-                        setupShadowRenderState();
-                    } else {
-                        setupOculusCompatibleRenderState();
-                    }
-                    glStateInitialized = true;
-                    lastFlushFrame = currentFrame;
+        
+                // ВСЕГДА настраиваем GL-состояние перед отрисовкой
+                if (isShadowPass()) {
+                    setupShadowRenderState();
+                } else {
+                    setupOculusCompatibleRenderState();
                 }
-                
+        
                 renderBatchedTasks();
-                
             } catch (Exception e) {
                 MainRegistry.LOGGER.warn("Batch render error: {}", e.getMessage());
                 safeResetTesselator();
@@ -132,7 +114,7 @@ public class ImmediateFallbackRenderer {
                 restoreRenderState();
                 pendingTasks.clear();
             }
-        }
+        }        
 
         private void renderBatchedTasks() {
             Tesselator tesselator = Tesselator.getInstance();
@@ -199,29 +181,31 @@ public class ImmediateFallbackRenderer {
             RenderSystem.colorMask(true, true, true, true);
         }
 
-        // ИСПРАВЛЕНИЕ: Настройка для обычного рендера (как было)
         private void setupOculusCompatibleRenderState() {
-            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
+            // Для дверей с прозрачными частями лучше использовать translucent‑шейдер
+            // Можно оставить и solid, но главное — включить blending.
+            RenderSystem.setShader(GameRenderer::getRendertypeTranslucentShader);
             RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
-            
-            // ВСЕГДА отключаем блендинг - работает и для shadow pass и для обычного
-            RenderSystem.disableBlend();
-            
+        
+            // КРИТИЧНО: включаем альфа‑смешивание
+            RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc(); // GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
+        
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(515); // GL_LEQUAL
             RenderSystem.depthMask(true);
-            
             RenderSystem.disableCull();
             RenderSystem.activeTexture(33984); // GL_TEXTURE0
             RenderSystem.colorMask(true, true, true, true);
         }
-
+        
         private void restoreRenderState() {
             RenderSystem.enableCull();
-            if (!isShadowPass()) {
-                RenderSystem.enableBlend(); // Восстанавливаем блендинг только для обычного рендера
-            }
+        
+            // После нашего батча возвращаемся к "чистому" состоянию:
+            RenderSystem.disableBlend();
             RenderSystem.defaultBlendFunc();
+        
             RenderSystem.depthFunc(513); // GL_LESS
         }
 
@@ -248,11 +232,7 @@ public class ImmediateFallbackRenderer {
 
     public static void onShaderReload() {
         // Очищаем все кэши при смене шейдера
-        shadowRendererClass = null;
-        activeField = null;
-        shadowModeActive = false;
         RENDERING_SHADOWS.set(false);
-        lastShadowCheck = 0;
         
         // Очищаем renderer кэши
         clearGlobalCache();
@@ -271,7 +251,6 @@ public class ImmediateFallbackRenderer {
             Boolean isActive = (Boolean) activeField.get(null);
             
             boolean currentlyActive = isActive != null && isActive;
-            shadowModeActive = currentlyActive;
             
             return currentlyActive;
             
@@ -293,7 +272,6 @@ public class ImmediateFallbackRenderer {
      */
     public static void setShadowMode(boolean shadowMode) {
         RENDERING_SHADOWS.set(shadowMode);
-        shadowModeActive = shadowMode;
     }
 
     // ═══ КОНСТРУКТОР ═══
@@ -390,7 +368,6 @@ public class ImmediateFallbackRenderer {
     public static void endFrame() {
         BatchRenderer batchRenderer = THREAD_BATCH.get();
         batchRenderer.flushBatch();
-        lastFrameId = getCurrentFrameId();
         RENDERING_SHADOWS.set(false); // Сбрасываем shadow state в конце кадра
     }
 
@@ -398,7 +375,6 @@ public class ImmediateFallbackRenderer {
         BatchRenderer batchRenderer = THREAD_BATCH.get();
         batchRenderer.safeResetTesselator();
         batchRenderer.pendingTasks.clear();
-        batchRenderer.glStateInitialized = false;
         RENDERING_SHADOWS.set(false);
     }
 
@@ -409,8 +385,6 @@ public class ImmediateFallbackRenderer {
     public static void clearGlobalCache() {
         QUAD_CACHE.clear();
         THREAD_BATCH.get().pendingTasks.clear();
-        THREAD_BATCH.get().glStateInitialized = false;
-        shadowModeActive = false;
         RENDERING_SHADOWS.set(false);
     }
 

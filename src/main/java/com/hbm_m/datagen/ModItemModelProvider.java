@@ -73,6 +73,39 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent("large_vehicle_door", 
             modLoc("block/large_vehicle_door"));
 
+        withExistingParent("round_airlock_door", 
+            modLoc("block/round_airlock_door"));
+
+        withExistingParent("transition_seal", 
+            modLoc("block/transition_seal"));
+
+        withExistingParent("silo_hatch", 
+            modLoc("block/silo_hatch"));
+
+        withExistingParent("silo_hatch_large", 
+            modLoc("block/silo_hatch_large"));
+
+        withExistingParent("qe_containment_door", 
+            modLoc("block/qe_containment_door"));
+
+        withExistingParent("water_door", 
+            modLoc("block/water_door"));
+
+        withExistingParent("fire_door", 
+            modLoc("block/fire_door"));
+
+        withExistingParent("sliding_blast_door", 
+            modLoc("block/sliding_blast_door"));
+
+        withExistingParent("sliding_seal_door", 
+            modLoc("block/sliding_seal_door"));
+
+        withExistingParent("secure_access_door", 
+            modLoc("block/secure_access_door"));
+
+        withExistingParent("qe_sliding_door", 
+            modLoc("block/qe_sliding_door"));
+
         // Door items (flat icons like vanilla doors)
         withExistingParent(ModBlocks.METAL_DOOR.getId().getPath(), "item/generated")
             .texture("layer0", modLoc("item/" + ModBlocks.METAL_DOOR.getId().getPath()));

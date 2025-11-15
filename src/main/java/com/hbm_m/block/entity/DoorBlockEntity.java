@@ -9,10 +9,13 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
+import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
@@ -21,7 +24,6 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.DoorBlock;
 import com.hbm_m.client.ClientSoundManager;
-import com.hbm_m.client.DoorDeclRegistry;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -37,15 +39,11 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     public long animStartTime = 0;
     private boolean locked = false;
 
-    private final String doorDeclId;
+    private String doorDeclId;
     
     // Мультиблок данные
     private BlockPos controllerPos = null;
     private PartRole partRole = PartRole.DEFAULT;
-    
-    // Оптимизация коллизии
-    private VoxelShape cachedCollisionShape = Shapes.block();
-    private float lastCollisionProgress = -1f;
     
     @OnlyIn(Dist.CLIENT)
     private Object loopingSound;
@@ -111,8 +109,19 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
 
     @OnlyIn(Dist.CLIENT)
     public DoorDecl getDoorDecl() {
-        return DoorDeclRegistry.getById(doorDeclId);
+        if (level == null) return null;
+        
+        BlockState state = getBlockState();
+        Block block = state.getBlock();
+        
+        if (block instanceof DoorBlock doorBlock) {
+            // КРИТИЧНО: убедитесь, что getDoorDeclId() возвращает правильный ID!
+            String declId = doorBlock.getDoorDeclId();
+            return DoorDeclRegistry.getById(declId);
+        }
+        return null;
     }
+    
     
     // Для серверной логики используем строковый ID
     public String getDoorDeclId() {
@@ -126,28 +135,44 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             : Direction.NORTH;
     }
 
+    /**
+     * Получает время открытия двери в тиках (серверная версия без клиентских зависимостей).
+     */
+    private int getServerOpenTime() {
+        return switch (doorDeclId) {
+            case "qe_sliding_door" -> 10;
+            case "sliding_seal_door" -> 20;
+            case "sliding_blast_door" -> 24;
+            case "secure_access_door" -> 120;
+            case "qe_containment_door" -> 160;
+            case "water_door" -> 60;
+            case "large_vehicle_door" -> 60;
+            case "fire_door" -> 160;
+            case "silo_hatch" -> 60;
+            case "silo_hatch_large" -> 60;
+            default -> 60;
+        };
+    }    
+
+    // ОБНОВИТЕ существующий метод getOpenProgress(float):
     public float getOpenProgress(float partialTick) {
-        // ИСПРАВЛЕНО: Не используем doorDecl на сервере
-        if (level != null && level.isClientSide) {
-            DoorDecl decl = getDoorDecl();
-            if (decl != null && decl.getOpenTime() == 0) {
-                return state == 1 || state == 3 ? 1f : 0f;
-            }
-        }
+        int openTime = getServerOpenTime(); // Используем серверную таблицу
         
-        // Для сервера используем фиксированное время
-        int openTime = 60; // Fallback значение
+        // ИСПРАВЛЕНО: Не используем doorDecl на сервере
         if (level != null && level.isClientSide) {
             DoorDecl decl = getDoorDecl();
             if (decl != null) {
                 openTime = decl.getOpenTime();
+                if (openTime == 0) {
+                    return state == 1 || state == 3 ? 1f : 0f;
+                }
             }
         }
-        
+
         long currentTime = System.currentTimeMillis();
         long elapsedTime = currentTime - animStartTime;
-        int totalTime = openTime * 50;
-        
+        int totalTime = openTime * 50; // тики в миллисекунды
+
         return switch (state) {
             case 0 -> 0f;
             case 1 -> 1f;
@@ -155,6 +180,14 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             case 3 -> Math.min(1f, (float) elapsedTime / totalTime);
             default -> 0f;
         };
+    }
+
+    /**
+     * Получает прогресс открытия БЕЗ партиальных тиков (для серверного использования).
+     * @return прогресс от 0.0 до 1.0
+     */
+    public float getOpenProgress() {
+        return getOpenProgress(0f); // Используем 0 партиальных тиков для сервера
     }
     
     public byte getState() {
@@ -205,24 +238,13 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     }
 
     private void setState(byte newState) {
-
         this.state = newState;
         this.animStartTime = System.currentTimeMillis();
-        
         if (newState == 3) {
-        this.openTicks = 0;
+            this.openTicks = 0;
         } else if (newState == 2) {
-            // ИСПРАВЛЕНО: Используем фиксированное значение или получаем на клиенте
-            int openTime = 60; // Fallback для сервера
-            if (level != null && level.isClientSide) {
-                DoorDecl decl = getDoorDecl();
-                if (decl != null) {
-                    openTime = decl.getOpenTime();
-                }
-            }
-            this.openTicks = openTime;
+            this.openTicks = getServerOpenTime(); // Используем серверный метод
         }
-        
         syncToClient();
     }
 
@@ -237,27 +259,31 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     // ==================== Server Tick ====================
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, DoorBlockEntity be) {
-        // ИСПРАВЛЕНО: Используем фиксированное время открытия для сервера
-        int openTime = 60; // Fallback значение для всех дверей
-        
-        if (be.state == 3) {
+        int openTime = be.getServerOpenTime(); // Используем серверный метод
+        boolean shouldSync = false;
+    
+        if (be.state == 3) { // Открывается
             be.openTicks++;
             be.updatePhantomBlocks(level, pos, openTime);
             if (be.openTicks >= openTime) {
                 be.state = 1;
                 be.openTicks = openTime;
-                be.syncToClient();
+                shouldSync = true;
                 be.notifyNeighborsOfStateChange(level, pos);
             }
-        } else if (be.state == 2) {
+        } else if (be.state == 2) { // Закрывается
             be.openTicks--;
             be.updatePhantomBlocks(level, pos, openTime);
             if (be.openTicks <= 0) {
                 be.state = 0;
                 be.openTicks = 0;
-                be.syncToClient();
+                shouldSync = true;
                 be.notifyNeighborsOfStateChange(level, pos);
             }
+        }
+    
+        if (shouldSync) {
+            be.syncToClient();
         }
     }
 
@@ -279,72 +305,13 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         }
     }
 
-    // ==================== Dynamic Collision ====================
-
-    public VoxelShape getDynamicCollisionShape(Direction facing) {
-        float progress = getOpenProgress(0);
-        
-        if (Math.abs(progress - lastCollisionProgress) < 0.01f) {
-            return cachedCollisionShape;
-        }
-        
-        lastCollisionProgress = progress;
-        
-        // ИСПРАВЛЕНО: На сервере используем упрощенную коллизию
-        List<AABB> bounds;
-        if (level != null && level.isClientSide) {
-            DoorDecl decl = getDoorDecl();
-            bounds = decl != null ? decl.getCollisionBounds(progress, facing) : List.of();
-        } else {
-            // Упрощенная коллизия для сервера
-            bounds = getServerCollisionBounds(progress, facing);
-        }
-        
-        if (bounds.isEmpty()) {
-            cachedCollisionShape = Shapes.empty();
-            return cachedCollisionShape;
-        }
-        
-        VoxelShape shape = Shapes.empty();
-        for (AABB aabb : bounds) {
-            shape = Shapes.or(shape, Shapes.create(aabb));
-        }
-        
-        cachedCollisionShape = shape.optimize();
-        return cachedCollisionShape;
-    }
-
-    // Упрощенная серверная коллизия
-    private List<AABB> getServerCollisionBounds(float progress, Direction facing) {
-        List<AABB> bounds = new ArrayList<>();
-        if (progress >= 0.99f) {
-            return bounds; // Полностью открыта
-        }
-        
-        // Левая створка
-        double leftMovement = progress * 3.0;
-        double leftDepth = Math.max(0.0, 1.0 - leftMovement);
-        if (leftDepth > 0.05) {
-            bounds.add(new AABB(-3.0, 0.0, 0.0, 0.0, 6.0, leftDepth));
-        }
-        
-        // Правая створка
-        double rightMovement = progress * 3.0;
-        double rightOffset = Math.min(1.0, rightMovement);
-        if (1.0 - rightOffset > 0.05) {
-            bounds.add(new AABB(0.0, 0.0, rightOffset, 3.0, 6.0, 1.0));
-        }
-        
-        return bounds;
-    }
-
     private void updatePhantomBlocks(Level level, BlockPos controllerPos, int openTime) {
         Direction facing = getFacing();
         
         // ИСПРАВЛЕНО: Используем фиксированные значения для сервера
         // Для клиента можно получить из DoorDecl, но для сервера используем стандартные
         int[][] ranges = {
-            {0, 0, 0, -4, 6, 2},  // Левая створка
+            {0, 0, 0, -5, 6, 2},  // Левая створка
             {0, 0, 0, 4, 6, 2}    // Правая створка
         };
         
@@ -503,6 +470,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         tag.putByte("state", state);
         tag.putInt("openTicks", openTicks);
         tag.putLong("animStartTime", animStartTime);
+        tag.putString("doorDeclId", doorDeclId);
         tag.putBoolean("locked", locked);
         if (controllerPos != null) {
             tag.putLong("controllerPos", controllerPos.asLong());
@@ -523,6 +491,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         if (tag.contains("controllerPos")) {
             this.controllerPos = BlockPos.of(tag.getLong("controllerPos"));
         }
+
+        if (tag.contains("doorDeclId")) {
+            this.doorDeclId = tag.getString("doorDeclId");
+        }        
         
         if (tag.contains("partRole")) {
             try {
@@ -531,8 +503,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
                 this.partRole = PartRole.DEFAULT;
             }
         }
-        
-        // ИСПРАВЛЕНО: Вызываем handleNewState ТОЛЬКО на клиенте при РЕАЛЬНОМ изменении
+
         if (level != null && level.isClientSide && oldState != this.state) {
             handleNewState(oldState, this.state);
         }
@@ -547,7 +518,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
 
     @Override
     public void handleUpdateTag(CompoundTag tag) {
-        load(tag); // load() уже отследит изменение state и вызовет handleNewState
+        load(tag);
     }
 
     @Nullable
@@ -560,7 +531,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
-            load(tag); // load() уже отследит изменение state и вызовет handleNewState
+            load(tag);
         }
     }
 
@@ -573,7 +544,6 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
 
     @Override
     public AABB getRenderBoundingBox() {
-        // ИСПРАВЛЕНО: Используем фиксированный радиус или получаем на клиенте
         double radius = 8.0; // Fallback
         if (level != null && level.isClientSide) {
             DoorDecl decl = getDoorDecl();

@@ -1,7 +1,7 @@
 package com.hbm_m.block;
 
 import com.hbm_m.block.entity.DoorBlockEntity;
-import com.hbm_m.block.entity.DoorDecl;
+import com.hbm_m.block.entity.DoorDeclRegistry;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -40,6 +40,7 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<PartRole> PART_ROLE = EnumProperty.create("part_role", PartRole.class);
     public static final BooleanProperty OPEN = BooleanProperty.create("open");
+    private final Map<Direction, VoxelShape> shapeCache = new java.util.EnumMap<>(Direction.class);
 
     private final String doorDeclId;
     private final MultiblockStructureHelper structureHelper;
@@ -48,23 +49,53 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
         super(properties);
         this.doorDeclId = doorDeclId;
         
-        // Создаём структуру 7x6x1 для двери
+        // Создаём структуру ТОЛЬКО один раз и переиспользуем
+        Map<BlockPos, Supplier<BlockState>> structureMap = createStructureForDoor(doorDeclId);
+        
+        this.structureHelper = new MultiblockStructureHelper(structureMap, 
+            () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+        
+        registerDefaultState(stateDefinition.any()
+            .setValue(FACING, Direction.NORTH)
+            .setValue(PART_ROLE, PartRole.DEFAULT)
+            .setValue(OPEN, false));
+    }
+
+    private static Map<BlockPos, Supplier<BlockState>> createStructureForDoor(String doorDeclId) {
         Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
         Supplier<BlockState> phantomSupplier = () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState();
+
+        // Получаем размеры двери на основе типа
+        int[] dimensions = getDoorDimensions(doorDeclId);
         
-        // Строим структуру: ширина от -3 до 3, высота от 0 до 5, глубина 0
-        for (int x = -3; x <= 3; x++) {
-            for (int y = 0; y <= 5; y++) {
-                structureMap.put(new BlockPos(x, y, 0), phantomSupplier);
+        // dimensions = [offsetX, offsetY, offsetZ, sizeX, sizeY, sizeZ]
+        int offsetX = dimensions[0];
+        int offsetY = dimensions[1]; 
+        int offsetZ = dimensions[2];
+        int sizeX = dimensions[3];
+        int sizeY = dimensions[4];
+        int sizeZ = dimensions[5];
+
+        // Генерируем структуру на основе размеров
+        for (int x = offsetX; x <= offsetX + sizeX; x++) {
+            for (int y = offsetY; y <= offsetY + sizeY; y++) {
+                for (int z = offsetZ; z <= offsetZ + sizeZ; z++) {
+                    structureMap.put(new BlockPos(x, y, z), phantomSupplier);
+                }
             }
         }
-        
-        this.structureHelper = new MultiblockStructureHelper(structureMap, phantomSupplier);
-        registerDefaultState(stateDefinition.any()
-                .setValue(FACING, Direction.NORTH)
-                .setValue(PART_ROLE, PartRole.DEFAULT)
-                .setValue(OPEN, false));
+
+        return structureMap;
     }
+
+    /**
+     * Получение размеров дверей для генерации структуры
+     * Размеры берутся из DoorDecl, но статически, чтобы избежать проблем инициализации
+     */
+    
+     public static int[] getDoorDimensions(String doorDeclId) {
+        return DoorDeclRegistry.getById(doorDeclId).getDimensions();
+    }    
 
     @Override
     public MultiblockStructureHelper getStructureHelper() {
@@ -126,40 +157,14 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof DoorBlockEntity doorBE) {
-            DoorBlockEntity controller = doorBE.getController();
-            if (controller != null) {
-                byte doorState = controller.getState();
-                
-                // Если дверь открыта (1) или открывается (3) - НЕТ коллизии вообще
-                if (doorState == 1 || doorState == 3) {
-                    return Shapes.empty();
-                }
-                
-                // Если дверь закрыта (0) или закрывается (2) - коллизия ТОЛЬКО для контроллера
-                // Фантомные блоки НЕ должны иметь коллизии!
-                if (doorState == 0 || doorState == 2) {
-                    // КРИТИЧНО: коллизия ТОЛЬКО у контроллера (главного блока)
-                    if (controller.getBlockPos().equals(pos)) {
-                        // Возвращаем ПОЛНЫЙ блок только для контроллера
-                        return Shapes.block();
-                    } else {
-                        // Для всех остальных блоков структуры - НЕТ коллизии
-                        return Shapes.empty();
-                    }
-                }
-            }
-        }
-        
-        // Fallback: если не контроллер - возвращаем полный блок
-        return Shapes.block();
+        return Shapes.empty();
     }
 
     @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        // НЕ показываем рамку выделения у контроллера - только у фантомов
-        return Shapes.empty();
+    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        // Используем НЕСТАТИЧЕСКИЙ кэш
+        return this.shapeCache.computeIfAbsent(pState.getValue(FACING),
+                facing -> getStructureHelper().generateShapeFromParts(facing));
     }
 
     @Override
