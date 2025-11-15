@@ -11,6 +11,7 @@ import com.hbm_m.item.MultiDetonatorItem;
 import com.hbm_m.menu.AnvilMenu;
 import com.hbm_m.network.ModNetwork;
 import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.world.biome.ModBiomes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
