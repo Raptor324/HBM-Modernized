@@ -53,20 +53,19 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
                             pos,
                             CRATER_RADIUS,
                             CRATER_DEPTH,
-                            // ТВЁРДЫЕ ВЕРСИИ (поверхность кратера)
                             ModBlocks.SELLAFIELD_SLAKED.get(),
                             ModBlocks.SELLAFIELD_SLAKED1.get(),
                             ModBlocks.SELLAFIELD_SLAKED2.get(),
                             ModBlocks.SELLAFIELD_SLAKED3.get(),
-                            // ГРАВИТИРУЮЩИЕ ВЕРСИИ (падающий селлафит)
                             ModBlocks.FALLING_SELLAFIT1.get(),
                             ModBlocks.FALLING_SELLAFIT2.get(),
                             ModBlocks.FALLING_SELLAFIT3.get(),
                             ModBlocks.FALLING_SELLAFIT4.get(),
-                            // === НОВОЕ: Блоки для ЗОН ПОВРЕЖДЕНИЯ ===
-                            ModBlocks.WASTE_LOG.get(),      // Обугленное бревно
-                            ModBlocks.WASTE_PLANKS.get()    // Обугленные доски
+                            ModBlocks.WASTE_LOG.get(),
+                            ModBlocks.WASTE_PLANKS.get(),
+                            ModBlocks.BURNED_GRASS.get()  // ← НОВЫЙ 15-й параметр
                     );
+
                 }));
             }
 

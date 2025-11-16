@@ -11,13 +11,16 @@ import com.hbm_m.item.MultiDetonatorItem;
 import com.hbm_m.menu.AnvilMenu;
 import com.hbm_m.network.ModNetwork;
 import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.util.SellafitSolidificationTracker;
 import com.hbm_m.world.biome.ModBiomes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.client.event.InputEvent;
 import net.minecraftforge.common.extensions.IForgeMenuType;
 import com.hbm_m.particle.ModExplosionParticles;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
@@ -132,6 +135,14 @@ public class MainRegistry {
             LOGGER.info("HazardSystem initialized successfully");
         });
     }
+
+    @SubscribeEvent
+    public static void onLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel() instanceof ServerLevel) {
+            SellafitSolidificationTracker.clearAll();
+        }
+    }
+
     @SubscribeEvent
     public void onAttachCapabilitiesChunk(AttachCapabilitiesEvent<LevelChunk> event) {
         final ResourceLocation key = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "chunk_radiation");
@@ -435,6 +446,7 @@ public class MainRegistry {
             event.accept(ModBlocks.PLUTONIUM_FUEL_BLOCK);
             event.accept(ModBlocks.URANIUM_ORE);
             event.accept(ModBlocks.WASTE_GRASS);
+            event.accept(ModBlocks.BURNED_GRASS);
             event.accept(ModBlocks.WASTE_LEAVES);
             event.accept(ModBlocks.WASTE_LOG);
             event.accept(ModBlocks.WASTE_PLANKS);
