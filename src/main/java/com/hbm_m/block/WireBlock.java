@@ -6,8 +6,9 @@ package com.hbm_m.block;
 // Логика соединения реализована в методе canConnectTo().
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.UniversalMachinePartBlockEntity;
 import com.hbm_m.block.entity.WireBlockEntity;
+import com.hbm_m.block.entity.machine.UniversalMachinePartBlockEntity;
+import com.hbm_m.block.machine.UniversalMachinePartBlock;
 import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;

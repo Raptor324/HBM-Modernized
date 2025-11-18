@@ -3,6 +3,8 @@ package com.hbm_m.datagen;
 // Провайдер генерации состояний блоков и моделей для блоков мода.
 // Используется в классе DataGenerators для регистрации.
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.item.ModIngots;
+import com.hbm_m.main.MainRegistry;
 
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
@@ -15,8 +17,11 @@ import net.minecraftforge.registries.RegistryObject;
 
 public class ModBlockStateProvider extends BlockStateProvider {
 
+    private final ExistingFileHelper existingFileHelper;
+
     public ModBlockStateProvider(PackOutput output, ExistingFileHelper exFileHelper) {
         super(output, RefStrings.MODID, exFileHelper);
+        this.existingFileHelper = exFileHelper;
     }
 
     @Override
@@ -27,10 +32,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         simpleBlockWithItem(ModBlocks.STRAWBERRY_BUSH.get(), models().cross(blockTexture(ModBlocks.STRAWBERRY_BUSH.get()).getPath(),
                 blockTexture(ModBlocks.STRAWBERRY_BUSH.get())).renderType("cutout"));
-        resourceBlockWithItem(ModBlocks.URANIUM_BLOCK);
-        resourceBlockWithItem(ModBlocks.PLUTONIUM_BLOCK);
-        resourceBlockWithItem(ModBlocks.PLUTONIUM_FUEL_BLOCK);
-        resourceBlockWithItem(ModBlocks.POLONIUM210_BLOCK);
+        // Блоки слитков теперь генерируются автоматически в цикле ниже
         
         oreWithItem(ModBlocks.URANIUM_ORE);
 
@@ -268,6 +270,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.SHREDDER.get(),
                 new ModelFile.UncheckedModelFile(modLoc("block/shredder")));
 
+        // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ СЛИТКОВ
+        for (ModIngots ingot : ModIngots.values()) {
+            RegistryObject<Block> blockRegistryObject = ModBlocks.getIngotBlock(ingot);
+            if (blockRegistryObject != null) {
+                resourceBlockWithItem(blockRegistryObject);
+            }
+        }
+
     }
 
     /**
@@ -283,12 +293,21 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // 3. Создаем имя файла текстуры (добавляем "block_" -> "block_uranium")
         String textureName = "block_" + baseName;
+        
+        // 4. Проверяем существование текстуры перед созданием модели
+        ResourceLocation textureLocation = modLoc("textures/block/" + textureName + ".png");
+        if (!existingFileHelper.exists(textureLocation, net.minecraft.server.packs.PackType.CLIENT_RESOURCES)) {
+            // Если текстура не найдена, пропускаем этот блок (логируем предупреждение)
+            MainRegistry.LOGGER.warn("Texture not found for block {}: {}. Skipping model generation.", 
+                    registrationName, textureLocation);
+            return;
+        }
 
-        // 4. Создаем модель блока, ЯВНО указывая путь к текстуре
+        // 5. Создаем модель блока, ЯВНО указывая путь к текстуре
         //    Метод models().cubeAll() создает модель типа "block/cube_all" с указанной текстурой.
         simpleBlock(blockObject.get(), models().cubeAll(registrationName, modLoc("block/" + textureName)));
 
-        // 5. Создаем модель для предмета-блока, как и раньше
+        // 6. Создаем модель для предмета-блока, как и раньше
         simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
     }
     private void oreWithItem(RegistryObject<Block> blockObject) {

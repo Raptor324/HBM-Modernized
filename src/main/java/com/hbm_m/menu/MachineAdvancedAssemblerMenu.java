@@ -5,7 +5,7 @@ package com.hbm_m.menu;
 // Содержит логику для обработки Shift-клика и отображения прогресса сборки.
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.block.entity.machine.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.item.ItemBlueprintFolder;
 import com.hbm_m.item.ItemTemplateFolder;
 

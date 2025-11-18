@@ -7,7 +7,13 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.item.ModPowders;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.data.LanguageProvider;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ModLanguageProvider extends LanguageProvider {
     // 1. Создаем НАШЕ СОБСТВЕННОЕ поле для хранения языка
@@ -17,6 +23,64 @@ public class ModLanguageProvider extends LanguageProvider {
         super(output, RefStrings.MODID, locale);
         // 2. Сохраняем язык в наше поле при создании объекта
         this.locale = locale;
+    }
+
+    private void addIngotPowderTranslations(Set<ResourceLocation> translatedPowders) {
+        for (ModIngots ingot : ModIngots.values()) {
+            if (ModItems.getPowder(ingot) != null) {
+                var powder = ModItems.getPowder(ingot);
+                if (!translatedPowders.contains(powder.getId())) {
+                    add(powder.get(), buildPowderName(ingot, false));
+                }
+            }
+            ModItems.getTinyPowder(ingot).ifPresent(tiny ->
+                    add(tiny.get(), buildPowderName(ingot, true)));
+        }
+
+        if ("ru_ru".equals(this.locale)) {
+            add(ModItems.DUST.get(), "Пыль");
+            add(ModItems.DUST_TINY.get(), "Малая кучка пыли");
+        } else {
+            add(ModItems.DUST.get(), "Dust");
+            add(ModItems.DUST_TINY.get(), "Tiny Dust");
+        }
+    }
+
+    private String buildPowderName(ModIngots ingot, boolean tiny) {
+        String base = ingot.getTranslation(this.locale);
+        if (base == null || base.isBlank()) {
+            base = formatName(ingot.getName());
+        }
+
+        String result = base;
+        if ("ru_ru".equals(this.locale)) {
+            String replaced = result.replace("Слиток", "Порошок").replace("слиток", "порошок");
+            if (replaced.equals(result)) {
+                replaced = "Порошок " + result;
+            }
+            result = replaced.trim();
+            if (tiny) {
+                result = "Малая кучка " + result;
+            }
+        } else {
+            String replaced = result.replace("Ingot", "Powder").replace("ingot", "powder");
+            if (replaced.equals(result)) {
+                replaced = result + " Powder";
+            }
+            result = replaced.trim();
+            if (tiny) {
+                result = "Tiny " + result;
+            }
+        }
+
+        return result;
+    }
+
+    private String formatName(String name) {
+        return Arrays.stream(name.replace('.', '_').split("_"))
+                .filter(part -> !part.isEmpty())
+                .map(part -> Character.toUpperCase(part.charAt(0)) + part.substring(1))
+                .collect(Collectors.joining(" "));
     }
 
     @Override
@@ -30,14 +94,19 @@ public class ModLanguageProvider extends LanguageProvider {
             }
         }
 
+        Set<ResourceLocation> translatedPowders = new HashSet<>();
         // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ
         for (ModPowders powders : ModPowders.values()) {
             // 3. Теперь мы используем наше поле 'this.locale', к которому у нас есть доступ
             String translation = powders.getTranslation(this.locale);
             if (translation != null) {
-                add(ModItems.getPowders(powders).get(), translation);
+                var powderItem = ModItems.getPowders(powders);
+                add(powderItem.get(), translation);
+                translatedPowders.add(powderItem.getId());
             }
         }
+
+        addIngotPowderTranslations(translatedPowders);
 
         // ЯВНАЯ ЛОКАЛИЗАЦИЯ ДЛЯ ОСТАЛЬНЫХ КЛЮЧЕЙ 
         switch (this.locale) {
@@ -81,6 +150,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_hoe", "Мотыга из звёздного металла");
                 add("item.hbm_m.starmetal_shovel", "Лопата из звёздного металла");
 
+                add("gui.hbm_m.energy", "Энергия: %s/%s HE");
+                add("gui.hbm_m.shredder.blade_warning.title", "Нет лезвий!");
+                add("gui.hbm_m.shredder.blade_warning.desc", "Установите или отремонтируйте лезвия шреддера.");
                 // БРОНЯ
                 add("item.hbm_m.alloy_helmet", "Шлем из продвинутого сплава");
                 add("item.hbm_m.alloy_chestplate", "Нагрудник из продвинутого сплава");
@@ -740,6 +812,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.steel_hoe", "Steel Hoe");
                 add("item.hbm_m.steel_shovel", "Steel Shovel");
 
+                add("gui.hbm_m.energy", "Energy: %s/%s HE");
+                add("gui.hbm_m.shredder.blade_warning.title", "Blades missing!");
+                add("gui.hbm_m.shredder.blade_warning.desc", "Install or repair the shredder blades.");
                 add("item.hbm_m.titanium_sword", "Titanium Sword");
                 add("item.hbm_m.titanium_pickaxe", "Titanium Pickaxe");
                 add("item.hbm_m.titanium_axe", "Titanium Axe");

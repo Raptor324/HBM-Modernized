@@ -190,7 +190,7 @@ public class MultiblockStructureHelper {
             BlockState stateInWorld = level.getBlockState(worldPos);
 
             // If the block in the world is a phantom block part, remove it.
-            if (stateInWorld.getBlock() instanceof com.hbm_m.block.UniversalMachinePartBlock) {
+            if (stateInWorld.getBlock() instanceof com.hbm_m.block.machine.UniversalMachinePartBlock) {
                 level.setBlock(worldPos, Blocks.AIR.defaultBlockState(), 3);
             }
         }

@@ -156,8 +156,7 @@
     "subtitle": "sounds.hbm_m.subtitle.assembler_operate",
     "sounds": [
       {
-        "name": "hbm_m:block/assembler_operate",
-        "stream": true
+        "name": "hbm_m:block/assembler_operate"
       }
     ]
   },
@@ -231,12 +230,8 @@
     ]
   },
   "block.shredder": {
-    "sounds": [
-      {
-        "name": "hbm_m:block/shredder",
-        "stream": true
-      }
-    ]
+    "subtitle": "sounds.hbm_m.subtitle.shredder",
+    "sounds": [ "hbm_m:block/shredder" ]
   },
 
     "block.garage_move": {

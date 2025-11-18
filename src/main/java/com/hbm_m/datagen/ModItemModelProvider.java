@@ -70,6 +70,24 @@ public class ModItemModelProvider extends ItemModelProvider {
             powdersItem(powders1tObject);
         }
 
+        // Порошки для всех слитков
+        for (ModIngots ingot : ModIngots.values()) {
+            RegistryObject<Item> powder = ModItems.getPowder(ingot);
+            if (powder != null) {
+                if (powderTextureExists(ingot.getName())) {
+                    powdersItem(powder);
+                }
+            }
+            ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
+                if (powderTinyTextureExists(ingot.getName())) {
+                    tinyPowderItem(tiny);
+                }
+            });
+        }
+
+        powderTexture(ModItems.DUST, "powders/dust");
+        powderTexture(ModItems.DUST_TINY, "powders/tiny/dust_tiny");
+
         withExistingParent("large_vehicle_door", 
             modLoc("block/large_vehicle_door"));
 
@@ -398,6 +416,29 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(registrationName, "item/generated")
                 // Путь к текстуре теперь использует правильное имя файла и подпапку
                 .texture("layer0", modLoc("item/powders/" + textureFileName));
+    }
+
+    private void tinyPowderItem(RegistryObject<Item> itemObject) {
+        String registrationName = itemObject.getId().getPath();
+        String baseName = registrationName.replace("_powder_tiny", "");
+        String textureFileName = "powder_" + baseName + "_tiny";
+        withExistingParent(registrationName, "item/generated")
+                .texture("layer0", modLoc("item/powders/tiny/" + textureFileName));
+    }
+
+    private void powderTexture(RegistryObject<Item> itemObject, String texturePath) {
+        withExistingParent(itemObject.getId().getPath(), "item/generated")
+                .texture("layer0", modLoc("item/" + texturePath));
+    }
+
+    private boolean powderTextureExists(String baseName) {
+        ResourceLocation texture = modLoc("textures/item/powders/powder_" + baseName + ".png");
+        return existingFileHelper.exists(texture, PackType.CLIENT_RESOURCES);
+    }
+
+    private boolean powderTinyTextureExists(String baseName) {
+        ResourceLocation texture = modLoc("textures/item/powders/tiny/powder_" + baseName + "_tiny.png");
+        return existingFileHelper.exists(texture, PackType.CLIENT_RESOURCES);
     }
 
     private void trimmedArmorItem(RegistryObject<Item> itemRegistryObject) {

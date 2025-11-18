@@ -12,7 +12,6 @@ public class AdvancedAssemblerSoundInstance extends AbstractTickableSoundInstanc
 
     // Конструктор теперь принимает только BlockPos, так как ему больше не нужно знать о BlockEntity.
     public AdvancedAssemblerSoundInstance(BlockPos pos) {
-        // Используйте ваш зарегистрированный звук для продвинутого ассемблера
         super(ModSounds.MOTOR.get(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
 
         this.looping = true;

@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 // GUI для сборочной машины. Отвечает за отрисовку прогресса, энергии и подсказок.
-// Основан на AbstractContainerScreen и использует текстуры из ресурсов мода.
+// Основан на GuiInfoScreen и использует текстуры из ресурсов мода.
 import javax.annotation.Nonnull;
 
 import com.hbm_m.item.ItemAssemblyTemplate;
@@ -12,11 +12,9 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.menu.MachineAssemblerMenu;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.hbm_m.util.EnergyFormatter;
-import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
@@ -24,7 +22,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
 
-public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemblerMenu> {
+public class GUIMachineAssembler extends GuiInfoScreen<MachineAssemblerMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_assembler_old.png");
@@ -64,21 +62,19 @@ public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemble
 
         // Информационные панели (ВАЖНО: привязываем текстуру заново)
         RenderSystem.setShaderTexture(0, TEXTURE);
-        drawInfoPanels(guiGraphics, x, y);
+        drawInfoPanels(guiGraphics);
         renderGhostItems(guiGraphics);
     }
 
     /**
      * Отрисовывает информационные панели (иконки за пределами GUI)
      */
-    private void drawInfoPanels(GuiGraphics guiGraphics, int x, int y) {
-        // Панель шаблона (всегда видна) - ID 11
-        drawInfoPanel(guiGraphics, x - 16, y + 16, 16, 16, 11);
+    private void drawInfoPanels(GuiGraphics guiGraphics) {
+        drawInfoPanel(guiGraphics, -16, 16, PanelType.LARGE_GRAY_STAR);
 
-        // Панель предупреждения (видна только если нет шаблона) - ID 6
         ItemStack templateStack = menu.getSlot(TEMPLATE_SLOT_GUI_INDEX).getItem();
         if (templateStack.isEmpty() || !(templateStack.getItem() instanceof ItemAssemblyTemplate)) {
-            drawInfoPanel(guiGraphics, x - 16, y + 36, 16, 16, 6);
+            drawInfoPanel(guiGraphics, -16, 36, PanelType.LARGE_RED_EXCLAMATION);
         }
     }
 
@@ -90,9 +86,6 @@ public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemble
         }
         
         // Получаем время для анимации циклической смены предметов (для Ingredient с несколькими вариантами)
-        long time = System.currentTimeMillis();
-        int cycleIndex = (int) ((time / 1000) % 20); // Меняется каждую секунду
-        
         // Слоты 6-17 (handler) соответствуют слотам 42-53 в menu (36 слотов игрока + 6 машины)
         int inputSlotsStart = 36 + 6; // 42
         int inputSlotsCount = 12;
@@ -141,29 +134,6 @@ public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemble
         }
     }
 
-    /**
-     * Отрисовывает одну информационную панель по ID
-     * @param id Тип панели: 6 = предупреждение, 11 = шаблон
-     */
-    private void drawInfoPanel(GuiGraphics guiGraphics, int x, int y, int width, int height, int id) {
-        int u = 192; // UV координаты в текстуре для иконок
-        int v = 0;
-        
-        // Определяем UV смещение в зависимости от ID панели
-        switch(id) {
-            case 6:  // Предупреждение
-                v = 16;
-                break;
-            case 11: // Шаблон
-                v = 0;
-                break;
-            default:
-                return;
-        }
-        
-        guiGraphics.blit(TEXTURE, x, y, u, v, width, height);
-    }
-
     @Override
     public void render(@Nonnull GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
         renderBackground(guiGraphics);
@@ -196,18 +166,13 @@ public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemble
 
             List<Component> tooltip = new ArrayList<>();
 
-            // --- ИЗМЕНЕНИЕ: Используем Long-геттеры и Форматер ---
-            long energy = this.menu.getEnergyLong();
-            long maxEnergy = this.menu.getMaxEnergyLong();
-            long delta = this.menu.getEnergyDeltaLong();
+        long energy = this.menu.getEnergyLong();
+        long maxEnergy = this.menu.getMaxEnergyLong();
 
             String energyStr = EnergyFormatter.format(energy);
             String maxEnergyStr = EnergyFormatter.format(maxEnergy);
-            String deltaStr = EnergyFormatter.formatRate(delta); // (уже добавляет /t)
 
             tooltip.add(Component.literal(energyStr + " / " + maxEnergyStr + " HE"));
-
-            // ---
 
             pGuiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), pX, pY);
         }
@@ -217,11 +182,8 @@ public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemble
      * Отрисовывает подсказки для информационных панелей
      */
     private void renderInfoPanelTooltips(GuiGraphics pGuiGraphics, int pX, int pY) {
-        int x = this.leftPos;
-        int y = this.topPos;
-
         // Панель шаблона
-        if (isMouseOver(pX, pY, x - 16, y + 16, 16, 16)) {
+        if (isPointInRect(-16, 16, 16, 16, pX, pY)) {
             List<Component> tooltip = new ArrayList<>();
             tooltip.add(Component.translatable("desc.gui.template"));
             pGuiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), pX, pY);
@@ -230,7 +192,7 @@ public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemble
         // Панель предупреждения (только если нет шаблона)
         ItemStack templateStack = menu.getSlot(TEMPLATE_SLOT_GUI_INDEX).getItem();
         if (templateStack.isEmpty() || !(templateStack.getItem() instanceof ItemAssemblyTemplate)) {
-            if (isMouseOver(pX, pY, x - 16, y + 36, 16, 16)) {
+            if (isPointInRect(-16, 36, 16, 16, pX, pY)) {
                 List<Component> tooltip = new ArrayList<>();
                 tooltip.add(Component.translatable("desc.gui.assembler.warning").withStyle(ChatFormatting.RED));
                 pGuiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), pX, pY);
@@ -238,10 +200,4 @@ public class GUIMachineAssembler extends AbstractContainerScreen<MachineAssemble
         }
     }
 
-    /**
-     * Проверяет, находится ли курсор мыши над областью
-     */
-    private boolean isMouseOver(int mouseX, int mouseY, int x, int y, int width, int height) {
-        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
-    }
 }

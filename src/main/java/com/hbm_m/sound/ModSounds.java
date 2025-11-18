@@ -51,7 +51,7 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> ASSEMBLER_STRIKE_2 = registerSoundEvents("block.assembler_strike2");
     public static final RegistryObject<SoundEvent> MOTOR = registerSoundEvents("block.motor");
     public static final RegistryObject<SoundEvent> PRESS_OPERATE = registerSoundEvents("block.press_operate");
-    public static final RegistryObject<SoundEvent> SHREDDER = registerSoundEvent("block.shredder");
+    public static final RegistryObject<SoundEvent> SHREDDER = registerSoundEvents("block.shredder");
 
     // Doors
     public static final RegistryObject<SoundEvent> GARAGE_MOVE = registerSoundEvents("block.garage_move");
@@ -73,11 +73,6 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> WGH_START = registerSoundEvents("block.wgh_start");
     public static final RegistryObject<SoundEvent> WGH_STOP = registerSoundEvents("block.wgh_stop");
 
-
-
-    private static RegistryObject<SoundEvent> registerSoundEvent(String name) {
-        return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name)));
-    }
     // РЕГИСТРАЦИЯ АБСТРАКТНОГО СОБЫТИЯ 
     // Это тот самый звук, который мы будем вызывать в коде.
     // Minecraft сам выберет один из 7 реальных звуков случайным образом.

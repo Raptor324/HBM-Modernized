@@ -5,7 +5,7 @@ package com.hbm_m.menu;
 // Содержит логику для обработки Shift-клика и взаимодействия с инвентарем игрока. Можно настроить режимы работы и приоритеты.
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.MachineBatteryBlockEntity;
+import com.hbm_m.block.entity.machine.MachineBatteryBlockEntity;
 // [ИСПРАВЛЕНО] Добавляем импорт LongDataPacker
 import com.hbm_m.energy.LongDataPacker;
 import net.minecraft.network.FriendlyByteBuf;

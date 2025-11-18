@@ -5,7 +5,10 @@ package com.hbm_m.item;
 // Слитки регистрируются автоматически на основе перечисления ModIngots.
 
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import com.hbm_m.armormod.item.ItemModHealth;
 import com.hbm_m.armormod.item.ItemModRadProtection;
@@ -35,6 +38,13 @@ public class ModItems {
     // 1. Создаем карту для хранения всех RegistryObject'ов наших слитков
     public static final Map<ModIngots, RegistryObject<Item>> INGOTS = new EnumMap<>(ModIngots.class);
     public static final Map<ModPowders, RegistryObject<Item>> POWDERS = new EnumMap<>(ModPowders.class);
+    public static final Map<ModIngots, RegistryObject<Item>> INGOT_POWDERS = new EnumMap<>(ModIngots.class);
+    public static final Map<ModIngots, RegistryObject<Item>> INGOT_POWDERS_TINY = new EnumMap<>(ModIngots.class);
+    private static final Set<String> POWDER_TINY_NAMES = Set.of(
+            "actinium", "boron", "cerium", "cobalt", "cs137", "i131",
+            "lanthanium", "lithium", "meteorite", "neodymium", "niobium",
+            "sr90", "steel", "xe135");
+    private static final Map<String, RegistryObject<Item>> POWDER_ITEMS_BY_ID = new HashMap<>();
     // 2. Используем статический блок для заполнения карты
     static {
         for (ModIngots ingot : ModIngots.values()) {
@@ -73,8 +83,29 @@ public class ModItems {
 
             // Кладём зарегистрированный объект в нашу карту
             POWDERS.put(powders, registeredItem);
+            POWDER_ITEMS_BY_ID.put(powders.getName() + "_powder", registeredItem);
         }
 
+    }
+
+    static {
+        for (ModIngots ingot : ModIngots.values()) {
+            String baseName = ingot.getName();
+            String powderId = baseName + "_powder";
+
+            RegistryObject<Item> powderItem = POWDER_ITEMS_BY_ID.get(powderId);
+            if (powderItem == null) {
+                powderItem = ITEMS.register(powderId, () -> new Item(new Item.Properties()));
+                POWDER_ITEMS_BY_ID.put(powderId, powderItem);
+            }
+            INGOT_POWDERS.put(ingot, powderItem);
+
+            if (POWDER_TINY_NAMES.contains(baseName)) {
+                String tinyId = baseName + "_powder_tiny";
+                RegistryObject<Item> tinyItem = ITEMS.register(tinyId, () -> new Item(new Item.Properties()));
+                INGOT_POWDERS_TINY.put(ingot, tinyItem);
+            }
+        }
     }
 
     
@@ -84,6 +115,10 @@ public class ModItems {
         return INGOTS.get(ingot);
     }
     public static RegistryObject<Item> getPowders(ModPowders powders) {return POWDERS.get(powders);}
+    public static RegistryObject<Item> getPowder(ModIngots ingot) { return INGOT_POWDERS.get(ingot); }
+    public static Optional<RegistryObject<Item>> getTinyPowder(ModIngots ingot) {
+        return Optional.ofNullable(INGOT_POWDERS_TINY.get(ingot));
+    }
     public static final int SLOT_HELMET = 0;
     public static final int SLOT_CHEST = 1;
     public static final int SLOT_LEGS = 2;
@@ -406,6 +441,10 @@ public class ModItems {
             () -> new DetonatorItem(new Item.Properties()));
 
     public static final RegistryObject<Item> SCRAP = ITEMS.register("scrap",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> DUST = ITEMS.register("dust",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> DUST_TINY = ITEMS.register("dust_tiny",
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> NUGGET_SILICON = ITEMS.register("nugget_silicon",

@@ -1,6 +1,5 @@
 package com.hbm_m.network;
 
-import com.hbm_m.block.entity.MachineWoodBurnerBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;
@@ -9,6 +8,8 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
+
+import com.hbm_m.block.entity.machine.MachineWoodBurnerBlockEntity;
 
 public class ToggleWoodBurnerPacket {
     private final BlockPos pos;

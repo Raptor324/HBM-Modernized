@@ -1,7 +1,6 @@
 package com.hbm_m.block;
 
 import com.hbm_m.block.entity.DoorBlockEntity;
-import com.hbm_m.block.entity.DoorDeclRegistry;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -90,11 +89,25 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     /**
      * Получение размеров дверей для генерации структуры
-     * Размеры берутся из DoorDecl, но статически, чтобы избежать проблем инициализации
+     * Размеры берутся статически из switch, чтобы избежать проблем инициализации
+     * (DoorDeclRegistry может быть недоступен во время генерации данных)
      */
-    
-     public static int[] getDoorDimensions(String doorDeclId) {
-        return DoorDeclRegistry.getById(doorDeclId).getDimensions();
+    public static int[] getDoorDimensions(String doorDeclId) {
+        return switch (doorDeclId) {
+            case "large_vehicle_door" -> new int[] { -3, 0, 0, 6, 5, 0 };
+            case "round_airlock_door" -> new int[] { -1, 0, 0, 3, 3, 0 };
+            case "transition_seal" -> new int[] { -12, 0, 0, 25, 23, 0 };
+            case "fire_door" -> new int[] { -1, 0, 0, 3, 2, 0 };
+            case "sliding_blast_door" -> new int[] { -3, 0, 0, 6, 3, 0 };
+            case "sliding_seal_door" -> new int[] { 0, 0, 0, 0, 1, 0 };
+            case "secure_access_door" -> new int[] { -2, 0, 0, 4, 4, 0 };
+            case "qe_sliding_door" -> new int[] { 0, 0, 0, 1, 1, 0 };
+            case "qe_containment_door" -> new int[] { -1, 0, 0, 2, 2, 0 };
+            case "water_door" -> new int[] { -1, 0, 0, 2, 2, 0 };
+            case "silo_hatch" -> new int[] { -2, 0, -2, 4, 0, 4 };
+            case "silo_hatch_large" -> new int[] { -3, 0, -3, 6, 0, 6 };
+            default -> new int[] { 0, 0, 0, 0, 1, 0 };
+        };
     }    
 
     @Override

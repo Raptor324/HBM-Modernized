@@ -8,7 +8,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import com.hbm_m.item.MultiDetonatorItem;
-import com.hbm_m.client.overlay.MultiDetonatorScreen;
+import com.hbm_m.client.overlay.GUIMultiDetonator;
 import org.lwjgl.glfw.GLFW;
 
 /**
@@ -36,14 +36,14 @@ public class MultiDetonatorKeyInputHandler {
 
             // Проверяем предмет в основной руке
             if (mainItem.getItem() instanceof MultiDetonatorItem) {
-                minecraft.setScreen(new MultiDetonatorScreen(mainItem));
+                minecraft.setScreen(new GUIMultiDetonator(mainItem));
                 // НЕ вызываем event.setCanceled(true); - это вызовет крах!
                 return;
             }
 
             // Проверяем предмет в руке со щитом
             if (offItem.getItem() instanceof MultiDetonatorItem) {
-                minecraft.setScreen(new MultiDetonatorScreen(offItem));
+                minecraft.setScreen(new GUIMultiDetonator(offItem));
                 // НЕ вызываем event.setCanceled(true); - это вызовет крах!
                 return;
             }

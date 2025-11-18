@@ -79,6 +79,21 @@ public class ModItemTagProvider extends ItemTagsProvider {
             powdersTagBuilder.add(powdersObject.getKey());
         }
 
+        for (ModIngots ingot : ModIngots.values()) {
+            RegistryObject<Item> powderObject = ModItems.getPowder(ingot);
+            if (powderObject != null) {
+                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName())))
+                        .add(powderObject.get());
+                powdersTagBuilder.add(powderObject.getKey());
+            }
+            ModItems.getTinyPowder(ingot).ifPresent(tiny ->
+                    this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName() + "/tiny")))
+                            .add(tiny.get()));
+        }
+
+        powdersTagBuilder.add(ModItems.DUST.getKey());
+        powdersTagBuilder.add(ModItems.DUST_TINY.getKey());
+
         // АВТОМАТИЧЕСКОЕ КОПИРОВАНИЕ ТЕГОВ ИЗ БЛОКОВ
         this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")));
