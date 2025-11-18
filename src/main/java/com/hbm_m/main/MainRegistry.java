@@ -90,7 +90,6 @@ public class MainRegistry {
 
         IEventBus modEventBus = context.getModEventBus();
         // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS
-
         ModBiomes.BIOMES.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus); // Регистрация наших блоков
         ModEntities.ENTITY_TYPES.register(modEventBus);
