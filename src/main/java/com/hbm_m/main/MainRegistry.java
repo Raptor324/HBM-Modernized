@@ -502,6 +502,10 @@ public class MainRegistry {
         // СТРОИТЕЛЬНЫЕ БЛОКИ
         if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get()) {
 
+            event.accept(ModBlocks.CRT_BROKEN);
+            event.accept(ModBlocks.CRT_CLEAN);
+            event.accept(ModBlocks.CRT_BSOD);
+            event.accept(ModBlocks.TOASTER);
             event.accept(ModBlocks.DOOR_OFFICE);
             event.accept(ModBlocks.DOOR_BUNKER);
             event.accept(ModBlocks.METAL_DOOR);
@@ -541,9 +545,7 @@ public class MainRegistry {
             event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB);
             event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS);
             event.accept(ModBlocks.BRICK_CONCRETE_MARKED);
-            event.accept(ModBlocks.CRATE_IRON);
-            event.accept(ModBlocks.CRATE_STEEL);
-            event.accept(ModBlocks.CRATE_DESH);
+
 
 
             event.accept(ModBlocks.LARGE_VEHICLE_DOOR);
@@ -570,7 +572,9 @@ public class MainRegistry {
 
             event.accept(ModItems.DOSIMETER);
             event.accept(ModItems.GEIGER_COUNTER);
-
+            event.accept(ModBlocks.CRATE_IRON);
+            event.accept(ModBlocks.CRATE_STEEL);
+            event.accept(ModBlocks.CRATE_DESH);
         }
 
 

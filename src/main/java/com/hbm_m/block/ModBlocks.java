@@ -253,6 +253,15 @@ public class ModBlocks {
      //   () -> new ExplosiveChargeBlock(BlockBehaviour.Properties.of()
         //    .strength(0.5f)
              //    .sound(SoundType.METAL)));
+    public static final RegistryObject<Block> TOASTER = registerBlock("toaster",
+            () -> new ToasterBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> CRT_BSOD = registerBlock("crt_bsod",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> CRT_CLEAN = registerBlock("crt_clean",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> CRT_BROKEN = registerBlock("crt_broken",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
 
     public static final RegistryObject<Block> SELLAFIELD_SLAKED  = registerBlock("sellafield_slaked",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));

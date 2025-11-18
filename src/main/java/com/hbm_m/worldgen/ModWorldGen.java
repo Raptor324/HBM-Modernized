@@ -14,11 +14,6 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 
 public class ModWorldGen {
-    public static final ResourceKey<PlacedFeature> RAZCHEXLITIEL_HUT_PLACED =
-            ResourceKey.create(
-                    Registries.PLACED_FEATURE,
-                    new ResourceLocation(RefStrings.MODID, "razchexlitiel_hut_placed")
-            );
 
     public static final DeferredRegister<BiomeModifier> BIOME_MODIFIERS =
             DeferredRegister.create(ForgeRegistries.Keys.BIOME_MODIFIERS, RefStrings.MODID);

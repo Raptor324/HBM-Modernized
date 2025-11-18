@@ -4,7 +4,7 @@
   "spawn_overrides": {},
   "step": "surface_structures",
   "terrain_adaptation": "bottom",
-  "start_pool": "hbm_m:razchexlitiel_hut_pool",
+  "start_pool": "hbm_m:house_pool",
   "size": 1,
   "start_height": {
     "absolute": 0
