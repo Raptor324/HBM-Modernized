@@ -3,7 +3,7 @@ package com.hbm_m.client;
 import java.util.Map;
 
 import com.hbm_m.block.DoorBlock;
-import com.hbm_m.block.UniversalMachinePartBlock;
+import com.hbm_m.block.machine.UniversalMachinePartBlock;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.mojang.blaze3d.vertex.PoseStack;

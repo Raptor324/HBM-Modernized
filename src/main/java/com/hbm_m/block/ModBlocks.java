@@ -1,7 +1,16 @@
 package com.hbm_m.block;
 
+import com.hbm_m.block.machine.MachineAdvancedAssemblerBlock;
+import com.hbm_m.block.machine.MachineAssemblerBlock;
+import com.hbm_m.block.machine.MachineBatteryBlock;
+import com.hbm_m.block.machine.MachinePressBlock;
+import com.hbm_m.block.machine.MachineShredderBlock;
+import com.hbm_m.block.machine.MachineWoodBurnerBlock;
+import com.hbm_m.block.machine.UniversalMachinePartBlock;
+import com.hbm_m.item.CrateItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.ModIngots;
 
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
@@ -15,6 +24,8 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraft.util.valueproviders.UniformInt;
 
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.function.Supplier;
 
 public class ModBlocks {
@@ -26,18 +37,87 @@ public class ModBlocks {
             
     private static final BlockBehaviour.Properties TABLE_PROPERTIES =
                 BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops();
+    
+    // Стандартные свойства для блоков слитков
+    private static final BlockBehaviour.Properties INGOT_BLOCK_PROPERTIES = 
+            BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops();
+    
+    // АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ БЛОКОВ СЛИТКОВ
+    // Карта для хранения всех RegistryObject'ов блоков слитков
+    public static final Map<ModIngots, RegistryObject<Block>> INGOT_BLOCKS = new EnumMap<>(ModIngots.class);
+    
+    // Статический блок для автоматической регистрации блоков слитков
+    static {
+        for (ModIngots ingot : ModIngots.values()) {
+            String blockName = ingot.getName() + "_block";
+            RegistryObject<Block> registeredBlock;
             
-    public static final RegistryObject<Block> URANIUM_BLOCK = registerBlock("uranium_block",
-            () -> new RadioactiveBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL)));
-
+            // Определяем, должен ли блок быть радиоактивным
+            if (isRadioactiveIngot(ingot)) {
+                registeredBlock = registerBlock(blockName,
+                        () -> new RadioactiveBlock(INGOT_BLOCK_PROPERTIES));
+            } else {
+                registeredBlock = registerBlock(blockName,
+                        () -> new Block(INGOT_BLOCK_PROPERTIES));
+            }
+            
+            // Кладём зарегистрированный блок в карту
+            INGOT_BLOCKS.put(ingot, registeredBlock);
+        }
+    }
+    
+    /**
+     * Определяет, должен ли слиток быть радиоактивным блоком
+     */
+    private static boolean isRadioactiveIngot(ModIngots ingot) {
+        String name = ingot.getName().toLowerCase();
+        // Проверяем по названию, является ли слиток радиоактивным
+        return name.contains("uranium") || 
+               name.contains("plutonium") || 
+               name.contains("thorium") || 
+               name.contains("actinium") || 
+               name.contains("polonium") || 
+               name.contains("neptunium") || 
+               name.contains("americium") || 
+               name.contains("curium") ||
+               name.contains("berkelium") ||
+               name.contains("californium") ||
+               name.contains("einsteinium") ||
+               name.contains("fermium") ||
+               name.contains("mendelevium") ||
+               name.contains("nobelium") ||
+               name.contains("lawrencium") ||
+               name.contains("radium") ||
+               name.contains("radon") ||
+               name.contains("francium") ||
+               name.contains("ra226") ||
+               name.contains("co60") ||
+               name.contains("sr90") ||
+               name.contains("am241") ||
+               name.contains("am242") ||
+               name.contains("u233") ||
+               name.contains("u235") ||
+               name.contains("u238") ||
+               name.contains("th232") ||
+               name.contains("pu238") ||
+               name.contains("pu239") ||
+               name.contains("pu240") ||
+               name.contains("pu241");
+    }
+    
+    // Удобный метод для получения блока слитка
+    public static RegistryObject<Block> getIngotBlock(ModIngots ingot) {
+        return INGOT_BLOCKS.get(ingot);
+    }
+    
+    // Старые блоки оставлены для обратной совместимости, но теперь они ссылаются на автоматически созданные
+    public static final RegistryObject<Block> URANIUM_BLOCK = getIngotBlock(ModIngots.URANIUM);
+    public static final RegistryObject<Block> PLUTONIUM_BLOCK = getIngotBlock(ModIngots.PLUTONIUM);
+    public static final RegistryObject<Block> PLUTONIUM_FUEL_BLOCK = getIngotBlock(ModIngots.PLUTONIUM_FUEL);
+    
+    // Специальные блоки, которые не являются стандартными блоками слитков
     public static final RegistryObject<Block> POLONIUM210_BLOCK = registerBlock("polonium210_block",
-            () -> new RadioactiveBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL)));
-
-    public static final RegistryObject<Block> PLUTONIUM_BLOCK = registerBlock("plutonium_block",
-            () -> new RadioactiveBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL)));
-
-    public static final RegistryObject<Block> PLUTONIUM_FUEL_BLOCK = registerBlock("plutonium_fuel_block",
-            () -> new RadioactiveBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL)));
+            () -> new RadioactiveBlock(INGOT_BLOCK_PROPERTIES));
 
     public static final RegistryObject<Block> URANIUM_ORE = registerBlock("uranium_ore",
             () -> new DropExperienceBlock(BlockBehaviour.Properties.copy(Blocks.STONE)
@@ -72,7 +152,7 @@ public class ModBlocks {
             () -> new ArmorTableBlock(TABLE_PROPERTIES));
 
     public static final RegistryObject<Block> SHREDDER = registerBlock("shredder",
-            () -> new ShredderBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
+            () -> new MachineShredderBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
 
     public static final RegistryObject<Block> MACHINE_ASSEMBLER = registerBlockWithoutItem("machine_assembler",

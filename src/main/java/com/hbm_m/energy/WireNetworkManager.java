@@ -368,7 +368,7 @@ public class WireNetworkManager {
                             if (list.size() < MAX_SOURCES_PER_COMPONENT) {
                                 // DETERMINE PRIORITY: check if neighbor is MachineBatteryBlockEntity
                                 int pr = 1; // default NORMAL
-                                if (nbe instanceof com.hbm_m.block.entity.MachineBatteryBlockEntity mb) {
+                                if (nbe instanceof com.hbm_m.block.entity.machine.MachineBatteryBlockEntity mb) {
                                     try {
                                         pr = mb.priority.ordinal();
                                     } catch (Exception ignored) {}
@@ -463,7 +463,7 @@ public class WireNetworkManager {
                     if (hasEnergyCap) {
                         // determine priority if battery
                         int pr = 1;
-                        if (nbe instanceof com.hbm_m.block.entity.MachineBatteryBlockEntity mb) {
+                        if (nbe instanceof com.hbm_m.block.entity.machine.MachineBatteryBlockEntity mb) {
                             try { pr = mb.priority.ordinal(); } catch (Exception ignored) {}
                         }
                         found.add(new EnergySource(np, d.getOpposite(), pr));

@@ -11,13 +11,16 @@ import com.hbm_m.util.SellafitSolidificationTracker;
 import com.hbm_m.world.biome.ModBiomes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.event.level.LevelEvent;
+import com.hbm_m.item.ModBatteryItem;
+import com.hbm_m.particle.ModExplosionParticles;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.DoorDeclRegistry;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.ModIngots;
+import com.hbm_m.item.ModPowders;
 import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.lib.RefStrings;
@@ -37,6 +40,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
@@ -55,6 +59,7 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
+
 
 @Mod(RefStrings.MODID)
 public class MainRegistry {
@@ -96,8 +101,6 @@ public class MainRegistry {
         // Регистрация обработчиков событий мода
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
-
-        DoorDeclRegistry.init();
 
         // Регистрация обработчиков событий Forge (игровых)
         MinecraftForge.EVENT_BUS.register(this);
@@ -274,6 +277,21 @@ public class MainRegistry {
                     LOGGER.info("Added {} to NTM Resources tab", ingotObject.get());
                 }
             }
+            for (ModPowders powder : ModPowders.values()) {
+                RegistryObject<Item> powderItem = ModItems.getPowders(powder);
+                if (powderItem != null) {
+                    event.accept(powderItem.get());
+                }
+            }
+            for (ModIngots ingot : ModIngots.values()) {
+                RegistryObject<Item> powder = ModItems.getPowder(ingot);
+                if (powder != null) {
+                    event.accept(powder.get());
+                }
+                ModItems.getTinyPowder(ingot).ifPresent(tiny -> event.accept(tiny.get()));
+            }
+            event.accept(ModItems.DUST.get());
+            event.accept(ModItems.DUST_TINY.get());
             event.accept(ModItems.CINNABAR);
             event.accept(ModItems.FIRECLAY_BALL);
 
@@ -433,14 +451,22 @@ public class MainRegistry {
         }
         // РУДЫ
         if (event.getTab() == ModCreativeTabs.NTM_ORES_TAB.get()) {
+            // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ БЛОКОВ СЛИТКОВ
+            for (ModIngots ingot : ModIngots.values()) {
+                RegistryObject<Block> ingotBlock = ModBlocks.getIngotBlock(ingot);
+                if (ingotBlock != null) {
+                    event.accept(ingotBlock.get());
+                    if (ModClothConfig.get().enableDebugLogging) {
+                        LOGGER.info("Added {} block to NTM Ores tab", ingotBlock.getId());
+                    }
+                }
+            }
+            
             event.accept(ModBlocks.SELLAFIELD_SLAKED);
             event.accept(ModBlocks.SELLAFIELD_SLAKED1);
             event.accept(ModBlocks.SELLAFIELD_SLAKED2);
             event.accept(ModBlocks.SELLAFIELD_SLAKED3);
-            event.accept(ModBlocks.URANIUM_BLOCK);
             event.accept(ModBlocks.POLONIUM210_BLOCK);
-            event.accept(ModBlocks.PLUTONIUM_BLOCK);
-            event.accept(ModBlocks.PLUTONIUM_FUEL_BLOCK);
             event.accept(ModBlocks.URANIUM_ORE);
             event.accept(ModBlocks.WASTE_GRASS);
             event.accept(ModBlocks.BURNED_GRASS);
@@ -541,8 +567,11 @@ public class MainRegistry {
             event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB);
             event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS);
             event.accept(ModBlocks.BRICK_CONCRETE_MARKED);
+            event.accept(ModBlocks.FREAKY_ALIEN_BLOCK);
 
-
+            event.accept(ModBlocks.CRATE_IRON);
+            event.accept(ModBlocks.CRATE_STEEL);
+            event.accept(ModBlocks.CRATE_DESH);
 
             event.accept(ModBlocks.LARGE_VEHICLE_DOOR);
             event.accept(ModBlocks.ROUND_AIRLOCK_DOOR);
@@ -556,6 +585,7 @@ public class MainRegistry {
             event.accept(ModBlocks.WATER_DOOR);
             event.accept(ModBlocks.SILO_HATCH);
             event.accept(ModBlocks.SILO_HATCH_LARGE);
+
 
             if (ModClothConfig.get().enableDebugLogging) {
                 // LOGGER.info("Added concrete hazard to NTM Resources tab");

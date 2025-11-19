@@ -3,7 +3,7 @@ package com.hbm_m.menu;
 // Имеет слоты для топлива и пепла. 
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.MachineWoodBurnerBlockEntity;
+import com.hbm_m.block.entity.machine.MachineWoodBurnerBlockEntity;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.energy.LongDataPacker;

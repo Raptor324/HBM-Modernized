@@ -40,8 +40,8 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<MachineWoodBurnerMenu>> WOOD_BURNER_MENU =
             MENUS.register("wood_burner_menu", () -> IForgeMenuType.create(MachineWoodBurnerMenu::new));
 
-    public static final RegistryObject<MenuType<ShredderMenu>> SHREDDER_MENU =
-            MENUS.register("shredder_menu", () -> IForgeMenuType.create(ShredderMenu::new));
+    public static final RegistryObject<MenuType<MachineShredderMenu>> SHREDDER_MENU =
+            MENUS.register("shredder_menu", () -> IForgeMenuType.create(MachineShredderMenu::new));
 
 
     public static final RegistryObject<MenuType<IronCrateMenu>> IRON_CRATE_MENU =

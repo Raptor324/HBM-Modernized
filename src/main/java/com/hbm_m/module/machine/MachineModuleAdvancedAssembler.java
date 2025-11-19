@@ -1,6 +1,5 @@
 package com.hbm_m.module.machine;
 
-import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.recipe.AssemblerRecipe;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -10,6 +9,7 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.items.IItemHandler;
 
+import com.hbm_m.block.entity.machine.BaseMachineBlockEntity;
 // ИЗМЕНЕНИЕ: Импортируем нашу long-систему
 import com.hbm_m.energy.ILongEnergyStorage;
 

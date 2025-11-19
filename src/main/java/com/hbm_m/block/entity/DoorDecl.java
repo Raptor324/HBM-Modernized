@@ -566,10 +566,20 @@ public abstract class DoorDecl {
             return 480; 
         }
         
-        private Map<String, List<ColladaAnimationParser.AnimationChannel>> animations;
+        private Map<String, List<ColladaAnimationParser.AnimationChannel>> animations = Collections.emptyMap();
+        private boolean animationsInitialized = false;
     
-        {
+        private void initializeAnimations() {
+            if (animationsInitialized) return;
+            animationsInitialized = true;
+            
             try {
+                // Проверяем, доступен ли Minecraft (не доступен во время генерации данных)
+                if (Minecraft.getInstance() == null) {
+                    animations = Collections.emptyMap();
+                    return;
+                }
+                
                 ResourceManager rm = Minecraft.getInstance().getResourceManager();
                 Resource resource = rm.getResource(
                     ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/sliding_blast_door.dae")
@@ -589,6 +599,7 @@ public abstract class DoorDecl {
         
         @Override
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            initializeAnimations();
             if (!animations.containsKey(partName)) {
                 super.getTranslation(partName, openTicks, child, trans);
                 return;
@@ -610,6 +621,7 @@ public abstract class DoorDecl {
         
         @Override
         public void getRotation(String partName, float openTicks, float[] rot) {
+            initializeAnimations();
             if (!animations.containsKey(partName)) {
                 super.getRotation(partName, openTicks, rot);
                 return;

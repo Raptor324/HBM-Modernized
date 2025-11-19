@@ -6,6 +6,7 @@ package com.hbm_m.item;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 
 public enum ModIngots {
     // Конструктор принимает название и пары "язык, перевод"
@@ -501,6 +502,7 @@ public enum ModIngots {
 
     private final String name;
     private final Map<String, String> translations;
+    private static final Map<String, ModIngots> BY_NAME = new HashMap<>();
 
     /**
      * Конструктор для слитков с поддержкой нескольких языков.
@@ -525,6 +527,12 @@ public enum ModIngots {
         this.translations = Collections.unmodifiableMap(translationMap);
     }
 
+    static {
+        for (ModIngots ingot : values()) {
+            BY_NAME.put(ingot.name, ingot);
+        }
+    }
+
     public String getName() {
         return name;
     }
@@ -536,5 +544,9 @@ public enum ModIngots {
      */
     public String getTranslation(String locale) {
         return translations.get(locale);
+    }
+
+    public static Optional<ModIngots> byName(String name) {
+        return Optional.ofNullable(BY_NAME.get(name));
     }
 }
