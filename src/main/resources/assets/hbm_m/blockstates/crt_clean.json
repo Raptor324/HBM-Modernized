@@ -5,15 +5,15 @@
     },
     "facing=south": {
       "model": "hbm_m:block/crt_clean",
-      "y": 180
+      "y": 90
     },
     "facing=west": {
       "model": "hbm_m:block/crt_clean",
-      "y": 270
+      "y": 180
     },
     "facing=east": {
       "model": "hbm_m:block/crt_clean",
-      "y": 90
+      "y": 0
     }
   }
 }

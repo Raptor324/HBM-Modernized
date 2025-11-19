@@ -4,22 +4,12 @@ package com.hbm_m.main;
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
 import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.client.overlay.MultiDetonatorScreen;
+import com.hbm_m.handler.MobGearHandler;
 import com.hbm_m.item.ModBatteryItem;
-import com.hbm_m.block.entity.AnvilBlockEntity;
-import com.hbm_m.item.MultiDetonatorItem;
-import com.hbm_m.menu.AnvilMenu;
-import com.hbm_m.network.ModNetwork;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.util.SellafitSolidificationTracker;
 import com.hbm_m.world.biome.ModBiomes;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.MenuType;
-import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.common.extensions.IForgeMenuType;
-import com.hbm_m.particle.ModExplosionParticles;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
@@ -27,7 +17,6 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.DoorDeclRegistry;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.item.ModBatteryItem;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.particle.ModParticleTypes;
@@ -39,7 +28,6 @@ import com.hbm_m.sound.ModSounds;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.client.ClientSetup;
 import com.hbm_m.capability.ChunkRadiationProvider;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.hazard.ModHazards;
@@ -67,7 +55,6 @@ import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-import org.lwjgl.glfw.GLFW;
 
 @Mod(RefStrings.MODID)
 public class MainRegistry {
@@ -90,6 +77,8 @@ public class MainRegistry {
 
         IEventBus modEventBus = context.getModEventBus();
         // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS
+        // Добавь эту:
+        MinecraftForge.EVENT_BUS.register(new MobGearHandler());
         ModBiomes.BIOMES.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus); // Регистрация наших блоков
         ModEntities.ENTITY_TYPES.register(modEventBus);
@@ -169,9 +158,16 @@ public class MainRegistry {
         // ТАЙМЕР ЗАКАНЧИВАЕТСЯ, ВЗРЫВЕМСЯ!
         if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get()) {
 
+            event.accept(ModBlocks.BARBED_WIRE_FIRE);
+            event.accept(ModBlocks.BARBED_WIRE_POISON);
+            event.accept(ModBlocks.BARBED_WIRE_RAD);
+            event.accept(ModBlocks.BARBED_WIRE_WITHER);
+            event.accept(ModBlocks.BARBED_WIRE);
+
             event.accept(ModItems.DETONATOR);
             event.accept(ModItems.MULTI_DETONATOR);
             event.accept(ModItems.RANGE_DETONATOR);
+
             event.accept(ModItems.GRENADE);
             event.accept(ModItems.GRENADEHE);
             event.accept(ModItems.GRENADEFIRE);
@@ -501,7 +497,7 @@ public class MainRegistry {
 
         // СТРОИТЕЛЬНЫЕ БЛОКИ
         if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get()) {
-
+            event.accept(ModBlocks.DORNIER);
             event.accept(ModBlocks.CRT_BROKEN);
             event.accept(ModBlocks.CRT_CLEAN);
             event.accept(ModBlocks.CRT_BSOD);
@@ -581,6 +577,19 @@ public class MainRegistry {
         // СТАНКИ
         if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
 
+
+
+            event.accept(ModBlocks.BARREL_CORRODED);
+            event.accept(ModBlocks.BARREL_IRON);
+            event.accept(ModBlocks.BARREL_PINK);
+            event.accept(ModBlocks.BARREL_PLASTIC);
+            event.accept(ModBlocks.BARREL_RED);
+            event.accept(ModBlocks.BARREL_STEEL);
+            event.accept(ModBlocks.BARREL_TAINT);
+            event.accept(ModBlocks.BARREL_TCALLOY);
+            event.accept(ModBlocks.BARREL_VITRIFIED);
+            event.accept(ModBlocks.BARREL_YELLOW);
+            event.accept(ModBlocks.BARREL_LOX);
             event.accept(ModBlocks.ANVIL_BLOCK);
             event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
             event.accept(ModBlocks.PRESS);
@@ -590,7 +599,6 @@ public class MainRegistry {
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.ARMOR_TABLE);
-            event.accept(ModItems.BATTERY_SCHRABIDIUM);
 
             // event.accept(ModBlocks.FLUID_TANK);
             event.accept(ModBlocks.MACHINE_BATTERY);
