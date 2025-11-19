@@ -9,6 +9,7 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.util.Mth;
 import net.minecraft.world.Containers;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
@@ -19,6 +20,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
@@ -48,6 +52,9 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     // Для рендера и синхронизации
     private int heatState = 0;
     private int pressPosition = 0;
+    private float visualPressPosition = 0F;
+    private float prevVisualPressPosition = 0F;
+    private boolean clientPressInitialized = false;
     
     protected final ContainerData data = new ContainerData() {
         @Override
@@ -113,79 +120,133 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     // ==================== TICK LOGIC ====================
     
     public static void tick(Level level, BlockPos pos, BlockState state, MachinePressBlockEntity entity) {
-        if (level.isClientSide) return;
-        
+        if (level.isClientSide) {
+            entity.clientTick();
+        } else {
+            entity.serverTick();
+        }
+    }
+
+    private void serverTick() {
+        if (level == null) {
+            return;
+        }
+    
         boolean needsSync = false;
-        
+    
+        int previousPress = this.press;
+        int previousPressPosition = this.pressPosition;
+        int previousBurnTime = this.burnTime;
+        int previousSpeed = this.speed;
+        boolean previousRetracting = this.isRetracting;
+
         // Добавление топлива (как у генератора)
-        ItemStack fuelStack = entity.inventory.getStackInSlot(FUEL_SLOT);
-        if (!fuelStack.isEmpty() && entity.burnTime < FUEL_PER_OPERATION) {
-            int fuelValue = entity.getBurnTime(fuelStack.getItem());
+        ItemStack fuelStack = inventory.getStackInSlot(FUEL_SLOT);
+        if (!fuelStack.isEmpty() && burnTime < FUEL_PER_OPERATION) {
+            int fuelValue = getBurnTime(fuelStack.getItem());
             if (fuelValue > 0) {
-                entity.burnTime += fuelValue * 20; // Конвертируем секунды в тики
+                burnTime += fuelValue * 20; // Конвертируем секунды в тики
                 fuelStack.shrink(1);
                 needsSync = true;
             }
         }
-        
-        boolean canProcess = entity.canProcess();
+
+        boolean canProcess = canProcess();
         boolean preheated = false; // TODO: проверка на press_preheater если нужно
-        
+
         // Логика ускорения/замедления (как в 1.7.10)
-        if ((canProcess || entity.isRetracting) && entity.burnTime >= FUEL_PER_OPERATION) {
-            entity.speed += preheated ? 4 : 1;
-            if (entity.speed > MAX_SPEED) {
-                entity.speed = MAX_SPEED;
+        if ((canProcess || isRetracting) && burnTime >= FUEL_PER_OPERATION) {
+            speed += preheated ? 4 : 1;
+            if (speed > MAX_SPEED) {
+                speed = MAX_SPEED;
             }
         } else {
-            entity.speed -= 1;
-            if (entity.speed < 0) {
-                entity.speed = 0;
+            speed -= 1;
+            if (speed < 0) {
+                speed = 0;
             }
         }
-        
+
         // Обновляем heatState для визуализации (0-12)
-        entity.heatState = Math.min(12, entity.speed / 33);
-        
+        heatState = Math.min(12, speed / 33);
+
         // Логика работы пресса (как в 1.7.10)
-        if (entity.delay <= 0) {
-            int stampSpeed = entity.speed * PROGRESS_AT_MAX / MAX_SPEED;
-            
-            if (entity.isRetracting) {
-                entity.press -= stampSpeed;
-                if (entity.press <= 0) {
-                    entity.press = 0;
-                    entity.isRetracting = false;
-                    entity.delay = 5;
+        if (delay <= 0) {
+            int stampSpeed = speed * PROGRESS_AT_MAX / MAX_SPEED;
+
+            if (isRetracting) {
+                press -= stampSpeed;
+                if (press <= 0) {
+                    press = 0;
+                    isRetracting = false;
+                    delay = 5;
                 }
             } else if (canProcess) {
-                entity.press += stampSpeed;
-                if (entity.press >= MAX_PRESS) {
+                press += stampSpeed;
+                if (press >= MAX_PRESS) {
                     // Завершение операции
-                    entity.craftItem();
-                    entity.isRetracting = true;
-                    entity.delay = 5;
-                    
+                    craftItem();
+                    isRetracting = true;
+                    delay = 5;
+
                     // ВАЖНО: вычитаем топливо только при успешной операции
-                    if (entity.burnTime >= FUEL_PER_OPERATION) {
-                        entity.burnTime -= FUEL_PER_OPERATION;
+                    if (burnTime >= FUEL_PER_OPERATION) {
+                        burnTime -= FUEL_PER_OPERATION;
                     }
                     needsSync = true;
                 }
-            } else if (entity.press > 0) {
-                entity.isRetracting = true;
+            } else if (press > 0) {
+                isRetracting = true;
             }
         } else {
-            entity.delay--;
+            delay--;
         }
-        
+
         // Обновляем позицию для рендера
-        entity.pressPosition = Math.min(20, (entity.press * 20) / MAX_PRESS);
-        
-        if (needsSync) {
-            entity.setChanged();
-            entity.sendUpdateToClient();
+        pressPosition = Math.min(20, (press * 20) / MAX_PRESS);
+
+        if (press != previousPress
+                || pressPosition != previousPressPosition
+                || burnTime != previousBurnTime
+                || speed != previousSpeed
+                || isRetracting != previousRetracting) {
+            needsSync = true;
         }
+
+        if (needsSync) {
+            setChanged();
+            sendUpdateToClient();
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    private void clientTick() {
+        float target = convertPressToProgress();
+        if (!clientPressInitialized) {
+            visualPressPosition = target;
+            prevVisualPressPosition = target;
+            clientPressInitialized = true;
+        }
+        prevVisualPressPosition = visualPressPosition;
+        visualPressPosition = Mth.lerp(0.25F, visualPressPosition, target);
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    public float getPressAnimationProgress(float partialTick) {
+        float interpolated = Mth.lerp(partialTick, prevVisualPressPosition, visualPressPosition);
+        return Mth.clamp(interpolated, 0.0F, 1.0F);
+    }
+
+    @Override
+    public AABB getRenderBoundingBox() {
+        return new AABB(
+            worldPosition.getX(),
+            worldPosition.getY(),
+            worldPosition.getZ(),
+            worldPosition.getX() + 1,
+            worldPosition.getY() + 3,
+            worldPosition.getZ() + 1
+        );
     }
     
     private void craftItem() {
@@ -308,7 +369,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     
     @Override
     public void load(CompoundTag tag) {
-        super.load(tag); // ОБЯЗАТЕЛЬНО ПЕРВЫМ
+        super.load(tag);
         press = tag.getInt("press");
         burnTime = tag.getInt("burnTime");
         speed = tag.getInt("speed");
@@ -316,5 +377,24 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         delay = tag.getInt("delay");
         heatState = tag.getInt("heatState");
         pressPosition = tag.getInt("pressPosition");
+
+        float progress = convertPressToProgress(); // press / (float) MAX_PRESS
+
+        clientPressInitialized = true;
+        visualPressPosition = progress;
+        prevVisualPressPosition = progress;
+    }
+
+
+    public ItemStack getMaterialStack() {
+        return inventory.getStackInSlot(MATERIAL_SLOT);
+    }
+
+    public ItemStack getStampStack() {
+        return inventory.getStackInSlot(STAMP_SLOT);
+    }
+
+    private float convertPressToProgress() {
+        return press / (float) MAX_PRESS;
     }
 }

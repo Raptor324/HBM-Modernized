@@ -125,6 +125,7 @@ public class ClientSetup {
             // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
 
             OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
             try {
@@ -190,8 +191,9 @@ public class ClientSetup {
         event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
         event.register("door", new DoorModelLoader());
         event.register("template_loader", new TemplateModelLoader());
+        event.register("press_loader", new PressModelLoader());
 
-        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, template_loader, door");
+        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, template_loader, door, press_loader");
     }
 
     @SubscribeEvent
@@ -211,6 +213,7 @@ public class ClientSetup {
                 MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
                 ImmediateFallbackRenderer.clearGlobalCache();
                 DoorRenderer.clearAllCaches();
+                MachinePressRenderer.clearCaches();
                 
                 // ИСПРАВЛЕНО: НЕ вызываем reset(), вместо этого очищаем только кеши
                 GlobalMeshCache.clearAll();
@@ -232,6 +235,7 @@ public class ClientSetup {
         MainRegistry.LOGGER.info("Client disconnecting, clearing VBO caches...");
         DoorRenderer.clearAllCaches();
         MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
+        MachinePressRenderer.clearCaches();
         com.hbm_m.client.render.shader.ImmediateFallbackRenderer.forceReset();
     }
 

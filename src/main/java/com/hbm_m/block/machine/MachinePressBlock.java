@@ -63,7 +63,7 @@ public class MachinePressBlock extends BaseEntityBlock implements IMultiblockCon
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override
@@ -123,10 +123,6 @@ public class MachinePressBlock extends BaseEntityBlock implements IMultiblockCon
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> blockEntityType) {
-        if(level.isClientSide()) {
-            return null;
-        }
-
         return createTickerHelper(blockEntityType, ModBlockEntities.PRESS_BE.get(),
             MachinePressBlockEntity::tick);
     }
