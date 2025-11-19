@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "hbm_m:block/barrel_lox"
+    },
+    "facing=south": {
+      "model": "hbm_m:block/barrel_lox",
+      "y": 90
+    },
+    "facing=west": {
+      "model": "hbm_m:block/barrel_lox",
+      "y": 180
+    },
+    "facing=east": {
+      "model": "hbm_m:block/barrel_lox",
+      "y": 0
+    }
+  }
+}

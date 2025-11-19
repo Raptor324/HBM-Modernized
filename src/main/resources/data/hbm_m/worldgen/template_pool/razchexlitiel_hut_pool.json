@@ -1,0 +1,16 @@
+{
+  "name": "hbm_m:razchexlitiel_hut_pool",
+  "description": "Template pool for Razchexlitiel Hut structure",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:razchexlitiel_hut",
+        "processors": "minecraft:empty"
+      }
+    }
+  ]
+}

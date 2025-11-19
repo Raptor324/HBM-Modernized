@@ -333,6 +333,61 @@ public class ModBlocks {
         //    .strength(0.5f)
              //    .sound(SoundType.METAL)));
 
+    public static final RegistryObject<Block> DORNIER = registerBlock("dornier",
+            () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> BARREL_LOX = registerBlock("barrel_lox",
+            () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> BARREL_CORRODED = registerBlock("barrel_corroded",
+            () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> BARREL_IRON = registerBlock("barrel_iron",
+            () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> BARREL_PINK = registerBlock("barrel_pink",
+            () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> BARREL_PLASTIC = registerBlock("barrel_plastic",
+            () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> BARREL_RED = registerBlock("barrel_red",
+            () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> BARREL_STEEL = registerBlock("barrel_steel",
+            () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> BARREL_TAINT = registerBlock("barrel_taint",
+            () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> BARREL_TCALLOY = registerBlock("barrel_tcalloy",
+            () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> BARREL_VITRIFIED = registerBlock("barrel_vitrified",
+            () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> BARREL_YELLOW = registerBlock("barrel_yellow",
+            () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> BARBED_WIRE = registerBlock("barbed_wire",
+            () -> new BarbedWireBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> BARBED_WIRE_FIRE = registerBlock("barbed_wire_fire",
+            () -> new BarbedWireFireBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> BARBED_WIRE_WITHER = registerBlock("barbed_wire_wither",
+            () -> new BarbedWireWitherBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> BARBED_WIRE_POISON = registerBlock("barbed_wire_poison",
+            () -> new BarbedWirePoisonBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> BARBED_WIRE_RAD = registerBlock("barbed_wire_rad",
+            () -> new BarbedWireRadBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> TOASTER = registerBlock("toaster",
+            () -> new ToasterBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> CRT_BSOD = registerBlock("crt_bsod",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> CRT_CLEAN = registerBlock("crt_clean",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> CRT_BROKEN = registerBlock("crt_broken",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+
     public static final RegistryObject<Block> SELLAFIELD_SLAKED  = registerBlock("sellafield_slaked",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
@@ -346,6 +401,10 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     // ГРАВИТИРУЮЩИЕ ВЕРСИИ СЕЛЛАФИТА (NEW!)
+
+    public static final RegistryObject<Block> BURNED_GRASS  = registerBlock("burned_grass",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.GRASS_BLOCK).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
     public static final RegistryObject<Block> FALLING_SELLAFIT1 = BLOCKS.register("falling_sellafit1",
             () -> new FallingSellafit(SELLAFIELD_SLAKED.get()));
 

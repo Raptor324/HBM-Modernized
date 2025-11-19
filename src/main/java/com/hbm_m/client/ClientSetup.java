@@ -139,7 +139,6 @@ public class ClientSetup {
             MainRegistry.LOGGER.info("Initial render path check completed");
         });
     }
-
     @SubscribeEvent
     public static void registerParticleFactories(RegisterParticleProvidersEvent event) {
 

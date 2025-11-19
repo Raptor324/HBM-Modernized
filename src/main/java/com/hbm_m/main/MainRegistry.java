@@ -4,6 +4,13 @@ package com.hbm_m.main;
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.handler.MobGearHandler;
+import com.hbm_m.item.ModBatteryItem;
+import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.util.SellafitSolidificationTracker;
+import com.hbm_m.world.biome.ModBiomes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraftforge.event.level.LevelEvent;
 import com.hbm_m.item.ModBatteryItem;
 import com.hbm_m.particle.ModExplosionParticles;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
@@ -75,6 +82,9 @@ public class MainRegistry {
 
         IEventBus modEventBus = context.getModEventBus();
         // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS
+        // Добавь эту:
+        MinecraftForge.EVENT_BUS.register(new MobGearHandler());
+        ModBiomes.BIOMES.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus); // Регистрация наших блоков
         ModEntities.ENTITY_TYPES.register(modEventBus);
         ModExplosionParticles.PARTICLE_TYPES.register(modEventBus);
@@ -118,6 +128,14 @@ public class MainRegistry {
             LOGGER.info("HazardSystem initialized successfully");
         });
     }
+
+    @SubscribeEvent
+    public static void onLevelUnload(LevelEvent.Unload event) {
+        if (event.getLevel() instanceof ServerLevel) {
+            SellafitSolidificationTracker.clearAll();
+        }
+    }
+
     @SubscribeEvent
     public void onAttachCapabilitiesChunk(AttachCapabilitiesEvent<LevelChunk> event) {
         final ResourceLocation key = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "chunk_radiation");
@@ -143,9 +161,16 @@ public class MainRegistry {
         // ТАЙМЕР ЗАКАНЧИВАЕТСЯ, ВЗРЫВЕМСЯ!
         if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get()) {
 
+            event.accept(ModBlocks.BARBED_WIRE_FIRE);
+            event.accept(ModBlocks.BARBED_WIRE_POISON);
+            event.accept(ModBlocks.BARBED_WIRE_RAD);
+            event.accept(ModBlocks.BARBED_WIRE_WITHER);
+            event.accept(ModBlocks.BARBED_WIRE);
+
             event.accept(ModItems.DETONATOR);
             event.accept(ModItems.MULTI_DETONATOR);
             event.accept(ModItems.RANGE_DETONATOR);
+
             event.accept(ModItems.GRENADE);
             event.accept(ModItems.GRENADEHE);
             event.accept(ModItems.GRENADEFIRE);
@@ -444,6 +469,7 @@ public class MainRegistry {
             event.accept(ModBlocks.POLONIUM210_BLOCK);
             event.accept(ModBlocks.URANIUM_ORE);
             event.accept(ModBlocks.WASTE_GRASS);
+            event.accept(ModBlocks.BURNED_GRASS);
             event.accept(ModBlocks.WASTE_LEAVES);
             event.accept(ModBlocks.WASTE_LOG);
             event.accept(ModBlocks.WASTE_PLANKS);
@@ -497,7 +523,11 @@ public class MainRegistry {
 
         // СТРОИТЕЛЬНЫЕ БЛОКИ
         if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get()) {
-
+            event.accept(ModBlocks.DORNIER);
+            event.accept(ModBlocks.CRT_BROKEN);
+            event.accept(ModBlocks.CRT_CLEAN);
+            event.accept(ModBlocks.CRT_BSOD);
+            event.accept(ModBlocks.TOASTER);
             event.accept(ModBlocks.DOOR_OFFICE);
             event.accept(ModBlocks.DOOR_BUNKER);
             event.accept(ModBlocks.METAL_DOOR);
@@ -568,13 +598,28 @@ public class MainRegistry {
 
             event.accept(ModItems.DOSIMETER);
             event.accept(ModItems.GEIGER_COUNTER);
-
+            event.accept(ModBlocks.CRATE_IRON);
+            event.accept(ModBlocks.CRATE_STEEL);
+            event.accept(ModBlocks.CRATE_DESH);
         }
 
 
         // СТАНКИ
         if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
 
+
+
+            event.accept(ModBlocks.BARREL_CORRODED);
+            event.accept(ModBlocks.BARREL_IRON);
+            event.accept(ModBlocks.BARREL_PINK);
+            event.accept(ModBlocks.BARREL_PLASTIC);
+            event.accept(ModBlocks.BARREL_RED);
+            event.accept(ModBlocks.BARREL_STEEL);
+            event.accept(ModBlocks.BARREL_TAINT);
+            event.accept(ModBlocks.BARREL_TCALLOY);
+            event.accept(ModBlocks.BARREL_VITRIFIED);
+            event.accept(ModBlocks.BARREL_YELLOW);
+            event.accept(ModBlocks.BARREL_LOX);
             event.accept(ModBlocks.ANVIL_BLOCK);
             event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
             event.accept(ModBlocks.PRESS);
@@ -584,7 +629,6 @@ public class MainRegistry {
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.ARMOR_TABLE);
-            event.accept(ModItems.BATTERY_SCHRABIDIUM);
 
             // event.accept(ModBlocks.FLUID_TANK);
             event.accept(ModBlocks.MACHINE_BATTERY);
