@@ -461,7 +461,17 @@ public class MainRegistry {
                     }
                 }
             }
-            
+
+            event.accept(ModBlocks.DEPTH_BORAX);
+            event.accept(ModBlocks.DEPTH_IRON);
+            event.accept(ModBlocks.DEPTH_TITANIUM);
+            event.accept(ModBlocks.DEPTH_TUNGSTEN);
+            event.accept(ModBlocks.DEPTH_STONE);
+            event.accept(ModBlocks.DEPTH_CINNABAR);
+            event.accept(ModBlocks.DEPTH_ZIRCONIUM);
+
+            event.accept(ModBlocks.ORE_OIL);
+            event.accept(ModBlocks.BEDROCK_OIL);
             event.accept(ModBlocks.SELLAFIELD_SLAKED);
             event.accept(ModBlocks.SELLAFIELD_SLAKED1);
             event.accept(ModBlocks.SELLAFIELD_SLAKED2);
@@ -597,6 +607,7 @@ public class MainRegistry {
         if (event.getTab() == ModCreativeTabs.NTM_INSTRUMENTS_TAB.get()) {
 
             event.accept(ModItems.DOSIMETER);
+            event.accept(ModItems.OIL_DETECTOR);
             event.accept(ModItems.GEIGER_COUNTER);
             event.accept(ModBlocks.CRATE_IRON);
             event.accept(ModBlocks.CRATE_STEEL);

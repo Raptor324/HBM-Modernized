@@ -1,0 +1,16 @@
+{
+  "name": "hbm_m:bedrockoiltest_pool",
+  "description": "Template pool for Bedrock Oil Test underground structure",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:bedrockoiltest",
+        "processors": "minecraft:empty"
+      }
+    }
+  ]
+}

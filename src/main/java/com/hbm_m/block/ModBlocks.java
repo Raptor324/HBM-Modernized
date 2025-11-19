@@ -336,6 +336,28 @@ public class ModBlocks {
     public static final RegistryObject<Block> DORNIER = registerBlock("dornier",
             () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
 
+    public static final RegistryObject<Block> ORE_OIL = registerBlock("ore_oil",
+            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> BEDROCK_OIL = registerBlock("bedrock_oil",
+            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> DEPTH_STONE = registerBlock("depth_stone",
+            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> DEPTH_BORAX = registerBlock("depth_borax",
+            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> DEPTH_CINNABAR = registerBlock("depth_cinnabar",
+            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> DEPTH_IRON = registerBlock("depth_iron",
+            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> DEPTH_TUNGSTEN = registerBlock("depth_tungsten",
+            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> DEPTH_TITANIUM = registerBlock("depth_titanium",
+            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+    public static final RegistryObject<Block> DEPTH_ZIRCONIUM = registerBlock("depth_zirconium",
+            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+
+
     public static final RegistryObject<Block> BARREL_LOX = registerBlock("barrel_lox",
             () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
     public static final RegistryObject<Block> BARREL_CORRODED = registerBlock("barrel_corroded",

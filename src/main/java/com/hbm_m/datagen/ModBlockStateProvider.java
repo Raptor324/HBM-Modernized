@@ -31,9 +31,19 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.STRAWBERRY_BUSH.get(), models().cross(blockTexture(ModBlocks.STRAWBERRY_BUSH.get()).getPath(),
                 blockTexture(ModBlocks.STRAWBERRY_BUSH.get())).renderType("cutout"));
         // Блоки слитков теперь генерируются автоматически в цикле ниже
-        
+
+
+        blockWithItem(ModBlocks.DEPTH_IRON);
+        blockWithItem(ModBlocks.DEPTH_TITANIUM);
+        blockWithItem(ModBlocks.DEPTH_TUNGSTEN);
+        blockWithItem(ModBlocks.DEPTH_CINNABAR);
+        blockWithItem(ModBlocks.DEPTH_ZIRCONIUM);
+        blockWithItem(ModBlocks.DEPTH_STONE);
+        blockWithItem(ModBlocks.DEPTH_BORAX);
         oreWithItem(ModBlocks.URANIUM_ORE);
         blockWithItem(ModBlocks.WASTE_LEAVES);
+        blockWithItem(ModBlocks.ORE_OIL);
+        blockWithItem(ModBlocks.BEDROCK_OIL);
         blockWithItem(ModBlocks.REINFORCED_STONE);
         blockWithItem(ModBlocks.CONCRETE_HAZARD);
         blockWithItem(ModBlocks.BRICK_CONCRETE);
