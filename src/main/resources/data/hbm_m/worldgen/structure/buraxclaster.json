@@ -4,7 +4,7 @@
   "spawn_overrides": {},
   "step": "underground_structures",
   "terrain_adaptation": "bury",
-  "start_pool": "hbm_m:bedrockoiltest_pool",
+  "start_pool": "hbm_m:buraxclaster_pool",
   "size": 2,
   "start_height": {
     "absolute": -63

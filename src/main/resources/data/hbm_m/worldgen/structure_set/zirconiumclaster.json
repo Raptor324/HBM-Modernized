@@ -1,13 +1,13 @@
 {
   "structures": [
     {
-      "structure": "hbm_m:bedrockoiltest",
+      "structure": "hbm_m:zirconiumclaster",
       "weight": 1
     }
   ],
   "placement": {
     "type": "minecraft:random_spread",
-    "salt": 9878543710,
+    "salt": 9856543710,
     "spacing": 16,
     "separation": 4
   }

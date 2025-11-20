@@ -1,13 +1,13 @@
 {
   "structures": [
     {
-      "structure": "hbm_m:bedrockoiltest",
+      "structure": "hbm_m:multiclaster",
       "weight": 1
     }
   ],
   "placement": {
     "type": "minecraft:random_spread",
-    "salt": 9878543710,
+    "salt": 9856663710,
     "spacing": 16,
     "separation": 4
   }

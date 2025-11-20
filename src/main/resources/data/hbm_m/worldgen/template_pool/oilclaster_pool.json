@@ -1,6 +1,5 @@
 {
   "name": "hbm_m:oilclaster_pool",
-  "description": "Template pool for Oil Claster underground structure",
   "fallback": "minecraft:empty",
   "elements": [
     {
@@ -9,7 +8,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:oilclaster",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:retain_non_air_blocks"
       }
     }
   ]
