@@ -303,6 +303,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
 
     private void serverTick() {
+
+        ensureNetworkInitialized();
+
         long gameTime = level.getGameTime();
         if (gameTime % 5 == 0) {
             chargeMachineFromBattery();

@@ -123,6 +123,11 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
     public static void tick(Level level, BlockPos pos, BlockState state, MachineWoodBurnerBlockEntity be) {
         if (level.isClientSide()) return;
 
+        EnergyNetworkManager manager = EnergyNetworkManager.get((ServerLevel) level);
+        if (!manager.hasNode(pos)) {
+            manager.addNode(pos);
+        }
+
         boolean wasBurning = be.isBurning();
         boolean canCurrentlyBurn = be.canBurn();
 
@@ -332,10 +337,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
     @Override
     public void setLevel(Level pLevel) {
         super.setLevel(pLevel);
-        if (!pLevel.isClientSide) {
-            // [ВАЖНО!] Сообщаем сети, что мы добавлены (при загрузке чанка/мира)
-            EnergyNetworkManager.get((ServerLevel) pLevel).addNode(this.getBlockPos());
-        }
+
     }
 
     @Override

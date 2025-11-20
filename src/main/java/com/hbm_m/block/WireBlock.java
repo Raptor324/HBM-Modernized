@@ -98,6 +98,8 @@ public class WireBlock extends BaseEntityBlock {
         // [🔥 ИЗМЕНЕНО: Добавляем 'facingState' в вызов]
         boolean canConnect = canVisuallyConnectTo(level, facingPos, facing.getOpposite(), facingState);
         return state.setValue(property, canConnect);
+
+
     }
 
     private BlockState getConnectionState(LevelAccessor level, BlockPos pos) {
@@ -112,34 +114,62 @@ public class WireBlock extends BaseEntityBlock {
     }
 
     private boolean canVisuallyConnectTo(LevelAccessor world, BlockPos neighborPos, Direction sideFromNeighbor, BlockState neighborState) {
-        // 1. Подключаемся к другим проводам (проверка по BlockState)
+
+        // 1. К другим проводам?
         if (neighborState.is(this)) {
             return true;
         }
 
-        BlockEntity be = world.getBlockEntity(neighborPos);
+        // 2. [🔥 НОВАЯ ЛОГИКА]
+        // Это Рубильник или Батарея? (Блоки, которые *всегда* должны быть подключены)
+        // Мы проверяем BlockState, а не BlockEntity, чтобы это работало мгновенно.
+        Block block = neighborState.getBlock();
+        if (block instanceof SwitchBlock || block instanceof MachineBatteryBlock) {
+            return true;
+        }
 
-        // 2. [🔥 ФИКС] Если BE ЕЩЁ НЕ СОЗДАН, проверяем BlockState
+        // 3. [🔥 СТАРАЯ ЛОГИКА]
+        // Это часть мультиблока или другая машина?
+        // Для *всего остального* (включая UniversalMachinePartBlock),
+        // мы должны строго проверять capability.
+
+        BlockEntity be = world.getBlockEntity(neighborPos);
         if (be == null) {
-            Block block = neighborState.getBlock();
-            // Проверяем, является ли блок одним из наших станков или частью мультиблока
-            if (block instanceof MachineBatteryBlock ||
-                    block instanceof MachineWoodBurnerBlock ||
-                    block instanceof MachineAdvancedAssemblerBlock ||
-                    block instanceof UniversalMachinePartBlock) {
-                return true;
-            }
-            // Если это не наш станок, и BE нет, то не коннектимся
+            // BE еще не загрузился.
+            // Если это не Рубильник и не Батарея (проверили в п.2),
+            // то мы не можем знать, коннектор это или нет.
+            // Безопаснее сказать "нет". "Тикающий" WireBlockEntity
+            // или обновление соседнего блока позже это исправят.
             return false;
         }
 
-        // 3. Если BE существует, проверяем Capabilities (самый надежный способ)
+        // 4. BE существует. Проверяем ЛЮБОЙ HBM capability.
+        //    Это поймает машины (Provider/Receiver) и коннекторы (Connector).
+
+        //    Проверяем HBM_CONNECTOR
         LazyOptional<IEnergyConnector> hbmCap = be.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, sideFromNeighbor);
         if (hbmCap.isPresent()) {
-            return hbmCap.resolve().map(connector -> connector.canConnectEnergy(sideFromNeighbor)).orElse(false);
+            // Сосед - это Провод, Рубильник "Вкл" или Батарея "Оба".
+            // Спрашиваем у него, можно ли (вдруг он на что-то смотрит).
+            // [ВАЖНО] UniversalMachinePartBlockEntity с ролью "DEFAULT"
+            // не будет иметь этого capability, и вернет false.
+            // А с ролью "ENERGY_CONNECTOR" - будет (если контроллер его имеет).
+            return hbmCap.resolve().map(c -> c.canConnectEnergy(sideFromNeighbor)).orElse(false);
         }
 
-        // 4. Откат к Forge Energy (если HBM Cap не найден)
+        //    Проверяем HBM_PROVIDER (Машины, Батареи "Выход")
+        //    (Это поймает энерго-порты твоего Генератора)
+        if (be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, sideFromNeighbor).isPresent()) {
+            return true;
+        }
+
+        //    Проверяем HBM_RECEIVER (Машины, Батареи "Вход")
+        //    (Это поймает энерго-порты твоего Сборщика)
+        if (be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, sideFromNeighbor).isPresent()) {
+            return true;
+        }
+
+        // 5. Это не наш HBM-блок. Проверяем Forge Energy (для модов).
         return be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY, sideFromNeighbor).isPresent();
     }
 

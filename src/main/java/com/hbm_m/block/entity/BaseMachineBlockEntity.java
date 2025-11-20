@@ -47,6 +47,8 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     private long lastEnergy = 0;
     private long energyDelta = 0;
 
+    private boolean networkInitialized = false;
+
     // Capability провайдеры
     private final LazyOptional<IEnergyProvider> hbmProvider = LazyOptional.of(() -> this);
     private final LazyOptional<IEnergyReceiver> hbmReceiver = LazyOptional.of(() -> this);
@@ -278,6 +280,14 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         super.onLoad();
         itemHandler = LazyOptional.of(() -> inventory);
         setupFluidCapability();
+        // Сеть инициализируем позже, в тике
+    }
+
+    protected void ensureNetworkInitialized() {
+        if (!networkInitialized && level != null && !level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) level).addNode(this.getBlockPos());
+            networkInitialized = true;
+        }
     }
 
     @Override
@@ -311,11 +321,5 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     @Override
     public void setLevel(Level pLevel) {
         super.setLevel(pLevel);
-        if (!pLevel.isClientSide) {
-            // [ВАЖНО!] Сообщаем сети, что мы добавлены
-            EnergyNetworkManager.get((ServerLevel) pLevel).addNode(this.getBlockPos());
-        }
     }
-
-
 }

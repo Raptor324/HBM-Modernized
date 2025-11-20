@@ -416,7 +416,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_cracked_stairs", "Ступени из треснутого бетона");
                 add("block.hbm_m.concrete_mossy_slab", "Плита из замшелого бетона");
                 add("block.hbm_m.concrete_mossy_stairs", "Ступени из замшелого бетона");
-
+                add("block.hbm_m.switch", "Рубильник");
                 add("block.hbm_m.large_vehicle_door", "Дверь для крупногабаритного транспорта");
                 add("block.hbm_m.strawberry_bush", "Куст клубники");
                 add("block.hbm_m.strawberry", "Клубника");
@@ -1147,7 +1147,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.reinforced_stone", "Reinforced Stone");
                 add("block.hbm_m.reinforced_stone_slab", "Reinforced Stone Slab");
                 add("block.hbm_m.reinforced_stone_stairs", "Reinforced Stone Stairs");
-                
+                add("block.hbm_m.switch", "Switch");
                 add("tooltip.hbm_m.rad_protection.value", "Radiation Resistance: %s");
                 add("tooltip.hbm_m.rad_protection.value_short", "%s rad-resistance");
 

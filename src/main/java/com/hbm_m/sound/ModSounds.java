@@ -53,6 +53,7 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> GARAGE_STOP = registerSoundEvents("block.garage_stop");
     public static final RegistryObject<SoundEvent> PRESS_OPERATE = registerSoundEvents("block.press_operate");
     public static final RegistryObject<SoundEvent> SHREDDER = registerSoundEvent("block.shredder");
+    public static final RegistryObject<SoundEvent> SWITCH_ON = registerSoundEvent("block.switch.on");
 
     private static RegistryObject<SoundEvent> registerSoundEvent(String name) {
         return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(MainRegistry.MOD_ID, name)));

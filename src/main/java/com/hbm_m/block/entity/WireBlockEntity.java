@@ -34,15 +34,12 @@ public class WireBlockEntity extends BlockEntity implements IEnergyConnector {
         if (level.isClientSide) return;
 
         ServerLevel serverLevel = (ServerLevel) level;
+        EnergyNetworkManager manager = EnergyNetworkManager.get(serverLevel);
 
-        // Проверяем раз в секунду (20 тиков)
-        if (level.getGameTime() % 20 == 0) {
-            EnergyNetworkManager manager = EnergyNetworkManager.get(serverLevel);
-
-            // Если провод не в сети - добавляем
-            if (!manager.hasNode(pos)) {
-                manager.addNode(pos);
-            }
+        // ПРОВЕРКА КАЖДЫЙ ТИК (для надежности, но можно оптимизировать boolean флагом initialized)
+        // hasNode - быстрая операция (проверка HashMap), так что это не ударит по TPS.
+        if (!manager.hasNode(pos)) {
+            manager.addNode(pos);
         }
     }
 
@@ -90,9 +87,7 @@ public class WireBlockEntity extends BlockEntity implements IEnergyConnector {
     @Override
     public void setLevel(Level pLevel) {
         super.setLevel(pLevel);
-        if (!pLevel.isClientSide) {
-            // [ВАЖНО!] Сообщаем сети, что мы добавлены
-            EnergyNetworkManager.get((ServerLevel) pLevel).addNode(this.getBlockPos());
-        }
+
     }
 }
+

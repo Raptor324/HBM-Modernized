@@ -90,12 +90,7 @@ public class MachineBatteryBlock extends BaseEntityBlock {
     }
 
     // ✅ Регистрация в энергосети
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        if (!level.isClientSide && !state.is(oldState.getBlock())) {
-        }
-        super.onPlace(state, level, pos, oldState, isMoving);
-    }
+
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
@@ -148,6 +143,7 @@ public class MachineBatteryBlock extends BaseEntityBlock {
             }
         }
     }
+    
 
     @Override
     public void appendHoverText(ItemStack pStack, @Nullable BlockGetter pLevel, List<Component> pTooltip, TooltipFlag pFlag) {

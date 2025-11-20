@@ -36,15 +36,27 @@ public class EnergyNetwork {
      */
     public void tick(ServerLevel level) {
         // 1. Валидация узлов
+        int sizeBefore = nodes.size();
         nodes.removeIf(node -> !node.isValid(level) || node.getNetwork() != this);
+
+        if (nodes.size() < sizeBefore) {
+            // Если узлы были удалены (стали невалидными),
+            // мы ОБЯЗАНЫ проверить, не раскололась ли сеть.
+            verifyConnectivity();
+        }
+
         if (nodes.size() < 2) {
+            // verifyConnectivity() мог распустить эту сеть (если она раскололась
+            // на части < 2 узлов), или removeIf() удалил последний узел.
+            // В любом случае, тикать больше нечего.
             return;
         }
 
         // 2. Сбор всех участников сети
-        List<IEnergyProvider> generators = new ArrayList<>();
-        // Группируем потребителей (Машины + Батареи в режиме INPUT/BOTH) по приоритету
-        Map<IEnergyReceiver.Priority, List<IEnergyReceiver>> consumersByPriority = new EnumMap<>(IEnergyReceiver.Priority.class);
+        Set<IEnergyProvider> generators = new HashSet<>();
+
+        // Группируем потребителей
+        Map<IEnergyReceiver.Priority, Set<IEnergyReceiver>> consumersByPriority = new EnumMap<>(IEnergyReceiver.Priority.class);
         Map<IEnergyReceiver, Long> consumerDemand = new IdentityHashMap<>();
         List<BatteryInfo> batteries = new ArrayList<>();
 
@@ -83,7 +95,7 @@ public class EnergyNetwork {
                     );
                     if (needed > 0) {
                         consumerDemand.put(batteryInfo.receiver, needed);
-                        consumersByPriority.computeIfAbsent(batteryInfo.receiver.getPriority(), k -> new ArrayList<>()).add(batteryInfo.receiver);
+                        consumersByPriority.computeIfAbsent(batteryInfo.receiver.getPriority(), k -> new HashSet<>()).add(batteryInfo.receiver);
                         totalConsumption += needed;
                     }
                 }
@@ -101,7 +113,7 @@ public class EnergyNetwork {
                     );
                     if (needed > 0) {
                         consumerDemand.put(consumer, needed);
-                        consumersByPriority.computeIfAbsent(consumer.getPriority(), k -> new ArrayList<>()).add(consumer);
+                        consumersByPriority.computeIfAbsent(consumer.getPriority(), k -> new HashSet<>()).add(consumer);
                         totalConsumption += needed;
                     }
                 }
@@ -132,9 +144,9 @@ public class EnergyNetwork {
             // Идем по приоритетам от ВЫСШЕГО к НИЗШЕМУ
             // (Priority.values() по умолчанию: LOW, NORMAL, HIGH)
             for (int i = IEnergyReceiver.Priority.values().length - 1; i >= 0; i--) {
-                IEnergyReceiver.Priority priority = IEnergyReceiver.Priority.values()[i]; // HIGH -> NORMAL -> LOW
+                IEnergyReceiver.Priority priority = IEnergyReceiver.Priority.values()[i];
 
-                List<IEnergyReceiver> currentGroup = consumersByPriority.get(priority);
+                Set<IEnergyReceiver> currentGroup = consumersByPriority.get(priority);
                 if (currentGroup == null || currentGroup.isEmpty()) continue;
                 if (energyToDistribute <= 0) break; // Энергия кончилась
 
@@ -168,7 +180,7 @@ public class EnergyNetwork {
      * ПРОПОРЦИОНАЛЬНО их спросу.
      * @return Фактически распределенное количество энергии
      */
-    private long distributeProportionally(long amount, List<IEnergyReceiver> consumers,
+    private long distributeProportionally(long amount, Set<IEnergyReceiver> consumers,
                                           Map<IEnergyReceiver, Long> consumerDemand,
                                           Map<IEnergyProvider, Long> providers) {
 
@@ -477,15 +489,19 @@ public class EnergyNetwork {
             nodes.removeAll(lostNodes);
             for (EnergyNode lostNode : lostNodes) {
                 lostNode.setNetwork(null);
-                // Используем reAddNode из EnergyNetworkManager, как мы обсуждали
-                manager.reAddNode(lostNode.getPos());
+
+                // [🔥 ИЗМЕНЕНО 🔥]
+                // Передаем 'this' (текущую сеть) как ту, к которой нельзя присоединяться.
+                manager.reAddNode(lostNode.getPos(), this);
             }
 
             // Если в текущей сети осталось меньше 2 узлов, распускаем ее
             if (nodes.size() < 2) {
                 for (EnergyNode remainingNode : nodes) {
                     remainingNode.setNetwork(null);
-                    manager.reAddNode(remainingNode.getPos());
+
+                    // [🔥 ИЗМЕНЕНО 🔥]
+                    manager.reAddNode(remainingNode.getPos(), this);
                 }
                 nodes.clear();
                 manager.removeNetwork(this);

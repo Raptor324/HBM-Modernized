@@ -243,5 +243,12 @@
     "block.press_operate": {
         "subtitle": "sounds.hbm_m.subtitle.press",
         "sounds": [ "hbm_m:block/press_operate" ]
-    }
+    },
+
+  "block.switch.on": {
+    "subtitle": "subtitle.hbm_m.block.switch.on",
+    "sounds": [
+      "hbm_m:block/switch_on"
+    ]
+  }
 }

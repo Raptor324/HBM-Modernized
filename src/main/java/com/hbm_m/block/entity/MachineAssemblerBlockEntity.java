@@ -255,6 +255,9 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     }
 
     private void serverTick() {
+
+        ensureNetworkInitialized();
+
         long gameTime = level.getGameTime();
 
         if (gameTime % 5 == 0) {
@@ -638,10 +641,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     @Override
     public void setLevel(Level pLevel) {
         super.setLevel(pLevel);
-        if (!pLevel.isClientSide) {
-            // [ВАЖНО!] Сообщаем сети, что мы добавлены (при загрузке чанка/мира)
-            EnergyNetworkManager.get((ServerLevel) pLevel).addNode(this.getBlockPos());
-        }
+
     }
 
     @Override

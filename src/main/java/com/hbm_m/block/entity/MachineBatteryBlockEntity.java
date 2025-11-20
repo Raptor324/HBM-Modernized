@@ -111,6 +111,11 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     public static void tick(Level level, BlockPos pos, BlockState state, MachineBatteryBlockEntity be) {
         if (level.isClientSide) return;
 
+        EnergyNetworkManager manager = EnergyNetworkManager.get((ServerLevel) level);
+        if (!manager.hasNode(pos)) {
+            manager.addNode(pos);
+        }
+
         long gameTime = level.getGameTime();
 
         // Обновление дельты энергии каждые 10 тиков
@@ -350,10 +355,6 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     @Override
     public void setLevel(Level pLevel) {
         super.setLevel(pLevel);
-        if (!pLevel.isClientSide) {
-            // [ВАЖНО!] Сообщаем сети, что мы добавлены (при загрузке чанка/мира)
-            EnergyNetworkManager.get((ServerLevel) pLevel).addNode(this.getBlockPos());
-        }
     }
 
     @Override

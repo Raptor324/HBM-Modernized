@@ -10,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.util.*;
 
 public class EnergyNetworkManager extends SavedData {
@@ -24,12 +25,15 @@ public class EnergyNetworkManager extends SavedData {
         this(level);
         if (nbt.contains("nodes")) {
             long[] nodePositions = nbt.getLongArray("nodes");
+            // [🔥 ФИКС] Эта строка из твоего лога, она правильная
             LOGGER.info("[NETWORK] Loading {} nodes for dimension {}", nodePositions.length, level.dimension().location());
+
             for (long posLong : nodePositions) {
                 BlockPos pos = BlockPos.of(posLong);
-                if (level.isLoaded(pos)) {
-                    allNodes.put(pos.asLong(), new EnergyNode(pos));
-                }
+
+                // [🔥 ФИКС] Просто добавляем. БЕЗ isValid().
+                // Мы "разгребём" мусор в rebuildAllNetworks(), когда мир будет готов.
+                allNodes.put(pos.asLong(), new EnergyNode(pos));
             }
         }
     }
@@ -61,55 +65,50 @@ public class EnergyNetworkManager extends SavedData {
             node.setNetwork(null);
         }
 
-        LOGGER.info("[NETWORK] Rebuilding from {} loaded nodes.", allNodes.size());
+        // [🔥 НОВЫЙ ШАГ ОЧИСТКИ]
+        // Теперь, когда мир ТОЧНО загружен, чистим 'allNodes'
+        // от всего мусора (невалидных узлов), который загрузил конструктор.
+        int totalNodes = allNodes.size();
+        allNodes.values().removeIf(node -> !node.isValid(level));
+        int validNodes = allNodes.size();
+        LOGGER.info("[NETWORK] Pruned node list: {} total -> {} valid.", totalNodes, validNodes);
+
 
         // 2. Используем Set для отслеживания *уже* обработанных узлов
         Set<EnergyNode> processedNodes = new HashSet<>();
 
-        // 3. Проходим по КАЖДОМУ узлу, который мы загрузили из NBT
+        // 3. Проходим по *очищенному* allNodes
         for (EnergyNode startNode : allNodes.values()) {
 
-            // Если узел уже обработан (т.е. мы нашли его как соседа), пропускаем
             if (processedNodes.contains(startNode)) {
                 continue;
             }
 
-            // [🔥 ИЗМЕНЕНИЕ 🔥]
-            // Мы начинаем новую сеть ТОЛЬКО с ВАЛИДНОГО узла.
-            // (Н-р, 'WoodBurner' (контроллер), 'Wire' или 'Battery')
-            if (startNode.isValid(level)) {
+            // [🔥 ФИКС] Нам больше не нужен startNode.isValid()
+            // потому что мы уже очистили 'allNodes'.
 
-                EnergyNetwork newNetwork = new EnergyNetwork(this);
-                networks.add(newNetwork);
+            EnergyNetwork newNetwork = new EnergyNetwork(this);
+            networks.add(newNetwork);
 
-                Queue<EnergyNode> queue = new LinkedList<>();
-                queue.add(startNode);
-                processedNodes.add(startNode); // Помечаем как обработанный
+            Queue<EnergyNode> queue = new LinkedList<>();
+            queue.add(startNode);
+            processedNodes.add(startNode);
 
-                while (!queue.isEmpty()) {
-                    EnergyNode currentNode = queue.poll();
-                    newNetwork.addNode(currentNode); // Добавляем в новую сеть
+            while (!queue.isEmpty()) {
+                EnergyNode currentNode = queue.poll();
+                newNetwork.addNode(currentNode); // Добавляем в новую сеть
 
-                    // Ищем соседей
-                    for (Direction dir : Direction.values()) {
-                        EnergyNode neighbor = allNodes.get(currentNode.getPos().relative(dir).asLong());
+                // Ищем соседей
+                for (Direction dir : Direction.values()) {
+                    EnergyNode neighbor = allNodes.get(currentNode.getPos().relative(dir).asLong());
 
-                        // [🔥 ГЛАВНЫЙ ФИКС 🔥]
-                        // Если сосед существует в нашем списке (allNodes)
-                        // и мы его еще не обработали, мы ДОЛЖНЫ его присоединить.
-                        // Мы НЕ проверяем neighbor.isValid()!
-                        // Невалидные части (как от мультиблоков)
-                        // *должны* быть в сети, чтобы соединять валидные части.
-                        if (neighbor != null && !processedNodes.contains(neighbor)) {
-                            processedNodes.add(neighbor); // Помечаем
-                            queue.add(neighbor); // Добавляем в очередь на поиск
-                        }
+                    // [🔥 ФИКС] Нам больше не нужен neighbor.isValid()
+                    // потому что 'allNodes' уже чист.
+                    if (neighbor != null && !processedNodes.contains(neighbor)) {
+                        processedNodes.add(neighbor); // Помечаем
+                        queue.add(neighbor); // Добавляем в очередь на поиск
                     }
                 }
-            } else {
-                // Если startNode невалиден (н-р, это 'ghost' узел),
-                // мы его тоже помечаем, чтобы не проверять его снова.
-                processedNodes.add(startNode);
             }
         }
 
@@ -124,18 +123,38 @@ public class EnergyNetworkManager extends SavedData {
     }
 
     public void addNode(BlockPos pos) {
-        if (allNodes.containsKey(pos.asLong())) {
-            return; // Узел уже существует и находится в сети
+        addNode(pos, null);
+    }
+
+    private void addNode(BlockPos pos, @Nullable EnergyNetwork networkToAvoid) {
+        long posLong = pos.asLong();
+
+        // [🔥 ФИКС 1] Сначала проверяем, валиден ли узел
+        EnergyNode newNode = new EnergyNode(pos);
+        if (!newNode.isValid(level)) {
+            allNodes.remove(posLong); // На всякий случай удаляем, если он там был
+            return; // Не добавляем невалидный узел
         }
 
-        EnergyNode newNode = new EnergyNode(pos);
-        allNodes.put(pos.asLong(), newNode);
+        // [🔥 ФИКС 2] Только ТЕПЕРЬ проверяем, есть ли он уже (защита от onLoad)
+        if (allNodes.containsKey(posLong)) {
+            // Узел уже существует (вероятно, из NBT) и он валиден.
+            // Нам нужно УБЕДИТЬСЯ, что он в сети.
+            // Если у него нет сети, запускаем поиск соседей.
+            if (newNode.getNetwork() != null) {
+                return; // Он уже в сети, всё ок
+            }
+        }
+
+        allNodes.put(posLong, newNode); // Добавляем/перезаписываем
 
         Set<EnergyNetwork> adjacentNetworks = new HashSet<>();
         for (Direction dir : Direction.values()) {
             EnergyNode neighbor = allNodes.get(pos.relative(dir).asLong());
             if (neighbor != null && neighbor.getNetwork() != null) {
-                adjacentNetworks.add(neighbor.getNetwork());
+                if (neighbor.getNetwork() != networkToAvoid) {
+                    adjacentNetworks.add(neighbor.getNetwork());
+                }
             }
         }
 
@@ -172,7 +191,7 @@ public class EnergyNetworkManager extends SavedData {
         setDirty();
     }
 
-    void reAddNode(BlockPos pos) {
+    void reAddNode(BlockPos pos, @Nullable EnergyNetwork networkToAvoid) {
         // Мы не удаляем его из allNodes, он там все еще есть,
         // но он потерял свою сеть.
         EnergyNode node = allNodes.get(pos.asLong());
@@ -182,7 +201,9 @@ public class EnergyNetworkManager extends SavedData {
 
         // Удаляем и добавляем, чтобы сработала логика поиска соседей
         allNodes.remove(pos.asLong());
-        addNode(pos);
+
+        // [🔥 ИЗМЕНЕНО 🔥]
+        addNode(pos, networkToAvoid); // Передаем "запрещенную" сеть
     }
 
     @Override

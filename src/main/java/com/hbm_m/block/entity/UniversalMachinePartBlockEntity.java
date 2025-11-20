@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity;
 
+import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.PartRole;
 import net.minecraft.core.BlockPos;
@@ -63,23 +64,39 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             return super.getCapability(cap, side);
         }
 
-        // Делегируем ВСЕ capability запросы контроллеру напрямую
-        // Контроллер сам решит, что вернуть на основании своей логики
-        if (cap == ForgeCapabilities.ENERGY && this.role == PartRole.ENERGY_CONNECTOR) {
-            BlockEntity controllerBE = this.level.getBlockEntity(this.controllerPos);
-            if (controllerBE != null) {
+        BlockEntity controllerBE = this.level.getBlockEntity(this.controllerPos);
+        if (controllerBE == null) {
+            return super.getCapability(cap, side);
+        }
+
+        // === ДЕЛЕГИРОВАНИЕ ЭНЕРГИИ ===
+        if (this.role == PartRole.ENERGY_CONNECTOR) {
+
+            // [🔥 ФИКС] HBM API (Provider, Receiver, Connector)
+            if (cap == ModCapabilities.HBM_ENERGY_PROVIDER ||
+                    cap == ModCapabilities.HBM_ENERGY_RECEIVER ||
+                    cap == ModCapabilities.HBM_ENERGY_CONNECTOR)
+            {
+                return controllerBE.getCapability(cap, side);
+            }
+
+            // Forge Energy API (как и было)
+            if (cap == ForgeCapabilities.ENERGY) {
                 return controllerBE.getCapability(cap, side);
             }
         }
 
-        // Для ITEM_HANDLER просто пробрасываем к контроллеру
-        // Контроллер MachineAdvancedAssemblerBlockEntity уже возвращает правильный itemHandler
-        if (cap == ForgeCapabilities.ITEM_HANDLER && 
-            (this.role == PartRole.ITEM_INPUT || this.role == PartRole.ITEM_OUTPUT)) {
-            BlockEntity controllerBE = this.level.getBlockEntity(this.controllerPos);
-            if (controllerBE != null) {
-                return controllerBE.getCapability(cap, side);
+        // === ДЕЛЕГИРОВАНИЕ ПРЕДМЕТОВ ===
+        if (cap == ForgeCapabilities.ITEM_HANDLER &&
+                (this.role == PartRole.ITEM_INPUT || this.role == PartRole.ITEM_OUTPUT))
+        {
+            // [🔥 УЛУЧШЕНИЕ] MachineAssemblerBlockEntity вернет специальный proxy-handler
+            if (controllerBE instanceof MachineAssemblerBlockEntity assembler) {
+                return assembler.getItemHandlerForPart(this.role).cast();
             }
+
+            // Для других машин (если появятся) можно делегировать напрямую
+            return controllerBE.getCapability(cap, side);
         }
 
         return super.getCapability(cap, side);
