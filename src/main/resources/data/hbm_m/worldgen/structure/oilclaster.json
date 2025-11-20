@@ -1,0 +1,15 @@
+{
+  "type": "minecraft:jigsaw",
+  "biomes": "#minecraft:is_overworld",
+  "spawn_overrides": {},
+  "step": "underground_structures",
+  "terrain_adaptation": "none",
+  "start_pool": "hbm_m:oilclaster_pool",
+  "size": 2,
+  "start_height": {
+    "absolute": -50
+  },
+  "project_start_to_heightmap": "WORLD_SURFACE_WG",
+  "use_expansion_hack": false,
+  "max_distance_from_center": 80
+}

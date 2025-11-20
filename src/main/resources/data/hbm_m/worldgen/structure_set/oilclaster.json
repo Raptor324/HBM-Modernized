@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "structure": "hbm_m:oilclaster",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 9876543210,
+    "spacing": 16,
+    "separation": 4
+  }
+}

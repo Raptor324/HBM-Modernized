@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "structure": "hbm_m:cinnabarclaster",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 97567377,
+    "spacing": 16,
+    "separation": 4
+  }
+}

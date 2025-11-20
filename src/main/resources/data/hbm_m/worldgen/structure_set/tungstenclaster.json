@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "structure": "hbm_m:tungstenclaster",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 9856454710,
+    "spacing": 16,
+    "separation": 4
+  }
+}

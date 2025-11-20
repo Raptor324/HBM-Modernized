@@ -1,15 +1,15 @@
 {
   "loader": "forge:composite",
   "textures": {
-    "particle": "hbm_m:block/barrel_tсalloy"
+    "particle": "hbm_m:block/barrel_tcalloy"
   },
   "children": {
-    "barrel_tсalloy_model": {
+    "barrel_tcalloy_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/barrel_tсalloy.obj",
+      "model": "hbm_m:models/block/barrel_tcalloy.obj",
       "flip_v": true,
       "textures": {
-        "default": "hbm_m:block/barrel_tсalloy"
+        "default": "hbm_m:block/barrel_tcalloy"
       }
     }
   },

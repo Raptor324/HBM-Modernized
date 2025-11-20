@@ -430,6 +430,8 @@ public class ModItems {
                 }
             })
     );
+    public static final RegistryObject<Item> OIL_DETECTOR = ITEMS.register("oil_detector",
+            () -> new OilDetectorItem(new Item.Properties()));
 
     public static final RegistryObject<Item> RANGE_DETONATOR = ITEMS.register("range_detonator",
             () -> new RangeDetonatorItem(new Item.Properties()));
