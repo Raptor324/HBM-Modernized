@@ -1,0 +1,46 @@
+package com.hbm_m.block;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.level.Explosion;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.Collections;
+import java.util.List;
+
+public class DepthOreBlock extends Block {
+
+    public DepthOreBlock(Properties properties) {
+        super(properties
+                .strength(29.0F, 29.0F)
+                .requiresCorrectToolForDrops()
+        );
+    }
+
+    // Не ломается поршнями
+    @Override
+    public PushReaction getPistonPushReaction(BlockState state) {
+        return PushReaction.BLOCK;
+    }
+
+    // Запретить ломать блок инструментом (игроком)
+    @Override
+    public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
+        return 0.0F; // Нельзя сломать вообще
+    }
+
+    // Блок ломается только взрывом
+    @Override
+    public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
+        // Если хочешь, чтобы выпадал предмет:
+        popResource(level, pos, new ItemStack(this));
+        level.removeBlock(pos, false);
+    }
+}

@@ -296,7 +296,7 @@ public class MainRegistry {
             event.accept(ModItems.FIRECLAY_BALL);
 
             event.accept(ModItems.SULFUR);
-
+            event.accept(ModItems.LIGNITE);
             event.accept(ModItems.FLUORITE);
             event.accept(ModItems.RAREGROUND_ORE_CHUNK);
             event.accept(ModItems.CINNABAR);
@@ -461,7 +461,6 @@ public class MainRegistry {
                     }
                 }
             }
-
             event.accept(ModBlocks.DEPTH_BORAX);
             event.accept(ModBlocks.DEPTH_IRON);
             event.accept(ModBlocks.DEPTH_TITANIUM);
@@ -607,8 +606,9 @@ public class MainRegistry {
         if (event.getTab() == ModCreativeTabs.NTM_INSTRUMENTS_TAB.get()) {
 
             event.accept(ModItems.DOSIMETER);
-            event.accept(ModItems.OIL_DETECTOR);
             event.accept(ModItems.GEIGER_COUNTER);
+            event.accept(ModItems.OIL_DETECTOR);
+            event.accept(ModItems.DEPTH_ORES_SCANNER);
             event.accept(ModBlocks.CRATE_IRON);
             event.accept(ModBlocks.CRATE_STEEL);
             event.accept(ModBlocks.CRATE_DESH);
@@ -657,7 +657,6 @@ public class MainRegistry {
         // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ
         if (event.getTab() == ModCreativeTabs.NTM_FUEL_TAB.get()) {
             // Сначала добавляем предметы, которые НЕ батарейки
-            event.accept(ModItems.LIGNITE);
             event.accept(ModItems.PLATE_FUEL_MOX);
             event.accept(ModItems.PLATE_FUEL_PU238BE);
             event.accept(ModItems.PLATE_FUEL_PU239);

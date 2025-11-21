@@ -185,7 +185,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.BATTERY_SPARK_CELL_10000);
         simpleItem(ModItems.BATTERY_SPARK_CELL_POWER);
 
-
+        simpleItem(ModItems.DEPTH_ORES_SCANNER);
+        simpleItem(ModItems.ZIRCONIUM_SHARP);
+        simpleItem(ModItems.BORAX);
         simpleItem(ModItems.CAPACITOR_BOARD);
         simpleItem(ModItems.CAPACITOR_TANTALUM);
         simpleItem(ModItems.BISMOID_CIRCUIT);
