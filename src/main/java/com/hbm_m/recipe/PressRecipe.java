@@ -47,16 +47,16 @@ public class PressRecipe implements Recipe<SimpleContainer> {
         boolean materialMatches = inputItems.get(1).test(material);
 
         // ОТЛАДКА
-        LOGGER.info("=== Press Recipe Check ===");
-        LOGGER.info("Recipe ID: {}", id);
-        LOGGER.info("Stamp in slot: {} ({})", stamp.getItem(), stamp.getDisplayName().getString());
-        LOGGER.info("Material in slot: {} ({})", material.getItem(), material.getDisplayName().getString());
-        LOGGER.info("Expected stamp ingredient: {}", inputItems.get(0).toJson());
-        LOGGER.info("Expected material ingredient: {}", inputItems.get(1).toJson());
-        LOGGER.info("Stamp matches: {}", stampMatches);
-        LOGGER.info("Material matches: {}", materialMatches);
-        LOGGER.info("Overall result: {}", stampMatches && materialMatches);
-        LOGGER.info("========================");
+        // LOGGER.info("=== Press Recipe Check ===");
+        // LOGGER.info("Recipe ID: {}", id);
+        // LOGGER.info("Stamp in slot: {} ({})", stamp.getItem(), stamp.getDisplayName().getString());
+        // LOGGER.info("Material in slot: {} ({})", material.getItem(), material.getDisplayName().getString());
+        // LOGGER.info("Expected stamp ingredient: {}", inputItems.get(0).toJson());
+        // LOGGER.info("Expected material ingredient: {}", inputItems.get(1).toJson());
+        // LOGGER.info("Stamp matches: {}", stampMatches);
+        // LOGGER.info("Material matches: {}", materialMatches);
+        // LOGGER.info("Overall result: {}", stampMatches && materialMatches);
+        // LOGGER.info("========================");
 
         return stampMatches && materialMatches;
     }

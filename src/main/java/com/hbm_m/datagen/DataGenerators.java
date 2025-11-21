@@ -64,6 +64,7 @@ public class DataGenerators {
                 packOutput, lookupProvider, getRegistrySetBuilder(), Set.of(RefStrings.MODID)
         );
 
+
         @SuppressWarnings("deprecation")
         CompletableFuture<HolderLookup.Provider> newLookupProvider = datapackProvider.getRegistryProvider();
         generator.addProvider(event.includeServer(), datapackProvider);
@@ -73,6 +74,10 @@ public class DataGenerators {
                 event.includeServer(),
                 new ModLootTableProvider(packOutput)   // ← только packOutput, без lookupProvider!
         );
+        CompletableFuture<HolderLookup.Provider> newLookupProvider = datapackProvider.getRegistryProvider();
+        generator.addProvider(event.includeServer(), datapackProvider);
+        generator.addProvider(event.includeServer(), new ModDamageTypeTagProvider(packOutput, newLookupProvider, existingFileHelper));
+
         generator.addProvider(event.includeClient(), new ModBlockStateProvider(packOutput, existingFileHelper));
         generator.addProvider(event.includeClient(), new ModItemModelProvider(packOutput, existingFileHelper));
         generator.addProvider(event.includeClient(), new ModLanguageProvider(packOutput, "ru_ru"));

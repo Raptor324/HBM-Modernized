@@ -1,9 +1,9 @@
 {
 	"parent": "block/orientable",
 	"textures": {
-		"top": "hbm_m:block/blast_furnace_top_off",
-		"front": "hbm_m:block/blast_furnace_front_off",
-		"side": "hbm_m:block/blast_furnace_side",
-		"bottom": "hbm_m:block/blast_furnace_top_off"
+		"top": "hbm_m:block/difurnace_top_off_alt",
+		"front": "hbm_m:block/difurnace_front_off_alt",
+		"side": "hbm_m:block/difurnace_side_alt",
+		"bottom": "hbm_m:block/difurnace_top_off_alt"
 	}
 }

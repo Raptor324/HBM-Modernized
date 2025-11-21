@@ -4,6 +4,7 @@ package com.hbm_m.event;
 import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
+import com.hbm_m.client.render.MachinePressRenderer;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.ImmediateFallbackRenderer;
 import com.hbm_m.client.render.shader.RenderPathManager;
@@ -79,6 +80,7 @@ public class ClientModEvents {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             MachineAdvancedAssemblerRenderer.flushInstancedBatches();
             DoorRenderer.flushInstancedBatches();
+            MachinePressRenderer.flushInstancedBatches();
             
             // НОВОЕ: Завершаем immediate рендер батчи
             ImmediateFallbackRenderer.endBatch();
