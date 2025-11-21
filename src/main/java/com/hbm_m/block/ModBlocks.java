@@ -350,19 +350,19 @@ public class ModBlocks {
             () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
 
     public static final RegistryObject<Block> DEPTH_STONE = registerBlock("depth_stone",
-            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+            () -> new DepthOreBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
     public static final RegistryObject<Block> DEPTH_BORAX = registerBlock("depth_borax",
-            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+            () -> new DepthOreBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
     public static final RegistryObject<Block> DEPTH_CINNABAR = registerBlock("depth_cinnabar",
-            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+            () -> new DepthOreBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
     public static final RegistryObject<Block> DEPTH_IRON = registerBlock("depth_iron",
-            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+            () -> new DepthOreBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
     public static final RegistryObject<Block> DEPTH_TUNGSTEN = registerBlock("depth_tungsten",
-            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+            () -> new DepthOreBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
     public static final RegistryObject<Block> DEPTH_TITANIUM = registerBlock("depth_titanium",
-            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+            () -> new DepthOreBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
     public static final RegistryObject<Block> DEPTH_ZIRCONIUM = registerBlock("depth_zirconium",
-            () -> new Block(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+            () -> new DepthOreBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
 
 
 
@@ -703,7 +703,7 @@ public class ModBlocks {
         ));
     
     // ==================== Helper Methods ====================
-    
+
     private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block) {
         RegistryObject<T> toReturn = BLOCKS.register(name, block);
         registerBlockItem(name, toReturn);

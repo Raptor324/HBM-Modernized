@@ -433,6 +433,9 @@ public class ModItems {
     public static final RegistryObject<Item> OIL_DETECTOR = ITEMS.register("oil_detector",
             () -> new OilDetectorItem(new Item.Properties()));
 
+    public static final RegistryObject<Item> DEPTH_ORES_SCANNER = ITEMS.register("depth_ores_scanner",
+            () -> new DepthOresScannerItem(new Item.Properties()));
+
     public static final RegistryObject<Item> RANGE_DETONATOR = ITEMS.register("range_detonator",
             () -> new RangeDetonatorItem(new Item.Properties()));
 
@@ -442,6 +445,11 @@ public class ModItems {
     public static final RegistryObject<Item> DETONATOR = ITEMS.register("detonator",
             () -> new DetonatorItem(new Item.Properties()));
 
+    public static final RegistryObject<Item> ZIRCONIUM_SHARP = ITEMS.register("zirconium_sharp",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> BORAX = ITEMS.register("borax",
+            () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> SCRAP = ITEMS.register("scrap",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> DUST = ITEMS.register("dust",
