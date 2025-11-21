@@ -35,6 +35,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.PLUTONIUM_FUEL_BLOCK.get())
                 .add(ModBlocks.MACHINE_BATTERY.get())
                 .add(ModBlocks.BLAST_FURNACE.get())
+                .add(ModBlocks.BLAST_FURNACE_EXTENSION.get())
                 .add(ModBlocks.PRESS.get())
                 .add(ModBlocks.WOOD_BURNER.get())
                 .add(ModBlocks.ALUMINUM_ORE.get())
@@ -79,6 +80,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.THORIUM_ORE.get())
                 .add(ModBlocks.THORIUM_ORE_DEEPSLATE.get())
                 .add(ModBlocks.COBALT_ORE.get())
+                .add(ModBlocks.BLAST_FURNACE_EXTENSION.get())
                 .add(ModBlocks.ASBESTOS_ORE.get());
 
         this.tag(BlockTags.NEEDS_STONE_TOOL)

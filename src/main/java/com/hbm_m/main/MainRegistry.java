@@ -617,9 +617,6 @@ public class MainRegistry {
 
         // СТАНКИ
         if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
-
-
-
             event.accept(ModBlocks.BARREL_CORRODED);
             event.accept(ModBlocks.BARREL_IRON);
             event.accept(ModBlocks.BARREL_PINK);
@@ -635,6 +632,7 @@ public class MainRegistry {
             event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
             event.accept(ModBlocks.PRESS);
             event.accept(ModBlocks.BLAST_FURNACE);
+            event.accept(ModBlocks.BLAST_FURNACE_EXTENSION);
             event.accept(ModBlocks.SHREDDER);
             event.accept(ModBlocks.WOOD_BURNER);
             event.accept(ModBlocks.MACHINE_ASSEMBLER);

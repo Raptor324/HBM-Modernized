@@ -7,7 +7,6 @@ import com.hbm_m.block.machine.MachinePressBlock;
 import com.hbm_m.block.machine.MachineShredderBlock;
 import com.hbm_m.block.machine.MachineWoodBurnerBlock;
 import com.hbm_m.block.machine.UniversalMachinePartBlock;
-import com.hbm_m.item.CrateItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.ModIngots;
@@ -140,7 +139,16 @@ public class ModBlocks {
             () -> new AnvilBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     public static final RegistryObject<Block> BLAST_FURNACE = registerBlock("blast_furnace",
-            () -> new BlastFurnaceBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL)));
+            () -> new BlastFurnaceBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
+                    .strength(4.0f, 4.0f)
+                    .sound(SoundType.STONE)
+                    .lightLevel(state -> state.getValue(BlastFurnaceBlock.LIT) ? 15 : 0)));
+
+    public static final RegistryObject<Block> BLAST_FURNACE_EXTENSION = registerBlock("blast_furnace_extension",
+            () -> new BlastFurnaceExtensionBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
+                    .strength(3.0f, 4.0f)
+                    .sound(SoundType.METAL)
+                    .noOcclusion()));
 
     public static final RegistryObject<Block> PRESS = registerBlockWithoutItem("press",
             () -> new MachinePressBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));

@@ -5,8 +5,6 @@ package com.hbm_m.datagen;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.main.MainRegistry;
-
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
@@ -116,6 +114,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/burned_grass_top")
                 )
         );
+
+        simpleBlock(ModBlocks.BLAST_FURNACE_EXTENSION.get(),
+                models().getExistingFile(modLoc("block/difurnace_extension")));
+        simpleBlockItem(ModBlocks.BLAST_FURNACE_EXTENSION.get(),
+                models().getExistingFile(modLoc("block/difurnace_extension")));
 
         simpleBlockWithItem(ModBlocks.CRATE_IRON.get(),
                 models().cubeBottomTop(
