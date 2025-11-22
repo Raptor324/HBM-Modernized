@@ -445,6 +445,13 @@ public class ModItems {
     public static final RegistryObject<Item> DETONATOR = ITEMS.register("detonator",
             () -> new DetonatorItem(new Item.Properties()));
 
+
+
+
+
+
+    public static final RegistryObject<Item> BOLT_STEEL = ITEMS.register("bolt_steel",
+            () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> ZIRCONIUM_SHARP = ITEMS.register("zirconium_sharp",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> COIL_GOLD_TORUS = ITEMS.register("coil_gold_torus",

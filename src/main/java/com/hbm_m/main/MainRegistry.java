@@ -269,9 +269,8 @@ public class MainRegistry {
 
         //СЛИТКИ И РЕСУРСЫ
         if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
-            event.accept(ModItems.MOTOR_BISMUTH);
-            event.accept(ModItems.MOTOR_DESH);
-            event.accept(ModItems.MOTOR);
+
+            event.accept(ModItems.ZIRCONIUM_SHARP);
             event.accept(ModItems.BORAX);
             event.accept(ModItems.DUST.get());
             event.accept(ModItems.DUST_TINY.get());
@@ -284,6 +283,8 @@ public class MainRegistry {
             event.accept(ModItems.FIREBRICK);
             event.accept(ModItems.WOOD_ASH_POWDER);
             event.accept(ModItems.SCRAP);
+            event.accept(ModItems.NUGGET_SILICON);
+            event.accept(ModItems.BILLET_SILICON);
             // Проходимся циклом по ВСЕМ слиткам
             for (RegistryObject<Item> ingotObject : ModItems.INGOTS.values()) {
 
@@ -333,14 +334,8 @@ public class MainRegistry {
         // ЗАПЧАСТИ
         if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get()) {
 
-            event.accept(ModItems.COIL_ADVANCED_ALLOY);
-            event.accept(ModItems.COIL_ADVANCED_ALLOY_TORUS);
-            event.accept(ModItems.COIL_COPPER);
-            event.accept(ModItems.COIL_COPPER_TORUS);
-            event.accept(ModItems.COIL_GOLD);
-            event.accept(ModItems.COIL_GOLD_TORUS);
-            event.accept(ModItems.COIL_MAGNETIZED_TUNGSTEN);
-            event.accept(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS);
+
+            event.accept(ModItems.BOLT_STEEL);
             event.accept(ModItems.PLATE_IRON);
             event.accept(ModItems.PLATE_STEEL);
             event.accept(ModItems.PLATE_GOLD);
@@ -375,6 +370,14 @@ public class MainRegistry {
             event.accept(ModItems.PLATE_DINEUTRONIUM);
             event.accept(ModItems.PLATE_EUPHEMIUM);
 
+            event.accept(ModItems.COIL_ADVANCED_ALLOY);
+            event.accept(ModItems.COIL_ADVANCED_ALLOY_TORUS);
+            event.accept(ModItems.COIL_COPPER);
+            event.accept(ModItems.COIL_COPPER_TORUS);
+            event.accept(ModItems.COIL_GOLD);
+            event.accept(ModItems.COIL_GOLD_TORUS);
+            event.accept(ModItems.COIL_MAGNETIZED_TUNGSTEN);
+            event.accept(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS);
             event.accept(ModItems.WIRE_RED_COPPER);
             event.accept(ModItems.WIRE_COPPER);
             event.accept(ModItems.WIRE_TUNGSTEN);
@@ -385,11 +388,12 @@ public class MainRegistry {
             event.accept(ModItems.WIRE_FINE);
             event.accept(ModItems.WIRE_CARBON);
             event.accept(ModItems.WIRE_ADVANCED_ALLOY);
-
-            event.accept(ModItems.NUGGET_SILICON);
-            event.accept(ModItems.BILLET_SILICON);
             event.accept(ModItems.INSULATOR);
             event.accept(ModItems.SILICON_CIRCUIT);
+
+            event.accept(ModItems.MOTOR_BISMUTH);
+            event.accept(ModItems.MOTOR_DESH);
+            event.accept(ModItems.MOTOR);
             event.accept(ModItems.CONTROLLER_ADVANCED);
             event.accept(ModItems.CONTROLLER_CHASSIS);
             event.accept(ModItems.CONTROLLER);
@@ -409,51 +413,12 @@ public class MainRegistry {
             event.accept(ModItems.ADVANCED_CIRCUIT);
             event.accept(ModItems.ATOMIC_CLOCK);
 
-
             event.accept(ModItems.BATTLE_GEARS);
             event.accept(ModItems.BATTLE_SENSOR);
             event.accept(ModItems.BATTLE_CASING);
             event.accept(ModItems.BATTLE_COUNTER);
             event.accept(ModItems.BATTLE_MODULE);
             event.accept(ModItems.METAL_ROD);
-
-
-            event.accept(ModItems.PLATE_ARMOR_AJR);
-            event.accept(ModItems.PLATE_ARMOR_DNT);
-            event.accept(ModItems.PLATE_ARMOR_DNT_RUSTED);
-            event.accept(ModItems.PLATE_ARMOR_FAU);
-            event.accept(ModItems.PLATE_ARMOR_HEV);
-            event.accept(ModItems.PLATE_ARMOR_LUNAR);
-            event.accept(ModItems.PLATE_ARMOR_TITANIUM);
-
-            event.accept(ModItems.PLATE_DALEKANIUM);
-            event.accept(ModItems.PLATE_DESH);
-            event.accept(ModItems.PLATE_DINEUTRONIUM);
-            event.accept(ModItems.PLATE_EUPHEMIUM);
-            event.accept(ModItems.PLATE_COMBINE_STEEL);
-            event.accept(ModItems.PLATE_BISMUTH);
-            event.accept(ModItems.PLATE_MIXED);
-
-            event.accept(ModItems.PLATE_IRON);
-            event.accept(ModItems.PLATE_STEEL);
-            event.accept(ModItems.PLATE_GOLD);
-            event.accept(ModItems.PLATE_GUNMETAL);
-            event.accept(ModItems.PLATE_GUNSTEEL);
-            event.accept(ModItems.PLATE_TITANIUM);
-            event.accept(ModItems.PLATE_KEVLAR);
-            event.accept(ModItems.PLATE_LEAD);
-            event.accept(ModItems.PLATE_PAA);
-            event.accept(ModItems.PLATE_SATURNITE);
-            event.accept(ModItems.PLATE_SCHRABIDIUM);
-            event.accept(ModItems.PLATE_ADVANCED_ALLOY);
-            event.accept(ModItems.PLATE_ALUMINUM);
-            event.accept(ModItems.PLATE_COPPER);
-            event.accept(ModItems.PLATE_DURA_STEEL);
-
-            event.accept(ModItems.PLATE_CAST);
-            event.accept(ModItems.PLATE_CAST_ALT);
-            event.accept(ModItems.PLATE_CAST_BISMUTH);
-            event.accept(ModItems.PLATE_CAST_DARK);
 
         }
         // РУДЫ

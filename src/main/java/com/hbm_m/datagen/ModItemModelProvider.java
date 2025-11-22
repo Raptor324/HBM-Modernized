@@ -162,7 +162,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 
 
 
-
+        simpleItem(ModItems.BOLT_STEEL);
         simpleItem(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS);
         simpleItem(ModItems.COIL_MAGNETIZED_TUNGSTEN);
         simpleItem(ModItems.COIL_COPPER_TORUS);

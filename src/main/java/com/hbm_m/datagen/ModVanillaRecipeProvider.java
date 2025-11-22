@@ -22,6 +22,26 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.Consumer;
 
 public class ModVanillaRecipeProvider extends RecipeProvider {
+    @Override
+    protected void buildRecipes(@NotNull Consumer<FinishedRecipe> writer) {
+        registerAll(writer);
+    }
+
+    public void registerVanillaRecipes(@NotNull Consumer<FinishedRecipe> writer) {
+        registerAll(writer);
+    }
+    //ЗАРЕГЕСТРИРУЙ ТУТ СВОИ РЕЦЕПТЫ, ИНАЧЕ НЕ ПРОСТИТ
+    private void registerAll(@NotNull Consumer<FinishedRecipe> writer) {
+        registerToolAndArmorSets(writer);
+        registerCrates(writer);
+        registerCoil(writer);
+        registerCoilTorus(writer);
+        registerStamps(writer);
+        registerGrenades(writer);
+        registerUtilityRecipes(writer);
+        registerPowderCooking(writer);
+        registerOreAndRawCooking(writer);
+    }
 
     //основные рецепты
     private void registerUtilityRecipes(Consumer<FinishedRecipe> writer) {
@@ -55,12 +75,44 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/door_office"));
 
 
+        //МОТОРЫ
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.MOTOR.get(), 2)
+                .pattern(" $ ")
+                .pattern("%#%")
+                .pattern("%@%")
+                .define('%', ModItems.PLATE_IRON.get())
+                .define('$', ModItems.WIRE_RED_COPPER.get())
+                .define('#', ModItems.COIL_COPPER.get())
+                .define('@', ModItems.COIL_COPPER_TORUS.get())
+                .unlockedBy(getHasName(ModItems.COIL_COPPER_TORUS.get()), has(ModItems.COIL_COPPER_TORUS.get()))
+                .save(writer, recipeId("crafting/motor"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.MOTOR_DESH.get(), 2)
+                .pattern("@$@")
+                .pattern("%#%")
+                .pattern("@$@")
+                .define('%', ModItems.getIngot(ModIngots.DESH).get())
+                .define('$', ModItems.COIL_GOLD_TORUS.get())
+                .define('#', ModItems.MOTOR.get())
+                // Используем Ingredient.ofItems для указания нескольких альтернативных материалов
+                .define('@', Ingredient.of(ModItems.getIngot(ModIngots.BAKELITE).get(), ModItems.getIngot(ModIngots.POLYMER).get()))
+                .unlockedBy(getHasName(ModItems.PLATE_DESH.get()), has(ModItems.PLATE_DESH.get()))
+                .save(writer, recipeId("crafting/motor_desh"));
 
 
 
 
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.REINFORCED_STONE.get())
+
+
+
+
+
+
+
+
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.REINFORCED_STONE.get(), 4)
                 .pattern("#$#")
                 .pattern("$#$")
                 .pattern("#$#")
@@ -69,7 +121,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy("has_stone", has(Blocks.STONE))
                 .save(writer, recipeId("crafting/reinforced_stone"));
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.DET_MINER.get())
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.DET_MINER.get(), 4)
                 .pattern("$$$")
                 .pattern("%#%")
                 .pattern("%#%")
@@ -253,16 +305,16 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
     //крафты катушек
     private void registerCoil(Consumer<FinishedRecipe> writer) {
         buildCoil(writer, ModItems.COIL_ADVANCED_ALLOY.get(), ModItems.WIRE_ADVANCED_ALLOY.get(), "coil_advanced_alloy");
-        buildCoil(writer, ModItems.COIL_COPPER.get(), ModItems.WIRE_COPPER.get(), "coil_copper");
+        buildCoil(writer, ModItems.COIL_COPPER.get(), ModItems.WIRE_RED_COPPER.get(), "coil_copper");
         buildCoil(writer, ModItems.COIL_GOLD.get(), ModItems.WIRE_GOLD.get(), "coil_gold");
         buildCoil(writer, ModItems.COIL_MAGNETIZED_TUNGSTEN.get(), ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), "coil_magnetized_tungsten");
     }
     //крафты кольцевых катушек
     private void registerCoilTorus(Consumer<FinishedRecipe> writer) {
-        buildCoil(writer, ModItems.COIL_ADVANCED_ALLOY_TORUS.get(), ModItems.COIL_ADVANCED_ALLOY.get(), "coil_advanced_alloy_torus");
-        buildCoil(writer, ModItems.COIL_COPPER_TORUS.get(), ModItems.COIL_COPPER.get(), "coil_copper_torus");
-        buildCoil(writer, ModItems.COIL_GOLD_TORUS.get(), ModItems.COIL_GOLD.get(), "coil_gold_torus");
-        buildCoil(writer, ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS.get(), ModItems.COIL_MAGNETIZED_TUNGSTEN.get(), "coil_magnetized_tungsten_torus");
+        buildCoilTorus(writer, ModItems.COIL_ADVANCED_ALLOY_TORUS.get(), ModItems.COIL_ADVANCED_ALLOY.get(), "coil_advanced_alloy_torus");
+        buildCoilTorus(writer, ModItems.COIL_COPPER_TORUS.get(), ModItems.COIL_COPPER.get(), "coil_copper_torus");
+        buildCoilTorus(writer, ModItems.COIL_GOLD_TORUS.get(), ModItems.COIL_GOLD.get(), "coil_gold_torus");
+        buildCoilTorus(writer, ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS.get(), ModItems.COIL_MAGNETIZED_TUNGSTEN.get(), "coil_magnetized_tungsten_torus");
     }
 
     //билды для рецептов
@@ -278,17 +330,17 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
     }
 
     private void buildCoilTorus(Consumer<FinishedRecipe> writer, Item result, ItemLike material, String name) {
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, result)
-                .pattern("###")
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, result, 2)
+                .pattern(" # ")
                 .pattern("#$#")
-                .pattern("###")
+                .pattern(" # ")
                 .define('$', ModItems.PLATE_IRON.get())
                 .define('#', material)
                 .unlockedBy(getHasName(material), has(material))
                 .save(writer, recipeId("crafting/" + name));
     }
     private void buildGrenadeUpgrade(Consumer<FinishedRecipe> writer, Item result, ItemLike core, String name) {
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, result)
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, result, 4)
                 .pattern(" # ")
                 .pattern("$%$")
                 .pattern(" # ")
@@ -451,23 +503,6 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         super(output);
     }
 
-    @Override
-    protected void buildRecipes(@NotNull Consumer<FinishedRecipe> writer) {
-        registerAll(writer);
-    }
 
-    public void registerVanillaRecipes(@NotNull Consumer<FinishedRecipe> writer) {
-        registerAll(writer);
-    }
-
-    private void registerAll(@NotNull Consumer<FinishedRecipe> writer) {
-        registerToolAndArmorSets(writer);
-        registerCrates(writer);
-        registerStamps(writer);
-        registerGrenades(writer);
-        registerUtilityRecipes(writer);
-        registerPowderCooking(writer);
-        registerOreAndRawCooking(writer);
-    }
 }
 
