@@ -10,6 +10,7 @@ import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
+import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.storage.loot.LootPool;
 import net.minecraft.world.level.storage.loot.LootTable;
@@ -21,6 +22,7 @@ import net.minecraft.world.level.storage.loot.predicates.MatchTool;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 import net.minecraftforge.registries.RegistryObject;
+import org.jetbrains.annotations.NotNull;
 
 import java.util.Collections;
 import java.util.Set;
@@ -203,12 +205,25 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModItems.CINNABAR.get(),
                 1.0f, 3.0f
         );
+        dropOreType2(
+                ModBlocks.DEPTH_IRON.get(),
+                ModBlocks.DEPTH_IRON.get(),
+                Items.RAW_IRON,
+                1.0f, 3.0f
+        );
 
+        dropOreType2(
+                ModBlocks.ASBESTOS_ORE.get(),
+                ModBlocks.ASBESTOS_ORE.get(),
+                ModItems.getIngot(ModIngots.ASBESTOS).get(),
+                1.0f, 3.0f
+        );
 
         // Если DEPTH_STONE должен вести себя как обычный блок,
         // отдельный вызов dropSelfType не нужен — его уже обработал цикл выше.
         // Если нужна особая логика — добавь здесь нужный метод.
     }
+
 
     /**
      * Руда тип 1:
