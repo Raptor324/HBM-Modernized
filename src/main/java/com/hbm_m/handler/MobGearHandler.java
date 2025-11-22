@@ -74,10 +74,10 @@ public class MobGearHandler {
                 // zombie.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(ModItems.GUN_REX.get()));
 
                 // Дроп шанса (как у ванильных)
-                zombie.setDropChance(EquipmentSlot.HEAD, 0.1f);
-                zombie.setDropChance(EquipmentSlot.CHEST, 0.1f);
-                zombie.setDropChance(EquipmentSlot.LEGS, 0.1f);
-                zombie.setDropChance(EquipmentSlot.FEET, 0.1f);
+                zombie.setDropChance(EquipmentSlot.HEAD, 0.05f);
+                zombie.setDropChance(EquipmentSlot.CHEST, 0.05f);
+                zombie.setDropChance(EquipmentSlot.LEGS, 0.05f);
+                zombie.setDropChance(EquipmentSlot.FEET, 0.05f);
             }
         }
 

@@ -447,7 +447,28 @@ public class ModItems {
 
     public static final RegistryObject<Item> ZIRCONIUM_SHARP = ITEMS.register("zirconium_sharp",
             () -> new Item(new Item.Properties()));
-
+    public static final RegistryObject<Item> COIL_GOLD_TORUS = ITEMS.register("coil_gold_torus",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_GOLD = ITEMS.register("coil_gold",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_MAGNETIZED_TUNGSTEN_TORUS = ITEMS.register("coil_magnetized_tungsten_torus",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_MAGNETIZED_TUNGSTEN = ITEMS.register("coil_magnetized_tungsten",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_COPPER_TORUS = ITEMS.register("coil_copper_torus",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_COPPER = ITEMS.register("coil_copper",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_ADVANCED_ALLOY_TORUS = ITEMS.register("coil_advanced_alloy_torus",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_ADVANCED_ALLOY = ITEMS.register("coil_advanced_alloy",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> MOTOR_DESH = ITEMS.register("motor_desh",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> MOTOR_BISMUTH = ITEMS.register("motor_bismuth",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> MOTOR = ITEMS.register("motor",
+            () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> BORAX = ITEMS.register("borax",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> SCRAP = ITEMS.register("scrap",

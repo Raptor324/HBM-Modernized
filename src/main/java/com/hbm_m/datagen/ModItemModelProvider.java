@@ -158,6 +158,22 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.TEMPLATE_FOLDER);
         simpleItem(ModItems.STRAWBERRY);
 
+
+
+
+
+
+        simpleItem(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS);
+        simpleItem(ModItems.COIL_MAGNETIZED_TUNGSTEN);
+        simpleItem(ModItems.COIL_COPPER_TORUS);
+        simpleItem(ModItems.COIL_COPPER);
+        simpleItem(ModItems.COIL_GOLD_TORUS);
+        simpleItem(ModItems.COIL_GOLD);
+        simpleItem(ModItems.COIL_ADVANCED_ALLOY_TORUS);
+        simpleItem(ModItems.COIL_ADVANCED_ALLOY);
+        simpleItem(ModItems.MOTOR_BISMUTH);
+        simpleItem(ModItems.MOTOR_DESH);
+        simpleItem(ModItems.MOTOR);
         simpleItem(ModItems.BATTERY_SCHRABIDIUM);
         simpleItem(ModItems.BATTERY_POTATO);
         simpleItem(ModItems.BATTERY);
