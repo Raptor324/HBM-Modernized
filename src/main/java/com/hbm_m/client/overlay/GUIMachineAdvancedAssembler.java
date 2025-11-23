@@ -3,6 +3,7 @@ package com.hbm_m.client.overlay;
 // GUI для продвинутой сборочной машины.
 // Отвечает за отрисовку прогресса, энергии, подсказок и взаимодействие с пользователем.
 // Основан на AbstractContainerScreen и использует текстуры из ресурсов мода.
+
 import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.recipe.AssemblerRecipe;
 
@@ -127,57 +128,58 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
      * Отрисовывает призрачные предметы в пустых входных слотах.
      * Использует группировку из BaseMachineBlockEntity.
      */
+
     private void renderGhostItems(GuiGraphics guiGraphics) {
         // ИСПОЛЬЗУЕМ метод из BlockEntity, который получает данные из модуля
         NonNullList<ItemStack> ghostItems = this.menu.getBlockEntity().getGhostItems();
-        
+
         if (ghostItems.isEmpty()) {
             return;
         }
-        
+
         // Слоты 4-15 (handler) соответствуют слотам 40-51 в menu
-        int inputSlotsStart = 36 + 4; // 40
+        int inputSlotsStart = 4; // 40
         int inputSlotsCount = 12;
-        
+
         // Отрисовываем сгруппированные предметы
         for (int i = 0; i < Math.min(ghostItems.size(), inputSlotsCount); i++) {
             ItemStack ghostStack = ghostItems.get(i);
-            
+
             if (ghostStack.isEmpty()) {
                 continue;
             }
-            
+
             // Получаем слот
             int slotIndex = inputSlotsStart + i;
             if (slotIndex >= this.menu.slots.size()) break;
-            
+
             net.minecraft.world.inventory.Slot slot = this.menu.slots.get(slotIndex);
-            
+
             // Отрисовываем призрак только если слот пуст
             if (!slot.hasItem()) {
                 // Отрисовка призрачного предмета с полупрозрачностью
                 guiGraphics.pose().pushPose();
                 guiGraphics.pose().translate(0, 0, 100); // z-level 100
-                
+
                 // Полупрозрачность
                 RenderSystem.enableBlend();
                 RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 0.5F);
-                
+
                 int x = this.leftPos + slot.x;
                 int y = this.topPos + slot.y;
-                
+
                 guiGraphics.renderItem(ghostStack, x, y);
-                
+
                 // ОТРИСОВКА КОЛИЧЕСТВА (если > 1)
                 if (ghostStack.getCount() > 1) {
                     RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F); // Полная непрозрачность для текста
                     guiGraphics.renderItemDecorations(this.font, ghostStack, x, y);
                 }
-                
+
                 // Восстанавливаем цвет
                 RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
                 RenderSystem.disableBlend();
-                
+
                 guiGraphics.pose().popPose();
             }
         }
@@ -210,6 +212,8 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             // Первая строка: текущая / максимальная энергия
             tooltip.add(Component.literal(energyStr + " / " + maxEnergyStr + " HE")
                     .withStyle(ChatFormatting.GREEN));
+
+            guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), pMouseX, pMouseY);
 
         }
         

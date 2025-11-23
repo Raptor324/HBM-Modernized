@@ -3,6 +3,7 @@ package com.hbm_m.main;
 // Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
+import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.handler.MobGearHandler;
 import com.hbm_m.item.ModBatteryItem;
@@ -13,6 +14,10 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.event.level.LevelEvent;
 import com.hbm_m.item.ModBatteryItem;
 import com.hbm_m.particle.ModExplosionParticles;
+import com.mojang.logging.LogUtils;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
@@ -58,18 +63,21 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
-
+import org.slf4j.Logger;
 
 @Mod(RefStrings.MODID)
 public class MainRegistry {
 
     // Добавляем логгер для отладки
-    public static final Logger LOGGER = LogManager.getLogger(RefStrings.MODID);
+    public static final Logger LOGGER = LogUtils.getLogger();
     public static final String MOD_ID = "hbm_m";
+
+
+
     private void registerCapabilities(IEventBus modEventBus) {
         modEventBus.addListener(ModCapabilities::register);
     }
+
 
     static {
         // Регистрируем конфиг до любых обращений к нему!
@@ -152,6 +160,33 @@ public class MainRegistry {
             event.addListener(provider.getCapability(ChunkRadiationProvider.CHUNK_RADIATION_CAPABILITY)::invalidate);
         }
     }
+
+
+
+    @SubscribeEvent
+    public static void onServerTick(TickEvent.ServerTickEvent event) {
+        if (event.phase == TickEvent.Phase.END) {
+            ServerLevel level = event.getServer().overworld(); // или через все миры
+            EnergyNetworkManager.get(level).tick();
+        }
+    }
+
+    @SubscribeEvent
+    public static void onServerWorldLoad(LevelEvent.Load event) {
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+            EnergyNetworkManager.get(serverLevel).rebuildAllNetworks();
+        }
+    }
+
+
+    // private void onRenderLevelStage(RenderLevelStageEvent event) {
+    //     if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
+    //         GPUInstancedRenderer.beginInstances("Ring");
+    //     }
+    //     else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+    //         GPUInstancedRenderer.endInstances();
+    //     }
+    // }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
         // Логгирование для отладки
@@ -649,6 +684,7 @@ public class MainRegistry {
             // event.accept(ModBlocks.FLUID_TANK);
             event.accept(ModBlocks.MACHINE_BATTERY);
             event.accept(ModBlocks.WIRE_COATED);
+            event.accept(ModBlocks.SWITCH);
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added geiger counter BLOCK to NTM Machines tab");
                 LOGGER.info("Added assembly machine BLOCK to NTM Machines tab");
@@ -666,9 +702,9 @@ public class MainRegistry {
             // Креативная батарейка - отдельный класс, добавляем ее 1 раз
             event.accept(ModItems.CREATIVE_BATTERY);
 
-            // --- Новая логика для всех ModBatteryItem ---
+// --- Новая логика для всех ModBatteryItem ---
 
-            // 1. Создаем список всех батареек
+// 1. Создаем список всех батареек
             List<RegistryObject<Item>> batteriesToAdd = List.of(
                     ModItems.BATTERY_POTATO,
                     ModItems.BATTERY,
@@ -698,27 +734,36 @@ public class MainRegistry {
                     ModItems.BATTERY_SPARK_CELL_POWER
             );
 
-            // 2. Проходимся по списку и добавляем 2 версии каждой
+// 2. Проходимся по списку и добавляем 2 версии каждой
             for (RegistryObject<Item> batteryRegObj : batteriesToAdd) {
                 Item item = batteryRegObj.get();
-                // (Проверка, что это ModBatteryItem, для безопасности)
-                if (item instanceof ModBatteryItem batteryItem) {
-                    // Добавляем пустую
-                    event.accept(batteryItem);
 
-                    // Создаем, заряжаем и добавляем полную
+                // Проверка, что это ModBatteryItem
+                if (item instanceof ModBatteryItem batteryItem) {
+                    // Добавляем пустую батарею
+                    ItemStack emptyStack = new ItemStack(batteryItem);
+                    event.accept(emptyStack);
+
+                    // Создаем заряженную батарею
                     ItemStack chargedStack = new ItemStack(batteryItem);
                     ModBatteryItem.setEnergy(chargedStack, batteryItem.getCapacity());
                     event.accept(chargedStack);
+
+                    if (ModClothConfig.get().enableDebugLogging) {
+                        LOGGER.debug("Added empty and charged variants of {} to creative tab",
+                                batteryRegObj.getId());
+                    }
                 } else {
-                    // На всякий случай, если что-то не то в списке
+                    // На всякий случай, если в списке что-то не ModBatteryItem
                     event.accept(item);
+                    LOGGER.warn("Item {} is not a ModBatteryItem, added as regular item",
+                            batteryRegObj.getId());
                 }
             }
-            // --- [Конец новой логики] ---
+// --- [Конец новой логики] ---
 
             if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added creative battery ITEM to NTM Fuel tab");
+                LOGGER.info("Added {} battery variants to NTM Fuel tab", batteriesToAdd.size() * 2);
             }
         }
         // --- [КОНЕЦ БЛОКА С ИЗМЕНЕНИЯМИ] ---

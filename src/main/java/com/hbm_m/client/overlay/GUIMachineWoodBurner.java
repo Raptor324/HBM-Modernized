@@ -1,13 +1,10 @@
 package com.hbm_m.client.overlay;
 
-// ИМПОРТЫ
-import com.hbm_m.main.MainRegistry;
+import com.hbm_m.main.MainRegistry; // ЗАМЕНИ НА СВОЙ КЛАСС
 import com.hbm_m.menu.MachineWoodBurnerMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.ToggleWoodBurnerPacket;
-// --- ДОБАВЛЕННЫЙ ИМПОРТ ---
 import com.hbm_m.util.EnergyFormatter;
-// ---
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -15,20 +12,12 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBurnerMenu> {
-    private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/wood_burner/345345.png");
-
-    private static final ResourceLocation BURN_TIME_BAR_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/wood_burner/fuel_bar.png");
-
-    private static final ResourceLocation ENERGY_BAR_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/wood_burner/energy_bar.png");
+    private static final ResourceLocation TEXTURE = new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/wood_burner/345345.png");
 
     public GUIMachineWoodBurner(MachineWoodBurnerMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);
@@ -59,166 +48,99 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
     }
 
     @Override
-    public void render(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
-        this.renderBackground(pGuiGraphics);
-        super.render(pGuiGraphics, pMouseX, pMouseY, pPartialTick);
-        this.renderTooltip(pGuiGraphics, pMouseX, pMouseY);
-    }
-
-    @Override
-    protected void renderBg(GuiGraphics pGuiGraphics, float pPartialTick, int pMouseX, int pMouseY) {
+    protected void renderBg(GuiGraphics gui, float partialTick, int mouseX, int mouseY) {
+        RenderSystem.setShaderTexture(0, TEXTURE);
         int x = this.leftPos;
         int y = this.topPos;
+        gui.blit(TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
 
-        RenderSystem.setShaderTexture(0, TEXTURE);
-        pGuiGraphics.blit(TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        renderBurnTimeBar(pGuiGraphics, x, y);
-        renderEnergyBar(pGuiGraphics, x, y);
-        renderToggleButton(pGuiGraphics, x, y);
-    }
-
-    private void renderBurnTimeBar(GuiGraphics graphics, int x, int y) {
-        if (menu.getBurnTime() > 0) {
-            int totalHeight = 52;
-            int barHeight = menu.getBurnTimeScaled(totalHeight);
-
-            RenderSystem.setShaderTexture(0, BURN_TIME_BAR_TEXTURE);
-
-            int startY = y + 18 + (totalHeight - barHeight);
-            int textureStartY = totalHeight - barHeight;
-
-            graphics.blit(BURN_TIME_BAR_TEXTURE, x + 17, startY, 0, textureStartY, 4, barHeight);
+        if (menu.isLit()) {
+            gui.blit(TEXTURE, x +46, y +37, 206, 72, 30, 14); // Flame
         }
-    }
 
-    private void renderEnergyBar(GuiGraphics graphics, int x, int y) {
-        if (menu.getEnergyLong() > 0) {
-            int totalHeight = 34;
-            int barHeight = menu.getEnergyScaled(totalHeight);
-
-            RenderSystem.setShaderTexture(0, ENERGY_BAR_TEXTURE);
-
-            // Рисуем снизу вверх
-            int startY = y + 18 + (totalHeight - barHeight); // y + 18 - это начало шкалы
-            int textureStartY = totalHeight - barHeight; // Начинаем с соответствующей позиции в текстуре
-
-            graphics.blit(
-                    ENERGY_BAR_TEXTURE,
-                    x + 143,           // X позиция на экране
-                    startY,            // Y позиция на экране (снизу вверх)
-                    0,                 // X в текстуре
-                    textureStartY,     // Y в текстуре (берём нужную часть градиента)
-                    16,                // Ширина
-                    barHeight          // Высота (сколько рисуем)
-            );
+        int burnHeight = menu.getBurnTimeScaled(52);
+        if (burnHeight > 0) {
+            gui.blit(TEXTURE, x + 17, y + 18 + 52 - burnHeight, 192, 52 - burnHeight, 4, burnHeight); // Fuel bar
         }
-    }
 
-    private void renderToggleButton(GuiGraphics graphics, int x, int y) {
-        // Рендерим текстуру выключенной кнопки ТОЛЬКО если генератор выключен
+        int energyHeight = menu.getEnergyScaled(34);
+        if (energyHeight > 0) {
+            gui.blit(TEXTURE, x + 143, y + 18 + 34 - energyHeight, 176, 34 - energyHeight, 16, energyHeight); // Energy bar
+        }
+
         if (!menu.isEnabled()) {
-            RenderSystem.setShaderTexture(0, TEXTURE);
-            // Координаты кнопки: x=47, y=17
-            // Координаты текстуры выключенной кнопки: x=196, y=0
-            graphics.blit(TEXTURE, x + 53, y + 17, 196, 0, 16, 16);
+            gui.blit(TEXTURE, x + 53, y + 17, 196, 0, 16, 16); // Disabled overlay
         }
-        // Если enabled=true, текстура включенной кнопки уже есть в основном GUI
-    }
-
-
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // Проверяем клик по кнопке переключателя (x=47, y=17, размер 16x16)
-        if (isMouseOver((int)mouseX, (int)mouseY, 53, 17, 16, 16)) {
-            // Отправляем пакет на сервер для переключения состояния
-            ModPacketHandler.INSTANCE.sendToServer(
-                    new ToggleWoodBurnerPacket(menu.getBlockEntity().getBlockPos())
-            );
-            return true;
-        }
-
-        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
-    protected void renderTooltip(GuiGraphics pGuiGraphics, int pX, int pY) {
-        super.renderTooltip(pGuiGraphics, pX, pY);
+    public void render(GuiGraphics gui, int mouseX, int mouseY, float delta) {
+        this.renderBackground(gui);
+        super.render(gui, mouseX, mouseY, delta);
+        this.renderTooltip(gui, mouseX, mouseY);
+    }
 
-        // (Тултип для кнопки переключателя - без изменений)
-        if (isMouseOver(pX, pY, 53, 17, 16, 16)) {
-            List<Component> tooltip = new ArrayList<>();
-            if (menu.isEnabled()) {
-                tooltip.add(Component.literal("Generator: ON").withStyle(ChatFormatting.GREEN));
-                tooltip.add(Component.literal("Click to turn OFF").withStyle(ChatFormatting.GRAY));
-            } else {
-                tooltip.add(Component.literal("Generator: OFF").withStyle(ChatFormatting.RED));
-                tooltip.add(Component.literal("Click to turn ON").withStyle(ChatFormatting.GRAY));
-            }
-            pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pX, pY);
-            return;
-        }
 
-        // (Тултип для шкалы времени горения - без изменений)
-        if (isMouseOver(pX, pY, 17, 17, 4, 52)) {
-            List<Component> tooltip = new ArrayList<>();
-            if (menu.isLit()) {
-                int burnTimeSeconds = menu.getBurnTime() / 20;
-                tooltip.add(Component.literal("Burn Time: " + burnTimeSeconds + "s")
-                        .withStyle(ChatFormatting.GOLD));
-            } else {
-                tooltip.add(Component.literal("Not burning").withStyle(ChatFormatting.GRAY));
-            }
-            pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pX, pY);
-        }
+    @Override
+    protected void renderTooltip(GuiGraphics gui, int mouseX, int mouseY) {
+        super.renderTooltip(gui, mouseX, mouseY);
 
-        // --- ИЗМЕНЕННЫЙ БЛОК ---
-        // Тултип для шкалы энергии
-        if (isMouseOver(pX, pY, 143, 18, 16, 34)) {
+        // Тултип для энергии
+        if (isMouseOver(mouseX, mouseY, 143, 18, 16, 34)) {
             List<Component> tooltip = new ArrayList<>();
 
+            // ИСПОЛЬЗУЙ ФОРМАТТЕР:
             long energy = menu.getEnergyLong();
             long maxEnergy = menu.getMaxEnergyLong();
 
             String energyStr = EnergyFormatter.format(energy);
             String maxEnergyStr = EnergyFormatter.format(maxEnergy);
 
-            // 1. Отображаем "1.2k / 10M HE"
             tooltip.add(Component.literal(energyStr + " / " + maxEnergyStr + " HE")
                     .withStyle(ChatFormatting.GREEN));
 
             if (menu.isLit()) {
-                // 2. Отображаем "+50 HE/t"
-                tooltip.add(Component.literal("+" + EnergyFormatter.formatRate(50)).withStyle(ChatFormatting.YELLOW));
+                tooltip.add(Component.literal("+50 HE/t").withStyle(ChatFormatting.YELLOW));
+            }
 
-                // --- [НОВЫЕ СТРОКИ] ---
-                // 3. Рассчитываем и отображаем "+1k HE/s"
-                long deltaPerSecond = 50 * 20; // (50 HE/t * 20 ticks)
-                String deltaPerSecondText = "+" + EnergyFormatter.formatWithUnit(deltaPerSecond, "HE/s");
-                tooltip.add(Component.literal(deltaPerSecondText).withStyle(ChatFormatting.YELLOW));
-                // --- [КОНЕЦ НОВЫХ СТРОК] ---
+            gui.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+        }
 
+        // ДОБАВЬ тултип для шкалы горения:
+        if (isMouseOver(mouseX, mouseY, 17, 18, 4, 52)) {
+            List<Component> tooltip = new ArrayList<>();
+            int burnTime = menu.getBurnTime();
+            int maxBurnTime = menu.getMaxBurnTime();
+
+            if (maxBurnTime > 0) {
+                int seconds = burnTime / 20;
+                tooltip.add(Component.literal("Burn Time: " + seconds + "s")
+                        .withStyle(ChatFormatting.GOLD));
             } else {
-                tooltip.add(Component.literal("Not generating").withStyle(ChatFormatting.GRAY));
+                tooltip.add(Component.literal("No Fuel")
+                        .withStyle(ChatFormatting.RED));
             }
 
-            // 4. Считаем процент
-            long percentage = maxEnergy > 0 ? (energy * 100 / maxEnergy) : 0;
-            tooltip.add(Component.literal(percentage + "%").withStyle(ChatFormatting.AQUA));
-
-            pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pX, pY);
+            gui.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
         }
-        // ---
 
-        // (Тултип для пламени - без изменений)
-        if (isMouseOver(pX, pY, 56, 36, 14, 14)) {
-            if (menu.isLit()) {
-                List<Component> tooltip = new ArrayList<>();
-                tooltip.add(Component.literal("Burning fuel").withStyle(ChatFormatting.RED));
-                pGuiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), pX, pY);
-            }
+        // ДОБАВЬ тултип для кнопки включения/выключения:
+        if (isMouseOver(mouseX, mouseY, 53, 17, 16, 16)) {
+            String status = menu.isEnabled() ? "Enabled" : "Disabled";
+            ChatFormatting color = menu.isEnabled() ? ChatFormatting.GREEN : ChatFormatting.RED;
+            gui.renderTooltip(this.font,
+                    Component.literal(status).withStyle(color), mouseX, mouseY);
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (isMouseOver(mouseX, mouseY, 53, 17, 16, 16)) {
+            // Отправка пакета на сервер для переключения 'enabled'
+            ModPacketHandler.INSTANCE.sendToServer(new ToggleWoodBurnerPacket(menu.blockEntity.getBlockPos()));
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     private boolean isMouseOver(double mouseX, double mouseY, int x, int y, int sizeX, int sizeY) {

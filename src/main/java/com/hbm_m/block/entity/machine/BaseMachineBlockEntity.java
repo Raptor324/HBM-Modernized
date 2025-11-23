@@ -1,233 +1,284 @@
 package com.hbm_m.block.entity.machine;
 
+import com.hbm_m.api.energy.*;
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.MenuProvider;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.energy.ILongEnergyStorage;
+import java.util.List;
 
 /**
- * Адаптированный базовый класс машины с поддержкой long-энергии
- * ОБНОВЛЕНО: Теперь работает с ILongEnergyStorage вместо int
+ * Базовый класс для всех машин с энергией.
+ * Реализует хранение энергии, инвентарь и синхронизацию.
  */
-public abstract class BaseMachineBlockEntity extends LoadedMachineBlockEntity implements MenuProvider {
+public abstract class BaseMachineBlockEntity extends BlockEntity implements MenuProvider, IEnergyProvider, IEnergyReceiver {
 
+    // Инвентарь
     protected final ItemStackHandler inventory;
-    protected Component customName;
-
-    // ИЗМЕНЕНИЕ: Используем long для энергии вместо int
-    protected long energyDelta = 0L;
-    protected long previousEnergy = 0L;
-
     protected LazyOptional<IItemHandler> itemHandler = LazyOptional.empty();
-    protected LazyOptional<IEnergyStorage> energyHandler = LazyOptional.empty();
-    protected LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
 
-    // ИЗМЕНЕНИЕ: Добавляем поле для long-энергии (абстрактное - переопределяется в подклассах)
-    protected ILongEnergyStorage longEnergyStorage = null;
-    protected LazyOptional<ILongEnergyStorage> longEnergyHandler = LazyOptional.empty();
-    protected LazyOptional<IEnergyStorage> forgeEnergyHandler = LazyOptional.empty();
+    // Энергия (long для больших значений)
+    protected long energy = 0;
+    protected final long capacity;
+    protected final long maxReceive;
+    protected final long maxExtract;
 
-    // ОПТИМИЗАЦИЯ: Счетчик изменений для батчинга обновлений
-    private int inventoryChangeCounter = 0;
-    private static final int SYNC_THRESHOLD = 3;
+    // Отслеживание изменения энергии (для GUI)
+    private long lastEnergy = 0;
+    private long energyDelta = 0;
 
-    public BaseMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, int slotCount) {
-        super(type, pos, state);
-        this.inventory = createInventoryHandler(slotCount);
+    private boolean networkInitialized = false;
+
+    // Capability провайдеры
+    private final LazyOptional<IEnergyProvider> hbmProvider = LazyOptional.of(() -> this);
+    private final LazyOptional<IEnergyReceiver> hbmReceiver = LazyOptional.of(() -> this);
+    private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
+    private final PackedEnergyCapabilityProvider feCapabilityProvider;
+
+    /**
+     * ✅ ОСНОВНОЙ КОНСТРУКТОР для машин-потребителей.
+     * По умолчанию, maxExtract = 0, потому что нехуй высасывать энергию из того, что
+     * должно её жрать. Машина - не батарейка. Запомни это, или я приду к тебе во сне.
+     */
+    public BaseMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state,
+                                  int inventorySize, long capacity, long receiveRate) {
+        this(type, pos, state, inventorySize, capacity, receiveRate, 0L);
     }
 
-    protected ItemStackHandler createInventoryHandler(int slotCount) {
-        return new ItemStackHandler(slotCount) {
+    /**
+     * ✅ ПОЛНЫЙ КОНСТРУКТОР. Используй это только для тех ебанутых случаев, когда
+     * машина должна ВДРУГ начать отдавать энергию. Для батарей, например.
+     * Хотя ты же сказал, что они ничего не наследуют. Ну, пусть будет. На всякий.
+     */
+    public BaseMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state,
+                                  int inventorySize, long capacity, long maxReceive, long maxExtract) {
+        super(type, pos, state);
+        this.inventory = createInventoryHandler(inventorySize);
+        this.capacity = capacity;
+        this.maxReceive = maxReceive;
+        this.maxExtract = maxExtract;
+        this.feCapabilityProvider = new PackedEnergyCapabilityProvider(this);
+    }
+
+    protected ItemStackHandler createInventoryHandler(int size) {
+        return new ItemStackHandler(size) {
             @Override
             protected void onContentsChanged(int slot) {
                 setChanged();
-                inventoryChangeCounter++;
-                if (inventoryChangeCounter >= SYNC_THRESHOLD || isCriticalSlot(slot)) {
+                if (isCriticalSlot(slot)) {
                     sendUpdateToClient();
-                    inventoryChangeCounter = 0;
                 }
             }
 
             @Override
             public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-                return BaseMachineBlockEntity.this.isItemValidForSlot(slot, stack);
+                return isItemValidForSlot(slot, stack);
             }
         };
     }
+
+    public ItemStackHandler getInventory() {
+        return this.inventory;
+    }
+
+    // --- Абстрактные методы ---
+    protected abstract Component getDefaultName();
+
+    protected abstract boolean isItemValidForSlot(int slot, ItemStack stack);
 
     protected boolean isCriticalSlot(int slot) {
         return false;
     }
 
-    public void forceInventorySync() {
-        sendUpdateToClient();
-        inventoryChangeCounter = 0;
+    // --- IEnergyProvider & IEnergyReceiver базовые методы ---
+    @Override
+    public long getEnergyStored() {
+        return this.energy;
     }
 
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return true;
+    @Override
+    public long getMaxEnergyStored() {
+        return this.capacity;
     }
 
-    public ItemStackHandler getInventory() {
-        return inventory;
-    }
-
-    public void setCustomName(Component name) {
-        this.customName = name;
+    @Override
+    public void setEnergyStored(long energy) {
+        this.energy = Math.max(0, Math.min(this.capacity, energy));
         setChanged();
     }
 
     @Override
-    public Component getDisplayName() {
-        return customName != null ? customName : getDefaultName();
+    public long getProvideSpeed() {
+        return this.maxExtract;
     }
 
-    public Component getCustomName() {
-        return customName;
+    @Override
+    public long getReceiveSpeed() {
+        return this.maxReceive;
     }
 
-    public boolean hasCustomName() {
-        return customName != null;
+    @Override
+    public IEnergyReceiver.Priority getPriority() {
+        return Priority.NORMAL;
     }
 
-    protected abstract Component getDefaultName();
+    @Override
+    public boolean canConnectEnergy(Direction side) {
+        return true;
+    }
 
-    public boolean stillValid(Player player) {
-        if (level == null || level.getBlockEntity(worldPosition) != this) {
-            return false;
+    // --- IEnergyProvider методы ---
+    @Override
+    public long extractEnergy(long maxExtract, boolean simulate) {
+        if (!canExtract()) return 0;
+
+        long energyExtracted = Math.min(this.energy, Math.min(this.maxExtract, maxExtract));
+        if (!simulate && energyExtracted > 0) {
+            setEnergyStored(this.energy - energyExtracted);
         }
-
-        double dx = player.getX() - (worldPosition.getX() + 0.5);
-        double dy = player.getY() - (worldPosition.getY() + 0.5);
-        double dz = player.getZ() - (worldPosition.getZ() + 0.5);
-        return (dx * dx + dy * dy + dz * dz) <= 4096.0; // 64^2
+        return energyExtracted;
     }
 
-    public int getScaledProgress(int pixels, int current, int max) {
-        return max == 0 ? 0 : current * pixels / max;
+    @Override
+    public boolean canExtract() {
+        return this.maxExtract > 0 && this.energy > 0;
     }
 
-    public int getFluidScaled(int pixels, FluidStack fluid, int capacity) {
-        return capacity == 0 ? 0 : fluid.getAmount() * pixels / capacity;
+    // --- IEnergyReceiver методы ---
+    @Override
+    public long receiveEnergy(long maxReceive, boolean simulate) {
+        if (!canReceive()) return 0;
+
+        long energyReceived = Math.min(this.capacity - this.energy, Math.min(this.maxReceive, maxReceive));
+        if (!simulate && energyReceived > 0) {
+            setEnergyStored(this.energy + energyReceived);
+        }
+        return energyReceived;
     }
 
-    // ИЗМЕНЕНИЕ: Теперь работаем с long вместо int
+    @Override
+    public boolean canReceive() {
+        return this.maxReceive > 0 && this.energy < this.capacity;
+    }
+
+    // --- Отслеживание дельты энергии ---
     protected void updateEnergyDelta(long currentEnergy) {
-        energyDelta = currentEnergy - previousEnergy;
-        previousEnergy = currentEnergy;
+        this.energyDelta = currentEnergy - this.lastEnergy;
+        this.lastEnergy = currentEnergy;
     }
 
     public long getEnergyDelta() {
-        return energyDelta;
+        return this.energyDelta;
     }
 
-    protected void updateNeighborRedstone(BlockPos neighborPos) {
-        if (level != null && !level.isClientSide) {
-            BlockState neighborState = level.getBlockState(neighborPos);
-            level.neighborChanged(neighborPos, getBlockState().getBlock(), worldPosition);
-            level.updateNeighborsAt(neighborPos, neighborState.getBlock());
-        }
-    }
-
-    protected void updateAllNeighborRedstone() {
-        if (level != null && !level.isClientSide) {
-            for (Direction direction : Direction.values()) {
-                updateNeighborRedstone(worldPosition.relative(direction));
-            }
-        }
-    }
-
+    // --- Ghost Items (для JEI) ---
     public NonNullList<ItemStack> getGhostItems() {
         return NonNullList.create();
     }
 
-    public static NonNullList<ItemStack> createGhostItemsFromIngredients(NonNullList<Ingredient> ingredients) {
+    public static NonNullList<ItemStack> createGhostItemsFromIngredients(List<Ingredient> ingredients) {
         NonNullList<ItemStack> ghostItems = NonNullList.create();
         for (Ingredient ingredient : ingredients) {
-            if (ingredient.isEmpty()) continue;
-            ItemStack[] stacks = ingredient.getItems();
-            if (stacks.length == 0) {
-                ghostItems.add(ItemStack.EMPTY);
-                continue;
-            }
-
-            ItemStack firstItem = stacks[0].copy();
-            boolean found = false;
-
-            for (ItemStack existingGhost : ghostItems) {
-                if (!existingGhost.isEmpty() && ItemStack.isSameItemSameTags(existingGhost, firstItem)) {
-                    existingGhost.grow(1);
-                    found = true;
-                    break;
-                }
-            }
-
-            if (!found) {
-                firstItem.setCount(1);
-                ghostItems.add(firstItem);
+            ItemStack[] matchingStacks = ingredient.getItems();
+            if (matchingStacks.length > 0) {
+                ghostItems.add(matchingStacks[0].copy());
             }
         }
         return ghostItems;
     }
 
+    // --- Настройка Fluid Capability (опционально) ---
+    protected void setupFluidCapability() {
+        // Переопределяется в подклассах при необходимости
+    }
+
+    // --- NBT ---
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.put("Inventory", inventory.serializeNBT());
-        if (customName != null) {
-            tag.putString("CustomName", Component.Serializer.toJson(customName));
-        }
-
-        // ИЗМЕНЕНИЕ: Сохраняем long энергию вместо int
-        tag.putLong("EnergyDelta", energyDelta);
-        tag.putLong("PreviousEnergy", previousEnergy);
+        tag.put("inventory", inventory.serializeNBT());
+        tag.putLong("energy", energy);
+        tag.putLong("lastEnergy", lastEnergy);
+        tag.putLong("energyDelta", energyDelta);
     }
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        inventory.deserializeNBT(tag.getCompound("Inventory"));
-        if (tag.contains("CustomName", 8)) {
-            customName = Component.Serializer.fromJson(tag.getString("CustomName"));
-        }
+        inventory.deserializeNBT(tag.getCompound("inventory"));
+        energy = tag.getLong("energy");
+        lastEnergy = tag.getLong("lastEnergy");
+        energyDelta = tag.getLong("energyDelta");
+    }
 
-        // ИЗМЕНЕНИЕ: Загружаем long энергию вместо int
-        energyDelta = tag.getLong("EnergyDelta");
-        previousEnergy = tag.getLong("PreviousEnergy");
+    // --- Синхронизация ---
+    @Override
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = super.getUpdateTag();
+        saveAdditional(tag);
+        return tag;
     }
 
     @Override
-    public <T> @NotNull LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+    public void handleUpdateTag(CompoundTag tag) {
+        load(tag);
+    }
+
+    @Nullable
+    @Override
+    public ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    @Override
+    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
+        load(pkt.getTag());
+    }
+
+    protected void sendUpdateToClient() {
+        if (level != null && !level.isClientSide && !isRemoved()) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    // --- Capabilities ---
+    @Override
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == ModCapabilities.HBM_ENERGY_PROVIDER) {
+            return hbmProvider.cast();
+        }
+        if (cap == ModCapabilities.HBM_ENERGY_RECEIVER) {
+            return hbmReceiver.cast();
+        }
+        if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
+            return hbmConnector.cast();
+        }
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return itemHandler.cast();
         }
 
-        if (cap == ForgeCapabilities.ENERGY) {
-            return energyHandler.cast();
-        }
-
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            return fluidHandler.cast();
-        }
+        LazyOptional<T> feCap = feCapabilityProvider.getCapability(cap, side);
+        if (feCap.isPresent()) return feCap;
 
         return super.getCapability(cap, side);
     }
@@ -236,31 +287,48 @@ public abstract class BaseMachineBlockEntity extends LoadedMachineBlockEntity im
     public void onLoad() {
         super.onLoad();
         itemHandler = LazyOptional.of(() -> inventory);
-        setupEnergyCapability();
         setupFluidCapability();
+        // Сеть инициализируем позже, в тике
     }
 
-    protected void setupEnergyCapability() {
-        // Переопределить в дочерних классах
-    }
-
-    protected void setupFluidCapability() {
-        // Переопределить в дочерних классах
+    protected void ensureNetworkInitialized() {
+        if (!networkInitialized && level != null && !level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) level).addNode(this.getBlockPos());
+            networkInitialized = true;
+        }
     }
 
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
         itemHandler.invalidate();
-        energyHandler.invalidate();
-        fluidHandler.invalidate();
+        hbmProvider.invalidate();
+        hbmReceiver.invalidate();
+        hbmConnector.invalidate();
+        feCapabilityProvider.invalidate();
     }
 
-    /**
-     * Получить ILongEnergyStorage. Должен быть переопределен в подклассах.
-     */
-    @Nullable
-    public ILongEnergyStorage getLongEnergyStorage() {
-        return longEnergyStorage;
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        // [ВАЖНО!] Сообщаем сети, что мы удалены
+        if (this.level != null && !this.level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+        }
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        // [ВАЖНО!] Также сообщаем при выгрузке чанка
+        if (this.level != null && !this.level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+        }
+    }
+
+    // И при загрузке/установке блока:
+    @Override
+    public void setLevel(Level pLevel) {
+        super.setLevel(pLevel);
     }
 }

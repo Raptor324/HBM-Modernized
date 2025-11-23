@@ -49,7 +49,7 @@ public class ProceduralWireBakedModel extends AbstractProceduralBakedModel {
         // 1. Анализ соединений
         Set<Direction> connections = new HashSet<>();
         for (Direction dir : Direction.values()) {
-            if (state.getValue(WireBlock.PROPERTIES_MAP.get(dir))) {
+            if (state.getValue(WireBlock.getProperty(dir))) {
                 connections.add(dir);
             }
         }

@@ -62,6 +62,11 @@ public class ModBlockEntities {
 			BlockEntityType.Builder.<MachineBatteryBlockEntity>of(MachineBatteryBlockEntity::new, ModBlocks.MACHINE_BATTERY.get())
 				.build(null));
 
+    public static final RegistryObject<BlockEntityType<SwitchBlockEntity>> SWITCH_BE =
+            BLOCK_ENTITIES.register("switch_be", () ->
+                    BlockEntityType.Builder.of(SwitchBlockEntity::new, ModBlocks.SWITCH.get())
+                            .build(null));
+
 	public static final RegistryObject<BlockEntityType<BlastFurnaceBlockEntity>> BLAST_FURNACE_BE =
 			BLOCK_ENTITIES.register("blast_furnace_be", () ->
 					BlockEntityType.Builder.of(BlastFurnaceBlockEntity::new,

@@ -309,5 +309,12 @@
     "block.wgh_stop": {
         "subtitle": "sounds.hbm_m.subtitle.wgh_stop",
         "sounds": [ "hbm_m:block/door/wgh_stop" ]
-    }
+    },
+
+  "block.switch.on": {
+    "subtitle": "subtitle.hbm_m.block.switch.on",
+    "sounds": [
+      "hbm_m:block/switch_on"
+    ]
+  }
 }

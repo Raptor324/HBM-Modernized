@@ -497,7 +497,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_cracked_stairs", "Ступени из треснутого бетона");
                 add("block.hbm_m.concrete_mossy_slab", "Плита из замшелого бетона");
                 add("block.hbm_m.concrete_mossy_stairs", "Ступени из замшелого бетона");
-
+                add("block.hbm_m.switch", "Рубильник");
                 add("block.hbm_m.large_vehicle_door", "Дверь для крупногабаритного транспорта");
                 add("block.hbm_m.round_airlock_door", "Круглая воздушная дверь");
                 add("block.hbm_m.strawberry_bush", "Куст клубники");
@@ -600,13 +600,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.recipe.setRecipe", "Выбрать рецепт");
 
                 add("tooltip.hbm_m.battery.stored", "Хранится энергии:");
-                add("tooltip.hbm_m.battery.transfer_rate", "Скорость зарядки: %1$s FE/t");
-                add("tooltip.hbm_m.battery.discharge_rate", "Скорость разрядки: %1$s FE/t");
+                add("tooltip.hbm_m.battery.transfer_rate", "Скорость зарядки: %1$s HE/t");
+                add("tooltip.hbm_m.battery.discharge_rate", "Скорость разрядки: %1$s HE/t");
 
-                add("tooltip.hbm_m.machine_battery.capacity", "Ёмкость: %1$s FE");
-                add("tooltip.hbm_m.machine_battery.charge_speed", "Скорость зарядки: %1$s FE/т");
-                add("tooltip.hbm_m.machine_battery.discharge_speed", "Скорость разрядки: %1$s FE/т");
-                add("tooltip.hbm_m.machine_battery.stored", "Заряжено: %1$s / %2$s FE");
+                add("tooltip.hbm_m.machine_battery.capacity", "Ёмкость: %1$s HE");
+                add("tooltip.hbm_m.machine_battery.charge_speed", "Скорость зарядки: %1$s HE/т");
+                add("tooltip.hbm_m.machine_battery.discharge_speed", "Скорость разрядки: %1$s HE/т");
+                add("tooltip.hbm_m.machine_battery.stored", "Заряжено: %1$s / %2$s HE");
                 add("tooltip.hbm_m.requires", "Требуется");
 
 
@@ -1241,7 +1241,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.reinforced_stone", "Reinforced Stone");
                 add("block.hbm_m.reinforced_stone_slab", "Reinforced Stone Slab");
                 add("block.hbm_m.reinforced_stone_stairs", "Reinforced Stone Stairs");
-                
+                add("block.hbm_m.switch", "Switch");
                 add("tooltip.hbm_m.rad_protection.value", "Radiation Resistance: %s");
                 add("tooltip.hbm_m.rad_protection.value_short", "%s rad-resistance");
 

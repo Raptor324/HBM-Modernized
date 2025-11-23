@@ -2,7 +2,7 @@ package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machine.MachineShredderBlockEntity;
-import com.hbm_m.energy.LongDataPacker;
+import com.hbm_m.util.LongDataPacker;
 import com.hbm_m.menu.ModMenuTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;

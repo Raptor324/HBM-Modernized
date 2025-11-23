@@ -1,180 +1,40 @@
 package com.hbm_m.item;
 
-import com.hbm_m.capability.EnergyCapabilityProvider;
+import com.hbm_m.api.energy.EnergyCapabilityProvider;
+import com.hbm_m.api.energy.IEnergyConnector;
 import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.energy.ILongEnergyStorage;
 import com.hbm_m.util.EnergyFormatter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 
-
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 import java.util.List;
 
-/**
- * Универсальный класс для батареек и аккумуляторов в стиле HBM NTM.
- * Поддерживает long-энергосистему через ILongEnergyStorage.
- * Совместим с Forge Energy через обёртки.
- */
 public class ModBatteryItem extends Item {
-    private final long capacity;
-    private final long maxReceive;
-    private final long maxExtract;
-    private final boolean isRechargeable;
+    protected final long capacity;
+    protected final long maxReceive;
+    protected final long maxExtract;
 
-    /**
-     * Конструктор для создания перезаряжаемой батарейки/аккумулятора
-     */
     public ModBatteryItem(Properties properties, long capacity, long maxReceive, long maxExtract) {
         super(properties.stacksTo(1));
         this.capacity = capacity;
         this.maxReceive = maxReceive;
         this.maxExtract = maxExtract;
-        this.isRechargeable = maxReceive > 0;
     }
 
-    /**
-     * Конструктор для одноразовых батареек (только разрядка)
-     */
     public ModBatteryItem(Properties properties, long capacity, long maxExtract) {
-        this(properties, capacity, 0, maxExtract);
+        this(properties, capacity, maxExtract, maxExtract);
     }
 
-    @Nullable
-    @Override
-    public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-        return new EnergyCapabilityProvider(stack, this.capacity, this.maxReceive, this.maxExtract);
-    }
-
-    @Override
-    public boolean isBarVisible(@Nonnull ItemStack stack) {
-        return true;
-    }
-
-    @Override
-    public int getBarWidth(@Nonnull ItemStack stack) {
-        // ИСПРАВЛЕНО: Читаем через ILongEnergyStorage для корректного отображения
-        return stack.getCapability(ModCapabilities.LONG_ENERGY)
-                .map(energy -> {
-                    long stored = energy.getEnergyStored();
-                    long max = energy.getMaxEnergyStored();
-                    return max > 0 ? Math.round(13.0F * stored / max) : 0;
-                })
-                .orElse(0);
-    }
-
-    @Override
-    public int getBarColor(@Nonnull ItemStack stack) {
-        // ИСПРАВЛЕНО: Читаем через ILongEnergyStorage
-        return stack.getCapability(ModCapabilities.LONG_ENERGY)
-                .map(energy -> {
-                    long stored = energy.getEnergyStored();
-                    long max = energy.getMaxEnergyStored();
-                    float ratio = max > 0 ? (float) stored / max : 0;
-
-                    // Красный → Оранжевый → Жёлтый → Зелёный
-                    if (ratio <= 0.25f) {
-                        return 0xFF0000; // Красный (критично)
-                    } else if (ratio <= 0.5f) {
-                        return 0xFF8800; // Оранжевый (низкий)
-                    } else if (ratio <= 0.75f) {
-                        return 0xFFFF00; // Жёлтый (средний)
-                    } else {
-                        return 0x55FF55; // Зелёный (высокий)
-                    }
-                })
-                .orElse(0xFF0000);
-    }
-
-    @Override
-    public void appendHoverText(@Nonnull ItemStack stack, @Nullable Level level,
-                                @Nonnull List<Component> tooltip, @Nonnull TooltipFlag flag) {
-        // ИСПРАВЛЕНО: Приоритет ILongEnergyStorage для корректного отображения больших значений
-        stack.getCapability(ModCapabilities.LONG_ENERGY).ifPresent(energy -> {
-            long stored = energy.getEnergyStored();
-            long max = energy.getMaxEnergyStored();
-
-            // Заголовок
-            tooltip.add(Component.translatable("tooltip.hbm_m.battery.stored")
-                    .withStyle(ChatFormatting.AQUA));
-
-            // Текущая энергия / Максимальная (с приставками СИ)
-            tooltip.add(Component.literal(
-                            String.format("%s / %s HE",
-                                    EnergyFormatter.format(stored),
-                                    EnergyFormatter.format(max)))
-                    .withStyle(ChatFormatting.GOLD));
-
-            // Скорость зарядки/разрядки
-            if (maxReceive > 0 && maxExtract > 0) {
-                // Перезаряжаемая батарея
-                tooltip.add(Component.translatable("tooltip.hbm_m.battery.transfer_rate",
-                        Component.literal(EnergyFormatter.format(maxReceive)).withStyle(ChatFormatting.GREEN)
-                ).withStyle(ChatFormatting.GREEN));
-
-                tooltip.add(Component.translatable("tooltip.hbm_m.battery.discharge_rate",
-                        Component.literal(EnergyFormatter.format(maxExtract)).withStyle(ChatFormatting.GREEN)
-                ).withStyle(ChatFormatting.GREEN));
-            }
-
-            // Процент заряда
-            float percent = max > 0 ? (stored * 100.0f / max) : 0;
-            ChatFormatting percentColor = percent > 75 ? ChatFormatting.GREEN :
-                    percent > 50 ? ChatFormatting.GREEN :
-                            percent > 25 ? ChatFormatting.GREEN : ChatFormatting.GREEN;
-
-            tooltip.add(Component.literal(String.format("%.1f%%", percent))
-                    .withStyle(percentColor));
-        });
-
-        super.appendHoverText(stack, level, tooltip, flag);
-    }
-
-    // Утилитарные методы для получения энергии напрямую из ItemStack
-    // (полезно для рецептов или других механик)
-
-    /**
-     * Получает текущее количество энергии в батарейке
-     */
-    public static long getEnergy(ItemStack stack) {
-        return stack.getCapability(ModCapabilities.LONG_ENERGY)
-                .map(ILongEnergyStorage::getEnergyStored)
-                .orElse(0L);
-    }
-
-    /**
-     * Устанавливает количество энергии в батарейке
-     */
-    public static void setEnergy(ItemStack stack, long energy) {
-        if (stack.getItem() instanceof ModBatteryItem battery) {
-            energy = Math.max(0, Math.min(energy, battery.capacity));
-            stack.getOrCreateTag().putLong("energy", energy);
-        }
-    }
-
-    /**
-     * Проверяет, разряжена ли батарейка
-     */
-    public static boolean isDepleted(ItemStack stack) {
-        return getEnergy(stack) <= 0;
-    }
-
-    /**
-     * Проверяет, полностью ли заряжена батарейка
-     */
-    public static boolean isFullyCharged(ItemStack stack) {
-        if (!(stack.getItem() instanceof ModBatteryItem battery)) return false;
-        return getEnergy(stack) >= battery.capacity;
-    }
-
-    // Геттеры для параметров батарейки
+    // --- Геттеры для параметров батареи ---
     public long getCapacity() {
         return capacity;
     }
@@ -187,7 +47,114 @@ public class ModBatteryItem extends Item {
         return maxExtract;
     }
 
-    public boolean isRechargeable() {
-        return isRechargeable;
+    @Nullable
+    @Override
+    public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
+
+        return new EnergyCapabilityProvider(stack, this.capacity, this.maxReceive, this.maxExtract);
+    }
+
+    // --- Статический метод для установки энергии ---
+    /**
+     * Устанавливает энергию в ItemStack батареи напрямую через NBT.
+     * Используется для создания предзаряженных батарей в креатив табе.
+     *
+     * @param stack ItemStack батареи
+     * @param energy Количество энергии для установки
+     */
+    public static void setEnergy(ItemStack stack, long energy) {
+        if (stack.isEmpty() || !(stack.getItem() instanceof ModBatteryItem battery)) {
+            return;
+        }
+
+        long clampedEnergy = Math.max(0, Math.min(energy, battery.getCapacity()));
+        stack.getOrCreateTag().putLong("energy", clampedEnergy);
+    }
+
+    /**
+     * Получает текущий заряд батареи из NBT.
+     *
+     * @param stack ItemStack батареи
+     * @return Количество энергии
+     */
+    public static long getEnergy(ItemStack stack) {
+        if (stack.isEmpty() || !stack.hasTag()) {
+            return 0;
+        }
+        return stack.getTag().getLong("energy");
+    }
+
+    @Override
+    public boolean isBarVisible(@Nonnull ItemStack stack) {
+        return true;
+    }
+
+    @Override
+    public int getBarWidth(@Nonnull ItemStack stack) {
+        return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
+                .map(energy -> {
+                    if (energy.getMaxEnergyStored() <= 0) return 0;
+                    return (int) Math.round(13.0 * energy.getEnergyStored() / (double) energy.getMaxEnergyStored());
+                })
+                .orElseGet(() -> stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER)
+                        .map(energy -> {
+                            if (energy.getMaxEnergyStored() <= 0) return 0;
+                            return (int) Math.round(13.0 * energy.getEnergyStored() / (double) energy.getMaxEnergyStored());
+                        })
+                        .orElse(0));
+    }
+
+    @Override
+    public int getBarColor(@Nonnull ItemStack stack) {
+        float ratio = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
+                .map(energy -> {
+                    if (energy.getMaxEnergyStored() <= 0) return 0.0f;
+                    return (float) energy.getEnergyStored() / energy.getMaxEnergyStored();
+                })
+                .orElseGet(() -> stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER)
+                        .map(energy -> {
+                            if (energy.getMaxEnergyStored() <= 0) return 0.0f;
+                            return (float) energy.getEnergyStored() / energy.getMaxEnergyStored();
+                        })
+                        .orElse(0.0f));
+
+        return Mth.hsvToRgb(ratio / 3.0F, 1.0F, 1.0F);
+    }
+
+    @Override
+    public void appendHoverText(@Nonnull ItemStack stack, @Nullable Level level, @Nonnull List<Component> tooltip, @Nonnull TooltipFlag flag) {
+        // [🔥 ИЗМЕНЕНО: Мы передаем ChatFormatting.AQUA в addEnergyTooltip 🔥]
+        stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
+                .ifPresent(energy -> addEnergyTooltip(tooltip, energy.getEnergyStored(), energy.getMaxEnergyStored(), ChatFormatting.AQUA));
+
+        if (!stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
+            stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER)
+                    .ifPresent(energy -> addEnergyTooltip(tooltip, energy.getEnergyStored(), energy.getMaxEnergyStored(), ChatFormatting.AQUA));
+        }
+
+        if (maxReceive > 0) {
+            // [🔥 ИЗМЕНЕНО: Вся строка теперь ChatFormatting.GOLD 🔥]
+            tooltip.add(Component.translatable("tooltip.hbm_m.battery.transfer_rate",
+                    EnergyFormatter.format(maxReceive)).withStyle(ChatFormatting.GOLD));
+        }
+        if (maxExtract > 0) {
+            // [🔥 ИЗМЕНЕНО: Вся строка теперь ChatFormatting.GOLD 🔥]
+            tooltip.add(Component.translatable("tooltip.hbm_m.battery.discharge_rate",
+                    EnergyFormatter.format(maxExtract)).withStyle(ChatFormatting.GOLD));
+        }
+        super.appendHoverText(stack, level, tooltip, flag);
+    }
+
+    private void addEnergyTooltip(List<Component> tooltip, long stored, long max, ChatFormatting color) {
+        // [🔥 ИЗМЕНЕНО: Теперь обе строки используют переданный 'color' 🔥]
+
+        // Строка 1: "Хранится энергии:"
+        tooltip.add(Component.translatable("tooltip.hbm_m.battery.stored").withStyle(color));
+
+        // Строка 2: " X / Y HE"
+        tooltip.add(Component.literal(String.format(" %s / %s HE",
+                        EnergyFormatter.format(stored),
+                        EnergyFormatter.format(max)))
+                .withStyle(color));
     }
 }

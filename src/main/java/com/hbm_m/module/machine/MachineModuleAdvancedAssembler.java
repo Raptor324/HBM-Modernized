@@ -1,5 +1,6 @@
 package com.hbm_m.module.machine;
 
+import com.hbm_m.api.energy.IEnergyReceiver;
 import com.hbm_m.recipe.AssemblerRecipe;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
@@ -11,7 +12,6 @@ import net.minecraftforge.items.IItemHandler;
 
 import com.hbm_m.block.entity.machine.BaseMachineBlockEntity;
 // ИЗМЕНЕНИЕ: Импортируем нашу long-систему
-import com.hbm_m.energy.ILongEnergyStorage;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -32,7 +32,7 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
     private AssemblerRecipe preferredRecipe = null;
 
     // ИЗМЕНЕНИЕ: Конструктор теперь принимает ILongEnergyStorage
-    public MachineModuleAdvancedAssembler(int moduleIndex, ILongEnergyStorage energyStorage,
+    public MachineModuleAdvancedAssembler(int moduleIndex, IEnergyReceiver energyStorage,
                                           IItemHandler itemHandler, Level level) {
         super(moduleIndex, energyStorage, itemHandler, level);
 

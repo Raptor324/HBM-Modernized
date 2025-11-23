@@ -73,6 +73,8 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> WGH_START = registerSoundEvents("block.wgh_start");
     public static final RegistryObject<SoundEvent> WGH_STOP = registerSoundEvents("block.wgh_stop");
 
+    public static final RegistryObject<SoundEvent> SWITCH_ON = registerSoundEvents("block.switch.on");
+
     // РЕГИСТРАЦИЯ АБСТРАКТНОГО СОБЫТИЯ 
     // Это тот самый звук, который мы будем вызывать в коде.
     // Minecraft сам выберет один из 7 реальных звуков случайным образом.
