@@ -25,7 +25,8 @@ public class ClientSoundManager {
      * СТАРЫЙ МЕТОД - для обратной совместимости с другими блоками.
      * Используется для простых машин, где звук зациклен пока машина работает.
      */
-    public static void updateSound(BlockEntity be, boolean shouldBePlaying, Supplier<AbstractTickableSoundInstance> soundSupplier) {
+    public static void updateSound(BlockEntity be, boolean shouldBePlaying,
+                               Supplier<? extends AbstractTickableSoundInstance> soundSupplier) {
         BlockPos pos = be.getBlockPos();
         
         if (shouldBePlaying) {
@@ -43,6 +44,7 @@ public class ClientSoundManager {
             }
         }
     }
+
     
     /**
      * НОВЫЙ МЕТОД - для дверей с зацикленным звуком движения.

@@ -326,13 +326,39 @@ public abstract class AbstractGpuVboRenderer {
         
         return brightness;
     }    
-    
+
     public void cleanup() {
-        if (!initialized) return;
-        if (vboId != -1) { GL15.glDeleteBuffers(vboId); vboId = -1; }
-        if (eboId != -1) { GL15.glDeleteBuffers(eboId); eboId = -1; }
-        if (vaoId != -1) { GL30.glDeleteVertexArrays(vaoId); vaoId = -1; }
-        initialized = false;
+        if (!initialized) {
+            return;
+        }
+
+        // Сохраняем текущие id в локальные переменные
+        final int vaoToDelete = this.vaoId;
+        final int vboToDelete = this.vboId;
+        final int eboToDelete = this.eboId;
+
+        // Локально помечаем как очищенные, чтобы больше не рендерить
+        this.vaoId = -1;
+        this.vboId = -1;
+        this.eboId = -1;
+        this.initialized = false;
+
+        // Планируем реальные GL-вызовы на рендер-тред
+        RenderSystem.recordRenderCall(() -> {
+            try {
+                if (vboToDelete != -1) {
+                    GL15.glDeleteBuffers(vboToDelete);
+                }
+                if (eboToDelete != -1) {
+                    GL15.glDeleteBuffers(eboToDelete);
+                }
+                if (vaoToDelete != -1) {
+                    GL30.glDeleteVertexArrays(vaoToDelete);
+                }
+            } catch (Exception e) {
+                MainRegistry.LOGGER.error("Error during VBO cleanup", e);
+            }
+        });
     }
 
     public static class VboData {

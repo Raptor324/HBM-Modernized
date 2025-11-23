@@ -1,6 +1,6 @@
 package com.hbm_m.menu;
 
-import com.hbm_m.block.entity.MachineWoodBurnerBlockEntity;
+import com.hbm_m.block.entity.machine.MachineWoodBurnerBlockEntity;
 import com.hbm_m.block.ModBlocks; // ЗАМЕНИ НА СВОЙ КЛАСС
 import com.hbm_m.menu.ModMenuTypes; // ЗАМЕНИ НА СВОЙ КЛАСС
 import net.minecraft.network.FriendlyByteBuf;

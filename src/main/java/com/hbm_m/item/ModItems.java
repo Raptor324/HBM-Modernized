@@ -5,7 +5,10 @@ package com.hbm_m.item;
 // Слитки регистрируются автоматически на основе перечисления ModIngots.
 
 import java.util.EnumMap;
+import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
 
 import com.hbm_m.armormod.item.ItemModHealth;
 import com.hbm_m.armormod.item.ItemModRadProtection;
@@ -35,6 +38,13 @@ public class ModItems {
     // 1. Создаем карту для хранения всех RegistryObject'ов наших слитков
     public static final Map<ModIngots, RegistryObject<Item>> INGOTS = new EnumMap<>(ModIngots.class);
     public static final Map<ModPowders, RegistryObject<Item>> POWDERS = new EnumMap<>(ModPowders.class);
+    public static final Map<ModIngots, RegistryObject<Item>> INGOT_POWDERS = new EnumMap<>(ModIngots.class);
+    public static final Map<ModIngots, RegistryObject<Item>> INGOT_POWDERS_TINY = new EnumMap<>(ModIngots.class);
+    private static final Set<String> POWDER_TINY_NAMES = Set.of(
+            "actinium", "boron", "cerium", "cobalt", "cs137", "i131",
+            "lanthanium", "lithium", "meteorite", "neodymium", "niobium",
+            "sr90", "steel", "xe135");
+    private static final Map<String, RegistryObject<Item>> POWDER_ITEMS_BY_ID = new HashMap<>();
     // 2. Используем статический блок для заполнения карты
     static {
         for (ModIngots ingot : ModIngots.values()) {
@@ -73,8 +83,29 @@ public class ModItems {
 
             // Кладём зарегистрированный объект в нашу карту
             POWDERS.put(powders, registeredItem);
+            POWDER_ITEMS_BY_ID.put(powders.getName() + "_powder", registeredItem);
         }
 
+    }
+
+    static {
+        for (ModIngots ingot : ModIngots.values()) {
+            String baseName = ingot.getName();
+            String powderId = baseName + "_powder";
+
+            RegistryObject<Item> powderItem = POWDER_ITEMS_BY_ID.get(powderId);
+            if (powderItem == null) {
+                powderItem = ITEMS.register(powderId, () -> new Item(new Item.Properties()));
+                POWDER_ITEMS_BY_ID.put(powderId, powderItem);
+            }
+            INGOT_POWDERS.put(ingot, powderItem);
+
+            if (POWDER_TINY_NAMES.contains(baseName)) {
+                String tinyId = baseName + "_powder_tiny";
+                RegistryObject<Item> tinyItem = ITEMS.register(tinyId, () -> new Item(new Item.Properties()));
+                INGOT_POWDERS_TINY.put(ingot, tinyItem);
+            }
+        }
     }
 
     
@@ -84,6 +115,10 @@ public class ModItems {
         return INGOTS.get(ingot);
     }
     public static RegistryObject<Item> getPowders(ModPowders powders) {return POWDERS.get(powders);}
+    public static RegistryObject<Item> getPowder(ModIngots ingot) { return INGOT_POWDERS.get(ingot); }
+    public static Optional<RegistryObject<Item>> getTinyPowder(ModIngots ingot) {
+        return Optional.ofNullable(INGOT_POWDERS_TINY.get(ingot));
+    }
     public static final int SLOT_HELMET = 0;
     public static final int SLOT_CHEST = 1;
     public static final int SLOT_LEGS = 2;
@@ -395,11 +430,52 @@ public class ModItems {
                 }
             })
     );
+    public static final RegistryObject<Item> OIL_DETECTOR = ITEMS.register("oil_detector",
+            () -> new OilDetectorItem(new Item.Properties()));
+
+    public static final RegistryObject<Item> DEPTH_ORES_SCANNER = ITEMS.register("depth_ores_scanner",
+            () -> new DepthOresScannerItem(new Item.Properties()));
+
+    public static final RegistryObject<Item> RANGE_DETONATOR = ITEMS.register("range_detonator",
+            () -> new RangeDetonatorItem(new Item.Properties()));
+
+    public static final RegistryObject<Item> MULTI_DETONATOR = ITEMS.register("multi_detonator",
+            () -> new MultiDetonatorItem(new Item.Properties()));
 
     public static final RegistryObject<Item> DETONATOR = ITEMS.register("detonator",
             () -> new DetonatorItem(new Item.Properties()));
 
+    public static final RegistryObject<Item> ZIRCONIUM_SHARP = ITEMS.register("zirconium_sharp",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_GOLD_TORUS = ITEMS.register("coil_gold_torus",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_GOLD = ITEMS.register("coil_gold",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_MAGNETIZED_TUNGSTEN_TORUS = ITEMS.register("coil_magnetized_tungsten_torus",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_MAGNETIZED_TUNGSTEN = ITEMS.register("coil_magnetized_tungsten",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_COPPER_TORUS = ITEMS.register("coil_copper_torus",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_COPPER = ITEMS.register("coil_copper",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_ADVANCED_ALLOY_TORUS = ITEMS.register("coil_advanced_alloy_torus",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_ADVANCED_ALLOY = ITEMS.register("coil_advanced_alloy",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> MOTOR_DESH = ITEMS.register("motor_desh",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> MOTOR_BISMUTH = ITEMS.register("motor_bismuth",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> MOTOR = ITEMS.register("motor",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> BORAX = ITEMS.register("borax",
+            () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> SCRAP = ITEMS.register("scrap",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> DUST = ITEMS.register("dust",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> DUST_TINY = ITEMS.register("dust_tiny",
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> NUGGET_SILICON = ITEMS.register("nugget_silicon",
@@ -681,6 +757,38 @@ public class ModItems {
     public static final RegistryObject<Item> LARGE_VEHICLE_DOOR = ITEMS.register("large_vehicle_door",
         () -> new MultiblockBlockItem(ModBlocks.LARGE_VEHICLE_DOOR.get(), new Item.Properties()));
 
+    public static final RegistryObject<Item> ROUND_AIRLOCK_DOOR = ITEMS.register("round_airlock_door",
+        () -> new MultiblockBlockItem(ModBlocks.ROUND_AIRLOCK_DOOR.get(), new Item.Properties()));
+
+    public static final RegistryObject<Item> TRANSITION_SEAL = ITEMS.register("transition_seal",
+        () -> new MultiblockBlockItem(ModBlocks.TRANSITION_SEAL.get(), new Item.Properties()));
+
+    public static final RegistryObject<Item> SILO_HATCH = ITEMS.register("silo_hatch",
+        () -> new MultiblockBlockItem(ModBlocks.SILO_HATCH.get(), new Item.Properties()));
+
+    public static final RegistryObject<Item> SILO_HATCH_LARGE = ITEMS.register("silo_hatch_large",
+        () -> new MultiblockBlockItem(ModBlocks.SILO_HATCH_LARGE.get(), new Item.Properties()));
+
+    public static final RegistryObject<Item> QE_CONTAINMENT = ITEMS.register("qe_containment_door",
+        () -> new MultiblockBlockItem(ModBlocks.QE_CONTAINMENT.get(), new Item.Properties()));
+
+    public static final RegistryObject<Item> WATER_DOOR = ITEMS.register("water_door",
+        () -> new MultiblockBlockItem(ModBlocks.WATER_DOOR.get(), new Item.Properties()));
+
+    public static final RegistryObject<Item> FIRE_DOOR = ITEMS.register("fire_door",
+        () -> new MultiblockBlockItem(ModBlocks.FIRE_DOOR.get(), new Item.Properties()));
+
+    public static final RegistryObject<Item> SLIDE_DOOR = ITEMS.register("sliding_blast_door",
+        () -> new MultiblockBlockItem(ModBlocks.SLIDE_DOOR.get(), new Item.Properties()));
+        
+    public static final RegistryObject<Item> SLIDING_SEAL_DOOR = ITEMS.register("sliding_seal_door",
+        () -> new MultiblockBlockItem(ModBlocks.SLIDING_SEAL_DOOR.get(), new Item.Properties()));
+
+    public static final RegistryObject<Item> SECURE_ACCESS_DOOR = ITEMS.register("secure_access_door",
+        () -> new MultiblockBlockItem(ModBlocks.SECURE_ACCESS_DOOR.get(), new Item.Properties()));
+
+    public static final RegistryObject<Item> QE_SLIDING = ITEMS.register("qe_sliding_door",
+        () -> new MultiblockBlockItem(ModBlocks.QE_SLIDING.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> STAMP_STONE_FLAT = ITEMS.register("stamp_stone_flat",
             () -> new ItemStamp(new Item.Properties(), 32));

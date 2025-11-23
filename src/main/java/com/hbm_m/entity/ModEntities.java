@@ -4,6 +4,7 @@ import com.hbm_m.entity.grenades.GrenadeProjectileEntity;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
+import net.minecraft.world.entity.item.FallingBlockEntity;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -50,4 +51,10 @@ public class ModEntities {
             () -> EntityType.Builder.<GrenadeProjectileEntity>of(GrenadeProjectileEntity::new, MobCategory.MISC)
                 .sized(0.5f, 0.5f)
                 .build("grenadeif_projectile"));
+    public static final RegistryObject<EntityType<FallingBlockEntity>> FALLING_SELLAFIT_ENTITY_TYPE = ENTITY_TYPES.register("falling_sellafit",
+            () -> EntityType.Builder.<FallingBlockEntity>of(FallingBlockEntity::new, MobCategory.MISC)
+                    .sized(0.98F, 0.98F) // Размеры сущности, обычно для блока 1x1
+                    .clientTrackingRange(10)
+                    .updateInterval(20)
+                    .build("falling_sellafit"));
 }

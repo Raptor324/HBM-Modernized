@@ -63,12 +63,13 @@ public class DataGenerators {
         DatapackBuiltinEntriesProvider datapackProvider = new DatapackBuiltinEntriesProvider(
                 packOutput, lookupProvider, getRegistrySetBuilder(), Set.of(RefStrings.MODID)
         );
-        
+
+
         @SuppressWarnings("deprecation")
         CompletableFuture<HolderLookup.Provider> newLookupProvider = datapackProvider.getRegistryProvider();
+        generator.addProvider(event.includeServer(), new ModLootTableProvider(packOutput));
         generator.addProvider(event.includeServer(), datapackProvider);
-        generator.addProvider(event.includeServer(), new ModDamageTypeTagProvider(
-                packOutput, newLookupProvider, existingFileHelper));
+        generator.addProvider(event.includeServer(), new ModDamageTypeTagProvider(packOutput, newLookupProvider, existingFileHelper));
         generator.addProvider(event.includeClient(), new ModBlockStateProvider(packOutput, existingFileHelper));
         generator.addProvider(event.includeClient(), new ModItemModelProvider(packOutput, existingFileHelper));
         generator.addProvider(event.includeClient(), new ModLanguageProvider(packOutput, "ru_ru"));
@@ -102,6 +103,7 @@ public class DataGenerators {
                             orePlacement(CountPlacement.of(1), HeightRangePlacement.uniform(VerticalAnchor.absolute(-60), VerticalAnchor.absolute(-62)))
                     ));
                 })
+
                 .add(ForgeRegistries.Keys.BIOME_MODIFIERS, context -> {
                     context.register(
                             ResourceKey.create(ForgeRegistries.Keys.BIOME_MODIFIERS, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "add_uranium_ore")),
@@ -112,10 +114,14 @@ public class DataGenerators {
                             )
                     );
                 });
+
+
     }
 
     // Вспомогательный метод для создания списка правил размещения
     public static List<PlacementModifier> orePlacement(PlacementModifier p_195347_, PlacementModifier p_195348_) {
         return List.of(p_195347_, InSquarePlacement.spread(), p_195348_, BiomeFilter.biome());
     }
+
+
 }

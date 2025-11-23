@@ -1,7 +1,10 @@
 package com.hbm_m.event;
 
+// import com.hbm_m.client.render.DoorDebugRenderer;
 import com.hbm_m.client.render.DoorRenderer;
+import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
+import com.hbm_m.client.render.MachinePressRenderer;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.ImmediateFallbackRenderer;
 import com.hbm_m.client.render.shader.RenderPathManager;
@@ -9,21 +12,27 @@ import com.hbm_m.client.render.shader.RenderPathManager;
 // Подсказки показываются при наведении на предмет в инвентаре.
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.multiblock.DoorPartAABBRegistry;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
+// @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientModEvents {
 
@@ -71,23 +80,34 @@ public class ClientModEvents {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             MachineAdvancedAssemblerRenderer.flushInstancedBatches();
             DoorRenderer.flushInstancedBatches();
-        } 
+            MachinePressRenderer.flushInstancedBatches();
+            
+            // НОВОЕ: Завершаем immediate рендер батчи
+            ImmediateFallbackRenderer.endBatch();
+        }
     }
 
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START) {
-            // Очистка старого кеша culling
+            // Очистка старого кеша culling в начале тика
             OcclusionCullingHelper.onFrameStart();
+            
         } else if (event.phase == TickEvent.Phase.END) {
+            // ИСПРАВЛЕНО: Проверяем render path только в конце тика
             RenderPathManager.checkAndUpdate();
             
-            //  ДОБАВЛЕНО: Периодическая очистка памяти immediate рендера
+            // Периодическая очистка памяти immediate рендера
             memoryCleanupCounter++;
             if (memoryCleanupCounter >= MEMORY_CLEANUP_INTERVAL) {
                 memoryCleanupCounter = 0;
-
+                
+                // Очищаем кеши рендереров
                 DoorRenderer.clearAllCaches();
+                
+                // НОВОЕ: Очищаем глобальные кеши
+                GlobalMeshCache.clearAll();
+                DoorPartAABBRegistry.clear();
                 
                 // Принудительно очищаем состояние Tesselator
                 ImmediateFallbackRenderer.forceReset();
@@ -99,19 +119,11 @@ public class ClientModEvents {
                 
                 // Если используется больше 80% памяти - запускаем GC
                 if (usedMemory > maxMemory * 0.8) {
-                    MainRegistry.LOGGER.debug("Memory usage high ({}%), triggering GC", 
-                        (usedMemory * 100) / maxMemory);
+                    MainRegistry.LOGGER.debug("Memory usage high ({}%), triggering GC",
+                            (usedMemory * 100) / maxMemory);
                     System.gc();
                 }
             }
         }
     }
-
-    // @SubscribeEvent
-    // public static void onRenderTick(TickEvent.RenderTickEvent event) {
-    //     // Проверяем только в начале фрейма
-    //     if (event.phase == TickEvent.Phase.START) {
-    //         RenderPathManager.checkAndUpdate();
-    //     }
-    // }
 }

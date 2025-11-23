@@ -9,6 +9,13 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import com.hbm_m.block.entity.IronCrateBlockEntity;
 import com.hbm_m.block.entity.SteelCrateBlockEntity;
+import com.hbm_m.block.entity.machine.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.block.entity.machine.MachineAssemblerBlockEntity;
+import com.hbm_m.block.entity.machine.MachineBatteryBlockEntity;
+import com.hbm_m.block.entity.machine.MachinePressBlockEntity;
+import com.hbm_m.block.entity.machine.MachineShredderBlockEntity;
+import com.hbm_m.block.entity.machine.MachineWoodBurnerBlockEntity;
+import com.hbm_m.block.entity.machine.UniversalMachinePartBlockEntity;
 import com.hbm_m.block.entity.DeshCrateBlockEntity;
 
 public class ModBlockEntities {
@@ -35,9 +42,9 @@ public class ModBlockEntities {
             BlockEntityType.Builder.<AnvilBlockEntity>of(AnvilBlockEntity::new,
                             ModBlocks.ANVIL_BLOCK.get()).build(null));
 
-    public static final RegistryObject<BlockEntityType<ShredderBlockEntity>> SHREDDER =
+    public static final RegistryObject<BlockEntityType<MachineShredderBlockEntity>> SHREDDER =
             BLOCK_ENTITIES.register("shredder", () ->
-                    BlockEntityType.Builder.of(ShredderBlockEntity::new,
+                    BlockEntityType.Builder.of(MachineShredderBlockEntity::new,
                             ModBlocks.SHREDDER.get()).build(null));
 
     public static final RegistryObject<BlockEntityType<UniversalMachinePartBlockEntity>> UNIVERSAL_MACHINE_PART_BE =
@@ -75,11 +82,25 @@ public class ModBlockEntities {
 					BlockEntityType.Builder.of(MachineWoodBurnerBlockEntity::new,
 							ModBlocks.WOOD_BURNER.get()).build(null));
 
+    // ДВЕРИ
+
     public static final RegistryObject<BlockEntityType<DoorBlockEntity>> DOOR_ENTITY = 
         BLOCK_ENTITIES.register("door", () -> 
                 BlockEntityType.Builder.of(DoorBlockEntity::new,
                 // Все блоки дверей, которые используют этот BlockEntity
-                        ModBlocks.LARGE_VEHICLE_DOOR.get()).build(null));
+                        ModBlocks.LARGE_VEHICLE_DOOR.get(),
+                        ModBlocks.ROUND_AIRLOCK_DOOR.get(),
+                        ModBlocks.TRANSITION_SEAL.get(),
+                        ModBlocks.FIRE_DOOR.get(),
+                        ModBlocks.SLIDE_DOOR.get(),
+                        ModBlocks.SLIDING_SEAL_DOOR.get(),
+                        ModBlocks.SECURE_ACCESS_DOOR.get(),
+                        ModBlocks.QE_SLIDING.get(),
+                        ModBlocks.QE_CONTAINMENT.get(),
+                        ModBlocks.WATER_DOOR.get(),
+                        ModBlocks.SILO_HATCH.get(),
+                        ModBlocks.SILO_HATCH_LARGE.get())
+                    .build(null));
 
     public static final RegistryObject<BlockEntityType<IronCrateBlockEntity>> IRON_CRATE_BE =
             BLOCK_ENTITIES.register("iron_crate_be", () ->

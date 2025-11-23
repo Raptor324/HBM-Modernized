@@ -8,25 +8,36 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.levelgen.feature.ConfiguredFeature;
+import net.minecraft.world.level.levelgen.feature.Feature;
+import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraftforge.common.world.BiomeModifier;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
+
+import static net.minecraftforge.registries.ForgeRegistries.FEATURES;
 
 public class ModWorldGen {
+
     public static final DeferredRegister<BiomeModifier> BIOME_MODIFIERS =
             DeferredRegister.create(ForgeRegistries.Keys.BIOME_MODIFIERS, RefStrings.MODID);
+
+    public static final DeferredRegister<Feature<?>> FEATURES =
+            DeferredRegister.create(ForgeRegistries.FEATURES, RefStrings.MODID);
             
     public static final ResourceKey<ConfiguredFeature<?, ?>> URANIUM_ORE_CONFIGURED_KEY =
             ResourceKey.create(Registries.CONFIGURED_FEATURE, RefStrings.resourceLocation("ore_uranium"));
-            
+
+    public static final RegistryObject<Feature<NoneFeatureConfiguration>> OILCLASTER_SURROUNDED =
+            FEATURES.register("oilclaster_surrounded", () -> new OilClasterSurroundedFeature(NoneFeatureConfiguration.CODEC));
     public static final ResourceKey<PlacedFeature> URANIUM_ORE_PLACED_KEY =
             ResourceKey.create(Registries.PLACED_FEATURE, RefStrings.resourceLocation("ore_uranium_placed"));
 
         public static final ResourceKey<PlacedFeature> STRAWBERRY_BUSH_PLACED =
                 ResourceKey.create(
                         Registries.PLACED_FEATURE,
-                        ResourceLocation.fromNamespaceAndPath("hbm_m", "strawberry_bush_placed")
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "strawberry_bush_placed")
                 );
 
 }

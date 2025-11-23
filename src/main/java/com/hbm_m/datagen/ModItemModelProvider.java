@@ -70,8 +70,59 @@ public class ModItemModelProvider extends ItemModelProvider {
             powdersItem(powders1tObject);
         }
 
+        // Порошки для всех слитков
+        for (ModIngots ingot : ModIngots.values()) {
+            RegistryObject<Item> powder = ModItems.getPowder(ingot);
+            if (powder != null) {
+                if (powderTextureExists(ingot.getName())) {
+                    powdersItem(powder);
+                }
+            }
+            ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
+                if (powderTinyTextureExists(ingot.getName())) {
+                    tinyPowderItem(tiny);
+                }
+            });
+        }
+
+        powderTexture(ModItems.DUST, "powders/dust");
+        powderTexture(ModItems.DUST_TINY, "powders/tiny/dust_tiny");
+
         withExistingParent("large_vehicle_door", 
             modLoc("block/large_vehicle_door"));
+
+        withExistingParent("round_airlock_door", 
+            modLoc("block/round_airlock_door"));
+
+        withExistingParent("transition_seal", 
+            modLoc("block/transition_seal"));
+
+        withExistingParent("silo_hatch", 
+            modLoc("block/silo_hatch"));
+
+        withExistingParent("silo_hatch_large", 
+            modLoc("block/silo_hatch_large"));
+
+        withExistingParent("qe_containment_door", 
+            modLoc("block/qe_containment_door"));
+
+        withExistingParent("water_door", 
+            modLoc("block/water_door"));
+
+        withExistingParent("fire_door", 
+            modLoc("block/fire_door"));
+
+        withExistingParent("sliding_blast_door", 
+            modLoc("block/sliding_blast_door"));
+
+        withExistingParent("sliding_seal_door", 
+            modLoc("block/sliding_seal_door"));
+
+        withExistingParent("secure_access_door", 
+            modLoc("block/secure_access_door"));
+
+        withExistingParent("qe_sliding_door", 
+            modLoc("block/qe_sliding_door"));
 
         // Door items (flat icons like vanilla doors)
         withExistingParent(ModBlocks.METAL_DOOR.getId().getPath(), "item/generated")
@@ -84,6 +135,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         // РЕГИСТРАЦИЯ МОДЕЛЕЙ ДЛЯ УНИКАЛЬНЫХ ПРЕДМЕТОВ 
         // Для предметов, зарегистрированных вручную, мы также можем генерировать модели.
 
+        simpleItem(ModItems.OIL_DETECTOR);
+        simpleItem(ModItems.MULTI_DETONATOR);
         simpleItem(ModItems.DETONATOR);
         simpleItem(ModItems.SCRAP);
         simpleItem(ModItems.BLADE_TEST);
@@ -105,6 +158,22 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.TEMPLATE_FOLDER);
         simpleItem(ModItems.STRAWBERRY);
 
+
+
+
+
+
+        simpleItem(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS);
+        simpleItem(ModItems.COIL_MAGNETIZED_TUNGSTEN);
+        simpleItem(ModItems.COIL_COPPER_TORUS);
+        simpleItem(ModItems.COIL_COPPER);
+        simpleItem(ModItems.COIL_GOLD_TORUS);
+        simpleItem(ModItems.COIL_GOLD);
+        simpleItem(ModItems.COIL_ADVANCED_ALLOY_TORUS);
+        simpleItem(ModItems.COIL_ADVANCED_ALLOY);
+        simpleItem(ModItems.MOTOR_BISMUTH);
+        simpleItem(ModItems.MOTOR_DESH);
+        simpleItem(ModItems.MOTOR);
         simpleItem(ModItems.BATTERY_SCHRABIDIUM);
         simpleItem(ModItems.BATTERY_POTATO);
         simpleItem(ModItems.BATTERY);
@@ -132,7 +201,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.BATTERY_SPARK_CELL_10000);
         simpleItem(ModItems.BATTERY_SPARK_CELL_POWER);
 
-
+        simpleItem(ModItems.DEPTH_ORES_SCANNER);
+        simpleItem(ModItems.ZIRCONIUM_SHARP);
+        simpleItem(ModItems.BORAX);
         simpleItem(ModItems.CAPACITOR_BOARD);
         simpleItem(ModItems.CAPACITOR_TANTALUM);
         simpleItem(ModItems.BISMOID_CIRCUIT);
@@ -365,6 +436,29 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(registrationName, "item/generated")
                 // Путь к текстуре теперь использует правильное имя файла и подпапку
                 .texture("layer0", modLoc("item/powders/" + textureFileName));
+    }
+
+    private void tinyPowderItem(RegistryObject<Item> itemObject) {
+        String registrationName = itemObject.getId().getPath();
+        String baseName = registrationName.replace("_powder_tiny", "");
+        String textureFileName = "powder_" + baseName + "_tiny";
+        withExistingParent(registrationName, "item/generated")
+                .texture("layer0", modLoc("item/powders/tiny/" + textureFileName));
+    }
+
+    private void powderTexture(RegistryObject<Item> itemObject, String texturePath) {
+        withExistingParent(itemObject.getId().getPath(), "item/generated")
+                .texture("layer0", modLoc("item/" + texturePath));
+    }
+
+    private boolean powderTextureExists(String baseName) {
+        ResourceLocation texture = modLoc("textures/item/powders/powder_" + baseName + ".png");
+        return existingFileHelper.exists(texture, PackType.CLIENT_RESOURCES);
+    }
+
+    private boolean powderTinyTextureExists(String baseName) {
+        ResourceLocation texture = modLoc("textures/item/powders/tiny/powder_" + baseName + "_tiny.png");
+        return existingFileHelper.exists(texture, PackType.CLIENT_RESOURCES);
     }
 
     private void trimmedArmorItem(RegistryObject<Item> itemRegistryObject) {

@@ -1,0 +1,16 @@
+{
+  "name": "hbm_m:house_pool",
+  "description": "Template pool for House structure",
+  "fallback": "minecraft:empty",
+  "elements": [
+    {
+      "weight": 1,
+      "element": {
+        "element_type": "minecraft:single_pool_element",
+        "projection": "rigid",
+        "location": "hbm_m:house",
+        "processors": "minecraft:empty"
+      }
+    }
+  ]
+}

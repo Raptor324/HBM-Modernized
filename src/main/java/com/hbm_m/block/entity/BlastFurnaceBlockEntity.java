@@ -2,8 +2,10 @@ package com.hbm_m.block.entity;
 
 // Блок-энтити для Плавильной Печи, которая переплавляет два входных предмета в один выходной с использованием топлива.
 import com.hbm_m.block.BlastFurnaceBlock;
-import com.hbm_m.recipe.BlastFurnaceRecipe;
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.BlastFurnaceMenu;
+import com.hbm_m.recipe.BlastFurnaceRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -18,6 +20,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
@@ -27,35 +30,63 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.EnumMap;
+import java.util.Map;
 import java.util.Optional;
 
 public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider {
+
+    private static final int FUEL_SLOT = 0;
+    private static final int INPUT_SLOT_TOP = 1;
+    private static final int INPUT_SLOT_BOTTOM = 2;
+    private static final int OUTPUT_SLOT = 3;
+    private static final int PROCESS_TIME = 400;
+    private static final int MAX_FUEL = 12_800;
+
     private final ItemStackHandler itemHandler = new ItemStackHandler(4) {
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
-            if(!level.isClientSide()) {
+            if (level != null && !level.isClientSide()) {
                 level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
             }
         }
+
+        @Override
+        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+            if (slot == OUTPUT_SLOT) {
+                return false;
+            }
+            if (slot == FUEL_SLOT) {
+                return isFuel(stack);
+            }
+            return true;
+        }
     };
 
-    private static final int FUEL_SLOT = 0;
-    private static final int INPUT_SLOT_1 = 1;
-    private static final int INPUT_SLOT_2 = 2;
-    private static final int OUTPUT_SLOT = 3;
-
+    private final Map<Direction, LazyOptional<IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
 
-    protected final ContainerData data;
-    private int progress = 0;
-    private int maxProgress = 100;
-    private int fuelLevel = 0;
-    private int maxFuelLevel = 64;
+    private final ContainerData data;
+    private int progress;
+    private int fuel;
+    private int sideUpper = Direction.UP.get3DDataValue();
+    private int sideLower = Direction.UP.get3DDataValue();
+    private int sideFuel = Direction.UP.get3DDataValue();
+
+    private static final int DATA_COUNT = 7;
+    private static final int DATA_INDEX_PROGRESS = 0;
+    private static final int DATA_INDEX_MAX_PROGRESS = 1;
+    private static final int DATA_INDEX_FUEL = 2;
+    private static final int DATA_INDEX_MAX_FUEL = 3;
+    private static final int DATA_INDEX_SIDE_UPPER = 4;
+    private static final int DATA_INDEX_SIDE_LOWER = 5;
+    private static final int DATA_INDEX_SIDE_FUEL = 6;
 
     public BlastFurnaceBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.BLAST_FURNACE_BE.get(), pos, state);
@@ -63,10 +94,13 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
             @Override
             public int get(int index) {
                 return switch (index) {
-                    case 0 -> BlastFurnaceBlockEntity.this.progress;
-                    case 1 -> BlastFurnaceBlockEntity.this.maxProgress;
-                    case 2 -> BlastFurnaceBlockEntity.this.fuelLevel;
-                    case 3 -> BlastFurnaceBlockEntity.this.maxFuelLevel;
+                    case DATA_INDEX_PROGRESS -> BlastFurnaceBlockEntity.this.progress;
+                    case DATA_INDEX_MAX_PROGRESS -> PROCESS_TIME;
+                    case DATA_INDEX_FUEL -> BlastFurnaceBlockEntity.this.fuel;
+                    case DATA_INDEX_MAX_FUEL -> MAX_FUEL;
+                    case DATA_INDEX_SIDE_UPPER -> BlastFurnaceBlockEntity.this.sideUpper;
+                    case DATA_INDEX_SIDE_LOWER -> BlastFurnaceBlockEntity.this.sideLower;
+                    case DATA_INDEX_SIDE_FUEL -> BlastFurnaceBlockEntity.this.sideFuel;
                     default -> 0;
                 };
             }
@@ -74,24 +108,29 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
             @Override
             public void set(int index, int value) {
                 switch (index) {
-                    case 0 -> BlastFurnaceBlockEntity.this.progress = value;
-                    case 1 -> BlastFurnaceBlockEntity.this.maxProgress = value;
-                    case 2 -> BlastFurnaceBlockEntity.this.fuelLevel = value;
-                    case 3 -> BlastFurnaceBlockEntity.this.maxFuelLevel = value;
+                    case DATA_INDEX_PROGRESS -> BlastFurnaceBlockEntity.this.progress = value;
+                    case DATA_INDEX_FUEL -> BlastFurnaceBlockEntity.this.fuel = value;
+                    case DATA_INDEX_SIDE_UPPER -> BlastFurnaceBlockEntity.this.sideUpper = value;
+                    case DATA_INDEX_SIDE_LOWER -> BlastFurnaceBlockEntity.this.sideLower = value;
+                    case DATA_INDEX_SIDE_FUEL -> BlastFurnaceBlockEntity.this.sideFuel = value;
+                    default -> { }
                 }
             }
 
             @Override
             public int getCount() {
-                return 4;
+                return DATA_COUNT;
             }
         };
     }
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if(cap == ForgeCapabilities.ITEM_HANDLER) {
-            return lazyItemHandler.cast();
+        if (cap == ForgeCapabilities.ITEM_HANDLER) {
+            if (side == null) {
+                return lazyItemHandler.cast();
+            }
+            return sidedItemHandlers.getOrDefault(side, lazyItemHandler).cast();
         }
         return super.getCapability(cap, side);
     }
@@ -100,17 +139,22 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
     public void onLoad() {
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
+        sidedItemHandlers.clear();
+        for (Direction direction : Direction.values()) {
+            sidedItemHandlers.put(direction, LazyOptional.of(() -> new DirectionalItemHandler(direction)));
+        }
     }
 
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
         lazyItemHandler.invalidate();
+        sidedItemHandlers.values().forEach(LazyOptional::invalidate);
     }
 
     public void drops() {
         SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
-        for(int i = 0; i < itemHandler.getSlots(); i++) {
+        for (int i = 0; i < itemHandler.getSlots(); i++) {
             inventory.setItem(i, itemHandler.getStackInSlot(i));
         }
         Containers.dropContents(this.level, this.worldPosition, inventory);
@@ -131,9 +175,10 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
     protected void saveAdditional(CompoundTag tag) {
         tag.put("inventory", itemHandler.serializeNBT());
         tag.putInt("blast_furnace.progress", progress);
-        tag.putInt("blast_furnace.max_progress", maxProgress);
-        tag.putInt("blast_furnace.fuel_level", fuelLevel);
-        tag.putInt("blast_furnace.max_fuel_level", maxFuelLevel);
+        tag.putInt("blast_furnace.fuel", fuel);
+        tag.putInt("blast_furnace.side_upper", sideUpper);
+        tag.putInt("blast_furnace.side_lower", sideLower);
+        tag.putInt("blast_furnace.side_fuel", sideFuel);
         super.saveAdditional(tag);
     }
 
@@ -142,38 +187,36 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         super.load(tag);
         itemHandler.deserializeNBT(tag.getCompound("inventory"));
         progress = tag.getInt("blast_furnace.progress");
-        maxProgress = tag.getInt("blast_furnace.max_progress");
-        fuelLevel = tag.getInt("blast_furnace.fuel_level");
-        maxFuelLevel = tag.getInt("blast_furnace.max_fuel_level");
+        fuel = tag.getInt("blast_furnace.fuel");
+        sideUpper = tag.getInt("blast_furnace.side_upper");
+        sideLower = tag.getInt("blast_furnace.side_lower");
+        sideFuel = tag.getInt("blast_furnace.side_fuel");
     }
 
     public void tick(Level level, BlockPos pos, BlockState state) {
-        boolean wasBurning = isBurning();
-        boolean dirty = false;
+        if (level.isClientSide()) {
+            return;
+        }
 
-        if (!isFuelFull() && canAddFuel()) {
-            addFuel();
+        boolean dirty = false;
+        boolean wasBurning = isBurning();
+
+        if (fuel < MAX_FUEL && tryConsumeFuelItem()) {
             dirty = true;
         }
 
-        boolean hasRecipeResult = hasRecipe();
-        boolean isBurningResult = isBurning();
-
-        if (hasRecipeResult && isBurningResult) {
-            increaseCraftingProgress();
-            dirty = true;
-
-            if (hasCraftingFinished()) {
+        boolean canProcess = hasRecipe() && fuel > 0;
+        if (canProcess) {
+            fuel = Math.max(0, fuel - 1);
+            progress += getProgressPerTick();
+            if (progress >= PROCESS_TIME) {
                 craftItem();
-                consumeFuel();
-                resetProgress();
-                dirty = true;
+                progress -= PROCESS_TIME;
             }
-        } else {
-            if (this.progress > 0) {
-                resetProgress();
-                dirty = true;
-            }
+            dirty = true;
+        } else if (progress != 0) {
+            progress = 0;
+            dirty = true;
         }
 
         if (wasBurning != isBurning()) {
@@ -186,87 +229,175 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         }
     }
 
-    private boolean isBurning() {
-        return this.fuelLevel > 0;
+    private int getProgressPerTick() {
+        return hasExtension() ? 3 : 1;
     }
 
-    private boolean isFuelFull() {
-        return this.fuelLevel >= this.maxFuelLevel;
-    }
-
-    private boolean canAddFuel() {
-        ItemStack fuelStack = this.itemHandler.getStackInSlot(FUEL_SLOT);
-        return fuelStack.getItem() == Items.LAVA_BUCKET && fuelStack.getCount() > 0;
-    }
-
-    private void addFuel() {
-        ItemStack fuelStack = this.itemHandler.getStackInSlot(FUEL_SLOT);
-        if (fuelStack.getItem() == Items.LAVA_BUCKET) {
-            this.fuelLevel = Math.min(this.fuelLevel + 64, this.maxFuelLevel);
-            fuelStack.shrink(1);
-            this.itemHandler.setStackInSlot(FUEL_SLOT, new ItemStack(Items.BUCKET, 1));
+    private boolean hasExtension() {
+        if (level == null) {
+            return false;
         }
+        BlockState above = level.getBlockState(worldPosition.above());
+        return above.is(ModBlocks.BLAST_FURNACE_EXTENSION.get());
     }
 
-    private void consumeFuel() {
-        if (this.fuelLevel > 0) {
-            this.fuelLevel--;
+    private boolean tryConsumeFuelItem() {
+        ItemStack stack = itemHandler.getStackInSlot(FUEL_SLOT);
+        if (stack.isEmpty()) {
+            return false;
         }
-    }
-
-    private void resetProgress() {
-        this.progress = 0;
-    }
-
-    private void craftItem() {
-        Optional<BlastFurnaceRecipe> recipe = getCurrentRecipe();
-        if (recipe.isPresent()) {
-            ItemStack output = recipe.get().getResultItem(getLevel().registryAccess());
-
-            this.itemHandler.extractItem(INPUT_SLOT_1, 1, false);
-            this.itemHandler.extractItem(INPUT_SLOT_2, 1, false);
-
-            this.itemHandler.setStackInSlot(OUTPUT_SLOT, new ItemStack(output.getItem(),
-                    this.itemHandler.getStackInSlot(OUTPUT_SLOT).getCount() + output.getCount()));
+        int value = getFuelValue(stack);
+        if (value <= 0) {
+            return false;
         }
-    }
 
-    private boolean hasCraftingFinished() {
-        return this.progress >= this.maxProgress;
-    }
+        int newFuelLevel = Math.min(MAX_FUEL, fuel + value);
+        if (newFuelLevel == fuel) {
+            return false;
+        }
+        fuel = newFuelLevel;
 
-    private void increaseCraftingProgress() {
-        this.progress++;
+        ItemStack remainder = stack.getCraftingRemainingItem();
+        stack.shrink(1);
+        if (stack.isEmpty()) {
+            itemHandler.setStackInSlot(FUEL_SLOT, remainder);
+        }
+        return true;
     }
 
     private boolean hasRecipe() {
         Optional<BlastFurnaceRecipe> recipe = getCurrentRecipe();
-
-        if(recipe.isEmpty()) {
+        if (recipe.isEmpty() || level == null) {
             return false;
         }
-        ItemStack result = recipe.get().getResultItem(getLevel().registryAccess());
+        ItemStack result = recipe.get().getResultItem(level.registryAccess());
+        return !result.isEmpty() && canAcceptResult(result);
+    }
 
-        return canInsertAmountIntoOutputSlot(result.getCount()) && canInsertItemIntoOutputSlot(result.getItem());
+    private boolean canAcceptResult(ItemStack result) {
+        ItemStack currentOutput = itemHandler.getStackInSlot(OUTPUT_SLOT);
+        if (currentOutput.isEmpty()) {
+            return true;
+        }
+        if (!ItemHandlerHelper.canItemStacksStack(currentOutput, result)) {
+            return false;
+        }
+        return currentOutput.getCount() + result.getCount() <= currentOutput.getMaxStackSize();
     }
 
     private Optional<BlastFurnaceRecipe> getCurrentRecipe() {
-        SimpleContainer inventory = new SimpleContainer(this.itemHandler.getSlots());
-        for(int i = 0; i < itemHandler.getSlots(); i++) {
-            inventory.setItem(i, this.itemHandler.getStackInSlot(i));
+        if (level == null) {
+            return Optional.empty();
         }
-
-        return this.level.getRecipeManager().getRecipeFor(BlastFurnaceRecipe.Type.INSTANCE, inventory, level);
+        SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
+        for (int i = 0; i < itemHandler.getSlots(); i++) {
+            inventory.setItem(i, itemHandler.getStackInSlot(i));
+        }
+        return level.getRecipeManager().getRecipeFor(BlastFurnaceRecipe.Type.INSTANCE, inventory, level);
     }
 
-    private boolean canInsertItemIntoOutputSlot(net.minecraft.world.item.Item item) {
-        return this.itemHandler.getStackInSlot(OUTPUT_SLOT).isEmpty() ||
-                this.itemHandler.getStackInSlot(OUTPUT_SLOT).is(item);
+    private void craftItem() {
+        Optional<BlastFurnaceRecipe> recipe = getCurrentRecipe();
+        if (recipe.isEmpty() || level == null) {
+            return;
+        }
+        ItemStack result = recipe.get().getResultItem(level.registryAccess()).copy();
+
+        itemHandler.extractItem(INPUT_SLOT_TOP, 1, false);
+        itemHandler.extractItem(INPUT_SLOT_BOTTOM, 1, false);
+
+        ItemStack output = itemHandler.getStackInSlot(OUTPUT_SLOT);
+        if (output.isEmpty()) {
+            itemHandler.setStackInSlot(OUTPUT_SLOT, result);
+        } else {
+            output.grow(result.getCount());
+            itemHandler.setStackInSlot(OUTPUT_SLOT, output);
+        }
     }
 
-    private boolean canInsertAmountIntoOutputSlot(int count) {
-        return this.itemHandler.getStackInSlot(OUTPUT_SLOT).getCount() + count <=
-                this.itemHandler.getStackInSlot(OUTPUT_SLOT).getMaxStackSize();
+    private boolean isBurning() {
+        return fuel > 0;
+    }
+
+    public static boolean isFuel(ItemStack stack) {
+        return getFuelValue(stack) > 0;
+    }
+
+    private static int getFuelValue(ItemStack stack) {
+        Item item = stack.getItem();
+        if (item == Items.LAVA_BUCKET) {
+            return 12_800;
+        }
+        if (item == Items.COAL || item == Items.CHARCOAL) {
+            return 200;
+        }
+        if (item == Items.COAL_BLOCK) {
+            return 2_000;
+        }
+        if (item == Items.BLAZE_ROD) {
+            return 1_000;
+        }
+        if (item == Items.BLAZE_POWDER) {
+            return 300;
+        }
+        if (item == ModItems.LIGNITE.get()) {
+            return 150;
+        }
+        return 0;
+    }
+
+    public void cycleSide(int slot) {
+        switch (slot) {
+            case 0 -> sideUpper = nextDirection(sideUpper);
+            case 1 -> sideLower = nextDirection(sideLower);
+            case 2 -> sideFuel = nextDirection(sideFuel);
+            default -> {
+                return;
+            }
+        }
+        markSidesChanged();
+    }
+
+    public Direction getConfiguredDirection(int slot) {
+        return Direction.from3DDataValue(switch (slot) {
+            case 0 -> sideUpper;
+            case 1 -> sideLower;
+            case 2 -> sideFuel;
+            default -> Direction.UP.get3DDataValue();
+        });
+    }
+
+    private static int nextDirection(int current) {
+        int next = (current + 1) % Direction.values().length;
+        return next < 0 ? 0 : next;
+    }
+
+    private void markSidesChanged() {
+        setChanged();
+        if (level != null) {
+            BlockState state = level.getBlockState(worldPosition);
+            level.sendBlockUpdated(worldPosition, state, state, 3);
+        }
+    }
+
+    private boolean canInsertFromDirection(int slot, Direction direction) {
+        if (direction == null) {
+            return true;
+        }
+        return switch (slot) {
+            case INPUT_SLOT_TOP -> matches(direction, sideUpper);
+            case INPUT_SLOT_BOTTOM -> matches(direction, sideLower);
+            case FUEL_SLOT -> matches(direction, sideFuel);
+            default -> false;
+        };
+    }
+
+    private static boolean matches(Direction direction, int stored) {
+        return direction.get3DDataValue() == stored;
+    }
+
+    private boolean canExtractFromDirection(int slot) {
+        return slot == OUTPUT_SLOT;
     }
 
     @Nullable
@@ -278,5 +409,49 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
     @Override
     public CompoundTag getUpdateTag() {
         return saveWithoutMetadata();
+    }
+
+    private class DirectionalItemHandler implements IItemHandler {
+        private final Direction direction;
+
+        private DirectionalItemHandler(Direction direction) {
+            this.direction = direction;
+        }
+
+        @Override
+        public int getSlots() {
+            return itemHandler.getSlots();
+        }
+
+        @Override
+        public @NotNull ItemStack getStackInSlot(int slot) {
+            return itemHandler.getStackInSlot(slot);
+        }
+
+        @Override
+        public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+            if (!canInsertFromDirection(slot, direction) || !itemHandler.isItemValid(slot, stack)) {
+                return stack;
+            }
+            return itemHandler.insertItem(slot, stack, simulate);
+        }
+
+        @Override
+        public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+            if (!canExtractFromDirection(slot)) {
+                return ItemStack.EMPTY;
+            }
+            return itemHandler.extractItem(slot, amount, simulate);
+        }
+
+        @Override
+        public int getSlotLimit(int slot) {
+            return itemHandler.getSlotLimit(slot);
+        }
+
+        @Override
+        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+            return itemHandler.isItemValid(slot, stack) && canInsertFromDirection(slot, direction);
+        }
     }
 }

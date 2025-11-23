@@ -41,6 +41,13 @@
     ],
     "subtitle": "sounds.hbm_m.geiger_counter"
   },
+  "techbleep": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.techbleep",
+    "sounds": [
+      "hbm_m:techbleep"
+    ]
+  },
   "techboop": {
     "category": "player",
     "subtitle": "sounds.hbm_m.techboop",
@@ -149,8 +156,7 @@
     "subtitle": "sounds.hbm_m.subtitle.assembler_operate",
     "sounds": [
       {
-        "name": "hbm_m:block/assembler_operate",
-        "stream": true
+        "name": "hbm_m:block/assembler_operate"
       }
     ]
   },
@@ -224,12 +230,8 @@
     ]
   },
   "block.shredder": {
-    "sounds": [
-      {
-        "name": "hbm_m:block/shredder",
-        "stream": true
-      }
-    ]
+    "subtitle": "sounds.hbm_m.subtitle.shredder",
+    "sounds": [ "hbm_m:block/shredder" ]
   },
 
     "block.garage_move": {
@@ -243,6 +245,70 @@
     "block.press_operate": {
         "subtitle": "sounds.hbm_m.subtitle.press",
         "sounds": [ "hbm_m:block/press_operate" ]
+    },
+    "block.alarm_6": {
+        "subtitle": "sounds.hbm_m.subtitle.alarm_6",
+        "sounds": [ "hbm_m:block/door/alarm_6" ]
+    },
+    "block.door_wgh_big_start": {
+        "subtitle": "sounds.hbm_m.subtitle.door_wgh_big_start",
+        "sounds": [ "hbm_m:block/door/door_wgh_big_start" ]
+    },
+    "block.door_wgh_big_stop": {
+        "subtitle": "sounds.hbm_m.subtitle.door_wgh_big_stop",
+        "sounds": [ "hbm_m:block/door/door_wgh_big_stop" ]
+    },
+    "block.door_move_2": {
+        "subtitle": "sounds.hbm_m.subtitle.door_move_2",
+        "sounds": [ "hbm_m:block/door/door_move_2" ]
+    },
+    "block.door_shut_1": {
+        "subtitle": "sounds.hbm_m.subtitle.door_shut_1",
+        "sounds": [ "hbm_m:block/door/door_shut_1" ]
+    },
+    "block.door_slide_opened_1": {
+        "subtitle": "sounds.hbm_m.subtitle.door_slide_opened_1",
+        "sounds": [ "hbm_m:block/door/door_slide_opened_1" ]
+    },
+    "block.door_slide_opening_1": {
+        "subtitle": "sounds.hbm_m.subtitle.door_slide_opening_1",
+        "sounds": [ "hbm_m:block/door/door_slide_opening_1" ]
+    },
+    "block.lever_1": {
+        "subtitle": "sounds.hbm_m.subtitle.lever_1",
+        "sounds": [ "hbm_m:block/door/lever_1" ]
+    },
+    "block.metal_stop_1": {
+        "subtitle": "sounds.hbm_m.subtitle.metal_stop_1",
+        "sounds": [ "hbm_m:block/door/metal_stop_1" ]
+    },
+    "block.sliding_door_opened": {
+        "subtitle": "sounds.hbm_m.subtitle.sliding_door_opened",
+        "sounds": [ "hbm_m:block/door/sliding_door_opened" ]
+    },
+    "block.sliding_door_opening": {
+        "subtitle": "sounds.hbm_m.subtitle.sliding_door_opening",
+        "sounds": [ "hbm_m:block/door/sliding_door_opening" ]
+    },
+    "block.sliding_door_shut": {
+        "subtitle": "sounds.hbm_m.subtitle.sliding_door_shut",
+        "sounds": [ "hbm_m:block/door/sliding_door_shut" ]
+    },
+    "block.transition_seal_open": {
+        "subtitle": "sounds.hbm_m.subtitle.transition_seal_open",
+        "sounds": [ "hbm_m:block/door/transition_seal_open" ]
+    },
+    "block.transition_seal_close": {
+        "subtitle": "sounds.hbm_m.subtitle.transition_seal_close",
+        "sounds": [ "hbm_m:block/door/transition_seal_close" ]
+    },
+    "block.wgh_start": {
+        "subtitle": "sounds.hbm_m.subtitle.wgh_start",
+        "sounds": [ "hbm_m:block/door/wgh_start" ]
+    },
+    "block.wgh_stop": {
+        "subtitle": "sounds.hbm_m.subtitle.wgh_stop",
+        "sounds": [ "hbm_m:block/door/wgh_stop" ]
     },
 
   "block.switch.on": {

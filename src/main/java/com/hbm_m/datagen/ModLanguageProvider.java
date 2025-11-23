@@ -7,7 +7,13 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.item.ModPowders;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.data.LanguageProvider;
+
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 public class ModLanguageProvider extends LanguageProvider {
     // 1. Создаем НАШЕ СОБСТВЕННОЕ поле для хранения языка
@@ -17,6 +23,64 @@ public class ModLanguageProvider extends LanguageProvider {
         super(output, RefStrings.MODID, locale);
         // 2. Сохраняем язык в наше поле при создании объекта
         this.locale = locale;
+    }
+
+    private void addIngotPowderTranslations(Set<ResourceLocation> translatedPowders) {
+        for (ModIngots ingot : ModIngots.values()) {
+            if (ModItems.getPowder(ingot) != null) {
+                var powder = ModItems.getPowder(ingot);
+                if (!translatedPowders.contains(powder.getId())) {
+                    add(powder.get(), buildPowderName(ingot, false));
+                }
+            }
+            ModItems.getTinyPowder(ingot).ifPresent(tiny ->
+                    add(tiny.get(), buildPowderName(ingot, true)));
+        }
+
+        if ("ru_ru".equals(this.locale)) {
+            add(ModItems.DUST.get(), "Пыль");
+            add(ModItems.DUST_TINY.get(), "Малая кучка пыли");
+        } else {
+            add(ModItems.DUST.get(), "Dust");
+            add(ModItems.DUST_TINY.get(), "Tiny Dust");
+        }
+    }
+
+    private String buildPowderName(ModIngots ingot, boolean tiny) {
+        String base = ingot.getTranslation(this.locale);
+        if (base == null || base.isBlank()) {
+            base = formatName(ingot.getName());
+        }
+
+        String result = base;
+        if ("ru_ru".equals(this.locale)) {
+            String replaced = result.replace("Слиток", "Порошок").replace("слиток", "порошок");
+            if (replaced.equals(result)) {
+                replaced = "Порошок " + result;
+            }
+            result = replaced.trim();
+            if (tiny) {
+                result = "Малая кучка " + result;
+            }
+        } else {
+            String replaced = result.replace("Ingot", "Powder").replace("ingot", "powder");
+            if (replaced.equals(result)) {
+                replaced = result + " Powder";
+            }
+            result = replaced.trim();
+            if (tiny) {
+                result = "Tiny " + result;
+            }
+        }
+
+        return result;
+    }
+
+    private String formatName(String name) {
+        return Arrays.stream(name.replace('.', '_').split("_"))
+                .filter(part -> !part.isEmpty())
+                .map(part -> Character.toUpperCase(part.charAt(0)) + part.substring(1))
+                .collect(Collectors.joining(" "));
     }
 
     @Override
@@ -30,14 +94,19 @@ public class ModLanguageProvider extends LanguageProvider {
             }
         }
 
+        Set<ResourceLocation> translatedPowders = new HashSet<>();
         // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ
         for (ModPowders powders : ModPowders.values()) {
             // 3. Теперь мы используем наше поле 'this.locale', к которому у нас есть доступ
             String translation = powders.getTranslation(this.locale);
             if (translation != null) {
-                add(ModItems.getPowders(powders).get(), translation);
+                var powderItem = ModItems.getPowders(powders);
+                add(powderItem.get(), translation);
+                translatedPowders.add(powderItem.getId());
             }
         }
+
+        addIngotPowderTranslations(translatedPowders);
 
         // ЯВНАЯ ЛОКАЛИЗАЦИЯ ДЛЯ ОСТАЛЬНЫХ КЛЮЧЕЙ 
         switch (this.locale) {
@@ -81,6 +150,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_hoe", "Мотыга из звёздного металла");
                 add("item.hbm_m.starmetal_shovel", "Лопата из звёздного металла");
 
+                add("gui.hbm_m.energy", "Энергия: %s/%s HE");
+                add("gui.hbm_m.shredder.blade_warning.title", "Нет лезвий!");
+                add("gui.hbm_m.shredder.blade_warning.desc", "Установите или отремонтируйте лезвия шреддера.");
                 // БРОНЯ
                 add("item.hbm_m.alloy_helmet", "Шлем из продвинутого сплава");
                 add("item.hbm_m.alloy_chestplate", "Нагрудник из продвинутого сплава");
@@ -252,7 +324,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.GRENADESLIME.get(), "Отскок-отскок граната");
                 add(ModItems.GRENADE.get(), "Отскок граната");
                 add(ModItems.GRENADEHE.get(), "Мощная отскок граната");
-                add(ModItems.GRENADEFIRE.get(), "Зажигательная Отскок граната");
+                add(ModItems.GRENADEFIRE.get(), "Зажигательная отскок граната");
 
                 add(ModItems.GRENADEIF.get(), "IF граната (WIP)");
 
@@ -261,34 +333,34 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("effect.hbm_m.radaway", "Очищение от радиации");
 
 
-                add(ModItems.QUANTUM_CHIP.get(), "Квантовый Чип");
-                add(ModItems.QUANTUM_CIRCUIT.get(), "Квантовая Микросхема");
-                add(ModItems.QUANTUM_COMPUTER.get(), "Квантовый Компьютер");
-                add(ModItems.SILICON_CIRCUIT.get(), "Опечатанная Кремниевая Пластина");
-                add(ModItems.BISMOID_CHIP.get(), "Передовой Микрочип");
-                add(ModItems.BISMOID_CIRCUIT.get(), "Передовая Микросхема");
-                add(ModItems.CONTROLLER_CHASSIS.get(), "Корпус Контроллера");
+                add(ModItems.QUANTUM_CHIP.get(), "Квантовый чип");
+                add(ModItems.QUANTUM_CIRCUIT.get(), "Квантовая микросхема");
+                add(ModItems.QUANTUM_COMPUTER.get(), "Квантовый компьютер");
+                add(ModItems.SILICON_CIRCUIT.get(), "Опечатанная кремниевая пластина");
+                add(ModItems.BISMOID_CHIP.get(), "Передовой микрочип");
+                add(ModItems.BISMOID_CIRCUIT.get(), "Передовая микросхема");
+                add(ModItems.CONTROLLER_CHASSIS.get(), "Корпус контроллера");
                 add(ModItems.CONTROLLER.get(), "Контроллер");
-                add(ModItems.CONTROLLER_ADVANCED.get(), "Продвинутый Контроллер");
-                add(ModItems.CAPACITOR_BOARD.get(), "Конденсаторная Плата");
-                add(ModItems.CAPACITOR_TANTALUM.get(), "Танталовый Конденсатор");
-                add(ModItems.ANALOG_CIRCUIT.get(), "Аналоговая Плата");
-                add(ModItems.INTEGRATED_CIRCUIT.get(), "Интегральная Схема");
-                add(ModItems.ADVANCED_CIRCUIT.get(), "Военная Микросхема");
+                add(ModItems.CONTROLLER_ADVANCED.get(), "Продвинутый контроллер");
+                add(ModItems.CAPACITOR_BOARD.get(), "Конденсаторная плата");
+                add(ModItems.CAPACITOR_TANTALUM.get(), "Танталовый конденсатор");
+                add(ModItems.ANALOG_CIRCUIT.get(), "Аналоговая плата");
+                add(ModItems.INTEGRATED_CIRCUIT.get(), "Интегральная схема");
+                add(ModItems.ADVANCED_CIRCUIT.get(), "Военная микросхема");
                 add(ModItems.MICROCHIP.get(), "Микрочип");
-                add(ModItems.ATOMIC_CLOCK.get(), "Атомные Часы");
-                add(ModItems.VACUUM_TUBE.get(), "Вакуумная Трубка");
+                add(ModItems.ATOMIC_CLOCK.get(), "Атомные часы");
+                add(ModItems.VACUUM_TUBE.get(), "Вакуумная трубка");
                 add(ModItems.CAPACITOR.get(), "Конденсатор");
-                add(ModItems.PCB.get(), "Печатная Плата");
+                add(ModItems.PCB.get(), "Печатная плата");
                 add(ModItems.INSULATOR.get(), "Изолятор");
-                add(ModItems.NUGGET_SILICON.get(), "Самородок Кремния");
-                add(ModItems.BILLET_SILICON.get(), "Заготовка Кремния");
+                add(ModItems.NUGGET_SILICON.get(), "Самородок кремния");
+                add(ModItems.BILLET_SILICON.get(), "Заготовка кремния");
 
-                add(ModItems.BATTLE_GEARS.get(), "Боевые Детали");
-                add(ModItems.BATTLE_CASING.get(), "Боевой Корпус");
-                add(ModItems.BATTLE_COUNTER.get(), "Боевой Блок Управления");
-                add(ModItems.BATTLE_SENSOR.get(), "Боевой Сенсор");
-                add(ModItems.BATTLE_MODULE.get(), "Боевой Модуль");
+                add(ModItems.BATTLE_GEARS.get(), "Боевые детали");
+                add(ModItems.BATTLE_CASING.get(), "Боевой корпус");
+                add(ModItems.BATTLE_COUNTER.get(), "Боевой блок управления");
+                add(ModItems.BATTLE_SENSOR.get(), "Боевой сенсор");
+                add(ModItems.BATTLE_MODULE.get(), "Боевой модуль");
                 add(ModItems.METAL_ROD.get(), "Металлический стержень");
                 add(ModItems.STRAWBERRY.get(), "Клубника");
                 add(ModItems.PLATE_GOLD.get(), "Золотая пластина");
@@ -371,6 +443,14 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.armor.all", "Любой броне");
                 add("tooltip.hbm_m.rad_protection.value_short", "%s сопр. радиации.");
 
+                add("gui.hbm_m.blast_furnace.accepts", "Принимает предметы со стороны: %s");
+                add("direction.hbm_m.down", "Вниз");
+                add("direction.hbm_m.up", "Вверх");
+                add("direction.hbm_m.north", "Север");
+                add("direction.hbm_m.south", "Юг");
+                add("direction.hbm_m.west", "Запад");
+                add("direction.hbm_m.east", "Восток");
+
                 // БЛОКИ
                 add("block.hbm_m.door_office", "Офисная дверь");
                 add("block.hbm_m.door_bunker", "Бункерная дверь");
@@ -401,6 +481,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.wood_burner", "Дровяной генератор");
                 add("block.hbm_m.shredder", "Шредер (WIP)");
                 add("block.hbm_m.blast_furnace", "Доменная печь");
+                add("block.hbm_m.blast_furnace_extension", "Расширение доменной печи");
                 add("block.hbm_m.press", "Пресс");
                 add("block.hbm_m.geiger_counter_block", "Стационарный счетчик Гейгера");
                 add("block.hbm_m.freaky_alien_block", "Блок ебанутого инопланетянина");
@@ -418,6 +499,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_mossy_stairs", "Ступени из замшелого бетона");
                 add("block.hbm_m.switch", "Рубильник");
                 add("block.hbm_m.large_vehicle_door", "Дверь для крупногабаритного транспорта");
+                add("block.hbm_m.round_airlock_door", "Круглая воздушная дверь");
                 add("block.hbm_m.strawberry_bush", "Куст клубники");
                 add("block.hbm_m.strawberry", "Клубника");
                 add("block.hbm_m.brick_concrete", "Бетонные кирпичи");
@@ -464,7 +546,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.crate_iron", "Железный ящик");
                 add("block.hbm_m.crate_steel", "Стальной ящик");
                 add("block.hbm_m.crate_desh", "Деш ящик");
-
 
                 add("block.hbm_m.waste_grass", "Мёртвая трава");
                 add("block.hbm_m.waste_leaves", "Мёртвая листва");
@@ -739,6 +820,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.steel_hoe", "Steel Hoe");
                 add("item.hbm_m.steel_shovel", "Steel Shovel");
 
+                add("gui.hbm_m.energy", "Energy: %s/%s HE");
+                add("gui.hbm_m.shredder.blade_warning.title", "Blades missing!");
+                add("gui.hbm_m.shredder.blade_warning.desc", "Install or repair the shredder blades.");
                 add("item.hbm_m.titanium_sword", "Titanium Sword");
                 add("item.hbm_m.titanium_pickaxe", "Titanium Pickaxe");
                 add("item.hbm_m.titanium_axe", "Titanium Axe");
@@ -1052,6 +1136,14 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.armor_table.casing_slot", "Casing");
                 add("tooltip.hbm_m.armor_table.servos_slot", "Servos");
 
+                add("gui.hbm_m.blast_furnace.accepts", "Accepts items from: %s");
+                add("direction.hbm_m.down", "Down");
+                add("direction.hbm_m.up", "Up");
+                add("direction.hbm_m.north", "North");
+                add("direction.hbm_m.south", "South");
+                add("direction.hbm_m.west", "West");
+                add("direction.hbm_m.east", "East");
+
                 // BLOCKS
                 add("block.hbm_m.door_office", "Office Door");
                 add("block.hbm_m.door_bunker", "Bunker Door");
@@ -1074,6 +1166,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.shredder", "Shredder (WIP)");
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
                 add("block.hbm_m.blast_furnace", "Blast Furnace");
+                add("block.hbm_m.blast_furnace_extension", "Blast Furnace Extension");
                 add("block.hbm_m.press", "Press");
                 add("block.hbm_m.crate_iron", "Iron Crate");
                 add("block.hbm_m.crate_steel", "Steel Crate");
@@ -1110,6 +1203,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_stairs", "Concrete Stairs");
                 add("block.hbm_m.concrete_slab", "Concrete Slab");
                 add("block.hbm_m.large_vehicle_door", "Large Vehicle Door");
+                add("block.hbm_m.round_airlock_door", "Round Airlock Door");
                 add("block.hbm_m.strawberry_bush", "Strawberry Bush");
 
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");

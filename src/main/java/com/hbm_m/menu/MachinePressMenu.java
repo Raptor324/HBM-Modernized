@@ -1,7 +1,7 @@
 package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.MachinePressBlockEntity;
+import com.hbm_m.block.entity.machine.MachinePressBlockEntity;
 import com.hbm_m.item.ItemStamp;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;

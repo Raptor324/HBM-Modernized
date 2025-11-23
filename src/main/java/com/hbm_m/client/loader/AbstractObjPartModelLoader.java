@@ -24,7 +24,9 @@ import java.util.function.Function;
 public abstract class AbstractObjPartModelLoader<T extends BakedModel> implements IGeometryLoader<AbstractObjPartModelLoader.ObjPartGeometry<T>> {
 
     protected abstract Set<String> getPartNames(JsonObject jsonObject);
-    protected abstract T createBakedModel(HashMap<String, BakedModel> bakedParts, ItemTransforms transforms);
+    protected abstract T createBakedModel(HashMap<String, BakedModel> bakedParts, 
+                                          ItemTransforms transforms,
+                                          ResourceLocation modelLocation);
 
     @Override
     public ObjPartGeometry<T> read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) {
@@ -60,7 +62,7 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
             ensureBasePart(model, bakedParts, context, baker, spriteGetter, overrides, modelName);
 
             MainRegistry.LOGGER.info("{}: Total baked parts: {}", loader.getClass().getSimpleName(), bakedParts.size());
-            return loader.createBakedModel(bakedParts, context.getTransforms());
+            return loader.createBakedModel(bakedParts, context.getTransforms(), modelLocation);
         }
 
         private ObjModel loadObjModel() {

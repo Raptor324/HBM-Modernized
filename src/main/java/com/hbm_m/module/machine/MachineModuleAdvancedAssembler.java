@@ -10,6 +10,7 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.items.IItemHandler;
 
+import com.hbm_m.block.entity.machine.BaseMachineBlockEntity;
 // ИЗМЕНЕНИЕ: Импортируем нашу long-систему
 
 import javax.annotation.Nullable;

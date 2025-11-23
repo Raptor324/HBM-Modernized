@@ -24,6 +24,7 @@ public class ModSounds {
 
     public static final RegistryObject<SoundEvent> RADAWAY_USE = registerSoundEvents("radaway_use");
 
+    public static final RegistryObject<SoundEvent> TOOL_TECH_BLEEP = registerSoundEvents("techbleep");
     public static final RegistryObject<SoundEvent> TOOL_TECH_BOOP = registerSoundEvents("techboop");
 
     public static final RegistryObject<SoundEvent> REPAIR_1 = registerSoundEvents("tool.repair1");
@@ -49,15 +50,31 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> ASSEMBLER_STRIKE_1 = registerSoundEvents("block.assembler_strike1");
     public static final RegistryObject<SoundEvent> ASSEMBLER_STRIKE_2 = registerSoundEvents("block.assembler_strike2");
     public static final RegistryObject<SoundEvent> MOTOR = registerSoundEvents("block.motor");
+    public static final RegistryObject<SoundEvent> PRESS_OPERATE = registerSoundEvents("block.press_operate");
+    public static final RegistryObject<SoundEvent> SHREDDER = registerSoundEvents("block.shredder");
+
+    // Doors
     public static final RegistryObject<SoundEvent> GARAGE_MOVE = registerSoundEvents("block.garage_move");
     public static final RegistryObject<SoundEvent> GARAGE_STOP = registerSoundEvents("block.garage_stop");
-    public static final RegistryObject<SoundEvent> PRESS_OPERATE = registerSoundEvents("block.press_operate");
-    public static final RegistryObject<SoundEvent> SHREDDER = registerSoundEvent("block.shredder");
-    public static final RegistryObject<SoundEvent> SWITCH_ON = registerSoundEvent("block.switch.on");
+    public static final RegistryObject<SoundEvent> ALARM_6 = registerSoundEvents("block.alarm_6");
+    public static final RegistryObject<SoundEvent> DOOR_WGH_BIG_START = registerSoundEvents("block.door_wgh_big_start");
+    public static final RegistryObject<SoundEvent> DOOR_WGH_BIG_STOP = registerSoundEvents("block.door_wgh_big_stop");
+    public static final RegistryObject<SoundEvent> DOOR_MOVE_2 = registerSoundEvents("block.door_move_2");
+    public static final RegistryObject<SoundEvent> DOOR_SHUT_1 = registerSoundEvents("block.door_shut_1");
+    public static final RegistryObject<SoundEvent> DOOR_SLIDE_OPENED_1 = registerSoundEvents("block.door_slide_opened_1");
+    public static final RegistryObject<SoundEvent> DOOR_SLIDE_OPENING_1 = registerSoundEvents("block.door_slide_opening_1");
+    public static final RegistryObject<SoundEvent> LEVER_1 = registerSoundEvents("block.lever_1");
+    public static final RegistryObject<SoundEvent> METAL_STOP_1 = registerSoundEvents("block.metal_stop_1");
+    public static final RegistryObject<SoundEvent> SLIDING_DOOR_OPENED = registerSoundEvents("block.sliding_door_opened");
+    public static final RegistryObject<SoundEvent> SLIDING_DOOR_OPENING = registerSoundEvents("block.sliding_door_opening");
+    public static final RegistryObject<SoundEvent> SLIDING_DOOR_SHUT = registerSoundEvents("block.sliding_door_shut");
+    public static final RegistryObject<SoundEvent> TRANSITION_SEAL_OPEN = registerSoundEvents("block.transition_seal_open");
+    public static final RegistryObject<SoundEvent> TRANSITION_SEAL_CLOSE = registerSoundEvents("block.transition_seal_close");
+    public static final RegistryObject<SoundEvent> WGH_START = registerSoundEvents("block.wgh_start");
+    public static final RegistryObject<SoundEvent> WGH_STOP = registerSoundEvents("block.wgh_stop");
 
-    private static RegistryObject<SoundEvent> registerSoundEvent(String name) {
-        return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(new ResourceLocation(MainRegistry.MOD_ID, name)));
-    }
+    public static final RegistryObject<SoundEvent> SWITCH_ON = registerSoundEvents("block.switch.on");
+
     // РЕГИСТРАЦИЯ АБСТРАКТНОГО СОБЫТИЯ 
     // Это тот самый звук, который мы будем вызывать в коде.
     // Minecraft сам выберет один из 7 реальных звуков случайным образом.

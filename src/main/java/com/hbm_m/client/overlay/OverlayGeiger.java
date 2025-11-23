@@ -6,6 +6,8 @@ package com.hbm_m.client.overlay;
 // Использует IGuiOverlay из Forge для интеграции с GUI игры.
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.item.ItemGeigerCounter;
+import com.hbm_m.lib.RefStrings;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
@@ -24,7 +26,7 @@ public class OverlayGeiger {
     private static boolean hasGeigerCached = false;
     private static final long INVENTORY_CHECK_INTERVAL = 1000;
 
-    private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath("hbm_m", "textures/gui/overlay_misc.png");
+    private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/overlay_misc.png");
 
     public static void onRenderOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         

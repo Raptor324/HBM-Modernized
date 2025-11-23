@@ -1,15 +1,13 @@
 package com.hbm_m.network;
 
-// Пакет от Клиента к Серверу для обновления состояния блока батареи.
-// Содержит позицию блока и идентификатор нажатой кнопки.  
-
-import com.hbm_m.block.entity.MachineBatteryBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
+
+import com.hbm_m.block.entity.machine.MachineBatteryBlockEntity;
 
 public class UpdateBatteryC2SPacket {
     private final BlockPos pos;

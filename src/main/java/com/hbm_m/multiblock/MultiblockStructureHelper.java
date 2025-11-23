@@ -20,11 +20,13 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.PacketDistributor;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -35,9 +37,18 @@ public class MultiblockStructureHelper {
     private final Map<BlockPos, Supplier<BlockState>> structureMap;
     private final Supplier<BlockState> phantomBlockState;
 
-    public MultiblockStructureHelper(Map<BlockPos, Supplier<BlockState>> structureMap, Supplier<BlockState> phantomBlockState) {
-        this.structureMap = Map.copyOf(structureMap);
+    private final Set<BlockPos> partOffsets;
+    private final int maxY;
+
+    public MultiblockStructureHelper(Map<BlockPos, Supplier<BlockState>> structureMap, 
+                                   Supplier<BlockState> phantomBlockState) {
+        // Используем unmodifiableMap вместо copyOf для экономии памяти
+        this.structureMap = Collections.unmodifiableMap(structureMap);
         this.phantomBlockState = phantomBlockState;
+        
+        // Предвычисляем значения
+        this.partOffsets = Collections.unmodifiableSet(structureMap.keySet());
+        this.maxY = computeMaxY();
     }
 
     private final Set<Block> replaceableBlocks = Set.of(
@@ -55,6 +66,13 @@ public class MultiblockStructureHelper {
         return state.is(BlockTags.REPLACEABLE_BY_TREES) || // Трава, папоротники
                state.is(BlockTags.FLOWERS) ||            // Все виды цветов
                state.is(BlockTags.SAPLINGS);             // Саженцы деревьев
+    }
+
+    private int computeMaxY() {
+        return structureMap.keySet().stream()
+            .mapToInt(BlockPos::getY)
+            .max()
+            .orElse(0);
     }
 
     public boolean checkPlacement(Level level, BlockPos controllerPos, Direction facing, Player player) {
@@ -88,14 +106,14 @@ public class MultiblockStructureHelper {
      * @return A Set of all local offsets for the multiblock parts, relative to the controller.
      */
     public Set<BlockPos> getPartOffsets() {
-        return this.structureMap.keySet();
+        return this.partOffsets; // Возвращаем уже созданный Set
     }
 
     public synchronized void placeStructure(Level level, BlockPos controllerPos, Direction facing, IMultiblockController controller) {
         if (level.isClientSide) return;
         
-        // Собираем все части СНАЧАЛА, обновления - ПОТОМ
         List<BlockPos> energyConnectorPositions = new ArrayList<>();
+        List<BlockPos> allPlacedPositions = new ArrayList<>();  // Собираем все координаты
         
         for (Map.Entry<BlockPos, Supplier<BlockState>> entry : structureMap.entrySet()) {
             BlockPos relativePos = entry.getKey();
@@ -106,8 +124,9 @@ public class MultiblockStructureHelper {
             
             // Ставим блок с флагом 2 (не отправлять обновления соседям)
             level.setBlock(worldPos, partState, 2);
-            MainRegistry.LOGGER.info("Player {} placed multiblock at {}", 
-                controller, controllerPos);
+            
+            // Добавляем в список для логирования
+            allPlacedPositions.add(worldPos);
             
             BlockEntity be = level.getBlockEntity(worldPos);
             if (be instanceof IMultiblockPart partBe) {
@@ -121,11 +140,14 @@ public class MultiblockStructureHelper {
             }
         }
         
+        // ОДНО сообщение со всеми координатами
+        MainRegistry.LOGGER.info("Player {} placed multiblock at {} with {} parts: {}", 
+            controller, controllerPos, allPlacedPositions.size(), formatPositions(allPlacedPositions));
+        
         updateFrameForController(level, controllerPos);
         
         // ОДНО массовое обновление в конце вместо 156
         for (BlockPos connectorPos : energyConnectorPositions) {
-            // Обновляем ТОЛЬКО провода, НЕ все соседние блоки
             for (Direction dir : Direction.values()) {
                 BlockPos wirePos = connectorPos.relative(dir);
                 BlockState wireState = level.getBlockState(wirePos);
@@ -136,7 +158,22 @@ public class MultiblockStructureHelper {
         }
     }
     
-
+    // Вспомогательный метод для красивого форматирования координат
+    private String formatPositions(List<BlockPos> positions) {
+        if (positions.isEmpty()) return "[]";
+        
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < positions.size(); i++) {
+            BlockPos pos = positions.get(i);
+            sb.append(String.format("(%d,%d,%d)", pos.getX(), pos.getY(), pos.getZ()));
+            if (i < positions.size() - 1) {
+                sb.append(", ");
+            }
+        }
+        sb.append("]");
+        return sb.toString();
+    }    
+    
     public void destroyStructure(Level level, BlockPos controllerPos, Direction facing) {
         if (level.isClientSide) return;
 
@@ -153,7 +190,7 @@ public class MultiblockStructureHelper {
             BlockState stateInWorld = level.getBlockState(worldPos);
 
             // If the block in the world is a phantom block part, remove it.
-            if (stateInWorld.getBlock() instanceof com.hbm_m.block.UniversalMachinePartBlock) {
+            if (stateInWorld.getBlock() instanceof com.hbm_m.block.machine.UniversalMachinePartBlock) {
                 level.setBlock(worldPos, Blocks.AIR.defaultBlockState(), 3);
             }
         }
@@ -343,6 +380,116 @@ public class MultiblockStructureHelper {
         }
 
         return finalShape.optimize();
+    }
+
+    /**
+     * Получает базовые AABB частей двери из реестра (автоматически извлечены из OBJ).
+     * @param doorId ID двери (например, "qe_sliding_door")
+     * @return Карта partName -> AABB или пустая если не зарегистрирована
+     */
+    public static Map<String, AABB> getDoorPartAABBs(String doorId) {
+        return DoorPartAABBRegistry.getAll(doorId);
+    }
+
+    /**
+     * Генерирует VoxelShape для двери на основе зарегистрированных AABB частей.
+     * @param doorId ID двери
+     * @param visibleParts Список имён видимых частей
+     * @param facing Направление двери
+     * @return Объединённая VoxelShape или пустая если нет данных
+     */
+    public static VoxelShape generateShapeFromDoorParts(String doorId, 
+                                                        java.util.List<String> visibleParts,
+                                                        Direction facing) {
+        Map<String, AABB> allAABBs = getDoorPartAABBs(doorId);
+        if (allAABBs.isEmpty()) return Shapes.empty();
+
+        // Получаем размеры мультиблока
+        int[] dims = com.hbm_m.block.DoorBlock.getDoorDimensions(doorId);
+        double widthBlocks = dims[3] + 1.0;   // X
+        double heightBlocks = dims[4] + 1.0;  // Y
+        double depthBlocks = dims[5] + 1.0;   // Z
+        double offsetX = dims[0];
+        double offsetY = dims[1];
+        double offsetZ = dims[2];
+
+        VoxelShape finalShape = Shapes.empty();
+        for (String partName : visibleParts) {
+            AABB raw = allAABBs.get(partName);
+            if (raw == null) continue;
+
+            // ИСПРАВЛЕНИЕ: OBJ модели дверей ориентированы вертикально (Y - высота створки)
+            // Но мультиблок large_vehicle_door горизонтальный (X - ширина створки)
+            // Поэтому ПОВОРАЧИВАЕМ модель на 90°: Y_obj → X_multiblock, X_obj → Y_multiblock
+            // Для вертикальных дверей (qe_sliding_door и т.д.) поворот не нужен
+            
+            boolean needsRotation = needsModelRotation(doorId);
+            
+            AABB scaled;
+            if (needsRotation) {
+                // Поворот: Y модели → X мультиблока, X модели → Y мультиблока
+                scaled = new AABB(
+                    raw.minY * widthBlocks + offsetX,    // Y_obj -> X_world
+                    raw.minX * heightBlocks + offsetY,   // X_obj -> Y_world
+                    raw.minZ * depthBlocks + offsetZ,
+                    raw.maxY * widthBlocks + offsetX,
+                    raw.maxX * heightBlocks + offsetY,
+                    raw.maxZ * depthBlocks + offsetZ
+                );
+            } else {
+                // Обычное масштабирование без поворота
+                scaled = new AABB(
+                    raw.minX * widthBlocks + offsetX,
+                    raw.minY * heightBlocks + offsetY,
+                    raw.minZ * depthBlocks + offsetZ,
+                    raw.maxX * widthBlocks + offsetX,
+                    raw.maxY * heightBlocks + offsetY,
+                    raw.maxZ * depthBlocks + offsetZ
+                );
+            }
+
+            // Поворачиваем по facing
+            AABB rotated = rotateAABBByFacing(scaled, facing);
+
+            // Конвертируем в VoxelShape (координаты в пикселях 0..16)
+            VoxelShape partShape = Block.box(
+                rotated.minX * 16.0, rotated.minY * 16.0, rotated.minZ * 16.0,
+                rotated.maxX * 16.0, rotated.maxY * 16.0, rotated.maxZ * 16.0
+            );
+
+            finalShape = Shapes.or(finalShape, partShape);
+        }
+
+        return finalShape.optimize();
+    }
+
+    /**
+     * Определяет, нужно ли поворачивать OBJ модель на 90° для соответствия мультиблоку.
+     * Горизонтальные двери (large_vehicle_door и т.д.) требуют поворота.
+     */
+    private static boolean needsModelRotation(String doorId) {
+        return switch (doorId) {
+            case "large_vehicle_door", 
+                "sliding_blast_door",
+                "secure_access_door",
+                "transition_seal",
+                "round_airlock_door",
+                "fire_door" -> true; // Горизонтальные двери
+            default -> false; // Вертикальные двери
+        };
+    }
+
+    /**
+     * Поворачивает AABB вокруг оси Y в зависимости от facing двери.
+     */
+    public static AABB rotateAABBByFacing(AABB aabb, Direction facing) {
+        // Используем тот же алгоритм поворота, что и у rotate(BlockPos)
+        return switch (facing) {
+            case SOUTH -> new AABB(-aabb.maxX, aabb.minY, -aabb.maxZ, -aabb.minX, aabb.maxY, -aabb.minZ);
+            case WEST  -> new AABB(-aabb.maxZ, aabb.minY,  aabb.minX, -aabb.minZ, aabb.maxY,  aabb.maxX);
+            case EAST  -> new AABB( aabb.minZ, aabb.minY, -aabb.maxX,  aabb.maxZ, aabb.maxY, -aabb.minX);
+            default    -> aabb; // NORTH — без изменений
+        };
     }
 
 

@@ -3,7 +3,7 @@ package com.hbm_m.client.overlay;
 // GUI для продвинутой сборочной машины.
 // Отвечает за отрисовку прогресса, энергии, подсказок и взаимодействие с пользователем.
 // Основан на AbstractContainerScreen и использует текстуры из ресурсов мода.
-import com.hbm_m.block.entity.BaseMachineBlockEntity;
+
 import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.recipe.AssemblerRecipe;
 

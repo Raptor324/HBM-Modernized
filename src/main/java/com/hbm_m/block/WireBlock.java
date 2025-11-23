@@ -3,6 +3,8 @@ package com.hbm_m.block;
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.api.energy.IEnergyConnector;
 import com.hbm_m.block.entity.WireBlockEntity;
+import com.hbm_m.block.machine.MachineBatteryBlock;
+import com.hbm_m.block.machine.UniversalMachinePartBlock;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.mojang.logging.LogUtils;

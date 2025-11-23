@@ -1,0 +1,53 @@
+{
+  "name": "outer_crater",
+  "effects": {
+    "fog_color": 329232,
+    "water_color": 658970,
+    "water_fog_color": 329011,
+    "sky_color": 1710619,
+    "foliage_color": 6975545,
+    "grass_color": 9470285
+  },
+  "temperature": 0.8,
+  "downfall": 0.4,
+  "precipitation": "rain",
+  "has_precipitation": true,
+  "category": "plains",
+  "depth": 0.125,
+  "scale": 0.05,
+  "particle": {
+    "type": "minecraft:ash",
+    "probability": 0.001
+  },
+  "spawn_costs": {},
+  "spawners": {},
+  "carvers": {},
+  "spawn": {
+    "creature": [
+      {
+        "type": "minecraft:pig",
+        "weight": 10,
+        "minCount": 2,
+        "maxCount": 4
+      },
+      {
+        "type": "minecraft:cow",
+        "weight": 8,
+        "minCount": 2,
+        "maxCount": 4
+      }
+    ],
+    "monster": [
+      {
+        "type": "minecraft:zombie",
+        "weight": 95,
+        "minCount": 1,
+        "maxCount": 3
+      }
+    ]
+  },
+  "features": [
+    "minecraft:grass_patch",
+    "minecraft:flower_patch"
+  ]
+}

@@ -1,6 +1,8 @@
 package com.hbm_m.recipe;
 
 import com.google.gson.JsonObject;
+import com.hbm_m.lib.RefStrings;
+
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
@@ -80,7 +82,7 @@ public class ShredderRecipe implements Recipe<Container> {
 
     public static class Serializer implements RecipeSerializer<ShredderRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        public static final ResourceLocation ID = new ResourceLocation("hbm_m", "shredding");
+        public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredding");
 
         @Override
         public ShredderRecipe fromJson(ResourceLocation recipeId, JsonObject json) {
