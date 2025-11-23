@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "connected_north=false,connected_south=false,connected_east=false,connected_west=false": { "model": "hbm_m:block/deco_steel" },
+    "connected_north=true,connected_south=false,connected_east=false,connected_west=false": { "model": "hbm_m:block/deco_steel_connected_north" },
+    "connected_north=false,connected_south=true,connected_east=false,connected_west=false": { "model": "hbm_m:block/deco_steel_connected_south" },
+    "connected_north=false,connected_south=false,connected_east=true,connected_west=false": { "model": "hbm_m:block/deco_steel_connected_east" },
+    "connected_north=false,connected_south=false,connected_east=false,connected_west=true": { "model": "hbm_m:block/deco_steel_connected_west" },
+    "connected_north=true,connected_south=true,connected_east=false,connected_west=false": { "model": "hbm_m:block/deco_steel_connected_north_south" },
+    "connected_north=true,connected_south=false,connected_east=true,connected_west=false": { "model": "hbm_m:block/deco_steel_connected_north_east" },
+    "connected_north=true,connected_south=false,connected_east=false,connected_west=true": { "model": "hbm_m:block/deco_steel_connected_north_west" },
+    "connected_north=false,connected_south=true,connected_east=true,connected_west=false": { "model": "hbm_m:block/deco_steel_connected_south_east" },
+    "connected_north=false,connected_south=true,connected_east=false,connected_west=true": { "model": "hbm_m:block/deco_steel_connected_south_west" },
+    "connected_north=false,connected_south=false,connected_east=true,connected_west=true": { "model": "hbm_m:block/deco_steel_connected_east_west" },
+    "connected_north=true,connected_south=true,connected_east=true,connected_west=false,side_facing=north": { "model": "hbm_m:block/deco_steel_connected_nse" },
+    "connected_north=true,connected_south=true,connected_east=false,connected_west=true,side_facing=north": { "model": "hbm_m:block/deco_steel_connected_nsw" },
+    "connected_north=true,connected_south=false,connected_east=true,connected_west=true,side_facing=north": { "model": "hbm_m:block/deco_steel_connected_new" },
+    "connected_north=false,connected_south=true,connected_east=true,connected_west=true,side_facing=north": { "model": "hbm_m:block/deco_steel_connected_sew" },
+    "connected_north=true,connected_south=true,connected_east=true,connected_west=true": { "model": "hbm_m:block/deco_steel_connected_all" }
+  }
+}

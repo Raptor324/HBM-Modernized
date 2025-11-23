@@ -4,6 +4,7 @@ package com.hbm_m.main;
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
 import com.hbm_m.item.ModBatteryItem;
 import com.hbm_m.particle.ModExplosionParticles;
@@ -83,6 +84,7 @@ public class MainRegistry {
         IEventBus modEventBus = context.getModEventBus();
         // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS
         // Добавь эту:
+        MinecraftForge.EVENT_BUS.register(new CrateBreaker());
         MinecraftForge.EVENT_BUS.register(new MobGearHandler());
         ModBiomes.BIOMES.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus); // Регистрация наших блоков
@@ -125,6 +127,7 @@ public class MainRegistry {
             ModPacketHandler.register();
             ModHazards.registerHazards(); // Регистрация опасностей (радиация, биологическая опасность в будущем и тд)
             // MinecraftForge.EVENT_BUS.addListener(this::onRenderLevelStage);
+
             LOGGER.info("HazardSystem initialized successfully");
         });
     }
@@ -329,6 +332,44 @@ public class MainRegistry {
                 }
             }
             event.accept(ModItems.RADAWAY);
+            event.accept(ModItems.CAN_KEY);
+            event.accept(ModItems.CAN_EMPTY);
+            event.accept(ModItems.CANNED_ASBESTOS);
+            event.accept(ModItems.CANNED_ASS);
+            event.accept(ModItems.CANNED_BARK);
+            event.accept(ModItems.CANNED_BEEF);
+            event.accept(ModItems.CANNED_BHOLE);
+            event.accept(ModItems.CANNED_CHEESE);
+            event.accept(ModItems.CANNED_CHINESE);
+            event.accept(ModItems.CANNED_DIESEL);
+            event.accept(ModItems.CANNED_FIST);
+            event.accept(ModItems.CANNED_FRIED);
+            event.accept(ModItems.CANNED_HOTDOGS);
+            event.accept(ModItems.CANNED_JIZZ);
+            event.accept(ModItems.CANNED_KEROSENE);
+            event.accept(ModItems.CANNED_LEFTOVERS);
+            event.accept(ModItems.CANNED_MILK);
+            event.accept(ModItems.CANNED_MYSTERY);
+            event.accept(ModItems.CANNED_NAPALM);
+            event.accept(ModItems.CANNED_OIL);
+            event.accept(ModItems.CANNED_PASHTET);
+            event.accept(ModItems.CANNED_PIZZA);
+            event.accept(ModItems.CANNED_RECURSION);
+            event.accept(ModItems.CANNED_SPAM);
+            event.accept(ModItems.CANNED_STEW);
+            event.accept(ModItems.CANNED_TOMATO);
+            event.accept(ModItems.CANNED_TUNA);
+            event.accept(ModItems.CANNED_TUBE);
+            event.accept(ModItems.CANNED_YOGURT);
+            event.accept(ModItems.CAN_BEPIS);
+            event.accept(ModItems.CAN_BREEN);
+            event.accept(ModItems.CAN_CREATURE);
+            event.accept(ModItems.CAN_LUNA);
+            event.accept(ModItems.CAN_MRSUGAR);
+            event.accept(ModItems.CAN_MUG);
+            event.accept(ModItems.CAN_OVERCHARGE);
+            event.accept(ModItems.CAN_REDBOMB);
+            event.accept(ModItems.CAN_SMART);
         }
 
         // ЗАПЧАСТИ
@@ -506,6 +547,8 @@ public class MainRegistry {
         // СТРОИТЕЛЬНЫЕ БЛОКИ
         if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get()) {
 
+
+            event.accept(ModBlocks.DECO_STEEL);
             event.accept(ModBlocks.CONCRETE_STAIRS);
             event.accept(ModBlocks.CONCRETE_SLAB);
             event.accept(ModBlocks.CONCRETE);
@@ -537,20 +580,25 @@ public class MainRegistry {
             event.accept(ModBlocks.REINFORCED_STONE);
             event.accept(ModBlocks.REINFORCED_STONE_SLAB);
             event.accept(ModBlocks.REINFORCED_STONE_STAIRS);
+
+            event.accept(ModBlocks.REINFORCED_GLASS);
+
             event.accept(ModBlocks.FREAKY_ALIEN_BLOCK);
             event.accept(ModBlocks.CRATE);
             event.accept(ModBlocks.CRATE_LEAD);
             event.accept(ModBlocks.CRATE_METAL);
             event.accept(ModBlocks.CRATE_WEAPON);
+            event.accept(ModBlocks.CRATE_CONSERVE);
 
-            event.accept(ModBlocks.REINFORCED_GLASS);
+            event.accept(ModBlocks.CAGE_LAMP);
+            event.accept(ModBlocks.FLOOD_LAMP);
 
             event.accept(ModBlocks.DORNIER);
+            event.accept(ModBlocks.TAPE_RECORDER);
             event.accept(ModBlocks.CRT_BROKEN);
             event.accept(ModBlocks.CRT_CLEAN);
             event.accept(ModBlocks.CRT_BSOD);
             event.accept(ModBlocks.TOASTER);
-            event.accept(ModBlocks.BARREL_RED);
             event.accept(ModBlocks.BARREL_PINK);
             event.accept(ModBlocks.BARREL_LOX);
             event.accept(ModBlocks.BARREL_YELLOW);
@@ -560,7 +608,6 @@ public class MainRegistry {
             event.accept(ModBlocks.DOOR_OFFICE);
             event.accept(ModBlocks.DOOR_BUNKER);
             event.accept(ModBlocks.METAL_DOOR);
-
             event.accept(ModBlocks.LARGE_VEHICLE_DOOR);
             event.accept(ModBlocks.ROUND_AIRLOCK_DOOR);
             event.accept(ModBlocks.TRANSITION_SEAL);
@@ -583,7 +630,7 @@ public class MainRegistry {
 
         // ИНСТРУМЕНТЫ
         if (event.getTab() == ModCreativeTabs.NTM_INSTRUMENTS_TAB.get()) {
-
+            event.accept(ModItems.CROWBAR);
             event.accept(ModItems.DOSIMETER);
             event.accept(ModItems.GEIGER_COUNTER);
             event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
@@ -596,7 +643,6 @@ public class MainRegistry {
 
         // СТАНКИ
         if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
-            event.accept(ModBlocks.BARREL_PLASTIC);
             event.accept(ModBlocks.BARREL_CORRODED);
             event.accept(ModBlocks.BARREL_IRON);
             event.accept(ModBlocks.BARREL_STEEL);

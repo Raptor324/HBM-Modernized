@@ -1,7 +1,12 @@
 {
   "variants": {
     "facing=north": {
-      "model": "hbm_m:block/crt_bsod"
+      "model": "hbm_m:block/crt_bsod",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "hbm_m:block/crt_bsod",
+      "y": 0
     },
     "facing=south": {
       "model": "hbm_m:block/crt_bsod",
@@ -10,10 +15,6 @@
     "facing=west": {
       "model": "hbm_m:block/crt_bsod",
       "y": 180
-    },
-    "facing=east": {
-      "model": "hbm_m:block/crt_bsod",
-      "y": 0
     }
   }
 }

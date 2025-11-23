@@ -23,7 +23,11 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> GEIGER_6 = registerSoundEvents("item.geiger6");
 
     public static final RegistryObject<SoundEvent> RADAWAY_USE = registerSoundEvents("radaway_use");
-
+    public static final RegistryObject<SoundEvent> CRATEBREAK5 = registerSoundEvents("block.cratebreak5");
+    public static final RegistryObject<SoundEvent> CRATEBREAK4 = registerSoundEvents("block.cratebreak4");
+    public static final RegistryObject<SoundEvent> CRATEBREAK3 = registerSoundEvents("block.cratebreak3");
+    public static final RegistryObject<SoundEvent> CRATEBREAK2 = registerSoundEvents("block.cratebreak2");
+    public static final RegistryObject<SoundEvent> CRATEBREAK1 = registerSoundEvents("block.cratebreak1");
     public static final RegistryObject<SoundEvent> TOOL_TECH_BLEEP = registerSoundEvents("techbleep");
     public static final RegistryObject<SoundEvent> TOOL_TECH_BOOP = registerSoundEvents("techboop");
 

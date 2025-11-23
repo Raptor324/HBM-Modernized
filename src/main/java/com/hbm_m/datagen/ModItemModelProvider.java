@@ -134,7 +134,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 
         // РЕГИСТРАЦИЯ МОДЕЛЕЙ ДЛЯ УНИКАЛЬНЫХ ПРЕДМЕТОВ 
         // Для предметов, зарегистрированных вручную, мы также можем генерировать модели.
-
+        simpleItem(ModItems.CROWBAR);
         simpleItem(ModItems.OIL_DETECTOR);
         simpleItem(ModItems.MULTI_DETONATOR);
         simpleItem(ModItems.DETONATOR);
@@ -159,7 +159,45 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.STRAWBERRY);
 
 
-
+        simpleItem(ModItems.CANNED_ASBESTOS);
+        simpleItem(ModItems.CANNED_ASS);
+        simpleItem(ModItems.CANNED_BARK);
+        simpleItem(ModItems.CANNED_BEEF);
+        simpleItem(ModItems.CANNED_BHOLE);
+        simpleItem(ModItems.CANNED_CHEESE);
+        simpleItem(ModItems.CANNED_CHINESE);
+        simpleItem(ModItems.CANNED_DIESEL);
+        simpleItem(ModItems.CANNED_FIST);
+        simpleItem(ModItems.CANNED_FRIED);
+        simpleItem(ModItems.CANNED_HOTDOGS);
+        simpleItem(ModItems.CANNED_JIZZ);
+        simpleItem(ModItems.CANNED_KEROSENE);
+        simpleItem(ModItems.CANNED_LEFTOVERS);
+        simpleItem(ModItems.CANNED_MILK);
+        simpleItem(ModItems.CANNED_MYSTERY);
+        simpleItem(ModItems.CANNED_NAPALM);
+        simpleItem(ModItems.CANNED_OIL);
+        simpleItem(ModItems.CANNED_PASHTET);
+        simpleItem(ModItems.CANNED_PIZZA);
+        simpleItem(ModItems.CANNED_RECURSION);
+        simpleItem(ModItems.CANNED_SPAM);
+        simpleItem(ModItems.CANNED_STEW);
+        simpleItem(ModItems.CANNED_TOMATO);
+        simpleItem(ModItems.CANNED_TUNA);
+        simpleItem(ModItems.CANNED_TUBE);
+        simpleItem(ModItems.CANNED_YOGURT);
+        simpleItem(ModItems.BOLT_STEEL);
+        simpleItem(ModItems.CAN_BEPIS);
+        simpleItem(ModItems.CAN_BREEN);
+        simpleItem(ModItems.CAN_CREATURE);
+        simpleItem(ModItems.CAN_EMPTY);
+        simpleItem(ModItems.CAN_KEY);
+        simpleItem(ModItems.CAN_LUNA);
+        simpleItem(ModItems.CAN_MRSUGAR);
+        simpleItem(ModItems.CAN_MUG);
+        simpleItem(ModItems.CAN_OVERCHARGE);
+        simpleItem(ModItems.CAN_REDBOMB);
+        simpleItem(ModItems.CAN_SMART);
 
 
         simpleItem(ModItems.BOLT_STEEL);

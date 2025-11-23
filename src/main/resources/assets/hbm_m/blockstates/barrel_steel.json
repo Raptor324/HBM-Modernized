@@ -1,8 +1,20 @@
 {
   "variants": {
-    "facing=north": { "model": "hbm_m:block/barrel_steel" },
-    "facing=south": { "model": "hbm_m:block/barrel_steel", "y": 180 },
-    "facing=west":  { "model": "hbm_m:block/barrel_steel", "y": 270 },
-    "facing=east":  { "model": "hbm_m:block/barrel_steel", "y": 90 }
+    "facing=north": {
+      "model": "hbm_m:block/barrel_steel",
+      "y": 0
+    },
+    "facing=east": {
+      "model": "hbm_m:block/barrel_steel",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "hbm_m:block/barrel_steel",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "hbm_m:block/barrel_steel",
+      "y": 270
+    }
   }
 }

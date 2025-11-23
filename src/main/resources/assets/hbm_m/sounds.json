@@ -73,6 +73,36 @@
       "hbm_m:tool/repair2"
     ]
   },
+  "block.cratebreak1": {
+    "subtitle": "sounds.hbm_m.subtitle.cratebreak1",
+    "sounds": [
+      "hbm_m:block/cratebreak1"
+    ]
+  },
+  "block.cratebreak2": {
+    "subtitle": "sounds.hbm_m.subtitle.cratebreak2",
+    "sounds": [
+      "hbm_m:block/cratebreak2"
+    ]
+  },
+  "block.cratebreak3": {
+    "subtitle": "sounds.hbm_m.subtitle.cratebreak4",
+    "sounds": [
+      "hbm_m:block/cratebreak3"
+    ]
+  },
+  "block.cratebreak4": {
+    "subtitle": "sounds.hbm_m.subtitle.cratebreak4",
+    "sounds": [
+      "hbm_m:block/cratebreak4"
+    ]
+  },
+  "block.cratebreak5": {
+    "subtitle": "sounds.hbm_m.subtitle.cratebreak5",
+    "sounds": [
+      "hbm_m:block/cratebreak5"
+    ]
+  },
   "tool.repair3": {
     "subtitle": "sounds.hbm_m.subtitle.repair",
     "sounds": [
