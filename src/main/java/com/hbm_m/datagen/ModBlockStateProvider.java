@@ -157,6 +157,33 @@ public class ModBlockStateProvider extends BlockStateProvider {
                                 blockTexture(ModBlocks.REINFORCED_GLASS.get()))
                         .renderType("cutout"));
 
+        simpleBlockWithItem(ModBlocks.BARBED_WIRE.get(),
+                models().cubeAll(ModBlocks.BARBED_WIRE.getId().getPath(),
+                                blockTexture(ModBlocks.BARBED_WIRE.get()))
+                        .renderType("cutout"));
+        simpleBlockWithItem(ModBlocks.BARBED_WIRE_FIRE.get(),
+                models().cubeAll(ModBlocks.BARBED_WIRE_FIRE.getId().getPath(),
+                                blockTexture(ModBlocks.BARBED_WIRE_FIRE.get()))
+                        .renderType("cutout"));
+        simpleBlockWithItem(ModBlocks.BARBED_WIRE_POISON.get(),
+                models().cubeAll(ModBlocks.BARBED_WIRE_POISON.getId().getPath(),
+                                blockTexture(ModBlocks.BARBED_WIRE_POISON.get()))
+                        .renderType("cutout"));
+        simpleBlockWithItem(ModBlocks.BARBED_WIRE_RAD.get(),
+                models().cubeAll(ModBlocks.BARBED_WIRE_RAD.getId().getPath(),
+                                blockTexture(ModBlocks.BARBED_WIRE_RAD.get()))
+                        .renderType("cutout"));
+        simpleBlockWithItem(ModBlocks.BARBED_WIRE_WITHER.get(),
+                models().cubeAll(ModBlocks.BARBED_WIRE_WITHER.getId().getPath(),
+                                blockTexture(ModBlocks.BARBED_WIRE_WITHER.get()))
+                        .renderType("cutout"));
+
+
+
+
+
+
+
         doorBlockWithRenderType(((DoorBlock) ModBlocks.METAL_DOOR.get()), modLoc("block/metal_door_bottom"), modLoc("block/metal_door_top"), "cutout");
         doorBlockWithRenderType(((DoorBlock) ModBlocks.DOOR_BUNKER.get()), modLoc("block/door_bunker_bottom"), modLoc("block/door_bunker_top"), "cutout");
         doorBlockWithRenderType(((DoorBlock) ModBlocks.DOOR_OFFICE.get()), modLoc("block/door_office_bottom"), modLoc("block/door_office_top"), "cutout");

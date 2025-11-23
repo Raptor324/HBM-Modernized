@@ -1,9 +1,20 @@
-
 {
   "variants": {
-    "facing=north": { "model": "hbm_m:block/barrel_taint" },
-    "facing=south": { "model": "hbm_m:block/barrel_taint", "y": 180 },
-    "facing=west":  { "model": "hbm_m:block/barrel_taint", "y": 270 },
-    "facing=east":  { "model": "hbm_m:block/barrel_taint", "y": 90 }
+    "facing=north": {
+      "model": "hbm_m:block/barrel_taint",
+      "y": 0
+    },
+    "facing=east": {
+      "model": "hbm_m:block/barrel_taint",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "hbm_m:block/barrel_taint",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "hbm_m:block/barrel_taint",
+      "y": 270
+    }
   }
 }

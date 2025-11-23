@@ -1,0 +1,6 @@
+{
+  "parent": "block/cube_all",
+  "textures": {
+    "all": "hbm_m:block/deco_steel_connected_all"
+  }
+}
