@@ -672,6 +672,18 @@ public class MainRegistry {
             event.accept(ModBlocks.BARREL_STEEL);
             event.accept(ModBlocks.BARREL_TCALLOY);
             event.accept(ModBlocks.ANVIL_BLOCK);
+            event.accept(ModBlocks.ANVIL_IRON);
+            event.accept(ModBlocks.ANVIL_LEAD);
+            event.accept(ModBlocks.ANVIL_STEEL);
+            event.accept(ModBlocks.ANVIL_DESH);
+            event.accept(ModBlocks.ANVIL_FERROURANIUM);
+            event.accept(ModBlocks.ANVIL_SATURNITE);
+            event.accept(ModBlocks.ANVIL_BISMUTH_BRONZE);
+            event.accept(ModBlocks.ANVIL_ARSENIC_BRONZE);
+            event.accept(ModBlocks.ANVIL_SCHRABIDATE);
+            event.accept(ModBlocks.ANVIL_DNT);
+            event.accept(ModBlocks.ANVIL_OSMIRIDIUM);
+            event.accept(ModBlocks.ANVIL_MURKY);
             event.accept(ModBlocks.PRESS);
             event.accept(ModBlocks.BLAST_FURNACE);
             event.accept(ModBlocks.BLAST_FURNACE_EXTENSION);

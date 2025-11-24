@@ -17,7 +17,7 @@ import org.joml.Vector3f;
 public class GUIMachinePress extends AbstractContainerScreen<MachinePressMenu> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/press/press_gui.png");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/gui_press.png");
 
     private static final int LIGHT_U = 176;
     private static final int LIGHT_V = 0;

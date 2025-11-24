@@ -26,7 +26,7 @@ import javax.annotation.Nullable;
 public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_armor_modifier.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_armor_modifier.png");
 
     private static final int SIDE_PANEL_WIDTH = 22;
     private static final int SIDE_PANEL_HEIGHT = 80;

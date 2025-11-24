@@ -450,8 +450,35 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("direction.hbm_m.south", "Юг");
                 add("direction.hbm_m.west", "Запад");
                 add("direction.hbm_m.east", "Восток");
+                add("gui.hbm_m.anvil.inputs", "Входы:");
+                add("gui.hbm_m.anvil.outputs", "Выходы:");
+                add("gui.hbm_m.anvil.search", "Поиск");
+                add("gui.hbm_m.anvil.search_hint", "Поиск...");
+                add("gui.hbm_m.anvil.tier", "Требуемый уровень: %s");
+                add("tier.hbm_m.anvil.iron", "Железо");
+                add("tier.hbm_m.anvil.steel", "Сталь");
+                add("tier.hbm_m.anvil.oil", "Нефтяной");
+                add("tier.hbm_m.anvil.nuclear", "Ядерный");
+                add("tier.hbm_m.anvil.rbmk", "РБМК");
+                add("tier.hbm_m.anvil.fusion", "Термоядерный");
+                add("tier.hbm_m.anvil.particle", "Частичный ускоритель");
+                add("tier.hbm_m.anvil.gerald", "Джеральд");
+                add("tier.hbm_m.anvil.murky", "Мрачный");
 
                 // БЛОКИ
+                add("block.hbm_m.anvil_block", "Индустриальная наковальня");
+                add("block.hbm_m.anvil_iron", "Железная наковальня");
+                add("block.hbm_m.anvil_lead", "Свинцовая наковальня");
+                add("block.hbm_m.anvil_steel", "Стальная наковальня");
+                add("block.hbm_m.anvil_desh", "Наковальня из деша");
+                add("block.hbm_m.anvil_ferrouranium", "Наковальня из ферроурания");
+                add("block.hbm_m.anvil_saturnite", "Сатурнитовая наковальня");
+                add("block.hbm_m.anvil_bismuth_bronze", "Наковальня из висмутовой бронзы");
+                add("block.hbm_m.anvil_arsenic_bronze", "Наковальня из мышьяковой бронзы");
+                add("block.hbm_m.anvil_schrabidate", "Шрабидатовая наковальня");
+                add("block.hbm_m.anvil_dnt", "Наковальня DNT");
+                add("block.hbm_m.anvil_osmiridium", "Осмиридиевая наковальня");
+                add("block.hbm_m.anvil_murky", "Мрачная наковальня");
                 add("block.hbm_m.door_office", "Офисная дверь");
                 add("block.hbm_m.door_bunker", "Бункерная дверь");
                 add("block.hbm_m.metal_door", "Металлическая дверь");
@@ -573,6 +600,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.wood_burner", "Дровяной генератор");
                 add("container.hbm_m.machine_battery", "Энергохранилище");
                 add("container.hbm_m.press", "Пресс");
+                add("container.hbm_m.anvil_block", "Индустриальная наковальня");
                 add("container.hbm_m.crate_iron", "Железный ящик");
                 add("container.hbm_m.crate_steel", "Стальной ящик");
                 add("container.hbm_m.crate_desh", "Душ ящик");
@@ -1143,8 +1171,35 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("direction.hbm_m.south", "South");
                 add("direction.hbm_m.west", "West");
                 add("direction.hbm_m.east", "East");
+                add("gui.hbm_m.anvil.inputs", "Inputs:");
+                add("gui.hbm_m.anvil.outputs", "Outputs:");
+                add("gui.hbm_m.anvil.search", "Search");
+                add("gui.hbm_m.anvil.search_hint", "Search...");
+                add("gui.hbm_m.anvil.tier", "Required Tier: %s");
+                add("tier.hbm_m.anvil.iron", "Iron");
+                add("tier.hbm_m.anvil.steel", "Steel");
+                add("tier.hbm_m.anvil.oil", "Oil");
+                add("tier.hbm_m.anvil.nuclear", "Nuclear");
+                add("tier.hbm_m.anvil.rbmk", "RBMK");
+                add("tier.hbm_m.anvil.fusion", "Fusion");
+                add("tier.hbm_m.anvil.particle", "Particle");
+                add("tier.hbm_m.anvil.gerald", "Gerald");
+                add("tier.hbm_m.anvil.murky", "Murky");
 
                 // BLOCKS
+                add("block.hbm_m.anvil_block", "Industrial Anvil");
+                add("block.hbm_m.anvil_iron", "Iron Anvil");
+                add("block.hbm_m.anvil_lead", "Lead Anvil");
+                add("block.hbm_m.anvil_steel", "Steel Anvil");
+                add("block.hbm_m.anvil_desh", "Desh Anvil");
+                add("block.hbm_m.anvil_ferrouranium", "Ferrouranium Anvil");
+                add("block.hbm_m.anvil_saturnite", "Saturnite Anvil");
+                add("block.hbm_m.anvil_bismuth_bronze", "Bismuth Bronze Anvil");
+                add("block.hbm_m.anvil_arsenic_bronze", "Arsenic Bronze Anvil");
+                add("block.hbm_m.anvil_schrabidate", "Schrabidate Anvil");
+                add("block.hbm_m.anvil_dnt", "DNT Anvil");
+                add("block.hbm_m.anvil_osmiridium", "Osmiridium Anvil");
+                add("block.hbm_m.anvil_murky", "Murky Anvil");
                 add("block.hbm_m.door_office", "Office Door");
                 add("block.hbm_m.door_bunker", "Bunker Door");
                 add("block.hbm_m.metal_door", "Metal Door");
@@ -1254,6 +1309,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.advanced_assembly_machine", "Assembly Machine");
                 add("container.hbm_m.machine_battery", "Machine Battery");
                 add("container.hbm_m.press", "Press");
+                add("container.hbm_m.anvil_block", "Industrial Anvil");
                 add("container.hbm_m.crate_iron", "Iron Crate");
                 add("container.hbm_m.crate_steel", "Steel Crate");
                 add("container.hbm_m.crate_desh", "Desh Crate");

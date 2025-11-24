@@ -26,7 +26,7 @@ public class OverlayGeiger {
     private static boolean hasGeigerCached = false;
     private static final long INVENTORY_CHECK_INTERVAL = 1000;
 
-    private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/overlay_misc.png");
+    private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/misc/overlay_misc.png");
 
     public static void onRenderOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         

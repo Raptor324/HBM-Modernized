@@ -24,7 +24,7 @@ import java.util.Locale;
 
 public class GUIAdvancedAssemblerRecipeSelector extends Screen {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
-            RefStrings.MODID, "textures/gui/gui_recipe_selector.png");
+            RefStrings.MODID, "textures/gui/processing/gui_recipe_selector.png");
     
     public static final String NULL_SELECTION = "null";
     

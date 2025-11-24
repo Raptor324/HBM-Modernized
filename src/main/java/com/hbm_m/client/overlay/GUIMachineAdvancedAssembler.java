@@ -34,7 +34,7 @@ import com.hbm_m.util.EnergyFormatter;
 public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<MachineAdvancedAssemblerMenu> {
 
     // Текстура из старого GUI
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_assembler.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_assembler.png");
     // private static final ResourceLocation TEMPLATE_FOLDER_ICON = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/item/template_folder.png");
 
     public GUIMachineAdvancedAssembler(MachineAdvancedAssemblerMenu menu, Inventory playerInventory, Component title) {

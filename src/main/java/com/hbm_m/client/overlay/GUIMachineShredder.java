@@ -13,7 +13,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUIMachineShredder extends GuiInfoScreen<MachineShredderMenu> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/shredder_gui.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_shredder.png");
 
     // Progress Bar constants (как в оригинале)
     private static final int PROGRESS_X = 63; // Relative X position on the GUI for the arrow

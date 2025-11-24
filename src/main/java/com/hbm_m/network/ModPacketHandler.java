@@ -36,5 +36,7 @@ public class ModPacketHandler {
         INSTANCE.registerMessage(id++, SetAssemblerRecipeC2SPacket.class, SetAssemblerRecipeC2SPacket::encode, SetAssemblerRecipeC2SPacket::decode, SetAssemblerRecipeC2SPacket::handle);
         INSTANCE.registerMessage(id++, ToggleWoodBurnerPacket.class, ToggleWoodBurnerPacket::encode, ToggleWoodBurnerPacket::decode, ToggleWoodBurnerPacket::handle);
         INSTANCE.registerMessage(id++, DetonateAllPacket.class, DetonateAllPacket::encode, DetonateAllPacket::decode, DetonateAllPacket::handle);
+        INSTANCE.registerMessage(id++, AnvilCraftC2SPacket.class, AnvilCraftC2SPacket::encode, AnvilCraftC2SPacket::decode, AnvilCraftC2SPacket::handle);
+        INSTANCE.registerMessage(id++, AnvilSelectRecipeC2SPacket.class, AnvilSelectRecipeC2SPacket::encode, AnvilSelectRecipeC2SPacket::decode, AnvilSelectRecipeC2SPacket::handle);
     }
 }

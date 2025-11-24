@@ -14,10 +14,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 
 public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBurnerMenu> {
-    private static final ResourceLocation TEXTURE = new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/wood_burner/345345.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/generators/gui_wood_burner_alt.png");
 
     public GUIMachineWoodBurner(MachineWoodBurnerMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);
@@ -89,7 +88,6 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
         if (isMouseOver(mouseX, mouseY, 143, 18, 16, 34)) {
             List<Component> tooltip = new ArrayList<>();
 
-            // ИСПОЛЬЗУЙ ФОРМАТТЕР:
             long energy = menu.getEnergyLong();
             long maxEnergy = menu.getMaxEnergyLong();
 
@@ -106,7 +104,6 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
             gui.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
         }
 
-        // ДОБАВЬ тултип для шкалы горения:
         if (isMouseOver(mouseX, mouseY, 17, 18, 4, 52)) {
             List<Component> tooltip = new ArrayList<>();
             int burnTime = menu.getBurnTime();
@@ -124,7 +121,6 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
             gui.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
         }
 
-        // ДОБАВЬ тултип для кнопки включения/выключения:
         if (isMouseOver(mouseX, mouseY, 53, 17, 16, 16)) {
             String status = menu.isEnabled() ? "Enabled" : "Disabled";
             ChatFormatting color = menu.isEnabled() ? ChatFormatting.GREEN : ChatFormatting.RED;

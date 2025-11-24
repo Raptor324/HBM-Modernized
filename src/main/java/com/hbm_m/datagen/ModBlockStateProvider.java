@@ -313,6 +313,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
             }
         }
 
+        registerAnvils();
     }
 
     /**
@@ -420,4 +421,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), model);
     }
 
+    private void registerAnvils() {
+        ModBlocks.getAnvilBlocks().forEach(reg -> horizontalBlock(
+                reg.get(),
+                models().getExistingFile(modLoc("block/" + reg.getId().getPath()))
+        ));
+    }
 }

@@ -40,7 +40,19 @@ public class ModBlockEntities {
     public static final RegistryObject<BlockEntityType<AnvilBlockEntity>> ANVIL_BE =
         BLOCK_ENTITIES.register("anvil_be", () ->
             BlockEntityType.Builder.<AnvilBlockEntity>of(AnvilBlockEntity::new,
-                            ModBlocks.ANVIL_BLOCK.get()).build(null));
+                    ModBlocks.ANVIL_BLOCK.get(),
+                    ModBlocks.ANVIL_IRON.get(),
+                    ModBlocks.ANVIL_LEAD.get(),
+                    ModBlocks.ANVIL_STEEL.get(),
+                    ModBlocks.ANVIL_DESH.get(),
+                    ModBlocks.ANVIL_FERROURANIUM.get(),
+                    ModBlocks.ANVIL_SATURNITE.get(),
+                    ModBlocks.ANVIL_BISMUTH_BRONZE.get(),
+                    ModBlocks.ANVIL_ARSENIC_BRONZE.get(),
+                    ModBlocks.ANVIL_SCHRABIDATE.get(),
+                    ModBlocks.ANVIL_DNT.get(),
+                    ModBlocks.ANVIL_OSMIRIDIUM.get(),
+                    ModBlocks.ANVIL_MURKY.get()).build(null));
 
     public static final RegistryObject<BlockEntityType<MachineShredderBlockEntity>> SHREDDER =
             BLOCK_ENTITIES.register("shredder", () ->
