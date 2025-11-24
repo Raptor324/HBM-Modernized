@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity.machine;
 
+import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machine.MachineAdvancedAssemblerBlock;
@@ -22,6 +23,7 @@ import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
@@ -773,6 +775,38 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 }
             }
             return allReached;
+        }
+    }
+
+    @Override
+    protected void ensureNetworkInitialized() {
+        // Если уже инициализировано - выходим
+        if (this.networkInitialized) return;
+
+        // 1. Вызываем родительский метод (он зарегистрирует сам контроллер и поставит flag = true)
+        super.ensureNetworkInitialized();
+
+        if (level != null && !level.isClientSide) {
+            // 2. Регистрируем все части мультиблока, которые являются коннекторами
+            if (getBlockState().getBlock() instanceof MachineAdvancedAssemblerBlock block) {
+                MultiblockStructureHelper helper = block.getStructureHelper();
+                Direction facing = getBlockState().getValue(MachineAdvancedAssemblerBlock.FACING);
+
+                // Получаем менеджер сети
+                EnergyNetworkManager manager = EnergyNetworkManager.get((ServerLevel) level);
+
+                // Проходим по всем частям структуры
+                for (BlockPos localPos : helper.getStructureMap().keySet()) {
+                    // Если часть является энергетическим коннектором
+                    if (block.getPartRole(localPos) == com.hbm_m.multiblock.PartRole.ENERGY_CONNECTOR) {
+                        // Вычисляем её реальную позицию в мире
+                        BlockPos partWorldPos = helper.getRotatedPos(worldPosition, localPos, facing);
+
+                        // Принудительно добавляем узел части в сеть
+                        manager.addNode(partWorldPos);
+                    }
+                }
+            }
         }
     }
 }

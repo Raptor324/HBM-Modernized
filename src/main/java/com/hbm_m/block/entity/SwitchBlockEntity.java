@@ -17,17 +17,17 @@ import javax.annotation.Nullable;
 
 public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
 
-    private LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
+    // Capability всегда "живая", но доступ к ней регулируется через getCapability
+    private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
 
     public SwitchBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.SWITCH_BE.get(), pos, state);
     }
 
-    // === ДОБАВЛЕН МЕТОД TICK ===
     public static void tick(Level level, BlockPos pos, BlockState state, SwitchBlockEntity entity) {
         if (level.isClientSide) return;
 
-        // Безопасная инициализация в тике
+        // Если рубильник включен, он ОБЯЗАН быть в сети
         if (state.getValue(SwitchBlock.POWERED)) {
             ServerLevel serverLevel = (ServerLevel) level;
             EnergyNetworkManager manager = EnergyNetworkManager.get(serverLevel);
@@ -38,15 +38,11 @@ public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
         }
     }
 
-    public void updateState(boolean powered) {
-        LazyOptional<IEnergyConnector> oldCap = hbmConnector;
-        hbmConnector = LazyOptional.of(() -> this);
-        oldCap.invalidate();
-    }
-
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
+            // [ВАЖНО] Проверяем валидность здесь. Если isValidSide вернет false (например, выключен),
+            // мы вернем super (empty). Это заставит EnergyNetworkManager считать узел невалидным.
             if (isValidSide(side)) {
                 return hbmConnector.cast();
             }
@@ -55,9 +51,15 @@ public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
     }
 
     private boolean isValidSide(@Nullable Direction side) {
-        if (side == null) return true;
+        // [ИСПРАВЛЕНО] Добавлена проверка POWERED.
+        // Теперь, если рубильник выключен, он не отдает Capability.
+        // Это синхронизирует логику EnergyNetworkManager с состоянием блока.
         BlockState state = this.getBlockState();
         if (!(state.getBlock() instanceof SwitchBlock)) return false;
+
+        if (!state.getValue(SwitchBlock.POWERED)) return false; // <--- ВОТ ЭТОГО НЕ ХВАТАЛО
+
+        if (side == null) return true;
         Direction facing = state.getValue(SwitchBlock.FACING);
         return side == facing || side == facing.getOpposite();
     }
@@ -70,17 +72,13 @@ public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
 
     @Override
     public boolean canConnectEnergy(Direction side) {
-        BlockState state = this.getBlockState();
-        if (!(state.getBlock() instanceof SwitchBlock)) return false;
-        if (!state.getValue(SwitchBlock.POWERED)) return false;
+        // Используем ту же логику проверки
         return isValidSide(side);
     }
 
-    // === ИСПРАВЛЕН МЕТОД SETLEVEL ===
     @Override
     public void setLevel(Level pLevel) {
         super.setLevel(pLevel);
-        // УДАЛЕНО: EnergyNetworkManager.get(...) - это вызывало дедлок!
     }
 
     @Override

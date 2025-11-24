@@ -30,8 +30,6 @@ public class SwitchBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty POWERED = BlockStateProperties.POWERED;
 
-
-
     public SwitchBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
@@ -63,30 +61,35 @@ public class SwitchBlock extends BaseEntityBlock {
             return InteractionResult.SUCCESS;
         }
 
-        // 1. Toggle state
+        // 1. Toggle logic
         boolean isPowered = !state.getValue(POWERED);
         BlockState newState = state.setValue(POWERED, isPowered);
 
-        // 2. Update Block and BE
+        // 2. [ИСПРАВЛЕНО] Используем флаг 3 (UPDATE_ALL = CLIENTS | NEIGHBORS).
+        // Это критично для корректного обновления состояния чанка перед тем, как NetworkManager его прочитает.
         level.setBlock(pos, newState, 3);
 
-        // 3. Force Capability invalidation on the TE so neighbors re-query
+        // 3. Update BE State cache (принудительно обновляем BE)
         if(level.getBlockEntity(pos) instanceof SwitchBlockEntity be) {
-            be.updateState(isPowered);
+            be.setBlockState(newState);
         }
 
         // 4. Handle Network Logic
         EnergyNetworkManager manager = EnergyNetworkManager.get((ServerLevel) level);
+
+        // [ИСПРАВЛЕНО] Всегда сначала удаляем узел.
+        // Это предотвращает ситуацию "зомби-узла", когда addNode думает, что узел уже есть,
+        // но он в некорректном состоянии.
+        manager.removeNode(pos);
+
         if (isPowered) {
             level.playSound(null, pos, ModSounds.SWITCH_ON.get(), SoundSource.BLOCKS, 1.0f, 1.0f);
             manager.addNode(pos);
         } else {
-            manager.removeNode(pos);
             level.playSound(null, pos, ModSounds.SWITCH_ON.get(), SoundSource.BLOCKS, 1.0f, 0.7f);
         }
 
-        // 5. CRITICAL: Notify neighbors to update their connections
-        // This forces the WireBlock to run its updateShape/getConnectionState logic again
+        // 5. Notify neighbors (теперь это делает и setBlock с флагом 3, но оставим для надежности)
         level.updateNeighborsAt(pos, this);
 
         return InteractionResult.SUCCESS;
@@ -120,7 +123,6 @@ public class SwitchBlock extends BaseEntityBlock {
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         if (level.isClientSide) return null;
-        // Убедитесь, что тип BE совпадает
         return createTickerHelper(type, ModBlockEntities.SWITCH_BE.get(), SwitchBlockEntity::tick);
     }
 }
