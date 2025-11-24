@@ -523,8 +523,10 @@ public class ModItems {
             () -> new DetonatorItem(new Item.Properties()));
 
 
-
-
+    public static final RegistryObject<Item> MALACHITE_CHUNK = ITEMS.register("malachite_chunk",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> LIMESTONE = ITEMS.register("limestone",
+            () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> CAN_KEY = ITEMS.register("can_key",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> CROWBAR = ITEMS.register("crowbar",

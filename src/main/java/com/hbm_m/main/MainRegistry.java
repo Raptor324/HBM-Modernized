@@ -499,6 +499,13 @@ public class MainRegistry {
             event.accept(ModBlocks.CINNABAR_ORE_DEEPSLATE);
             event.accept(ModBlocks.URANIUM_ORE_DEEPSLATE);
 
+            event.accept(ModBlocks.RESOURCE_ASBESTOS.get());
+            event.accept(ModBlocks.RESOURCE_BAUXITE.get());
+            event.accept(ModBlocks.RESOURCE_HEMATITE.get());
+            event.accept(ModBlocks.RESOURCE_LIMESTONE.get());
+            event.accept(ModBlocks.RESOURCE_MALACHITE.get());
+            event.accept(ModBlocks.RESOURCE_SULFUR.get());
+
             event.accept(ModItems.ALUMINUM_RAW);
             event.accept(ModItems.BERYLLIUM_RAW);
             event.accept(ModItems.COBALT_RAW);

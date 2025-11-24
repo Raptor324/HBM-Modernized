@@ -30,7 +30,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 blockTexture(ModBlocks.STRAWBERRY_BUSH.get())).renderType("cutout"));
         // Блоки слитков теперь генерируются автоматически в цикле ниже
 
-
+        blockWithItem(ModBlocks.RESOURCE_ASBESTOS);
+        blockWithItem(ModBlocks.RESOURCE_BAUXITE);
+        blockWithItem(ModBlocks.RESOURCE_HEMATITE);
+        blockWithItem(ModBlocks.RESOURCE_LIMESTONE);
+        blockWithItem(ModBlocks.RESOURCE_MALACHITE);
+        blockWithItem(ModBlocks.RESOURCE_SULFUR);
         blockWithItem(ModBlocks.DEPTH_IRON);
         blockWithItem(ModBlocks.DEPTH_TITANIUM);
         blockWithItem(ModBlocks.DEPTH_TUNGSTEN);

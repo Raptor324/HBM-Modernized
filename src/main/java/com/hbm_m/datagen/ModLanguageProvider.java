@@ -2,6 +2,7 @@ package com.hbm_m.datagen;
 
 // Провайдер генерации локализаций (переводов) для мода.
 
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.ModPowders;
@@ -490,6 +491,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("direction.hbm_m.east", "Восток");
 
                 // БЛОКИ
+                add(ModBlocks.RESOURCE_ASBESTOS.get(), "Асбестовый кластер");
+                add(ModBlocks.RESOURCE_BAUXITE.get(), "Боксит");
+                add(ModBlocks.RESOURCE_HEMATITE.get(), "Гематит");
+                add(ModBlocks.RESOURCE_LIMESTONE.get(), "Известняк");
+                add(ModBlocks.RESOURCE_MALACHITE.get(), "Малахит");
+                add(ModBlocks.RESOURCE_SULFUR.get(), "Серный кластер");
                 add("block.hbm_m.door_office", "Офисная дверь");
                 add("block.hbm_m.door_bunker", "Бункерная дверь");
                 add("block.hbm_m.metal_door", "Металлическая дверь");
@@ -1287,7 +1294,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.wire_coated", "Red Copper Wire");
 
                 // ORES
-
+                add(ModBlocks.RESOURCE_ASBESTOS.get(), "Asbestos Cluster");
+                add(ModBlocks.RESOURCE_BAUXITE.get(), "Bauxite");
+                add(ModBlocks.RESOURCE_HEMATITE.get(), "Hematite");
+                add(ModBlocks.RESOURCE_LIMESTONE.get(), "Limestone");
+                add(ModBlocks.RESOURCE_MALACHITE.get(), "Malachite");
+                add(ModBlocks.RESOURCE_SULFUR.get(), "Sulfur Cluster");
                 add("block.hbm_m.cinnabar_ore_deepslate", "Deepslate Cinnabar Ore");
                 add("block.hbm_m.cobalt_ore_deepslate", "Deepslate Cobalt Ore");
                 add("block.hbm_m.uranium_ore", "Uranium Ore");

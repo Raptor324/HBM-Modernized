@@ -553,6 +553,27 @@ public class ModBlocks {
 
 
     // -----------------------<РУДЫ>-----------------------------
+
+
+    public static final RegistryObject<Block> RESOURCE_ASBESTOS = registerBlock("resource_asbestos",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> RESOURCE_BAUXITE = registerBlock("resource_bauxite",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> RESOURCE_HEMATITE = registerBlock("resource_hematite",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> RESOURCE_LIMESTONE = registerBlock("resource_limestone",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> RESOURCE_MALACHITE = registerBlock("resource_malachite",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> RESOURCE_SULFUR = registerBlock("resource_sulfur",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+
+
     public static final RegistryObject<Block> LIGNITE_ORE = registerBlock("lignite_ore",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
