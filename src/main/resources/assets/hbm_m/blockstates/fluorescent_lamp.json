@@ -1,0 +1,10 @@
+{
+  "variants": {
+    "facing=north": { "model": "hbm_m:block/fluorescent_lamp", "y": 270 },
+    "facing=east": { "model": "hbm_m:block/fluorescent_lamp", "y": 0 },
+    "facing=south": { "model": "hbm_m:block/fluorescent_lamp", "y": 90 },
+    "facing=west": { "model": "hbm_m:block/fluorescent_lamp", "y": 180 },
+    "facing=up": { "model": "hbm_m:block/fluorescent_lamp_top"},
+    "facing=down": { "model": "hbm_m:block/fluorescent_lamp_bottom"}
+  }
+}

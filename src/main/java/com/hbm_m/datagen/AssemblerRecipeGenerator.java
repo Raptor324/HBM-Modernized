@@ -36,6 +36,19 @@ public final class AssemblerRecipeGenerator {
     }
 
     private static void registerPlateRecipes(Consumer<FinishedRecipe> writer) {
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.LARGE_VEHICLE_DOOR.get(), 1), 100, 200)
+                .addIngredient(ModItems.INSULATOR.get(), 4)
+                .addIngredient(ModItems.PLATE_CAST_DARK.get(), 16)
+                .addIngredient(ModItems.MOTOR.get(), 4)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 16)
+                .addIngredient(Items.GREEN_DYE, 4)
+                .save(writer, "large_vehicle_door");
+
+
+
+
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.PLATE_IRON.get(), 2), 60, 100)
                 .addIngredient(Items.IRON_INGOT, 3)

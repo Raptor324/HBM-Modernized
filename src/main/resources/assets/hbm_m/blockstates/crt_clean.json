@@ -1,7 +1,12 @@
 {
   "variants": {
     "facing=north": {
-      "model": "hbm_m:block/crt_clean"
+      "model": "hbm_m:block/crt_clean",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "hbm_m:block/crt_clean",
+      "y": 0
     },
     "facing=south": {
       "model": "hbm_m:block/crt_clean",
@@ -10,10 +15,6 @@
     "facing=west": {
       "model": "hbm_m:block/crt_clean",
       "y": 180
-    },
-    "facing=east": {
-      "model": "hbm_m:block/crt_clean",
-      "y": 0
     }
   }
 }

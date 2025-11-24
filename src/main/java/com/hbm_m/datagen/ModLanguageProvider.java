@@ -332,6 +332,45 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.wood_ash_powder", "Древесный пепел");
                 add("effect.hbm_m.radaway", "Очищение от радиации");
 
+                add(ModItems.CANNED_ASBESTOS.get(), "Консервированный асбест");
+                add(ModItems.CANNED_ASS.get(), "Консервированная задница");
+                add(ModItems.CANNED_BARK.get(), "Консервированная кора");
+                add(ModItems.CANNED_BEEF.get(), "Консервированная говядина");
+                add(ModItems.CANNED_BHOLE.get(), "Консервированная черная дыра");
+                add(ModItems.CANNED_CHEESE.get(), "Консервированный сыр");
+                add(ModItems.CANNED_CHINESE.get(), "Консервированное китайское блюдо");
+                add(ModItems.CANNED_DIESEL.get(), "Консервированный дизель");
+                add(ModItems.CANNED_FIST.get(), "Консервированный кулак");
+                add(ModItems.CANNED_FRIED.get(), "Жареная консерва");
+                add(ModItems.CANNED_HOTDOGS.get(), "Консервированные хот-доги");
+                add(ModItems.CANNED_JIZZ.get(), "Консервированное жеребцовое молочко");
+                add(ModItems.CANNED_KEROSENE.get(), "Консервированный керосин");
+                add(ModItems.CANNED_LEFTOVERS.get(), "Консервированные остатки");
+                add(ModItems.CANNED_MILK.get(), "Консервированное молоко");
+                add(ModItems.CANNED_MYSTERY.get(), "Консервированная загадка");
+                add(ModItems.CANNED_NAPALM.get(), "Консервированный напалм");
+                add(ModItems.CANNED_OIL.get(), "Консервированная нефть");
+                add(ModItems.CANNED_PASHTET.get(), "Консервированный паштет");
+                add(ModItems.CANNED_PIZZA.get(), "Консервированная пицца");
+                add(ModItems.CANNED_RECURSION.get(), "Консервированная рекурсия");
+                add(ModItems.CANNED_SPAM.get(), "Консервированный спам");
+                add(ModItems.CANNED_STEW.get(), "Консервированное рагу");
+                add(ModItems.CANNED_TOMATO.get(), "Консервированный томат");
+                add(ModItems.CANNED_TUNA.get(), "Консервированный тунец");
+                add(ModItems.CANNED_TUBE.get(), "Консервированная трубка");
+                add(ModItems.CANNED_YOGURT.get(), "Консервированный йогурт");
+                add(ModItems.CAN_BEPIS.get(), "Напиток Бепис");
+                add(ModItems.CAN_BREEN.get(), "Напиток Breen");
+                add(ModItems.CAN_CREATURE.get(), "Напиток Creature");
+                add(ModItems.CAN_EMPTY.get(), "Пустая банка");
+                add(ModItems.CAN_KEY.get(), "Консервный нож");
+                add(ModItems.CAN_LUNA.get(), "Напиток Luna");
+                add(ModItems.CAN_MRSUGAR.get(), "Напиток Mrsugar");
+                add(ModItems.CAN_MUG.get(), "Напиток Mug");
+                add(ModItems.CAN_OVERCHARGE.get(), "Напиток Overcharge");
+                add(ModItems.CAN_REDBOMB.get(), "Напиток RedBomb");
+                add(ModItems.CAN_SMART.get(), "Напиток Smart");
+
 
                 add(ModItems.QUANTUM_CHIP.get(), "Квантовый чип");
                 add(ModItems.QUANTUM_CIRCUIT.get(), "Квантовая микросхема");
@@ -921,6 +960,47 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_boots", "Starmetal Boots");
 
                 // ITEMS
+
+
+                add(ModItems.CANNED_ASBESTOS.get(), "Canned Asbestos");
+                add(ModItems.CANNED_ASS.get(), "Canned Ass Meat");
+                add(ModItems.CANNED_BARK.get(), "Canned Bark");
+                add(ModItems.CANNED_BEEF.get(), "Canned Beef");
+                add(ModItems.CANNED_BHOLE.get(), "Canned Black Hole");
+                add(ModItems.CANNED_CHEESE.get(), "Canned Cheese");
+                add(ModItems.CANNED_CHINESE.get(), "Canned Chinese");
+                add(ModItems.CANNED_DIESEL.get(), "Canned Diesel");
+                add(ModItems.CANNED_FIST.get(), "Canned Fist");
+                add(ModItems.CANNED_FRIED.get(), "Canned Fried");
+                add(ModItems.CANNED_HOTDOGS.get(), "Canned Hotdogs");
+                add(ModItems.CANNED_JIZZ.get(), "Mystery Canned Item");
+                add(ModItems.CANNED_KEROSENE.get(), "Canned Kerosene");
+                add(ModItems.CANNED_LEFTOVERS.get(), "Canned Leftovers");
+                add(ModItems.CANNED_MILK.get(), "Canned Milk");
+                add(ModItems.CANNED_MYSTERY.get(), "Canned Mystery");
+                add(ModItems.CANNED_NAPALM.get(), "Canned Napalm");
+                add(ModItems.CANNED_OIL.get(), "Canned Oil");
+                add(ModItems.CANNED_PASHTET.get(), "Canned Pate");
+                add(ModItems.CANNED_PIZZA.get(), "Canned Pizza");
+                add(ModItems.CANNED_RECURSION.get(), "Canned Recursion");
+                add(ModItems.CANNED_SPAM.get(), "Canned Spam");
+                add(ModItems.CANNED_STEW.get(), "Canned Stew");
+                add(ModItems.CANNED_TOMATO.get(), "Canned Tomato");
+                add(ModItems.CANNED_TUNA.get(), "Canned Tuna");
+                add(ModItems.CANNED_TUBE.get(), "Canned Tube");
+                add(ModItems.CANNED_YOGURT.get(), "Canned Yogurt");
+                add(ModItems.CAN_BEPIS.get(), "Can of Bepis");
+                add(ModItems.CAN_BREEN.get(), "Can of Breen");
+                add(ModItems.CAN_CREATURE.get(), "Can of Creature");
+                add(ModItems.CAN_EMPTY.get(), "Empty Can");
+                add(ModItems.CAN_KEY.get(), "Can Key");
+                add(ModItems.CAN_LUNA.get(), "Can of Luna");
+                add(ModItems.CAN_MRSUGAR.get(), "Can of Mrsugar");
+                add(ModItems.CAN_MUG.get(), "Can of Mug");
+                add(ModItems.CAN_OVERCHARGE.get(), "Can of Overcharge");
+                add(ModItems.CAN_REDBOMB.get(), "Can of Redbomb");
+                add(ModItems.CAN_SMART.get(), "Can of Smart");
+
 
                 add(ModItems.BATTERY_POTATO.get(), "Potato Battery");
                 add(ModItems.BATTERY.get(), "Battery");

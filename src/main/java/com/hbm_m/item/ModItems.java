@@ -134,9 +134,86 @@ public class ModItems {
 // ХАВЧИК:
     public static final RegistryObject<Item> STRAWBERRY = ITEMS.register("strawberry",
             () -> new Item(new Item.Properties().food(ModFoods.STRAWBERRY)));
+    public static final RegistryObject<Item> CANNED_ASBESTOS = ITEMS.register("canned_asbestos",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_ASBESTOS)));
+    public static final RegistryObject<Item> CANNED_ASS = ITEMS.register("canned_ass",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_ASS)));
+    public static final RegistryObject<Item> CANNED_BARK = ITEMS.register("canned_bark",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_BARK)));
+    public static final RegistryObject<Item> CANNED_BEEF = ITEMS.register("canned_beef",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_BEEF)));
+    public static final RegistryObject<Item> CANNED_BHOLE = ITEMS.register("canned_bhole",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_BHOLE)));
+    public static final RegistryObject<Item> CANNED_CHEESE = ITEMS.register("canned_cheese",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_CHEESE)));
+    public static final RegistryObject<Item> CANNED_CHINESE = ITEMS.register("canned_chinese",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_CHINESE)));
+    public static final RegistryObject<Item> CANNED_DIESEL = ITEMS.register("canned_diesel",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_DIESEL)));
+    public static final RegistryObject<Item> CANNED_FIST = ITEMS.register("canned_fist",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_FIST)));
+    public static final RegistryObject<Item> CANNED_FRIED = ITEMS.register("canned_fried",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_FRIED)));
+    public static final RegistryObject<Item> CANNED_HOTDOGS = ITEMS.register("canned_hotdogs",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_HOTDOGS)));
+    public static final RegistryObject<Item> CANNED_JIZZ = ITEMS.register("canned_jizz",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_JIZZ)));
+    public static final RegistryObject<Item> CANNED_KEROSENE = ITEMS.register("canned_kerosene",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_KEROSENE)));
+    public static final RegistryObject<Item> CANNED_LEFTOVERS = ITEMS.register("canned_leftovers",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_LEFTOVERS)));
+    public static final RegistryObject<Item> CANNED_MILK = ITEMS.register("canned_milk",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_MILK)));
+    public static final RegistryObject<Item> CANNED_MYSTERY = ITEMS.register("canned_mystery",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_MYSTERY)));
+    public static final RegistryObject<Item> CANNED_NAPALM = ITEMS.register("canned_napalm",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_NAPALM)));
+    public static final RegistryObject<Item> CANNED_OIL = ITEMS.register("canned_oil",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_OIL)));
+    public static final RegistryObject<Item> CANNED_PASHTET = ITEMS.register("canned_pashtet",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_PASHTET)));
+    public static final RegistryObject<Item> CANNED_PIZZA = ITEMS.register("canned_pizza",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_PIZZA)));
+    public static final RegistryObject<Item> CANNED_RECURSION = ITEMS.register("canned_recursion",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_RECURSION)));
+    public static final RegistryObject<Item> CANNED_SPAM = ITEMS.register("canned_spam",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_SPAM)));
+    public static final RegistryObject<Item> CANNED_STEW = ITEMS.register("canned_stew",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_STEW)));
+    public static final RegistryObject<Item> CANNED_TOMATO = ITEMS.register("canned_tomato",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_TOMATO)));
+    public static final RegistryObject<Item> CANNED_TUNA = ITEMS.register("canned_tuna",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_TUNA)));
+    public static final RegistryObject<Item> CANNED_TUBE = ITEMS.register("canned_tube",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_TUBE)));
+    public static final RegistryObject<Item> CANNED_YOGURT = ITEMS.register("canned_yogurt",
+            () -> new ItemConserve(new Item.Properties().food(ModFoods.CANNED_YOGURT)));
 
 
-// ИНСТРУМЕНТЫ ГОРНЯКА:
+    public static final RegistryObject<Item> CAN_BEPIS = ITEMS.register("can_bepis",
+            () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_BEPIS)));
+    public static final RegistryObject<Item> CAN_BREEN = ITEMS.register("can_breen",
+            () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_BREEN)));
+    public static final RegistryObject<Item> CAN_CREATURE = ITEMS.register("can_creature",
+            () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_CREATURE)));
+    public static final RegistryObject<Item> CAN_EMPTY = ITEMS.register("can_empty",
+            () -> new Item(new Item.Properties())); // Пустая банка без эффекта
+    public static final RegistryObject<Item> CAN_LUNA = ITEMS.register("can_luna",
+            () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_LUNA)));
+    public static final RegistryObject<Item> CAN_MRSUGAR = ITEMS.register("can_mrsugar",
+            () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_MRSUGAR)));
+    public static final RegistryObject<Item> CAN_MUG = ITEMS.register("can_mug",
+            () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_MUG)));
+    public static final RegistryObject<Item> CAN_OVERCHARGE = ITEMS.register("can_overcharge",
+            () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_OVERCHARGE)));
+    public static final RegistryObject<Item> CAN_REDBOMB = ITEMS.register("can_redbomb",
+            () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_REDBOMB)));
+    public static final RegistryObject<Item> CAN_SMART = ITEMS.register("can_smart",
+            () -> new ItemEnergyDrink(new Item.Properties().food(ItemEnergyDrink.CAN_SMART)));
+
+
+
+    // ИНСТРУМЕНТЫ ГОРНЯКА:
     public static final RegistryObject<Item> STARMETAL_SWORD = ITEMS.register("starmetal_sword",
             () -> new SwordItem(ModToolTiers.STARMETAL, 7, -2, new Item.Properties()));
     public static final RegistryObject<Item> STARMETAL_AXE = ITEMS.register("starmetal_axe",
@@ -445,6 +522,15 @@ public class ModItems {
     public static final RegistryObject<Item> DETONATOR = ITEMS.register("detonator",
             () -> new DetonatorItem(new Item.Properties()));
 
+
+
+
+    public static final RegistryObject<Item> CAN_KEY = ITEMS.register("can_key",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> CROWBAR = ITEMS.register("crowbar",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> BOLT_STEEL = ITEMS.register("bolt_steel",
+            () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> ZIRCONIUM_SHARP = ITEMS.register("zirconium_sharp",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> COIL_GOLD_TORUS = ITEMS.register("coil_gold_torus",
