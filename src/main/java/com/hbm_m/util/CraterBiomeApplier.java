@@ -140,87 +140,67 @@ public class CraterBiomeApplier {
                                           BlockPos centerPos,
                                           Holder innerCrater,
                                           Holder outerCrater) {
-        try {
-            // ✅ centerPos - это координаты блока бомбы, используем их как центр кратера
-            int centerX = centerPos.getX();
-            int centerZ = centerPos.getZ();
-            int chunkX = chunk.getPos().x;
-            int chunkZ = chunk.getPos().z;
-            int chunkBlockX = chunkX << 4;  // чанк * 16
-            int chunkBlockZ = chunkZ << 4;
+        int centerX = centerPos.getX();
+        int centerZ = centerPos.getZ();
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
+        int chunkBlockX = chunkX << 4;
+        int chunkBlockZ = chunkZ << 4;
 
-            LevelChunkSection[] sections = chunk.getSections();
-            if (sections == null) return 0;
+        LevelChunkSection[] sections = chunk.getSections();
+        if (sections == null) return 0;
 
-            int appliedBiomesCount = 0;
-            boolean chunkHasChanges = false;
+        int appliedBiomesCount = 0;
+        boolean chunkHasChanges = false;
 
-            // Process each section
-            for (LevelChunkSection section : sections) {
-                if (section == null) continue;
+        for (LevelChunkSection section : sections) {
+            if (section == null) continue;
+            var biomesRO = section.getBiomes();
+            if (biomesRO == null) continue;
+            var biomes = biomesRO.recreate();
 
-                // Get read-only container
-                var biomesRO = section.getBiomes();
-                if (biomesRO == null) continue;
+            boolean sectionChanged = false;
 
-                // Create writeable copy - это работает на 1.20.1
-                var biomes = biomesRO.recreate();
-                boolean sectionChanged = false;
+            for (int qx = 0; qx < 4; qx++) {
+                for (int qy = 0; qy < 4; qy++) {
+                    for (int qz = 0; qz < 4; qz++) {
+                        int blockX = chunkBlockX + (qx << 2) + 2;
+                        int blockZ = chunkBlockZ + (qz << 2) + 2;
 
-                // ✅ Правильный расчёт координат кварталов
-                // В одном чанке 16x16 блоков, т.е. 4x4 квартала по X и Z
-                // Каждый квартал занимает 4x4 блока
+                        double dx = blockX - centerX;
+                        double dz = blockZ - centerZ;
+                        double distance = Math.sqrt(dx * dx + dz * dz);
 
-                for (int qx = 0; qx < 4; qx++) {
-                    for (int qy = 0; qy < 4; qy++) {
-                        for (int qz = 0; qz < 4; qz++) {
-                            // ✅ Вычисляем центр квартала правильно
-                            // qx,qz - номер квартала (0-3)
-                            // Каждый квартал покрывает 4 блока
-                            // Центр квартала находится в середине его 4x4 блоков
-                            int blockX = chunkBlockX + (qx << 2) + 2;  // +2 = центр 4 блоков
-                            int blockZ = chunkBlockZ + (qz << 2) + 2;
+                        Holder biomeToSet = null;
 
-                            // Считаем расстояние от ЦЕНТРА БОМБЫ (переданный centerPos)
-                            double dx = blockX - centerX;
-                            double dz = blockZ - centerZ;
-                            double distance = Math.sqrt(dx * dx + dz * dz);
+                        if (distance <= INNER_CRATER_RADIUS) {
+                            biomeToSet = innerCrater;
+                        } else if (distance <= OUTER_CRATER_RADIUS) {
+                            biomeToSet = outerCrater;
+                        }
 
-                            // Выбираем биом в зависимости от расстояния
-                            Holder biomeToSet = null;
-
-                            if (distance <= INNER_CRATER_RADIUS) {
-                                biomeToSet = innerCrater;
-                                sectionChanged = true;
-                            } else if (distance <= OUTER_CRATER_RADIUS) {
-                                biomeToSet = outerCrater;
-                                sectionChanged = true;
-                            }
-
-                            // Применяем биом
-                            if (biomeToSet != null) {
-                                biomes.set(qx, qy, qz, biomeToSet);
-                                appliedBiomesCount++;
-                            }
+                        if (biomeToSet != null) {
+                            biomes.set(qx, qy, qz, biomeToSet);
+                            sectionChanged = true;
+                            appliedBiomesCount++;
                         }
                     }
                 }
-
-                // ✅ Сохраняем изменённые биомы обратно в секцию
-                if (sectionChanged) {
-                    chunkHasChanges = true;
-                    saveBiomesToSection(section, biomes);
-                }
             }
 
-            return appliedBiomesCount;
-
-        } catch (Exception e) {
-            System.err.println("[CRATER_BIOME] ERROR in applyBiomesToChunk: " + e.getMessage());
-            e.printStackTrace();
-            return 0;
+            if (sectionChanged) {
+                chunkHasChanges = true;
+                saveBiomesToSection(section, biomes);
+            }
         }
+
+        if (chunkHasChanges) {
+            chunk.setUnsaved(true);
+        }
+
+        return appliedBiomesCount;
     }
+
 
     /**
      * ✅ Сохраняет изменённые биомы в секцию

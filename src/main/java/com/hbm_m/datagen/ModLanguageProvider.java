@@ -216,7 +216,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.creative_battery_flavor","Бесконечность — не предел!!");
 
                 // ПРЕДМЕТЫ
-
                 add(ModItems.BATTERY_POTATO.get(), "Картофельная батарейка");
                 add(ModItems.BATTERY.get(), "Батарейка");
                 add(ModItems.BATTERY_RED_CELL.get(), "Красная энергоячейка");
@@ -932,8 +931,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_boots", "Starmetal Boots");
 
                 // ITEMS
-
-
                 add(ModItems.CANNED_ASBESTOS.get(), "Canned Asbestos");
                 add(ModItems.CANNED_ASS.get(), "Canned Ass Meat");
                 add(ModItems.CANNED_BARK.get(), "Canned Bark");
