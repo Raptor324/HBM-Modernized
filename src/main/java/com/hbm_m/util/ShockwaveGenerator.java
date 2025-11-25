@@ -16,7 +16,7 @@ public class ShockwaveGenerator {
     private static final int DAMAGE_ZONE_HEIGHT = 20;   // Высота обработки по Y
 
     public static void generateCrater(ServerLevel level, BlockPos centerPos, int craterRadius, int craterDepth,
-                                      Block wasteLogBlock, Block wastePlanksBlock) {
+                                      Block wasteLogBlock, Block wastePlanksBlock, Block burnedGrass) {
 
         int centerX = centerPos.getX();
         int centerY = centerPos.getY();
@@ -25,39 +25,39 @@ public class ShockwaveGenerator {
         RandomSource random = level.random;
 
 
-            // Сфера разрушения с естественным профилем
-            for (int x = centerX - craterRadius; x <= centerX + craterRadius; x++) {
-                for (int y = centerY - craterRadius; y <= centerY + craterRadius; y++) {
-                    for (int z = centerZ - craterRadius; z <= centerZ + craterRadius; z++) {
-                        double dx = x - centerX;
-                        double dy = y - centerY;
-                        double dz = z - centerZ;
-                        double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
+        // Сфера разрушения с естественным профилем
+        for (int x = centerX - craterRadius; x <= centerX + craterRadius; x++) {
+            for (int y = centerY - craterRadius; y <= centerY + craterRadius; y++) {
+                for (int z = centerZ - craterRadius; z <= centerZ + craterRadius; z++) {
+                    double dx = x - centerX;
+                    double dy = y - centerY;
+                    double dz = z - centerZ;
+                    double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
-                        if (dist > craterRadius) continue;
-                        // Плавная глубина кратера (косинусоидальный спад)
-                        double norm = dist / craterRadius; // от 0 (центр) до 1 (край)
-                        double smoothDepth = craterDepth * Math.cos(norm * Math.PI / 2);
-                        double noise = (random.nextDouble() - 0.5) * 2.0;
+                    if (dist > craterRadius) continue;
+                    // Плавная глубина кратера (косинусоидальный спад)
+                    double norm = dist / craterRadius; // от 0 (центр) до 1 (край)
+                    double smoothDepth = craterDepth * Math.cos(norm * Math.PI / 2);
+                    double noise = (random.nextDouble() - 0.5) * 2.0;
 
-                        // Внутри сферы с естественным профилем
-                        if (dist <= smoothDepth + noise) {
-                            BlockPos checkPos = new BlockPos(x, y, z);
-                            BlockState state = level.getBlockState(checkPos);
+                    // Внутри сферы с естественным профилем
+                    if (dist <= smoothDepth + noise) {
+                        BlockPos checkPos = new BlockPos(x, y, z);
+                        BlockState state = level.getBlockState(checkPos);
 
-                            if (!state.isAir()) {
-                                level.setBlock(checkPos, Blocks.AIR.defaultBlockState(), 3);
-                            }
+                        if (!state.isAir()) {
+                            level.setBlock(checkPos, Blocks.AIR.defaultBlockState(), 3);
                         }
                     }
                 }
             }
+        }
         // Зона повреждения деревьев
-        applyDamageZones(level, centerPos, wasteLogBlock, wastePlanksBlock);
+        applyDamageZones(level, centerPos, wasteLogBlock, wastePlanksBlock, burnedGrass);
     }
 
     private static void applyDamageZones(ServerLevel level, BlockPos centerPos,
-                                         Block wasteLogBlock, Block wastePlanksBlock) {
+                                         Block wasteLogBlock, Block wastePlanksBlock, Block burnedGrass) {
 
         int centerX = centerPos.getX();
         int centerY = centerPos.getY();
@@ -96,37 +96,40 @@ public class ShockwaveGenerator {
                             level.setBlock(checkPos, Blocks.AIR.defaultBlockState(), 3);
                             continue;
                         }
-
-                        // Заменяем брёвна на обугленные
-                        if (state.is(BlockTags.LOGS) && !wasteLogBlock.defaultBlockState().isAir()) {
-                            level.setBlock(checkPos, wasteLogBlock.defaultBlockState(), 3);
-                            continue;
-                        }
-
-                        // Заменяем доски на обугленные
-                        if (state.is(BlockTags.PLANKS) && !wastePlanksBlock.defaultBlockState().isAir()) {
-                            level.setBlock(checkPos, wastePlanksBlock.defaultBlockState(), 3);
-                            continue;
-                        }
-                    }
-                    // ===== ЗОНА 4: 80-105 блоков =====
-                    else if (horizontalDistance <= ZONE_4_RADIUS) {
-                        // Удаляем листву с вероятностью 40%
-                        if (state.is(BlockTags.LEAVES)) {
-                            if (random.nextFloat() < 0.4F) {
-                                level.setBlock(checkPos, Blocks.AIR.defaultBlockState(), 3);
+                        if (state.is(Blocks.GRASS_BLOCK)) {
+                            level.setBlock(checkPos, burnedGrass.defaultBlockState(), 3);
+                            // Заменяем брёвна на обугленные
+                            if (state.is(BlockTags.LOGS) && !wasteLogBlock.defaultBlockState().isAir()) {
+                                level.setBlock(checkPos, wasteLogBlock.defaultBlockState(), 3);
+                                continue;
                             }
 
+                            // Заменяем доски на обугленные
+                            if (state.is(BlockTags.PLANKS) && !wastePlanksBlock.defaultBlockState().isAir()) {
+                                level.setBlock(checkPos, wastePlanksBlock.defaultBlockState(), 3);
+                                continue;
+                            }
+                        }
+                        // ===== ЗОНА 4: 80-105 блоков =====
+                        else if (horizontalDistance <= ZONE_4_RADIUS) {
+                            // Удаляем листву с вероятностью 40%
                             if (state.is(BlockTags.LEAVES)) {
-                                if (random.nextFloat() < 0.2F) {
-                                    level.setBlock(checkPos, Blocks.FIRE.defaultBlockState(), 3);
+                                if (random.nextFloat() < 0.4F) {
+                                    level.setBlock(checkPos, Blocks.AIR.defaultBlockState(), 3);
                                 }
-                            continue;
+
+
+                                if (state.is(BlockTags.LEAVES)) {
+                                    if (random.nextFloat() < 0.2F) {
+                                        level.setBlock(checkPos, Blocks.FIRE.defaultBlockState(), 3);
+                                    }
+                                    continue;
+                                }
+                            }
                         }
                     }
                 }
             }
         }
     }
-  }
 }

@@ -52,7 +52,8 @@ public class ExplosiveChargeBlock extends Block implements IDetonatable {
                             CRATER_RADIUS,
                             CRATER_DEPTH,
                             ModBlocks.WASTE_LOG.get(),
-                            ModBlocks.WASTE_PLANKS.get()
+                            ModBlocks.WASTE_PLANKS.get(),
+                            ModBlocks.BURNED_GRASS.get()
                     );
                 }));
             }

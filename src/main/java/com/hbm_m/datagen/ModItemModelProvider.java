@@ -158,7 +158,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.TEMPLATE_FOLDER);
         simpleItem(ModItems.STRAWBERRY);
 
-
+        simpleItem(ModItems.LIMESTONE);
+        simpleItem(ModItems.MALACHITE_CHUNK);
         simpleItem(ModItems.CANNED_ASBESTOS);
         simpleItem(ModItems.CANNED_ASS);
         simpleItem(ModItems.CANNED_BARK);

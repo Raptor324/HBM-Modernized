@@ -211,13 +211,37 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 Items.RAW_IRON,
                 1.0f, 3.0f
         );
-
         dropOreType2(
                 ModBlocks.ASBESTOS_ORE.get(),
                 ModBlocks.ASBESTOS_ORE.get(),
                 ModItems.getIngot(ModIngots.ASBESTOS).get(),
                 1.0f, 3.0f
         );
+        dropOreType2(
+                ModBlocks.RESOURCE_ASBESTOS.get(),
+                ModBlocks.RESOURCE_ASBESTOS.get(),
+                ModItems.getIngot(ModIngots.ASBESTOS).get(),
+                2.0f, 5.0f
+        );
+        dropOreType2(
+                ModBlocks.RESOURCE_SULFUR.get(),
+                ModBlocks.RESOURCE_SULFUR.get(),
+                ModItems.SULFUR.get(),
+                2.0f, 5.0f
+        );
+        dropOreType2(
+                ModBlocks.RESOURCE_MALACHITE.get(),
+                ModBlocks.RESOURCE_MALACHITE.get(),
+                ModItems.MALACHITE_CHUNK.get(),
+                1.0f, 3.0f
+        );
+        dropOreType2(
+                ModBlocks.RESOURCE_LIMESTONE.get(),
+                ModBlocks.RESOURCE_LIMESTONE.get(),
+                ModItems.LIMESTONE.get(),
+                1.0f, 3.0f
+        );
+
 
         // Если DEPTH_STONE должен вести себя как обычный блок,
         // отдельный вызов dropSelfType не нужен — его уже обработал цикл выше.

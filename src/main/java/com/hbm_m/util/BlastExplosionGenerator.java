@@ -209,18 +209,8 @@ public class BlastExplosionGenerator {
             double velocityY = 1.5 + random.nextDouble() * 2.0;
             double velocityZ = (Math.sin(angle) + (random.nextDouble() - 0.5) * 0.5) * 2.5;
 
-            // Выбираем случайный блок из ModBlocks для частиц
-            Block debrisBlock = getRandomModBlock(random);
-            BlockState debrisState = debrisBlock.defaultBlockState();
 
-            // Создаём частицу блока
-            level.sendParticles(
-                    new BlockParticleOption(ParticleTypes.BLOCK, debrisState),
-                    x, y, z,
-                    1,
-                    velocityX, velocityY, velocityZ,
-                    1.0
-            );
+
 
             // Добавляем дым для эффекта
             if (random.nextFloat() < 0.3f) {
@@ -500,11 +490,10 @@ public class BlastExplosionGenerator {
 
         for (BlockPos pos : debrisPositions) {
             if (level.getBlockState(pos).isAir() || level.getBlockState(pos).canBeReplaced()) {
-                // Используем случайный блок из ModBlocks
-                Block debrisBlock = getRandomModBlock(random);
-                level.setBlock(pos, debrisBlock.defaultBlockState(), 3);
 
-                // Добавляем частицы дыма для эффекта
+
+
+                // Добавляем частицы дыма для эффект
                 level.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE,
                         pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5,
                         2, 0.1, 0.1, 0.1, 0.02);
@@ -518,17 +507,7 @@ public class BlastExplosionGenerator {
     /**
      * Возвращает случайный блок из SELLAFIELD_SLAKED для осколков
      */
-    private static Block getRandomModBlock(RandomSource random) {
-        // Используем блоки SELLAFIELD_SLAKED для поверхности кратера и осколков
-        Block[] modBlocks = {
-                ModBlocks.SELLAFIELD_SLAKED.get(),
-                ModBlocks.SELLAFIELD_SLAKED1.get(),
-                ModBlocks.SELLAFIELD_SLAKED2.get(),
-                ModBlocks.SELLAFIELD_SLAKED3.get()
-        };
 
-        return modBlocks[random.nextInt(modBlocks.length)];
-    }
 
     private static BlockPos findSurfacePosition(ServerLevel level, BlockPos startPos) {
         // Находим поверхность для размещения осколка (сканируем вверх/вниз)
@@ -577,37 +556,8 @@ public class BlastExplosionGenerator {
             }
         }
 
-        // Заполняем дно случайными блоками из ModBlocks
-        int surfaceDepth = 2;
-        for (BlockPos bottomPos : bottomBlocks) {
-            if (level.getBlockState(bottomPos).isAir()) {
-                Block randomBlock = getRandomModBlock(random);
-                level.setBlock(bottomPos, randomBlock.defaultBlockState(), 3);
 
-                // Заполняем несколько слоёв вверх для более толстого покрытия
-                BlockPos currentPos = bottomPos.above();
-                for (int layer = 1; layer < surfaceDepth; layer++) {
-                    if (craterBlocksSet.contains(currentPos) && level.getBlockState(currentPos).isAir()) {
-                        randomBlock = getRandomModBlock(random);
-                        level.setBlock(currentPos, randomBlock.defaultBlockState(), 3);
-                        currentPos = currentPos.above();
-                    } else {
-                        break;
-                    }
                 }
             }
-        }
-    }
 
-    // ==================== ОБРАТНАЯ СОВМЕСТИМОСТЬ ====================
 
-    /**
-     * Старый метод для совместимости (если используется где-то ещё)
-     */
-    public static void generateCrater(ServerLevel level, BlockPos centerPos,
-                                      int radius, int depth,
-                                      Block surfaceBlock1, Block surfaceBlock2, Block surfaceBlock3) {
-        // Перенаправляем на новый метод (блоки теперь выбираются из ModBlocks автоматически)
-        generateNaturalCrater(level, centerPos, radius, depth);
-    }
-}

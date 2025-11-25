@@ -92,6 +92,7 @@ public class MainRegistry {
         IEventBus modEventBus = context.getModEventBus();
         // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS
         // Добавь эту:
+
         MinecraftForge.EVENT_BUS.register(new CrateBreaker());
         MinecraftForge.EVENT_BUS.register(new MobGearHandler());
         ModBiomes.BIOMES.register(modEventBus);
@@ -216,6 +217,9 @@ public class MainRegistry {
             event.accept(ModItems.GRENADESLIME);
 
             event.accept(ModItems.GRENADEIF);
+
+            event.accept(ModBlocks.MINE_AP);
+            event.accept(ModBlocks.MINE_FAT);
 
             event.accept(ModBlocks.DET_MINER);
             event.accept(ModBlocks.GIGA_DET);
@@ -534,6 +538,13 @@ public class MainRegistry {
             event.accept(ModBlocks.CINNABAR_ORE_DEEPSLATE);
             event.accept(ModBlocks.URANIUM_ORE_DEEPSLATE);
 
+            event.accept(ModBlocks.RESOURCE_ASBESTOS.get());
+            event.accept(ModBlocks.RESOURCE_BAUXITE.get());
+            event.accept(ModBlocks.RESOURCE_HEMATITE.get());
+            event.accept(ModBlocks.RESOURCE_LIMESTONE.get());
+            event.accept(ModBlocks.RESOURCE_MALACHITE.get());
+            event.accept(ModBlocks.RESOURCE_SULFUR.get());
+
             event.accept(ModItems.ALUMINUM_RAW);
             event.accept(ModItems.BERYLLIUM_RAW);
             event.accept(ModItems.COBALT_RAW);
@@ -628,7 +639,9 @@ public class MainRegistry {
             event.accept(ModBlocks.CAGE_LAMP);
             event.accept(ModBlocks.FLOOD_LAMP);
 
+            event.accept(ModBlocks.B29);
             event.accept(ModBlocks.DORNIER);
+            event.accept(ModBlocks.FILE_CABINET);
             event.accept(ModBlocks.TAPE_RECORDER);
             event.accept(ModBlocks.CRT_BROKEN);
             event.accept(ModBlocks.CRT_CLEAN);

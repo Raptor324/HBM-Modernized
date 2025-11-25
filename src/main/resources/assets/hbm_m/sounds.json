@@ -48,6 +48,67 @@
       "hbm_m:techbleep"
     ]
   },
+  "explosionsmallfar1": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.explosionsmallfar1",
+    "sounds": [
+      "hbm_m:explosionsmallfar1"
+    ]
+  },
+  "explosionsmallfar2": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.explosionsmallfar2",
+    "sounds": [
+      "hbm_m:explosionsmallfar2"
+    ]
+  },
+  "explosionsmallnear1": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.explosionsmallnear1",
+    "sounds": [
+      "hbm_m:explosionsmallnear1"
+    ]
+  },
+  "explosionsmallnear2": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.explosionsmallnear2",
+    "sounds": [
+      "hbm_m:explosionsmallnear2"
+    ]
+  },
+  "explosionsmallnear3": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.explosionsmallnear3",
+    "sounds": [
+      "hbm_m:explosionsmallnear3"
+    ]
+  },
+  "grenadetrigger": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.grenadetrigger",
+    "sounds": [
+      "hbm_m:grenadetrigger"
+    ]
+  },
+  "mukeexplosion": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.mukeexplosion",
+    "sounds": [
+      "hbm_m:mukeexplosion"
+    ]
+  },
+
+
+
+
+
+
+
+
+
+
+
+
   "techboop": {
     "category": "player",
     "subtitle": "sounds.hbm_m.techboop",

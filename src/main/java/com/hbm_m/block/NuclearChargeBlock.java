@@ -5,6 +5,7 @@ import com.hbm_m.util.CraterGenerator;
 import com.hbm_m.util.MessGenerator;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
@@ -13,6 +14,7 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.server.TickTask;
 
+import net.minecraftforge.server.ServerLifecycleHooks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -61,8 +63,9 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
             scheduleExplosionEffects(serverLevel, x, y, z);
 
             // ОПТИМИЗАЦИЯ: Генерация кратера в отдельном тике
-            if (serverLevel.getServer() != null) {
-                serverLevel.getServer().tell(new TickTask(CRATER_GENERATION_DELAY, () -> {
+            MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+            if (server != null) {
+                server.tell(new TickTask(CRATER_GENERATION_DELAY, () -> {
                     CraterGenerator.generateCrater(
                             serverLevel,
                             pos,
@@ -72,13 +75,10 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
                             ModBlocks.SELLAFIELD_SLAKED1.get(),
                             ModBlocks.SELLAFIELD_SLAKED2.get(),
                             ModBlocks.SELLAFIELD_SLAKED3.get(),
-                            ModBlocks.FALLING_SELLAFIT1.get(),
-                            ModBlocks.FALLING_SELLAFIT2.get(),
-                            ModBlocks.FALLING_SELLAFIT3.get(),
-                            ModBlocks.FALLING_SELLAFIT4.get(),
                             ModBlocks.WASTE_LOG.get(),
                             ModBlocks.WASTE_PLANKS.get(),
                             ModBlocks.BURNED_GRASS.get()
+
                     );
                     LOGGER.info("Кратер успешно сгенерирован в позиции: {}", pos);
                 }));

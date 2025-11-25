@@ -4,6 +4,8 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
@@ -54,6 +56,17 @@ public class ModBlockEntities {
                     ModBlocks.ANVIL_OSMIRIDIUM.get(),
                     ModBlocks.ANVIL_MURKY.get()).build(null));
 
+    public static final RegistryObject<BlockEntityType<MineBlockEntity>> MINE_BLOCK_ENTITY =
+            BLOCK_ENTITIES.register("mine_block_entity", () ->
+                    BlockEntityType.Builder.of(MineBlockEntity::new, ModBlocks.MINE_AP.get())
+                            .build(null)
+            );
+
+    public static final RegistryObject<BlockEntityType<MineBlockEntity>> MINE_NUKE_BLOCK_ENTITY =
+            BLOCK_ENTITIES.register("mine_nuke_block_entity", () ->
+                    BlockEntityType.Builder.of(MineBlockEntity::new, ModBlocks.MINE_FAT.get())
+                            .build(null)
+            );
     public static final RegistryObject<BlockEntityType<MachineShredderBlockEntity>> SHREDDER =
             BLOCK_ENTITIES.register("shredder", () ->
                     BlockEntityType.Builder.of(MachineShredderBlockEntity::new,

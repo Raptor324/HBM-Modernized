@@ -22,6 +22,14 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> GEIGER_5 = registerSoundEvents("item.geiger5");
     public static final RegistryObject<SoundEvent> GEIGER_6 = registerSoundEvents("item.geiger6");
 
+    public static final RegistryObject<SoundEvent> EXPLOSION_SMALL_NEAR1 = registerSoundEvents("explosionsmallnear1");
+    public static final RegistryObject<SoundEvent> EXPLOSION_SMALL_NEAR2 = registerSoundEvents("explosionsmallnear2");
+    public static final RegistryObject<SoundEvent> EXPLOSION_SMALL_NEAR3 = registerSoundEvents("explosionsmallnear3");
+    public static final RegistryObject<SoundEvent> EXPLOSION_SMALL_FAR1 = registerSoundEvents("explosionsmallfar1");
+    public static final RegistryObject<SoundEvent> EXPLOSION_SMALL_FAR2 = registerSoundEvents("explosionsmallfar2");
+    public static final RegistryObject<SoundEvent> MUKE_EXPLOSION = registerSoundEvents("mukeexplosion");
+    public static final RegistryObject<SoundEvent> GRENADE_TRIGGER = registerSoundEvents("grenadetrigger");
+
     public static final RegistryObject<SoundEvent> RADAWAY_USE = registerSoundEvents("radaway_use");
     public static final RegistryObject<SoundEvent> CRATEBREAK5 = registerSoundEvents("block.cratebreak5");
     public static final RegistryObject<SoundEvent> CRATEBREAK4 = registerSoundEvents("block.cratebreak4");
