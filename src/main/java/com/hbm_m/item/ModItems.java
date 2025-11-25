@@ -1198,9 +1198,6 @@ public class ModItems {
     public static final RegistryObject<Item> WIRE_TUNGSTEN = ITEMS.register("wire_tungsten",
             () -> new Item(new Item.Properties()));
 
-    // Здесь мы регистрируем предмет-блок батареи для машин, поддерживающий хранение энергии через Forge Energy
-    public static final RegistryObject<Item> MACHINE_BATTERY = ITEMS.register("machine_battery",
-            () -> new MachineBatteryBlockItem(ModBlocks.MACHINE_BATTERY.get(), new Item.Properties(), BATTERY_CAPACITY));
 
     
 
