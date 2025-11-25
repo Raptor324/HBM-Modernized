@@ -1,33 +1,33 @@
 {
   "loader": "forge:composite",
   "textures": {
-    "particle": "hbm_m:block/cage_lamp"
+    "particle": "hbm_m:block/mine_fat"
   },
   "children": {
-    "cage_lamp_model": {
+    "mine_fat_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/cage_lamp.obj",
+      "model": "hbm_m:models/block/mine_fat.obj",
       "flip_v": true,
       "textures": {
-        "default": "hbm_m:block/cage_lamp"
+        "default": "hbm_m:block/mine_fat"
       }
     }
   },
   "transform": {
-    "translation": [0, 0.5, 0.5],
+    "translation": [0, -0.75, -0.75],
     "rotation": [0, 0, 0],
-    "scale": 1.0
+    "scale": 0.25
   },
   "display": {
     "gui": {
-      "rotation": [ 30, 45, 180 ],
+      "rotation": [ 30, 45, 0 ],
       "translation": [ -2, 2.5, 3 ],
-      "scale": [ 1, 1, 1 ]
+      "scale": [ 1.5, 1.5, 1.5 ]
     },
     "ground": {
       "rotation": [ 0, 0, 0 ],
       "translation": [ 0, 3, 0 ],
-      "scale": [ 0.7, 0.7, 0.7 ]
+      "scale": [ 1, 1, 1 ]
     },
     "fixed": {
       "rotation": [ 0, 0, 0 ],

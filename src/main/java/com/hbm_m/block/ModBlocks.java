@@ -408,6 +408,19 @@ public class ModBlocks {
 
 
 
+
+    public static final RegistryObject<Block> FILE_CABINET = registerBlock("file_cabinet",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> B29 = registerBlock("b29",
+            () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> MINE_FAT = registerBlock("mine_fat",
+            () -> new MineNukeBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
+    public static final RegistryObject<Block> MINE_AP = registerBlock("mine_ap",
+            () -> new MineBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
+
     public static final RegistryObject<Block> CRATE_CONSERVE = registerBlock("crate_conserve",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).noOcclusion()));
     public static final RegistryObject<Block> TAPE_RECORDER = registerBlock("tape_recorder",

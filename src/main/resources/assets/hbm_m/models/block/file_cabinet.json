@@ -1,33 +1,33 @@
 {
   "loader": "forge:composite",
   "textures": {
-    "particle": "hbm_m:block/cage_lamp"
+    "particle": "hbm_m:block/file_cabinet"
   },
   "children": {
-    "cage_lamp_model": {
+    "file_cabinet_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/cage_lamp.obj",
+      "model": "hbm_m:models/block/file_cabinet.obj",
       "flip_v": true,
       "textures": {
-        "default": "hbm_m:block/cage_lamp"
+        "default": "hbm_m:block/file_cabinet"
       }
     }
   },
   "transform": {
-    "translation": [0, 0.5, 0.5],
+    "translation": [0.50, 0.0, 0.5],
     "rotation": [0, 0, 0],
     "scale": 1.0
   },
   "display": {
     "gui": {
-      "rotation": [ 30, 45, 180 ],
-      "translation": [ -2, 2.5, 3 ],
-      "scale": [ 1, 1, 1 ]
+      "rotation": [ 210, 225, 180 ],
+      "translation": [ 0, 0, 0.5 ],
+      "scale": [ 0.65, 0.65, 0.65 ]
     },
     "ground": {
       "rotation": [ 0, 0, 0 ],
       "translation": [ 0, 3, 0 ],
-      "scale": [ 0.7, 0.7, 0.7 ]
+      "scale": [ 0.25, 0.25, 0.25 ]
     },
     "fixed": {
       "rotation": [ 0, 0, 0 ],
@@ -35,14 +35,14 @@
       "scale": [ 0.5, 0.5, 0.5 ]
     },
     "thirdperson_righthand": {
-      "rotation": [ 180, 180, 90 ],
+      "rotation": [ 75, 180, 0 ],
       "translation": [ 0, 2.5, 0 ],
-      "scale": [ 1, 1, 1 ]
+      "scale": [ 0.375, 0.375, 0.375 ]
     },
     "firstperson_righthand": {
-      "rotation": [ 135, 180, 0 ],
-      "translation": [ 2, -0.5, -0.2 ],
-      "scale": [ 1, 1, 1 ]
+      "rotation": [ 0, 180, 0 ],
+      "translation": [ 2, -1, 0 ],
+      "scale": [ 0.4, 0.4, 0.4 ]
     },
     "head": {
       "rotation": [ 0, 180, 0 ],
