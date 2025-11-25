@@ -1,9 +1,14 @@
 package com.hbm_m.block.entity.machine;
 
+import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.client.ClientSoundManager;
 import com.hbm_m.item.ItemBlades;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.MachineShredderMenu;
 import com.hbm_m.recipe.ShredderRecipe;
+import com.hbm_m.sound.ShredderSoundInstance;
+import com.hbm_m.util.LongDataPacker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -21,20 +26,11 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.energy.BlockEntityEnergyStorage;
-import com.hbm_m.energy.LongDataPacker;
-import com.hbm_m.energy.LongToForgeWrapper;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.client.ClientSoundManager;
-import com.hbm_m.sound.ShredderSoundInstance;
 
 import java.util.Optional;
 
@@ -45,9 +41,6 @@ import java.util.Optional;
 public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
 
     // Константы слотов (как в оригинале: 30 слотов)
-    private static final int INPUT_SLOTS = 9;      // 0-8: входные слоты
-    private static final int OUTPUT_SLOTS = 18;    // 9-26: выходные слоты
-    private static final int BLADE_SLOTS = 2;      // 27-28: лезвия
     private static final int BATTERY_SLOT = 29;    // 29: батарея
     private static final int TOTAL_SLOTS = 30;
 
@@ -60,26 +53,23 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     private static final int BLADE_RIGHT = 28;
 
     // Константы работы (как в оригинале)
-    public static final long MAX_POWER = 10000L;
+    public static final long MAX_POWER = 10_000L;
+    private static final long MAX_RECEIVE = 1_000L;
     public static final int PROCESSING_SPEED = 60;  // тиков на обработку
     private static final long ENERGY_PER_TICK = 5L;  // потребление энергии за тик
 
     // Состояние машины
     private int progress = 0;
-    private int soundCycle = 0; // Устаревшее, используется только для совместимости
     private boolean isActive = false;
     private boolean clientIsActive = false; // Отдельное поле для клиента (как в Advanced Assembler)
     private int syncCounter = 0; // Счетчик для регулярной синхронизации
     private static final int SYNC_INTERVAL = 20; // Синхронизация каждые 20 тиков (1 раз в секунду)
 
-    // Long-энергия (как в оригинале)
-    private final BlockEntityEnergyStorage energyStorage = new BlockEntityEnergyStorage(MAX_POWER, 1000L, 1000L);
-    private LazyOptional<IEnergyStorage> forgeEnergyHandler = LazyOptional.empty();
     private final ContainerData containerData = new ContainerData() {
         @Override
         public int get(int index) {
-            long energy = energyStorage.getEnergyStored();
-            long maxEnergy = energyStorage.getMaxEnergyStored();
+            long energy = MachineShredderBlockEntity.this.getEnergyStored();
+            long maxEnergy = MachineShredderBlockEntity.this.getMaxEnergyStored();
             long delta = getEnergyDelta();
             return switch (index) {
                 case 0 -> progress;
@@ -106,12 +96,17 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     };
 
     public MachineShredderBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.SHREDDER.get(), pos, state, TOTAL_SLOTS);
+        super(ModBlockEntities.SHREDDER.get(), pos, state, TOTAL_SLOTS, MAX_POWER, MAX_RECEIVE);
     }
 
     @Override
     protected Component getDefaultName() {
         return Component.translatable("container.hbm_m.shredder");
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return getDefaultName();
     }
 
     @Override
@@ -128,24 +123,18 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             return stack.getItem() instanceof ItemBlades;
         }
         if (slot == BATTERY_SLOT) {
-            // Проверяем, что это батарея (предмет с энергетической capability)
-            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+            // Разрешаем предметы, которые могут отдавать энергию
+            boolean hasHbmEnergy = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
+                    .map(provider -> provider.canExtract())
+                    .orElse(false);
+            if (hasHbmEnergy) {
+                return true;
+            }
+            return stack.getCapability(ForgeCapabilities.ENERGY)
+                    .map(storage -> storage.canExtract())
+                    .orElse(false);
         }
         return false;
-    }
-
-    @Override
-    protected void setupEnergyCapability() {
-        longEnergyStorage = energyStorage;
-        longEnergyHandler = LazyOptional.of(() -> energyStorage);
-        forgeEnergyHandler = longEnergyHandler.lazyMap(LongToForgeWrapper::new);
-        energyHandler = forgeEnergyHandler;
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        forgeEnergyHandler.invalidate();
     }
 
     @Nullable
@@ -158,7 +147,6 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putInt("progress", progress);
-        tag.putLong("power", energyStorage.getEnergyStored());
         tag.putBoolean("active", isActive);
     }
 
@@ -166,7 +154,6 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
         tag.putInt("progress", progress);
-        tag.putLong("power", energyStorage.getEnergyStored());
         tag.putBoolean("active", isActive);
         return tag;
     }
@@ -187,11 +174,8 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     public void load(CompoundTag tag) {
         super.load(tag);
         progress = tag.getInt("progress");
-        if (tag.contains("soundCycle")) {
-            soundCycle = tag.getInt("soundCycle"); // Для обратной совместимости
-        }
         if (tag.contains("power")) {
-            energyStorage.setEnergy(tag.getLong("power"));
+            this.setEnergyStored(tag.getLong("power"));
         }
         if (tag.contains("active")) {
             isActive = tag.getBoolean("active");
@@ -251,22 +235,26 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     }    
 
     private void serverTick(Level level, BlockPos pos) {
+        ensureNetworkInitialized();
+
         boolean dirty = false;
 
         chargeFromBattery();
 
+        if (level.getGameTime() % 10L == 0L) {
+            updateEnergyDelta(this.getEnergyStored());
+        }
+
         boolean canProcess = canProcess();
         boolean wasActive = isActive;
 
-        // Сначала пытаемся извлечь энергию, только если можем обработать
         boolean canWork = false;
-        if (canProcess && hasPower()) {
-            // Потребляем энергию каждый тик, пока машина работает
-            long extracted = energyStorage.extractEnergy(ENERGY_PER_TICK, false);
-            if (extracted >= ENERGY_PER_TICK) {
-                // Успешно извлекли достаточно энергии
+        if (canProcess) {
+            long currentEnergy = this.getEnergyStored();
+            if (currentEnergy >= ENERGY_PER_TICK) {
+                this.setEnergyStored(currentEnergy - ENERGY_PER_TICK);
                 canWork = true;
-                dirty = true; // Энергия изменилась
+                dirty = true;
             }
         }
 
@@ -325,8 +313,6 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             dirty = true;
         }
 
-        updateEnergyDelta(energyStorage.getEnergyStored());
-
         if (dirty) {
             setChanged();
             sendUpdateToClient();
@@ -337,42 +323,72 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
 
     private void chargeFromBattery() {
         ItemStack batteryStack = inventory.getStackInSlot(BATTERY_SLOT);
-        if (batteryStack.isEmpty()) return;
+        if (batteryStack.isEmpty()) {
+            return;
+        }
+
+        boolean transferred = batteryStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).map(itemEnergy -> {
+            if (!itemEnergy.canExtract()) {
+                return false;
+            }
+
+            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
+            if (energyNeeded <= 0) {
+                return false;
+            }
+
+            long energyToTransfer = Math.min(energyNeeded, this.getReceiveSpeed());
+            long extracted = itemEnergy.extractEnergy(energyToTransfer, false);
+
+            if (extracted > 0) {
+                this.setEnergyStored(this.getEnergyStored() + extracted);
+                setChanged();
+                return true;
+            }
+            return false;
+        }).orElse(false);
+
+        if (transferred) {
+            return;
+        }
 
         batteryStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
-            if (!itemEnergy.canExtract()) return;
+            if (!itemEnergy.canExtract()) {
+                return;
+            }
 
-            long energyNeeded = energyStorage.getMaxEnergyStored() - energyStorage.getEnergyStored();
-            if (energyNeeded <= 0) return;
+            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
+            if (energyNeeded <= 0) {
+                return;
+            }
 
-            long maxCanReceive = energyStorage.getMaxReceive();
-            long energyToTransfer = Math.min(energyNeeded, maxCanReceive);
-            
-            if (energyToTransfer > 0) {
-                int energyToTransferInt = (int) Math.min(energyToTransfer, Integer.MAX_VALUE);
-                int extracted = itemEnergy.extractEnergy(energyToTransferInt, false);
-                if (extracted > 0) {
-                    energyStorage.receiveEnergy(extracted, false);
-                    setChanged();
-                }
+            int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
+            if (maxTransfer <= 0) {
+                return;
+            }
+
+            int extracted = itemEnergy.extractEnergy(maxTransfer, false);
+            if (extracted > 0) {
+                this.setEnergyStored(this.getEnergyStored() + extracted);
+                setChanged();
             }
         });
     }
 
     public boolean hasPower() {
-        return energyStorage.getEnergyStored() > 0;
+        return this.getEnergyStored() > 0;
     }
 
     public long getPower() {
-        return energyStorage.getEnergyStored();
+        return this.getEnergyStored();
     }
 
     public long getMaxPower() {
-        return MAX_POWER;
+        return this.getMaxEnergyStored();
     }
 
     public long getPowerScaled(long i) {
-        return (energyStorage.getEnergyStored() * i) / MAX_POWER;
+        return (this.getEnergyStored() * i) / MAX_POWER;
     }
 
     // ==================== PROCESSING ====================
@@ -557,18 +573,6 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         return PROCESSING_SPEED;
     }
 
-    // Для совместимости с GUI
-    public IEnergyStorage getEnergyStorage() {
-        return forgeEnergyHandler.orElse(null);
-    }
-
-    public int getEnergy() {
-        return (int) Math.min(energyStorage.getEnergyStored(), Integer.MAX_VALUE);
-    }
-
-    public int getMaxEnergy() {
-        return (int) Math.min(MAX_POWER, Integer.MAX_VALUE);
-    }
 
     private boolean isDustLike(ItemStack stack) {
         if (stack.isEmpty()) {

@@ -1,20 +1,17 @@
 package com.hbm_m.block.entity.machine;
 
+import com.hbm_m.api.energy.*;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.WireBlockEntity;
-import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.energy.BlockEntityEnergyStorage;
-import com.hbm_m.energy.ILongEnergyStorage;
-import com.hbm_m.energy.LongToForgeWrapper;
-import com.hbm_m.energy.LongDataPacker;
+import com.hbm_m.block.machine.MachineBatteryBlock;
+import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.menu.MachineBatteryMenu;
-import com.hbm_m.main.MainRegistry;
+import com.hbm_m.util.LongDataPacker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.Containers;
-import net.minecraft.world.SimpleContainer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -22,401 +19,342 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.energy.IEnergyStorage;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.UUID;
+import javax.annotation.Nullable;
 
 /**
- * Батарея машины - аккумулятор энергии для мультиблочной системы.
- * Адаптирована для long-энергосистемы с поддержкой редстоун-управления.
+ * Энергохранилище с настраиваемыми режимами работы.
+ * Режимы: 0 = BOTH, 1 = INPUT, 2 = OUTPUT, 3 = DISABLED
  */
-public class MachineBatteryBlockEntity extends BaseMachineBlockEntity {
-    
-    // Слоты
-    private static final int SLOT_COUNT = 2;
-    private static final int CHARGE_SLOT = 0;
-    private static final int DISCHARGE_SLOT = 1;
-    
-    // Long-энергия
-    private final BlockEntityEnergyStorage energyStorage = 
-        new BlockEntityEnergyStorage(com.hbm_m.item.ModItems.BATTERY_CAPACITY, 100_000L);
-    
-    // Режимы работы
+public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvider, IEnergyProvider, IEnergyReceiver {
+
+    private final long capacity;
+    private final long transferRate;
+    private long energy = 0;
+    private long lastEnergy = 0;
+
+    // Режимы работы (0 = BOTH, 1 = INPUT, 2 = OUTPUT, 3 = DISABLED)
     public int modeOnNoSignal = 0;
     public int modeOnSignal = 0;
-    public Priority priority = Priority.NORMAL;
-    
-    public enum Priority { LOW, NORMAL, HIGH }
-    
-    // Обёртка IEnergyStorage с поддержкой редстоун-режимов
-    private final IEnergyStorage energyWrapper = createEnergyWrapper();
-    
-    // ContainerData с упаковкой long для энергии
-    protected final ContainerData data = new ContainerData() {
+    private Priority priority = Priority.LOW;
+    private long energyDelta = 0;
+
+    private final ItemStackHandler itemHandler = new ItemStackHandler(2) {
         @Override
-        public int get(int pIndex) {
-            long currentEnergy = energyStorage.getEnergyStored();
-            long maxEnergy = energyStorage.getMaxEnergyStored();
-            long delta = getEnergyDelta();
-            return switch (pIndex) {
-                case 0 -> LongDataPacker.packHigh(currentEnergy);
-                case 1 -> LongDataPacker.packLow(currentEnergy);
-                case 2 -> LongDataPacker.packHigh(maxEnergy);
-                case 3 -> LongDataPacker.packLow(maxEnergy);
-                case 4 -> LongDataPacker.packHigh(delta);
-                case 5 -> LongDataPacker.packLow(delta);
-                case 6 -> modeOnNoSignal;
-                case 7 -> modeOnSignal;
-                case 8 -> priority.ordinal();
-                default -> 0;
-            };
+        protected void onContentsChanged(int slot) {
+            setChanged();
         }
-        
+
         @Override
-        public void set(int pIndex, int pValue) {
-            switch (pIndex) {
-                case 6 -> modeOnNoSignal = pValue;
-                case 7 -> modeOnSignal = pValue;
-                case 8 -> priority = Priority.values()[pValue];
-            }
-        }
-        
-        @Override
-        public int getCount() { 
-            return 9; 
+        public boolean isItemValid(int slot, @NotNull net.minecraft.world.item.ItemStack stack) {
+            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
         }
     };
-    
-    public MachineBatteryBlockEntity(BlockPos pPos, BlockState pBlockState) {
-        super(ModBlockEntities.MACHINE_BATTERY_BE.get(), pPos, pBlockState, SLOT_COUNT);
-    }
-    
-    @Override
-    protected Component getDefaultName() {
-        return Component.translatable("container.hbm_m.machine_battery");
-    }
-    
-    @Override
-    protected void setupEnergyCapability() {
-        // Используем long-энергохранилище с обёрткой редстоун-управления
-        longEnergyHandler = LazyOptional.of(() -> energyStorage);
-        // Обёртка Forge Energy поверх long-хранилища с поддержкой редстоун-режимов
-        forgeEnergyHandler = LazyOptional.of(() -> energyWrapper);
-    }
-    
-    @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-    }
-    
-    @Nullable
-    @Override
-    public AbstractContainerMenu createMenu(int pContainerId, Inventory pPlayerInventory, Player pPlayer) {
-        return new MachineBatteryMenu(pContainerId, pPlayerInventory, this, this.data);
-    }
-    
-    // ==================== ENERGY WRAPPER (Redstone-aware) ====================
-    
-    private IEnergyStorage createEnergyWrapper() {
-        return new IEnergyStorage() {
-            private boolean isInputAllowed() {
-                if (level == null) return false;
-                boolean hasSignal = level.hasNeighborSignal(worldPosition);
-                int activeMode = hasSignal ? modeOnSignal : modeOnNoSignal;
-                return activeMode == 0 || activeMode == 1;
+
+    // [ИСПРАВЛЕНИЕ] Убрали final и инициализацию в конструкторе (кроме empty)
+    private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
+    private LazyOptional<IEnergyProvider> hbmProvider = LazyOptional.empty();
+    private LazyOptional<IEnergyReceiver> hbmReceiver = LazyOptional.empty();
+    private LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.empty();
+
+    // Forge Energy враппер тоже должен пересоздаваться, если он зависит от полей,
+    // но поскольку PackedEnergyCapabilityProvider обычно создает свой LazyOptional внутри,
+    // проверь его реализацию. Если он хранит LazyOptional как поле, его тоже надо обновлять.
+    // Для надежности пересоздадим и его, если он не является простым прокси.
+    private PackedEnergyCapabilityProvider feCapabilityProvider;
+
+    protected final ContainerData data;
+
+    public MachineBatteryBlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlockEntities.MACHINE_BATTERY_BE.get(), pos, state);
+        this.capacity = state.getBlock() instanceof MachineBatteryBlock b ? b.getCapacity() : 9_000_000_000_000_000_000L;
+        this.transferRate = 100_000_000_000L;
+
+        // Инициализируем провайдер FE (но сам LazyOptional внутри него должен быть валидным)
+        this.feCapabilityProvider = new PackedEnergyCapabilityProvider(this);
+
+        this.data = new ContainerData() {
+            @Override
+            public int get(int index) {
+                return switch (index) {
+                    case 0 -> LongDataPacker.packHigh(energy);
+                    case 1 -> LongDataPacker.packLow(energy);
+                    case 2 -> LongDataPacker.packHigh(capacity);
+                    case 3 -> LongDataPacker.packLow(capacity);
+                    case 4 -> (int) energyDelta;
+                    case 5 -> modeOnNoSignal;
+                    case 6 -> modeOnSignal;
+                    case 7 -> priority.ordinal();
+                    default -> 0;
+                };
             }
-            
-            private boolean isOutputAllowed() {
-                if (level == null) return false;
-                boolean hasSignal = level.hasNeighborSignal(worldPosition);
-                int activeMode = hasSignal ? modeOnSignal : modeOnNoSignal;
-                return activeMode == 0 || activeMode == 2;
+
+            @Override
+            public void set(int index, int value) {
+                switch (index) {
+                    case 5 -> modeOnNoSignal = value;
+                    case 6 -> modeOnSignal = value;
+                    case 7 -> priority = Priority.values()[Math.max(0, Math.min(value, Priority.values().length - 1))];
+                }
             }
-            
-            @Override 
-            public int receiveEnergy(int maxReceive, boolean simulate) { 
-                if (!isInputAllowed()) return 0;
-                long maxReceiveLong = Math.min(maxReceive, Integer.MAX_VALUE);
-                return (int) energyStorage.receiveEnergy(maxReceiveLong, simulate); 
-            }
-            
-            @Override 
-            public int extractEnergy(int maxExtract, boolean simulate) { 
-                if (!isOutputAllowed()) return 0;
-                long maxExtractLong = Math.min(maxExtract, Integer.MAX_VALUE);
-                return (int) energyStorage.extractEnergy(maxExtractLong, simulate); 
-            }
-            
-            @Override 
-            public int getEnergyStored() { 
-                return (int) Math.min(energyStorage.getEnergyStored(), Integer.MAX_VALUE); 
-            }
-            
-            @Override 
-            public int getMaxEnergyStored() { 
-                return (int) Math.min(energyStorage.getMaxEnergyStored(), Integer.MAX_VALUE); 
-            }
-            
-            @Override 
-            public boolean canExtract() { 
-                return isOutputAllowed() && energyStorage.canExtract(); 
-            }
-            
-            @Override 
-            public boolean canReceive() { 
-                return isInputAllowed() && energyStorage.canReceive(); 
+
+            @Override
+            public int getCount() {
+                return 8;
             }
         };
     }
-    
-    // ==================== TICK LOGIC ====================
-    
-    public static void tick(Level pLevel, BlockPos pPos, BlockState pState, MachineBatteryBlockEntity pBlockEntity) {
-        if (pLevel.isClientSide()) return;
-        
-        long gameTime = pLevel.getGameTime();
-        
-        // Ежедневная обработка энергии
-        if (gameTime % 1 == 0) {
-            boolean hasSignal = pLevel.hasNeighborSignal(pPos);
-            int activeMode = hasSignal ? pBlockEntity.modeOnSignal : pBlockEntity.modeOnNoSignal;
-            
-            boolean canInput = activeMode == 0 || activeMode == 1;
-            boolean canOutput = activeMode == 0 || activeMode == 2;
-            
-            if (canInput) {
-                pBlockEntity.chargeFromItem();
-            }
-            
-            if (canOutput) {
-                pBlockEntity.dischargeToItem();
-                pBlockEntity.pushEnergyToNeighbors();
-            }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        // [ИСПРАВЛЕНИЕ] Создаем новые LazyOptional при загрузке чанка/мира
+        lazyItemHandler = LazyOptional.of(() -> itemHandler);
+        hbmProvider = LazyOptional.of(() -> this);
+        hbmReceiver = LazyOptional.of(() -> this);
+        hbmConnector = LazyOptional.of(() -> this);
+
+        // Если PackedEnergyCapabilityProvider хранит LazyOptional внутри себя,
+        // убедись, что он не закэшировал старый invalid optional.
+        // Обычно лучше пересоздать сам враппер, если он легкий.
+        // this.feCapabilityProvider = new PackedEnergyCapabilityProvider(this);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        // [ИСПРАВЛЕНИЕ] Инвалидируем текущие optional
+        if (hbmConnector.isPresent()) hbmConnector.invalidate();
+        if (lazyItemHandler.isPresent()) lazyItemHandler.invalidate();
+        if (hbmProvider.isPresent()) hbmProvider.invalidate();
+        if (hbmReceiver.isPresent()) hbmReceiver.invalidate();
+
+        // Не забываем про FE провайдер
+        if (feCapabilityProvider != null) feCapabilityProvider.invalidate();
+    }
+
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineBatteryBlockEntity be) {
+        if (level.isClientSide) return;
+
+        EnergyNetworkManager manager = EnergyNetworkManager.get((ServerLevel) level);
+        if (!manager.hasNode(pos)) {
+            manager.addNode(pos);
         }
-        
-        // Обновление энергетической дельты
+
+        long gameTime = level.getGameTime();
+
         if (gameTime % 10 == 0) {
-            pBlockEntity.updateEnergyDelta(pBlockEntity.energyStorage.getEnergyStored());
+            be.energyDelta = (be.energy - be.lastEnergy) / 10;
+            be.lastEnergy = be.energy;
         }
-        
-        pBlockEntity.setChanged();
+
+        be.chargeFromItem();
+        be.dischargeToItem();
     }
-    
+
     private void chargeFromItem() {
-        ItemStack chargeStack = inventory.getStackInSlot(CHARGE_SLOT);
-        if (chargeStack.isEmpty()) return;
-        
-        chargeStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(source -> {
+        itemHandler.getStackInSlot(0).getCapability(ForgeCapabilities.ENERGY).ifPresent(source -> {
             if (!source.canExtract()) return;
-            
-            long spaceAvailable = energyStorage.getMaxEnergyStored() - energyStorage.getEnergyStored();
+            long spaceAvailable = capacity - energy;
             if (spaceAvailable <= 0) return;
-            
-            int maxCanExtract = (int) Math.min(energyStorage.getMaxReceive(), spaceAvailable);
-            if (maxCanExtract <= 0) return;
-            
-            int extracted = source.extractEnergy(maxCanExtract, true);
+
+            int maxTransfer = (int) Math.min(transferRate, spaceAvailable);
+            int extracted = source.extractEnergy(maxTransfer, false);
             if (extracted > 0) {
-                long received = energyStorage.receiveEnergy(extracted, false);
-                source.extractEnergy((int) received, false);
+                energy += extracted;
                 setChanged();
             }
         });
     }
-    
+
     private void dischargeToItem() {
-        ItemStack dischargeStack = inventory.getStackInSlot(DISCHARGE_SLOT);
-        if (dischargeStack.isEmpty()) return;
-        
-        dischargeStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(target -> {
+        itemHandler.getStackInSlot(1).getCapability(ForgeCapabilities.ENERGY).ifPresent(target -> {
             if (!target.canReceive()) return;
-            
-            long availableEnergy = energyStorage.getEnergyStored();
+            long availableEnergy = energy;
             if (availableEnergy <= 0) return;
-            
-            int maxCanTransfer = (int) Math.min(energyStorage.getMaxExtract(), availableEnergy);
-            if (maxCanTransfer <= 0) return;
-            
-            int canReceive = target.receiveEnergy(maxCanTransfer, true);
-            if (canReceive > 0) {
-                long extracted = energyStorage.extractEnergy(canReceive, false);
-                target.receiveEnergy((int) extracted, false);
+
+            int maxTransfer = (int) Math.min(transferRate, availableEnergy);
+            int received = target.receiveEnergy(maxTransfer, false);
+            if (received > 0) {
+                energy -= received;
                 setChanged();
             }
         });
     }
-    
-    private void pushEnergyToNeighbors() {
-        if (ModClothConfig.get().enableDebugLogging) {
-            MainRegistry.LOGGER.debug("[BATTERY >>>] pushEnergyToNeighbors at {} currentEnergy={}", 
-                this.worldPosition, this.energyStorage.getEnergyStored());
-        }
-        
-        long energyToSend = Math.min(energyStorage.getMaxExtract(), energyStorage.getEnergyStored());
-        UUID pushId = UUID.randomUUID();
-        
-        if (energyToSend <= 0) {
-            return;
-        }
-        
-        Level lvl = this.level;
-        if (lvl == null) return;
-        
-        final long[] totalSent = {0};
-        
-        for (Direction direction : Direction.values()) {
-            if (totalSent[0] >= energyToSend) break;
-            
-            BlockEntity neighbor = lvl.getBlockEntity(worldPosition.relative(direction));
-            if (neighbor == null) continue;
-            
-            // Балансировка между батареями
-            if (neighbor instanceof MachineBatteryBlockEntity otherBattery) {
-                long myEnergy = this.energyStorage.getEnergyStored();
-                long theirEnergy = otherBattery.energyStorage.getEnergyStored();
-                
-                if (myEnergy <= theirEnergy) {
-                    if (ModClothConfig.get().enableDebugLogging) {
-                        MainRegistry.LOGGER.debug("[BATTERY >>>] Skipping battery at {} (my: {}, their: {})",
-                            neighbor.getBlockPos(), myEnergy, theirEnergy);
-                    }
-                    continue;
-                }
-                
-                long difference = myEnergy - theirEnergy;
-                long toSend = Math.min(difference / 2, energyToSend - totalSent[0]);
-                
-                if (toSend > 0) {
-                    int toSendInt = (int) Math.min(toSend, Integer.MAX_VALUE);
-                    long accepted = otherBattery.energyStorage.receiveEnergy(toSendInt, false);
-                    if (accepted > 0) {
-                        this.energyStorage.extractEnergy(accepted, false);
-                        totalSent[0] += accepted;
-                        if (ModClothConfig.get().enableDebugLogging) {
-                            MainRegistry.LOGGER.debug("[BATTERY >>>] Balanced {} FE to battery at {}",
-                                accepted, neighbor.getBlockPos());
-                        }
-                    }
-                }
-                continue;
-            }
-            
-            // Для проводов
-            if (neighbor instanceof WireBlockEntity wire) {
-                long remaining = energyToSend - totalSent[0];
-                int remainingInt = (int) Math.min(remaining, Integer.MAX_VALUE);
-                long accepted = wire.acceptEnergy(remainingInt, pushId, this.worldPosition);
-                if (accepted > 0) {
-                    this.energyStorage.extractEnergy(accepted, false);
-                    totalSent[0] += accepted;
-                }
-                continue;
-            }
-            
-            // Для остальных устройств
-            LazyOptional<IEnergyStorage> neighborCapability = 
-                neighbor.getCapability(ForgeCapabilities.ENERGY, direction.getOpposite());
-            
-            neighborCapability.ifPresent(neighborStorage -> {
-                if (neighborStorage.canReceive()) {
-                    long remaining = energyToSend - totalSent[0];
-                    int remainingInt = (int) Math.min(remaining, Integer.MAX_VALUE);
-                    int accepted = neighborStorage.receiveEnergy(remainingInt, false);
-                    if (accepted > 0) {
-                        this.energyStorage.extractEnergy(accepted, false);
-                        totalSent[0] += accepted;
-                    }
-                }
-            });
-        }
+
+    public int getCurrentMode() {
+        if (level == null) return modeOnNoSignal;
+        return level.hasNeighborSignal(this.worldPosition) ? modeOnSignal : modeOnNoSignal;
     }
-    
-    // ==================== BUTTON HANDLING ====================
-    
-    public void handleButtonPress(int buttonId) {
-        switch (buttonId) {
-            case 0:
-                modeOnNoSignal = (modeOnNoSignal + 1) % 4;
-                break;
-            case 1:
-                modeOnSignal = (modeOnSignal + 1) % 4;
-                break;
-            case 2:
-                priority = Priority.values()[(priority.ordinal() + 1) % Priority.values().length];
-                break;
-        }
-        
+
+    // --- IEnergyProvider & IEnergyReceiver ---
+    @Override
+    public long getEnergyStored() {
+        return this.energy;
+    }
+
+    @Override
+    public long getMaxEnergyStored() {
+        return this.capacity;
+    }
+
+    @Override
+    public void setEnergyStored(long energy) {
+        this.energy = Math.max(0, Math.min(this.capacity, energy));
         setChanged();
-        if (level != null && !level.isClientSide()) {
-            sendUpdateToClient();
+    }
+
+    @Override
+    public long getProvideSpeed() {
+        return this.transferRate;
+    }
+
+    @Override
+    public long getReceiveSpeed() {
+        return this.transferRate;
+    }
+
+    @Override
+    public Priority getPriority() {
+        return this.priority;
+    }
+
+    public void setPriority(Priority p) {
+        this.priority = p;
+        setChanged();
+    }
+
+    @Override
+    public boolean canConnectEnergy(Direction side) {
+        return true;
+    }
+
+    @Override
+    public long extractEnergy(long maxExtract, boolean simulate) {
+        if (!canExtract()) return 0;
+        long energyExtracted = Math.min(this.energy, Math.min(this.transferRate, maxExtract));
+        if (!simulate && energyExtracted > 0) {
+            setEnergyStored(this.energy - energyExtracted);
         }
+        return energyExtracted;
     }
-    
-    // ==================== NBT ====================
-    
+
     @Override
-    protected void saveAdditional(CompoundTag pTag) {
-        super.saveAdditional(pTag);
-        pTag.putLong("EnergyStored", energyStorage.getEnergyStored());
-        pTag.putInt("modeOnNoSignal", modeOnNoSignal);
-        pTag.putInt("modeOnSignal", modeOnSignal);
-        pTag.putInt("priority", priority.ordinal());
+    public boolean canExtract() {
+        int mode = getCurrentMode();
+        return (mode == 0 || mode == 2) && this.energy > 0;
     }
-    
+
     @Override
-    public void load(CompoundTag pTag) {
-        super.load(pTag);
-        energyStorage.setEnergy(pTag.getLong("EnergyStored"));
-        modeOnNoSignal = pTag.getInt("modeOnNoSignal");
-        modeOnSignal = pTag.getInt("modeOnSignal");
-        priority = Priority.values()[pTag.getInt("priority")];
+    public long receiveEnergy(long maxReceive, boolean simulate) {
+        if (!canReceive()) return 0;
+        long energyReceived = Math.min(this.capacity - this.energy, Math.min(this.transferRate, maxReceive));
+        if (!simulate && energyReceived > 0) {
+            setEnergyStored(this.energy + energyReceived);
+        }
+        return energyReceived;
     }
-    
+
     @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        tag.putLong("EnergyStored", energyStorage.getEnergyStored());
-        tag.putInt("modeOnNoSignal", modeOnNoSignal);
-        tag.putInt("modeOnSignal", modeOnSignal);
-        tag.putInt("priority", priority.ordinal());
-        return tag;
+    public boolean canReceive() {
+        int mode = getCurrentMode();
+        return (mode == 0 || mode == 1) && this.energy < this.capacity;
     }
-    
-    // ==================== CAPABILITY ====================
-    
+
+    // --- Capabilities ---
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
-            return itemHandler.cast();
+            return lazyItemHandler.cast();
         }
-        if (cap == ForgeCapabilities.ENERGY) {
-            return forgeEnergyHandler.cast();
+
+        if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
+            return hbmConnector.cast();
         }
+
+        int mode = getCurrentMode();
+
+        if (cap == ModCapabilities.HBM_ENERGY_PROVIDER && (mode == 0 || mode == 2)) {
+            return hbmProvider.cast();
+        }
+
+        if (cap == ModCapabilities.HBM_ENERGY_RECEIVER && (mode == 0 || mode == 1)) {
+            return hbmReceiver.cast();
+        }
+
+        LazyOptional<T> feCap = feCapabilityProvider.getCapability(cap, side);
+        if (feCap.isPresent()) return feCap;
+
         return super.getCapability(cap, side);
     }
-    
-    // ==================== UTILITY ====================
-    
-    public void drops() {
-        SimpleContainer container = new SimpleContainer(inventory.getSlots());
-        for (int i = 0; i < inventory.getSlots(); i++) {
-            container.setItem(i, inventory.getStackInSlot(i));
+
+    @Override
+    public void load(CompoundTag tag) {
+        super.load(tag);
+        this.energy = tag.getLong("Energy");
+        this.lastEnergy = tag.getLong("lastEnergy");
+        this.energyDelta = tag.getLong("energyDelta");
+        this.modeOnNoSignal = tag.getInt("modeOnNoSignal");
+        this.modeOnSignal = tag.getInt("modeOnSignal");
+        if (tag.contains("priority")) {
+            int priorityIndex = tag.getInt("priority");
+            this.priority = Priority.values()[Math.max(0, Math.min(priorityIndex, Priority.values().length - 1))];
         }
-        
-        if (this.level != null) {
-            Containers.dropContents(this.level, this.worldPosition, container);
+        if (tag.contains("Inventory")) {
+            itemHandler.deserializeNBT(tag.getCompound("Inventory"));
         }
     }
-    
-    public int getComparatorPower() {
-        long energy = this.energyStorage.getEnergyStored();
-        long maxEnergy = this.energyStorage.getMaxEnergyStored();
-        return (int) Math.floor(((double) energy / (double) maxEnergy) * 15.0);
+
+    @Override
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
+        tag.putLong("Energy", this.energy);
+        tag.putInt("modeOnNoSignal", this.modeOnNoSignal);
+        tag.putLong("lastEnergy", this.lastEnergy);
+        tag.putLong("energyDelta", this.energyDelta);
+        tag.putInt("modeOnSignal", this.modeOnSignal);
+        tag.putInt("priority", this.priority.ordinal());
+        tag.put("Inventory", itemHandler.serializeNBT());
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return Component.translatable(this.getBlockState().getBlock().getDescriptionId());
+    }
+
+    @Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int windowId, Inventory playerInventory, Player player) {
+        return new MachineBatteryMenu(windowId, playerInventory, this, this.data);
+    }
+
+    public void handleButtonPress(int buttonId) {
+        switch (buttonId) {
+            case 0 -> this.data.set(5, (this.modeOnNoSignal + 1) % 4);
+            case 1 -> this.data.set(6, (this.modeOnSignal + 1) % 4);
+            case 2 -> {
+                Priority[] priorities = Priority.values();
+                int currentIndex = this.priority.ordinal();
+                int nextIndex = (currentIndex + 1) % priorities.length;
+                this.data.set(7, nextIndex);
+            }
+        }
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (this.level != null && !this.level.isClientSide) {
+            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
+        }
     }
 }

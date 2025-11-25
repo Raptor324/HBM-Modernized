@@ -7,8 +7,8 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machine.MachineAssemblerBlockEntity;
 import com.hbm_m.item.ItemAssemblyTemplate;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.energy.LongDataPacker;
 
+import com.hbm_m.util.LongDataPacker;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -89,19 +89,32 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
     }
 
     public long getEnergyLong() {
+        // Теперь энергия находится в индексах 0 (high) и 1 (low)
         return LongDataPacker.unpack(this.data.get(2), this.data.get(3));
     }
 
     public long getMaxEnergyLong() {
+        // Макс. энергия - в индексах 2 (high) и 3 (low)
         return LongDataPacker.unpack(this.data.get(4), this.data.get(5));
     }
 
     public boolean isCrafting() {
-        return data.get(8) > 0; // <-- ИНДЕКС СДВИНУТ НА 8
+        // Состояние крафта сместилось на индекс 6
+        return data.get(8) > 0;
     }
 
     public long getEnergyDeltaLong() {
         return LongDataPacker.unpack(this.data.get(6), this.data.get(7));
+    }
+
+    public int getProgress() {
+        // Прогресс в индексе 0
+        return this.data.get(0);
+    }
+
+    public int getMaxProgress() {
+        // Макс. прогресс в индексе 1
+        return this.data.get(1);
     }
 
     public MachineAssemblerBlockEntity getBlockEntity() {

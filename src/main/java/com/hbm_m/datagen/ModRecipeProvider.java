@@ -7,7 +7,6 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.recipe.AnvilRecipe;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -35,17 +34,10 @@ public class ModRecipeProvider extends RecipeProvider {
     @Override
     protected void buildRecipes(@Nonnull Consumer<FinishedRecipe> pWriter) {
 
-        new AnvilRecipe(
-                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "iron_sword_anvil"),
-                new ItemStack(Items.IRON_INGOT, 0), // Вход A: 2 железных слитка
-                new ItemStack(Items.STICK, 1),      // Вход B: 1 палка
-                new ItemStack(Items.IRON_SWORD, 2), // Выход: 1 железный меч
-                java.util.List.of(new ItemStack(Items.IRON_INGOT, 2), new ItemStack(Items.STICK, 1)) // Требуемые предметы
-        );
-
         BlastFurnaceRecipeGenerator.generate(pWriter);
         PressRecipeGenerator.generate(pWriter);
         AssemblerRecipeGenerator.generate(pWriter);
+        AnvilRecipeGenerator.generate(pWriter);
         ShredderRecipeGenerator.generate(pWriter, ModRecipeProvider::unlockedByItem);
 
         // ==================== АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ РЕЦЕПТОВ ДЛЯ БЛОКОВ СЛИТКОВ ====================

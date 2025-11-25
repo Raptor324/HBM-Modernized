@@ -42,7 +42,19 @@ public class ModBlockEntities {
     public static final RegistryObject<BlockEntityType<AnvilBlockEntity>> ANVIL_BE =
         BLOCK_ENTITIES.register("anvil_be", () ->
             BlockEntityType.Builder.<AnvilBlockEntity>of(AnvilBlockEntity::new,
-                            ModBlocks.ANVIL_BLOCK.get()).build(null));
+                    ModBlocks.ANVIL_BLOCK.get(),
+                    ModBlocks.ANVIL_IRON.get(),
+                    ModBlocks.ANVIL_LEAD.get(),
+                    ModBlocks.ANVIL_STEEL.get(),
+                    ModBlocks.ANVIL_DESH.get(),
+                    ModBlocks.ANVIL_FERROURANIUM.get(),
+                    ModBlocks.ANVIL_SATURNITE.get(),
+                    ModBlocks.ANVIL_BISMUTH_BRONZE.get(),
+                    ModBlocks.ANVIL_ARSENIC_BRONZE.get(),
+                    ModBlocks.ANVIL_SCHRABIDATE.get(),
+                    ModBlocks.ANVIL_DNT.get(),
+                    ModBlocks.ANVIL_OSMIRIDIUM.get(),
+                    ModBlocks.ANVIL_MURKY.get()).build(null));
 
     public static final RegistryObject<BlockEntityType<MineBlockEntity>> MINE_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("mine_block_entity", () ->
@@ -74,6 +86,11 @@ public class ModBlockEntities {
 		BLOCK_ENTITIES.register("machine_battery_be", () ->
 			BlockEntityType.Builder.<MachineBatteryBlockEntity>of(MachineBatteryBlockEntity::new, ModBlocks.MACHINE_BATTERY.get())
 				.build(null));
+
+    public static final RegistryObject<BlockEntityType<SwitchBlockEntity>> SWITCH_BE =
+            BLOCK_ENTITIES.register("switch_be", () ->
+                    BlockEntityType.Builder.of(SwitchBlockEntity::new, ModBlocks.SWITCH.get())
+                            .build(null));
 
 	public static final RegistryObject<BlockEntityType<BlastFurnaceBlockEntity>> BLAST_FURNACE_BE =
 			BLOCK_ENTITIES.register("blast_furnace_be", () ->

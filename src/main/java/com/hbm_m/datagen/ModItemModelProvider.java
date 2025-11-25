@@ -417,7 +417,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.GRENADEHE);
         simpleItem(ModItems.GRENADEFIRE);
 
-        simpleBlockItem(ModBlocks.ANVIL_BLOCK);
+        ModBlocks.getAnvilBlocks().forEach(this::blockItemFromBlockModel);
     };
 
     /**
@@ -441,6 +441,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         return withExistingParent(item.getId().getPath(),
                 ResourceLocation.parse("item/generated")).texture("layer0",
                 ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
+    }
+
+    private ItemModelBuilder blockItemFromBlockModel(RegistryObject<Block> block) {
+        return withExistingParent(block.getId().getPath(), modLoc("block/" + block.getId().getPath()));
     }
     
     private void ingotItem(RegistryObject<Item> itemObject) {

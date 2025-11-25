@@ -200,7 +200,7 @@ public class ModClothConfig implements ConfigData {
 
     @Category("debug")
     @Gui.Tooltip
-    public boolean enableDebugLogging = false;
+    public boolean enableDebugLogging = true;
 
     @Override
     public void validatePostLoad() throws ValidationException {

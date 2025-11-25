@@ -8,6 +8,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Централизованная система для определения опасностей, исходящих от предметов.
@@ -25,13 +26,13 @@ public final class HazardSystem {
     // Они приватные, чтобы гарантировать целостность данных. Все взаимодействие идет через публичные методы.
 
     // Правила для тегов (самый низкий приоритет)
-    private static final Map<TagKey<Item>, HazardData> TAG_RULES = new HashMap<>();
+    private static final Map<TagKey<Item>, HazardData> TAG_RULES = new ConcurrentHashMap<>();
     // Правила для конкретных предметов (самый высокий приоритет)
-    private static final Map<Item, HazardData> ITEM_RULES = new HashMap<>();
+    private static final Map<Item, HazardData> ITEM_RULES = new ConcurrentHashMap<>();
     // Хранилище защиты от радиации для брони
-    private static final Map<Item, Float> ARMOR_PROTECTION_RULES = new HashMap<>();
+    private static final Map<Item, Float> ARMOR_PROTECTION_RULES = new ConcurrentHashMap<>();
     // Кэш для уже вычисленных результатов. Ключ - Item, Значение - финальный список опасностей.
-    private static final Map<Item, List<HazardEntry>> HAZARD_CACHE = new HashMap<>();
+    private static final Map<Item, List<HazardEntry>> HAZARD_CACHE = new ConcurrentHashMap<>();
 
     // ПУБЛИЧНЫЕ МЕТОДЫ РЕГИСТРАЦИИ 
 
@@ -140,12 +141,22 @@ public final class HazardSystem {
      * @return Уровень опасности или 0.0f, если не найдено.
      */
     
-    public static float getHazardLevelFromStack(ItemStack stack, HazardType type) {
-        return getHazardsFromStack(stack).stream()
-                .filter(entry -> entry.type == type)
-                .map(entry -> entry.baseLevel) // В будущем здесь можно будет применять модификаторы
-                .findFirst() // Возвращаем первое найденное значение (самое высокоприоритетное)
-                .orElse(0.0f);
+     public static float getHazardLevelFromStack(ItemStack stack, HazardType type) {
+        // Получаем список опасностей и дополнительно защищаемся от возможного null
+        List<HazardEntry> entries = getHazardsFromStack(stack);
+        if (entries == null || entries.isEmpty()) {
+            return 0.0f;
+        }
+    
+        // Обычный цикл без stream, чуть быстрее и без лишных объектов
+        for (HazardEntry entry : entries) {
+            if (entry.type == type) {
+                // В будущем здесь можно будет применить модификаторы
+                return entry.baseLevel;
+            }
+        }
+    
+        return 0.0f;
     }
 
     public static float getHazardLevelFromState(BlockState state, HazardType type) {

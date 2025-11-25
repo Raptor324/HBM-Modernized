@@ -2,11 +2,7 @@ package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.AnvilBlockEntity;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.recipe.AnvilRecipe;
-import com.hbm_m.recipe.AnvilRecipeManager;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -14,15 +10,15 @@ import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
-import java.util.Optional;
-
 public class AnvilMenu extends AbstractContainerMenu {
-
+    
     public final AnvilBlockEntity blockEntity;
     private final Level level;
+    private final ContainerLevelAccess access;
 
     // Конструктор для клиента
     public AnvilMenu(int containerId, Inventory inv, FriendlyByteBuf extraData) {
@@ -38,130 +34,79 @@ public class AnvilMenu extends AbstractContainerMenu {
     public AnvilMenu(int containerId, Inventory inv, BlockEntity entity) {
         super(ModMenuTypes.ANVIL_MENU.get(), containerId);
         
-        if (entity instanceof AnvilBlockEntity) {
-            blockEntity = (AnvilBlockEntity) entity;
+        if (entity instanceof AnvilBlockEntity anvilEntity) {
+            blockEntity = anvilEntity;
         } else {
-            // Создаём временную заглушку для клиента если entity == null
-            blockEntity = new AnvilBlockEntity(BlockPos.ZERO, ModBlocks.ANVIL_BLOCK.get().defaultBlockState());
+            blockEntity = new AnvilBlockEntity(BlockPos.ZERO, ModBlocks.ANVIL_IRON.get().defaultBlockState());
         }
-        
+
         this.level = inv.player.level();
-        
+        this.access = ContainerLevelAccess.create(level, blockEntity.getBlockPos());
+
+        // Добавляем инвентарь игрока ПЕРЕД слотами наковальни
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
 
-        // Слот A (вход 1)
-        this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 0, 17, 27));
-        
-        // Слот B (вход 2)
-        this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 1, 53, 27));
-        
-        // Слот C (выход) - только для извлечения
-        this.addSlot(new SlotItemHandler(blockEntity.getItemHandler(), 2, 89, 27) {
-            @Override
-            public boolean mayPlace(@NotNull ItemStack stack) {
-                return false;
-            }
-        });
+        IItemHandler itemHandler = blockEntity.getItemHandler();
+
+        // Слот A (вход 1) - индекс 36
+        this.addSlot(new SmithingInputSlot(itemHandler, 0, 17, 27));
+
+        // Слот B (вход 2) - индекс 37
+        this.addSlot(new SmithingInputSlot(itemHandler, 1, 53, 27));
+
+        // Слот C (выход) - индекс 38, только для извлечения
+        this.addSlot(new SmithingOutputSlot(itemHandler, 2, 89, 27));
     }
 
-    // Метод для крафта
-    public boolean tryCraft(Player player, boolean craftMax) {
-        ItemStack slotA = blockEntity.getItemHandler().getStackInSlot(0);
-        ItemStack slotB = blockEntity.getItemHandler().getStackInSlot(1);
-        
-        Optional<AnvilRecipe> recipeOpt = AnvilRecipeManager.findRecipe(level, slotA, slotB);
-        
-        if (recipeOpt.isEmpty()) {
-            return false;
-        }
-        
-        AnvilRecipe recipe = recipeOpt.get();
-        int craftCount = craftMax ? 64 : 1;
-        
-        // Проверяем, сколько раз можем скрафтить
-        int maxCrafts = Math.min(
-            slotA.getCount() / recipe.getInputA().getCount(),
-            slotB.getCount() / recipe.getInputB().getCount()
-        );
-        
-        // Проверяем наличие ресурсов в инвентаре игрока
-        for (ItemStack required : recipe.getRequiredItems()) {
-            int available = countItemInInventory(player, required);
-            maxCrafts = Math.min(maxCrafts, available / required.getCount());
-        }
-        
-        craftCount = Math.min(craftCount, maxCrafts);
-        if (craftCount <= 0) {
-            return false;
-        }
-        
-        // Забираем ресурсы из инвентаря
-        for (ItemStack required : recipe.getRequiredItems()) {
-            removeItemFromInventory(player, required, required.getCount() * craftCount);
-        }
-        
-        // Забираем из слотов
-        slotA.shrink(recipe.getInputA().getCount() * craftCount);
-        slotB.shrink(recipe.getInputB().getCount() * craftCount);
-        
-        ItemStack result = recipe.getResultItem(RegistryAccess.EMPTY).copy();
-        result.setCount(result.getCount() * craftCount);
-        
-        if (!player.getInventory().add(result)) {
-            player.drop(result, false);
-        }
-        
-        return true;
-    }
-
-    private int countItemInInventory(Player player, ItemStack stack) {
-        int count = 0;
-        for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
-            ItemStack invStack = player.getInventory().getItem(i);
-            if (ItemStack.isSameItemSameTags(invStack, stack)) {
-                count += invStack.getCount();
-            }
-        }
-        return count;
-    }
-
-    private void removeItemFromInventory(Player player, ItemStack stack, int amount) {
-        int remaining = amount;
-        for (int i = 0; i < player.getInventory().getContainerSize() && remaining > 0; i++) {
-            ItemStack invStack = player.getInventory().getItem(i);
-            if (ItemStack.isSameItemSameTags(invStack, stack)) {
-                int toRemove = Math.min(remaining, invStack.getCount());
-                invStack.shrink(toRemove);
-                remaining -= toRemove;
-            }
-        }
+    public void tryCraft(Player player, boolean craftAll) {
+        blockEntity.craft(player, craftAll);
     }
 
     @Override
     public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
         Slot sourceSlot = slots.get(index);
-        if (!sourceSlot.hasItem()) return ItemStack.EMPTY;
+        if (!sourceSlot.hasItem()) {
+            return ItemStack.EMPTY;
+        }
 
         ItemStack sourceStack = sourceSlot.getItem();
         ItemStack copyOfSourceStack = sourceStack.copy();
 
-        if (index < 36) {
-            // Из инвентаря в наковальню
-            if (!this.moveItemStackTo(sourceStack, 36, 38, false)) {
+        if (index == 38) {
+            // Выходной слот - переносим в инвентарь
+            if (!this.moveItemStackTo(sourceStack, 0, 36, true)) {
                 return ItemStack.EMPTY;
             }
-        } else if (index < 39) {
-            // Из наковальни в инвентарь
+            sourceSlot.onQuickCraft(sourceStack, copyOfSourceStack);
+        } else if (index >= 36 && index <= 37) {
+            // Входные слоты - переносим в инвентарь
             if (!this.moveItemStackTo(sourceStack, 0, 36, false)) {
                 return ItemStack.EMPTY;
             }
+        } else {
+            // Инвентарь игрока - пытаемся переместить во входные слоты
+            if (!this.moveItemStackTo(sourceStack, 36, 38, false)) {
+                if (index < 27) {
+                    if (!this.moveItemStackTo(sourceStack, 27, 36, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                } else if (index < 36) {
+                    if (!this.moveItemStackTo(sourceStack, 0, 27, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                }
+            }
         }
 
-        if (sourceStack.getCount() == 0) {
-            sourceSlot.set(ItemStack.EMPTY);
+        if (sourceStack.isEmpty()) {
+            sourceSlot.setByPlayer(ItemStack.EMPTY);
         } else {
             sourceSlot.setChanged();
+        }
+
+        if (sourceStack.getCount() == copyOfSourceStack.getCount()) {
+            return ItemStack.EMPTY;
         }
 
         sourceSlot.onTake(player, sourceStack);
@@ -170,20 +115,96 @@ public class AnvilMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(@NotNull Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.ANVIL_BLOCK.get());
+        return stillValid(access, player, blockEntity.getBlockState().getBlock());
+    }
+
+    @Override
+    public void removed(@NotNull Player player) {
+        super.removed(player);
+        this.access.execute((level, pos) -> {
+            if (!level.isClientSide) {
+                IItemHandler handler = blockEntity.getItemHandler();
+                for (int i = 0; i < 2; i++) {
+                    ItemStack stack = handler.getStackInSlot(i);
+                    if (!stack.isEmpty()) {
+                        player.drop(stack, false);
+                        handler.extractItem(i, stack.getCount(), false);
+                    }
+                }
+            }
+        });
     }
 
     private void addPlayerInventory(Inventory playerInventory) {
-        for (int i = 0; i < 3; ++i) {
-            for (int l = 0; l < 9; ++l) {
-                this.addSlot(new Slot(playerInventory, l + i * 9 + 9, 8 + l * 18, 140 + i * 18));
+        for (int row = 0; row < 3; ++row) {
+            for (int col = 0; col < 9; ++col) {
+                this.addSlot(new Slot(playerInventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18 + 56));
             }
         }
     }
 
     private void addPlayerHotbar(Inventory playerInventory) {
-        for (int i = 0; i < 9; ++i) {
-            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 198));
+        for (int col = 0; col < 9; ++col) {
+            this.addSlot(new Slot(playerInventory, col, 8 + col * 18, 142 + 56));
+        }
+    }
+
+    /**
+     * Входной слот для ковки - при изменении обновляет рецепт
+     */
+    private class SmithingInputSlot extends SlotItemHandler {
+        public SmithingInputSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+            super(itemHandler, index, xPosition, yPosition);
+        }
+
+        @Override
+        public void setChanged() {
+            super.setChanged();
+            blockEntity.updateCrafting();
+        }
+
+        @Override
+        public void set(@NotNull ItemStack stack) {
+            super.set(stack);
+            blockEntity.updateCrafting();
+        }
+
+        @Override
+        public @NotNull ItemStack remove(int amount) {
+            ItemStack result = super.remove(amount);
+            blockEntity.updateCrafting();
+            return result;
+        }
+    }
+
+    /**
+     * Выходной слот - только для извлечения, при взятии расходует материалы
+     */
+    private class SmithingOutputSlot extends SlotItemHandler {
+
+        public SmithingOutputSlot(IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+            super(itemHandler, index, xPosition, yPosition);
+        }
+
+        @Override
+        public boolean mayPlace(@NotNull ItemStack stack) {
+            return false;
+        }
+
+        @Override
+        public void onTake(@NotNull Player player, @NotNull ItemStack stack) {
+            super.onTake(player, stack);
+            
+            if (!level.isClientSide) {
+                blockEntity.consumeMaterials(player, false);
+                blockEntity.updateCrafting();
+            }
+        }
+
+        @Override
+        public void setChanged() {
+            super.setChanged();
+            blockEntity.updateCrafting();
         }
     }
 }

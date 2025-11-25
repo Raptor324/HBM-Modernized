@@ -24,6 +24,7 @@ import net.minecraftforge.registries.RegistryObject;
 import net.minecraft.util.valueproviders.UniformInt;
 
 import java.util.EnumMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -36,6 +37,8 @@ public class ModBlocks {
             
     private static final BlockBehaviour.Properties TABLE_PROPERTIES =
                 BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops();
+    private static final BlockBehaviour.Properties ANVIL_PROPERTIES =
+            BlockBehaviour.Properties.copy(Blocks.ANVIL).sound(SoundType.ANVIL).noOcclusion();
     
     // Стандартные свойства для блоков слитков
     private static final BlockBehaviour.Properties INGOT_BLOCK_PROPERTIES = 
@@ -135,8 +138,37 @@ public class ModBlocks {
 
     //---------------------------<СТАНКИ>-------------------------------------
 
-    public static final RegistryObject<Block> ANVIL_BLOCK = registerBlock("anvil_block",
-            () -> new AnvilBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    public static final RegistryObject<Block> ANVIL_BLOCK = registerAnvil("anvil_block", AnvilTier.STEEL);
+    public static final RegistryObject<Block> ANVIL_IRON = registerAnvil("anvil_iron", AnvilTier.IRON);
+    public static final RegistryObject<Block> ANVIL_LEAD = registerAnvil("anvil_lead", AnvilTier.IRON);
+    public static final RegistryObject<Block> ANVIL_STEEL = registerAnvil("anvil_steel", AnvilTier.STEEL);
+    public static final RegistryObject<Block> ANVIL_DESH = registerAnvil("anvil_desh", AnvilTier.OIL);
+    public static final RegistryObject<Block> ANVIL_FERROURANIUM = registerAnvil("anvil_ferrouranium", AnvilTier.NUCLEAR);
+    public static final RegistryObject<Block> ANVIL_SATURNITE = registerAnvil("anvil_saturnite", AnvilTier.RBMK);
+    public static final RegistryObject<Block> ANVIL_BISMUTH_BRONZE = registerAnvil("anvil_bismuth_bronze", AnvilTier.RBMK);
+    public static final RegistryObject<Block> ANVIL_ARSENIC_BRONZE = registerAnvil("anvil_arsenic_bronze", AnvilTier.RBMK);
+    public static final RegistryObject<Block> ANVIL_SCHRABIDATE = registerAnvil("anvil_schrabidate", AnvilTier.FUSION);
+    public static final RegistryObject<Block> ANVIL_DNT = registerAnvil("anvil_dnt", AnvilTier.PARTICLE);
+    public static final RegistryObject<Block> ANVIL_OSMIRIDIUM = registerAnvil("anvil_osmiridium", AnvilTier.GERALD);
+    public static final RegistryObject<Block> ANVIL_MURKY = registerAnvil("anvil_murky", AnvilTier.MURKY);
+
+    public static List<RegistryObject<Block>> getAnvilBlocks() {
+        return List.of(
+                ANVIL_BLOCK,
+                ANVIL_IRON,
+                ANVIL_LEAD,
+                ANVIL_STEEL,
+                ANVIL_DESH,
+                ANVIL_FERROURANIUM,
+                ANVIL_SATURNITE,
+                ANVIL_BISMUTH_BRONZE,
+                ANVIL_ARSENIC_BRONZE,
+                ANVIL_SCHRABIDATE,
+                ANVIL_DNT,
+                ANVIL_OSMIRIDIUM,
+                ANVIL_MURKY
+        );
+    }
 
     public static final RegistryObject<Block> BLAST_FURNACE = registerBlock("blast_furnace",
             () -> new BlastFurnaceBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
@@ -162,6 +194,9 @@ public class ModBlocks {
     public static final RegistryObject<Block> SHREDDER = registerBlock("shredder",
             () -> new MachineShredderBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
+    public static final RegistryObject<Block> SWITCH = registerBlock("switch",
+            () -> new SwitchBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
+
 
     public static final RegistryObject<Block> MACHINE_ASSEMBLER = registerBlockWithoutItem("machine_assembler",
         () -> new MachineAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
@@ -172,8 +207,9 @@ public class ModBlocks {
     public static final RegistryObject<Block> UNIVERSAL_MACHINE_PART = registerBlockWithoutItem("universal_machine_part",
         () -> new UniversalMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
 
-    public static final RegistryObject<Block> MACHINE_BATTERY = registerBlockWithoutItem("machine_battery",
-        () -> new MachineBatteryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f)));
+    public static final RegistryObject<Block> MACHINE_BATTERY = BLOCKS.register("machine_battery",
+            () -> new MachineBatteryBlock(Block.Properties.of().strength(5.0f), 1000000L) // Емкость 1М
+    );
 
     // public static final RegistryObject<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
     //     () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -784,6 +820,10 @@ public class ModBlocks {
         ));
     
     // ==================== Helper Methods ====================
+
+    private static RegistryObject<Block> registerAnvil(String name, AnvilTier tier) {
+        return registerBlock(name, () -> new AnvilBlock(ANVIL_PROPERTIES, tier));
+    }
 
     private static <T extends Block> RegistryObject<T> registerBlock(String name, Supplier<T> block) {
         RegistryObject<T> toReturn = BLOCKS.register(name, block);

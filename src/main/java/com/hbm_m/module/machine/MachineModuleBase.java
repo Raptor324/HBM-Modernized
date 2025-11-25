@@ -8,9 +8,8 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.items.IItemHandler;
-
+import com.hbm_m.api.energy.IEnergyReceiver;
 // ИЗМЕНЕНИЕ: Импортируем нашу long-систему вместо Forge Energy
-import com.hbm_m.energy.ILongEnergyStorage;
 
 import javax.annotation.Nullable;
 
@@ -27,7 +26,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     // === CONFIGURATION ===
     protected final int moduleIndex;
     // ИЗМЕНЕНИЕ: Теперь используем ILongEnergyStorage вместо IEnergyStorage
-    protected final ILongEnergyStorage energyStorage;
+    protected final IEnergyReceiver energyStorage;
     protected final IItemHandler itemHandler;
     protected final Level level;
     protected int[] inputSlots;
@@ -44,7 +43,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     public boolean needsSync = false;
 
     // ИЗМЕНЕНИЕ: Конструктор теперь принимает ILongEnergyStorage
-    public MachineModuleBase(int moduleIndex, ILongEnergyStorage energyStorage, IItemHandler itemHandler, Level level) {
+    public MachineModuleBase(int moduleIndex, IEnergyReceiver energyStorage, IItemHandler itemHandler, Level level) {
         this.moduleIndex = moduleIndex;
         this.energyStorage = energyStorage;
         this.itemHandler = itemHandler;
@@ -100,8 +99,9 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
 
             // Проверяем наличие энергии для ЭТОГО тика
             if (energyStorage.getEnergyStored() >= energyPerTick) {
-                // Потребляем энергию ПЕРЕД увеличением прогресса (как в оригинале)
-                energyStorage.extractEnergy(energyPerTick, false);
+                // НОВЫЙ СПОСОБ ПОТРЕБЛЕНИЯ ЭНЕРГИИ
+                long currentEnergy = energyStorage.getEnergyStored();
+                energyStorage.setEnergyStored(currentEnergy - energyPerTick);
 
                 double step = Math.min(speedMultiplier, 1.0);
                 this.progress += step;
@@ -257,7 +257,8 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             // Проверяем наличие энергии для ЭТОГО тика
             if (energyStorage.getEnergyStored() >= energyPerTick) {
                 // Потребляем энергию ПЕРЕД увеличением прогресса (как в оригинале)
-                energyStorage.extractEnergy(energyPerTick, false);
+                long currentEnergy = energyStorage.getEnergyStored();
+                energyStorage.setEnergyStored(currentEnergy - energyPerTick);
 
                 double step = Math.min(speedMultiplier, 1.0);
                 this.progress += step;

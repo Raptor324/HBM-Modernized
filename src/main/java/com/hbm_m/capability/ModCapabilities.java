@@ -1,19 +1,18 @@
-package com.hbm_m.capability;// package com.hbm_m.api.capability; (или где у тебя хранятся capabilities)
+package com.hbm_m.capability;
 
-import com.hbm_m.energy.ILongEnergyStorage;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.CapabilityManager;
-import net.minecraftforge.common.capabilities.CapabilityToken;
-import net.minecraftforge.common.capabilities.RegisterCapabilitiesEvent;
+import com.hbm_m.api.energy.*;
+import net.minecraftforge.common.capabilities.*;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 public class ModCapabilities {
+    public static final Capability<IEnergyProvider> HBM_ENERGY_PROVIDER = CapabilityManager.get(new CapabilityToken<>() {});
+    public static final Capability<IEnergyReceiver> HBM_ENERGY_RECEIVER = CapabilityManager.get(new CapabilityToken<>() {});
+    public static final Capability<IEnergyConnector> HBM_ENERGY_CONNECTOR = CapabilityManager.get(new CapabilityToken<>() {});
 
-    // Наш новый capability для long-энергии
-    public static final Capability<ILongEnergyStorage> LONG_ENERGY =
-            CapabilityManager.get(new CapabilityToken<>() {});
-
-    // Метод для регистрации
+    @SubscribeEvent
     public static void register(RegisterCapabilitiesEvent event) {
-        event.register(ILongEnergyStorage.class);
+        event.register(IEnergyProvider.class);
+        event.register(IEnergyReceiver.class);
+        event.register(IEnergyConnector.class);
     }
 }
