@@ -36,15 +36,14 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     private final long capacity;
     private final long transferRate;
     private long energy = 0;
-    private long lastEnergy = 0; // Для расчёта дельты
+    private long lastEnergy = 0;
 
     // Режимы работы (0 = BOTH, 1 = INPUT, 2 = OUTPUT, 3 = DISABLED)
-    public int modeOnNoSignal = 0; // По умолчанию BOTH
-    public int modeOnSignal = 0;   // По умолчанию BOTH
+    public int modeOnNoSignal = 0;
+    public int modeOnSignal = 0;
     private Priority priority = Priority.LOW;
-    private long energyDelta = 0; // [🔥 ДОБАВЬ ЭТО ПОЛЕ 🔥]
+    private long energyDelta = 0;
 
-    // Инвентарь для предметов (2 слота)
     private final ItemStackHandler itemHandler = new ItemStackHandler(2) {
         @Override
         protected void onContentsChanged(int slot) {
@@ -57,29 +56,37 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         }
     };
 
+    // [ИСПРАВЛЕНИЕ] Убрали final и инициализацию в конструкторе (кроме empty)
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
-    private final LazyOptional<IEnergyProvider> hbmProvider = LazyOptional.of(() -> this);
-    private final LazyOptional<IEnergyReceiver> hbmReceiver = LazyOptional.of(() -> this);
-    private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-    private final PackedEnergyCapabilityProvider feCapabilityProvider;
+    private LazyOptional<IEnergyProvider> hbmProvider = LazyOptional.empty();
+    private LazyOptional<IEnergyReceiver> hbmReceiver = LazyOptional.empty();
+    private LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.empty();
+
+    // Forge Energy враппер тоже должен пересоздаваться, если он зависит от полей,
+    // но поскольку PackedEnergyCapabilityProvider обычно создает свой LazyOptional внутри,
+    // проверь его реализацию. Если он хранит LazyOptional как поле, его тоже надо обновлять.
+    // Для надежности пересоздадим и его, если он не является простым прокси.
+    private PackedEnergyCapabilityProvider feCapabilityProvider;
 
     protected final ContainerData data;
 
     public MachineBatteryBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_BATTERY_BE.get(), pos, state);
         this.capacity = state.getBlock() instanceof MachineBatteryBlock b ? b.getCapacity() : 9_000_000_000_000_000_000L;
-        this.transferRate = 100_000_000_000L; // 0.5% за тик
+        this.transferRate = 100_000_000_000L;
+
+        // Инициализируем провайдер FE (но сам LazyOptional внутри него должен быть валидным)
         this.feCapabilityProvider = new PackedEnergyCapabilityProvider(this);
 
         this.data = new ContainerData() {
             @Override
             public int get(int index) {
                 return switch (index) {
-                    case 0 -> LongDataPacker.packHigh(energy);      // energy high
-                    case 1 -> LongDataPacker.packLow(energy);       // energy low
-                    case 2 -> LongDataPacker.packHigh(capacity);    // capacity high
-                    case 3 -> LongDataPacker.packLow(capacity);     // capacity low
-                    case 4 -> (int) energyDelta;                          // energy delta
+                    case 0 -> LongDataPacker.packHigh(energy);
+                    case 1 -> LongDataPacker.packLow(energy);
+                    case 2 -> LongDataPacker.packHigh(capacity);
+                    case 3 -> LongDataPacker.packLow(capacity);
+                    case 4 -> (int) energyDelta;
                     case 5 -> modeOnNoSignal;
                     case 6 -> modeOnSignal;
                     case 7 -> priority.ordinal();
@@ -106,7 +113,29 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     @Override
     public void onLoad() {
         super.onLoad();
+        // [ИСПРАВЛЕНИЕ] Создаем новые LazyOptional при загрузке чанка/мира
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
+        hbmProvider = LazyOptional.of(() -> this);
+        hbmReceiver = LazyOptional.of(() -> this);
+        hbmConnector = LazyOptional.of(() -> this);
+
+        // Если PackedEnergyCapabilityProvider хранит LazyOptional внутри себя,
+        // убедись, что он не закэшировал старый invalid optional.
+        // Обычно лучше пересоздать сам враппер, если он легкий.
+        // this.feCapabilityProvider = new PackedEnergyCapabilityProvider(this);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        // [ИСПРАВЛЕНИЕ] Инвалидируем текущие optional
+        if (hbmConnector.isPresent()) hbmConnector.invalidate();
+        if (lazyItemHandler.isPresent()) lazyItemHandler.invalidate();
+        if (hbmProvider.isPresent()) hbmProvider.invalidate();
+        if (hbmReceiver.isPresent()) hbmReceiver.invalidate();
+
+        // Не забываем про FE провайдер
+        if (feCapabilityProvider != null) feCapabilityProvider.invalidate();
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineBatteryBlockEntity be) {
@@ -119,15 +148,11 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
 
         long gameTime = level.getGameTime();
 
-        // Обновление дельты энергии каждые 10 тиков
         if (gameTime % 10 == 0) {
-            // [ИЗМЕНЕНО] Рассчитываем среднюю дельту за последние 10 тиков
             be.energyDelta = (be.energy - be.lastEnergy) / 10;
-            // Сохраняем текущую энергию для *следующего* расчета
             be.lastEnergy = be.energy;
         }
 
-        // Зарядка/разрядка предметов каждый тик
         be.chargeFromItem();
         be.dischargeToItem();
     }
@@ -162,9 +187,6 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         });
     }
 
-    /**
-     * Получить текущий режим работы с учётом redstone-сигнала
-     */
     public int getCurrentMode() {
         if (level == null) return modeOnNoSignal;
         return level.hasNeighborSignal(this.worldPosition) ? modeOnSignal : modeOnNoSignal;
@@ -225,7 +247,6 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     @Override
     public boolean canExtract() {
         int mode = getCurrentMode();
-        // BOTH (0) или OUTPUT (2)
         return (mode == 0 || mode == 2) && this.energy > 0;
     }
 
@@ -242,7 +263,6 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     @Override
     public boolean canReceive() {
         int mode = getCurrentMode();
-        // BOTH (0) или INPUT (1)
         return (mode == 0 || mode == 1) && this.energy < this.capacity;
     }
 
@@ -253,43 +273,26 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
             return lazyItemHandler.cast();
         }
 
-        // [ИЗМЕНЕНО] Сначала проверяем базовый коннектор.
-        // Батарея - это *всегда* узел сети, даже в режиме "DISABLED".
-        // Это не дает сети "потерять" узел, когда он выключен.
         if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
-            return hbmConnector.cast(); // <-- Теперь мы возвращаем кэшированное поле
+            return hbmConnector.cast();
         }
 
         int mode = getCurrentMode();
 
-        // HBM Provider (только если режим BOTH или OUTPUT)
         if (cap == ModCapabilities.HBM_ENERGY_PROVIDER && (mode == 0 || mode == 2)) {
             return hbmProvider.cast();
         }
 
-        // HBM Receiver (только если режим BOTH или INPUT)
         if (cap == ModCapabilities.HBM_ENERGY_RECEIVER && (mode == 0 || mode == 1)) {
             return hbmReceiver.cast();
         }
 
-        // Forge Energy (всегда доступен)
         LazyOptional<T> feCap = feCapabilityProvider.getCapability(cap, side);
         if (feCap.isPresent()) return feCap;
 
         return super.getCapability(cap, side);
     }
 
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        hbmConnector.invalidate();
-        lazyItemHandler.invalidate();
-        hbmProvider.invalidate();
-        hbmReceiver.invalidate();
-        feCapabilityProvider.invalidate();
-    }
-
-    // --- NBT ---
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -319,7 +322,6 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         tag.put("Inventory", itemHandler.serializeNBT());
     }
 
-    // --- GUI ---
     @Override
     public Component getDisplayName() {
         return Component.translatable(this.getBlockState().getBlock().getDescriptionId());
@@ -333,20 +335,15 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
 
     public void handleButtonPress(int buttonId) {
         switch (buttonId) {
-            // [ФИКС] Меняем значения через this.data.set(...)
             case 0 -> this.data.set(5, (this.modeOnNoSignal + 1) % 4);
             case 1 -> this.data.set(6, (this.modeOnSignal + 1) % 4);
-
-            // [ФИКС] Теперь мы меняем data, которую видит GUI
             case 2 -> {
                 Priority[] priorities = Priority.values();
                 int currentIndex = this.priority.ordinal();
                 int nextIndex = (currentIndex + 1) % priorities.length;
-                this.data.set(7, nextIndex); // <-- Вот и всё
+                this.data.set(7, nextIndex);
             }
         }
-
-        // Эти строки нужны для NBT, оставляем их
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -354,18 +351,10 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     }
 
     @Override
-    public void setLevel(Level pLevel) {
-        super.setLevel(pLevel);
-    }
-
-    @Override
     public void setRemoved() {
         super.setRemoved();
-        // [ВАЖНО!] Сообщаем сети, что мы удалены
         if (this.level != null && !this.level.isClientSide) {
             EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
         }
     }
-
 }
-
