@@ -42,19 +42,9 @@ public class ExplosiveChargeBlock extends Block implements IDetonatable {
 
             if (serverLevel.getServer() != null) {
                 serverLevel.getServer().tell(new TickTask(30, () -> {
-                    // Взрыв (без разрушения блоков - за это отвечает кратер)
-                    level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 8.0F, Level.ExplosionInteraction.NONE);
+                    level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 8.0F, Level.ExplosionInteraction.TNT);
 
-                    // Генерация кратера
-                    ShockwaveGenerator.generateCrater(
-                            serverLevel,
-                            pos,
-                            CRATER_RADIUS,
-                            CRATER_DEPTH,
-                            ModBlocks.WASTE_LOG.get(),
-                            ModBlocks.WASTE_PLANKS.get(),
-                            ModBlocks.BURNED_GRASS.get()
-                    );
+
                 }));
             }
 

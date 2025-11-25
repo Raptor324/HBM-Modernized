@@ -44,6 +44,10 @@ public class MineBlock extends Block implements EntityBlock {
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return COLLISION_SHAPE;
     }
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        return COLLISION_SHAPE;
+    }
 
     @Override
     public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
