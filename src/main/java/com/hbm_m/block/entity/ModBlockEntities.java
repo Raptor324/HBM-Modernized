@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity;
 
+import com.hbm_m.api.energy.ConverterBlockEntity;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.world.level.block.Block;
@@ -154,6 +155,10 @@ public class ModBlockEntities {
                             DeshCrateBlockEntity::new,
                             ModBlocks.CRATE_DESH.get()
                     ).build(null));
+
+    public static final RegistryObject<BlockEntityType<ConverterBlockEntity>> CONVERTER_BE =
+            BLOCK_ENTITIES.register("converter_be",
+                    () -> BlockEntityType.Builder.of(ConverterBlockEntity::new, ModBlocks.CONVERTER_BLOCK.get()).build(null));
         
 
     public static void register(IEventBus eventBus) {

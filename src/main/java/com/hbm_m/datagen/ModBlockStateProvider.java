@@ -226,6 +226,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath()));
         simpleBlockWithItem(ModBlocks.WIRE_COATED.get(), models().getExistingFile(modLoc("block/wire_coated")));
 
+
+        blockWithItem(ModBlocks.CONVERTER_BLOCK);
+
+
         orientableBlockWithItem(
                 ModBlocks.MACHINE_BATTERY,
                 modLoc("block/battery_side_alt"),

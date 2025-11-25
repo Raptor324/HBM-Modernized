@@ -1,5 +1,6 @@
 package com.hbm_m.block;
 
+import com.hbm_m.api.energy.ConverterBlock;
 import com.hbm_m.block.machine.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machine.MachineAssemblerBlock;
 import com.hbm_m.block.machine.MachineBatteryBlock;
@@ -194,6 +195,9 @@ public class ModBlocks {
                 ANVIL_MURKY
         );
     }
+
+    public static final RegistryObject<Block> CONVERTER_BLOCK = registerBlock("converter_block",
+            () -> new ConverterBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
     public static final RegistryObject<Block> BLAST_FURNACE = registerBlock("blast_furnace",
             () -> new BlastFurnaceBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
