@@ -47,7 +47,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     private long lastEnergy = 0;
     private long energyDelta = 0;
 
-    private boolean networkInitialized = false;
+    protected boolean networkInitialized = false;
 
     // Capability провайдеры
     private final LazyOptional<IEnergyProvider> hbmProvider = LazyOptional.of(() -> this);
@@ -317,14 +317,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         }
     }
 
-    @Override
-    public void onChunkUnloaded() {
-        super.onChunkUnloaded();
-        // [ВАЖНО!] Также сообщаем при выгрузке чанка
-        if (this.level != null && !this.level.isClientSide) {
-            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
-        }
-    }
+
 
     // И при загрузке/установке блока:
     @Override

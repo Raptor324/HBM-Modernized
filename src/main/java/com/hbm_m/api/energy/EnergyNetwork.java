@@ -63,6 +63,7 @@ public class EnergyNetwork {
         long totalConsumption = 0;
 
         for (EnergyNode node : nodes) {
+            if (!level.isLoaded(node.getPos())) continue;
             BlockEntity be = level.getBlockEntity(node.getPos());
             if (be == null) continue;
 

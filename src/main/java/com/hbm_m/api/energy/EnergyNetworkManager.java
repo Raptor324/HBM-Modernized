@@ -129,28 +129,53 @@ public class EnergyNetworkManager extends SavedData {
     private void addNode(BlockPos pos, @Nullable EnergyNetwork networkToAvoid) {
         long posLong = pos.asLong();
 
-        // [🔥 ФИКС 1] Сначала проверяем, валиден ли узел
-        EnergyNode newNode = new EnergyNode(pos);
-        if (!newNode.isValid(level)) {
-            allNodes.remove(posLong); // На всякий случай удаляем, если он там был
-            return; // Не добавляем невалидный узел
-        }
-
-        // [🔥 ФИКС 2] Только ТЕПЕРЬ проверяем, есть ли он уже (защита от onLoad)
+        // 1. Защита от дубликатов и проверка существования
         if (allNodes.containsKey(posLong)) {
-            // Узел уже существует (вероятно, из NBT) и он валиден.
-            // Нам нужно УБЕДИТЬСЯ, что он в сети.
-            // Если у него нет сети, запускаем поиск соседей.
-            if (newNode.getNetwork() != null) {
-                return; // Он уже в сети, всё ок
+            EnergyNode existingNode = allNodes.get(posLong);
+            if (existingNode != null && existingNode.getNetwork() != null) {
+                return; // Узел уже есть и он в порядке
             }
         }
 
-        allNodes.put(posLong, newNode); // Добавляем/перезаписываем
+        // 2. Создаем и проверяем валидность
+        EnergyNode newNode = new EnergyNode(pos);
+        // Если чанк загружен, но блока нет (или он не подходит), удаляем и выходим
+        if (!newNode.isValid(level)) {
+            allNodes.remove(posLong);
+            return;
+        }
 
+        // 3. Сохраняем узел
+        allNodes.put(posLong, newNode);
+
+        // 4. Ищем соседей (с функцией АВТО-ПОЧИНКИ)
         Set<EnergyNetwork> adjacentNetworks = new HashSet<>();
         for (Direction dir : Direction.values()) {
-            EnergyNode neighbor = allNodes.get(pos.relative(dir).asLong());
+            BlockPos neighborPos = pos.relative(dir);
+            long neighborLong = neighborPos.asLong();
+
+            EnergyNode neighbor = allNodes.get(neighborLong);
+
+            // [АВТО-ПОЧИНКА]
+            // Если в памяти менеджера соседа НЕТ, но чанк загружен...
+            if (neighbor == null && level.isLoaded(neighborPos)) {
+                // Проверяем, есть ли там реальный TileEntity с энергией
+                net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(neighborPos);
+                if (be != null) {
+                    boolean isEnergyBlock = be.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_PROVIDER).isPresent() ||
+                            be.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_RECEIVER).isPresent() ||
+                            be.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_CONNECTOR).isPresent();
+
+                    if (isEnergyBlock) {
+                        // Мы нашли "потерянный" провод! Добавляем его принудительно.
+                        // Это рекурсивно вызовет addNode для провода и починит сеть дальше.
+                        addNode(neighborPos);
+                        neighbor = allNodes.get(neighborLong); // Теперь он точно есть
+                    }
+                }
+            }
+
+            // Стандартная логика соединения
             if (neighbor != null && neighbor.getNetwork() != null) {
                 if (neighbor.getNetwork() != networkToAvoid) {
                     adjacentNetworks.add(neighbor.getNetwork());
@@ -158,6 +183,7 @@ public class EnergyNetworkManager extends SavedData {
             }
         }
 
+        // 5. Слияние или создание сети
         if (adjacentNetworks.isEmpty()) {
             EnergyNetwork newNetwork = new EnergyNetwork(this);
             networks.add(newNetwork);

@@ -2,6 +2,10 @@ package com.hbm_m.block.machine;
 
 import com.hbm_m.block.DoorBlock;
 import com.hbm_m.block.entity.DoorBlockEntity;
+// Этот класс реализует фантомный блок, который является частью каждой мультиблочной структуры.
+// Фантомные блоки невидимы и не имеют коллизии, но позволяют игроку взаимодействовать с контроллером структуры,
+// наведя курсор на любую часть структуры. Форма фантомного блока определяется формой всей структуры, сдвинутой так,
+// чтобы правильно отображаться на позиции этой части.
 import com.hbm_m.block.entity.machine.UniversalMachinePartBlockEntity;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.IMultiblockPart;
@@ -24,16 +28,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Map;
-
 import org.jetbrains.annotations.Nullable;
 
 public class UniversalMachinePartBlock extends BaseEntityBlock {
@@ -82,28 +80,17 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
             return SMALL_INTERACT_SHAPE;
         }
 
-        if (controller instanceof DoorBlock doorBlock) {
-            // ИСПРАВЛЕНО: Используем OBJ AABB вместо generateShapeFromParts
-            String doorId = doorBlock.getDoorDeclId();
-            Direction facing = controllerState.getValue(DoorBlock.FACING);
-            
-            Map<String, AABB> allParts = MultiblockStructureHelper.getDoorPartAABBs(doorId);
-            if (allParts.isEmpty()) {
-                // Fallback на стандартную форму
-                VoxelShape fallback = controller.getStructureHelper()
-                    .generateShapeFromParts(facing);
-                BlockPos offset = pPos.subtract(controllerPos);
-                return fallback.move(-offset.getX(), -offset.getY(), -offset.getZ());
+        if (controller instanceof DoorBlock) {
+            VoxelShape masterShape = controller.getStructureHelper()
+                    .generateShapeFromParts(controllerState.getValue(DoorBlock.FACING));
+
+            if (masterShape.isEmpty()) {
+                return SMALL_INTERACT_SHAPE;
             }
-            
-            // Генерируем рамку из всех частей OBJ (независимо от прогресса — для outline)
-            java.util.List<String> allPartNames = new ArrayList<>(allParts.keySet());
-            VoxelShape shape = MultiblockStructureHelper.generateShapeFromDoorParts(
-                doorId, allPartNames, facing
-            );
-            
+
+            // Сдвигаем форму структуры относительно этого фантома
             BlockPos offset = pPos.subtract(controllerPos);
-            return shape.move(-offset.getX(), -offset.getY(), -offset.getZ());
+            return masterShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
         }
 
         // 4. Для обычных мультиблоков - показываем полную форму
@@ -122,7 +109,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
 
     @Override
     public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        
+
         // 1. Get the BlockEntity of this part
         if (!(pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part)) {
             return Shapes.empty(); // Для коллизии возвращаем пустоту, если что-то не так
@@ -140,53 +127,28 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
             return Shapes.empty();
         }
 
-        if (controller instanceof DoorBlock doorBlock) {
+        if (controller instanceof DoorBlock) {
             BlockEntity controllerBE = pLevel.getBlockEntity(controllerPos);
-            if (!(controllerBE instanceof DoorBlockEntity doorBE)) return Shapes.empty();
-    
-            String doorId = doorBlock.getDoorDeclId();
-            Direction facing = controllerState.getValue(DoorBlock.FACING);
-            
-            byte doorState = doorBE.getState();
-            
-            // Полностью открыта (state == 1) — без коллизии
-            if (doorState == 1) {
-                return Shapes.empty();
-            }
-            
-            // Полностью закрыта (state == 0) — полная коллизия из всех AABB
-            if (doorState == 0) {
-                Map<String, AABB> allParts = MultiblockStructureHelper.getDoorPartAABBs(doorId);
-                if (allParts.isEmpty()) {
-                    // Fallback: используем стандартную форму мультиблока
-                    VoxelShape fallback = controller.getStructureHelper()
-                        .generateShapeFromParts(facing);
-                    BlockPos offset = pPos.subtract(controllerPos);
-                    return fallback.move(-offset.getX(), -offset.getY(), -offset.getZ());
+            if (controllerBE instanceof DoorBlockEntity doorBE) {
+                byte doorState = doorBE.getState();
+
+                // Если дверь открыта или открывается - НЕТ коллизии
+                if (doorState == 1 || doorState == 3) {
+                    return Shapes.empty();
                 }
-                
-                // Генерируем полную коллизию из всех частей OBJ
-                java.util.List<String> allPartNames = new ArrayList<>(allParts.keySet());
-                VoxelShape shape = MultiblockStructureHelper.generateShapeFromDoorParts(
-                    doorId, allPartNames, facing
-                );
-                
+
+                // Если дверь закрыта или закрывается - полная коллизия структуры
+                VoxelShape masterShape = controller.getStructureHelper()
+                        .generateShapeFromParts(controllerState.getValue(DoorBlock.FACING));
+
+                if (masterShape.isEmpty()) {
+                    return Shapes.empty();
+                }
+
                 BlockPos offset = pPos.subtract(controllerPos);
-                return shape.move(-offset.getX(), -offset.getY(), -offset.getZ());
+                return masterShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
             }
-            
-            // В процессе движения (state == 2 или 3) — динамическая коллизия по прогрессу
-            float progress = doorBE.getOpenProgress();
-            java.util.List<String> visibleParts = getVisiblePartsForProgress(doorId, progress);
-            
-            if (visibleParts.isEmpty()) return Shapes.empty();
-            
-            VoxelShape shape = MultiblockStructureHelper.generateShapeFromDoorParts(
-                doorId, visibleParts, facing
-            );
-            
-            BlockPos offset = pPos.subtract(controllerPos);
-            return shape.move(-offset.getX(), -offset.getY(), -offset.getZ());
+            return Shapes.empty();
         }
 
         // 4. Для обычных мультиблоков (не дверей) - используем стандартную логику
@@ -203,31 +165,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
         return masterShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
     }
 
-    /**
-     * Определяет, какие части видимы на текущем прогрессе открытия.
-     * Здесь можно реализовать логику удаления частей створок по мере открытия.
-     */
-    private java.util.List<String> getVisiblePartsForProgress(String doorId, float progress) {
-        Map<String, AABB> allParts = MultiblockStructureHelper.getDoorPartAABBs(doorId);
-        if (allParts.isEmpty()) return Collections.emptyList();
-
-        // Простая стратегия: если прогресс < 0.99, показываем все части (рамка + створки)
-        // Можно расширить, чтобы удалять «doorLeft»/«doorRight» по порогам прогресса
-        if (progress >= 0.99f) {
-            // Полностью открыто — только рамка (если есть)
-            return allParts.keySet().stream()
-                .filter(name -> name.toLowerCase().contains("frame"))
-                .collect(java.util.stream.Collectors.toList());
-        }
-
-        // Не полностью открыто — все части
-        return new ArrayList<>(allParts.keySet());
-    }
-
     @Override
     public void neighborChanged(BlockState pState, Level pLevel, BlockPos pPos, Block pBlock, BlockPos pFromPos, boolean pIsMoving) {
         super.neighborChanged(pState, pLevel, pPos, pBlock, pFromPos, pIsMoving);
-        
+
         // Делегируем всю логику в MultiblockStructureHelper
         MultiblockStructureHelper.onNeighborChangedForPart(pLevel, pPos, pFromPos);
     }

@@ -29,12 +29,18 @@ public class EnergyNode {
     }
 
     /**
-     * Проверяет, валиден ли узел (загружен ли чанк, есть ли BlockEntity с capability)
+     * Проверяет, валиден ли узел.
+     * ВАЖНО: Если чанк не загружен, мы считаем узел "условно валидным",
+     * чтобы не разрушать сеть в выгруженных областях мира.
      */
     public boolean isValid(ServerLevel level) {
-        if (!level.isLoaded(pos)) return false;
+        // [ИСПРАВЛЕНИЕ] Если чанк не загружен, мы не можем проверить наличие блока.
+        // Возвращаем true, чтобы сохранить узел в памяти менеджера.
+        // Он будет проверен позже, когда чанк прогрузится и сеть тикнет.
+        if (!level.isLoaded(pos)) return true;
 
         BlockEntity be = level.getBlockEntity(pos);
+        // Если чанк загружен, но TileEntity нет — значит блок сломали, удаляем узел.
         if (be == null) return false;
 
         return be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent() ||

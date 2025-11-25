@@ -3,8 +3,9 @@ package com.hbm_m.block.entity.machine;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machine.MachineAssemblerBlock;
-import com.hbm_m.client.ClientSoundManager;
+import com.hbm_m.block.entity.machine.BaseMachineBlockEntity;
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.client.ClientSoundManager;
 import com.hbm_m.item.ItemAssemblyTemplate;
 import com.hbm_m.item.ItemCreativeBattery;
 import com.hbm_m.menu.MachineAssemblerMenu;
@@ -46,7 +47,7 @@ import java.util.*;
  * Адаптировано для long-энергосистемы с наследованием от BaseMachineBlockEntity.
  */
 public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
-    
+
     // Слоты
     private static final int SLOT_COUNT = 18;
     private static final int ENERGY_SLOT = 0;
@@ -59,14 +60,14 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     private boolean isCrafting = false;
     private int progress = 0;
     private int maxProgress = 100;
-    
+
     // Proxy handlers для multiblock parts
     private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
     private LazyOptional<IItemHandler> lazyOutputProxy = LazyOptional.empty();
-    
+
     // Отслеживание источников предметов
     private final Set<BlockPos> lastPullSources = new HashSet<>();
-    
+
     // ContainerData для GUI с упаковкой long
     protected final ContainerData data = new ContainerData() {
         @Override
@@ -111,7 +112,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                 100_000L,   // Емкость
                 100_000L);  // Скорость приема
     }
-    
+
     @Override
     protected Component getDefaultName() {
         return Component.translatable("container.hbm_m.machine_assembler");
@@ -126,8 +127,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == ENERGY_SLOT) {
-            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent() || 
-                   stack.getItem() instanceof ItemCreativeBattery;
+            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent() ||
+                    stack.getItem() instanceof ItemCreativeBattery;
         }
         if (slot == TEMPLATE_SLOT) {
             return stack.getItem() instanceof ItemAssemblyTemplate;
@@ -137,16 +138,16 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
         return slot >= INPUT_SLOT_START && slot <= INPUT_SLOT_END;
     }
-    
+
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         sendUpdateToClient();
         return new MachineAssemblerMenu(containerId, playerInventory, this, this.data);
     }
-    
+
     // ==================== MULTIBLOCK PART SUPPORT ====================
-    
+
     public LazyOptional<IItemHandler> getItemHandlerForPart(PartRole role) {
         if (role == PartRole.ITEM_INPUT) {
             if (!lazyInputProxy.isPresent()) {
@@ -162,7 +163,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
         return LazyOptional.empty();
     }
-    
+
     @NotNull
     private IItemHandler createInputProxy() {
         return new IItemHandler() {
@@ -170,37 +171,37 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             public int getSlots() {
                 return INPUT_SLOT_END - INPUT_SLOT_START + 1;
             }
-            
+
             @NotNull
             @Override
             public ItemStack getStackInSlot(int slot) {
                 return inventory.getStackInSlot(slot + INPUT_SLOT_START);
             }
-            
+
             @NotNull
             @Override
             public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
                 return inventory.insertItem(slot + INPUT_SLOT_START, stack, simulate);
             }
-            
+
             @NotNull
             @Override
             public ItemStack extractItem(int slot, int amount, boolean simulate) {
                 return ItemStack.EMPTY;
             }
-            
+
             @Override
             public int getSlotLimit(int slot) {
                 return inventory.getSlotLimit(slot + INPUT_SLOT_START);
             }
-            
+
             @Override
             public boolean isItemValid(int slot, @NotNull ItemStack stack) {
                 return inventory.isItemValid(slot + INPUT_SLOT_START, stack);
             }
         };
     }
-    
+
     @NotNull
     private IItemHandler createOutputProxy() {
         return new IItemHandler() {
@@ -208,39 +209,39 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             public int getSlots() {
                 return 1;
             }
-            
+
             @NotNull
             @Override
             public ItemStack getStackInSlot(int slot) {
                 return slot == 0 ? inventory.getStackInSlot(OUTPUT_SLOT) : ItemStack.EMPTY;
             }
-            
+
             @NotNull
             @Override
             public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
                 return stack;
             }
-            
+
             @NotNull
             @Override
             public ItemStack extractItem(int slot, int amount, boolean simulate) {
                 return slot == 0 ? inventory.extractItem(OUTPUT_SLOT, amount, simulate) : ItemStack.EMPTY;
             }
-            
+
             @Override
             public int getSlotLimit(int slot) {
                 return slot == 0 ? inventory.getSlotLimit(OUTPUT_SLOT) : 0;
             }
-            
+
             @Override
             public boolean isItemValid(int slot, @NotNull ItemStack stack) {
                 return false;
             }
         };
     }
-    
+
     // ==================== TICK LOGIC ====================
-    
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAssemblerBlockEntity entity) {
         if (level.isClientSide) {
             entity.clientTick();
@@ -248,11 +249,11 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             entity.serverTick();
         }
     }
-    
+
     @OnlyIn(Dist.CLIENT)
     private void clientTick() {
-        ClientSoundManager.updateSound(this, this.isCrafting(), 
-            () -> new com.hbm_m.sound.AssemblerSoundInstance(this.getBlockPos()));
+        ClientSoundManager.updateSound(this, this.isCrafting(),
+                () -> new com.hbm_m.sound.AssemblerSoundInstance(this.getBlockPos()));
     }
 
     private void serverTick() {
@@ -309,7 +310,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             stopCrafting();
         }
     }
-    
+
     private void stopCrafting() {
         if (isCrafting) {
             progress = 0;
@@ -318,7 +319,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             sendUpdateToClient();
         }
     }
-    
+
     // ==================== ENERGY ====================
 
     // В методе chargeFromEnergySlot():
@@ -368,22 +369,22 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             });
         }
     }
-    
 
-    
+
+
     // ==================== CRAFTING ====================
-    
+
     private Optional<AssemblerRecipe> getRecipeFromTemplate() {
         ItemStack templateStack = inventory.getStackInSlot(TEMPLATE_SLOT);
         if (!(templateStack.getItem() instanceof ItemAssemblyTemplate)) {
             return Optional.empty();
         }
-        
+
         ItemStack outputStack = ItemAssemblyTemplate.getRecipeOutput(templateStack);
         if (outputStack.isEmpty()) {
             return Optional.empty();
         }
-        
+
         RecipeManager recipeManager = level.getRecipeManager();
         return recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE)
                 .stream()
@@ -394,15 +395,15 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     @Override
     public NonNullList<ItemStack> getGhostItems() {
         Optional<AssemblerRecipe> recipeOpt = getRecipeFromTemplate();
-        
+
         if (recipeOpt.isEmpty()) {
             return NonNullList.create();
         }
-        
+
         AssemblerRecipe recipe = recipeOpt.get();
         return BaseMachineBlockEntity.createGhostItemsFromIngredients(recipe.getIngredients());
     }
-    
+
     private boolean hasResources(AssemblerRecipe recipe) {
         SimpleContainer container = new SimpleContainer(INPUT_SLOT_END - INPUT_SLOT_START + 1);
         for (int i = 0; i < container.getContainerSize(); i++) {
@@ -410,18 +411,18 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
         return recipe.matches(container, level);
     }
-    
+
     private boolean canInsertResult(ItemStack result) {
         ItemStack outputSlotStack = inventory.getStackInSlot(OUTPUT_SLOT);
         return outputSlotStack.isEmpty() ||
                 (ItemStack.isSameItemSameTags(outputSlotStack, result) &&
                         outputSlotStack.getCount() + result.getCount() <= outputSlotStack.getMaxStackSize());
     }
-    
+
     private void craftItem(AssemblerRecipe recipe) {
         NonNullList<Ingredient> ingredients = recipe.getIngredients();
         ItemStack result = recipe.getResultItem(null).copy();
-        
+
         for (Ingredient ingredient : ingredients) {
             for (int i = INPUT_SLOT_START; i <= INPUT_SLOT_END; i++) {
                 ItemStack stackInSlot = inventory.getStackInSlot(i);
@@ -431,72 +432,72 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                 }
             }
         }
-        
+
         ItemStack outputSlot = inventory.getStackInSlot(OUTPUT_SLOT);
         if (outputSlot.isEmpty()) {
             inventory.setStackInSlot(OUTPUT_SLOT, result);
         } else {
             outputSlot.grow(result.getCount());
         }
-        
+
         setChanged();
         sendUpdateToClient();
     }
-    
+
     // ==================== AUTOMATION ====================
-    
+
     private void pullIngredientsForOneCraft(AssemblerRecipe recipe) {
         if (level == null || hasResources(recipe)) return;
-        
+
         lastPullSources.clear();
-        
+
         NonNullList<Ingredient> ingredients = recipe.getIngredients();
         Map<Ingredient, Integer> required = new IdentityHashMap<>();
         for (Ingredient ing : ingredients) {
             required.put(ing, required.getOrDefault(ing, 0) + 1);
         }
-        
+
         Direction facing = getBlockState().getValue(MachineAssemblerBlock.FACING);
         MultiblockStructureHelper helper = ((MachineAssemblerBlock) getBlockState().getBlock()).getStructureHelper();
-        
+
         for (BlockPos localOffset : helper.getPartOffsets()) {
             int x = localOffset.getX();
             int y = localOffset.getY();
             int z = localOffset.getZ();
             boolean isInputConveyor = (y == 0) && (x == 2) && (z == 0 || z == 1);
-            
+
             if (!isInputConveyor) continue;
-            
+
             BlockPos partPos = helper.getRotatedPos(worldPosition, localOffset, facing);
             BlockEntity partBE = level.getBlockEntity(partPos);
-            
+
             if (!(partBE instanceof UniversalMachinePartBlockEntity)) continue;
-            
+
             int dx = Integer.signum(partPos.getX() - worldPosition.getX());
             int dz = Integer.signum(partPos.getZ() - worldPosition.getZ());
             BlockPos neighborPosGlobal = partPos.offset(dx, 0, dz);
             BlockEntity neighbor = level.getBlockEntity(neighborPosGlobal);
-            
-            if (neighbor == null || neighbor instanceof UniversalMachinePartBlockEntity || 
-                neighbor == this || lastPullSources.contains(neighborPosGlobal)) continue;
-            
+
+            if (neighbor == null || neighbor instanceof UniversalMachinePartBlockEntity ||
+                    neighbor == this || lastPullSources.contains(neighborPosGlobal)) continue;
+
             int dxN = partPos.getX() - neighborPosGlobal.getX();
             int dzN = partPos.getZ() - neighborPosGlobal.getZ();
             Direction dirToNeighbor;
-            
+
             if (dxN == 1 && dzN == 0) dirToNeighbor = Direction.EAST;
             else if (dxN == -1 && dzN == 0) dirToNeighbor = Direction.WEST;
             else if (dxN == 0 && dzN == 1) dirToNeighbor = Direction.SOUTH;
             else if (dxN == 0 && dzN == -1) dirToNeighbor = Direction.NORTH;
             else continue;
-            
+
             IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, dirToNeighbor).orElse(null);
             if (cap == null) continue;
-            
+
             for (Map.Entry<Ingredient, Integer> entry : required.entrySet()) {
                 Ingredient ingredient = entry.getKey();
                 int need = entry.getValue();
-                
+
                 int present = 0;
                 for (int i = INPUT_SLOT_START; i <= INPUT_SLOT_END; i++) {
                     ItemStack s = inventory.getStackInSlot(i);
@@ -504,22 +505,22 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                         present += s.getCount();
                     }
                 }
-                
+
                 int missing = need - present;
                 if (missing <= 0) continue;
-                
+
                 for (int slot = 0; slot < cap.getSlots() && missing > 0; slot++) {
                     ItemStack possible = cap.getStackInSlot(slot);
                     if (possible.isEmpty() || !ingredient.test(possible)) continue;
-                    
+
                     ItemStack simulated = cap.extractItem(slot, missing, true);
                     if (simulated.isEmpty()) continue;
-                    
+
                     ItemStack toInsert = simulated.copy();
                     for (int dest = INPUT_SLOT_START; dest <= INPUT_SLOT_END && !toInsert.isEmpty(); dest++) {
                         ItemStack remain = inventory.insertItem(dest, toInsert.copy(), true);
                         int inserted = toInsert.getCount() - remain.getCount();
-                        
+
                         if (inserted > 0) {
                             ItemStack actuallyExtracted = cap.extractItem(slot, inserted, false);
                             inventory.insertItem(dest, actuallyExtracted.copy(), false);
@@ -533,62 +534,62 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
         }
     }
-    
+
     private void pushOutputToNeighbors() {
         if (level == null) return;
-        
+
         ItemStack out = inventory.getStackInSlot(OUTPUT_SLOT);
         if (out.isEmpty()) return;
-        
+
         Direction facing = getBlockState().getValue(MachineAssemblerBlock.FACING);
         MultiblockStructureHelper helper = ((MachineAssemblerBlock) getBlockState().getBlock()).getStructureHelper();
-        
+
         for (BlockPos localOffset : helper.getPartOffsets()) {
             if (out.isEmpty()) break;
-            
+
             int x = localOffset.getX();
             int y = localOffset.getY();
             int z = localOffset.getZ();
             boolean isOutputConveyor = (y == 0) && (x == -1) && (z == 0 || z == 1);
-            
+
             if (!isOutputConveyor) continue;
-            
+
             BlockPos partPos = helper.getRotatedPos(worldPosition, localOffset, facing);
-            
+
             int dxOut = Integer.signum(partPos.getX() - worldPosition.getX());
             int dzOut = Integer.signum(partPos.getZ() - worldPosition.getZ());
             Direction outDir = Direction.getNearest(dxOut, 0, dzOut);
             Direction facingDir = getBlockState().getValue(MachineAssemblerBlock.FACING);
-            
+
             BlockPos neighborPos = partPos.relative(outDir).relative(facingDir.getOpposite());
             BlockEntity neighbor = level.getBlockEntity(neighborPos);
-            
-            if (neighbor == null || neighbor instanceof UniversalMachinePartBlockEntity || 
-                neighbor == this || lastPullSources.contains(neighborPos)) continue;
-            
+
+            if (neighbor == null || neighbor instanceof UniversalMachinePartBlockEntity ||
+                    neighbor == this || lastPullSources.contains(neighborPos)) continue;
+
             Direction side1 = outDir.getOpposite();
             Direction side2 = facingDir;
-            
+
             IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side1)
                     .orElse(neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side2)
                             .orElse(null));
-            
+
             if (cap == null) continue;
-            
+
             ItemStack toInsert = out.copy();
             for (int slot = 0; slot < cap.getSlots() && !toInsert.isEmpty(); slot++) {
                 ItemStack remaining = cap.insertItem(slot, toInsert.copy(), false);
-                
+
                 if (remaining.getCount() < toInsert.getCount()) {
                     inventory.getStackInSlot(OUTPUT_SLOT).shrink(toInsert.getCount() - remaining.getCount());
                     toInsert = remaining;
                 }
             }
-            
+
             out = inventory.getStackInSlot(OUTPUT_SLOT);
         }
     }
-    
+
     // ==================== NBT ====================
 
     @Override
@@ -613,7 +614,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             ClientSoundManager.updateSound(this, false, null);
         }
     }
-    
+
     @Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
@@ -627,14 +628,14 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         lazyInputProxy.invalidate();
         lazyOutputProxy.invalidate();
     }
-    
+
     // ==================== CLIENT ====================
-    
+
     @OnlyIn(Dist.CLIENT)
     public void setCrafting(boolean crafting) {
         this.isCrafting = crafting;
     }
-    
+
     public boolean isCrafting() {
         return isCrafting;
     }
@@ -654,15 +655,9 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
     }
 
-    @Override
-    public void onChunkUnloaded() {
-        super.onChunkUnloaded();
-        // [ВАЖНО!] Также сообщаем при выгрузке чанка
-        if (this.level != null && !this.level.isClientSide) {
-            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
-        }
-    }
-}
 
+
+
+}
 
 
