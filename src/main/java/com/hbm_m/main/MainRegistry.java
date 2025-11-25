@@ -719,6 +719,11 @@ public class MainRegistry {
 
             // event.accept(ModBlocks.FLUID_TANK);
             event.accept(ModBlocks.MACHINE_BATTERY);
+            event.accept(ModBlocks.MACHINE_BATTERY_LITHIUM);
+            event.accept(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM);
+            event.accept(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM);
+
+
             event.accept(ModBlocks.WIRE_COATED);
             event.accept(ModBlocks.SWITCH);
             if (ModClothConfig.get().enableDebugLogging) {

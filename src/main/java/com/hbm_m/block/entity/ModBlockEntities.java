@@ -2,6 +2,7 @@ package com.hbm_m.block.entity;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -38,6 +39,17 @@ public class ModBlockEntities {
 		BLOCK_ENTITIES.register("advanced_assembly_machine_be", () ->
 			BlockEntityType.Builder.<MachineAdvancedAssemblerBlockEntity>of(MachineAdvancedAssemblerBlockEntity::new, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get())
 				.build(null));
+
+    public static final RegistryObject<BlockEntityType<MachineBatteryBlockEntity>> MACHINE_BATTERY_BE =
+            BLOCK_ENTITIES.register("machine_battery_be", () -> {
+                // Превращаем список RegistryObject в массив Block[]
+                Block[] validBlocks = ModBlocks.BATTERY_BLOCKS.stream()
+                        .map(RegistryObject::get)
+                        .toArray(Block[]::new);
+
+                return BlockEntityType.Builder.<MachineBatteryBlockEntity>of(MachineBatteryBlockEntity::new, validBlocks)
+                        .build(null);
+            });
 
     public static final RegistryObject<BlockEntityType<AnvilBlockEntity>> ANVIL_BE =
         BLOCK_ENTITIES.register("anvil_be", () ->
@@ -82,10 +94,6 @@ public class ModBlockEntities {
 			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get())
 				.build(null));
 
-    public static final RegistryObject<BlockEntityType<MachineBatteryBlockEntity>> MACHINE_BATTERY_BE =
-		BLOCK_ENTITIES.register("machine_battery_be", () ->
-			BlockEntityType.Builder.<MachineBatteryBlockEntity>of(MachineBatteryBlockEntity::new, ModBlocks.MACHINE_BATTERY.get())
-				.build(null));
 
     public static final RegistryObject<BlockEntityType<SwitchBlockEntity>> SWITCH_BE =
             BLOCK_ENTITIES.register("switch_be", () ->

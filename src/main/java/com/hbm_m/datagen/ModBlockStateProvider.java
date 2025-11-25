@@ -233,6 +233,27 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/battery_top")
         );
 
+        orientableBlockWithItem(
+                ModBlocks.MACHINE_BATTERY_LITHIUM,
+                modLoc("block/machine_battery_lithium_side"),
+                modLoc("block/machine_battery_lithium_front"),
+                modLoc("block/machine_battery_lithium_top")
+        );
+
+        orientableBlockWithItem(
+                ModBlocks.MACHINE_BATTERY_SCHRABIDIUM,
+                modLoc("block/machine_battery_schrabidium_side"),
+                modLoc("block/machine_battery_schrabidium_front"),
+                modLoc("block/machine_battery_schrabidium_top")
+        );
+
+        orientableBlockWithItem(
+                ModBlocks.MACHINE_BATTERY_DINEUTRONIUM,
+                modLoc("block/machine_battery_dineutronium_side"),
+                modLoc("block/machine_battery_dineutronium_front"),
+                modLoc("block/machine_battery_dineutronium_top")
+        );
+
         // Генерация моделей для ступенек
         stairsBlock((StairBlock) ModBlocks.REINFORCED_STONE_STAIRS.get(),
                 modLoc("block/reinforced_stone"));
