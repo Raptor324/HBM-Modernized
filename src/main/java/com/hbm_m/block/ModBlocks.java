@@ -1,5 +1,6 @@
 package com.hbm_m.block;
 
+import com.hbm_m.api.energy.ConverterBlock;
 import com.hbm_m.block.machine.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machine.MachineAssemblerBlock;
 import com.hbm_m.block.machine.MachineBatteryBlock;
@@ -23,6 +24,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraft.util.valueproviders.UniformInt;
 
+import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +45,31 @@ public class ModBlocks {
     // Стандартные свойства для блоков слитков
     private static final BlockBehaviour.Properties INGOT_BLOCK_PROPERTIES = 
             BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops();
-    
+
+    public static final List<RegistryObject<Block>> BATTERY_BLOCKS = new ArrayList<>();
+
+    // Вспомогательный метод для регистрации батареек
+    private static RegistryObject<Block> registerBattery(String name, long capacity) {
+        // 1. Регистрируем БЛОК
+        RegistryObject<Block> batteryBlock = BLOCKS.register(name,
+                () -> new MachineBatteryBlock(Block.Properties.of().strength(5.0f).requiresCorrectToolForDrops(), capacity));
+
+        // 2. Регистрируем ПРЕДМЕТ (MachineBatteryBlockItem)
+        // Обращаемся к ModItems.ITEMS напрямую
+        ModItems.ITEMS.register(name,
+                () -> new com.hbm_m.item.MachineBatteryBlockItem(batteryBlock.get(), new Item.Properties(), capacity));
+
+        // 3. Добавляем в список для TileEntity
+        BATTERY_BLOCKS.add(batteryBlock);
+
+        return batteryBlock;
+    }
+
+    // Регистрируем батарейки
+    public static final RegistryObject<Block> MACHINE_BATTERY = registerBattery("machine_battery", 1_000_000L);
+    public static final RegistryObject<Block> MACHINE_BATTERY_LITHIUM = registerBattery("machine_battery_lithium", 50_000_000L);
+    public static final RegistryObject<Block> MACHINE_BATTERY_SCHRABIDIUM = registerBattery("machine_battery_schrabidium", 25_000_000_000L);
+    public static final RegistryObject<Block> MACHINE_BATTERY_DINEUTRONIUM = registerBattery("machine_battery_dineutronium", 1_000_000_000_000L);
     // АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ БЛОКОВ СЛИТКОВ
     // Карта для хранения всех RegistryObject'ов блоков слитков
     public static final Map<ModIngots, RegistryObject<Block>> INGOT_BLOCKS = new EnumMap<>(ModIngots.class);
@@ -170,6 +196,9 @@ public class ModBlocks {
         );
     }
 
+    public static final RegistryObject<Block> CONVERTER_BLOCK = registerBlock("converter_block",
+            () -> new ConverterBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
+
     public static final RegistryObject<Block> BLAST_FURNACE = registerBlock("blast_furnace",
             () -> new BlastFurnaceBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
                     .strength(4.0f, 4.0f)
@@ -207,9 +236,6 @@ public class ModBlocks {
     public static final RegistryObject<Block> UNIVERSAL_MACHINE_PART = registerBlockWithoutItem("universal_machine_part",
         () -> new UniversalMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
 
-    public static final RegistryObject<Block> MACHINE_BATTERY = BLOCKS.register("machine_battery",
-            () -> new MachineBatteryBlock(Block.Properties.of().strength(5.0f), 1000000L) // Емкость 1М
-    );
 
     // public static final RegistryObject<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
     //     () -> new Block(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
