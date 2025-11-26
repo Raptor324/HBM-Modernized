@@ -15,6 +15,7 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
@@ -34,6 +35,7 @@ import java.util.Random;
 
 import org.jetbrains.annotations.Nullable;
 
+
 public class MineNukeBlock extends Block implements EntityBlock {
 
     private static final float EXPLOSION_POWER = 20.0F;
@@ -41,18 +43,23 @@ public class MineNukeBlock extends Block implements EntityBlock {
     private static final int CRATER_DEPTH = 3;
     private static final DirectionProperty FACING = DirectionProperty.create("facing");
     private static final VoxelShape SHAPE = Shapes.box(0.25, 0, 0.25, 0.75, 0.25, 0.75);
-
+    private static final VoxelShape COLLISION_SHAPE = Shapes.box(0.25, 0.0, 0.25, 0.75, 0.25, 0.75);
     private static final Random RANDOM = new Random();
 
     public MineNukeBlock(Properties properties) {
         super(BlockBehaviour.Properties.of().strength(3.5F));
         this.registerDefaultState(this.defaultBlockState().setValue(FACING, net.minecraft.core.Direction.NORTH));
     }
-
     @Override
-    public VoxelShape getCollisionShape(BlockState state, net.minecraft.world.level.BlockGetter world, BlockPos pos, CollisionContext context) {
-        return SHAPE;
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        return COLLISION_SHAPE;
     }
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        return COLLISION_SHAPE;
+    }
+
+
 
     @Override
     public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {

@@ -340,6 +340,20 @@ public class ModBlocks {
                     // .isViewBlocking((state, level, pos) -> true) // Блок блокирует обзор
             ));
 
+    public static final RegistryObject<Block> DUD_FUGAS_TONG = registerBlock("dud_fugas_tong",
+            () -> new DudFugasBlock(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
+                    .sound(SoundType.STONE) // Звук при разрушении
+                    .requiresCorrectToolForDrops() // Требует правильного инструмента для лута (как руды)
+                    .noOcclusion()));
+
+    public static final RegistryObject<Block> DUD_NUKE = registerBlock("dud_nuke",
+            () -> new DudNukeBlock(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
+                    .sound(SoundType.STONE) // Звук при разрушении
+                    .requiresCorrectToolForDrops() // Требует правильного инструмента для лута (как руды)
+                    .noOcclusion()));
+
     public static final RegistryObject<Block> SMOKE_BOMB = registerBlock("smoke_bomb",
             () -> new SmokeBombBlock(BlockBehaviour.Properties.of()
                     .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)

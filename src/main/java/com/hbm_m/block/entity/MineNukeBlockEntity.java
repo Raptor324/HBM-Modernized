@@ -59,7 +59,7 @@ public class MineNukeBlockEntity extends BlockEntity {
                 Level level = mine.getLevel();
                 BlockPos pos = mine.getBlockPos();
                 // Взрыв
-                level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3.5F, true, Level.ExplosionInteraction.NONE);
+                level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 8F, true, Level.ExplosionInteraction.TNT);
                 level.removeBlock(pos, false);
                 break;
             }

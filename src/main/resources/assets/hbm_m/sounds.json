@@ -69,6 +69,20 @@
       "hbm_m:explosionsmallnear1"
     ]
   },
+  "click": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.click",
+    "sounds": [
+      "hbm_m:click"
+    ]
+  },
+  "explosionlargenear": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.explosionlargenear",
+    "sounds": [
+      "hbm_m:explosionlargenear"
+    ]
+  },
   "explosionsmallnear2": {
     "category": "player",
     "subtitle": "sounds.hbm_m.explosionsmallnear2",

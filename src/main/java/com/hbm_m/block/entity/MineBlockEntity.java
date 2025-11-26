@@ -14,8 +14,8 @@ import java.util.List;
 
 public class MineBlockEntity extends BlockEntity {
 
-    private static final double DETECTION_RADIUS = 5.0;
-    private static final int SOUND_COOLDOWN = 60; // 3 секунды (20 тиков = 1 сек)
+    private static final double DETECTION_RADIUS = 10.0;
+    private static final int SOUND_COOLDOWN = 180;
     private int soundCooldown = 0;
     private boolean hasPlayedWarning = false;
 
@@ -23,22 +23,20 @@ public class MineBlockEntity extends BlockEntity {
         super(ModBlockEntities.MINE_BLOCK_ENTITY.get(), pos, state);
     }
 
-    public static void tick(BlockEntity entity) {
-        if (!(entity instanceof MineBlockEntity mine)) return;
-        if (mine.getLevel() == null || mine.getLevel().isClientSide) return;
+    public static <T extends BlockEntity> void tick(Level level, BlockPos blockPos, BlockState blockState, T blockEntity) {
+        if (!(blockEntity instanceof MineBlockEntity mine)) return;
+        if (level == null || level.isClientSide) return;
 
-        // Проверяем мобов в радиусе обнаружения
-        AABB searchArea = new AABB(mine.getBlockPos()).inflate(DETECTION_RADIUS);
-        List<LivingEntity> entities = mine.getLevel().getEntitiesOfClass(
+        AABB searchArea = new AABB(blockPos).inflate(DETECTION_RADIUS);
+        List<LivingEntity> entities = level.getEntitiesOfClass(
                 LivingEntity.class,
                 searchArea,
                 e -> !(e instanceof Player player && player.isCreative())
         );
 
-        // Оповещение
         if (!entities.isEmpty()) {
             if (mine.soundCooldown == 0) {
-                mine.playWarningSound();
+                mine.playWarningSound(level, blockPos);
                 mine.soundCooldown = SOUND_COOLDOWN;
                 mine.hasPlayedWarning = true;
             }
@@ -48,35 +46,31 @@ public class MineBlockEntity extends BlockEntity {
 
         if (mine.soundCooldown > 0) mine.soundCooldown--;
 
-        // Взрыв, если кто-то оказался непосредственно на мине
         for (LivingEntity entityInRange : entities) {
             double distance = entityInRange.distanceToSqr(
-                    mine.getBlockPos().getX() + 0.5,
-                    mine.getBlockPos().getY() + 0.5,
-                    mine.getBlockPos().getZ() + 0.5
+                    blockPos.getX() + 0.5,
+                    blockPos.getY() + 0.5,
+                    blockPos.getZ() + 0.5
             );
-            if (distance < 1.2) { // 1 блок
-                Level level = mine.getLevel();
-                BlockPos pos = mine.getBlockPos();
-                // Взрыв
-                level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 3.5F, true, Level.ExplosionInteraction.NONE);
-                level.removeBlock(pos, false);
+            if (distance < 1.2) {
+                level.explode(null, blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5, 3.5F, true, Level.ExplosionInteraction.NONE);
+                level.removeBlock(blockPos, false);
                 break;
             }
         }
     }
 
-    private void playWarningSound() {
-        if (this.level != null && ModSounds.GRENADE_TRIGGER.isPresent()) {
-            this.level.playSound(
+    private void playWarningSound(Level level, BlockPos blockPos) {
+        if (level != null && ModSounds.GRENADE_TRIGGER.isPresent()) {
+            level.playSound(
                     null,
-                    this.worldPosition.getX() + 0.5,
-                    this.worldPosition.getY() + 0.5,
-                    this.worldPosition.getZ() + 0.5,
+                    blockPos.getX() + 0.5,
+                    blockPos.getY() + 0.5,
+                    blockPos.getZ() + 0.5,
                     ModSounds.GRENADE_TRIGGER.get(),
                     net.minecraft.sounds.SoundSource.BLOCKS,
                     3.0F,
-                    3.0F
+                    1.0F
             );
         }
     }

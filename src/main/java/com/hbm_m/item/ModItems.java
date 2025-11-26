@@ -522,7 +522,12 @@ public class ModItems {
     public static final RegistryObject<Item> DETONATOR = ITEMS.register("detonator",
             () -> new DetonatorItem(new Item.Properties()));
 
-
+    public static final RegistryObject<Item> BILLET_PLUTONIUM = ITEMS.register("billet_plutonium",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> BALL_TNT = ITEMS.register("ball_tnt",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> DEFUSER = ITEMS.register("defuser",
+            () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> MALACHITE_CHUNK = ITEMS.register("malachite_chunk",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> LIMESTONE = ITEMS.register("limestone",

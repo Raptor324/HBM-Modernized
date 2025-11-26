@@ -5,6 +5,7 @@ package com.hbm_m.main;
 // Также здесь настраиваются обработчики событий и системы радиации.
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
 import com.hbm_m.item.ModBatteryItem;
@@ -94,6 +95,7 @@ public class MainRegistry {
         // Добавь эту:
 
         MinecraftForge.EVENT_BUS.register(new CrateBreaker());
+        MinecraftForge.EVENT_BUS.register(new BombDefuser());
         MinecraftForge.EVENT_BUS.register(new MobGearHandler());
         ModBiomes.BIOMES.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus); // Регистрация наших блоков
@@ -230,88 +232,18 @@ public class MainRegistry {
             event.accept(ModBlocks.NUCLEAR_CHARGE);
             event.accept(ModBlocks.C4);
 
+            event.accept(ModBlocks.DUD_FUGAS_TONG);
+            event.accept(ModBlocks.DUD_NUKE);
+
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");
-            }
-        }
-
-        // БРОНЯ И ИНСТРУМЕНТЫ
-        if (event.getTabKey() == CreativeModeTabs.COMBAT) {
-
-            event.accept(ModItems.ALLOY_SWORD);
-            event.accept(ModItems.ALLOY_AXE);
-            event.accept(ModItems.ALLOY_PICKAXE);
-            event.accept(ModItems.ALLOY_HOE);
-            event.accept(ModItems.ALLOY_SHOVEL);
-            event.accept(ModItems.STEEL_SWORD);
-            event.accept(ModItems.STEEL_AXE);
-            event.accept(ModItems.STEEL_PICKAXE);
-            event.accept(ModItems.STEEL_HOE);
-            event.accept(ModItems.STEEL_SHOVEL);
-            event.accept(ModItems.TITANIUM_SWORD);
-            event.accept(ModItems.TITANIUM_AXE);
-            event.accept(ModItems.TITANIUM_PICKAXE);
-            event.accept(ModItems.TITANIUM_HOE);
-            event.accept(ModItems.TITANIUM_SHOVEL);
-            event.accept(ModItems.STARMETAL_SWORD);
-            event.accept(ModItems.STARMETAL_AXE);
-            event.accept(ModItems.STARMETAL_PICKAXE);
-            event.accept(ModItems.STARMETAL_HOE);
-            event.accept(ModItems.STARMETAL_SHOVEL);
-
-            event.accept(ModItems.ALLOY_HELMET);
-            event.accept(ModItems.ALLOY_CHESTPLATE);
-            event.accept(ModItems.ALLOY_LEGGINGS);
-            event.accept(ModItems.ALLOY_BOOTS);
-            event.accept(ModItems.COBALT_HELMET);
-            event.accept(ModItems.COBALT_CHESTPLATE);
-            event.accept(ModItems.COBALT_LEGGINGS);
-            event.accept(ModItems.COBALT_BOOTS);
-            event.accept(ModItems.TITANIUM_HELMET);
-            event.accept(ModItems.TITANIUM_CHESTPLATE);
-            event.accept(ModItems.TITANIUM_LEGGINGS);
-            event.accept(ModItems.TITANIUM_BOOTS);
-            event.accept(ModItems.SECURITY_HELMET);
-            event.accept(ModItems.SECURITY_CHESTPLATE);
-            event.accept(ModItems.SECURITY_LEGGINGS);
-            event.accept(ModItems.SECURITY_BOOTS);
-            event.accept(ModItems.AJR_HELMET);
-            event.accept(ModItems.AJR_CHESTPLATE);
-            event.accept(ModItems.AJR_LEGGINGS);
-            event.accept(ModItems.AJR_BOOTS);
-            event.accept(ModItems.STEEL_HELMET);
-            event.accept(ModItems.STEEL_CHESTPLATE);
-            event.accept(ModItems.STEEL_LEGGINGS);
-            event.accept(ModItems.STEEL_BOOTS);
-            event.accept(ModItems.ASBESTOS_HELMET);
-            event.accept(ModItems.ASBESTOS_CHESTPLATE);
-            event.accept(ModItems.ASBESTOS_LEGGINGS);
-            event.accept(ModItems.ASBESTOS_BOOTS);
-            event.accept(ModItems.HAZMAT_HELMET);
-            event.accept(ModItems.HAZMAT_CHESTPLATE);
-            event.accept(ModItems.HAZMAT_LEGGINGS);
-            event.accept(ModItems.HAZMAT_BOOTS);
-            event.accept(ModItems.LIQUIDATOR_HELMET);
-            event.accept(ModItems.LIQUIDATOR_CHESTPLATE);
-            event.accept(ModItems.LIQUIDATOR_LEGGINGS);
-            event.accept(ModItems.LIQUIDATOR_BOOTS);
-            event.accept(ModItems.PAA_HELMET);
-            event.accept(ModItems.PAA_CHESTPLATE);
-            event.accept(ModItems.PAA_LEGGINGS);
-            event.accept(ModItems.PAA_BOOTS);
-            event.accept(ModItems.STARMETAL_HELMET);
-            event.accept(ModItems.STARMETAL_CHESTPLATE);
-            event.accept(ModItems.STARMETAL_LEGGINGS);
-            event.accept(ModItems.STARMETAL_BOOTS);
-
-            if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added Alloy Sword to vanilla Combat tab");
             }
         }
 
         //СЛИТКИ И РЕСУРСЫ
         if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
 
+            event.accept(ModItems.BALL_TNT);
             event.accept(ModItems.ZIRCONIUM_SHARP);
             event.accept(ModItems.BORAX);
             event.accept(ModItems.DUST.get());
@@ -327,6 +259,7 @@ public class MainRegistry {
             event.accept(ModItems.SCRAP);
             event.accept(ModItems.NUGGET_SILICON);
             event.accept(ModItems.BILLET_SILICON);
+            event.accept(ModItems.BILLET_PLUTONIUM);
             // Проходимся циклом по ВСЕМ слиткам
             for (RegistryObject<Item> ingotObject : ModItems.INGOTS.values()) {
 
@@ -678,12 +611,107 @@ public class MainRegistry {
 
         // ИНСТРУМЕНТЫ
         if (event.getTab() == ModCreativeTabs.NTM_INSTRUMENTS_TAB.get()) {
+
+
+            // БРОНЯ
+            event.accept(ModItems.TITANIUM_HELMET);
+            event.accept(ModItems.TITANIUM_CHESTPLATE);
+            event.accept(ModItems.TITANIUM_LEGGINGS);
+            event.accept(ModItems.TITANIUM_BOOTS);
+
+            event.accept(ModItems.COBALT_HELMET);
+            event.accept(ModItems.COBALT_CHESTPLATE);
+            event.accept(ModItems.COBALT_LEGGINGS);
+            event.accept(ModItems.COBALT_BOOTS);
+
+            event.accept(ModItems.STEEL_HELMET);
+            event.accept(ModItems.STEEL_CHESTPLATE);
+            event.accept(ModItems.STEEL_LEGGINGS);
+            event.accept(ModItems.STEEL_BOOTS);
+
+            event.accept(ModItems.ALLOY_HELMET);
+            event.accept(ModItems.ALLOY_CHESTPLATE);
+            event.accept(ModItems.ALLOY_LEGGINGS);
+            event.accept(ModItems.ALLOY_BOOTS);
+
+            event.accept(ModItems.STARMETAL_HELMET);
+            event.accept(ModItems.STARMETAL_CHESTPLATE);
+            event.accept(ModItems.STARMETAL_LEGGINGS);
+            event.accept(ModItems.STARMETAL_BOOTS);
+
+            //СПЕЦ БРОНЯ
+            event.accept(ModItems.SECURITY_HELMET);
+            event.accept(ModItems.SECURITY_CHESTPLATE);
+            event.accept(ModItems.SECURITY_LEGGINGS);
+            event.accept(ModItems.SECURITY_BOOTS);
+
+            event.accept(ModItems.ASBESTOS_HELMET);
+            event.accept(ModItems.ASBESTOS_CHESTPLATE);
+            event.accept(ModItems.ASBESTOS_LEGGINGS);
+            event.accept(ModItems.ASBESTOS_BOOTS);
+
+            event.accept(ModItems.HAZMAT_HELMET);
+            event.accept(ModItems.HAZMAT_CHESTPLATE);
+            event.accept(ModItems.HAZMAT_LEGGINGS);
+            event.accept(ModItems.HAZMAT_BOOTS);
+
+            event.accept(ModItems.PAA_HELMET);
+            event.accept(ModItems.PAA_CHESTPLATE);
+            event.accept(ModItems.PAA_LEGGINGS);
+            event.accept(ModItems.PAA_BOOTS);
+
+            event.accept(ModItems.LIQUIDATOR_HELMET);
+            event.accept(ModItems.LIQUIDATOR_CHESTPLATE);
+            event.accept(ModItems.LIQUIDATOR_LEGGINGS);
+            event.accept(ModItems.LIQUIDATOR_BOOTS);
+
+            //СИЛОВАЯ БРОНЯ
+            event.accept(ModItems.AJR_HELMET);
+            event.accept(ModItems.AJR_CHESTPLATE);
+            event.accept(ModItems.AJR_LEGGINGS);
+            event.accept(ModItems.AJR_BOOTS);
+
+            //МЕЧИ
+            event.accept(ModItems.TITANIUM_SWORD);
+            event.accept(ModItems.STEEL_SWORD);
+            event.accept(ModItems.ALLOY_SWORD);
+            event.accept(ModItems.STARMETAL_SWORD);
+
+            //ТОПОРЫ
+            event.accept(ModItems.TITANIUM_AXE);
+            event.accept(ModItems.STEEL_AXE);
+            event.accept(ModItems.ALLOY_AXE);
+            event.accept(ModItems.STARMETAL_AXE);
+
+            //КИРКИ
+            event.accept(ModItems.TITANIUM_PICKAXE);
+            event.accept(ModItems.STEEL_PICKAXE);
+            event.accept(ModItems.ALLOY_PICKAXE);
+            event.accept(ModItems.STARMETAL_PICKAXE);
+
+            //ЛОПАТЫ
+            event.accept(ModItems.TITANIUM_SHOVEL);
+            event.accept(ModItems.STEEL_SHOVEL);
+            event.accept(ModItems.ALLOY_SHOVEL);
+            event.accept(ModItems.STARMETAL_SHOVEL);
+
+            //МОТЫГИ
+            event.accept(ModItems.TITANIUM_HOE);
+            event.accept(ModItems.STEEL_HOE);
+            event.accept(ModItems.ALLOY_HOE);
+            event.accept(ModItems.STARMETAL_HOE);
+
+            //СПЕЦ. ИНСТРУМЕНТЫ
+            event.accept(ModItems.DEFUSER);
             event.accept(ModItems.CROWBAR);
+
             event.accept(ModItems.DOSIMETER);
             event.accept(ModItems.GEIGER_COUNTER);
             event.accept(ModBlocks.GEIGER_COUNTER_BLOCK);
+
             event.accept(ModItems.OIL_DETECTOR);
             event.accept(ModItems.DEPTH_ORES_SCANNER);
+
             event.accept(ModBlocks.CRATE_IRON);
             event.accept(ModBlocks.CRATE_STEEL);
             event.accept(ModBlocks.CRATE_DESH);
