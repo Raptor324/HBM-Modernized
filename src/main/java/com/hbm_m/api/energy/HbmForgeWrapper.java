@@ -1,48 +1,50 @@
 package com.hbm_m.api.energy;
 
+import com.hbm_m.api.energy.ConverterBlockEntity;
 import net.minecraftforge.energy.IEnergyStorage;
 
 public class HbmForgeWrapper implements IEnergyStorage {
 
-    private final ConverterBlockEntity blockEntity;
+    private final ConverterBlockEntity tile;
 
-    public HbmForgeWrapper(ConverterBlockEntity blockEntity) {
-        this.blockEntity = blockEntity;
+    public HbmForgeWrapper(ConverterBlockEntity tile) {
+        this.tile = tile;
     }
 
     @Override
     public int receiveEnergy(int maxReceive, boolean simulate) {
-        // Фордж пытается залить энергию.
-        // Конвертируем int -> long и передаем в BE
-        long accepted = blockEntity.receiveEnergy(maxReceive, simulate);
-        return (int) Math.min(accepted, Integer.MAX_VALUE);
+        // Просто заливаем в буфер тайла
+        long space = tile.getMaxEnergyStored() - tile.getEnergyStored();
+        long amount = Math.min(maxReceive, space);
+        if (!simulate) {
+            tile.setEnergyStored(tile.getEnergyStored() + amount);
+        }
+        return (int) Math.min(amount, Integer.MAX_VALUE);
     }
 
     @Override
     public int extractEnergy(int maxExtract, boolean simulate) {
-        // Фордж пытается высосать энергию.
-        long extracted = blockEntity.extractEnergy(maxExtract, simulate);
-        return (int) Math.min(extracted, Integer.MAX_VALUE);
+        // Просто забираем из буфера тайла
+        long amount = Math.min(maxExtract, tile.getEnergyStored());
+        if (!simulate) {
+            tile.setEnergyStored(tile.getEnergyStored() - amount);
+        }
+        return (int) Math.min(amount, Integer.MAX_VALUE);
     }
 
     @Override
     public int getEnergyStored() {
-        // Если энергии больше, чем 2 млрд, показываем максимум int
-        return (int) Math.min(blockEntity.getEnergyStored(), Integer.MAX_VALUE);
+        return (int) Math.min(tile.getEnergyStored(), Integer.MAX_VALUE);
     }
 
     @Override
     public int getMaxEnergyStored() {
-        return (int) Math.min(blockEntity.getMaxEnergyStored(), Integer.MAX_VALUE);
+        return (int) Math.min(tile.getMaxEnergyStored(), Integer.MAX_VALUE);
     }
 
     @Override
-    public boolean canExtract() {
-        return blockEntity.canExtract();
-    }
+    public boolean canExtract() { return true; }
 
     @Override
-    public boolean canReceive() {
-        return blockEntity.canReceive();
-    }
+    public boolean canReceive() { return true; }
 }

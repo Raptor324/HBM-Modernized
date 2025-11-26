@@ -1198,6 +1198,9 @@ public class ModItems {
     public static final RegistryObject<Item> WIRE_TUNGSTEN = ITEMS.register("wire_tungsten",
             () -> new Item(new Item.Properties()));
 
+    public static final RegistryObject<Item> SCREWDRIVER = ITEMS.register("screwdriver",
+            () -> new Item(new Item.Properties().stacksTo(1))); // В стаке только 1 штука
+
 
     
 
