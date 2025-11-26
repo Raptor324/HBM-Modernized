@@ -119,7 +119,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("itemGroup.hbm_m.ntm_ores_tab", "Руды и блоки NTM");
                 add("itemGroup.hbm_m.ntm_building_tab", "Строительные блоки NTM");
                 add("itemGroup.hbm_m.ntm_machines_tab", "Механизмы и станки NTM");
-                add("itemGroup.hbm_m.ntm_instruments_tab", "Инструменты NTM");
+                add("itemGroup.hbm_m.ntm_instruments_tab", "Броня и инструменты NTM");
                 add("itemGroup.hbm_m.ntm_spareparts_tab", "Запчасти NTM");
                 add("itemGroup.hbm_m.ntm_bombs_tab", "Бомбы NTM");
                 add("itemGroup.hbm_m.ntm_missiles_tab", "Ракеты и спутники NTM");

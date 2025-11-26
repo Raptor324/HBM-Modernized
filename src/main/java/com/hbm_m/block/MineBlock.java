@@ -1,4 +1,5 @@
 package com.hbm_m.block;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -18,6 +19,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
@@ -32,18 +35,27 @@ public class MineBlock extends Block implements EntityBlock {
 
     private static final VoxelShape COLLISION_SHAPE = Shapes.box(0.25, 0.0, 0.25, 0.75, 0.25, 0.75);
     private static final double DETECTION_RADIUS = 10.0;
-    private static final float EXPLOSION_POWER = 3.5F;
+    private static final float EXPLOSION_POWER = 2.5F;
     public static final DirectionProperty FACING = DirectionProperty.create("facing");
 
     public MineBlock(Properties props) {
         super(props);
         this.registerDefaultState(this.defaultBlockState().setValue(FACING, Direction.NORTH));
     }
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return level.isClientSide ? null : (lvl, pos, st, te) -> {
+            if (te instanceof MineBlockEntity mine) {
+                MineBlockEntity.tick(lvl, pos, st, mine);
+            }
+        };
+    }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return COLLISION_SHAPE;
     }
+
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return COLLISION_SHAPE;
@@ -60,8 +72,6 @@ public class MineBlock extends Block implements EntityBlock {
         }
         super.stepOn(level, pos, state, entity);
     }
-
-
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
@@ -83,13 +93,15 @@ public class MineBlock extends Block implements EntityBlock {
                 pos.getY() + 0.5,
                 pos.getZ() + 0.5,
                 EXPLOSION_POWER,
-                true, // наносить урон и взаимодействовать с блоками
-                Level.ExplosionInteraction.NONE // Можно заменить на Level.ExplosionInteraction.TNT для стандартного взрыва
+                true,
+                Level.ExplosionInteraction.NONE
         );
 
         level.removeBlock(pos, false);
     }
+
     private static final Random RANDOM = new Random();
+
     private void playDetonationSound(Level level, BlockPos pos) {
         SoundEvent[] sounds = new SoundEvent[]{
                 ModSounds.EXPLOSION_SMALL_NEAR1.orElse(null),
@@ -97,7 +109,6 @@ public class MineBlock extends Block implements EntityBlock {
                 ModSounds.EXPLOSION_SMALL_NEAR3.orElse(null)
         };
 
-        // Фильтруем null, если есть
         List<SoundEvent> availableSounds = Arrays.stream(sounds)
                 .filter(Objects::nonNull)
                 .toList();

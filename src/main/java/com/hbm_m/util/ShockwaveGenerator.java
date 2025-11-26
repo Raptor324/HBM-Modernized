@@ -1,5 +1,6 @@
-package com.hbm_m.util; // Замени на свой пакет
+package com.hbm_m.util;
 
+import com.hbm_m.block.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;
@@ -7,14 +8,16 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.levelgen.Heightmap;
 
 public class ShockwaveGenerator {
 
     private static final int ZONE_3_RADIUS = 25;        // Зона уничтожения деревьев
-    private static final int ZONE_4_RADIUS = 35;       // Зона частичного урона
+    private static final int ZONE_4_RADIUS = 35;        // Зона частичного урона
     private static final int DAMAGE_ZONE_HEIGHT = 20;   // Высота обработки по Y
 
+    /**
+     * Генерация воронки кратера с применением защиты блоков
+     */
     public static void generateCrater(ServerLevel level, BlockPos centerPos, int craterRadius, int craterDepth,
                                       Block wasteLogBlock, Block wastePlanksBlock, Block burnedGrass) {
 
@@ -23,7 +26,6 @@ public class ShockwaveGenerator {
         int centerZ = centerPos.getZ();
 
         RandomSource random = level.random;
-
 
         // Сфера разрушения с естественным профилем
         for (int x = centerX - craterRadius; x <= centerX + craterRadius; x++) {
@@ -35,15 +37,19 @@ public class ShockwaveGenerator {
                     double dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
 
                     if (dist > craterRadius) continue;
-                    // Плавная глубина кратера (косинусоидальный спад)
-                    double norm = dist / craterRadius; // от 0 (центр) до 1 (край)
+
+                    double norm = dist / craterRadius;
                     double smoothDepth = craterDepth * Math.cos(norm * Math.PI / 2);
                     double noise = (random.nextDouble() - 0.5) * 2.0;
 
-                    // Внутри сферы с естественным профилем
                     if (dist <= smoothDepth + noise) {
                         BlockPos checkPos = new BlockPos(x, y, z);
                         BlockState state = level.getBlockState(checkPos);
+
+                        // Проверяем защиту блока: если нельзя ломать - пропускаем
+                        BlockExplosionDefense.ExplosionDefenseResult defenseResult =
+                                BlockExplosionDefense.calculateExplosionDamage(level, checkPos, centerPos, craterRadius, random);
+                        if (!defenseResult.shouldBreak) continue;
 
                         if (!state.isAir()) {
                             level.setBlock(checkPos, Blocks.AIR.defaultBlockState(), 3);
@@ -52,7 +58,8 @@ public class ShockwaveGenerator {
                 }
             }
         }
-        // Зона повреждения деревьев
+
+        // Зона повреждения деревьев и окружающих блоков
         applyDamageZones(level, centerPos, wasteLogBlock, wastePlanksBlock, burnedGrass);
     }
 
@@ -82,50 +89,36 @@ public class ShockwaveGenerator {
 
                     BlockState state = level.getBlockState(checkPos);
 
-                    // ===== ЗОНА 3: 0-80 блоков =====
+                    // Защита блока - не ломаем если запрещено
+                    BlockExplosionDefense.ExplosionDefenseResult defenseResult =
+                            BlockExplosionDefense.calculateExplosionDamage(level, checkPos, centerPos, ZONE_4_RADIUS, random);
+                    if (!defenseResult.shouldBreak) continue;
+
                     if (horizontalDistance <= ZONE_3_RADIUS) {
-
-                        // Удаляем всю листву
-
-                        if (state.is(BlockTags.FLOWERS)) {
+                        if (state.is(BlockTags.LEAVES)) {
                             level.setBlock(checkPos, Blocks.FIRE.defaultBlockState(), 3);
                             continue;
                         }
-
-                        if (state.is(BlockTags.LEAVES)) {
-                            level.setBlock(checkPos, Blocks.AIR.defaultBlockState(), 3);
+                        if (state.is(BlockTags.LOGS)) {
+                            level.setBlock(checkPos, wasteLogBlock.defaultBlockState(), 3);
+                            continue;
+                        }
+                        if (state.is(BlockTags.PLANKS)) {
+                            level.setBlock(checkPos, wastePlanksBlock.defaultBlockState(), 3);
                             continue;
                         }
                         if (state.is(Blocks.GRASS_BLOCK)) {
                             level.setBlock(checkPos, burnedGrass.defaultBlockState(), 3);
-                            // Заменяем брёвна на обугленные
-                            if (state.is(BlockTags.LOGS) && !wasteLogBlock.defaultBlockState().isAir()) {
-                                level.setBlock(checkPos, wasteLogBlock.defaultBlockState(), 3);
-                                continue;
-                            }
-
-                            // Заменяем доски на обугленные
-                            if (state.is(BlockTags.PLANKS) && !wastePlanksBlock.defaultBlockState().isAir()) {
-                                level.setBlock(checkPos, wastePlanksBlock.defaultBlockState(), 3);
-                                continue;
-                            }
+                            continue;
                         }
-                        // ===== ЗОНА 4: 80-105 блоков =====
-                        else if (horizontalDistance <= ZONE_4_RADIUS) {
-                            // Удаляем листву с вероятностью 40%
-                            if (state.is(BlockTags.LEAVES)) {
-                                if (random.nextFloat() < 0.4F) {
-                                    level.setBlock(checkPos, Blocks.AIR.defaultBlockState(), 3);
-                                }
-
-
-                                if (state.is(BlockTags.LEAVES)) {
-                                    if (random.nextFloat() < 0.2F) {
-                                        level.setBlock(checkPos, Blocks.FIRE.defaultBlockState(), 3);
-                                    }
-                                    continue;
-                                }
+                    } else if (horizontalDistance <= ZONE_4_RADIUS) {
+                        if (state.is(BlockTags.LEAVES)) {
+                            if (random.nextFloat() < 0.4F) {
+                                level.removeBlock(checkPos, false);
+                            } else if (random.nextFloat() < 0.2F) {
+                                level.setBlock(checkPos, Blocks.FIRE.defaultBlockState(), 3);
                             }
+                            continue;
                         }
                     }
                 }

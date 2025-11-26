@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "hbm_m:block/dud_fugas_tong",
+      "y": 0
+    },
+    "facing=east": {
+      "model": "hbm_m:block/dud_fugas_tong",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "hbm_m:block/dud_fugas_tong",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "hbm_m:block/dud_fugas_tong",
+      "y": 270
+    }
+  }
+}

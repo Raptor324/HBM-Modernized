@@ -250,19 +250,19 @@ public class ModHazards {
         ));
 
          HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED.get(), new HazardData(
-                 new HazardEntry(HazardType.RADIATION, 5f)
+                 new HazardEntry(HazardType.RADIATION, 0.1f)
          ));
 
          HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED1.get(), new HazardData(
-                 new HazardEntry(HazardType.RADIATION, 5f)
+                 new HazardEntry(HazardType.RADIATION, 0.1f)
          ));
 
          HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED2.get(), new HazardData(
-                 new HazardEntry(HazardType.RADIATION, 5f)
+                 new HazardEntry(HazardType.RADIATION, 0.1f)
          ));
 
          HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED3.get(), new HazardData(
-                 new HazardEntry(HazardType.RADIATION, 5f)
+                 new HazardEntry(HazardType.RADIATION, 0.1f)
          ));
 
         HazardSystem.register(ModBlocks.PLUTONIUM_FUEL_BLOCK.get(), new HazardData(
@@ -283,7 +283,12 @@ public class ModHazards {
                  new HazardEntry(HazardType.RADIATION, 0.5f)
          ));
 
-        HazardSystem.register(ModItems.PLATE_SCHRABIDIUM.get(), new HazardData(
+         HazardSystem.register(ModItems.BILLET_PLUTONIUM.get(), new HazardData(
+                 new HazardEntry(HazardType.RADIATION, 0.5f)
+         ));
+
+
+         HazardSystem.register(ModItems.PLATE_SCHRABIDIUM.get(), new HazardData(
             new HazardEntry(HazardType.RADIATION, 15.0f)
         ));
 
