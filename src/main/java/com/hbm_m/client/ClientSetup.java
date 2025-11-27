@@ -86,6 +86,18 @@ public class ClientSetup {
         // MinecraftForge.EVENT_BUS.register(ClientSetup.class);
 
         // Register Entity Renders
+        ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADE_IF_FIRE_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADE_IF_SLIME_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADE_IF_HE_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
         ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
         );

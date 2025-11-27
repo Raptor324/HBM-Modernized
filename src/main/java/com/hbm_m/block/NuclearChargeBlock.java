@@ -4,10 +4,14 @@ import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.util.CraterGenerator;
 import com.hbm_m.util.MessGenerator;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -15,8 +19,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.server.TickTask;
 
 import net.minecraftforge.server.ServerLifecycleHooks;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * ОПТИМИЗИРОВАННЫЙ ЯДЕРНЫЙ БЛОК v2

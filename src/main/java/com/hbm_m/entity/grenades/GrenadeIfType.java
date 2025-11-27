@@ -7,7 +7,11 @@ import java.util.function.Supplier;
 public enum GrenadeIfType {
     // Добавили параметр урона: 50.0f (25 сердец).
     // 5.0f - сила разрушения блоков (радиус взрыва), 50.0f - урон сущностям.
-    GRENADE_IF(0.3f, 5.0f, 50.0f, false, () -> ModItems.GRENADE_IF.get());
+    GRENADE_IF(0.3f, 5.0f, 45.0f, false, ModItems.GRENADE_IF::get),
+    GRENADE_IF_HE(0.3f, 8.0f, 80.0f, false, ModItems.GRENADE_IF_HE::get),
+    GRENADE_IF_SLIME(0.45f, 6.0f, 60.0f, false, ModItems.GRENADE_IF_SLIME::get),
+    GRENADE_IF_FIRE(0.3f, 6.0f, 60.0f, true, ModItems.GRENADE_IF_FIRE::get);
+
 
     private final float bounceMultiplier;
     private final float explosionPower;

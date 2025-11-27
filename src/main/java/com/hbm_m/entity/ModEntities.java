@@ -1,6 +1,7 @@
 package com.hbm_m.entity;
 
 import com.hbm_m.entity.grenades.GrenadeIfProjectileEntity;
+import com.hbm_m.entity.grenades.GrenadeNucProjectileEntity;
 import com.hbm_m.entity.grenades.GrenadeProjectileEntity;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.world.entity.EntityType;
@@ -54,6 +55,35 @@ public class ModEntities {
                             .clientTrackingRange(4)
                             .updateInterval(10)
                             .build("grenade_if_projectile"));
+
+    public static final RegistryObject<EntityType<GrenadeIfProjectileEntity>> GRENADE_IF_FIRE_PROJECTILE =
+            ENTITY_TYPES.register("grenade_if_fire_projectile",
+                    () -> EntityType.Builder.<GrenadeIfProjectileEntity>of(GrenadeIfProjectileEntity::new, MobCategory.MISC)
+                            .sized(0.5f, 0.5f)
+                            .build("grenade_if_fire_projectile"));
+
+    public static final RegistryObject<EntityType<GrenadeIfProjectileEntity>> GRENADE_IF_SLIME_PROJECTILE =
+            ENTITY_TYPES.register("grenade_if_slime_projectile",
+                    () -> EntityType.Builder.<GrenadeIfProjectileEntity>of(GrenadeIfProjectileEntity::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F)
+                            .clientTrackingRange(4)
+                            .updateInterval(10)
+                            .build("grenade_if_slime_projectile"));
+
+    public static final RegistryObject<EntityType<GrenadeIfProjectileEntity>> GRENADE_IF_HE_PROJECTILE =
+            ENTITY_TYPES.register("grenade_if_he_projectile",
+                    () -> EntityType.Builder.<GrenadeIfProjectileEntity>of(GrenadeIfProjectileEntity::new, MobCategory.MISC)
+                            .sized(0.5f, 0.5f)
+                            .build("grenade_if_he_projectile"));
+
+
+    public static final RegistryObject<EntityType<GrenadeNucProjectileEntity>> GRENADE_NUC_PROJECTILE =
+            ENTITY_TYPES.register("grenade_nuc_projectile",
+                    () -> EntityType.Builder.<GrenadeNucProjectileEntity>of(GrenadeNucProjectileEntity::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F)
+                            .clientTrackingRange(4)
+                            .updateInterval(10)
+                            .build("grenade_nuc_projectile"));
     public static final RegistryObject<EntityType<FallingBlockEntity>> FALLING_SELLAFIT_ENTITY_TYPE = ENTITY_TYPES.register("falling_sellafit",
             () -> EntityType.Builder.<FallingBlockEntity>of(FallingBlockEntity::new, MobCategory.MISC)
                     .sized(0.98F, 0.98F) // Размеры сущности, обычно для блока 1x1

@@ -219,6 +219,11 @@ public class MainRegistry {
             event.accept(ModItems.GRENADESLIME);
 
             event.accept(ModItems.GRENADE_IF);
+            event.accept(ModItems.GRENADE_IF_HE);
+            event.accept(ModItems.GRENADE_IF_SLIME);
+            event.accept(ModItems.GRENADE_IF_FIRE);
+
+            event.accept(ModItems.GRENADE_NUC);
 
             event.accept(ModBlocks.MINE_AP);
             event.accept(ModBlocks.MINE_FAT);

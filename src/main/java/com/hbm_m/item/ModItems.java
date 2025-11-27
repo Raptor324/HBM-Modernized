@@ -17,6 +17,9 @@ import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeIfType;
 import com.hbm_m.entity.grenades.GrenadeType;
+import com.hbm_m.item.fekal_grenades.GrenadeIfItem;
+import com.hbm_m.item.fekal_grenades.GrenadeItem;
+import com.hbm_m.item.fekal_grenades.GrenadeNucItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
@@ -281,6 +284,18 @@ public class ModItems {
 
     public static final RegistryObject<Item> GRENADE_IF = ITEMS.register("grenade_if",
             () -> new GrenadeIfItem(new Item.Properties(), GrenadeIfType.GRENADE_IF, ModEntities.GRENADE_IF_PROJECTILE));
+
+    public static final RegistryObject<Item> GRENADE_IF_HE = ITEMS.register("grenade_if_he",
+            () -> new GrenadeIfItem(new Item.Properties(), GrenadeIfType.GRENADE_IF_HE, ModEntities.GRENADE_IF_HE_PROJECTILE));
+
+    public static final RegistryObject<Item> GRENADE_IF_SLIME = ITEMS.register("grenade_if_slime",
+            () -> new GrenadeIfItem(new Item.Properties(), GrenadeIfType.GRENADE_IF_SLIME, ModEntities.GRENADE_IF_SLIME_PROJECTILE));
+
+    public static final RegistryObject<Item> GRENADE_IF_FIRE = ITEMS.register("grenade_if_fire",
+            () -> new GrenadeIfItem(new Item.Properties(), GrenadeIfType.GRENADE_IF_FIRE, ModEntities.GRENADE_IF_FIRE_PROJECTILE));
+
+    public static final RegistryObject<Item> GRENADE_NUC = ITEMS.register("grenade_nuc",
+            () -> new GrenadeNucItem(new Item.Properties(), ModEntities.GRENADE_NUC_PROJECTILE));
 
 
     // БРОНЯ ГОРНЯКА:

@@ -1,10 +1,9 @@
-package com.hbm_m.item;
+package com.hbm_m.item.fekal_grenades;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.TooltipFlag;
 import java.util.List;
 
-import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeProjectileEntity;
 import com.hbm_m.entity.grenades.GrenadeType;
 import net.minecraft.sounds.SoundEvents;
@@ -39,11 +38,11 @@ public class GrenadeItem extends Item {
         String behaviorText;
 
         switch (grenadeType) {
-            case SMART -> behaviorText = "Детонирует при прямом попадании в сущность, запас отскоков: 3";
-            case FIRE -> behaviorText = "Распространяет огонь после детонации, запас отскоков: 3";
-            case SLIME -> behaviorText = "Теряет меньше скорости при контакте с поверхностями, запас отскоков: 4";
-            case STANDARD -> behaviorText = "Слабый взрыв, запас отскоков: 3";
-            case HE -> behaviorText = "Стандартный взрыв, запас отскоков: 3";
+            case SMART -> behaviorText = "Детонирует при прямом попадании в сущность";
+            case FIRE -> behaviorText = "Распространяет огонь после детонации";
+            case SLIME -> behaviorText = "Лучше отскакивает";
+            case STANDARD -> behaviorText = "Слабый взрыв";
+            case HE -> behaviorText = "Стандартный взрыв";
             default -> behaviorText = "Кидайте и взрывайте!";
         }
 
@@ -51,9 +50,6 @@ public class GrenadeItem extends Item {
         tooltip.add(Component.literal(behaviorText)
                 .withStyle(ChatFormatting.YELLOW));
 
-        //  ОТДЕЛЬНАЯ строка снизу
-        tooltip.add(Component.literal("Детонирует после последнего отскока")
-                .withStyle(ChatFormatting.GRAY));
     }
 
 
