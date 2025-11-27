@@ -1,15 +1,15 @@
 {
   "loader": "forge:composite",
   "textures": {
-    "particle": "hbm_m:block/dud_nuke"
+    "particle": "hbm_m:block/dud_salted"
   },
   "children": {
-    "dud_nuke_model": {
+    "dud_salted_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/dud_nuke.obj",
+      "model": "hbm_m:models/block/dud_salted.obj",
       "flip_v": true,
       "textures": {
-        "default": "hbm_m:block/dud_nuke"
+        "default": "hbm_m:block/dud_salted"
       }
     }
   },

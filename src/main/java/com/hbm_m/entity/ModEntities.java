@@ -1,5 +1,6 @@
 package com.hbm_m.entity;
 
+import com.hbm_m.entity.grenades.GrenadeIfProjectileEntity;
 import com.hbm_m.entity.grenades.GrenadeProjectileEntity;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.world.entity.EntityType;
@@ -46,11 +47,13 @@ public class ModEntities {
                 .sized(0.5f, 0.5f)
                 .build("grenadeslime_projectile"));
 
-    public static final RegistryObject<EntityType<GrenadeProjectileEntity>> GRENADEIF_PROJECTILE =
-        ENTITY_TYPES.register("grenadeif_projectile",
-            () -> EntityType.Builder.<GrenadeProjectileEntity>of(GrenadeProjectileEntity::new, MobCategory.MISC)
-                .sized(0.5f, 0.5f)
-                .build("grenadeif_projectile"));
+    public static final RegistryObject<EntityType<GrenadeIfProjectileEntity>> GRENADE_IF_PROJECTILE =
+            ENTITY_TYPES.register("grenade_if_projectile",
+                    () -> EntityType.Builder.<GrenadeIfProjectileEntity>of(GrenadeIfProjectileEntity::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F)
+                            .clientTrackingRange(4)
+                            .updateInterval(10)
+                            .build("grenade_if_projectile"));
     public static final RegistryObject<EntityType<FallingBlockEntity>> FALLING_SELLAFIT_ENTITY_TYPE = ENTITY_TYPES.register("falling_sellafit",
             () -> EntityType.Builder.<FallingBlockEntity>of(FallingBlockEntity::new, MobCategory.MISC)
                     .sized(0.98F, 0.98F) // Размеры сущности, обычно для блока 1x1

@@ -15,6 +15,7 @@ import com.hbm_m.armormod.item.ItemModRadProtection;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
+import com.hbm_m.entity.grenades.GrenadeIfType;
 import com.hbm_m.entity.grenades.GrenadeType;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.multiblock.MultiblockBlockItem;
@@ -278,8 +279,8 @@ public class ModItems {
     public static final RegistryObject<Item> GRENADESMART = ITEMS.register("grenadesmart",
         () -> new GrenadeItem(new Item.Properties(), GrenadeType.SMART, ModEntities.GRENADESMART_PROJECTILE));
 
-    public static final RegistryObject<Item> GRENADEIF = ITEMS.register("grenadeif",
-        () -> new GrenadeItem(new Item.Properties(), GrenadeType.IF, ModEntities.GRENADEIF_PROJECTILE));
+    public static final RegistryObject<Item> GRENADE_IF = ITEMS.register("grenade_if",
+            () -> new GrenadeIfItem(new Item.Properties(), GrenadeIfType.GRENADE_IF, ModEntities.GRENADE_IF_PROJECTILE));
 
 
     // БРОНЯ ГОРНЯКА:

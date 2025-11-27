@@ -23,7 +23,7 @@ import java.util.List;
 public class DetMinerBlock extends Block implements IDetonatable {
 
     private static final int MINING_RADIUS = 3;
-    private static final int DETONATION_RADIUS = 4;
+    private static final int DETONATION_RADIUS = 6;
 
     public DetMinerBlock(Properties properties) {
         super(properties);

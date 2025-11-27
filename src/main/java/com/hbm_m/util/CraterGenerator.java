@@ -492,14 +492,14 @@ public class CraterGenerator {
         List<LivingEntity> entitiesZone3 = level.getEntitiesOfClass(LivingEntity.class, zone3Area);
         for (LivingEntity entity : entitiesZone3) {
             entity.hurt(level.damageSources().generic(), ZONE_3_DAMAGE);
-            entity.setSecondsOnFire((int) FIRE_DURATION / 20);
+            entity.setSecondsOnFire((int) FIRE_DURATION / 200);
         }
 
         List<LivingEntity> entitiesZone4 = level.getEntitiesOfClass(LivingEntity.class, zone4Area);
         for (LivingEntity entity : entitiesZone4) {
             if (!entitiesZone3.contains(entity)) {
                 entity.hurt(level.damageSources().generic(), ZONE_4_DAMAGE);
-                entity.setSecondsOnFire((int) FIRE_DURATION / 20);
+                entity.setSecondsOnFire((int) FIRE_DURATION / 200);
             }
         }
     }

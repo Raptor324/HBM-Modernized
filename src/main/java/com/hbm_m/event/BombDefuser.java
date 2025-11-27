@@ -30,6 +30,7 @@ public class BombDefuser {
 
     private static final List<RegistryObject<Block>> BOMBS = List.of(
             ModBlocks.DUD_FUGAS_TONG,
+            ModBlocks.DUD_SALTED,
             ModBlocks.DUD_NUKE
     );
 
@@ -43,7 +44,13 @@ public class BombDefuser {
     // Убираем "шансы", теперь фиксированное количество дропа для каждого типа
     private static final Map<RegistryObject<Block>, List<DropAmount>> BOMB_DROPS = Map.of(
             ModBlocks.DUD_FUGAS_TONG, List.of(
-                    new DropAmount(ModItems.BALL_TNT, 16) // фиксируем 4 предмета
+                    new DropAmount(ModItems.PLATE_STEEL, 8),
+                    new DropAmount(ModItems.BALL_TNT, 16)
+            ),
+            ModBlocks.DUD_SALTED, List.of(
+                    new DropAmount(ModItems.BILLET_PLUTONIUM, 2),
+                    new DropAmount(ModItems.BALL_TNT, 8),
+                    new DropAmount(ModItems.COBALT_RAW, 8)
             ),
             ModBlocks.DUD_NUKE, List.of(
                     new DropAmount(ModItems.BALL_TNT, 8),

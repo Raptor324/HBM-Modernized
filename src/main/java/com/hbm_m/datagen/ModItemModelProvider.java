@@ -204,7 +204,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.CAN_REDBOMB);
         simpleItem(ModItems.CAN_SMART);
 
-
+        simpleItem(ModItems.GRENADE_IF);
         simpleItem(ModItems.BOLT_STEEL);
         simpleItem(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS);
         simpleItem(ModItems.COIL_MAGNETIZED_TUNGSTEN);
