@@ -25,8 +25,9 @@ import java.util.function.Consumer;
 public class AnvilRecipeBuilder implements RecipeBuilder {
     private final ItemStack inputA;
     private final ItemStack inputB;
-    private final ItemStack output;
-    private final List<ItemStack> requiredItems = new ArrayList<>();
+    private final ItemStack primaryOutput;
+    private final List<ItemStack> inventoryInputs = new ArrayList<>();
+    private final List<OutputEntry> outputs = new ArrayList<>();
     private final AnvilTier tier;
     private final Advancement.Builder advancement = Advancement.Builder.advancement();
     @Nullable
@@ -34,12 +35,12 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
     @Nullable
     private AnvilTier upperTier;
     private AnvilRecipe.OverlayType overlay = AnvilRecipe.OverlayType.NONE;
-    private float outputChance = 1.0F;
 
     private AnvilRecipeBuilder(ItemStack inputA, ItemStack inputB, ItemStack output, AnvilTier tier) {
         this.inputA = inputA;
         this.inputB = inputB;
-        this.output = output;
+        this.primaryOutput = output.copy();
+        this.outputs.add(new OutputEntry(this.primaryOutput.copy(), 1.0F));
         this.tier = tier;
     }
 
@@ -48,7 +49,11 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
     }
 
     public AnvilRecipeBuilder addRequirement(ItemStack stack) {
-        this.requiredItems.add(stack);
+        return addInventoryRequirement(stack);
+    }
+
+    public AnvilRecipeBuilder addInventoryRequirement(ItemStack stack) {
+        this.inventoryInputs.add(stack.copy());
         return this;
     }
 
@@ -67,8 +72,17 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
         return this;
     }
 
-    public AnvilRecipeBuilder withOutputChance(float chance) {
-        this.outputChance = Mth.clamp(chance, 0.0F, 1.0F);
+    public AnvilRecipeBuilder addOutput(ItemStack stack) {
+        return addOutput(stack, 1.0F);
+    }
+
+    public AnvilRecipeBuilder addOutput(ItemStack stack, float chance) {
+        this.outputs.add(new OutputEntry(stack.copy(), Mth.clamp(chance, 0.0F, 1.0F)));
+        return this;
+    }
+
+    public AnvilRecipeBuilder clearOutputs() {
+        this.outputs.clear();
         return this;
     }
 
@@ -85,7 +99,7 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
 
     @Override
     public Item getResult() {
-        return this.output.getItem();
+        return this.primaryOutput.getItem();
     }
 
     @Override
@@ -116,15 +130,31 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
 
         @Override
         public void serializeRecipeData(@Nonnull JsonObject json) {
-            json.add("input_a", stackToJson(builder.inputA));
-            json.add("input_b", stackToJson(builder.inputB));
-            json.add("output", stackToJson(builder.output));
+            if (!builder.inputA.isEmpty()) {
+                json.add("input_a", stackToJson(builder.inputA));
+            }
+            if (!builder.inputB.isEmpty()) {
+                json.add("input_b", stackToJson(builder.inputB));
+            }
 
-            if (!builder.requiredItems.isEmpty()) {
+            if (!builder.inventoryInputs.isEmpty()) {
                 JsonArray array = new JsonArray();
-                builder.requiredItems.forEach(stack -> array.add(stackToJson(stack)));
+                builder.inventoryInputs.forEach(stack -> array.add(stackToJson(stack)));
                 json.add("required_items", array);
             }
+
+            if (builder.outputs.isEmpty()) {
+                throw new IllegalStateException("Anvil recipe " + id + " has no outputs");
+            }
+            JsonArray outputsArray = new JsonArray();
+            builder.outputs.forEach(entry -> {
+                JsonObject entryJson = stackToJson(entry.stack());
+                if (entry.chance() < 1.0F) {
+                    entryJson.addProperty("chance", entry.chance());
+                }
+                outputsArray.add(entryJson);
+            });
+            json.add("outputs", outputsArray);
 
             json.addProperty("tier", builder.tier.name().toLowerCase(Locale.ROOT));
             if (builder.upperTier != null) {
@@ -135,9 +165,6 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
             }
             if (builder.overlay != AnvilRecipe.OverlayType.NONE) {
                 json.addProperty("overlay", builder.overlay.name().toLowerCase(Locale.ROOT));
-            }
-            if (builder.outputChance < 1.0F) {
-                json.addProperty("output_chance", builder.outputChance);
             }
         }
 
@@ -163,5 +190,7 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
             return null;
         }
     }
+
+    private record OutputEntry(ItemStack stack, float chance) { }
 }
 

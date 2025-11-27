@@ -164,23 +164,21 @@ public class ModBlocks {
 
     //---------------------------<СТАНКИ>-------------------------------------
 
-    public static final RegistryObject<Block> ANVIL_BLOCK = registerAnvil("anvil_block", AnvilTier.STEEL);
-    public static final RegistryObject<Block> ANVIL_IRON = registerAnvil("anvil_iron", AnvilTier.IRON);
-    public static final RegistryObject<Block> ANVIL_LEAD = registerAnvil("anvil_lead", AnvilTier.IRON);
-    public static final RegistryObject<Block> ANVIL_STEEL = registerAnvil("anvil_steel", AnvilTier.STEEL);
-    public static final RegistryObject<Block> ANVIL_DESH = registerAnvil("anvil_desh", AnvilTier.OIL);
-    public static final RegistryObject<Block> ANVIL_FERROURANIUM = registerAnvil("anvil_ferrouranium", AnvilTier.NUCLEAR);
-    public static final RegistryObject<Block> ANVIL_SATURNITE = registerAnvil("anvil_saturnite", AnvilTier.RBMK);
-    public static final RegistryObject<Block> ANVIL_BISMUTH_BRONZE = registerAnvil("anvil_bismuth_bronze", AnvilTier.RBMK);
-    public static final RegistryObject<Block> ANVIL_ARSENIC_BRONZE = registerAnvil("anvil_arsenic_bronze", AnvilTier.RBMK);
-    public static final RegistryObject<Block> ANVIL_SCHRABIDATE = registerAnvil("anvil_schrabidate", AnvilTier.FUSION);
-    public static final RegistryObject<Block> ANVIL_DNT = registerAnvil("anvil_dnt", AnvilTier.PARTICLE);
-    public static final RegistryObject<Block> ANVIL_OSMIRIDIUM = registerAnvil("anvil_osmiridium", AnvilTier.GERALD);
-    public static final RegistryObject<Block> ANVIL_MURKY = registerAnvil("anvil_murky", AnvilTier.MURKY);
+    public static final RegistryObject<Block> ANVIL_IRON = registerAnvil("anvil_iron", AnvilTier.IRON); // 1 уровень
+    public static final RegistryObject<Block> ANVIL_LEAD = registerAnvil("anvil_lead", AnvilTier.IRON); // 1 уровень
+    public static final RegistryObject<Block> ANVIL_STEEL = registerAnvil("anvil_steel", AnvilTier.STEEL); // 2 уровень
+    public static final RegistryObject<Block> ANVIL_DESH = registerAnvil("anvil_desh", AnvilTier.OIL); // 3 уровень
+    public static final RegistryObject<Block> ANVIL_FERROURANIUM = registerAnvil("anvil_ferrouranium", AnvilTier.NUCLEAR); // 4 уровень
+    public static final RegistryObject<Block> ANVIL_SATURNITE = registerAnvil("anvil_saturnite", AnvilTier.RBMK); // 5 уровень
+    public static final RegistryObject<Block> ANVIL_BISMUTH_BRONZE = registerAnvil("anvil_bismuth_bronze", AnvilTier.RBMK); // 5 уровень
+    public static final RegistryObject<Block> ANVIL_ARSENIC_BRONZE = registerAnvil("anvil_arsenic_bronze", AnvilTier.RBMK); // 5 уровень
+    public static final RegistryObject<Block> ANVIL_SCHRABIDATE = registerAnvil("anvil_schrabidate", AnvilTier.FUSION); // 6 уровень
+    public static final RegistryObject<Block> ANVIL_DNT = registerAnvil("anvil_dnt", AnvilTier.PARTICLE); // 7 уровень
+    public static final RegistryObject<Block> ANVIL_OSMIRIDIUM = registerAnvil("anvil_osmiridium", AnvilTier.GERALD); // 8 уровень
+    public static final RegistryObject<Block> ANVIL_MURKY = registerAnvil("anvil_murky", AnvilTier.MURKY); // 1916169 уровень
 
     public static List<RegistryObject<Block>> getAnvilBlocks() {
         return List.of(
-                ANVIL_BLOCK,
                 ANVIL_IRON,
                 ANVIL_LEAD,
                 ANVIL_STEEL,

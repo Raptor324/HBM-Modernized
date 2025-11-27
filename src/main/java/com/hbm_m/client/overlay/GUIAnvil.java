@@ -28,85 +28,84 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
-
+import java.util.Objects;
 import net.minecraftforge.items.ItemStackHandler;
 
 public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
-
+    
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/processing/gui_anvil.png");
-
     private static final int DISPLAY_SLOTS = 10;
-
+    
     private final List<AnvilRecipe> originRecipes = new ArrayList<>();
     private final List<AnvilRecipe> filteredRecipes = new ArrayList<>();
-
     private EditBox searchBox;
     private int columnOffset;
     private int maxColumnOffset;
     private int selectionIndex = -1;
     private int lastTextWidth;
     private ItemStack hoveredRecipeStack = ItemStack.EMPTY;
-
+    private boolean followSelection = true;
+    
+    @Nullable
+    private ResourceLocation cachedServerSelection;
+    
     public GUIAnvil(AnvilMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         this.imageWidth = 176;
         this.imageHeight = 222;
     }
-
+    
     @Override
     protected void init() {
         super.init();
         loadAvailableRecipes();
-
+        
         int x = (width - imageWidth) / 2;
         int y = (height - imageHeight) / 2;
-
-        searchBox = new EditBox(this.font, x + 10, y + 111, 84, 12,
-                Component.translatable("gui.hbm_m.anvil.search"));
+        
+        searchBox = new EditBox(this.font, x + 10, y + 111, 84, 12, Component.empty());
         searchBox.setMaxLength(25);
         searchBox.setBordered(false);
         searchBox.setTextColor(0xFFFFFFFF);
         searchBox.setTextColorUneditable(0xFFFFFFFF);
         searchBox.setResponder(this::applySearch);
-        searchBox.setSuggestion(Component.translatable("gui.hbm_m.anvil.search_hint").getString());
+        
+        // Устанавливаем подсказку
+        String hint = Component.translatable("gui.hbm_m.anvil.search_hint").getString();
+        if ("gui.hbm_m.anvil.search_hint".equals(hint)) {
+            hint = Component.translatable("gui.hbm_m.anvil.search").getString();
+        }
+        searchBox.setSuggestion(hint);
         searchBox.setValue("");
-
+        
         this.addRenderableWidget(searchBox);
-
-        // Инициализация с полным списком
+        
+        cachedServerSelection = menu.blockEntity.getSelectedRecipeId().orElse(null);
         applySearch("");
     }
-
-    /**
-     * Загружает доступные рецепты с учетом tier наковальни
-     */
+    
     private void loadAvailableRecipes() {
         originRecipes.clear();
         RegistryAccess access = getRegistryAccess();
-
         originRecipes.addAll(
-                AnvilRecipeManager.getClientRecipes().stream()
-                        .filter(recipe -> recipe.canCraftOn(menu.blockEntity.getTier()))
-                        .sorted(Comparator.comparing(recipe ->
-                                recipe.getResultItem(access).getHoverName().getString().toLowerCase(Locale.ROOT)))
-                        .toList()
+            AnvilRecipeManager.getClientRecipes().stream()
+                .filter(recipe -> recipe.canCraftOn(menu.blockEntity.getTier()))
+                .sorted(Comparator.comparing(recipe ->
+                    recipe.getResultItem(access).getHoverName().getString().toLowerCase(Locale.ROOT)))
+                .toList()
         );
     }
-
-    /**
-     * Применяет поисковый фильтр к рецептам
-     */
+    
     private void applySearch(String rawQuery) {
         String query = rawQuery == null ? "" : rawQuery.trim().toLowerCase(Locale.ROOT);
         filteredRecipes.clear();
-
+        
         if (query.isEmpty()) {
             filteredRecipes.addAll(originRecipes);
         } else {
             RegistryAccess access = getRegistryAccess();
             for (AnvilRecipe recipe : originRecipes) {
-                // Поиск по имени результата и входных материалов
                 List<String> searchTerms = buildSearchTerms(recipe, access);
                 for (String term : searchTerms) {
                     if (term.contains(query)) {
@@ -116,18 +115,16 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
                 }
             }
         }
-
+        
         resetPagination();
-        syncSelectionToServer(false);
+        cachedServerSelection = menu.blockEntity.getSelectedRecipeId().orElse(null);
+        followSelection = true;
+        refreshSelectionFromCache(false);
     }
-
-    /**
-     * Создает список поисковых терминов для рецепта
-     */
+    
     private List<String> buildSearchTerms(AnvilRecipe recipe, RegistryAccess access) {
         List<String> terms = new ArrayList<>();
-
-        // Добавляем имя выходного предмета
+        
         ItemStack output = recipe.getResultItem(access);
         if (!output.isEmpty()) {
             try {
@@ -135,89 +132,145 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
             } catch (Exception ex) {
                 terms.add("error");
             }
+            addTagSearchTerms(terms, output);
         }
-
-        // Добавляем имена входных предметов
+        
+        for (AnvilRecipe.ResultEntry entry : recipe.getOutputs()) {
+            ItemStack stack = entry.stack();
+            if (stack.isEmpty()) continue;
+            try {
+                terms.add(stack.getHoverName().getString().toLowerCase(Locale.ROOT));
+            } catch (Exception ex) {
+                terms.add("error");
+            }
+            addTagSearchTerms(terms, stack);
+        }
+        
         for (ItemStack input : List.of(recipe.getInputA(), recipe.getInputB())) {
-            if (!input.isEmpty()) {
-                try {
-                    terms.add(input.getHoverName().getString().toLowerCase(Locale.ROOT));
-                } catch (Exception ex) {
-                    terms.add("error");
-                }
+            if (input.isEmpty()) continue;
+            try {
+                terms.add(input.getHoverName().getString().toLowerCase(Locale.ROOT));
+            } catch (Exception ex) {
+                terms.add("error");
             }
+            addTagSearchTerms(terms, input);
         }
-
-        // Добавляем дополнительные требуемые предметы
-        for (ItemStack required : recipe.getRequiredItems()) {
-            if (!required.isEmpty()) {
-                try {
-                    terms.add(required.getHoverName().getString().toLowerCase(Locale.ROOT));
-                } catch (Exception ex) {
-                    terms.add("error");
-                }
+        
+        for (ItemStack required : recipe.getInventoryInputs()) {
+            if (required.isEmpty()) continue;
+            try {
+                terms.add(required.getHoverName().getString().toLowerCase(Locale.ROOT));
+            } catch (Exception ex) {
+                terms.add("error");
             }
+            addTagSearchTerms(terms, required);
         }
-
+        
         return terms;
     }
-
-    /**
-     * Сброс пагинации
-     */
+    
     private void resetPagination() {
         this.columnOffset = 0;
         this.selectionIndex = -1;
         recalculateBounds();
     }
-
-    /**
-     * Пересчет границ прокрутки
-     */
+    
     private void recalculateBounds() {
         int size = filteredRecipes.size();
         double raw = (size - DISPLAY_SLOTS) / 2.0D;
         maxColumnOffset = Math.max(0, (int) Math.ceil(raw));
         columnOffset = Mth.clamp(columnOffset, 0, maxColumnOffset);
-
         if (selectionIndex >= size) {
             selectionIndex = -1;
         }
     }
-
+    
     @Override
     protected void containerTick() {
         super.containerTick();
-        syncSelectionToServer(false);
-    }
-
-    /**
-     * Синхронизация выбранного рецепта с сервером
-     */
-    private void syncSelectionToServer(boolean forceDefault) {
-        menu.blockEntity.getSelectedRecipeId().ifPresentOrElse(id -> {
-            int index = findRecipeIndex(id);
-            if (index >= 0 && index < filteredRecipes.size()) {
-                selectionIndex = index;
-                // Прокручиваем к выбранному рецепту
-                columnOffset = Mth.clamp(index / 2, 0, maxColumnOffset);
-            } else if (forceDefault && !filteredRecipes.isEmpty()) {
-                selectionIndex = 0;
-                notifyServerAboutSelection(filteredRecipes.get(0));
+        if (searchBox != null) {
+            searchBox.tick();
+            
+            // ИСПРАВЛЕНИЕ 1: Убираем подсказку при фокусе
+            if (searchBox.isFocused() && searchBox.getValue().isEmpty()) {
+                searchBox.setSuggestion("");
+            } else if (!searchBox.isFocused() && searchBox.getValue().isEmpty()) {
+                // Возвращаем подсказку когда теряем фокус и поле пустое
+                String hint = Component.translatable("gui.hbm_m.anvil.search_hint").getString();
+                if ("gui.hbm_m.anvil.search_hint".equals(hint)) {
+                    hint = Component.translatable("gui.hbm_m.anvil.search").getString();
+                }
+                searchBox.setSuggestion(hint);
             }
-        }, () -> {
-            if (forceDefault && !filteredRecipes.isEmpty()) {
+        }
+        
+        syncSelectionFromServer();
+        if (followSelection) {
+            ensureSelectionVisible();
+        }
+    }
+    
+    private void syncSelectionFromServer() {
+        ResourceLocation serverSelection = menu.blockEntity.getSelectedRecipeId().orElse(null);
+        if (!Objects.equals(serverSelection, cachedServerSelection)) {
+            cachedServerSelection = serverSelection;
+            refreshSelectionFromCache(false);
+        }
+    }
+    
+    private void refreshSelectionFromCache(boolean forceDefault) {
+        if (filteredRecipes.isEmpty()) {
+            selectionIndex = -1;
+            followSelection = false;
+            return;
+        }
+        
+        if (cachedServerSelection == null) {
+            if (forceDefault) {
                 selectionIndex = 0;
+                followSelection = true;
                 notifyServerAboutSelection(filteredRecipes.get(0));
-            } else if (!forceDefault) {
+            } else {
                 selectionIndex = -1;
+                followSelection = false;
             }
-        });
+            return;
+        }
+        
+        int index = findRecipeIndex(cachedServerSelection);
+        if (index >= 0) {
+            selectionIndex = index;
+            followSelection = true;
+        } else if (forceDefault) {
+            selectionIndex = 0;
+            followSelection = true;
+            notifyServerAboutSelection(filteredRecipes.get(0));
+        } else {
+            selectionIndex = -1;
+            followSelection = false;
+        }
     }
-
-    /**
-     * Ищет индекс рецепта по его ID
-     */
+    
+    private void ensureSelectionVisible() {
+        if (selectionIndex < 0) {
+            return;
+        }
+        
+        int targetColumn = selectionIndex / 2;
+        int columnsVisible = DISPLAY_SLOTS / 2;
+        int maxVisibleColumn = columnOffset + columnsVisible - 1;
+        
+        if (targetColumn < columnOffset) {
+            columnOffset = targetColumn;
+        } else if (targetColumn > maxVisibleColumn) {
+            columnOffset = targetColumn - columnsVisible + 1;
+        } else {
+            return;
+        }
+        
+        columnOffset = Mth.clamp(columnOffset, 0, maxColumnOffset);
+    }
+    
     private int findRecipeIndex(ResourceLocation id) {
         for (int i = 0; i < filteredRecipes.size(); i++) {
             if (filteredRecipes.get(i).getId().equals(id)) {
@@ -226,131 +279,135 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         }
         return -1;
     }
-
-    /**
-     * Внешний метод для фокусировки на рецепте (для NEI/JEI интеграции)
-     */
+    
     public void focusRecipe(@Nullable AnvilRecipe target) {
         if (target == null || !originRecipes.contains(target)) {
             return;
         }
-
+        
         searchBox.setValue("");
         applySearch("");
-
+        
         int pos = filteredRecipes.indexOf(target);
         if (pos >= 0) {
             selectionIndex = pos;
-            columnOffset = Mth.clamp(pos / 2, 0, maxColumnOffset);
+            followSelection = true;
+            ensureSelectionVisible();
             notifyServerAboutSelection(target);
         }
     }
-
+    
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (searchBox.mouseClicked(mouseX, mouseY, button)) {
-            return true;
+        if (searchBox != null) {
+            if (searchBox.mouseClicked(mouseX, mouseY, button)) {
+                this.setFocused(searchBox);
+                return true;
+            }
+            
+            if (searchBox.isFocused() && !isMouseOverSearchBox(mouseX, mouseY)) {
+                searchBox.setFocused(false);
+            }
         }
-
+        
         if (isOverLeftArrow(mouseX, mouseY)) {
             playClickSound();
             scrollColumns(-1);
             return true;
         }
-
+        
         if (isOverRightArrow(mouseX, mouseY)) {
             playClickSound();
             scrollColumns(1);
             return true;
         }
-
-        if (isOverCraftButton(mouseX, mouseY) && selectionIndex >= 0) {
+        
+        if (isOverCraftButton(mouseX, mouseY) && isCraftButtonEnabled()) {
             playClickSound();
             boolean craftAll = hasShiftDown();
             ModPacketHandler.INSTANCE.sendToServer(
-                    new AnvilCraftC2SPacket(menu.blockEntity.getBlockPos(), craftAll));
+                new AnvilCraftC2SPacket(menu.blockEntity.getBlockPos(), craftAll));
             return true;
         }
-
+        
         if (isOverSearchButton(mouseX, mouseY)) {
             playClickSound();
             applySearch(searchBox.getValue());
             return true;
         }
-
+        
         if (handleRecipeClick(mouseX, mouseY)) {
             playClickSound();
             return true;
         }
-
+        
         return super.mouseClicked(mouseX, mouseY, button);
     }
-
-    /**
-     * Воспроизводит звук нажатия кнопки
-     */
+    
     private void playClickSound() {
         if (minecraft != null) {
             minecraft.getSoundManager().play(
-                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                            SoundEvents.UI_BUTTON_CLICK, 1.0F));
+                net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                    SoundEvents.UI_BUTTON_CLICK, 1.0F));
         }
     }
-
-    /**
-     * Прокрутка столбцов рецептов
-     */
+    
     private void scrollColumns(int delta) {
         columnOffset = Mth.clamp(columnOffset + delta, 0, maxColumnOffset);
+        followSelection = false;
     }
-
-    /**
-     * Обработка клика по рецепту
-     */
+    
     private boolean handleRecipeClick(double mouseX, double mouseY) {
         int startIndex = columnOffset * 2;
         int guiLeft = (width - imageWidth) / 2;
         int guiTop = (height - imageHeight) / 2;
-
+        
         for (int slot = 0; slot < DISPLAY_SLOTS; slot++) {
             int recipeIndex = startIndex + slot;
             if (recipeIndex >= filteredRecipes.size()) {
                 break;
             }
-
+            
             int col = slot / 2;
             int row = slot % 2;
             int overlayX = guiLeft + 16 + col * 18;
             int overlayY = guiTop + 71 + row * 18;
-
+            
             if (mouseX >= overlayX && mouseX < overlayX + 18 &&
-                    mouseY >= overlayY && mouseY < overlayY + 18) {
-
+                mouseY >= overlayY && mouseY < overlayY + 18) {
+                
                 if (selectionIndex == recipeIndex) {
-                    // Отмена выбора
                     selectionIndex = -1;
+                    followSelection = false;
                     notifyServerAboutSelection(null);
                 } else {
-                    // Выбор рецепта
                     selectionIndex = recipeIndex;
+                    followSelection = true;
                     notifyServerAboutSelection(filteredRecipes.get(recipeIndex));
                 }
+                
                 return true;
             }
         }
+        
         return false;
     }
-
-    /**
-     * Уведомляет сервер о выбранном рецепте
-     */
+    
+    private boolean isCraftButtonEnabled() {
+        if (selectionIndex < 0 || selectionIndex >= filteredRecipes.size()) {
+            return false;
+        }
+        return !filteredRecipes.get(selectionIndex).usesMachineInputs();
+    }
+    
     private void notifyServerAboutSelection(@Nullable AnvilRecipe recipe) {
         ResourceLocation id = recipe != null ? recipe.getId() : null;
+        cachedServerSelection = id;
         menu.blockEntity.setSelectedRecipeId(id);
         ModPacketHandler.INSTANCE.sendToServer(
-                new AnvilSelectRecipeC2SPacket(menu.blockEntity.getBlockPos(), id));
+            new AnvilSelectRecipeC2SPacket(menu.blockEntity.getBlockPos(), id));
     }
-
+    
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (isOverRecipeGrid(mouseX, mouseY)) {
@@ -363,341 +420,369 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         }
         return super.mouseScrolled(mouseX, mouseY, delta);
     }
-
-
-    // === Проверки позиций мыши ===
-
+    
     private boolean isOverRecipeGrid(double mouseX, double mouseY) {
         int guiLeft = (width - imageWidth) / 2;
         int guiTop = (height - imageHeight) / 2;
         return mouseX >= guiLeft + 16 && mouseX < guiLeft + 106 &&
-                mouseY >= guiTop + 71 && mouseY < guiTop + 107;
+               mouseY >= guiTop + 71 && mouseY < guiTop + 107;
     }
-
+    
     private boolean isOverLeftArrow(double mouseX, double mouseY) {
         int guiLeft = (width - imageWidth) / 2;
         int guiTop = (height - imageHeight) / 2;
         return mouseX >= guiLeft + 7 && mouseX < guiLeft + 16 &&
-                mouseY >= guiTop + 71 && mouseY < guiTop + 107;
+               mouseY >= guiTop + 71 && mouseY < guiTop + 107;
     }
-
+    
     private boolean isOverRightArrow(double mouseX, double mouseY) {
         int guiLeft = (width - imageWidth) / 2;
         int guiTop = (height - imageHeight) / 2;
         return mouseX >= guiLeft + 106 && mouseX < guiLeft + 115 &&
-                mouseY >= guiTop + 71 && mouseY < guiTop + 107;
+               mouseY >= guiTop + 71 && mouseY < guiTop + 107;
     }
-
+    
     private boolean isOverCraftButton(double mouseX, double mouseY) {
         int guiLeft = (width - imageWidth) / 2;
         int guiTop = (height - imageHeight) / 2;
         return mouseX >= guiLeft + 52 && mouseX < guiLeft + 70 &&
-                mouseY >= guiTop + 53 && mouseY < guiTop + 71;
+               mouseY >= guiTop + 53 && mouseY < guiTop + 71;
     }
-
+    
     private boolean isOverSearchButton(double mouseX, double mouseY) {
         int guiLeft = (width - imageWidth) / 2;
         int guiTop = (height - imageHeight) / 2;
         return mouseX >= guiLeft + 97 && mouseX < guiLeft + 115 &&
-                mouseY >= guiTop + 107 && mouseY < guiTop + 125;
+               mouseY >= guiTop + 107 && mouseY < guiTop + 125;
     }
-
-    // === Отрисовка ===
-
+    
+    private boolean isMouseOverSearchBox(double mouseX, double mouseY) {
+        if (searchBox == null) return false;
+        int x = searchBox.getX();
+        int y = searchBox.getY();
+        int width = searchBox.getWidth();
+        int height = searchBox.getHeight();
+        return mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height;
+    }
+    
     @Override
     protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         hoveredRecipeStack = ItemStack.EMPTY;
-
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.setShaderTexture(0, TEXTURE);
-
+        
         int guiLeft = (width - imageWidth) / 2;
         int guiTop = (height - imageHeight) / 2;
-
-        // Основная текстура GUI
+        
         guiGraphics.blit(TEXTURE, guiLeft, guiTop, 0, 0, imageWidth, imageHeight);
-
+        
         renderSearchFieldBackground(guiGraphics, guiLeft, guiTop);
-
-        // Подсветка кнопок при наведении
         drawButtonHighlights(guiGraphics, guiLeft, guiTop, mouseX, mouseY);
-
-        // Отрисовка сетки рецептов
         renderRecipeGrid(guiGraphics, guiLeft, guiTop, mouseX, mouseY);
-
-        // Отрисовка деталей рецепта
-        renderRecipeDetails(guiGraphics, guiLeft, guiTop);
+        
+        // ИСПРАВЛЕНИЕ 2: Рисуем панель как в оригинале - ВСЕГДА
+        renderSidePanel(guiGraphics, guiLeft, guiTop);
     }
-
+    
     @Override
     protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        // Заголовок GUI
-        Component titleText = Component.translatable("container.hbm_m.anvil",
-                menu.blockEntity.getTier());
+        Component titleText = Component.translatable("container.hbm_m.anvil", menu.blockEntity.getTier());
         int titleWidth = this.font.width(titleText);
-        guiGraphics.drawString(this.font, titleText, (imageWidth - titleWidth) / 2, 6, 0x404040, false);
-
-        // Название инвентаря
+        int x = 61 - titleWidth / 2;
+        int y = 8;
+        guiGraphics.drawString(this.font, titleText, x, y, 0x404040, false);
+        
         Component inventoryLabel = Component.translatable("container.inventory");
         guiGraphics.drawString(this.font, inventoryLabel, 8, imageHeight - 96 + 2, 0x404040, false);
-
-        Component searchLabel = Component.translatable("gui.hbm_m.anvil.search");
-        guiGraphics.drawString(this.font, searchLabel, 10, 100, 0x606060, false);
+        
+        // Рисуем текст деталей рецепта (если выбран)
+        renderRecipeDetailsText(guiGraphics);
     }
-
-    /**
-     * Подсветка кнопок при наведении
-     */
+    
     private void drawButtonHighlights(GuiGraphics guiGraphics, int guiLeft, int guiTop, int mouseX, int mouseY) {
         if (isOverLeftArrow(mouseX, mouseY) && columnOffset > 0) {
             guiGraphics.blit(TEXTURE, guiLeft + 7, guiTop + 71, 176, 186, 9, 36);
         }
-
+        
         if (isOverRightArrow(mouseX, mouseY) && columnOffset < maxColumnOffset) {
             guiGraphics.blit(TEXTURE, guiLeft + 106, guiTop + 71, 185, 186, 9, 36);
         }
-
-        if (isOverCraftButton(mouseX, mouseY) && selectionIndex >= 0) {
+        
+        if (isOverCraftButton(mouseX, mouseY) && isCraftButtonEnabled()) {
             guiGraphics.blit(TEXTURE, guiLeft + 52, guiTop + 53, 176, 150, 18, 18);
         }
-
+        
         if (isOverSearchButton(mouseX, mouseY)) {
             guiGraphics.blit(TEXTURE, guiLeft + 97, guiTop + 107, 176, 168, 18, 18);
         }
     }
-
+    
     private void renderSearchFieldBackground(GuiGraphics guiGraphics, int guiLeft, int guiTop) {
         if (searchBox == null) {
             return;
         }
-        int left = guiLeft + 8;
-        int top = guiTop + 108;
-        int right = left + 88;
-        int bottom = top + 16;
-        int borderColor = searchBox.isFocused() ? 0xFF6BE5FF : 0xFF4F4F4F;
-        int fillColor = searchBox.isFocused() ? 0xAA111111 : 0x66101010;
-        guiGraphics.fill(left - 1, top - 1, right + 1, bottom + 1, 0xAA000000);
-        guiGraphics.fill(left, top, right, bottom, fillColor);
-        guiGraphics.fill(left - 1, top - 1, right + 1, top, borderColor);
-        guiGraphics.fill(left - 1, bottom, right + 1, bottom + 1, borderColor);
-        guiGraphics.fill(left - 1, top, left, bottom, borderColor);
-        guiGraphics.fill(right, top, right + 1, bottom, borderColor);
+        
+        if (searchBox.isFocused()) {
+            guiGraphics.blit(TEXTURE, guiLeft + 8, guiTop + 108, 168, 222, 88, 16);
+        }
     }
-
-    /**
-     * Отрисовка сетки рецептов
-     */
+    
     private void renderRecipeGrid(GuiGraphics guiGraphics, int guiLeft, int guiTop, int mouseX, int mouseY) {
         int startIndex = columnOffset * 2;
-
+        
         for (int slot = 0; slot < DISPLAY_SLOTS; slot++) {
             int recipeIndex = startIndex + slot;
             if (recipeIndex >= filteredRecipes.size()) {
                 break;
             }
-
+            
             int col = slot / 2;
             int row = slot % 2;
             int itemX = guiLeft + 17 + col * 18;
             int itemY = guiTop + 72 + row * 18;
             int overlayX = itemX - 1;
             int overlayY = itemY - 1;
-
+            
             AnvilRecipe recipe = filteredRecipes.get(recipeIndex);
-            ItemStack displayStack = recipe.getDisplayStack();
-
-            // Отрисовка предмета
+            
+            // ИСПРАВЛЕНИЕ: Определяем иконку в зависимости от типа рецепта
+            ItemStack displayStack;
+            if (recipe.isRecycling()) {
+                // Для разборки - показываем входной предмет
+                displayStack = recipe.getRecyclingInputStack();
+                if (displayStack.isEmpty()) {
+                    displayStack = recipe.getDisplayStack(); // Фоллбэк
+                }
+            } else {
+                // Для обычных рецептов - стандартная иконка
+                displayStack = recipe.getDisplayStack();
+            }
+            
             guiGraphics.renderItem(displayStack, itemX, itemY);
             guiGraphics.renderItemDecorations(this.font, displayStack, itemX, itemY);
-
-            // Оверлей (tier/type индикатор)
+            
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(0, 0, 200);
+            
             int overlayU = 18 + 18 * recipe.getOverlay().ordinal();
             guiGraphics.blit(TEXTURE, overlayX, overlayY, overlayU, 222, 18, 18);
-
-            // Рамка выбора
+            
             if (recipeIndex == selectionIndex) {
+                guiGraphics.pose().translate(0, 0, 10);
                 guiGraphics.blit(TEXTURE, overlayX, overlayY, 0, 222, 18, 18);
             }
-
-            // Сохранение стека для тултипа
+            
+            guiGraphics.pose().popPose();
+            
             if (mouseX >= overlayX && mouseX < overlayX + 18 &&
-                    mouseY >= overlayY && mouseY < overlayY + 18) {
+                mouseY >= overlayY && mouseY < overlayY + 18) {
                 hoveredRecipeStack = displayStack;
             }
         }
     }
-
+    
+    private void renderSidePanel(GuiGraphics guiGraphics, int guiLeft, int guiTop) {
+        int slide = Mth.clamp(lastTextWidth - 42, 0, 1000);
+        
+        // СНАЧАЛА рисуем дополнительные сегменты (слева направо)
+        int mul = 1;
+        while (slide >= 51 * mul) {
+            guiGraphics.blit(TEXTURE, guiLeft + 125 + 51 * mul, guiTop + 17, 125, 17, 54, 108);
+            mul++;
+        }
+        
+        // ПОТОМ рисуем основной сегмент (справа)
+        guiGraphics.blit(TEXTURE, guiLeft + 125 + slide, guiTop + 17, 125, 17, 54, 108);
+    }
+    
     /**
-     * Отрисовка деталей выбранного рецепта
+     * Отрисовка текста деталей рецепта
      */
-    private void renderRecipeDetails(GuiGraphics guiGraphics, int guiLeft, int guiTop) {
+    private void renderRecipeDetailsText(GuiGraphics guiGraphics) {
         List<Component> lines = buildRecipeDetails();
-
-        if (lines.isEmpty()) {
+        
+        // Вычисляем ширину текста и обновляем lastTextWidth
+        int longest = 0;
+        if (!lines.isEmpty()) {
+            for (Component line : lines) {
+                longest = Math.max(longest, this.font.width(line));
+            }
+            float scale = 0.5F;
+            lastTextWidth = (int) (longest * scale);
+        } else {
             lastTextWidth = 0;
+        }
+        
+        // Если нет текста - выходим
+        if (lines.isEmpty()) {
             return;
         }
-
-        // Вычисляем максимальную ширину текста
-        int longest = 0;
-        for (Component line : lines) {
-            longest = Math.max(longest, this.font.width(line));
-        }
-
+        
+        // Рисуем текст
         float scale = 0.5F;
-        lastTextWidth = (int) (longest * scale);
-
-        // Расширяющаяся панель для длинного текста
-        int slide = Mth.clamp(lastTextWidth - 42, 0, 1000);
-        for (int mul = 1; slide >= 51 * mul; mul++) {
-            guiGraphics.blit(TEXTURE, guiLeft + 125 + 51 * mul, guiTop + 17, 125, 17, 54, 108);
-        }
-        guiGraphics.blit(TEXTURE, guiLeft + 125 + slide, guiTop + 17, 125, 17, 54, 108);
-
-        // Отрисовка текста с масштабированием
         guiGraphics.pose().pushPose();
         guiGraphics.pose().scale(scale, scale, 1.0F);
-        guiGraphics.pose().translate((guiLeft + 130) / scale, (guiTop + 25) / scale, 0.0F);
-
+        guiGraphics.pose().translate(130 / scale, 25 / scale, 0.0F);
+        
         int yOffset = 0;
         for (Component line : lines) {
             guiGraphics.drawString(this.font, line, 0, yOffset, 0xFFFFFF, false);
             yOffset += 9;
         }
-
+        
         guiGraphics.pose().popPose();
     }
-
-    /**
-     * Формирует детальное описание выбранного рецепта
-     */
+    
     private List<Component> buildRecipeDetails() {
         if (selectionIndex < 0 || selectionIndex >= filteredRecipes.size() ||
-                minecraft == null || minecraft.player == null) {
+            minecraft == null || minecraft.player == null) {
             return List.of();
         }
-
+        
         AnvilRecipe recipe = filteredRecipes.get(selectionIndex);
         List<Component> lines = new ArrayList<>();
-
-        // Заголовок входов
+        
         lines.add(Component.translatable("gui.hbm_m.anvil.inputs")
-                .withStyle(ChatFormatting.YELLOW));
-
-        appendIngredientLines(lines, List.of(recipe.getInputA(), recipe.getInputB()), IngredientSource.MACHINE);
-        appendIngredientLines(lines, recipe.getRequiredItems(), IngredientSource.PLAYER);
-
-        // Разделитель
+            .withStyle(ChatFormatting.YELLOW));
+        
+        List<ItemStack> machineInputs = new ArrayList<>();
+        if (!recipe.getInputA().isEmpty()) {
+            machineInputs.add(recipe.getInputA());
+        }
+        if (!recipe.getInputB().isEmpty()) {
+            machineInputs.add(recipe.getInputB());
+        }
+        
+        if (!machineInputs.isEmpty()) {
+            appendIngredientLines(lines, machineInputs, IngredientSource.MACHINE);
+        }
+        
+        if (!recipe.getInventoryInputs().isEmpty()) {
+            appendIngredientLines(lines, recipe.getInventoryInputs(), IngredientSource.PLAYER);
+        }
+        
         lines.add(Component.empty());
-
-        // Заголовок выходов
         lines.add(Component.translatable("gui.hbm_m.anvil.outputs")
-                .withStyle(ChatFormatting.YELLOW));
-
-        // Выходной предмет
-        ItemStack output = recipe.getResultItem(getRegistryAccess());
-        float chance = recipe.getOutputChance();
-        String chanceText = chance < 1.0F ? " (" + (int)(chance * 100) + "%)" : "";
-
-        lines.add(Component.literal("> " + output.getCount() + "x " +
-                output.getHoverName().getString() + chanceText));
-
+            .withStyle(ChatFormatting.YELLOW));
+        
+        for (AnvilRecipe.ResultEntry entry : recipe.getOutputs()) {
+            ItemStack stack = entry.stack();
+            float chance = entry.chance();
+            String chanceText = chance < 1.0F ? " (" + (int) (chance * 100) + "%)" : "";
+            lines.add(Component.literal("> " + stack.getCount() + "x " +
+                stack.getHoverName().getString() + chanceText));
+        }
+        
         return lines;
     }
-
+    
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
         hoveredRecipeStack = ItemStack.EMPTY;
         renderBackground(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, delta);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
-
-        // Тултип для рецепта при наведении
+        
         if (!hoveredRecipeStack.isEmpty()) {
             guiGraphics.renderTooltip(this.font, hoveredRecipeStack, mouseX, mouseY);
         }
-
-        // Отрисовка поля поиска
-        searchBox.render(guiGraphics, mouseX, mouseY, delta);
     }
-
+    
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == GLFW.GLFW_KEY_ENTER || keyCode == GLFW.GLFW_KEY_KP_ENTER) {
-            playClickSound();
+        if (searchBox != null && searchBox.keyPressed(keyCode, scanCode, modifiers)) {
             applySearch(searchBox.getValue());
             return true;
         }
-        if (keyCode == GLFW.GLFW_KEY_SLASH && !searchBox.isFocused()) {
+        
+        if (keyCode == GLFW.GLFW_KEY_SLASH && searchBox != null && !searchBox.isFocused()) {
             searchBox.setFocused(true);
             return true;
         }
-        if (searchBox.keyPressed(keyCode, scanCode, modifiers)) {
-            applySearch(searchBox.getValue());
-            return true;
-        }
-        if (searchBox.canConsumeInput()) {
-            return true;
-        }
+        
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
-
+    
     @Override
     public boolean charTyped(char codePoint, int modifiers) {
-        if (searchBox.charTyped(codePoint, modifiers)) {
+        if (searchBox != null && searchBox.charTyped(codePoint, modifiers)) {
             applySearch(searchBox.getValue());
             return true;
         }
         return super.charTyped(codePoint, modifiers);
     }
-
-    /**
-     * Подсчитывает количество предметов в инвентаре игрока
-     */
+    
     private int getPlayerItemCount(ItemStack stack) {
         if (minecraft == null || minecraft.player == null) {
             return 0;
         }
-
+        
         int count = 0;
         Inventory inventory = minecraft.player.getInventory();
-
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             ItemStack invStack = inventory.getItem(i);
             if (ItemStack.isSameItemSameTags(invStack, stack)) {
                 count += invStack.getCount();
             }
         }
-
         return count;
     }
-
+    
     private void appendIngredientLines(List<Component> lines, List<ItemStack> stacks, IngredientSource source) {
         for (ItemStack stack : stacks) {
             if (stack.isEmpty()) {
                 continue;
             }
-
+            
             int owned = source == IngredientSource.MACHINE
-                    ? getMachineItemCount(stack)
-                    : getPlayerItemCount(stack);
+                ? getMachineItemCount(stack)
+                : getPlayerItemCount(stack);
             boolean hasEnough = owned >= stack.getCount();
-
+            
             Component line = Component.literal("> " + stack.getCount() + "x " +
-                    stack.getHoverName().getString());
+                stack.getHoverName().getString());
             line = line.copy().withStyle(hasEnough ? ChatFormatting.WHITE : ChatFormatting.RED);
             lines.add(line);
         }
     }
-
+    
+    private void addTagSearchTerms(List<String> terms, ItemStack stack) {
+        if (stack.isEmpty()) {
+            return;
+        }
+        
+        try {
+            stack.getItem().builtInRegistryHolder().tags().forEach(tagKey -> {
+                ResourceLocation id = tagKey.location();
+                if (!"forge".equals(id.getNamespace())) {
+                    return;
+                }
+                
+                String full = id.toString().toLowerCase(Locale.ROOT);
+                String path = id.getPath().toLowerCase(Locale.ROOT);
+                terms.add(full);
+                terms.add(path);
+                
+                for (String part : path.split("[/_]")) {
+                    if (!part.isEmpty()) {
+                        terms.add(part);
+                    }
+                }
+            });
+        } catch (Exception ignored) {
+        }
+    }
+    
     private int getMachineItemCount(ItemStack stack) {
         if (stack.isEmpty()) {
             return 0;
         }
+        
         ItemStackHandler handler = menu.blockEntity.getItemHandler();
         int count = 0;
         int slotLimit = Math.min(handler.getSlots(), 2);
+        
         for (int slot = 0; slot < slotLimit; slot++) {
             ItemStack slotStack = handler.getStackInSlot(slot);
             if (ItemStack.isSameItemSameTags(slotStack, stack)) {
@@ -706,20 +791,19 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         }
         return count;
     }
-
+    
     private enum IngredientSource {
         MACHINE,
         PLAYER
     }
-
+    
     private RegistryAccess getRegistryAccess() {
         return minecraft != null && minecraft.level != null ?
-                minecraft.level.registryAccess() : RegistryAccess.EMPTY;
+            minecraft.level.registryAccess() : RegistryAccess.EMPTY;
     }
-
+    
     @Override
     public void removed() {
         super.removed();
-        // Отключаем повтор клавиш при закрытии GUI (аналог Keyboard.enableRepeatEvents(false))
     }
 }

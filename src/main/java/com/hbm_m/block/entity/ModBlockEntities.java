@@ -55,7 +55,6 @@ public class ModBlockEntities {
     public static final RegistryObject<BlockEntityType<AnvilBlockEntity>> ANVIL_BE =
         BLOCK_ENTITIES.register("anvil_be", () ->
             BlockEntityType.Builder.<AnvilBlockEntity>of(AnvilBlockEntity::new,
-                    ModBlocks.ANVIL_BLOCK.get(),
                     ModBlocks.ANVIL_IRON.get(),
                     ModBlocks.ANVIL_LEAD.get(),
                     ModBlocks.ANVIL_STEEL.get(),
@@ -67,7 +66,8 @@ public class ModBlockEntities {
                     ModBlocks.ANVIL_SCHRABIDATE.get(),
                     ModBlocks.ANVIL_DNT.get(),
                     ModBlocks.ANVIL_OSMIRIDIUM.get(),
-                    ModBlocks.ANVIL_MURKY.get()).build(null));
+                    ModBlocks.ANVIL_MURKY.get())
+                .build(null));
 
     public static final RegistryObject<BlockEntityType<MineBlockEntity>> MINE_BLOCK_ENTITY =
             BLOCK_ENTITIES.register("mine_block_entity", () ->

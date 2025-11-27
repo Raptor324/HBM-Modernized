@@ -2,6 +2,7 @@ package com.hbm_m.block.entity;
 
 import com.hbm_m.block.AnvilBlock;
 import com.hbm_m.block.AnvilTier;
+import com.hbm_m.item.ModBatteryItem;
 import com.hbm_m.menu.AnvilMenu;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
@@ -34,7 +35,12 @@ import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
+import java.util.function.Consumer;
+
+import net.minecraft.util.RandomSource;
 
 public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -156,7 +162,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         ItemStack slotA = itemHandler.getStackInSlot(0);
         ItemStack slotB = itemHandler.getStackInSlot(1);
 
-        Optional<AnvilRecipe> recipeOpt = resolveCraftableRecipe(level, slotA, slotB);
+        Optional<AnvilRecipe> recipeOpt = resolveCombineRecipe(level, slotA, slotB);
 
         ItemStack result = recipeOpt
                 .map(recipe -> recipe.getResultItem(level.registryAccess()).copy())
@@ -183,9 +189,9 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         if (required.isEmpty()) {
             return actual.isEmpty();
         }
-        
-        return ItemStack.isSameItemSameTags(actual, required) && 
-               actual.getCount() >= required.getCount();
+
+        return matchesIngredient(actual, required) &&
+                actual.getCount() >= required.getCount();
     }
 
     private boolean hasMatchingInputs(ItemStack slotA, ItemStack slotB, AnvilRecipe recipe) {
@@ -215,10 +221,13 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     private int conflictValue(ItemStack actual, ItemStack required) {
-        if (required.isEmpty() || actual.isEmpty()) {
-            return 0;
+        if (required.isEmpty()) {
+            return actual.isEmpty() ? 0 : 1;
         }
-        return ItemStack.isSameItemSameTags(actual, required) ? 0 : 1;
+        if (actual.isEmpty()) {
+            return 1;
+        }
+        return matchesIngredient(actual, required) ? 0 : 1;
     }
 
     private boolean matchesPair(ItemStack first, ItemStack second, ItemStack requiredFirst, ItemStack requiredSecond) {
@@ -273,7 +282,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         ItemStack current = itemHandler.getStackInSlot(slotIndex);
         boolean changed = false;
 
-        if (!current.isEmpty() && !ItemStack.isSameItemSameTags(current, required)) {
+        if (!current.isEmpty() && !matchesIngredient(current, required)) {
             ItemStack toReturn = current.copy();
             itemHandler.setStackInSlot(slotIndex, ItemStack.EMPTY);
             if (!player.getInventory().add(toReturn)) {
@@ -294,20 +303,18 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         }
 
         int missing = slotLimit - have;
-        int pulled = removeItemFromInventory(player, required, missing);
-        if (pulled <= 0) {
-            return changed;
+        int pulled = moveMatchingItemsFromInventory(player, required, missing, extracted -> {
+            ItemStack remainder = itemHandler.insertItem(slotIndex, extracted, false);
+            if (!remainder.isEmpty()) {
+                if (!player.getInventory().add(remainder)) {
+                    player.drop(remainder, false);
+                }
+            }
+        });
+        if (pulled > 0) {
+            changed = true;
         }
-
-        if (current.isEmpty()) {
-            ItemStack insert = required.copy();
-            insert.setCount(pulled);
-            itemHandler.setStackInSlot(slotIndex, insert);
-        } else {
-            current.grow(pulled);
-            itemHandler.setStackInSlot(slotIndex, current);
-        }
-        return true;
+        return changed;
     }
 
     /**
@@ -317,7 +324,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
      * @param craftMax если true, крафтит максимальное количество
      * @return true, если материалы были успешно расходованы
      */
-    public boolean consumeMaterials(Player player, boolean craftMax) {
+    public boolean consumeMaterials(Player player, boolean craftMax, @Nullable EnergyTransferTracker tracker) {
         Level level = getLevel();
         if (level == null || level.isClientSide()) {
             return false;
@@ -326,7 +333,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         ItemStack slotA = itemHandler.getStackInSlot(0);
         ItemStack slotB = itemHandler.getStackInSlot(1);
 
-        Optional<AnvilRecipe> recipeOpt = resolveCraftableRecipe(level, slotA, slotB);
+        Optional<AnvilRecipe> recipeOpt = resolveCombineRecipe(level, slotA, slotB);
         if (recipeOpt.isEmpty()) {
             return false;
         }
@@ -338,37 +345,71 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
             return false;
         }
 
-        // Вычисляем количество крафтов
         int craftCount = craftMax ? 64 : 1;
-        int maxCrafts = computeMaxCrafts(slotA, slotB, recipe, orientation);
-
-        for (ItemStack required : recipe.getRequiredItems()) {
-            if (required.isEmpty()) {
-                continue;
-            }
-            int available = countItemInInventory(player, required);
-            maxCrafts = Math.min(maxCrafts, available / required.getCount());
+        if (craftMax) {
+            craftCount = Math.min(craftCount, computeMaxCrafts(slotA, slotB, recipe, orientation));
         }
-
-        craftCount = Math.min(craftCount, maxCrafts);
         if (craftCount <= 0) {
             return false;
         }
 
-        // Расходуем дополнительные материалы из инвентаря игрока
-        for (ItemStack required : recipe.getRequiredItems()) {
+        for (ItemStack required : recipe.getInventoryInputs()) {
             if (required.isEmpty()) {
                 continue;
             }
-            removeItemFromInventory(player, required, required.getCount() * craftCount);
+            int available = countItemInInventory(player, required);
+            craftCount = Math.min(craftCount, available / required.getCount());
         }
 
-        // Расходуем материалы из слотов наковальни
+        if (craftCount <= 0) {
+            return false;
+        }
+
         shrinkSlotInput(slotA, slotB, recipe, orientation, craftCount);
+
+        for (ItemStack required : recipe.getInventoryInputs()) {
+            if (required.isEmpty()) {
+                continue;
+            }
+            removeItemFromInventory(player, required, required.getCount() * craftCount, tracker);
+        }
 
         player.getInventory().setChanged();
         setChangedAndNotify();
         return true;
+    }
+
+    public void handleCombineOutputTaken(Player player, ItemStack outputStack) {
+        Level level = getLevel();
+        if (level == null || level.isClientSide()) {
+            return;
+        }
+
+        ItemStack slotACopy = itemHandler.getStackInSlot(0).copy();
+        ItemStack slotBCopy = itemHandler.getStackInSlot(1).copy();
+        Optional<AnvilRecipe> recipeOpt = resolveCombineRecipe(level, slotACopy, slotBCopy);
+        if (recipeOpt.isEmpty()) {
+            consumeMaterials(player, false, null);
+            updateCrafting();
+            return;
+        }
+
+        AnvilRecipe recipe = recipeOpt.get();
+        InputOrientation orientation = resolveOrientation(slotACopy, slotBCopy, recipe);
+        if (orientation == InputOrientation.NONE) {
+            consumeMaterials(player, false, null);
+            updateCrafting();
+            return;
+        }
+
+        EnergyTransferTracker tracker = new EnergyTransferTracker();
+        collectEnergyFromSlots(tracker, slotACopy, slotBCopy, recipe, orientation, 1);
+
+        boolean crafted = consumeMaterials(player, false, tracker);
+        if (crafted && !outputStack.isEmpty()) {
+            applyEnergyToOutputs(List.of(outputStack), tracker.getTotalEnergy());
+        }
+        updateCrafting();
     }
 
     /**
@@ -380,68 +421,32 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
             return false;
         }
 
-        ItemStack slotA = itemHandler.getStackInSlot(0);
-        ItemStack slotB = itemHandler.getStackInSlot(1);
-
-        Optional<AnvilRecipe> recipeOpt = resolveCraftableRecipe(level, slotA, slotB);
+        Optional<AnvilRecipe> recipeOpt = resolveSelectedInventoryRecipe(level);
         if (recipeOpt.isEmpty()) {
             return false;
         }
 
         AnvilRecipe recipe = recipeOpt.get();
 
-        InputOrientation orientation = resolveOrientation(slotA, slotB, recipe);
-        if (orientation == InputOrientation.NONE) {
+        int maxCrafts = computeInventoryCraftLimit(player, recipe);
+        if (maxCrafts <= 0) {
             return false;
         }
 
-        // Вычисляем количество крафтов
-        int craftCount = craftMax ? 64 : 1;
-        int maxCrafts = computeMaxCrafts(slotA, slotB, recipe, orientation);
-
-        for (ItemStack required : recipe.getRequiredItems()) {
-            if (required.isEmpty()) {
-                continue;
-            }
-            int available = countItemInInventory(player, required);
-            maxCrafts = Math.min(maxCrafts, available / required.getCount());
-        }
-
-        craftCount = Math.min(craftCount, maxCrafts);
+        int craftCount = Math.min(craftMax ? 64 : 1, maxCrafts);
         if (craftCount <= 0) {
             return false;
         }
 
-        // Расходуем материалы
-        for (ItemStack required : recipe.getRequiredItems()) {
-            if (required.isEmpty()) {
-                continue;
-            }
-            removeItemFromInventory(player, required, required.getCount() * craftCount);
+        EnergyTransferTracker tracker = new EnergyTransferTracker();
+        consumeInventory(player, recipe, craftCount, tracker);
+
+        List<ItemStack> produced = rollOutputs(level, recipe, craftCount);
+        applyEnergyToOutputs(produced, tracker.getTotalEnergy());
+        if (!produced.isEmpty()) {
+            giveStacksToPlayer(player, produced);
         }
 
-        shrinkSlotInput(slotA, slotB, recipe, orientation, craftCount);
-
-        // Создаём результат с учетом шанса
-        ItemStack result = recipe.getResultItem(level.registryAccess()).copy();
-        int successfulCrafts = 0;
-        
-        for (int i = 0; i < craftCount; i++) {
-            if (level.random.nextFloat() < recipe.getOutputChance()) {
-                successfulCrafts++;
-            }
-        }
-
-        if (successfulCrafts > 0) {
-            result.setCount(result.getCount() * successfulCrafts);
-            
-            // Добавляем результат в инвентарь или выбрасываем
-            if (!player.getInventory().add(result)) {
-                player.drop(result, false);
-            }
-        }
-
-        player.getInventory().setChanged();
         setChangedAndNotify();
         updateCrafting();
         return true;
@@ -473,30 +478,37 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         }
     }
 
-    private Optional<AnvilRecipe> resolveCraftableRecipe(Level level, ItemStack slotA, ItemStack slotB) {
-        Optional<AnvilRecipe> fallback = AnvilRecipeManager
-                .findRecipe(level, slotA, slotB, getTier())
+    private Optional<AnvilRecipe> resolveCombineRecipe(Level level, ItemStack slotA, ItemStack slotB) {
+        Optional<AnvilRecipe> selected = resolveSelectedRecipe(level)
+                .filter(AnvilRecipe::usesMachineInputs)
                 .filter(recipe -> canCraftRecipe(recipe, slotA, slotB));
 
-        if (fallback.isEmpty()) {
-            return Optional.empty();
-        }
-
-        if (selectedRecipeId == null || selectedRecipeId.equals(fallback.get().getId())) {
-            return fallback;
-        }
-
-        Optional<AnvilRecipe> selected = AnvilRecipeManager.getRecipe(level, selectedRecipeId);
-        if (selected.isEmpty()) {
-            clearSelectedRecipeId();
-            return fallback;
-        }
-
-        if (canCraftRecipe(selected.get(), slotA, slotB)) {
+        if (selected.isPresent()) {
             return selected;
         }
 
-        return Optional.empty();
+        return AnvilRecipeManager
+                .findRecipe(level, slotA, slotB, getTier())
+                .filter(AnvilRecipe::usesMachineInputs)
+                .filter(recipe -> canCraftRecipe(recipe, slotA, slotB));
+    }
+
+    private Optional<AnvilRecipe> resolveSelectedRecipe(Level level) {
+        if (selectedRecipeId == null) {
+            return Optional.empty();
+        }
+
+        Optional<AnvilRecipe> selected = AnvilRecipeManager.getRecipe(level, selectedRecipeId);
+        if (selected.isEmpty() || !selected.get().canCraftOn(getTier())) {
+            clearSelectedRecipeId();
+            return Optional.empty();
+        }
+
+        return selected;
+    }
+
+    private Optional<AnvilRecipe> resolveSelectedInventoryRecipe(Level level) {
+        return resolveSelectedRecipe(level).filter(recipe -> !recipe.usesMachineInputs());
     }
 
     private void setChangedAndNotify() {
@@ -532,7 +544,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         int count = 0;
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack invStack = player.getInventory().getItem(i);
-            if (ItemStack.isSameItemSameTags(invStack, stack)) {
+            if (matchesIngredient(invStack, stack)) {
                 count += invStack.getCount();
             }
         }
@@ -540,6 +552,10 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     private int removeItemFromInventory(Player player, ItemStack stack, int amount) {
+        return removeItemFromInventory(player, stack, amount, null);
+    }
+
+    private int removeItemFromInventory(Player player, ItemStack stack, int amount, @Nullable EnergyTransferTracker tracker) {
         if (stack.isEmpty() || amount <= 0) {
             return 0;
         }
@@ -547,8 +563,12 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         int removed = 0;
         for (int i = 0; i < player.getInventory().getContainerSize() && remaining > 0; i++) {
             ItemStack invStack = player.getInventory().getItem(i);
-            if (ItemStack.isSameItemSameTags(invStack, stack)) {
+            if (matchesIngredient(invStack, stack)) {
                 int toRemove = Math.min(remaining, invStack.getCount());
+                if (tracker != null && isBattery(invStack)) {
+                    long energyPerItem = ModBatteryItem.getEnergy(invStack);
+                    tracker.add(energyPerItem * toRemove);
+                }
                 invStack.shrink(toRemove);
                 remaining -= toRemove;
                 removed += toRemove;
@@ -558,6 +578,192 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
             player.getInventory().setChanged();
         }
         return removed;
+    }
+
+    private int computeInventoryCraftLimit(Player player, AnvilRecipe recipe) {
+        List<ItemStack> requirements = recipe.getInventoryInputs();
+        if (requirements.isEmpty()) {
+            return 0;
+        }
+
+        int limit = Integer.MAX_VALUE;
+        for (ItemStack required : requirements) {
+            if (required.isEmpty()) {
+                continue;
+            }
+            int available = countItemInInventory(player, required);
+            limit = Math.min(limit, available / required.getCount());
+        }
+        return limit;
+    }
+
+    private void consumeInventory(Player player, AnvilRecipe recipe, int craftCount, @Nullable EnergyTransferTracker tracker) {
+        for (ItemStack required : recipe.getInventoryInputs()) {
+            if (required.isEmpty()) {
+                continue;
+            }
+            removeItemFromInventory(player, required, required.getCount() * craftCount, tracker);
+        }
+    }
+
+    private List<ItemStack> rollOutputs(Level level, AnvilRecipe recipe, int craftCount) {
+        List<ItemStack> result = new ArrayList<>();
+        RandomSource random = level.random;
+
+        for (int i = 0; i < craftCount; i++) {
+            for (AnvilRecipe.ResultEntry entry : recipe.getOutputs()) {
+                if (entry.chance() >= 1.0F || random.nextFloat() <= entry.chance()) {
+                    ItemStack stack = entry.stack().copy();
+                    mergeStack(result, stack);
+                }
+            }
+        }
+
+        return result;
+    }
+
+    private void mergeStack(List<ItemStack> stacks, ItemStack addition) {
+        if (addition.isEmpty()) {
+            return;
+        }
+
+        for (ItemStack existing : stacks) {
+            if (ItemStack.isSameItemSameTags(existing, addition)) {
+                existing.grow(addition.getCount());
+                return;
+            }
+        }
+
+        stacks.add(addition.copy());
+    }
+
+    private void giveStacksToPlayer(Player player, List<ItemStack> stacks) {
+        for (ItemStack stack : stacks) {
+            if (!player.getInventory().add(stack)) {
+                player.drop(stack, false);
+            }
+        }
+        player.getInventory().setChanged();
+    }
+
+    private void collectEnergyFromSlots(@Nullable EnergyTransferTracker tracker, ItemStack slotA, ItemStack slotB,
+                                        AnvilRecipe recipe, InputOrientation orientation, int craftCount) {
+        if (tracker == null) {
+            return;
+        }
+        ItemStack firstRequired = orientation == InputOrientation.NORMAL ? recipe.getInputA() : recipe.getInputB();
+        ItemStack secondRequired = orientation == InputOrientation.NORMAL ? recipe.getInputB() : recipe.getInputA();
+        tracker.add(extractEnergyFromStack(slotA, firstRequired.getCount() * craftCount));
+        tracker.add(extractEnergyFromStack(slotB, secondRequired.getCount() * craftCount));
+    }
+
+    private long extractEnergyFromStack(ItemStack stack, int itemCount) {
+        if (!isBattery(stack) || itemCount <= 0) {
+            return 0;
+        }
+        int copies = Math.min(itemCount, Math.max(1, stack.getCount()));
+        long energyPerItem = ModBatteryItem.getEnergy(stack);
+        return energyPerItem * copies;
+    }
+
+    private void applyEnergyToOutputs(List<ItemStack> outputs, long totalEnergy) {
+        if (totalEnergy <= 0 || outputs.isEmpty()) {
+            return;
+        }
+
+        List<ItemStack> batteryOutputs = new ArrayList<>();
+        for (ItemStack stack : outputs) {
+            if (isBattery(stack)) {
+                batteryOutputs.add(stack);
+            }
+        }
+
+        if (batteryOutputs.isEmpty()) {
+            return;
+        }
+
+        long remaining = totalEnergy;
+        for (ItemStack stack : batteryOutputs) {
+            if (remaining <= 0) {
+                break;
+            }
+            ModBatteryItem battery = (ModBatteryItem) stack.getItem();
+            long capacity = battery.getCapacity();
+            long current = ModBatteryItem.getEnergy(stack);
+            long space = Math.max(0, capacity - current);
+            if (space <= 0) {
+                continue;
+            }
+            long toInsert = Math.min(space, remaining);
+            addEnergyToBattery(stack, toInsert);
+            remaining -= toInsert;
+        }
+    }
+
+    private void addEnergyToBattery(ItemStack stack, long delta) {
+        if (delta <= 0 || !isBattery(stack)) {
+            return;
+        }
+        ModBatteryItem battery = (ModBatteryItem) stack.getItem();
+        long current = ModBatteryItem.getEnergy(stack);
+        long newEnergy = Math.min(battery.getCapacity(), current + delta);
+        ModBatteryItem.setEnergy(stack, newEnergy);
+    }
+
+    private boolean isBattery(ItemStack stack) {
+        return !stack.isEmpty() && stack.getItem() instanceof ModBatteryItem;
+    }
+
+    private static final class EnergyTransferTracker {
+        private long totalEnergy = 0;
+
+        void add(long energy) {
+            if (energy > 0) {
+                totalEnergy += energy;
+            }
+        }
+
+        long getTotalEnergy() {
+            return totalEnergy;
+        }
+    }
+
+    private boolean matchesIngredient(ItemStack actual, ItemStack required) {
+        if (required.isEmpty()) {
+            return actual.isEmpty();
+        }
+        if (actual.isEmpty()) {
+            return false;
+        }
+        if (required.hasTag()) {
+            return ItemStack.isSameItemSameTags(actual, required);
+        }
+        return actual.is(required.getItem());
+    }
+
+    private int moveMatchingItemsFromInventory(Player player, ItemStack template, int amount, Consumer<ItemStack> consumer) {
+        if (player == null || template.isEmpty() || amount <= 0) {
+            return 0;
+        }
+        Inventory inventory = player.getInventory();
+        int remaining = amount;
+        for (int i = 0; i < inventory.getContainerSize() && remaining > 0; i++) {
+            ItemStack invStack = inventory.getItem(i);
+            if (!matchesIngredient(invStack, template)) {
+                continue;
+            }
+            int toExtract = Math.min(remaining, invStack.getCount());
+            ItemStack extracted = invStack.split(toExtract);
+            if (extracted.isEmpty()) {
+                continue;
+            }
+            remaining -= extracted.getCount();
+            consumer.accept(extracted);
+        }
+        if (remaining < amount) {
+            inventory.setChanged();
+        }
+        return amount - remaining;
     }
 
     private enum InputOrientation {

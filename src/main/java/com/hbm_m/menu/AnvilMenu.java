@@ -127,8 +127,10 @@ public class AnvilMenu extends AbstractContainerMenu {
                 for (int i = 0; i < 2; i++) {
                     ItemStack stack = handler.getStackInSlot(i);
                     if (!stack.isEmpty()) {
-                        player.drop(stack, false);
-                        handler.extractItem(i, stack.getCount(), false);
+                        ItemStack toReturn = handler.extractItem(i, stack.getCount(), false);
+                        if (!player.getInventory().add(toReturn)) {
+                            player.drop(toReturn, false);
+                        }
                     }
                 }
             }
@@ -196,8 +198,7 @@ public class AnvilMenu extends AbstractContainerMenu {
             super.onTake(player, stack);
             
             if (!level.isClientSide) {
-                blockEntity.consumeMaterials(player, false);
-                blockEntity.updateCrafting();
+                blockEntity.handleCombineOutputTaken(player, stack);
             }
         }
 

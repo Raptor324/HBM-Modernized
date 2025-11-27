@@ -723,7 +723,6 @@ public class MainRegistry {
             event.accept(ModBlocks.BARREL_IRON);
             event.accept(ModBlocks.BARREL_STEEL);
             event.accept(ModBlocks.BARREL_TCALLOY);
-            event.accept(ModBlocks.ANVIL_BLOCK);
             event.accept(ModBlocks.ANVIL_IRON);
             event.accept(ModBlocks.ANVIL_LEAD);
             event.accept(ModBlocks.ANVIL_STEEL);
