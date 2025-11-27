@@ -1,4 +1,4 @@
-package com.hbm_m.item; // Замените на ваш пакет
+package com.hbm_m.item.fekal_grenades; // Замените на ваш пакет
 
 import com.hbm_m.entity.grenades.GrenadeIfProjectileEntity;
 import com.hbm_m.entity.grenades.GrenadeIfType;
@@ -22,15 +22,36 @@ import java.util.List;
 
 import static com.hbm_m.entity.grenades.GrenadeIfType.GRENADE_IF;
 
+
 public class GrenadeIfItem extends Item {
 
     private final GrenadeIfType grenadeType;
 
     public GrenadeIfItem(Properties properties, GrenadeIfType grenadeIf, RegistryObject<EntityType<GrenadeIfProjectileEntity>> grenadeType) {
         super(properties);
-        this.grenadeType = GRENADE_IF;
-    }
+        this.grenadeType = grenadeIf;
 
+    }
+    @Override
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, level, tooltip, flag);
+
+        //  Универсальная подсказка на основе типа гранаты
+        String behaviorText;
+
+        switch (grenadeType) {
+            case GRENADE_IF_HE -> behaviorText = "Мощный взрыв";
+            case GRENADE_IF_SLIME -> behaviorText = "Лучше отскакивает";
+            case GRENADE_IF -> behaviorText = "Стандартный взрыв";
+            case GRENADE_IF_FIRE -> behaviorText = "Распространяет огонь после детонации";
+            default -> behaviorText = "Граната с таймером";
+        }
+
+        // БЕЗ пробела в начале и пустых строк
+        tooltip.add(Component.literal(behaviorText)
+                .withStyle(ChatFormatting.YELLOW));
+
+    }
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
@@ -54,12 +75,4 @@ public class GrenadeIfItem extends Item {
         return InteractionResultHolder.sidedSuccess(itemstack, level.isClientSide());
     }
 
-    @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
-        tooltip.add(Component.literal("Детонирует через 4 секунды после первого касания")
-                .withStyle(ChatFormatting.YELLOW));
-        tooltip.add(Component.literal("Сохраняет способность к отскокам")
-                .withStyle(ChatFormatting.GRAY));
-    }
 }
