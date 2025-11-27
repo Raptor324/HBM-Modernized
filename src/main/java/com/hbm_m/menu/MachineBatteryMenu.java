@@ -2,6 +2,7 @@ package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machine.MachineBatteryBlockEntity;
+import com.hbm_m.block.machine.MachineBatteryBlock;
 import com.hbm_m.util.LongDataPacker;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -9,6 +10,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
@@ -141,8 +143,19 @@ public class MachineBatteryMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player pPlayer) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
-                pPlayer, ModBlocks.MACHINE_BATTERY.get());
+        // Создаем доступ к уровню
+        return ContainerLevelAccess.create(level, blockEntity.getBlockPos()).evaluate((level, pos) -> {
+            // Получаем блок, на который смотрит игрок
+            Block block = level.getBlockState(pos).getBlock();
+
+            // ПРОВЕРКА: Является ли этот блок батарейкой (любой: обычной, литиевой и т.д.)
+            if (!(block instanceof MachineBatteryBlock)) {
+                return false;
+            }
+
+            // Стандартная проверка дистанции (64 блока)
+            return pPlayer.distanceToSqr((double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D) <= 64.0D;
+        }, true);
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

@@ -1,8 +1,6 @@
 package com.hbm_m.item;
 
-// Предмет-блок батареи для машин, поддерживающий хранение энергии через Forge Energy (Энергохранилище).
-// Показывает информацию о емкости, скорости зарядки/разрядки и текущем заряде в подсказке.
-
+import com.hbm_m.util.EnergyFormatter; // Убедись, что у тебя есть этот импорт или используй свой форматтер
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -17,29 +15,41 @@ import java.util.List;
 
 public class MachineBatteryBlockItem extends BlockItem {
 
-    private final int maxPower;
+    private final long maxPower; // Меняем int на long
 
-    public MachineBatteryBlockItem(Block pBlock, Properties pProperties, int maxPower) {
+    public MachineBatteryBlockItem(Block pBlock, Properties pProperties, long maxPower) {
         super(pBlock, pProperties);
         this.maxPower = maxPower;
     }
 
     @Override
     public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
+        // Используем long для вычислений
+        // Если у тебя есть утилита EnergyFormatter.format(long), лучше использовать её для красивых чисел (1M, 1G и т.д.)
 
         pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.capacity", maxPower).withStyle(ChatFormatting.GOLD));
         pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.charge_speed", maxPower / 200).withStyle(ChatFormatting.GOLD));
         pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.discharge_speed", maxPower / 600).withStyle(ChatFormatting.GOLD));
 
-        // Если в предмете сохранена энергия (после разрушения блока)
+        // Читаем энергию из NBT
         if (pStack.hasTag()) {
             CompoundTag blockEntityTag = pStack.getTagElement("BlockEntityTag");
-            if (blockEntityTag != null && blockEntityTag.contains("energy")) {
-                int energy = blockEntityTag.getInt("energy");
-                pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.stored", energy, maxPower).withStyle(ChatFormatting.YELLOW));
+            // Важно: в MachineBatteryBlockEntity мы сохраняем как "Energy" (с большой буквы), проверь это!
+            // В старом коде было "Energy", здесь "energy". Лучше проверять оба варианта или привести к одному.
+            if (blockEntityTag != null) {
+                long energy = 0;
+                if (blockEntityTag.contains("Energy")) {
+                    energy = blockEntityTag.getLong("Energy");
+                } else if (blockEntityTag.contains("energy")) {
+                    energy = blockEntityTag.getInt("energy"); // Поддержка старых сохранений
+                }
+
+                if (energy > 0) {
+                    pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.stored", energy, maxPower).withStyle(ChatFormatting.YELLOW));
+                }
             }
         }
-        
+
         super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
     }
 }

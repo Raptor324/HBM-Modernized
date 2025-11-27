@@ -226,11 +226,36 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath()));
         simpleBlockWithItem(ModBlocks.WIRE_COATED.get(), models().getExistingFile(modLoc("block/wire_coated")));
 
+
+        blockWithItem(ModBlocks.CONVERTER_BLOCK);
+
+
         orientableBlockWithItem(
                 ModBlocks.MACHINE_BATTERY,
                 modLoc("block/battery_side_alt"),
                 modLoc("block/battery_front_alt"),
                 modLoc("block/battery_top")
+        );
+
+        orientableBlockWithItem(
+                ModBlocks.MACHINE_BATTERY_LITHIUM,
+                modLoc("block/machine_battery_lithium_side"),
+                modLoc("block/machine_battery_lithium_front"),
+                modLoc("block/machine_battery_lithium_top")
+        );
+
+        orientableBlockWithItem(
+                ModBlocks.MACHINE_BATTERY_SCHRABIDIUM,
+                modLoc("block/machine_battery_schrabidium_side"),
+                modLoc("block/machine_battery_schrabidium_front"),
+                modLoc("block/machine_battery_schrabidium_top")
+        );
+
+        orientableBlockWithItem(
+                ModBlocks.MACHINE_BATTERY_DINEUTRONIUM,
+                modLoc("block/machine_battery_dineutronium_side"),
+                modLoc("block/machine_battery_dineutronium_front"),
+                modLoc("block/machine_battery_dineutronium_top")
         );
 
         // Генерация моделей для ступенек
