@@ -218,7 +218,7 @@ public class MainRegistry {
             event.accept(ModItems.GRENADESMART);
             event.accept(ModItems.GRENADESLIME);
 
-            event.accept(ModItems.GRENADEIF);
+            event.accept(ModItems.GRENADE_IF);
 
             event.accept(ModBlocks.MINE_AP);
             event.accept(ModBlocks.MINE_FAT);
@@ -234,6 +234,7 @@ public class MainRegistry {
 
             event.accept(ModBlocks.DUD_FUGAS_TONG);
             event.accept(ModBlocks.DUD_NUKE);
+            event.accept(ModBlocks.DUD_SALTED);
 
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");

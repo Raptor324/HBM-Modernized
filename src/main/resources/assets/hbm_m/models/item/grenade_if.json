@@ -1,6 +1,6 @@
 {
     "parent": "item/generated",
     "textures": {
-        "layer0": "hbm_m:item/grenadeif"
+        "layer0": "hbm_m:item/grenade_if"
     }
 }

@@ -1,5 +1,7 @@
 package com.hbm_m.entity.grenades;
 
+import com.hbm_m.entity.ModEntities;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -12,10 +14,9 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.EntityHitResult;
+import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 import java.util.Arrays;
@@ -23,98 +24,100 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
-public class GrenadeProjectileEntity extends ThrowableItemProjectile {
+public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
 
-    private static final EntityDataAccessor<String> GRENADE_TYPE_ID =
-            SynchedEntityData.defineId(GrenadeProjectileEntity.class, EntityDataSerializers.STRING);
+    private static final EntityDataAccessor<Boolean> TIMER_ACTIVATED = SynchedEntityData.defineId(GrenadeIfProjectileEntity.class, EntityDataSerializers.BOOLEAN);
+    private static final EntityDataAccessor<Integer> DETONATION_TIME = SynchedEntityData.defineId(GrenadeIfProjectileEntity.class, EntityDataSerializers.INT);
+    private static final int FUSE_SECONDS = 4;
 
-    private int bounceCount = 0;
-    private GrenadeType grenadeType;
+    private static final float MIN_BOUNCE_SPEED = 0.15f;
+
+    private GrenadeIfType grenadeType;
 
     private static final Random RANDOM = new Random();
 
-    public GrenadeProjectileEntity(EntityType<? extends ThrowableItemProjectile> entityType, Level level) {
+    public GrenadeIfProjectileEntity(EntityType<? extends ThrowableItemProjectile> entityType, Level level) {
         super(entityType, level);
     }
 
-    public GrenadeProjectileEntity(EntityType<? extends ThrowableItemProjectile> entityType, Level level,
-                                   LivingEntity livingEntity, GrenadeType type) {
-        super(entityType, livingEntity, level);
+    public GrenadeIfProjectileEntity(Level level, LivingEntity thrower, GrenadeIfType type) {
+        super(ModEntities.GRENADE_IF_PROJECTILE.get(), thrower, level);
         this.grenadeType = type;
-        this.entityData.set(GRENADE_TYPE_ID, type.name());
     }
 
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(GRENADE_TYPE_ID, GrenadeType.STANDARD.name());
+        this.entityData.define(TIMER_ACTIVATED, false);
+        this.entityData.define(DETONATION_TIME, 0);
     }
 
     @Override
     protected Item getDefaultItem() {
-        if (grenadeType == null) {
-            try {
-                grenadeType = GrenadeType.valueOf(this.entityData.get(GRENADE_TYPE_ID));
-            } catch (Exception e) {
-                grenadeType = GrenadeType.STANDARD;
-            }
-        }
-        return grenadeType != null ? grenadeType.getItem() : Items.SNOWBALL;
+        return grenadeType != null ? grenadeType.getItem() : ModItems.GRENADE_IF.get();
     }
 
     @Override
-    protected void onHitBlock(BlockHitResult result) {
+    public void tick() {
+        super.tick();
         if (!this.level().isClientSide) {
-            if (grenadeType == null) {
-                grenadeType = GrenadeType.valueOf(this.entityData.get(GRENADE_TYPE_ID));
-            }
-
-            BlockPos blockPos = result.getBlockPos();
-            this.level().playSound(null, blockPos, ModSounds.BOUNCE_RANDOM.get(), SoundSource.NEUTRAL, 2.1F, 1.0F);
-
-            this.bounceCount++;
-
-            if (this.bounceCount < grenadeType.getMaxBounces()) {
-                Vec3 currentVelocity = this.getDeltaMovement();
-                Vec3 hitNormal = Vec3.atLowerCornerOf(result.getDirection().getNormal());
-                Vec3 reflectedVelocity = currentVelocity.subtract(hitNormal.scale(2 * currentVelocity.dot(hitNormal)));
-                this.setDeltaMovement(reflectedVelocity.scale(grenadeType.getBounceMultiplier()));
-            } else {
-                explode(blockPos);
+            if (this.entityData.get(TIMER_ACTIVATED)) {
+                if (this.tickCount >= this.entityData.get(DETONATION_TIME)) {
+                    explode(this.blockPosition());
+                }
             }
         }
     }
 
     @Override
-    protected void onHitEntity(EntityHitResult result) {
+    protected void onHit(HitResult result) {
+        super.onHit(result);
         if (!this.level().isClientSide) {
-            if (grenadeType == null) {
-                grenadeType = GrenadeType.valueOf(this.entityData.get(GRENADE_TYPE_ID));
+            if (!this.entityData.get(TIMER_ACTIVATED)) {
+                this.entityData.set(TIMER_ACTIVATED, true);
+                this.entityData.set(DETONATION_TIME, this.tickCount + (FUSE_SECONDS * 20));
             }
 
-            if (grenadeType.explodesOnEntity()) {
-                explode(result.getEntity().blockPosition());
+            if (result.getType() == HitResult.Type.BLOCK) {
+                handleBounce((BlockHitResult) result);
             }
         }
+    }
+
+    private void handleBounce(BlockHitResult result) {
+        Vec3 velocity = this.getDeltaMovement();
+        float speed = (float) velocity.length();
+
+        if (speed < MIN_BOUNCE_SPEED) {
+            this.setDeltaMovement(Vec3.ZERO);
+            this.setNoGravity(true);
+            this.level().playSound(null, this.blockPosition(), ModSounds.BOUNCE_RANDOM.get(), SoundSource.NEUTRAL, 0.5F, 0.8F);
+            return;
+        }
+
+        BlockPos blockPos = result.getBlockPos();
+        this.level().playSound(null, blockPos, ModSounds.BOUNCE_RANDOM.get(), SoundSource.NEUTRAL, 2.1F, 1.0F);
+
+        Vec3 currentVelocity = this.getDeltaMovement();
+        Vec3 hitNormal = Vec3.atLowerCornerOf(result.getDirection().getNormal());
+        Vec3 reflectedVelocity = currentVelocity.subtract(hitNormal.scale(2 * currentVelocity.dot(hitNormal)));
+        this.setDeltaMovement(reflectedVelocity.scale(grenadeType.getBounceMultiplier()));
     }
 
     private void explode(BlockPos pos) {
         if (!this.level().isClientSide && !this.isRemoved()) {
-            // Увеличиваем силу взрыва (например, умножаем на 1.5 для более мощного разрушения)
-            float explosionPower = grenadeType.getExplosionPower() * 1.5f;
-
             this.level().explode(
                     this, null, null,
                     pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    explosionPower,
+                    grenadeType.getExplosionPower(),
                     grenadeType.causesFire(),
-                    Level.ExplosionInteraction.TNT
+                    Level.ExplosionInteraction.BLOCK
             );
 
-            // Вызов кастомного звука
+            // Вызов пользовательского звука
             playDetonationSound(this.level(), pos);
 
-            float damageRadius = explosionPower * 2.0f;
+            float damageRadius = grenadeType.getExplosionPower() * 2.0f;
             List<LivingEntity> entities = this.level().getEntitiesOfClass(
                     LivingEntity.class,
                     this.getBoundingBox().inflate(damageRadius)
@@ -131,7 +134,6 @@ public class GrenadeProjectileEntity extends ThrowableItemProjectile {
                     }
                 }
             }
-
             this.discard();
         }
     }
@@ -165,17 +167,20 @@ public class GrenadeProjectileEntity extends ThrowableItemProjectile {
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
-        tag.putInt("BounceCount", this.bounceCount);
-        tag.putString("GrenadeType", this.entityData.get(GRENADE_TYPE_ID));
+        tag.putBoolean("TimerActivated", this.entityData.get(TIMER_ACTIVATED));
+        tag.putInt("DetonationTime", this.entityData.get(DETONATION_TIME));
+        if (grenadeType != null) {
+            tag.putString("GrenadeType", grenadeType.name());
+        }
     }
 
     @Override
     public void readAdditionalSaveData(CompoundTag tag) {
         super.readAdditionalSaveData(tag);
-        this.bounceCount = tag.getInt("BounceCount");
+        this.entityData.set(TIMER_ACTIVATED, tag.getBoolean("TimerActivated"));
+        this.entityData.set(DETONATION_TIME, tag.getInt("DetonationTime"));
         if (tag.contains("GrenadeType")) {
-            this.entityData.set(GRENADE_TYPE_ID, tag.getString("GrenadeType"));
-            this.grenadeType = GrenadeType.valueOf(tag.getString("GrenadeType"));
+            this.grenadeType = GrenadeIfType.valueOf(tag.getString("GrenadeType"));
         }
     }
 }

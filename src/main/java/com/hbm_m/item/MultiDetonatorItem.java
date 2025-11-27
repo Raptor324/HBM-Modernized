@@ -1,5 +1,7 @@
 package com.hbm_m.item;
 
+import net.minecraft.world.item.TooltipFlag;
+import java.util.List;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -19,6 +21,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import com.hbm_m.block.IDetonatable;
+
+import javax.annotation.Nullable;
 
 /**
  * Мульти-детонатор: позволяет сохранять до 4 точек детонации
@@ -60,6 +64,49 @@ public class MultiDetonatorItem extends Item {
     public MultiDetonatorItem(Properties properties) {
         super(properties.stacksTo(1));
     }
+
+
+    @Override
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, level, tooltip, flag);
+
+        //  Проходим по всем 4 точкам
+        for (int i = 0; i < MAX_POINTS; i++) {
+            PointData point = getPointData(stack, i);
+
+            if (point != null && point.hasTarget) {
+                // 🟢 АКТИВНАЯ точка - выделяем зелёным
+                if (i == getActivePoint(stack)) {
+                    tooltip.add(Component.literal("➤ " + point.name + ":")
+                            .withStyle(ChatFormatting.YELLOW));
+                } else {
+                    // 🟡 Обычная точка - жёлтым
+                    tooltip.add(Component.literal("✅ " + point.name + ":")
+                            .withStyle(ChatFormatting.GREEN));
+                }
+
+                // Координаты
+                tooltip.add(Component.literal("   " + point.x + ", " + point.y + ", " + point.z)
+                        .withStyle(ChatFormatting.WHITE));
+
+            } else {
+                // Пустая точка - серым
+                tooltip.add(Component.literal("○ Точка " + (i + 1) + ":")
+                        .withStyle(ChatFormatting.GRAY));
+                tooltip.add(Component.literal("   Не установлена")
+                        .withStyle(ChatFormatting.GRAY));
+            }
+        }
+
+        //  Инструкции внизу
+        tooltip.add(Component.literal("R - открыть меню")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal("Shift+ПКМ - сохранить в активную точку")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal("ПКМ - активировать активную точку")
+                .withStyle(ChatFormatting.GRAY));
+    }
+
 
     /**
      * useOn: сохранение позиции в текущую активную точку (при Shift+ПКМ на блок)

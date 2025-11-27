@@ -25,6 +25,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+
 public class SmokeBombBlock extends Block implements IDetonatable {
     private static final float EXPLOSION_POWER = 25.0F;
     private static final double PARTICLE_VIEW_DISTANCE = 512.0;
@@ -32,7 +33,7 @@ public class SmokeBombBlock extends Block implements IDetonatable {
     // Параметры воронки
     private static final int CRATER_RADIUS = 25; // Радиус воронки в блоках
     private static final int CRATER_DEPTH = 8; // Глубина воронки в блоках
-
+    private static final int DETONATION_RADIUS = 6;
 
     public static final DirectionProperty FACING = DirectionProperty.create("facing", Direction.Plane.HORIZONTAL);
 
@@ -77,6 +78,9 @@ public class SmokeBombBlock extends Block implements IDetonatable {
             // Взрыв (без разрушения блоков - за это отвечает воронка)
             level.explode(null, x, y, z, EXPLOSION_POWER,
                     Level.ExplosionInteraction.NONE); // NONE = не разрушает блоки
+
+            // 2. Активируем соседние Detonatable блоки по цепочке
+            triggerNearbyDetonations(serverLevel, pos, player);
 
             // Запускаем поэтапную систему частиц
             scheduleExplosionEffects(serverLevel, x, y, z);
@@ -200,6 +204,27 @@ public class SmokeBombBlock extends Block implements IDetonatable {
                     xSpeed, ySpeed, zSpeed,
                     1.0
             );
+        }
+    }
+    private void triggerNearbyDetonations(ServerLevel serverLevel, BlockPos pos, Player player) {
+        for (int x = -DETONATION_RADIUS; x <= DETONATION_RADIUS; x++) {
+            for (int y = -DETONATION_RADIUS; y <= DETONATION_RADIUS; y++) {
+                for (int z = -DETONATION_RADIUS; z <= DETONATION_RADIUS; z++) {
+                    double dist = Math.sqrt(x * x + y * y + z * z);
+                    if (dist <= DETONATION_RADIUS && dist > 0) {
+                        BlockPos checkPos = pos.offset(x, y, z);
+                        BlockState checkState = serverLevel.getBlockState(checkPos);
+                        Block block = checkState.getBlock();
+                        if (block instanceof IDetonatable) {
+                            IDetonatable detonatable = (IDetonatable) block;
+                            int delay = (int)(dist * 2); // Задержка зависит от расстояния
+                            serverLevel.getServer().tell(new TickTask(delay, () -> {
+                                detonatable.onDetonate(serverLevel, checkPos, checkState, player);
+                            }));
+                        }
+                    }
+                }
+            }
         }
     }
 }
