@@ -316,14 +316,21 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> DUD_FUGAS_TONG = registerBlock("dud_fugas_tong",
             () -> new DudFugasBlock(BlockBehaviour.Properties.of()
-                    .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
+                    .strength(31F, 6.0F) // Прочность блока (как у камня или земли)
                     .sound(SoundType.STONE) // Звук при разрушении
                     .requiresCorrectToolForDrops() // Требует правильного инструмента для лута (как руды)
                     .noOcclusion()));
 
     public static final RegistryObject<Block> DUD_NUKE = registerBlock("dud_nuke",
             () -> new DudNukeBlock(BlockBehaviour.Properties.of()
-                    .strength(0.5F, 6.0F) // Прочность блока (как у камня или земли)
+                    .strength(31F, 6.0F) // Прочность блока (как у камня или земли)
+                    .sound(SoundType.STONE) // Звук при разрушении
+                    .requiresCorrectToolForDrops() // Требует правильного инструмента для лута (как руды)
+                    .noOcclusion()));
+
+    public static final RegistryObject<Block> DUD_SALTED = registerBlock("dud_salted",
+            () -> new DudNukeBlock(BlockBehaviour.Properties.of()
+                    .strength(31F, 6.0F) // Прочность блока (как у камня или земли)
                     .sound(SoundType.STONE) // Звук при разрушении
                     .requiresCorrectToolForDrops() // Требует правильного инструмента для лута (как руды)
                     .noOcclusion()));

@@ -101,7 +101,7 @@ public class ClientSetup {
         ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType ->
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
         );
-        ModEntities.GRENADEIF_PROJECTILE.ifPresent(entityType ->
+        ModEntities.GRENADE_IF_PROJECTILE.ifPresent(entityType ->
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
         );
 

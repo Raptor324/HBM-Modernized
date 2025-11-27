@@ -326,7 +326,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.GRENADEHE.get(), "Мощная отскок граната");
                 add(ModItems.GRENADEFIRE.get(), "Зажигательная отскок граната");
 
-                add(ModItems.GRENADEIF.get(), "IF граната (WIP)");
+                add(ModItems.GRENADE_IF.get(), "IF граната (WIP)");
 
                 add("item.hbm_m.radaway", "Антирадин");
                 add("item.hbm_m.wood_ash_powder", "Древесный пепел");
@@ -1114,7 +1114,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.GRENADESLIME.get(), "Bouncy Bouncing Grenade");
                 add(ModItems.GRENADESMART.get(), "Smart Bouncing Grenade");
 
-                add(ModItems.GRENADEIF.get(), "IF Grenade (WIP)");
+                add(ModItems.GRENADE_IF.get(), "IF Grenade (WIP)");
 
                 add("item.hbm_m.geiger_counter", "Geiger Counter");
                 add("item.hbm_m.dosimeter", "Dosimeter");

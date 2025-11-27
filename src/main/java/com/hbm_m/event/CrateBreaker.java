@@ -50,13 +50,17 @@ public class CrateBreaker {
     // Дроп с шансом для каждого ящика: список (предмет, шанс выпадения)
     private static final Map<RegistryObject<Block>, List<DropChance>> CRATE_DROPS = Map.of(
             ModBlocks.CRATE, List.of(
-                    new DropChance(ModItems.GRENADE, 0.4),
-                    new DropChance(ModItems.GRENADEFIRE, 0.4),
-                    new DropChance(ModItems.GRENADESLIME, 0.4),
-                    new DropChance(ModItems.RADAWAY, 0.1),
-                    new DropChance(ModItems.DETONATOR, 0.1),
-                    new DropChance(ModItems.OIL_DETECTOR, 0.1),
-                    new DropChance(ModItems.GRENADESMART, 0.1)
+                    new DropChance(ModBlocks.CRT_BROKEN, 0.1),
+                    new DropChance(ModBlocks.BARREL_CORRODED, 0.1),
+                    new DropChance(ModBlocks.BARREL_IRON, 0.1),
+                    new DropChance(ModBlocks.TAPE_RECORDER, 0.1),
+                    new DropChance(ModBlocks.TOASTER, 0.1),
+                    new DropChance(ModBlocks.FILE_CABINET, 0.1),
+                    new DropChance(ModBlocks.CRT_CLEAN, 0.1),
+                    new DropChance(ModBlocks.CRT_BSOD, 0.1),
+                    new DropChance(ModBlocks.B29, 0.01),
+                    new DropChance(ModBlocks.DORNIER, 0.01),
+                    new DropChance(ModItems.RADAWAY, 0.1)
             ),
             ModBlocks.CRATE_METAL, List.of(
                     new DropChance(ModItems.PCB, 0.4),
@@ -70,24 +74,39 @@ public class CrateBreaker {
             ),
             ModBlocks.CRATE_WEAPON, List.of(
                     new DropChance(ModItems.DETONATOR, 0.1),
-                    new DropChance(ModItems.GRENADEIF, 0.4),
+                    new DropChance(ModItems.RADAWAY, 0.1),
+                    new DropChance(ModItems.GRENADE, 0.2),
+                    new DropChance(ModItems.GRENADEFIRE, 0.2),
+                    new DropChance(ModItems.GRENADESLIME, 0.2),
+                    new DropChance(ModItems.GRENADE_IF, 0.2),
+                    new DropChance(ModItems.GRENADESMART, 0.1),
                     new DropChance(ModBlocks.DET_MINER, 0.4),
                     new DropChance(ModBlocks.EXPLOSIVE_CHARGE, 0.1),
                     new DropChance(ModItems.RANGE_DETONATOR, 0.1),
                     new DropChance(ModItems.MULTI_DETONATOR, 0.1),
+                    new DropChance(ModBlocks.C4, 0.1),
+                    new DropChance(ModBlocks.SMOKE_BOMB, 0.1),
                     new DropChance(ModBlocks.NUCLEAR_CHARGE, 0.001)
             ),
             ModBlocks.CRATE_LEAD, List.of(
                     new DropChance(ModItems.BLADE_TEST, 0.1),
-                    new DropChance(ModItems.STAMP_OBSIDIAN_FLAT, 0.1),
-                    new DropChance(ModItems.STAMP_STEEL_FLAT, 0.2),
-                    new DropChance(ModItems.STAMP_IRON_FLAT, 0.4),
+                    new DropChance(ModItems.RADAWAY, 0.2),
+                    new DropChance(ModItems.STAMP_OBSIDIAN_FLAT, 0.05),
+                    new DropChance(ModItems.STAMP_STEEL_FLAT, 0.1),
+                    new DropChance(ModItems.STAMP_IRON_FLAT, 0.2),
                     new DropChance(ModItems.BLUEPRINT_FOLDER, 0.1),
+                    new DropChance(ModBlocks.BLAST_FURNACE_EXTENSION, 0.05),
                     new DropChance(ModBlocks.FREAKY_ALIEN_BLOCK, 0.1),
-                    new DropChance(ModItems.STAMP_DESH_FLAT, 0.01)
+                    new DropChance(ModItems.STAMP_DESH_FLAT, 0.01),
+                    new DropChance(ModItems.DEFUSER, 0.05),
+                    new DropChance(ModItems.RUBBER_CLADDING, 0.05),
+                    new DropChance(ModItems.LEAD_CLADDING, 0.05),
+                    new DropChance(ModItems.PAINT_CLADDING, 0.05),
+                    new DropChance(ModItems.OIL_DETECTOR, 0.05)
             ),
             ModBlocks.CRATE_CONSERVE, List.of(
                     new DropChance(ModItems.CANNED_ASBESTOS, 0.1),
+                    new DropChance(ModItems.RADAWAY, 0.1),
                     new DropChance(ModItems.CANNED_ASS, 0.1),
                     new DropChance(ModItems.CANNED_BARK, 0.1),
                     new DropChance(ModItems.CANNED_BEEF, 0.1),

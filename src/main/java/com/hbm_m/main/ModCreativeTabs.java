@@ -56,7 +56,7 @@ public class ModCreativeTabs {
     public static final RegistryObject<CreativeModeTab> NTM_WEAPONS_TAB = CREATIVE_MODE_TABS.register("ntm_weapons_tab",
             () -> CreativeModeTab.builder()
                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_weapons_tab"))
-                    .icon(() -> new ItemStack(ModItems.GRENADEIF.get()))
+                    .icon(() -> new ItemStack(ModItems.GRENADE_IF.get()))
                     .build());
 
     public static final RegistryObject<CreativeModeTab> NTM_CONSUMABLES_TAB = CREATIVE_MODE_TABS.register("ntm_consumables_tab",

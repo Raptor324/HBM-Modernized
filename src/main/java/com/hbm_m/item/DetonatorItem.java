@@ -12,11 +12,15 @@ import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import com.hbm_m.block.IDetonatable;
+
+import javax.annotation.Nullable;
+import java.util.List;
 
 public class DetonatorItem extends Item {
 
@@ -28,6 +32,46 @@ public class DetonatorItem extends Item {
     public DetonatorItem(Properties properties) {
         super(properties.stacksTo(1));
     }
+
+
+    @Override
+    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, level, tooltip, flag);
+
+        // Если есть сохраненная позиция, показываем её в тултипе
+        if (stack.hasTag()) {
+            CompoundTag nbt = stack.getTag();
+            if (nbt != null && nbt.contains(NBT_HAS_TARGET) && nbt.getBoolean(NBT_HAS_TARGET)) {
+                int x = nbt.getInt(NBT_POS_X);
+                int y = nbt.getInt(NBT_POS_Y);
+                int z = nbt.getInt(NBT_POS_Z);
+
+                // Основная строка с координатами
+                tooltip.add(Component.literal("Цель: ")
+                        .append(Component.literal(x + ", " + y + ", " + z))
+                        .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD));
+
+                // Дополнительная информация
+                tooltip.add(Component.literal("ПКМ - активировать")
+                        .withStyle(ChatFormatting.GRAY));
+                tooltip.add(Component.literal("Shift+ПКМ - установить")
+                        .withStyle(ChatFormatting.GRAY));
+            } else {
+                // Если позиции нет
+                tooltip.add(Component.literal("Нет цели")
+                        .withStyle(ChatFormatting.RED));
+                tooltip.add(Component.literal("Shift+ПКМ - установить")
+                        .withStyle(ChatFormatting.GRAY));
+            }
+        } else {
+            tooltip.add(Component.literal("Нет цели")
+                    .withStyle(ChatFormatting.RED));
+            tooltip.add(Component.literal("Shift+ПКМ - установить")
+                    .withStyle(ChatFormatting.GRAY));
+        }
+    }
+
+
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
