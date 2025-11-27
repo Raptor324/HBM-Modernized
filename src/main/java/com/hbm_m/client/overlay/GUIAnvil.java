@@ -481,13 +481,12 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         drawButtonHighlights(guiGraphics, guiLeft, guiTop, mouseX, mouseY);
         renderRecipeGrid(guiGraphics, guiLeft, guiTop, mouseX, mouseY);
         
-        // ИСПРАВЛЕНИЕ 2: Рисуем панель как в оригинале - ВСЕГДА
         renderSidePanel(guiGraphics, guiLeft, guiTop);
     }
     
     @Override
     protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        Component titleText = Component.translatable("container.hbm_m.anvil", menu.blockEntity.getTier());
+        Component titleText = Component.translatable("container.hbm_m.anvil", menu.blockEntity.getTier().getDisplayName());
         int titleWidth = this.font.width(titleText);
         int x = 61 - titleWidth / 2;
         int y = 8;

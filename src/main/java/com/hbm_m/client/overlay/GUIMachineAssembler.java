@@ -85,21 +85,49 @@ public class GUIMachineAssembler extends GuiInfoScreen<MachineAssemblerMenu> {
             return;
         }
         
-        // Получаем время для анимации циклической смены предметов (для Ingredient с несколькими вариантами)
+        // Группируем одинаковые предметы и суммируем их количество
+        java.util.Map<ItemStack, Integer> groupedItems = new java.util.LinkedHashMap<>();
+        for (ItemStack stack : ghostItems) {
+            if (stack.isEmpty()) {
+                continue;
+            }
+            
+            // Ищем уже существующий предмет в группе
+            ItemStack found = null;
+            for (ItemStack key : groupedItems.keySet()) {
+                if (ItemStack.isSameItemSameTags(key, stack)) {
+                    found = key;
+                    break;
+                }
+            }
+            
+            if (found != null) {
+                // Увеличиваем количество
+                groupedItems.put(found, groupedItems.get(found) + stack.getCount());
+            } else {
+                // Добавляем новый предмет
+                ItemStack copy = stack.copy();
+                copy.setCount(1); // Нормализуем количество для ключа
+                groupedItems.put(copy, stack.getCount());
+            }
+        }
+        
         // Слоты 6-17 (handler) соответствуют слотам 42-53 в menu (36 слотов игрока + 6 машины)
         int inputSlotsStart = 36 + 6; // 42
         int inputSlotsCount = 12;
         
         // Отрисовываем сгруппированные предметы
-        for (int i = 0; i < Math.min(ghostItems.size(), inputSlotsCount); i++) {
-            ItemStack ghostStack = ghostItems.get(i);
-            
-            if (ghostStack.isEmpty()) {
-                continue;
+        int slotOffset = 0;
+        for (java.util.Map.Entry<ItemStack, Integer> entry : groupedItems.entrySet()) {
+            if (slotOffset >= inputSlotsCount) {
+                break; // Превышен лимит слотов
             }
             
+            ItemStack ghostStack = entry.getKey().copy();
+            ghostStack.setCount(entry.getValue()); // Устанавливаем суммарное количество
+            
             // Получаем слот
-            int slotIndex = inputSlotsStart + i;
+            int slotIndex = inputSlotsStart + slotOffset;
             if (slotIndex >= this.menu.slots.size()) break;
             
             net.minecraft.world.inventory.Slot slot = this.menu.slots.get(slotIndex);
@@ -131,6 +159,8 @@ public class GUIMachineAssembler extends GuiInfoScreen<MachineAssemblerMenu> {
                 
                 guiGraphics.pose().popPose();
             }
+            
+            slotOffset++;
         }
     }
 

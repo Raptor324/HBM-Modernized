@@ -11,6 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
 
@@ -123,11 +124,15 @@ public class AnvilMenu extends AbstractContainerMenu {
         super.removed(player);
         this.access.execute((level, pos) -> {
             if (!level.isClientSide) {
-                IItemHandler handler = blockEntity.getItemHandler();
-                for (int i = 0; i < 2; i++) {
+                ItemStackHandler handler = blockEntity.getItemHandler();
+                // Очищаем все слоты: входные (0, 1) и выходной (2)
+                for (int i = 0; i < 3; i++) {
                     ItemStack stack = handler.getStackInSlot(i);
                     if (!stack.isEmpty()) {
-                        ItemStack toReturn = handler.extractItem(i, stack.getCount(), false);
+                        // Получаем копию стека и сразу очищаем слот
+                        ItemStack toReturn = stack.copy();
+                        handler.setStackInSlot(i, ItemStack.EMPTY);
+                        // Пытаемся добавить в инвентарь, иначе выбрасываем
                         if (!player.getInventory().add(toReturn)) {
                             player.drop(toReturn, false);
                         }

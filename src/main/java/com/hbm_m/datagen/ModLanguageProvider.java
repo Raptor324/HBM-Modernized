@@ -646,6 +646,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.machine_battery", "Энергохранилище");
                 add("container.hbm_m.press", "Пресс");
                 add("container.hbm_m.anvil_block", "Индустриальная наковальня");
+                add("container.hbm_m.anvil", "Наковальня %s");
                 add("container.hbm_m.crate_iron", "Железный ящик");
                 add("container.hbm_m.crate_steel", "Стальной ящик");
                 add("container.hbm_m.crate_desh", "Душ ящик");
@@ -1399,6 +1400,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.machine_battery", "Machine Battery");
                 add("container.hbm_m.press", "Press");
                 add("container.hbm_m.anvil_block", "Industrial Anvil");
+                add("container.hbm_m.anvil", "%s Anvil");
                 add("container.hbm_m.crate_iron", "Iron Crate");
                 add("container.hbm_m.crate_steel", "Steel Crate");
                 add("container.hbm_m.crate_desh", "Desh Crate");
