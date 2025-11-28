@@ -1,29 +1,29 @@
-package com.hbm_m.block;
+package com.hbm_m.block.explosives;
 
+import com.hbm_m.block.IDetonatable;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.util.CraterGenerator;
-import com.hbm_m.util.MessGenerator;
-
-import net.minecraft.ChatFormatting;
+import com.hbm_m.util.DudCraterGenerator;
 import net.minecraft.core.BlockPos;
-import net.minecraft.network.chat.Component;
+import net.minecraft.core.Direction;
 import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.server.TickTask;
-
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.material.PushReaction;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.server.ServerLifecycleHooks;
-import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.List;
 
 /**
  * ОПТИМИЗИРОВАННЫЙ ЯДЕРНЫЙ БЛОК v2
@@ -34,7 +34,7 @@ import java.util.List;
  * ✅ Асинхронная генерация кратера
  * ✅ Уменьшение нагрузки на основной поток
  */
-public class NuclearChargeBlock extends Block implements IDetonatable {
+public class DudNukeBlock extends Block implements IDetonatable {
 
     private static final Logger LOGGER = LoggerFactory.getLogger("NuclearCharge");
 
@@ -42,14 +42,51 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
     private static final double PARTICLE_VIEW_DISTANCE = 512.0;
 
     // Параметры воронки
-    private static final int CRATER_RADIUS = 60; // Радиус воронки в блоках
-    private static final int CRATER_DEPTH = 30;  // Глубина воронки в блоках
+    private static final int CRATER_RADIUS = 30; // Радиус воронки в блоках
+    private static final int CRATER_DEPTH = 10;  // Глубина воронки в блоках
 
     // ОПТИМИЗАЦИЯ: Задержка перед генерацией кратера (в тиках)
     private static final int CRATER_GENERATION_DELAY = 30;
 
-    public NuclearChargeBlock(Properties properties) {
-        super(properties);
+    public static final DirectionProperty FACING = DirectionProperty.create("facing", Direction.Plane.HORIZONTAL);
+
+    private static final VoxelShape SHAPE = Shapes.box(0, 0, 0, 1, 1, 1); // полный куб (замени при необходимости)
+
+    public DudNukeBlock(Properties props) {
+        super(props);
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+    }
+    // Не ломается поршнями
+    @Override
+    public PushReaction getPistonPushReaction(BlockState state) {
+        return PushReaction.BLOCK;
+    }
+
+    // Запретить ломать блок инструментом (игроком)
+    @Override
+    public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
+        return 0.0F; // Нельзя сломать вообще
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        // Блок поворачивается лицом к игроку при установке (противоположно взгляду игрока)
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        return SHAPE;
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        return SHAPE;
     }
 
     @Override
@@ -73,7 +110,7 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
             MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
             if (server != null) {
                 server.tell(new TickTask(CRATER_GENERATION_DELAY, () -> {
-                    CraterGenerator.generateCrater(
+                    DudCraterGenerator.generateCrater(
                             serverLevel,
                             pos,
                             CRATER_RADIUS,

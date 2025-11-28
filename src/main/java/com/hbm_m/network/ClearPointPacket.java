@@ -1,11 +1,10 @@
 package com.hbm_m.network;
 
+import com.hbm_m.item.tools.MultiDetonatorItem;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
+
 import java.util.function.Supplier;
 
 /**
@@ -48,15 +47,15 @@ public class ClearPointPacket {
         ItemStack offItem = player.getOffhandItem();
         ItemStack detonatorStack = ItemStack.EMPTY;
 
-        if (mainItem.getItem() instanceof com.hbm_m.item.MultiDetonatorItem) {
+        if (mainItem.getItem() instanceof MultiDetonatorItem) {
             detonatorStack = mainItem;
-        } else if (offItem.getItem() instanceof com.hbm_m.item.MultiDetonatorItem) {
+        } else if (offItem.getItem() instanceof MultiDetonatorItem) {
             detonatorStack = offItem;
         }
 
         if (!detonatorStack.isEmpty()) {
-            com.hbm_m.item.MultiDetonatorItem detonatorItem =
-                    (com.hbm_m.item.MultiDetonatorItem) detonatorStack.getItem();
+            MultiDetonatorItem detonatorItem =
+                    (MultiDetonatorItem) detonatorStack.getItem();
 
             // ⭐ Вызываем clearPoint который сохраняет имя!
             detonatorItem.clearPoint(detonatorStack, pointIndex);

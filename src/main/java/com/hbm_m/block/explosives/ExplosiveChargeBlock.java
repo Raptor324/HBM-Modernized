@@ -1,5 +1,6 @@
-package com.hbm_m.block;
+package com.hbm_m.block.explosives;
 
+import com.hbm_m.block.IDetonatable;
 import com.hbm_m.particle.ModExplosionParticles;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -13,15 +14,14 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class DudFugasBlock extends Block implements IDetonatable {
-    private static final float EXPLOSION_POWER = 80.0F;
+public class ExplosiveChargeBlock extends Block implements IDetonatable {
+    private static final float EXPLOSION_POWER = 25.0F;
     private static final double PARTICLE_VIEW_DISTANCE = 512.0;
-
+    private static final int DETONATION_RADIUS = 6;
     // Параметры воронки
     private static final int CRATER_RADIUS = 35; // Радиус воронки в блоках
     private static final int CRATER_DEPTH = 12; // Глубина воронки в блоках
@@ -31,21 +31,11 @@ public class DudFugasBlock extends Block implements IDetonatable {
 
     private static final VoxelShape SHAPE = Shapes.box(0, 0, 0, 1, 1, 1); // полный куб (замени при необходимости)
 
-    public DudFugasBlock(Properties props) {
+    public ExplosiveChargeBlock(Properties props) {
         super(props);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
-    // Не ломается поршнями
-    @Override
-    public PushReaction getPistonPushReaction(BlockState state) {
-        return PushReaction.BLOCK;
-    }
 
-    // Запретить ломать блок инструментом (игроком)
-    @Override
-    public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
-        return 0.0F; // Нельзя сломать вообще
-    }
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);
@@ -79,14 +69,17 @@ public class DudFugasBlock extends Block implements IDetonatable {
 
             // Взрыв (без разрушения блоков - за это отвечает воронка)
             level.explode(null, x, y, z, EXPLOSION_POWER,
-                    Level.ExplosionInteraction.TNT); // NONE = не разрушает блоки
+                    Level.ExplosionInteraction.NONE); // NONE = не разрушает блоки
 
             // Запускаем поэтапную систему частиц
             scheduleExplosionEffects(serverLevel, x, y, z);
 
+            // 2. Активируем соседние Detonatable блоки по цепочке
+            triggerNearbyDetonations(serverLevel, pos, player);
+
             if (serverLevel.getServer() != null) {
                 serverLevel.getServer().tell(new TickTask(30, () -> {
-                    level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 40.0F, Level.ExplosionInteraction.TNT);
+                    level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 8.0F, Level.ExplosionInteraction.TNT);
 
 
                 }));
@@ -193,6 +186,27 @@ public class DudFugasBlock extends Block implements IDetonatable {
                     xSpeed, ySpeed, zSpeed,
                     1.0
             );
+        }
+    }
+    private void triggerNearbyDetonations(ServerLevel serverLevel, BlockPos pos, Player player) {
+        for (int x = -DETONATION_RADIUS; x <= DETONATION_RADIUS; x++) {
+            for (int y = -DETONATION_RADIUS; y <= DETONATION_RADIUS; y++) {
+                for (int z = -DETONATION_RADIUS; z <= DETONATION_RADIUS; z++) {
+                    double dist = Math.sqrt(x * x + y * y + z * z);
+                    if (dist <= DETONATION_RADIUS && dist > 0) {
+                        BlockPos checkPos = pos.offset(x, y, z);
+                        BlockState checkState = serverLevel.getBlockState(checkPos);
+                        Block block = checkState.getBlock();
+                        if (block instanceof IDetonatable) {
+                            IDetonatable detonatable = (IDetonatable) block;
+                            int delay = (int)(dist * 2); // Задержка зависит от расстояния
+                            serverLevel.getServer().tell(new TickTask(delay, () -> {
+                                detonatable.onDetonate(serverLevel, checkPos, checkState, player);
+                            }));
+                        }
+                    }
+                }
+            }
         }
     }
 }

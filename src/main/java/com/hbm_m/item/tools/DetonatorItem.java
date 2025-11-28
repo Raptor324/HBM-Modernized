@@ -1,4 +1,4 @@
-package com.hbm_m.item;
+package com.hbm_m.item.tools;
 
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;

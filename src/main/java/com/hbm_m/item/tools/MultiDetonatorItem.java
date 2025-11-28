@@ -1,4 +1,4 @@
-package com.hbm_m.item;
+package com.hbm_m.item.tools;
 
 import net.minecraft.world.item.TooltipFlag;
 import java.util.List;

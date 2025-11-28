@@ -1,9 +1,9 @@
-package com.hbm_m.block;
+package com.hbm_m.block.explosives;
 
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.sound.ModSounds;
-import com.hbm_m.util.CraterGenerator;
 
 import com.hbm_m.util.ShockwaveGenerator;
 import net.minecraft.core.BlockPos;
@@ -24,12 +24,13 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-import java.util.Arrays;
 import java.util.List;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.Random;
 
@@ -45,6 +46,12 @@ public class MineNukeBlock extends Block implements EntityBlock {
     private static final VoxelShape SHAPE = Shapes.box(0.25, 0, 0.25, 0.75, 0.25, 0.75);
     private static final VoxelShape COLLISION_SHAPE = Shapes.box(0.25, 0.0, 0.25, 0.75, 0.25, 0.75);
     private static final Random RANDOM = new Random();
+
+    // Новые параметры для урона
+    private static final float DAMAGE_RADIUS = 30.0f; // Радиус поражения урона (в блоках)
+    private static final float DAMAGE_AMOUNT = 200.0f; // 200 урона = 100 полных сердец
+    private static final float MAX_DAMAGE_DISTANCE = 25.0f; // Максимальное расстояние для полного урона
+
 
     public MineNukeBlock(Properties properties) {
         super(BlockBehaviour.Properties.of().strength(3.5F));
@@ -79,10 +86,15 @@ public class MineNukeBlock extends Block implements EntityBlock {
         double y = pos.getY() + 0.5;
         double z = pos.getZ() + 0.5;
 
+        // Повышенная громкость звука
         playRandomDetonationSound(level, pos);
 
-        level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, EXPLOSION_POWER, false, Level.ExplosionInteraction.NONE);
+        level.explode(null, x, y, z, EXPLOSION_POWER, false, Level.ExplosionInteraction.NONE);
 
+        // Урон в зоне действия (НОВОЕ)
+        if (level instanceof ServerLevel serverLevel) {
+            dealExplosionDamage(serverLevel, x, y, z);
+        }
 
         if (level instanceof ServerLevel serverLevel) {
             spawnExplosionEffects(serverLevel, x, y, z);
@@ -99,6 +111,43 @@ public class MineNukeBlock extends Block implements EntityBlock {
                             ModBlocks.BURNED_GRASS.get()
                     );
                 }));
+            }
+        }
+    }
+
+    // НОВЫЙ МЕТОД: Нанесение урона в зоне действия мины
+    private void dealExplosionDamage(ServerLevel serverLevel, double x, double y, double z) {
+        List<LivingEntity> entitiesNearby = serverLevel.getEntitiesOfClass(
+                LivingEntity.class,
+                new AABB(x - DAMAGE_RADIUS, y - DAMAGE_RADIUS, z - DAMAGE_RADIUS,
+                        x + DAMAGE_RADIUS, y + DAMAGE_RADIUS, z + DAMAGE_RADIUS)
+        );
+
+        for (LivingEntity entity : entitiesNearby) {
+            double distanceToEntity = Math.sqrt(
+                    Math.pow(entity.getX() - x, 2) +
+                            Math.pow(entity.getY() - y, 2) +
+                            Math.pow(entity.getZ() - z, 2)
+            );
+
+            // Проверяем, находится ли сущность в радиусе поражения
+            if (distanceToEntity <= DAMAGE_RADIUS) {
+                // Вычисляем урон в зависимости от расстояния
+                // На близком расстоянии (0-5 блоков): полный урон
+                // На среднем расстоянии (5-25 блоков): уменьшающийся урон
+                // На дальнем расстоянии (25+ блоков): минимальный урон
+                float damage = DAMAGE_AMOUNT;
+
+                if (distanceToEntity > MAX_DAMAGE_DISTANCE) {
+                    // Линейное снижение урона на расстоянии
+                    float remainingDistance = DAMAGE_RADIUS - MAX_DAMAGE_DISTANCE;
+                    float damageDistance = (float) distanceToEntity - MAX_DAMAGE_DISTANCE;
+                    damage = DAMAGE_AMOUNT * (1.0f - (damageDistance / remainingDistance)) * 0.5f; // Минимум 50% урона
+                }
+
+                // Наносим урон с источником (взрыв)
+                entity.hurt(entity.damageSources().explosion(null), damage);
+
             }
         }
     }
@@ -143,7 +192,8 @@ public class MineNukeBlock extends Block implements EntityBlock {
         sounds.removeIf(Objects::isNull);
         if (!sounds.isEmpty()) {
             SoundEvent sound = sounds.get(RANDOM.nextInt(sounds.size()));
-            level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, sound, SoundSource.BLOCKS, 1.0F, 1.0F);
+            // Повышенная громкость: с 1.0F на 4.0F для дальней слышимости
+            level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, sound, SoundSource.BLOCKS, 4.0F, 1.0F);
         }
     }
 

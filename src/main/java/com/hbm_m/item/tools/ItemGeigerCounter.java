@@ -1,9 +1,10 @@
-package com.hbm_m.item;
+package com.hbm_m.item.tools;
 
 // Предмет-геигер для измерения радиации в окружающей среде и на игроке.
 // Показывает уровень радиации в чате при использовании и издает звуки щелчков в зависимости от уровня радиации.
 // Используется на сервере, отправляет данные на клиент для звуков и HUD.
 
+import com.hbm_m.item.AbstractRadiationMeterItem;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraftforge.registries.RegistryObject;
 import com.hbm_m.main.MainRegistry;

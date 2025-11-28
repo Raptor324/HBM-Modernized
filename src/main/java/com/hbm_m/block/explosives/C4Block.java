@@ -1,68 +1,43 @@
-package com.hbm_m.block;
+package com.hbm_m.block.explosives;
+import java.util.List;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import org.jetbrains.annotations.Nullable;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
+import java.util.List;
 
+import com.hbm_m.block.IDetonatable;
 import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.util.CraterGenerator;
-import com.hbm_m.util.MessGenerator;
-import com.hbm_m.util.ShockwaveGenerator;
+import com.hbm_m.util.BlastExplosionGenerator;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.core.BlockPos;
-import net.minecraft.server.TickTask;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
-
-public class SmokeBombBlock extends Block implements IDetonatable {
+public class C4Block extends Block implements IDetonatable {
     private static final float EXPLOSION_POWER = 25.0F;
     private static final double PARTICLE_VIEW_DISTANCE = 512.0;
-
-    // Параметры воронки
-    private static final int CRATER_RADIUS = 25; // Радиус воронки в блоках
-    private static final int CRATER_DEPTH = 8; // Глубина воронки в блоках
     private static final int DETONATION_RADIUS = 6;
+    // Параметры воронки
+    private static final int CRATER_RADIUS = 15; // Радиус воронки в блоках
+    private static final int CRATER_DEPTH = 25; // Глубина воронки в блоках
 
-    public static final DirectionProperty FACING = DirectionProperty.create("facing", Direction.Plane.HORIZONTAL);
+    // Блоки для поверхности воронки (замени на свои)
+    private static final Block BLOCK1 = Blocks.BLACK_CONCRETE_POWDER; // Замени на свой
+    private static final Block BLOCK2 = Blocks.GRAY_CONCRETE_POWDER; // Замени на свой
+    private static final Block BLOCK3 = Blocks.BLACK_CONCRETE; // Замени на свой
 
-    private static final VoxelShape SHAPE = Shapes.box(0, 0, 0, 1, 1, 1); // полный куб (замени при необходимости)
-
-    public SmokeBombBlock(Properties props) {
-        super(props);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
-
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        // Блок поворачивается лицом к игроку при установке (противоположно взгляду игрока)
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
-    }
-
-    @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return SHAPE;
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return SHAPE;
+    public C4Block(Properties properties) {
+        super(properties);
     }
 
     @Override
@@ -79,29 +54,23 @@ public class SmokeBombBlock extends Block implements IDetonatable {
             level.explode(null, x, y, z, EXPLOSION_POWER,
                     Level.ExplosionInteraction.NONE); // NONE = не разрушает блоки
 
-            // 2. Активируем соседние Detonatable блоки по цепочке
-            triggerNearbyDetonations(serverLevel, pos, player);
-
             // Запускаем поэтапную систему частиц
             scheduleExplosionEffects(serverLevel, x, y, z);
 
-            if (serverLevel.getServer() != null) {
-                serverLevel.getServer().tell(new net.minecraft.server.TickTask(30, () -> {
-                    // Взрыв (без разрушения блоков - за это отвечает кратер)
-                    level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 8.0F, Level.ExplosionInteraction.NONE);
+            // 2. Активируем соседние Detonatable блоки по цепочке
+            triggerNearbyDetonations(serverLevel, pos, player);
 
-                    // Генерация кратера
-                    ShockwaveGenerator.generateCrater(
-                            serverLevel,
-                            pos,
-                            CRATER_RADIUS,
-                            CRATER_DEPTH,
-                            ModBlocks.WASTE_LOG.get(),
-                            ModBlocks.WASTE_PLANKS.get(),
-                            ModBlocks.BURNED_GRASS.get()
-                    );
-                }));
-            }
+            // Создаём воронку с задержкой (после взрывной волны)
+            serverLevel.getServer().tell(new net.minecraft.server.TickTask(30, () -> {
+                // НОВЫЙ ВЫЗОВ - теперь не нужно передавать блоки
+               BlastExplosionGenerator.generateNaturalCrater(
+                        serverLevel,
+                        pos,
+                        CRATER_RADIUS,
+                        CRATER_DEPTH
+                );
+            }));
+
 
             return true;
         }

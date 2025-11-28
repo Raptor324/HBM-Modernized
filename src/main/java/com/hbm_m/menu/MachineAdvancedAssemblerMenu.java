@@ -2,7 +2,6 @@ package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machine.MachineAdvancedAssemblerBlockEntity;
-import com.hbm_m.item.ItemBlueprintFolder;
 import com.hbm_m.util.LongDataPacker; // <-- Убедись, что этот импорт есть
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -13,7 +12,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
-import javax.annotation.Nonnull;
 import org.jetbrains.annotations.NotNull;
 
 public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {

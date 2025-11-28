@@ -1,10 +1,11 @@
-package com.hbm_m.block;
+package com.hbm_m.block.explosives;
 
+import com.hbm_m.block.IDetonatable;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.util.ShockwaveGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
@@ -12,26 +13,28 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.server.TickTask;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class ExplosiveChargeBlock extends Block implements IDetonatable {
+
+public class SmokeBombBlock extends Block implements IDetonatable {
     private static final float EXPLOSION_POWER = 25.0F;
     private static final double PARTICLE_VIEW_DISTANCE = 512.0;
-    private static final int DETONATION_RADIUS = 6;
-    // Параметры воронки
-    private static final int CRATER_RADIUS = 35; // Радиус воронки в блоках
-    private static final int CRATER_DEPTH = 12; // Глубина воронки в блоках
 
+    // Параметры воронки
+    private static final int CRATER_RADIUS = 25; // Радиус воронки в блоках
+    private static final int CRATER_DEPTH = 8; // Глубина воронки в блоках
+    private static final int DETONATION_RADIUS = 6;
 
     public static final DirectionProperty FACING = DirectionProperty.create("facing", Direction.Plane.HORIZONTAL);
 
     private static final VoxelShape SHAPE = Shapes.box(0, 0, 0, 1, 1, 1); // полный куб (замени при необходимости)
 
-    public ExplosiveChargeBlock(Properties props) {
+    public SmokeBombBlock(Properties props) {
         super(props);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
@@ -71,17 +74,27 @@ public class ExplosiveChargeBlock extends Block implements IDetonatable {
             level.explode(null, x, y, z, EXPLOSION_POWER,
                     Level.ExplosionInteraction.NONE); // NONE = не разрушает блоки
 
-            // Запускаем поэтапную систему частиц
-            scheduleExplosionEffects(serverLevel, x, y, z);
-
             // 2. Активируем соседние Detonatable блоки по цепочке
             triggerNearbyDetonations(serverLevel, pos, player);
 
+            // Запускаем поэтапную систему частиц
+            scheduleExplosionEffects(serverLevel, x, y, z);
+
             if (serverLevel.getServer() != null) {
-                serverLevel.getServer().tell(new TickTask(30, () -> {
-                    level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 8.0F, Level.ExplosionInteraction.TNT);
+                serverLevel.getServer().tell(new net.minecraft.server.TickTask(30, () -> {
+                    // Взрыв (без разрушения блоков - за это отвечает кратер)
+                    level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 8.0F, Level.ExplosionInteraction.NONE);
 
-
+                    // Генерация кратера
+                    ShockwaveGenerator.generateCrater(
+                            serverLevel,
+                            pos,
+                            CRATER_RADIUS,
+                            CRATER_DEPTH,
+                            ModBlocks.WASTE_LOG.get(),
+                            ModBlocks.WASTE_PLANKS.get(),
+                            ModBlocks.BURNED_GRASS.get()
+                    );
                 }));
             }
 
@@ -98,12 +111,12 @@ public class ExplosiveChargeBlock extends Block implements IDetonatable {
         spawnSparks(level, x, y, z);
 
         // Фаза 3: Взрывная волна (5 тиков задержки)
-        level.getServer().tell(new TickTask(5, () -> {
+        level.getServer().tell(new net.minecraft.server.TickTask(5, () -> {
             spawnShockwave(level, x, y, z);
         }));
 
         // Фаза 4: Гриб из дыма (10 тиков задержки)
-        level.getServer().tell(new TickTask(10, () -> {
+        level.getServer().tell(new net.minecraft.server.TickTask(10, () -> {
             spawnMushroomCloud(level, x, y, z);
         }));
     }

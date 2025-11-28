@@ -1,4 +1,4 @@
-package com.hbm_m.item;
+package com.hbm_m.item.tools;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
