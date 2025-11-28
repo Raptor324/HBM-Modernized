@@ -16,11 +16,14 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeType;
+import com.hbm_m.item.armor.ModPowerArmorItem;
+import com.hbm_m.item.armor.PowerArmorSpecs;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.*;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
@@ -381,6 +384,40 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterials.STARMETAL, ArmorItem.Type.LEGGINGS, new Item.Properties()));
     public static final RegistryObject<Item> STARMETAL_BOOTS = ITEMS.register("starmetal_boots",
             () -> new ArmorItem(ModArmorMaterials.STARMETAL, ArmorItem.Type.BOOTS, new Item.Properties()));
+
+
+    //-----------------------POWER ARMOR ----------------------------------
+
+    public static final PowerArmorSpecs T51_SPECS = new PowerArmorSpecs(
+            PowerArmorSpecs.EnergyMode.CONSTANT_DRAIN,
+            1000000L, // Емкость
+            5000,   // Прием
+            50      // Расход в тик
+    )
+            .setResistances(
+                    1.0f, // Падение (80%)
+                    1.0f, // Взрыв (50%)
+                    1.0f, // Кинетика (40%)
+                    1.0f, // Пули (60%)
+                    1.0f, // Огонь (20%)
+                    1.0f, // Холод (50%)
+                    0.7f  // Радиация (70%)
+            )
+            .addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200, 1)); // Сила II
+
+    public static final RegistryObject<Item> T51_HELMET = ITEMS.register("t51_helmet",
+            () -> new ModPowerArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.HELMET, new Item.Properties(), T51_SPECS));
+
+    public static final RegistryObject<Item> T51_CHESTPLATE = ITEMS.register("t51_chestplate",
+            () -> new ModPowerArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.CHESTPLATE, new Item.Properties(), T51_SPECS));
+
+    public static final RegistryObject<Item> T51_LEGGINGS = ITEMS.register("t51_leggings",
+            () -> new ModPowerArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.LEGGINGS, new Item.Properties(), T51_SPECS));
+
+    public static final RegistryObject<Item> T51_BOOTS = ITEMS.register("t51_boots",
+            () -> new ModPowerArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.BOOTS, new Item.Properties(), T51_SPECS));
+
+
 
     // Инструменты
     public static final RegistryObject<Item> GEIGER_COUNTER = ITEMS.register("geiger_counter",

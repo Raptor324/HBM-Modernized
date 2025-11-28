@@ -259,6 +259,11 @@ public class MainRegistry {
             event.accept(ModItems.STARMETAL_HOE);
             event.accept(ModItems.STARMETAL_SHOVEL);
 
+            event.accept(ModItems.T51_CHESTPLATE);
+            event.accept(ModItems.T51_HELMET);
+            event.accept(ModItems.T51_LEGGINGS);
+            event.accept(ModItems.T51_BOOTS);
+
             event.accept(ModItems.ALLOY_HELMET);
             event.accept(ModItems.ALLOY_CHESTPLATE);
             event.accept(ModItems.ALLOY_LEGGINGS);

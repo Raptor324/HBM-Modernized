@@ -2,9 +2,10 @@ package com.hbm_m.client;
 
 // Основной класс клиентской настройки мода. Здесь регистрируются все клиентские обработчики событий,
 // GUI, рендереры, модели и т.д.
+import com.hbm_m.client.model.ModModelLayers;
+import com.hbm_m.client.model.T51ArmorModel;
 import com.hbm_m.client.overlay.*;
 import com.hbm_m.client.loader.*;
-import com.hbm_m.client.model.DoorBakedModel;
 import com.hbm_m.client.render.*;
 import com.hbm_m.client.render.shader.*;
 import com.hbm_m.config.*;
@@ -28,14 +29,12 @@ import com.google.common.collect.ImmutableMap;
 import com.hbm_m.particle.custom.*;
 import com.hbm_m.particle.explosions.*;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.DoorDecl;
 import com.hbm_m.block.entity.DoorDeclRegistry;
 import com.hbm_m.block.entity.ModBlockEntities;
 
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
@@ -86,6 +85,9 @@ public class ClientSetup {
         // MinecraftForge.EVENT_BUS.register(ClientSetup.class);
 
         // Register Entity Renders
+
+
+
         ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
         );
@@ -351,5 +353,11 @@ public class ClientSetup {
                 MainRegistry.LOGGER.warn("Could not populate templates tab: Minecraft level is null.");
             }
         }
+    }
+
+    @SubscribeEvent
+    public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
+        // Мы говорим игре: "Когда спросят слой T51_ARMOR, используй метод createBodyLayer из ModelT51"
+        event.registerLayerDefinition(ModModelLayers.T51_ARMOR, T51ArmorModel::createBodyLayer);
     }
 }
