@@ -190,8 +190,6 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         super.containerTick();
         if (searchBox != null) {
             searchBox.tick();
-            
-            // ИСПРАВЛЕНИЕ 1: Убираем подсказку при фокусе
             if (searchBox.isFocused() && searchBox.getValue().isEmpty()) {
                 searchBox.setSuggestion("");
             } else if (!searchBox.isFocused() && searchBox.getValue().isEmpty()) {

@@ -118,11 +118,13 @@ public class ModItems {
     public static RegistryObject<Item> getIngot(ModIngots ingot) {
         return INGOTS.get(ingot);
     }
+
     public static RegistryObject<Item> getPowders(ModPowders powders) {return POWDERS.get(powders);}
     public static RegistryObject<Item> getPowder(ModIngots ingot) { return INGOT_POWDERS.get(ingot); }
     public static Optional<RegistryObject<Item>> getTinyPowder(ModIngots ingot) {
         return Optional.ofNullable(INGOT_POWDERS_TINY.get(ingot));
     }
+    
     public static final int SLOT_HELMET = 0;
     public static final int SLOT_CHEST = 1;
     public static final int SLOT_LEGS = 2;

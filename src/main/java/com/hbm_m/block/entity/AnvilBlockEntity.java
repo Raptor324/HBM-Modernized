@@ -47,14 +47,18 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     private final ItemStackHandler itemHandler = new ItemStackHandler(3) {
         @Override
         protected void onContentsChanged(int slot) {
+            // Если изменились входные слоты, нужно пересчитать выход
+            if (slot == 0 || slot == 1) {
+                updateCrafting();
+            }
             setChanged();
         }
-
+    
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return slot != 2; // Слот 2 только для вывода
+            return slot != 2;
         }
-    };
+    };    
 
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
     
@@ -87,10 +91,13 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
+        // Просто сохраняем весь инвентарь как есть, включая слот 2
         tag.put("inventory", itemHandler.serializeNBT());
+
         if (selectedRecipeId != null) {
             tag.putString("SelectedRecipe", selectedRecipeId.toString());
         }
+
         super.saveAdditional(tag);
     }
 
@@ -155,23 +162,25 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
      */
     public void updateCrafting() {
         Level level = getLevel();
-        if (level == null) {
-            return;
-        }
-
+        if (level == null) return;
+    
         ItemStack slotA = itemHandler.getStackInSlot(0);
         ItemStack slotB = itemHandler.getStackInSlot(1);
-
         Optional<AnvilRecipe> recipeOpt = resolveCombineRecipe(level, slotA, slotB);
-
+    
         ItemStack result = recipeOpt
                 .map(recipe -> recipe.getResultItem(level.registryAccess()).copy())
                 .orElse(ItemStack.EMPTY);
-
-        itemHandler.setStackInSlot(2, result);
-        setChangedAndNotify();
+    
+        ItemStack currentOutput = itemHandler.getStackInSlot(2);
+        
+        // Обновляем только если результат изменился, чтобы не спамить пакетами
+        if (!ItemStack.matches(result, currentOutput)) {
+            itemHandler.setStackInSlot(2, result);
+            setChangedAndNotify(); 
+        }
     }
-
+    
     /**
      * Проверяет, можно ли выполнить рецепт с текущими материалами
      */
@@ -244,11 +253,31 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     private void shrinkSlotInput(ItemStack slotA, ItemStack slotB, AnvilRecipe recipe, InputOrientation orientation, int craftCount) {
-        ItemStack firstRequired = orientation == InputOrientation.NORMAL ? recipe.getInputA() : recipe.getInputB();
-        ItemStack secondRequired = orientation == InputOrientation.NORMAL ? recipe.getInputB() : recipe.getInputA();
-        slotA.shrink(firstRequired.getCount() * craftCount);
-        slotB.shrink(secondRequired.getCount() * craftCount);
-    }
+        // Определяем, какой слот соответствует какому требованию рецепта
+        // NORMAL: slotA -> inputA, slotB -> inputB
+        // SWAPPED: slotA -> inputB, slotB -> inputA
+        
+        boolean isNormal = orientation == InputOrientation.NORMAL;
+        
+        // Требуемые предметы (для расчета количества, если нужно)
+        ItemStack reqForSlotA = isNormal ? recipe.getInputA() : recipe.getInputB();
+        ItemStack reqForSlotB = isNormal ? recipe.getInputB() : recipe.getInputA();
+    
+        // Проверяем, нужно ли потреблять предметы в слоте A
+        // Если ориентация NORMAL, смотрим consumesA. Если SWAPPED, смотрим consumesB.
+        boolean shouldConsumeSlotA = isNormal ? recipe.consumesA() : recipe.consumesB();
+        
+        // Аналогично для слота B
+        boolean shouldConsumeSlotB = isNormal ? recipe.consumesB() : recipe.consumesA();
+    
+        if (shouldConsumeSlotA) {
+            slotA.shrink(reqForSlotA.getCount() * craftCount);
+        }
+        
+        if (shouldConsumeSlotB) {
+            slotB.shrink(reqForSlotB.getCount() * craftCount);
+        }
+    }    
 
     private boolean populateInputsForOrientation(ServerPlayer player, AnvilRecipe recipe, InputOrientation orientation) {
         boolean changed = false;
@@ -549,10 +578,6 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
             }
         }
         return count;
-    }
-
-    private int removeItemFromInventory(Player player, ItemStack stack, int amount) {
-        return removeItemFromInventory(player, stack, amount, null);
     }
 
     private int removeItemFromInventory(Player player, ItemStack stack, int amount, @Nullable EnergyTransferTracker tracker) {

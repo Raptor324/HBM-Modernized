@@ -39,10 +39,16 @@ public final class AnvilRecipeGenerator {
                 AnvilTier.STEEL);
 
         registerCombineRecipe(writer, "oil", "detector",
-                stack(ModItems.PLATE_COPPER, 2),
-                stack(ModItems.PLATE_ALUMINUM),
+                stack(ModItems.PLATE_COPPER, 2), // Медь (слот А)
+                stack(ModItems.PLATE_ALUMINUM), // Алюминий (слот B)
                 stack(ModItems.OIL_DETECTOR),
-                AnvilTier.OIL);
+                AnvilTier.OIL,
+
+                // Лямбда для настроек:
+                builder -> builder
+                    .keepInputA() // Медь (слот А) останется!
+                    //.keepInputB() // Если нужно оставить и алюминий, раскомментируй
+        );
 
         registerCombineRecipe(writer, "nuclear", "radaway",
                 stack(ModItems.PLATE_LEAD, 2),
@@ -66,7 +72,11 @@ public final class AnvilRecipeGenerator {
                 stack(ModItems.BATTERY_SCHRABIDIUM),
                 stack(ModItems.BATTERY_LITHIUM_CELL),
                 stack(ModItems.BATTERY_SPARK),
-                AnvilTier.PARTICLE);
+                AnvilTier.PARTICLE,
+
+                builder -> builder
+                    .keepInputB() // Шрабидиум (слот B) останется!
+        );
 
         registerCombineRecipe(writer, "gerald", "quantum_computer",
                 stack(ModItems.CONTROLLER_ADVANCED),
@@ -212,12 +222,37 @@ public final class AnvilRecipeGenerator {
                         .addOutput(stack(ModItems.BATTLE_MODULE), 0.35F));
     }
 
+    /**
+     * Регистрирует рецепт объединения (Combine Recipe).
+     *
+     * @param writer      Потребитель рецептов
+     * @param tierFolder  Папка тира (iron, steel...)
+     * @param name        Имя рецепта
+     * @param inputA      Первый входной слот
+     * @param inputB      Второй входной слот
+     * @param output      Результат
+     * @param tier        Минимальный тир наковальни
+     */
     private static void registerCombineRecipe(Consumer<FinishedRecipe> writer, String tierFolder, String name,
-                                              ItemStack inputA, ItemStack inputB, ItemStack output,
-                                              AnvilTier tier) {
-        AnvilRecipeBuilder.anvilRecipe(inputA, inputB, output, tier)
-                .withOverlay(AnvilRecipe.OverlayType.SMITHING)
-                .save(writer, anvilId(tierFolder, "combine", name));
+                                                ItemStack inputA, ItemStack inputB, ItemStack output,
+                                                AnvilTier tier) {
+        // Вызываем перегруженный метод без дополнительных настроек
+        registerCombineRecipe(writer, tierFolder, name, inputA, inputB, output, tier, builder -> {});
+    }
+
+    /**
+     * Регистрирует рецепт объединения с дополнительными настройками (например, сохранение предметов).
+     */
+    private static void registerCombineRecipe(Consumer<FinishedRecipe> writer, String tierFolder, String name,
+                                                ItemStack inputA, ItemStack inputB, ItemStack output,
+                                                AnvilTier tier, Consumer<AnvilRecipeBuilder> settings) {
+        AnvilRecipeBuilder builder = AnvilRecipeBuilder.anvilRecipe(inputA, inputB, output, tier)
+                .withOverlay(AnvilRecipe.OverlayType.SMITHING);
+        
+        // Применяем пользовательские настройки (здесь можно вызвать .keepInputA() и т.д.)
+        settings.accept(builder);
+
+        builder.save(writer, anvilId(tierFolder, "combine", name));
     }
 
     private static void registerInventoryRecipe(Consumer<FinishedRecipe> writer, String tierFolder, String name,

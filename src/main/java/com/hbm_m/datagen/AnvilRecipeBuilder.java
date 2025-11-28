@@ -25,6 +25,8 @@ import java.util.function.Consumer;
 public class AnvilRecipeBuilder implements RecipeBuilder {
     private final ItemStack inputA;
     private final ItemStack inputB;
+    private boolean consumeA = true;
+    private boolean consumeB = true;
     private final ItemStack primaryOutput;
     private final List<ItemStack> inventoryInputs = new ArrayList<>();
     private final List<OutputEntry> outputs = new ArrayList<>();
@@ -42,6 +44,16 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
         this.primaryOutput = output.copy();
         this.outputs.add(new OutputEntry(this.primaryOutput.copy(), 1.0F));
         this.tier = tier;
+    }
+
+    public AnvilRecipeBuilder keepInputA() {
+        this.consumeA = false;
+        return this;
+    }
+
+    public AnvilRecipeBuilder keepInputB() {
+        this.consumeB = false;
+        return this;
     }
 
     public static AnvilRecipeBuilder anvilRecipe(ItemStack inputA, ItemStack inputB, ItemStack output, AnvilTier tier) {
@@ -136,6 +148,9 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
             if (!builder.inputB.isEmpty()) {
                 json.add("input_b", stackToJson(builder.inputB));
             }
+
+            if (!builder.consumeA) json.addProperty("consume_a", false);
+            if (!builder.consumeB) json.addProperty("consume_b", false);
 
             if (!builder.inventoryInputs.isEmpty()) {
                 JsonArray array = new JsonArray();
