@@ -125,6 +125,15 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
 
 
         // Тип 2: silk touch -> блок, иначе сырьё с random count + Fortune + explosion decay
+
+        dropOreType2(
+                ModBlocks.WASTE_LOG.get(),
+                ModBlocks.WASTE_LOG.get(),
+                Items.CHARCOAL,
+                1.0f, 3.0f
+        );
+
+
         dropOreType2(
                 ModBlocks.DEPTH_CINNABAR.get(),
                 ModBlocks.DEPTH_CINNABAR.get(),
