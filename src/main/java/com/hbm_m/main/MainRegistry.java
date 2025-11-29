@@ -676,8 +676,12 @@ public class MainRegistry {
             event.accept(ModBlocks.METEOR_BRICK_CRACKED_SLAB);
             event.accept(ModBlocks.METEOR_BRICK_MOSSY_SLAB);
             event.accept(ModBlocks.METEOR_CRUSHED_SLAB);
-
-
+            event.accept(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB);
+            event.accept(ModBlocks.BRICK_CONCRETE_CRACKED_SLAB);
+            event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB);
+            event.accept(ModBlocks.CONCRETE_SLAB);
+            event.accept(ModBlocks.CONCRETE_MOSSY_SLAB);
+            event.accept(ModBlocks.CONCRETE_CRACKED_SLAB);
 
             //СТУПЕНИ
             event.accept(ModBlocks.CONCRETE_STAIRS);
