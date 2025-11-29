@@ -7,7 +7,7 @@
       "weight": 1,
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "projection": "rigid",
+        "projection": "terrain_matching",
         "location": "hbm_m:bunker",
         "processors": "minecraft:empty"
       }
