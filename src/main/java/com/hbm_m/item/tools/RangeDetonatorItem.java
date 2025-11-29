@@ -131,6 +131,6 @@ public class RangeDetonatorItem extends Item {
         tooltip.add(Component.translatable("tooltip.hbm_m.range_detonator.desc")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.hbm_m.range_detonator.hint")
-                .withStyle(ChatFormatting.DARK_GRAY));
+                .withStyle(ChatFormatting.GRAY));
     }
 }
