@@ -36,22 +36,29 @@ public class GrenadeIfItem extends Item {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
 
-        //  Универсальная подсказка на основе типа гранаты
-        String behaviorText;
-
-        switch (grenadeType) {
-            case GRENADE_IF_HE -> behaviorText = "Мощный взрыв";
-            case GRENADE_IF_SLIME -> behaviorText = "Лучше отскакивает";
-            case GRENADE_IF -> behaviorText = "Стандартный взрыв";
-            case GRENADE_IF_FIRE -> behaviorText = "Распространяет огонь после детонации";
-            default -> behaviorText = "Граната с таймером";
-        }
-
-        // БЕЗ пробела в начале и пустых строк
-        tooltip.add(Component.literal(behaviorText)
+        // 1-я строка — общая для всех IF‑гранат
+        tooltip.add(Component.translatable("tooltip.hbm_m.grenade_if.common.line1")
                 .withStyle(ChatFormatting.YELLOW));
 
+        // 2-я строка — зависит от типа
+        String key;
+        switch (grenadeType) {
+            case GRENADE_IF_HE ->
+                    key = "tooltip.hbm_m.grenade_if.he.line2";
+            case GRENADE_IF_SLIME ->
+                    key = "tooltip.hbm_m.grenade_if.slime.line2";
+            case GRENADE_IF_FIRE ->
+                    key = "tooltip.hbm_m.grenade_if.fire.line2";
+            case GRENADE_IF ->
+                    key = "tooltip.hbm_m.grenade_if.standard.line2";
+            default ->
+                    key = "tooltip.hbm_m.grenade_if.default.line2";
+        }
+
+        tooltip.add(Component.translatable(key)
+                .withStyle(ChatFormatting.GRAY));
     }
+
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);

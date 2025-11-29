@@ -297,7 +297,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.HEART_BOOSTER.get(), "Усилитель сердца");
                 add(ModItems.HEART_FAB.get(), "Фаб-сердце");
                 add(ModItems.BLACK_DIAMOND.get(), "Черный алмаз");
-
+                add(ModBlocks.SMOKE_BOMB.get(), "Семтекс");
                 add(ModItems.TEMPLATE_FOLDER.get(), "Папка шаблонов машин");
                 add(ModItems.ASSEMBLY_TEMPLATE.get(), "Шаблон сборочной машины: %s");
                 add("tooltip.hbm_m.template_broken", "Шаблон сломан!");
@@ -311,7 +311,177 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.template_folder.desc", "Шаблоны машин: Бумага + Краситель$Идентификатор: Железная пластина + Краситель$Штамп для пресса: Плоский штамп$Трек сирены: Изолятор + Стальная пластина");
                 add("desc.gui.template", "Вставьте сборочный шаблон");
                 add("desc.gui.assembler.warning", "Некорректный шаблон!");
-                
+                // === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
+                add("tooltip.hbm_m.gigadet.line1", "Был создан по приколу");
+                add("tooltip.hbm_m.nuclear_charge.line1", "Ядерное оружие высокой мощности!");
+                add("tooltip.hbm_m.nuclear_charge.line2", "На данный момент, это самый");
+                add("tooltip.hbm_m.nuclear_charge.line3", "разрушительный блок в нашем моде");
+                add("tooltip.hbm_m.nuclear_charge.line4", "Если кратер загрузился некорректно");
+                add("tooltip.hbm_m.nuclear_charge.line5", "или без биомов, то перезапустите мир");
+
+                add("tooltip.hbm_m.detminer.line1", "Не наносит урон сущностям и игрокам");
+                add("tooltip.hbm_m.detminer.line4", "Позволяет добывать глубинные руды и камень");
+
+                add("tooltip.hbm_m.dudnuke.line1", "Ядерное оружие высокой мощности!");
+                add("tooltip.hbm_m.dudnuke.line4", "Если кратер загрузился некорректно");
+                add("tooltip.hbm_m.dudnuke.line5", "или без биомов, то перезапустите мир");
+                add("tooltip.hbm_m.dudnuke.line6", "Может быть обезврежена");
+
+                add("tooltip.hbm_m.dudsalted.line1", "Ядерное оружие высокой мощности!");
+                add("tooltip.hbm_m.dudsalted.line4", "Если кратер загрузился некорректно");
+                add("tooltip.hbm_m.dudsalted.line5", "или без биомов, то перезапустите мир");
+                add("tooltip.hbm_m.dudsalted.line6", "Может быть обезврежена");
+
+                add("tooltip.hbm_m.dudfugas.line1", "Фугасная бомба высокой мощности!");
+                add("tooltip.hbm_m.dudfugas.line6", "Может быть обезврежена");
+
+                add("tooltip.hbm_m.defuser.line1", "Устройство для обезвреживания мин и бомб");
+
+                add("tooltip.hbm_m.crowbar.line1", "Инструмент для вскрытия контейнеров");
+                add("tooltip.hbm_m.crowbar.line2", "Открывает ящики по нажатию ПКМ");
+
+                add("tooltip.hbm_m.mine_nuke.line1", "Ядерное оружие!");
+                add("tooltip.hbm_m.mine_nuke.line2", "Радиус поражения: 35 метров");
+                add("tooltip.hbm_m.mine_nuke.line3", "Может быть обезврежена");
+
+                add("tooltip.hbm_m.mine.line1", "Может быть обезврежена");
+
+// ДЕТОНАТОР
+                add("tooltip.hbm_m.detonator.target", "Цель: ");
+                add("tooltip.hbm_m.detonator.no_target", "Нет цели");
+                add("tooltip.hbm_m.detonator.right_click", "ПКМ - активировать");
+                add("tooltip.hbm_m.detonator.shift_right_click", "Shift+ПКМ - установить");
+
+// СКАНЕР КЛАСТЕРОВ
+                add("tooltip.hbm_m.depth_ores_scanner.scans_chunks", "Сканирует чанки в поисках");
+                add("tooltip.hbm_m.depth_ores_scanner.deep_clusters", "глубинных кластеров под игроком");
+                add("tooltip.hbm_m.depth_ores_scanner.depth_warning", "Работает на глубине -30 и ниже!");
+                // DEPTH ORES SCANNER (сообщения)
+                add("message.hbm_m.depth_ores_scanner.invalid_height", "Сканер работает только на высоте -30 или ниже!");
+                add("message.hbm_m.depth_ores_scanner.directly_below", "Глубинный кластер прямо под нами!");
+                add("message.hbm_m.depth_ores_scanner.in_chunk", "В нашем чанке обнаружен глубинный кластер!");
+                add("message.hbm_m.depth_ores_scanner.adjacent_chunk", "В соседнем чанке обнаружен глубинный кластер!");
+                add("message.hbm_m.depth_ores_scanner.none_found", "Не обнаружено глубинных кластеров поблизости");
+
+// MULTI DETONATOR TOOLTIPS
+                add("tooltip.hbm_m.multi_detonator.active_point", "➤ %s:");
+                add("tooltip.hbm_m.multi_detonator.point_set", "✅ %s:");
+                add("tooltip.hbm_m.multi_detonator.coordinates", "   %d, %d, %d");
+                add("tooltip.hbm_m.multi_detonator.point_empty", "○ Точка %d:");
+                add("tooltip.hbm_m.multi_detonator.not_set", "   Не установлена");
+                add("tooltip.hbm_m.multi_detonator.key_r", "R - открыть меню");
+                add("tooltip.hbm_m.multi_detonator.shift_rmb", "Shift+ПКМ - сохранить в активную точку");
+                add("tooltip.hbm_m.multi_detonator.rmb_activate", "ПКМ - активировать активную точку");
+
+// MULTI DETONATOR MESSAGES
+                add("message.hbm_m.multi_detonator.position_saved", "Позиция '%s' сохранена: %d, %d, %d");
+                add("message.hbm_m.multi_detonator.no_coordinates", "Нет заданных координат!");
+                add("message.hbm_m.multi_detonator.point_not_set", "Точка %d не установлена!");
+                add("message.hbm_m.multi_detonator.chunk_not_loaded", "Позиция не загружена!");
+                add("message.hbm_m.multi_detonator.activated", "%s активирован!");
+                add("message.hbm_m.multi_detonator.activation_error", "Ошибка при активации!");
+                add("message.hbm_m.multi_detonator.incompatible_block", "Блок несовместим!");
+
+
+
+
+
+// ДЕТЕКТОР НЕФТИ (тултип)
+                add("tooltip.hbm_m.oil_detector.scans_chunks", "Сканирует чанки в поисках");
+                add("tooltip.hbm_m.oil_detector.oil_deposits", "нефтяных залеж под игроком");
+
+// ДЕТЕКТОР НЕФТИ (сообщения использования)
+                add("message.hbm_m.oil_detector.directly_below", "Залежи нефти прямо под нами!");
+                add("message.hbm_m.oil_detector.in_chunk", "В нашем чанке обнаружена нефть!");
+                add("message.hbm_m.oil_detector.adjacent_chunk", "В соседнем чанке обнаружены залежи нефти!");
+                add("message.hbm_m.oil_detector.none_found", "Не обнаружено залежь нефти поблизости");
+
+                // RANGE DETONATOR
+                add("tooltip.hbm_m.range_detonator.desc", "Активирует совместимые блоки");
+                add("tooltip.hbm_m.range_detonator.hint", "по лучу до 256 блоков.");
+                add("message.hbm_m.range_detonator.pos_not_loaded", "Позиция несовместима или не прогружена");
+                add("message.hbm_m.range_detonator.activated", "Успешно активировано");
+
+                add("tooltip.hbm_m.grenade_nuc.line1", "Ядерное оружие!");
+                add("tooltip.hbm_m.grenade_nuc.line2", "Зона поражения: 25 метров");
+                add("tooltip.hbm_m.grenade_nuc.line3", "Задержка: 6с");
+
+                add("tooltip.hbm_m.grenade.common.line1", "Ручная граната");
+
+                add("tooltip.hbm_m.grenade.smart.line2", "Детонирует при прямом попадании в сущность");
+                add("tooltip.hbm_m.grenade.fire.line2", "Оставляет огонь после детонации");
+                add("tooltip.hbm_m.grenade.slime.line2", "Сильно отскакивает от поверхностей");
+                add("tooltip.hbm_m.grenade.standard.line2", "Слабый осколочный взрыв");
+                add("tooltip.hbm_m.grenade.he.line2", "Усиленный фугасный взрыв");
+                add("tooltip.hbm_m.grenade.default.line2", "Кидайте и взрывайте!");
+
+                add("tooltip.hbm_m.grenade_if.common.line1", "IF-Граната");
+
+                add("tooltip.hbm_m.grenade_if.he.line2", "Мощный фугасный взрыв");
+                add("tooltip.hbm_m.grenade_if.slime.line2", "Сильно отскакивает от поверхностей");
+                add("tooltip.hbm_m.grenade_if.fire.line2", "Оставляет огонь после детонации");
+                add("tooltip.hbm_m.grenade_if.standard.line2", "Стандартный взрыв с таймером");
+                add("tooltip.hbm_m.grenade_if.default.line2", "Аллах одобряет!");
+
+                // ru_ru case
+                // ru_ru case
+                add(ModBlocks.BARREL_IRON.get(), "Железная бочка");
+                add(ModBlocks.BARREL_STEEL.get(), "Стальная бочка");
+                add(ModBlocks.BARREL_TCALLOY.get(), "Бочка из термо-керамического сплава");
+                add(ModItems.ZIRCONIUM_SHARP.get(), "Осколок циркония");
+                add(ModBlocks.CRATE_CONSERVE.get(), "Ящик с консервами");
+                add(ModBlocks.CAGE_LAMP.get(), "Лампа в клетке");
+                add(ModBlocks.FLOOD_LAMP.get(), "Прожектор");
+                add(ModBlocks.B29.get(), "B-29");
+                add(ModBlocks.DORNIER.get(), "Dornier");
+                add(ModBlocks.FILE_CABINET.get(), "Шкафчик");
+                add(ModBlocks.TAPE_RECORDER.get(), "Магнитофон");
+                add(ModBlocks.CRT_BROKEN.get(), "Сломанный монитор");
+                add(ModBlocks.CRT_BSOD.get(), "BSOD Монитор ");
+                add(ModBlocks.CRT_CLEAN.get(), "Монитор");
+                add(ModBlocks.TOASTER.get(), "Тостер");
+                add(ModBlocks.BARREL_CORRODED.get(), "Проржавевшая бочка");
+                add(ModBlocks.BARREL_LOX.get(), "Бочка с жидким кислородом");
+                add(ModBlocks.BARREL_PINK.get(), "Бочка с керосином");
+                add(ModBlocks.BARREL_YELLOW.get(), "Бочка с ядерными отходами");
+                add(ModBlocks.BARREL_VITRIFIED.get(), "Бочка с остеклованными ядерными отходами");
+                add(ModBlocks.BARREL_TAINT.get(), "Бочка с говном");
+                add(ModBlocks.FIRE_DOOR.get(), "Пожарная дверь");
+                add(ModBlocks.SLIDING_SEAL_DOOR.get(), "Скользящая герметичная дверь");
+                add(ModBlocks.SECURE_ACCESS_DOOR.get(), "Усиленная дверь");
+                add(ModBlocks.QE_CONTAINMENT.get(), "QE дверь биологического сдерживания");
+                add(ModBlocks.QE_SLIDING.get(), "QE раздвижная дверь");
+                add(ModBlocks.WATER_DOOR.get(), "Подводный люк");
+                add(ModBlocks.SILO_HATCH.get(), "Малый люк");
+                add(ModBlocks.SILO_HATCH_LARGE.get(), "Люк ракетной шахты");
+
+
+                add(ModBlocks.DUD_SALTED.get(), "Неразорвавшаяся солёная бомба");
+                add(ModBlocks.DUD_NUKE.get(), "Неразорвавшаяся ядерная бомба");
+                add(ModBlocks.DUD_FUGAS_TONG.get(), "Неразорвавшаяся фугасная бомба");
+                add(ModBlocks.MINE_FAT.get(), "Мина 'Толстяк'");
+                add(ModBlocks.MINE_AP.get(), "Противопехотная мина");
+                add(ModItems.GRENADE_NUC.get(), "Ядерная граната");
+                add(ModItems.GRENADE_IF_HE.get(), "IF-Граната: фугасная");
+                add(ModItems.GRENADE_IF_FIRE.get(), "IF-Граната: зажигательная");
+                add(ModItems.GRENADE_IF_SLIME.get(), "IF-Граната: прыгучая");
+                add(ModItems.MULTI_DETONATOR.get(), "Мульти-детонатор");
+                add(ModItems.RANGE_DETONATOR.get(), "Детонатор дальнего действия");
+                add(ModItems.DETONATOR.get(), "Детонатор");
+                add(ModBlocks.BARBED_WIRE_POISON.get(), "Колючая проволока (яд)");
+                add(ModBlocks.BARBED_WIRE_FIRE.get(), "Колючая проволока (огонь)");
+                add(ModBlocks.BARBED_WIRE_RAD.get(), "Колючая проволока (радиация)");
+                add(ModBlocks.BARBED_WIRE.get(), "Колючая проволока");
+                add(ModBlocks.BARBED_WIRE_WITHER.get(), "Колючая проволока (иссушение)");
+                add(ModBlocks.WASTE_CHARGE.get(), "Отходный заряд");
+                add(ModBlocks.GIGA_DET.get(), "Чёртов заряд горняка");
+                add(ModBlocks.NUCLEAR_CHARGE.get(), "Ядерный заряд");
+                add(ModBlocks.C4.get(), "Заряд C4");
+                add(ModItems.DEFUSER.get(), "Устройство для разминирования");
+                add(ModItems.CROWBAR.get(), "Лом");
+                add(ModItems.DEPTH_ORES_SCANNER.get(), "Сканер глубинных кластеров");
+                add(ModItems.OIL_DETECTOR.get(), "Детектор нефти");
+
 
                 add(ModItems.GHIORSIUM_CLADDING.get(), "Прокладка из гиорсия");
                 add(ModItems.DESH_CLADDING.get(), "Обшивка из деш");
@@ -326,12 +496,23 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.GRENADEHE.get(), "Мощная отскок граната");
                 add(ModItems.GRENADEFIRE.get(), "Зажигательная отскок граната");
 
-                add(ModItems.GRENADE_IF.get(), "IF граната (WIP)");
+                add(ModItems.GRENADE_IF.get(), "IF граната");
 
                 add("item.hbm_m.radaway", "Антирадин");
                 add("item.hbm_m.wood_ash_powder", "Древесный пепел");
                 add("effect.hbm_m.radaway", "Очищение от радиации");
 
+
+// ru_ru case
+                add(ModBlocks.CONVERTER_BLOCK.get(), "Конвертер энергии");
+                add(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get(), "Динейтрониевая батарея");
+                add(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get(), "Шрабидиевая батарея");
+                add(ModBlocks.MACHINE_BATTERY_LITHIUM.get(), "Литиевая батарея");
+
+                add(ModItems.BLADE_TEST.get(), "Деш Лезвия");
+                add(ModItems.BORAX.get(), "Бура");
+                add(ModItems.BALL_TNT.get(), "Взрывчатка");
+                add(ModItems.BOLT_STEEL.get(), "Болт");
                 add(ModItems.CANNED_ASBESTOS.get(), "Консервированный асбест");
                 add(ModItems.CANNED_ASS.get(), "Консервированная задница");
                 add(ModItems.CANNED_BARK.get(), "Консервированная кора");
@@ -528,7 +709,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.door_bunker", "Бункерная дверь");
                 add("block.hbm_m.metal_door", "Металлическая дверь");
                 add("block.hbm_m.demon_lamp", "Милая лампа (WIP)");
-                add("block.hbm_m.explosive_charge", "Заряд взрывчатки (WIP)");
+                add("block.hbm_m.explosive_charge", "Заряд взрывчатки");
                 add("block.hbm_m.det_miner", "Шахтёрский заряд");
                 add("block.hbm_m.concrete_vent", "Вентиляция в бетоне");
                 add("block.hbm_m.concrete_fan", "Вентилятор в бетоне");
@@ -551,7 +732,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.machine_battery", "Энергохранилище");
                 add("block.hbm_m.wire_coated", "Провод из красной меди");
                 add("block.hbm_m.wood_burner", "Дровяной генератор");
-                add("block.hbm_m.shredder", "Шредер (WIP)");
+                add("block.hbm_m.shredder", "Измельчитель");
                 add("block.hbm_m.blast_furnace", "Доменная печь");
                 add("block.hbm_m.blast_furnace_extension", "Расширение доменной печи");
                 add("block.hbm_m.press", "Пресс");
@@ -1115,7 +1296,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.GRENADESLIME.get(), "Bouncy Bouncing Grenade");
                 add(ModItems.GRENADESMART.get(), "Smart Bouncing Grenade");
 
-                add(ModItems.GRENADE_IF.get(), "IF Grenade (WIP)");
+                add(ModItems.GRENADE_IF.get(), "IF Grenade");
 
                 add("item.hbm_m.geiger_counter", "Geiger Counter");
                 add("item.hbm_m.dosimeter", "Dosimeter");
@@ -1160,7 +1341,182 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("desc.gui.template", "Insert Assembly Template");
                 add("desc.gui.assembler.warning", "No valid template!");
 
+// === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
+                add("tooltip.hbm_m.crowbar.line1", "Tool for prying open containers.");
+                add("tooltip.hbm_m.crowbar.line2", "Opens crates on right-click");
+                add("tooltip.hbm_m.defuser.line1", "Device for disarming mines and bombs");
+                add("tooltip.hbm_m.defuser.line2", "RMB on a compatible device to disarm");
+                add("tooltip.hbm_m.mine.line1", "Can be defused");
+                add("tooltip.hbm_m.gigadet.line1", "Was made for fun");
 
+                add("tooltip.hbm_m.nuclear_charge.line1", "High-yield nuclear weapon!");
+                add("tooltip.hbm_m.nuclear_charge.line2", "At the moment, this is the");
+                add("tooltip.hbm_m.nuclear_charge.line3", "most destructive block in our mod.");
+                add("tooltip.hbm_m.nuclear_charge.line4", "If the crater loaded incorrectly");
+                add("tooltip.hbm_m.nuclear_charge.line5", "or without biomes, restart the world.");
+
+                add("tooltip.hbm_m.mine_nuke.line1", "Nuclear weapon!");
+                add("tooltip.hbm_m.mine_nuke.line2", "Blast radius: 35 meters");
+                add("tooltip.hbm_m.mine_nuke.line3", "Can be defused");
+
+                add("tooltip.hbm_m.dudnuke.line1", "High-yield nuclear weapon!");
+                add("tooltip.hbm_m.dudnuke.line4", "If the crater loaded incorrectly");
+                add("tooltip.hbm_m.dudnuke.line5", "or without biomes, restart the world");
+                add("tooltip.hbm_m.dudnuke.line6", "Can be defused");
+
+                add("tooltip.hbm_m.dudsalted.line1", "High-yield nuclear weapon!");
+                add("tooltip.hbm_m.dudsalted.line4", "If the crater loaded incorrectly");
+                add("tooltip.hbm_m.dudsalted.line5", "or without biomes, restart the world");
+                add("tooltip.hbm_m.dudsalted.line6", "Can be defused");
+
+                add("tooltip.hbm_m.dudfugas.line1", "High-yield explosion!");
+                add("tooltip.hbm_m.dudfugas.line6", "Can be defused");
+
+// ДЕТОНАТОР
+                add("tooltip.hbm_m.detonator.target", "Target: ");
+                add("tooltip.hbm_m.detonator.no_target", "No target");
+                add("tooltip.hbm_m.detonator.right_click", "RMB - Activate");
+                add("tooltip.hbm_m.detonator.shift_right_click", "Shift+RMB - Set target");
+
+// СКАНЕР КЛАСТЕРОВ
+                add("tooltip.hbm_m.depth_ores_scanner.scans_chunks", "Scans chunks for");
+                add("tooltip.hbm_m.depth_ores_scanner.deep_clusters", "depth clusters beneath the player");
+                add("tooltip.hbm_m.depth_ores_scanner.depth_warning", "works at depth -30 and below!");
+// DEPTH ORES SCANNER (сообщения)
+                add("message.hbm_m.depth_ores_scanner.invalid_height", "Scanner works only at height -30 or below!");
+                add("message.hbm_m.depth_ores_scanner.directly_below", "Depth cluster directly below us!");
+                add("message.hbm_m.depth_ores_scanner.in_chunk", "Depth cluster found in our chunk!");
+                add("message.hbm_m.depth_ores_scanner.adjacent_chunk", "Depth cluster found in adjacent chunk!");
+                add("message.hbm_m.depth_ores_scanner.none_found", "No depth clusters found nearby");
+
+// ДЕТЕКТОР НЕФТИ (тултип)
+                add("tooltip.hbm_m.oil_detector.scans_chunks", "Scans chunks for");
+                add("tooltip.hbm_m.oil_detector.oil_deposits", "oil deposits beneath the player");
+
+// ДЕТЕКТОР НЕФТИ (сообщения использования)
+                add("message.hbm_m.oil_detector.directly_below", "Oil deposits directly below us!");
+                add("message.hbm_m.oil_detector.in_chunk", "Oil found in our chunk!");
+                add("message.hbm_m.oil_detector.adjacent_chunk", "Oil deposits found in adjacent chunk!");
+                add("message.hbm_m.oil_detector.none_found", "No oil deposits found nearby");
+
+// MULTI DETONATOR TOOLTIPS
+                add("tooltip.hbm_m.multi_detonator.active_point", "➤ %s:");
+                add("tooltip.hbm_m.multi_detonator.point_set", "✅ %s:");
+                add("tooltip.hbm_m.multi_detonator.coordinates", "   %d, %d, %d");
+                add("tooltip.hbm_m.multi_detonator.point_empty", "○ Point %d:");
+                add("tooltip.hbm_m.multi_detonator.not_set", "   Not set");
+                add("tooltip.hbm_m.multi_detonator.key_r", "R - open menu");
+                add("tooltip.hbm_m.multi_detonator.shift_rmb", "Shift+RMB - save to active point");
+                add("tooltip.hbm_m.multi_detonator.rmb_activate", "RMB - activate active point");
+
+// MULTI DETONATOR MESSAGES
+                add("message.hbm_m.multi_detonator.position_saved", "Position '%s' saved: %d, %d, %d");
+                add("message.hbm_m.multi_detonator.no_coordinates", "No coordinates set!");
+                add("message.hbm_m.multi_detonator.point_not_set", "Point %d not set!");
+                add("message.hbm_m.multi_detonator.chunk_not_loaded", "Position not loaded!");
+                add("message.hbm_m.multi_detonator.activated", "%s activated!");
+                add("message.hbm_m.multi_detonator.activation_error", "Activation error!");
+                add("message.hbm_m.multi_detonator.incompatible_block", "Block incompatible!");
+// RANGE DETONATOR
+                add("tooltip.hbm_m.range_detonator.desc", "Activates compatible blocks");
+                add("tooltip.hbm_m.range_detonator.hint", "along a ray up to 256 blocks.");
+                add("message.hbm_m.range_detonator.pos_not_loaded", "Position incompatible or not loaded");
+                add("message.hbm_m.range_detonator.activated", "Successfully activated");
+
+
+                add("tooltip.hbm_m.grenade_nuc.line1", "Nuclear weapon!");
+                add("tooltip.hbm_m.grenade_nuc.line2", "Blast radius: 25 meters");
+                add("tooltip.hbm_m.grenade_nuc.line3", "Fuse time: 6s");
+                add("tooltip.hbm_m.detminer.line1", "Does not damage entities or players");
+                add("tooltip.hbm_m.detminer.line4", "Allows mining depth ores and stone");
+
+
+                add("tooltip.hbm_m.grenade.common.line1", "Hand grenade");
+
+                add("tooltip.hbm_m.grenade.smart.line2", "Detonates on direct hit with an entity");
+                add("tooltip.hbm_m.grenade.fire.line2", "Leaves fire after detonation");
+                add("tooltip.hbm_m.grenade.slime.line2", "Bounces strongly off surfaces");
+                add("tooltip.hbm_m.grenade.standard.line2", "Weak fragmentation blast");
+                add("tooltip.hbm_m.grenade.he.line2", "Enhanced high-explosive blast");
+                add("tooltip.hbm_m.grenade.default.line2", "Throw it and watch it boom!");
+
+                add("tooltip.hbm_m.grenade_if.common.line1", "IF-Grenade");
+
+                add("tooltip.hbm_m.grenade_if.he.line2", "Powerful high-explosive blast");
+                add("tooltip.hbm_m.grenade_if.slime.line2", "Bounces strongly off surfaces");
+                add("tooltip.hbm_m.grenade_if.fire.line2", "Leaves fire after detonation");
+                add("tooltip.hbm_m.grenade_if.standard.line2", "Standard timed explosion");
+                add("tooltip.hbm_m.grenade_if.default.line2", "Throw it and wait for the boom");
+
+// en_us case
+                add(ModBlocks.CONVERTER_BLOCK.get(), "Energy Converter");
+                add(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get(), "Spark Battery");
+                add(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get(), "Shrabidium Battery");
+                add(ModBlocks.MACHINE_BATTERY_LITHIUM.get(), "Lithium Battery");
+                // en_us case
+                add(ModItems.BLADE_TEST.get(), "Desh Blades");
+                add(ModItems.BORAX.get(), "Borax");
+                add(ModItems.BALL_TNT.get(), "TNT Ball");
+                add(ModItems.BOLT_STEEL.get(), "Steel Bolt");
+                add(ModItems.ZIRCONIUM_SHARP.get(), "Zirconium Sharp");
+                add(ModBlocks.CRATE_CONSERVE.get(), "Canned Goods Crate");
+                add(ModBlocks.CAGE_LAMP.get(), "Cage Lamp");
+                add(ModBlocks.FLOOD_LAMP.get(), "Flood Lamp");
+                add(ModBlocks.B29.get(), "B-29");
+                add(ModBlocks.DORNIER.get(), "Dornier");
+                add(ModBlocks.FILE_CABINET.get(), "File Cabinet");
+                add(ModBlocks.TAPE_RECORDER.get(), "Tape Recorder");
+                add(ModBlocks.CRT_BROKEN.get(), "Broken CRT");
+                add(ModBlocks.CRT_BSOD.get(), "BSOD CRT");
+                add(ModBlocks.CRT_CLEAN.get(), "Clean CRT");
+                add(ModBlocks.TOASTER.get(), "Toaster");
+                add(ModBlocks.BARREL_CORRODED.get(), "Corroded Barrel");
+                add(ModBlocks.BARREL_LOX.get(), "LOX Barrel");
+                add(ModBlocks.BARREL_PINK.get(), "Pink Barrel");
+                add(ModBlocks.BARREL_YELLOW.get(), "Yellow Barrel");
+                add(ModBlocks.BARREL_VITRIFIED.get(), "Vitrified Barrel");
+                add(ModBlocks.BARREL_TAINT.get(), "Tainted Barrel");
+                add(ModBlocks.BARREL_IRON.get(), "Iron Barrel");
+                add(ModBlocks.BARREL_STEEL.get(), "Steel Barrel");
+                add(ModBlocks.BARREL_TCALLOY.get(), "Iron Barrel");
+                add(ModBlocks.FIRE_DOOR.get(), "Fire Door");
+                add(ModBlocks.SLIDING_SEAL_DOOR.get(), "Sliding Seal Door");
+                add(ModBlocks.SECURE_ACCESS_DOOR.get(), "Secure Access Door");
+                add(ModBlocks.QE_CONTAINMENT.get(), "QE Containment Door");
+                add(ModBlocks.QE_SLIDING.get(), "QE Sliding Door");
+                add(ModBlocks.WATER_DOOR.get(), "Waterproof Hatch");
+                add(ModBlocks.SILO_HATCH.get(), "Silo Hatch");
+                add(ModBlocks.SILO_HATCH_LARGE.get(), "Large Silo Hatch");
+
+
+                add(ModBlocks.DUD_SALTED.get(), "Unexploded Salted Bomb");
+                add(ModBlocks.DUD_NUKE.get(), "Unexploded Nuclear Bomb");
+                add(ModBlocks.DUD_FUGAS_TONG.get(), "Unexploded High-Explosive Bomb");
+                add(ModBlocks.MINE_FAT.get(), "FatMan Mine");
+                add(ModBlocks.MINE_AP.get(), "Anti-Personnel Mine");
+                add(ModItems.GRENADE_NUC.get(), "Nuclear Grenade");
+                add(ModItems.GRENADE_IF_HE.get(), "IF Grenade: HE");
+                add(ModItems.GRENADE_IF_FIRE.get(), "IF Grenade: Incendiary");
+                add(ModItems.GRENADE_IF_SLIME.get(), "IF Grenade: Bouncy");
+                add(ModItems.MULTI_DETONATOR.get(), "Multi Detonator");
+                add(ModItems.RANGE_DETONATOR.get(), "Range Detonator");
+                add(ModItems.DETONATOR.get(), "Detonator");
+                add(ModBlocks.BARBED_WIRE_POISON.get(), "Poison Barbed Wire");
+                add(ModBlocks.BARBED_WIRE_FIRE.get(), "Fire Barbed Wire");
+                add(ModBlocks.BARBED_WIRE_RAD.get(), "Radiation Barbed Wire");
+                add(ModBlocks.BARBED_WIRE.get(), "Barbed Wire");
+                add(ModBlocks.BARBED_WIRE_WITHER.get(), "Wither Barbed Wire");
+                add(ModBlocks.WASTE_CHARGE.get(), "Waste Charge");
+                add(ModBlocks.GIGA_DET.get(), "Giga Det");
+                add(ModBlocks.NUCLEAR_CHARGE.get(), "Nuclear Charge");
+                add(ModBlocks.C4.get(), "C4 Charge");
+                add(ModItems.DEFUSER.get(), "Defuser");
+                add(ModItems.CROWBAR.get(), "Crowbar");
+                add(ModItems.DEPTH_ORES_SCANNER.get(), "Depth Ore Scanner");
+                add(ModItems.OIL_DETECTOR.get(), "Oil Detector");
+
+
+                add(ModBlocks.SMOKE_BOMB.get(), "Semtex");
                 add(ModItems.NUGGET_SILICON.get(), "Silicon Nugget");
                 add(ModItems.BILLET_SILICON.get(), "Silicon Billet");
                 add(ModItems.PLATE_GOLD.get(), "Golden Plate");
@@ -1289,7 +1645,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.door_bunker", "Bunker Door");
                 add("block.hbm_m.metal_door", "Metal Door");
                 add("block.hbm_m.demon_lamp", "Demon Lamp (WIP)");
-                add("block.hbm_m.explosive_charge", "Explosive Charge (WIP)");
+                add("block.hbm_m.explosive_charge", "Explosive Charge");
                 add("block.hbm_m.reinforced_glass", "Reinforced Glass");
                 add("block.hbm_m.crate", "Crate");
                 add("block.hbm_m.crate_lead", "Lead Crate");
@@ -1303,7 +1659,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.machine_assembler", "Assembly Machine (Legacy)");
                 add("block.hbm_m.advanced_assembly_machine", "Assembly Machine");
                 add("block.hbm_m.machine_battery", "Machine Battery");
-                add("block.hbm_m.shredder", "Shredder (WIP)");
+                add("block.hbm_m.shredder", "Shredder");
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
                 add("block.hbm_m.blast_furnace", "Blast Furnace");
                 add("block.hbm_m.blast_furnace_extension", "Blast Furnace Extension");

@@ -1,6 +1,7 @@
 package com.hbm_m.block;
 
 import com.hbm_m.api.energy.ConverterBlock;
+import com.hbm_m.block.explosives.*;
 import com.hbm_m.block.machine.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machine.MachineAssemblerBlock;
 import com.hbm_m.block.machine.MachineBatteryBlock;

@@ -11,8 +11,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
-import com.hbm_m.item.MultiDetonatorItem;
-import com.hbm_m.item.MultiDetonatorItem.PointData;
+import com.hbm_m.item.tools.MultiDetonatorItem;
+import com.hbm_m.item.tools.MultiDetonatorItem.PointData;
 import com.hbm_m.block.IDetonatable;
 import java.util.function.Supplier;
 

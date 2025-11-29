@@ -34,23 +34,25 @@ public class GrenadeItem extends Item {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
 
-        //  Универсальная подсказка на основе типа гранаты
-        String behaviorText;
-
-        switch (grenadeType) {
-            case SMART -> behaviorText = "Детонирует при прямом попадании в сущность";
-            case FIRE -> behaviorText = "Распространяет огонь после детонации";
-            case SLIME -> behaviorText = "Лучше отскакивает";
-            case STANDARD -> behaviorText = "Слабый взрыв";
-            case HE -> behaviorText = "Стандартный взрыв";
-            default -> behaviorText = "Кидайте и взрывайте!";
-        }
-
-        // БЕЗ пробела в начале и пустых строк
-        tooltip.add(Component.literal(behaviorText)
+        // Общая первая строка для всех гранат
+        tooltip.add(Component.translatable("tooltip.hbm_m.grenade.common.line1")
                 .withStyle(ChatFormatting.YELLOW));
 
+        // Вторая строка — специфична для типа гранаты
+        String key;
+        switch (grenadeType) {
+            case SMART -> key = "tooltip.hbm_m.grenade.smart.line2";
+            case FIRE  -> key = "tooltip.hbm_m.grenade.fire.line2";
+            case SLIME -> key = "tooltip.hbm_m.grenade.slime.line2";
+            case STANDARD -> key = "tooltip.hbm_m.grenade.standard.line2";
+            case HE    -> key = "tooltip.hbm_m.grenade.he.line2";
+            default    -> key = "tooltip.hbm_m.grenade.default.line2";
+        }
+
+        tooltip.add(Component.translatable(key)
+                .withStyle(ChatFormatting.GRAY));
     }
+
 
 
     @Override

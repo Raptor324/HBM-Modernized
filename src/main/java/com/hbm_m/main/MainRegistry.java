@@ -532,8 +532,6 @@ public class MainRegistry {
         // СТРОИТЕЛЬНЫЕ БЛОКИ
         if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get()) {
 
-
-            event.accept(ModBlocks.DECO_STEEL);
             event.accept(ModBlocks.CONCRETE_STAIRS);
             event.accept(ModBlocks.CONCRETE_SLAB);
             event.accept(ModBlocks.CONCRETE);
@@ -597,9 +595,7 @@ public class MainRegistry {
             event.accept(ModBlocks.METAL_DOOR);
             event.accept(ModBlocks.LARGE_VEHICLE_DOOR);
             event.accept(ModBlocks.ROUND_AIRLOCK_DOOR);
-            event.accept(ModBlocks.TRANSITION_SEAL);
             event.accept(ModBlocks.FIRE_DOOR);
-            event.accept(ModBlocks.SLIDE_DOOR);
             event.accept(ModBlocks.SLIDING_SEAL_DOOR);
             event.accept(ModBlocks.SECURE_ACCESS_DOOR);
             event.accept(ModBlocks.QE_CONTAINMENT);

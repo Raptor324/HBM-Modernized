@@ -5,7 +5,7 @@ import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machine.MachineAdvancedAssemblerBlock;
 import com.hbm_m.client.ClientSoundManager;
-import com.hbm_m.item.ItemBlueprintFolder;
+import com.hbm_m.item.tools.ItemBlueprintFolder;
 import com.hbm_m.item.ItemCreativeBattery;
 import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;

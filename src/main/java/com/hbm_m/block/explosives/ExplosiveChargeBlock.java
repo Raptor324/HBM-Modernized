@@ -1,27 +1,67 @@
-package com.hbm_m.block;
+package com.hbm_m.block.explosives;
 
+import com.hbm_m.block.IDetonatable;
 import com.hbm_m.particle.ModExplosionParticles;
-
-import com.hbm_m.util.WasteBlastGenerator;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
+import org.jetbrains.annotations.Nullable;
 
-public class WasteChargeBlock extends Block implements IDetonatable {
+import java.util.List;
 
+public class ExplosiveChargeBlock extends Block implements IDetonatable {
     private static final float EXPLOSION_POWER = 25.0F;
     private static final double PARTICLE_VIEW_DISTANCE = 512.0;
     private static final int DETONATION_RADIUS = 6;
     // Параметры воронки
-    private static final int CRATER_RADIUS = 60; // Радиус воронки в блоках
-    private static final int CRATER_DEPTH = 20; // Глубина воронки в блоках
+    private static final int CRATER_RADIUS = 35; // Радиус воронки в блоках
+    private static final int CRATER_DEPTH = 12; // Глубина воронки в блоках
 
-    public WasteChargeBlock(Properties properties) {
-        super(properties);
+
+    public static final DirectionProperty FACING = DirectionProperty.create("facing", Direction.Plane.HORIZONTAL);
+
+    private static final VoxelShape SHAPE = Shapes.box(0, 0, 0, 1, 1, 1); // полный куб (замени при необходимости)
+
+    public ExplosiveChargeBlock(Properties props) {
+        super(props);
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
+    @Override
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        // Блок поворачивается лицом к игроку при установке (противоположно взгляду игрока)
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        return SHAPE;
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        return SHAPE;
     }
 
     @Override
@@ -44,38 +84,16 @@ public class WasteChargeBlock extends Block implements IDetonatable {
             // 2. Активируем соседние Detonatable блоки по цепочке
             triggerNearbyDetonations(serverLevel, pos, player);
 
-            // ИСПРАВЛЕНИЕ: Проверка на null для сервера
             if (serverLevel.getServer() != null) {
-                // Создаём воронку с задержкой (после взрывной волны)
-                serverLevel.getServer().tell(new net.minecraft.server.TickTask(30, () -> {
-                    // НОВОЕ: Используем массив из 4 вариантов селлафита
-                    Block[] sellafieldBlocks = {
-                            ModBlocks.SELLAFIELD_SLAKED.get(),
-                            ModBlocks.SELLAFIELD_SLAKED1.get(),
-                            ModBlocks.SELLAFIELD_SLAKED2.get(),
-                            ModBlocks.SELLAFIELD_SLAKED3.get()
-                    };
+                serverLevel.getServer().tell(new TickTask(30, () -> {
+                    level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 8.0F, Level.ExplosionInteraction.TNT);
 
-                    // Анимированная версия (2 секунды)
-                    WasteBlastGenerator.generateCrater(
-                            serverLevel,
-                            pos,
-                            CRATER_RADIUS,
-                            CRATER_DEPTH,
-                            sellafieldBlocks
-                    );
 
-                    // ИЛИ мгновенная версия (раскомментируй если нужна)
-                    // CraterGenerator.generateCraterInstant(
-                    //         serverLevel, pos, CRATER_RADIUS, CRATER_DEPTH,
-                    //         sellafieldBlocks
-                    // );
                 }));
             }
 
             return true;
         }
-
         return false;
     }
 
@@ -87,12 +105,12 @@ public class WasteChargeBlock extends Block implements IDetonatable {
         spawnSparks(level, x, y, z);
 
         // Фаза 3: Взрывная волна (5 тиков задержки)
-        level.getServer().tell(new net.minecraft.server.TickTask(5, () -> {
+        level.getServer().tell(new TickTask(5, () -> {
             spawnShockwave(level, x, y, z);
         }));
 
         // Фаза 4: Гриб из дыма (10 тиков задержки)
-        level.getServer().tell(new net.minecraft.server.TickTask(10, () -> {
+        level.getServer().tell(new TickTask(10, () -> {
             spawnMushroomCloud(level, x, y, z);
         }));
     }
@@ -129,6 +147,7 @@ public class WasteChargeBlock extends Block implements IDetonatable {
         // 3 кольца взрывной волны на разной высоте
         for (int ring = 0; ring < 3; ring++) {
             double ringY = y + (ring * 0.5);
+
             level.sendParticles(
                     ModExplosionParticles.SHOCKWAVE.get(),
                     x, ringY, z,

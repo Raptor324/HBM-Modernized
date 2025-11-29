@@ -1,4 +1,4 @@
-package com.hbm_m.item;
+package com.hbm_m.item.tools;
 
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;
@@ -38,38 +38,36 @@ public class DetonatorItem extends Item {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
 
-        // Если есть сохраненная позиция, показываем её в тултипе
         if (stack.hasTag()) {
             CompoundTag nbt = stack.getTag();
-            if (nbt != null && nbt.contains(NBT_HAS_TARGET) && nbt.getBoolean(NBT_HAS_TARGET)) {
-                int x = nbt.getInt(NBT_POS_X);
-                int y = nbt.getInt(NBT_POS_Y);
-                int z = nbt.getInt(NBT_POS_Z);
+            if (nbt != null && nbt.contains("HasTarget") && nbt.getBoolean("HasTarget")) {
+                int x = nbt.getInt("DetPosX");
+                int y = nbt.getInt("DetPosY");
+                int z = nbt.getInt("DetPosZ");
 
-                // Основная строка с координатами
-                tooltip.add(Component.literal("Цель: ")
+                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.target")
                         .append(Component.literal(x + ", " + y + ", " + z))
                         .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD));
 
-                // Дополнительная информация
-                tooltip.add(Component.literal("ПКМ - активировать")
+                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.right_click")
                         .withStyle(ChatFormatting.GRAY));
-                tooltip.add(Component.literal("Shift+ПКМ - установить")
+                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.shift_right_click")
                         .withStyle(ChatFormatting.GRAY));
             } else {
-                // Если позиции нет
-                tooltip.add(Component.literal("Нет цели")
+                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.no_target")
                         .withStyle(ChatFormatting.RED));
-                tooltip.add(Component.literal("Shift+ПКМ - установить")
+                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.shift_right_click")
                         .withStyle(ChatFormatting.GRAY));
             }
         } else {
-            tooltip.add(Component.literal("Нет цели")
+            tooltip.add(Component.translatable("tooltip.hbm_m.detonator.no_target")
                     .withStyle(ChatFormatting.RED));
-            tooltip.add(Component.literal("Shift+ПКМ - установить")
+            tooltip.add(Component.translatable("tooltip.hbm_m.detonator.shift_right_click")
                     .withStyle(ChatFormatting.GRAY));
         }
     }
+
+
 
 
 
