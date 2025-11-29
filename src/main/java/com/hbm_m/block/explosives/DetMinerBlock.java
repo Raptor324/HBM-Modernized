@@ -20,8 +20,8 @@ import net.minecraft.world.level.gameevent.GameEvent;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +33,16 @@ public class DetMinerBlock extends Block implements IDetonatable {
     public DetMinerBlock(Properties properties) {
         super(properties);
     }
-
+    @Override
+    public void appendHoverText(ItemStack stack,
+                                @Nullable net.minecraft.world.level.BlockGetter level,
+                                List<Component> tooltip,
+                                TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line1")
+                .withStyle(ChatFormatting.YELLOW));
+        tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line4")
+                .withStyle(ChatFormatting.GRAY));
+    }
     @Override
     public void neighborChanged(BlockState state, Level level, BlockPos pos,
                                 Block block, BlockPos fromPos, boolean isMoving) {

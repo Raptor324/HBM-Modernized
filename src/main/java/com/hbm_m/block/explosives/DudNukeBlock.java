@@ -4,12 +4,16 @@ import com.hbm_m.block.IDetonatable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.util.DudCraterGenerator;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -24,6 +28,9 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * ОПТИМИЗИРОВАННЫЙ ЯДЕРНЫЙ БЛОК v2
@@ -56,6 +63,22 @@ public class DudNukeBlock extends Block implements IDetonatable {
         super(props);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
+
+    @Override
+    public void appendHoverText(ItemStack stack,
+                                @Nullable net.minecraft.world.level.BlockGetter level,
+                                List<Component> tooltip,
+                                TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.hbm_m.dudnuke.line1")
+                .withStyle(ChatFormatting.DARK_RED));
+        tooltip.add(Component.translatable("tooltip.hbm_m.dudnuke.line4")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.dudnuke.line5")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.dudnuke.line6")
+                .withStyle(ChatFormatting.GRAY));
+    }
+
     // Не ломается поршнями
     @Override
     public PushReaction getPistonPushReaction(BlockState state) {

@@ -3,13 +3,21 @@ package com.hbm_m.block.explosives;
 import com.hbm_m.block.IDetonatable;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.util.MessGenerator;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import org.jetbrains.annotations.Nullable;
+
+import java.util.List;
 
 public class GigaDetBlock extends Block implements IDetonatable {
     private static final float EXPLOSION_POWER = 25.0F;
@@ -26,6 +34,16 @@ public class GigaDetBlock extends Block implements IDetonatable {
 
     public GigaDetBlock(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack,
+                                @Nullable BlockGetter level,
+                                List<Component> tooltip,
+                                TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.hbm_m.gigadet.line1")
+                .withStyle(ChatFormatting.GRAY));
+
     }
 
     @Override

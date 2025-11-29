@@ -1,5 +1,7 @@
-package com.hbm_m.block;
+package com.hbm_m.block.explosives;
 
+import com.hbm_m.block.IDetonatable;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.particle.ModExplosionParticles;
 
 import com.hbm_m.util.WasteBlastGenerator;

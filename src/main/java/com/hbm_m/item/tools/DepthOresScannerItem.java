@@ -26,13 +26,11 @@ public class DepthOresScannerItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, @Nullable List<Component> tooltip, TooltipFlag flag) {
         if (tooltip == null) return;
-        tooltip.add(Component.literal("Сканирует чанки в поисках")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("глубинных кластеров под игроком")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("работает на глубине -30 и ниже!")
-                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.depth_ores_scanner.scans_chunks").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.depth_ores_scanner.deep_clusters").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.depth_ores_scanner.depth_warning").withStyle(ChatFormatting.GRAY));
     }
+
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
@@ -46,7 +44,7 @@ public class DepthOresScannerItem extends Item {
         // Новая проверка на высоту
         if (playerPos.getY() > -30) {
             player.displayClientMessage(
-                    Component.literal("Сканер работает только на высоте -30 или ниже!").withStyle(ChatFormatting.GRAY),
+                    Component.translatable("message.hbm_m.depth_ores_scanner.invalid_height").withStyle(ChatFormatting.GRAY),
                     true
             );
             if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
@@ -62,7 +60,7 @@ public class DepthOresScannerItem extends Item {
 
         if (depthStoneUnderPlayer) {
             player.displayClientMessage(
-                    Component.literal("Глубинный кластер прямо под нами!").withStyle(ChatFormatting.DARK_GREEN),
+                    Component.translatable("message.hbm_m.depth_ores_scanner.directly_below").withStyle(ChatFormatting.DARK_GREEN),
                     true
             );
             if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
@@ -71,7 +69,7 @@ public class DepthOresScannerItem extends Item {
             }
         } else if (depthStoneFound) {
             player.displayClientMessage(
-                    Component.literal("В нашем чанке обнаружен глубинный кластер!").withStyle(ChatFormatting.GREEN),
+                    Component.translatable("message.hbm_m.depth_ores_scanner.in_chunk").withStyle(ChatFormatting.GREEN),
                     true
             );
             if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
@@ -79,7 +77,8 @@ public class DepthOresScannerItem extends Item {
                 level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
             }
         } else if (depthStoneInAdjacentChunk) {
-            player.displayClientMessage(                    Component.literal("В соседнем чанке обнаружен глубинный кластер!").withStyle(ChatFormatting.GOLD),
+            player.displayClientMessage(
+                    Component.translatable("message.hbm_m.depth_ores_scanner.adjacent_chunk").withStyle(ChatFormatting.GOLD),
                     true
             );
             if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
@@ -88,7 +87,7 @@ public class DepthOresScannerItem extends Item {
             }
         } else {
             player.displayClientMessage(
-                    Component.literal("Не обнаружено глубинных кластеров поблизости").withStyle(ChatFormatting.RED),
+                    Component.translatable("message.hbm_m.depth_ores_scanner.none_found").withStyle(ChatFormatting.RED),
                     true
             );
             if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
@@ -99,6 +98,7 @@ public class DepthOresScannerItem extends Item {
 
         return InteractionResultHolder.success(stack);
     }
+
 
     private void playSound(Level level, Player player, java.util.Optional<SoundEvent> sound) {
         sound.ifPresent(soundEvent -> level.playSound(null, player.getX(), player.getY(), player.getZ(),

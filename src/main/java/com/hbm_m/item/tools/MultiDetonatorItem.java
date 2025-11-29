@@ -65,48 +65,43 @@ public class MultiDetonatorItem extends Item {
         super(properties.stacksTo(1));
     }
 
-
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
 
-        //  Проходим по всем 4 точкам
+        // Проходим по всем 4 точкам
         for (int i = 0; i < MAX_POINTS; i++) {
             PointData point = getPointData(stack, i);
 
             if (point != null && point.hasTarget) {
-                // 🟢 АКТИВНАЯ точка - выделяем зелёным
+                // 🟢 АКТИВНАЯ точка - выделяем жёлтым
                 if (i == getActivePoint(stack)) {
-                    tooltip.add(Component.literal("➤ " + point.name + ":")
+                    tooltip.add(Component.translatable("tooltip.hbm_m.multi_detonator.active_point", point.name)
                             .withStyle(ChatFormatting.YELLOW));
                 } else {
-                    // 🟡 Обычная точка - жёлтым
-                    tooltip.add(Component.literal("✅ " + point.name + ":")
+                    // 🟡 Обычная точка - зелёным
+                    tooltip.add(Component.translatable("tooltip.hbm_m.multi_detonator.point_set", point.name)
                             .withStyle(ChatFormatting.GREEN));
                 }
 
                 // Координаты
-                tooltip.add(Component.literal("   " + point.x + ", " + point.y + ", " + point.z)
+                tooltip.add(Component.translatable("tooltip.hbm_m.multi_detonator.coordinates", point.x, point.y, point.z)
                         .withStyle(ChatFormatting.WHITE));
 
             } else {
                 // Пустая точка - серым
-                tooltip.add(Component.literal("○ Точка " + (i + 1) + ":")
+                tooltip.add(Component.translatable("tooltip.hbm_m.multi_detonator.point_empty", i + 1)
                         .withStyle(ChatFormatting.GRAY));
-                tooltip.add(Component.literal("   Не установлена")
+                tooltip.add(Component.translatable("tooltip.hbm_m.multi_detonator.not_set")
                         .withStyle(ChatFormatting.GRAY));
             }
         }
 
-        //  Инструкции внизу
-        tooltip.add(Component.literal("R - открыть меню")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("Shift+ПКМ - сохранить в активную точку")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("ПКМ - активировать активную точку")
-                .withStyle(ChatFormatting.GRAY));
+        // Инструкции внизу
+        tooltip.add(Component.translatable("tooltip.hbm_m.multi_detonator.key_r").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.multi_detonator.shift_rmb").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.multi_detonator.rmb_activate").withStyle(ChatFormatting.GRAY));
     }
-
 
     /**
      * useOn: сохранение позиции в текущую активную точку (при Shift+ПКМ на блок)
@@ -141,13 +136,13 @@ public class MultiDetonatorItem extends Item {
 
             ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
 
-            // ⭐ Расширяем список, сохраняя существующие точки
+            // Расширяем список, сохраняя существующие точки
             while (pointsList.size() <= activePoint) {
                 CompoundTag newPointTag = createEmptyPointTag();
                 pointsList.add(newPointTag);
             }
 
-            // ⭐ ГЛАВНОЕ: Получаем существующую точку и сохраняем ЕЁ ИМЯ
+            // Получаем существующую точку и сохраняем ЕЁ ИМЯ
             CompoundTag pointTag = pointsList.getCompound(activePoint);
             String savedName = pointTag.getString(NBT_POINT_NAME);
 
@@ -157,7 +152,7 @@ public class MultiDetonatorItem extends Item {
             pointTag.putInt(NBT_POINT_Z, pos.getZ());
             pointTag.putBoolean(NBT_POINT_HAS_TARGET, true);
 
-            // ⭐ КРИТИЧНО: Возвращаем сохранённое имя
+            // Возвращаем сохранённое имя
             pointTag.putString(NBT_POINT_NAME, savedName.isEmpty() ?
                     "Point " + (activePoint + 1) : savedName);
 
@@ -167,8 +162,7 @@ public class MultiDetonatorItem extends Item {
             if (!level.isClientSide) {
                 String finalName = pointTag.getString(NBT_POINT_NAME);
                 player.displayClientMessage(
-                        Component.literal("Позиция '" + finalName + "' сохранена: "
-                                        + pos.getX() + ", " + pos.getY() + ", " + pos.getZ())
+                        Component.translatable("message.hbm_m.multi_detonator.position_saved", finalName, pos.getX(), pos.getY(), pos.getZ())
                                 .withStyle(ChatFormatting.GREEN),
                         true
                 );
@@ -185,7 +179,6 @@ public class MultiDetonatorItem extends Item {
 
         return InteractionResult.PASS;
     }
-
 
     /**
      * use: активация текущей выбранной точки при ПКМ в воздухе (без Shift)
@@ -204,7 +197,7 @@ public class MultiDetonatorItem extends Item {
         if (!level.isClientSide) {
             if (!stack.hasTag()) {
                 player.displayClientMessage(
-                        Component.literal("Нет заданных координат!")
+                        Component.translatable("message.hbm_m.multi_detonator.no_coordinates")
                                 .withStyle(ChatFormatting.RED),
                         true
                 );
@@ -228,7 +221,7 @@ public class MultiDetonatorItem extends Item {
 
             if (pointData == null || !pointData.hasTarget) {
                 player.displayClientMessage(
-                        Component.literal("Точка " + (activePoint + 1) + " не установлена!")
+                        Component.translatable("message.hbm_m.multi_detonator.point_not_set", activePoint + 1)
                                 .withStyle(ChatFormatting.RED),
                         true
                 );
@@ -245,7 +238,7 @@ public class MultiDetonatorItem extends Item {
 
             if (!level.isLoaded(targetPos)) {
                 player.displayClientMessage(
-                        Component.literal("Позиция не загружена!")
+                        Component.translatable("message.hbm_m.multi_detonator.chunk_not_loaded")
                                 .withStyle(ChatFormatting.RED),
                         true
                 );
@@ -268,9 +261,8 @@ public class MultiDetonatorItem extends Item {
                     boolean success = detonatable.onDetonate(level, targetPos, state, player);
 
                     if (success) {
-                        // ⭐ ИСПРАВЛЕНО: Теперь выводим ИМЯ точки в сообщение при детонации
                         player.displayClientMessage(
-                                Component.literal(pointData.name + " активирован!")
+                                Component.translatable("message.hbm_m.multi_detonator.activated", pointData.name)
                                         .withStyle(ChatFormatting.GREEN),
                                 true
                         );
@@ -282,7 +274,7 @@ public class MultiDetonatorItem extends Item {
                     }
                 } catch (Exception e) {
                     player.displayClientMessage(
-                            Component.literal("Ошибка при активации!")
+                            Component.translatable("message.hbm_m.multi_detonator.activation_error")
                                     .withStyle(ChatFormatting.RED),
                             true
                     );
@@ -296,7 +288,7 @@ public class MultiDetonatorItem extends Item {
                 }
             } else {
                 player.displayClientMessage(
-                        Component.literal("Блок несовместим!")
+                        Component.translatable("message.hbm_m.multi_detonator.incompatible_block")
                                 .withStyle(ChatFormatting.RED),
                         true
                 );
@@ -402,7 +394,7 @@ public class MultiDetonatorItem extends Item {
 
         ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
 
-        // ⭐ ФИХ: При расширении списка - копируем имена существующих точек
+        // При расширении списка - копируем имена существующих точек
         while (pointsList.size() <= pointIndex) {
             CompoundTag newPointTag = createEmptyPointTag();
             pointsList.add(newPointTag);
@@ -438,7 +430,7 @@ public class MultiDetonatorItem extends Item {
         if (pointIndex < pointsList.size()) {
             CompoundTag pointTag = pointsList.getCompound(pointIndex);
 
-            // ⭐ РЕШЕНИЕ: Очищаем ТОЛЬКО координаты и флаг hasTarget, оставляем имя!
+            // Очищаем ТОЛЬКО координаты и флаг hasTarget, оставляем имя!
             String savedName = pointTag.getString(NBT_POINT_NAME);
 
             // Создаём очищенный тег с сохранённым именем
@@ -447,7 +439,7 @@ public class MultiDetonatorItem extends Item {
             clearedTag.putInt(NBT_POINT_Y, 0);
             clearedTag.putInt(NBT_POINT_Z, 0);
             clearedTag.putBoolean(NBT_POINT_HAS_TARGET, false);
-            clearedTag.putString(NBT_POINT_NAME, savedName); // ⭐ Сохраняем имя!
+            clearedTag.putString(NBT_POINT_NAME, savedName); // Сохраняем имя!
 
             pointsList.set(pointIndex, clearedTag);
             nbt.put(NBT_POINTS_TAG, pointsList);

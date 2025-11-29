@@ -26,11 +26,12 @@ public class OilDetectorItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, @Nullable List<Component> tooltip, TooltipFlag flag) {
         if (tooltip == null) return;
-        tooltip.add(Component.literal("Сканирует чанки в поисках")
+        tooltip.add(Component.translatable("tooltip.hbm_m.oil_detector.scans_chunks")
                 .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("нефтянных залеж под игроком")
+        tooltip.add(Component.translatable("tooltip.hbm_m.oil_detector.oil_deposits")
                 .withStyle(ChatFormatting.GRAY));
     }
+
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
@@ -46,7 +47,7 @@ public class OilDetectorItem extends Item {
 
         if (oilUnderPlayer) {
             player.displayClientMessage(
-                    Component.literal("Залежи нефти прямо под нами!").withStyle(ChatFormatting.DARK_GREEN),
+                    Component.translatable("message.hbm_m.oil_detector.directly_below").withStyle(ChatFormatting.DARK_GREEN),
                     true
             );
             if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
@@ -55,7 +56,7 @@ public class OilDetectorItem extends Item {
             }
         } else if (oilFound) {
             player.displayClientMessage(
-                    Component.literal("В нашем чанке обнаружена нефть!").withStyle(ChatFormatting.GREEN),
+                    Component.translatable("message.hbm_m.oil_detector.in_chunk").withStyle(ChatFormatting.GREEN),
                     true
             );
             if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
@@ -64,7 +65,7 @@ public class OilDetectorItem extends Item {
             }
         } else if (oilInAdjacentChunk) {
             player.displayClientMessage(
-                    Component.literal("В соседнем чанке обнаружены залежи нефти!").withStyle(ChatFormatting.GOLD),
+                    Component.translatable("message.hbm_m.oil_detector.adjacent_chunk").withStyle(ChatFormatting.GOLD),
                     true
             );
             if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
@@ -73,7 +74,7 @@ public class OilDetectorItem extends Item {
             }
         } else {
             player.displayClientMessage(
-                    Component.literal("Не обнаружено залежь нефти поблизости").withStyle(ChatFormatting.RED),
+                    Component.translatable("message.hbm_m.oil_detector.none_found").withStyle(ChatFormatting.RED),
                     true
             );
             if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
@@ -84,6 +85,7 @@ public class OilDetectorItem extends Item {
 
         return InteractionResultHolder.success(stack);
     }
+
 
     private void playSound(Level level, Player player, java.util.Optional<SoundEvent> sound) {
         sound.ifPresent(soundEvent -> level.playSound(null, player.getX(), player.getY(), player.getZ(),

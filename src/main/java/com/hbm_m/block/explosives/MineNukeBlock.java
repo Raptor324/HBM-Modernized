@@ -6,7 +6,9 @@ import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.sound.ModSounds;
 
 import com.hbm_m.util.ShockwaveGenerator;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
@@ -15,6 +17,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -57,6 +61,21 @@ public class MineNukeBlock extends Block implements EntityBlock {
         super(BlockBehaviour.Properties.of().strength(3.5F));
         this.registerDefaultState(this.defaultBlockState().setValue(FACING, net.minecraft.core.Direction.NORTH));
     }
+
+    @Override
+    public void appendHoverText(ItemStack stack,
+                                @Nullable BlockGetter level,
+                                List<Component> tooltip,
+                                TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line1")
+                .withStyle(ChatFormatting.DARK_RED));
+        tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line2")
+                .withStyle(ChatFormatting.RED));
+        tooltip.add(Component.translatable("tooltip.hbm_m.mine_nuke.line3")
+                .withStyle(ChatFormatting.GRAY));
+    }
+
+
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return COLLISION_SHAPE;

@@ -563,13 +563,17 @@ public class ModItems {
     public static final RegistryObject<Item> CROWBAR = ITEMS.register("crowbar",
             () -> new Item(new Item.Properties()) {
                 @Override
-                public void appendHoverText(ItemStack stack, @Nullable Level level, @Nullable List<Component> tooltip, TooltipFlag flag) {
-                    if (tooltip != null) {
-                        tooltip.add(Component.literal("Открывает ящики по нажатию ПКМ")
-                                .withStyle(ChatFormatting.GRAY));
-                    }
+                public void appendHoverText(ItemStack stack, @Nullable Level level,
+                                            @Nullable List<Component> tooltip, TooltipFlag flag) {
+                    if (tooltip == null) return;
+
+                    tooltip.add(Component.translatable("tooltip.hbm_m.crowbar.line1")
+                            .withStyle(ChatFormatting.GRAY));
+                    tooltip.add(Component.translatable("tooltip.hbm_m.crowbar.line2")
+                            .withStyle(ChatFormatting.GRAY));
                 }
             });
+
 
     public static final RegistryObject<Item> MALACHITE_CHUNK = ITEMS.register("malachite_chunk",
             () -> new Item(new Item.Properties()));
@@ -580,11 +584,12 @@ public class ModItems {
     public static final RegistryObject<Item> DEFUSER = ITEMS.register("defuser",
             () -> new Item(new Item.Properties()) {
                 @Override
-                public void appendHoverText(ItemStack stack, @Nullable Level level, @Nullable List<Component> tooltip, TooltipFlag flag) {
-                    if (tooltip != null) {
-                        tooltip.add(Component.literal("Устройство для разминирования")
-                                .withStyle(ChatFormatting.GRAY));
-                    }
+                public void appendHoverText(ItemStack stack, @Nullable Level level,
+                                            @Nullable List<Component> tooltip, TooltipFlag flag) {
+                    if (tooltip == null) return;
+
+                    tooltip.add(Component.translatable("tooltip.hbm_m.defuser.line1")
+                            .withStyle(ChatFormatting.GRAY));
                 }
             });
     public static final RegistryObject<Item> BOLT_STEEL = ITEMS.register("bolt_steel",

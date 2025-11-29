@@ -41,60 +41,61 @@ public class RangeDetonatorItem extends Item {
             if (hitResult.getType() == HitResult.Type.BLOCK) {
                 BlockPos targetPos = hitResult.getBlockPos();
 
+                // Проверяем, загружен ли чанк
+                if (!level.isLoaded(targetPos)) {
+                    player.displayClientMessage(
+                            Component.translatable("message.hbm_m.range_detonator.pos_not_loaded")
+                                    .withStyle(ChatFormatting.RED),
+                            true
+                    );
+                    return InteractionResultHolder.fail(stack);
+                }
 
-                    // Проверяем, загружен ли чанк
-                    if (!level.isLoaded(targetPos)) {
-                        player.displayClientMessage(
-                                Component.literal("Позиция не совместима или не прогружена")
-                                        .withStyle(ChatFormatting.RED),
-                                true
-                        );
-                        return InteractionResultHolder.fail(stack);
-                    }
-
-                    // Спавним частицу красного камня на целевой позиции (лазерная точка)
-                    spawnRedstoneParticles(level, targetPos);
+                // Спавним частицу (лазерная точка)
+                spawnRedstoneParticles(level, targetPos);
 
                 BlockState state = level.getBlockState(targetPos);
                 Block block = state.getBlock();
 
                 // Проверяем, поддерживает ли блок детонацию
-                if (block instanceof IDetonatable) {
-                    IDetonatable detonatable = (IDetonatable) block;
+                if (block instanceof IDetonatable detonatable) {
                     boolean success = detonatable.onDetonate(level, targetPos, state, player);
 
                     if (success) {
                         player.displayClientMessage(
-                                Component.literal("Успешно активировано")
+                                Component.translatable("message.hbm_m.range_detonator.activated")
                                         .withStyle(ChatFormatting.GREEN),
                                 true
                         );
                         if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
                             SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                            level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                            level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                                    soundEvent, player.getSoundSource(), 1.0F, 1.0F);
                         }
                         return InteractionResultHolder.success(stack);
                     } else {
                         player.displayClientMessage(
-                                Component.literal("Позиция не совместима или не прогружена")
+                                Component.translatable("message.hbm_m.range_detonator.pos_not_loaded")
                                         .withStyle(ChatFormatting.RED),
                                 true
                         );
                         if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
                             SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                            level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                            level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                                    soundEvent, player.getSoundSource(), 1.0F, 1.0F);
                         }
                         return InteractionResultHolder.fail(stack);
                     }
                 } else {
                     player.displayClientMessage(
-                            Component.literal("Позиция не совместима или не прогружена")
+                            Component.translatable("message.hbm_m.range_detonator.pos_not_loaded")
                                     .withStyle(ChatFormatting.RED),
                             true
                     );
                     if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
                         SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                        level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                                soundEvent, player.getSoundSource(), 1.0F, 1.0F);
                     }
                     return InteractionResultHolder.fail(stack);
                 }
@@ -121,5 +122,15 @@ public class RangeDetonatorItem extends Item {
                     0.0, 0.0, 0.0
             );
         }
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack, @Nullable Level level,
+                                List<Component> tooltip, TooltipFlag flag) {
+        super.appendHoverText(stack, level, tooltip, flag);
+        tooltip.add(Component.translatable("tooltip.hbm_m.range_detonator.desc")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.range_detonator.hint")
+                .withStyle(ChatFormatting.DARK_GRAY));
     }
 }

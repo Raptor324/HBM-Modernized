@@ -31,17 +31,18 @@ public class GrenadeNucItem extends Item {
         if (tooltip == null) return;
 
         // 1. Тёмно-красный
-        tooltip.add(Component.literal("Ядерное оружие!")
+        tooltip.add(Component.translatable("tooltip.hbm_m.grenade_nuc.line1")
                 .withStyle(ChatFormatting.DARK_RED));
 
         // 2. Красный
-        tooltip.add(Component.literal("Зона поражения: 25 метров")
+        tooltip.add(Component.translatable("tooltip.hbm_m.grenade_nuc.line2")
                 .withStyle(ChatFormatting.RED));
 
         // 3. Серый
-        tooltip.add(Component.literal("Задержка: 6с")
+        tooltip.add(Component.translatable("tooltip.hbm_m.grenade_nuc.line3")
                 .withStyle(ChatFormatting.GRAY));
     }
+
 
 
     @Override

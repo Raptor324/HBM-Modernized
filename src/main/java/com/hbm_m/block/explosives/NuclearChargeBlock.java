@@ -5,10 +5,14 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.util.CraterGenerator;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -17,6 +21,9 @@ import net.minecraft.server.TickTask;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.annotation.Nullable;
+import java.util.List;
 
 /**
  * ОПТИМИЗИРОВАННЫЙ ЯДЕРНЫЙ БЛОК v2
@@ -43,6 +50,23 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
 
     public NuclearChargeBlock(Properties properties) {
         super(properties);
+    }
+
+    @Override
+    public void appendHoverText(ItemStack stack,
+                                @Nullable net.minecraft.world.level.BlockGetter level,
+                                List<Component> tooltip,
+                                TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.hbm_m.nuclear_charge.line1")
+                .withStyle(ChatFormatting.DARK_RED));
+        tooltip.add(Component.translatable("tooltip.hbm_m.nuclear_charge.line2")
+                .withStyle(ChatFormatting.RED));
+        tooltip.add(Component.translatable("tooltip.hbm_m.nuclear_charge.line3")
+                .withStyle(ChatFormatting.RED));
+        tooltip.add(Component.translatable("tooltip.hbm_m.nuclear_charge.line4")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.nuclear_charge.line5")
+                .withStyle(ChatFormatting.GRAY));
     }
 
     @Override
