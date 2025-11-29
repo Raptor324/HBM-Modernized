@@ -1,8 +1,11 @@
 package com.hbm_m.block;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -10,8 +13,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.PushReaction;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nullable;
 import java.util.Collections;
 import java.util.List;
 
@@ -23,7 +26,16 @@ public class DepthOreBlock extends Block {
                 .requiresCorrectToolForDrops()
         );
     }
-
+    @Override
+    public void appendHoverText(ItemStack stack,
+                                @Nullable net.minecraft.world.level.BlockGetter level,
+                                List<Component> tooltip,
+                                TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.hbm_m.depthstone.line1")
+                .withStyle(ChatFormatting.YELLOW));
+        tooltip.add(Component.translatable("tooltip.hbm_m.depthstone.line4")
+                .withStyle(ChatFormatting.YELLOW));
+    }
     // Не ломается поршнями
     @Override
     public PushReaction getPistonPushReaction(BlockState state) {

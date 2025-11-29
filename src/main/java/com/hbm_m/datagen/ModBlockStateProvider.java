@@ -30,6 +30,68 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 blockTexture(ModBlocks.STRAWBERRY_BUSH.get())).renderType("cutout"));
         // Блоки слитков теперь генерируются автоматически в цикле ниже
 
+
+        blockWithItem(ModBlocks.ASPHALT);
+        blockWithItem(ModBlocks.BARRICADE);
+        blockWithItem(ModBlocks.BASALT_BRICK);
+        blockWithItem(ModBlocks.BASALT_POLISHED);
+        blockWithItem(ModBlocks.BRICK_BASE);
+        blockWithItem(ModBlocks.BRICK_DUCRETE);
+        blockWithItem(ModBlocks.BRICK_FIRE);
+        blockWithItem(ModBlocks.BRICK_LIGHT);
+        blockWithItem(ModBlocks.BRICK_OBSIDIAN);
+        blockWithItem(ModBlocks.CONCRETE_ASBESTOS);
+        blockWithItem(ModBlocks.CONCRETE_BLACK);
+        blockWithItem(ModBlocks.CONCRETE_BLUE);
+        blockWithItem(ModBlocks.CONCRETE_BROWN);
+        blockWithItem(ModBlocks.CONCRETE_COLORED_BRONZE);
+        blockWithItem(ModBlocks.CONCRETE_COLORED_INDIGO);
+        blockWithItem(ModBlocks.CONCRETE_COLORED_MACHINE);
+        blockWithItem(ModBlocks.CONCRETE_COLORED_PINK);
+        blockWithItem(ModBlocks.CONCRETE_COLORED_PURPLE);
+        blockWithItem(ModBlocks.CONCRETE_COLORED_SAND);
+        blockWithItem(ModBlocks.CONCRETE_CYAN);
+        blockWithItem(ModBlocks.CONCRETE_GRAY);
+        blockWithItem(ModBlocks.CONCRETE_GREEN);
+        blockWithItem(ModBlocks.CONCRETE_LIGHT_BLUE);
+        blockWithItem(ModBlocks.CONCRETE_LIME);
+        blockWithItem(ModBlocks.CONCRETE_MAGENTA);
+        blockWithItem(ModBlocks.CONCRETE_ORANGE);
+        blockWithItem(ModBlocks.CONCRETE_PINK);
+        blockWithItem(ModBlocks.CONCRETE_PURPLE);
+        blockWithItem(ModBlocks.CONCRETE_REBAR);
+        blockWithItem(ModBlocks.CONCRETE_REBAR_ALT);
+        blockWithItem(ModBlocks.CONCRETE_RED);
+        blockWithItem(ModBlocks.CONCRETE_SILVER);
+        blockWithItem(ModBlocks.CONCRETE_SUPER);
+        blockWithItem(ModBlocks.CONCRETE_SUPER_BROKEN);
+        blockWithItem(ModBlocks.CONCRETE_SUPER_M0);
+        blockWithItem(ModBlocks.CONCRETE_SUPER_M1);
+        blockWithItem(ModBlocks.CONCRETE_SUPER_M2);
+        blockWithItem(ModBlocks.CONCRETE_SUPER_M3);
+        blockWithItem(ModBlocks.CONCRETE_TILE);
+        blockWithItem(ModBlocks.CONCRETE_TILE_TREFOIL);
+        blockWithItem(ModBlocks.CONCRETE_WHITE);
+        blockWithItem(ModBlocks.CONCRETE_YELLOW);
+        blockWithItem(ModBlocks.CONCRETE_FLAT);
+        blockWithItem(ModBlocks.DEPTH_BRICK);
+        blockWithItem(ModBlocks.DEPTH_NETHER_BRICK);
+        blockWithItem(ModBlocks.DEPTH_NETHER_TILES);
+        blockWithItem(ModBlocks.DEPTH_STONE_NETHER);
+        blockWithItem(ModBlocks.DEPTH_TILES);
+        blockWithItem(ModBlocks.GNEISS_BRICK);
+        blockWithItem(ModBlocks.GNEISS_STONE);
+        blockWithItem(ModBlocks.GNEISS_TILE);
+        blockWithItem(ModBlocks.METEOR);
+        blockWithItem(ModBlocks.METEOR_BRICK);
+        blockWithItem(ModBlocks.METEOR_BRICK_CRACKED);
+        blockWithItem(ModBlocks.METEOR_BRICK_MOSSY);
+        blockWithItem(ModBlocks.METEOR_COBBLE);
+        blockWithItem(ModBlocks.METEOR_CRUSHED);
+        blockWithItem(ModBlocks.METEOR_POLISHED);
+        blockWithItem(ModBlocks.METEOR_TREASURE);
+        blockWithItem(ModBlocks.VINYL_TILE);
+        blockWithItem(ModBlocks.VINYL_TILE_SMALL);
         blockWithItem(ModBlocks.RESOURCE_ASBESTOS);
         blockWithItem(ModBlocks.RESOURCE_BAUXITE);
         blockWithItem(ModBlocks.RESOURCE_HEMATITE);
@@ -53,8 +115,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.BRICK_CONCRETE_BROKEN);
         blockWithItem(ModBlocks.BRICK_CONCRETE_CRACKED);
         blockWithItem(ModBlocks.BRICK_CONCRETE_MOSSY);
-        blockWithItem(ModBlocks.BRICK_CONCRETE_MARKED);
-        blockWithItem(ModBlocks.CONCRETE_MARKED);
         blockWithItem(ModBlocks.CONCRETE_FAN);
         blockWithItem(ModBlocks.CONCRETE_VENT);
         blockWithItem(ModBlocks.CONCRETE_MOSSY);
@@ -117,6 +177,64 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/burned_grass_side"),
                         modLoc("block/burned_grass_bottom"),
                         modLoc("block/burned_grass_top")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.METEOR_BRICK_CHISELED.get(),
+                models().cubeBottomTop(
+                        ModBlocks.METEOR_BRICK_CHISELED.getId().getPath(),
+                        modLoc("block/meteor_brick_chiseled"),
+                        modLoc("block/meteor_brick"),
+                        modLoc("block/meteor_brick")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.GNEISS_CHISELED.get(),
+                models().cubeBottomTop(
+                        ModBlocks.GNEISS_CHISELED.getId().getPath(),
+                        modLoc("block/gneiss_chiseled"),
+                        modLoc("block/gneiss_stone"),
+                        modLoc("block/gneiss_stone")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.BRICK_CONCRETE_MARKED.get(),
+                models().cubeBottomTop(
+                        ModBlocks.BRICK_CONCRETE_MARKED.getId().getPath(),
+                        modLoc("block/brick_concrete_marked"),
+                        modLoc("block/brick_concrete"),
+                        modLoc("block/brick_concrete")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.CONCRETE_MARKED.get(),
+                models().cubeBottomTop(
+                        ModBlocks.CONCRETE_MARKED.getId().getPath(),
+                        modLoc("block/concrete_marked"),
+                        modLoc("block/concrete"),
+                        modLoc("block/concrete")
+                )
+        );
+        simpleBlockWithItem(ModBlocks.CONCRETE_PILLAR.get(),
+                models().cubeBottomTop(
+                        ModBlocks.CONCRETE_PILLAR.getId().getPath(),
+                        modLoc("block/concrete_pillar_side"),
+                        modLoc("block/concrete_pillar_top"),
+                        modLoc("block/concrete_pillar_top")
+                )
+        );
+
+        simpleBlockWithItem(ModBlocks.CONCRETE_COLORED_MACHINE_STRIPE.get(),
+                models().cubeBottomTop(
+                        ModBlocks.CONCRETE_COLORED_MACHINE_STRIPE.getId().getPath(),
+                        modLoc("block/concrete_colored_machine_stripe"),
+                        modLoc("block/concrete_colored_machine"),
+                        modLoc("block/concrete_colored_machine")
+                )
+        );
+
+        simpleBlockWithItem(ModBlocks.METEOR_PILLAR.get(),
+                models().cubeBottomTop(
+                        ModBlocks.METEOR_PILLAR.getId().getPath(),
+                        modLoc("block/meteor_pillar"),
+                        modLoc("block/meteor_pillar_top"),
+                        modLoc("block/meteor_pillar_top")
                 )
         );
 
@@ -304,6 +422,165 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(ModBlocks.CONCRETE_HAZARD_STAIRS.get(),
                 models().getExistingFile(modLoc("block/concrete_hazard_stairs")));
 
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_ASBESTOS_STAIRS.get(), modLoc("block/concrete_asbestos"));
+        simpleBlockItem(ModBlocks.CONCRETE_ASBESTOS_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_asbestos_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_BLACK_STAIRS.get(), modLoc("block/concrete_black"));
+        simpleBlockItem(ModBlocks.CONCRETE_BLACK_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_black_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_BLUE_STAIRS.get(), modLoc("block/concrete_blue"));
+        simpleBlockItem(ModBlocks.CONCRETE_BLUE_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_blue_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_BROWN_STAIRS.get(), modLoc("block/concrete_brown"));
+        simpleBlockItem(ModBlocks.CONCRETE_BROWN_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_brown_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_COLORED_BRONZE_STAIRS.get(), modLoc("block/concrete_colored_bronze"));
+        simpleBlockItem(ModBlocks.CONCRETE_COLORED_BRONZE_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_colored_bronze_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_COLORED_INDIGO_STAIRS.get(), modLoc("block/concrete_colored_indigo"));
+        simpleBlockItem(ModBlocks.CONCRETE_COLORED_INDIGO_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_colored_indigo_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_COLORED_MACHINE_STAIRS.get(), modLoc("block/concrete_colored_machine"));
+        simpleBlockItem(ModBlocks.CONCRETE_COLORED_MACHINE_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_colored_machine_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_COLORED_PINK_STAIRS.get(), modLoc("block/concrete_colored_pink"));
+        simpleBlockItem(ModBlocks.CONCRETE_COLORED_PINK_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_colored_pink_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_COLORED_PURPLE_STAIRS.get(), modLoc("block/concrete_colored_purple"));
+        simpleBlockItem(ModBlocks.CONCRETE_COLORED_PURPLE_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_colored_purple_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_COLORED_SAND_STAIRS.get(), modLoc("block/concrete_colored_sand"));
+        simpleBlockItem(ModBlocks.CONCRETE_COLORED_SAND_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_colored_sand_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_CYAN_STAIRS.get(), modLoc("block/concrete_cyan"));
+        simpleBlockItem(ModBlocks.CONCRETE_CYAN_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_cyan_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_GRAY_STAIRS.get(), modLoc("block/concrete_gray"));
+        simpleBlockItem(ModBlocks.CONCRETE_GRAY_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_gray_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_GREEN_STAIRS.get(), modLoc("block/concrete_green"));
+        simpleBlockItem(ModBlocks.CONCRETE_GREEN_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_green_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_LIGHT_BLUE_STAIRS.get(), modLoc("block/concrete_light_blue"));
+        simpleBlockItem(ModBlocks.CONCRETE_LIGHT_BLUE_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_light_blue_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_LIME_STAIRS.get(), modLoc("block/concrete_lime"));
+        simpleBlockItem(ModBlocks.CONCRETE_LIME_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_lime_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_MAGENTA_STAIRS.get(), modLoc("block/concrete_magenta"));
+        simpleBlockItem(ModBlocks.CONCRETE_MAGENTA_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_magenta_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_ORANGE_STAIRS.get(), modLoc("block/concrete_orange"));
+        simpleBlockItem(ModBlocks.CONCRETE_ORANGE_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_orange_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_PINK_STAIRS.get(), modLoc("block/concrete_pink"));
+        simpleBlockItem(ModBlocks.CONCRETE_PINK_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_pink_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_PURPLE_STAIRS.get(), modLoc("block/concrete_purple"));
+        simpleBlockItem(ModBlocks.CONCRETE_PURPLE_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_purple_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_RED_STAIRS.get(), modLoc("block/concrete_red"));
+        simpleBlockItem(ModBlocks.CONCRETE_RED_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_red_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_SILVER_STAIRS.get(), modLoc("block/concrete_silver"));
+        simpleBlockItem(ModBlocks.CONCRETE_SILVER_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_silver_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_WHITE_STAIRS.get(), modLoc("block/concrete_white"));
+        simpleBlockItem(ModBlocks.CONCRETE_WHITE_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_white_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_YELLOW_STAIRS.get(), modLoc("block/concrete_yellow"));
+        simpleBlockItem(ModBlocks.CONCRETE_YELLOW_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_yellow_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_SUPER_STAIRS.get(), modLoc("block/concrete_super"));
+        simpleBlockItem(ModBlocks.CONCRETE_SUPER_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_super_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_SUPER_M0_STAIRS.get(), modLoc("block/concrete_super_m0"));
+        simpleBlockItem(ModBlocks.CONCRETE_SUPER_M0_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_super_m0_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_SUPER_M1_STAIRS.get(), modLoc("block/concrete_super_m1"));
+        simpleBlockItem(ModBlocks.CONCRETE_SUPER_M1_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_super_m1_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_SUPER_M2_STAIRS.get(), modLoc("block/concrete_super_m2"));
+        simpleBlockItem(ModBlocks.CONCRETE_SUPER_M2_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_super_m2_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_SUPER_M3_STAIRS.get(), modLoc("block/concrete_super_m3"));
+        simpleBlockItem(ModBlocks.CONCRETE_SUPER_M3_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_super_m3_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_SUPER_BROKEN_STAIRS.get(), modLoc("block/concrete_super_broken"));
+        simpleBlockItem(ModBlocks.CONCRETE_SUPER_BROKEN_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_super_broken_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_REBAR_STAIRS.get(), modLoc("block/concrete_rebar"));
+        simpleBlockItem(ModBlocks.CONCRETE_REBAR_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_rebar_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_FLAT_STAIRS.get(), modLoc("block/concrete_flat"));
+        simpleBlockItem(ModBlocks.CONCRETE_FLAT_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_flat_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.CONCRETE_TILE_STAIRS.get(), modLoc("block/concrete_tile"));
+        simpleBlockItem(ModBlocks.CONCRETE_TILE_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_tile_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.DEPTH_BRICK_STAIRS.get(), modLoc("block/depth_brick"));
+        simpleBlockItem(ModBlocks.DEPTH_BRICK_STAIRS.get(), models().getExistingFile(modLoc("block/depth_brick_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.DEPTH_TILES_STAIRS.get(), modLoc("block/depth_tiles"));
+        simpleBlockItem(ModBlocks.DEPTH_TILES_STAIRS.get(), models().getExistingFile(modLoc("block/depth_tiles_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.DEPTH_NETHER_BRICK_STAIRS.get(), modLoc("block/depth_nether_brick"));
+        simpleBlockItem(ModBlocks.DEPTH_NETHER_BRICK_STAIRS.get(), models().getExistingFile(modLoc("block/depth_nether_brick_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.DEPTH_NETHER_TILES_STAIRS.get(), modLoc("block/depth_nether_tiles"));
+        simpleBlockItem(ModBlocks.DEPTH_NETHER_TILES_STAIRS.get(), models().getExistingFile(modLoc("block/depth_nether_tiles_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.GNEISS_TILE_STAIRS.get(), modLoc("block/gneiss_tile"));
+        simpleBlockItem(ModBlocks.GNEISS_TILE_STAIRS.get(), models().getExistingFile(modLoc("block/gneiss_tile_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.GNEISS_BRICK_STAIRS.get(), modLoc("block/gneiss_brick"));
+        simpleBlockItem(ModBlocks.GNEISS_BRICK_STAIRS.get(), models().getExistingFile(modLoc("block/gneiss_brick_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.BRICK_BASE_STAIRS.get(), modLoc("block/brick_base"));
+        simpleBlockItem(ModBlocks.BRICK_BASE_STAIRS.get(), models().getExistingFile(modLoc("block/brick_base_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.BRICK_LIGHT_STAIRS.get(), modLoc("block/brick_light"));
+        simpleBlockItem(ModBlocks.BRICK_LIGHT_STAIRS.get(), models().getExistingFile(modLoc("block/brick_light_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.BRICK_FIRE_STAIRS.get(), modLoc("block/brick_fire"));
+        simpleBlockItem(ModBlocks.BRICK_FIRE_STAIRS.get(), models().getExistingFile(modLoc("block/brick_fire_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.BRICK_OBSIDIAN_STAIRS.get(), modLoc("block/brick_obsidian"));
+        simpleBlockItem(ModBlocks.BRICK_OBSIDIAN_STAIRS.get(), models().getExistingFile(modLoc("block/brick_obsidian_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.VINYL_TILE_STAIRS.get(), modLoc("block/vinyl_tile"));
+        simpleBlockItem(ModBlocks.VINYL_TILE_STAIRS.get(), models().getExistingFile(modLoc("block/vinyl_tile_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.VINYL_TILE_SMALL_STAIRS.get(), modLoc("block/vinyl_tile_small"));
+        simpleBlockItem(ModBlocks.VINYL_TILE_SMALL_STAIRS.get(), models().getExistingFile(modLoc("block/vinyl_tile_small_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.BRICK_DUCRETE_STAIRS.get(), modLoc("block/brick_ducrete"));
+        simpleBlockItem(ModBlocks.BRICK_DUCRETE_STAIRS.get(), models().getExistingFile(modLoc("block/brick_ducrete_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.ASPHALT_STAIRS.get(), modLoc("block/asphalt"));
+        simpleBlockItem(ModBlocks.ASPHALT_STAIRS.get(), models().getExistingFile(modLoc("block/asphalt_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.BASALT_POLISHED_STAIRS.get(), modLoc("block/basalt_polished"));
+        simpleBlockItem(ModBlocks.BASALT_POLISHED_STAIRS.get(), models().getExistingFile(modLoc("block/basalt_polished_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.BASALT_BRICK_STAIRS.get(), modLoc("block/basalt_brick"));
+        simpleBlockItem(ModBlocks.BASALT_BRICK_STAIRS.get(), models().getExistingFile(modLoc("block/basalt_brick_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.METEOR_POLISHED_STAIRS.get(), modLoc("block/meteor_polished"));
+        simpleBlockItem(ModBlocks.METEOR_POLISHED_STAIRS.get(), models().getExistingFile(modLoc("block/meteor_polished_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.METEOR_BRICK_STAIRS.get(), modLoc("block/meteor_brick"));
+        simpleBlockItem(ModBlocks.METEOR_BRICK_STAIRS.get(), models().getExistingFile(modLoc("block/meteor_brick_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.METEOR_BRICK_CRACKED_STAIRS.get(), modLoc("block/meteor_brick_cracked"));
+        simpleBlockItem(ModBlocks.METEOR_BRICK_CRACKED_STAIRS.get(), models().getExistingFile(modLoc("block/meteor_brick_cracked_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.METEOR_BRICK_MOSSY_STAIRS.get(), modLoc("block/meteor_brick_mossy"));
+        simpleBlockItem(ModBlocks.METEOR_BRICK_MOSSY_STAIRS.get(), models().getExistingFile(modLoc("block/meteor_brick_mossy_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.METEOR_CRUSHED_STAIRS.get(), modLoc("block/meteor_crushed"));
+        simpleBlockItem(ModBlocks.METEOR_CRUSHED_STAIRS.get(), models().getExistingFile(modLoc("block/meteor_crushed_stairs")));
+
         // Генерация моделей для плит
         slabBlock((SlabBlock) ModBlocks.CONCRETE_SLAB.get(),
                 blockTexture(ModBlocks.CONCRETE.get()),
@@ -358,6 +635,336 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/brick_concrete_broken"));
         simpleBlockItem(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB.get(),
                 models().getExistingFile(modLoc("block/brick_concrete_broken_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.ASPHALT_SLAB.get(),
+                blockTexture(ModBlocks.ASPHALT.get()),
+                modLoc("block/asphalt"));
+        simpleBlockItem(ModBlocks.ASPHALT_SLAB.get(),
+                models().getExistingFile(modLoc("block/asphalt_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.BASALT_BRICK_SLAB.get(),
+                blockTexture(ModBlocks.BASALT_BRICK.get()),
+                modLoc("block/basalt_brick"));
+        simpleBlockItem(ModBlocks.BASALT_BRICK_SLAB.get(),
+                models().getExistingFile(modLoc("block/basalt_brick_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.BASALT_POLISHED_SLAB.get(),
+                blockTexture(ModBlocks.BASALT_POLISHED.get()),
+                modLoc("block/basalt_polished"));
+        simpleBlockItem(ModBlocks.BASALT_POLISHED_SLAB.get(),
+                models().getExistingFile(modLoc("block/basalt_polished_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.BRICK_BASE_SLAB.get(),
+                blockTexture(ModBlocks.BRICK_BASE.get()),
+                modLoc("block/brick_base"));
+        simpleBlockItem(ModBlocks.BRICK_BASE_SLAB.get(),
+                models().getExistingFile(modLoc("block/brick_base_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.BRICK_DUCRETE_SLAB.get(),
+                blockTexture(ModBlocks.BRICK_DUCRETE.get()),
+                modLoc("block/brick_ducrete"));
+        simpleBlockItem(ModBlocks.BRICK_DUCRETE_SLAB.get(),
+                models().getExistingFile(modLoc("block/brick_ducrete_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.BRICK_FIRE_SLAB.get(),
+                blockTexture(ModBlocks.BRICK_FIRE.get()),
+                modLoc("block/brick_fire"));
+        simpleBlockItem(ModBlocks.BRICK_FIRE_SLAB.get(),
+                models().getExistingFile(modLoc("block/brick_fire_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.BRICK_LIGHT_SLAB.get(),
+                blockTexture(ModBlocks.BRICK_LIGHT.get()),
+                modLoc("block/brick_light"));
+        simpleBlockItem(ModBlocks.BRICK_LIGHT_SLAB.get(),
+                models().getExistingFile(modLoc("block/brick_light_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.BRICK_OBSIDIAN_SLAB.get(),
+                blockTexture(ModBlocks.BRICK_OBSIDIAN.get()),
+                modLoc("block/brick_obsidian"));
+        simpleBlockItem(ModBlocks.BRICK_OBSIDIAN_SLAB.get(),
+                models().getExistingFile(modLoc("block/brick_obsidian_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_ASBESTOS_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_ASBESTOS.get()),
+                modLoc("block/concrete_asbestos"));
+        simpleBlockItem(ModBlocks.CONCRETE_ASBESTOS_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_asbestos_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_BLACK_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_BLACK.get()),
+                modLoc("block/concrete_black"));
+        simpleBlockItem(ModBlocks.CONCRETE_BLACK_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_black_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_BLUE_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_BLUE.get()),
+                modLoc("block/concrete_blue"));
+        simpleBlockItem(ModBlocks.CONCRETE_BLUE_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_blue_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_BROWN_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_BROWN.get()),
+                modLoc("block/concrete_brown"));
+        simpleBlockItem(ModBlocks.CONCRETE_BROWN_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_brown_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_COLORED_BRONZE_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_COLORED_BRONZE.get()),
+                modLoc("block/concrete_colored_bronze"));
+        simpleBlockItem(ModBlocks.CONCRETE_COLORED_BRONZE_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_colored_bronze_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_COLORED_INDIGO_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_COLORED_INDIGO.get()),
+                modLoc("block/concrete_colored_indigo"));
+        simpleBlockItem(ModBlocks.CONCRETE_COLORED_INDIGO_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_colored_indigo_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_COLORED_MACHINE_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_COLORED_MACHINE.get()),
+                modLoc("block/concrete_colored_machine"));
+        simpleBlockItem(ModBlocks.CONCRETE_COLORED_MACHINE_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_colored_machine_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_COLORED_PINK_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_COLORED_PINK.get()),
+                modLoc("block/concrete_colored_pink"));
+        simpleBlockItem(ModBlocks.CONCRETE_COLORED_PINK_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_colored_pink_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_COLORED_PURPLE_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_COLORED_PURPLE.get()),
+                modLoc("block/concrete_colored_purple"));
+        simpleBlockItem(ModBlocks.CONCRETE_COLORED_PURPLE_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_colored_purple_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_COLORED_SAND_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_COLORED_SAND.get()),
+                modLoc("block/concrete_colored_sand"));
+        simpleBlockItem(ModBlocks.CONCRETE_COLORED_SAND_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_colored_sand_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_CYAN_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_CYAN.get()),
+                modLoc("block/concrete_cyan"));
+        simpleBlockItem(ModBlocks.CONCRETE_CYAN_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_cyan_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_GRAY_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_GRAY.get()),
+                modLoc("block/concrete_gray"));
+        simpleBlockItem(ModBlocks.CONCRETE_GRAY_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_gray_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_GREEN_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_GREEN.get()),
+                modLoc("block/concrete_green"));
+        simpleBlockItem(ModBlocks.CONCRETE_GREEN_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_green_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_LIGHT_BLUE_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_LIGHT_BLUE.get()),
+                modLoc("block/concrete_light_blue"));
+        simpleBlockItem(ModBlocks.CONCRETE_LIGHT_BLUE_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_light_blue_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_LIME_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_LIME.get()),
+                modLoc("block/concrete_lime"));
+        simpleBlockItem(ModBlocks.CONCRETE_LIME_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_lime_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_MAGENTA_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_MAGENTA.get()),
+                modLoc("block/concrete_magenta"));
+        simpleBlockItem(ModBlocks.CONCRETE_MAGENTA_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_magenta_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_ORANGE_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_ORANGE.get()),
+                modLoc("block/concrete_orange"));
+        simpleBlockItem(ModBlocks.CONCRETE_ORANGE_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_orange_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_PINK_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_PINK.get()),
+                modLoc("block/concrete_pink"));
+        simpleBlockItem(ModBlocks.CONCRETE_PINK_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_pink_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_PURPLE_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_PURPLE.get()),
+                modLoc("block/concrete_purple"));
+        simpleBlockItem(ModBlocks.CONCRETE_PURPLE_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_purple_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_REBAR_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_REBAR.get()),
+                modLoc("block/concrete_rebar"));
+        simpleBlockItem(ModBlocks.CONCRETE_REBAR_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_rebar_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_RED_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_RED.get()),
+                modLoc("block/concrete_red"));
+        simpleBlockItem(ModBlocks.CONCRETE_RED_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_red_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_SILVER_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_SILVER.get()),
+                modLoc("block/concrete_silver"));
+        simpleBlockItem(ModBlocks.CONCRETE_SILVER_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_silver_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_SUPER_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_SUPER.get()),
+                modLoc("block/concrete_super"));
+        simpleBlockItem(ModBlocks.CONCRETE_SUPER_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_super_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_SUPER_BROKEN_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_SUPER_BROKEN.get()),
+                modLoc("block/concrete_super_broken"));
+        simpleBlockItem(ModBlocks.CONCRETE_SUPER_BROKEN_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_super_broken_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_SUPER_M0_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_SUPER_M0.get()),
+                modLoc("block/concrete_super_m0"));
+        simpleBlockItem(ModBlocks.CONCRETE_SUPER_M0_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_super_m0_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_SUPER_M1_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_SUPER_M1.get()),
+                modLoc("block/concrete_super_m1"));
+        simpleBlockItem(ModBlocks.CONCRETE_SUPER_M1_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_super_m1_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_SUPER_M2_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_SUPER_M2.get()),
+                modLoc("block/concrete_super_m2"));
+        simpleBlockItem(ModBlocks.CONCRETE_SUPER_M2_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_super_m2_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_SUPER_M3_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_SUPER_M3.get()),
+                modLoc("block/concrete_super_m3"));
+        simpleBlockItem(ModBlocks.CONCRETE_SUPER_M3_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_super_m3_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_TILE_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_TILE.get()),
+                modLoc("block/concrete_tile"));
+        simpleBlockItem(ModBlocks.CONCRETE_TILE_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_tile_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_WHITE_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_WHITE.get()),
+                modLoc("block/concrete_white"));
+        simpleBlockItem(ModBlocks.CONCRETE_WHITE_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_white_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_YELLOW_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_YELLOW.get()),
+                modLoc("block/concrete_yellow"));
+        simpleBlockItem(ModBlocks.CONCRETE_YELLOW_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_yellow_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.CONCRETE_FLAT_SLAB.get(),
+                blockTexture(ModBlocks.CONCRETE_FLAT.get()),
+                modLoc("block/concrete_flat"));
+        simpleBlockItem(ModBlocks.CONCRETE_FLAT_SLAB.get(),
+                models().getExistingFile(modLoc("block/concrete_flat_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.DEPTH_BRICK_SLAB.get(),
+                blockTexture(ModBlocks.DEPTH_BRICK.get()),
+                modLoc("block/depth_brick"));
+        simpleBlockItem(ModBlocks.DEPTH_BRICK_SLAB.get(),
+                models().getExistingFile(modLoc("block/depth_brick_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.DEPTH_NETHER_BRICK_SLAB.get(),
+                blockTexture(ModBlocks.DEPTH_NETHER_BRICK.get()),
+                modLoc("block/depth_nether_brick"));
+        simpleBlockItem(ModBlocks.DEPTH_NETHER_BRICK_SLAB.get(),
+                models().getExistingFile(modLoc("block/depth_nether_brick_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.DEPTH_NETHER_TILES_SLAB.get(),
+                blockTexture(ModBlocks.DEPTH_NETHER_TILES.get()),
+                modLoc("block/depth_nether_tiles"));
+        simpleBlockItem(ModBlocks.DEPTH_NETHER_TILES_SLAB.get(),
+                models().getExistingFile(modLoc("block/depth_nether_tiles_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.DEPTH_STONE_NETHER_SLAB.get(),
+                blockTexture(ModBlocks.DEPTH_STONE_NETHER.get()),
+                modLoc("block/depth_stone_nether"));
+        simpleBlockItem(ModBlocks.DEPTH_STONE_NETHER_SLAB.get(),
+                models().getExistingFile(modLoc("block/depth_stone_nether_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.DEPTH_TILES_SLAB.get(),
+                blockTexture(ModBlocks.DEPTH_TILES.get()),
+                modLoc("block/depth_tiles"));
+        simpleBlockItem(ModBlocks.DEPTH_TILES_SLAB.get(),
+                models().getExistingFile(modLoc("block/depth_tiles_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.GNEISS_BRICK_SLAB.get(),
+                blockTexture(ModBlocks.GNEISS_BRICK.get()),
+                modLoc("block/gneiss_brick"));
+        simpleBlockItem(ModBlocks.GNEISS_BRICK_SLAB.get(),
+                models().getExistingFile(modLoc("block/gneiss_brick_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.GNEISS_TILE_SLAB.get(),
+                blockTexture(ModBlocks.GNEISS_TILE.get()),
+                modLoc("block/gneiss_tile"));
+        simpleBlockItem(ModBlocks.GNEISS_TILE_SLAB.get(),
+                models().getExistingFile(modLoc("block/gneiss_tile_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.METEOR_BRICK_SLAB.get(),
+                blockTexture(ModBlocks.METEOR_BRICK.get()),
+                modLoc("block/meteor_brick"));
+        simpleBlockItem(ModBlocks.METEOR_BRICK_SLAB.get(),
+                models().getExistingFile(modLoc("block/meteor_brick_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.METEOR_BRICK_CRACKED_SLAB.get(),
+                blockTexture(ModBlocks.METEOR_BRICK_CRACKED.get()),
+                modLoc("block/meteor_brick_cracked"));
+        simpleBlockItem(ModBlocks.METEOR_BRICK_CRACKED_SLAB.get(),
+                models().getExistingFile(modLoc("block/meteor_brick_cracked_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.METEOR_BRICK_MOSSY_SLAB.get(),
+                blockTexture(ModBlocks.METEOR_BRICK_MOSSY.get()),
+                modLoc("block/meteor_brick_mossy"));
+        simpleBlockItem(ModBlocks.METEOR_BRICK_MOSSY_SLAB.get(),
+                models().getExistingFile(modLoc("block/meteor_brick_mossy_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.METEOR_CRUSHED_SLAB.get(),
+                blockTexture(ModBlocks.METEOR_CRUSHED.get()),
+                modLoc("block/meteor_crushed"));
+        simpleBlockItem(ModBlocks.METEOR_CRUSHED_SLAB.get(),
+                models().getExistingFile(modLoc("block/meteor_crushed_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.METEOR_POLISHED_SLAB.get(),
+                blockTexture(ModBlocks.METEOR_POLISHED.get()),
+                modLoc("block/meteor_polished"));
+        simpleBlockItem(ModBlocks.METEOR_POLISHED_SLAB.get(),
+                models().getExistingFile(modLoc("block/meteor_polished_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.VINYL_TILE_SLAB.get(),
+                blockTexture(ModBlocks.VINYL_TILE.get()),
+                modLoc("block/vinyl_tile"));
+        simpleBlockItem(ModBlocks.VINYL_TILE_SLAB.get(),
+                models().getExistingFile(modLoc("block/vinyl_tile_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.VINYL_TILE_SMALL_SLAB.get(),
+                blockTexture(ModBlocks.VINYL_TILE_SMALL.get()),
+                modLoc("block/vinyl_tile_small"));
+        simpleBlockItem(ModBlocks.VINYL_TILE_SMALL_SLAB.get(),
+                models().getExistingFile(modLoc("block/vinyl_tile_small_slab")));
+
+
+
+
+
+
 
         simpleBlockWithItem(ModBlocks.SHREDDER.get(),
                 new ModelFile.UncheckedModelFile(modLoc("block/shredder")));
