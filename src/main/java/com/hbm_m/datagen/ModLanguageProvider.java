@@ -929,6 +929,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.machine_assembler", "Сборочная машина (Старая)");
                 add("block.hbm_m.advanced_assembly_machine", "Сборочная машина");
                 add("block.hbm_m.machine_battery", "Энергохранилище");
+
+
                 add("block.hbm_m.wire_coated", "Провод из красной меди");
                 add("block.hbm_m.wood_burner", "Дровяной генератор");
                 add("block.hbm_m.shredder", "Измельчитель");
@@ -1082,7 +1084,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("tooltip.hbm_m.abilities", "Способности:");
                 add("tooltip.hbm_m.vein_miner", "Жилковый майнер (%s)");
-                add("tooltip.hbm_m.aoe", "Зона действия %s x %s x %s");
+                add("tooltip.hbm_m.aoe", "Зона действия %s");
                 add("tooltip.hbm_m.silk_touch", "Шёлковое касание");
                 add("tooltip.hbm_m.fortune", "Удача (%s)");
                 add("tooltip.hbm_m.right_click", "ПКМ - переключить способность");
@@ -1090,7 +1092,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("message.hbm_m.vein_miner.enabled", "Жилковый майнер %s активирован!");
                 add("message.hbm_m.vein_miner.disabled", "Жилковый майнер %s деактивирован!");
-                add("message.hbm_m.aoe.enabled", "Зона действия %s x %s x %s активирована!");
+                add("message.hbm_m.aoe.enabled", "Зона действия %1$s x %1$s x %1$s активирована!");
                 add("message.hbm_m.aoe.disabled", "Зона действия %s x %s x %s деактивирована!");
                 add("message.hbm_m.silk_touch.enabled", "Шёлковое касание активировано!");
                 add("message.hbm_m.silk_touch.disabled", "Шёлковое касание деактивировано!");

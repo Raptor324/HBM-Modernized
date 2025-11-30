@@ -80,12 +80,14 @@ public class ModPickaxeItem extends PickaxeItem {
         // AOE - показываем все уровни вплоть до максимального
         if (aoeLevel > 0) {
             for (int i = 1; i <= aoeLevel; i++) {
-                int size = 1 + (i * 2);
+                // Проверяем, активен ли этот уровень сейчас
                 boolean isActive = isAOEEnabled(stack) && getAOELevelNBT(stack) == i;
                 ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
+
+                // Теперь передаем в перевод только переменную 'i' (сам уровень)
                 tooltip.add(Component.literal(" ")
-                    .append(Component.translatable("tooltip.hbm_m.aoe", size, size, size)
-                    .withStyle(color)));
+                        .append(Component.translatable("tooltip.hbm_m.aoe", i)
+                                .withStyle(color)));
             }
         }
 

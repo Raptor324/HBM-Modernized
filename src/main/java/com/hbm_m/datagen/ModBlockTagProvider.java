@@ -10,13 +10,15 @@ import com.hbm_m.lib.RefStrings;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.*;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.data.BlockTagsProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
+import net.minecraftforge.registries.RegistryObject;
 
 import javax.annotation.Nonnull;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 public class ModBlockTagProvider extends BlockTagsProvider {
@@ -28,700 +30,95 @@ public class ModBlockTagProvider extends BlockTagsProvider {
     @Override
     protected void addTags(@Nonnull HolderLookup.Provider provider) {
         // ============ МИНЕРАЛЬНЫЙ ТАГ: ДОБЫЧА КИРКАМИ ============
-        this.tag(BlockTags.MINEABLE_WITH_PICKAXE)
-                // ===== РУДЫ И СЛИТКИ =====
-                .add(ModBlocks.URANIUM_ORE.get())
-                .add(ModBlocks.URANIUM_BLOCK.get())
-                .add(ModBlocks.POLONIUM210_BLOCK.get())
-                .add(ModBlocks.PLUTONIUM_BLOCK.get())
-                .add(ModBlocks.PLUTONIUM_FUEL_BLOCK.get())
-                .add(ModBlocks.MACHINE_BATTERY.get())
-                .add(ModBlocks.BLAST_FURNACE.get())
-                .add(ModBlocks.BLAST_FURNACE_EXTENSION.get())
-                .add(ModBlocks.ALUMINUM_ORE.get())
-                .add(ModBlocks.ALUMINUM_ORE_DEEPSLATE.get())
-                .add(ModBlocks.URANIUM_ORE_H.get())
-                .add(ModBlocks.URANIUM_ORE_DEEPSLATE.get())
-                .add(ModBlocks.BERYLLIUM_ORE.get())
-                .add(ModBlocks.BERYLLIUM_ORE_DEEPSLATE.get())
-                .add(ModBlocks.CINNABAR_ORE.get())
-                .add(ModBlocks.CINNABAR_ORE_DEEPSLATE.get())
-                .add(ModBlocks.LIGNITE_ORE.get())
-                .add(ModBlocks.ASBESTOS_ORE.get())
-                .add(ModBlocks.LEAD_ORE.get())
-                .add(ModBlocks.LEAD_ORE_DEEPSLATE.get())
-                .add(ModBlocks.FLUORITE_ORE.get())
-                .add(ModBlocks.RAREGROUND_ORE.get())
-                .add(ModBlocks.RAREGROUND_ORE_DEEPSLATE.get())
-                .add(ModBlocks.SULFUR_ORE.get())
-                .add(ModBlocks.TITANIUM_ORE.get())
-                .add(ModBlocks.TITANIUM_ORE_DEEPSLATE.get())
-                .add(ModBlocks.THORIUM_ORE.get())
-                .add(ModBlocks.THORIUM_ORE_DEEPSLATE.get())
-                .add(ModBlocks.TUNGSTEN_ORE.get())
-                .add(ModBlocks.COBALT_ORE.get())
-                .add(ModBlocks.COBALT_ORE_DEEPSLATE.get())
-
-                // ===== МАШИНЫ И СТАНКИ =====
-                .add(ModBlocks.PRESS.get())
-                .add(ModBlocks.WOOD_BURNER.get())
-                .add(ModBlocks.ARMOR_TABLE.get())
-                .add(ModBlocks.SHREDDER.get())
-                .add(ModBlocks.MACHINE_ASSEMBLER.get())
-                .add(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get())
-                .add(ModBlocks.ANVIL_IRON.get())
-                .add(ModBlocks.ANVIL_LEAD.get())
-                .add(ModBlocks.ANVIL_STEEL.get())
-                .add(ModBlocks.ANVIL_DESH.get())
-                .add(ModBlocks.ANVIL_FERROURANIUM.get())
-                .add(ModBlocks.ANVIL_SATURNITE.get())
-                .add(ModBlocks.ANVIL_BISMUTH_BRONZE.get())
-                .add(ModBlocks.ANVIL_ARSENIC_BRONZE.get())
-                .add(ModBlocks.ANVIL_SCHRABIDATE.get())
-                .add(ModBlocks.ANVIL_DNT.get())
-                .add(ModBlocks.ANVIL_OSMIRIDIUM.get())
-                .add(ModBlocks.ANVIL_MURKY.get())
-                .add(ModBlocks.GEIGER_COUNTER_BLOCK.get())
-                .add(ModBlocks.WIRE_COATED.get())
-                .add(ModBlocks.UNIVERSAL_MACHINE_PART.get())
-
-                // ===== СТРУКТУРНЫЕ БЛОКИ =====
-                .add(ModBlocks.REINFORCED_STONE.get())
-                .add(ModBlocks.REINFORCED_STONE_STAIRS.get())
-                .add(ModBlocks.REINFORCED_STONE_SLAB.get())
-                .add(ModBlocks.REINFORCED_GLASS.get())
-
-                // ===== БЕТОН =====
-                .add(ModBlocks.CONCRETE.get())
-                .add(ModBlocks.CONCRETE_STAIRS.get())
-                .add(ModBlocks.CONCRETE_SLAB.get())
-                .add(ModBlocks.CONCRETE_CRACKED.get())
-                .add(ModBlocks.CONCRETE_CRACKED_STAIRS.get())
-                .add(ModBlocks.CONCRETE_CRACKED_SLAB.get())
-                .add(ModBlocks.CONCRETE_MOSSY.get())
-                .add(ModBlocks.CONCRETE_MOSSY_STAIRS.get())
-                .add(ModBlocks.CONCRETE_MOSSY_SLAB.get())
-                .add(ModBlocks.CONCRETE_HAZARD.get())
-                .add(ModBlocks.CONCRETE_HAZARD_STAIRS.get())
-                .add(ModBlocks.CONCRETE_HAZARD_SLAB.get())
-                .add(ModBlocks.CONCRETE_VENT.get())
-                .add(ModBlocks.CONCRETE_FAN.get())
-                .add(ModBlocks.CONCRETE_MARKED.get())
-
-                // ===== КИРПИЧНЫЙ БЕТОН =====
-                .add(ModBlocks.BRICK_CONCRETE.get())
-                .add(ModBlocks.BRICK_CONCRETE_STAIRS.get())
-                .add(ModBlocks.BRICK_CONCRETE_SLAB.get())
-                .add(ModBlocks.BRICK_CONCRETE_BROKEN.get())
-                .add(ModBlocks.BRICK_CONCRETE_BROKEN_STAIRS.get())
-                .add(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB.get())
-                .add(ModBlocks.BRICK_CONCRETE_CRACKED.get())
-                .add(ModBlocks.BRICK_CONCRETE_CRACKED_STAIRS.get())
-                .add(ModBlocks.BRICK_CONCRETE_CRACKED_SLAB.get())
-                .add(ModBlocks.BRICK_CONCRETE_MOSSY.get())
-                .add(ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS.get())
-                .add(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB.get())
-                .add(ModBlocks.BRICK_CONCRETE_MARKED.get())
-
-                // ===== ЯЩИКИ ХРАНИЛИЩА =====
-                .add(ModBlocks.CRATE.get())
-                .add(ModBlocks.CRATE_LEAD.get())
-                .add(ModBlocks.CRATE_METAL.get())
-                .add(ModBlocks.CRATE_WEAPON.get())
-                .add(ModBlocks.CRATE_IRON.get())
-                .add(ModBlocks.CRATE_STEEL.get())
-                .add(ModBlocks.CRATE_DESH.get())
-
-                // ===== БОЧКИ =====
-                .add(ModBlocks.BARREL_LOX.get())
-                .add(ModBlocks.BARREL_CORRODED.get())
-                .add(ModBlocks.BARREL_IRON.get())
-                .add(ModBlocks.BARREL_PINK.get())
-                .add(ModBlocks.BARREL_PLASTIC.get())
-                .add(ModBlocks.BARREL_RED.get())
-                .add(ModBlocks.BARREL_STEEL.get())
-                .add(ModBlocks.BARREL_TAINT.get())
-                .add(ModBlocks.BARREL_TCALLOY.get())
-                .add(ModBlocks.BARREL_VITRIFIED.get())
-                .add(ModBlocks.BARREL_YELLOW.get())
-
-                // ===== КОЛЮЧАЯ ПРОВОЛОКА =====
-                .add(ModBlocks.BARBED_WIRE.get())
-                .add(ModBlocks.BARBED_WIRE_FIRE.get())
-                .add(ModBlocks.BARBED_WIRE_WITHER.get())
-                .add(ModBlocks.BARBED_WIRE_POISON.get())
-                .add(ModBlocks.BARBED_WIRE_RAD.get())
-
-                // ===== ДВЕРИ =====
-                .add(ModBlocks.DOOR_BUNKER.get())
-                .add(ModBlocks.DOOR_OFFICE.get())
-                .add(ModBlocks.METAL_DOOR.get())
-                .add(ModBlocks.LARGE_VEHICLE_DOOR.get())
-                .add(ModBlocks.ROUND_AIRLOCK_DOOR.get())
-                .add(ModBlocks.TRANSITION_SEAL.get())
-                .add(ModBlocks.FIRE_DOOR.get())
-                .add(ModBlocks.SLIDE_DOOR.get())
-                .add(ModBlocks.SLIDING_SEAL_DOOR.get())
-                .add(ModBlocks.SECURE_ACCESS_DOOR.get())
-                .add(ModBlocks.QE_SLIDING.get())
-                .add(ModBlocks.QE_CONTAINMENT.get())
-                .add(ModBlocks.WATER_DOOR.get())
-                .add(ModBlocks.SILO_HATCH.get())
-                .add(ModBlocks.SILO_HATCH_LARGE.get())
-
-                // ===== ОТХОДЫ И ЗАГРЯЗНЕНИЕ =====
-                .add(ModBlocks.WASTE_GRASS.get())
-                .add(ModBlocks.WASTE_LEAVES.get())
-                .add(ModBlocks.WASTE_PLANKS.get())
-                .add(ModBlocks.WASTE_LOG.get())
-                .add(ModBlocks.BURNED_GRASS.get())
-
-                // ===== DEPTH БЛОКИ =====
-                .add(ModBlocks.DEPTH_STONE.get())
-                .add(ModBlocks.DEPTH_BORAX.get())
-                .add(ModBlocks.DEPTH_CINNABAR.get())
-                .add(ModBlocks.DEPTH_IRON.get())
-                .add(ModBlocks.DEPTH_TUNGSTEN.get())
-                .add(ModBlocks.DEPTH_TITANIUM.get())
-                .add(ModBlocks.DEPTH_ZIRCONIUM.get())
-
-                // ===== СЕЛЛАФИТ ЗАГРЯЗНЕНИЕ =====
-                .add(ModBlocks.SELLAFIELD_SLAKED.get())
-                .add(ModBlocks.SELLAFIELD_SLAKED1.get())
-                .add(ModBlocks.SELLAFIELD_SLAKED2.get())
-                .add(ModBlocks.SELLAFIELD_SLAKED3.get())
-
-                // ===== ВЗРЫВЧАТЫЕ ВЕЩЕСТВА И ОПАСНЫЕ БЛОКИ =====
-                .add(ModBlocks.DET_MINER.get())
-                .add(ModBlocks.GIGA_DET.get())
-                .add(ModBlocks.EXPLOSIVE_CHARGE.get())
-                .add(ModBlocks.SMOKE_BOMB.get())
-                .add(ModBlocks.NUCLEAR_CHARGE.get())
-                .add(ModBlocks.WASTE_CHARGE.get())
-                .add(ModBlocks.C4.get())
-
-                // ===== ТЕХОБЪЕКТЫ =====
-                .add(ModBlocks.DORNIER.get())
-                .add(ModBlocks.ORE_OIL.get())
-                .add(ModBlocks.BEDROCK_OIL.get())
-                .add(ModBlocks.TOASTER.get())
-                .add(ModBlocks.CRT_BSOD.get())
-                .add(ModBlocks.CRT_CLEAN.get())
-                .add(ModBlocks.CRT_BROKEN.get())
-
-                .add(ModBlocks.CONCRETE_ASBESTOS.get())
-.add(ModBlocks.CONCRETE_ASBESTOS_SLAB.get())
-.add(ModBlocks.CONCRETE_ASBESTOS_STAIRS.get())
-.add(ModBlocks.CONCRETE_BLACK.get())
-.add(ModBlocks.CONCRETE_BLACK_SLAB.get())
-.add(ModBlocks.CONCRETE_BLACK_STAIRS.get())
-.add(ModBlocks.CONCRETE_BLUE.get())
-.add(ModBlocks.CONCRETE_BLUE_SLAB.get())
-.add(ModBlocks.CONCRETE_BLUE_STAIRS.get())
-.add(ModBlocks.CONCRETE_BROWN.get())
-.add(ModBlocks.CONCRETE_BROWN_SLAB.get())
-.add(ModBlocks.CONCRETE_BROWN_STAIRS.get())
-.add(ModBlocks.CONCRETE_COLORED_BRONZE.get())
-.add(ModBlocks.CONCRETE_COLORED_BRONZE_SLAB.get())
-.add(ModBlocks.CONCRETE_COLORED_BRONZE_STAIRS.get())
-.add(ModBlocks.CONCRETE_COLORED_INDIGO.get())
-.add(ModBlocks.CONCRETE_COLORED_INDIGO_SLAB.get())
-.add(ModBlocks.CONCRETE_COLORED_INDIGO_STAIRS.get())
-.add(ModBlocks.CONCRETE_COLORED_MACHINE.get())
-.add(ModBlocks.CONCRETE_COLORED_MACHINE_SLAB.get())
-.add(ModBlocks.CONCRETE_COLORED_MACHINE_STAIRS.get())
-.add(ModBlocks.CONCRETE_COLORED_PINK.get())
-.add(ModBlocks.CONCRETE_COLORED_PINK_SLAB.get())
-.add(ModBlocks.CONCRETE_COLORED_PINK_STAIRS.get())
-.add(ModBlocks.CONCRETE_COLORED_PURPLE.get())
-.add(ModBlocks.CONCRETE_COLORED_PURPLE_SLAB.get())
-.add(ModBlocks.CONCRETE_COLORED_PURPLE_STAIRS.get())
-.add(ModBlocks.CONCRETE_COLORED_SAND.get())
-.add(ModBlocks.CONCRETE_COLORED_SAND_SLAB.get())
-.add(ModBlocks.CONCRETE_COLORED_SAND_STAIRS.get())
-.add(ModBlocks.CONCRETE_CYAN.get())
-.add(ModBlocks.CONCRETE_CYAN_SLAB.get())
-.add(ModBlocks.CONCRETE_CYAN_STAIRS.get())
-.add(ModBlocks.CONCRETE_GRAY.get())
-.add(ModBlocks.CONCRETE_GRAY_SLAB.get())
-.add(ModBlocks.CONCRETE_GRAY_STAIRS.get())
-.add(ModBlocks.CONCRETE_GREEN.get())
-.add(ModBlocks.CONCRETE_GREEN_SLAB.get())
-.add(ModBlocks.CONCRETE_GREEN_STAIRS.get())
-.add(ModBlocks.CONCRETE_LIGHT_BLUE.get())
-.add(ModBlocks.CONCRETE_LIGHT_BLUE_SLAB.get())
-.add(ModBlocks.CONCRETE_LIGHT_BLUE_STAIRS.get())
-.add(ModBlocks.CONCRETE_LIME.get())
-.add(ModBlocks.CONCRETE_LIME_SLAB.get())
-.add(ModBlocks.CONCRETE_LIME_STAIRS.get())
-.add(ModBlocks.CONCRETE_MAGENTA.get())
-.add(ModBlocks.CONCRETE_MAGENTA_SLAB.get())
-.add(ModBlocks.CONCRETE_MAGENTA_STAIRS.get())
-.add(ModBlocks.CONCRETE_ORANGE.get())
-.add(ModBlocks.CONCRETE_ORANGE_SLAB.get())
-.add(ModBlocks.CONCRETE_ORANGE_STAIRS.get())
-.add(ModBlocks.CONCRETE_PINK.get())
-.add(ModBlocks.CONCRETE_PINK_SLAB.get())
-.add(ModBlocks.CONCRETE_PINK_STAIRS.get())
-.add(ModBlocks.CONCRETE_PURPLE.get())
-.add(ModBlocks.CONCRETE_PURPLE_SLAB.get())
-.add(ModBlocks.CONCRETE_PURPLE_STAIRS.get())
-.add(ModBlocks.CONCRETE_RED.get())
-.add(ModBlocks.CONCRETE_RED_SLAB.get())
-.add(ModBlocks.CONCRETE_RED_STAIRS.get())
-.add(ModBlocks.CONCRETE_SILVER.get())
-.add(ModBlocks.CONCRETE_SILVER_SLAB.get())
-.add(ModBlocks.CONCRETE_SILVER_STAIRS.get())
-.add(ModBlocks.CONCRETE_SUPER.get())
-.add(ModBlocks.CONCRETE_SUPER_SLAB.get())
-.add(ModBlocks.CONCRETE_SUPER_STAIRS.get())
-.add(ModBlocks.CONCRETE_SUPER_M0.get())
-.add(ModBlocks.CONCRETE_SUPER_M0_SLAB.get())
-.add(ModBlocks.CONCRETE_SUPER_M0_STAIRS.get())
-.add(ModBlocks.CONCRETE_SUPER_M1.get())
-.add(ModBlocks.CONCRETE_SUPER_M1_SLAB.get())
-.add(ModBlocks.CONCRETE_SUPER_M1_STAIRS.get())
-.add(ModBlocks.CONCRETE_SUPER_M2.get())
-.add(ModBlocks.CONCRETE_SUPER_M2_SLAB.get())
-.add(ModBlocks.CONCRETE_SUPER_M2_STAIRS.get())
-.add(ModBlocks.CONCRETE_SUPER_M3.get())
-.add(ModBlocks.CONCRETE_SUPER_M3_SLAB.get())
-.add(ModBlocks.CONCRETE_SUPER_M3_STAIRS.get())
-.add(ModBlocks.CONCRETE_SUPER_BROKEN.get())
-.add(ModBlocks.CONCRETE_SUPER_BROKEN_SLAB.get())
-.add(ModBlocks.CONCRETE_SUPER_BROKEN_STAIRS.get())
-.add(ModBlocks.CONCRETE_REBAR.get())
-.add(ModBlocks.CONCRETE_REBAR_SLAB.get())
-.add(ModBlocks.CONCRETE_REBAR_STAIRS.get())
-.add(ModBlocks.CONCRETE_FLAT.get())
-.add(ModBlocks.CONCRETE_FLAT_SLAB.get())
-.add(ModBlocks.CONCRETE_FLAT_STAIRS.get())
-.add(ModBlocks.CONCRETE_TILE.get())
-.add(ModBlocks.CONCRETE_TILE_SLAB.get())
-.add(ModBlocks.CONCRETE_TILE_STAIRS.get())
-.add(ModBlocks.CONCRETE_WHITE.get())
-.add(ModBlocks.CONCRETE_WHITE_SLAB.get())
-.add(ModBlocks.CONCRETE_WHITE_STAIRS.get())
-.add(ModBlocks.CONCRETE_YELLOW.get())
-.add(ModBlocks.CONCRETE_YELLOW_SLAB.get())
-.add(ModBlocks.CONCRETE_YELLOW_STAIRS.get())
-.add(ModBlocks.DEPTH_BRICK.get())
-.add(ModBlocks.DEPTH_BRICK_SLAB.get())
-.add(ModBlocks.DEPTH_BRICK_STAIRS.get())
-.add(ModBlocks.DEPTH_TILES.get())
-.add(ModBlocks.DEPTH_TILES_SLAB.get())
-.add(ModBlocks.DEPTH_TILES_STAIRS.get())
-.add(ModBlocks.DEPTH_NETHER_BRICK.get())
-.add(ModBlocks.DEPTH_NETHER_BRICK_SLAB.get())
-.add(ModBlocks.DEPTH_NETHER_BRICK_STAIRS.get())
-.add(ModBlocks.DEPTH_NETHER_TILES.get())
-.add(ModBlocks.DEPTH_NETHER_TILES_SLAB.get())
-.add(ModBlocks.DEPTH_NETHER_TILES_STAIRS.get())
-.add(ModBlocks.GNEISS_TILE.get())
-.add(ModBlocks.GNEISS_TILE_SLAB.get())
-.add(ModBlocks.GNEISS_TILE_STAIRS.get())
-.add(ModBlocks.GNEISS_BRICK.get())
-.add(ModBlocks.GNEISS_BRICK_SLAB.get())
-.add(ModBlocks.GNEISS_BRICK_STAIRS.get())
-.add(ModBlocks.BRICK_BASE.get())
-.add(ModBlocks.BRICK_BASE_SLAB.get())
-.add(ModBlocks.BRICK_BASE_STAIRS.get())
-.add(ModBlocks.BRICK_LIGHT.get())
-.add(ModBlocks.BRICK_LIGHT_SLAB.get())
-.add(ModBlocks.BRICK_LIGHT_STAIRS.get())
-.add(ModBlocks.BRICK_FIRE.get())
-.add(ModBlocks.BRICK_FIRE_SLAB.get())
-.add(ModBlocks.BRICK_FIRE_STAIRS.get())
-.add(ModBlocks.BRICK_OBSIDIAN.get())
-.add(ModBlocks.BRICK_OBSIDIAN_SLAB.get())
-.add(ModBlocks.BRICK_OBSIDIAN_STAIRS.get())
-.add(ModBlocks.VINYL_TILE.get())
-.add(ModBlocks.VINYL_TILE_SLAB.get())
-.add(ModBlocks.VINYL_TILE_STAIRS.get())
-.add(ModBlocks.VINYL_TILE_SMALL.get())
-.add(ModBlocks.VINYL_TILE_SMALL_SLAB.get())
-.add(ModBlocks.VINYL_TILE_SMALL_STAIRS.get())
-.add(ModBlocks.BRICK_DUCRETE.get())
-.add(ModBlocks.BRICK_DUCRETE_SLAB.get())
-.add(ModBlocks.BRICK_DUCRETE_STAIRS.get())
-.add(ModBlocks.ASPHALT.get())
-.add(ModBlocks.ASPHALT_SLAB.get())
-.add(ModBlocks.ASPHALT_STAIRS.get())
-.add(ModBlocks.BASALT_POLISHED.get())
-.add(ModBlocks.BASALT_POLISHED_SLAB.get())
-.add(ModBlocks.BASALT_POLISHED_STAIRS.get())
-.add(ModBlocks.BASALT_BRICK.get())
-.add(ModBlocks.BASALT_BRICK_SLAB.get())
-.add(ModBlocks.BASALT_BRICK_STAIRS.get())
-.add(ModBlocks.METEOR_POLISHED.get())
-.add(ModBlocks.METEOR_POLISHED_SLAB.get())
-.add(ModBlocks.METEOR_POLISHED_STAIRS.get())
-.add(ModBlocks.METEOR_BRICK.get())
-.add(ModBlocks.METEOR_BRICK_SLAB.get())
-.add(ModBlocks.METEOR_BRICK_STAIRS.get())
-.add(ModBlocks.METEOR_BRICK_CRACKED.get())
-.add(ModBlocks.METEOR_BRICK_CRACKED_SLAB.get())
-.add(ModBlocks.METEOR_BRICK_CRACKED_STAIRS.get())
-.add(ModBlocks.METEOR_BRICK_MOSSY.get())
-.add(ModBlocks.METEOR_BRICK_MOSSY_SLAB.get())
-.add(ModBlocks.METEOR_BRICK_MOSSY_STAIRS.get())
-.add(ModBlocks.METEOR_CRUSHED.get())
-.add(ModBlocks.METEOR_CRUSHED_SLAB.get())
-.add(ModBlocks.METEOR_CRUSHED_STAIRS.get())
-
-                // ===== ПРОЧИЕ БЛОКИ =====
-                .add(ModBlocks.FREAKY_ALIEN_BLOCK.get());
-
-        // ============ ТРЕБУЕМЫЙ УРОВЕНЬ: ЖЕЛЕЗНАЯ КИРКА ============
-        this.tag(BlockTags.NEEDS_IRON_TOOL)
-                // Руды и слитки требующие железа
-                .add(ModBlocks.BERYLLIUM_ORE.get())
-                .add(ModBlocks.BERYLLIUM_ORE_DEEPSLATE.get())
-                .add(ModBlocks.URANIUM_ORE_H.get())
-                .add(ModBlocks.URANIUM_ORE_DEEPSLATE.get())
-                .add(ModBlocks.CINNABAR_ORE.get())
-                .add(ModBlocks.CINNABAR_ORE_DEEPSLATE.get())
-                .add(ModBlocks.LEAD_ORE.get())
-                .add(ModBlocks.LEAD_ORE_DEEPSLATE.get())
-                .add(ModBlocks.FLUORITE_ORE.get())
-                .add(ModBlocks.RAREGROUND_ORE.get())
-                .add(ModBlocks.RAREGROUND_ORE_DEEPSLATE.get())
-                .add(ModBlocks.SULFUR_ORE.get())
-                .add(ModBlocks.TITANIUM_ORE.get())
-                .add(ModBlocks.TITANIUM_ORE_DEEPSLATE.get())
-                .add(ModBlocks.THORIUM_ORE.get())
-                .add(ModBlocks.THORIUM_ORE_DEEPSLATE.get())
-                .add(ModBlocks.TUNGSTEN_ORE.get())
-                .add(ModBlocks.COBALT_ORE.get())
-                .add(ModBlocks.COBALT_ORE_DEEPSLATE.get())
-                .add(ModBlocks.BLAST_FURNACE_EXTENSION.get())
-                .add(ModBlocks.ASBESTOS_ORE.get())
-                .add(ModBlocks.URANIUM_ORE.get())
-                .add(ModBlocks.URANIUM_BLOCK.get())
-                .add(ModBlocks.POLONIUM210_BLOCK.get())
-                .add(ModBlocks.PLUTONIUM_BLOCK.get())
-                .add(ModBlocks.PLUTONIUM_FUEL_BLOCK.get())
-                .add(ModBlocks.MACHINE_BATTERY.get())
-                .add(ModBlocks.BLAST_FURNACE.get())
-
-                // Машины и станки
-                .add(ModBlocks.PRESS.get())
-                .add(ModBlocks.WOOD_BURNER.get())
-                .add(ModBlocks.ANVIL_IRON.get())
-                .add(ModBlocks.ANVIL_LEAD.get())
-                .add(ModBlocks.ANVIL_STEEL.get())
-                .add(ModBlocks.ANVIL_DESH.get())
-                .add(ModBlocks.ANVIL_FERROURANIUM.get())
-                .add(ModBlocks.ANVIL_SATURNITE.get())
-                .add(ModBlocks.ANVIL_BISMUTH_BRONZE.get())
-                .add(ModBlocks.ANVIL_ARSENIC_BRONZE.get())
-                .add(ModBlocks.ANVIL_SCHRABIDATE.get())
-                .add(ModBlocks.ANVIL_DNT.get())
-                .add(ModBlocks.ANVIL_OSMIRIDIUM.get())
-                .add(ModBlocks.ANVIL_MURKY.get())
-                .add(ModBlocks.ARMOR_TABLE.get())
-                .add(ModBlocks.SHREDDER.get())
-                .add(ModBlocks.MACHINE_ASSEMBLER.get())
-                .add(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get())
-                .add(ModBlocks.GEIGER_COUNTER_BLOCK.get())
-                .add(ModBlocks.WIRE_COATED.get())
-                .add(ModBlocks.UNIVERSAL_MACHINE_PART.get())
-
-                // Структурные блоки
-                .add(ModBlocks.REINFORCED_STONE.get())
-                .add(ModBlocks.REINFORCED_STONE_STAIRS.get())
-                .add(ModBlocks.REINFORCED_STONE_SLAB.get())
-                .add(ModBlocks.REINFORCED_GLASS.get())
-
-                // Бетон
-                .add(ModBlocks.CONCRETE.get())
-                .add(ModBlocks.CONCRETE_STAIRS.get())
-                .add(ModBlocks.CONCRETE_SLAB.get())
-                .add(ModBlocks.CONCRETE_CRACKED.get())
-                .add(ModBlocks.CONCRETE_CRACKED_STAIRS.get())
-                .add(ModBlocks.CONCRETE_CRACKED_SLAB.get())
-                .add(ModBlocks.CONCRETE_MOSSY.get())
-                .add(ModBlocks.CONCRETE_MOSSY_STAIRS.get())
-                .add(ModBlocks.CONCRETE_MOSSY_SLAB.get())
-                .add(ModBlocks.CONCRETE_HAZARD.get())
-                .add(ModBlocks.CONCRETE_HAZARD_STAIRS.get())
-                .add(ModBlocks.CONCRETE_HAZARD_SLAB.get())
-                .add(ModBlocks.CONCRETE_VENT.get())
-                .add(ModBlocks.CONCRETE_FAN.get())
-                .add(ModBlocks.CONCRETE_MARKED.get())
-
-                // Кирпичный бетон
-                .add(ModBlocks.BRICK_CONCRETE.get())
-                .add(ModBlocks.BRICK_CONCRETE_STAIRS.get())
-                .add(ModBlocks.BRICK_CONCRETE_SLAB.get())
-                .add(ModBlocks.BRICK_CONCRETE_BROKEN.get())
-                .add(ModBlocks.BRICK_CONCRETE_BROKEN_STAIRS.get())
-                .add(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB.get())
-                .add(ModBlocks.BRICK_CONCRETE_CRACKED.get())
-                .add(ModBlocks.BRICK_CONCRETE_CRACKED_STAIRS.get())
-                .add(ModBlocks.BRICK_CONCRETE_CRACKED_SLAB.get())
-                .add(ModBlocks.BRICK_CONCRETE_MOSSY.get())
-                .add(ModBlocks.BRICK_CONCRETE_MOSSY_STAIRS.get())
-                .add(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB.get())
-                .add(ModBlocks.BRICK_CONCRETE_MARKED.get())
-
-                // Ящики и бочки
-                .add(ModBlocks.CRATE.get())
-                .add(ModBlocks.CRATE_LEAD.get())
-                .add(ModBlocks.CRATE_METAL.get())
-                .add(ModBlocks.CRATE_WEAPON.get())
-                .add(ModBlocks.CRATE_IRON.get())
-                .add(ModBlocks.CRATE_STEEL.get())
-                .add(ModBlocks.CRATE_DESH.get())
-                .add(ModBlocks.BARREL_LOX.get())
-                .add(ModBlocks.BARREL_CORRODED.get())
-                .add(ModBlocks.BARREL_IRON.get())
-                .add(ModBlocks.BARREL_PINK.get())
-                .add(ModBlocks.BARREL_PLASTIC.get())
-                .add(ModBlocks.BARREL_RED.get())
-                .add(ModBlocks.BARREL_STEEL.get())
-                .add(ModBlocks.BARREL_TAINT.get())
-                .add(ModBlocks.BARREL_TCALLOY.get())
-                .add(ModBlocks.BARREL_VITRIFIED.get())
-                .add(ModBlocks.BARREL_YELLOW.get())
-
-                // Колючая проволока
-                .add(ModBlocks.BARBED_WIRE.get())
-                .add(ModBlocks.BARBED_WIRE_FIRE.get())
-                .add(ModBlocks.BARBED_WIRE_WITHER.get())
-                .add(ModBlocks.BARBED_WIRE_POISON.get())
-                .add(ModBlocks.BARBED_WIRE_RAD.get())
-
-                // Двери
-                .add(ModBlocks.DOOR_BUNKER.get())
-                .add(ModBlocks.DOOR_OFFICE.get())
-                .add(ModBlocks.METAL_DOOR.get())
-                .add(ModBlocks.LARGE_VEHICLE_DOOR.get())
-                .add(ModBlocks.ROUND_AIRLOCK_DOOR.get())
-                .add(ModBlocks.TRANSITION_SEAL.get())
-                .add(ModBlocks.FIRE_DOOR.get())
-                .add(ModBlocks.SLIDE_DOOR.get())
-                .add(ModBlocks.SLIDING_SEAL_DOOR.get())
-                .add(ModBlocks.SECURE_ACCESS_DOOR.get())
-                .add(ModBlocks.QE_SLIDING.get())
-                .add(ModBlocks.QE_CONTAINMENT.get())
-                .add(ModBlocks.WATER_DOOR.get())
-                .add(ModBlocks.SILO_HATCH.get())
-                .add(ModBlocks.SILO_HATCH_LARGE.get())
-
-                // Отходы и загрязнение
-                .add(ModBlocks.WASTE_GRASS.get())
-                .add(ModBlocks.WASTE_LEAVES.get())
-                .add(ModBlocks.WASTE_PLANKS.get())
-                .add(ModBlocks.WASTE_LOG.get())
-                .add(ModBlocks.BURNED_GRASS.get())
-
-                // Depth блоки
-                .add(ModBlocks.DEPTH_STONE.get())
-                .add(ModBlocks.DEPTH_BORAX.get())
-                .add(ModBlocks.DEPTH_CINNABAR.get())
-                .add(ModBlocks.DEPTH_IRON.get())
-                .add(ModBlocks.DEPTH_TUNGSTEN.get())
-                .add(ModBlocks.DEPTH_TITANIUM.get())
-                .add(ModBlocks.DEPTH_ZIRCONIUM.get())
-
-                // Селлафит загрязнение
-                .add(ModBlocks.SELLAFIELD_SLAKED.get())
-                .add(ModBlocks.SELLAFIELD_SLAKED1.get())
-                .add(ModBlocks.SELLAFIELD_SLAKED2.get())
-                .add(ModBlocks.SELLAFIELD_SLAKED3.get())
-
-                // Взрывчатые вещества и опасные блоки
-                .add(ModBlocks.DET_MINER.get())
-                .add(ModBlocks.GIGA_DET.get())
-                .add(ModBlocks.EXPLOSIVE_CHARGE.get())
-                .add(ModBlocks.SMOKE_BOMB.get())
-                .add(ModBlocks.NUCLEAR_CHARGE.get())
-                .add(ModBlocks.WASTE_CHARGE.get())
-                .add(ModBlocks.C4.get())
-
-                // Техобъекты
-                .add(ModBlocks.DORNIER.get())
-                .add(ModBlocks.ORE_OIL.get())
-                .add(ModBlocks.BEDROCK_OIL.get())
-                .add(ModBlocks.TOASTER.get())
-                .add(ModBlocks.CRT_BSOD.get())
-                .add(ModBlocks.CRT_CLEAN.get())
-                .add(ModBlocks.CRT_BROKEN.get())
-
-                // Добавляем в NEEDS_IRON_TOOL после бетонных блоков (аналогично MINEABLE_WITH_PICKAXE):
-
-.add(ModBlocks.CONCRETE_ASBESTOS.get())
-.add(ModBlocks.CONCRETE_ASBESTOS_SLAB.get())
-.add(ModBlocks.CONCRETE_ASBESTOS_STAIRS.get())
-.add(ModBlocks.CONCRETE_BLACK.get())
-.add(ModBlocks.CONCRETE_BLACK_SLAB.get())
-.add(ModBlocks.CONCRETE_BLACK_STAIRS.get())
-.add(ModBlocks.CONCRETE_BLUE.get())
-.add(ModBlocks.CONCRETE_BLUE_SLAB.get())
-.add(ModBlocks.CONCRETE_BLUE_STAIRS.get())
-.add(ModBlocks.CONCRETE_BROWN.get())
-.add(ModBlocks.CONCRETE_BROWN_SLAB.get())
-.add(ModBlocks.CONCRETE_BROWN_STAIRS.get())
-.add(ModBlocks.CONCRETE_COLORED_BRONZE.get())
-.add(ModBlocks.CONCRETE_COLORED_BRONZE_SLAB.get())
-.add(ModBlocks.CONCRETE_COLORED_BRONZE_STAIRS.get())
-.add(ModBlocks.CONCRETE_COLORED_INDIGO.get())
-.add(ModBlocks.CONCRETE_COLORED_INDIGO_SLAB.get())
-.add(ModBlocks.CONCRETE_COLORED_INDIGO_STAIRS.get())
-.add(ModBlocks.CONCRETE_COLORED_MACHINE.get())
-.add(ModBlocks.CONCRETE_COLORED_MACHINE_SLAB.get())
-.add(ModBlocks.CONCRETE_COLORED_MACHINE_STAIRS.get())
-.add(ModBlocks.CONCRETE_COLORED_PINK.get())
-.add(ModBlocks.CONCRETE_COLORED_PINK_SLAB.get())
-.add(ModBlocks.CONCRETE_COLORED_PINK_STAIRS.get())
-.add(ModBlocks.CONCRETE_COLORED_PURPLE.get())
-.add(ModBlocks.CONCRETE_COLORED_PURPLE_SLAB.get())
-.add(ModBlocks.CONCRETE_COLORED_PURPLE_STAIRS.get())
-.add(ModBlocks.CONCRETE_COLORED_SAND.get())
-.add(ModBlocks.CONCRETE_COLORED_SAND_SLAB.get())
-.add(ModBlocks.CONCRETE_COLORED_SAND_STAIRS.get())
-.add(ModBlocks.CONCRETE_CYAN.get())
-.add(ModBlocks.CONCRETE_CYAN_SLAB.get())
-.add(ModBlocks.CONCRETE_CYAN_STAIRS.get())
-.add(ModBlocks.CONCRETE_GRAY.get())
-.add(ModBlocks.CONCRETE_GRAY_SLAB.get())
-.add(ModBlocks.CONCRETE_GRAY_STAIRS.get())
-.add(ModBlocks.CONCRETE_GREEN.get())
-.add(ModBlocks.CONCRETE_GREEN_SLAB.get())
-.add(ModBlocks.CONCRETE_GREEN_STAIRS.get())
-.add(ModBlocks.CONCRETE_LIGHT_BLUE.get())
-.add(ModBlocks.CONCRETE_LIGHT_BLUE_SLAB.get())
-.add(ModBlocks.CONCRETE_LIGHT_BLUE_STAIRS.get())
-.add(ModBlocks.CONCRETE_LIME.get())
-.add(ModBlocks.CONCRETE_LIME_SLAB.get())
-.add(ModBlocks.CONCRETE_LIME_STAIRS.get())
-.add(ModBlocks.CONCRETE_MAGENTA.get())
-.add(ModBlocks.CONCRETE_MAGENTA_SLAB.get())
-.add(ModBlocks.CONCRETE_MAGENTA_STAIRS.get())
-.add(ModBlocks.CONCRETE_ORANGE.get())
-.add(ModBlocks.CONCRETE_ORANGE_SLAB.get())
-.add(ModBlocks.CONCRETE_ORANGE_STAIRS.get())
-.add(ModBlocks.CONCRETE_PINK.get())
-.add(ModBlocks.CONCRETE_PINK_SLAB.get())
-.add(ModBlocks.CONCRETE_PINK_STAIRS.get())
-.add(ModBlocks.CONCRETE_PURPLE.get())
-.add(ModBlocks.CONCRETE_PURPLE_SLAB.get())
-.add(ModBlocks.CONCRETE_PURPLE_STAIRS.get())
-.add(ModBlocks.CONCRETE_RED.get())
-.add(ModBlocks.CONCRETE_RED_SLAB.get())
-.add(ModBlocks.CONCRETE_RED_STAIRS.get())
-.add(ModBlocks.CONCRETE_SILVER.get())
-.add(ModBlocks.CONCRETE_SILVER_SLAB.get())
-.add(ModBlocks.CONCRETE_SILVER_STAIRS.get())
-.add(ModBlocks.CONCRETE_SUPER.get())
-.add(ModBlocks.CONCRETE_SUPER_SLAB.get())
-.add(ModBlocks.CONCRETE_SUPER_STAIRS.get())
-.add(ModBlocks.CONCRETE_SUPER_M0.get())
-.add(ModBlocks.CONCRETE_SUPER_M0_SLAB.get())
-.add(ModBlocks.CONCRETE_SUPER_M0_STAIRS.get())
-.add(ModBlocks.CONCRETE_SUPER_M1.get())
-.add(ModBlocks.CONCRETE_SUPER_M1_SLAB.get())
-.add(ModBlocks.CONCRETE_SUPER_M1_STAIRS.get())
-.add(ModBlocks.CONCRETE_SUPER_M2.get())
-.add(ModBlocks.CONCRETE_SUPER_M2_SLAB.get())
-.add(ModBlocks.CONCRETE_SUPER_M2_STAIRS.get())
-.add(ModBlocks.CONCRETE_SUPER_M3.get())
-.add(ModBlocks.CONCRETE_SUPER_M3_SLAB.get())
-.add(ModBlocks.CONCRETE_SUPER_M3_STAIRS.get())
-.add(ModBlocks.CONCRETE_SUPER_BROKEN.get())
-.add(ModBlocks.CONCRETE_SUPER_BROKEN_SLAB.get())
-.add(ModBlocks.CONCRETE_SUPER_BROKEN_STAIRS.get())
-.add(ModBlocks.CONCRETE_REBAR.get())
-.add(ModBlocks.CONCRETE_REBAR_SLAB.get())
-.add(ModBlocks.CONCRETE_REBAR_STAIRS.get())
-.add(ModBlocks.CONCRETE_FLAT.get())
-.add(ModBlocks.CONCRETE_FLAT_SLAB.get())
-.add(ModBlocks.CONCRETE_FLAT_STAIRS.get())
-.add(ModBlocks.CONCRETE_TILE.get())
-.add(ModBlocks.CONCRETE_TILE_SLAB.get())
-.add(ModBlocks.CONCRETE_TILE_STAIRS.get())
-.add(ModBlocks.CONCRETE_WHITE.get())
-.add(ModBlocks.CONCRETE_WHITE_SLAB.get())
-.add(ModBlocks.CONCRETE_WHITE_STAIRS.get())
-.add(ModBlocks.CONCRETE_YELLOW.get())
-.add(ModBlocks.CONCRETE_YELLOW_SLAB.get())
-.add(ModBlocks.CONCRETE_YELLOW_STAIRS.get())
-.add(ModBlocks.DEPTH_BRICK.get())
-.add(ModBlocks.DEPTH_BRICK_SLAB.get())
-.add(ModBlocks.DEPTH_BRICK_STAIRS.get())
-.add(ModBlocks.DEPTH_TILES.get())
-.add(ModBlocks.DEPTH_TILES_SLAB.get())
-.add(ModBlocks.DEPTH_TILES_STAIRS.get())
-.add(ModBlocks.DEPTH_NETHER_BRICK.get())
-.add(ModBlocks.DEPTH_NETHER_BRICK_SLAB.get())
-.add(ModBlocks.DEPTH_NETHER_BRICK_STAIRS.get())
-.add(ModBlocks.DEPTH_NETHER_TILES.get())
-.add(ModBlocks.DEPTH_NETHER_TILES_SLAB.get())
-.add(ModBlocks.DEPTH_NETHER_TILES_STAIRS.get())
-.add(ModBlocks.GNEISS_TILE.get())
-.add(ModBlocks.GNEISS_TILE_SLAB.get())
-.add(ModBlocks.GNEISS_TILE_STAIRS.get())
-.add(ModBlocks.GNEISS_BRICK.get())
-.add(ModBlocks.GNEISS_BRICK_SLAB.get())
-.add(ModBlocks.GNEISS_BRICK_STAIRS.get())
-.add(ModBlocks.BRICK_BASE.get())
-.add(ModBlocks.BRICK_BASE_SLAB.get())
-.add(ModBlocks.BRICK_BASE_STAIRS.get())
-.add(ModBlocks.BRICK_LIGHT.get())
-.add(ModBlocks.BRICK_LIGHT_SLAB.get())
-.add(ModBlocks.BRICK_LIGHT_STAIRS.get())
-.add(ModBlocks.BRICK_FIRE.get())
-.add(ModBlocks.BRICK_FIRE_SLAB.get())
-.add(ModBlocks.BRICK_FIRE_STAIRS.get())
-.add(ModBlocks.BRICK_OBSIDIAN.get())
-.add(ModBlocks.BRICK_OBSIDIAN_SLAB.get())
-.add(ModBlocks.BRICK_OBSIDIAN_STAIRS.get())
-.add(ModBlocks.VINYL_TILE.get())
-.add(ModBlocks.VINYL_TILE_SLAB.get())
-.add(ModBlocks.VINYL_TILE_STAIRS.get())
-.add(ModBlocks.VINYL_TILE_SMALL.get())
-.add(ModBlocks.VINYL_TILE_SMALL_SLAB.get())
-.add(ModBlocks.VINYL_TILE_SMALL_STAIRS.get())
-.add(ModBlocks.BRICK_DUCRETE.get())
-.add(ModBlocks.BRICK_DUCRETE_SLAB.get())
-.add(ModBlocks.BRICK_DUCRETE_STAIRS.get())
-.add(ModBlocks.ASPHALT.get())
-.add(ModBlocks.ASPHALT_SLAB.get())
-.add(ModBlocks.ASPHALT_STAIRS.get())
-.add(ModBlocks.BASALT_POLISHED.get())
-.add(ModBlocks.BASALT_POLISHED_SLAB.get())
-.add(ModBlocks.BASALT_POLISHED_STAIRS.get())
-.add(ModBlocks.BASALT_BRICK.get())
-.add(ModBlocks.BASALT_BRICK_SLAB.get())
-.add(ModBlocks.BASALT_BRICK_STAIRS.get())
-.add(ModBlocks.METEOR_POLISHED.get())
-.add(ModBlocks.METEOR_POLISHED_SLAB.get())
-.add(ModBlocks.METEOR_POLISHED_STAIRS.get())
-.add(ModBlocks.METEOR_BRICK.get())
-.add(ModBlocks.METEOR_BRICK_SLAB.get())
-.add(ModBlocks.METEOR_BRICK_STAIRS.get())
-.add(ModBlocks.METEOR_BRICK_CRACKED.get())
-.add(ModBlocks.METEOR_BRICK_CRACKED_SLAB.get())
-.add(ModBlocks.METEOR_BRICK_CRACKED_STAIRS.get())
-.add(ModBlocks.METEOR_BRICK_MOSSY.get())
-.add(ModBlocks.METEOR_BRICK_MOSSY_SLAB.get())
-.add(ModBlocks.METEOR_BRICK_MOSSY_STAIRS.get())
-.add(ModBlocks.METEOR_CRUSHED.get())
-.add(ModBlocks.METEOR_CRUSHED_SLAB.get())
-.add(ModBlocks.METEOR_CRUSHED_STAIRS.get())
 
 
-                // Прочие
-                .add(ModBlocks.FREAKY_ALIEN_BLOCK.get());
+        // --- 1. Инициализация тегов ---
+        var pickaxeTag = this.tag(BlockTags.MINEABLE_WITH_PICKAXE);
+        var shovelTag = this.tag(BlockTags.MINEABLE_WITH_SHOVEL);
+        var axeTag = this.tag(BlockTags.MINEABLE_WITH_AXE); // Тег для топора
+
+        var ironToolTag = this.tag(BlockTags.NEEDS_IRON_TOOL);
+        var stoneToolTag = this.tag(BlockTags.NEEDS_STONE_TOOL);
+        var diamondToolTag = this.tag(BlockTags.NEEDS_DIAMOND_TOOL);
+
+        // --- 2. Списки исключений (Кто чем копается) ---
+
+        // А. Блоки для ЛОПАТЫ (Земля, песок, сыпучее)
+        Set<Block> shovelBlocks = Set.of(
+                ModBlocks.WASTE_GRASS.get(),
+                ModBlocks.BURNED_GRASS.get()
+        );
+
+        // Б. Блоки для ТОПОРА (Дерево, ящики, деревянные двери)
+        Set<Block> axeBlocks = Set.of(
+                ModBlocks.WASTE_LOG.get(),
+                ModBlocks.WASTE_PLANKS.get(),
+                ModBlocks.CRATE.get(),        // Деревянный ящик
+                ModBlocks.CRATE_WEAPON.get(), // Оружейный ящик (обычно дерево)
+                ModBlocks.DOOR_OFFICE.get(),  // Офисная дверь (обычно дерево)
+                ModBlocks.WOOD_BURNER.get()   // В названии Wood, возможно логично рубить топором? (если нет - уберите)
+        );
+
+        // В. Блоки для КИРКИ СЛАБОГО УРОВНЯ (Каменная кирка и выше)
+        Set<Block> stoneTierPickaxeBlocks = Set.of(
+                ModBlocks.ALUMINUM_ORE.get(),
+                ModBlocks.ALUMINUM_ORE_DEEPSLATE.get(),
+                ModBlocks.LIGNITE_ORE.get(),
+                ModBlocks.RESOURCE_BAUXITE.get(),
+                ModBlocks.RESOURCE_LIMESTONE.get(),
+                ModBlocks.RESOURCE_MALACHITE.get(),
+                ModBlocks.RESOURCE_SULFUR.get()
+        );
+
+        // Г. Блоки, требующие МИНИМУМ КАМЕННЫЙ инструмент (Не важно, топор или кирка)
+        // Если вы хотите, чтобы дерево ломалось только КАМЕННЫМ топором (не деревянным), добавьте его сюда.
+        Set<Block> needsStoneToolGeneral = Set.of(
+                // ModBlocks.HARD_WOOD_LOG.get() // Пример
+        );
+
+        // --- 3. Автоматический цикл ---
+        for (RegistryObject<Block> regObject : ModBlocks.BLOCKS.getEntries()) {
+            Block block = regObject.get();
+
+            // Фильтр: пропускаем растения, листья, паутину
+            boolean isPlantOrSoft = block instanceof FlowerBlock
+                    || block instanceof BushBlock
+                    || block instanceof LeavesBlock
+                    || block instanceof WebBlock;
+
+            if (!isPlantOrSoft) {
+
+                // --- ЛОГИКА РАСПРЕДЕЛЕНИЯ ---
+
+                if (shovelBlocks.contains(block)) {
+                    // -> ЛОПАТА
+                    shovelTag.add(block);
+
+                } else if (axeBlocks.contains(block)) {
+                    // -> ТОПОР
+                    axeTag.add(block);
+
+                    // Если нужно запретить деревянный топор для этого блока:
+                    if (needsStoneToolGeneral.contains(block)) {
+                        stoneToolTag.add(block);
+                    }
+
+                } else {
+                    // -> КИРКА (По умолчанию для всех машин и руд)
+                    pickaxeTag.add(block);
+
+                    // Определяем уровень кирки
+                    if (stoneTierPickaxeBlocks.contains(block)) {
+                        stoneToolTag.add(block); // Каменная
+                    } else {
+                        ironToolTag.add(block);  // Железная (по умолчанию)
+                    }
+                }
+            }
+        }
 
 
 
-        // ============ ТРЕБУЕМЫЙ УРОВЕНЬ: КАМЕННАЯ КИРКА ============
-        this.tag(BlockTags.NEEDS_STONE_TOOL)
-                .add(ModBlocks.ALUMINUM_ORE_DEEPSLATE.get())
-                .add(ModBlocks.LIGNITE_ORE.get())
-                .add(ModBlocks.ALUMINUM_ORE.get());
 
         // ============ ТЕГ ДЛЯ OCCLUSION CULLING ============
         // Блоки, через которые можно видеть (не блокируют рендеринг машин)
