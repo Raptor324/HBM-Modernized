@@ -28,7 +28,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -45,6 +44,11 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
     private static final float RADIATION_RADIUS = 25.0f; // Радиус поражения радиацией
     private static final float MIN_BOUNCE_SPEED = 0.1f; // Тяжелая граната, меньше скачет
     private static final float BOUNCE_MULTIPLIER = 0.4f; // Гасит скорость сильнее при отскоке
+
+    // Новые параметры для урона
+    private static final float DAMAGE_RADIUS = 25.0f; // Радиус поражения урона (в блоках)
+    private static final float DAMAGE_AMOUNT = 200.0f; // 150 урона = 75 полных сердец
+    private static final float MAX_DAMAGE_DISTANCE = 25.0f; // Максимальное расстояние для полного урона
 
     private static final Random RANDOM = new Random();
 
@@ -75,7 +79,8 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
         super.tick();
         if (!this.level().isClientSide) {
             if (this.entityData.get(TIMER_ACTIVATED)) {
-                if (this.tickCount >= this.entityData.get(DETONATION_TIME)) {
+                int detonationTime = this.entityData.get(DETONATION_TIME);
+                if (this.tickCount >= detonationTime) {
                     explode(this.blockPosition());
                 }
             }
@@ -101,7 +106,6 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
     private void handleBounce(BlockHitResult result) {
         Vec3 velocity = this.getDeltaMovement();
         float speed = (float) velocity.length();
-
         if (speed < MIN_BOUNCE_SPEED) {
             this.setDeltaMovement(Vec3.ZERO);
             this.setNoGravity(true); // Останавливаемся, если скорость слишком мала
@@ -111,7 +115,6 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
         // Тяжелый звук удара
         BlockPos blockPos = result.getBlockPos();
         this.level().playSound(null, blockPos, ModSounds.BOUNCE_RANDOM.get(), SoundSource.NEUTRAL, 2.5F, 0.6F);
-
         Vec3 currentVelocity = this.getDeltaMovement();
         Vec3 hitNormal = Vec3.atLowerCornerOf(result.getDirection().getNormal());
         Vec3 reflectedVelocity = currentVelocity.subtract(hitNormal.scale(2 * currentVelocity.dot(hitNormal)));
@@ -131,35 +134,75 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
             this.discard();
 
             // 2. Основной взрыв (без разрушения блоков - за это кратер)
-            serverLevel.explode(this, x, y, z, 12.0F, true, Level.ExplosionInteraction.NONE);
+            serverLevel.explode(this, x, y, z, 9.0F, true, Level.ExplosionInteraction.NONE);
 
             // 3. Цепная детонация соседних IDetonatable блоков
             triggerNearbyDetonations(serverLevel, pos, null);
 
-            // 4. Поэтапные эффекты взрыва
+            // 4. Урон в зоне действия (НОВОЕ)
+            dealExplosionDamage(serverLevel, x, y, z);
+
+            // 5. Поэтапные эффекты взрыва
             scheduleExplosionEffects(serverLevel, x, y, z);
 
+            // 6. Звук взрыва с повышенной громкостью (ИЗМЕНЕННОЕ)
             playRandomDetonationSound(level(), pos);
 
-            // 5. Отложенный кратер (через 1.5 секунды = 30 тиков)
+            // 7. Отложенный кратер (через 1.5 секунды = 30 тиков)
             if (serverLevel.getServer() != null) {
                 serverLevel.getServer().tell(new net.minecraft.server.TickTask(30, () -> {
                     // Дополнительный взрыв для физики
-                    serverLevel.explode(null, x, y, z, 8.0F, Level.ExplosionInteraction.NONE);
+                    serverLevel.explode(null, x, y, z, 9.0F, Level.ExplosionInteraction.NONE);
 
                     // Генерация кратера с ядерными блоками (замени на свои)
                     ShockwaveGenerator.generateCrater(
                             serverLevel,
                             pos,
-                            20,  // CRATER_RADIUS = 20 блоков (под гранату поменьше)
-                            6,   // CRATER_DEPTH = 6 блоков
-                            ModBlocks.WASTE_LOG.get(),      // заменить на твои радиоактивные блоки
+                            25, // CRATER_RADIUS = 20 блоков (под гранату поменьше)
+                            10, // CRATER_DEPTH = 6 блоков
+                            ModBlocks.WASTE_LOG.get(), // заменить на твои радиоактивные блоки
                             ModBlocks.WASTE_PLANKS.get(),
                             ModBlocks.BURNED_GRASS.get()
                     );
                 }));
             }
+        }
+    }
 
+    // НОВЫЙ МЕТОД: Нанесение урона в зоне действия гранаты
+    private void dealExplosionDamage(ServerLevel serverLevel, double x, double y, double z) {
+        List<LivingEntity> entitiesNearby = serverLevel.getEntitiesOfClass(
+                LivingEntity.class,
+                new net.minecraft.world.phys.AABB(x - DAMAGE_RADIUS, y - DAMAGE_RADIUS, z - DAMAGE_RADIUS,
+                        x + DAMAGE_RADIUS, y + DAMAGE_RADIUS, z + DAMAGE_RADIUS)
+        );
+
+        for (LivingEntity entity : entitiesNearby) {
+            double distanceToEntity = Math.sqrt(
+                    Math.pow(entity.getX() - x, 2) +
+                            Math.pow(entity.getY() - y, 2) +
+                            Math.pow(entity.getZ() - z, 2)
+            );
+
+            // Проверяем, находится ли сущность в радиусе поражения
+            if (distanceToEntity <= DAMAGE_RADIUS) {
+                // Вычисляем урон в зависимости от расстояния
+                // На близком расстоянии (0-5 блоков): полный урон
+                // На среднем расстоянии (5-20 блоков): уменьшающийся урон
+                // На дальнем расстоянии (20+ блоков): минимальный урон
+                float damage = DAMAGE_AMOUNT;
+
+                if (distanceToEntity > MAX_DAMAGE_DISTANCE) {
+                    // Линейное снижение урона на расстоянии
+                    float remainingDistance = DAMAGE_RADIUS - MAX_DAMAGE_DISTANCE;
+                    float damageDistance = (float) distanceToEntity - MAX_DAMAGE_DISTANCE;
+                    damage = DAMAGE_AMOUNT * (1.0f - (damageDistance / remainingDistance)) * 0.5f; // Минимум 50% урона
+                }
+
+                // Наносим урон с источником (взрыв) - метатель тоже получает урон!
+                entity.hurt(entity.damageSources().explosion(null), damage);
+
+            }
         }
     }
 
@@ -172,9 +215,11 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
         sounds.removeIf(Objects::isNull);
         if (!sounds.isEmpty()) {
             SoundEvent sound = sounds.get(RANDOM.nextInt(sounds.size()));
-            level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, sound, SoundSource.BLOCKS, 1.0F, 1.0F);
+            // Повышенная громкость: с 1.0F на 4.0F для дальней слышимости
+            level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, sound, SoundSource.BLOCKS, 4.0F, 1.0F);
         }
     }
+
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
         super.addAdditionalSaveData(tag);
@@ -188,6 +233,7 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
         this.entityData.set(TIMER_ACTIVATED, tag.getBoolean("TimerActivated"));
         this.entityData.set(DETONATION_TIME, tag.getInt("DetonationTime"));
     }
+
     // === ПЕРЕНЕСЕННЫЕ МЕТОДЫ ИЗ SmokeBombBlock ===
 
     private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
@@ -220,7 +266,6 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
             double xSpeed = (level.random.nextDouble() - 0.5) * 5.0;
             double ySpeed = level.random.nextDouble() * 4.0;
             double zSpeed = (level.random.nextDouble() - 0.5) * 5.0;
-
             level.sendParticles(
                     ModExplosionParticles.EXPLOSION_SPARK.get(),
                     x, y, z, 1, xSpeed, ySpeed, zSpeed, 1.2
@@ -245,7 +290,6 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
             double offsetX = (level.random.nextDouble() - 0.5) * 5.0;
             double offsetZ = (level.random.nextDouble() - 0.5) * 5.0;
             double ySpeed = 0.6 + level.random.nextDouble() * 0.4;
-
             level.sendParticles(
                     ModExplosionParticles.MUSHROOM_SMOKE.get(),
                     x + offsetX, y, z + offsetZ,
@@ -260,11 +304,9 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
             double offsetX = Math.cos(angle) * radius;
             double offsetZ = Math.sin(angle) * radius;
             double capY = y + 18 + level.random.nextDouble() * 8;
-
             double xSpeed = Math.cos(angle) * 0.4;
             double ySpeed = -0.05 + level.random.nextDouble() * 0.15;
             double zSpeed = Math.sin(angle) * 0.4;
-
             level.sendParticles(
                     ModExplosionParticles.MUSHROOM_SMOKE.get(),
                     x + offsetX, capY, z + offsetZ,

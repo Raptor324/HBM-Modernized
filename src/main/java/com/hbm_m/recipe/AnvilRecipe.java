@@ -27,6 +27,8 @@ public class AnvilRecipe implements Recipe<Container> {
     private final ResourceLocation id;
     private final ItemStack inputA;
     private final ItemStack inputB;
+    private final boolean consumeA;
+    private final boolean consumeB;
     private final List<ItemStack> inventoryInputs;
     private final List<ResultEntry> outputs;
     private final ItemStack displayStack;
@@ -40,10 +42,12 @@ public class AnvilRecipe implements Recipe<Container> {
     public AnvilRecipe(ResourceLocation id, ItemStack inputA, ItemStack inputB,
                        List<ItemStack> inventoryInputs, List<ResultEntry> outputs,
                        AnvilTier requiredTier, @Nullable AnvilTier upperTier,
-                       @Nullable String blueprintPool, OverlayType overlay) {
+                       @Nullable String blueprintPool, OverlayType overlay, boolean consumeA, boolean consumeB) {
         this.id = id;
         this.inputA = inputA == null ? ItemStack.EMPTY : inputA;
         this.inputB = inputB == null ? ItemStack.EMPTY : inputB;
+        this.consumeA = consumeA;
+        this.consumeB = consumeB;
         this.inventoryInputs = Collections.unmodifiableList(new ArrayList<>(inventoryInputs));
         if (outputs.isEmpty()) {
             throw new IllegalArgumentException("Anvil recipe " + id + " must define at least one output");
@@ -122,13 +126,11 @@ public class AnvilRecipe implements Recipe<Container> {
         return Type.INSTANCE;
     }
 
-    public ItemStack getInputA() {
-        return inputA;
-    }
+    public ItemStack getInputA() { return inputA; }
+    public ItemStack getInputB() { return inputB; }
 
-    public ItemStack getInputB() {
-        return inputB;
-    }
+    public boolean consumesA() { return consumeA; }
+    public boolean consumesB() { return consumeB; }
 
     public List<ItemStack> getRequiredItems() {
         return inventoryInputs;
@@ -229,6 +231,9 @@ public class AnvilRecipe implements Recipe<Container> {
                     ? itemStackFromJson(GsonHelper.getAsJsonObject(json, "input_b"))
                     : ItemStack.EMPTY;
 
+            boolean consumeA = GsonHelper.getAsBoolean(json, "consume_a", true);
+            boolean consumeB = GsonHelper.getAsBoolean(json, "consume_b", true);
+
             List<ItemStack> inventoryInputs = new ArrayList<>();
             if (json.has("required_items")) {
                 JsonArray reqArray = GsonHelper.getAsJsonArray(json, "required_items");
@@ -258,13 +263,16 @@ public class AnvilRecipe implements Recipe<Container> {
             String blueprintPool = GsonHelper.getAsString(json, "blueprint_pool", null);
             OverlayType overlay = OverlayType.byName(GsonHelper.getAsString(json, "overlay", "none"));
 
-            return new AnvilRecipe(id, inputA, inputB, inventoryInputs, outputs, tier, upper, blueprintPool, overlay);
+            return new AnvilRecipe(id, inputA, inputB, inventoryInputs, outputs, tier, upper, blueprintPool, overlay, consumeA, consumeB);
         }
 
         @Override
         public AnvilRecipe fromNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
             ItemStack inputA = buffer.readItem();
             ItemStack inputB = buffer.readItem();
+
+            boolean consumeA = buffer.readBoolean();
+            boolean consumeB = buffer.readBoolean();
 
             int size = buffer.readInt();
             List<ItemStack> inventoryInputs = new ArrayList<>();
@@ -289,13 +297,16 @@ public class AnvilRecipe implements Recipe<Container> {
             String blueprintPool = buffer.readBoolean() ? buffer.readUtf() : null;
             OverlayType overlay = OverlayType.values()[buffer.readVarInt()];
 
-            return new AnvilRecipe(id, inputA, inputB, inventoryInputs, outputs, tier, upper, blueprintPool, overlay);
+            return new AnvilRecipe(id, inputA, inputB, inventoryInputs, outputs, tier, upper, blueprintPool, overlay, consumeA, consumeB);
         }
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, AnvilRecipe recipe) {
             buffer.writeItem(recipe.inputA);
             buffer.writeItem(recipe.inputB);
+
+            buffer.writeBoolean(recipe.consumeA);
+            buffer.writeBoolean(recipe.consumeB);
 
             buffer.writeInt(recipe.inventoryInputs.size());
             for (ItemStack item : recipe.inventoryInputs) {

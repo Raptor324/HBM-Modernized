@@ -297,7 +297,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.HEART_BOOSTER.get(), "Усилитель сердца");
                 add(ModItems.HEART_FAB.get(), "Фаб-сердце");
                 add(ModItems.BLACK_DIAMOND.get(), "Черный алмаз");
-
+                add(ModBlocks.SMOKE_BOMB.get(), "Семтекс");
                 add(ModItems.TEMPLATE_FOLDER.get(), "Папка шаблонов машин");
                 add(ModItems.ASSEMBLY_TEMPLATE.get(), "Шаблон сборочной машины: %s");
                 add("tooltip.hbm_m.template_broken", "Шаблон сломан!");
@@ -311,7 +311,177 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.template_folder.desc", "Шаблоны машин: Бумага + Краситель$Идентификатор: Железная пластина + Краситель$Штамп для пресса: Плоский штамп$Трек сирены: Изолятор + Стальная пластина");
                 add("desc.gui.template", "Вставьте сборочный шаблон");
                 add("desc.gui.assembler.warning", "Некорректный шаблон!");
-                
+                // === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
+                add("tooltip.hbm_m.gigadet.line1", "Был создан по приколу");
+                add("tooltip.hbm_m.nuclear_charge.line1", "Ядерное оружие высокой мощности!");
+                add("tooltip.hbm_m.nuclear_charge.line2", "На данный момент, это самый");
+                add("tooltip.hbm_m.nuclear_charge.line3", "разрушительный блок в нашем моде");
+                add("tooltip.hbm_m.nuclear_charge.line4", "Если кратер загрузился некорректно");
+                add("tooltip.hbm_m.nuclear_charge.line5", "или без биомов, то перезапустите мир");
+
+                add("tooltip.hbm_m.detminer.line1", "Не наносит урон сущностям и игрокам");
+                add("tooltip.hbm_m.detminer.line4", "Позволяет добывать глубинные руды и камень");
+
+                add("tooltip.hbm_m.dudnuke.line1", "Ядерное оружие высокой мощности!");
+                add("tooltip.hbm_m.dudnuke.line4", "Если кратер загрузился некорректно");
+                add("tooltip.hbm_m.dudnuke.line5", "или без биомов, то перезапустите мир");
+                add("tooltip.hbm_m.dudnuke.line6", "Может быть обезврежена");
+
+                add("tooltip.hbm_m.dudsalted.line1", "Ядерное оружие высокой мощности!");
+                add("tooltip.hbm_m.dudsalted.line4", "Если кратер загрузился некорректно");
+                add("tooltip.hbm_m.dudsalted.line5", "или без биомов, то перезапустите мир");
+                add("tooltip.hbm_m.dudsalted.line6", "Может быть обезврежена");
+
+                add("tooltip.hbm_m.dudfugas.line1", "Фугасная бомба высокой мощности!");
+                add("tooltip.hbm_m.dudfugas.line6", "Может быть обезврежена");
+
+                add("tooltip.hbm_m.defuser.line1", "Устройство для обезвреживания мин и бомб");
+
+                add("tooltip.hbm_m.crowbar.line1", "Инструмент для вскрытия контейнеров");
+                add("tooltip.hbm_m.crowbar.line2", "Открывает ящики по нажатию ПКМ");
+
+                add("tooltip.hbm_m.mine_nuke.line1", "Ядерное оружие!");
+                add("tooltip.hbm_m.mine_nuke.line2", "Радиус поражения: 35 метров");
+                add("tooltip.hbm_m.mine_nuke.line3", "Может быть обезврежена");
+
+                add("tooltip.hbm_m.mine.line1", "Может быть обезврежена");
+
+// ДЕТОНАТОР
+                add("tooltip.hbm_m.detonator.target", "Цель: ");
+                add("tooltip.hbm_m.detonator.no_target", "Нет цели");
+                add("tooltip.hbm_m.detonator.right_click", "ПКМ - активировать");
+                add("tooltip.hbm_m.detonator.shift_right_click", "Shift+ПКМ - установить");
+
+// СКАНЕР КЛАСТЕРОВ
+                add("tooltip.hbm_m.depth_ores_scanner.scans_chunks", "Сканирует чанки в поисках");
+                add("tooltip.hbm_m.depth_ores_scanner.deep_clusters", "глубинных кластеров под игроком");
+                add("tooltip.hbm_m.depth_ores_scanner.depth_warning", "Работает на глубине -30 и ниже!");
+                // DEPTH ORES SCANNER (сообщения)
+                add("message.hbm_m.depth_ores_scanner.invalid_height", "Сканер работает только на высоте -30 или ниже!");
+                add("message.hbm_m.depth_ores_scanner.directly_below", "Глубинный кластер прямо под нами!");
+                add("message.hbm_m.depth_ores_scanner.in_chunk", "В нашем чанке обнаружен глубинный кластер!");
+                add("message.hbm_m.depth_ores_scanner.adjacent_chunk", "В соседнем чанке обнаружен глубинный кластер!");
+                add("message.hbm_m.depth_ores_scanner.none_found", "Не обнаружено глубинных кластеров поблизости");
+
+// MULTI DETONATOR TOOLTIPS
+                add("tooltip.hbm_m.multi_detonator.active_point", "➤ %s:");
+                add("tooltip.hbm_m.multi_detonator.point_set", "✅ %s:");
+                add("tooltip.hbm_m.multi_detonator.coordinates", "   %d, %d, %d");
+                add("tooltip.hbm_m.multi_detonator.point_empty", "○ Точка %d:");
+                add("tooltip.hbm_m.multi_detonator.not_set", "   Не установлена");
+                add("tooltip.hbm_m.multi_detonator.key_r", "R - открыть меню");
+                add("tooltip.hbm_m.multi_detonator.shift_rmb", "Shift+ПКМ - сохранить в активную точку");
+                add("tooltip.hbm_m.multi_detonator.rmb_activate", "ПКМ - активировать активную точку");
+
+// MULTI DETONATOR MESSAGES
+                add("message.hbm_m.multi_detonator.position_saved", "Позиция '%s' сохранена: %d, %d, %d");
+                add("message.hbm_m.multi_detonator.no_coordinates", "Нет заданных координат!");
+                add("message.hbm_m.multi_detonator.point_not_set", "Точка %d не установлена!");
+                add("message.hbm_m.multi_detonator.chunk_not_loaded", "Позиция не загружена!");
+                add("message.hbm_m.multi_detonator.activated", "%s активирован!");
+                add("message.hbm_m.multi_detonator.activation_error", "Ошибка при активации!");
+                add("message.hbm_m.multi_detonator.incompatible_block", "Блок несовместим!");
+
+
+
+
+
+// ДЕТЕКТОР НЕФТИ (тултип)
+                add("tooltip.hbm_m.oil_detector.scans_chunks", "Сканирует чанки в поисках");
+                add("tooltip.hbm_m.oil_detector.oil_deposits", "нефтяных залеж под игроком");
+
+// ДЕТЕКТОР НЕФТИ (сообщения использования)
+                add("message.hbm_m.oil_detector.directly_below", "Залежи нефти прямо под нами!");
+                add("message.hbm_m.oil_detector.in_chunk", "В нашем чанке обнаружена нефть!");
+                add("message.hbm_m.oil_detector.adjacent_chunk", "В соседнем чанке обнаружены залежи нефти!");
+                add("message.hbm_m.oil_detector.none_found", "Не обнаружено залежь нефти поблизости");
+
+                // RANGE DETONATOR
+                add("tooltip.hbm_m.range_detonator.desc", "Активирует совместимые блоки");
+                add("tooltip.hbm_m.range_detonator.hint", "по лучу до 256 блоков.");
+                add("message.hbm_m.range_detonator.pos_not_loaded", "Позиция несовместима или не прогружена");
+                add("message.hbm_m.range_detonator.activated", "Успешно активировано");
+
+                add("tooltip.hbm_m.grenade_nuc.line1", "Ядерное оружие!");
+                add("tooltip.hbm_m.grenade_nuc.line2", "Зона поражения: 25 метров");
+                add("tooltip.hbm_m.grenade_nuc.line3", "Задержка: 6с");
+
+                add("tooltip.hbm_m.grenade.common.line1", "Ручная граната");
+
+                add("tooltip.hbm_m.grenade.smart.line2", "Детонирует при прямом попадании в сущность");
+                add("tooltip.hbm_m.grenade.fire.line2", "Оставляет огонь после детонации");
+                add("tooltip.hbm_m.grenade.slime.line2", "Сильно отскакивает от поверхностей");
+                add("tooltip.hbm_m.grenade.standard.line2", "Слабый осколочный взрыв");
+                add("tooltip.hbm_m.grenade.he.line2", "Усиленный фугасный взрыв");
+                add("tooltip.hbm_m.grenade.default.line2", "Кидайте и взрывайте!");
+
+                add("tooltip.hbm_m.grenade_if.common.line1", "IF-Граната");
+
+                add("tooltip.hbm_m.grenade_if.he.line2", "Мощный фугасный взрыв");
+                add("tooltip.hbm_m.grenade_if.slime.line2", "Сильно отскакивает от поверхностей");
+                add("tooltip.hbm_m.grenade_if.fire.line2", "Оставляет огонь после детонации");
+                add("tooltip.hbm_m.grenade_if.standard.line2", "Стандартный взрыв с таймером");
+                add("tooltip.hbm_m.grenade_if.default.line2", "Аллах одобряет!");
+
+                // ru_ru case
+                // ru_ru case
+                add(ModBlocks.BARREL_IRON.get(), "Железная бочка");
+                add(ModBlocks.BARREL_STEEL.get(), "Стальная бочка");
+                add(ModBlocks.BARREL_TCALLOY.get(), "Бочка из технециевой стали");
+                add(ModItems.ZIRCONIUM_SHARP.get(), "Осколок циркония");
+                add(ModBlocks.CRATE_CONSERVE.get(), "Ящик с консервами");
+                add(ModBlocks.CAGE_LAMP.get(), "Лампа в клетке");
+                add(ModBlocks.FLOOD_LAMP.get(), "Прожектор");
+                add(ModBlocks.B29.get(), "B-29");
+                add(ModBlocks.DORNIER.get(), "Dornier");
+                add(ModBlocks.FILE_CABINET.get(), "Шкафчик");
+                add(ModBlocks.TAPE_RECORDER.get(), "Магнитофон");
+                add(ModBlocks.CRT_BROKEN.get(), "Сломанный монитор");
+                add(ModBlocks.CRT_BSOD.get(), "BSOD Монитор ");
+                add(ModBlocks.CRT_CLEAN.get(), "Монитор");
+                add(ModBlocks.TOASTER.get(), "Тостер");
+                add(ModBlocks.BARREL_CORRODED.get(), "Проржавевшая бочка");
+                add(ModBlocks.BARREL_LOX.get(), "Бочка с жидким кислородом");
+                add(ModBlocks.BARREL_PINK.get(), "Бочка с керосином");
+                add(ModBlocks.BARREL_YELLOW.get(), "Бочка с ядерными отходами");
+                add(ModBlocks.BARREL_VITRIFIED.get(), "Бочка с остеклованными ядерными отходами");
+                add(ModBlocks.BARREL_TAINT.get(), "Бочка с говном");
+                add(ModBlocks.FIRE_DOOR.get(), "Пожарная дверь");
+                add(ModBlocks.SLIDING_SEAL_DOOR.get(), "Скользящая герметичная дверь");
+                add(ModBlocks.SECURE_ACCESS_DOOR.get(), "Усиленная дверь");
+                add(ModBlocks.QE_CONTAINMENT.get(), "QE дверь биологического сдерживания");
+                add(ModBlocks.QE_SLIDING.get(), "QE раздвижная дверь");
+                add(ModBlocks.WATER_DOOR.get(), "Подводный люк");
+                add(ModBlocks.SILO_HATCH.get(), "Малый люк");
+                add(ModBlocks.SILO_HATCH_LARGE.get(), "Люк ракетной шахты");
+
+
+                add(ModBlocks.DUD_SALTED.get(), "Неразорвавшаяся солёная бомба");
+                add(ModBlocks.DUD_NUKE.get(), "Неразорвавшаяся ядерная бомба");
+                add(ModBlocks.DUD_FUGAS_TONG.get(), "Неразорвавшаяся фугасная бомба");
+                add(ModBlocks.MINE_FAT.get(), "Мина 'Толстяк'");
+                add(ModBlocks.MINE_AP.get(), "Противопехотная мина");
+                add(ModItems.GRENADE_NUC.get(), "Ядерная граната");
+                add(ModItems.GRENADE_IF_HE.get(), "IF-Граната: фугасная");
+                add(ModItems.GRENADE_IF_FIRE.get(), "IF-Граната: зажигательная");
+                add(ModItems.GRENADE_IF_SLIME.get(), "IF-Граната: прыгучая");
+                add(ModItems.MULTI_DETONATOR.get(), "Мульти-детонатор");
+                add(ModItems.RANGE_DETONATOR.get(), "Детонатор дальнего действия");
+                add(ModItems.DETONATOR.get(), "Детонатор");
+                add(ModBlocks.BARBED_WIRE_POISON.get(), "Колючая проволока (яд)");
+                add(ModBlocks.BARBED_WIRE_FIRE.get(), "Колючая проволока (огонь)");
+                add(ModBlocks.BARBED_WIRE_RAD.get(), "Колючая проволока (радиация)");
+                add(ModBlocks.BARBED_WIRE.get(), "Колючая проволока");
+                add(ModBlocks.BARBED_WIRE_WITHER.get(), "Колючая проволока (иссушение)");
+                add(ModBlocks.WASTE_CHARGE.get(), "Отходный заряд");
+                add(ModBlocks.GIGA_DET.get(), "Чёртов заряд горняка");
+                add(ModBlocks.NUCLEAR_CHARGE.get(), "Ядерный заряд");
+                add(ModBlocks.C4.get(), "Заряд C4");
+                add(ModItems.DEFUSER.get(), "Устройство для разминирования");
+                add(ModItems.CROWBAR.get(), "Лом");
+                add(ModItems.DEPTH_ORES_SCANNER.get(), "Сканер глубинных кластеров");
+                add(ModItems.OIL_DETECTOR.get(), "Детектор нефти");
+
 
                 add(ModItems.GHIORSIUM_CLADDING.get(), "Прокладка из гиорсия");
                 add(ModItems.DESH_CLADDING.get(), "Обшивка из деш");
@@ -326,12 +496,222 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.GRENADEHE.get(), "Мощная отскок граната");
                 add(ModItems.GRENADEFIRE.get(), "Зажигательная отскок граната");
 
-                add(ModItems.GRENADE_IF.get(), "IF граната (WIP)");
+                add(ModItems.GRENADE_IF.get(), "IF граната");
 
                 add("item.hbm_m.radaway", "Антирадин");
                 add("item.hbm_m.wood_ash_powder", "Древесный пепел");
                 add("effect.hbm_m.radaway", "Очищение от радиации");
 
+
+// ru_ru case
+                add(ModBlocks.CONVERTER_BLOCK.get(), "Конвертер энергии");
+                add(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get(), "Динейтрониевое энергохранилище");
+                add(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get(), "Шрабидиевое энергохранилище");
+                add(ModBlocks.MACHINE_BATTERY_LITHIUM.get(), "Литиевое энергохранилище");
+
+                // русский:
+                add(ModBlocks.ASPHALT.get(), "Асфальт");
+                add(ModBlocks.BARRICADE.get(), "Мешки с песком");
+                add(ModBlocks.CONCRETE_PILLAR.get(), "Колонна из бетона");
+                add(ModBlocks.BASALT_BRICK.get(), "Базальтовые кирпичи");
+                add(ModBlocks.BASALT_POLISHED.get(), "Отполированный базальт");
+                add(ModBlocks.BRICK_BASE.get(), "Отполированные кирпичи");
+                add(ModBlocks.BRICK_DUCRETE.get(), "Дюкритовые кирпичи");
+                add(ModBlocks.BRICK_FIRE.get(), "Огнеупорные кирпичи");
+                add(ModBlocks.BRICK_LIGHT.get(), "Легкие кирпичи");
+                add(ModBlocks.BRICK_OBSIDIAN.get(), "Обсидиановые кирпичи");
+                add(ModBlocks.CONCRETE_ASBESTOS.get(), "Асбестобетон");
+                add(ModBlocks.CONCRETE_BLACK.get(), "Чёрный бетон");
+                add(ModBlocks.CONCRETE_BLUE.get(), "Синий бетон");
+                add(ModBlocks.CONCRETE_BROWN.get(), "Коричневый бетон");
+                add(ModBlocks.CONCRETE_COLORED_BRONZE.get(), "Бронзовый бетон");
+                add(ModBlocks.CONCRETE_COLORED_INDIGO.get(), "Индиго бетон");
+                add(ModBlocks.CONCRETE_COLORED_MACHINE.get(), "Бетон 'Выбор Пломбира'");
+                add(ModBlocks.CONCRETE_COLORED_MACHINE_STRIPE.get(), "Полосатый бетон 'Выбор Пломбира'");
+                add(ModBlocks.CONCRETE_COLORED_PINK.get(), "Розовый бетон");
+                add(ModBlocks.CONCRETE_COLORED_PURPLE.get(), "Фиолетовый бетон");
+                add(ModBlocks.CONCRETE_COLORED_SAND.get(), "Бетон 'Техас'");
+                add(ModBlocks.CONCRETE_CYAN.get(), "Бирюзовый бетон");
+                add(ModBlocks.CONCRETE_GRAY.get(), "Серый бетон");
+                add(ModBlocks.CONCRETE_GREEN.get(), "Зелёный бетон");
+                add(ModBlocks.CONCRETE_LIGHT_BLUE.get(), "Голубой бетон");
+                add(ModBlocks.CONCRETE_LIME.get(), "Лаймовый бетон");
+                add(ModBlocks.CONCRETE_MAGENTA.get(), "Пурпурный бетон");
+                add(ModBlocks.CONCRETE_ORANGE.get(), "Оранжевый бетон");
+                add(ModBlocks.CONCRETE_PINK.get(), "Розовый бетон");
+                add(ModBlocks.CONCRETE_PURPLE.get(), "Фиолетовый бетон");
+                add(ModBlocks.CONCRETE_REBAR.get(), "Грубый бетон");
+                add(ModBlocks.CONCRETE_REBAR_ALT.get(), "Бетон с арматурой");
+                add(ModBlocks.CONCRETE_RED.get(), "Красный бетон");
+                add(ModBlocks.CONCRETE_SILVER.get(), "Серебристый бетон");
+                add(ModBlocks.CONCRETE_SUPER.get(), "Супер бетон");
+                add(ModBlocks.CONCRETE_SUPER_BROKEN.get(), "Разбитый супер бетон");
+                add(ModBlocks.CONCRETE_SUPER_M0.get(), "Супер бетон M0");
+                add(ModBlocks.CONCRETE_SUPER_M1.get(), "Супер бетон M1");
+                add(ModBlocks.CONCRETE_SUPER_M2.get(), "Супер бетон M2");
+                add(ModBlocks.CONCRETE_SUPER_M3.get(), "Супер бетон M3");
+                add(ModBlocks.CONCRETE_TILE.get(), "Бетонная плитка");
+                add(ModBlocks.CONCRETE_TILE_TREFOIL.get(), "Помеченная бетонная плитка");
+                add(ModBlocks.CONCRETE_WHITE.get(), "Белый бетон");
+                add(ModBlocks.CONCRETE_YELLOW.get(), "Жёлтый бетон");
+                add(ModBlocks.CONCRETE_FLAT.get(), "Плоский бетон");
+                add(ModBlocks.DEPTH_BRICK.get(), "Глубинные кирпичи");
+                add(ModBlocks.DEPTH_NETHER_BRICK.get(), "Адские глубинные кирпичи");
+                add(ModBlocks.DEPTH_NETHER_TILES.get(), "Адская глубинная плитка");
+                add(ModBlocks.DEPTH_STONE_NETHER.get(), "Адский глубинный камень");
+                add(ModBlocks.DEPTH_TILES.get(), "Глубинная плитка");
+                add(ModBlocks.GNEISS_BRICK.get(), "Кирпичи из графитового сланца");
+                add(ModBlocks.GNEISS_CHISELED.get(), "Резной графитовый сланец");
+                add(ModBlocks.GNEISS_STONE.get(), "Графитовый сланец");
+                add(ModBlocks.GNEISS_TILE.get(), "Плитка из графитового сланца");
+                add(ModBlocks.METEOR.get(), "Блок метеорита");
+                add(ModBlocks.METEOR_BRICK.get(), "Метеоритные кирпичи");
+                add(ModBlocks.METEOR_BRICK_CHISELED.get(), "Резные метеоритные кирпичи");
+                add(ModBlocks.METEOR_BRICK_CRACKED.get(), "Треснутые метеоритные кирпичи");
+                add(ModBlocks.METEOR_BRICK_MOSSY.get(), "Замшелые метеоритные кирпичи");
+                add(ModBlocks.METEOR_COBBLE.get(), "Метеоритный булыжник");
+                add(ModBlocks.METEOR_CRUSHED.get(), "Дроблёный метеорит");
+                add(ModBlocks.METEOR_PILLAR.get(), "Метеоритная колонна");
+                add(ModBlocks.METEOR_POLISHED.get(), "Отполированный метеорит");
+                add(ModBlocks.METEOR_TREASURE.get(), "Блок метеоритных сокровищ");
+                add(ModBlocks.VINYL_TILE.get(), "Виниловая плитка");
+                add(ModBlocks.VINYL_TILE_SMALL.get(), "Мелкая виниловая плитка");
+
+                add(ModBlocks.CONCRETE_ASBESTOS_SLAB.get(), "Плита из асбестобетона");
+                add(ModBlocks.CONCRETE_BLACK_SLAB.get(), "Чёрная бетонная плита");
+                add(ModBlocks.CONCRETE_BLUE_SLAB.get(), "Синяя бетонная плита");
+                add(ModBlocks.CONCRETE_BROWN_SLAB.get(), "Коричневая бетонная плита");
+                add(ModBlocks.CONCRETE_COLORED_BRONZE_SLAB.get(), "Плита из бронзового бетона");
+                add(ModBlocks.CONCRETE_COLORED_INDIGO_SLAB.get(), "Плита из индиго бетона");
+                add(ModBlocks.CONCRETE_COLORED_MACHINE_SLAB.get(), "Плита из бетона 'Выбор Пломбира'");
+                add(ModBlocks.CONCRETE_COLORED_PINK_SLAB.get(), "Плита из розового бетона");
+                add(ModBlocks.CONCRETE_COLORED_PURPLE_SLAB.get(), "Плита из фиолетового бетона");
+                add(ModBlocks.CONCRETE_COLORED_SAND_SLAB.get(), "Плита из бетона 'Техас'");
+                add(ModBlocks.CONCRETE_CYAN_SLAB.get(), "Бирюзовая бетонная плита");
+                add(ModBlocks.CONCRETE_GRAY_SLAB.get(), "Серая бетонная плита");
+                add(ModBlocks.CONCRETE_GREEN_SLAB.get(), "Зелёная бетонная плита");
+                add(ModBlocks.CONCRETE_LIGHT_BLUE_SLAB.get(), "Голубая бетонная плита");
+                add(ModBlocks.CONCRETE_LIME_SLAB.get(), "Лаймовая бетонная плита");
+                add(ModBlocks.CONCRETE_MAGENTA_SLAB.get(), "Пурпурная бетонная плита");
+                add(ModBlocks.CONCRETE_ORANGE_SLAB.get(), "Оранжевая бетонная плита");
+                add(ModBlocks.CONCRETE_PINK_SLAB.get(), "Розовая бетонная плита");
+                add(ModBlocks.CONCRETE_PURPLE_SLAB.get(), "Фиолетовая бетонная плита");
+                add(ModBlocks.CONCRETE_RED_SLAB.get(), "Красная бетонная плита");
+                add(ModBlocks.CONCRETE_SILVER_SLAB.get(), "Серебристая бетонная плита");
+                add(ModBlocks.CONCRETE_WHITE_SLAB.get(), "Белая бетонная плита");
+                add(ModBlocks.CONCRETE_YELLOW_SLAB.get(), "Жёлтая бетонная плита");
+                add(ModBlocks.CONCRETE_SUPER_SLAB.get(), "Плита из супер бетона");
+                add(ModBlocks.CONCRETE_SUPER_M0_SLAB.get(), "Плита из супер бетона M0");
+                add(ModBlocks.CONCRETE_SUPER_M1_SLAB.get(), "Плита из супер бетона M1");
+                add(ModBlocks.CONCRETE_SUPER_M2_SLAB.get(), "Плита из супер бетона M2");
+                add(ModBlocks.CONCRETE_SUPER_M3_SLAB.get(), "Плита из супер бетона M3");
+                add(ModBlocks.CONCRETE_SUPER_BROKEN_SLAB.get(), "Плита из разбитого супер бетона");
+                add(ModBlocks.CONCRETE_REBAR_SLAB.get(), "Плита из грубого бетона");
+                add(ModBlocks.CONCRETE_FLAT_SLAB.get(), "Плита из плоского бетона");
+                add(ModBlocks.CONCRETE_TILE_SLAB.get(), "Плита из бетонной плитки");
+                add(ModBlocks.DEPTH_BRICK_SLAB.get(), "Плита из глубинных кирпичей");
+                add(ModBlocks.DEPTH_TILES_SLAB.get(), "Плита из глубинной плитки");
+                add(ModBlocks.DEPTH_NETHER_BRICK_SLAB.get(), "Плита из адских глубинных кирпичей");
+                add(ModBlocks.DEPTH_NETHER_TILES_SLAB.get(), "Плита из адской глубинной плитки");
+                add(ModBlocks.GNEISS_TILE_SLAB.get(), "Плита из плитки графитового сланца");
+                add(ModBlocks.GNEISS_BRICK_SLAB.get(), "Плита из кирпичей графитового сланца");
+                add(ModBlocks.BRICK_BASE_SLAB.get(), "Плита из отполированных кирпичей");
+                add(ModBlocks.BRICK_LIGHT_SLAB.get(), "Плита из легких кирпичей");
+                add(ModBlocks.BRICK_FIRE_SLAB.get(), "Плита из огнеупорных кирпичей");
+                add(ModBlocks.BRICK_OBSIDIAN_SLAB.get(), "Плита из обсидиановых кирпичей");
+                add(ModBlocks.VINYL_TILE_SLAB.get(), "Плита из виниловой плитки");
+                add(ModBlocks.VINYL_TILE_SMALL_SLAB.get(), "Плита из мелкой виниловой плитки");
+                add(ModBlocks.BRICK_DUCRETE_SLAB.get(), "Плита из дюкритовых кирпичей");
+                add(ModBlocks.ASPHALT_SLAB.get(), "Асфальтовая плита");
+                add(ModBlocks.BASALT_POLISHED_SLAB.get(), "Плита из отполированного базальта");
+                add(ModBlocks.BASALT_BRICK_SLAB.get(), "Плита из базальтовых кирпичей");
+                add(ModBlocks.METEOR_POLISHED_SLAB.get(), "Плита из отполированного метеорита");
+                add(ModBlocks.METEOR_BRICK_SLAB.get(), "Плита из метеоритных кирпичей");
+                add(ModBlocks.METEOR_BRICK_CRACKED_SLAB.get(), "Плита из треснутых метеоритных кирпичей");
+                add(ModBlocks.METEOR_BRICK_MOSSY_SLAB.get(), "Плита из замшелых метеоритных кирпичей");
+                add(ModBlocks.METEOR_CRUSHED_SLAB.get(), "Плита из дроблёного метеорита");
+
+                add(ModBlocks.CONCRETE_ASBESTOS_STAIRS.get(), "Ступени из асбестобетона");
+                add(ModBlocks.CONCRETE_BLACK_STAIRS.get(), "Чёрные бетонные ступени");
+                add(ModBlocks.CONCRETE_BLUE_STAIRS.get(), "Синие бетонные ступени");
+                add(ModBlocks.CONCRETE_BROWN_STAIRS.get(), "Коричневые бетонные ступени");
+                add(ModBlocks.CONCRETE_COLORED_BRONZE_STAIRS.get(), "Ступени из бронзового бетона");
+                add(ModBlocks.CONCRETE_COLORED_INDIGO_STAIRS.get(), "Ступени из индиго бетона");
+                add(ModBlocks.CONCRETE_COLORED_MACHINE_STAIRS.get(), "Ступени из бетона 'Выбор Пломбира'");
+                add(ModBlocks.CONCRETE_COLORED_PINK_STAIRS.get(), "Ступени из розового бетона");
+                add(ModBlocks.CONCRETE_COLORED_PURPLE_STAIRS.get(), "Ступени из фиолетового бетона");
+                add(ModBlocks.CONCRETE_COLORED_SAND_STAIRS.get(), "Ступени из бетона 'Техас'");
+                add(ModBlocks.CONCRETE_CYAN_STAIRS.get(), "Бирюзовые бетонные ступени");
+                add(ModBlocks.CONCRETE_GRAY_STAIRS.get(), "Серые бетонные ступени");
+                add(ModBlocks.CONCRETE_GREEN_STAIRS.get(), "Зелёные бетонные ступени");
+                add(ModBlocks.CONCRETE_LIGHT_BLUE_STAIRS.get(), "Голубые бетонные ступени");
+                add(ModBlocks.CONCRETE_LIME_STAIRS.get(), "Лаймовые бетонные ступени");
+                add(ModBlocks.CONCRETE_MAGENTA_STAIRS.get(), "Пурпурные бетонные ступени");
+                add(ModBlocks.CONCRETE_ORANGE_STAIRS.get(), "Оранжевые бетонные ступени");
+                add(ModBlocks.CONCRETE_PINK_STAIRS.get(), "Розовые бетонные ступени");
+                add(ModBlocks.CONCRETE_PURPLE_STAIRS.get(), "Фиолетовые бетонные ступени");
+                add(ModBlocks.CONCRETE_RED_STAIRS.get(), "Красные бетонные ступени");
+                add(ModBlocks.CONCRETE_SILVER_STAIRS.get(), "Серебристые бетонные ступени");
+                add(ModBlocks.CONCRETE_WHITE_STAIRS.get(), "Белые бетонные ступени");
+                add(ModBlocks.CONCRETE_YELLOW_STAIRS.get(), "Жёлтые бетонные ступени");
+                add(ModBlocks.CONCRETE_SUPER_STAIRS.get(), "Ступени из супер бетона");
+                add(ModBlocks.CONCRETE_SUPER_M0_STAIRS.get(), "Ступени из супер бетона M0");
+                add(ModBlocks.CONCRETE_SUPER_M1_STAIRS.get(), "Ступени из супер бетона M1");
+                add(ModBlocks.CONCRETE_SUPER_M2_STAIRS.get(), "Ступени из супер бетона M2");
+                add(ModBlocks.CONCRETE_SUPER_M3_STAIRS.get(), "Ступени из супер бетона M3");
+                add(ModBlocks.CONCRETE_SUPER_BROKEN_STAIRS.get(), "Ступени из разбитого супер бетона");
+                add(ModBlocks.CONCRETE_REBAR_STAIRS.get(), "Ступени из грубого бетона");
+                add(ModBlocks.CONCRETE_FLAT_STAIRS.get(), "Ступени из плоского бетона");
+                add(ModBlocks.CONCRETE_TILE_STAIRS.get(), "Ступени из бетонной плитки");
+                add(ModBlocks.DEPTH_BRICK_STAIRS.get(), "Ступени из глубинных кирпичей");
+                add(ModBlocks.DEPTH_TILES_STAIRS.get(), "Ступени из глубинной плитки");
+                add(ModBlocks.DEPTH_NETHER_BRICK_STAIRS.get(), "Ступени из адских глубинных кирпичей");
+                add(ModBlocks.DEPTH_NETHER_TILES_STAIRS.get(), "Ступени из адской глубинной плитки");
+                add(ModBlocks.GNEISS_TILE_STAIRS.get(), "Ступени из плитки графитового сланца");
+                add(ModBlocks.GNEISS_BRICK_STAIRS.get(), "Ступени из кирпичей графитового сланца");
+                add(ModBlocks.BRICK_BASE_STAIRS.get(), "Ступени из отполированных кирпичей");
+                add(ModBlocks.BRICK_LIGHT_STAIRS.get(), "Ступени из легких кирпичей");
+                add(ModBlocks.BRICK_FIRE_STAIRS.get(), "Ступени из огнеупорных кирпичей");
+                add(ModBlocks.BRICK_OBSIDIAN_STAIRS.get(), "Ступени из обсидиановых кирпичей");
+                add(ModBlocks.VINYL_TILE_STAIRS.get(), "Ступени из виниловой плитки");
+                add(ModBlocks.VINYL_TILE_SMALL_STAIRS.get(), "Ступени из мелкой виниловой плитки");
+                add(ModBlocks.BRICK_DUCRETE_STAIRS.get(), "Ступени из дюкритовых кирпичей");
+                add(ModBlocks.ASPHALT_STAIRS.get(), "Асфальтовые ступени");
+                add(ModBlocks.BASALT_POLISHED_STAIRS.get(), "Ступени из отполированного базальта");
+                add(ModBlocks.BASALT_BRICK_STAIRS.get(), "Ступени из базальтовых кирпичей");
+                add(ModBlocks.METEOR_POLISHED_STAIRS.get(), "Ступени из отполированного метеорита");
+                add(ModBlocks.METEOR_BRICK_STAIRS.get(), "Ступени из метеоритных кирпичей");
+                add(ModBlocks.METEOR_BRICK_CRACKED_STAIRS.get(), "Ступени из треснутых метеоритных кирпичей");
+                add(ModBlocks.METEOR_BRICK_MOSSY_STAIRS.get(), "Ступени из замшелых метеоритных кирпичей");
+                add(ModBlocks.METEOR_CRUSHED_STAIRS.get(), "Ступени из дроблёного метеорита");
+
+
+                add(ModBlocks.DEPTH_STONE.get(), "Глубинный камень");
+                add(ModBlocks.DEPTH_CINNABAR.get(), "Глубинная киноварная руда");
+                add(ModBlocks.DEPTH_IRON.get(), "Глубинная железная руда");
+                add(ModBlocks.DEPTH_ZIRCONIUM.get(), "Глубинная циркониевая руда");
+                add(ModBlocks.DEPTH_BORAX.get(), "Глубинная бура");
+                add(ModBlocks.DEPTH_TUNGSTEN.get(), "Глубинная вольфрамовая руда");
+                add(ModBlocks.DEPTH_TITANIUM.get(), "Глубинная титановая руда");
+                add(ModBlocks.BEDROCK_OIL.get(), "Бедроковая нефть");
+                add(ModBlocks.BURNED_GRASS.get(), "Выжженная трава");
+                add(ModBlocks.WASTE_PLANKS.get(), "Выжженные доски");
+                add(ModBlocks.WASTE_LOG.get(), "Выжженное бревно");
+                add(ModBlocks.SELLAFIELD_SLAKED.get(), "Погашенный селлафит");
+                add(ModBlocks.SELLAFIELD_SLAKED1.get(), "Погашенный селлафит I");
+                add(ModBlocks.SELLAFIELD_SLAKED2.get(), "Погашенный селлафит II");
+                add(ModBlocks.SELLAFIELD_SLAKED3.get(), "Погашенный селлафит III");
+
+
+                add("tooltip.hbm_m.depthstone.line1", "Может быть уничтожен только взрывом!");
+                add("tooltip.hbm_m.depthstone.line4", "Используйте Шахтёрский заряд для безопасной добычи");
+                add(ModItems.MOTOR_BISMUTH.get(), "Висмутовый мотор");
+                add(ModItems.MOTOR_DESH.get(), "Деш мотор");
+                add(ModItems.MOTOR.get(), "Мотор");
+                add(ModItems.BLADE_TEST.get(), "Деш Лезвия");
+                add(ModItems.BORAX.get(), "Бура");
+                add(ModItems.BALL_TNT.get(), "Взрывчатка");
+                add(ModItems.BOLT_STEEL.get(), "Болт");
                 add(ModItems.CANNED_ASBESTOS.get(), "Консервированный асбест");
                 add(ModItems.CANNED_ASS.get(), "Консервированная задница");
                 add(ModItems.CANNED_BARK.get(), "Консервированная кора");
@@ -528,7 +908,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.door_bunker", "Бункерная дверь");
                 add("block.hbm_m.metal_door", "Металлическая дверь");
                 add("block.hbm_m.demon_lamp", "Милая лампа (WIP)");
-                add("block.hbm_m.explosive_charge", "Заряд взрывчатки (WIP)");
+                add("block.hbm_m.explosive_charge", "Заряд взрывчатки");
                 add("block.hbm_m.det_miner", "Шахтёрский заряд");
                 add("block.hbm_m.concrete_vent", "Вентиляция в бетоне");
                 add("block.hbm_m.concrete_fan", "Вентилятор в бетоне");
@@ -553,7 +933,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("block.hbm_m.wire_coated", "Провод из красной меди");
                 add("block.hbm_m.wood_burner", "Дровяной генератор");
-                add("block.hbm_m.shredder", "Шредер (WIP)");
+                add("block.hbm_m.shredder", "Измельчитель");
                 add("block.hbm_m.blast_furnace", "Доменная печь");
                 add("block.hbm_m.blast_furnace_extension", "Расширение доменной печи");
                 add("block.hbm_m.press", "Пресс");
@@ -1117,7 +1497,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.GRENADESLIME.get(), "Bouncy Bouncing Grenade");
                 add(ModItems.GRENADESMART.get(), "Smart Bouncing Grenade");
 
-                add(ModItems.GRENADE_IF.get(), "IF Grenade (WIP)");
+                add(ModItems.GRENADE_IF.get(), "IF Grenade");
 
                 add("item.hbm_m.geiger_counter", "Geiger Counter");
                 add("item.hbm_m.dosimeter", "Dosimeter");
@@ -1162,7 +1542,381 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("desc.gui.template", "Insert Assembly Template");
                 add("desc.gui.assembler.warning", "No valid template!");
 
+// === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
+                add("tooltip.hbm_m.crowbar.line1", "Tool for prying open containers.");
+                add("tooltip.hbm_m.crowbar.line2", "Opens crates on right-click");
+                add("tooltip.hbm_m.defuser.line1", "Device for disarming mines and bombs");
+                add("tooltip.hbm_m.defuser.line2", "RMB on a compatible device to disarm");
+                add("tooltip.hbm_m.mine.line1", "Can be defused");
+                add("tooltip.hbm_m.gigadet.line1", "Was made for fun");
 
+                add("tooltip.hbm_m.nuclear_charge.line1", "High-yield nuclear weapon!");
+                add("tooltip.hbm_m.nuclear_charge.line2", "At the moment, this is the");
+                add("tooltip.hbm_m.nuclear_charge.line3", "most destructive block in our mod.");
+                add("tooltip.hbm_m.nuclear_charge.line4", "If the crater loaded incorrectly");
+                add("tooltip.hbm_m.nuclear_charge.line5", "or without biomes, restart the world.");
+
+                add("tooltip.hbm_m.mine_nuke.line1", "Nuclear weapon!");
+                add("tooltip.hbm_m.mine_nuke.line2", "Blast radius: 35 meters");
+                add("tooltip.hbm_m.mine_nuke.line3", "Can be defused");
+
+                add("tooltip.hbm_m.dudnuke.line1", "High-yield nuclear weapon!");
+                add("tooltip.hbm_m.dudnuke.line4", "If the crater loaded incorrectly");
+                add("tooltip.hbm_m.dudnuke.line5", "or without biomes, restart the world");
+                add("tooltip.hbm_m.dudnuke.line6", "Can be defused");
+
+                add("tooltip.hbm_m.dudsalted.line1", "High-yield nuclear weapon!");
+                add("tooltip.hbm_m.dudsalted.line4", "If the crater loaded incorrectly");
+                add("tooltip.hbm_m.dudsalted.line5", "or without biomes, restart the world");
+                add("tooltip.hbm_m.dudsalted.line6", "Can be defused");
+
+                add("tooltip.hbm_m.dudfugas.line1", "High-yield explosion!");
+                add("tooltip.hbm_m.dudfugas.line6", "Can be defused");
+
+// ДЕТОНАТОР
+                add("tooltip.hbm_m.detonator.target", "Target: ");
+                add("tooltip.hbm_m.detonator.no_target", "No target");
+                add("tooltip.hbm_m.detonator.right_click", "RMB - Activate");
+                add("tooltip.hbm_m.detonator.shift_right_click", "Shift+RMB - Set target");
+
+// СКАНЕР КЛАСТЕРОВ
+                add("tooltip.hbm_m.depth_ores_scanner.scans_chunks", "Scans chunks for");
+                add("tooltip.hbm_m.depth_ores_scanner.deep_clusters", "depth clusters beneath the player");
+                add("tooltip.hbm_m.depth_ores_scanner.depth_warning", "works at depth -30 and below!");
+// DEPTH ORES SCANNER (сообщения)
+                add("message.hbm_m.depth_ores_scanner.invalid_height", "Scanner works only at height -30 or below!");
+                add("message.hbm_m.depth_ores_scanner.directly_below", "Depth cluster directly below us!");
+                add("message.hbm_m.depth_ores_scanner.in_chunk", "Depth cluster found in our chunk!");
+                add("message.hbm_m.depth_ores_scanner.adjacent_chunk", "Depth cluster found in adjacent chunk!");
+                add("message.hbm_m.depth_ores_scanner.none_found", "No depth clusters found nearby");
+
+// ДЕТЕКТОР НЕФТИ (тултип)
+                add("tooltip.hbm_m.oil_detector.scans_chunks", "Scans chunks for");
+                add("tooltip.hbm_m.oil_detector.oil_deposits", "oil deposits beneath the player");
+
+// ДЕТЕКТОР НЕФТИ (сообщения использования)
+                add("message.hbm_m.oil_detector.directly_below", "Oil deposits directly below us!");
+                add("message.hbm_m.oil_detector.in_chunk", "Oil found in our chunk!");
+                add("message.hbm_m.oil_detector.adjacent_chunk", "Oil deposits found in adjacent chunk!");
+                add("message.hbm_m.oil_detector.none_found", "No oil deposits found nearby");
+
+// MULTI DETONATOR TOOLTIPS
+                add("tooltip.hbm_m.multi_detonator.active_point", "➤ %s:");
+                add("tooltip.hbm_m.multi_detonator.point_set", "✅ %s:");
+                add("tooltip.hbm_m.multi_detonator.coordinates", "   %d, %d, %d");
+                add("tooltip.hbm_m.multi_detonator.point_empty", "○ Point %d:");
+                add("tooltip.hbm_m.multi_detonator.not_set", "   Not set");
+                add("tooltip.hbm_m.multi_detonator.key_r", "R - open menu");
+                add("tooltip.hbm_m.multi_detonator.shift_rmb", "Shift+RMB - save to active point");
+                add("tooltip.hbm_m.multi_detonator.rmb_activate", "RMB - activate active point");
+
+// MULTI DETONATOR MESSAGES
+                add("message.hbm_m.multi_detonator.position_saved", "Position '%s' saved: %d, %d, %d");
+                add("message.hbm_m.multi_detonator.no_coordinates", "No coordinates set!");
+                add("message.hbm_m.multi_detonator.point_not_set", "Point %d not set!");
+                add("message.hbm_m.multi_detonator.chunk_not_loaded", "Position not loaded!");
+                add("message.hbm_m.multi_detonator.activated", "%s activated!");
+                add("message.hbm_m.multi_detonator.activation_error", "Activation error!");
+                add("message.hbm_m.multi_detonator.incompatible_block", "Block incompatible!");
+// RANGE DETONATOR
+                add("tooltip.hbm_m.range_detonator.desc", "Activates compatible blocks");
+                add("tooltip.hbm_m.range_detonator.hint", "along a ray up to 256 blocks.");
+                add("message.hbm_m.range_detonator.pos_not_loaded", "Position incompatible or not loaded");
+                add("message.hbm_m.range_detonator.activated", "Successfully activated");
+
+
+                add("tooltip.hbm_m.grenade_nuc.line1", "Nuclear weapon!");
+                add("tooltip.hbm_m.grenade_nuc.line2", "Blast radius: 25 meters");
+                add("tooltip.hbm_m.grenade_nuc.line3", "Fuse time: 6s");
+                add("tooltip.hbm_m.detminer.line1", "Does not damage entities or players");
+                add("tooltip.hbm_m.detminer.line4", "Allows mining depth ores and stone");
+
+
+                add("tooltip.hbm_m.grenade.common.line1", "Hand grenade");
+
+                add("tooltip.hbm_m.grenade.smart.line2", "Detonates on direct hit with an entity");
+                add("tooltip.hbm_m.grenade.fire.line2", "Leaves fire after detonation");
+                add("tooltip.hbm_m.grenade.slime.line2", "Bounces strongly off surfaces");
+                add("tooltip.hbm_m.grenade.standard.line2", "Weak fragmentation blast");
+                add("tooltip.hbm_m.grenade.he.line2", "Enhanced high-explosive blast");
+                add("tooltip.hbm_m.grenade.default.line2", "Throw it and watch it boom!");
+
+                add("tooltip.hbm_m.grenade_if.common.line1", "IF-Grenade");
+
+                add("tooltip.hbm_m.grenade_if.he.line2", "Powerful high-explosive blast");
+                add("tooltip.hbm_m.grenade_if.slime.line2", "Bounces strongly off surfaces");
+                add("tooltip.hbm_m.grenade_if.fire.line2", "Leaves fire after detonation");
+                add("tooltip.hbm_m.grenade_if.standard.line2", "Standard timed explosion");
+                add("tooltip.hbm_m.grenade_if.default.line2", "Throw it and wait for the boom");
+
+                add("tooltip.hbm_m.depthstone.line1", "Can be mined or destroyed only by explosion!");
+                add("tooltip.hbm_m.depthstone.line4", "Use Det Miner to safe-mine depth ores");
+
+// en_us case
+                // английский:
+                add(ModBlocks.DEPTH_STONE.get(), "Depth Stone");
+                add(ModBlocks.DEPTH_CINNABAR.get(), "Deep Cinnabar Ore");
+                add(ModBlocks.DEPTH_IRON.get(), "Deep Iron Ore");
+                add(ModBlocks.DEPTH_ZIRCONIUM.get(), "Deep Zirconium Ore");
+                add(ModBlocks.DEPTH_BORAX.get(), "Deep Borax Ore");
+                add(ModBlocks.DEPTH_TUNGSTEN.get(), "Deep Tungsten Ore");
+                add(ModBlocks.DEPTH_TITANIUM.get(), "Deep Titanium Ore");
+                add(ModBlocks.BEDROCK_OIL.get(), "Bedrock Oil");
+                add(ModBlocks.BURNED_GRASS.get(), "Burned Grass");
+                add(ModBlocks.WASTE_PLANKS.get(), "Burned Planks");
+                add(ModBlocks.WASTE_LOG.get(), "Burned Log");
+                add(ModBlocks.CONCRETE_PILLAR.get(), "Concrete Pillar");
+                add(ModBlocks.SELLAFIELD_SLAKED.get(), "Slaked Sellafield");
+                add(ModBlocks.SELLAFIELD_SLAKED1.get(), "Slaked Sellafield I");
+                add(ModBlocks.SELLAFIELD_SLAKED2.get(), "Slaked Sellafield II");
+                add(ModBlocks.SELLAFIELD_SLAKED3.get(), "Slaked Sellafield III");
+                add(ModItems.MOTOR_BISMUTH.get(), "Bismuth Motor");
+                add(ModItems.MOTOR_DESH.get(), "Desh Motor");
+                add(ModItems.MOTOR.get(), "Motor");
+                add(ModBlocks.ASPHALT.get(), "Asphalt");
+                add(ModBlocks.BARRICADE.get(), "Sand Barricade");
+                add(ModBlocks.BASALT_BRICK.get(), "Basalt Bricks");
+                add(ModBlocks.BASALT_POLISHED.get(), "Polished Basalt");
+                add(ModBlocks.BRICK_BASE.get(), "Polished Bricks");
+                add(ModBlocks.BRICK_DUCRETE.get(), "Ducrete Bricks");
+                add(ModBlocks.BRICK_FIRE.get(), "Fire Bricks");
+                add(ModBlocks.BRICK_LIGHT.get(), "Light Bricks");
+                add(ModBlocks.BRICK_OBSIDIAN.get(), "Obsidian Bricks");
+                add(ModBlocks.CONCRETE_ASBESTOS.get(), "Asbestos Concrete");
+                add(ModBlocks.CONCRETE_BLACK.get(), "Black Concrete");
+                add(ModBlocks.CONCRETE_BLUE.get(), "Blue Concrete");
+                add(ModBlocks.CONCRETE_BROWN.get(), "Brown Concrete");
+                add(ModBlocks.CONCRETE_COLORED_BRONZE.get(), "Bronze Concrete");
+                add(ModBlocks.CONCRETE_COLORED_INDIGO.get(), "Indigo Concrete");
+                add(ModBlocks.CONCRETE_COLORED_MACHINE.get(), "Concrete 'Machine'");
+                add(ModBlocks.CONCRETE_COLORED_MACHINE_STRIPE.get(), "Striped Concrete 'Machine'");
+                add(ModBlocks.CONCRETE_COLORED_PINK.get(), "Pink Concrete");
+                add(ModBlocks.CONCRETE_COLORED_PURPLE.get(), "Purple Concrete");
+                add(ModBlocks.CONCRETE_COLORED_SAND.get(), "Concrete 'Texas'");
+                add(ModBlocks.CONCRETE_CYAN.get(), "Cyan Concrete");
+                add(ModBlocks.CONCRETE_GRAY.get(), "Gray Concrete");
+                add(ModBlocks.CONCRETE_GREEN.get(), "Green Concrete");
+                add(ModBlocks.CONCRETE_LIGHT_BLUE.get(), "Light Blue Concrete");
+                add(ModBlocks.CONCRETE_LIME.get(), "Lime Concrete");
+                add(ModBlocks.CONCRETE_MAGENTA.get(), "Magenta Concrete");
+                add(ModBlocks.CONCRETE_ORANGE.get(), "Orange Concrete");
+                add(ModBlocks.CONCRETE_PINK.get(), "Pink Concrete");
+                add(ModBlocks.CONCRETE_PURPLE.get(), "Purple Concrete");
+                add(ModBlocks.CONCRETE_REBAR.get(), "Rough Concrete");
+                add(ModBlocks.CONCRETE_REBAR_ALT.get(), "Rebar Concrete");
+                add(ModBlocks.CONCRETE_RED.get(), "Red Concrete");
+                add(ModBlocks.CONCRETE_SILVER.get(), "Silver Concrete");
+                add(ModBlocks.CONCRETE_SUPER.get(), "Super Concrete");
+                add(ModBlocks.CONCRETE_SUPER_BROKEN.get(), "Broken Super Concrete");
+                add(ModBlocks.CONCRETE_SUPER_M0.get(), "Super Concrete MO");
+                add(ModBlocks.CONCRETE_SUPER_M1.get(), "Super Concrete M1");
+                add(ModBlocks.CONCRETE_SUPER_M2.get(), "Super Concrete M2");
+                add(ModBlocks.CONCRETE_SUPER_M3.get(), "Super Concrete M3");
+                add(ModBlocks.CONCRETE_TILE.get(), "Concrete Tile");
+                add(ModBlocks.CONCRETE_TILE_TREFOIL.get(), "Marked Concrete Tile");
+                add(ModBlocks.CONCRETE_WHITE.get(), "White Concrete");
+                add(ModBlocks.CONCRETE_YELLOW.get(), "Yellow Concrete");
+                add(ModBlocks.CONCRETE_FLAT.get(), "Flat Concrete");
+                add(ModBlocks.DEPTH_BRICK.get(), "Depth Bricks");
+                add(ModBlocks.DEPTH_NETHER_BRICK.get(), "Depth Nether Bricks");
+                add(ModBlocks.DEPTH_NETHER_TILES.get(), "Depth Nether Tiles");
+                add(ModBlocks.DEPTH_STONE_NETHER.get(), "Depth Nether Stone");
+                add(ModBlocks.DEPTH_TILES.get(), "Depth Tiles");
+                add(ModBlocks.GNEISS_BRICK.get(), "Gneiss Brick");
+                add(ModBlocks.GNEISS_CHISELED.get(), "Chiseled Gneiss");
+                add(ModBlocks.GNEISS_STONE.get(), "Graphite Slate");
+                add(ModBlocks.GNEISS_TILE.get(), "Graphite Slate Tile");
+                add(ModBlocks.METEOR.get(), "Meteor Block");
+                add(ModBlocks.METEOR_BRICK.get(), "Meteor Bricks");
+                add(ModBlocks.METEOR_BRICK_CHISELED.get(), "Chiseled Meteor Bricks");
+                add(ModBlocks.METEOR_BRICK_CRACKED.get(), "Cracked Meteor Bricks");
+                add(ModBlocks.METEOR_BRICK_MOSSY.get(), "Mossy Meteor Bricks");
+                add(ModBlocks.METEOR_COBBLE.get(), "Meteor Cobble");
+                add(ModBlocks.METEOR_CRUSHED.get(), "Crushed Meteor");
+                add(ModBlocks.METEOR_PILLAR.get(), "Meteor Pillar");
+                add(ModBlocks.METEOR_POLISHED.get(), "Polished Meteor");
+                add(ModBlocks.METEOR_TREASURE.get(), "Meteor Treasure");
+                add(ModBlocks.VINYL_TILE.get(), "Vinyl Tiles");
+                add(ModBlocks.VINYL_TILE_SMALL.get(), "Small Vinyl Tiles");
+
+
+                add(ModBlocks.CONCRETE_ASBESTOS_SLAB.get(), "Asbestos Concrete Slab");
+                add(ModBlocks.CONCRETE_BLACK_SLAB.get(), "Black Concrete Slab");
+                add(ModBlocks.CONCRETE_BLUE_SLAB.get(), "Blue Concrete Slab");
+                add(ModBlocks.CONCRETE_BROWN_SLAB.get(), "Brown Concrete Slab");
+                add(ModBlocks.CONCRETE_COLORED_BRONZE_SLAB.get(), "Bronze Concrete Slab");
+                add(ModBlocks.CONCRETE_COLORED_INDIGO_SLAB.get(), "Indigo Concrete Slab");
+                add(ModBlocks.CONCRETE_COLORED_MACHINE_SLAB.get(), "Concrete 'Machine' Slab");
+                add(ModBlocks.CONCRETE_COLORED_PINK_SLAB.get(), "Pink Concrete Slab");
+                add(ModBlocks.CONCRETE_COLORED_PURPLE_SLAB.get(), "Purple Concrete Slab");
+                add(ModBlocks.CONCRETE_COLORED_SAND_SLAB.get(), "Concrete 'Texas' Slab");
+                add(ModBlocks.CONCRETE_CYAN_SLAB.get(), "Cyan Concrete Slab");
+                add(ModBlocks.CONCRETE_GRAY_SLAB.get(), "Gray Concrete Slab");
+                add(ModBlocks.CONCRETE_GREEN_SLAB.get(), "Green Concrete Slab");
+                add(ModBlocks.CONCRETE_LIGHT_BLUE_SLAB.get(), "Light Blue Concrete Slab");
+                add(ModBlocks.CONCRETE_LIME_SLAB.get(), "Lime Concrete Slab");
+                add(ModBlocks.CONCRETE_MAGENTA_SLAB.get(), "Magenta Concrete Slab");
+                add(ModBlocks.CONCRETE_ORANGE_SLAB.get(), "Orange Concrete Slab");
+                add(ModBlocks.CONCRETE_PINK_SLAB.get(), "Pink Concrete Slab");
+                add(ModBlocks.CONCRETE_PURPLE_SLAB.get(), "Purple Concrete Slab");
+                add(ModBlocks.CONCRETE_RED_SLAB.get(), "Red Concrete Slab");
+                add(ModBlocks.CONCRETE_SILVER_SLAB.get(), "Silver Concrete Slab");
+                add(ModBlocks.CONCRETE_WHITE_SLAB.get(), "White Concrete Slab");
+                add(ModBlocks.CONCRETE_YELLOW_SLAB.get(), "Yellow Concrete Slab");
+                add(ModBlocks.CONCRETE_SUPER_SLAB.get(), "Super Concrete Slab");
+                add(ModBlocks.CONCRETE_SUPER_M0_SLAB.get(), "Super Concrete M0 Slab");
+                add(ModBlocks.CONCRETE_SUPER_M1_SLAB.get(), "Super Concrete M1 Slab");
+                add(ModBlocks.CONCRETE_SUPER_M2_SLAB.get(), "Super Concrete M2 Slab");
+                add(ModBlocks.CONCRETE_SUPER_M3_SLAB.get(), "Super Concrete M3 Slab");
+                add(ModBlocks.CONCRETE_SUPER_BROKEN_SLAB.get(), "Broken Super Concrete Slab");
+                add(ModBlocks.CONCRETE_REBAR_SLAB.get(), "Rough Concrete Slab");
+                add(ModBlocks.CONCRETE_FLAT_SLAB.get(), "Flat Concrete Slab");
+                add(ModBlocks.CONCRETE_TILE_SLAB.get(), "Concrete Tile Slab");
+                add(ModBlocks.DEPTH_BRICK_SLAB.get(), "Depth Bricks Slab");
+                add(ModBlocks.DEPTH_TILES_SLAB.get(), "Depth Tiles Slab");
+                add(ModBlocks.DEPTH_NETHER_BRICK_SLAB.get(), "Depth Nether Bricks Slab");
+                add(ModBlocks.DEPTH_NETHER_TILES_SLAB.get(), "Depth Nether Tiles Slab");
+                add(ModBlocks.GNEISS_TILE_SLAB.get(), "Graphite Slate Tile Slab");
+                add(ModBlocks.GNEISS_BRICK_SLAB.get(), "Gneiss Brick Slab");
+                add(ModBlocks.BRICK_BASE_SLAB.get(), "Polished Bricks Slab");
+                add(ModBlocks.BRICK_LIGHT_SLAB.get(), "Light Bricks Slab");
+                add(ModBlocks.BRICK_FIRE_SLAB.get(), "Fire Bricks Slab");
+                add(ModBlocks.BRICK_OBSIDIAN_SLAB.get(), "Obsidian Bricks Slab");
+                add(ModBlocks.VINYL_TILE_SLAB.get(), "Vinyl Tiles Slab");
+                add(ModBlocks.VINYL_TILE_SMALL_SLAB.get(), "Small Vinyl Tiles Slab");
+                add(ModBlocks.BRICK_DUCRETE_SLAB.get(), "Ducrete Bricks Slab");
+                add(ModBlocks.ASPHALT_SLAB.get(), "Asphalt Slab");
+                add(ModBlocks.BASALT_POLISHED_SLAB.get(), "Polished Basalt Slab");
+                add(ModBlocks.BASALT_BRICK_SLAB.get(), "Basalt Bricks Slab");
+                add(ModBlocks.METEOR_POLISHED_SLAB.get(), "Polished Meteor Slab");
+                add(ModBlocks.METEOR_BRICK_SLAB.get(), "Meteor Bricks Slab");
+                add(ModBlocks.METEOR_BRICK_CRACKED_SLAB.get(), "Cracked Meteor Bricks Slab");
+                add(ModBlocks.METEOR_BRICK_MOSSY_SLAB.get(), "Mossy Meteor Bricks Slab");
+                add(ModBlocks.METEOR_CRUSHED_SLAB.get(), "Crushed Meteor Slab");
+
+                add(ModBlocks.CONCRETE_ASBESTOS_STAIRS.get(), "Asbestos Concrete Stairs");
+                add(ModBlocks.CONCRETE_BLACK_STAIRS.get(), "Black Concrete Stairs");
+                add(ModBlocks.CONCRETE_BLUE_STAIRS.get(), "Blue Concrete Stairs");
+                add(ModBlocks.CONCRETE_BROWN_STAIRS.get(), "Brown Concrete Stairs");
+                add(ModBlocks.CONCRETE_COLORED_BRONZE_STAIRS.get(), "Bronze Concrete Stairs");
+                add(ModBlocks.CONCRETE_COLORED_INDIGO_STAIRS.get(), "Indigo Concrete Stairs");
+                add(ModBlocks.CONCRETE_COLORED_MACHINE_STAIRS.get(), "Concrete 'Machine' Stairs");
+                add(ModBlocks.CONCRETE_COLORED_PINK_STAIRS.get(), "Pink Concrete Stairs");
+                add(ModBlocks.CONCRETE_COLORED_PURPLE_STAIRS.get(), "Purple Concrete Stairs");
+                add(ModBlocks.CONCRETE_COLORED_SAND_STAIRS.get(), "Concrete 'Texas' Stairs");
+                add(ModBlocks.CONCRETE_CYAN_STAIRS.get(), "Cyan Concrete Stairs");
+                add(ModBlocks.CONCRETE_GRAY_STAIRS.get(), "Gray Concrete Stairs");
+                add(ModBlocks.CONCRETE_GREEN_STAIRS.get(), "Green Concrete Stairs");
+                add(ModBlocks.CONCRETE_LIGHT_BLUE_STAIRS.get(), "Light Blue Concrete Stairs");
+                add(ModBlocks.CONCRETE_LIME_STAIRS.get(), "Lime Concrete Stairs");
+                add(ModBlocks.CONCRETE_MAGENTA_STAIRS.get(), "Magenta Concrete Stairs");
+                add(ModBlocks.CONCRETE_ORANGE_STAIRS.get(), "Orange Concrete Stairs");
+                add(ModBlocks.CONCRETE_PINK_STAIRS.get(), "Pink Concrete Stairs");
+                add(ModBlocks.CONCRETE_PURPLE_STAIRS.get(), "Purple Concrete Stairs");
+                add(ModBlocks.CONCRETE_RED_STAIRS.get(), "Red Concrete Stairs");
+                add(ModBlocks.CONCRETE_SILVER_STAIRS.get(), "Silver Concrete Stairs");
+                add(ModBlocks.CONCRETE_WHITE_STAIRS.get(), "White Concrete Stairs");
+                add(ModBlocks.CONCRETE_YELLOW_STAIRS.get(), "Yellow Concrete Stairs");
+                add(ModBlocks.CONCRETE_SUPER_STAIRS.get(), "Super Concrete Stairs");
+                add(ModBlocks.CONCRETE_SUPER_M0_STAIRS.get(), "Super Concrete M0 Stairs");
+                add(ModBlocks.CONCRETE_SUPER_M1_STAIRS.get(), "Super Concrete M1 Stairs");
+                add(ModBlocks.CONCRETE_SUPER_M2_STAIRS.get(), "Super Concrete M2 Stairs");
+                add(ModBlocks.CONCRETE_SUPER_M3_STAIRS.get(), "Super Concrete M3 Stairs");
+                add(ModBlocks.CONCRETE_SUPER_BROKEN_STAIRS.get(), "Broken Super Concrete Stairs");
+                add(ModBlocks.CONCRETE_REBAR_STAIRS.get(), "Rough Concrete Stairs");
+                add(ModBlocks.CONCRETE_FLAT_STAIRS.get(), "Flat Concrete Stairs");
+                add(ModBlocks.CONCRETE_TILE_STAIRS.get(), "Concrete Tile Stairs");
+                add(ModBlocks.DEPTH_BRICK_STAIRS.get(), "Depth Bricks Stairs");
+                add(ModBlocks.DEPTH_TILES_STAIRS.get(), "Depth Tiles Stairs");
+                add(ModBlocks.DEPTH_NETHER_BRICK_STAIRS.get(), "Depth Nether Bricks Stairs");
+                add(ModBlocks.DEPTH_NETHER_TILES_STAIRS.get(), "Depth Nether Tiles Stairs");
+                add(ModBlocks.GNEISS_TILE_STAIRS.get(), "Graphite Slate Tile Stairs");
+                add(ModBlocks.GNEISS_BRICK_STAIRS.get(), "Gneiss Brick Stairs");
+                add(ModBlocks.BRICK_BASE_STAIRS.get(), "Polished Bricks Stairs");
+                add(ModBlocks.BRICK_LIGHT_STAIRS.get(), "Light Bricks Stairs");
+                add(ModBlocks.BRICK_FIRE_STAIRS.get(), "Fire Bricks Stairs");
+                add(ModBlocks.BRICK_OBSIDIAN_STAIRS.get(), "Obsidian Bricks Stairs");
+                add(ModBlocks.VINYL_TILE_STAIRS.get(), "Vinyl Tiles Stairs");
+                add(ModBlocks.VINYL_TILE_SMALL_STAIRS.get(), "Small Vinyl Tiles Stairs");
+                add(ModBlocks.BRICK_DUCRETE_STAIRS.get(), "Ducrete Bricks Stairs");
+                add(ModBlocks.ASPHALT_STAIRS.get(), "Asphalt Stairs");
+                add(ModBlocks.BASALT_POLISHED_STAIRS.get(), "Polished Basalt Stairs");
+                add(ModBlocks.BASALT_BRICK_STAIRS.get(), "Basalt Bricks Stairs");
+                add(ModBlocks.METEOR_POLISHED_STAIRS.get(), "Polished Meteor Stairs");
+                add(ModBlocks.METEOR_BRICK_STAIRS.get(), "Meteor Bricks Stairs");
+                add(ModBlocks.METEOR_BRICK_CRACKED_STAIRS.get(), "Cracked Meteor Bricks Stairs");
+                add(ModBlocks.METEOR_BRICK_MOSSY_STAIRS.get(), "Mossy Meteor Bricks Stairs");
+                add(ModBlocks.METEOR_CRUSHED_STAIRS.get(), "Crushed Meteor Stairs");
+
+
+                add(ModBlocks.CONVERTER_BLOCK.get(), "Energy Converter");
+                add(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get(), "Spark Battery");
+                add(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get(), "Shrabidium Battery");
+                add(ModBlocks.MACHINE_BATTERY_LITHIUM.get(), "Lithium Battery");
+                // en_us case
+                add(ModItems.BLADE_TEST.get(), "Desh Blades");
+                add(ModItems.BORAX.get(), "Borax");
+                add(ModItems.BALL_TNT.get(), "TNT Ball");
+                add(ModItems.BOLT_STEEL.get(), "Steel Bolt");
+                add(ModItems.ZIRCONIUM_SHARP.get(), "Zirconium Sharp");
+                add(ModBlocks.CRATE_CONSERVE.get(), "Canned Goods Crate");
+                add(ModBlocks.CAGE_LAMP.get(), "Cage Lamp");
+                add(ModBlocks.FLOOD_LAMP.get(), "Flood Lamp");
+                add(ModBlocks.B29.get(), "B-29");
+                add(ModBlocks.DORNIER.get(), "Dornier");
+                add(ModBlocks.FILE_CABINET.get(), "File Cabinet");
+                add(ModBlocks.TAPE_RECORDER.get(), "Tape Recorder");
+                add(ModBlocks.CRT_BROKEN.get(), "Broken CRT");
+                add(ModBlocks.CRT_BSOD.get(), "BSOD CRT");
+                add(ModBlocks.CRT_CLEAN.get(), "Clean CRT");
+                add(ModBlocks.TOASTER.get(), "Toaster");
+                add(ModBlocks.BARREL_CORRODED.get(), "Corroded Barrel");
+                add(ModBlocks.BARREL_LOX.get(), "LOX Barrel");
+                add(ModBlocks.BARREL_PINK.get(), "Pink Barrel");
+                add(ModBlocks.BARREL_YELLOW.get(), "Yellow Barrel");
+                add(ModBlocks.BARREL_VITRIFIED.get(), "Vitrified Barrel");
+                add(ModBlocks.BARREL_TAINT.get(), "Tainted Barrel");
+                add(ModBlocks.BARREL_IRON.get(), "Iron Barrel");
+                add(ModBlocks.BARREL_STEEL.get(), "Steel Barrel");
+                add(ModBlocks.BARREL_TCALLOY.get(), "Iron Barrel");
+                add(ModBlocks.FIRE_DOOR.get(), "Fire Door");
+                add(ModBlocks.SLIDING_SEAL_DOOR.get(), "Sliding Seal Door");
+                add(ModBlocks.SECURE_ACCESS_DOOR.get(), "Secure Access Door");
+                add(ModBlocks.QE_CONTAINMENT.get(), "QE Containment Door");
+                add(ModBlocks.QE_SLIDING.get(), "QE Sliding Door");
+                add(ModBlocks.WATER_DOOR.get(), "Waterproof Hatch");
+                add(ModBlocks.SILO_HATCH.get(), "Silo Hatch");
+                add(ModBlocks.SILO_HATCH_LARGE.get(), "Large Silo Hatch");
+
+
+                add(ModBlocks.DUD_SALTED.get(), "Unexploded Salted Bomb");
+                add(ModBlocks.DUD_NUKE.get(), "Unexploded Nuclear Bomb");
+                add(ModBlocks.DUD_FUGAS_TONG.get(), "Unexploded High-Explosive Bomb");
+                add(ModBlocks.MINE_FAT.get(), "FatMan Mine");
+                add(ModBlocks.MINE_AP.get(), "Anti-Personnel Mine");
+                add(ModItems.GRENADE_NUC.get(), "Nuclear Grenade");
+                add(ModItems.GRENADE_IF_HE.get(), "IF Grenade: HE");
+                add(ModItems.GRENADE_IF_FIRE.get(), "IF Grenade: Incendiary");
+                add(ModItems.GRENADE_IF_SLIME.get(), "IF Grenade: Bouncy");
+                add(ModItems.MULTI_DETONATOR.get(), "Multi Detonator");
+                add(ModItems.RANGE_DETONATOR.get(), "Range Detonator");
+                add(ModItems.DETONATOR.get(), "Detonator");
+                add(ModBlocks.BARBED_WIRE_POISON.get(), "Poison Barbed Wire");
+                add(ModBlocks.BARBED_WIRE_FIRE.get(), "Fire Barbed Wire");
+                add(ModBlocks.BARBED_WIRE_RAD.get(), "Radiation Barbed Wire");
+                add(ModBlocks.BARBED_WIRE.get(), "Barbed Wire");
+                add(ModBlocks.BARBED_WIRE_WITHER.get(), "Wither Barbed Wire");
+                add(ModBlocks.WASTE_CHARGE.get(), "Waste Charge");
+                add(ModBlocks.GIGA_DET.get(), "Giga Det");
+                add(ModBlocks.NUCLEAR_CHARGE.get(), "Nuclear Charge");
+                add(ModBlocks.C4.get(), "C4 Charge");
+                add(ModItems.DEFUSER.get(), "Defuser");
+                add(ModItems.CROWBAR.get(), "Crowbar");
+                add(ModItems.DEPTH_ORES_SCANNER.get(), "Depth Ore Scanner");
+                add(ModItems.OIL_DETECTOR.get(), "Oil Detector");
+
+
+                add(ModBlocks.SMOKE_BOMB.get(), "Semtex");
                 add(ModItems.NUGGET_SILICON.get(), "Silicon Nugget");
                 add(ModItems.BILLET_SILICON.get(), "Silicon Billet");
                 add(ModItems.PLATE_GOLD.get(), "Golden Plate");
@@ -1291,7 +2045,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.door_bunker", "Bunker Door");
                 add("block.hbm_m.metal_door", "Metal Door");
                 add("block.hbm_m.demon_lamp", "Demon Lamp (WIP)");
-                add("block.hbm_m.explosive_charge", "Explosive Charge (WIP)");
+                add("block.hbm_m.explosive_charge", "Explosive Charge");
                 add("block.hbm_m.reinforced_glass", "Reinforced Glass");
                 add("block.hbm_m.crate", "Crate");
                 add("block.hbm_m.crate_lead", "Lead Crate");
@@ -1305,7 +2059,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.machine_assembler", "Assembly Machine (Legacy)");
                 add("block.hbm_m.advanced_assembly_machine", "Assembly Machine");
                 add("block.hbm_m.machine_battery", "Machine Battery");
-                add("block.hbm_m.shredder", "Shredder (WIP)");
+                add("block.hbm_m.shredder", "Shredder");
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
                 add("block.hbm_m.blast_furnace", "Blast Furnace");
                 add("block.hbm_m.blast_furnace_extension", "Blast Furnace Extension");

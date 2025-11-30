@@ -31,6 +31,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
     protected void addTags(@Nonnull HolderLookup.Provider provider) {
         // ============ МИНЕРАЛЬНЫЙ ТАГ: ДОБЫЧА КИРКАМИ ============
 
+
         // --- 1. Инициализация тегов ---
         var pickaxeTag = this.tag(BlockTags.MINEABLE_WITH_PICKAXE);
         var shovelTag = this.tag(BlockTags.MINEABLE_WITH_SHOVEL);
@@ -115,6 +116,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 }
             }
         }
+
 
 
 

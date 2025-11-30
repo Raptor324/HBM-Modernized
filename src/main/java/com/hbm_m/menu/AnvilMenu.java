@@ -4,6 +4,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.AnvilBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.Containers;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
@@ -123,21 +124,38 @@ public class AnvilMenu extends AbstractContainerMenu {
     public void removed(@NotNull Player player) {
         super.removed(player);
         this.access.execute((level, pos) -> {
+            // Выполняем только на сервере
             if (!level.isClientSide) {
                 ItemStackHandler handler = blockEntity.getItemHandler();
-                // Очищаем все слоты: входные (0, 1) и выходной (2)
-                for (int i = 0; i < 3; i++) {
+                
+                // Проходим только по ВХОДНЫМ слотам (0 и 1)
+                // Слот 2 (выход) пропускаем, чтобы не дюпать результат
+                for (int i = 0; i < 2; i++) {
                     ItemStack stack = handler.getStackInSlot(i);
                     if (!stack.isEmpty()) {
-                        // Получаем копию стека и сразу очищаем слот
+                        // Создаем копию, чтобы безопасно работать
                         ItemStack toReturn = stack.copy();
+                        
+                        // Очищаем слот в машине
                         handler.setStackInSlot(i, ItemStack.EMPTY);
-                        // Пытаемся добавить в инвентарь, иначе выбрасываем
+                        
+                        // Пытаемся положить игроку в инвентарь
                         if (!player.getInventory().add(toReturn)) {
+                            // Если не влезло полностью - кидаем под ноги игроку
                             player.drop(toReturn, false);
+                        } else {
+                            // Если влезло частично (add изменяет stack, уменьшая count),
+                            // то остаток (если есть) тоже кидаем игроку
+                            if (!toReturn.isEmpty()) {
+                                player.drop(toReturn, false);
+                            }
                         }
                     }
                 }
+                
+                // Очищаем слот выхода, чтобы он не висел "фантомом" до следующего открытия
+                // Это важно, если у BlockEntity логика завязана на наличие предметов
+                handler.setStackInSlot(2, ItemStack.EMPTY);
             }
         });
     }

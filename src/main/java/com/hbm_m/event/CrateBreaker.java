@@ -1,6 +1,7 @@
 package com.hbm_m.event;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.sound.ModSounds;
 

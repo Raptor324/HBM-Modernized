@@ -9,6 +9,13 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
+import java.util.List;
 
 import com.hbm_m.armormod.item.ItemModHealth;
 import com.hbm_m.armormod.item.ItemModRadProtection;
@@ -20,10 +27,13 @@ import com.hbm_m.entity.grenades.GrenadeType;
 import com.hbm_m.item.fekal_grenades.GrenadeIfItem;
 import com.hbm_m.item.fekal_grenades.GrenadeItem;
 import com.hbm_m.item.fekal_grenades.GrenadeNucItem;
+import com.hbm_m.item.tools.*;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
 
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.*;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -118,11 +128,13 @@ public class ModItems {
     public static RegistryObject<Item> getIngot(ModIngots ingot) {
         return INGOTS.get(ingot);
     }
+
     public static RegistryObject<Item> getPowders(ModPowders powders) {return POWDERS.get(powders);}
     public static RegistryObject<Item> getPowder(ModIngots ingot) { return INGOT_POWDERS.get(ingot); }
     public static Optional<RegistryObject<Item>> getTinyPowder(ModIngots ingot) {
         return Optional.ofNullable(INGOT_POWDERS_TINY.get(ingot));
     }
+    
     public static final int SLOT_HELMET = 0;
     public static final int SLOT_CHEST = 1;
     public static final int SLOT_LEGS = 2;
@@ -405,6 +417,14 @@ public class ModItems {
     public static final RegistryObject<Item> DOSIMETER = ITEMS.register("dosimeter",
             () -> new ItemDosimeter(new Item.Properties().stacksTo(1)));
 
+
+
+
+
+
+
+
+
     // Модификаторы брони
     public static final RegistryObject<Item> HEART_PIECE = ITEMS.register("heart_piece",
             () -> new ItemModHealth(
@@ -542,16 +562,38 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> BALL_TNT = ITEMS.register("ball_tnt",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> DEFUSER = ITEMS.register("defuser",
-            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> CROWBAR = ITEMS.register("crowbar",
+            () -> new Item(new Item.Properties()) {
+                @Override
+                public void appendHoverText(ItemStack stack, @Nullable Level level,
+                                            @Nullable List<Component> tooltip, TooltipFlag flag) {
+                    if (tooltip == null) return;
+
+                    tooltip.add(Component.translatable("tooltip.hbm_m.crowbar.line1")
+                            .withStyle(ChatFormatting.GRAY));
+                    tooltip.add(Component.translatable("tooltip.hbm_m.crowbar.line2")
+                            .withStyle(ChatFormatting.GRAY));
+                }
+            });
+
+
     public static final RegistryObject<Item> MALACHITE_CHUNK = ITEMS.register("malachite_chunk",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> LIMESTONE = ITEMS.register("limestone",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> CAN_KEY = ITEMS.register("can_key",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> CROWBAR = ITEMS.register("crowbar",
-            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> DEFUSER = ITEMS.register("defuser",
+            () -> new Item(new Item.Properties()) {
+                @Override
+                public void appendHoverText(ItemStack stack, @Nullable Level level,
+                                            @Nullable List<Component> tooltip, TooltipFlag flag) {
+                    if (tooltip == null) return;
+
+                    tooltip.add(Component.translatable("tooltip.hbm_m.defuser.line1")
+                            .withStyle(ChatFormatting.GRAY));
+                }
+            });
     public static final RegistryObject<Item> BOLT_STEEL = ITEMS.register("bolt_steel",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> ZIRCONIUM_SHARP = ITEMS.register("zirconium_sharp",
