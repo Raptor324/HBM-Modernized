@@ -1,5 +1,5 @@
 {
-  "name": "hbm_m:bunker_pool",
+  "name": "hbm_m:depthtest_pool",
   "fallback": "minecraft:empty",
   "elements": [
     {
@@ -7,7 +7,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
-        "location": "hbm_m:bunker",
+        "location": "hbm_m:depthtest",
         "processors": "hbm_m:foundation_processor"
       }
     }

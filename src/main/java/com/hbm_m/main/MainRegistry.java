@@ -12,14 +12,11 @@ import com.hbm_m.item.ModBatteryItem;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.util.SellafitSolidificationTracker;
 import com.hbm_m.world.biome.ModBiomes;
+import com.hbm_m.worldgen.StructureFoundationProcessor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.event.level.LevelEvent;
-import com.hbm_m.item.ModBatteryItem;
-import com.hbm_m.particle.ModExplosionParticles;
 import com.mojang.logging.LogUtils;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
@@ -44,7 +41,6 @@ import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.worldgen.ModWorldGen;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -55,16 +51,15 @@ import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-
 import java.util.List;
 import java.util.stream.Collectors;
 
-import org.apache.logging.log4j.LogManager;
 import org.slf4j.Logger;
 
 @Mod(RefStrings.MODID)
@@ -98,29 +93,29 @@ public class MainRegistry {
         MinecraftForge.EVENT_BUS.register(new BombDefuser());
         MinecraftForge.EVENT_BUS.register(new MobGearHandler());
         ModBiomes.BIOMES.register(modEventBus);
-        ModBlocks.BLOCKS.register(modEventBus); // Регистрация наших блоков
+        ModBlocks.BLOCKS.register(modEventBus);
         ModEntities.ENTITY_TYPES.register(modEventBus);
         ModExplosionParticles.PARTICLE_TYPES.register(modEventBus);
-        ModItems.ITEMS.register(modEventBus); // Регистрация наших предметов
-        ModMenuTypes.MENUS.register(modEventBus); // Регистрация меню
-        ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus); // Регистрация наших вкладок креативного режима
-        ModSounds.SOUND_EVENTS.register(modEventBus); // Регистрация звуков
-        ModParticleTypes.PARTICLES.register(modEventBus); // Регистрация частиц
-        ModBlockEntities.register(modEventBus); // Регистрация блочных сущностей
-        ModWorldGen.BIOME_MODIFIERS.register(modEventBus); // Регистрация модификаторов биомов (руды, структуры и тд)
-        ModEffects.register(modEventBus); // Регистрация эффектов
+        ModItems.ITEMS.register(modEventBus);
+        ModMenuTypes.MENUS.register(modEventBus);
+        ModCreativeTabs.CREATIVE_MODE_TABS.register(modEventBus);
+        ModSounds.SOUND_EVENTS.register(modEventBus);
+        ModParticleTypes.PARTICLES.register(modEventBus);
+        ModBlockEntities.register(modEventBus);
+        ModWorldGen.BIOME_MODIFIERS.register(modEventBus);
+        ModEffects.register(modEventBus);
         ModRecipes.register(modEventBus);
         registerCapabilities(modEventBus);
-        // Регистрация обработчиков событий мода
+
+        // ✅ ЭТА СТРОКА ДОЛЖНА БЫТЬ ПОСЛЕДНЕЙ!
+        ModWorldGen.PROCESSORS.register(modEventBus);  // ✅ ОСТАВИ!
+
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
 
-        // Регистрация обработчиков событий Forge (игровых)
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new PlayerHandler());
-
-
         // Регистрация остальных систем resources
         // ModPacketHandler.register(); // Регистрация пакетов
 
@@ -676,8 +671,9 @@ public class MainRegistry {
             event.accept(ModBlocks.METEOR_BRICK_CRACKED_SLAB);
             event.accept(ModBlocks.METEOR_BRICK_MOSSY_SLAB);
             event.accept(ModBlocks.METEOR_CRUSHED_SLAB);
-            event.accept(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB);
+            event.accept(ModBlocks.BRICK_CONCRETE_SLAB);
             event.accept(ModBlocks.BRICK_CONCRETE_CRACKED_SLAB);
+            event.accept(ModBlocks.BRICK_CONCRETE_BROKEN_SLAB);
             event.accept(ModBlocks.BRICK_CONCRETE_MOSSY_SLAB);
             event.accept(ModBlocks.CONCRETE_SLAB);
             event.accept(ModBlocks.CONCRETE_MOSSY_SLAB);

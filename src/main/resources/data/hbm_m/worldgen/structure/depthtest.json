@@ -6,13 +6,12 @@
     "minecraft:birch_forest",
     "minecraft:dark_forest",
     "minecraft:taiga",
-    "minecraft:savanna",
-    "minecraft:desert"
+    "minecraft:savanna"
   ],
   "spawn_overrides": {},
   "step": "surface_structures",
   "terrain_adaptation": "beard_box",
-  "start_pool": "hbm_m:bunker_pool",
+  "start_pool": "hbm_m:depthtest_pool",
   "size": 1,
   "start_height": {
     "absolute": 0
