@@ -31,6 +31,10 @@ import com.hbm_m.item.tools.*;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
+import net.minecraft.client.Minecraft;
+import net.minecraft.resources.ResourceLocation;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -48,7 +52,7 @@ public class ModItems {
     public static final DeferredRegister<Item> ITEMS =
             DeferredRegister.create(ForgeRegistries.ITEMS, RefStrings.MODID);
 
-    // АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ СЛИТКОВ 
+    // АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ СЛИТКОВ
     // 1. Создаем карту для хранения всех RegistryObject'ов наших слитков
     public static final Map<ModIngots, RegistryObject<Item>> INGOTS = new EnumMap<>(ModIngots.class);
     public static final Map<ModPowders, RegistryObject<Item>> POWDERS = new EnumMap<>(ModPowders.class);
@@ -74,7 +78,7 @@ public class ModItems {
                 registeredItem = ITEMS.register(ingot.getName() + "_ingot", // Имя в реестре: steel_ingot
                         () -> new Item(new Item.Properties()));
             }
-            
+
             // Кладём зарегистрированный объект в нашу карту
             INGOTS.put(ingot, registeredItem);
         }
@@ -122,9 +126,9 @@ public class ModItems {
         }
     }
 
-    
-    
-    // УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА 
+
+
+    // УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА
     public static RegistryObject<Item> getIngot(ModIngots ingot) {
         return INGOTS.get(ingot);
     }
