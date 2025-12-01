@@ -1,6 +1,9 @@
 package com.hbm_m.block;
 
 import com.hbm_m.api.energy.ConverterBlock;
+import com.hbm_m.block.crates.DeshCrateBlock;
+import com.hbm_m.block.crates.IronCrateBlock;
+import com.hbm_m.block.crates.SteelCrateBlock;
 import com.hbm_m.block.explosives.*;
 import com.hbm_m.block.machine.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machine.MachineAssemblerBlock;
@@ -1002,10 +1005,18 @@ public class ModBlocks {
                     BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
     public static final RegistryObject<Block> REINFORCED_STONE_SLAB = registerBlock("reinforced_stone_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
-    public static final RegistryObject<Block> CRATE_IRON = registerBlock("crate_iron",
-            () -> new IronCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops()));
-    public static final RegistryObject<Block> CRATE_STEEL = registerBlock("crate_steel",
-            () -> new SteelCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(1f, 1.5f).requiresCorrectToolForDrops()));
+
+
+    // ✅ ПРАВИЛЬНО - РЕГИСТРИРУЙТЕ ПРОСТО!
+    public static final RegistryObject<Block> CRATE_IRON = BLOCKS.register("crate_iron",
+            () -> new IronCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
+                    .sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops()));
+    // ✅ ПРАВИЛЬНО - РЕГИСТРИРУЙТЕ ПРОСТО!
+    public static final RegistryObject<Block> CRATE_STEEL = BLOCKS.register("crate_steel",
+            () -> new SteelCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
+                    .sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops()));
+
+
     public static final RegistryObject<Block> CRATE_DESH = registerBlock("crate_desh",
             () -> new DeshCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(1.5f, 2f).requiresCorrectToolForDrops()));
 

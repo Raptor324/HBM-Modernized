@@ -48,6 +48,20 @@
       "hbm_m:techbleep"
     ]
   },
+  "crateopen": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.crateopen",
+    "sounds": [
+      "hbm_m:crateopen"
+    ]
+  },
+  "crateclose": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.crateclose",
+    "sounds": [
+      "hbm_m:crateclose"
+    ]
+  },
   "explosionsmallfar1": {
     "category": "player",
     "subtitle": "sounds.hbm_m.explosionsmallfar1",

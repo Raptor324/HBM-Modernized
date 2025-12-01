@@ -1,6 +1,8 @@
-package com.hbm_m.block.entity;
+package com.hbm_m.block.entity.crates;
 
-import com.hbm_m.menu.SteelCrateMenu;
+import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.menu.IronCrateMenu;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -15,38 +17,33 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-/**
- * BlockEntity для Steel Crate
- * Хранит инвентарь на 54 слота (6 рядов × 9 колонок)
- * Сохраняет содержимое при разрушении как Shulker Box
- */
-public class SteelCrateBlockEntity extends BlockEntity implements MenuProvider {
+public class IronCrateBlockEntity extends BlockEntity implements MenuProvider {
 
-    private static final int SLOTS = 54;
+    private static final int SLOTS = 36;
 
     private final ItemStackHandler itemHandler = new ItemStackHandler(SLOTS) {
         @Override
         protected void onContentsChanged(int slot) {
-            setChanged();
+            setChanged(); // Обновляем при изменении содержимого
         }
 
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return true;
+            return true; // Разрешаем любые предметы
         }
     };
 
-    private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
+    private LazyOptional<ItemStackHandler> lazyItemHandler = LazyOptional.empty();
 
-    public SteelCrateBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.STEEL_CRATE_BE.get(), pos, state);
+    public IronCrateBlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlockEntities.IRON_CRATE_BE.get(), pos, state);
     }
 
+    // ✅ ПРАВИЛЬНАЯ СИГНАТУРА МЕТОДА
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
@@ -54,6 +51,7 @@ public class SteelCrateBlockEntity extends BlockEntity implements MenuProvider {
         }
         return super.getCapability(cap, side);
     }
+
 
     @Override
     public void onLoad() {
@@ -80,7 +78,7 @@ public class SteelCrateBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /**
-     * Проверяет пустой ли крейт
+     * Проверяет, пустой ли ящик
      */
     public boolean isEmpty() {
         for (int i = 0; i < itemHandler.getSlots(); i++) {
@@ -92,12 +90,11 @@ public class SteelCrateBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /**
-     * Сохраняет содержимое в ItemStack (для дропа блока с содержимым)
+     * Сохраняет содержимое в ItemStack при разрушении блока
      */
     public void saveToItem(ItemStack stack) {
         CompoundTag tag = new CompoundTag();
         this.saveAdditional(tag);
-
         if (!tag.isEmpty()) {
             stack.addTagElement("BlockEntityTag", tag);
         }
@@ -105,13 +102,13 @@ public class SteelCrateBlockEntity extends BlockEntity implements MenuProvider {
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("container.hbm_m.crate_steel");
+        return Component.translatable("container.hbm_m.crate_iron");
     }
 
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new SteelCrateMenu(containerId, playerInventory, this);
+        return new IronCrateMenu(containerId, playerInventory, this);
     }
 
     public ItemStackHandler getItemHandler() {

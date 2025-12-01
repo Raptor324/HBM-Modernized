@@ -1,6 +1,8 @@
-package com.hbm_m.block;
+package com.hbm_m.block.crates;
 
-import com.hbm_m.block.entity.IronCrateBlockEntity;
+import com.hbm_m.block.entity.crates.IronCrateBlockEntity;
+import com.hbm_m.sound.ModSounds;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -43,7 +45,10 @@ public class IronCrateBlock extends BaseEntityBlock {
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof IronCrateBlockEntity crateEntity) {
+            // Проигрываем звук при открытии
+            playOpenSound(level, player);
             NetworkHooks.openScreen((ServerPlayer) player, crateEntity, pos);
+            return InteractionResult.sidedSuccess(level.isClientSide());
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
@@ -86,20 +91,31 @@ public class IronCrateBlock extends BaseEntityBlock {
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
-
         if (blockEntity instanceof IronCrateBlockEntity crateEntity) {
             if (!level.isClientSide) {
-                // Создаём ItemStack блока
                 ItemStack stack = new ItemStack(this);
 
-                // Сохраняем содержимое в блок
-                crateEntity.saveToItem(stack);
+                // Если ящик не пустой - сохраняем содержимое и делаем unstackable
+                if (!crateEntity.isEmpty()) {
+                    crateEntity.saveToItem(stack);
+                    stack.setCount(1); // Делаем unstackable
+                }
+                // Если пустой - остаётся stackable (count=1 по умолчанию)
 
-                // Дропаем блок с содержимым
                 popResource(level, pos, stack);
             }
         }
-
         super.playerWillDestroy(level, pos, state, player);
     }
+
+    /**
+     * Проигрывает звук открытия
+     */
+    private void playOpenSound(Level level, Player player) {
+        if (ModSounds.CRATE_OPEN.isPresent()) {
+            level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                    ModSounds.CRATE_OPEN.get(), player.getSoundSource(), 0.6F, 1.0F);
+        }
+    }
+
 }

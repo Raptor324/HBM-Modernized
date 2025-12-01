@@ -897,14 +897,12 @@ public class MainRegistry {
 
             event.accept(ModItems.OIL_DETECTOR);
             event.accept(ModItems.DEPTH_ORES_SCANNER);
-
-            event.accept(ModBlocks.CRATE_IRON);
-            event.accept(ModBlocks.CRATE_STEEL);
-            event.accept(ModBlocks.CRATE_DESH);
         }
 
         // СТАНКИ
         if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
+            event.accept(ModBlocks.CRATE_IRON);
+            event.accept(ModBlocks.CRATE_STEEL);
             event.accept(ModBlocks.BARREL_CORRODED);
             event.accept(ModBlocks.BARREL_IRON);
             event.accept(ModBlocks.BARREL_STEEL);

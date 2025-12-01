@@ -45,12 +45,14 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
+import static com.hbm_m.lib.RefStrings.MODID;
+
 
 public class ModItems {
     // Создаем отложенный регистратор для предметов.
     // Это стандартный способ регистрации объектов в Forge.
     public static final DeferredRegister<Item> ITEMS =
-            DeferredRegister.create(ForgeRegistries.ITEMS, RefStrings.MODID);
+            DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
 
     // ✅ ВСЕ МАПЫ ОСТАЮТСЯ
     public static final Map<ModIngots, RegistryObject<Item>> INGOTS = new EnumMap<>(ModIngots.class);
@@ -434,7 +436,10 @@ public class ModItems {
 
 
 
-
+    public static final RegistryObject<Item> CRATE_IRON = ITEMS.register("crate_iron",
+            () -> new IronCrateItem(ModBlocks.CRATE_IRON.get(), new Item.Properties()));
+    public static final RegistryObject<Item> CRATE_STEEL = ITEMS.register("crate_steel",
+            () -> new SteelCrateItem(ModBlocks.CRATE_STEEL.get(), new Item.Properties()));
 
 
 

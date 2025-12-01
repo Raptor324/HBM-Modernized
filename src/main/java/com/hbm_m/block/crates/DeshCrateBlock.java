@@ -1,6 +1,6 @@
-package com.hbm_m.block;
+package com.hbm_m.block.crates;
 
-import com.hbm_m.block.entity.SteelCrateBlockEntity;
+import com.hbm_m.block.entity.crates.DeshCrateBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,19 +19,19 @@ import net.minecraftforge.network.NetworkHooks;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Steel Crate - блок с инвентарём на 54 слота
+ * Desh Crate - блок с инвентарём на 104 слота
  * Работает как Shulker Box - сохраняет содержимое при разрушении
  */
-public class SteelCrateBlock extends BaseEntityBlock {
+public class DeshCrateBlock extends BaseEntityBlock {
 
-    public SteelCrateBlock(Properties properties) {
+    public DeshCrateBlock(Properties properties) {
         super(properties);
     }
 
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new SteelCrateBlockEntity(pos, state);
+        return new DeshCrateBlockEntity(pos, state);
     }
 
     @Override
@@ -42,7 +42,7 @@ public class SteelCrateBlock extends BaseEntityBlock {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof SteelCrateBlockEntity crateEntity) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof DeshCrateBlockEntity crateEntity) {
             NetworkHooks.openScreen((ServerPlayer) player, crateEntity, pos);
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
@@ -53,7 +53,7 @@ public class SteelCrateBlock extends BaseEntityBlock {
                             @Nullable LivingEntity placer, ItemStack stack) {
         if (stack.hasTag()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof SteelCrateBlockEntity crateEntity) {
+            if (blockEntity instanceof DeshCrateBlockEntity crateEntity) {
                 CompoundTag tag = stack.getTag();
                 if (tag != null && tag.contains("BlockEntityTag")) {
                     CompoundTag beTag = tag.getCompound("BlockEntityTag");
@@ -76,7 +76,7 @@ public class SteelCrateBlock extends BaseEntityBlock {
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         BlockEntity blockEntity = level.getBlockEntity(pos);
 
-        if (blockEntity instanceof SteelCrateBlockEntity crateEntity) {
+        if (blockEntity instanceof DeshCrateBlockEntity crateEntity) {
             if (!level.isClientSide) {
                 ItemStack stack = new ItemStack(this);
                 crateEntity.saveToItem(stack);

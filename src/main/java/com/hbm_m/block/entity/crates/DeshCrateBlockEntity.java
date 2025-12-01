@@ -1,5 +1,6 @@
-package com.hbm_m.block.entity;
+package com.hbm_m.block.entity.crates;
 
+import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.menu.DeshCrateMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
