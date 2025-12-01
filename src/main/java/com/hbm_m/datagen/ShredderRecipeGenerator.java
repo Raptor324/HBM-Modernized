@@ -119,25 +119,35 @@ public final class ShredderRecipeGenerator {
             var ingotRegistry = ModItems.getIngot(ingot);
             var powderRegistry = ModItems.getPowder(ingot);
 
-            // ✅ ПРОВЕРКА NULL!
+            // Если нет предмета слитка или порошка - пропускаем
             if (ingotRegistry == null || powderRegistry == null) {
                 continue;
             }
 
             var ingotItem = ingotRegistry.get();
             var powderItem = powderRegistry.get();
-            var blockRegistry = ModBlocks.getIngotBlock(ingot);
             String ingotName = ingot.getName();
 
-            // Шреддер: слиток → порошок
+            // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+            // Безопасно получаем блок. Если его нет - будет null, но без краша.
+            net.minecraftforge.registries.RegistryObject<net.minecraft.world.level.block.Block> blockRegistry = null;
+
+            if (ModBlocks.hasIngotBlock(ingot)) {
+                blockRegistry = ModBlocks.getIngotBlock(ingot);
+            }
+            // -----------------------
+
+            // 1. Рецепт Шреддера: Слиток → Порошок (Всегда есть, если мы тут)
             ShredderRecipeBuilder.shredderRecipe(ingotItem, new ItemStack(powderItem, 1))
                     .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/" + ingotName + "_powder"));
 
-            // Шреддер: блок → порошки
+            // 2. Рецепт Шреддера: Блок → Порошки (ТОЛЬКО ЕСЛИ БЛОК СУЩЕСТВУЕТ)
             if (blockRegistry != null) {
                 ShredderRecipeBuilder.shredderRecipe(blockRegistry.get().asItem(), new ItemStack(powderItem, 9))
                         .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/" + ingotName + "_block_powder"));
             }
+
+            // ... Дальше ваш код плавки (smelting/blasting/tiny) без изменений ...
 
             // Плавка порошка → слиток
             net.minecraft.data.recipes.SimpleCookingRecipeBuilder.smelting(
