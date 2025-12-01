@@ -9,7 +9,9 @@ import com.hbm_m.item.ModPowders;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraftforge.common.data.LanguageProvider;
+import net.minecraftforge.registries.RegistryObject;
 
 import java.util.Arrays;
 import java.util.HashSet;
@@ -86,30 +88,47 @@ public class ModLanguageProvider extends LanguageProvider {
 
     @Override
     protected void addTranslations() {
-        // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ 
+        // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            // 3. Теперь мы используем наше поле 'this.locale', к которому у нас есть доступ
-            String translation = ingot.getTranslation(this.locale);
-            if (translation != null) {
-                add(ModItems.getIngot(ingot).get(), translation);
+            RegistryObject<Item> ingotItem = ModItems.getIngot(ingot);
+            if (ingotItem != null && ingotItem.isPresent()) {
+                String translation = ingot.getTranslation(this.locale);
+                if (translation != null) {
+                    add(ingotItem.get(), translation);
+                }
             }
         }
 
         Set<ResourceLocation> translatedPowders = new HashSet<>();
-        // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ
+
+        // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ ПОРОШКОВ
         for (ModPowders powders : ModPowders.values()) {
-            // 3. Теперь мы используем наше поле 'this.locale', к которому у нас есть доступ
-            String translation = powders.getTranslation(this.locale);
-            if (translation != null) {
-                var powderItem = ModItems.getPowders(powders);
-                add(powderItem.get(), translation);
-                translatedPowders.add(powderItem.getId());
+            RegistryObject<Item> powderItem = ModItems.getPowders(powders);
+            if (powderItem != null && powderItem.isPresent()) {
+                String translation = powders.getTranslation(this.locale);
+                if (translation != null) {
+                    add(powderItem.get(), translation);
+                    translatedPowders.add(powderItem.getId());
+                }
             }
         }
 
-        addIngotPowderTranslations(translatedPowders);
+        // ДОБАВЛЕНИЕ ЛОКАЛИЗАЦИИ ДЛЯ ПОРОШКОВ ИЗ СЛИТКОВ
+        for (ModIngots ingot : ModIngots.values()) {
+            RegistryObject<Item> powder = ModItems.getPowder(ingot);
+            if (powder != null && powder.isPresent() && !translatedPowders.contains(powder.getId())) {
+                add(powder.get(), buildPowderName(ingot, false));
+            }
+            ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
+                if (tiny != null && tiny.isPresent()) {
+                    add(tiny.get(), buildPowderName(ingot, true));
+                }
+            });
+        }
 
-        // ЯВНАЯ ЛОКАЛИЗАЦИЯ ДЛЯ ОСТАЛЬНЫХ КЛЮЧЕЙ 
+
+
+    // ЯВНАЯ ЛОКАЛИЗАЦИЯ ДЛЯ ОСТАЛЬНЫХ КЛЮЧЕЙ
         switch (this.locale) {
             case "ru_ru":
                 // КРЕАТИВНЫЕ ВКЛАДКИ
@@ -249,7 +268,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.WIRE_GOLD.get(), "Золотой провод");
                 add(ModItems.WIRE_TUNGSTEN.get(), "Вольфрамовый провод");
                 add(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), "Провод из намагниченного вольфрама");
-                add(ModItems.WIRE_FINE.get(), "Порядочный провод");
+                add(ModItems.WIRE_FINE.get(), "Железный провод");
                 add(ModItems.WIRE_CARBON.get(), "Провод из свинца");
                 add(ModItems.WIRE_SCHRABIDIUM.get(), "Шрабидиевый провод");
                 add(ModItems.WIRE_ADVANCED_ALLOY.get(), "Провод из продвинутого сплава");
@@ -788,7 +807,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_GUNSTEEL.get(), "Пластина оружейной стали");
                 add(ModItems.PLATE_IRON.get(), "Железная пластина");
                 add(ModItems.PLATE_KEVLAR.get(), "Кевларовая пластина");
-                add(ModItems.PLATE_LEAD.get(), "Оловянная пластина");
+                add(ModItems.PLATE_LEAD.get(), "Свинцовая пластина");
                 add(ModItems.PLATE_MIXED.get(), "Композитная пластина");
                 add(ModItems.PLATE_PAA.get(), "Пластина сплава РаА");
                 add(ModItems.PLATE_SATURNITE.get(), "Сатурнитовая пластина");

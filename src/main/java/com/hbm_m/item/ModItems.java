@@ -52,79 +52,89 @@ public class ModItems {
     public static final DeferredRegister<Item> ITEMS =
             DeferredRegister.create(ForgeRegistries.ITEMS, RefStrings.MODID);
 
-    // АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ СЛИТКОВ
-    // 1. Создаем карту для хранения всех RegistryObject'ов наших слитков
+    // ✅ ВСЕ МАПЫ ОСТАЮТСЯ
     public static final Map<ModIngots, RegistryObject<Item>> INGOTS = new EnumMap<>(ModIngots.class);
     public static final Map<ModPowders, RegistryObject<Item>> POWDERS = new EnumMap<>(ModPowders.class);
     public static final Map<ModIngots, RegistryObject<Item>> INGOT_POWDERS = new EnumMap<>(ModIngots.class);
     public static final Map<ModIngots, RegistryObject<Item>> INGOT_POWDERS_TINY = new EnumMap<>(ModIngots.class);
+
     private static final Set<String> POWDER_TINY_NAMES = Set.of(
             "actinium", "boron", "cerium", "cobalt", "cs137", "i131",
             "lanthanium", "lithium", "meteorite", "neodymium", "niobium",
             "sr90", "steel", "xe135");
     private static final Map<String, RegistryObject<Item>> POWDER_ITEMS_BY_ID = new HashMap<>();
-    // 2. Используем статический блок для заполнения карты
+
+    // ✅ ОТДЕЛЬНЫЕ СПИСКИ!
+    private static final Set<String> ENABLED_MODPOWDERS = Set.of("iron", "gold", "coal"); // Только ModPowders!
+    private static final Set<String> ENABLED_INGOT_POWDERS = Set.of(
+            "uranium", "plutonium",
+            "actinium", "steel", "advanced_alloy", "aluminum", "schrabidium", "lead",
+            "red_copper", "asbestos", "titanium", "cobalt", "tungsten",
+            "beryllium", "bismuth", "polymer", "bakelite", "desh", "les",
+            "magnetized_tungsten", "combine_steel", "dura_steel",
+            "euphemium", "dineutronium", "australium", "tantalium",
+            "meteorite", "lanthanium", "neodymium", "niobium", "cerium", "cadmium",
+            "caesium", "strontium", "tennessine", "bromide", "zirconium", "iodine",
+            "astatine", "neptunium", "polonium", "boron", "schrabidate",
+            "au198", "ra226", "thorium", "selenium", "co60",
+            "sr90", "calcium", "ferrouranium"
+    );
+
+    private static final Set<String> ENABLED_TINY_POWDERS = Set.of(
+            "actinium", "boron", "cerium", "cobalt", "cs137", "i131", "lanthanium", "lithium",
+            "meteorite", "neodymium", "niobium", "sr90", "steel", "xe135"
+    );
+
     static {
+        // 1. СЛИТКИ (ВСЕГДА) ✅ OK
         for (ModIngots ingot : ModIngots.values()) {
-            // Регистрируем предмет. Имя будет, например, "ingot_uranium"
-            // Важно: мы стандартизируем имена, добавляя префикс "ingot_"
             RegistryObject<Item> registeredItem;
-
-            // Пример того, как сделать один из слитков особенным
             if (ingot == ModIngots.URANIUM) {
-                registeredItem = ITEMS.register(ingot.getName() + "_ingot", // Имя в реестре: uranium_ingot
-                        () -> new RadioactiveItem(new Item.Properties()));
+                registeredItem = ITEMS.register(ingot.getName() + "_ingot", () -> new RadioactiveItem(new Item.Properties()));
             } else {
-                registeredItem = ITEMS.register(ingot.getName() + "_ingot", // Имя в реестре: steel_ingot
-                        () -> new Item(new Item.Properties()));
+                registeredItem = ITEMS.register(ingot.getName() + "_ingot", () -> new Item(new Item.Properties()));
             }
-
-            // Кладём зарегистрированный объект в нашу карту
             INGOTS.put(ingot, registeredItem);
         }
-    }
-    static {
 
-        for (ModPowders powders : ModPowders.values()) {
-            // Регистрируем предмет. Имя будет, например, "ingot_uranium"
-            // Важно: мы стандартизируем имена, добавляя префикс "ingot_"
-            RegistryObject<Item> registeredItem;
-
-            // Пример того, как сделать один из слитков особенным
-            if (powders == ModPowders.IRON) {
-                registeredItem = ITEMS.register(powders.getName() + "_powder",
-                        () -> new RadioactiveItem(new Item.Properties()));
-            } else {
-                registeredItem = ITEMS.register(powders.getName() + "_powder",
-                        () -> new Item(new Item.Properties()));
-            }
-
-            // Кладём зарегистрированный объект в нашу карту
-            POWDERS.put(powders, registeredItem);
-            POWDER_ITEMS_BY_ID.put(powders.getName() + "_powder", registeredItem);
-        }
-
-    }
-
-    static {
-        for (ModIngots ingot : ModIngots.values()) {
-            String baseName = ingot.getName();
-            String powderId = baseName + "_powder";
-
-            RegistryObject<Item> powderItem = POWDER_ITEMS_BY_ID.get(powderId);
-            if (powderItem == null) {
-                powderItem = ITEMS.register(powderId, () -> new Item(new Item.Properties()));
+        // 2. ModPowders (ТОЛЬКО ИЗ ENABLED_MODPOWDERS) ✅ ИСПРАВЛЕНО!
+        for (ModPowders powder : ModPowders.values()) {
+            String baseName = powder.name(); // или powder.getName() если есть
+            if (ENABLED_MODPOWDERS.contains(baseName)) {
+                String powderId = baseName + "_powder";
+                RegistryObject<Item> powderItem = ITEMS.register(powderId,
+                        () -> powder == ModPowders.IRON ? new RadioactiveItem(new Item.Properties()) : new Item(new Item.Properties()));
+                POWDERS.put(powder, powderItem);
                 POWDER_ITEMS_BY_ID.put(powderId, powderItem);
             }
-            INGOT_POWDERS.put(ingot, powderItem);
+        }
 
-            if (POWDER_TINY_NAMES.contains(baseName)) {
+        // 3. Порошки из слитков (ТОЛЬКО ИЗ ENABLED_INGOT_POWDERS) ✅ ИСПРАВЛЕНО!
+        for (ModIngots ingot : ModIngots.values()) {
+            String baseName = ingot.getName();
+
+            // Основной порошок
+            if (ENABLED_INGOT_POWDERS.contains(baseName)) {
+                String powderId = baseName + "_powder";
+                RegistryObject<Item> powderItem = POWDER_ITEMS_BY_ID.get(powderId);
+                if (powderItem == null) {
+                    powderItem = ITEMS.register(powderId, () -> new Item(new Item.Properties()));
+                    POWDER_ITEMS_BY_ID.put(powderId, powderItem);
+                }
+                INGOT_POWDERS.put(ingot, powderItem);
+            }
+
+            // Маленький порошок ✅ OK
+            if (POWDER_TINY_NAMES.contains(baseName) && ENABLED_TINY_POWDERS.contains(baseName)) {
                 String tinyId = baseName + "_powder_tiny";
                 RegistryObject<Item> tinyItem = ITEMS.register(tinyId, () -> new Item(new Item.Properties()));
                 INGOT_POWDERS_TINY.put(ingot, tinyItem);
             }
         }
     }
+
+
+
 
 
 
@@ -598,9 +608,15 @@ public class ModItems {
                             .withStyle(ChatFormatting.GRAY));
                 }
             });
+    public static final RegistryObject<Item> POWDER_COAL = ITEMS.register("powder_coal",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> POWDER_COAL_SMALL = ITEMS.register("powder_coal_small",
+            () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> BOLT_STEEL = ITEMS.register("bolt_steel",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> ZIRCONIUM_SHARP = ITEMS.register("zirconium_sharp",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_TUNGSTEN = ITEMS.register("coil_tungsten",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> COIL_GOLD_TORUS = ITEMS.register("coil_gold_torus",
             () -> new Item(new Item.Properties()));

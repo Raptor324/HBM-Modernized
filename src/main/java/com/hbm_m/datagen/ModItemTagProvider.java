@@ -56,43 +56,56 @@ public class ModItemTagProvider extends ItemTagsProvider {
     @Override
     protected void addTags(@Nonnull HolderLookup.Provider provider) {
 
-        // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ СЛИТКОВ
+        // ✅ АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ СЛИТКОВ
         TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots")));
 
         for (ModIngots ingot : ModIngots.values()) {
             RegistryObject<Item> ingotObject = ModItems.getIngot(ingot);
-            String ingotName = ingot.getName();
-
-            this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots/" + ingotName)))
-                    .add(ingotObject.get());
-            ingotsTagBuilder.add(ingotObject.getKey());
+            // ✅ ПРОВЕРКА НА NULL И НА РЕГИСТРАЦИЮ
+            if (ingotObject != null && ingotObject.isPresent()) {
+                String ingotName = ingot.getName();
+                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots/" + ingotName)))
+                        .add(ingotObject.get());
+                ingotsTagBuilder.add(ingotObject.getKey());
+            }
         }
 
+        // ✅ АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ ПОРОШКОВ
         TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders")));
 
-        for (ModPowders powders : ModPowders.values()) {
-            RegistryObject<Item> powdersObject = ModItems.getPowders(powders);
-            String powdersName = powders.getName();
-
-            this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + powdersName)))
-                    .add(powdersObject.get());
-            powdersTagBuilder.add(powdersObject.getKey());
+        for (ModPowders powder : ModPowders.values()) {
+            RegistryObject<Item> powderObject = ModItems.getPowders(powder);
+            // ✅ ПОЛНАЯ ПРОВЕРКА - ИСПРАВЛЕНА ОСНОВНАЯ ОШИБКА!
+            if (powderObject != null && powderObject.isPresent()) {
+                String powderName = powder.getName();
+                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + powderName)))
+                        .add(powderObject.get());
+                powdersTagBuilder.add(powderObject.getKey());
+            }
         }
 
+        // ✅ ПОРОШКИ ИЗ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
             RegistryObject<Item> powderObject = ModItems.getPowder(ingot);
-            if (powderObject != null) {
+            if (powderObject != null && powderObject.isPresent()) {  // ✅ ДОБАВЛЕНА ПРОВЕРКА isPresent()
                 this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName())))
                         .add(powderObject.get());
                 powdersTagBuilder.add(powderObject.getKey());
             }
-            ModItems.getTinyPowder(ingot).ifPresent(tiny ->
+
+            // ✅ МАЛЕНЬКИЕ ПОРОШКИ С ПРОВЕРКОЙ
+            ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
+                if (tiny != null && tiny.isPresent()) {  // ✅ ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА
                     this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName() + "/tiny")))
-                            .add(tiny.get()));
+                            .add(tiny.get());
+                }
+            });
         }
 
+        // ✅ БАЗОВЫЕ ПОРОШКИ (всегда существуют)
         powdersTagBuilder.add(ModItems.DUST.getKey());
         powdersTagBuilder.add(ModItems.DUST_TINY.getKey());
+
 
         // АВТОМАТИЧЕСКОЕ КОПИРОВАНИЕ ТЕГОВ ИЗ БЛОКОВ
         this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")),
