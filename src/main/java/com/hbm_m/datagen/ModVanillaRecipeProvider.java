@@ -17,11 +17,17 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraftforge.registries.RegistryObject;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Consumer;
 
 public class ModVanillaRecipeProvider extends RecipeProvider {
+
+    public ModVanillaRecipeProvider(PackOutput output) {
+        super(output);
+    }
+
     @Override
     protected void buildRecipes(@NotNull Consumer<FinishedRecipe> writer) {
         registerAll(writer);
@@ -30,6 +36,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
     public void registerVanillaRecipes(@NotNull Consumer<FinishedRecipe> writer) {
         registerAll(writer);
     }
+
     //ЗАРЕГЕСТРИРУЙ ТУТ СВОИ РЕЦЕПТЫ, ИНАЧЕ НЕ ПРОСТИТ
     private void registerAll(@NotNull Consumer<FinishedRecipe> writer) {
         registerToolAndArmorSets(writer);
@@ -43,9 +50,23 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerOreAndRawCooking(writer);
     }
 
+    // ✅ БЕЗОПАСНАЯ ПРОВЕРКА NULL
+    private boolean isItemSafe(RegistryObject<?> itemObj) {
+        return itemObj != null && itemObj.get() != null;
+    }
+
+    private ItemLike safeIngot(ModIngots ingot) {
+        RegistryObject<?> obj = ModItems.getIngot(ingot);
+        return isItemSafe(obj) ? (ItemLike) obj.get() : Items.AIR;
+    }
+
+    private Item safePowder(ModPowders powder) {
+        RegistryObject<?> obj = ModItems.getPowders(powder);
+        return isItemSafe(obj) ? (Item) obj.get() : null;
+    }
+
     //основные рецепты
     private void registerUtilityRecipes(Consumer<FinishedRecipe> writer) {
-
         //двери
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.DOOR_BUNKER.get())
                 .pattern("$$$")
@@ -74,7 +95,6 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.PLATE_IRON.get()), has(ModItems.PLATE_IRON.get()))
                 .save(writer, recipeId("crafting/door_office"));
 
-
         //МОТОРЫ
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.MOTOR.get(), 2)
                 .pattern(" $ ")
@@ -94,23 +114,37 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('%', ModItems.getIngot(ModIngots.DESH).get())
                 .define('$', ModItems.COIL_GOLD_TORUS.get())
                 .define('#', ModItems.MOTOR.get())
-                // Используем Ingredient.ofItems для указания нескольких альтернативных материалов
                 .define('@', Ingredient.of(ModItems.getIngot(ModIngots.BAKELITE).get(), ModItems.getIngot(ModIngots.POLYMER).get()))
                 .unlockedBy(getHasName(ModItems.PLATE_DESH.get()), has(ModItems.PLATE_DESH.get()))
                 .save(writer, recipeId("crafting/motor_desh"));
 
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BOLT_STEEL.get(), 16)
+                .pattern("$ ")
+                .pattern("$ ")
+                .pattern("  ")
+                .define('$', Items.IRON_INGOT)
+                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
+                .save(writer, recipeId("crafting/bolt_steel"));
 
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.GRENADE_IF.get())
+                .pattern(" $ ")
+                .pattern("#@#")
+                .pattern(" # ")
+                .define('$', ModItems.COIL_TUNGSTEN.get())
+                .define('#', ModItems.PLATE_STEEL.get())
+                .define('@', ModItems.BALL_TNT.get())
+                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .save(writer, recipeId("crafting/grenade_if"));
 
-
-
-
-
-
-
-
-
-
-
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BALL_TNT.get(), 4)
+                .pattern("#$ ")
+                .pattern("@  ")
+                .pattern("   ")
+                .define('$', ModItems.POWDER_COAL_SMALL.get())
+                .define('@', ModItems.SULFUR.get())
+                .define('#', Items.GUNPOWDER)
+                .unlockedBy(getHasName(ModItems.SULFUR.get()), has(ModItems.SULFUR.get()))
+                .save(writer, recipeId("crafting/ball_tnt"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.REINFORCED_STONE.get(), 4)
                 .pattern("#$#")
@@ -142,15 +176,30 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerSmelting(writer, ModItems.FIRECLAY_BALL.get(), ModItems.FIREBRICK.get(), 0.1F, 100, "firebrick_smelting");
     }
 
-    //переплавка порошков
+    //переплавка порошков - ✅ ИСПРАВЛЕННАЯ ВЕРСИЯ
     private void registerPowderCooking(Consumer<FinishedRecipe> writer) {
-        Item ironPowder = ModItems.getPowders(ModPowders.IRON).get();
-        Item goldPowder = ModItems.getPowders(ModPowders.GOLD).get();
-        registerSmelting(writer, ironPowder, Items.IRON_INGOT, 0.0F, 200, "powder_iron_smelting");
-        registerBlasting(writer, ironPowder, Items.IRON_INGOT, 0.0F, 100, "powder_iron_blasting");
-        registerSmelting(writer, goldPowder, Items.GOLD_INGOT, 0.0F, 200, "powder_gold_smelting");
-        registerBlasting(writer, goldPowder, Items.GOLD_INGOT, 0.0F, 100, "powder_gold_blasting");
+        // ✅ ПРОВЕРЯЕМ КАЖДЫЙ ПОРОШОК ПЕРЕД ИСПОЛЬЗОВАНИЕМ
+        Item ironPowder = safePowder(ModPowders.IRON);
+        Item goldPowder = safePowder(ModPowders.GOLD);
+        Item coalPowder = safePowder(ModPowders.COAL);
+
+        // Регистрируем только если порошок существует
+        if (ironPowder != null) {
+            registerSmelting(writer, ironPowder, Items.IRON_INGOT, 0.0F, 200, "powder_iron_smelting");
+            registerBlasting(writer, ironPowder, Items.IRON_INGOT, 0.0F, 100, "powder_iron_blasting");
+        }
+
+        if (goldPowder != null) {
+            registerSmelting(writer, goldPowder, Items.GOLD_INGOT, 0.0F, 200, "powder_gold_smelting");
+            registerBlasting(writer, goldPowder, Items.GOLD_INGOT, 0.0F, 100, "powder_gold_blasting");
+        }
+
+        if (coalPowder != null) {
+            registerSmelting(writer, coalPowder, Items.COAL, 0.0F, 200, "powder_coal_smelting");
+            registerBlasting(writer, coalPowder, Items.COAL, 0.0F, 100, "powder_coal_blasting");
+        }
     }
+
     //переплавка руд
     private void registerOreAndRawCooking(Consumer<FinishedRecipe> writer) {
         ItemLike uraniumIngot = ModItems.getIngot(ModIngots.URANIUM).get();
@@ -191,6 +240,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerSmeltingAndBlasting(writer, ModBlocks.ALUMINUM_ORE.get(), aluminumIngot, 0.7F, 1.0F, "aluminum_ore");
         registerSmeltingAndBlasting(writer, ModBlocks.ALUMINUM_ORE_DEEPSLATE.get(), aluminumIngot, 0.7F, 1.0F, "aluminum_ore_deepslate");
     }
+
     //крафты ящиков
     private void registerCrates(Consumer<FinishedRecipe> writer) {
         ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.CRATE_IRON.get())
@@ -220,6 +270,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.PLATE_DESH.get()), has(ModItems.PLATE_DESH.get()))
                 .save(writer, recipeId("crafting/crate_desh"));
     }
+
     //крафты штампов
     private void registerStamps(Consumer<FinishedRecipe> writer) {
         buildStamp(writer, ModItems.STAMP_STONE_FLAT.get(), Items.STONE, "stamp_stone_flat");
@@ -229,21 +280,26 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         buildStamp(writer, ModItems.STAMP_OBSIDIAN_FLAT.get(), Blocks.OBSIDIAN.asItem(), "stamp_obsidian_flat");
         buildStamp(writer, ModItems.STAMP_DESH_FLAT.get(), ModItems.getIngot(ModIngots.DESH).get(), "stamp_desh_flat");
     }
+
     //крафты гранат
     private void registerGrenades(Consumer<FinishedRecipe> writer) {
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.GRENADE.get())
-                .pattern("%# ")
+                .pattern("%@ ")
                 .pattern("#$#")
                 .pattern(" # ")
                 .define('%', ModItems.WIRE_RED_COPPER.get())
-                .define('#', ModItems.PLATE_STEEL.get())
-                .define('$', Items.TNT)
+                .define('@', ModItems.PLATE_STEEL.get())
+                .define('#', ModItems.PLATE_IRON.get())
+                .define('$', ModItems.BALL_TNT.get())
                 .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
                 .save(writer, recipeId("crafting/grenade"));
 
-        buildGrenadeUpgrade(writer, ModItems.GRENADEHE.get(), Items.TNT, "grenadehe");
+        buildGrenadeUpgrade(writer, ModItems.GRENADEHE.get(), ModItems.BALL_TNT.get(), "grenadehe");
         buildGrenadeUpgrade(writer, ModItems.GRENADESLIME.get(), Items.SLIME_BALL, "grenadeslime");
         buildGrenadeUpgrade(writer, ModItems.GRENADEFIRE.get(), ModItems.getIngot(ModIngots.PHOSPHORUS).get(), "grenadefire");
+        buildGrenadeIfUpgrade(writer, ModItems.GRENADE_IF_HE.get(), ModItems.BALL_TNT.get(), "grenade_if_he");
+        buildGrenadeIfUpgrade(writer, ModItems.GRENADE_IF_SLIME.get(), Items.SLIME_BALL, "grenade_if_slime");
+        buildGrenadeIfUpgrade(writer, ModItems.GRENADE_IF_FIRE.get(), ModItems.getIngot(ModIngots.PHOSPHORUS).get(), "grenade_if_fire");
 
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.GRENADESMART.get())
                 .pattern(" @ ")
@@ -257,6 +313,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.GRENADE.get()), has(ModItems.GRENADE.get()))
                 .save(writer, recipeId("crafting/grenadesmart"));
     }
+
     //крафты брони и инструментов
     private void registerToolAndArmorSets(Consumer<FinishedRecipe> writer) {
         ItemLike titaniumIngot = ModItems.getIngot(ModIngots.TITANIUM).get();
@@ -308,7 +365,9 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         buildCoil(writer, ModItems.COIL_COPPER.get(), ModItems.WIRE_RED_COPPER.get(), "coil_copper");
         buildCoil(writer, ModItems.COIL_GOLD.get(), ModItems.WIRE_GOLD.get(), "coil_gold");
         buildCoil(writer, ModItems.COIL_MAGNETIZED_TUNGSTEN.get(), ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), "coil_magnetized_tungsten");
+        buildCoil(writer, ModItems.COIL_TUNGSTEN.get(), ModItems.WIRE_TUNGSTEN.get(), "coil_tungsten");
     }
+
     //крафты кольцевых катушек
     private void registerCoilTorus(Consumer<FinishedRecipe> writer) {
         buildCoilTorus(writer, ModItems.COIL_ADVANCED_ALLOY_TORUS.get(), ModItems.COIL_ADVANCED_ALLOY.get(), "coil_advanced_alloy_torus");
@@ -339,6 +398,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(material), has(material))
                 .save(writer, recipeId("crafting/" + name));
     }
+
     private void buildGrenadeUpgrade(Consumer<FinishedRecipe> writer, Item result, ItemLike core, String name) {
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, result, 4)
                 .pattern(" # ")
@@ -351,17 +411,29 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/" + name));
     }
 
+    private void buildGrenadeIfUpgrade(Consumer<FinishedRecipe> writer, Item result, ItemLike core, String name) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, result, 2)
+                .pattern(" # ")
+                .pattern("$%$")
+                .pattern(" # ")
+                .define('%', ModItems.GRENADE_IF.get())
+                .define('#', ModItems.PLATE_STEEL.get())
+                .define('$', core)
+                .unlockedBy(getHasName(ModItems.GRENADE_IF.get()), has(ModItems.GRENADE_IF.get()))
+                .save(writer, recipeId("crafting/" + name));
+    }
+
+    // ✅ ИСПРАВЛЕННЫЙ МЕТОД - ВСЕ СТРОКИ ОДИНАКОВОЙ ШИРИНЫ (3x3)
     private void buildStamp(Consumer<FinishedRecipe> writer, Item result, ItemLike material, String name) {
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, result)
                 .pattern("###")
                 .pattern("$$$")
-                .pattern("   ")
+                .pattern("   ")  // ✅ БЫЛО " ", ТЕПЕРЬ "   " (3 пробела для ширины 3)
                 .define('#', Items.BRICK)
                 .define('$', material)
                 .unlockedBy(getHasName(material), has(material))
                 .save(writer, recipeId("crafting/" + name));
     }
-
 
     private void buildSword(Consumer<FinishedRecipe> writer, ItemLike material, Item result, String name) {
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, result)
@@ -473,7 +545,6 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         buildBoots(writer, material, boots, name + "_boots");
     }
 
-
     //регистрация и прочее
     private void registerSmeltingAndBlasting(Consumer<FinishedRecipe> writer, ItemLike input, ItemLike output,
                                              float smeltXp, float blastXp, String baseName) {
@@ -498,11 +569,4 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
     private ResourceLocation recipeId(String path) {
         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
     }
-
-    public ModVanillaRecipeProvider(PackOutput output) {
-        super(output);
-    }
-
-
 }
-
