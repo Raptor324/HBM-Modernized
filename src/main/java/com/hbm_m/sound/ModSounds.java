@@ -23,6 +23,8 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> GEIGER_6 = registerSoundEvents("item.geiger6");
 
     public static final RegistryObject<SoundEvent> CLICK = registerSoundEvents("click");
+    public static final RegistryObject<SoundEvent> CRATE_OPEN = registerSoundEvents("crateopen");
+    public static final RegistryObject<SoundEvent> CRATE_CLOSE = registerSoundEvents("crateclose");
     public static final RegistryObject<SoundEvent> EXPLOSION_LARGE_NEAR = registerSoundEvents("explosionlargenear");
     public static final RegistryObject<SoundEvent> EXPLOSION_SMALL_NEAR1 = registerSoundEvents("explosionsmallnear1");
     public static final RegistryObject<SoundEvent> EXPLOSION_SMALL_NEAR2 = registerSoundEvents("explosionsmallnear2");

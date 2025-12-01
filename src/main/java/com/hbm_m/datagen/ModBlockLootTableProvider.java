@@ -18,6 +18,7 @@ import net.minecraft.world.level.storage.loot.entries.AlternativesEntry;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
+import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
 import net.minecraft.world.level.storage.loot.predicates.MatchTool;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
@@ -34,11 +35,15 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
     }
     @Override
     protected void generate() {
-        // 1) ПО УМОЛЧАНИЮ: каждый блок дропает сам себя
+        // 1) Автоматический dropSelf для ВСЕХ блоков
         for (RegistryObject<Block> entry : ModBlocks.BLOCKS.getEntries()) {
-            Block block = entry.get();
-            this.dropSelf(block);
+            this.dropSelf(entry.get());
         }
+
+        // 2) ✅ ПЕРЕОПРЕДЕЛЯЕМ для ящиков - ПУСТЫЕ таблицы!
+        dropEmptyTable(ModBlocks.CRATE_IRON.get());
+        dropEmptyTable(ModBlocks.CRATE_STEEL.get());
+        dropEmptyTable(ModBlocks.CRATE_DESH.get());
 
         // 2) ОСОБЫЕ СЛУЧАИ: руды переопределяют свою таблицу
 
@@ -118,8 +123,6 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModBlocks.LEAD_ORE_DEEPSLATE.get(),
                 ModItems.LEAD_RAW.get()
         );
-
-
 
 
 
@@ -257,7 +260,14 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         // Если нужна особая логика — добавь здесь нужный метод.
     }
 
+    private void dropEmptyTable(Block block) {
+        LootTable.Builder emptyTable = LootTable.lootTable()
+                .withPool(LootPool.lootPool()
+                        .setRolls(ConstantValue.exactly(1))
+                        .when(LootItemRandomChanceCondition.randomChance(0.0f))); // 0% шанс!
 
+        this.add(block, emptyTable);
+    }
     /**
      * Руда тип 1:
      * - При Silk Touch дропает блок руды.

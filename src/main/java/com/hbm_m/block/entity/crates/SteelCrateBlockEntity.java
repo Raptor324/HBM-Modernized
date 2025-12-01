@@ -1,6 +1,7 @@
-package com.hbm_m.block.entity;
+package com.hbm_m.block.entity.crates;
 
-import com.hbm_m.menu.IronCrateMenu;
+import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.menu.SteelCrateMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -15,33 +16,38 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class IronCrateBlockEntity extends BlockEntity implements MenuProvider {
+/**
+ * BlockEntity для Steel Crate (54 слота)
+ * ✅ ТОЧНАЯ КОПИЯ IronCrateBlockEntity с 54 слотами
+ */
+public class SteelCrateBlockEntity extends BlockEntity implements MenuProvider {
 
-    private static final int SLOTS = 36;
+    private static final int SLOTS = 54; // ✅ 54 СЛОТА ДЛЯ STEEL
 
     private final ItemStackHandler itemHandler = new ItemStackHandler(SLOTS) {
         @Override
         protected void onContentsChanged(int slot) {
-            setChanged();
+            setChanged(); // Обновляем при изменении содержимого
         }
 
         @Override
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return true;
+            return true; // Разрешаем любые предметы
         }
     };
 
-    private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
+    private LazyOptional<ItemStackHandler> lazyItemHandler = LazyOptional.empty();
 
-    public IronCrateBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.IRON_CRATE_BE.get(), pos, state);
+    public SteelCrateBlockEntity(BlockPos pos, BlockState state) {
+        // ✅ ТОЧНО КАК В IRON
+        super(com.hbm_m.block.entity.ModBlockEntities.STEEL_CRATE_BE.get(), pos, state);
     }
 
+    // ✅ ТОЧНО КАК В IRON
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
@@ -50,32 +56,38 @@ public class IronCrateBlockEntity extends BlockEntity implements MenuProvider {
         return super.getCapability(cap, side);
     }
 
+    // ✅ ТОЧНО КАК В IRON
     @Override
     public void onLoad() {
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
     }
 
+    // ✅ ТОЧНО КАК В IRON
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
         lazyItemHandler.invalidate();
     }
 
+    // ✅ ТОЧНО КАК В IRON
     @Override
     protected void saveAdditional(CompoundTag tag) {
         tag.put("inventory", itemHandler.serializeNBT());
         super.saveAdditional(tag);
     }
 
+    // ✅ ТОЧНО КАК В IRON
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        itemHandler.deserializeNBT(tag.getCompound("inventory"));
+        if (tag.contains("inventory")) {
+            itemHandler.deserializeNBT(tag.getCompound("inventory"));
+        }
     }
 
     /**
-     * Проверяет пустой ли крейт
+     * Проверяет, пустой ли ящик
      */
     public boolean isEmpty() {
         for (int i = 0; i < itemHandler.getSlots(); i++) {
@@ -87,12 +99,11 @@ public class IronCrateBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /**
-     * Сохраняет содержимое в ItemStack
+     * Сохраняет содержимое в ItemStack при разрушении блока
      */
     public void saveToItem(ItemStack stack) {
         CompoundTag tag = new CompoundTag();
         this.saveAdditional(tag);
-
         if (!tag.isEmpty()) {
             stack.addTagElement("BlockEntityTag", tag);
         }
@@ -100,13 +111,14 @@ public class IronCrateBlockEntity extends BlockEntity implements MenuProvider {
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("container.hbm_m.crate_iron");
+        return Component.translatable("container.hbm_m.crate_steel");
     }
 
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new IronCrateMenu(containerId, playerInventory, this);
+        // ✅ SteelCrateMenu вместо IronCrateMenu
+        return new SteelCrateMenu(containerId, playerInventory, this);
     }
 
     public ItemStackHandler getItemHandler() {

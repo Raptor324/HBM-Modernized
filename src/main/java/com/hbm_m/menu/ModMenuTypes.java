@@ -44,6 +44,9 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<IronCrateMenu>> IRON_CRATE_MENU =
             MENUS.register("iron_crate_menu", () -> IForgeMenuType.create(IronCrateMenu::new));
 
+    public static final RegistryObject<MenuType<IronCrateMenu>> PORTABLE_IRON_CRATE_MENU =
+            MENUS.register("portable_iron_crate_menu", () -> IForgeMenuType.create(IronCrateMenu::new));
+
     public static final RegistryObject<MenuType<SteelCrateMenu>> STEEL_CRATE_MENU =
             MENUS.register("steel_crate_menu", () -> IForgeMenuType.create(SteelCrateMenu::new));
 

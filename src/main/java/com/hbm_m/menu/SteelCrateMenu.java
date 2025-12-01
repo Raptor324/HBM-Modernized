@@ -1,7 +1,7 @@
 package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.SteelCrateBlockEntity;
+import com.hbm_m.block.entity.crates.SteelCrateBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -17,6 +17,7 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Menu для Steel Crate (54 слота: 6 рядов × 9 колонок)
+ * Повторяет функционал IronCrateMenu, но с 54 слотами и текущим расположением
  */
 public class SteelCrateMenu extends AbstractContainerMenu {
 
@@ -38,8 +39,8 @@ public class SteelCrateMenu extends AbstractContainerMenu {
     public SteelCrateMenu(int containerId, Inventory inv, BlockEntity entity) {
         super(ModMenuTypes.STEEL_CRATE_MENU.get(), containerId);
 
-        if (entity instanceof SteelCrateBlockEntity) {
-            blockEntity = (SteelCrateBlockEntity) entity;
+        if (entity instanceof SteelCrateBlockEntity steelEntity) {
+            blockEntity = steelEntity;
         } else {
             blockEntity = new SteelCrateBlockEntity(BlockPos.ZERO,
                     ModBlocks.CRATE_STEEL.get().defaultBlockState());
@@ -109,6 +110,7 @@ public class SteelCrateMenu extends AbstractContainerMenu {
         ItemStack sourceStack = sourceSlot.getItem();
         ItemStack copyOfSourceStack = sourceStack.copy();
 
+        // Логика как в IronCrateMenu:
         if (index < CRATE_SLOTS) {
             if (!this.moveItemStackTo(sourceStack, PLAYER_INVENTORY_START, PLAYER_HOTBAR_START + 9, true)) {
                 return ItemStack.EMPTY;

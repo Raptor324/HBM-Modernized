@@ -1,4 +1,4 @@
-package com.hbm_m.client.overlay;
+package com.hbm_m.client.overlay.crates;
 
 import com.hbm_m.menu.DeshCrateMenu;
 import net.minecraft.client.gui.GuiGraphics;

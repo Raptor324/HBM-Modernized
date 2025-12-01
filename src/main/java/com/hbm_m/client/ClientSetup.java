@@ -4,6 +4,9 @@ package com.hbm_m.client;
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.overlay.*;
 import com.hbm_m.client.loader.*;
+import com.hbm_m.client.overlay.crates.GUIDeshCrate;
+import com.hbm_m.client.overlay.crates.GUIIronCrate;
+import com.hbm_m.client.overlay.crates.GUISteelCrate;
 import com.hbm_m.client.render.*;
 import com.hbm_m.client.render.shader.*;
 import com.hbm_m.config.*;
