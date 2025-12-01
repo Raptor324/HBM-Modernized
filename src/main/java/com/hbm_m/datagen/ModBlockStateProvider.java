@@ -970,10 +970,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 new ModelFile.UncheckedModelFile(modLoc("block/shredder")));
 
         // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ СЛИТКОВ
+        // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            RegistryObject<Block> blockRegistryObject = ModBlocks.getIngotBlock(ingot);
-            if (blockRegistryObject != null) {
-                resourceBlockWithItem(blockRegistryObject);
+            // !!! ДОБАВЛЕНА ПРОВЕРКА !!!
+            if (ModBlocks.hasIngotBlock(ingot)) {
+                RegistryObject<Block> blockRegistryObject = ModBlocks.getIngotBlock(ingot);
+                if (blockRegistryObject != null) {
+                    resourceBlockWithItem(blockRegistryObject);
+                }
             }
         }
 
@@ -985,29 +989,25 @@ public class ModBlockStateProvider extends BlockStateProvider {
      * Например, для блока с именем "uranium_block" он будет искать текстуру "block_uranium".
      */
     private void resourceBlockWithItem(RegistryObject<Block> blockObject) {
-        // 1. Получаем регистрационное имя блока (например, "uranium_block")
+        // 1. Получаем регистрационное имя (теперь оно уже "block_uranium")
         String registrationName = blockObject.getId().getPath();
 
-        // 2. Трансформируем его в базовое имя (удаляем "_block" -> "uranium")
-        String baseName = registrationName.replace("_block", "");
+        // 2. Имя текстуры теперь совпадает с именем блока!
+        // (Если ваши текстуры называются block_uranium.png)
+        String textureName = registrationName;
 
-        // 3. Создаем имя файла текстуры (добавляем "block_" -> "block_uranium")
-        String textureName = "block_" + baseName;
-        
-        // 4. Проверяем существование текстуры перед созданием модели
+        // 4. Проверяем существование текстуры
         ResourceLocation textureLocation = modLoc("textures/block/" + textureName + ".png");
         if (!existingFileHelper.exists(textureLocation, net.minecraft.server.packs.PackType.CLIENT_RESOURCES)) {
-            // Если текстура не найдена, пропускаем этот блок (логируем предупреждение)
-            MainRegistry.LOGGER.warn("Texture not found for block {}: {}. Skipping model generation.", 
+            MainRegistry.LOGGER.warn("Texture not found for block {}: {}. Skipping model generation.",
                     registrationName, textureLocation);
             return;
         }
 
-        // 5. Создаем модель блока, ЯВНО указывая путь к текстуре
-        //    Метод models().cubeAll() создает модель типа "block/cube_all" с указанной текстурой.
+        // 5. Создаем модель
         simpleBlock(blockObject.get(), models().cubeAll(registrationName, modLoc("block/" + textureName)));
 
-        // 6. Создаем модель для предмета-блока, как и раньше
+        // 6. Создаем модель для предмета
         simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
     }
     private void oreWithItem(RegistryObject<Block> blockObject) {

@@ -511,11 +511,16 @@ public class MainRegistry {
             event.accept(ModBlocks.POLONIUM210_BLOCK);
 // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ БЛОКОВ СЛИТКОВ
             for (ModIngots ingot : ModIngots.values()) {
-                RegistryObject<Block> ingotBlock = ModBlocks.getIngotBlock(ingot);
-                if (ingotBlock != null) {
-                    event.accept(ingotBlock.get());
-                    if (ModClothConfig.get().enableDebugLogging) {
-                        LOGGER.info("Added {} block to NTM Ores tab", ingotBlock.getId());
+
+                // !!! ВАЖНОЕ ИСПРАВЛЕНИЕ: ПРОВЕРКА НАЛИЧИЯ БЛОКА !!!
+                if (ModBlocks.hasIngotBlock(ingot)) {
+
+                    RegistryObject<Block> ingotBlock = ModBlocks.getIngotBlock(ingot);
+                    if (ingotBlock != null) {
+                        event.accept(ingotBlock.get());
+                        if (ModClothConfig.get().enableDebugLogging) {
+                            LOGGER.info("Added {} block to NTM Ores tab", ingotBlock.getId());
+                        }
                     }
                 }
             }

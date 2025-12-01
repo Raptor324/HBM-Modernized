@@ -25,10 +25,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraft.util.valueproviders.UniformInt;
 
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Supplier;
 
 public class ModBlocks {
@@ -44,8 +41,6 @@ public class ModBlocks {
             BlockBehaviour.Properties.copy(Blocks.ANVIL).sound(SoundType.ANVIL).noOcclusion();
 
     // Стандартные свойства для блоков слитков
-    private static final BlockBehaviour.Properties INGOT_BLOCK_PROPERTIES =
-            BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops();
 
     public static final List<RegistryObject<Block>> BATTERY_BLOCKS = new ArrayList<>();
 
@@ -72,24 +67,74 @@ public class ModBlocks {
     public static final RegistryObject<Block> MACHINE_BATTERY_DINEUTRONIUM = registerBattery("machine_battery_dineutronium", 1_000_000_000_000L);
 
     // АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ БЛОКОВ СЛИТКОВ
+    private static final BlockBehaviour.Properties INGOT_BLOCK_PROPERTIES =
+            BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(3.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops();
+
+    // 1. СПИСОК РАЗРЕШЕННЫХ БЛОКОВ (Whitelist)
+    // Сюда добавляем только те материалы, которым нужны блоки (9 слитков = 1 блок).
+    // Скопировано и адаптировано из ModItems, убраны лишние материалы типа еды или топлива, если им не нужен блок.
+    // 1. СПИСОК РАЗРЕШЕННЫХ БЛОКОВ (Whitelist)
+    // 1. СПИСОК РАЗРЕШЕННЫХ БЛОКОВ (Whitelist)
+    private static final Set<String> ENABLED_INGOT_BLOCKS = Set.of(
+            "uranium", "plutonium", "thorium", "titanium", "aluminum", "copper",
+            "lead", "tungsten", "steel", "advanced_alloy", "schrabidium", "saturnite",
+            "beryllium", "bismuth", "desh", "cobalt", "lanthanium", "neodymium",
+            "niobium", "zirconium", "actinium", "ferrouranium",
+            "u233", "u235", "u238", "pu238", "pu239", "pu240", "pu241",
+            "th232", "co60", "sr90", "ra226", "neptunium", "americium",
+            "technetium", "australium", "dineutronium", "euphemium",
+            "combine_steel", "dura_steel", "starmetal", "red_copper",
+            // ТОПЛИВО
+            "plutonium_fuel", "uranium_fuel", "thorium_fuel", "mox_fuel", "schrabidium_fuel",
+            // ДОБАВЛЕНО (исправление крашей генератора рецептов)
+             "osmiridium", "boron", "tcalloy", "cdalloy", "bscco", "arsenic","cadmium", "les" // les - это литий в вашем ModIngots
+    );
+
+    // 2. КАРТА БЛОКОВ
     public static final Map<ModIngots, RegistryObject<Block>> INGOT_BLOCKS = new EnumMap<>(ModIngots.class);
 
+    // 3. АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ
     static {
         for (ModIngots ingot : ModIngots.values()) {
-            String blockName = ingot.getName() + "_block";
-            RegistryObject<Block> registeredBlock;
+            String name = ingot.getName();
 
-            if (isRadioactiveIngot(ingot)) {
-                registeredBlock = registerBlock(blockName,
-                        () -> new RadioactiveBlock(INGOT_BLOCK_PROPERTIES));
-            } else {
-                registeredBlock = registerBlock(blockName,
-                        () -> new Block(INGOT_BLOCK_PROPERTIES));
+            // Проверяем, есть ли этот слиток в "белом списке"
+            if (ENABLED_INGOT_BLOCKS.contains(name)) {
+
+                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                // Раньше было: String blockName = name + "_block";
+                // Теперь ставим приставку в начало:
+                String blockName = "block_" + name;
+                // -----------------------
+
+                RegistryObject<Block> registeredBlock;
+
+                // Определяем свойства (радиоактивный или обычный)
+                if (isRadioactiveIngot(ingot)) {
+                    registeredBlock = registerBlock(blockName,
+                            () -> new RadioactiveBlock(INGOT_BLOCK_PROPERTIES));
+                } else {
+                    registeredBlock = registerBlock(blockName,
+                            () -> new Block(INGOT_BLOCK_PROPERTIES));
+                }
+
+                // Сохраняем в карту
+                INGOT_BLOCKS.put(ingot, registeredBlock);
             }
-            INGOT_BLOCKS.put(ingot, registeredBlock);
         }
     }
 
+    // Вспомогательный метод получения блока (безопасный)
+    public static RegistryObject<Block> getIngotBlock(ModIngots ingot) {
+        RegistryObject<Block> block = INGOT_BLOCKS.get(ingot);
+        if (block == null) {
+            // Логируем ошибку или возвращаем заглушку, чтобы игра не крашилась при обращении к несуществующему блоку
+            throw new NullPointerException("Block for ingot " + ingot.getName() + " is not registered! Check ENABLED_INGOT_BLOCKS.");
+        }
+        return block;
+    }
+
+    // Оставляем вашу логику определения радиоактивности без изменений
     private static boolean isRadioactiveIngot(ModIngots ingot) {
         String name = ingot.getName().toLowerCase();
         return name.contains("uranium") ||
@@ -125,8 +170,8 @@ public class ModBlocks {
                 name.contains("pu241");
     }
 
-    public static RegistryObject<Block> getIngotBlock(ModIngots ingot) {
-        return INGOT_BLOCKS.get(ingot);
+    public static boolean hasIngotBlock(ModIngots ingot) {
+        return INGOT_BLOCKS.containsKey(ingot);
     }
 
     public static final RegistryObject<Block> URANIUM_BLOCK = getIngotBlock(ModIngots.URANIUM);
