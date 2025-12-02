@@ -234,7 +234,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.battery_creative", "Бесконечная батарейка");
                 add("tooltip.hbm_m.creative_battery_desc","Предоставляет бесконечное количество энергии");
                 add("tooltip.hbm_m.creative_battery_flavor","Бесконечность — не предел!!");
-
+                add(ModItems.COIL_TUNGSTEN.get(), "Нагревательный элемент");
                 // ПРЕДМЕТЫ
                 add(ModItems.BATTERY_POTATO.get(), "Картофельная батарейка");
                 add(ModItems.BATTERY.get(), "Батарейка");
@@ -253,7 +253,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.BATTERY_SCHRABIDIUM_CELL_2.get(), "Шрабидиевая энергоячейка x2");
                 add(ModItems.BATTERY_SCHRABIDIUM_CELL_4.get(), "Шрабидиевая энергоячейка x4");
                 add(ModItems.BATTERY_SPARK.get(), "Спарк батарея");
-                add(ModItems.BATTERY_TRIXITE.get(), "Безымянная спарк батарея");
+                add(ModItems.BATTERY_TRIXITE.get(), "Нефритовый стержень спарк батарей оригинал");
                 add(ModItems.BATTERY_SPARK_CELL_6.get(), "Спарк энергоячейка");
                 add(ModItems.BATTERY_SPARK_CELL_25.get(), "Спарк магический аккумулятор");
                 add(ModItems.BATTERY_SPARK_CELL_100.get(), "Спарк магический массив хранения энергии");
@@ -720,6 +720,19 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.SELLAFIELD_SLAKED1.get(), "Погашенный селлафит I");
                 add(ModBlocks.SELLAFIELD_SLAKED2.get(), "Погашенный селлафит II");
                 add(ModBlocks.SELLAFIELD_SLAKED3.get(), "Погашенный селлафит III");
+                add(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS.get(), "Кольцевая катушка из намагниченного вольфрама");
+                add(ModItems.COIL_MAGNETIZED_TUNGSTEN.get(), "Катушка из намагниченного вольфрама");
+                add(ModItems.COIL_ADVANCED_ALLOY_TORUS.get(), "Кольцевая катушка из продвинутого сплава");
+                add(ModItems.COIL_ADVANCED_ALLOY.get(), "Катушка из продвинутого сплава");
+                add(ModItems.COIL_COPPER_TORUS.get(), "Кольцевая медная катушка");
+                add(ModItems.COIL_COPPER.get(), "Медная катушка");
+                add(ModItems.DUST.get(), "Кучка пыли");
+                add(ModItems.DUST_TINY.get(), "Маленькая кучка пыли");
+                add(ModItems.SCRAP.get(), "Мусор");
+                add(ModItems.POWDER_COAL.get(), "Угольный порошок");
+                add(ModItems.POWDER_COAL_SMALL.get(), "Маленькая кучка угольного порошока");
+                add(ModItems.BILLET_PLUTONIUM.get(), "Заготовка плутония");
+
 
 
                 add("tooltip.hbm_m.depthstone.line1", "Может быть уничтожен только взрывом!");
@@ -727,7 +740,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.MOTOR_BISMUTH.get(), "Висмутовый мотор");
                 add(ModItems.MOTOR_DESH.get(), "Деш мотор");
                 add(ModItems.MOTOR.get(), "Мотор");
-                add(ModItems.BLADE_TEST.get(), "Деш Лезвия");
+                add(ModItems.BLADE_TEST.get(), "Деш лезвия");
+                add(ModItems.BLADE_STEEL.get(), "Стальные лезвия");
+                add(ModItems.BLADE_TITANIUM.get(), "Титановые лезвия");
+                add(ModItems.BLADE_ALLOY.get(), "Лезвия из продвинутого сплава");
                 add(ModItems.BORAX.get(), "Бура");
                 add(ModItems.BALL_TNT.get(), "Взрывчатка");
                 add(ModItems.BOLT_STEEL.get(), "Болт");
@@ -1867,13 +1883,31 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.METEOR_BRICK_MOSSY_STAIRS.get(), "Mossy Meteor Bricks Stairs");
                 add(ModBlocks.METEOR_CRUSHED_STAIRS.get(), "Crushed Meteor Stairs");
 
-
+                add(ModItems.COIL_TUNGSTEN.get(), "Heating Element");
                 add(ModBlocks.CONVERTER_BLOCK.get(), "Energy Converter");
                 add(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get(), "Spark Battery");
                 add(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get(), "Shrabidium Battery");
                 add(ModBlocks.MACHINE_BATTERY_LITHIUM.get(), "Lithium Battery");
                 // en_us case
+
+                add(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS.get(), "Magnetized Tungsten Torus Coil");
+                add(ModItems.COIL_MAGNETIZED_TUNGSTEN.get(), "Magnetized Tungsten Coil");
+                add(ModItems.COIL_ADVANCED_ALLOY_TORUS.get(), "Advanced Alloy Torus Coil");
+                add(ModItems.COIL_ADVANCED_ALLOY.get(), "Advanced Alloy Coil");
+                add(ModItems.COIL_COPPER_TORUS.get(), "Copper Torus Coil");
+                add(ModItems.COIL_COPPER.get(), "Copper Coil");
+
+                add(ModItems.DUST.get(), "Dust");
+                add(ModItems.DUST_TINY.get(), "Tiny Dust");
+                add(ModItems.SCRAP.get(), "Scrap");
+                add(ModItems.POWDER_COAL.get(), "Coal Powder");
+                add(ModItems.POWDER_COAL_SMALL.get(), "Tiny Coal Powder");
+                add(ModItems.BILLET_PLUTONIUM.get(), "Plutonium Billet");
+
                 add(ModItems.BLADE_TEST.get(), "Desh Blades");
+                add(ModItems.BLADE_STEEL.get(), "Steel Blades");
+                add(ModItems.BLADE_TITANIUM.get(), "Titanium Blades");
+                add(ModItems.BLADE_ALLOY.get(), "Advanced Alloy Blades");
                 add(ModItems.BORAX.get(), "Borax");
                 add(ModItems.BALL_TNT.get(), "TNT Ball");
                 add(ModItems.BOLT_STEEL.get(), "Steel Bolt");

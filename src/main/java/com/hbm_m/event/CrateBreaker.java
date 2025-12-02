@@ -93,7 +93,11 @@ public class CrateBreaker {
                     new DropChance(ModBlocks.NUCLEAR_CHARGE, 0.001)
             ),
             ModBlocks.CRATE_LEAD, List.of(
-                    new DropChance(ModItems.BLADE_TEST, 0.1),
+                    new DropChance(ModItems.BLADE_TEST, 0.01),
+                    new DropChance(ModItems.BLADE_ALLOY, 0.05),
+                    new DropChance(ModBlocks.PRESS, 0.05),
+                    new DropChance(ModItems.BLADE_STEEL, 0.2),
+                    new DropChance(ModItems.BLADE_TITANIUM, 0.2),
                     new DropChance(ModItems.RADAWAY, 0.2),
                     new DropChance(ModItems.STAMP_OBSIDIAN_FLAT, 0.05),
                     new DropChance(ModItems.STAMP_STEEL_FLAT, 0.1),
