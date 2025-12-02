@@ -12,7 +12,6 @@ import com.hbm_m.item.ModBatteryItem;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.util.SellafitSolidificationTracker;
 import com.hbm_m.world.biome.ModBiomes;
-import com.hbm_m.worldgen.StructureFoundationProcessor;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.event.level.LevelEvent;
 import com.mojang.logging.LogUtils;
@@ -51,12 +50,12 @@ import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
+
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -179,19 +178,6 @@ public class MainRegistry {
         }
     }
 
-
-    // private void onRenderLevelStage(RenderLevelStageEvent event) {
-    //     if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SOLID_BLOCKS) {
-    //         GPUInstancedRenderer.beginInstances("Ring");
-    //     }
-    //     else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
-    //         GPUInstancedRenderer.endInstances();
-    //     }
-    // }
-
-    // ✅ ИСПРАВЛЕННАЯ ЧАСТЬ ДЛЯ MainRegistry.java
-// Замените ВЕСЬ метод addCreative на этот:
-
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
         // Логгирование для отладки
         LOGGER.info("Building creative tab contents for: " + event.getTabKey());
@@ -293,7 +279,7 @@ public class MainRegistry {
         // РАСХОДНИКИ И МОДИФИКАТОРЫ
         if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get()) {
             // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ МОДИФИКАТОРОВ
-            // 1. Получаем все зарегистрированные предметы из вашего мода
+            // 1. Получаем все зарегистрированные предметы
             List<RegistryObject<Item>> allModItems = ForgeRegistries.ITEMS.getEntries().stream()
                     .filter(entry -> entry.getKey().location().getNamespace().equals(RefStrings.MODID))
                     .map(entry -> RegistryObject.create(entry.getKey().location(), ForgeRegistries.ITEMS))
@@ -1032,13 +1018,12 @@ public class MainRegistry {
                             batteryRegObj.getId());
                 }
             }
-// --- [Конец новой логики] ---
 
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added {} battery variants to NTM Fuel tab", batteriesToAdd.size() * 2);
             }
         }
-        // --- [КОНЕЦ БЛОКА С ИЗМЕНЕНИЯМИ] ---
+
         if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get()) {
 
             event.accept(ModItems.BLADE_STEEL);
@@ -1082,10 +1067,11 @@ public class MainRegistry {
             event.accept(ModItems.STAMP_DESH_357);
 
             event.accept(ModItems.TEMPLATE_FOLDER);
+
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
                 ClientSetup.addTemplatesClient(event);
             });
         }
     }
-  }
+}
 

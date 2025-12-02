@@ -9,10 +9,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import java.util.List;
@@ -28,16 +27,9 @@ import com.hbm_m.item.fekal_grenades.GrenadeIfItem;
 import com.hbm_m.item.fekal_grenades.GrenadeItem;
 import com.hbm_m.item.fekal_grenades.GrenadeNucItem;
 import com.hbm_m.item.tools.*;
-import com.hbm_m.lib.RefStrings;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
-import net.minecraft.client.Minecraft;
-import net.minecraft.resources.ResourceLocation;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
 
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.*;
 import net.minecraftforge.eventbus.api.IEventBus;
@@ -54,7 +46,6 @@ public class ModItems {
     public static final DeferredRegister<Item> ITEMS =
             DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
 
-    // ✅ ВСЕ МАПЫ ОСТАЮТСЯ
     public static final Map<ModIngots, RegistryObject<Item>> INGOTS = new EnumMap<>(ModIngots.class);
     public static final Map<ModPowders, RegistryObject<Item>> POWDERS = new EnumMap<>(ModPowders.class);
     public static final Map<ModIngots, RegistryObject<Item>> INGOT_POWDERS = new EnumMap<>(ModIngots.class);
@@ -66,7 +57,6 @@ public class ModItems {
             "sr90", "steel", "xe135");
     private static final Map<String, RegistryObject<Item>> POWDER_ITEMS_BY_ID = new HashMap<>();
 
-    // ✅ ОТДЕЛЬНЫЕ СПИСКИ!
     private static final Set<String> ENABLED_MODPOWDERS = Set.of("iron", "gold", "coal"); // Только ModPowders!
     private static final Set<String> ENABLED_INGOT_POWDERS = Set.of(
             "uranium", "plutonium",
@@ -134,11 +124,6 @@ public class ModItems {
             }
         }
     }
-
-
-
-
-
 
     // УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА
     public static RegistryObject<Item> getIngot(ModIngots ingot) {
@@ -536,9 +521,6 @@ public class ModItems {
                 new Item.Properties().stacksTo(1)
         )
     );
-
-
-
 
 
     public static final RegistryObject<Item> RADAWAY = ITEMS.register("radaway",
