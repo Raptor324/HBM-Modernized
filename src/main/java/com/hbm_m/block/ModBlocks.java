@@ -78,19 +78,17 @@ public class ModBlocks {
     // Скопировано и адаптировано из ModItems, убраны лишние материалы типа еды или топлива, если им не нужен блок.
     // 1. СПИСОК РАЗРЕШЕННЫХ БЛОКОВ (Whitelist)
     // 1. СПИСОК РАЗРЕШЕННЫХ БЛОКОВ (Whitelist)
-    private static final Set<String> ENABLED_INGOT_BLOCKS = Set.of(
+    public static final Set<String> ENABLED_INGOT_BLOCKS = Set.of(
             "uranium", "plutonium", "thorium", "titanium", "aluminum", "copper",
             "lead", "tungsten", "steel", "advanced_alloy", "schrabidium", "saturnite",
-            "beryllium", "bismuth", "desh", "cobalt", "lanthanium", "neodymium",
+            "beryllium", "bismuth", "desh", "cobalt", "lanthanium",
             "niobium", "zirconium", "actinium", "ferrouranium",
             "u233", "u235", "u238", "pu238", "pu239", "pu240", "pu241",
-            "th232", "co60", "sr90", "ra226", "neptunium", "americium",
-            "technetium", "australium", "dineutronium", "euphemium",
+            "ra226", "neptunium",
+            "australium", "dineutronium", "euphemium",
             "combine_steel", "dura_steel", "starmetal", "red_copper",
-            // ТОПЛИВО
             "plutonium_fuel", "uranium_fuel", "thorium_fuel", "mox_fuel", "schrabidium_fuel",
-            // ДОБАВЛЕНО (исправление крашей генератора рецептов)
-             "osmiridium", "boron", "tcalloy", "cdalloy", "bscco", "arsenic","cadmium", "les" // les - это литий в вашем ModIngots
+            "boron", "tcalloy", "cdalloy", "cadmium"
     );
 
     // 2. КАРТА БЛОКОВ

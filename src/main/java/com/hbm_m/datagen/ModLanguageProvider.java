@@ -10,6 +10,7 @@ import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.data.LanguageProvider;
 import net.minecraftforge.registries.RegistryObject;
 
@@ -17,6 +18,9 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
+import static com.hbm_m.block.ModBlocks.getIngotBlock;
 
 public class ModLanguageProvider extends LanguageProvider {
     // 1. Создаем НАШЕ СОБСТВЕННОЕ поле для хранения языка
@@ -85,7 +89,41 @@ public class ModLanguageProvider extends LanguageProvider {
                 .map(part -> Character.toUpperCase(part.charAt(0)) + part.substring(1))
                 .collect(Collectors.joining(" "));
     }
+    private void addIngotBlockTranslations(Set<ResourceLocation> translatedBlocks) {
+        for (ModIngots ingot : ModIngots.values()) {
+            if (ENABLED_INGOT_BLOCKS.contains(ingot.getName())) {
+                RegistryObject<Block> block = getIngotBlock(ingot);
+                if (block != null && !translatedBlocks.contains(block.getId())) {
+                    add(block.get(), buildBlockName(ingot));
+                }
+            }
+        }
+        // Можно добавить перевод для русской локали по умолчанию для общих блоков, если нужно
+    }
 
+    // Метод формирования имени блока с переводом
+    private String buildBlockName(ModIngots ingot) {
+        String base = ingot.getTranslation(this.locale);
+        if (base == null || base.isBlank()) {
+            base = formatName(ingot.getName());
+        }
+
+        if ("ru_ru".equals(this.locale)) {
+            // Для русского языка заменяем "слиток" на "блок", либо добавляем приставку "Блок"
+            String replaced = base.replace("Слиток", "Блок").replace("слиток", "блок");
+            if (replaced.equals(base)) {
+                replaced = "Блок " + base;
+            }
+            return replaced.trim();
+        } else {
+            // Для английского - добавляем приставку "Block" или заменяем "Ingot" на "Block"
+            String replaced = base.replace("Ingot", "Block").replace("ingot", "block");
+            if (replaced.equals(base)) {
+                replaced = base + " Block";
+            }
+            return replaced.trim();
+        }
+    }
     @Override
     protected void addTranslations() {
         // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ
@@ -501,14 +539,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.DEPTH_ORES_SCANNER.get(), "Сканер глубинных кластеров");
                 add(ModItems.OIL_DETECTOR.get(), "Детектор нефти");
 
-
                 add(ModItems.GHIORSIUM_CLADDING.get(), "Прокладка из гиорсия");
                 add(ModItems.DESH_CLADDING.get(), "Обшивка из деш");
                 add(ModItems.RUBBER_CLADDING.get(), "Резиновая обшивка");
                 add(ModItems.LEAD_CLADDING.get(), "Свинцовая обшивка");
                 add(ModItems.PAINT_CLADDING.get(), "Свинцовая краска");
-
-
+                add(ModItems.CRT_DISPLAY.get(), "Электро-лучевая трубка");
+                add(ModItems.MAN_CORE.get(), "Плутониевое ядро");
                 add(ModItems.GRENADESMART.get(), "УМная отскок граната");
                 add(ModItems.GRENADESLIME.get(), "Отскок-отскок граната");
                 add(ModItems.GRENADE.get(), "Отскок граната");
@@ -725,7 +762,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.COIL_ADVANCED_ALLOY_TORUS.get(), "Кольцевая катушка из продвинутого сплава");
                 add(ModItems.COIL_ADVANCED_ALLOY.get(), "Катушка из продвинутого сплава");
                 add(ModItems.COIL_COPPER_TORUS.get(), "Кольцевая медная катушка");
+                add(ModItems.COIL_GOLD_TORUS.get(), "Кольцевая золотая катушка");
                 add(ModItems.COIL_COPPER.get(), "Медная катушка");
+                add(ModItems.COIL_GOLD.get(), "Медная катушка");
                 add(ModItems.DUST.get(), "Кучка пыли");
                 add(ModItems.DUST_TINY.get(), "Маленькая кучка пыли");
                 add(ModItems.SCRAP.get(), "Мусор");
@@ -1689,6 +1728,8 @@ public class ModLanguageProvider extends LanguageProvider {
 
 // en_us case
                 // английский:
+                add(ModItems.MAN_CORE.get(), "Plutonium Core");
+                add(ModItems.CRT_DISPLAY.get(), "CRT");
                 add(ModBlocks.DEPTH_STONE.get(), "Depth Stone");
                 add(ModBlocks.DEPTH_CINNABAR.get(), "Deep Cinnabar Ore");
                 add(ModBlocks.DEPTH_IRON.get(), "Deep Iron Ore");
@@ -1896,6 +1937,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.COIL_ADVANCED_ALLOY.get(), "Advanced Alloy Coil");
                 add(ModItems.COIL_COPPER_TORUS.get(), "Copper Torus Coil");
                 add(ModItems.COIL_COPPER.get(), "Copper Coil");
+
+                add(ModItems.COIL_GOLD_TORUS.get(), "Golden Torus Coil");
+                add(ModItems.COIL_GOLD.get(), "Golden Coil");
 
                 add(ModItems.DUST.get(), "Dust");
                 add(ModItems.DUST_TINY.get(), "Tiny Dust");

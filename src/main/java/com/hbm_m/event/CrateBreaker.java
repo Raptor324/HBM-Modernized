@@ -69,9 +69,11 @@ public class CrateBreaker {
                     new DropChance(ModItems.CAPACITOR, 0.4),
                     new DropChance(ModItems.SILICON_CIRCUIT, 0.4),
                     new DropChance(ModItems.MICROCHIP, 0.2),
+                    new DropChance(ModItems.CRT_DISPLAY, 0.4),
+                    new DropChance(ModItems.INSULATOR, 0.4),
                     new DropChance(ModItems.ANALOG_CIRCUIT, 0.1),
                     new DropChance(ModItems.MOTOR_DESH, 0.1),
-                    new DropChance(ModItems.MOTOR, 0.1)
+                    new DropChance(ModItems.MOTOR, 0.2)
             ),
             ModBlocks.CRATE_WEAPON, List.of(
                     new DropChance(ModItems.DETONATOR, 0.1),
@@ -84,12 +86,14 @@ public class CrateBreaker {
                     new DropChance(ModItems.GRENADE_IF_SLIME, 0.2),
                     new DropChance(ModItems.GRENADE_IF_HE, 0.2),
                     new DropChance(ModItems.GRENADESMART, 0.1),
-                    new DropChance(ModBlocks.DET_MINER, 0.4),
+                    new DropChance(ModBlocks.DET_MINER, 0.2),
                     new DropChance(ModBlocks.EXPLOSIVE_CHARGE, 0.1),
-                    new DropChance(ModItems.RANGE_DETONATOR, 0.1),
-                    new DropChance(ModItems.MULTI_DETONATOR, 0.1),
+                    new DropChance(ModItems.RANGE_DETONATOR, 0.01),
+                    new DropChance(ModItems.MULTI_DETONATOR, 0.01),
                     new DropChance(ModBlocks.C4, 0.1),
                     new DropChance(ModBlocks.SMOKE_BOMB, 0.1),
+                    new DropChance(ModBlocks.GIGA_DET, 0.1),
+                    new DropChance(ModBlocks.WASTE_CHARGE, 0.1),
                     new DropChance(ModBlocks.NUCLEAR_CHARGE, 0.001)
             ),
             ModBlocks.CRATE_LEAD, List.of(

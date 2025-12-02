@@ -29,8 +29,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.STRAWBERRY_BUSH.get(), models().cross(blockTexture(ModBlocks.STRAWBERRY_BUSH.get()).getPath(),
                 blockTexture(ModBlocks.STRAWBERRY_BUSH.get())).renderType("cutout"));
         // Блоки слитков теперь генерируются автоматически в цикле ниже
-
-
+        blockWithItem(ModBlocks.GIGA_DET);
+        blockWithItem(ModBlocks.POLONIUM210_BLOCK);
+        blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
+        blockWithItem(ModBlocks.CRATE_WEAPON);
+        blockWithItem(ModBlocks.CRATE_METAL);
+        blockWithItem(ModBlocks.CRATE);
+        blockWithItem(ModBlocks.CRATE_LEAD);
         blockWithItem(ModBlocks.ASPHALT);
         blockWithItem(ModBlocks.BARRICADE);
         blockWithItem(ModBlocks.BASALT_BRICK);
@@ -156,10 +161,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         );
         // === КОНЕЦ РЕГИСТРАЦИИ ПАДАЮЩИХ БЛОКОВ ===
 
-        resourceBlockWithItem(ModBlocks.CRATE);
-        resourceBlockWithItem(ModBlocks.CRATE_LEAD);
-        resourceBlockWithItem(ModBlocks.CRATE_METAL);
-        resourceBlockWithItem(ModBlocks.CRATE_WEAPON);
         blockWithItem(ModBlocks.WASTE_PLANKS);
 
         simpleBlockWithItem(ModBlocks.WASTE_LOG.get(),
@@ -272,8 +273,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         blockWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
         blockWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);
-        resourceBlockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
-        resourceBlockWithItem(ModBlocks.GIGA_DET);
 
         simpleBlockWithItem(ModBlocks.REINFORCED_GLASS.get(),
                 models().cubeAll(ModBlocks.REINFORCED_GLASS.getId().getPath(),
