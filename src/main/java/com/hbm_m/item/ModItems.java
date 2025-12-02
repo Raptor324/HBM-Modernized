@@ -977,7 +977,16 @@ public class ModItems {
 
 
     public static final RegistryObject<Item> BLADE_TEST = ITEMS.register("blade_test",
-            () -> new ItemBlades(new Item.Properties(), 48));
+            () -> new ItemBlades(new Item.Properties()));
+
+    public static final RegistryObject<Item> BLADE_STEEL = ITEMS.register("blade_steel",
+            () -> new ItemBlades(new Item.Properties(), 200));
+
+    public static final RegistryObject<Item> BLADE_TITANIUM = ITEMS.register("blade_titanium",
+            () -> new ItemBlades(new Item.Properties(), 350));
+
+    public static final RegistryObject<Item> BLADE_ALLOY = ITEMS.register("blade_alloy",
+            () -> new ItemBlades(new Item.Properties(), 700));
 
     // Железные штампы (48 использований)
     public static final RegistryObject<Item> STAMP_IRON_FLAT = ITEMS.register("stamp_iron_flat",

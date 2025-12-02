@@ -242,6 +242,7 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.BORAX.get()));
             event.accept(new ItemStack(ModItems.DUST.get()));
             event.accept(new ItemStack(ModItems.DUST_TINY.get()));
+            event.accept(new ItemStack(ModItems.POWDER_COAL.get()));
             event.accept(new ItemStack(ModItems.POWDER_COAL_SMALL.get()));
             event.accept(new ItemStack(ModItems.CINNABAR.get()));
             event.accept(new ItemStack(ModItems.FIRECLAY_BALL.get()));
@@ -1023,6 +1024,9 @@ public class MainRegistry {
         // --- [КОНЕЦ БЛОКА С ИЗМЕНЕНИЯМИ] ---
         if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get()) {
 
+            event.accept(ModItems.BLADE_STEEL);
+            event.accept(ModItems.BLADE_TITANIUM);
+            event.accept(ModItems.BLADE_ALLOY);
             event.accept(ModItems.BLADE_TEST);
             event.accept(ModItems.STAMP_STONE_FLAT);
             event.accept(ModItems.STAMP_STONE_PLATE);

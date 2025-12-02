@@ -133,6 +133,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.MULTI_DETONATOR);
         simpleItem(ModItems.DETONATOR);
         simpleItem(ModItems.SCRAP);
+        simpleItem(ModItems.BLADE_STEEL);
+        simpleItem(ModItems.BLADE_TITANIUM);
+        simpleItem(ModItems.BLADE_ALLOY);
         simpleItem(ModItems.BLADE_TEST);
         simpleItem(ModItems.ALLOY_SWORD);
         simpleItem(ModItems.GEIGER_COUNTER);

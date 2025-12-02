@@ -131,6 +131,9 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.PAINT_CLADDING.get());
 
         this.tag(BLADES)
+                .add(ModItems.BLADE_STEEL.get())
+                .add(ModItems.BLADE_TITANIUM.get())
+                .add(ModItems.BLADE_ALLOY.get())
                 .add(ModItems.BLADE_TEST.get());
         // ТЕГИ ДЛЯ ШТАМПОВ ПРЕССА
 
