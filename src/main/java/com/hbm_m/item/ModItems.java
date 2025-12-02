@@ -734,7 +734,11 @@ public class ModItems {
     public static final RegistryObject<Item> BATTLE_COUNTER = ITEMS.register("battle_counter",
             () -> new Item(new Item.Properties()));
 
+    public static final RegistryObject<Item> MAN_CORE = ITEMS.register("man_core",
+            () -> new Item(new Item.Properties()));
 
+    public static final RegistryObject<Item> CRT_DISPLAY = ITEMS.register("crt_display",
+            () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> PLATE_IRON = ITEMS.register("plate_iron",
             () -> new Item(new Item.Properties()));

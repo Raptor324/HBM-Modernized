@@ -57,6 +57,9 @@ public final class ShredderRecipeGenerator {
         ShredderRecipeBuilder.shredderRecipe(Items.STONE,
                         new ItemStack(Items.GRAVEL, 1))
                 .save(writer, "stone_to_gravel");
+        ShredderRecipeBuilder.shredderRecipe(Items.COAL,
+                        new ItemStack(ModItems.POWDER_COAL.get(), 1))
+                .save(writer, "coal_to_powder");
         ShredderRecipeBuilder.shredderRecipe(Items.COBBLESTONE,
                         new ItemStack(Items.GRAVEL, 1))
                 .save(writer, "cobblestone_to_gravel");

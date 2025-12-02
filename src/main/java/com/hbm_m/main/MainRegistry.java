@@ -354,6 +354,7 @@ public class MainRegistry {
         if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get()) {
             event.accept(ModItems.BOLT_STEEL);
             event.accept(ModItems.COIL_TUNGSTEN);
+
             event.accept(ModItems.PLATE_IRON);
             event.accept(ModItems.PLATE_ALUMINUM);
             event.accept(ModItems.PLATE_TITANIUM);
@@ -370,6 +371,7 @@ public class MainRegistry {
             event.accept(ModItems.PLATE_SCHRABIDIUM);
             event.accept(ModItems.PLATE_SATURNITE);
             event.accept(ModItems.PLATE_COMBINE_STEEL);
+
             event.accept(ModItems.WIRE_FINE);
             event.accept(ModItems.WIRE_ALUMINIUM);
             event.accept(ModItems.WIRE_CARBON);
@@ -380,6 +382,7 @@ public class MainRegistry {
             event.accept(ModItems.WIRE_ADVANCED_ALLOY);
             event.accept(ModItems.WIRE_MAGNETIZED_TUNGSTEN);
             event.accept(ModItems.WIRE_SCHRABIDIUM);
+
             event.accept(ModItems.COIL_COPPER);
             event.accept(ModItems.COIL_ADVANCED_ALLOY);
             event.accept(ModItems.COIL_GOLD);
@@ -388,6 +391,7 @@ public class MainRegistry {
             event.accept(ModItems.COIL_ADVANCED_ALLOY_TORUS);
             event.accept(ModItems.COIL_GOLD_TORUS);
             event.accept(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS);
+
             event.accept(ModItems.PLATE_ARMOR_TITANIUM);
             event.accept(ModItems.PLATE_ARMOR_AJR);
             event.accept(ModItems.PLATE_ARMOR_LUNAR);
@@ -395,22 +399,27 @@ public class MainRegistry {
             event.accept(ModItems.PLATE_ARMOR_DNT);
             event.accept(ModItems.PLATE_ARMOR_DNT_RUSTED);
             event.accept(ModItems.PLATE_ARMOR_FAU);
+
             event.accept(ModItems.PLATE_MIXED);
             event.accept(ModItems.PLATE_DALEKANIUM);
             event.accept(ModItems.PLATE_DESH);
             event.accept(ModItems.PLATE_BISMUTH);
             event.accept(ModItems.PLATE_EUPHEMIUM);
             event.accept(ModItems.PLATE_DINEUTRONIUM);
+
             event.accept(ModItems.PLATE_CAST);
             event.accept(ModItems.PLATE_CAST_ALT);
             event.accept(ModItems.PLATE_CAST_BISMUTH);
             event.accept(ModItems.PLATE_CAST_DARK);
+
             event.accept(ModItems.MOTOR);
             event.accept(ModItems.MOTOR_DESH);
             event.accept(ModItems.MOTOR_BISMUTH);
+
             event.accept(ModItems.INSULATOR);
             event.accept(ModItems.SILICON_CIRCUIT);
             event.accept(ModItems.PCB);
+            event.accept(ModItems.CRT_DISPLAY);
             event.accept(ModItems.VACUUM_TUBE);
             event.accept(ModItems.CAPACITOR);
             event.accept(ModItems.MICROCHIP);
@@ -418,6 +427,7 @@ public class MainRegistry {
             event.accept(ModItems.INTEGRATED_CIRCUIT);
             event.accept(ModItems.ADVANCED_CIRCUIT);
             event.accept(ModItems.CAPACITOR_BOARD);
+
             event.accept(ModItems.CONTROLLER_CHASSIS);
             event.accept(ModItems.CONTROLLER);
             event.accept(ModItems.CONTROLLER_ADVANCED);
@@ -428,12 +438,14 @@ public class MainRegistry {
             event.accept(ModItems.QUANTUM_CHIP);
             event.accept(ModItems.QUANTUM_CIRCUIT);
             event.accept(ModItems.QUANTUM_COMPUTER);
+
             event.accept(ModItems.BATTLE_GEARS);
             event.accept(ModItems.BATTLE_SENSOR);
             event.accept(ModItems.BATTLE_CASING);
             event.accept(ModItems.BATTLE_COUNTER);
             event.accept(ModItems.BATTLE_MODULE);
             event.accept(ModItems.METAL_ROD);
+            event.accept(ModItems.MAN_CORE);
         }
         // РУДЫ
         if (event.getTab() == ModCreativeTabs.NTM_ORES_TAB.get()) {
@@ -857,11 +869,11 @@ public class MainRegistry {
             event.accept(ModItems.LIQUIDATOR_LEGGINGS);
             event.accept(ModItems.LIQUIDATOR_BOOTS);
 
-            //СИЛОВАЯ БРОНЯ
+           /* //СИЛОВАЯ БРОНЯ
             event.accept(ModItems.AJR_HELMET);
             event.accept(ModItems.AJR_CHESTPLATE);
             event.accept(ModItems.AJR_LEGGINGS);
-            event.accept(ModItems.AJR_BOOTS);
+            event.accept(ModItems.AJR_BOOTS);*/
 
             //МЕЧИ
             event.accept(ModItems.TITANIUM_SWORD);

@@ -120,13 +120,16 @@ public final class PressRecipeGenerator {
                 .stamp(ModItemTagProvider.STAMPS_WIRE)
                 .material(ModItems.getIngot(ModIngots.TUNGSTEN).get())
                 .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_tungsten"));
-    }
 
-    private static void generateCircuits(Consumer<FinishedRecipe> writer) {
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.SILICON_CIRCUIT.get()))
                 .stamp(ModItemTagProvider.STAMPS_CIRCUIT)
                 .material(ModItems.BILLET_SILICON.get())
                 .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silicon_circuit"));
+    }
+
+
+    private static void generateCircuits(Consumer<FinishedRecipe> writer) {
+
     }
 }
 
