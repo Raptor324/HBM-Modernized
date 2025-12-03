@@ -61,6 +61,82 @@ public class CrateBreaker {
                     new DropChance(ModBlocks.CRT_BSOD, 0.1),
                     new DropChance(ModBlocks.B29, 0.01),
                     new DropChance(ModBlocks.DORNIER, 0.01),
+
+                    // Новые блоки из MainRegistry, по 10 штук каждый
+                    new DropChance(ModBlocks.CONCRETE, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_ASBESTOS, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_COLORED_SAND, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_BLACK, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_BLUE, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_BROWN, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_COLORED_INDIGO, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_COLORED_PINK, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_COLORED_PURPLE, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_CYAN, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_GRAY, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_GREEN, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_LIGHT_BLUE, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_LIME, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_MAGENTA, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_ORANGE, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_PINK, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_PURPLE, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_RED, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_YELLOW, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_HAZARD, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_SILVER, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_WHITE, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_SUPER, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_SUPER_M0, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_SUPER_M1, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_SUPER_M2, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_SUPER_M3, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_SUPER_BROKEN, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_REBAR, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_REBAR_ALT, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_FLAT, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_TILE, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_VENT, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_FAN, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_TILE_TREFOIL, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_MOSSY, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_CRACKED, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_MARKED, 0.1, 10),
+                    new DropChance(ModBlocks.BRICK_CONCRETE, 0.1, 10),
+                    new DropChance(ModBlocks.BRICK_CONCRETE_MOSSY, 0.1, 10),
+                    new DropChance(ModBlocks.BRICK_CONCRETE_CRACKED, 0.1, 10),
+                    new DropChance(ModBlocks.BRICK_CONCRETE_BROKEN, 0.1, 10),
+                    new DropChance(ModBlocks.BRICK_CONCRETE_MARKED, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_PILLAR, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_COLORED_MACHINE, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_COLORED_MACHINE_STRIPE, 0.1, 10),
+                    new DropChance(ModBlocks.CONCRETE_COLORED_BRONZE, 0.1, 10),
+                    new DropChance(ModBlocks.METEOR_POLISHED, 0.1, 10),
+                    new DropChance(ModBlocks.METEOR_BRICK, 0.1, 10),
+                    new DropChance(ModBlocks.METEOR_BRICK_CRACKED, 0.1, 10),
+                    new DropChance(ModBlocks.METEOR_BRICK_MOSSY, 0.1, 10),
+                    new DropChance(ModBlocks.METEOR_BRICK_CHISELED, 0.1, 10),
+                    new DropChance(ModBlocks.METEOR_PILLAR, 0.1, 10),
+                    new DropChance(ModBlocks.DEPTH_BRICK, 0.1, 10),
+                    new DropChance(ModBlocks.DEPTH_TILES, 0.1, 10),
+                    new DropChance(ModBlocks.DEPTH_NETHER_BRICK, 0.1, 10),
+                    new DropChance(ModBlocks.DEPTH_NETHER_TILES, 0.1, 10),
+                    new DropChance(ModBlocks.GNEISS_TILE, 0.1, 10),
+                    new DropChance(ModBlocks.GNEISS_BRICK, 0.1, 10),
+                    new DropChance(ModBlocks.GNEISS_CHISELED, 0.1, 10),
+                    new DropChance(ModBlocks.BRICK_BASE, 0.1, 10),
+                    new DropChance(ModBlocks.BRICK_LIGHT, 0.1, 10),
+                    new DropChance(ModBlocks.BARRICADE, 0.1, 10),
+                    new DropChance(ModBlocks.BRICK_FIRE, 0.1, 10),
+                    new DropChance(ModBlocks.BRICK_OBSIDIAN, 0.1, 10),
+                    new DropChance(ModBlocks.VINYL_TILE, 0.1, 10),
+                    new DropChance(ModBlocks.VINYL_TILE_SMALL, 0.1, 10),
+                    new DropChance(ModBlocks.REINFORCED_STONE, 0.1, 10),
+                    new DropChance(ModBlocks.BRICK_DUCRETE, 0.1, 10),
+                    new DropChance(ModBlocks.ASPHALT, 0.1, 10),
+                    new DropChance(ModBlocks.BASALT_POLISHED, 0.1, 10),
+                    new DropChance(ModBlocks.BASALT_BRICK, 0.1, 10),
+
                     new DropChance(ModItems.RADAWAY, 0.1)
             ),
             ModBlocks.CRATE_METAL, List.of(
@@ -72,28 +148,43 @@ public class CrateBreaker {
                     new DropChance(ModItems.CRT_DISPLAY, 0.4),
                     new DropChance(ModItems.INSULATOR, 0.4),
                     new DropChance(ModItems.ANALOG_CIRCUIT, 0.1),
+                    new DropChance(ModItems.CAPACITOR_BOARD, 0.1),
+                    new DropChance(ModItems.INTEGRATED_CIRCUIT, 0.1),
+                    new DropChance(ModItems.ADVANCED_CIRCUIT, 0.01),
                     new DropChance(ModItems.MOTOR_DESH, 0.1),
                     new DropChance(ModItems.MOTOR, 0.2)
             ),
             ModBlocks.CRATE_WEAPON, List.of(
-                    new DropChance(ModItems.DETONATOR, 0.1),
+                    new DropChance(ModItems.DETONATOR, 0.05),
                     new DropChance(ModItems.RADAWAY, 0.1),
-                    new DropChance(ModItems.GRENADE, 0.2),
-                    new DropChance(ModItems.GRENADEFIRE, 0.2),
-                    new DropChance(ModItems.GRENADESLIME, 0.2),
-                    new DropChance(ModItems.GRENADE_IF, 0.2),
-                    new DropChance(ModItems.GRENADE_IF_FIRE, 0.2),
-                    new DropChance(ModItems.GRENADE_IF_SLIME, 0.2),
-                    new DropChance(ModItems.GRENADE_IF_HE, 0.2),
-                    new DropChance(ModItems.GRENADESMART, 0.1),
-                    new DropChance(ModBlocks.DET_MINER, 0.2),
-                    new DropChance(ModBlocks.EXPLOSIVE_CHARGE, 0.1),
+                    new DropChance(ModItems.GRENADE, 0.3),
+                    new DropChance(ModItems.GRENADEFIRE, 0.3),
+                    new DropChance(ModItems.GRENADESLIME, 0.3),
+                    new DropChance(ModItems.GRENADE_IF, 0.3),
+                    new DropChance(ModItems.GRENADE_IF_FIRE, 0.3),
+                    new DropChance(ModItems.GRENADE_IF_SLIME, 0.3),
+                    new DropChance(ModItems.GRENADE_IF_HE, 0.3),
+                    new DropChance(ModItems.GRENADESMART, 0.2),
+                    new DropChance(ModBlocks.DET_MINER, 0.3),
+                    new DropChance(ModBlocks.EXPLOSIVE_CHARGE, 0.2),
                     new DropChance(ModItems.RANGE_DETONATOR, 0.01),
                     new DropChance(ModItems.MULTI_DETONATOR, 0.01),
                     new DropChance(ModBlocks.C4, 0.1),
                     new DropChance(ModBlocks.SMOKE_BOMB, 0.1),
                     new DropChance(ModBlocks.GIGA_DET, 0.1),
                     new DropChance(ModBlocks.WASTE_CHARGE, 0.1),
+                    new DropChance(ModItems.LIQUIDATOR_BOOTS, 0.05),
+                    new DropChance(ModItems.LIQUIDATOR_CHESTPLATE, 0.05),
+                    new DropChance(ModItems.LIQUIDATOR_HELMET, 0.05),
+                    new DropChance(ModItems.LIQUIDATOR_LEGGINGS, 0.05),
+                    new DropChance(ModItems.STARMETAL_PICKAXE, 0.05),
+                    new DropChance(ModItems.STARMETAL_SWORD, 0.05),
+                    new DropChance(ModItems.STARMETAL_HELMET, 0.05),
+                    new DropChance(ModItems.STARMETAL_LEGGINGS, 0.05),
+                    new DropChance(ModItems.STARMETAL_CHESTPLATE, 0.05),
+                    new DropChance(ModItems.STARMETAL_BOOTS, 0.05),
+                    new DropChance(ModItems.STARMETAL_SHOVEL, 0.05),
+                    new DropChance(ModItems.STARMETAL_HOE, 0.1),
                     new DropChance(ModBlocks.NUCLEAR_CHARGE, 0.001)
             ),
             ModBlocks.CRATE_LEAD, List.of(
@@ -113,7 +204,11 @@ public class CrateBreaker {
                     new DropChance(ModItems.DEFUSER, 0.05),
                     new DropChance(ModItems.RUBBER_CLADDING, 0.05),
                     new DropChance(ModItems.LEAD_CLADDING, 0.05),
-                    new DropChance(ModItems.PAINT_CLADDING, 0.05),
+                    new DropChance(ModItems.PAINT_CLADDING, 0.1),
+                    new DropChance(ModBlocks.ANVIL_DNT, 0.001),
+                    new DropChance(ModBlocks.ANVIL_DESH, 0.01),
+                    new DropChance(ModBlocks.ANVIL_STEEL, 0.05),
+                    new DropChance(ModBlocks.ANVIL_IRON, 0.05),
                     new DropChance(ModItems.OIL_DETECTOR, 0.05)
             ),
             ModBlocks.CRATE_CONSERVE, List.of(
@@ -161,7 +256,10 @@ public class CrateBreaker {
 
     );
 
-    private record DropChance(RegistryObject<?> item, double chance) {}
+    private record DropChance(RegistryObject<?> item, double chance, int count) { public DropChance(RegistryObject<?> item, double chance) {
+        this(item, chance, 1); // если количество не указано, будет 1
+    }
+    }
 
     @SubscribeEvent
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
@@ -189,13 +287,15 @@ public class CrateBreaker {
 
         event.setCanceled(true);
 
-        // Отправляем анимацию руки на клиент
+        // Анимация руки
         if (player instanceof ServerPlayer serverPlayer) {
             serverPlayer.swing(event.getHand(), true);
         }
 
+        // Ломаем блок без ванильного дропа
         level.destroyBlock(pos, false);
 
+        // Случайный звук треска
         RegistryObject<?> soundObj = CRACK_SOUNDS.get(RANDOM.nextInt(CRACK_SOUNDS.size()));
         if (soundObj != null) {
             var soundEvent = soundObj.get();
@@ -204,41 +304,58 @@ public class CrateBreaker {
             }
         }
 
+        // Дропы для конкретного ящика
         List<DropChance> dropChances = CRATE_DROPS.get(matchedCrate);
         if (dropChances == null) return;
 
-        // Выполняем 4 ролла для дропа с шансом
+        // 4 независимых ролла
         for (int i = 0; i < 4; i++) {
             dropChances.stream()
-                    .filter(dc -> RANDOM.nextDouble() <= dc.chance)
+                    .filter(dc -> RANDOM.nextDouble() <= dc.chance())
                     .findAny()
-                    .ifPresent(dc -> dropItem(dc, level, pos));
+                    .ifPresent(dc -> {
+                        // Получаем объект для дропа
+                        var obj = dc.item().get();
+                        Item itemToDrop = null;
+
+                        if (obj instanceof Item it) {
+                            itemToDrop = it;
+                        } else if (obj instanceof Block bl) {
+                            itemToDrop = Item.byBlock(bl);
+                        }
+
+                        if (itemToDrop == null || itemToDrop == Items.AIR) return;
+
+                        // Определяем стабильное количество:
+                        // если у DropChance есть компонент count() — используем его,
+                        // иначе дефолт 1.
+                        int count = 1;
+
+                        try {
+                            // Вызов аксессора записи через отражение, если он существует
+                            var m = dc.getClass().getMethod("count");
+                            Object val = m.invoke(dc);
+                            if (val instanceof Integer c && c > 0) {
+                                count = c;
+                            }
+                        } catch (ReflectiveOperationException ignored) {
+                            // компонента count нет — оставляем 1
+                        }
+
+                        ItemStack stack = new ItemStack(itemToDrop, count);
+                        ItemEntity dropEntity = new ItemEntity(
+                                level,
+                                pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                                stack
+                        );
+                        dropEntity.setDeltaMovement(
+                                (RANDOM.nextDouble() - 0.5) * 0.5,
+                                RANDOM.nextDouble() * 0.3 + 0.1,
+                                (RANDOM.nextDouble() - 0.5) * 0.5
+                        );
+                        level.addFreshEntity(dropEntity);
+                    });
         }
     }
 
-    private static void dropItem(DropChance dc, Level level, BlockPos pos) {
-        var obj = dc.item.get();
-        Item itemToDrop = null;
-
-        // Если это предмет напрямую
-        if (obj instanceof Item item) {
-            itemToDrop = item;
-        }
-        // Если это блок - конвертируем в item-версию
-        else if (obj instanceof Block block) {
-            itemToDrop = Item.byBlock(block);
-        }
-
-        if (itemToDrop != null && itemToDrop != Items.AIR) {
-            ItemStack dropStack = new ItemStack(itemToDrop);
-            ItemEntity dropEntity = new ItemEntity(level,
-                    pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    dropStack);
-            dropEntity.setDeltaMovement(
-                    (RANDOM.nextDouble() - 0.5) * 0.5,
-                    RANDOM.nextDouble() * 0.3 + 0.1,
-                    (RANDOM.nextDouble() - 0.5) * 0.5);
-            level.addFreshEntity(dropEntity);
-        }
-    }
 }
