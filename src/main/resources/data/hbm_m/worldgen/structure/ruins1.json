@@ -2,12 +2,13 @@
   "type": "minecraft:jigsaw",
   "biomes": [
     "minecraft:plains",
-    "minecraft:savanna"
+    "minecraft:savanna",
+    "minecraft:desert"
   ],
   "spawn_overrides": {},
   "step": "surface_structures",
   "terrain_adaptation": "beard_box",
-  "start_pool": "hbm_m:avanpost_pool",
+  "start_pool": "hbm_m:ruins1_pool",
   "size": 1,
   "start_height": {
     "absolute": 0
