@@ -169,6 +169,7 @@ dependencies {
     runtimeOnly fg.deobf("maven.modrinth:spark:1.10.53-forge")
     runtimeOnly fg.deobf("curse.maven:oculus-581495:6020952")
     runtimeOnly fg.deobf("curse.maven:embeddium-908741:5681725")
+    runtimeOnly fg.deobf("curse.maven:jei-238222:7270446")
     
     api(fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.136"))
 

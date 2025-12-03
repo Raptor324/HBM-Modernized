@@ -309,6 +309,16 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.getPowder(ModIngots.ALUMINUM).get()), has(ModItems.getPowder(ModIngots.ALUMINUM).get()))
                 .save(writer, recipeId("crafting/capacitor"));
 
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.CAGE_LAMP.get(), 4)
+                .pattern(" % ")
+                .pattern(" @ ")
+                .pattern(" ! ")
+                .define('%', Items.GLASS_PANE)
+                .define('@', ModItems.WIRE_TUNGSTEN.get())
+                .define('!', Items.IRON_INGOT)
+                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
+                .save(writer, recipeId("crafting/cage_lamp"));
+
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.BARBED_WIRE.get(), 16)
                 .pattern("$@$")
                 .pattern("@ @")

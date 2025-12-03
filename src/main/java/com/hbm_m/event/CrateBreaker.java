@@ -63,6 +63,7 @@ public class CrateBreaker {
                     new DropChance(ModBlocks.DORNIER, 0.01),
 
                     // Новые блоки из MainRegistry, по 10 штук каждый
+                    new DropChance(ModBlocks.FLOOD_LAMP, 0.1, 10),
                     new DropChance(ModBlocks.CONCRETE, 0.1, 10),
                     new DropChance(ModBlocks.CONCRETE_ASBESTOS, 0.1, 10),
                     new DropChance(ModBlocks.CONCRETE_COLORED_SAND, 0.1, 10),
