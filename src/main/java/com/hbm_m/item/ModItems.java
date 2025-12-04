@@ -878,6 +878,9 @@ public class ModItems {
     public static final RegistryObject<Item> SULFUR = ITEMS.register("sulfur",
             () -> new Item(new Item.Properties()));
 
+    public static final RegistryObject<Item> SEQUESTRUM = ITEMS.register("sequestrum",
+            () -> new Item(new Item.Properties()));
+
     public static final RegistryObject<Item> FLUORITE = ITEMS.register("fluorite",
             () -> new Item(new Item.Properties()));
 

@@ -99,6 +99,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.VINYL_TILE_SMALL);
         blockWithItem(ModBlocks.RESOURCE_ASBESTOS);
         blockWithItem(ModBlocks.RESOURCE_BAUXITE);
+        blockWithItem(ModBlocks.SEQUESTRUM_ORE);
         blockWithItem(ModBlocks.RESOURCE_HEMATITE);
         blockWithItem(ModBlocks.RESOURCE_LIMESTONE);
         blockWithItem(ModBlocks.RESOURCE_MALACHITE);
