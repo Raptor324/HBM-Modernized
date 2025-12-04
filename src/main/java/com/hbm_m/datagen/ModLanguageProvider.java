@@ -2279,10 +2279,10 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("gui.recipe.setRecipe", "Set Recipe");
 
-                add("tooltip.hbm_m.machine_battery.capacity", "Capacity: %1$s FE");
-                add("tooltip.hbm_m.machine_battery.charge_speed", "Charge Speed: %1$s FE/t");
-                add("tooltip.hbm_m.machine_battery.discharge_speed", "Discharge Speed: %1$s FE/t");
-                add("tooltip.hbm_m.machine_battery.stored", "Stored: %1$s / %2$s FE");
+                add("tooltip.hbm_m.machine_battery.capacity", "Capacity: %1$s HE");
+                add("tooltip.hbm_m.machine_battery.charge_speed", "Charge Speed: %1$s HE/t");
+                add("tooltip.hbm_m.machine_battery.discharge_speed", "Discharge Speed: %1$s HE/t");
+                add("tooltip.hbm_m.machine_battery.stored", "Stored: %1$s / %2$s HE");
 
                 // HAZARD TOOLTIPS
 
@@ -2326,8 +2326,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.meter.protection", "§ePlayer protection: %s (%s)");
 
                 add("item.hbm_m.meter.rads_over_limit", ">%s RAD/s");
-                add("gui.hbm_m.battery.energy.info", "%s / %s FE");
-                add("gui.hbm_m.battery.energy.delta", "%s FE/t");
+                add("gui.hbm_m.battery.energy.info", "%s / %s HE");
+                add("gui.hbm_m.battery.energy.delta", "%s HE/t");
                 add("tooltip.hbm_m.hold_shift_for_details", "<Hold SHIFT to display more info>");
 
                 add("sounds.hbm_m.geiger_counter", "Geiger Counter clicking");
