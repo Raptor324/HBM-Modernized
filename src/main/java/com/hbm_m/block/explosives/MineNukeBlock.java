@@ -108,7 +108,7 @@ public class MineNukeBlock extends Block implements EntityBlock {
         // Повышенная громкость звука
         playRandomDetonationSound(level, pos);
 
-        level.explode(null, x, y, z, EXPLOSION_POWER, false, Level.ExplosionInteraction.NONE);
+        level.explode(null, x, y, z, EXPLOSION_POWER, false, Level.ExplosionInteraction.TNT);
 
         // Урон в зоне действия (НОВОЕ)
         if (level instanceof ServerLevel serverLevel) {

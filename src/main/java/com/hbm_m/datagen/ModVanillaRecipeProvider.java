@@ -412,14 +412,22 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BALL_TNT.get(), 4)
                 .pattern("#$ ")
-                .pattern("@% ")
+                .pattern("@  ")
                 .pattern("   ")
-                .define('$', ModItems.POWDER_COAL.get())
-                .define('@', ModItems.SULFUR.get())
+                .define('@', ModItems.SEQUESTRUM.get())
                 .define('#', Items.GUNPOWDER)
-                .define('%', Items.SUGAR)
-                .unlockedBy(getHasName(ModItems.SULFUR.get()), has(ModItems.SULFUR.get()))
+                .define('$', Items.SUGAR)
+                .unlockedBy(getHasName(ModItems.SEQUESTRUM.get()), has(ModItems.SEQUESTRUM.get()))
                 .save(writer, recipeId("crafting/ball_tnt"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BLUEPRINT_FOLDER.get())
+                .pattern("@#@")
+                .pattern("@#@")
+                .pattern("@#@")
+                .define('@', Ingredient.of(Items.BLUE_DYE, Items.LAPIS_LAZULI))
+                .define('#', Items.PAPER)
+                .unlockedBy(getHasName(Items.PAPER), has(Items.PAPER))
+                .save(writer, recipeId("crafting/blueprint_folder"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.REINFORCED_STONE.get(), 4)
                 .pattern("#$#")

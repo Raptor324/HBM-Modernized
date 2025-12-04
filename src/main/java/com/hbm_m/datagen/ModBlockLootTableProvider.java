@@ -250,6 +250,12 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModItems.LIMESTONE.get(),
                 1.0f, 3.0f
         );
+        dropOreType2(
+                ModBlocks.SEQUESTRUM_ORE.get(),
+                ModBlocks.SEQUESTRUM_ORE.get(),
+                ModItems.SEQUESTRUM.get(),
+                1.0f, 3.0f
+        );
 
 
         // Если DEPTH_STONE должен вести себя как обычный блок,

@@ -233,6 +233,7 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.CINNABAR.get()));
             event.accept(new ItemStack(ModItems.FIRECLAY_BALL.get()));
             event.accept(new ItemStack(ModItems.SULFUR.get()));
+            event.accept(new ItemStack(ModItems.SEQUESTRUM.get()));
             event.accept(new ItemStack(ModItems.LIGNITE.get()));
             event.accept(new ItemStack(ModItems.FLUORITE.get()));
             event.accept(new ItemStack(ModItems.RAREGROUND_ORE_CHUNK.get()));
@@ -454,6 +455,7 @@ public class MainRegistry {
             event.accept(ModBlocks.TUNGSTEN_ORE);
             event.accept(ModBlocks.ASBESTOS_ORE);
             event.accept(ModBlocks.SULFUR_ORE);
+            event.accept(ModBlocks.SEQUESTRUM_ORE);
 
             event.accept(ModBlocks.ALUMINUM_ORE);
             event.accept(ModBlocks.ALUMINUM_ORE_DEEPSLATE);

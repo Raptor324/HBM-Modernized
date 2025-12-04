@@ -1097,6 +1097,9 @@ public class ModBlocks {
     public static final RegistryObject<Block> RESOURCE_SULFUR = registerBlock("resource_sulfur",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
+    public static final RegistryObject<Block> SEQUESTRUM_ORE = registerBlock("sequestrum_ore",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+
 
     public static final RegistryObject<Block> LIGNITE_ORE = registerBlock("lignite_ore",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));

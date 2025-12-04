@@ -564,7 +564,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get(), "Динейтрониевое энергохранилище");
                 add(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get(), "Шрабидиевое энергохранилище");
                 add(ModBlocks.MACHINE_BATTERY_LITHIUM.get(), "Литиевое энергохранилище");
-
+                add(ModBlocks.SEQUESTRUM_ORE.get(), "Селитровая руда");
+                add(ModItems.SEQUESTRUM.get(), "Селитра");
                 // русский:
                 add(ModBlocks.ASPHALT.get(), "Асфальт");
                 add(ModBlocks.BARRICADE.get(), "Мешки с песком");
@@ -2208,6 +2209,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.wire_coated", "Red Copper Wire");
 
                 // ORES
+                add(ModBlocks.SEQUESTRUM_ORE.get(), "Salpeter Ore");
+                add(ModItems.SEQUESTRUM.get(), "Salpeter");
                 add(ModBlocks.RESOURCE_ASBESTOS.get(), "Asbestos Cluster");
                 add(ModBlocks.RESOURCE_BAUXITE.get(), "Bauxite");
                 add(ModBlocks.RESOURCE_HEMATITE.get(), "Hematite");
