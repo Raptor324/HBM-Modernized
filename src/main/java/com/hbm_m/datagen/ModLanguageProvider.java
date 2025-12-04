@@ -1271,7 +1271,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor", "Влияние источников радиации на чанк");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor", "Фактор рандомизации радиации в чанке");
 
+                add("text.autoconfig.hbm_m.category.rendering", "Рендеринг");
+
+                add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Дистанция для рендеринга динамических частей .obj моделей");
+                add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Включить куллинг моделей");
+
                 add("text.autoconfig.hbm_m.category.debug", "Отладка");
+
                 add("text.autoconfig.hbm_m.option.enableDebugRender", "Включить отладочный рендер радиации");
                 add("text.autoconfig.hbm_m.option.debugRenderTextSize", "Размер текста отладочного рендера");
                 add("text.autoconfig.hbm_m.option.debugRenderDistance", "Дальность отладочного рендеринга (чанки)");
@@ -1291,7 +1297,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radConfusion.@Tooltip", "Порог для эффекта замешательства (WIP)");
                 add("text.autoconfig.hbm_m.option.radBlindness.@Tooltip", "Порог для эффекта слепоты");
 
-                                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect.@Tooltip", "Включает/выключает эффект случайных мерцающих пикселей на экране, когда игрок подвергается радиационному облучению.");
+                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect.@Tooltip", "Включает/выключает эффект случайных мерцающих пикселей на экране, когда игрок подвергается радиационному облучению.");
                 add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold.@Tooltip", "Минимальный уровень входящей радиации (в RAD/с), при котором начинает появляться эффект визуальных помех.");
                 add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad.@Tooltip", "Уровень входящей радиации (в RAD/с), при котором эффект помех достигает своей максимальной силы (максимальное количество пикселей).");
                 add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots.@Tooltip", "Максимальное количество пикселей, которое может одновременно находиться на экране при пиковой интенсивности эффекта. Влияет на производительность на слабых системах.");
@@ -1309,11 +1315,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor.@Tooltip", "Влияние источников радиации на чанк.");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor.@Tooltip", "Фактор рандомизации радиации в чанке");
 
-                add("text.autoconfig.hbm_m.option.hazmatMod.@Tooltip", "Защита обычного костюма химзащиты (1.0 = нет защиты)");
-                add("text.autoconfig.hbm_m.option.advHazmatMod.@Tooltip", "Защита продвинутого костюма химзащиты");
-                add("text.autoconfig.hbm_m.option.paaHazmatMod.@Tooltip", "Защита костюма PAA");
+                add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Дистанция для рендеринга динамических частей .obj моделей (в чанках)");
+                add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Включить куллинг моделей (выключите, если ваши модели рендерятся некорректно)");
 
-                add("text.autoconfig.hbm_m.option.enableDebugRender.@Tooltip", "Показывать отладочный оверлей чанков (F3)");
+                add("text.autoconfig.hbm_m.option.enableDebugRender.@Tooltip", "Показывать отладочный оверлей радиации в чанках (F3)");
                 add("text.autoconfig.hbm_m.option.debugRenderTextSize.@Tooltip", "Размер текста для отладочного оверлея");
                 add("text.autoconfig.hbm_m.option.debugRenderDistance.@Tooltip", "Дальность отладочного рендеринга (чанки)");
                 add("text.autoconfig.hbm_m.option.debugRenderInSurvival.@Tooltip", "Показывать отладочный рендер в режиме выживания");
@@ -2418,6 +2423,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor", "Source influence factor");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor", "Chunk radiation randomization factor");
 
+                add("text.autoconfig.hbm_m.category.rendering", "Rendering");
+
+                add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Distance for .obj model dynamic parts rendering");
+                add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Enable model occlusion culling");
+
                 add("text.autoconfig.hbm_m.category.debug", "Debug");
 
                 add("text.autoconfig.hbm_m.option.enableDebugRender", "Enable radiation debug render");
@@ -2464,9 +2474,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor.@Tooltip", "Influence of radioactive blocks in chunk");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor.@Tooltip", "Randomization factor for chunk radiation");
 
-                add("text.autoconfig.hbm_m.option.hazmatMod.@Tooltip", "Protection for regular hazmat suit (1.0 = no protection)");
-                add("text.autoconfig.hbm_m.option.advHazmatMod.@Tooltip", "Protection for advanced hazmat suit");
-                add("text.autoconfig.hbm_m.option.paaHazmatMod.@Tooltip", "Protection for PAA suit");
+                add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Distance for .obj model dynamic parts rendering (in chunks)");
+                add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Enable model occlusion culling (disable if your models are not rendering correctly)");
 
                 add("text.autoconfig.hbm_m.option.enableDebugRender.@Tooltip", "Whether radiation debug render is enabled (F3)");
                 add("text.autoconfig.hbm_m.option.debugRenderTextSize.@Tooltip", "Debug render text size");
