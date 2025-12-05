@@ -1262,7 +1262,8 @@ public class ModItems {
             ));
 
 
-
+    public static final RegistryObject<Item> AIRSTRIKE_TEST = ITEMS.register("airstrike_test",
+            () -> new AirstrikeItem(new Item.Properties()));
     public static final RegistryObject<Item> WIRE_RED_COPPER = ITEMS.register("wire_red_copper",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> WIRE_ADVANCED_ALLOY = ITEMS.register("wire_advanced_alloy",

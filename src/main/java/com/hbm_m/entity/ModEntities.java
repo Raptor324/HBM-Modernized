@@ -1,9 +1,13 @@
 package com.hbm_m.entity;
 
+import com.hbm_m.entity.grenades.AirstrikeEntity;
 import com.hbm_m.entity.grenades.GrenadeIfProjectileEntity;
 import com.hbm_m.entity.grenades.GrenadeNucProjectileEntity;
 import com.hbm_m.entity.grenades.GrenadeProjectileEntity;
+import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.item.FallingBlockEntity;
@@ -29,6 +33,13 @@ public class ModEntities {
             () -> EntityType.Builder.<GrenadeProjectileEntity>of(GrenadeProjectileEntity::new, MobCategory.MISC)
                 .sized(0.5f, 0.5f)
                 .build("grenadehe_projectile"));
+
+    public static final RegistryObject<EntityType<AirstrikeEntity>> AIRSTRIKE_ENTITY =
+            ENTITY_TYPES.register("airstrike",
+                    () -> EntityType.Builder.<AirstrikeEntity>of(AirstrikeEntity::new, MobCategory.MISC)
+                            .sized(2.0F, 1.0F)
+                            .build("airstrike")
+            );
 
     public static final RegistryObject<EntityType<GrenadeProjectileEntity>> GRENADEFIRE_PROJECTILE =
         ENTITY_TYPES.register("grenadefire_projectile",

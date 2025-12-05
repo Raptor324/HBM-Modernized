@@ -213,7 +213,10 @@ public class ClientSetup {
         ModConfigKeybindHandler.onRegisterKeyMappings(event);
         MainRegistry.LOGGER.info("Registered key mappings.");
     }
-
+    @SubscribeEvent
+    public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntities.AIRSTRIKE_ENTITY.get(), AirstrikeEntityRenderer::new);
+    }
     @SubscribeEvent
     public static void onResourceReload(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(new ShaderReloadListener());
@@ -322,7 +325,6 @@ public class ClientSetup {
             return ChunkRenderTypeSet.of(RenderType.solid());
         }
     }
-    
     public static void addTemplatesClient(BuildCreativeModeTabContentsEvent event) {
         if (Minecraft.getInstance().level != null) {
             RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
