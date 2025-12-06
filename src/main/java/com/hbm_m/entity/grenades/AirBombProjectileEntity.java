@@ -11,6 +11,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -23,6 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
@@ -84,20 +86,26 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
                 this.setYRot(synchedYaw);
                 this.yRotO = synchedYaw;
             }
-            // 🆕 СВИСТ БОМБЫ: ТОЛЬКО 1 РАЗ при спавне
+            // 🆕 [translate:СВИСТ БОМБЫ]: только 1 раз при спавне
             if (this.tickCount == 1 && !instantDetonation) {
                 playBombWhistle();
             }
         }
     }
-    // 🆕 СВИСТ БОМБЫ: ОДИН РАЗ при спавне
+
+    // 🆕 [translate:СВИСТ БОМБЫ]: один раз при спавне
     private void playBombWhistle() {
         if (ModSounds.BOMBWHISTLE.isPresent()) {
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                    ModSounds.BOMBWHISTLE.get(), SoundSource.HOSTILE, 6.0F, 0.9F + RANDOM.nextFloat() * 0.2F);
+            this.level().playSound(
+                    null,
+                    this.getX(), this.getY(), this.getZ(),
+                    ModSounds.BOMBWHISTLE.get(),
+                    SoundSource.HOSTILE,
+                    6.0F,
+                    0.9F + RANDOM.nextFloat() * 0.2F
+            );
         }
     }
-
 
     @Override
     protected void onHit(HitResult result) {
@@ -114,7 +122,6 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
 
             if (result.getType() == HitResult.Type.ENTITY) {
                 explode(this.blockPosition());
-                return;
             }
         }
     }
@@ -128,21 +135,21 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
 
             this.discard();
 
-            // ✅ ВСЕ КАСТОМНЫЕ ЭФФЕКТЫ
+            // ✅ Все кастомные эффекты
             triggerNearbyDetonations(serverLevel, pos, null);
             dealExplosionDamage(serverLevel, x, y, z);
             scheduleExplosionEffects(serverLevel, x, y, z);
             playDetonationSound(serverLevel, pos);
 
             if (serverLevel.getServer() != null) {
-                serverLevel.getServer().tell(new net.minecraft.server.TickTask(20, () -> {
-                    serverLevel.explode(null, x, y, z, EXPLOSION_POWER * 0.8F, Level.ExplosionInteraction.TNT);
-                }));
+                serverLevel.getServer().tell(new net.minecraft.server.TickTask(20, () ->
+                        serverLevel.explode(null, x, y, z, EXPLOSION_POWER * 0.8F, Level.ExplosionInteraction.TNT)
+                ));
             }
             if (serverLevel.getServer() != null) {
-                serverLevel.getServer().tell(new net.minecraft.server.TickTask(20, () -> {
-                    serverLevel.explode(null, x, y, z, EXPLOSION_POWER2 * 0.8F, Level.ExplosionInteraction.NONE);
-                }));
+                serverLevel.getServer().tell(new net.minecraft.server.TickTask(20, () ->
+                        serverLevel.explode(null, x, y, z, EXPLOSION_POWER2 * 0.8F, Level.ExplosionInteraction.NONE)
+                ));
             }
         }
     }
@@ -155,17 +162,53 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
                         x + DAMAGE_RADIUS, y + DAMAGE_RADIUS, z + DAMAGE_RADIUS
                 )
         );
-
+        // здесь можно добавить урон по [translate:entitiesNearby]
     }
 
+    /**
+     * Рандомный выбор одного из трёх звуков [translate:бомб].
+     */
     private void playDetonationSound(Level level, BlockPos pos) {
-        if (ModSounds.EXPLOSION_LARGE_NEAR.isPresent()) {
-            level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    ModSounds.EXPLOSION_LARGE_NEAR.get(), net.minecraft.sounds.SoundSource.BLOCKS, 3.0F, 0.8F + RANDOM.nextFloat() * 0.2F);
+        List<SoundEvent> candidates = new ArrayList<>();
+
+        if (ModSounds.BOMBDET1.isPresent()) {
+            candidates.add(ModSounds.BOMBDET1.get());
         }
+        if (ModSounds.BOMBDET2.isPresent()) {
+            candidates.add(ModSounds.BOMBDET2.get());
+        }
+        if (ModSounds.BOMBDET3.isPresent()) {
+            candidates.add(ModSounds.BOMBDET3.get());
+        }
+
+        // Если ни один из трёх звуков не зарегистрирован — fallback на старый
+        if (candidates.isEmpty()) {
+            if (ModSounds.EXPLOSION_LARGE_NEAR.isPresent()) {
+                level.playSound(
+                        null,
+                        pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                        ModSounds.EXPLOSION_LARGE_NEAR.get(),
+                        SoundSource.BLOCKS,
+                        3.0F,
+                        0.8F + RANDOM.nextFloat() * 0.2F
+                );
+            }
+            return;
+        }
+
+        SoundEvent soundEvent = candidates.get(RANDOM.nextInt(candidates.size()));
+
+        level.playSound(
+                null,
+                pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                soundEvent,
+                SoundSource.BLOCKS,
+                8.0F,
+                0.8F + RANDOM.nextFloat() * 0.2F
+        );
     }
 
-    // ✅ КАСТОМНЫЕ ЭФФЕКТЫ
+    // ✅ Кастомные эффекты
     private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
         spawnFlash(level, x, y, z);
         spawnSparks(level, x, y, z);
@@ -199,8 +242,13 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
             double offsetX = (level.random.nextDouble() - 0.5) * 6.0;
             double offsetZ = (level.random.nextDouble() - 0.5) * 6.0;
             double ySpeed = 0.8 + level.random.nextDouble() * 0.4;
-            level.sendParticles(ModExplosionParticles.MUSHROOM_SMOKE.get(),
-                    x + offsetX, y, z + offsetZ, 1, offsetX * 0.08, ySpeed, offsetZ * 0.08, 1.5);
+            level.sendParticles(
+                    ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                    x + offsetX, y, z + offsetZ,
+                    1,
+                    offsetX * 0.08, ySpeed, offsetZ * 0.08,
+                    1.5
+            );
         }
         // Шапка
         for (int i = 0; i < 250; i++) {
@@ -212,8 +260,13 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
             double xSpeed = Math.cos(angle) * 0.5;
             double ySpeed = -0.1 + level.random.nextDouble() * 0.2;
             double zSpeed = Math.sin(angle) * 0.5;
-            level.sendParticles(ModExplosionParticles.MUSHROOM_SMOKE.get(),
-                    x + offsetX, capY, z + offsetZ, 1, xSpeed, ySpeed, zSpeed, 1.5);
+            level.sendParticles(
+                    ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                    x + offsetX, capY, z + offsetZ,
+                    1,
+                    xSpeed, ySpeed, zSpeed,
+                    1.5
+            );
         }
     }
 
@@ -227,10 +280,10 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
                         BlockState checkState = serverLevel.getBlockState(checkPos);
                         Block block = checkState.getBlock();
                         if (block instanceof IDetonatable detonatable) {
-                            int delay = (int)(dist * 2.0);
-                            serverLevel.getServer().tell(new net.minecraft.server.TickTask(delay, () -> {
-                                detonatable.onDetonate(serverLevel, checkPos, checkState, player);
-                            }));
+                            int delay = (int) (dist * 2.0);
+                            serverLevel.getServer().tell(new net.minecraft.server.TickTask(delay, () ->
+                                    detonatable.onDetonate(serverLevel, checkPos, checkState, player)
+                            ));
                         }
                     }
                 }

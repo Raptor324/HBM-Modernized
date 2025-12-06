@@ -335,6 +335,12 @@ public class ModBlocks {
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops().noOcclusion()));
 
+    public static final RegistryObject<Block> BALEBOMB_TEST = registerBlock("balebomb_test",
+            () -> new AirBombBlock(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops().noOcclusion()));
+
     public static final RegistryObject<Block> EXPLOSIVE_CHARGE = registerBlock("explosive_charge",
             () -> new ExplosiveChargeBlock(BlockBehaviour.Properties.of()
                     .strength(0.5F, 6.0F)

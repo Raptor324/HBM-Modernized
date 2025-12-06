@@ -1,26 +1,26 @@
 {
   "loader": "forge:composite",
   "textures": {
-    "particle": "hbm_m:block/airbomb"
+    "particle": "hbm_m:block/balebomb_test"
   },
   "children": {
-    "airbomb_model": {
+    "balebomb_test_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/airbomb.obj",
+      "model": "hbm_m:models/block/balebomb_test.obj",
       "flip_v": true,
       "textures": {
-        "default": "hbm_m:block/airbomb"
+        "default": "hbm_m:block/balebomb_test"
       }
     }
   },
   "transform": {
-    "translation": [0.15, -1.4, 0.1],
-    "rotation": [90, 0, 0],
+    "translation": [-0.9, -0.37, 0.135],
+    "rotation": [0, 0, 0],
     "scale": 0.65
   },
   "display": {
     "gui": {
-      "rotation": [ 30, 45, 0 ],
+      "rotation": [ 30, 315, 0 ],
       "translation": [ 0, -0.5, 1.2 ],
       "scale": [ 0.6, 0.6, 0.6 ]
     },

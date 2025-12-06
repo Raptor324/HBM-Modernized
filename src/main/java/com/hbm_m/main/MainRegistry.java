@@ -193,6 +193,7 @@ public class MainRegistry {
             event.accept(ModItems.MULTI_DETONATOR);
             event.accept(ModItems.RANGE_DETONATOR);
             event.accept(ModItems.AIRSTRIKE_TEST);
+            event.accept(ModItems.AIRSTRIKE_HEAVY);
             event.accept(ModItems.GRENADE);
             event.accept(ModItems.GRENADEHE);
             event.accept(ModItems.GRENADEFIRE);
@@ -207,6 +208,7 @@ public class MainRegistry {
             event.accept(ModBlocks.MINE_FAT);
             event.accept(ModBlocks.AIRBOMB);
             event.accept(ModItems.AIRBOMB_A);
+            event.accept(ModBlocks.BALEBOMB_TEST);
             event.accept(ModBlocks.DET_MINER);
             event.accept(ModBlocks.GIGA_DET);
             event.accept(ModBlocks.WASTE_CHARGE);
