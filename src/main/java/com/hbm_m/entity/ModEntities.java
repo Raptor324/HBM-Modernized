@@ -1,9 +1,6 @@
 package com.hbm_m.entity;
 
-import com.hbm_m.entity.grenades.AirstrikeEntity;
-import com.hbm_m.entity.grenades.GrenadeIfProjectileEntity;
-import com.hbm_m.entity.grenades.GrenadeNucProjectileEntity;
-import com.hbm_m.entity.grenades.GrenadeProjectileEntity;
+import com.hbm_m.entity.grenades.*;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.resources.ResourceLocation;
@@ -40,7 +37,17 @@ public class ModEntities {
                             .sized(2.0F, 1.0F)
                             .build("airstrike")
             );
+    public static final RegistryObject<EntityType<AirstrikeHeavyEntity>> AIRSTRIKE_HEAVY_ENTITY =
+            ENTITY_TYPES.register("airstrikeheavy",
+                    () -> EntityType.Builder.<AirstrikeHeavyEntity>of(AirstrikeHeavyEntity::new, MobCategory.MISC)
+                            .sized(2.0F, 1.0F)
+                            .build("airstrikeheavy"));
 
+    public static final RegistryObject<EntityType<AirBombProjectileEntity>> AIRBOMB_PROJECTILE =
+            ENTITY_TYPES.register("airbomb_projectile",
+                    () -> EntityType.Builder.<AirBombProjectileEntity>of(AirBombProjectileEntity::new, MobCategory.MISC)
+                            .sized(0.5f, 0.5f)
+                            .build("airbomb_projectile"));
     public static final RegistryObject<EntityType<GrenadeProjectileEntity>> GRENADEFIRE_PROJECTILE =
         ENTITY_TYPES.register("grenadefire_projectile",
             () -> EntityType.Builder.<GrenadeProjectileEntity>of(GrenadeProjectileEntity::new, MobCategory.MISC)

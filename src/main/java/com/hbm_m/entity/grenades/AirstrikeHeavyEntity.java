@@ -1,9 +1,9 @@
 package com.hbm_m.entity.grenades;
 
 import com.hbm_m.entity.ModEntities;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.SectionPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -24,17 +24,20 @@ import javax.annotation.Nonnull;
 import java.util.Random;
 import java.util.UUID;
 
-public class AirstrikeEntity extends Entity {
+public class AirstrikeHeavyEntity extends Entity {
 
-    // ✅ Параметры (ваши настройки)
-    private static final double AIRSTRIKE_HEIGHT = 50.0;
-    private static final double ATTACK_RADIUS = 75.0;
-    private static final double PLANE_SPEED = 1.25;
-    private static final int BOMB_INTERVAL = 12;
-    private static final int DESPAWN_DELAY = 60;
+    // ✅ Параметры (увеличено расстояние спавна самолёта)
+    private static final double AIRSTRIKE_HEIGHT = 80.0;  // Выше для драматичности
+    private static final double SPAWN_DISTANCE = 150.0;    // 🆕 ДАЛЕКО ОТ ЦЕЛИ (было 75)
+    private static final double ATTACK_RADIUS = 100;
+    private static final double PLANE_SPEED = 1.25;         // Немного быстрее
+    private static final int BOMB_INTERVAL = 12;           // Больше пауза между бомбами
+    private static final int TOTAL_BOMBS = 4;              // 🆕 РОВНО 3 БОМБЫ
+    private static final int DESPAWN_DELAY = 80;
     private static final int CHUNK_RETRY_DELAY = 60;
 
     private int bombTimer = 0;
+    private int bombsDropped = 0;                          // 🆕 Счётчик сброшенных бомб
     private int despawnTimer = -1;
     private int chunkRetryTimer = 0;
     private boolean hasFinishedAttack = false;
@@ -45,28 +48,21 @@ public class AirstrikeEntity extends Entity {
 
     // ✅ 8 НАПРАВЛЕНИЙ
     private static final double[] DIRECTION_ANGLES = {
-            0.0,      // Север
-            Math.PI/4,   // Северо-Восток
-            Math.PI/2,   // Восток
-            3*Math.PI/4, // Юго-Восток
-            Math.PI,     // Юг
-            5*Math.PI/4, // Юго-Запад
-            3*Math.PI/2, // Запад
-            7*Math.PI/4  // Северо-Запад
+            0.0, Math.PI/4, Math.PI/2, 3*Math.PI/4,
+            Math.PI, 5*Math.PI/4, 3*Math.PI/2, 7*Math.PI/4
     };
 
-    // Синхронизируемые данные
     private static final EntityDataAccessor<BlockPos> TARGET_POS =
-            SynchedEntityData.defineId(AirstrikeEntity.class, EntityDataSerializers.BLOCK_POS);
+            SynchedEntityData.defineId(AirstrikeHeavyEntity.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<String> OWNER_UUID_ACCESSOR =
-            SynchedEntityData.defineId(AirstrikeEntity.class, EntityDataSerializers.STRING);
+            SynchedEntityData.defineId(AirstrikeHeavyEntity.class, EntityDataSerializers.STRING);
 
-    public AirstrikeEntity(EntityType<?> entityType, Level level) {
+    public AirstrikeHeavyEntity(EntityType<?> entityType, Level level) {
         super(entityType, level);
         this.noPhysics = true;
     }
 
-    public AirstrikeEntity(Level level, LivingEntity owner, BlockPos targetPos) {
+    public AirstrikeHeavyEntity(Level level, LivingEntity owner, BlockPos targetPos) {
         super(ModEntities.AIRSTRIKE_ENTITY.get(), level);
         this.noPhysics = true;
 
@@ -88,7 +84,8 @@ public class AirstrikeEntity extends Entity {
             return true;
         }
 
-        for (int chunkDist = 1; chunkDist <= 16; chunkDist++) {
+        // Поиск ближайшего загруженного чанка
+        for (int chunkDist = 1; chunkDist <= 24; chunkDist++) {  // 🆕 Больше попыток
             for (int chunkX = -chunkDist; chunkX <= chunkDist; chunkX++) {
                 for (int chunkZ = -chunkDist; chunkZ <= chunkDist; chunkZ++) {
                     if (Math.abs(chunkX) == chunkDist || Math.abs(chunkZ) == chunkDist) {
@@ -110,7 +107,8 @@ public class AirstrikeEntity extends Entity {
         int directionIndex = RANDOM.nextInt(8);
         double angle = DIRECTION_ANGLES[directionIndex];
         Vec3 dir = new Vec3(Math.cos(angle), 0, Math.sin(angle)).normalize();
-        return Vec3.atCenterOf(target).subtract(dir.scale(ATTACK_RADIUS)).add(0, AIRSTRIKE_HEIGHT, 0);
+        // 🆕 Спавним Гораздо ДАЛЕЕ от цели (150 блоков вместо 75)
+        return Vec3.atCenterOf(target).subtract(dir.scale(SPAWN_DISTANCE)).add(0, AIRSTRIKE_HEIGHT, 0);
     }
 
     private boolean isChunkLoaded(ServerLevel level, Vec3 pos) {
@@ -122,8 +120,9 @@ public class AirstrikeEntity extends Entity {
         int directionIndex = RANDOM.nextInt(8);
         double angle = DIRECTION_ANGLES[directionIndex];
         this.direction = new Vec3(Math.cos(angle), 0, Math.sin(angle)).normalize();
+        // 🆕 Используем УВЕЛИЧЕННОЕ расстояние спавна
         Vec3 startPos = Vec3.atCenterOf(target)
-                .subtract(this.direction.scale(ATTACK_RADIUS))
+                .subtract(this.direction.scale(SPAWN_DISTANCE))
                 .add(0, AIRSTRIKE_HEIGHT, 0);
         this.setPos(startPos);
         this.setDeltaMovement(this.direction.scale(PLANE_SPEED));
@@ -165,7 +164,6 @@ public class AirstrikeEntity extends Entity {
                 this.yRotO = newYaw;
             }
 
-            // ✅ ПОСТОЯННЫЙ ЗВУК ДВИГАТЕЛЕЙ
             playAmbientSound();
 
             BlockPos target = getTargetPos();
@@ -173,12 +171,18 @@ public class AirstrikeEntity extends Entity {
             Vec3 relativePos = this.position().subtract(targetCenter);
             double distanceToCenterSq = relativePos.horizontalDistanceSqr();
 
-            if (!hasFinishedAttack && distanceToCenterSq <= ATTACK_RADIUS * ATTACK_RADIUS) {
+            // 🆕 Логика: сбрасываем РОВНО 3 бомбы в радиусе атаки
+            if (!hasFinishedAttack && bombsDropped < TOTAL_BOMBS &&
+                    distanceToCenterSq <= ATTACK_RADIUS * ATTACK_RADIUS) {
                 bombTimer++;
                 if (bombTimer >= BOMB_INTERVAL) {
-                    dropBomb(target);
+                    dropAirBomb(target);  // 🆕 НОВЫЙ метод для авиабомб
                     bombTimer = 0;
                 }
+            } else if (bombsDropped >= TOTAL_BOMBS) {
+                // 🆕 Завершаем атаку после 3 бомб
+                hasFinishedAttack = true;
+                despawnTimer = 0;
             } else if (!hasFinishedAttack && distanceToCenterSq > ATTACK_RADIUS * ATTACK_RADIUS) {
                 Vec3 toTarget = targetCenter.subtract(this.position());
                 if (toTarget.dot(this.direction) < 0) {
@@ -196,50 +200,46 @@ public class AirstrikeEntity extends Entity {
         }
     }
 
-    // ✅ РАНДОМНЫЙ ВЫБОР БЕЗ ИСКАЖЕНИЯ (ТОЧНО КАК В ВАШЕМ КОДЕ!)
     private void playAmbientSound() {
         if (RANDOM.nextBoolean()) {
             if (ModSounds.BOMBER1.isPresent()) {
-                SoundEvent soundEvent = ModSounds.BOMBER1.get();
                 this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                        soundEvent, SoundSource.HOSTILE, 6.0F, 1.0F);
+                        ModSounds.BOMBER1.get(), SoundSource.HOSTILE, 6.0F, 1.0F);
             }
         } else {
             if (ModSounds.BOMBER2.isPresent()) {
-                SoundEvent soundEvent = ModSounds.BOMBER2.get();
                 this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                        soundEvent, SoundSource.HOSTILE, 6.0F, 1.0F);
+                        ModSounds.BOMBER2.get(), SoundSource.HOSTILE, 6.0F, 1.0F);
             }
         }
     }
 
-    private void dropBomb(BlockPos targetPos) {
+    // 🆕 В dropAirBomb() методах самолёта:
+    private void dropAirBomb(BlockPos targetPos) {
         ServerLevel serverLevel = (ServerLevel) this.level();
         LivingEntity owner = getOwner();
         if (owner == null) return;
 
         if (ModSounds.BOMBWHISTLE.isPresent()) {
-            SoundEvent soundEvent = ModSounds.BOMBWHISTLE.get();
             this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                    soundEvent, SoundSource.HOSTILE, 5.0F, 1.0F);
+                    ModSounds.BOMBWHISTLE.get(), SoundSource.HOSTILE, 5.0F, 1.0F);
         }
 
-        GrenadeType grenadeType = getRandomGrenadeType();
-        GrenadeProjectileEntity grenade = new GrenadeProjectileEntity(
-                ModEntities.GRENADE_PROJECTILE.get(), serverLevel, owner, grenadeType
+        // ✅ ПЕРЕДАЁМ YAW САМОЛЁТА БОМБЕ!
+        AirBombProjectileEntity airBomb = new AirBombProjectileEntity(
+                serverLevel, owner, this.getYRot()  // ← КЛЮЧЕВОЕ ИЗМЕНЕНИЕ!
         );
-        grenade.setPos(this.getX(), this.getY() - 1, this.getZ());
 
-        Vec3 directionToTarget = Vec3.atCenterOf(targetPos).subtract(grenade.position()).normalize();
-        grenade.shoot(directionToTarget.x, directionToTarget.y, directionToTarget.z, 1.5F, 1.0F);
+        airBomb.setPos(this.getX(), this.getY() - 2.0, this.getZ());
 
-        serverLevel.addFreshEntity(grenade);
+        Vec3 planeDirection = this.getDeltaMovement().normalize();
+        Vec3 bombDirection = new Vec3(planeDirection.x, -0.8, planeDirection.z).normalize();
+        airBomb.shoot(bombDirection.x, bombDirection.y, bombDirection.z, 1.8F, 0.2F);
+
+        serverLevel.addFreshEntity(airBomb);
+        bombsDropped++;
     }
 
-    private GrenadeType getRandomGrenadeType() {
-        GrenadeType[] allTypes = GrenadeType.values();
-        return allTypes[RANDOM.nextInt(allTypes.length)];
-    }
 
     private float yawRotationSpeed(float currentYaw, float targetYaw, float maxChange) {
         float f = wrapDegrees(targetYaw - currentYaw);
@@ -280,6 +280,7 @@ public class AirstrikeEntity extends Entity {
         }
         this.isWaitingForChunk = tag.getBoolean("WaitingForChunk");
         this.chunkRetryTimer = tag.getInt("ChunkRetryTimer");
+        this.bombsDropped = tag.getInt("BombsDropped");  // 🆕 Сохранение счётчика
     }
 
     @Override
@@ -291,6 +292,7 @@ public class AirstrikeEntity extends Entity {
         tag.putString("OwnerUUID", this.entityData.get(OWNER_UUID_ACCESSOR));
         tag.putBoolean("WaitingForChunk", isWaitingForChunk);
         tag.putInt("ChunkRetryTimer", chunkRetryTimer);
+        tag.putInt("BombsDropped", bombsDropped);  // 🆕 Сохранение счётчика
     }
 
     @Nonnull

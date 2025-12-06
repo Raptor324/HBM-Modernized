@@ -1,11 +1,11 @@
 package com.hbm_m.item.tools;
 
 import com.hbm_m.entity.grenades.AirstrikeEntity;
+import com.hbm_m.entity.grenades.AirstrikeHeavyEntity;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
@@ -20,12 +20,21 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class AirstrikeItem extends Item {
+public class AirstrikeHeavyItem extends Item {
 
     private static final int MAX_RANGE = 256;
 
-    public AirstrikeItem(Properties properties) {
+    public AirstrikeHeavyItem(Properties properties) {
         super(properties.stacksTo(1));
+    }
+    @Override
+    public boolean isFoil(ItemStack stack) {
+        return true;  // ✅ ПОСТОЯННЫЙ ПЕРЕЛИВ ДЛЯ ВСЕХ экземпляров!
+    }
+
+    @Override
+    public boolean isEnchantable(ItemStack stack) {
+        return false;  // ✅ НЕ добавляется в стол зачарований
     }
 
     @Override
@@ -46,7 +55,7 @@ public class AirstrikeItem extends Item {
                 }
 
                 // Создаем сущность самолета
-                AirstrikeEntity airplane = new AirstrikeEntity(level, player, targetPos);
+                AirstrikeHeavyEntity airplane = new AirstrikeHeavyEntity(level, player, targetPos);
                 level.addFreshEntity(airplane);
 
                 player.displayClientMessage(
@@ -80,7 +89,7 @@ public class AirstrikeItem extends Item {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
         tooltip.add(Component.literal("Вызывает авиаудар в целевую точку").withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("Дождь из случайных гранат").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal("3 мощных фугасных бомбы").withStyle(ChatFormatting.GRAY));
     }
 
     // Вспомогательный метод для трассировки луча, идентичный player.pick

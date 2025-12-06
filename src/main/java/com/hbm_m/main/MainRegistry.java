@@ -205,6 +205,8 @@ public class MainRegistry {
             event.accept(ModItems.GRENADE_NUC);
             event.accept(ModBlocks.MINE_AP);
             event.accept(ModBlocks.MINE_FAT);
+            event.accept(ModBlocks.AIRBOMB);
+            event.accept(ModItems.AIRBOMB_A);
             event.accept(ModBlocks.DET_MINER);
             event.accept(ModBlocks.GIGA_DET);
             event.accept(ModBlocks.WASTE_CHARGE);

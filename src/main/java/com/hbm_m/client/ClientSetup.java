@@ -215,6 +215,8 @@ public class ClientSetup {
     }
     @SubscribeEvent
     public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntities.AIRBOMB_PROJECTILE.get(),
+                AirBombProjectileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_ENTITY.get(), AirstrikeEntityRenderer::new);
     }
     @SubscribeEvent

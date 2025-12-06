@@ -156,7 +156,7 @@ public class GrenadeProjectileEntity extends ThrowableItemProjectile {
                     pos.getZ() + 0.5,
                     soundToPlay,
                     SoundSource.BLOCKS,
-                    1.0F,
+                    3.0F,
                     1.0F
             );
         }
