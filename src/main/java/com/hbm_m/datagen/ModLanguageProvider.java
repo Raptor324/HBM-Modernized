@@ -652,6 +652,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CONCRETE_MAGENTA_SLAB.get(), "Пурпурная бетонная плита");
                 add(ModBlocks.CONCRETE_ORANGE_SLAB.get(), "Оранжевая бетонная плита");
                 add(ModBlocks.CONCRETE_PINK_SLAB.get(), "Розовая бетонная плита");
+                add(ModItems.AIRSTRIKE_TEST.get(), "Авиаудар");
                 add(ModBlocks.CONCRETE_PURPLE_SLAB.get(), "Фиолетовая бетонная плита");
                 add(ModBlocks.CONCRETE_RED_SLAB.get(), "Красная бетонная плита");
                 add(ModBlocks.CONCRETE_SILVER_SLAB.get(), "Серебристая бетонная плита");
@@ -2211,6 +2212,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 // ORES
                 add(ModBlocks.SEQUESTRUM_ORE.get(), "Salpeter Ore");
                 add(ModItems.SEQUESTRUM.get(), "Salpeter");
+                add(ModItems.AIRSTRIKE_TEST.get(), "Airstrike");
                 add(ModBlocks.RESOURCE_ASBESTOS.get(), "Asbestos Cluster");
                 add(ModBlocks.RESOURCE_BAUXITE.get(), "Bauxite");
                 add(ModBlocks.RESOURCE_HEMATITE.get(), "Hematite");

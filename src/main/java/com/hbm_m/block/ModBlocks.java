@@ -329,6 +329,11 @@ public class ModBlocks {
                     .sound(SoundType.WOOD)
                     .requiresCorrectToolForDrops()));
 
+    public static final RegistryObject<Block> AIRBOMB = registerBlock("airbomb",
+            () -> new AirBombBlock(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops().noOcclusion()));
 
     public static final RegistryObject<Block> EXPLOSIVE_CHARGE = registerBlock("explosive_charge",
             () -> new ExplosiveChargeBlock(BlockBehaviour.Properties.of()
@@ -1058,7 +1063,6 @@ public class ModBlocks {
     public static final RegistryObject<Block> CRATE_STEEL = BLOCKS.register("crate_steel",
             () -> new SteelCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
                     .sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops()));
-
 
     public static final RegistryObject<Block> CRATE_DESH = registerBlock("crate_desh",
             () -> new DeshCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(1.5f, 2f).requiresCorrectToolForDrops()));

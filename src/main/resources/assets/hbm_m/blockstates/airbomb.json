@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "hbm_m:block/airbomb",
+      "y": 0
+    },
+    "facing=east": {
+      "model": "hbm_m:block/airbomb",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "hbm_m:block/airbomb",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "hbm_m:block/airbomb",
+      "y": 270
+    }
+  }
+}

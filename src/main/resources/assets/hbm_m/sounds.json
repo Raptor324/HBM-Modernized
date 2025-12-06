@@ -48,6 +48,27 @@
       "hbm_m:techbleep"
     ]
   },
+  "bomber1": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.bomber1",
+    "sounds": [
+      "hbm_m:bomber1"
+    ]
+  },
+  "bomber2": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.bomber2",
+    "sounds": [
+      "hbm_m:bomber3"
+    ]
+  },
+  "bombwhistle": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.bombwhistle",
+    "sounds": [
+      "hbm_m:bombwhistle"
+    ]
+  },
   "crateopen": {
     "category": "player",
     "subtitle": "sounds.hbm_m.crateopen",
