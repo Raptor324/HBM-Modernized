@@ -1,6 +1,5 @@
 package com.hbm_m.item.fekal_grenades;
 
-
 import com.hbm_m.entity.grenades.AirBombProjectileEntity;
 import com.hbm_m.entity.grenades.GrenadeNucProjectileEntity;
 import net.minecraft.ChatFormatting;
@@ -27,8 +26,6 @@ public class AirBombItem extends Item {
         super(properties);
     }
 
-
-
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack itemstack = player.getItemInHand(hand);
@@ -39,10 +36,13 @@ public class AirBombItem extends Item {
                 1.5F, 0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F));
 
         if (!level.isClientSide) {
-            AirBombProjectileEntity grenade = new AirBombProjectileEntity(level, player);
+            // ✅ СИНХРОНИЗАЦИЯ НАПРАВЛЕНИЯ ИГРОКА
+            AirBombProjectileEntity grenade = new AirBombProjectileEntity(
+                    level, player, player.getYRot()  // ← Yaw игрока для синхронизации!
+            );
             grenade.setItem(itemstack);
 
-            // Бросаем чуть слабее (скорость 1.2F вместо 1.5F), так как это тяжелая ядерная граната
+            // Бросаем чуть слабее (скорость 1.2F вместо 1.5F)
             grenade.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, 1.2F, 1.0F);
             level.addFreshEntity(grenade);
 
@@ -54,5 +54,4 @@ public class AirBombItem extends Item {
 
         return InteractionResultHolder.sidedSuccess(itemstack, level.isClientSide());
     }
-
 }

@@ -11,6 +11,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -32,8 +33,8 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
 
     // ✅ Параметры взрыва
     private static final float EXPLOSION_POWER = 12.0f;
+    private static final float EXPLOSION_POWER2 = 20.0f;
     private static final float DAMAGE_RADIUS = 28.0f;
-    private static final float DAMAGE_AMOUNT = 250.0f;
     private static final int DETONATION_RADIUS = 10;
     private static final Random RANDOM = new Random();
 
@@ -83,8 +84,20 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
                 this.setYRot(synchedYaw);
                 this.yRotO = synchedYaw;
             }
+            // 🆕 СВИСТ БОМБЫ: ТОЛЬКО 1 РАЗ при спавне
+            if (this.tickCount == 1 && !instantDetonation) {
+                playBombWhistle();
+            }
         }
     }
+    // 🆕 СВИСТ БОМБЫ: ОДИН РАЗ при спавне
+    private void playBombWhistle() {
+        if (ModSounds.BOMBWHISTLE.isPresent()) {
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                    ModSounds.BOMBWHISTLE.get(), SoundSource.HOSTILE, 6.0F, 0.9F + RANDOM.nextFloat() * 0.2F);
+        }
+    }
+
 
     @Override
     protected void onHit(HitResult result) {
@@ -121,10 +134,14 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
             scheduleExplosionEffects(serverLevel, x, y, z);
             playDetonationSound(serverLevel, pos);
 
-            // ✅ Второй взрыв через 1 секунду
             if (serverLevel.getServer() != null) {
                 serverLevel.getServer().tell(new net.minecraft.server.TickTask(20, () -> {
                     serverLevel.explode(null, x, y, z, EXPLOSION_POWER * 0.8F, Level.ExplosionInteraction.TNT);
+                }));
+            }
+            if (serverLevel.getServer() != null) {
+                serverLevel.getServer().tell(new net.minecraft.server.TickTask(20, () -> {
+                    serverLevel.explode(null, x, y, z, EXPLOSION_POWER2 * 0.8F, Level.ExplosionInteraction.NONE);
                 }));
             }
         }

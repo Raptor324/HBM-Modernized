@@ -330,7 +330,7 @@ public class ModBlocks {
                     .requiresCorrectToolForDrops()));
 
     public static final RegistryObject<Block> AIRBOMB = registerBlock("airbomb",
-            () -> new ExplosiveChargeBlock(BlockBehaviour.Properties.of()
+            () -> new AirBombBlock(BlockBehaviour.Properties.of()
                     .strength(0.5F, 6.0F)
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops().noOcclusion()));

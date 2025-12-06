@@ -32,6 +32,13 @@ public class AirBombProjectileEntityRenderer extends EntityRenderer<AirBombProje
 
         poseStack.pushPose();
 
+        // ✅ СИНХРОНИЗАЦИЯ С САМОЛЁТОМ: поворот по Yaw
+        poseStack.mulPose(Axis.YP.rotationDegrees(-entity.getSynchedYaw()));
+
+        // 🆕 ПОСТОЯННЫЙ НАКЛОН К ЗЕМЛЕ: +1° каждые 10 тиков (НАКОПИТЕЛЬНО)
+        float tiltAngle = (entity.tickCount / 10.0F) * 7.0F;  // 0° → 1° → 2° → 3°...
+        poseStack.mulPose(Axis.XP.rotationDegrees(tiltAngle));  // Наклон носом вниз
+
         // ✅ Смещение центра модели
         poseStack.translate(-0.5, 0.0, -0.5);
 
@@ -52,7 +59,6 @@ public class AirBombProjectileEntityRenderer extends EntityRenderer<AirBombProje
 
     @Override
     public ResourceLocation getTextureLocation(AirBombProjectileEntity entity) {
-        // Не используется при рендере через blockRenderer, можно вернуть что‑нибудь дефолтное
         return new ResourceLocation("minecraft", "textures/block/iron_block.png");
     }
 }

@@ -218,12 +218,6 @@ public class AirstrikeEntity extends Entity {
         LivingEntity owner = getOwner();
         if (owner == null) return;
 
-        if (ModSounds.BOMBWHISTLE.isPresent()) {
-            SoundEvent soundEvent = ModSounds.BOMBWHISTLE.get();
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                    soundEvent, SoundSource.HOSTILE, 5.0F, 1.0F);
-        }
-
         GrenadeType grenadeType = getRandomGrenadeType();
         GrenadeProjectileEntity grenade = new GrenadeProjectileEntity(
                 ModEntities.GRENADE_PROJECTILE.get(), serverLevel, owner, grenadeType

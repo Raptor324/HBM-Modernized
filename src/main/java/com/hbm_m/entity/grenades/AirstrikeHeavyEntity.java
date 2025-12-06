@@ -220,10 +220,6 @@ public class AirstrikeHeavyEntity extends Entity {
         LivingEntity owner = getOwner();
         if (owner == null) return;
 
-        if (ModSounds.BOMBWHISTLE.isPresent()) {
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                    ModSounds.BOMBWHISTLE.get(), SoundSource.HOSTILE, 5.0F, 1.0F);
-        }
 
         // ✅ ПЕРЕДАЁМ YAW САМОЛЁТА БОМБЕ!
         AirBombProjectileEntity airBomb = new AirBombProjectileEntity(
