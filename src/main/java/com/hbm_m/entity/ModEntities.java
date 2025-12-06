@@ -37,17 +37,22 @@ public class ModEntities {
                             .sized(2.0F, 1.0F)
                             .build("airstrike")
             );
-    public static final RegistryObject<EntityType<AirstrikeHeavyEntity>> AIRSTRIKE_HEAVY_ENTITY =
-            ENTITY_TYPES.register("airstrikeheavy",
-                    () -> EntityType.Builder.<AirstrikeHeavyEntity>of(AirstrikeHeavyEntity::new, MobCategory.MISC)
+    public static final RegistryObject<EntityType<AirstrikeNukeEntity>> AIRSTRIKE_NUKE_ENTITY =
+            ENTITY_TYPES.register("airstrikenuke",
+                    () -> EntityType.Builder.<AirstrikeNukeEntity>of(AirstrikeNukeEntity::new, MobCategory.MISC)
                             .sized(2.0F, 1.0F)
-                            .build("airstrikeheavy"));
+                            .build("airstrikenuke"));
 
     public static final RegistryObject<EntityType<AirBombProjectileEntity>> AIRBOMB_PROJECTILE =
             ENTITY_TYPES.register("airbomb_projectile",
                     () -> EntityType.Builder.<AirBombProjectileEntity>of(AirBombProjectileEntity::new, MobCategory.MISC)
                             .sized(0.5f, 0.5f)
                             .build("airbomb_projectile"));
+    public static final RegistryObject<EntityType<AirNukeBombProjectileEntity>> AIRNUKEBOMB_PROJECTILE =
+            ENTITY_TYPES.register("airnukebomb_projectile",
+                    () -> EntityType.Builder.<AirNukeBombProjectileEntity>of(AirNukeBombProjectileEntity::new, MobCategory.MISC)
+                            .sized(0.5f, 0.5f)
+                            .build("airnukebomb_projectile"));
     public static final RegistryObject<EntityType<GrenadeProjectileEntity>> GRENADEFIRE_PROJECTILE =
         ENTITY_TYPES.register("grenadefire_projectile",
             () -> EntityType.Builder.<GrenadeProjectileEntity>of(GrenadeProjectileEntity::new, MobCategory.MISC)

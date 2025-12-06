@@ -10,7 +10,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.hbm_m.item.fekal_grenades.AirBombItem;
+import com.hbm_m.item.fekal_grenades.*;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
@@ -24,9 +24,6 @@ import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeIfType;
 import com.hbm_m.entity.grenades.GrenadeType;
-import com.hbm_m.item.fekal_grenades.GrenadeIfItem;
-import com.hbm_m.item.fekal_grenades.GrenadeItem;
-import com.hbm_m.item.fekal_grenades.GrenadeNucItem;
 import com.hbm_m.item.tools.*;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
@@ -313,6 +310,8 @@ public class ModItems {
 
     public static final RegistryObject<Item> AIRBOMB_A = ITEMS.register("airbomb_a",
             () -> new AirBombItem(new Item.Properties(), ModEntities.AIRBOMB_PROJECTILE));
+    public static final RegistryObject<Item> AIRNUKEBOMB_A = ITEMS.register("airnukebomb_a",
+            () -> new AirNukeBombItem(new Item.Properties(), ModEntities.AIRNUKEBOMB_PROJECTILE));
 
     // БРОНЯ ГОРНЯКА:
     public static final RegistryObject<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet",
@@ -1269,6 +1268,8 @@ public class ModItems {
             () -> new AirstrikeItem(new Item.Properties()));
     public static final RegistryObject<Item> AIRSTRIKE_HEAVY = ITEMS.register("airstrike_heavy",
             () -> new AirstrikeHeavyItem(new Item.Properties()));
+    public static final RegistryObject<Item> AIRSTRIKE_NUKE = ITEMS.register("airstrike_nuke",
+            () -> new AirstrikeNukeItem(new Item.Properties()));
     public static final RegistryObject<Item> WIRE_RED_COPPER = ITEMS.register("wire_red_copper",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> WIRE_ADVANCED_ALLOY = ITEMS.register("wire_advanced_alloy",
