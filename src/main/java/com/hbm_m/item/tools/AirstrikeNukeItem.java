@@ -1,7 +1,7 @@
 package com.hbm_m.item.tools;
 
-import com.hbm_m.entity.grenades.AirstrikeEntity;
 import com.hbm_m.entity.grenades.AirstrikeHeavyEntity;
+import com.hbm_m.entity.grenades.AirstrikeNukeEntity;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -20,12 +20,21 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class AirstrikeHeavyItem extends Item {
+public class AirstrikeNukeItem extends Item {
 
     private static final int MAX_RANGE = 256;
 
-    public AirstrikeHeavyItem(Properties properties) {
+    public AirstrikeNukeItem(Properties properties) {
         super(properties.stacksTo(1));
+    }
+    @Override
+    public boolean isFoil(ItemStack stack) {
+        return true;  // ✅ ПОСТОЯННЫЙ ПЕРЕЛИВ ДЛЯ ВСЕХ экземпляров!
+    }
+
+    @Override
+    public boolean isEnchantable(ItemStack stack) {
+        return false;  // ✅ НЕ добавляется в стол зачарований
     }
 
     @Override
@@ -46,7 +55,7 @@ public class AirstrikeHeavyItem extends Item {
                 }
 
                 // Создаем сущность самолета
-                AirstrikeHeavyEntity airplane = new AirstrikeHeavyEntity(level, player, targetPos);
+                AirstrikeNukeEntity airplane = new AirstrikeNukeEntity(level, player, targetPos);
                 level.addFreshEntity(airplane);
 
                 player.displayClientMessage(
@@ -80,7 +89,7 @@ public class AirstrikeHeavyItem extends Item {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
         tooltip.add(Component.literal("Вызывает авиаудар в целевую точку").withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("3 мощных фугасных бомбы").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal("1 тактическая ядерная бомба").withStyle(ChatFormatting.GRAY));
     }
 
     // Вспомогательный метод для трассировки луча, идентичный player.pick

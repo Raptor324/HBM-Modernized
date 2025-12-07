@@ -225,6 +225,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.BATTERY_SCHRABIDIUM);
         simpleItem(ModItems.BATTERY_POTATO);
         simpleItem(ModItems.BATTERY);
+        simpleItem(ModItems.AIRSTRIKE_NUKE);
         simpleItem(ModItems.BATTERY_RED_CELL);
         simpleItem(ModItems.BATTERY_RED_CELL_6);
         simpleItem(ModItems.BATTERY_RED_CELL_24);

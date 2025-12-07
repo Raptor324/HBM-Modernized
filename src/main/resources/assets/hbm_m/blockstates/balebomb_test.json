@@ -1,0 +1,20 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "hbm_m:block/balebomb_test",
+      "y": 90
+    },
+    "facing=east": {
+      "model": "hbm_m:block/balebomb_test",
+      "y": 180
+    },
+    "facing=south": {
+      "model": "hbm_m:block/balebomb_test",
+      "y": 270
+    },
+    "facing=west": {
+      "model": "hbm_m:block/balebomb_test",
+      "y": 0
+    }
+  }
+}

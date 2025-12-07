@@ -25,7 +25,7 @@ import java.util.Random;
 
 public class GrenadeProjectileEntity extends ThrowableItemProjectile {
 
-    private static final EntityDataAccessor<String> GRENADE_TYPE_ID =
+    static final EntityDataAccessor<String> GRENADE_TYPE_ID =
             SynchedEntityData.defineId(GrenadeProjectileEntity.class, EntityDataSerializers.STRING);
 
     private int bounceCount = 0;

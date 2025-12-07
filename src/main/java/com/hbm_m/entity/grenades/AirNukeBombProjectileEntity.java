@@ -1,10 +1,13 @@
 package com.hbm_m.entity.grenades;
 
 import com.hbm_m.block.IDetonatable;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.util.CraterGenerator;
+import com.hbm_m.util.DudCraterGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -13,6 +16,7 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.server.TickTask;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -28,29 +32,33 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-public class AirBombProjectileEntity extends ThrowableItemProjectile {
+public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
 
     private static final EntityDataAccessor<Float> SYNCHED_YAW =
-            SynchedEntityData.defineId(AirBombProjectileEntity.class, EntityDataSerializers.FLOAT);
+            SynchedEntityData.defineId(AirNukeBombProjectileEntity.class, EntityDataSerializers.FLOAT);
 
-    // ✅ Параметры взрыва
-    private static final float EXPLOSION_POWER = 12.0f;
-    private static final float EXPLOSION_POWER2 = 20.0f;
-    private static final float DAMAGE_RADIUS = 28.0f;
-    private static final int DETONATION_RADIUS = 10;
+    // ✅ Параметры ЯДЕРНОГО взрыва
+    private static final float EXPLOSION_POWER = 25.0f;
+    private static final float DAMAGE_RADIUS = 60.0f;
+    private static final int DETONATION_RADIUS = 20;
     private static final Random RANDOM = new Random();
+
+    // ✅ Параметры кратера (как у NuclearChargeBlock)
+    private static final int CRATER_RADIUS = 30;
+    private static final int CRATER_DEPTH = 15;
+    private static final int CRATER_GENERATION_DELAY = 30;
 
     private boolean instantDetonation = false;
 
-    public AirBombProjectileEntity(EntityType<? extends ThrowableItemProjectile> entityType, Level level) {
+    public AirNukeBombProjectileEntity(EntityType<? extends ThrowableItemProjectile> entityType, Level level) {
         super(entityType, level);
     }
 
-    public AirBombProjectileEntity(Level level, LivingEntity thrower) {
-        super(ModEntities.AIRBOMB_PROJECTILE.get(), thrower, level);
+    public AirNukeBombProjectileEntity(Level level, LivingEntity thrower) {
+        super(ModEntities.AIRNUKEBOMB_PROJECTILE.get(), thrower, level);
     }
 
-    public AirBombProjectileEntity(Level level, LivingEntity thrower, float planeYaw) {
+    public AirNukeBombProjectileEntity(Level level, LivingEntity thrower, float planeYaw) {
         this(level, thrower);
         syncYawWithPlane(planeYaw);
     }
@@ -73,7 +81,7 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
 
     @Override
     protected Item getDefaultItem() {
-        return ModItems.AIRBOMB_A.get();
+        return ModItems.AIRBOMB_A.get(); // Замени на свою ядерную бомбу
     }
 
     @Override
@@ -86,24 +94,16 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
                 this.setYRot(synchedYaw);
                 this.yRotO = synchedYaw;
             }
-            // 🆕 [translate:СВИСТ БОМБЫ]: только 1 раз при спавне
             if (this.tickCount == 1 && !instantDetonation) {
                 playBombWhistle();
             }
         }
     }
 
-    // 🆕 [translate:СВИСТ БОМБЫ]: один раз при спавне
     private void playBombWhistle() {
         if (ModSounds.BOMBWHISTLE.isPresent()) {
-            this.level().playSound(
-                    null,
-                    this.getX(), this.getY(), this.getZ(),
-                    ModSounds.BOMBWHISTLE.get(),
-                    SoundSource.HOSTILE,
-                    6.0F,
-                    0.9F + RANDOM.nextFloat() * 0.2F
-            );
+            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
+                    ModSounds.BOMBWHISTLE.get(), SoundSource.HOSTILE, 10.0F, 0.5F + RANDOM.nextFloat() * 0.2F);
         }
     }
 
@@ -119,7 +119,6 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
                 explode(blockResult.getBlockPos());
                 return;
             }
-
             if (result.getType() == HitResult.Type.ENTITY) {
                 explode(this.blockPosition());
             }
@@ -135,21 +134,32 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
 
             this.discard();
 
-            // ✅ Все кастомные эффекты
+            // ✅ ЯДЕРНЫЙ ВЗРЫВ: сначала эффекты, потом кратер
             triggerNearbyDetonations(serverLevel, pos, null);
             dealExplosionDamage(serverLevel, x, y, z);
-            scheduleExplosionEffects(serverLevel, x, y, z);
+            scheduleNuclearEffects(serverLevel, x, y, z); // ← ЯДЕРНЫЕ ЭФФЕКТЫ
             playDetonationSound(serverLevel, pos);
 
+            // ✅ ОСНОВНОЙ ЯДЕРНЫЙ ВЗРЫВ (без разрушения блоков)
+            serverLevel.explode(null, x, y, z, EXPLOSION_POWER, Level.ExplosionInteraction.NONE);
+
+            // ✅ ГЕНЕРАТОР КРАТЕРА (как у NuclearChargeBlock)
             if (serverLevel.getServer() != null) {
-                serverLevel.getServer().tell(new net.minecraft.server.TickTask(20, () ->
-                        serverLevel.explode(null, x, y, z, EXPLOSION_POWER * 0.8F, Level.ExplosionInteraction.TNT)
-                ));
-            }
-            if (serverLevel.getServer() != null) {
-                serverLevel.getServer().tell(new net.minecraft.server.TickTask(20, () ->
-                        serverLevel.explode(null, x, y, z, EXPLOSION_POWER2 * 0.8F, Level.ExplosionInteraction.NONE)
-                ));
+                serverLevel.getServer().tell(new TickTask(CRATER_GENERATION_DELAY, () -> {
+                    DudCraterGenerator.generateCrater(
+                            serverLevel,
+                            pos,
+                            CRATER_RADIUS,
+                            CRATER_DEPTH,
+                            ModBlocks.SELLAFIELD_SLAKED.get(),
+                            ModBlocks.SELLAFIELD_SLAKED1.get(),
+                            ModBlocks.SELLAFIELD_SLAKED2.get(),
+                            ModBlocks.SELLAFIELD_SLAKED3.get(),
+                            ModBlocks.WASTE_LOG.get(),
+                            ModBlocks.WASTE_PLANKS.get(),
+                            ModBlocks.BURNED_GRASS.get()
+                    );
+                }));
             }
         }
     }
@@ -162,58 +172,19 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
                         x + DAMAGE_RADIUS, y + DAMAGE_RADIUS, z + DAMAGE_RADIUS
                 )
         );
-        // здесь можно добавить урон по [translate:entitiesNearby]
     }
 
     /**
-     * Рандомный выбор одного из трёх звуков [translate:бомб].
+     * ✅ ЯДЕРНЫЕ ЭФФЕКТЫ (как у NuclearChargeBlock)
      */
-    private void playDetonationSound(Level level, BlockPos pos) {
-        List<SoundEvent> candidates = new ArrayList<>();
-
-        if (ModSounds.BOMBDET1.isPresent()) {
-            candidates.add(ModSounds.BOMBDET1.get());
-        }
-        if (ModSounds.BOMBDET2.isPresent()) {
-            candidates.add(ModSounds.BOMBDET2.get());
-        }
-        if (ModSounds.BOMBDET3.isPresent()) {
-            candidates.add(ModSounds.BOMBDET3.get());
-        }
-
-        // Если ни один из трёх звуков не зарегистрирован — fallback на старый
-        if (candidates.isEmpty()) {
-            if (ModSounds.EXPLOSION_LARGE_NEAR.isPresent()) {
-                level.playSound(
-                        null,
-                        pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                        ModSounds.EXPLOSION_LARGE_NEAR.get(),
-                        SoundSource.BLOCKS,
-                        3.0F,
-                        0.8F + RANDOM.nextFloat() * 0.2F
-                );
-            }
-            return;
-        }
-
-        SoundEvent soundEvent = candidates.get(RANDOM.nextInt(candidates.size()));
-
-        level.playSound(
-                null,
-                pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                soundEvent,
-                SoundSource.BLOCKS,
-                8.0F,
-                0.8F + RANDOM.nextFloat() * 0.2F
-        );
-    }
-
-    // ✅ Кастомные эффекты
-    private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
+    private void scheduleNuclearEffects(ServerLevel level, double x, double y, double z) {
         spawnFlash(level, x, y, z);
         spawnSparks(level, x, y, z);
-        level.getServer().tell(new net.minecraft.server.TickTask(3, () -> spawnShockwave(level, x, y, z)));
-        level.getServer().tell(new net.minecraft.server.TickTask(8, () -> spawnMushroomCloud(level, x, y, z)));
+
+        if (level.getServer() != null) {
+            level.getServer().tell(new TickTask(5, () -> spawnShockwave(level, x, y, z)));
+            level.getServer().tell(new TickTask(10, () -> spawnMushroomCloud(level, x, y, z)));
+        }
     }
 
     private void spawnFlash(ServerLevel level, double x, double y, double z) {
@@ -221,53 +192,55 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
     }
 
     private void spawnSparks(ServerLevel level, double x, double y, double z) {
-        for (int i = 0; i < 400; i++) {
-            double xSpeed = (level.random.nextDouble() - 0.5) * 6.0;
-            double ySpeed = level.random.nextDouble() * 5.0;
-            double zSpeed = (level.random.nextDouble() - 0.5) * 6.0;
-            level.sendParticles(ModExplosionParticles.EXPLOSION_SPARK.get(), x, y, z, 1, xSpeed, ySpeed, zSpeed, 1.5);
+        for (int i = 0; i < 200; i++) {
+            double xSpeed = (level.random.nextDouble() - 0.5) * 4.0;
+            double ySpeed = level.random.nextDouble() * 3.0;
+            double zSpeed = (level.random.nextDouble() - 0.5) * 4.0;
+            level.sendParticles(ModExplosionParticles.EXPLOSION_SPARK.get(), x, y, z, 1, xSpeed, ySpeed, zSpeed, 1.0);
         }
     }
 
     private void spawnShockwave(ServerLevel level, double x, double y, double z) {
-        for (int ring = 0; ring < 6; ring++) {
-            double ringY = y + (ring * 0.3);
+        for (int ring = 0; ring < 3; ring++) {
+            double ringY = y + (ring * 0.5);
             level.sendParticles(ModExplosionParticles.SHOCKWAVE.get(), x, ringY, z, 1, 0, 0, 0, 0);
         }
     }
 
     private void spawnMushroomCloud(ServerLevel level, double x, double y, double z) {
         // Стебель
-        for (int i = 0; i < 150; i++) {
-            double offsetX = (level.random.nextDouble() - 0.5) * 6.0;
-            double offsetZ = (level.random.nextDouble() - 0.5) * 6.0;
-            double ySpeed = 0.8 + level.random.nextDouble() * 0.4;
-            level.sendParticles(
-                    ModExplosionParticles.MUSHROOM_SMOKE.get(),
-                    x + offsetX, y, z + offsetZ,
-                    1,
-                    offsetX * 0.08, ySpeed, offsetZ * 0.08,
-                    1.5
-            );
+        for (int i = 0; i < 40; i++) {
+            double offsetX = (level.random.nextDouble() - 0.5) * 4.0;
+            double offsetZ = (level.random.nextDouble() - 0.5) * 4.0;
+            double ySpeed = 0.5 + level.random.nextDouble() * 0.3;
+            level.sendParticles(ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                    x + offsetX, y, z + offsetZ, 1, offsetX * 0.05, ySpeed, offsetZ * 0.05, 1.0);
         }
         // Шапка
-        for (int i = 0; i < 250; i++) {
+        for (int i = 0; i < 60; i++) {
             double angle = level.random.nextDouble() * Math.PI * 2;
-            double radius = 8.0 + level.random.nextDouble() * 12.0;
+            double radius = 5.0 + level.random.nextDouble() * 8.0;
             double offsetX = Math.cos(angle) * radius;
             double offsetZ = Math.sin(angle) * radius;
-            double capY = y + 20 + level.random.nextDouble() * 10;
-            double xSpeed = Math.cos(angle) * 0.5;
-            double ySpeed = -0.1 + level.random.nextDouble() * 0.2;
-            double zSpeed = Math.sin(angle) * 0.5;
-            level.sendParticles(
-                    ModExplosionParticles.MUSHROOM_SMOKE.get(),
-                    x + offsetX, capY, z + offsetZ,
-                    1,
-                    xSpeed, ySpeed, zSpeed,
-                    1.5
-            );
+            double capY = y + 15 + level.random.nextDouble() * 5;
+            double xSpeed = Math.cos(angle) * 0.3;
+            double ySpeed = -0.1 + level.random.nextDouble() * 0.1;
+            double zSpeed = Math.sin(angle) * 0.3;
+            level.sendParticles(ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                    x + offsetX, capY, z + offsetZ, 1, xSpeed, ySpeed, zSpeed, 1.0);
         }
+    }
+
+    private void playDetonationSound(ServerLevel level, BlockPos pos) {
+        List<SoundEvent> candidates = new ArrayList<>();
+        if (ModSounds.EXPLOSION_LARGE_NEAR.isPresent()) candidates.add(ModSounds.BOMBDET1.get());
+        if (ModSounds.EXPLOSION_LARGE_NEAR.isPresent()) candidates.add(ModSounds.BOMBDET2.get());
+        if (ModSounds.EXPLOSION_LARGE_NEAR.isPresent()) candidates.add(ModSounds.BOMBDET3.get());
+
+
+        SoundEvent soundEvent = candidates.get(RANDOM.nextInt(candidates.size()));
+        level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                soundEvent, SoundSource.BLOCKS, 8.0F, 0.8F + RANDOM.nextFloat() * 0.2F);
     }
 
     private void triggerNearbyDetonations(ServerLevel serverLevel, BlockPos pos, Player player) {
@@ -281,9 +254,8 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
                         Block block = checkState.getBlock();
                         if (block instanceof IDetonatable detonatable) {
                             int delay = (int) (dist * 2.0);
-                            serverLevel.getServer().tell(new net.minecraft.server.TickTask(delay, () ->
-                                    detonatable.onDetonate(serverLevel, checkPos, checkState, player)
-                            ));
+                            serverLevel.getServer().tell(new TickTask(delay, () ->
+                                    detonatable.onDetonate(serverLevel, checkPos, checkState, player)));
                         }
                     }
                 }

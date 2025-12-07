@@ -1,7 +1,6 @@
 package com.hbm_m.entity.grenades;
 
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.item.ModItems;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -11,7 +10,6 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -24,15 +22,15 @@ import javax.annotation.Nonnull;
 import java.util.Random;
 import java.util.UUID;
 
-public class AirstrikeHeavyEntity extends Entity {
+public class AirstrikeNukeEntity extends Entity {
 
     // ✅ Параметры (увеличено расстояние спавна самолёта)
-    private static final double AIRSTRIKE_HEIGHT = 80.0;  // Выше для драматичности
-    private static final double SPAWN_DISTANCE = 150.0;    // 🆕 ДАЛЕКО ОТ ЦЕЛИ (было 75)
-    private static final double ATTACK_RADIUS = 100;
-    private static final double PLANE_SPEED = 1.25;         // Немного быстрее
-    private static final int BOMB_INTERVAL = 12;           // Больше пауза между бомбами
-    private static final int TOTAL_BOMBS = 4;              // 🆕 РОВНО 3 БОМБЫ
+    private static final double AIRSTRIKE_HEIGHT = 110.0;
+    private static final double SPAWN_DISTANCE = 150.0;
+    private static final double ATTACK_RADIUS = 75;
+    private static final double PLANE_SPEED = 1;
+    private static final int BOMB_INTERVAL = 12;
+    private static final int TOTAL_BOMBS = 1;
     private static final int DESPAWN_DELAY = 80;
     private static final int CHUNK_RETRY_DELAY = 60;
 
@@ -53,17 +51,17 @@ public class AirstrikeHeavyEntity extends Entity {
     };
 
     private static final EntityDataAccessor<BlockPos> TARGET_POS =
-            SynchedEntityData.defineId(AirstrikeHeavyEntity.class, EntityDataSerializers.BLOCK_POS);
+            SynchedEntityData.defineId(AirstrikeNukeEntity.class, EntityDataSerializers.BLOCK_POS);
     private static final EntityDataAccessor<String> OWNER_UUID_ACCESSOR =
-            SynchedEntityData.defineId(AirstrikeHeavyEntity.class, EntityDataSerializers.STRING);
+            SynchedEntityData.defineId(AirstrikeNukeEntity.class, EntityDataSerializers.STRING);
 
-    public AirstrikeHeavyEntity(EntityType<?> entityType, Level level) {
+    public AirstrikeNukeEntity(EntityType<?> entityType, Level level) {
         super(entityType, level);
         this.noPhysics = true;
     }
 
-    public AirstrikeHeavyEntity(Level level, LivingEntity owner, BlockPos targetPos) {
-        super(ModEntities.AIRSTRIKE_ENTITY.get(), level);
+    public AirstrikeNukeEntity(Level level, LivingEntity owner, BlockPos targetPos) {
+        super(ModEntities.AIRSTRIKE_NUKE_ENTITY.get(), level);
         this.noPhysics = true;
 
         this.entityData.set(TARGET_POS, targetPos);
@@ -222,18 +220,18 @@ public class AirstrikeHeavyEntity extends Entity {
         // ✅ Направление самолёта (нормализованное)
         Vec3 planeDirection = this.getDeltaMovement().normalize();
 
-        // ✅ ПЕРПЕНДИКУЛЯРНОЕ НАПРАВЛЕНИЕ ВПРАВО (90° по часовой)
-        Vec3 rightDirection = new Vec3(-planeDirection.z, 0, planeDirection.x).normalize();
+        // ✅ ПЕРПЕНДИКУЛЯРНОЕ НАПРАВЛЕНИЕ ВЛЕВО (90° против часовой)
+        Vec3 leftDirection = new Vec3(planeDirection.z, 0, -planeDirection.x).normalize();
 
-        // ✅ ТОЧКА СБРОСА: прямо под самолётом + 2 блока вправо
+        // ✅ ТОЧКА СБРОСА: +3 блока ВПЕРЁД + 2 блока ВЛЕВО
         Vec3 dropPos = new Vec3(
-                this.getX() + rightDirection.x * 2.0,  // +2 блока по X вправо
-                this.getY() - 2.0,                     // под самолётом
-                this.getZ() + rightDirection.z * 2.0   // +2 блока по Z вправо
+                this.getX() + planeDirection.x * 10.0 + leftDirection.x * 4.0,   // +3 вперёд +2 влево
+                this.getY() - 2.0,                                              // под самолётом
+                this.getZ() + planeDirection.z * 10.0 + leftDirection.z * 4.0    // +3 вперёд +2 влево
         );
 
         // ✅ ПЕРЕДАЁМ YAW САМОЛЁТА БОМБЕ!
-        AirBombProjectileEntity airBomb = new AirBombProjectileEntity(
+        AirNukeBombProjectileEntity airBomb = new AirNukeBombProjectileEntity(
                 serverLevel, owner, this.getYRot()
         );
 
