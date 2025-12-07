@@ -8,6 +8,7 @@ import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.util.ShockwaveGenerator;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -255,65 +256,69 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
     }
 
     private void spawnFlash(ServerLevel level, double x, double y, double z) {
+        // ✅ Каст к SimpleParticleType
         level.sendParticles(
-                ModExplosionParticles.FLASH.get(),
+                (SimpleParticleType) ModExplosionParticles.FLASH.get(),
                 x, y, z, 1, 0, 0, 0, 0
         );
     }
 
     private void spawnSparks(ServerLevel level, double x, double y, double z) {
-        for (int i = 0; i < 300; i++) { // Немного больше искр для ядерки
-            double xSpeed = (level.random.nextDouble() - 0.5) * 5.0;
-            double ySpeed = level.random.nextDouble() * 4.0;
-            double zSpeed = (level.random.nextDouble() - 0.5) * 5.0;
+        for (int i = 0; i < 400; i++) {
+            double xSpeed = (level.random.nextDouble() - 0.5) * 6.0;
+            double ySpeed = level.random.nextDouble() * 5.0;
+            double zSpeed = (level.random.nextDouble() - 0.5) * 6.0;
             level.sendParticles(
-                    ModExplosionParticles.EXPLOSION_SPARK.get(),
-                    x, y, z, 1, xSpeed, ySpeed, zSpeed, 1.2
+                    (SimpleParticleType) ModExplosionParticles.EXPLOSION_SPARK.get(),
+                    x, y, z, 1, xSpeed, ySpeed, zSpeed, 1.5
             );
         }
     }
 
     private void spawnShockwave(ServerLevel level, double x, double y, double z) {
-        // 4 кольца для более мощного эффекта
-        for (int ring = 0; ring < 4; ring++) {
-            double ringY = y + (ring * 0.4);
+        for (int ring = 0; ring < 6; ring++) {
+            double ringY = y + (ring * 0.3);
             level.sendParticles(
-                    ModExplosionParticles.SHOCKWAVE.get(),
+                    (SimpleParticleType) ModExplosionParticles.SHOCKWAVE.get(),
                     x, ringY, z, 1, 0, 0, 0, 0
             );
         }
     }
 
     private void spawnMushroomCloud(ServerLevel level, double x, double y, double z) {
-        // Стебель гриба (больше дыма)
-        for (int i = 0; i < 120; i++) {
-            double offsetX = (level.random.nextDouble() - 0.5) * 5.0;
-            double offsetZ = (level.random.nextDouble() - 0.5) * 5.0;
-            double ySpeed = 0.6 + level.random.nextDouble() * 0.4;
+        // Стебель
+        for (int i = 0; i < 150; i++) {
+            double offsetX = (level.random.nextDouble() - 0.5) * 6.0;
+            double offsetZ = (level.random.nextDouble() - 0.5) * 6.0;
+            double ySpeed = 0.8 + level.random.nextDouble() * 0.4;
             level.sendParticles(
-                    ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                    (SimpleParticleType) ModExplosionParticles.MUSHROOM_SMOKE.get(),
                     x + offsetX, y, z + offsetZ,
-                    1, offsetX * 0.06, ySpeed, offsetZ * 0.06, 1.2
+                    1,
+                    offsetX * 0.08, ySpeed, offsetZ * 0.08,
+                    1.5
             );
         }
-
-        // Шапка гриба (больше и выше)
-        for (int i = 0; i < 200; i++) {
+        // Шапка - ВСЁ ТО ЖЕ САМОЕ
+        for (int i = 0; i < 250; i++) {
             double angle = level.random.nextDouble() * Math.PI * 2;
-            double radius = 6.0 + level.random.nextDouble() * 10.0;
+            double radius = 8.0 + level.random.nextDouble() * 12.0;
             double offsetX = Math.cos(angle) * radius;
             double offsetZ = Math.sin(angle) * radius;
-            double capY = y + 18 + level.random.nextDouble() * 8;
-            double xSpeed = Math.cos(angle) * 0.4;
-            double ySpeed = -0.05 + level.random.nextDouble() * 0.15;
-            double zSpeed = Math.sin(angle) * 0.4;
+            double capY = y + 20 + level.random.nextDouble() * 10;
+            double xSpeed = Math.cos(angle) * 0.5;
+            double ySpeed = -0.1 + level.random.nextDouble() * 0.2;
+            double zSpeed = Math.sin(angle) * 0.5;
             level.sendParticles(
-                    ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                    (SimpleParticleType) ModExplosionParticles.MUSHROOM_SMOKE.get(),
                     x + offsetX, capY, z + offsetZ,
-                    1, xSpeed, ySpeed, zSpeed, 1.2
+                    1,
+                    xSpeed, ySpeed, zSpeed,
+                    1.5
             );
         }
     }
+
 
     private void triggerNearbyDetonations(ServerLevel serverLevel, BlockPos pos, Player player) {
         int DETONATION_RADIUS = 8; // Немного больше для ядерки

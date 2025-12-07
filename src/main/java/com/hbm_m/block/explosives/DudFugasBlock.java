@@ -5,6 +5,7 @@ import com.hbm_m.particle.ModExplosionParticles;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
@@ -134,83 +135,67 @@ public class DudFugasBlock extends Block implements IDetonatable {
     }
 
     private void spawnFlash(ServerLevel level, double x, double y, double z) {
-        // Центральная вспышка - используем addAlwaysVisibleParticle через sendParticles с force=true
+        // ✅ Каст к SimpleParticleType
         level.sendParticles(
-                ModExplosionParticles.FLASH.get(),
-                x, y, z,
-                1, // count
-                0, 0, 0, // offset
-                0 // speed
+                (SimpleParticleType) ModExplosionParticles.FLASH.get(),
+                x, y, z, 1, 0, 0, 0, 0
         );
     }
 
     private void spawnSparks(ServerLevel level, double x, double y, double z) {
-        // 200 искр разлетающихся во все стороны
         for (int i = 0; i < 400; i++) {
-            double xSpeed = (level.random.nextDouble() - 0.5) * 4.0;
-            double ySpeed = level.random.nextDouble() * 3.0;
-            double zSpeed = (level.random.nextDouble() - 0.5) * 4.0;
-
+            double xSpeed = (level.random.nextDouble() - 0.5) * 6.0;
+            double ySpeed = level.random.nextDouble() * 5.0;
+            double zSpeed = (level.random.nextDouble() - 0.5) * 6.0;
             level.sendParticles(
-                    ModExplosionParticles.EXPLOSION_SPARK.get(),
-                    x, y, z,
-                    1,
-                    xSpeed, ySpeed, zSpeed,
-                    1.0
+                    (SimpleParticleType) ModExplosionParticles.EXPLOSION_SPARK.get(),
+                    x, y, z, 1, xSpeed, ySpeed, zSpeed, 1.5
             );
         }
     }
 
     private void spawnShockwave(ServerLevel level, double x, double y, double z) {
-        // 3 кольца взрывной волны на разной высоте
-        for (int ring = 0; ring < 3; ring++) {
-            double ringY = y + (ring * 0.5);
-
+        for (int ring = 0; ring < 6; ring++) {
+            double ringY = y + (ring * 0.3);
             level.sendParticles(
-                    ModExplosionParticles.SHOCKWAVE.get(),
-                    x, ringY, z,
-                    1,
-                    0, 0, 0,
-                    0
+                    (SimpleParticleType) ModExplosionParticles.SHOCKWAVE.get(),
+                    x, ringY, z, 1, 0, 0, 0, 0
             );
         }
     }
 
     private void spawnMushroomCloud(ServerLevel level, double x, double y, double z) {
-        // Стебель гриба (вертикальная колонна дыма)
-        for (int i = 0; i < 80; i++) {
-            double offsetX = (level.random.nextDouble() - 0.5) * 4.0;
-            double offsetZ = (level.random.nextDouble() - 0.5) * 4.0;
-            double ySpeed = 0.5 + level.random.nextDouble() * 0.3;
-
+        // Стебель
+        for (int i = 0; i < 150; i++) {
+            double offsetX = (level.random.nextDouble() - 0.5) * 6.0;
+            double offsetZ = (level.random.nextDouble() - 0.5) * 6.0;
+            double ySpeed = 0.8 + level.random.nextDouble() * 0.4;
             level.sendParticles(
-                    ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                    (SimpleParticleType) ModExplosionParticles.MUSHROOM_SMOKE.get(),
                     x + offsetX, y, z + offsetZ,
                     1,
-                    offsetX * 0.05, ySpeed, offsetZ * 0.05,
-                    1.0
+                    offsetX * 0.08, ySpeed, offsetZ * 0.08,
+                    1.5
             );
         }
-
-        // Шапка гриба (расширяющееся облако)
-        for (int i = 0; i < 120; i++) {
+        // Шапка - ВСЁ ТО ЖЕ САМОЕ
+        for (int i = 0; i < 250; i++) {
             double angle = level.random.nextDouble() * Math.PI * 2;
-            double radius = 5.0 + level.random.nextDouble() * 8.0;
+            double radius = 8.0 + level.random.nextDouble() * 12.0;
             double offsetX = Math.cos(angle) * radius;
             double offsetZ = Math.sin(angle) * radius;
-            double capY = y + 15 + level.random.nextDouble() * 5;
-
-            double xSpeed = Math.cos(angle) * 0.3;
-            double ySpeed = -0.1 + level.random.nextDouble() * 0.1;
-            double zSpeed = Math.sin(angle) * 0.3;
-
+            double capY = y + 20 + level.random.nextDouble() * 10;
+            double xSpeed = Math.cos(angle) * 0.5;
+            double ySpeed = -0.1 + level.random.nextDouble() * 0.2;
+            double zSpeed = Math.sin(angle) * 0.5;
             level.sendParticles(
-                    ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                    (SimpleParticleType) ModExplosionParticles.MUSHROOM_SMOKE.get(),
                     x + offsetX, capY, z + offsetZ,
                     1,
                     xSpeed, ySpeed, zSpeed,
-                    1.0
+                    1.5
             );
         }
     }
+
 }

@@ -106,6 +106,7 @@ public class MainRegistry {
         ModRecipes.register(modEventBus);
         registerCapabilities(modEventBus);
 
+
         // ✅ ЭТА СТРОКА ДОЛЖНА БЫТЬ ПОСЛЕДНЕЙ!
         ModWorldGen.PROCESSORS.register(modEventBus);  // ✅ ОСТАВИ!
 

@@ -6,6 +6,7 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -217,7 +218,11 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
     }
 
     private void spawnFlash(ServerLevel level, double x, double y, double z) {
-        level.sendParticles(ModExplosionParticles.FLASH.get(), x, y, z, 1, 0, 0, 0, 0);
+        // ✅ Каст к SimpleParticleType
+        level.sendParticles(
+                (SimpleParticleType) ModExplosionParticles.FLASH.get(),
+                x, y, z, 1, 0, 0, 0, 0
+        );
     }
 
     private void spawnSparks(ServerLevel level, double x, double y, double z) {
@@ -225,14 +230,20 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
             double xSpeed = (level.random.nextDouble() - 0.5) * 6.0;
             double ySpeed = level.random.nextDouble() * 5.0;
             double zSpeed = (level.random.nextDouble() - 0.5) * 6.0;
-            level.sendParticles(ModExplosionParticles.EXPLOSION_SPARK.get(), x, y, z, 1, xSpeed, ySpeed, zSpeed, 1.5);
+            level.sendParticles(
+                    (SimpleParticleType) ModExplosionParticles.EXPLOSION_SPARK.get(),
+                    x, y, z, 1, xSpeed, ySpeed, zSpeed, 1.5
+            );
         }
     }
 
     private void spawnShockwave(ServerLevel level, double x, double y, double z) {
         for (int ring = 0; ring < 6; ring++) {
             double ringY = y + (ring * 0.3);
-            level.sendParticles(ModExplosionParticles.SHOCKWAVE.get(), x, ringY, z, 1, 0, 0, 0, 0);
+            level.sendParticles(
+                    (SimpleParticleType) ModExplosionParticles.SHOCKWAVE.get(),
+                    x, ringY, z, 1, 0, 0, 0, 0
+            );
         }
     }
 
@@ -243,14 +254,14 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
             double offsetZ = (level.random.nextDouble() - 0.5) * 6.0;
             double ySpeed = 0.8 + level.random.nextDouble() * 0.4;
             level.sendParticles(
-                    ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                    (SimpleParticleType) ModExplosionParticles.MUSHROOM_SMOKE.get(),
                     x + offsetX, y, z + offsetZ,
                     1,
                     offsetX * 0.08, ySpeed, offsetZ * 0.08,
                     1.5
             );
         }
-        // Шапка
+        // Шапка - ВСЁ ТО ЖЕ САМОЕ
         for (int i = 0; i < 250; i++) {
             double angle = level.random.nextDouble() * Math.PI * 2;
             double radius = 8.0 + level.random.nextDouble() * 12.0;
@@ -261,7 +272,7 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
             double ySpeed = -0.1 + level.random.nextDouble() * 0.2;
             double zSpeed = Math.sin(angle) * 0.5;
             level.sendParticles(
-                    ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                    (SimpleParticleType) ModExplosionParticles.MUSHROOM_SMOKE.get(),
                     x + offsetX, capY, z + offsetZ,
                     1,
                     xSpeed, ySpeed, zSpeed,
@@ -269,6 +280,7 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
             );
         }
     }
+
 
     private void triggerNearbyDetonations(ServerLevel serverLevel, BlockPos pos, Player player) {
         for (int x = -DETONATION_RADIUS; x <= DETONATION_RADIUS; x++) {

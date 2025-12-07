@@ -8,6 +8,7 @@ import com.hbm_m.sound.ModSounds;
 import com.hbm_m.util.ShockwaveGenerator;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
@@ -172,23 +173,44 @@ public class MineNukeBlock extends Block implements EntityBlock {
     }
 
     private void spawnExplosionEffects(ServerLevel level, double x, double y, double z) {
-        level.sendParticles(ModExplosionParticles.FLASH.get(), x, y, z, 1, 0, 0, 0, 0);
+        // ✅ Вспышка
+        level.sendParticles(
+                (SimpleParticleType) ModExplosionParticles.FLASH.get(),
+                x, y, z, 1, 0, 0, 0, 0
+        );
+
+        // ✅ Искры взрыва (200 штук)
         for (int i = 0; i < 200; i++) {
             double dx = (level.random.nextDouble() - 0.5) * 4.0;
             double dy = level.random.nextDouble() * 3.0;
             double dz = (level.random.nextDouble() - 0.5) * 4.0;
-            level.sendParticles(ModExplosionParticles.EXPLOSION_SPARK.get(), x, y, z, 1, dx, dy, dz, 1.0);
+            level.sendParticles(
+                    (SimpleParticleType) ModExplosionParticles.EXPLOSION_SPARK.get(),
+                    x, y, z, 1, dx, dy, dz, 1.0
+            );
         }
+
+        // ✅ Волны удара (3 кольца)
         for (int ring = 0; ring < 3; ring++) {
             double ringY = y + ring * 0.5;
-            level.sendParticles(ModExplosionParticles.SHOCKWAVE.get(), x, ringY, z, 1, 0, 0, 0, 0);
+            level.sendParticles(
+                    (SimpleParticleType) ModExplosionParticles.SHOCKWAVE.get(),
+                    x, ringY, z, 1, 0, 0, 0, 0
+            );
         }
+
+        // ✅ Дым стебля грибовидного облака
         for (int i = 0; i < 40; i++) {
             double offsetX = (level.random.nextDouble() - 0.5) * 4.0;
             double offsetZ = (level.random.nextDouble() - 0.5) * 4.0;
             double ySpeed = 0.5 + level.random.nextDouble() * 0.3;
-            level.sendParticles(ModExplosionParticles.MUSHROOM_SMOKE.get(), x + offsetX, y, z + offsetZ, 1, offsetX * 0.05, ySpeed, offsetZ * 0.05, 1.0);
+            level.sendParticles(
+                    (SimpleParticleType) ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                    x + offsetX, y, z + offsetZ, 1, offsetX * 0.05, ySpeed, offsetZ * 0.05, 1.0
+            );
         }
+
+        // ✅ Дым шляпки грибовидного облака
         for (int i = 0; i < 60; i++) {
             double angle = level.random.nextDouble() * Math.PI * 2;
             double radius = 5.0 + level.random.nextDouble() * 8.0;
@@ -198,9 +220,13 @@ public class MineNukeBlock extends Block implements EntityBlock {
             double xSpeed = Math.cos(angle) * 0.3;
             double ySpeed = -0.1 + level.random.nextDouble() * 0.1;
             double zSpeed = Math.sin(angle) * 0.3;
-            level.sendParticles(ModExplosionParticles.MUSHROOM_SMOKE.get(), x + offsetX, capY, z + offsetZ, 1, xSpeed, ySpeed, zSpeed, 1.0);
+            level.sendParticles(
+                    (SimpleParticleType) ModExplosionParticles.MUSHROOM_SMOKE.get(),
+                    x + offsetX, capY, z + offsetZ, 1, xSpeed, ySpeed, zSpeed, 1.0
+            );
         }
     }
+
 
     private void playRandomDetonationSound(Level level, BlockPos pos) {
         List<SoundEvent> sounds = Arrays.asList(

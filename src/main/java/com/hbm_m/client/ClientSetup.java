@@ -37,6 +37,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
@@ -151,21 +152,6 @@ public class ClientSetup {
             MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
             MainRegistry.LOGGER.info("Initial render path check completed");
         });
-    }
-    @SubscribeEvent
-    public static void registerParticleFactories(RegisterParticleProvidersEvent event) {
-
-        event.registerSpriteSet(ModParticleTypes.EXPLOSION_WAVE.get(),
-                ExplosionWaveParticle.Provider::new);
-
-        event.registerSpriteSet(ModExplosionParticles.FLASH.get(),
-                FlashParticle.Provider::new);
-        event.registerSpriteSet(ModExplosionParticles.SHOCKWAVE.get(),
-                ShockwaveParticle.Provider::new);
-        event.registerSpriteSet(ModExplosionParticles.MUSHROOM_SMOKE.get(),
-                MushroomSmokeParticle.Provider::new);
-        event.registerSpriteSet(ModExplosionParticles.EXPLOSION_SPARK.get(),
-                ExplosionSparkParticle.Provider::new);
     }
 
 
