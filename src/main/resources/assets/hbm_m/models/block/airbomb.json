@@ -20,8 +20,8 @@
   },
   "display": {
     "gui": {
-      "rotation": [ 30, 45, 0 ],
-      "translation": [ 0, -0.5, 1.2 ],
+      "rotation": [ 30, 225, 0 ],
+      "translation": [ 0, 0, 1.2 ],
       "scale": [ 0.6, 0.6, 0.6 ]
     },
     "ground": {

@@ -214,27 +214,39 @@ public class AirstrikeHeavyEntity extends Entity {
         }
     }
 
-    // 🆕 В dropAirBomb() методах самолёта:
     private void dropAirBomb(BlockPos targetPos) {
         ServerLevel serverLevel = (ServerLevel) this.level();
         LivingEntity owner = getOwner();
         if (owner == null) return;
 
+        // ✅ Направление самолёта (нормализованное)
+        Vec3 planeDirection = this.getDeltaMovement().normalize();
+
+        // ✅ ПЕРПЕНДИКУЛЯРНОЕ НАПРАВЛЕНИЕ ВПРАВО (90° по часовой)
+        Vec3 rightDirection = new Vec3(-planeDirection.z, 0, planeDirection.x).normalize();
+
+        // ✅ ТОЧКА СБРОСА: прямо под самолётом + 2 блока вправо
+        Vec3 dropPos = new Vec3(
+                this.getX() + rightDirection.x * 2.0,  // +2 блока по X вправо
+                this.getY() - 2.0,                     // под самолётом
+                this.getZ() + rightDirection.z * 2.0   // +2 блока по Z вправо
+        );
 
         // ✅ ПЕРЕДАЁМ YAW САМОЛЁТА БОМБЕ!
         AirBombProjectileEntity airBomb = new AirBombProjectileEntity(
-                serverLevel, owner, this.getYRot()  // ← КЛЮЧЕВОЕ ИЗМЕНЕНИЕ!
+                serverLevel, owner, this.getYRot()
         );
 
-        airBomb.setPos(this.getX(), this.getY() - 2.0, this.getZ());
+        airBomb.setPos(dropPos);  // ← НОВАЯ ТОЧКА СБРОСА
 
-        Vec3 planeDirection = this.getDeltaMovement().normalize();
+        // Направление бомбы: параллельно самолёту + падение вниз
         Vec3 bombDirection = new Vec3(planeDirection.x, -0.8, planeDirection.z).normalize();
         airBomb.shoot(bombDirection.x, bombDirection.y, bombDirection.z, 1.8F, 0.2F);
 
         serverLevel.addFreshEntity(airBomb);
         bombsDropped++;
     }
+
 
 
     private float yawRotationSpeed(float currentYaw, float targetYaw, float maxChange) {
