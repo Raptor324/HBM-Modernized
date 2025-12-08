@@ -11,21 +11,13 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureManager;
 
 /**
- * ✅ ИСПРАВЛЕННЫЙ: Кастомный тип рендера для частиц, видимых на больших расстояниях
- * Полностью решает проблему стандартного ограничения в 32 блока
- *
- * Особенности:
- * - Отключение culling для видимости со всех углов
- * - Правильное управление depth buffer
- * - Альфа-блендинг для прозрачности
- * - Использование стандартного particle shader'а Minecraft'а
+ * ✅ ИСПРАВЛЕННЫЙ: Кастомный тип рендера для дальних частиц
  */
 public class LongRangeParticleRenderType implements ParticleRenderType {
 
     public static final LongRangeParticleRenderType INSTANCE = new LongRangeParticleRenderType();
 
     private LongRangeParticleRenderType() {
-        // Приватный конструктор - singleton pattern
     }
 
     @Override
@@ -37,40 +29,44 @@ public class LongRangeParticleRenderType implements ParticleRenderType {
     public void begin(BufferBuilder buffer, TextureManager textureManager) {
         // ✅ Включаем прозрачность (альфа-блендинг)
         RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc(); // GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA
+        RenderSystem.defaultBlendFunc();
 
-        // ✅ ОТКЛЮЧАЕМ запись в глубину (depth mask false)
-        // Это позволяет прозрачным частицам правильно отображаться за другими объектами
+        // ✅ ОТКЛЮЧАЕМ запись в depth buffer (depthMask = false)
+        // Это позволяет прозрачным частицам правильно отображаться за объектами
         RenderSystem.depthMask(false);
 
-        // ✅ Устанавливаем шейдер частиц
+        // ✅ Устанавливаем particle shader
         RenderSystem.setShader(GameRenderer::getParticleShader);
 
         // ✅ ОБЯЗАТЕЛЬНО привязываем текстуру частиц
-        // Без этого будут фиолетовые квадраты (текстура не найдена)
+        // Без этого будут фиолетовые квадраты
         RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);
 
-        // ✅ Включаем тест глубины
+        // ✅ Включаем тест глубины (depth test)
         RenderSystem.enableDepthTest();
-        RenderSystem.depthFunc(515); // GL_LEQUAL - стандартная функция для частиц
 
-        // ✅ ГЛАВНОЕ: ОТКЛЮЧАЕМ CULLING (разворот граней)
-        // Если этого не сделать, частицы будут исчезать при определенном угле обзора
+        // ✅ Функция глубины: 515 = GL_LEQUAL
+        // Это стандартная функция для прозрачных объектов
+        RenderSystem.depthFunc(515);
+
+        // ✅ ГЛАВНОЕ: ОТКЛЮЧАЕМ FACE CULLING
+        // Если не отключить, частицы будут исчезать при определенном угле обзора
         RenderSystem.disableCull();
 
         // ✅ Запускаем буфер вершин
-        // QUADS - 4 вершины на одну частицу (квадрат)
+        // QUADS = 4 вершины на одну частицу
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.PARTICLE);
     }
 
     @Override
     public void end(Tesselator tesselator) {
-        // ✅ Отправляем накопленные вершины на рендер
+        // ✅ Отправляем все вершины на рендер
         tesselator.end();
 
-        // ✅ Восстанавливаем состояние для остальной игры
-        RenderSystem.enableCull(); // Возвращаем culling для остального мира
-        RenderSystem.depthMask(true); // Возвращаем запись в depth buffer
-        RenderSystem.disableBlend(); // Отключаем блендинг
+        // ✅ ВОССТАНАВЛИВАЕМ состояние RenderSystem для остальной игры
+        RenderSystem.enableCull();           // Включаем face culling обратно
+        RenderSystem.depthMask(true);        // Включаем запись в depth buffer
+        RenderSystem.disableBlend();         // Отключаем альфа-блендинг
+        RenderSystem.depthFunc(515);         // Возвращаем стандартную функцию глубины
     }
 }
