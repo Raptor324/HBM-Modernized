@@ -95,19 +95,11 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     protected final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
-            // Используем унаследованные методы!
-            long currentEnergy = MachineAdvancedAssemblerBlockEntity.this.getEnergyStored();
-            long maxEnergy = MachineAdvancedAssemblerBlockEntity.this.getMaxEnergyStored();
-            long delta = getEnergyDelta();
             return switch (index) {
+                // Только прогресс (индексы 0 и 1)
                 case 0 -> assemblerModule != null ? assemblerModule.getProgressInt() : 0;
                 case 1 -> assemblerModule != null ? assemblerModule.getMaxProgress() : 0;
-                case 2 -> LongDataPacker.packHigh(currentEnergy);
-                case 3 -> LongDataPacker.packLow(currentEnergy);
-                case 4 -> LongDataPacker.packHigh(maxEnergy);
-                case 5 -> LongDataPacker.packLow(maxEnergy);
-                case 6 -> LongDataPacker.packHigh(delta);
-                case 7 -> LongDataPacker.packLow(delta);
+                // Все индексы с энергией (2-7) удалены
                 default -> 0;
             };
         }
@@ -117,7 +109,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
         @Override
         public int getCount() {
-            return 8;
+            return 2;
         }
     };
 
@@ -249,7 +241,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             entity.clientTick(level, pos, state);
         } else {
             entity.serverTick();
-        }
+       }
     }
 
     @OnlyIn(Dist.CLIENT)

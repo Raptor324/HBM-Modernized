@@ -103,26 +103,23 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
             @Override
             public int get(int i) {
                 return switch (i) {
-                    case 0 -> (int) (energy & 0xFFFFFFFFL);      // energy low
-                    case 1 -> (int) (energy >> 32);              // energy high
-                    case 2 -> (int) (capacity & 0xFFFFFFFFL);    // capacity low
-                    case 3 -> (int) (capacity >> 32);            // capacity high
-                    case 4 -> burnTime;
-                    case 5 -> maxBurnTime;
-                    case 6 -> isBurning() ? 1 : 0;
-                    case 7 -> enabled ? 1 : 0;
+                    // Энергию (0-3) убрали, индексы сдвинулись:
+                    case 0 -> burnTime;       // Было 4
+                    case 1 -> maxBurnTime;    // Было 5
+                    case 2 -> isBurning() ? 1 : 0; // Было 6
+                    case 3 -> enabled ? 1 : 0;     // Было 7
                     default -> 0;
                 };
             }
 
             @Override
             public void set(int i, int v) {
-                if (i == 7) enabled = v != 0;
+                if (i == 3) enabled = v != 0; // Было 7
             }
 
             @Override
             public int getCount() {
-                return 8;
+                return 4; // Было 8
             }
         };
     }

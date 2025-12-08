@@ -82,14 +82,11 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
             @Override
             public int get(int index) {
                 return switch (index) {
-                    case 0 -> LongDataPacker.packHigh(energy);
-                    case 1 -> LongDataPacker.packLow(energy);
-                    case 2 -> LongDataPacker.packHigh(capacity);
-                    case 3 -> LongDataPacker.packLow(capacity);
-                    case 4 -> (int) energyDelta;
-                    case 5 -> modeOnNoSignal;
-                    case 6 -> modeOnSignal;
-                    case 7 -> priority.ordinal();
+                    // Убрали индексы 0-3 (Energy high/low, Capacity high/low)
+                    case 0 -> (int) energyDelta;    // Было 4
+                    case 1 -> modeOnNoSignal;       // Было 5
+                    case 2 -> modeOnSignal;         // Было 6
+                    case 3 -> priority.ordinal();   // Было 7
                     default -> 0;
                 };
             }
@@ -97,15 +94,16 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
             @Override
             public void set(int index, int value) {
                 switch (index) {
-                    case 5 -> modeOnNoSignal = value;
-                    case 6 -> modeOnSignal = value;
-                    case 7 -> priority = Priority.values()[Math.max(0, Math.min(value, Priority.values().length - 1))];
+                    // Индексы сместились
+                    case 1 -> modeOnNoSignal = value; // Было 5
+                    case 2 -> modeOnSignal = value;   // Было 6
+                    case 3 -> priority = Priority.values()[Math.max(0, Math.min(value, Priority.values().length - 1))]; // Было 7
                 }
             }
 
             @Override
             public int getCount() {
-                return 8;
+                return 4;
             }
         };
     }
@@ -335,13 +333,13 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
 
     public void handleButtonPress(int buttonId) {
         switch (buttonId) {
-            case 0 -> this.data.set(5, (this.modeOnNoSignal + 1) % 4);
-            case 1 -> this.data.set(6, (this.modeOnSignal + 1) % 4);
+            case 0 -> this.data.set(1, (this.modeOnNoSignal + 1) % 4);
+            case 1 -> this.data.set(2, (this.modeOnSignal + 1) % 4);
             case 2 -> {
                 Priority[] priorities = Priority.values();
                 int currentIndex = this.priority.ordinal();
                 int nextIndex = (currentIndex + 1) % priorities.length;
-                this.data.set(7, nextIndex);
+                this.data.set(3, nextIndex);
             }
         }
         setChanged();
