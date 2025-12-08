@@ -34,6 +34,14 @@ public class ModExplosionParticles {
     public static final RegistryObject<ParticleType<?>> MUSHROOM_SMOKE =
             PARTICLE_TYPES.register("mushroom_smoke", () -> new SimpleParticleType(true));
 
+    // 💨 ГРИБОВИДНЫЙ ДЫМ (серый дым стебля + шапки)
+    public static final RegistryObject<ParticleType<?>> DARK_SMOKE =
+            PARTICLE_TYPES.register("dark_smoke", () -> new SimpleParticleType(true));
+
+    // 💨 ГРИБОВИДНЫЙ ДЫМ (серый дым стебля + шапки)
+    public static final RegistryObject<ParticleType<?>> WAVE_SMOKE =
+            PARTICLE_TYPES.register("wave_smoke", () -> new SimpleParticleType(true));
+
     // 🔥 ОГОНЬ (основание взрыва)
     public static final RegistryObject<ParticleType<?>> EXPLOSION_FIRE =
             PARTICLE_TYPES.register("explosion_fire", () -> new SimpleParticleType(true));

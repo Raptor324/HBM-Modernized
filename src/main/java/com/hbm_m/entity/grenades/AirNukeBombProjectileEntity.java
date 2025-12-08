@@ -5,6 +5,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.particle.explosions.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.util.CraterGenerator;
 import com.hbm_m.util.DudCraterGenerator;
@@ -138,7 +139,7 @@ public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
             // ✅ ЯДЕРНЫЙ ВЗРЫВ: сначала эффекты, потом кратер
             triggerNearbyDetonations(serverLevel, pos, null);
             dealExplosionDamage(serverLevel, x, y, z);
-            scheduleNuclearEffects(serverLevel, x, y, z); // ← ЯДЕРНЫЕ ЭФФЕКТЫ
+            scheduleExplosionEffects(serverLevel, x, y, z); // ← ЯДЕРНЫЕ ЭФФЕКТЫ
             playDetonationSound(serverLevel, pos);
 
             // ✅ ОСНОВНОЙ ЯДЕРНЫЙ ВЗРЫВ (без разрушения блоков)
@@ -175,17 +176,23 @@ public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
         );
     }
 
-    /**
-     * ✅ ЯДЕРНЫЕ ЭФФЕКТЫ (как у NuclearChargeBlock)
-     */
-    private void scheduleNuclearEffects(ServerLevel level, double x, double y, double z) {
-        spawnFlash(level, x, y, z);
-        spawnSparks(level, x, y, z);
+    private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
+        // ✅ Flash - точно те же параметры
+        level.sendParticles(
+                (SimpleParticleType) ModExplosionParticles.FLASH.get(),
+                x, y, z, 1, 0, 0, 0, 0
+        );
 
-        if (level.getServer() != null) {
-            level.getServer().tell(new TickTask(5, () -> spawnShockwave(level, x, y, z)));
-            level.getServer().tell(new TickTask(10, () -> spawnMushroomCloud(level, x, y, z)));
-        }
+        // ✅ Sparks - 400 частиц с ТОЧНЫМИ скоростями
+        ExplosionParticleUtils.spawnAirBombSparks(level, x, y, z);
+
+        // ✅ Shockwave через 3 тика - точно те же кольца
+        level.getServer().tell(new net.minecraft.server.TickTask(3, () ->
+                ExplosionParticleUtils.spawnAirBombShockwave(level, x, y, z)));
+
+        // ✅ Mushroom Cloud через 8 тиков - ТОЧНО те же параметры
+        level.getServer().tell(new net.minecraft.server.TickTask(8, () ->
+                ExplosionParticleUtils.spawnAirBombMushroomCloud(level, x, y, z)));
     }
 
     private void spawnFlash(ServerLevel level, double x, double y, double z) {

@@ -210,8 +210,6 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
         );
     }
 
-    // ✅ УДАЛЕНО: все методы spawnFlash, spawnSparks, spawnShockwave, spawnMushroomCloud
-// ✅ Заменено на вызовы ExplosionParticleUtils
 
     private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
         // ✅ Flash - точно те же параметры

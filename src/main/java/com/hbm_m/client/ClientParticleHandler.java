@@ -37,6 +37,16 @@ public class ClientParticleHandler {
                 (SimpleParticleType) ModExplosionParticles.MUSHROOM_SMOKE.get(),
                 MushroomSmokeParticle.Provider::new);
 
+        // 💨 ГРИБОВИДНЫЙ ДЫМ (серый дым)
+        event.registerSpriteSet(
+                (SimpleParticleType) ModExplosionParticles.DARK_SMOKE.get(),
+                DarkSmokeParticle.Provider::new);
+
+        // 💨 ГРИБОВИДНЫЙ ДЫМ (серый дым)
+        event.registerSpriteSet(
+                (SimpleParticleType) ModExplosionParticles.WAVE_SMOKE.get(),
+                WaveSmokeParticle.Provider::new);
+
         // 🔥 ОГОНЬ (основание взрыва)
         event.registerSpriteSet(
                 (SimpleParticleType) ModExplosionParticles.EXPLOSION_FIRE.get(),

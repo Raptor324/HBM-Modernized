@@ -3,6 +3,7 @@ package com.hbm_m.block.explosives;
 import com.hbm_m.block.IDetonatable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.particle.explosions.ExplosionParticleUtils;
 import com.hbm_m.util.DudCraterGenerator;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -162,92 +163,22 @@ public class DudNukeBlock extends Block implements IDetonatable {
      * ОПТИМИЗИРОВАНА: Планирование эффектов взрыва
      */
     private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
-        // Фаза 1: Яркая вспышка (мгновенно)
-        spawnFlash(level, x, y, z);
-
-        // Фаза 2: Искры (0-10 тиков)
-        spawnSparks(level, x, y, z);
-
-        // Фаза 3: Взрывная волна (5 тиков задержки)
-        if (level.getServer() != null) {
-            level.getServer().tell(new TickTask(5, () -> {
-                spawnShockwave(level, x, y, z);
-            }));
-        }
-
-        // Фаза 4: Гриб из дыма (10 тиков задержки)
-        if (level.getServer() != null) {
-            level.getServer().tell(new TickTask(10, () -> {
-                spawnMushroomCloud(level, x, y, z);
-            }));
-        }
-    }
-
-    /**
-     * Спавнит яркую вспышку в центре взрыва
-     */
-    private void spawnFlash(ServerLevel level, double x, double y, double z) {
-        // ✅ Каст к SimpleParticleType
+        // ✅ Flash - точно те же параметры
         level.sendParticles(
                 (SimpleParticleType) ModExplosionParticles.FLASH.get(),
                 x, y, z, 1, 0, 0, 0, 0
         );
-    }
 
-    private void spawnSparks(ServerLevel level, double x, double y, double z) {
-        for (int i = 0; i < 400; i++) {
-            double xSpeed = (level.random.nextDouble() - 0.5) * 6.0;
-            double ySpeed = level.random.nextDouble() * 5.0;
-            double zSpeed = (level.random.nextDouble() - 0.5) * 6.0;
-            level.sendParticles(
-                    (SimpleParticleType) ModExplosionParticles.EXPLOSION_SPARK.get(),
-                    x, y, z, 1, xSpeed, ySpeed, zSpeed, 1.5
-            );
-        }
-    }
+        // ✅ Sparks - 400 частиц с ТОЧНЫМИ скоростями
+        ExplosionParticleUtils.spawnAirBombSparks(level, x, y, z);
 
-    private void spawnShockwave(ServerLevel level, double x, double y, double z) {
-        for (int ring = 0; ring < 6; ring++) {
-            double ringY = y + (ring * 0.3);
-            level.sendParticles(
-                    (SimpleParticleType) ModExplosionParticles.SHOCKWAVE.get(),
-                    x, ringY, z, 1, 0, 0, 0, 0
-            );
-        }
-    }
+        // ✅ Shockwave через 3 тика - точно те же кольца
+        level.getServer().tell(new net.minecraft.server.TickTask(3, () ->
+                ExplosionParticleUtils.spawnAirBombShockwave(level, x, y, z)));
 
-    private void spawnMushroomCloud(ServerLevel level, double x, double y, double z) {
-        // Стебель
-        for (int i = 0; i < 150; i++) {
-            double offsetX = (level.random.nextDouble() - 0.5) * 6.0;
-            double offsetZ = (level.random.nextDouble() - 0.5) * 6.0;
-            double ySpeed = 0.8 + level.random.nextDouble() * 0.4;
-            level.sendParticles(
-                    (SimpleParticleType) ModExplosionParticles.MUSHROOM_SMOKE.get(),
-                    x + offsetX, y, z + offsetZ,
-                    1,
-                    offsetX * 0.08, ySpeed, offsetZ * 0.08,
-                    1.5
-            );
-        }
-        // Шапка - ВСЁ ТО ЖЕ САМОЕ
-        for (int i = 0; i < 250; i++) {
-            double angle = level.random.nextDouble() * Math.PI * 2;
-            double radius = 8.0 + level.random.nextDouble() * 12.0;
-            double offsetX = Math.cos(angle) * radius;
-            double offsetZ = Math.sin(angle) * radius;
-            double capY = y + 20 + level.random.nextDouble() * 10;
-            double xSpeed = Math.cos(angle) * 0.5;
-            double ySpeed = -0.1 + level.random.nextDouble() * 0.2;
-            double zSpeed = Math.sin(angle) * 0.5;
-            level.sendParticles(
-                    (SimpleParticleType) ModExplosionParticles.MUSHROOM_SMOKE.get(),
-                    x + offsetX, capY, z + offsetZ,
-                    1,
-                    xSpeed, ySpeed, zSpeed,
-                    1.5
-            );
-        }
+        // ✅ Mushroom Cloud через 8 тиков - ТОЧНО те же параметры
+        level.getServer().tell(new net.minecraft.server.TickTask(8, () ->
+                ExplosionParticleUtils.spawnAirBombMushroomCloud(level, x, y, z)));
     }
 
 }

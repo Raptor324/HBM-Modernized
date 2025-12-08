@@ -17,7 +17,7 @@ public class ExplosionSparkParticle extends AbstractExplosionParticle {
         this.zd = zSpeed;
 
         // ✅ ВРЕМЯ ЖИЗНИ: 20-40 тиков
-        this.lifetime = 20 + this.random.nextInt(20);
+        this.lifetime = 20 + this.random.nextInt(15);
 
         // ✅ ФИЗИКА
         this.gravity = 0.3F;
