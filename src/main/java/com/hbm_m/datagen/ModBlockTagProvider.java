@@ -46,6 +46,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
         // А. Блоки для ЛОПАТЫ (Земля, песок, сыпучее)
         Set<Block> shovelBlocks = Set.of(
                 ModBlocks.WASTE_GRASS.get(),
+                ModBlocks.DEAD_DIRT.get(),
                 ModBlocks.BURNED_GRASS.get()
         );
 

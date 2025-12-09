@@ -43,6 +43,12 @@ public class ModEntities {
                             .sized(2.0F, 1.0F)
                             .build("airstrikenuke"));
 
+    public static final RegistryObject<EntityType<AirstrikeAgentEntity>> AIRSTRIKE_AGENT_ENTITY =
+            ENTITY_TYPES.register("airstrikeagent",
+                    () -> EntityType.Builder.<AirstrikeAgentEntity>of(AirstrikeAgentEntity::new, MobCategory.MISC)
+                            .sized(2.0F, 1.0F)
+                            .build("airstrikeagent"));
+
     public static final RegistryObject<EntityType<AirBombProjectileEntity>> AIRBOMB_PROJECTILE =
             ENTITY_TYPES.register("airbomb_projectile",
                     () -> EntityType.Builder.<AirBombProjectileEntity>of(AirBombProjectileEntity::new, MobCategory.MISC)

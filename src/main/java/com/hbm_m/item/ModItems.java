@@ -1266,6 +1266,8 @@ public class ModItems {
 
     public static final RegistryObject<Item> AIRSTRIKE_TEST = ITEMS.register("airstrike_test",
             () -> new AirstrikeItem(new Item.Properties()));
+    public static final RegistryObject<Item> AIRSTRIKE_AGENT= ITEMS.register("airstrike_agent",
+            () -> new AirstrikeAgentItem(new Item.Properties()));
     public static final RegistryObject<Item> AIRSTRIKE_HEAVY = ITEMS.register("airstrike_heavy",
             () -> new AirstrikeHeavyItem(new Item.Properties()));
     public static final RegistryObject<Item> AIRSTRIKE_NUKE = ITEMS.register("airstrike_nuke",

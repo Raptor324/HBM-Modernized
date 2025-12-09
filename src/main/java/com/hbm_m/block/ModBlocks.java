@@ -521,6 +521,16 @@ public class ModBlocks {
 
     // ======================================================================
 
+    public static final RegistryObject<Block> DEAD_DIRT  = registerBlock("dead_dirt",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.DIRT).strength(0.5f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> GEYSIR_DIRT  = registerBlock("geysir_dirt",
+            () -> new GeysirBlock(BlockBehaviour.Properties.copy(Blocks.DIRT).strength(0.5f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> GEYSIR_STONE  = registerBlock("geysir_stone",
+            () -> new GeysirBlock(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+
     public static final RegistryObject<Block> SELLAFIELD_SLAKED  = registerBlock("sellafield_slaked",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 

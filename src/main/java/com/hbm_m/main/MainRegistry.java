@@ -106,6 +106,7 @@ public class MainRegistry {
         ModRecipes.register(modEventBus);
         registerCapabilities(modEventBus);
 
+
         // ✅ ЭТА СТРОКА ДОЛЖНА БЫТЬ ПОСЛЕДНЕЙ!
         ModWorldGen.PROCESSORS.register(modEventBus);  // ✅ ОСТАВИ!
 
@@ -194,6 +195,7 @@ public class MainRegistry {
             event.accept(ModItems.RANGE_DETONATOR);
             event.accept(ModItems.AIRSTRIKE_TEST);
             event.accept(ModItems.AIRSTRIKE_HEAVY);
+            event.accept(ModItems.AIRSTRIKE_AGENT);
             event.accept(ModItems.AIRSTRIKE_NUKE);
             event.accept(ModItems.GRENADE);
             event.accept(ModItems.GRENADEHE);
@@ -503,6 +505,9 @@ public class MainRegistry {
             event.accept(ModBlocks.METEOR_CRUSHED);
             event.accept(ModBlocks.METEOR_TREASURE);
 
+            event.accept(ModBlocks.GEYSIR_DIRT);
+            event.accept(ModBlocks.GEYSIR_STONE);
+
             event.accept(ModBlocks.SELLAFIELD_SLAKED);
             event.accept(ModBlocks.SELLAFIELD_SLAKED1);
             event.accept(ModBlocks.SELLAFIELD_SLAKED2);
@@ -511,6 +516,7 @@ public class MainRegistry {
             event.accept(ModBlocks.WASTE_PLANKS);
             event.accept(ModBlocks.WASTE_GRASS);
             event.accept(ModBlocks.BURNED_GRASS);
+            event.accept(ModBlocks.DEAD_DIRT);
             event.accept(ModBlocks.WASTE_LEAVES);
 
             event.accept(ModItems.STRAWBERRY);

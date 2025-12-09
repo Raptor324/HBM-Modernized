@@ -3,11 +3,13 @@ package com.hbm_m.block.explosives;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.particle.explosions.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
 
 import com.hbm_m.util.ShockwaveGenerator;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
@@ -116,7 +118,7 @@ public class MineNukeBlock extends Block implements EntityBlock {
         }
 
         if (level instanceof ServerLevel serverLevel) {
-            spawnExplosionEffects(serverLevel, x, y, z);
+            scheduleExplosionEffects(serverLevel, x, y, z);
             MinecraftServer server = serverLevel.getServer();
             if (server != null) {
                 server.tell(new TickTask(5, () -> {
@@ -171,36 +173,25 @@ public class MineNukeBlock extends Block implements EntityBlock {
         }
     }
 
-    private void spawnExplosionEffects(ServerLevel level, double x, double y, double z) {
-        level.sendParticles(ModExplosionParticles.FLASH.get(), x, y, z, 1, 0, 0, 0, 0);
-        for (int i = 0; i < 200; i++) {
-            double dx = (level.random.nextDouble() - 0.5) * 4.0;
-            double dy = level.random.nextDouble() * 3.0;
-            double dz = (level.random.nextDouble() - 0.5) * 4.0;
-            level.sendParticles(ModExplosionParticles.EXPLOSION_SPARK.get(), x, y, z, 1, dx, dy, dz, 1.0);
-        }
-        for (int ring = 0; ring < 3; ring++) {
-            double ringY = y + ring * 0.5;
-            level.sendParticles(ModExplosionParticles.SHOCKWAVE.get(), x, ringY, z, 1, 0, 0, 0, 0);
-        }
-        for (int i = 0; i < 40; i++) {
-            double offsetX = (level.random.nextDouble() - 0.5) * 4.0;
-            double offsetZ = (level.random.nextDouble() - 0.5) * 4.0;
-            double ySpeed = 0.5 + level.random.nextDouble() * 0.3;
-            level.sendParticles(ModExplosionParticles.MUSHROOM_SMOKE.get(), x + offsetX, y, z + offsetZ, 1, offsetX * 0.05, ySpeed, offsetZ * 0.05, 1.0);
-        }
-        for (int i = 0; i < 60; i++) {
-            double angle = level.random.nextDouble() * Math.PI * 2;
-            double radius = 5.0 + level.random.nextDouble() * 8.0;
-            double offsetX = Math.cos(angle) * radius;
-            double offsetZ = Math.sin(angle) * radius;
-            double capY = y + 15 + level.random.nextDouble() * 5;
-            double xSpeed = Math.cos(angle) * 0.3;
-            double ySpeed = -0.1 + level.random.nextDouble() * 0.1;
-            double zSpeed = Math.sin(angle) * 0.3;
-            level.sendParticles(ModExplosionParticles.MUSHROOM_SMOKE.get(), x + offsetX, capY, z + offsetZ, 1, xSpeed, ySpeed, zSpeed, 1.0);
-        }
+    private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
+        // ✅ Flash - точно те же параметры
+        level.sendParticles(
+                (SimpleParticleType) ModExplosionParticles.FLASH.get(),
+                x, y, z, 1, 0, 0, 0, 0
+        );
+
+        // ✅ Sparks - 400 частиц с ТОЧНЫМИ скоростями
+        ExplosionParticleUtils.spawnAirBombSparks(level, x, y, z);
+
+        // ✅ Shockwave через 3 тика - точно те же кольца
+        level.getServer().tell(new net.minecraft.server.TickTask(3, () ->
+                ExplosionParticleUtils.spawnAirBombShockwave(level, x, y, z)));
+
+        // ✅ Mushroom Cloud через 8 тиков - ТОЧНО те же параметры
+        level.getServer().tell(new net.minecraft.server.TickTask(8, () ->
+                ExplosionParticleUtils.spawnAirBombMushroomCloud(level, x, y, z)));
     }
+
 
     private void playRandomDetonationSound(Level level, BlockPos pos) {
         List<SoundEvent> sounds = Arrays.asList(
