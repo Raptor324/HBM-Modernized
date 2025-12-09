@@ -37,12 +37,17 @@ public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEn
     // 3. Поля для клиентской энергии
     private long clientEnergy;
     private long clientMaxEnergy;
+    private long clientDelta;
+
+    private long lastSyncedEnergy = -1;
+    private long lastSyncedMaxEnergy = -1;
+    private long lastSyncedDelta = -1; // [NEW]
 
     // Серверный конструктор
     public MachineBatteryMenu(int pContainerId, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.MACHINE_BATTERY_MENU.get(), pContainerId);
         checkContainerSize(inv, 2);
-        checkContainerDataCount(data, 4);
+        checkContainerDataCount(data, 3);
 
         if (!(entity instanceof MachineBatteryBlockEntity)) {
             throw new IllegalArgumentException("Wrong BlockEntity type!");
@@ -68,13 +73,14 @@ public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEn
     public MachineBatteryMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
         this(pContainerId, inv,
                 inv.player.level().getBlockEntity(extraData.readBlockPos()),
-                new SimpleContainerData(4));
+                new SimpleContainerData(3));
     }
 
     @Override
-    public void setEnergy(long energy, long maxEnergy) {
+    public void setEnergy(long energy, long maxEnergy, long delta) { // <--- Добавили delta в аргументы
         this.clientEnergy = energy;
         this.clientMaxEnergy = maxEnergy;
+        this.clientDelta = delta; // <--- Сохраняем полученную дельту
     }
 
     @Override
@@ -85,6 +91,11 @@ public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEn
     @Override
     public long getMaxEnergyStatic() {
         return blockEntity.getMaxEnergyStored();
+    }
+
+    @Override
+    public long getEnergyDeltaStatic() {
+        return blockEntity.getEnergyDelta();
     }
 
      // Если используется интерфейсом
@@ -109,22 +120,26 @@ public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEn
         return getMaxEnergyLong();
     }
 
-    // --- Геттеры ---
-
-    public int getEnergyDelta() {
-        return this.data.get(0); // Было 4
+    public long getEnergyDelta() {
+        if (blockEntity != null && !level.isClientSide) {
+            return blockEntity.getEnergyDelta(); // Берем напрямую из BE
+        }
+        return clientDelta; // Берем из пакета
     }
 
+
+    // --- Геттеры ---
+
     public int getModeOnNoSignal() {
-        return this.data.get(1); // Было 5
+        return this.data.get(0); // Было 5
     }
 
     public int getModeOnSignal() {
-        return this.data.get(2); // Было 6
+        return this.data.get(1); // Было 6
     }
 
     public int getPriorityOrdinal() {
-        return this.data.get(3); // Было 7
+        return this.data.get(2); // Было 7
     }
 
     @Override
@@ -132,14 +147,29 @@ public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEn
         super.broadcastChanges();
 
         if (blockEntity != null && !this.level.isClientSide) {
-            ModPacketHandler.INSTANCE.send(
-                    PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player),
-                    new PacketSyncEnergy(
-                            this.containerId,
-                            blockEntity.getEnergyStored(),
-                            blockEntity.getMaxEnergyStored()
-                    )
-            );
+            long currentEnergy = blockEntity.getEnergyStored();
+            long currentMax = blockEntity.getMaxEnergyStored();
+            long currentDelta = blockEntity.getEnergyDelta();
+
+            // Отправляем пакет только если значения изменились
+            if (currentEnergy != lastSyncedEnergy ||
+                    currentMax != lastSyncedMaxEnergy ||
+                    currentDelta != lastSyncedDelta) {
+
+                ModPacketHandler.INSTANCE.send(
+                        PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player),
+                        new PacketSyncEnergy(
+                                this.containerId,
+                                currentEnergy,
+                                currentMax,
+                                currentDelta // [NEW] Отправляем long дельту
+                        )
+                );
+
+                lastSyncedEnergy = currentEnergy;
+                lastSyncedMaxEnergy = currentMax;
+                lastSyncedDelta = currentDelta;
+            }
         }
     }
 

@@ -8,13 +8,14 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
 public class ClientEnergySyncHandler {
-    public static void handle(int containerId, long energy, long maxEnergy) {
-        // Этот код безопасен, потому что класс загрузится только на клиенте
+    // Добавили аргумент long delta
+    public static void handle(int containerId, long energy, long maxEnergy, long delta) {
         Player player = Minecraft.getInstance().player;
         if (player != null && player.containerMenu != null) {
             if (player.containerMenu.containerId == containerId &&
                     player.containerMenu instanceof ILongEnergyMenu menu) {
-                menu.setEnergy(energy, maxEnergy);
+                // Передаем дельту в меню
+                menu.setEnergy(energy, maxEnergy, delta);
             }
         }
     }

@@ -1,10 +1,13 @@
 package com.hbm_m.api.energy;
 
 public interface ILongEnergyMenu {
-    // Клиент вызывает это, когда приходит пакет
-    void setEnergy(long energy, long maxEnergy);
+    // [ИСПРАВЛЕНИЕ] Добавляем третий аргумент long delta
+    void setEnergy(long energy, long maxEnergy, long delta);
 
     // Сервер вызывает это, чтобы узнать, что отправлять
     long getEnergyStatic();
     long getMaxEnergyStatic();
+
+    // [ИСПРАВЛЕНИЕ] Добавляем этот метод, чтобы меню могло читать дельту с TileEntity
+    long getEnergyDeltaStatic();
 }

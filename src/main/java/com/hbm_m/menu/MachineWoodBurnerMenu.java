@@ -72,7 +72,7 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
     // --- Реализация ILongEnergyMenu ---
 
     @Override
-    public void setEnergy(long energy, long maxEnergy) {
+    public void setEnergy(long energy, long maxEnergy, long delta) {
         this.clientEnergy = energy;
         this.clientMaxEnergy = maxEnergy;
     }
@@ -101,6 +101,11 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
         return clientMaxEnergy;
     }
 
+    @Override
+    public long getEnergyDeltaStatic() {
+        return 0; // Возвращаем 0, так как дельта не используется
+    }
+
     // --- Геттеры для данных (индексы смещены) ---
     // Было 4, 5, 6, 7 -> Стало 0, 1, 2, 3
 
@@ -118,13 +123,14 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
     public void broadcastChanges() {
         super.broadcastChanges();
 
-        if (blockEntity != null && !blockEntity.getLevel().isClientSide) {
+        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
             ModPacketHandler.INSTANCE.send(
-                    PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player),
-                    new PacketSyncEnergy(
+                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> (net.minecraft.server.level.ServerPlayer) this.player),
+                    new com.hbm_m.network.packet.PacketSyncEnergy(
                             this.containerId,
                             blockEntity.getEnergyStored(),
-                            blockEntity.getMaxEnergyStored()
+                            blockEntity.getMaxEnergyStored(),
+                            0L // <--- Передаем 0 как дельту
                     )
             );
         }

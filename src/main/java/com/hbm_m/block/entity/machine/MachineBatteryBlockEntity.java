@@ -82,11 +82,9 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
             @Override
             public int get(int index) {
                 return switch (index) {
-                    // Убрали индексы 0-3 (Energy high/low, Capacity high/low)
-                    case 0 -> (int) energyDelta;    // Было 4
-                    case 1 -> modeOnNoSignal;       // Было 5
-                    case 2 -> modeOnSignal;         // Было 6
-                    case 3 -> priority.ordinal();   // Было 7
+                    case 0 -> modeOnNoSignal;       // Сдвинули на 0
+                    case 1 -> modeOnSignal;         // Сдвинули на 1
+                    case 2 -> priority.ordinal();   // Сдвинули на 2
                     default -> 0;
                 };
             }
@@ -94,16 +92,15 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
             @Override
             public void set(int index, int value) {
                 switch (index) {
-                    // Индексы сместились
-                    case 1 -> modeOnNoSignal = value; // Было 5
-                    case 2 -> modeOnSignal = value;   // Было 6
-                    case 3 -> priority = Priority.values()[Math.max(0, Math.min(value, Priority.values().length - 1))]; // Было 7
+                    case 0 -> modeOnNoSignal = value;
+                    case 1 -> modeOnSignal = value;
+                    case 2 -> priority = Priority.values()[Math.max(0, Math.min(value, Priority.values().length - 1))];
                 }
             }
 
             @Override
             public int getCount() {
-                return 4;
+                return 3; // Теперь у нас всего 3 int-параметра
             }
         };
     }
@@ -188,6 +185,9 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     public int getCurrentMode() {
         if (level == null) return modeOnNoSignal;
         return level.hasNeighborSignal(this.worldPosition) ? modeOnSignal : modeOnNoSignal;
+    }
+    public long getEnergyDelta() {
+        return this.energyDelta;
     }
 
     // --- IEnergyProvider & IEnergyReceiver ---
@@ -332,14 +332,15 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     }
 
     public void handleButtonPress(int buttonId) {
+        // [ИСПРАВЛЕНИЕ] Обновили индексы для кнопок
         switch (buttonId) {
-            case 0 -> this.data.set(1, (this.modeOnNoSignal + 1) % 4);
-            case 1 -> this.data.set(2, (this.modeOnSignal + 1) % 4);
+            case 0 -> this.data.set(0, (this.modeOnNoSignal + 1) % 4); // Индекс 0
+            case 1 -> this.data.set(1, (this.modeOnSignal + 1) % 4);   // Индекс 1
             case 2 -> {
                 Priority[] priorities = Priority.values();
                 int currentIndex = this.priority.ordinal();
                 int nextIndex = (currentIndex + 1) % priorities.length;
-                this.data.set(3, nextIndex);
+                this.data.set(2, nextIndex); // Индекс 2
             }
         }
         setChanged();

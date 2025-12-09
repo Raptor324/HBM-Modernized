@@ -95,7 +95,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
     }
 
     @Override
-    public void setEnergy(long energy, long maxEnergy) {
+    public void setEnergy(long energy, long maxEnergy, long delta) {
         this.clientEnergy = energy;
         this.clientMaxEnergy = maxEnergy;
     }
@@ -127,19 +127,22 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
     }
 
     @Override
+    public long getEnergyDeltaStatic() {
+        return 0; // Возвращаем 0, так как дельта не используется
+    }
+
+    @Override
     public void broadcastChanges() {
         super.broadcastChanges();
 
-        // Отправляем пакет только с Сервера
         if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
-            // Можно добавить проверку "если энергия изменилась", чтобы экономить трафик,
-            // но для начала можно слать всегда.
             ModPacketHandler.INSTANCE.send(
                     net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> (net.minecraft.server.level.ServerPlayer) this.player),
                     new com.hbm_m.network.packet.PacketSyncEnergy(
                             this.containerId,
                             blockEntity.getEnergyStored(),
-                            blockEntity.getMaxEnergyStored()
+                            blockEntity.getMaxEnergyStored(),
+                            0L // <--- Передаем 0 как дельту
                     )
             );
         }

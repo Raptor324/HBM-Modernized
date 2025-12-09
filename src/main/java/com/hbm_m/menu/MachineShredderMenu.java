@@ -218,7 +218,7 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
     }
 
     @Override
-    public void setEnergy(long energy, long maxEnergy) {
+    public void setEnergy(long energy, long maxEnergy, long delta) {
         this.clientEnergy = energy;
         this.clientMaxEnergy = maxEnergy;
     }
@@ -253,6 +253,11 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         return clientMaxEnergy;
     }
 
+    @Override
+    public long getEnergyDeltaStatic() {
+        return 0; // Возвращаем 0, так как дельта не используется
+    }
+
     // Если дельта не критична для GUI, возвращаем 0, так как мы убрали её из Data
     // Если она нужна, её стоит добавить в PacketSyncEnergy в будущем.
     public long getEnergyDeltaLong() {
@@ -264,13 +269,14 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
     public void broadcastChanges() {
         super.broadcastChanges();
 
-        if (blockEntity != null && !this.level.isClientSide) {
+        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
             ModPacketHandler.INSTANCE.send(
-                    PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player),
-                    new PacketSyncEnergy(
+                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> (net.minecraft.server.level.ServerPlayer) this.player),
+                    new com.hbm_m.network.packet.PacketSyncEnergy(
                             this.containerId,
                             blockEntity.getEnergyStored(),
-                            blockEntity.getMaxEnergyStored()
+                            blockEntity.getMaxEnergyStored(),
+                            0L // <--- Передаем 0 как дельту
                     )
             );
         }

@@ -32,7 +32,8 @@ public class EnergyNetwork {
     }
 
     /**
-     * НОВАЯ ЛОГИКА TICK (v6.0) - Поддержка пропорционального распределения по приоритетам
+     * ИСПРАВЛЕННАЯ ЛОГИКА TICK (v6.3) - С гистерезисом для батарей
+     * Решает проблему "мигания" интерфейса и бесконечных циклов зарядки/разрядки.
      */
     public void tick(ServerLevel level) {
         // 1. Валидация узлов
@@ -40,27 +41,28 @@ public class EnergyNetwork {
         nodes.removeIf(node -> !node.isValid(level) || node.getNetwork() != this);
 
         if (nodes.size() < sizeBefore) {
-            // Если узлы были удалены (стали невалидными),
-            // мы ОБЯЗАНЫ проверить, не раскололась ли сеть.
             verifyConnectivity();
         }
 
         if (nodes.size() < 2) {
-            // verifyConnectivity() мог распустить эту сеть (если она раскололась
-            // на части < 2 узлов), или removeIf() удалил последний узел.
-            // В любом случае, тикать больше нечего.
             return;
         }
 
-        // 2. Сбор всех участников сети
-        Set<IEnergyProvider> generators = new HashSet<>();
+        // ====================================================================
+        // ШАГ 1: Сбор и классификация участников
+        // ====================================================================
 
-        // Группируем потребителей
-        Map<IEnergyReceiver.Priority, Set<IEnergyReceiver>> consumersByPriority = new EnumMap<>(IEnergyReceiver.Priority.class);
-        Map<IEnergyReceiver, Long> consumerDemand = new IdentityHashMap<>();
-        List<BatteryInfo> batteries = new ArrayList<>();
+        // Чистые генераторы (и батареи в режиме OUTPUT)
+        List<IEnergyProvider> pureGenerators = new ArrayList<>();
+        // Чистые потребители (машины и батареи в режиме INPUT)
+        List<IEnergyReceiver> pureConsumers = new ArrayList<>();
+        // Батареи в режиме BOTH (неопределившиеся)
+        List<BatteryInfo> ambivalentBatteries = new ArrayList<>();
 
-        long totalConsumption = 0;
+        List<BatteryInfo> allBatteries = new ArrayList<>(); // Для фазы балансировки
+
+        long pureGenerationCap = 0;   // Сколько могут дать чистые генераторы
+        long pureConsumerDemand = 0;  // Сколько хотят чистые потребители (машины)
 
         for (EnergyNode node : nodes) {
             if (!level.isLoaded(node.getPos())) continue;
@@ -74,106 +76,139 @@ public class EnergyNetwork {
             boolean isReceiver = receiverCap.isPresent();
 
             if (isProvider && isReceiver) {
-                // Это батарея
+                // Это БАТАРЕЯ
                 int mode = (be instanceof MachineBatteryBlockEntity batteryBE) ? batteryBE.getCurrentMode() : 0;
-                BatteryInfo batteryInfo = new BatteryInfo(node.getPos(), receiverCap.get(), providerCap.get(), mode);
-                batteries.add(batteryInfo); // Добавляем в общий список батарей
+                BatteryInfo info = new BatteryInfo(node.getPos(), receiverCap.get(), providerCap.get(), mode);
+                allBatteries.add(info);
 
-                // Батарея может быть и поставщиком, и потребителем
-                // 1. Если она может отдавать (Output/Both) -> в список генераторов
-                if (batteryInfo.canOutput() && batteryInfo.provider.canExtract()) {
-                    long available = Math.min(batteryInfo.provider.getEnergyStored(), batteryInfo.provider.getProvideSpeed());
-                    if (available > 0) {
-                        generators.add(batteryInfo.provider); // Добавляем как IEnergyProvider
+                if (mode == 2) {
+                    // OUTPUT ONLY -> Считаем генератором
+                    if (info.provider.canExtract()) {
+                        pureGenerators.add(info.provider);
+                        pureGenerationCap += Math.min(info.provider.getEnergyStored(), info.provider.getProvideSpeed());
                     }
-                }
-
-                // 2. Если она может принимать (Input/Both) -> в список потребителей
-                if (batteryInfo.canInput() && batteryInfo.receiver.canReceive()) {
-                    long needed = Math.min(
-                            batteryInfo.receiver.getMaxEnergyStored() - batteryInfo.receiver.getEnergyStored(),
-                            batteryInfo.receiver.getReceiveSpeed()
-                    );
-                    if (needed > 0) {
-                        consumerDemand.put(batteryInfo.receiver, needed);
-                        consumersByPriority.computeIfAbsent(batteryInfo.receiver.getPriority(), k -> new HashSet<>()).add(batteryInfo.receiver);
-                        totalConsumption += needed;
+                } else if (mode == 1) {
+                    // INPUT ONLY -> Считаем потребителем
+                    if (info.receiver.canReceive()) {
+                        pureConsumers.add(info.receiver);
+                        long needed = Math.min(info.receiver.getMaxEnergyStored() - info.receiver.getEnergyStored(), info.receiver.getReceiveSpeed());
+                        pureConsumerDemand += needed;
                     }
+                } else if (mode == 0) {
+                    // BOTH -> Решим судьбу ниже
+                    ambivalentBatteries.add(info);
                 }
-
             } else if (isProvider) {
-                // Чистый генератор
-                generators.add(providerCap.get());
+                // Обычный ГЕНЕРАТОР
+                IEnergyProvider p = providerCap.get();
+                if (p.canExtract()) {
+                    pureGenerators.add(p);
+                    pureGenerationCap += Math.min(p.getEnergyStored(), p.getProvideSpeed());
+                }
             } else if (isReceiver) {
-                // Чистый потребитель (машина)
-                IEnergyReceiver consumer = receiverCap.get();
-                if (consumer.canReceive()) {
-                    long needed = Math.min(
-                            consumer.getMaxEnergyStored() - consumer.getEnergyStored(),
-                            consumer.getReceiveSpeed()
-                    );
+                // Обычная МАШИНА
+                IEnergyReceiver r = receiverCap.get();
+                if (r.canReceive()) {
+                    pureConsumers.add(r);
+                    long needed = Math.min(r.getMaxEnergyStored() - r.getEnergyStored(), r.getReceiveSpeed());
+                    pureConsumerDemand += needed;
+                }
+            }
+        }
+
+        // ====================================================================
+        // ШАГ 2: Определение режима сети (Surplus vs Deficit)
+        // ====================================================================
+
+        // Списки для финального распределения
+        Set<IEnergyProvider> activeProviders = new HashSet<>(pureGenerators);
+
+        // Карты для распределения (группировка по приоритетам)
+        Map<IEnergyReceiver.Priority, Set<IEnergyReceiver>> activeConsumersByPriority = new EnumMap<>(IEnergyReceiver.Priority.class);
+        Map<IEnergyReceiver, Long> activeConsumerDemand = new IdentityHashMap<>();
+
+        long totalActiveDemand = 0;
+
+        // Добавляем "чистых" потребителей (Машины) в список на раздачу
+        for (IEnergyReceiver r : pureConsumers) {
+            long needed = Math.min(r.getMaxEnergyStored() - r.getEnergyStored(), r.getReceiveSpeed());
+            if (needed > 0) {
+                activeConsumerDemand.put(r, needed);
+                activeConsumersByPriority.computeIfAbsent(r.getPriority(), k -> new HashSet<>()).add(r);
+                totalActiveDemand += needed;
+            }
+        }
+
+        // ГЛАВНАЯ ЛОГИКА: Решаем, что делают BOTH батареи
+        boolean isDeficit = pureGenerationCap < pureConsumerDemand;
+
+        for (BatteryInfo bat : ambivalentBatteries) {
+            if (isDeficit) {
+                // ДЕФИЦИТ: Батареи (Both) помогают генераторам (РАЗРЯДКА)
+                // Они НЕ добавляются в consumers, поэтому не будут потреблять
+                if (bat.provider.canExtract()) {
+                    activeProviders.add(bat.provider);
+                }
+            } else {
+                // ПРОФИЦИТ: Батареи (Both) заряжаются от излишков (ЗАРЯДКА)
+                // Они НЕ добавляются в providers, поэтому не будут сливать энергию
+                if (bat.receiver.canReceive()) {
+                    long needed = Math.min(bat.receiver.getMaxEnergyStored() - bat.receiver.getEnergyStored(), bat.receiver.getReceiveSpeed());
                     if (needed > 0) {
-                        consumerDemand.put(consumer, needed);
-                        consumersByPriority.computeIfAbsent(consumer.getPriority(), k -> new HashSet<>()).add(consumer);
-                        totalConsumption += needed;
+                        activeConsumerDemand.put(bat.receiver, needed);
+                        activeConsumersByPriority.computeIfAbsent(bat.receiver.getPriority(), k -> new HashSet<>()).add(bat.receiver);
+                        totalActiveDemand += needed;
                     }
                 }
             }
         }
 
-        // ===== ФАЗА 1: Сбор энергии (Генераторы + Батареи в режиме Выхода) =====
-        long totalGeneration = 0;
-        Map<IEnergyProvider, Long> generatorCapacity = new IdentityHashMap<>();
+        // ====================================================================
+        // ШАГ 3: Физическое распределение энергии
+        // ====================================================================
 
-        for (IEnergyProvider gen : generators) {
-            // gen УЖЕ содержит и чистые генераторы, и батареи (Output/Both)
-            if (gen.canExtract()) { // Доп. проверка
-                long available = Math.min(gen.getEnergyStored(), gen.getProvideSpeed());
-                if (available > 0) {
-                    generatorCapacity.put(gen, available);
-                    totalGeneration += available;
-                }
+        // 3.1 Считаем реальную доступную энергию от выбранных провайдеров
+        long totalEnergyAvailable = 0;
+        Map<IEnergyProvider, Long> providerCapacities = new IdentityHashMap<>();
+
+        for (IEnergyProvider p : activeProviders) {
+            long canProvide = Math.min(p.getEnergyStored(), p.getProvideSpeed());
+            if (canProvide > 0) {
+                providerCapacities.put(p, canProvide);
+                totalEnergyAvailable += canProvide;
             }
         }
 
-        // ===== ФАЗА 2: Распределение энергии потребителям (по приоритетам) =====
-
-        long energyToDistribute = Math.min(totalGeneration, totalConsumption);
-        long remainingGeneration = totalGeneration; // Сколько всего останется
+        long energyToDistribute = Math.min(totalEnergyAvailable, totalActiveDemand);
 
         if (energyToDistribute > 0) {
-            // Идем по приоритетам от ВЫСШЕГО к НИЗШЕМУ
-            // (Priority.values() по умолчанию: LOW, NORMAL, HIGH)
+            // Распределяем по приоритетам (HIGH -> NORMAL -> LOW)
             for (int i = IEnergyReceiver.Priority.values().length - 1; i >= 0; i--) {
                 IEnergyReceiver.Priority priority = IEnergyReceiver.Priority.values()[i];
 
-                Set<IEnergyReceiver> currentGroup = consumersByPriority.get(priority);
-                if (currentGroup == null || currentGroup.isEmpty()) continue;
-                if (energyToDistribute <= 0) break; // Энергия кончилась
+                Set<IEnergyReceiver> group = activeConsumersByPriority.get(priority);
+                if (group == null || group.isEmpty()) continue;
+                if (energyToDistribute <= 0) break;
 
-                // Считаем, сколько всего нужно этой группе
                 long groupDemand = 0;
-                for (IEnergyReceiver consumer : currentGroup) {
-                    groupDemand += consumerDemand.getOrDefault(consumer, 0L);
-                }
-                if (groupDemand <= 0) continue;
+                for (IEnergyReceiver r : group) groupDemand += activeConsumerDemand.getOrDefault(r, 0L);
 
-                // Даем этой группе либо сколько она просит, либо сколько осталось
-                long energyToGiveThisGroup = Math.min(energyToDistribute, groupDemand);
+                long energyForGroup = Math.min(energyToDistribute, groupDemand);
 
-                // Распределяем энергию ВНУТРИ группы ПРОПОРЦИОНАЛЬНО
-                long energyGiven = distributeProportionally(energyToGiveThisGroup, currentGroup, consumerDemand, generatorCapacity);
+                // Используем твой метод пропорционального распределения
+                long used = distributeProportionally(energyForGroup, group, activeConsumerDemand, providerCapacities);
 
-                energyToDistribute -= energyGiven;
-                remainingGeneration -= energyGiven; // Уменьшаем общий остаток
+                energyToDistribute -= used;
             }
         }
 
-        // ===== ФАЗА 3: Балансировка между батареями режима "BOTH" =====
-        // (Остаток `remainingGeneration` уже в батареях, т.к. они были
-        // и в списке `generators`, и в списке `consumersByPriority`)
+        // ====================================================================
+        // ШАГ 4: Балансировка батарей (между собой)
+        // ====================================================================
 
-        balanceBatteries(batteries);
+        // Балансировка запускается всегда, чтобы выровнять заряд между батареями
+        // (например, если одна батарея зарядилась быстрее другой в фазе 3)
+        balanceBatteries(allBatteries);
     }
 
     /**

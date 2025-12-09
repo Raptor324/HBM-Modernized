@@ -61,6 +61,9 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     private int progress = 0;
     private int maxProgress = 100;
 
+    private long lastEnergy = 0;
+    private long energyDelta = 0;
+
     // Proxy handlers для multiblock parts
     private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
     private LazyOptional<IItemHandler> lazyOutputProxy = LazyOptional.empty();
