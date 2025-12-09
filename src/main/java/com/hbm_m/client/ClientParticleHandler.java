@@ -58,5 +58,9 @@ public class ClientParticleHandler {
                 (SimpleParticleType) ModExplosionParticles.AGENT_ORANGE.get(),
                 AgentOrangeParticle.Provider::new);
 
+        event.registerSpriteSet(
+                (SimpleParticleType) ModExplosionParticles.FIRE_SPARK.get(),
+                FireSparkParticle.Provider::new);
+
     }
 }

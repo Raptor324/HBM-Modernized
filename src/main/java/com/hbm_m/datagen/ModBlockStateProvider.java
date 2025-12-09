@@ -39,6 +39,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.ASPHALT);
         blockWithItem(ModBlocks.BARRICADE);
         blockWithItem(ModBlocks.DEAD_DIRT);
+        blockWithItem(ModBlocks.GEYSIR_DIRT);
+        blockWithItem(ModBlocks.GEYSIR_STONE);
         blockWithItem(ModBlocks.BASALT_BRICK);
         blockWithItem(ModBlocks.BASALT_POLISHED);
         blockWithItem(ModBlocks.BRICK_BASE);

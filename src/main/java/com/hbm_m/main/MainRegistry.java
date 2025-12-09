@@ -505,6 +505,9 @@ public class MainRegistry {
             event.accept(ModBlocks.METEOR_CRUSHED);
             event.accept(ModBlocks.METEOR_TREASURE);
 
+            event.accept(ModBlocks.GEYSIR_DIRT);
+            event.accept(ModBlocks.GEYSIR_STONE);
+
             event.accept(ModBlocks.SELLAFIELD_SLAKED);
             event.accept(ModBlocks.SELLAFIELD_SLAKED1);
             event.accept(ModBlocks.SELLAFIELD_SLAKED2);

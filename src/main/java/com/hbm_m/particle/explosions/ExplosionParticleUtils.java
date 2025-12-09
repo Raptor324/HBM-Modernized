@@ -72,6 +72,40 @@ public class ExplosionParticleUtils {
     }
 
     /**
+     * ✅ Спавн 400 оранжевых искр
+     */
+    public static void spawnAirBombFireSparks(ServerLevel level, double x, double y, double z) {
+        level.getServer().execute(() -> {
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                ClientLevel clientLevel = Minecraft.getInstance().level;
+                if (clientLevel == null) return;
+
+                for (int i = 0; i < 400; i++) {
+                    double theta = level.random.nextDouble() * 2 * Math.PI;
+                    double phi = level.random.nextDouble() * Math.PI;
+
+                    double dirX = Math.sin(phi) * Math.cos(theta);
+                    double dirY = Math.cos(phi);
+                    double dirZ = Math.sin(phi) * Math.sin(theta);
+
+                    double speed = 0.8 + level.random.nextDouble() * 0.5;
+
+                    double xSpeed = dirX * speed;
+                    double ySpeed = dirY * speed;
+                    double zSpeed = dirZ * speed;
+
+                    clientLevel.addAlwaysVisibleParticle(
+                            (SimpleParticleType) ModExplosionParticles.FIRE_SPARK.get(),
+                            true,
+                            x, y, z,
+                            xSpeed, ySpeed, zSpeed
+                    );
+                }
+            });
+        });
+    }
+
+    /**
      * ✅ КОЛЬЦО УДАРНОЙ ВОЛНЫ
      */
     public static void spawnAirBombShockwave(ServerLevel level, double x, double y, double z) {
@@ -192,6 +226,51 @@ public class ExplosionParticleUtils {
                             (SimpleParticleType) ModExplosionParticles.AGENT_ORANGE.get(),
                             true,
                             x + offsetX, y, z + offsetZ,
+                            xSpeed, ySpeed, zSpeed
+                    );
+                }
+            });
+        });
+    }
+
+    /**
+     * ☠️ СПАВН AGENT ORANGE ДЛЯ ГЕЙЗЕРА (вертикальная струя)
+     *
+     * @param verticalSpeed Скорость вверх (0.1 - 0.3)
+     */
+    public static void spawnAgentOrangeGeyser(ServerLevel level, double x, double y, double z,
+                                              int particleCount, double verticalSpeed) {
+        spawnAgentOrangeGeyser(level, x, y, z, particleCount, verticalSpeed, 0.5);
+    }
+
+    /**
+     * ☠️ СПАВН AGENT ORANGE ДЛЯ ГЕЙЗЕРА (с горизонтальным разбросом)
+     *
+     * @param verticalSpeed Скорость вверх
+     * @param horizontalSpread Радиус горизонтального разброса
+     */
+    public static void spawnAgentOrangeGeyser(ServerLevel level, double x, double y, double z,
+                                              int particleCount, double verticalSpeed,
+                                              double horizontalSpread) {
+        level.getServer().execute(() -> {
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                ClientLevel clientLevel = Minecraft.getInstance().level;
+                if (clientLevel == null) return;
+
+                for (int i = 0; i < particleCount; i++) {
+                    // ✅ ГОРИЗОНТАЛЬНОЕ СМЕЩЕНИЕ
+                    double offsetX = (level.random.nextDouble() - 0.5) * horizontalSpread;
+                    double offsetZ = (level.random.nextDouble() - 0.5) * horizontalSpread;
+
+                    // ✅ СКОРОСТИ
+                    double xSpeed = offsetX * 0.08; // Медленный разлёт в стороны
+                    double ySpeed = verticalSpeed + (level.random.nextDouble() - 0.5) * 0.05; // В основном вверх
+                    double zSpeed = offsetZ * 0.08;
+
+                    clientLevel.addAlwaysVisibleParticle(
+                            (SimpleParticleType) ModExplosionParticles.AGENT_ORANGE.get(),
+                            true,
+                            x + offsetX * 0.2, y, z + offsetZ * 0.2, // Небольшой начальный разброс
                             xSpeed, ySpeed, zSpeed
                     );
                 }
