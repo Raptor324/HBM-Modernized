@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import static com.hbm_m.particle.explosions.ExplosionParticleUtils.*;
+
 public class AirBombProjectileEntity extends ThrowableItemProjectile {
 
     private static final EntityDataAccessor<Float> SYNCHED_YAW =
@@ -212,24 +214,13 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
 
 
     private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
-        // ✅ Flash - точно те же параметры
-        level.sendParticles(
-                (SimpleParticleType) ModExplosionParticles.FLASH.get(),
-                x, y, z, 1, 0, 0, 0, 0
-        );
-
-        // ✅ Sparks - 400 частиц с ТОЧНЫМИ скоростями
+        level.sendParticles((SimpleParticleType) ModExplosionParticles.FLASH.get(),
+                x, y, z, 1, 0, 0, 0, 0);
         ExplosionParticleUtils.spawnAirBombSparks(level, x, y, z);
-
-        // ✅ Shockwave через 3 тика - точно те же кольца
         level.getServer().tell(new net.minecraft.server.TickTask(3, () ->
                 ExplosionParticleUtils.spawnAirBombShockwave(level, x, y, z)));
-
-        // ✅ Mushroom Cloud через 8 тиков - ТОЧНО те же параметры
         level.getServer().tell(new net.minecraft.server.TickTask(8, () ->
-                ExplosionParticleUtils.spawnAirBombMushroomCloud(level, x, y, z)));
-    }
-
+                ExplosionParticleUtils.spawnAirBombMushroomCloud(level, x, y, z)));}
 
 
     private void triggerNearbyDetonations(ServerLevel serverLevel, BlockPos pos, Player player) {

@@ -46,6 +46,9 @@ public class ModExplosionParticles {
     public static final RegistryObject<ParticleType<?>> EXPLOSION_FIRE =
             PARTICLE_TYPES.register("explosion_fire", () -> new SimpleParticleType(true));
 
+    public static final RegistryObject<ParticleType<?>> AGENT_ORANGE =
+            PARTICLE_TYPES.register("agent_orange", () -> new SimpleParticleType(true));
+
     // ✅ СТАРЫЕ/ЗАПАСНЫЕ (можно удалить если не используются)
     public static final RegistryObject<ParticleType<?>> FLASH =
             PARTICLE_TYPES.register("flash", () -> new SimpleParticleType(true));

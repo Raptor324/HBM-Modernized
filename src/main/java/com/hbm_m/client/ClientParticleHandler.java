@@ -2,7 +2,6 @@ package com.hbm_m.client;
 
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.*;
-
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
@@ -14,8 +13,10 @@ public class ClientParticleHandler {
 
     @SubscribeEvent
     public static void registerParticleProviders(RegisterParticleProvidersEvent event) {
-        // ✅ ВСЕ ЧАСТИЦЫ как ИСКРЫ - используют LongRangeParticleRenderType!
-        // ✅ Все наследуют AbstractExplosionParticle с дальним рендером (256+ блоков)
+
+        // ════════════════════════════════════════════════════════════════
+        // 💣 ФУГАСНЫЕ ВЗРЫВНЫЕ ЧАСТИЦЫ
+        // ════════════════════════════════════════════════════════════════
 
         // 🔥 ВСПЫШКА (яркий белый свет)
         event.registerSpriteSet(
@@ -37,12 +38,12 @@ public class ClientParticleHandler {
                 (SimpleParticleType) ModExplosionParticles.MUSHROOM_SMOKE.get(),
                 MushroomSmokeParticle.Provider::new);
 
-        // 💨 ГРИБОВИДНЫЙ ДЫМ (серый дым)
+        // 💨 ТЁМНЫЙ ДЫМ
         event.registerSpriteSet(
                 (SimpleParticleType) ModExplosionParticles.DARK_SMOKE.get(),
                 DarkSmokeParticle.Provider::new);
 
-        // 💨 ГРИБОВИДНЫЙ ДЫМ (серый дым)
+        // 💨 ВОЛНОВОЙ ДЫМ
         event.registerSpriteSet(
                 (SimpleParticleType) ModExplosionParticles.WAVE_SMOKE.get(),
                 WaveSmokeParticle.Provider::new);
@@ -52,14 +53,10 @@ public class ClientParticleHandler {
                 (SimpleParticleType) ModExplosionParticles.EXPLOSION_FIRE.get(),
                 ExplosionFireParticle.Provider::new);
 
-        // ✅ СТАРЫЕ/ЗАПАСНЫЕ (если нужны):
-        /*
+        // ☠️ AGENT ORANGE
         event.registerSpriteSet(
-                (SimpleParticleType) ModExplosionParticles.FLASH.get(),
-                FlashParticle.Provider::new);
-        event.registerSpriteSet(
-                (SimpleParticleType) ModExplosionParticles.SHOCKWAVE.get(),
-                ShockwaveParticle.Provider::new);
-        */
+                (SimpleParticleType) ModExplosionParticles.AGENT_ORANGE.get(),
+                AgentOrangeParticle.Provider::new);
+
     }
 }

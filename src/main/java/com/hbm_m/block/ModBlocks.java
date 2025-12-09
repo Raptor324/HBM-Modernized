@@ -521,6 +521,10 @@ public class ModBlocks {
 
     // ======================================================================
 
+    public static final RegistryObject<Block> DEAD_DIRT  = registerBlock("dead_dirt",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.DIRT).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+
     public static final RegistryObject<Block> SELLAFIELD_SLAKED  = registerBlock("sellafield_slaked",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 

@@ -23,7 +23,7 @@ public abstract class AbstractExplosionParticle extends TextureSheetParticle {
 
     // ✅ МАКСИМАЛЬНАЯ ДИСТАНЦИЯ РЕНДЕРА (512 блоков)
     // 512² = 262144 в квадрате
-    private static final double MAX_RENDER_DISTANCE_SQ = 512.0 * 512.0;
+    private static final double MAX_RENDER_DISTANCE_SQ = 1024.0 * 1024.0;
 
     public AbstractExplosionParticle(ClientLevel level, double x, double y, double z, SpriteSet sprites) {
         super(level, x, y, z, 0.0, 0.0, 0.0);
