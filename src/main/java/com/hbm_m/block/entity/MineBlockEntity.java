@@ -15,7 +15,7 @@ import java.util.List;
 public class MineBlockEntity extends BlockEntity {
 
     private static final double DETECTION_RADIUS = 10.0;
-    private static final int SOUND_COOLDOWN = 18000;
+    private static final int SOUND_COOLDOWN = 1800;
     private int soundCooldown = 0;
     private boolean hasPlayedWarning = false;
 

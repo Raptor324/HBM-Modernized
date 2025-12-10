@@ -203,16 +203,19 @@ public class AirstrikeAgentEntity extends Entity {
         }
     }
 
-    /**
-     * ☠️ РАСПЫЛИТЬ AGENT ORANGE ПОД САМОЛЁТОМ
-     *
-     * Создаёт густое облако отравленных частиц
-     */
     private void sprayAgentOrange() {
         ServerLevel serverLevel = (ServerLevel) this.level();
 
-        // ✅ ПОЗИЦИЯ РАСПЫЛЕНИЯ: под самолётом с небольшим разбросом
-        Vec3 sprayPos = this.position().add(1, -3, 0);
+        // вектор "вправо" от направления полёта
+        Vec3 right = new Vec3(-this.direction.z, 0, this.direction.x).normalize();
+        // 2 блока влево = -2 * right
+        Vec3 lateralOffset = right.scale(1.25);
+
+        // базовая точка под самолётом
+        Vec3 base = this.position().add(0, -2.5, 0);
+
+        // итоговая позиция распыления: 2 блока влево от направления
+        Vec3 sprayPos = base.add(lateralOffset);
 
         // ✅ СПАВНИМ ГУСТОЕ ОБЛАКО AGENT ORANGE
         ExplosionParticleUtils.spawnAgentOrange(
@@ -222,7 +225,18 @@ public class AirstrikeAgentEntity extends Entity {
                 sprayPos.z,
                 PARTICLES_PER_SPRAY
         );
+
+        // 🔊 Звук сброса/распыления
+        serverLevel.playSound(
+                null,
+                sprayPos.x, sprayPos.y, sprayPos.z,
+                net.minecraft.sounds.SoundEvents.FIRE_EXTINGUISH,
+                SoundSource.BLOCKS,
+                4.0F,
+                0.7F
+        );
     }
+
 
     private void playAmbientSound() {
         if (RANDOM.nextBoolean()) {
