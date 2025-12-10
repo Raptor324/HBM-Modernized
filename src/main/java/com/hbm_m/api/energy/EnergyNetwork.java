@@ -250,7 +250,7 @@ public class EnergyNetwork {
         // [ВАЖНО] Запоминаем изначальное количество энергии для расчета долей.
         // Если мы будем уменьшать amount в цикле и от него считать процент,
         // последние в списке получат копейки.
-        long initialPoolForCalculation = amount;    
+        long initialPoolForCalculation = amount;
 
         // Создаем копию списка, чтобы избежать ConcurrentModificationException (на всякий случай)
         List<IEnergyReceiver> sortedConsumers = new ArrayList<>(consumers);
