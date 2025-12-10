@@ -1,6 +1,9 @@
 package com.hbm_m.block;
 
 import com.hbm_m.api.energy.ConverterBlock;
+import com.hbm_m.block.crates.DeshCrateBlock;
+import com.hbm_m.block.crates.IronCrateBlock;
+import com.hbm_m.block.crates.SteelCrateBlock;
 import com.hbm_m.block.explosives.*;
 import com.hbm_m.block.machine.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machine.MachineAssemblerBlock;
@@ -25,10 +28,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 import net.minecraft.util.valueproviders.UniformInt;
 
-import java.util.ArrayList;
-import java.util.EnumMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.function.Supplier;
 
 public class ModBlocks {
@@ -44,8 +44,6 @@ public class ModBlocks {
             BlockBehaviour.Properties.copy(Blocks.ANVIL).sound(SoundType.ANVIL).noOcclusion();
 
     // Стандартные свойства для блоков слитков
-    private static final BlockBehaviour.Properties INGOT_BLOCK_PROPERTIES =
-            BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops();
 
     public static final List<RegistryObject<Block>> BATTERY_BLOCKS = new ArrayList<>();
 
@@ -72,24 +70,72 @@ public class ModBlocks {
     public static final RegistryObject<Block> MACHINE_BATTERY_DINEUTRONIUM = registerBattery("machine_battery_dineutronium", 1_000_000_000_000L);
 
     // АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ БЛОКОВ СЛИТКОВ
+    private static final BlockBehaviour.Properties INGOT_BLOCK_PROPERTIES =
+            BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(3.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops();
+
+    // 1. СПИСОК РАЗРЕШЕННЫХ БЛОКОВ (Whitelist)
+    // Сюда добавляем только те материалы, которым нужны блоки (9 слитков = 1 блок).
+    // Скопировано и адаптировано из ModItems, убраны лишние материалы типа еды или топлива, если им не нужен блок.
+    // 1. СПИСОК РАЗРЕШЕННЫХ БЛОКОВ (Whitelist)
+    // 1. СПИСОК РАЗРЕШЕННЫХ БЛОКОВ (Whitelist)
+    public static final Set<String> ENABLED_INGOT_BLOCKS = Set.of(
+            "uranium", "plutonium", "thorium", "titanium", "aluminum", "copper",
+            "lead", "tungsten", "steel", "advanced_alloy", "schrabidium", "saturnite",
+            "beryllium", "bismuth", "desh", "cobalt", "lanthanium",
+            "niobium", "zirconium", "actinium", "ferrouranium",
+            "u233", "u235", "u238", "pu238", "pu239", "pu240", "pu241",
+            "ra226", "neptunium",
+            "australium", "dineutronium", "euphemium",
+            "combine_steel", "dura_steel", "starmetal", "red_copper",
+            "plutonium_fuel", "uranium_fuel", "thorium_fuel", "mox_fuel", "schrabidium_fuel",
+            "boron", "tcalloy", "cdalloy", "cadmium"
+    );
+
+    // 2. КАРТА БЛОКОВ
     public static final Map<ModIngots, RegistryObject<Block>> INGOT_BLOCKS = new EnumMap<>(ModIngots.class);
 
+    // 3. АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ
     static {
         for (ModIngots ingot : ModIngots.values()) {
-            String blockName = ingot.getName() + "_block";
-            RegistryObject<Block> registeredBlock;
+            String name = ingot.getName();
 
-            if (isRadioactiveIngot(ingot)) {
-                registeredBlock = registerBlock(blockName,
-                        () -> new RadioactiveBlock(INGOT_BLOCK_PROPERTIES));
-            } else {
-                registeredBlock = registerBlock(blockName,
-                        () -> new Block(INGOT_BLOCK_PROPERTIES));
+            // Проверяем, есть ли этот слиток в "белом списке"
+            if (ENABLED_INGOT_BLOCKS.contains(name)) {
+
+                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
+                // Раньше было: String blockName = name + "_block";
+                // Теперь ставим приставку в начало:
+                String blockName = "block_" + name;
+                // -----------------------
+
+                RegistryObject<Block> registeredBlock;
+
+                // Определяем свойства (радиоактивный или обычный)
+                if (isRadioactiveIngot(ingot)) {
+                    registeredBlock = registerBlock(blockName,
+                            () -> new RadioactiveBlock(INGOT_BLOCK_PROPERTIES));
+                } else {
+                    registeredBlock = registerBlock(blockName,
+                            () -> new Block(INGOT_BLOCK_PROPERTIES));
+                }
+
+                // Сохраняем в карту
+                INGOT_BLOCKS.put(ingot, registeredBlock);
             }
-            INGOT_BLOCKS.put(ingot, registeredBlock);
         }
     }
 
+    // Вспомогательный метод получения блока (безопасный)
+    public static RegistryObject<Block> getIngotBlock(ModIngots ingot) {
+        RegistryObject<Block> block = INGOT_BLOCKS.get(ingot);
+        if (block == null) {
+            // Логируем ошибку или возвращаем заглушку, чтобы игра не крашилась при обращении к несуществующему блоку
+            throw new NullPointerException("Block for ingot " + ingot.getName() + " is not registered! Check ENABLED_INGOT_BLOCKS.");
+        }
+        return block;
+    }
+
+    // Оставляем вашу логику определения радиоактивности без изменений
     private static boolean isRadioactiveIngot(ModIngots ingot) {
         String name = ingot.getName().toLowerCase();
         return name.contains("uranium") ||
@@ -125,8 +171,8 @@ public class ModBlocks {
                 name.contains("pu241");
     }
 
-    public static RegistryObject<Block> getIngotBlock(ModIngots ingot) {
-        return INGOT_BLOCKS.get(ingot);
+    public static boolean hasIngotBlock(ModIngots ingot) {
+        return INGOT_BLOCKS.containsKey(ingot);
     }
 
     public static final RegistryObject<Block> URANIUM_BLOCK = getIngotBlock(ModIngots.URANIUM);
@@ -283,6 +329,17 @@ public class ModBlocks {
                     .sound(SoundType.WOOD)
                     .requiresCorrectToolForDrops()));
 
+    public static final RegistryObject<Block> AIRBOMB = registerBlock("airbomb",
+            () -> new AirBombBlock(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops().noOcclusion()));
+
+    public static final RegistryObject<Block> BALEBOMB_TEST = registerBlock("balebomb_test",
+            () -> new AirNukeBombBlock(BlockBehaviour.Properties.of()
+                    .strength(0.5F, 6.0F)
+                    .sound(SoundType.STONE)
+                    .requiresCorrectToolForDrops().noOcclusion()));
 
     public static final RegistryObject<Block> EXPLOSIVE_CHARGE = registerBlock("explosive_charge",
             () -> new ExplosiveChargeBlock(BlockBehaviour.Properties.of()
@@ -463,6 +520,16 @@ public class ModBlocks {
 
 
     // ======================================================================
+
+    public static final RegistryObject<Block> DEAD_DIRT  = registerBlock("dead_dirt",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.DIRT).strength(0.5f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> GEYSIR_DIRT  = registerBlock("geysir_dirt",
+            () -> new GeysirBlock(BlockBehaviour.Properties.copy(Blocks.DIRT).strength(0.5f, 4.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> GEYSIR_STONE  = registerBlock("geysir_stone",
+            () -> new GeysirBlock(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
 
     public static final RegistryObject<Block> SELLAFIELD_SLAKED  = registerBlock("sellafield_slaked",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
@@ -1002,10 +1069,17 @@ public class ModBlocks {
                     BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
     public static final RegistryObject<Block> REINFORCED_STONE_SLAB = registerBlock("reinforced_stone_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
-    public static final RegistryObject<Block> CRATE_IRON = registerBlock("crate_iron",
-            () -> new IronCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops()));
-    public static final RegistryObject<Block> CRATE_STEEL = registerBlock("crate_steel",
-            () -> new SteelCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(1f, 1.5f).requiresCorrectToolForDrops()));
+
+
+    // ✅ ПРАВИЛЬНО - РЕГИСТРИРУЙТЕ ПРОСТО!
+    public static final RegistryObject<Block> CRATE_IRON = BLOCKS.register("crate_iron",
+            () -> new IronCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
+                    .sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops()));
+    // ✅ ПРАВИЛЬНО - РЕГИСТРИРУЙТЕ ПРОСТО!
+    public static final RegistryObject<Block> CRATE_STEEL = BLOCKS.register("crate_steel",
+            () -> new SteelCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
+                    .sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops()));
+
     public static final RegistryObject<Block> CRATE_DESH = registerBlock("crate_desh",
             () -> new DeshCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(1.5f, 2f).requiresCorrectToolForDrops()));
 
@@ -1041,6 +1115,9 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
     public static final RegistryObject<Block> RESOURCE_SULFUR = registerBlock("resource_sulfur",
+            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> SEQUESTRUM_ORE = registerBlock("sequestrum_ore",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
 

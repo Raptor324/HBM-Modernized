@@ -29,10 +29,18 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.STRAWBERRY_BUSH.get(), models().cross(blockTexture(ModBlocks.STRAWBERRY_BUSH.get()).getPath(),
                 blockTexture(ModBlocks.STRAWBERRY_BUSH.get())).renderType("cutout"));
         // Блоки слитков теперь генерируются автоматически в цикле ниже
-
-
+        blockWithItem(ModBlocks.GIGA_DET);
+        blockWithItem(ModBlocks.POLONIUM210_BLOCK);
+        blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
+        blockWithItem(ModBlocks.CRATE_WEAPON);
+        blockWithItem(ModBlocks.CRATE_METAL);
+        blockWithItem(ModBlocks.CRATE);
+        blockWithItem(ModBlocks.CRATE_LEAD);
         blockWithItem(ModBlocks.ASPHALT);
         blockWithItem(ModBlocks.BARRICADE);
+        blockWithItem(ModBlocks.DEAD_DIRT);
+        blockWithItem(ModBlocks.GEYSIR_DIRT);
+        blockWithItem(ModBlocks.GEYSIR_STONE);
         blockWithItem(ModBlocks.BASALT_BRICK);
         blockWithItem(ModBlocks.BASALT_POLISHED);
         blockWithItem(ModBlocks.BRICK_BASE);
@@ -94,6 +102,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.VINYL_TILE_SMALL);
         blockWithItem(ModBlocks.RESOURCE_ASBESTOS);
         blockWithItem(ModBlocks.RESOURCE_BAUXITE);
+        blockWithItem(ModBlocks.SEQUESTRUM_ORE);
         blockWithItem(ModBlocks.RESOURCE_HEMATITE);
         blockWithItem(ModBlocks.RESOURCE_LIMESTONE);
         blockWithItem(ModBlocks.RESOURCE_MALACHITE);
@@ -156,10 +165,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         );
         // === КОНЕЦ РЕГИСТРАЦИИ ПАДАЮЩИХ БЛОКОВ ===
 
-        resourceBlockWithItem(ModBlocks.CRATE);
-        resourceBlockWithItem(ModBlocks.CRATE_LEAD);
-        resourceBlockWithItem(ModBlocks.CRATE_METAL);
-        resourceBlockWithItem(ModBlocks.CRATE_WEAPON);
         blockWithItem(ModBlocks.WASTE_PLANKS);
 
         simpleBlockWithItem(ModBlocks.WASTE_LOG.get(),
@@ -272,8 +277,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         blockWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
         blockWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);
-        resourceBlockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
-        resourceBlockWithItem(ModBlocks.GIGA_DET);
 
         simpleBlockWithItem(ModBlocks.REINFORCED_GLASS.get(),
                 models().cubeAll(ModBlocks.REINFORCED_GLASS.getId().getPath(),
@@ -970,10 +973,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 new ModelFile.UncheckedModelFile(modLoc("block/shredder")));
 
         // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ СЛИТКОВ
+        // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            RegistryObject<Block> blockRegistryObject = ModBlocks.getIngotBlock(ingot);
-            if (blockRegistryObject != null) {
-                resourceBlockWithItem(blockRegistryObject);
+            // !!! ДОБАВЛЕНА ПРОВЕРКА !!!
+            if (ModBlocks.hasIngotBlock(ingot)) {
+                RegistryObject<Block> blockRegistryObject = ModBlocks.getIngotBlock(ingot);
+                if (blockRegistryObject != null) {
+                    resourceBlockWithItem(blockRegistryObject);
+                }
             }
         }
 
@@ -985,29 +992,25 @@ public class ModBlockStateProvider extends BlockStateProvider {
      * Например, для блока с именем "uranium_block" он будет искать текстуру "block_uranium".
      */
     private void resourceBlockWithItem(RegistryObject<Block> blockObject) {
-        // 1. Получаем регистрационное имя блока (например, "uranium_block")
+        // 1. Получаем регистрационное имя (теперь оно уже "block_uranium")
         String registrationName = blockObject.getId().getPath();
 
-        // 2. Трансформируем его в базовое имя (удаляем "_block" -> "uranium")
-        String baseName = registrationName.replace("_block", "");
+        // 2. Имя текстуры теперь совпадает с именем блока!
+        // (Если ваши текстуры называются block_uranium.png)
+        String textureName = registrationName;
 
-        // 3. Создаем имя файла текстуры (добавляем "block_" -> "block_uranium")
-        String textureName = "block_" + baseName;
-        
-        // 4. Проверяем существование текстуры перед созданием модели
+        // 4. Проверяем существование текстуры
         ResourceLocation textureLocation = modLoc("textures/block/" + textureName + ".png");
         if (!existingFileHelper.exists(textureLocation, net.minecraft.server.packs.PackType.CLIENT_RESOURCES)) {
-            // Если текстура не найдена, пропускаем этот блок (логируем предупреждение)
-            MainRegistry.LOGGER.warn("Texture not found for block {}: {}. Skipping model generation.", 
+            MainRegistry.LOGGER.warn("Texture not found for block {}: {}. Skipping model generation.",
                     registrationName, textureLocation);
             return;
         }
 
-        // 5. Создаем модель блока, ЯВНО указывая путь к текстуре
-        //    Метод models().cubeAll() создает модель типа "block/cube_all" с указанной текстурой.
+        // 5. Создаем модель
         simpleBlock(blockObject.get(), models().cubeAll(registrationName, modLoc("block/" + textureName)));
 
-        // 6. Создаем модель для предмета-блока, как и раньше
+        // 6. Создаем модель для предмета
         simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
     }
     private void oreWithItem(RegistryObject<Block> blockObject) {

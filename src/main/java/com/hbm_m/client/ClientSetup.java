@@ -4,6 +4,9 @@ package com.hbm_m.client;
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.overlay.*;
 import com.hbm_m.client.loader.*;
+import com.hbm_m.client.overlay.crates.GUIDeshCrate;
+import com.hbm_m.client.overlay.crates.GUIIronCrate;
+import com.hbm_m.client.overlay.crates.GUISteelCrate;
 import com.hbm_m.client.render.*;
 import com.hbm_m.client.render.shader.*;
 import com.hbm_m.config.*;
@@ -34,6 +37,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
+import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
@@ -149,21 +153,6 @@ public class ClientSetup {
             MainRegistry.LOGGER.info("Initial render path check completed");
         });
     }
-    @SubscribeEvent
-    public static void registerParticleFactories(RegisterParticleProvidersEvent event) {
-
-        event.registerSpriteSet(ModParticleTypes.EXPLOSION_WAVE.get(),
-                ExplosionWaveParticle.Provider::new);
-
-        event.registerSpriteSet(ModExplosionParticles.FLASH.get(),
-                FlashParticle.Provider::new);
-        event.registerSpriteSet(ModExplosionParticles.SHOCKWAVE.get(),
-                ShockwaveParticle.Provider::new);
-        event.registerSpriteSet(ModExplosionParticles.MUSHROOM_SMOKE.get(),
-                MushroomSmokeParticle.Provider::new);
-        event.registerSpriteSet(ModExplosionParticles.EXPLOSION_SPARK.get(),
-                ExplosionSparkParticle.Provider::new);
-    }
 
 
 
@@ -210,7 +199,16 @@ public class ClientSetup {
         ModConfigKeybindHandler.onRegisterKeyMappings(event);
         MainRegistry.LOGGER.info("Registered key mappings.");
     }
+    @SubscribeEvent
+    public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntities.AIRNUKEBOMB_PROJECTILE.get(),
+                AirNukeBombProjectileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.AIRBOMB_PROJECTILE.get(),
+                AirBombProjectileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.AIRSTRIKE_NUKE_ENTITY.get(), AirstrikeNukeEntityRenderer::new);
 
+        event.registerEntityRenderer(ModEntities.AIRSTRIKE_ENTITY.get(), AirstrikeEntityRenderer::new);
+    }
     @SubscribeEvent
     public static void onResourceReload(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(new ShaderReloadListener());
@@ -319,7 +317,6 @@ public class ClientSetup {
             return ChunkRenderTypeSet.of(RenderType.solid());
         }
     }
-    
     public static void addTemplatesClient(BuildCreativeModeTabContentsEvent event) {
         if (Minecraft.getInstance().level != null) {
             RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();

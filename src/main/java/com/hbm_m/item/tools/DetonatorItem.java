@@ -126,7 +126,6 @@ public class DetonatorItem extends Item {
                                     .withStyle(ChatFormatting.RED),
                             true
                     );
-
                     if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
                         SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
                         level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);

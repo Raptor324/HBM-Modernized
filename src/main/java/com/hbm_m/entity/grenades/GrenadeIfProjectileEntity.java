@@ -1,6 +1,7 @@
 package com.hbm_m.entity.grenades;
 
 import com.hbm_m.entity.ModEntities;
+import com.hbm_m.entity.grenades.GrenadeType;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.core.BlockPos;
@@ -14,6 +15,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.projectile.ThrowableItemProjectile;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
@@ -23,6 +25,9 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 import java.util.Random;
+
+import static com.hbm_m.entity.grenades.GrenadeProjectileEntity.GRENADE_TYPE_ID;
+
 
 public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
 
@@ -54,7 +59,14 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
 
     @Override
     protected Item getDefaultItem() {
-        return grenadeType != null ? grenadeType.getItem() : ModItems.GRENADE_IF.get();
+        if (grenadeType == null) {
+            try {
+                grenadeType = GrenadeIfType.valueOf(this.entityData.get(GRENADE_TYPE_ID));
+            } catch (Exception e) {
+                grenadeType = GrenadeIfType.GRENADE_IF;
+            }
+        }
+        return grenadeType != null ? grenadeType.getItem() : Items.SNOWBALL;
     }
 
     @Override
@@ -158,7 +170,7 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
                     pos.getZ() + 0.5,
                     soundToPlay,
                     SoundSource.BLOCKS,
-                    1.0F,
+                    3.0F,
                     1.0F
             );
         }

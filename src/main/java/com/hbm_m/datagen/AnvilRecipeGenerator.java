@@ -1,6 +1,8 @@
 package com.hbm_m.datagen;
 
 import com.hbm_m.block.AnvilTier;
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.AnvilRecipe;
@@ -8,6 +10,8 @@ import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.block.Block;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.function.Consumer;
@@ -26,200 +30,185 @@ public final class AnvilRecipeGenerator {
     }
 
     private static void registerCombineRecipes(Consumer<FinishedRecipe> writer) {
-        registerCombineRecipe(writer, "iron", "metal_rod",
-                stack(ModItems.PLATE_IRON, 2),
-                stack(ModItems.INSULATOR),
-                stack(ModItems.METAL_ROD, 2),
+
+        registerCombineRecipe(writer, "iron", "silicon",
+                stack(ModItems.CINNABAR.get(), 1),
+                stack(ModItems.BORAX.get(), 1),
+                stack(ModItems.BILLET_SILICON.get(), 3),
                 AnvilTier.IRON);
 
-        registerCombineRecipe(writer, "steel", "combat_axe",
-                stack(ModItems.PLATE_STEEL, 2),
-                stack(ModItems.PLATE_IRON),
-                stack(ModItems.STEEL_AXE),
-                AnvilTier.STEEL);
+        registerCombineRecipe(writer, "iron", "anvil_steel",
+                stack(ModBlocks.ANVIL_IRON.get(), 1),
+                stack(ModItems.getIngot(ModIngots.STEEL).get(), 10),
+                stack(ModBlocks.ANVIL_STEEL.get(), 1),
+                AnvilTier.IRON);
 
-        registerCombineRecipe(writer, "oil", "detector",
-                stack(ModItems.PLATE_COPPER, 2), // Медь (слот А)
-                stack(ModItems.PLATE_ALUMINUM), // Алюминий (слот B)
-                stack(ModItems.OIL_DETECTOR),
-                AnvilTier.OIL,
+        registerCombineRecipe(writer, "iron", "anvil_desh",
+                stack(ModBlocks.ANVIL_IRON.get(), 1),
+                stack(ModItems.getIngot(ModIngots.DESH).get(), 10),
+                stack(ModBlocks.ANVIL_DESH.get(), 1),
+                AnvilTier.IRON);
 
-                // Лямбда для настроек:
-                builder -> builder
-                    .keepInputA() // Медь (слот А) останется!
-                    //.keepInputB() // Если нужно оставить и алюминий, раскомментируй
-        );
+        registerCombineRecipe(writer, "iron", "anvil_ferrouranium",
+                stack(ModBlocks.ANVIL_IRON.get(), 1),
+                stack(ModItems.getIngot(ModIngots.FERROURANIUM).get(), 10),
+                stack(ModBlocks.ANVIL_FERROURANIUM.get(), 1),
+                AnvilTier.IRON);
 
-        registerCombineRecipe(writer, "nuclear", "radaway",
-                stack(ModItems.PLATE_LEAD, 2),
-                stack(ModItems.SULFUR, 3),
-                stack(ModItems.RADAWAY, 2),
-                AnvilTier.NUCLEAR);
+        registerCombineRecipe(writer, "iron", "anvil_saturnite",
+                stack(ModBlocks.ANVIL_IRON.get(), 1),
+                stack(ModItems.getIngot(ModIngots.SATURNITE).get(), 10),
+                stack(ModBlocks.ANVIL_SATURNITE.get(), 1),
+                AnvilTier.IRON);
 
-        registerCombineRecipe(writer, "rbmk", "battery_advanced",
-                stack(ModItems.BATTERY),
-                stack(ModItems.PLATE_TITANIUM, 2),
-                stack(ModItems.BATTERY_ADVANCED),
-                AnvilTier.RBMK);
+        registerCombineRecipe(writer, "iron", "anvil_bismuth_bronze",
+                stack(ModBlocks.ANVIL_IRON.get(), 1),
+                stack(ModItems.getIngot(ModIngots.BISMUTH_BRONZE).get(), 10),
+                stack(ModBlocks.ANVIL_BISMUTH_BRONZE.get(), 1),
+                AnvilTier.IRON);
 
-        registerCombineRecipe(writer, "fusion", "quantum_chip",
-                stack(ModItems.SILICON_CIRCUIT),
-                stack(ModItems.BISMOID_CIRCUIT),
-                stack(ModItems.QUANTUM_CHIP),
-                AnvilTier.FUSION);
+        registerCombineRecipe(writer, "iron", "anvil_arsenic_bronze",
+                stack(ModBlocks.ANVIL_IRON.get(), 1),
+                stack(ModItems.getIngot(ModIngots.ARSENIC_BRONZE).get(), 10),
+                stack(ModBlocks.ANVIL_ARSENIC_BRONZE.get(), 1),
+                AnvilTier.IRON);
 
-        registerCombineRecipe(writer, "particle", "battery_spark",
-                stack(ModItems.BATTERY_SCHRABIDIUM),
-                stack(ModItems.BATTERY_LITHIUM_CELL),
-                stack(ModItems.BATTERY_SPARK),
-                AnvilTier.PARTICLE,
+        registerCombineRecipe(writer, "iron", "anvil_schrabidate",
+                stack(ModBlocks.ANVIL_IRON.get(), 1),
+                stack(ModItems.getIngot(ModIngots.SCHRABIDATE).get(), 10),
+                stack(ModBlocks.ANVIL_SCHRABIDATE.get(), 1),
+                AnvilTier.IRON);
 
-                builder -> builder
-                    .keepInputB() // Шрабидиум (слот B) останется!
-        );
+        registerCombineRecipe(writer, "iron", "anvil_dineutronium",
+                stack(ModBlocks.ANVIL_IRON.get(), 1),
+                stack(ModItems.getIngot(ModIngots.DINEUTRONIUM).get(), 10),
+                stack(ModBlocks.ANVIL_DNT.get(), 1),
+                AnvilTier.IRON);
 
-        registerCombineRecipe(writer, "gerald", "quantum_computer",
-                stack(ModItems.CONTROLLER_ADVANCED),
-                stack(ModItems.QUANTUM_CHIP),
-                stack(ModItems.QUANTUM_COMPUTER),
-                AnvilTier.GERALD);
+        registerCombineRecipe(writer, "iron", "anvil_osmiridium",
+                stack(ModBlocks.ANVIL_IRON.get(), 1),
+                stack(ModItems.getIngot(ModIngots.OSMIRIDIUM).get(), 10),
+                stack(ModBlocks.ANVIL_OSMIRIDIUM.get(), 1),
+                AnvilTier.IRON);
 
-        registerCombineRecipe(writer, "murky", "spark_cell_power",
-                stack(ModItems.BATTERY_SPARK_CELL_1000),
-                stack(ModItems.QUANTUM_COMPUTER),
-                stack(ModItems.BATTERY_SPARK_CELL_POWER),
-                AnvilTier.MURKY);
+
+
     }
 
     private static void registerCraftRecipes(Consumer<FinishedRecipe> writer) {
-        registerInventoryRecipe(writer, "iron", "coil_copper",
-                AnvilTier.IRON,
-                stack(ModItems.COIL_COPPER),
-                stack(ModItems.WIRE_COPPER, 4),
-                stack(ModItems.PLATE_IRON),
-                stack(ModItems.INSULATOR));
 
-        registerInventoryRecipe(writer, "steel", "motor",
+        registerInventoryRecipe(writer, "steel", "1coil_copper_torus",
+                AnvilTier.STEEL,
+                stack(ModItems.COIL_COPPER_TORUS),
+                stack(ModItems.COIL_COPPER, 2 ));
+
+        registerInventoryRecipe(writer, "steel", "2coil_gold_torus",
+                AnvilTier.STEEL,
+                stack(ModItems.COIL_GOLD_TORUS),
+                stack(ModItems.COIL_GOLD, 2 ));
+
+        registerInventoryRecipe(writer, "steel", "3coil_alloy_torus",
+                AnvilTier.STEEL,
+                stack(ModItems.COIL_ADVANCED_ALLOY_TORUS),
+                stack(ModItems.COIL_ADVANCED_ALLOY, 2 ));
+
+        registerInventoryRecipe(writer, "steel", "4coil_tungsten_torus",
+                AnvilTier.STEEL,
+                stack(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS),
+                stack(ModItems.COIL_MAGNETIZED_TUNGSTEN, 2 ));
+
+        registerInventoryRecipe(writer, "steel", "5silicon",
+                AnvilTier.STEEL,
+                stack(ModItems.SILICON_CIRCUIT),
+                stack(ModItems.BILLET_SILICON, 1 ));
+
+        registerInventoryRecipe(writer, "steel", "6motor",
                 AnvilTier.STEEL,
                 stack(ModItems.MOTOR),
-                stack(ModItems.PLATE_STEEL, 2),
-                stack(ModItems.METAL_ROD, 2),
-                stack(ModItems.COIL_COPPER));
+                stack(ModItems.COIL_COPPER, 1 ),
+                stack(ModItems.PLATE_IRON, 2 ),
+                stack(ModItems.COIL_COPPER_TORUS, 1 ));
 
-        registerInventoryRecipe(writer, "oil", "depth_scanner",
-                AnvilTier.OIL,
-                stack(ModItems.DEPTH_ORES_SCANNER),
-                stack(ModItems.OIL_DETECTOR),
-                stack(ModItems.COIL_COPPER),
-                stack(ModItems.PLATE_ALUMINUM));
+        registerInventoryRecipe(writer, "iron", "7blast_furnace",
+                AnvilTier.IRON,
+                stack(ModBlocks.BLAST_FURNACE),
+                stack(ModItems.PLATE_COPPER, 4),
+                stack(Items.STONE_BRICKS, 4 ),
+                stack(ModItems.FIREBRICK, 4 ));
 
-        registerInventoryRecipe(writer, "nuclear", "battery_standard",
-                AnvilTier.NUCLEAR,
-                stack(ModItems.BATTERY),
-                stack(ModItems.PLATE_LEAD, 2),
-                stack(ModItems.WIRE_COPPER, 2),
-                stack(ModItems.CAPACITOR));
+        registerInventoryRecipe(writer, "steel", "8advanced_assemble_machine",
+                AnvilTier.STEEL,
+                stack(ModBlocks.ADVANCED_ASSEMBLY_MACHINE),
+                stack(ModItems.PLATE_COPPER, 4),
+                stack(ModItems.getIngot(ModIngots.STEEL).get(), 8),
+                stack(ModItems.MOTOR, 2 ),
+                stack(ModItems.VACUUM_TUBE, 4 ));
 
-        registerInventoryRecipe(writer, "rbmk", "motor_bismuth",
-                AnvilTier.RBMK,
-                stack(ModItems.MOTOR_BISMUTH),
-                stack(ModItems.MOTOR),
-                stack(ModItems.PLATE_BISMUTH),
-                stack(ModItems.COIL_GOLD));
-
-        registerInventoryRecipe(writer, "fusion", "controller_advanced",
-                AnvilTier.FUSION,
-                stack(ModItems.CONTROLLER_ADVANCED),
-                stack(ModItems.CONTROLLER),
-                stack(ModItems.QUANTUM_CHIP),
-                stack(ModItems.CAPACITOR_BOARD));
-
-        registerInventoryRecipe(writer, "particle", "battle_module",
-                AnvilTier.PARTICLE,
-                stack(ModItems.BATTLE_MODULE),
-                stack(ModItems.BATTLE_SENSOR),
-                stack(ModItems.BATTLE_GEARS),
-                stack(ModItems.PLATE_SCHRABIDIUM));
-
-        registerInventoryRecipe(writer, "gerald", "battle_counter",
-                AnvilTier.GERALD,
-                stack(ModItems.BATTLE_COUNTER),
-                stack(ModItems.BATTLE_CASING),
-                stack(ModItems.QUANTUM_COMPUTER),
-                stack(ModItems.BATTERY_SPARK));
-
-        registerInventoryRecipe(writer, "murky", "battle_casing",
-                AnvilTier.MURKY,
-                stack(ModItems.BATTLE_CASING),
-                stack(ModItems.BATTLE_MODULE),
-                stack(ModItems.PLATE_ARMOR_DNT),
-                stack(ModItems.PLATE_ARMOR_HEV));
     }
 
     private static void registerDisassemblyRecipes(Consumer<FinishedRecipe> writer) {
-        registerDisassemblyRecipe(writer, "iron", "coil_copper",
-                AnvilTier.IRON,
-                stack(ModItems.COIL_COPPER),
-                stack(ModItems.WIRE_COPPER, 2),
-                builder -> builder.addOutput(stack(ModItems.INSULATOR), 0.5F)
-                        .addOutput(stack(ModItems.METAL_ROD), 0.35F));
 
-        registerDisassemblyRecipe(writer, "steel", "steel_weapon",
+        registerDisassemblyRecipe(writer, "steel", "crt_breakdown1",
                 AnvilTier.STEEL,
-                stack(ModItems.STEEL_AXE),
-                stack(ModItems.PLATE_STEEL, 2),
-                builder -> builder.addOutput(stack(ModItems.PLATE_IRON), 0.6F)
-                        .addOutput(stack(ModItems.BOLT_STEEL), 0.35F));
-
-        registerDisassemblyRecipe(writer, "oil", "oil_detector",
-                AnvilTier.OIL,
-                stack(ModItems.OIL_DETECTOR),
-                stack(ModItems.PLATE_COPPER),
-                builder -> builder.addOutput(stack(ModItems.PLATE_ALUMINUM), 1.0F)
-                        .addOutput(stack(ModItems.INSULATOR), 0.5F));
-
-        registerDisassemblyRecipe(writer, "nuclear", "battery_breakdown",
-                AnvilTier.NUCLEAR,
-                stack(ModItems.BATTERY),
-                stack(ModItems.WIRE_COPPER, 2),
+                stack(ModBlocks.CRT_BROKEN),
+                stack(ModItems.PLATE_STEEL, 4),
                 builder -> builder.addOutput(stack(ModItems.PLATE_LEAD), 1.0F)
                         .addOutput(stack(ModItems.CAPACITOR_BOARD), 0.4F)
-                        .addOutput(stack(ModItems.SULFUR), 0.5F));
+                        .addOutput(stack(ModItems.PCB), 1F)
+                        .addOutput(stack(ModItems.ANALOG_CIRCUIT), 0.4F)
+                        .addOutput(stack(ModItems.CAPACITOR_BOARD), 0.4F)
+                        .addOutput(stack(ModItems.MICROCHIP), 0.5F));
 
-        registerDisassemblyRecipe(writer, "rbmk", "battery_advanced",
-                AnvilTier.RBMK,
-                stack(ModItems.BATTERY_ADVANCED),
-                stack(ModItems.BATTERY_LITHIUM_CELL),
-                builder -> builder.addOutput(stack(ModItems.PLATE_TITANIUM, 2), 1.0F)
-                        .addOutput(stack(ModItems.COIL_GOLD), 0.45F));
+        registerDisassemblyRecipe(writer, "steel", "crt_breakdown2",
+                AnvilTier.STEEL,
+                stack(ModBlocks.CRT_BSOD),
+                stack(ModItems.PLATE_STEEL, 4),
+                builder -> builder.addOutput(stack(ModItems.PLATE_LEAD), 1.0F)
+                        .addOutput(stack(ModItems.CAPACITOR_BOARD), 0.4F)
+                        .addOutput(stack(ModItems.PCB), 1F)
+                        .addOutput(stack(ModItems.ANALOG_CIRCUIT), 0.4F)
+                        .addOutput(stack(ModItems.CAPACITOR_BOARD), 0.4F)
+                        .addOutput(stack(ModItems.MICROCHIP), 0.5F));
 
-        registerDisassemblyRecipe(writer, "fusion", "quantum_chip",
-                AnvilTier.FUSION,
-                stack(ModItems.QUANTUM_CHIP),
-                stack(ModItems.BISMOID_CIRCUIT),
-                builder -> builder.addOutput(stack(ModItems.SILICON_CIRCUIT), 1.0F)
-                        .addOutput(stack(ModItems.CAPACITOR_BOARD), 0.5F));
+        registerDisassemblyRecipe(writer, "steel", "crt_breakdown3",
+                AnvilTier.STEEL,
+                stack(ModBlocks.CRT_CLEAN),
+                stack(ModItems.PLATE_STEEL, 4),
+                builder -> builder.addOutput(stack(ModItems.PLATE_LEAD), 1.0F)
+                        .addOutput(stack(ModItems.CAPACITOR_BOARD), 0.4F)
+                        .addOutput(stack(ModItems.PCB), 1F)
+                        .addOutput(stack(ModItems.ANALOG_CIRCUIT), 0.4F)
+                        .addOutput(stack(ModItems.CAPACITOR_BOARD), 0.4F)
+                        .addOutput(stack(ModItems.MICROCHIP), 0.5F));
 
-        registerDisassemblyRecipe(writer, "particle", "battery_spark",
-                AnvilTier.PARTICLE,
-                stack(ModItems.BATTERY_SPARK),
-                stack(ModItems.BATTERY_SCHRABIDIUM),
-                builder -> builder.addOutput(stack(ModItems.BATTERY_LITHIUM_CELL), 1.0F)
-                        .addOutput(stack(ModItems.QUANTUM_CHIP), 0.3F));
+        registerDisassemblyRecipe(writer, "steel", "tape_breakdown",
+                AnvilTier.STEEL,
+                stack(ModBlocks.TAPE_RECORDER),
+                stack(ModItems.PLATE_STEEL, 4),
+                builder -> builder.addOutput(stack(ModItems.PLATE_LEAD), 1.0F)
+                        .addOutput(stack(ModItems.WIRE_RED_COPPER), 0.5F)
+                        .addOutput(stack(ModItems.VACUUM_TUBE), 0.5F)
+                        .addOutput(stack(ModItems.MICROCHIP), 0.1F));
 
-        registerDisassemblyRecipe(writer, "gerald", "quantum_computer",
-                AnvilTier.GERALD,
-                stack(ModItems.QUANTUM_COMPUTER),
-                stack(ModItems.CONTROLLER_ADVANCED),
-                builder -> builder.addOutput(stack(ModItems.QUANTUM_CHIP), 1.0F)
-                        .addOutput(stack(ModItems.BATTERY_SPARK), 0.5F));
+        registerDisassemblyRecipe(writer, "steel", "cabinet_breakdown",
+                AnvilTier.STEEL,
+                stack(ModBlocks.FILE_CABINET),
+                stack(ModItems.PLATE_STEEL, 4),
+                builder -> builder.addOutput(stack(ModItems.DUST), 1.0F));
 
-        registerDisassemblyRecipe(writer, "murky", "spark_cell_power",
-                AnvilTier.MURKY,
-                stack(ModItems.BATTERY_SPARK_CELL_POWER),
-                stack(ModItems.BATTERY_SPARK_CELL_1000),
-                builder -> builder.addOutput(stack(ModItems.BATTERY_SPARK), 1.0F)
-                        .addOutput(stack(ModItems.BATTLE_MODULE), 0.35F));
+        registerDisassemblyRecipe(writer, "steel", "toaster_breakdown",
+                AnvilTier.STEEL,
+                stack(ModBlocks.TOASTER),
+                stack(ModItems.PLATE_STEEL, 2),
+                builder -> builder
+                        .addOutput(stack(ModItems.MAN_CORE), 0.001F));
+
+        registerDisassemblyRecipe(writer, "steel", "freaky_breakdown",
+                AnvilTier.STEEL,
+                stack(ModBlocks.FREAKY_ALIEN_BLOCK),
+                stack(ModItems.CANNED_JIZZ, 1),
+                builder -> builder
+                        .addOutput(stack(ModItems.CANNED_ASBESTOS), 0.5F));
     }
 
     /**
@@ -282,13 +271,26 @@ public final class AnvilRecipeGenerator {
                 "anvil/" + tierFolder + "/" + category + "_" + name);
     }
 
-    private static ItemStack stack(RegistryObject<Item> item) {
-        return stack(item, 1);
+    private static ItemStack stack(Object obj, int count) {
+        if (obj instanceof RegistryObject<?>) {
+            Object val = ((RegistryObject<?>) obj).get();
+            if (val instanceof Item) {
+                return new ItemStack((Item) val, count);
+            } else if (val instanceof Block) {
+                return new ItemStack(((Block) val).asItem(), count);
+            }
+        } else if (obj instanceof Item) {
+            return new ItemStack((Item) obj, count);
+        } else if (obj instanceof Block) {
+            return new ItemStack(((Block) obj).asItem(), count);
+        }
+        throw new IllegalArgumentException("Unsupported object for stack: " + obj);
     }
 
-    private static ItemStack stack(RegistryObject<Item> item, int count) {
-        return new ItemStack(item.get(), count);
+    private static ItemStack stack(Object obj) {
+        return stack(obj, 1);
     }
+
 
 }
 
