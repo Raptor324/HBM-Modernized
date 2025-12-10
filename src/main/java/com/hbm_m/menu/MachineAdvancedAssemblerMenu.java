@@ -1,9 +1,13 @@
 package com.hbm_m.menu;
 
+import com.hbm_m.api.energy.ILongEnergyMenu;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machine.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.network.packet.PacketSyncEnergy;
 import com.hbm_m.util.LongDataPacker; // <-- Убедись, что этот импорт есть
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
@@ -12,22 +16,28 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
+import net.minecraftforge.network.PacketDistributor;
 import org.jetbrains.annotations.NotNull;
 
-public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
+public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
     public final MachineAdvancedAssemblerBlockEntity blockEntity;
     private final Level level;
     private final ContainerData data;
+    private final Player player; // 2. Нужно сохранить игрока для отправки пакетов
+
+    private long clientEnergy;
+    private long clientMaxEnergy;
 
     // Конструктор, вызываемый с сервера
     public MachineAdvancedAssemblerMenu(int pContainerId, Inventory pPlayerInventory, MachineAdvancedAssemblerBlockEntity pBlockEntity, ContainerData pData) {
         super(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), pContainerId);
         // Убедимся, что данных пришло нужное количество
-        checkContainerDataCount(pData, 8);
+        checkContainerDataCount(pData, 2);
         this.blockEntity = pBlockEntity;
         this.level = pPlayerInventory.player.level();
         this.data = pData;
+        this.player = pPlayerInventory.player; // Сохраняем игрока
 
         // Добавляем слоты машины
         this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
@@ -48,7 +58,7 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
 
     // Конструктор, вызываемый с клиента
     public MachineAdvancedAssemblerMenu(int pContainerId, Inventory pPlayerInventory, FriendlyByteBuf pExtraData) {
-        this(pContainerId, pPlayerInventory, getBlockEntity(pPlayerInventory, pExtraData), new SimpleContainerData(8));
+        this(pContainerId, pPlayerInventory, getBlockEntity(pPlayerInventory, pExtraData), new SimpleContainerData(2));
     }
 
     private static MachineAdvancedAssemblerBlockEntity getBlockEntity(final Inventory playerInventory, final FriendlyByteBuf data) {
@@ -57,6 +67,22 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
             return (MachineAdvancedAssemblerBlockEntity) be;
         }
         throw new IllegalStateException("BlockEntity не найден или имеет неверный тип!");
+    }
+
+    @Override
+    public void setEnergy(long energy, long maxEnergy, long delta) {
+        this.clientEnergy = energy;
+        this.clientMaxEnergy = maxEnergy;
+    }
+
+    @Override
+    public long getEnergyStatic() {
+        return blockEntity.getEnergyStored();
+    }
+
+    @Override
+    public long getMaxEnergyStatic() {
+        return blockEntity.getMaxEnergyStored();
     }
 
     // --- Логика для GUI (с правильными индексами) ---
@@ -74,15 +100,40 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu {
     }
 
     public long getEnergyLong() {
-        int high = this.data.get(2); // Индекс 3: energy high
-        int low = this.data.get(3);  // Индекс 2: energy low
-        return LongDataPacker.unpack(high, low);
+        // На сервере берем напрямую из BE, на клиенте - из локальной переменной (обновленной пакетом)
+        if (blockEntity != null && !this.level.isClientSide) {
+            return blockEntity.getEnergyStored();
+        }
+        return clientEnergy;
     }
 
     public long getMaxEnergyLong() {
-        int high = this.data.get(4); // Индекс 5: maxEnergy high
-        int low = this.data.get(5);  // Индекс 4: maxEnergy low
-        return LongDataPacker.unpack(high, low);
+        if (blockEntity != null && !this.level.isClientSide) {
+            return blockEntity.getMaxEnergyStored();
+        }
+        return clientMaxEnergy;
+    }
+
+    @Override
+    public long getEnergyDeltaStatic() {
+        return 0; // Возвращаем 0, так как дельта не используется
+    }
+
+    @Override
+    public void broadcastChanges() {
+        super.broadcastChanges();
+
+        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
+            ModPacketHandler.INSTANCE.send(
+                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> (net.minecraft.server.level.ServerPlayer) this.player),
+                    new com.hbm_m.network.packet.PacketSyncEnergy(
+                            this.containerId,
+                            blockEntity.getEnergyStored(),
+                            blockEntity.getMaxEnergyStored(),
+                            0L // <--- Передаем 0 как дельту
+                    )
+            );
+        }
     }
 
     public long getEnergyDeltaLong() {

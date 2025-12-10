@@ -116,11 +116,13 @@ public class MainRegistry {
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new PlayerHandler());
+
+
         // Регистрация остальных систем resources
         // ModPacketHandler.register(); // Регистрация пакетов
 
+
         // Инстанцируем ClientSetup, чтобы его конструктор вызвал регистрацию на Forge Event Bus
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> new ClientSetup());
 
         LOGGER.info("Radiation handlers registered. Using {}.", ModClothConfig.get().usePrismSystem ? "ChunkRadiationHandlerPRISM" : "ChunkRadiationHandlerSimple");
         LOGGER.info("Registered event listeners for Radiation System.");

@@ -61,6 +61,9 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     private int progress = 0;
     private int maxProgress = 100;
 
+    private long lastEnergy = 0;
+    private long energyDelta = 0;
+
     // Proxy handlers для multiblock parts
     private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
     private LazyOptional<IItemHandler> lazyOutputProxy = LazyOptional.empty();
@@ -72,19 +75,10 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     protected final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
-            long energy = MachineAssemblerBlockEntity.this.getEnergyStored();
-            long maxEnergy = MachineAssemblerBlockEntity.this.getMaxEnergyStored();
-            long delta = getEnergyDelta();
             return switch (index) {
                 case 0 -> progress;
                 case 1 -> maxProgress;
-                case 2 -> LongDataPacker.packHigh(energy);
-                case 3 -> LongDataPacker.packLow(energy);
-                case 4 -> LongDataPacker.packHigh(maxEnergy);
-                case 5 -> LongDataPacker.packLow(maxEnergy);
-                case 6 -> LongDataPacker.packHigh(delta);
-                case 7 -> LongDataPacker.packLow(delta);
-                case 8 -> isCrafting ? 1 : 0;
+                case 2 -> isCrafting ? 1 : 0; // Индекс стал 2!
                 default -> 0;
             };
         }
@@ -94,13 +88,13 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             switch (index) {
                 case 0 -> progress = value;
                 case 1 -> maxProgress = value;
-                case 8 -> isCrafting = value != 0;
+                case 2 -> isCrafting = value != 0;
             }
         }
 
         @Override
         public int getCount() {
-            return 9;
+            return 3;
         }
     };
 
@@ -262,9 +256,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
         long gameTime = level.getGameTime();
 
-        if (gameTime % 5 == 0) {
             chargeFromEnergySlot();
-        }
 
         if (gameTime % 10 == 0) {
             updateEnergyDelta(this.getEnergyStored());
@@ -608,11 +600,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         progress = tag.getInt("progress");
         maxProgress = tag.getInt("maxProgress");
         isCrafting = tag.getBoolean("isCrafting");
-
-        // Эту клиентскую логику можно оставить
-        if (level != null && level.isClientSide && !isCrafting) {
-            ClientSoundManager.updateSound(this, false, null);
-        }
     }
 
     @Override
@@ -648,8 +635,17 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     public void setRemoved() {
-        super.setRemoved();
-        // [ВАЖНО!] Сообщаем сети, что мы удалены
+        super.setRemoved(); // Сначала вызываем super
+
+        // Используем DistExecutor. Это гарантирует, что код внутри лямбды
+        // даже не будет загружаться классом-лоадером на сервере.
+        if (level != null && level.isClientSide) {
+            net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                ClientSoundManager.updateSound(this, false, null);
+            });
+        }
+
+        // Удаление узла сети (у тебя это уже есть в конце файла, оставь как было)
         if (this.level != null && !this.level.isClientSide) {
             EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
         }
