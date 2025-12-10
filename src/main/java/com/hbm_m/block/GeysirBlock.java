@@ -25,7 +25,7 @@ public class GeysirBlock extends Block {
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
     // ⏱️ НАСТРОЙКИ ПЕРИОДА
-    private static final int ERUPTION_INTERVAL = 600;     // 30 секунд (600 тиков)
+    private static final int ERUPTION_INTERVAL = 400;     // 20 секунд (400 тиков)
     private static final int ERUPTION_DURATION = 60;      // 3 секунды активности (60 тиков)
     private static final int ERUPTION_COOLDOWN = 20;      // 1 секунда задержки
 
@@ -113,7 +113,7 @@ public class GeysirBlock extends Block {
         // ════════════════════════════════════════════════════════════════
         for (int height = 0; height < 15; height += 2) { // ← Каждые 2 блока (оптимизация)
             double y = centerY + height;
-            int particleCount = 4;
+            int particleCount = 1;
             double verticalSpeed = 0.25 + height * 0.015; // Увеличивается с высотой
 
             ExplosionParticleUtils.spawnAgentOrangeGeyser(
@@ -132,7 +132,7 @@ public class GeysirBlock extends Block {
         // ════════════════════════════════════════════════════════════════
         for (int height = 15; height < 30; height += 2) {
             double y = centerY + height;
-            int particleCount = 3;
+            int particleCount = 2;
             double progress = (height - 15) / 15.0; // 0.0 - 1.0
             double horizontalSpread = 1.0 + progress * 8.0; // От 1 до 9 блоков
             double verticalSpeed = 0.2 - progress * 0.1; // Замедляется
@@ -153,9 +153,9 @@ public class GeysirBlock extends Block {
         // ════════════════════════════════════════════════════════════════
         for (int height = 30; height < SPRAY_HEIGHT; height += 3) { // ← Реже (каждые 3 блока)
             double y = centerY + height;
-            int particleCount = 5; // Больше частиц для эффекта облака
+            int particleCount = 2; // Больше частиц для эффекта облака
             double progress = (height - 30) / 10.0; // 0.0 - 1.0
-            double horizontalSpread = 9.0 + progress * 6.0; // От 9 до 15 блоков
+            double horizontalSpread = 15.0 + progress * 9.0; // От 9 до 15 блоков
             double verticalSpeed = 0.05 - progress * 0.05; // Почти нулевая, потом падение
 
             ExplosionParticleUtils.spawnAgentOrangeGeyser(
@@ -181,7 +181,7 @@ public class GeysirBlock extends Block {
         if (gameTime % 40 == 0) {
             // Звук давления/выброса
             level.playSound(null, pos, SoundEvents.FIRE_EXTINGUISH, SoundSource.BLOCKS,
-                    0.8F, 0.7F);
+                    1F, 0.7F);
         }
     }
 }

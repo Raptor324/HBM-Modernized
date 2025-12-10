@@ -1,10 +1,14 @@
 package com.hbm_m.particle.explosions;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.sound.ModSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.core.BlockPos;
+import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundEvents;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.LivingEntity;
@@ -48,11 +52,11 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
 
         // ✅ РАЗМЕР: 0.6 - 1.8
         this.quadSize = 0.9F + this.random.nextFloat() * 1.2F;
-
-        // 🟠 ЦВЕТ: МАКСИМАЛЬНО ЯРКО-ОРАНЖЕВЫЙ
-        this.rCol = 1.0F;                                   // Красный = 100%
-        this.gCol = 0.5F + this.random.nextFloat() * 0.1F;  // Зелёный = 50-60%
+// 🟠 ЦВЕТ: ТЁМНО-ОРАНЖЕВЫЙ (было светлее)
+        this.rCol = 0.8F;                                   // Красный = 80% (было 100%)
+        this.gCol = 0.4F + this.random.nextFloat() * 0.1F;  // Зелёный = 40-50% (было 50-60%)
         this.bCol = 0.0F;                                   // Синий = 0%
+
 
         // ✅ ПРОЗРАЧНОСТЬ
         this.alpha = 0.9F;
@@ -102,21 +106,33 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
         this.zd *= 0.98F;
 
         // ════════════════════════════════════════════════════════════════
-        // ✅ ПРОВЕРКА СТОЛКНОВЕНИЯ С БЛОКАМИ (ПОСЛЕ движения и эффектов!)
-        // ════════════════════════════════════════════════════════════════
+// ✅ ПРОВЕРКА СТОЛКНОВЕНИЯ С БЛОКАМИ (ПОСЛЕ движения и эффектов!)
+// ════════════════════════════════════════════════════════════════
 
-        // ✅ Проверяем блок НИЖЕ (на который упали)
+// ✅ Проверяем блок НИЖЕ (на который упали)
         BlockPos belowPos = BlockPos.containing(this.x, this.y - 0.3, this.z);
         var belowState = this.level.getBlockState(belowPos);
 
-        // ✅ Если под нами твёрдый блок И мы падаем вниз - исчезаем
+// ✅ Если под нами твёрдый блок И мы падаем вниз - исчезаем
         if (this.yd < 0 && !belowState.isAir() && belowState.isSolidRender(this.level, belowPos)) {
             // ☠️ Последняя коррупция перед исчезновением
             corruptNearbyBlocks();
+
+            // 🔊 ЗВУК ПРИ КАСАНИИ ЗЕМЛИ
+            this.level.playLocalSound(
+                    this.x, this.y, this.z,
+                    SoundEvents.FIRE_EXTINGUISH,
+                    SoundSource.BLOCKS,
+                    0.8F,   // Громкость
+                    0.7F,   // Высота тона
+                    false
+            );
+
             System.out.println("[AgentOrange] Частица исчезла при касании блока: " + belowState.getBlock());
             this.remove();
             return;
         }
+
     }
 
 
@@ -228,7 +244,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
                             );
                             if (success) {
                                 System.out.println("[AgentOrange] Земля заменена: " + finalPos);
-                            }
+                               }
                         });
                         blocksCorrupted++;
                     }
@@ -245,6 +261,8 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
                     blocksChecked++;
                     BlockPos checkPos = centerPos.offset(dx, dy, dz);
 
+
+
                     if (isLeafBlock(checkPos)) {
                         final BlockPos finalPos = checkPos.immutable();
                         server.execute(() -> {
@@ -255,7 +273,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
                             );
                             if (success) {
                                 System.out.println("[AgentOrange] Листва заменена: " + finalPos);
-                            }
+                               }
                         });
                         blocksCorrupted++;
                     }
@@ -278,6 +296,8 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
                 || block == Blocks.DIRT
                 || block == Blocks.COARSE_DIRT
                 || block == Blocks.DIRT_PATH
+                || block == Blocks.ROOTED_DIRT
+                || block == Blocks.FARMLAND
                 || block == Blocks.MYCELIUM
                 || block == Blocks.PODZOL;
     }
@@ -298,21 +318,6 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
                 || block == Blocks.CHERRY_LEAVES
                 || block == Blocks.AZALEA_LEAVES
                 || block == Blocks.FLOWERING_AZALEA_LEAVES;
-    }
-
-
-    /**
-     * ✅ ПРОВЕРКА: можно ли коррупировать блок?
-     */
-    private boolean isCorruptibleBlock(BlockPos pos) {
-        var block = this.level.getBlockState(pos).getBlock();
-
-        return block == Blocks.GRASS_BLOCK
-                || block == Blocks.DIRT
-                || block == Blocks.COARSE_DIRT
-                || block == Blocks.DIRT_PATH
-                || block == Blocks.MYCELIUM
-                || block == Blocks.PODZOL;
     }
 
     public static class Provider extends AbstractExplosionParticle.Provider<AgentOrangeParticle> {
