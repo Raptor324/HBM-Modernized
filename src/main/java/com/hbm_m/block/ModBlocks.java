@@ -1,7 +1,5 @@
 package com.hbm_m.block;
 
-package com.hbm_m.block;
-
 import com.hbm_m.api.energy.ConverterBlock;
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.explosives.*;
