@@ -4,6 +4,7 @@ package com.hbm_m.main;
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
 import com.hbm_m.api.energy.EnergyNetworkManager;
+import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
@@ -114,6 +115,7 @@ public class MainRegistry {
         // Регистрация обработчиков событий мода
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
+        ModFluids.register(modEventBus);
 
         // Регистрация обработчиков событий Forge (игровых)
         MinecraftForge.EVENT_BUS.register(this);
@@ -261,6 +263,7 @@ public class MainRegistry {
             event.accept(ModItems.NUGGET_SILICON);
             event.accept(ModItems.BILLET_SILICON);
             event.accept(ModItems.BILLET_PLUTONIUM);
+            event.accept(ModItems.CRUDE_OIL_BUCKET);
             // Проходимся циклом по ВСЕМ слиткам
             for (RegistryObject<Item> ingotObject : ModItems.INGOTS.values()) {
 
@@ -930,7 +933,7 @@ public class MainRegistry {
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.ARMOR_TABLE);
 
-            // event.accept(ModBlocks.FLUID_TANK);
+            event.accept(ModBlocks.FLUID_TANK);
             event.accept(ModBlocks.MACHINE_BATTERY);
             event.accept(ModBlocks.MACHINE_BATTERY_LITHIUM);
             event.accept(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM);

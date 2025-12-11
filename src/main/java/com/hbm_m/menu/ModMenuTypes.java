@@ -50,6 +50,9 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<DeshCrateMenu>> DESH_CRATE_MENU =
             MENUS.register("desh_crate_menu", () -> IForgeMenuType.create(DeshCrateMenu::new));
 
+    public static final RegistryObject<MenuType<MachineFluidTankMenu>> FLUID_TANK_MENU =
+            MENUS.register("fluid_tank_menu", () -> IForgeMenuType.create(MachineFluidTankMenu::new));
+
     public static void register(IEventBus eventBus) {
         MENUS.register(eventBus);
     }

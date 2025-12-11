@@ -1,14 +1,9 @@
 package com.hbm_m.block;
 
 import com.hbm_m.api.energy.ConverterBlock;
+import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.explosives.*;
-import com.hbm_m.block.machine.MachineAdvancedAssemblerBlock;
-import com.hbm_m.block.machine.MachineAssemblerBlock;
-import com.hbm_m.block.machine.MachineBatteryBlock;
-import com.hbm_m.block.machine.MachinePressBlock;
-import com.hbm_m.block.machine.MachineShredderBlock;
-import com.hbm_m.block.machine.MachineWoodBurnerBlock;
-import com.hbm_m.block.machine.UniversalMachinePartBlock;
+import com.hbm_m.block.machine.*;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.ModIngots;
@@ -1239,6 +1234,23 @@ public class ModBlocks {
                             .noOcclusion(),
                     "silo_hatch_large"
             ));
+
+    public static final RegistryObject<Block> FLUID_TANK = registerBlock("fluid_tank",
+            () -> new MachineFluidTankBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
+                    .strength(4.0f)           // Прочность
+                    .requiresCorrectToolForDrops() // Нужна кирка
+                    .noOcclusion()));         // Если модель будет не полным кубом (прозрачность)
+
+    //======================= ЖИДКОСТИ ==========================================//
+
+
+
+
+
+
+
+
+
 
     // ==================== Helper Methods ====================
 
