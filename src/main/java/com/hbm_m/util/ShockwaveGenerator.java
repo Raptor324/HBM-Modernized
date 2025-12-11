@@ -46,10 +46,6 @@ public class ShockwaveGenerator {
                         BlockPos checkPos = new BlockPos(x, y, z);
                         BlockState state = level.getBlockState(checkPos);
 
-                        // Проверяем защиту блока: если нельзя ломать - пропускаем
-                        BlockExplosionDefense.ExplosionDefenseResult defenseResult =
-                                BlockExplosionDefense.calculateExplosionDamage(level, checkPos, centerPos, craterRadius, random);
-                        if (!defenseResult.shouldBreak) continue;
 
                         if (!state.isAir()) {
                             level.setBlock(checkPos, Blocks.AIR.defaultBlockState(), 3);
@@ -89,10 +85,6 @@ public class ShockwaveGenerator {
 
                     BlockState state = level.getBlockState(checkPos);
 
-                    // Защита блока - не ломаем если запрещено
-                    BlockExplosionDefense.ExplosionDefenseResult defenseResult =
-                            BlockExplosionDefense.calculateExplosionDamage(level, checkPos, centerPos, ZONE_4_RADIUS, random);
-                    if (!defenseResult.shouldBreak) continue;
 
                     if (horizontalDistance <= ZONE_3_RADIUS) {
                         if (state.is(BlockTags.LEAVES)) {

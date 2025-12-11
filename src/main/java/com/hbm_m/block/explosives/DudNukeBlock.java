@@ -4,7 +4,7 @@ import com.hbm_m.block.IDetonatable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.ExplosionParticleUtils;
-import com.hbm_m.util.DudCraterGenerator;
+import com.hbm_m.util.CraterGenerator;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -135,7 +135,7 @@ public class DudNukeBlock extends Block implements IDetonatable {
             MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
             if (server != null) {
                 server.tell(new TickTask(CRATER_GENERATION_DELAY, () -> {
-                    DudCraterGenerator.generateCrater(
+                    CraterGenerator.generateCrater(
                             serverLevel,
                             pos,
                             CRATER_RADIUS,

@@ -8,7 +8,6 @@ import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.util.CraterGenerator;
-import com.hbm_m.util.DudCraterGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
@@ -148,7 +147,7 @@ public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
             // ✅ ГЕНЕРАТОР КРАТЕРА (как у NuclearChargeBlock)
             if (serverLevel.getServer() != null) {
                 serverLevel.getServer().tell(new TickTask(CRATER_GENERATION_DELAY, () -> {
-                    DudCraterGenerator.generateCrater(
+                    CraterGenerator.generateCrater(
                             serverLevel,
                             pos,
                             CRATER_RADIUS,

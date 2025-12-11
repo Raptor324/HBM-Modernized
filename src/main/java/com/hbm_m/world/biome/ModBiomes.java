@@ -2,7 +2,6 @@ package com.hbm_m.world.biome;
 
 import com.hbm_m.main.MainRegistry;
 import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -10,34 +9,40 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraftforge.registries.RegistryObject;
 
 /**
- * ✅ ИСПРАВЛЕННАЯ ВЕРСИЯ: Правильная регистрация биомов
+ * ✅ MOD BIOMES v3.0 - FIXED
+ *
+ * ✅ Исправления:
+ * - Используется правильный Registries.BIOME вместо ForgeRegistries
+ * - Правильная регистрация через DeferredRegister
+ * - ResourceKey правильно создан
+ * - Вся система совместима с Minecraft 1.20.1
  */
 public class ModBiomes {
 
     static {
-        System.out.println("[HBM_MODS] ========================================");
-        System.out.println("[HBM_MODS] ModBiomes класс загружен!");
-        System.out.println("[HBM_MODS] DeferredRegister создан!");
-        System.out.println("[HBM_MODS] ========================================");
+        System.out.println("╔═══════════════════════════════════════════════════════════╗");
+        System.out.println("║ [HBM_MODS] ModBiomes initialization                       ║");
+        System.out.println("║ DeferredRegister for biomes created                       ║");
+        System.out.println("╚═══════════════════════════════════════════════════════════╝");
     }
 
-    // ✅ ГЛАВНЫЙ DeferredRegister - ОБЯЗАТЕЛЬНО!
+    // ✅ ГЛАВНЫЙ DeferredRegister - используем правильный реестр
     public static final DeferredRegister<Biome> BIOMES =
-            DeferredRegister.create(ForgeRegistries.BIOMES, MainRegistry.MOD_ID);
+            DeferredRegister.create(Registries.BIOME, MainRegistry.MOD_ID);
 
-    // ✅ РЕГИСТРАЦИЯ Inner Crater
+    // ✅ РЕГИСТРАЦИЯ Inner Crater - самая тёмная зона
     public static final RegistryObject<Biome> INNER_CRATER = BIOMES.register(
             "inner_crater",
             CraterBiomes::createInnerCraterBiome
     );
 
-    // ✅ РЕГИСТРАЦИЯ Outer Crater
+    // ✅ РЕГИСТРАЦИЯ Outer Crater - менее тёмная зона
     public static final RegistryObject<Biome> OUTER_CRATER = BIOMES.register(
             "outer_crater",
             CraterBiomes::createOuterCraterBiome
     );
 
-    // ✅ ResourceKey для использования в коде
+    // ✅ ResourceKey для использования в коде (для lookup в реестре)
     public static final ResourceKey<Biome> INNER_CRATER_KEY =
             ResourceKey.create(Registries.BIOME,
                     new ResourceLocation(MainRegistry.MOD_ID, "inner_crater"));
