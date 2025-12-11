@@ -9,12 +9,18 @@ import com.hbm_m.item.ModPowders;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.data.LanguageProvider;
+import net.minecraftforge.registries.RegistryObject;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
+import static com.hbm_m.block.ModBlocks.getIngotBlock;
 
 public class ModLanguageProvider extends LanguageProvider {
     // 1. Создаем НАШЕ СОБСТВЕННОЕ поле для хранения языка
@@ -83,33 +89,84 @@ public class ModLanguageProvider extends LanguageProvider {
                 .map(part -> Character.toUpperCase(part.charAt(0)) + part.substring(1))
                 .collect(Collectors.joining(" "));
     }
+    private void addIngotBlockTranslations(Set<ResourceLocation> translatedBlocks) {
+        for (ModIngots ingot : ModIngots.values()) {
+            if (ENABLED_INGOT_BLOCKS.contains(ingot.getName())) {
+                RegistryObject<Block> block = getIngotBlock(ingot);
+                if (block != null && !translatedBlocks.contains(block.getId())) {
+                    add(block.get(), buildBlockName(ingot));
+                }
+            }
+        }
+        // Можно добавить перевод для русской локали по умолчанию для общих блоков, если нужно
+    }
 
+    // Метод формирования имени блока с переводом
+    private String buildBlockName(ModIngots ingot) {
+        String base = ingot.getTranslation(this.locale);
+        if (base == null || base.isBlank()) {
+            base = formatName(ingot.getName());
+        }
+
+        if ("ru_ru".equals(this.locale)) {
+            // Для русского языка заменяем "слиток" на "блок", либо добавляем приставку "Блок"
+            String replaced = base.replace("Слиток", "Блок").replace("слиток", "блок");
+            if (replaced.equals(base)) {
+                replaced = "Блок " + base;
+            }
+            return replaced.trim();
+        } else {
+            // Для английского - добавляем приставку "Block" или заменяем "Ingot" на "Block"
+            String replaced = base.replace("Ingot", "Block").replace("ingot", "block");
+            if (replaced.equals(base)) {
+                replaced = base + " Block";
+            }
+            return replaced.trim();
+        }
+    }
     @Override
     protected void addTranslations() {
-        // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ 
+        // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            // 3. Теперь мы используем наше поле 'this.locale', к которому у нас есть доступ
-            String translation = ingot.getTranslation(this.locale);
-            if (translation != null) {
-                add(ModItems.getIngot(ingot).get(), translation);
+            RegistryObject<Item> ingotItem = ModItems.getIngot(ingot);
+            if (ingotItem != null && ingotItem.isPresent()) {
+                String translation = ingot.getTranslation(this.locale);
+                if (translation != null) {
+                    add(ingotItem.get(), translation);
+                }
             }
         }
 
         Set<ResourceLocation> translatedPowders = new HashSet<>();
-        // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ
+
+        // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ ПОРОШКОВ
         for (ModPowders powders : ModPowders.values()) {
-            // 3. Теперь мы используем наше поле 'this.locale', к которому у нас есть доступ
-            String translation = powders.getTranslation(this.locale);
-            if (translation != null) {
-                var powderItem = ModItems.getPowders(powders);
-                add(powderItem.get(), translation);
-                translatedPowders.add(powderItem.getId());
+            RegistryObject<Item> powderItem = ModItems.getPowders(powders);
+            if (powderItem != null && powderItem.isPresent()) {
+                String translation = powders.getTranslation(this.locale);
+                if (translation != null) {
+                    add(powderItem.get(), translation);
+                    translatedPowders.add(powderItem.getId());
+                }
             }
         }
 
-        addIngotPowderTranslations(translatedPowders);
+        // ДОБАВЛЕНИЕ ЛОКАЛИЗАЦИИ ДЛЯ ПОРОШКОВ ИЗ СЛИТКОВ
+        for (ModIngots ingot : ModIngots.values()) {
+            RegistryObject<Item> powder = ModItems.getPowder(ingot);
+            if (powder != null && powder.isPresent() && !translatedPowders.contains(powder.getId())) {
+                add(powder.get(), buildPowderName(ingot, false));
+            }
+            ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
+                if (tiny != null && tiny.isPresent()) {
+                    add(tiny.get(), buildPowderName(ingot, true));
+                }
+            });
+        }
 
-        // ЯВНАЯ ЛОКАЛИЗАЦИЯ ДЛЯ ОСТАЛЬНЫХ КЛЮЧЕЙ 
+
+
+    // ЯВНАЯ ЛОКАЛИЗАЦИЯ ДЛЯ ОСТАЛЬНЫХ КЛЮЧЕЙ
         switch (this.locale) {
             case "ru_ru":
                 // КРЕАТИВНЫЕ ВКЛАДКИ
@@ -215,7 +272,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.battery_creative", "Бесконечная батарейка");
                 add("tooltip.hbm_m.creative_battery_desc","Предоставляет бесконечное количество энергии");
                 add("tooltip.hbm_m.creative_battery_flavor","Бесконечность — не предел!!");
-
+                add(ModItems.COIL_TUNGSTEN.get(), "Нагревательный элемент");
                 // ПРЕДМЕТЫ
                 add(ModItems.BATTERY_POTATO.get(), "Картофельная батарейка");
                 add(ModItems.BATTERY.get(), "Батарейка");
@@ -234,7 +291,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.BATTERY_SCHRABIDIUM_CELL_2.get(), "Шрабидиевая энергоячейка x2");
                 add(ModItems.BATTERY_SCHRABIDIUM_CELL_4.get(), "Шрабидиевая энергоячейка x4");
                 add(ModItems.BATTERY_SPARK.get(), "Спарк батарея");
-                add(ModItems.BATTERY_TRIXITE.get(), "Безымянная спарк батарея");
+                add(ModItems.BATTERY_TRIXITE.get(), "Нефритовый стержень спарк батарей оригинал");
                 add(ModItems.BATTERY_SPARK_CELL_6.get(), "Спарк энергоячейка");
                 add(ModItems.BATTERY_SPARK_CELL_25.get(), "Спарк магический аккумулятор");
                 add(ModItems.BATTERY_SPARK_CELL_100.get(), "Спарк магический массив хранения энергии");
@@ -249,7 +306,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.WIRE_GOLD.get(), "Золотой провод");
                 add(ModItems.WIRE_TUNGSTEN.get(), "Вольфрамовый провод");
                 add(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), "Провод из намагниченного вольфрама");
-                add(ModItems.WIRE_FINE.get(), "Порядочный провод");
+                add(ModItems.WIRE_FINE.get(), "Железный провод");
                 add(ModItems.WIRE_CARBON.get(), "Провод из свинца");
                 add(ModItems.WIRE_SCHRABIDIUM.get(), "Шрабидиевый провод");
                 add(ModItems.WIRE_ADVANCED_ALLOY.get(), "Провод из продвинутого сплава");
@@ -482,14 +539,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.DEPTH_ORES_SCANNER.get(), "Сканер глубинных кластеров");
                 add(ModItems.OIL_DETECTOR.get(), "Детектор нефти");
 
-
                 add(ModItems.GHIORSIUM_CLADDING.get(), "Прокладка из гиорсия");
                 add(ModItems.DESH_CLADDING.get(), "Обшивка из деш");
                 add(ModItems.RUBBER_CLADDING.get(), "Резиновая обшивка");
                 add(ModItems.LEAD_CLADDING.get(), "Свинцовая обшивка");
                 add(ModItems.PAINT_CLADDING.get(), "Свинцовая краска");
-
-
+                add(ModItems.CRT_DISPLAY.get(), "Электро-лучевая трубка");
+                add(ModItems.MAN_CORE.get(), "Плутониевое ядро");
                 add(ModItems.GRENADESMART.get(), "УМная отскок граната");
                 add(ModItems.GRENADESLIME.get(), "Отскок-отскок граната");
                 add(ModItems.GRENADE.get(), "Отскок граната");
@@ -508,7 +564,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get(), "Динейтрониевое энергохранилище");
                 add(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get(), "Шрабидиевое энергохранилище");
                 add(ModBlocks.MACHINE_BATTERY_LITHIUM.get(), "Литиевое энергохранилище");
-
+                add(ModBlocks.SEQUESTRUM_ORE.get(), "Селитровая руда");
+                add(ModItems.SEQUESTRUM.get(), "Селитра");
                 // русский:
                 add(ModBlocks.ASPHALT.get(), "Асфальт");
                 add(ModBlocks.BARRICADE.get(), "Мешки с песком");
@@ -595,6 +652,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CONCRETE_MAGENTA_SLAB.get(), "Пурпурная бетонная плита");
                 add(ModBlocks.CONCRETE_ORANGE_SLAB.get(), "Оранжевая бетонная плита");
                 add(ModBlocks.CONCRETE_PINK_SLAB.get(), "Розовая бетонная плита");
+                add(ModItems.AIRSTRIKE_TEST.get(), "Авиаудар");
                 add(ModBlocks.CONCRETE_PURPLE_SLAB.get(), "Фиолетовая бетонная плита");
                 add(ModBlocks.CONCRETE_RED_SLAB.get(), "Красная бетонная плита");
                 add(ModBlocks.CONCRETE_SILVER_SLAB.get(), "Серебристая бетонная плита");
@@ -701,6 +759,21 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.SELLAFIELD_SLAKED1.get(), "Погашенный селлафит I");
                 add(ModBlocks.SELLAFIELD_SLAKED2.get(), "Погашенный селлафит II");
                 add(ModBlocks.SELLAFIELD_SLAKED3.get(), "Погашенный селлафит III");
+                add(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS.get(), "Кольцевая катушка из намагниченного вольфрама");
+                add(ModItems.COIL_MAGNETIZED_TUNGSTEN.get(), "Катушка из намагниченного вольфрама");
+                add(ModItems.COIL_ADVANCED_ALLOY_TORUS.get(), "Кольцевая катушка из продвинутого сплава");
+                add(ModItems.COIL_ADVANCED_ALLOY.get(), "Катушка из продвинутого сплава");
+                add(ModItems.COIL_COPPER_TORUS.get(), "Кольцевая медная катушка");
+                add(ModItems.COIL_GOLD_TORUS.get(), "Кольцевая золотая катушка");
+                add(ModItems.COIL_COPPER.get(), "Медная катушка");
+                add(ModItems.COIL_GOLD.get(), "Медная катушка");
+                add(ModItems.DUST.get(), "Кучка пыли");
+                add(ModItems.DUST_TINY.get(), "Маленькая кучка пыли");
+                add(ModItems.SCRAP.get(), "Мусор");
+                add(ModItems.POWDER_COAL.get(), "Угольный порошок");
+                add(ModItems.POWDER_COAL_SMALL.get(), "Маленькая кучка угольного порошока");
+                add(ModItems.BILLET_PLUTONIUM.get(), "Заготовка плутония");
+
 
 
                 add("tooltip.hbm_m.depthstone.line1", "Может быть уничтожен только взрывом!");
@@ -708,7 +781,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.MOTOR_BISMUTH.get(), "Висмутовый мотор");
                 add(ModItems.MOTOR_DESH.get(), "Деш мотор");
                 add(ModItems.MOTOR.get(), "Мотор");
-                add(ModItems.BLADE_TEST.get(), "Деш Лезвия");
+                add(ModItems.BLADE_TEST.get(), "Деш лезвия");
+                add(ModItems.BLADE_STEEL.get(), "Стальные лезвия");
+                add(ModItems.BLADE_TITANIUM.get(), "Титановые лезвия");
+                add(ModItems.BLADE_ALLOY.get(), "Лезвия из продвинутого сплава");
                 add(ModItems.BORAX.get(), "Бура");
                 add(ModItems.BALL_TNT.get(), "Взрывчатка");
                 add(ModItems.BOLT_STEEL.get(), "Болт");
@@ -788,7 +864,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PLATE_GUNSTEEL.get(), "Пластина оружейной стали");
                 add(ModItems.PLATE_IRON.get(), "Железная пластина");
                 add(ModItems.PLATE_KEVLAR.get(), "Кевларовая пластина");
-                add(ModItems.PLATE_LEAD.get(), "Оловянная пластина");
+                add(ModItems.PLATE_LEAD.get(), "Свинцовая пластина");
                 add(ModItems.PLATE_MIXED.get(), "Композитная пластина");
                 add(ModItems.PLATE_PAA.get(), "Пластина сплава РаА");
                 add(ModItems.PLATE_SATURNITE.get(), "Сатурнитовая пластина");
@@ -1197,7 +1273,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor", "Влияние источников радиации на чанк");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor", "Фактор рандомизации радиации в чанке");
 
+                add("text.autoconfig.hbm_m.category.rendering", "Рендеринг");
+
+                add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Дистанция для рендеринга динамических частей .obj моделей");
+                add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Включить куллинг моделей");
+
                 add("text.autoconfig.hbm_m.category.debug", "Отладка");
+
                 add("text.autoconfig.hbm_m.option.enableDebugRender", "Включить отладочный рендер радиации");
                 add("text.autoconfig.hbm_m.option.debugRenderTextSize", "Размер текста отладочного рендера");
                 add("text.autoconfig.hbm_m.option.debugRenderDistance", "Дальность отладочного рендеринга (чанки)");
@@ -1217,7 +1299,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radConfusion.@Tooltip", "Порог для эффекта замешательства (WIP)");
                 add("text.autoconfig.hbm_m.option.radBlindness.@Tooltip", "Порог для эффекта слепоты");
 
-                                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect.@Tooltip", "Включает/выключает эффект случайных мерцающих пикселей на экране, когда игрок подвергается радиационному облучению.");
+                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect.@Tooltip", "Включает/выключает эффект случайных мерцающих пикселей на экране, когда игрок подвергается радиационному облучению.");
                 add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold.@Tooltip", "Минимальный уровень входящей радиации (в RAD/с), при котором начинает появляться эффект визуальных помех.");
                 add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad.@Tooltip", "Уровень входящей радиации (в RAD/с), при котором эффект помех достигает своей максимальной силы (максимальное количество пикселей).");
                 add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots.@Tooltip", "Максимальное количество пикселей, которое может одновременно находиться на экране при пиковой интенсивности эффекта. Влияет на производительность на слабых системах.");
@@ -1235,11 +1317,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor.@Tooltip", "Влияние источников радиации на чанк.");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor.@Tooltip", "Фактор рандомизации радиации в чанке");
 
-                add("text.autoconfig.hbm_m.option.hazmatMod.@Tooltip", "Защита обычного костюма химзащиты (1.0 = нет защиты)");
-                add("text.autoconfig.hbm_m.option.advHazmatMod.@Tooltip", "Защита продвинутого костюма химзащиты");
-                add("text.autoconfig.hbm_m.option.paaHazmatMod.@Tooltip", "Защита костюма PAA");
+                add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Дистанция для рендеринга динамических частей .obj моделей (в чанках)");
+                add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Включить куллинг моделей (выключите, если ваши модели рендерятся некорректно)");
 
-                add("text.autoconfig.hbm_m.option.enableDebugRender.@Tooltip", "Показывать отладочный оверлей чанков (F3)");
+                add("text.autoconfig.hbm_m.option.enableDebugRender.@Tooltip", "Показывать отладочный оверлей радиации в чанках (F3)");
                 add("text.autoconfig.hbm_m.option.debugRenderTextSize.@Tooltip", "Размер текста для отладочного оверлея");
                 add("text.autoconfig.hbm_m.option.debugRenderDistance.@Tooltip", "Дальность отладочного рендеринга (чанки)");
                 add("text.autoconfig.hbm_m.option.debugRenderInSurvival.@Tooltip", "Показывать отладочный рендер в режиме выживания");
@@ -1654,6 +1735,8 @@ public class ModLanguageProvider extends LanguageProvider {
 
 // en_us case
                 // английский:
+                add(ModItems.MAN_CORE.get(), "Plutonium Core");
+                add(ModItems.CRT_DISPLAY.get(), "CRT");
                 add(ModBlocks.DEPTH_STONE.get(), "Depth Stone");
                 add(ModBlocks.DEPTH_CINNABAR.get(), "Deep Cinnabar Ore");
                 add(ModBlocks.DEPTH_IRON.get(), "Deep Iron Ore");
@@ -1848,13 +1931,34 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.METEOR_BRICK_MOSSY_STAIRS.get(), "Mossy Meteor Bricks Stairs");
                 add(ModBlocks.METEOR_CRUSHED_STAIRS.get(), "Crushed Meteor Stairs");
 
-
+                add(ModItems.COIL_TUNGSTEN.get(), "Heating Element");
                 add(ModBlocks.CONVERTER_BLOCK.get(), "Energy Converter");
                 add(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get(), "Spark Battery");
                 add(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get(), "Shrabidium Battery");
                 add(ModBlocks.MACHINE_BATTERY_LITHIUM.get(), "Lithium Battery");
                 // en_us case
+
+                add(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS.get(), "Magnetized Tungsten Torus Coil");
+                add(ModItems.COIL_MAGNETIZED_TUNGSTEN.get(), "Magnetized Tungsten Coil");
+                add(ModItems.COIL_ADVANCED_ALLOY_TORUS.get(), "Advanced Alloy Torus Coil");
+                add(ModItems.COIL_ADVANCED_ALLOY.get(), "Advanced Alloy Coil");
+                add(ModItems.COIL_COPPER_TORUS.get(), "Copper Torus Coil");
+                add(ModItems.COIL_COPPER.get(), "Copper Coil");
+
+                add(ModItems.COIL_GOLD_TORUS.get(), "Golden Torus Coil");
+                add(ModItems.COIL_GOLD.get(), "Golden Coil");
+
+                add(ModItems.DUST.get(), "Dust");
+                add(ModItems.DUST_TINY.get(), "Tiny Dust");
+                add(ModItems.SCRAP.get(), "Scrap");
+                add(ModItems.POWDER_COAL.get(), "Coal Powder");
+                add(ModItems.POWDER_COAL_SMALL.get(), "Tiny Coal Powder");
+                add(ModItems.BILLET_PLUTONIUM.get(), "Plutonium Billet");
+
                 add(ModItems.BLADE_TEST.get(), "Desh Blades");
+                add(ModItems.BLADE_STEEL.get(), "Steel Blades");
+                add(ModItems.BLADE_TITANIUM.get(), "Titanium Blades");
+                add(ModItems.BLADE_ALLOY.get(), "Advanced Alloy Blades");
                 add(ModItems.BORAX.get(), "Borax");
                 add(ModItems.BALL_TNT.get(), "TNT Ball");
                 add(ModItems.BOLT_STEEL.get(), "Steel Bolt");
@@ -2106,6 +2210,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.wire_coated", "Red Copper Wire");
 
                 // ORES
+                add(ModBlocks.SEQUESTRUM_ORE.get(), "Salpeter Ore");
+                add(ModItems.SEQUESTRUM.get(), "Salpeter");
+                add(ModItems.AIRSTRIKE_TEST.get(), "Airstrike");
                 add(ModBlocks.RESOURCE_ASBESTOS.get(), "Asbestos Cluster");
                 add(ModBlocks.RESOURCE_BAUXITE.get(), "Bauxite");
                 add(ModBlocks.RESOURCE_HEMATITE.get(), "Hematite");
@@ -2182,10 +2289,10 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("gui.recipe.setRecipe", "Set Recipe");
 
-                add("tooltip.hbm_m.machine_battery.capacity", "Capacity: %1$s FE");
-                add("tooltip.hbm_m.machine_battery.charge_speed", "Charge Speed: %1$s FE/t");
-                add("tooltip.hbm_m.machine_battery.discharge_speed", "Discharge Speed: %1$s FE/t");
-                add("tooltip.hbm_m.machine_battery.stored", "Stored: %1$s / %2$s FE");
+                add("tooltip.hbm_m.machine_battery.capacity", "Capacity: %1$s HE");
+                add("tooltip.hbm_m.machine_battery.charge_speed", "Charge Speed: %1$s HE/t");
+                add("tooltip.hbm_m.machine_battery.discharge_speed", "Discharge Speed: %1$s HE/t");
+                add("tooltip.hbm_m.machine_battery.stored", "Stored: %1$s / %2$s HE");
 
                 // HAZARD TOOLTIPS
 
@@ -2229,8 +2336,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.meter.protection", "§ePlayer protection: %s (%s)");
 
                 add("item.hbm_m.meter.rads_over_limit", ">%s RAD/s");
-                add("gui.hbm_m.battery.energy.info", "%s / %s FE");
-                add("gui.hbm_m.battery.energy.delta", "%s FE/t");
+                add("gui.hbm_m.battery.energy.info", "%s / %s HE");
+                add("gui.hbm_m.battery.energy.delta", "%s HE/t");
                 add("tooltip.hbm_m.hold_shift_for_details", "<Hold SHIFT to display more info>");
 
                 add("sounds.hbm_m.geiger_counter", "Geiger Counter clicking");
@@ -2321,6 +2428,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor", "Source influence factor");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor", "Chunk radiation randomization factor");
 
+                add("text.autoconfig.hbm_m.category.rendering", "Rendering");
+
+                add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Distance for .obj model dynamic parts rendering");
+                add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Enable model occlusion culling");
+
                 add("text.autoconfig.hbm_m.category.debug", "Debug");
 
                 add("text.autoconfig.hbm_m.option.enableDebugRender", "Enable radiation debug render");
@@ -2367,9 +2479,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor.@Tooltip", "Influence of radioactive blocks in chunk");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor.@Tooltip", "Randomization factor for chunk radiation");
 
-                add("text.autoconfig.hbm_m.option.hazmatMod.@Tooltip", "Protection for regular hazmat suit (1.0 = no protection)");
-                add("text.autoconfig.hbm_m.option.advHazmatMod.@Tooltip", "Protection for advanced hazmat suit");
-                add("text.autoconfig.hbm_m.option.paaHazmatMod.@Tooltip", "Protection for PAA suit");
+                add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Distance for .obj model dynamic parts rendering (in chunks)");
+                add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Enable model occlusion culling (disable if your models are not rendering correctly)");
 
                 add("text.autoconfig.hbm_m.option.enableDebugRender.@Tooltip", "Whether radiation debug render is enabled (F3)");
                 add("text.autoconfig.hbm_m.option.debugRenderTextSize.@Tooltip", "Debug render text size");

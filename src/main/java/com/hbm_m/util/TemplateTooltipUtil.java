@@ -88,7 +88,7 @@ public class TemplateTooltipUtil {
         // НОВОЕ: Потребление энергии
         tooltip.add(Component.translatable("tooltip.hbm_m.energy_consumption").withStyle(ChatFormatting.GRAY, ChatFormatting.BOLD));
         int powerConsumption = recipe.getPowerConsumption();
-        tooltip.add(Component.literal("  " + formatEnergy(powerConsumption) + " FE/t")
+        tooltip.add(Component.literal("  " + formatEnergy(powerConsumption) + " HE/t")
                 .withStyle(ChatFormatting.YELLOW));
     }
     

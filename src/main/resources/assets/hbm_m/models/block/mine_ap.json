@@ -14,14 +14,14 @@
     }
   },
   "transform": {
-    "translation": [0, -0.6, -0.6],
+    "translation": [-0.2, -0.7, -0.2],
     "rotation": [0, 0, 0],
     "scale": 0.25
   },
   "display": {
     "gui": {
       "rotation": [ 30, 45, 0 ],
-      "translation": [ -2, 2.0, 3 ],
+      "translation": [ -2, 9, 0 ],
       "scale": [ 1.7, 1.7, 1.7 ]
     },
     "ground": {

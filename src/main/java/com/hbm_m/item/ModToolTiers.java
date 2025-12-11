@@ -12,7 +12,7 @@ import java.util.List;
 
 public class ModToolTiers {
     public static final Tier ALLOY = TierSortingRegistry.registerTier(
-            new ForgeTier(4, 900, 6f, 6f, 25,
+            new ForgeTier(4, 1500, 6f, 6f, 25,
                     ModTags.Blocks.NEEDS_ALLOY_TOOL, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
             ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "alloy"), List.of(Tiers.NETHERITE), List.of());
 
@@ -22,7 +22,7 @@ public class ModToolTiers {
             ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "steel"), List.of(Tiers.IRON), List.of());
 
     public static final Tier STARMETAL = TierSortingRegistry.registerTier(
-            new ForgeTier(5, 1500, 9f, 8f, 25,
+            new ForgeTier(5, 19000, 9f, 8f, 25,
                     ModTags.Blocks.NEEDS_STARMETAL_TOOL, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
             ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "starmetal"), List.of(Tiers.IRON), List.of());
 

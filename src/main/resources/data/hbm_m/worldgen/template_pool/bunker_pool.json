@@ -1,15 +1,14 @@
 {
   "name": "hbm_m:bunker_pool",
-  "description": "Template pool for Bunker structure",
   "fallback": "minecraft:empty",
   "elements": [
     {
       "weight": 1,
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "projection": "terrain_matching",
+        "projection": "rigid",
         "location": "hbm_m:bunker",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:foundation_processor"
       }
     }
   ]

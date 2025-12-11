@@ -1,69 +1,52 @@
 package com.hbm_m.particle.explosions;
 
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.*;
-import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.client.particle.SpriteSet;
 
-@OnlyIn(Dist.CLIENT)
-public class ShockwaveRingParticle extends TextureSheetParticle {
+/**
+ * ✅ Кольца ударной волны (шокволна)
+ * Расширяющиеся волны давления от взрыва
+ */
+public class ShockwaveRingParticle extends AbstractExplosionParticle {
 
-    private final SpriteSet spriteSet;
+    public ShockwaveRingParticle(ClientLevel level, double x, double y, double z,
+                                 SpriteSet sprites, double xSpeed, double ySpeed, double zSpeed) {
+        super(level, x, y, z, sprites);
 
-    protected ShockwaveRingParticle(ClientLevel level, double x, double y, double z,
-                                    double xSpeed, double ySpeed, double zSpeed,
-                                    SpriteSet spriteSet) {
-        super(level, x, y, z, xSpeed, ySpeed, zSpeed);
-        this.spriteSet = spriteSet;
+        // ✅ ВРЕМЯ ЖИЗНИ: 15-25 тиков
+        this.lifetime = 15 + this.random.nextInt(10);
 
-        // Настройки волны
-        this.lifetime = 180;
+        // ✅ ФИЗИКА: нет гравитации
         this.gravity = 0.0F;
+        this.hasPhysics = false;
 
-        // Начальный размер и движение
-        this.quadSize = 2.0F;
-        this.xd = xSpeed;
-        this.yd = ySpeed;
-        this.zd = zSpeed;
+        // ✅ РАЗМЕР: средний-крупный (0.8-1.2)
+        this.quadSize = 0.8F + this.random.nextFloat() * 0.4F;
 
+        // ✅ ЦВЕТ: серо-белый (выглядит как воздушная волна)
+        this.rCol = 0.8F + this.random.nextFloat() * 0.2F;
+        this.gCol = 0.8F + this.random.nextFloat() * 0.2F;
+        this.bCol = 0.9F + this.random.nextFloat() * 0.1F;
 
-        this.setSpriteFromAge(spriteSet);
+        // ✅ ПРОЗРАЧНОСТЬ: начальная
+        this.alpha = 0.8F;
     }
 
     @Override
     public void tick() {
         super.tick();
 
-        // Расширяется и затухает
-        float agePercent = (float)this.age / (float)this.lifetime;
-        this.alpha = 1.0F - agePercent;
+        // ✅ Плавное исчезновение
+        float fadeProgress = (float) this.age / (float) this.lifetime;
+        this.alpha = 0.8F * (1.0F - fadeProgress);
 
-        // Замедляется со временем
-        this.xd *= 0.95;
-        this.zd *= 0.95;
-
-        this.setSpriteFromAge(spriteSet);
+        // ✅ Медленное увеличение размера (волна расширяется)
+        this.quadSize *= 1.01F;
     }
 
-    @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public static class Provider implements ParticleProvider<SimpleParticleType> {
-        private final SpriteSet spriteSet;
-
-        public Provider(SpriteSet spriteSet) {
-            this.spriteSet = spriteSet;
-        }
-
-        @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level,
-                                       double x, double y, double z,
-                                       double xSpeed, double ySpeed, double zSpeed) {
-            return new ShockwaveRingParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, this.spriteSet);
+    public static class Provider extends AbstractExplosionParticle.Provider<ShockwaveRingParticle> {
+        public Provider(SpriteSet sprites) {
+            super(sprites, ShockwaveRingParticle::new);
         }
     }
 }

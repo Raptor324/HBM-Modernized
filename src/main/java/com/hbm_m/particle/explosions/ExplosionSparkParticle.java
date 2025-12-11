@@ -1,29 +1,37 @@
 package com.hbm_m.particle.explosions;
 
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.*;
-import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.client.particle.SpriteSet;
 
-public class ExplosionSparkParticle extends TextureSheetParticle {
+/**
+ * ✅ Оранжевые искры с физикой падения
+ */
+public class ExplosionSparkParticle extends AbstractExplosionParticle {
 
-    protected ExplosionSparkParticle(ClientLevel level, double x, double y, double z,
-                                     double xSpeed, double ySpeed, double zSpeed) {
-        super(level, x, y, z, xSpeed, ySpeed, zSpeed);
-
-        this.lifetime = 20 + this.random.nextInt(20); // 1-2 секунды
-        this.gravity = 0.3F;
-        this.hasPhysics = false;
+    public ExplosionSparkParticle(ClientLevel level, double x, double y, double z,
+                                  SpriteSet sprites, double xSpeed, double ySpeed, double zSpeed) {
+        super(level, x, y, z, sprites);
 
         this.xd = xSpeed;
         this.yd = ySpeed;
         this.zd = zSpeed;
 
+        // ✅ ВРЕМЯ ЖИЗНИ: 20-40 тиков
+        this.lifetime = 20 + this.random.nextInt(15);
+
+        // ✅ ФИЗИКА
+        this.gravity = 0.3F;
+        this.hasPhysics = false;
+
+        // ✅ ВНЕШНИЙ ВИД: размер 0.3-0.6
         this.quadSize = 0.3F + this.random.nextFloat() * 0.3F;
 
-        // Оранжево-жёлтый цвет
-        this.rCol = 1.0F;
-        this.gCol = 0.6F + this.random.nextFloat() * 0.3F;
-        this.bCol = 0.1F;
+        // ✅ ЦВЕТ: оранжево-желтый
+        this.rCol = 1.0F;          // Red: максимум
+        this.gCol = 0.6F + this.random.nextFloat() * 0.3F;  // Green: 0.6-0.9
+        this.bCol = 0.1F;          // Blue: минимум (оранжевый оттенок)
+
+        // ✅ ПРОЗРАЧНОСТЬ
         this.alpha = 1.0F;
     }
 
@@ -31,35 +39,17 @@ public class ExplosionSparkParticle extends TextureSheetParticle {
     public void tick() {
         super.tick();
 
-        // Затухание
+        // ✅ Плавное исчезновение (fade out)
         float fadeProgress = (float) this.age / (float) this.lifetime;
-        this.alpha = 1.0F - fadeProgress;
+        this.alpha = Math.max(0.6F, 1.0F - fadeProgress);
 
-        // Уменьшение размера
-        this.quadSize *= 0.96F;
+        // ✅ Сжатие (эффект сгорания)
+        this.quadSize *= 0.98F;
     }
 
-    @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
-    }
-
-    public static class Provider implements ParticleProvider<SimpleParticleType> {
-        private final SpriteSet sprites;
-
+    public static class Provider extends AbstractExplosionParticle.Provider<ExplosionSparkParticle> {
         public Provider(SpriteSet sprites) {
-            this.sprites = sprites;
-        }
-
-        @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level,
-                                       double x, double y, double z,
-                                       double xSpeed, double ySpeed, double zSpeed) {
-            ExplosionSparkParticle particle = new ExplosionSparkParticle(
-                    level, x, y, z, xSpeed, ySpeed, zSpeed
-            );
-            particle.pickSprite(this.sprites);
-            return particle;
+            super(sprites, ExplosionSparkParticle::new);
         }
     }
 }

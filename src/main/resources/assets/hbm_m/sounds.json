@@ -48,6 +48,62 @@
       "hbm_m:techbleep"
     ]
   },
+  "bombdet1": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.bombdet1",
+    "sounds": [
+      "hbm_m:bombdet1"
+    ]
+  },
+  "bombdet2": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.bombdet2",
+    "sounds": [
+      "hbm_m:bombdet2"
+    ]
+  },
+  "bombdet3": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.bombdet3",
+    "sounds": [
+      "hbm_m:bombdet3"
+    ]
+  },
+  "bomber1": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.bomber1",
+    "sounds": [
+      "hbm_m:bomber1"
+    ]
+  },
+  "bomber2": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.bomber2",
+    "sounds": [
+      "hbm_m:bomber3"
+    ]
+  },
+  "bombwhistle": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.bombwhistle",
+    "sounds": [
+      "hbm_m:bombwhistle"
+    ]
+  },
+  "crateopen": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.crateopen",
+    "sounds": [
+      "hbm_m:crateopen"
+    ]
+  },
+  "crateclose": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.crateclose",
+    "sounds": [
+      "hbm_m:crateclose"
+    ]
+  },
   "explosionsmallfar1": {
     "category": "player",
     "subtitle": "sounds.hbm_m.explosionsmallfar1",
