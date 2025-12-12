@@ -35,31 +35,24 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 /**
- * ОПТИМИЗИРОВАННЫЙ ЯДЕРНЫЙ БЛОК v2
+ * ✅ ДАДО-БОЕВАЯ ГОЛОВКА v4
  *
  * Улучшения:
- * ✅ Кэширование позиций для частиц
- * ✅ Оптимизированное спавнение частиц
- * ✅ Асинхронная генерация кратера
- * ✅ Уменьшение нагрузки на основной поток
+ * ✅ Полностью динамический размер кратера
+ * ✅ Радиус определяется ТОЛЬКО силой пробития лучей
+ * ✅ Синхронизация лучей исправлена
  */
 public class DudNukeBlock extends Block implements IDetonatable {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger("NuclearCharge");
+    private static final Logger LOGGER = LoggerFactory.getLogger("DudNuke");
 
     private static final float EXPLOSION_POWER = 25.0F;
     private static final double PARTICLE_VIEW_DISTANCE = 512.0;
-
-    // Параметры воронки
-    private static final int CRATER_RADIUS = 30; // Радиус воронки в блоках
-    private static final int CRATER_DEPTH = 10;  // Глубина воронки в блоках
-
-    // ОПТИМИЗАЦИЯ: Задержка перед генерацией кратера (в тиках)
     private static final int CRATER_GENERATION_DELAY = 30;
 
     public static final DirectionProperty FACING = DirectionProperty.create("facing", Direction.Plane.HORIZONTAL);
 
-    private static final VoxelShape SHAPE = Shapes.box(0, 0, 0, 1, 1, 1); // полный куб (замени при необходимости)
+    private static final VoxelShape SHAPE = Shapes.box(0, 0, 0, 1, 1, 1);
 
     public DudNukeBlock(Properties props) {
         super(props);
@@ -68,7 +61,7 @@ public class DudNukeBlock extends Block implements IDetonatable {
 
     @Override
     public void appendHoverText(ItemStack stack,
-                                @Nullable net.minecraft.world.level.BlockGetter level,
+                                @Nullable BlockGetter level,
                                 List<Component> tooltip,
                                 TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.hbm_m.dudnuke.line1")
@@ -81,16 +74,14 @@ public class DudNukeBlock extends Block implements IDetonatable {
                 .withStyle(ChatFormatting.GRAY));
     }
 
-    // Не ломается поршнями
     @Override
     public PushReaction getPistonPushReaction(BlockState state) {
         return PushReaction.BLOCK;
     }
 
-    // Запретить ломать блок инструментом (игроком)
     @Override
     public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
-        return 0.0F; // Нельзя сломать вообще
+        return 0.0F;
     }
 
     @Override
@@ -100,7 +91,6 @@ public class DudNukeBlock extends Block implements IDetonatable {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        // Блок поворачивается лицом к игроку при установке (противоположно взгляду игрока)
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
@@ -131,15 +121,13 @@ public class DudNukeBlock extends Block implements IDetonatable {
             // Запускаем поэтапную систему частиц
             scheduleExplosionEffects(serverLevel, x, y, z);
 
-            // ОПТИМИЗАЦИЯ: Генерация кратера в отдельном тике
+            // ✅ ГЕНЕРАЦИЯ КРАТЕРА (радиус определяется лучами!)
             MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
             if (server != null) {
                 server.tell(new TickTask(CRATER_GENERATION_DELAY, () -> {
                     CraterGenerator.generateCrater(
                             serverLevel,
                             pos,
-                            CRATER_RADIUS,
-                            CRATER_DEPTH,
                             ModBlocks.SELLAFIELD_SLAKED.get(),
                             ModBlocks.SELLAFIELD_SLAKED1.get(),
                             ModBlocks.SELLAFIELD_SLAKED2.get(),
@@ -147,8 +135,8 @@ public class DudNukeBlock extends Block implements IDetonatable {
                             ModBlocks.WASTE_LOG.get(),
                             ModBlocks.WASTE_PLANKS.get(),
                             ModBlocks.BURNED_GRASS.get()
-
                     );
+
                     LOGGER.info("Кратер успешно сгенерирован в позиции: {}", pos);
                 }));
             }
@@ -160,24 +148,24 @@ public class DudNukeBlock extends Block implements IDetonatable {
     }
 
     /**
-     * ОПТИМИЗИРОВАНА: Планирование эффектов взрыва
+     * ✅ Планирование эффектов взрыва
      */
     private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
-        // ✅ Flash - точно те же параметры
+        // ✅ Flash
         level.sendParticles(
                 (SimpleParticleType) ModExplosionParticles.FLASH.get(),
                 x, y, z, 1, 0, 0, 0, 0
         );
 
-        // ✅ Sparks - 400 частиц с ТОЧНЫМИ скоростями
+        // ✅ Sparks
         ExplosionParticleUtils.spawnAirBombSparks(level, x, y, z);
 
-        // ✅ Shockwave через 3 тика - точно те же кольца
-        level.getServer().tell(new net.minecraft.server.TickTask(3, () ->
+        // ✅ Shockwave через 3 тика
+        level.getServer().tell(new TickTask(3, () ->
                 ExplosionParticleUtils.spawnAirBombShockwave(level, x, y, z)));
 
-        // ✅ Mushroom Cloud через 8 тиков - ТОЧНО те же параметры
-        level.getServer().tell(new net.minecraft.server.TickTask(8, () ->
+        // ✅ Mushroom Cloud через 8 тиков
+        level.getServer().tell(new TickTask(8, () ->
                 ExplosionParticleUtils.spawnAirBombMushroomCloud(level, x, y, z)));
     }
 
