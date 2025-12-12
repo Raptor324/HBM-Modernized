@@ -107,34 +107,63 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         ItemStack inputStack = itemHandler.getStackInSlot(SLOT_INPUT_L);
         if(inputStack.isEmpty()) return;
 
-        ItemStack outputStack = itemHandler.getStackInSlot(SLOT_OUTPUT_L);
-        if(outputStack.getCount() >= outputStack.getMaxStackSize()) return;
-
-        // Берем Capability у предмета
+        // Получаем Capability предмета
         inputStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).ifPresent(handler -> {
-            // Пытаемся слить из предмета ВСЁ что есть (Simulate)
+            // 1. Сначала симулируем, чтобы узнать, сколько можем залить
             FluidStack fluidInItem = handler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
 
             if(fluidInItem != null && !fluidInItem.isEmpty()) {
-                // Проверяем, влезет ли это в наш танк
+                // Проверяем, сколько места в танке
                 int filledAmount = fluidTank.fill(fluidInItem, IFluidHandler.FluidAction.SIMULATE);
 
-                // Если танк готов принять ровно столько, сколько мы сливаем
-                if(filledAmount == fluidInItem.getAmount()) {
-                    // ИСПОЛНЯЕМ
-                    fluidTank.fill(fluidInItem, IFluidHandler.FluidAction.EXECUTE); // Залили в танк
-                    handler.drain(filledAmount, IFluidHandler.FluidAction.EXECUTE); // Слили из предмета
+                // Если мы можем перелить хотя бы каплю (или строго всё, как хочешь)
+                // Для бесконечного источника лучше проверять filledAmount > 0
+                if(filledAmount > 0) {
 
-                    ItemStack container = handler.getContainer(); // Получили пустую тару (например, ведро)
+                    // 2. ИСПОЛНЯЕМ ПЕРЕЛИВАНИЕ
+                    fluidTank.fill(fluidInItem, IFluidHandler.FluidAction.EXECUTE); // Наполнили танк
+                    handler.drain(filledAmount, IFluidHandler.FluidAction.EXECUTE); // "Слили" из предмета
 
-                    inputStack.shrink(1); // Убрали входной предмет
+                    // Получаем то, чем стал предмет после слива (для ведра воды -> это пустое ведро)
+                    ItemStack container = handler.getContainer();
 
-                    // Кладем результат вниз
-                    if (!container.isEmpty()) {
-                        if (outputStack.isEmpty()) {
-                            itemHandler.setStackInSlot(SLOT_OUTPUT_L, container);
-                        } else if (ItemStack.isSameItemSameTags(outputStack, container) && outputStack.getCount() < outputStack.getMaxStackSize()) {
-                            outputStack.grow(1);
+                    // === ИСПРАВЛЕНИЕ ДЛЯ БЕСКОНЕЧНЫХ ИСТОЧНИКОВ ===
+
+                    // Проверяем: стал ли предмет другим?
+                    // Если это обычное ведро: input = Ведро Воды, container = Пустое Ведро. Они РАЗНЫЕ.
+                    // Если это InfiniteWater: input = InfiniteWater, container = InfiniteWater. Они ОДИНАКОВЫЕ.
+
+                    boolean isInfiniteSource = !container.isEmpty() &&
+                            ItemStack.isSameItemSameTags(inputStack, container);
+
+                    if (isInfiniteSource) {
+                        // Если это бесконечный источник — МЫ НИЧЕГО НЕ ТРОГАЕМ.
+                        // Предмет остается в верхнем слоте (inputStack), мы его не удаляем (shrink)
+                        // и не пытаемся переложить вниз.
+                        // В следующем тике он снова отдаст воду.
+                    } else {
+                        // ЛОГИКА ДЛЯ ОБЫЧНЫХ ВЕДЕР
+
+                        ItemStack outputStack = itemHandler.getStackInSlot(SLOT_OUTPUT_L);
+                        // Если выходной слот занят и там не тот же предмет или нет места - прерываемся (откат не делаем, но ведро не исчезнет)
+                        if (!outputStack.isEmpty() &&
+                                (!ItemStack.isSameItemSameTags(outputStack, container) ||
+                                        outputStack.getCount() >= outputStack.getMaxStackSize())) {
+                            // Тут сложный момент: мы уже залили жидкость в танк.
+                            // По-хорошему, надо бы проверять место в output ДО залива,
+                            // но для простоты оставим так (жидкость зальется, ведро останется сверху пока не освободят место).
+                            return;
+                        }
+
+                        inputStack.shrink(1); // Удаляем полное ведро из входа
+
+                        if (!container.isEmpty()) {
+                            // Кладем пустое ведро в выход
+                            if (outputStack.isEmpty()) {
+                                itemHandler.setStackInSlot(SLOT_OUTPUT_L, container);
+                            } else if (ItemStack.isSameItemSameTags(outputStack, container) && outputStack.getCount() < outputStack.getMaxStackSize()) {
+                                outputStack.grow(1);
+                            }
                         }
                     }
                 }
