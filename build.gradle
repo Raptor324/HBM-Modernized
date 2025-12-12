@@ -3,6 +3,7 @@ plugins {
     id 'net.minecraftforge.gradle' version '6.0.14'
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
     id 'java-library'
+    id 'org.spongepowered.mixin' version '0.7.+'
 }
 
 group = mod_group_id
@@ -12,7 +13,13 @@ base {
     archivesName = mod_id
 }
 
+mixin {
+    add sourceSets.main, "mixins.hbm_m.refmap.json"
+    config "mixins.hbm_m.json"
 
+    debug.verbose = true
+    debug.export = true
+}
 
 // Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -213,8 +220,7 @@ tasks.named('jar', Jar).configure {
                 'Implementation-Title'    : project.name,
                 'Implementation-Version'  : project.version,
                 'Implementation-Vendor'   : mod_authors,
-                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ"),
-                'Implementation-Version'  : project.jar.archiveVersion
+                'Implementation-Timestamp': new Date().format("yyyy-MM-dd'T'HH:mm:ssZ")
         ])
     }
 
