@@ -1,15 +1,10 @@
 pluginManagement {
     repositories {
-        maven { url 'file:///C:/local-maven-repo' }
-        maven { url = 'https://maven.parchmentmc.org' }
         gradlePluginPortal()
-        maven {
-            name = 'MinecraftForge'
-            url = 'https://maven.minecraftforge.net/'
-        }
-        // maven {
-        //     name = 'SpongePowered'
-        //     url = 'https://repo.spongepowered.org/maven'
-        // }
+        maven { url = "https://maven.minecraftforge.net" }
+        maven { url = "https://maven.parchmentmc.org" }
+        mavenCentral()
     }
 }
+
+rootProject.name = "HBM-Modernized"

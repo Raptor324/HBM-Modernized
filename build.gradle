@@ -1,9 +1,8 @@
 plugins {
     id 'maven-publish'
-    id 'net.minecraftforge.gradle' version '[6.0,6.3)'
+    id 'net.minecraftforge.gradle' version '6.0.14'
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
     id 'java-library'
-    id 'org.spongepowered.mixin' version '0.7.+'
 }
 
 group = mod_group_id
@@ -13,13 +12,7 @@ base {
     archivesName = mod_id
 }
 
-mixin {
-    add sourceSets.main, "mixins.hbm_m.refmap.json"
-    config "mixins.hbm_m.json"
 
-    debug.verbose = true
-    debug.export = true
-}
 
 // Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
@@ -133,6 +126,7 @@ repositories {
     // }
     mavenCentral()
     maven { url = 'https://maven.minecraftforge.net/' }
+    maven { url = "https://maven.parchmentmc.org/" }
     maven { url = "https://maven.shedaniel.me/" }
     maven {
         name = "Modrinth"
@@ -147,16 +141,6 @@ repositories {
         content {
             includeGroup "curse.maven"
         }
-    }
-    
-    // maven {
-    //     name = 'SpongePowered'
-    //     url = 'https://repo.spongepowered.org/maven'
-    // }
-    // If you have mod jar dependencies in ./libs, you can declare them as a repository like so.
-    // See https://docs.gradle.org/current/userguide/declaring_repositories.html#sub:flat_dir_resolver
-    flatDir {
-        dir 'libs'
     }
 }
 

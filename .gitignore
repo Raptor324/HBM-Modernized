@@ -8,6 +8,7 @@
 # ================= IDE Specific =================
 # Файлы настроек для разных сред разработки.
 # Они специфичны для каждого пользователя и не должны быть общими.
+.editorconfig
 
 # IntelliJ IDEA
 .idea/
@@ -25,6 +26,11 @@ bin/
 # Visual Studio Code
 .vscode/
 .cursor
+
+# Sublime Text
+*.sublime-project
+*.sublime-workspace
+
 # ================= Generated Files =================
 /src/generated/
 
@@ -44,6 +50,7 @@ ideas
 .DS_Store
 Thumbs.db
 .kilocode
+desktop.ini
 
 # ================= Minecraft/Forge Specific =================
 # Файлы, генерируемые средой разработки Forge.
@@ -52,8 +59,5 @@ natives/
 *.tsrg
 forge*changelog.txt
 .fake
-.editorconfig
 .github/copilot-instructions.md
-.gitignore
 .cursor/
-desktop.ini
