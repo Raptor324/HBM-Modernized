@@ -10,7 +10,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+
+import com.hbm_m.api.fluids.ModFluids;
+
 import com.hbm_m.item.fekal_grenades.*;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
@@ -1296,6 +1300,14 @@ public class ModItems {
     public static final RegistryObject<Item> SCREWDRIVER = ITEMS.register("screwdriver",
             () -> new Item(new Item.Properties().stacksTo(1))); // В стаке только 1 штука
 
+
+    //=============================== ВЁДРА ДЛЯ ЖИДКОСТЕЙ ===============================//
+
+    public static final RegistryObject<Item> CRUDE_OIL_BUCKET = ITEMS.register("bucket_crude_oil",
+            () -> new BucketItem(ModFluids.CRUDE_OIL_SOURCE,
+                    new Item.Properties()
+                            .craftRemainder(Items.BUCKET) // Возвращает пустое ведро при крафте
+                            .stacksTo(1))); // Ведра не стакаются
 
     
 

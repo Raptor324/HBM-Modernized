@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "hbm_m:block/fluid_tank"
+    },
+    "facing=east": {
+      "model": "hbm_m:block/fluid_tank",
+      "y": 90
+    },
+    "facing=south": {
+      "model": "hbm_m:block/fluid_tank",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "hbm_m:block/fluid_tank",
+      "y": 270
+    }
+  }
+}

@@ -2,8 +2,11 @@ package com.hbm_m.block.entity;
 
 import com.hbm_m.api.energy.ConverterBlockEntity;
 import com.hbm_m.block.ModBlocks;
+
+
 import com.hbm_m.block.entity.crates.IronCrateBlockEntity;
 import com.hbm_m.block.entity.crates.SteelCrateBlockEntity;
+
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -11,7 +14,10 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
+
+
 import com.hbm_m.block.entity.machine.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.block.entity.machine.MachineFluidTankBlockEntity;
 import com.hbm_m.block.entity.machine.MachineAssemblerBlockEntity;
 import com.hbm_m.block.entity.machine.MachineBatteryBlockEntity;
 import com.hbm_m.block.entity.machine.MachinePressBlockEntity;
@@ -19,6 +25,7 @@ import com.hbm_m.block.entity.machine.MachineShredderBlockEntity;
 import com.hbm_m.block.entity.machine.MachineWoodBurnerBlockEntity;
 import com.hbm_m.block.entity.machine.UniversalMachinePartBlockEntity;
 import com.hbm_m.block.entity.crates.DeshCrateBlockEntity;
+
 
 public class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
@@ -113,6 +120,11 @@ public class ModBlockEntities {
 			BLOCK_ENTITIES.register("wood_burner_be", () ->
 					BlockEntityType.Builder.of(MachineWoodBurnerBlockEntity::new,
 							ModBlocks.WOOD_BURNER.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<MachineFluidTankBlockEntity>> FLUID_TANK_BE =
+            BLOCK_ENTITIES.register("fluid_tank_be", () ->
+                    BlockEntityType.Builder.of(MachineFluidTankBlockEntity::new,
+                            ModBlocks.FLUID_TANK.get()).build(null));
 
     // ДВЕРИ
 
