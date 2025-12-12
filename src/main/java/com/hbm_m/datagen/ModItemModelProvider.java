@@ -1,10 +1,6 @@
 package com.hbm_m.datagen;
-// Провайдер генерации моделей предметов для мода.
-// Здесь мы определяем, как будут выглядеть наши предметы в инвентаре и в мире.
-// Используется в классе DataGenerators для регистрации.
 
 import java.util.LinkedHashMap;
-
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
@@ -47,46 +43,40 @@ public class ModItemModelProvider extends ItemModelProvider {
         super(output, RefStrings.MODID, existingFileHelper);
     }
 
-    /**
-     * Здесь мы регистрируем все модели для наших предметов.
-     */
     @Override
     protected void registerModels() {
-        // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ СЛИТКОВ 
-        // Проходимся по всем слиткам из нашего enum'а
+        // ✅ ИСПРАВЛЕННЫЙ ЦИКЛ ДЛЯ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            // Получаем объект-обертку предмета
             RegistryObject<Item> ingotObject = ModItems.getIngot(ingot);
-            
-            // Вызываем наш вспомогательный метод для генерации простой модели
-            ingotItem(ingotObject);
+            if (ingotObject != null && ingotObject.isPresent()) {
+                ingotItem(ingotObject);
+            }
         }
 
-        for (ModPowders powders : ModPowders.values()) {
-            // Получаем объект-обертку предмета
-            RegistryObject<Item> powders1tObject = ModItems.getPowders(powders);
-
-            // Вызываем наш вспомогательный метод для генерации простой модели
-            powdersItem(powders1tObject);
+        // ✅ ИСПРАВЛЕННЫЙ ЦИКЛ ДЛЯ ModPowders (ОСНОВНАЯ ОШИБКА!)
+        for (ModPowders powder : ModPowders.values()) {
+            RegistryObject<Item> powderObject = ModItems.getPowders(powder);
+            if (powderObject != null && powderObject.isPresent()) {
+                powdersItem(powderObject);
+            }
         }
 
-        // Порошки для всех слитков
+        // ✅ ИСПРАВЛЕННЫЙ ЦИКЛ ДЛЯ ПОРОШКОВ ИЗ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
             RegistryObject<Item> powder = ModItems.getPowder(ingot);
-            if (powder != null) {
-                if (powderTextureExists(ingot.getName())) {
-                    powdersItem(powder);
-                }
+            if (powder != null && powder.isPresent() && powderTextureExists(ingot.getName())) {
+                powdersItem(powder);
             }
             ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
-                if (powderTinyTextureExists(ingot.getName())) {
+                if (tiny != null && tiny.isPresent() && powderTinyTextureExists(ingot.getName())) {
                     tinyPowderItem(tiny);
                 }
             });
         }
 
-        powderTexture(ModItems.DUST, "powders/dust");
-        powderTexture(ModItems.DUST_TINY, "powders/tiny/dust_tiny");
+        // БАЗОВЫЕ ПОРОШКИ (всегда существуют)
+        if (ModItems.DUST != null && ModItems.DUST.isPresent()) powderTexture(ModItems.DUST, "powders/dust");
+        if (ModItems.DUST_TINY != null && ModItems.DUST_TINY.isPresent()) powderTexture(ModItems.DUST_TINY, "powders/tiny/dust_tiny");
 
         withExistingParent("large_vehicle_door", 
             modLoc("block/large_vehicle_door"));
@@ -137,12 +127,21 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.BILLET_PLUTONIUM);
         simpleItem(ModItems.BALL_TNT);
         simpleItem(ModItems.DEFUSER);
+        simpleItem(ModItems.AIRSTRIKE_AGENT);
         simpleItem(ModItems.SCREWDRIVER);
         simpleItem(ModItems.CROWBAR);
         simpleItem(ModItems.OIL_DETECTOR);
         simpleItem(ModItems.MULTI_DETONATOR);
+        simpleItem(ModItems.AIRSTRIKE_TEST);
+        simpleItem(ModItems.AIRSTRIKE_HEAVY);
         simpleItem(ModItems.DETONATOR);
         simpleItem(ModItems.SCRAP);
+        simpleItem(ModItems.CRT_DISPLAY);
+        simpleItem(ModItems.SEQUESTRUM);
+        simpleItem(ModItems.MAN_CORE);
+        simpleItem(ModItems.BLADE_STEEL);
+        simpleItem(ModItems.BLADE_TITANIUM);
+        simpleItem(ModItems.BLADE_ALLOY);
         simpleItem(ModItems.BLADE_TEST);
         simpleItem(ModItems.ALLOY_SWORD);
         simpleItem(ModItems.GEIGER_COUNTER);
@@ -227,6 +226,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.BATTERY_SCHRABIDIUM);
         simpleItem(ModItems.BATTERY_POTATO);
         simpleItem(ModItems.BATTERY);
+        simpleItem(ModItems.AIRSTRIKE_NUKE);
         simpleItem(ModItems.BATTERY_RED_CELL);
         simpleItem(ModItems.BATTERY_RED_CELL_6);
         simpleItem(ModItems.BATTERY_RED_CELL_24);
@@ -359,6 +359,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.STAMP_DESH_50);
         simpleItem(ModItems.STAMP_DESH_357);
 
+        simpleItem(ModItems.POWDER_COAL);
+        simpleItem(ModItems.POWDER_COAL_SMALL);
+        simpleItem(ModItems.COIL_TUNGSTEN);
         simpleItem(ModItems.NUGGET_SILICON);
         simpleItem(ModItems.BILLET_SILICON);
         simpleItem(ModItems.WIRE_RED_COPPER);
@@ -475,20 +478,12 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("layer0", modLoc("item/ingot/" + textureFileName));
     }
 
+    // ✅ ОСНОВНОЕ ИСПРАВЛЕНИЕ - powdersItem с проверкой!
     private void powdersItem(RegistryObject<Item> itemObject) {
-        
         String registrationName = itemObject.getId().getPath();
-
-        
         String baseName = registrationName.replace("_powder", "");
-
-        // 3. Формируем ИМЯ ФАЙЛА ТЕКСТУРЫ (например, "ingot_uranium")
         String textureFileName = "powder_" + baseName;
-
-        // Генерируем .json файл модели
-        // Имя файла модели совпадает с регистрационным именем
         withExistingParent(registrationName, "item/generated")
-                // Путь к текстуре теперь использует правильное имя файла и подпапку
                 .texture("layer0", modLoc("item/powders/" + textureFileName));
     }
 

@@ -6,7 +6,6 @@
   "refmap": "hbm_m.refmap.json",
   "mixins": [
     "SlotMixin"
-    
   ],
   "client": [
     "ShadowIntegrationMixin"

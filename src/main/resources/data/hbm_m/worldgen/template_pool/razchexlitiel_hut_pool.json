@@ -6,9 +6,9 @@
       "weight": 1,
       "element": {
         "element_type": "minecraft:single_pool_element",
-        "projection": "terrain_matching",
+        "projection": "rigid",
         "location": "hbm_m:razchexlitiel_hut",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:foundation_processor"
       }
     }
   ]

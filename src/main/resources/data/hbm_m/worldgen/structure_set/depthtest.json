@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "structure": "hbm_m:depthtest",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "salt": 14905690,
+    "spacing": 32,
+    "separation": 8
+  }
+}
