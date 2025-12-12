@@ -17,6 +17,7 @@ import net.minecraftforge.registries.RegistryObject;
 
 
 import com.hbm_m.block.entity.machine.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.block.entity.machine.MachineFluidTankBlockEntity;
 import com.hbm_m.block.entity.machine.MachineAssemblerBlockEntity;
 import com.hbm_m.block.entity.machine.MachineBatteryBlockEntity;
 import com.hbm_m.block.entity.machine.MachinePressBlockEntity;
