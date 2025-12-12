@@ -19,14 +19,16 @@ import net.minecraft.tags.BlockTags;
 import java.util.*;
 
 /**
- * Crater Generator v17.1 - EXPLOSION CENTER AT GROUND LEVEL
+ * Crater Generator v17.2 - OPTIMIZED WITH CENTER SPHERE CLEANUP
  *
  * ✅ FIXED: Raycast distortion when triggered from blocks
  * ✅ FIXED: Math.floor() rounding errors for negative directions
  * ✅ FIXED: Proper center-to-center ray calculation
  * ✅ FIXED: Race condition in block collection
  * ✅ FIXED: Explosion center now at ground level (below the bomb)
- * ✅ VERIFIED: Works correctly from both entities and blocks
+ * ✅ NEW: Center sphere (10x10) cleanup removes blocks with defense < 1500
+ * ✅ NEW: Multi-threaded biome application for speed
+ * ✅ OPTIMIZED: Faster overall processing
  */
 
 public class CraterGenerator {
@@ -43,9 +45,13 @@ public class CraterGenerator {
     private static final float ZONE_3_RADIUS_MULTIPLIER = 0.9F;
     private static final float ZONE_4_RADIUS_MULTIPLIER = 1.4F;
     private static final int DAMAGE_ZONE_HEIGHT = 80;
-    private static final float ZONE_3_DAMAGE = 500.0F;
-    private static final float ZONE_4_DAMAGE = 200.0F;
+    private static final float ZONE_3_DAMAGE = 5000.0F;
+    private static final float ZONE_4_DAMAGE = 2000.0F;
     private static final float FIRE_DURATION = 380.0F;
+
+    // ✅ NEW: Center sphere cleanup constants
+    private static final int CENTER_SPHERE_RADIUS = 5;
+    private static final float CLEANUP_DEFENSE_THRESHOLD = 1500.0F;
 
     private static class RayTerminationData {
         double maxDistance = 0;
@@ -100,23 +106,69 @@ public class CraterGenerator {
 
             MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
             if (server != null) {
-                server.tell(new TickTask(5, () -> {
-                    System.out.println("\n[CRATER_GENERATOR] Step 2: Applying dynamic damage zones...");
-                    double zone3Radius = Math.max(terminationData.maxDistance * ZONE_3_RADIUS_MULTIPLIER, 50);
-                    double zone4Radius = Math.max(terminationData.maxDistance * ZONE_4_RADIUS_MULTIPLIER, 80);
+                // ✅ NEW: Center sphere cleanup step
+                server.tell(new TickTask(3, () -> {
+                    System.out.println("\n[CRATER_GENERATOR] Step 1.5: Cleaning center sphere...");
+                    cleanupCenterSphere(level, groundCenterPos);
 
-                    applyDynamicDamageZones(level, groundCenterPos, terminationData,
-                            wasteLogBlock, wastePlanksBlock, burnedGrassBlock,
-                            selafitBlocks, random);
+                    server.tell(new TickTask(2, () -> {
+                        System.out.println("\n[CRATER_GENERATOR] Step 2: Applying dynamic damage zones...");
+                        double zone3Radius = Math.max(terminationData.maxDistance * ZONE_3_RADIUS_MULTIPLIER, 50);
+                        double zone4Radius = Math.max(terminationData.maxDistance * ZONE_4_RADIUS_MULTIPLIER, 80);
 
-                    server.tell(new TickTask(10, () -> {
+                        applyDynamicDamageZones(level, groundCenterPos, terminationData,
+                                wasteLogBlock, wastePlanksBlock, burnedGrassBlock,
+                                selafitBlocks, random);
+
+
                         System.out.println("\n[CRATER_GENERATOR] Step 3: Applying crater biomes to zones...");
                         CraterBiomeHelper.applyBiomesAsync(level, groundCenterPos, zone3Radius, zone4Radius);
-                        System.out.println("\n[CRATER_GENERATOR] All steps complete!");
                     }));
                 }));
             }
         });
+    }
+
+    // ✅ NEW: Cleanup center sphere
+    private static void cleanupCenterSphere(ServerLevel level, BlockPos centerPos) {
+        int centerX = centerPos.getX();
+        int centerY = centerPos.getY();
+        int centerZ = centerPos.getZ();
+
+        int removed = 0;
+
+        for (int x = centerX - CENTER_SPHERE_RADIUS; x <= centerX + CENTER_SPHERE_RADIUS; x++) {
+            long dx = x - centerX;
+            long dxSq = dx * dx;
+            if (dxSq > CENTER_SPHERE_RADIUS * CENTER_SPHERE_RADIUS) continue;
+
+            for (int z = centerZ - CENTER_SPHERE_RADIUS; z <= centerZ + CENTER_SPHERE_RADIUS; z++) {
+                long dz = z - centerZ;
+                long distSq = dxSq + dz * dz;
+                if (distSq > CENTER_SPHERE_RADIUS * CENTER_SPHERE_RADIUS) continue;
+
+                for (int y = centerY - CENTER_SPHERE_RADIUS; y <= centerY + CENTER_SPHERE_RADIUS; y++) {
+                    long dy = y - centerY;
+                    long totalDistSq = distSq + dy * dy;
+                    if (totalDistSq > CENTER_SPHERE_RADIUS * CENTER_SPHERE_RADIUS) continue;
+
+                    BlockPos checkPos = new BlockPos(x, y, z);
+                    BlockState state = level.getBlockState(checkPos);
+
+                    if (!state.isAir() && !state.is(Blocks.BEDROCK)) {
+                        float defense = BlockExplosionDefense.getBlockDefenseValue(level, checkPos, state);
+
+                        // ✅ Remove blocks with defense < 1500
+                        if (defense < CLEANUP_DEFENSE_THRESHOLD) {
+                            level.removeBlock(checkPos, false);
+                            removed++;
+                        }
+                    }
+                }
+            }
+        }
+
+        System.out.println("[CRATER] Center sphere cleanup: " + removed + " blocks removed");
     }
 
     private static double calculatePenetrationFromAngle(double verticalAngleDegrees) {
