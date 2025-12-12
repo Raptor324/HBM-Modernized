@@ -19,12 +19,13 @@ import net.minecraft.tags.BlockTags;
 import java.util.*;
 
 /**
- * Crater Generator v17.0 - CRITICAL RAY COORDINATE FIX
+ * Crater Generator v17.1 - EXPLOSION CENTER AT GROUND LEVEL
  *
  * ✅ FIXED: Raycast distortion when triggered from blocks
  * ✅ FIXED: Math.floor() rounding errors for negative directions
  * ✅ FIXED: Proper center-to-center ray calculation
  * ✅ FIXED: Race condition in block collection
+ * ✅ FIXED: Explosion center now at ground level (below the bomb)
  * ✅ VERIFIED: Works correctly from both entities and blocks
  */
 
@@ -39,8 +40,8 @@ public class CraterGenerator {
     private static final double MIN_PENETRATION = 500.0;
     private static final double MAX_RAY_DISTANCE = 100.0;
     private static final int RAY_THICKNESS = 2;
-    private static final float ZONE_3_RADIUS_MULTIPLIER = 0.8F;
-    private static final float ZONE_4_RADIUS_MULTIPLIER = 1.6F;
+    private static final float ZONE_3_RADIUS_MULTIPLIER = 0.9F;
+    private static final float ZONE_4_RADIUS_MULTIPLIER = 1.4F;
     private static final int DAMAGE_ZONE_HEIGHT = 80;
     private static final float ZONE_3_DAMAGE = 500.0F;
     private static final float ZONE_4_DAMAGE = 200.0F;
@@ -62,6 +63,9 @@ public class CraterGenerator {
             Block wastePlanksBlock,
             Block burnedGrassBlock) {
 
+        // ✅ CRITICAL FIX v17.1: Center is at ground level (below the bomb position)
+        BlockPos groundCenterPos = centerPos.below();
+
         RandomSource random = level.random;
         Block[] selafitBlocks = {sellafit1, sellafit2, sellafit3, sellafit4};
         Set<BlockPos> craterBlocksSet = Collections.synchronizedSet(new HashSet<>());
@@ -75,21 +79,22 @@ public class CraterGenerator {
         long startTime = System.currentTimeMillis();
         System.out.println("\n========================================");
         System.out.println("[CRATER_GENERATOR] START: Generating crater...");
-        System.out.println("Center: " + centerPos);
+        System.out.println("Bomb Position: " + centerPos);
+        System.out.println("Crater Center (Ground): " + groundCenterPos);
         System.out.println("Total Rays: " + TOTAL_RAYS);
         System.out.println("========================================\n");
 
-        BlockPos below = centerPos.below();
+        BlockPos below = groundCenterPos.below();
         BlockState belowState = level.getBlockState(below);
 
         if (!belowState.isAir() && !belowState.is(Blocks.BEDROCK)) {
             craterBlocksSet.add(below);
-            distributeBlockToRings(centerPos, below, (int) MAX_RAY_DISTANCE, rings);
+            distributeBlockToRings(groundCenterPos, below, (int) MAX_RAY_DISTANCE, rings);
         }
 
-        collectSphericRaysAsync(level, centerPos, craterBlocksSet, rings, terminationData, () -> {
+        collectSphericRaysAsync(level, groundCenterPos, craterBlocksSet, rings, terminationData, () -> {
             System.out.println("\n[CRATER_GENERATOR] Step 1: Finalizing crater structure...");
-            finalizeCrater(level, centerPos, rings, craterBlocksSet,
+            finalizeCrater(level, groundCenterPos, rings, craterBlocksSet,
                     selafitBlocks, random,
                     wasteLogBlock, wastePlanksBlock, burnedGrassBlock, startTime);
 
@@ -100,13 +105,13 @@ public class CraterGenerator {
                     double zone3Radius = Math.max(terminationData.maxDistance * ZONE_3_RADIUS_MULTIPLIER, 50);
                     double zone4Radius = Math.max(terminationData.maxDistance * ZONE_4_RADIUS_MULTIPLIER, 80);
 
-                    applyDynamicDamageZones(level, centerPos, terminationData,
+                    applyDynamicDamageZones(level, groundCenterPos, terminationData,
                             wasteLogBlock, wastePlanksBlock, burnedGrassBlock,
                             selafitBlocks, random);
 
                     server.tell(new TickTask(10, () -> {
                         System.out.println("\n[CRATER_GENERATOR] Step 3: Applying crater biomes to zones...");
-                        CraterBiomeHelper.applyBiomesAsync(level, centerPos, zone3Radius, zone4Radius);
+                        CraterBiomeHelper.applyBiomesAsync(level, groundCenterPos, zone3Radius, zone4Radius);
                         System.out.println("\n[CRATER_GENERATOR] All steps complete!");
                     }));
                 }));
