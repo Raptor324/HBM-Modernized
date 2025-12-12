@@ -1301,6 +1301,16 @@ public class ModItems {
             () -> new Item(new Item.Properties().stacksTo(1))); // В стаке только 1 штука
 
 
+        // Медленный источник (500 mB/t)
+        public static final RegistryObject<Item> INFINITE_WATER_500 = ITEMS.register("inf_water",
+                () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 500));
+
+        // Быстрый источник (5000 mB/t)
+        public static final RegistryObject<Item> INFINITE_WATER_5000 = ITEMS.register("inf_water_mk2",
+                () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 5000));
+
+
+
     //=============================== ВЁДРА ДЛЯ ЖИДКОСТЕЙ ===============================//
 
     public static final RegistryObject<Item> CRUDE_OIL_BUCKET = ITEMS.register("bucket_crude_oil",

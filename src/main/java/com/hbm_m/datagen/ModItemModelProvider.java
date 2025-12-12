@@ -160,6 +160,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.CREATIVE_BATTERY);
         simpleItem(ModItems.TEMPLATE_FOLDER);
         simpleItem(ModItems.STRAWBERRY);
+        simpleItem(ModItems.INFINITE_WATER_500);
+        simpleItem(ModItems.INFINITE_WATER_5000);
 
         simpleItem(ModItems.LIMESTONE);
         simpleItem(ModItems.MALACHITE_CHUNK);
