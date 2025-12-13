@@ -1,21 +1,40 @@
-# ================= Gradle & Build Artifacts =================
-# Эти файлы создаются при сборке и не должны быть в репозитории.
-/build/
-/.gradle/
-/run/
-/run-data/
+# Build Systems (Generated, Reproducible)
+# ———————————————————————————————————————
+.gradle/
+build/
+out/
 
-# ================= IDE Specific =================
-# Файлы настроек для разных сред разработки.
-# Они специфичны для каждого пользователя и не должны быть общими.
-.editorconfig
+# Gradle wrapper (can be regenerated)
+gradlew
+gradlew.bat
+gradle/wrapper/gradle-wrapper.jar
+
+
+# Runtime & Dev Environments
+# ———————————————————————————————————————
+run/
+run-data/
+logs/
+temp/
+
+# JVM crash dumps
+hs_err_pid*
+replay_pid*
+
+
+# Generated Sources & Data
+# ———————————————————————————————————————
+src/generated/
+
+
+# IDEs (User-specific, never shared)
+# ———————————————————————————————————————
 
 # IntelliJ IDEA
 .idea/
 *.iml
 *.iws
 *.ipr
-out/
 
 # Eclipse
 .classpath
@@ -25,39 +44,44 @@ bin/
 
 # Visual Studio Code
 .vscode/
-.cursor
+
+# Cursor
+.cursor/
 
 # Sublime Text
 *.sublime-project
 *.sublime-workspace
 
-# ================= Generated Files =================
-/src/generated/
 
-# ================= Logs & Temporary Files =================
-# Логи, дампы ошибок и временные файлы.
-*.log
-hs_err_pid*
-replay_pid*
-temp/
-logs/
-/ExampleProject/
-/OLD/
-agent
-ideas
-# ================= OS Specific =================
-# Системные файлы, которые могут случайно появиться.
+# OS / File Managers / Editors
+# ———————————————————————————————————————
 .DS_Store
 Thumbs.db
-.kilocode
 desktop.ini
 
-# ================= Minecraft/Forge Specific =================
-# Файлы, генерируемые средой разработки Forge.
+# Linux / misc
+*~
+*.swp
+*.swo
+
+
+# Minecraft / Forge / Modding Artifacts
+# ———————————————————————————————————————
 natives/
 *.srg
 *.tsrg
 forge*changelog.txt
 .fake
+
+
+# Tooling / AI / Misc Noise
+# ———————————————————————————————————————
+.editorconfig
+.kilocode
+agent
+ideas
+OLD/
+ExampleProject/
+
+# GitHub local-only helpers
 .github/copilot-instructions.md
-.cursor/
