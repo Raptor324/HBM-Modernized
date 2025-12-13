@@ -1,5 +1,96 @@
-# Disable autocrlf on generated files, they always generate with LF
-# Add any extra files or paths here to make git stop saying they
-# are changed when only line endings change.
-src/generated/**/.cache/cache text eol=lf
-src/generated/**/*.json text eol=lf
+# Global policy
+# ———————————————————————————————————————
+
+# All text files are stored with LF in the repository
+* text=auto eol=lf
+
+
+# Runtime & Dev Environments
+# ———————————————————————————————————————
+run-data/**       -text
+temp/**           -text
+
+# JVM crash dumps
+hs_err_pid*       -text
+replay_pid*       -text
+
+
+# Generated Sources & Data
+# (Tracked, but never manually edited)
+# ———————————————————————————————————————
+src/generated/**              linguist-generated=true text eol=lf
+src/generated/**/.cache/**    -text
+src/generated/**/*.json      text eol=lf
+
+
+# IDEs (User-specific)
+# ———————————————————————————————————————
+*.iml             -text
+*.iws             -text
+*.ipr             -text
+
+.settings/**      -text
+.classpath        -text
+.project          -text
+bin/**            -text
+
+.vscode/**        -text
+.cursor/**        -text
+
+*.sublime-project -text
+*.sublime-workspace -text
+
+
+# OS / File Managers / Editors
+# ———————————————————————————————————————
+.DS_Store         -text
+Thumbs.db         -text
+desktop.ini       -text
+
+*~                -text
+*.swp             -text
+*.swo             -text
+
+
+# Minecraft / Forge / Modding Artifacts
+# ———————————————————————————————————————
+natives/**        -text
+*.srg             -text
+*.tsrg            -text
+forge*changelog.txt text eol=lf
+.fake             -text
+
+
+# Tooling / AI / Misc Noise
+# ———————————————————————————————————————
+.editorconfig     text eol=lf
+.kilocode         -text
+agent/**          -text
+ideas/**          -text
+OLD/**            -text
+ExampleProject/** -text
+
+.github/copilot-instructions.md text eol=lf
+
+
+# Scripts
+# ———————————————————————————————————————
+*.sh              text eol=lf
+*.bash            text eol=lf
+*.ps1             text eol=crlf
+*.bat             text eol=crlf
+
+
+# Binary formats (never normalize)
+# ———————————————————————————————————————
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.webp binary
+*.gif  binary
+*.ico  binary
+
+*.jar  binary
+*.zip  binary
+*.7z   binary
+*.class binary
