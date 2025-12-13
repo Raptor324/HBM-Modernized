@@ -1,265 +1,396 @@
 package com.hbm_m.util;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.event.entity.player.ItemTooltipEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+import com.hbm_m.block.ModBlocks;
 
 /**
- * Система защиты от взрывов для блоков
+ * 💥 СИСТЕМА ЗАЩИТЫ БЛОКОВ С КОЭФФИЦИЕНТОМ ПРОБИТИЯ v3.0
  *
- * Шкала прочности: 0-15
- * - 0: Выпадают 100%, независимо от расстояния
- * - 1-5: Уничтожаются или становятся селлафитом (90%, 85%, 80%, 75%, 70%)
- * - 6-10: Становятся селлафитом или ничего (70%, 65%, 60%, 55%, 50%)
- * - 11-14: Становятся селлафитом или ничего (30%, 15%, 5%, 1%)
- * - 15: Невозможно уничтожить
+ * ✅ Логичные коэффициенты по материалам:
+ * ✅ Бетон: 250
+ * ✅ Бетонные кирпичи: 350
+ * ✅ Метеорит: 500
+ * ✅ Кафель, мозаика: 180-220
+ * ✅ Специальный бетон (усиленный): 400-600
+ * ✅ Тултип с золотым цветом взрывоустойчивости (ИНТЕГРИРОВАН)
  */
+
+@Mod.EventBusSubscriber(modid = "hbm_m", bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class BlockExplosionDefense {
 
-    // Система защиты от взрывов по кольцам
-    public static class ExplosionDefenseResult {
-        public boolean shouldBreak;        // Разрушить ли блок?
-        public boolean replaceWithSellafit; // Заменить ли на селлафит?
+    /**
+     * ✅ ГЛАВНЫЙ МЕТОД: Получить коэффициент защиты блока
+     * Основано на взрывоустойчивости и типе материала
+     */
+    public static float getBlockDefenseValue(ServerLevel level, BlockPos pos, BlockState state) {
+        if (state == null) return 0.0F;
 
-        public ExplosionDefenseResult(boolean shouldBreak, boolean replaceWithSellafit) {
-            this.shouldBreak = shouldBreak;
-            this.replaceWithSellafit = replaceWithSellafit;
+        // Бедрок - абсолютная защита
+        if (state.is(Blocks.BEDROCK)) {
+            return 10_000.0F;
+        }
+
+        if (level != null && pos != null && state.getDestroySpeed(level, pos) < 0) {
+            return 10_000.0F;
+        }
+
+        Block block = state.getBlock();
+
+        // === ЯВНО СУПЕР-ПРОЧНЫЕ БЛОКИ ===
+        if (block == Blocks.OBSIDIAN || block == Blocks.CRYING_OBSIDIAN) {
+            return 250.0F;
+        }
+
+        if (block == Blocks.ANCIENT_DEBRIS) {
+            return 400.0F;
+        }
+
+        if (block == Blocks.NETHERITE_BLOCK) {
+            return 300.0F;
+        }
+
+        // ========== ПОЛЬЗОВАТЕЛЬСКИЕ БЛОКИ ==========
+
+        // === БЕТОН (базовый) - 250 ===
+        if (isConcreteBlock(block)) {
+            return 250.0F;
+        }
+
+        // === МЕТЕОРИТ - 500 ===
+        if (isMeteorBlock(block)) {
+            return 500.0F;
+        }
+
+        // === БЕТОННЫЕ КИРПИЧИ - 350 ===
+        if (isBrickBlock(block)) {
+            return 350.0F;
+        }
+
+        // === КАФЕЛЬ И МОЗАИКА - 200 ===
+        if (isTileBlock(block)) {
+            return 200.0F;
+        }
+
+        // === СПЕЦИАЛЬНЫЕ МАТЕРИАЛЫ ===
+        if (isDepthBlock(block)) {
+            return 280.0F;
+        }
+
+        if (isGneissBlock(block)) {
+            return 260.0F;
+        }
+
+        if (isBasaltBlock(block)) {
+            return 240.0F;
+        }
+
+        // === ЛЕСТНИЦЫ (половина защиты от базового блока) ===
+        if (isStairsBlock(block)) {
+            return 150.0F;
+        }
+
+        // === СТАНДАРТНАЯ КОНВЕРСИЯ ВЗРЫВОУСТОЙЧИВОСТИ ===
+        float blastRes = getBlastResistance(state);
+
+        // Диапазон 0-50: защита 5-10 (линейно)
+        if (blastRes <= 50.0F) {
+            float t = blastRes / 50.0F;
+            return 5.0F + t * 5.0F;
+        }
+
+        // Диапазон 50-250: защита 25
+        if (blastRes <= 250.0F) {
+            return 25.0F;
+        }
+
+        // Диапазон 250-1000: защита 50
+        if (blastRes <= 1000.0F) {
+            return 50.0F;
+        }
+
+        // 1000+: защита 100
+        return 100.0F;
+    }
+
+    // ========== ОБРАБОТЧИК ТУЛТИПОВ (EventHandler встроен в класс) ==========
+
+    /**
+     * ✅ ОБРАБОТЧИК СОБЫТИЙ ТУЛТИПОВ
+     * Автоматически добавляет информацию о взрывоустойчивости к блокам
+     */
+    @SubscribeEvent
+    public static void onItemTooltip(ItemTooltipEvent event) {
+        ItemStack stack = event.getItemStack();
+
+        // Проверяем, это ли BlockItem (блок в виде предмета)
+        if (!(stack.getItem() instanceof net.minecraft.world.item.BlockItem blockItem)) {
+            return;
+        }
+
+        // Получаем блок из предмета
+        var block = blockItem.getBlock();
+
+        // Проверяем, это ли один из наших модульных блоков
+        if (isModularBlock(block)) {
+            // Определяем коэффициент защиты по типу блока
+            float defenseValue = getDefenseValueForBlock(block);
+
+            // Добавляем строку в тултип золотым цветом
+            if (defenseValue >= 10_000.0F) {
+                event.getToolTip().add(Component.literal("§6Взрывоустойчивость: §cНЕДОЕМИЕ§r"));
+            } else if (defenseValue > 0) {
+                event.getToolTip().add(Component.literal(
+                        String.format("§6Взрывоустойчивость: §e%.0f§r", defenseValue)
+                ));
+            }
         }
     }
 
     /**
-     * Возвращает уровень защиты блока (0-15)
-     * Если уровень не задан, использует прочность блока для расчета
+     * ✅ Проверка: это ли один из наших модульных блоков
      */
-    public static int getExplosionDefenseLevel(BlockState state, ServerLevel level, BlockPos pos) {
-        // Здесь можно добавить кастомную систему через NBT данные блока
-        // Пока используем прочность как основу
-        float hardness = state.getDestroySpeed(level, pos);
-
-        // Преобразуем прочность в уровень защиты (0-15)
-        if (hardness < 0) return 15; // Bedrock-подобные блоки
-        if (hardness < 1.0F) return 0;  // Мягкие блоки (доски, листва и тп)
-        if (hardness < 2.0F) return 1;  // Булыжник, земля
-        if (hardness < 3.0F) return 2;  // Камень
-        if (hardness < 5.0F) return 3;  // Железная руда
-        if (hardness < 10.0F) return 5; // Ок, алмазная руда
-        if (hardness < 15.0F) return 8; // Обсидиан
-        if (hardness < 30.0F) return 10; // Древний обсидиан
-        if (hardness < 50.0F) return 14; // Очень прочные материалы
-        return 15; // Bedrock
+    private static boolean isModularBlock(Block block) {
+        return isConcreteBlock(block) ||
+                isMeteorBlock(block) ||
+                isBrickBlock(block) ||
+                isTileBlock(block) ||
+                isDepthBlock(block) ||
+                isGneissBlock(block) ||
+                isBasaltBlock(block) ||
+                isStairsBlock(block);
     }
 
     /**
-     * Вычисляет, что случится с блоком при взрыве
-     *
-     * @param level Уровень
-     * @param pos Позиция блока
-     * @param centerPos Центр взрыва
-     * @param maxRadius Максимальный радиус взрыва
-     * @param random Random
-     * @return ExplosionDefenseResult с информацией о судьбе блока
+     * ✅ Получить защиту по типу блока
      */
-    public static ExplosionDefenseResult calculateExplosionDamage(
-            ServerLevel level,
-            BlockPos pos,
-            BlockPos centerPos,
-            float maxRadius,
-            RandomSource random) {
+    private static float getDefenseValueForBlock(Block block) {
+        if (isConcreteBlock(block)) return 250.0F;
+        if (isMeteorBlock(block)) return 500.0F;
+        if (isBrickBlock(block)) return 350.0F;
+        if (isTileBlock(block)) return 200.0F;
+        if (isDepthBlock(block)) return 280.0F;
+        if (isGneissBlock(block)) return 260.0F;
+        if (isBasaltBlock(block)) return 240.0F;
+        if (isStairsBlock(block)) return 150.0F;
 
-        BlockState state = level.getBlockState(pos);
-        int defenseLevel = getExplosionDefenseLevel(state, level, pos);
+        return 0.0F;
+    }
 
-        // Вычисляем расстояние до центра в блоках
-        double dx = pos.getX() - centerPos.getX();
-        double dz = pos.getZ() - centerPos.getZ();
-        double horizontalDistance = Math.sqrt(dx * dx + dz * dz);
+    // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ КЛАССИФИКАЦИИ ==========
 
-        // Определяем номер кольца (0-5)
-        int ring = calculateRingIndex(horizontalDistance, maxRadius, 6);
-
-        // Применяем систему защиты в зависимости от кольца и уровня защиты
-        return applyExplosionDefense(defenseLevel, ring, random);
+    /**
+     * ✅ Базовые БЕТОННЫЕ блоки - 250
+     */
+    private static boolean isConcreteBlock(Block block) {
+        return block == ModBlocks.CONCRETE_BLACK.get() ||
+                block == ModBlocks.CONCRETE_WHITE.get() ||
+                block == ModBlocks.CONCRETE_RED.get() ||
+                block == ModBlocks.CONCRETE_GREEN.get() ||
+                block == ModBlocks.CONCRETE_BLUE.get() ||
+                block == ModBlocks.CONCRETE_YELLOW.get() ||
+                block == ModBlocks.CONCRETE_CYAN.get() ||
+                block == ModBlocks.CONCRETE_GRAY.get() ||
+                block == ModBlocks.CONCRETE_LIGHT_BLUE.get() ||
+                block == ModBlocks.CONCRETE_LIME.get() ||
+                block == ModBlocks.CONCRETE_MAGENTA.get() ||
+                block == ModBlocks.CONCRETE_ORANGE.get() ||
+                block == ModBlocks.CONCRETE_PINK.get() ||
+                block == ModBlocks.CONCRETE_PURPLE.get() ||
+                block == ModBlocks.CONCRETE_BROWN.get() ||
+                block == ModBlocks.CONCRETE_SILVER.get() ||
+                block == ModBlocks.CONCRETE_ASBESTOS.get() ||
+                block == ModBlocks.CONCRETE_FLAT.get() ||
+                block == ModBlocks.CONCRETE_PILLAR.get() ||
+                block == ModBlocks.CONCRETE_MARKED.get() ||
+                block == ModBlocks.CONCRETE_COLORED_BRONZE.get() ||
+                block == ModBlocks.CONCRETE_COLORED_INDIGO.get() ||
+                block == ModBlocks.CONCRETE_COLORED_MACHINE.get() ||
+                block == ModBlocks.CONCRETE_COLORED_MACHINE_STRIPE.get() ||
+                block == ModBlocks.CONCRETE_COLORED_PINK.get() ||
+                block == ModBlocks.CONCRETE_COLORED_PURPLE.get() ||
+                block == ModBlocks.CONCRETE_COLORED_SAND.get();
     }
 
     /**
-     * Определяет номер кольца на основе расстояния
+     * ✅ УСИЛЕННЫЙ БЕТОН - 400
      */
-    private static int calculateRingIndex(double distance, float maxRadius, int totalRings) {
-        if (distance >= maxRadius) return totalRings - 1;
-        int ring = (int) (distance / maxRadius * totalRings);
-        return Math.min(ring, totalRings - 1);
+    private static boolean isSpecialConcreteBlock(Block block) {
+        return block == ModBlocks.CONCRETE_SUPER.get() ||
+                block == ModBlocks.CONCRETE_SUPER_M0.get() ||
+                block == ModBlocks.CONCRETE_SUPER_M1.get() ||
+                block == ModBlocks.CONCRETE_SUPER_M2.get() ||
+                block == ModBlocks.CONCRETE_SUPER_M3.get() ||
+                block == ModBlocks.CONCRETE_SUPER_BROKEN.get() ||
+                block == ModBlocks.CONCRETE_REBAR.get() ||
+                block == ModBlocks.CONCRETE_REBAR_ALT.get();
     }
 
     /**
-     * Применяет систему защиты от взрывов в зависимости от кольца и уровня защиты
-     *
-     * Логика:
-     * КОЛЬЦА 0-3 (БЛИЗКО К ЦЕНТРУ, 0-66% расстояния):
-     *   - Уровень 0: Разрушить (100%)
-     *   - Уровень 1-10: Разрушить (100%)
-     *   - Уровень 11-14: Селлафит (100%)
-     *   - Уровень 15: Ничего (0%)
-     *
-     * КОЛЬЦА 4-5 (ДАЛЕКО ОТ ЦЕНТРА, 66-100% расстояния):
-     *   - Уровень 0: Разрушить (100%)
-     *   - Уровень 1-5: Разрушить (100%)
-     *   - Уровень 6-10: Селлафит (100%)
-     *   - Уровень 11-14: Применить вероятность
-     *   - Уровень 15: Ничего (0%)
+     * ✅ МЕТЕОРИТ - 500
      */
-    private static ExplosionDefenseResult applyExplosionDefense(int defenseLevel, int ring, RandomSource random) {
-        // Уровень 15 - невозможно уничтожить
-        if (defenseLevel == 15) {
-            return new ExplosionDefenseResult(false, false);
-        }
-
-        // Уровень 0 - выпадает всегда, независимо от кольца
-        if (defenseLevel == 0) {
-            return new ExplosionDefenseResult(true, false);
-        }
-
-        // КОЛЬЦА 0-3 (близко к центру)
-        if (ring <= 1) {
-            // Уровень 1-10: Разрушить (100%)
-            if (defenseLevel >= 1 && defenseLevel <= 10) {
-                return new ExplosionDefenseResult(true, false);
-            }
-            // Уровень 11-14: Селлафит (100%)
-            if (defenseLevel >= 11 && defenseLevel <= 14) {
-                return new ExplosionDefenseResult(true, true);
-            }
-        }
-
-        // КОЛЬЦА 2-5 (далеко от центра)
-        if (ring >= 2) {
-            // Уровень 1-5: Разрушить (100%)
-            if (defenseLevel >= 1 && defenseLevel <= 5) {
-                return new ExplosionDefenseResult(true, false);
-            }
-            // Уровень 6-10: Применить вероятность
-            if (defenseLevel >= 6 && defenseLevel <= 10) {
-                float sellafitChance = getSelafitChanceForDefenseLevel(defenseLevel);
-                boolean becomesSellafit = random.nextFloat() < sellafitChance;
-                return new ExplosionDefenseResult(becomesSellafit, becomesSellafit);
-            }
-            // Уровень 11-14: Применить вероятность
-            if (defenseLevel >= 11 && defenseLevel <= 14) {
-                float sellafitChance = getSelafitChanceForDefenseLevel(defenseLevel);
-                boolean becomesSellafit = random.nextFloat() < sellafitChance;
-                return new ExplosionDefenseResult(becomesSellafit, becomesSellafit);
-            }
-        }
-
-        // Не произошло ничего
-        return new ExplosionDefenseResult(false, false);
+    private static boolean isMeteorBlock(Block block) {
+        return block == ModBlocks.METEOR.get() ||
+                block == ModBlocks.METEOR_BRICK.get() ||
+                block == ModBlocks.METEOR_BRICK_CHISELED.get() ||
+                block == ModBlocks.METEOR_BRICK_CRACKED.get() ||
+                block == ModBlocks.METEOR_BRICK_MOSSY.get() ||
+                block == ModBlocks.METEOR_COBBLE.get() ||
+                block == ModBlocks.METEOR_CRUSHED.get() ||
+                block == ModBlocks.METEOR_PILLAR.get() ||
+                block == ModBlocks.METEOR_POLISHED.get() ||
+                block == ModBlocks.METEOR_TREASURE.get();
     }
 
     /**
-     * Возвращает шанс того, что блок станет селлафитом для уровней 11-14
-     * 11 - 30%, 12 - 15%, 13 - 5%, 14 - 1%
+     * ✅ БЕТОННЫЕ КИРПИЧИ - 350
      */
-    private static float getSelafitChanceForDefenseLevel(int level) {
-        return switch (level) {
-            case 11 -> 0.30F;
-            case 12 -> 0.15F;
-            case 13 -> 0.05F;
-            case 14 -> 0.01F;
-            default -> 0.0F;
-        };
+    private static boolean isBrickBlock(Block block) {
+        return block == ModBlocks.BRICK_BASE.get() ||
+                block == ModBlocks.BRICK_DUCRETE.get() ||
+                block == ModBlocks.BRICK_FIRE.get() ||
+                block == ModBlocks.BRICK_LIGHT.get() ||
+                block == ModBlocks.BRICK_OBSIDIAN.get();
     }
 
     /**
-     * Альтернативная система с вероятностью разрушения для блоков 1-10
-     * (Если вы хотите использовать старую систему с шансами для всех блоков)
+     * ✅ КАФЕЛЬ И МОЗАИКА - 200
      */
-    public static ExplosionDefenseResult calculateExplosionDamageWithBaseProbability(
-            ServerLevel level,
-            BlockPos pos,
-            BlockPos centerPos,
-            float maxRadius,
-            RandomSource random) {
-
-        BlockState state = level.getBlockState(pos);
-        int defenseLevel = getExplosionDefenseLevel(state, level, pos);
-
-        double dx = pos.getX() - centerPos.getX();
-        double dz = pos.getZ() - centerPos.getZ();
-        double horizontalDistance = Math.sqrt(dx * dx + dz * dz);
-        int ring = calculateRingIndex(horizontalDistance, maxRadius, 6);
-
-        // Уровень 0 - выпадает всегда
-        if (defenseLevel == 0) {
-            return new ExplosionDefenseResult(true, false);
-        }
-
-        // Уровень 15 - не трогать
-        if (defenseLevel == 15) {
-            return new ExplosionDefenseResult(false, false);
-        }
-
-        // Уровень 1-5: Шанс уничтожиться или стать селлафитом
-        if (defenseLevel >= 1 && defenseLevel <= 5) {
-            float destroyChance = getDestroyChanceForLevel1to5(defenseLevel);
-            if (random.nextFloat() < destroyChance) {
-                return new ExplosionDefenseResult(true, false);
-            } else {
-                return new ExplosionDefenseResult(true, true);
-            }
-        }
-
-        // Уровень 6-10: Шанс стать селлафитом или ничего
-        if (defenseLevel >= 6 && defenseLevel <= 10) {
-            float selafitChance = getSelafitChanceForLevel6to10(defenseLevel);
-            if (random.nextFloat() < selafitChance) {
-                return new ExplosionDefenseResult(true, true);
-            } else {
-                return new ExplosionDefenseResult(false, false);
-            }
-        }
-
-        // Уровень 11-14
-        if (defenseLevel >= 11 && defenseLevel <= 14) {
-            float selafitChance = getSelafitChanceForDefenseLevel(defenseLevel);
-            if (random.nextFloat() < selafitChance) {
-                return new ExplosionDefenseResult(true, true);
-            } else {
-                return new ExplosionDefenseResult(false, false);
-            }
-        }
-
-        return new ExplosionDefenseResult(false, false);
+    private static boolean isTileBlock(Block block) {
+        return block == ModBlocks.CONCRETE_TILE.get() ||
+                block == ModBlocks.CONCRETE_TILE_TREFOIL.get() ||
+                block == ModBlocks.VINYL_TILE.get() ||
+                block == ModBlocks.VINYL_TILE_SMALL.get() ||
+                block == ModBlocks.DEPTH_TILES.get() ||
+                block == ModBlocks.DEPTH_NETHER_TILES.get() ||
+                block == ModBlocks.GNEISS_TILE.get();
     }
 
     /**
-     * Шанс разрушения для уровней 1-5
-     * 1 - 90%, 2 - 85%, 3 - 80%, 4 - 75%, 5 - 70%
+     * ✅ DEPTH МАТЕРИАЛЫ - 280
      */
-    private static float getDestroyChanceForLevel1to5(int level) {
-        return switch (level) {
-            case 1 -> 0.90F;
-            case 2 -> 0.85F;
-            case 3 -> 0.80F;
-            case 4 -> 0.75F;
-            case 5 -> 0.70F;
-            default -> 0.0F;
-        };
+    private static boolean isDepthBlock(Block block) {
+        return block == ModBlocks.DEPTH_BRICK.get() ||
+                block == ModBlocks.DEPTH_NETHER_BRICK.get() ||
+                block == ModBlocks.DEPTH_STONE_NETHER.get();
     }
 
     /**
-     * Шанс превращения в селлафит для уровней 6-10
-     * 6 - 70%, 7 - 65%, 8 - 60%, 9 - 55%, 10 - 50%
+     * ✅ ГНЕЙСС - 260
      */
-    private static float getSelafitChanceForLevel6to10(int level) {
-        return switch (level) {
-            case 6 -> 0.70F;
-            case 7 -> 0.65F;
-            case 8 -> 0.60F;
-            case 9 -> 0.55F;
-            case 10 -> 0.50F;
-            default -> 0.0F;
-        };
+    private static boolean isGneissBlock(Block block) {
+        return block == ModBlocks.GNEISS_BRICK.get() ||
+                block == ModBlocks.GNEISS_CHISELED.get() ||
+                block == ModBlocks.GNEISS_STONE.get();
+    }
+
+    /**
+     * ✅ БАЗАЛЬТ - 240
+     */
+    private static boolean isBasaltBlock(Block block) {
+        return block == ModBlocks.BASALT_BRICK.get() ||
+                block == ModBlocks.BASALT_POLISHED.get() ||
+                block == ModBlocks.ASPHALT.get() ||
+                block == ModBlocks.BARRICADE.get();
+    }
+
+    /**
+     * ✅ ЛЕСТНИЦЫ (STAIRS) - 150 (половина от базового)
+     */
+    private static boolean isStairsBlock(Block block) {
+        return block == ModBlocks.CONCRETE_ASBESTOS_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_BLACK_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_BLUE_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_BROWN_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_COLORED_BRONZE_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_COLORED_INDIGO_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_COLORED_MACHINE_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_COLORED_PINK_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_COLORED_PURPLE_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_COLORED_SAND_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_CYAN_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_GRAY_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_GREEN_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_LIGHT_BLUE_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_LIME_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_MAGENTA_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_ORANGE_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_PINK_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_PURPLE_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_RED_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_SILVER_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_WHITE_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_YELLOW_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_SUPER_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_SUPER_M0_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_SUPER_M1_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_SUPER_M2_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_SUPER_M3_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_SUPER_BROKEN_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_REBAR_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_FLAT_STAIRS.get() ||
+                block == ModBlocks.CONCRETE_TILE_STAIRS.get() ||
+                block == ModBlocks.DEPTH_BRICK_STAIRS.get() ||
+                block == ModBlocks.DEPTH_TILES_STAIRS.get() ||
+                block == ModBlocks.DEPTH_NETHER_BRICK_STAIRS.get() ||
+                block == ModBlocks.DEPTH_NETHER_TILES_STAIRS.get() ||
+                block == ModBlocks.GNEISS_TILE_STAIRS.get() ||
+                block == ModBlocks.GNEISS_BRICK_STAIRS.get() ||
+                block == ModBlocks.BRICK_BASE_STAIRS.get() ||
+                block == ModBlocks.BRICK_LIGHT_STAIRS.get() ||
+                block == ModBlocks.BRICK_FIRE_STAIRS.get() ||
+                block == ModBlocks.BRICK_OBSIDIAN_STAIRS.get() ||
+                block == ModBlocks.VINYL_TILE_STAIRS.get() ||
+                block == ModBlocks.VINYL_TILE_SMALL_STAIRS.get() ||
+                block == ModBlocks.BRICK_DUCRETE_STAIRS.get() ||
+                block == ModBlocks.ASPHALT_STAIRS.get() ||
+                block == ModBlocks.BASALT_POLISHED_STAIRS.get() ||
+                block == ModBlocks.BASALT_BRICK_STAIRS.get() ||
+                block == ModBlocks.METEOR_POLISHED_STAIRS.get() ||
+                block == ModBlocks.METEOR_BRICK_STAIRS.get() ||
+                block == ModBlocks.METEOR_BRICK_CRACKED_STAIRS.get() ||
+                block == ModBlocks.METEOR_BRICK_MOSSY_STAIRS.get() ||
+                block == ModBlocks.METEOR_CRUSHED_STAIRS.get();
+    }
+
+    /**
+     * ✅ Получить взрывоустойчивость блока
+     */
+    public static float getBlastResistance(BlockState state) {
+        if (state == null) return 0.0F;
+        return state.getBlock().getExplosionResistance();
+    }
+
+    /**
+     * ✅ Получить уровень защиты по диапазонам (для обратной совместимости)
+     */
+    public static int getDefenseLevelFromResistance(float blastRes) {
+        if (blastRes < 0) return 15;
+        if (blastRes < 1.0F) return 0;
+        if (blastRes < 2.0F) return 1;
+        if (blastRes < 5.0F) return 2;
+        if (blastRes < 10.0F) return 3;
+        if (blastRes < 20.0F) return 4;
+        if (blastRes < 30.0F) return 5;
+        if (blastRes < 50.0F) return 6;
+        if (blastRes < 75.0F) return 7;
+        if (blastRes < 100.0F) return 8;
+        if (blastRes < 150.0F) return 9;
+        if (blastRes < 250.0F) return 10;
+        if (blastRes < 500.0F) return 11;
+        if (blastRes < 1000.0F) return 12;
+        if (blastRes < 5000.0F) return 13;
+        return 14;
     }
 }

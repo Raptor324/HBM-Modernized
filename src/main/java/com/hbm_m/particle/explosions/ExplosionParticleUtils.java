@@ -114,7 +114,7 @@ public class ExplosionParticleUtils {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
-                int particleCount = 400;
+                int particleCount = 500;
 
                 for (int i = 0; i < particleCount; i++) {
                     double angle = (i / (double) particleCount) * 2 * Math.PI;
@@ -155,7 +155,7 @@ public class ExplosionParticleUtils {
                 // ┃ ЧАСТЬ 1: СФЕРИЧЕСКИЙ ОГНЕННЫЙ ШАР                   ┃
                 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-                for (int i = 0; i < 550; i++) {
+                for (int i = 0; i < 750; i++) {
                     double theta = level.random.nextDouble() * 2 * Math.PI;
                     double phi = level.random.nextDouble() * Math.PI;
                     double radius = 0.0 + level.random.nextDouble() * 4.0;
@@ -181,7 +181,7 @@ public class ExplosionParticleUtils {
                 // ┃ ЧАСТЬ 2: ШАПКА ГРИБОВИДНОГО ОБЛАКА                  ┃
                 // ┗━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┛
 
-                for (int i = 0; i < 150; i++) {
+                for (int i = 0; i < 350; i++) {
                     double angle = level.random.nextDouble() * Math.PI * 2;
                     double radius = 0.0 + level.random.nextDouble() * 4.0;
                     double offsetX = Math.cos(angle) * radius;
