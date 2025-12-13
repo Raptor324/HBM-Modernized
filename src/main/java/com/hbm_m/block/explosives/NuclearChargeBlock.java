@@ -91,7 +91,8 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
                             ModBlocks.SELLAFIELD_SLAKED3.get(),
                             ModBlocks.WASTE_LOG.get(),
                             ModBlocks.WASTE_PLANKS.get(),
-                            ModBlocks.BURNED_GRASS.get()
+                            ModBlocks.BURNED_GRASS.get(),
+                            ModBlocks.DEAD_DIRT.get()
                     );
 
                     LOGGER.info("Кратер успешно сгенерирован в позиции: {}", pos);
