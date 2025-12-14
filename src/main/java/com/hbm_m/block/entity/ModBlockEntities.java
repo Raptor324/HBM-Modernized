@@ -1,9 +1,14 @@
 package com.hbm_m.block.entity;
 
 import com.hbm_m.api.energy.ConverterBlockEntity;
+import com.hbm_m.api.energy.SwitchBlockEntity;
+import com.hbm_m.api.energy.WireBlockEntity;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.crates.IronCrateBlockEntity;
-import com.hbm_m.block.entity.crates.SteelCrateBlockEntity;
+import com.hbm_m.block.entity.custom.crates.IronCrateBlockEntity;
+import com.hbm_m.block.entity.custom.crates.SteelCrateBlockEntity;
+import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
+import com.hbm_m.block.entity.custom.machines.*;
+import com.hbm_m.block.entity.custom.explosives.MineBlockEntity;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -11,14 +16,7 @@ import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import com.hbm_m.block.entity.machine.MachineAdvancedAssemblerBlockEntity;
-import com.hbm_m.block.entity.machine.MachineAssemblerBlockEntity;
-import com.hbm_m.block.entity.machine.MachineBatteryBlockEntity;
-import com.hbm_m.block.entity.machine.MachinePressBlockEntity;
-import com.hbm_m.block.entity.machine.MachineShredderBlockEntity;
-import com.hbm_m.block.entity.machine.MachineWoodBurnerBlockEntity;
-import com.hbm_m.block.entity.machine.UniversalMachinePartBlockEntity;
-import com.hbm_m.block.entity.crates.DeshCrateBlockEntity;
+import com.hbm_m.block.entity.custom.crates.DeshCrateBlockEntity;
 
 public class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
@@ -116,7 +114,7 @@ public class ModBlockEntities {
 
     // ДВЕРИ
 
-    public static final RegistryObject<BlockEntityType<DoorBlockEntity>> DOOR_ENTITY = 
+    public static final RegistryObject<BlockEntityType<DoorBlockEntity>> DOOR_ENTITY =
         BLOCK_ENTITIES.register("door", () -> 
                 BlockEntityType.Builder.of(DoorBlockEntity::new,
                 // Все блоки дверей, которые используют этот BlockEntity

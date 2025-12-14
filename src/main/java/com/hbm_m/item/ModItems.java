@@ -10,21 +10,34 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.hbm_m.item.fekal_grenades.*;
+import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
+import com.hbm_m.item.custom.crates.IronCrateItem;
+import com.hbm_m.item.custom.crates.SteelCrateItem;
+import com.hbm_m.item.custom.industrial.*;
+import com.hbm_m.item.custom.radiation_meter.ItemDosimeter;
+import com.hbm_m.item.custom.radiation_meter.ItemGeigerCounter;
+import com.hbm_m.item.custom.food.ItemConserve;
+import com.hbm_m.item.custom.food.ItemEnergyDrink;
+import com.hbm_m.item.custom.food.ModFoods;
+import com.hbm_m.item.custom.grenades_and_activators.*;
+import com.hbm_m.item.custom.tools_and_armor.*;
+import com.hbm_m.item.tags_and_tiers.*;
+import com.hbm_m.item.custom.scanners.DepthOresScannerItem;
+import com.hbm_m.item.custom.scanners.OilDetectorItem;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
-import com.hbm_m.armormod.item.ItemModHealth;
-import com.hbm_m.armormod.item.ItemModRadProtection;
+import com.hbm_m.block.custom.machines.armormod.item.ItemModHealth;
+import com.hbm_m.block.custom.machines.armormod.item.ItemModRadProtection;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeIfType;
 import com.hbm_m.entity.grenades.GrenadeType;
-import com.hbm_m.item.tools.*;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
 

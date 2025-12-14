@@ -5,8 +5,8 @@ package com.hbm_m.client.overlay;
 // рисует индикаторы совместимости для слотов модов и показывает подсказки для модов.
 // Основан на AbstractContainerScreen и использует миксин для изменения координат слотов.
 // Подсказки для пустых слотов реализованы через интерфейс IHasTooltip.
-import com.hbm_m.armormod.menu.ArmorTableMenu;
-import com.hbm_m.armormod.menu.IHasTooltip;
+import com.hbm_m.block.custom.machines.armormod.menu.ArmorTableMenu;
+import com.hbm_m.block.custom.machines.armormod.menu.IHasTooltip;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.util.IMixinSlot;
 

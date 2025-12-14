@@ -1,8 +1,8 @@
 package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machine.MachinePressBlockEntity;
-import com.hbm_m.item.ItemStamp;
+import com.hbm_m.block.entity.custom.machines.MachinePressBlockEntity;
+import com.hbm_m.item.custom.industrial.ItemStamp;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.network.FriendlyByteBuf;
@@ -10,7 +10,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;

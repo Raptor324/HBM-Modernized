@@ -5,9 +5,13 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.server.ServerLifecycleHooks;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
@@ -493,18 +497,44 @@ public class CraterGenerator {
         BlockPos pos = new BlockPos(x, y, z);
         BlockState state = level.getBlockState(pos);
 
+        // Если воздух — пропускаем (сопротивление 0)
         if (state.isAir()) {
             return 0;
         }
 
+        // Бедрок останавливает луч
         if (state.is(Blocks.BEDROCK)) {
             return 10_000;
         }
 
+        // [НОВОЕ]: Жидкости (Вода/Лава) теперь тоже считаются "мягкими" препятствиями,
+        // но они ДОЛЖНЫ быть удалены.
+        // Раньше мы могли возвращать 0 или малую величину, не добавляя их в craterBlocksSet.
+        if (!state.getFluidState().isEmpty()) {
+            // Добавляем жидкость в список уничтожения
+            synchronized (craterBlocksSet) {
+                if (!craterBlocksSet.contains(pos)) {
+                    craterBlocksSet.add(pos);
+                    distributeBlockToRings(centerPos, pos, (int) MAX_RAY_DISTANCE, rings);
+                }
+            }
+            // Жидкость почти не гасит луч (как воздух или чуть плотнее)
+            return 0.2;
+        }
+
+        // Пропускаем "прозрачные" для коллизии блоки (трава, цветы), но удаляем их
+        // (Они имеют resistance ~0, но лучше явно обработать)
         if (state.canBeReplaced() || state.getCollisionShape(level, pos).isEmpty()) {
+            synchronized (craterBlocksSet) {
+                if (!craterBlocksSet.contains(pos)) {
+                    craterBlocksSet.add(pos);
+                    distributeBlockToRings(centerPos, pos, (int) MAX_RAY_DISTANCE, rings);
+                }
+            }
             return 0.1;
         }
 
+        // Стандартная обработка твердых блоков
         float defense = BlockExplosionDefense.getBlockDefenseValue(level, pos, state);
 
         if (defense < 10_000) {
@@ -514,10 +544,12 @@ public class CraterGenerator {
                     distributeBlockToRings(centerPos, pos, (int) MAX_RAY_DISTANCE, rings);
                 }
             }
+            return defense;
         }
 
         return defense;
     }
+
 
     private static void distributeBlockToRings(
             BlockPos center, BlockPos pos, int maxRadius, List<Set<BlockPos>> rings) {
@@ -575,7 +607,8 @@ public class CraterGenerator {
 
         for (int i = 0; i < totalBatches; i++) {
             final int batchIndex = i;
-            server.tell(new TickTask(i + 1, () -> {
+            // Используем tickCount + задержку для равномерного распределения нагрузки
+            server.tell(new TickTask(server.getTickCount() + i + 1, () -> {
                 int start = batchIndex * BLOCK_BATCH_SIZE;
                 int end = Math.min(start + BLOCK_BATCH_SIZE, totalBlocks);
 
@@ -583,6 +616,7 @@ public class CraterGenerator {
                     BlockPos pos = allBlocksList.get(j);
                     boolean isBorder = false;
 
+                    // Проверка на границу кратера (есть ли рядом блок не из кратера?)
                     for (int dx = -1; dx <= 1; dx++) {
                         for (int dy = -1; dy <= 1; dy++) {
                             for (int dz = -1; dz <= 1; dz++) {
@@ -590,6 +624,7 @@ public class CraterGenerator {
                                     BlockPos neighbor = pos.offset(dx, dy, dz);
                                     BlockState neighborState = level.getBlockState(neighbor);
 
+                                    // Если сосед не в кратере и твердый -> значит мы на границе
                                     if (!allCraterBlocks.contains(neighbor) &&
                                             !neighborState.isAir() &&
                                             !neighborState.getCollisionShape(level, neighbor).isEmpty()) {
@@ -604,15 +639,29 @@ public class CraterGenerator {
                     }
 
                     if (isBorder) {
-                        int sIndex = random.nextInt(selafitBlocks.length);
-                        level.setBlock(pos, selafitBlocks[sIndex].defaultBlockState(), 3);
+                        BlockState state = level.getBlockState(pos);
+
+                        // [ИСПРАВЛЕНИЕ]: Мягкие блоки просто удаляются, а не превращаются в камень
+                        if (state.is(BlockTags.LEAVES) || state.is(BlockTags.FLOWERS) ||
+                                state.is(Blocks.GRASS) || state.is(Blocks.TALL_GRASS) ||
+                                state.getCollisionShape(level, pos).isEmpty()) {
+
+                            level.removeBlock(pos, false);
+
+                        } else {
+                            // Твердые блоки становятся селлафитом
+                            int sIndex = random.nextInt(selafitBlocks.length);
+                            level.setBlock(pos, selafitBlocks[sIndex].defaultBlockState(), 3);
+                        }
                     } else {
+                        // Внутренность кратера - удаляем блок
                         level.removeBlock(pos, false);
                     }
                 }
             }));
         }
     }
+
 
     private static void removeItemsInRadiusBatched(ServerLevel level, BlockPos center, int radius) {
         AABB box = new AABB(center).inflate(radius);
@@ -622,7 +671,6 @@ public class CraterGenerator {
         }
     }
 
-    // *** FIXED: Now uses ONLY XZ distance for zone boundaries (2D) ***
     private static void applyDynamicDamageZones(
             ServerLevel level,
             BlockPos centerPos,
@@ -639,61 +687,98 @@ public class CraterGenerator {
         int centerY = centerPos.getY();
         int centerZ = centerPos.getZ();
 
-        // *** FIXED: Expanded vertical range to match world height ***
-        int scanHeightUp = 256;      // Scan up to top
-        int scanHeightDown = 64;     // Scan down
+        int scanHeightUp = 256;
+        int scanHeightDown = 64;
 
-        int searchRadius = (int) zone4Radius + 20;
+        // Радиус поиска +40 блоков для захвата зон 5 и 6
+        int searchRadius = (int) zone4Radius + 40;
 
         for (int x = centerX - searchRadius; x <= centerX + searchRadius; x++) {
             long dx = x - centerX;
-
             for (int z = centerZ - searchRadius; z <= centerZ + searchRadius; z++) {
                 long dz = z - centerZ;
 
-                // *** CRITICAL: Only use XZ distance (2D) for zone determination ***
                 double distance2D = Math.sqrt(dx * dx + dz * dz);
 
-                double currentRadiusZ3 = getZoneRadiusWithNoise(zone3Radius, centerX, centerZ, x, z);
-                double currentRadiusZ4 = getZoneRadiusWithNoise(zone4Radius, centerX, centerZ, x, z);
+                // Радиусы всех зон (с шумом)
+                double r3 = getZoneRadiusWithNoise(zone3Radius, centerX, centerZ, x, z);
+                double r4 = getZoneRadiusWithNoise(zone4Radius, centerX, centerZ, x, z);
+                double r5 = getZoneRadiusWithNoise(zone4Radius + 24.0, centerX, centerZ, x, z); // Обугливание
+                double r6 = getZoneRadiusWithNoise(zone4Radius + 48.0, centerX, centerZ, x, z); // Снос листвы
+
+                // Если мы за пределами самой дальней зоны (6) — пропускаем
+                if (distance2D > r6) continue;
+
+                boolean isZone3 = distance2D <= r3;
+                boolean isZone4 = distance2D <= r4;
+                boolean isZone5 = distance2D <= r5;
 
                 BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
 
-                // Zone 3 - INNER crater biome
-                if (distance2D <= currentRadiusZ3) {
-                    for (int y = centerY + scanHeightUp; y >= centerY - scanHeightDown; y--) {
-                        mutablePos.set(x, y, z);
-                        BlockState state = level.getBlockState(mutablePos);
+                for (int y = centerY + scanHeightUp; y >= centerY - scanHeightDown; y--) {
+                    mutablePos.set(x, y, z);
+                    BlockState originalState = level.getBlockState(mutablePos);
 
-                        if (state.isAir()) continue;
-                        if (state.is(Blocks.BEDROCK)) break;
+                    if (originalState.isAir()) continue;
 
-                        // Remove decorations
-                        if (state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS) ||
-                                state.is(BlockTags.FLOWERS) || state.is(Blocks.GRASS) ||
-                                state.is(Blocks.TALL_GRASS) || state.is(Blocks.SNOW) ||
-                                state.getCollisionShape(level, mutablePos).isEmpty()) {
-                            level.removeBlock(mutablePos, false);
-                            continue;
+                    BlockPos fixedPos = mutablePos.immutable();
+
+                    if (isZone3) {
+                        // === ZONE 3: Эпицентр ===
+                        transformBlockInZone3(level, fixedPos, originalState, selafitBlocks, random);
+                        break; // Тут поверхность уничтожена, осадок не нужен
+
+                    } else {
+                        // === ZONE 4, 5, 6 (Внешние зоны) ===
+
+                        // 1. Применяем разрушения в зависимости от зоны
+                        if (isZone4) {
+                            // ZONE 4: Полное выжигание
+                            applyZone4Effects(level, fixedPos, originalState, wasteLogBlock, wastePlanksBlock, burnedGrassBlock, deadDirtBlock, random);
+                        } else if (isZone5) {
+                            // ZONE 5: Обугливание леса
+                            applyZone5Effects(level, fixedPos, originalState, wasteLogBlock, wastePlanksBlock, random);
+                        } else {
+                            // ZONE 6: Снос листвы
+                            applyZone6Effects(level, fixedPos, originalState, random);
                         }
 
-                        Block selafitBlock = selafitBlocks[random.nextInt(selafitBlocks.length)];
-                        level.setBlock(mutablePos, selafitBlock.defaultBlockState(), 3);
-                        break; // Only affect topmost solid block
-                    }
-                }
-                // Zone 4 - OUTER crater biome
-                else if (distance2D <= currentRadiusZ4) {
-                    for (int y = centerY + scanHeightUp; y >= centerY - scanHeightDown; y--) {
-                        mutablePos.set(x, y, z);
-                        BlockState state = level.getBlockState(mutablePos);
-                        applyZone4Effects(level, mutablePos.immutable(), state, wasteLogBlock, wastePlanksBlock, burnedGrassBlock, deadDirtBlock, random);
+                        // 2. [ИЗМЕНЕНИЕ]: Ядерный осадок выпадает во ВСЕХ внешних зонах (4, 5, 6)
+                        BlockState newState = level.getBlockState(fixedPos);
+                        if (!newState.isAir()) {
+                            tryApplyNuclearFallout(level, fixedPos.above(), newState, random);
+                        }
+
+                        // Мы не делаем break, чтобы в лесу снег мог теоретически упасть на ветки ниже,
+                        // если верхние сгорели, но так как мы идем сверху вниз и проверяем above().isAir(),
+                        // снег ляжет на самую верхнюю твердую поверхность.
                     }
                 }
             }
         }
 
         applyDamageToEntities(level, centerPos, zone3Radius, zone4Radius, random);
+        cleanupItems(level, centerPos, zone3Radius + 10);
+    }
+
+
+
+
+    private static void transformBlockInZone3(ServerLevel level, BlockPos pos, BlockState state, Block[] selafitBlocks, RandomSource random) {
+        if (state.is(Blocks.BEDROCK)) return;
+
+        // Удаляем декорации и слабые блоки
+        if (state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS) ||
+                state.is(BlockTags.FLOWERS) || state.is(Blocks.GRASS) ||
+                state.is(Blocks.TALL_GRASS) || state.is(Blocks.SNOW) ||
+                state.getCollisionShape(level, pos).isEmpty()) {
+            level.removeBlock(pos, false);
+            return;
+        }
+
+        // Превращаем твердый блок в случайный селафит
+        Block selafitBlock = selafitBlocks[random.nextInt(selafitBlocks.length)];
+        level.setBlock(pos, selafitBlock.defaultBlockState(), 3);
     }
 
     private static void applyZone4Effects(
@@ -709,20 +794,12 @@ public class CraterGenerator {
         if (state.isAir()) return;
         if (state.is(Blocks.BEDROCK)) return;
 
-        if (state.is(BlockTags.LEAVES)) {
-            if (random.nextFloat() < 0.5F) {
-                level.removeBlock(pos, false);
-            } else if (random.nextFloat() < 0.5F) {
-                level.setBlock(pos, Blocks.FIRE.defaultBlockState(), 3);
-            }
-            return;
-        }
-
         if (state.is(BlockTags.LOGS)) {
             level.setBlock(pos, wasteLogBlock.defaultBlockState(), 3);
         } else if (state.is(BlockTags.PLANKS)) {
             level.setBlock(pos, wastePlanksBlock.defaultBlockState(), 3);
-        } else if (state.is(BlockTags.WOODEN_STAIRS) || state.is(BlockTags.WOODEN_SLABS) ||
+        }
+        else if (state.is(BlockTags.WOODEN_STAIRS) || state.is(BlockTags.WOODEN_SLABS) || state.is(BlockTags.LEAVES)  || state.is(BlockTags.WOODEN_TRAPDOORS) ||
                 state.is(Blocks.TORCH) || state.is(BlockTags.WOOL_CARPETS) || state.is(BlockTags.WOOL) ||
                 state.is(BlockTags.WOODEN_FENCES) || state.is(Blocks.PUMPKIN) || state.is(BlockTags.WOODEN_DOORS)) {
             level.removeBlock(pos, false);
@@ -748,43 +825,91 @@ public class CraterGenerator {
         }
     }
 
-    private static void applyDamageToEntities(
+    // ZONE 5: Только деревья страдают (стволы чернеют)
+    private static void applyZone5Effects(
             ServerLevel level,
-            BlockPos centerPos,
-            double zone3Radius,
-            double zone4Radius,
+            BlockPos pos,
+            BlockState state,
+            Block wasteLogBlock,
+            Block wastePlanksBlock,
             RandomSource random) {
 
-        int centerX = centerPos.getX();
-        int centerY = centerPos.getY();
-        int centerZ = centerPos.getZ();
-
-        AABB zone3Area = new AABB(
-                centerX - zone3Radius, centerY - DAMAGE_ZONE_HEIGHT, centerZ - zone3Radius,
-                centerX + zone3Radius, centerY + DAMAGE_ZONE_HEIGHT, centerZ + zone3Radius
-        );
-
-        AABB zone4Area = new AABB(
-                centerX - zone4Radius, centerY - DAMAGE_ZONE_HEIGHT, centerZ - zone4Radius,
-                centerX + zone4Radius, centerY + DAMAGE_ZONE_HEIGHT, centerZ + zone4Radius
-        );
-
-        List<LivingEntity> entitiesZone3 = level.getEntitiesOfClass(LivingEntity.class, zone3Area);
-        for (LivingEntity entity : entitiesZone3) {
-            entity.hurt(level.damageSources().generic(), ZONE_3_DAMAGE);
-            entity.setSecondsOnFire((int) FIRE_DURATION / 20);
-            applyExplosionKnockback(entity, centerPos, zone3Radius);
+        // Листва: сносится или загорается
+        if (state.is(BlockTags.LEAVES)) {
+            if (random.nextFloat() < 0.7F) {
+                level.removeBlock(pos, false); // Сдуло
+            } else if (random.nextFloat() < 0.3F) {
+                level.setBlock(pos, Blocks.FIRE.defaultBlockState(), 3); // Загорелась
+            }
+            return;
         }
 
-        List<LivingEntity> entitiesZone4 = level.getEntitiesOfClass(LivingEntity.class, zone4Area);
-        for (LivingEntity entity : entitiesZone4) {
-            if (!entitiesZone3.contains(entity)) {
-                entity.hurt(level.damageSources().generic(), ZONE_4_DAMAGE);
-                entity.setSecondsOnFire((int) FIRE_DURATION / 20);
-                applyExplosionKnockback(entity, centerPos, zone4Radius);
+        // Бревна: превращаются в радиоактивные/жженые
+        if (state.is(BlockTags.LOGS)) {
+            level.setBlock(pos, wasteLogBlock.defaultBlockState(), 3);
+            return;
+        }
+
+        // Доски (например, дома): тоже портятся
+        if (state.is(BlockTags.PLANKS)) {
+            level.setBlock(pos, wastePlanksBlock.defaultBlockState(), 3);
+            return;
+        }
+        else if (state.is(BlockTags.WOODEN_STAIRS) || state.is(BlockTags.WOODEN_SLABS) || state.is(BlockTags.WOODEN_TRAPDOORS) ||
+                state.is(Blocks.TORCH) || state.is(BlockTags.WOOL_CARPETS) || state.is(BlockTags.WOOL) ||
+                state.is(BlockTags.WOODEN_FENCES) || state.is(Blocks.PUMPKIN)  || state.is(BlockTags.WOODEN_DOORS)) {
+            level.removeBlock(pos, false);
+        }
+        // Траву и землю НЕ трогаем
+    }
+
+    // ZONE 6: Только листва сдувается
+    private static void applyZone6Effects(
+            ServerLevel level,
+            BlockPos pos,
+            BlockState state,
+            RandomSource random) {
+
+        // Листва: просто сносится ветром, иногда загорается (редко)
+        if (state.is(BlockTags.LEAVES)) {
+            if (random.nextFloat() < 0.5F) {
+                level.removeBlock(pos, false); // Сдуло
+            }
+            else if (random.nextFloat() < 0.1F) {
+                // Маленький шанс огня на самом краю
+                level.setBlock(pos, Blocks.FIRE.defaultBlockState(), 3);
             }
         }
     }
+
+
+    private static void tryApplyNuclearFallout(ServerLevel level, BlockPos pos, BlockState blockBelowState, RandomSource random) {
+        // Шанс 5%
+        if (random.nextFloat() < 0.1F) {
+            // 1. Проверяем, что место для снега свободно
+            if (!level.getBlockState(pos).isAir()) return;
+
+            // 2. [ВАЖНО] Проверяем, что блок СНИЗУ твердый сверху.
+            // Это предотвратит левитацию на неполных блоках (если они вдруг выжили)
+            if (!Block.isFaceFull(blockBelowState.getCollisionShape(level, pos.below()), net.minecraft.core.Direction.UP)) {
+                return;
+            }
+
+            // 3. Проверяем, что блок снизу не горячий/жидкий
+            if (!blockBelowState.getFluidState().isEmpty() ||
+                    blockBelowState.is(Blocks.FIRE) ||
+                    blockBelowState.is(Blocks.SOUL_FIRE) ||
+                    blockBelowState.is(Blocks.MAGMA_BLOCK)) {
+                return;
+            }
+
+            try {
+                // Ставим блок
+                level.setBlock(pos, com.hbm_m.block.ModBlocks.NUCLEAR_FALLOUT.get().defaultBlockState(), 3);
+            } catch (Exception ignored) {}
+        }
+    }
+
 
     private static void applyExplosionKnockback(LivingEntity entity, BlockPos centerPos, double radius) {
         double dx = entity.getX() - centerPos.getX();
@@ -799,5 +924,144 @@ public class CraterGenerator {
         double knockbackStrength = Math.max(0, 1.0 - (distance / radius)) * 1.5;
 
         entity.push(dirX * knockbackStrength, 0.5, dirZ * knockbackStrength);
+    }
+
+    private static boolean isEntityExposed(ServerLevel level, Vec3 startPos, LivingEntity entity) {
+        Vec3 currentPos = startPos;
+        Vec3 targetPos = entity.getEyePosition();
+        Vec3 direction = targetPos.subtract(startPos).normalize();
+        double maxDistSq = startPos.distanceToSqr(targetPos);
+
+        // Ограничитель итераций, чтобы не зависнуть в бесконечном цикле
+        int safetyLoopCount = 0;
+
+        while (safetyLoopCount++ < 50) {
+            // Если мы уже прошли точку цели (или очень близко), значит препятствий нет
+            if (currentPos.distanceToSqr(startPos) >= maxDistSq) {
+                return true;
+            }
+
+            ClipContext context = new ClipContext(
+                    currentPos,
+                    targetPos,
+                    ClipContext.Block.COLLIDER,
+                    ClipContext.Fluid.NONE,
+                    entity
+            );
+
+            BlockHitResult result = level.clip(context);
+
+            // Если ничего не задели — путь чист
+            if (result.getType() == HitResult.Type.MISS) {
+                return true;
+            }
+
+            // Если задели блок, проверяем его защиту
+            BlockPos hitPos = result.getBlockPos();
+            BlockState hitState = level.getBlockState(hitPos);
+
+            // Получаем кастомную защиту блока
+            float defense = BlockExplosionDefense.getBlockDefenseValue(level, hitPos, hitState);
+
+            // УСЛОВИЕ: Если защита >= 50, то это надежное укрытие -> урон не проходит
+            if (defense >= 50.0F) {
+                return false;
+            }
+
+            // Если защита < 50 (стекло, листва, забор), мы "пробиваем" блок.
+            // Смещаем позицию луча чуть дальше точки попадания по вектору движения
+            currentPos = result.getLocation().add(direction.scale(0.1));
+        }
+
+        return true; // Если цикл кончился (редкий случай), считаем, что задело
+    }
+
+
+    private static void applyDamageToEntities(
+            ServerLevel level,
+            BlockPos centerPos,
+            double zone3Radius,
+            double zone4Radius,
+            RandomSource random) {
+
+        int centerX = centerPos.getX();
+        int centerY = centerPos.getY();
+        int centerZ = centerPos.getZ();
+
+        // Радиусы для новых зон (синхронизировано с applyDynamicDamageZones)
+        double zone5Radius = zone4Radius + 12.0;
+        double zone6Radius = zone4Radius + 24.0;
+
+        // Урон для зон
+        float ZONE_5_DAMAGE = 500.0F;
+        float ZONE_6_DAMAGE = 100.0F;
+
+        Vec3 explosionCenter = new Vec3(centerX + 0.5, centerY + 0.5, centerZ + 0.5);
+
+        // Используем самую большую зону (6) для поиска всех сущностей разом, чтобы не делать 4 поиска
+        // zone6Radius + запас (например, 5 блоков), чтобы точно зацепить хитбоксы на границе
+        double maxSearchRadius = zone6Radius + 5.0;
+
+        AABB searchArea = new AABB(
+                centerX - maxSearchRadius, centerY - DAMAGE_ZONE_HEIGHT, centerZ - maxSearchRadius,
+                centerX + maxSearchRadius, centerY + DAMAGE_ZONE_HEIGHT, centerZ + maxSearchRadius
+        );
+
+        List<LivingEntity> allEntities = level.getEntitiesOfClass(LivingEntity.class, searchArea);
+
+        // Квадраты радиусов для быстрой проверки дистанции (оптимизация)
+        double r3Sq = zone3Radius * zone3Radius;
+        double r4Sq = zone4Radius * zone4Radius;
+        double r5Sq = zone5Radius * zone5Radius;
+        double r6Sq = zone6Radius * zone6Radius;
+
+        for (LivingEntity entity : allEntities) {
+            // Считаем дистанцию до сущности (только горизонтальную, или полную - зависит от вашей логики)
+            // Обычно для ядерного взрыва лучше использовать 2D дистанцию (x/z), так как он идет столбом
+            // Но здесь используем 3D дистанцию от центра, как в оригинальном методе knockback
+            double distSq = entity.distanceToSqr(explosionCenter);
+
+            // Проверяем, видит ли взрыв сущность через твердые блоки (>50 def)
+            if (!isEntityExposed(level, explosionCenter, entity)) {
+                continue; // Сущность в надежном укрытии
+            }
+
+            if (distSq <= r3Sq) {
+                // === ZONE 3 ===
+                entity.hurt(level.damageSources().generic(), ZONE_3_DAMAGE);
+                entity.setSecondsOnFire((int) FIRE_DURATION / 20);
+                applyExplosionKnockback(entity, centerPos, zone3Radius);
+
+            } else if (distSq <= r4Sq) {
+                // === ZONE 4 ===
+                entity.hurt(level.damageSources().generic(), ZONE_4_DAMAGE);
+                entity.setSecondsOnFire((int) FIRE_DURATION / 20);
+                applyExplosionKnockback(entity, centerPos, zone4Radius);
+
+            } else if (distSq <= r5Sq) {
+                // === ZONE 5 ===
+                entity.hurt(level.damageSources().generic(), ZONE_5_DAMAGE);
+                entity.setSecondsOnFire((int) (FIRE_DURATION * 0.5) / 20); // Меньше огня
+                applyExplosionKnockback(entity, centerPos, zone5Radius);
+
+            } else if (distSq <= r6Sq) {
+                // === ZONE 6 ===
+                entity.hurt(level.damageSources().generic(), ZONE_6_DAMAGE);
+                // В 6 зоне не поджигаем, только урон и толчок
+                applyExplosionKnockback(entity, centerPos, zone6Radius);
+            }
+        }
+    }
+
+    private static void cleanupItems(ServerLevel level, BlockPos center, double radius) {
+        // Создаем коробку поиска (AABB)
+        net.minecraft.world.phys.AABB area = new net.minecraft.world.phys.AABB(center).inflate(radius, 100, radius); // 100 высота
+
+        // Находим все предметы (дроп)
+        List<net.minecraft.world.entity.item.ItemEntity> items = level.getEntitiesOfClass(net.minecraft.world.entity.item.ItemEntity.class, area);
+
+        for (net.minecraft.world.entity.item.ItemEntity item : items) {
+            item.discard(); // Удаляем
+        }
     }
 }

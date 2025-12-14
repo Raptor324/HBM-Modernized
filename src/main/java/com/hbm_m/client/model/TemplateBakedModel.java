@@ -2,7 +2,7 @@ package com.hbm_m.client.model;
 
 // Модель предмета, которая показывает результат сборки из шаблона при зажатом Shift.
 // Основана на BakedModelWrapper и ItemOverrides.
-import com.hbm_m.item.ItemAssemblyTemplate;
+import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;

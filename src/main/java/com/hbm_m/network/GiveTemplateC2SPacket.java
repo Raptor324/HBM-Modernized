@@ -1,6 +1,6 @@
 package com.hbm_m.network;
 
-import com.hbm_m.item.ItemAssemblyTemplate;
+import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.util.TemplateCraftingCosts;
 

@@ -1,7 +1,7 @@
 package com.hbm_m.datagen;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.ModIngots;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
 import net.minecraft.advancements.critereon.EnchantmentPredicate;
 import net.minecraft.advancements.critereon.ItemPredicate;

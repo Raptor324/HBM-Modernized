@@ -1,8 +1,7 @@
 package com.hbm_m.menu;
 
-import com.hbm_m.block.entity.machine.MachineWoodBurnerBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineWoodBurnerBlockEntity;
 import com.hbm_m.block.ModBlocks; // ЗАМЕНИ НА СВОЙ КЛАСС
-import com.hbm_m.menu.ModMenuTypes; // ЗАМЕНИ НА СВОЙ КЛАСС
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -12,10 +11,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.ForgeHooks;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-
-import static net.minecraft.world.inventory.AbstractFurnaceMenu.FUEL_SLOT;
 
 public class MachineWoodBurnerMenu extends AbstractContainerMenu {
     public final MachineWoodBurnerBlockEntity blockEntity;

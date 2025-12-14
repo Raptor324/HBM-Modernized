@@ -112,7 +112,7 @@ public class CraterBiomeHelper {
 
     @SuppressWarnings("unchecked")
     private static boolean applyBiomesToChunkFixed(LevelChunk chunk, BlockPos center,
-                                                   double zone3Radius, double zone4Radius,
+                                                   double zone3Radius, double baseZone4Radius, // baseZone4Radius - это физическая зона разрушения
                                                    Holder<Biome> innerBiome, Holder<Biome> outerBiome,
                                                    ServerLevel level) {
         boolean modified = false;
@@ -123,8 +123,11 @@ public class CraterBiomeHelper {
         int centerX = center.getX();
         int centerZ = center.getZ();
 
+        // 🔥 РАСШИРЕНИЕ БИОМА: Зона биома будет больше зоны разрушения на 40 блоков
+        double zone4BiomeRadius = baseZone4Radius + 40.0;
+
         double gradientR3 = zone3Radius * GRADIENT_MULTIPLIER;
-        double gradientR4 = zone4Radius * GRADIENT_MULTIPLIER;
+        double gradientR4 = zone4BiomeRadius * GRADIENT_MULTIPLIER; // Градиент тоже сдвигается
 
         int minSection = level.getMinSection();
         int maxSection = level.getMaxSection();
@@ -147,31 +150,27 @@ public class CraterBiomeHelper {
                         double dz = blockZ - centerZ;
                         double dist2D = Math.sqrt(dx * dx + dz * dz);
 
-                        // Wavy radii
+                        // Wavy radii (используем расширенный радиус для зоны 4)
                         double currentR3 = getZoneRadiusWithNoise(zone3Radius, centerX, centerZ, blockX, blockZ);
                         double gradientR3Wavy = getZoneRadiusWithNoise(gradientR3, centerX, centerZ, blockX, blockZ);
-                        double currentR4 = getZoneRadiusWithNoise(zone4Radius, centerX, centerZ, blockX, blockZ);
+
+                        double currentR4 = getZoneRadiusWithNoise(zone4BiomeRadius, centerX, centerZ, blockX, blockZ);
                         double gradientR4Wavy = getZoneRadiusWithNoise(gradientR4, centerX, centerZ, blockX, blockZ);
 
                         Holder<Biome> targetBiome = null;
 
-                        // ✅ DITHERING NOISE (Случайный шум для плавности)
-                        // Используем координаты блока для псевдо-случайности, чтобы паттерн был стабильным
+                        // Dithering noise
                         double dither = ((blockX & 3) * 0.25 + (blockZ & 3) * 0.25) * 0.2 - 0.1;
 
                         if (dist2D <= currentR3) {
                             targetBiome = innerBiome;
                         } else if (dist2D <= gradientR3Wavy) {
-                            // Inner gradient
                             double factor = (dist2D - currentR3) / (gradientR3Wavy - currentR3);
-                            // 🔥 Смешиваем с шумом
                             targetBiome = (factor + dither) < 0.5 ? innerBiome : outerBiome;
                         } else if (dist2D <= currentR4) {
                             targetBiome = outerBiome;
                         } else if (dist2D <= gradientR4Wavy) {
-                            // Outer gradient
                             double factor = (dist2D - currentR4) / (gradientR4Wavy - currentR4);
-                            // 🔥 Смешиваем с шумом
                             targetBiome = (factor + dither) < 0.5 ? outerBiome : null;
                         }
 
@@ -188,6 +187,7 @@ public class CraterBiomeHelper {
         if (modified) chunk.setUnsaved(true);
         return modified;
     }
+
 
 
     // === Sending updates ===

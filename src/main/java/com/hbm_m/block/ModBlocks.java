@@ -1,20 +1,29 @@
 package com.hbm_m.block;
 
 import com.hbm_m.api.energy.ConverterBlock;
-import com.hbm_m.block.crates.DeshCrateBlock;
-import com.hbm_m.block.crates.IronCrateBlock;
-import com.hbm_m.block.crates.SteelCrateBlock;
-import com.hbm_m.block.explosives.*;
-import com.hbm_m.block.machine.MachineAdvancedAssemblerBlock;
-import com.hbm_m.block.machine.MachineAssemblerBlock;
-import com.hbm_m.block.machine.MachineBatteryBlock;
-import com.hbm_m.block.machine.MachinePressBlock;
-import com.hbm_m.block.machine.MachineShredderBlock;
-import com.hbm_m.block.machine.MachineWoodBurnerBlock;
-import com.hbm_m.block.machine.UniversalMachinePartBlock;
+import com.hbm_m.api.energy.MachineBatteryBlock;
+import com.hbm_m.api.energy.SwitchBlock;
+import com.hbm_m.api.energy.WireBlock;
+import com.hbm_m.block.custom.explosives.*;
+import com.hbm_m.block.custom.machines.*;
+import com.hbm_m.block.custom.machines.anvils.AnvilBlock;
+import com.hbm_m.block.custom.machines.BlastFurnaceBlock;
+import com.hbm_m.block.custom.machines.anvils.AnvilTier;
+import com.hbm_m.block.custom.machines.crates.DeshCrateBlock;
+import com.hbm_m.block.custom.machines.crates.IronCrateBlock;
+import com.hbm_m.block.custom.machines.crates.SteelCrateBlock;
+import com.hbm_m.block.custom.decorations.CageLampBlock;
+import com.hbm_m.block.custom.decorations.CrtBlock;
+import com.hbm_m.block.custom.decorations.DecoSteelBlock;
+import com.hbm_m.block.custom.decorations.DoorBlock;
+import com.hbm_m.block.custom.weapons.*;
+import com.hbm_m.block.custom.nature.DepthOreBlock;
+import com.hbm_m.block.custom.nature.GeysirBlock;
+import com.hbm_m.block.custom.nature.RadioactiveBlock;
+import com.hbm_m.item.custom.fekal_electric.MachineBatteryBlockItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.ModIngots;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
 
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
@@ -55,7 +64,7 @@ public class ModBlocks {
 
         // 2. Регистрируем ПРЕДМЕТ (MachineBatteryBlockItem)
         ModItems.ITEMS.register(name,
-                () -> new com.hbm_m.item.MachineBatteryBlockItem(batteryBlock.get(), new Item.Properties(), capacity));
+                () -> new MachineBatteryBlockItem(batteryBlock.get(), new Item.Properties(), capacity));
 
         // 3. Добавляем в список для TileEntity
         BATTERY_BLOCKS.add(batteryBlock);
@@ -421,6 +430,14 @@ public class ModBlocks {
                     .strength(0.5F, 6.0F)
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops()));
+
+    // ✅ ДОБАВЛЕНО: Ядерные осадки (как снег)
+    public static final RegistryObject<Block> NUCLEAR_FALLOUT = registerBlock("nuclear_fallout",
+            () -> new SnowLayerBlock(BlockBehaviour.Properties.copy(Blocks.SNOW)
+                    .strength(0.1F)
+                    // Тут можно добавить .lightLevel() если он должен светиться,
+                    // .emissiveRendering() и так далее
+            ));
 
     public static final RegistryObject<Block> DOOR_BUNKER = registerBlock("door_bunker",
             () -> new net.minecraft.world.level.block.DoorBlock(BlockBehaviour.Properties.copy(Blocks.NETHERITE_BLOCK).sound(SoundType.NETHERITE_BLOCK).noOcclusion(), BlockSetType.STONE));

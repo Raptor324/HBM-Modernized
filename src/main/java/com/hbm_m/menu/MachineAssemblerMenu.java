@@ -4,8 +4,8 @@ package com.hbm_m.menu;
 // Содержит логику для обработки Shift-клика и отображения прогресса сборки и уровня энергии.
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machine.MachineAssemblerBlockEntity;
-import com.hbm_m.item.ItemAssemblyTemplate;
+import com.hbm_m.block.entity.custom.machines.MachineAssemblerBlockEntity;
+import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
 import com.hbm_m.main.MainRegistry;
 
 import com.hbm_m.util.LongDataPacker;

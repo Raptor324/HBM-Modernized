@@ -4,7 +4,7 @@ package com.hbm_m.menu;
 // Содержит логику для обработки Shift-клика и отображения прогресса плавки и уровня топлива.
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.BlastFurnaceBlockEntity;
+import com.hbm_m.block.entity.custom.machines.BlastFurnaceBlockEntity;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.network.FriendlyByteBuf;

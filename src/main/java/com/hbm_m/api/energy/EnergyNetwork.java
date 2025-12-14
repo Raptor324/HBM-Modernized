@@ -1,6 +1,6 @@
 package com.hbm_m.api.energy; // <-- Убедись, что твой package правильный
 
-import com.hbm_m.block.entity.machine.MachineBatteryBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineBatteryBlockEntity;
 import com.hbm_m.capability.ModCapabilities;
 import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;

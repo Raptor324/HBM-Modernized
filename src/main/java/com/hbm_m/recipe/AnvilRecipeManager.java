@@ -1,6 +1,6 @@
 package com.hbm_m.recipe;
 
-import com.hbm_m.block.AnvilTier;
+import com.hbm_m.block.custom.machines.anvils.AnvilTier;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.resources.ResourceLocation;

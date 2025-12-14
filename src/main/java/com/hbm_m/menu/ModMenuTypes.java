@@ -1,6 +1,6 @@
 package com.hbm_m.menu;
 
-import com.hbm_m.armormod.menu.ArmorTableMenu;
+import com.hbm_m.block.custom.machines.armormod.menu.ArmorTableMenu;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.common.extensions.IForgeMenuType;
