@@ -110,20 +110,16 @@ public class CraterBiomeHelper {
         return baseRadius * noiseInfluence;
     }
 
-    // === Core per-chunk logic ===
-
     @SuppressWarnings("unchecked")
     private static boolean applyBiomesToChunkFixed(LevelChunk chunk, BlockPos center,
                                                    double zone3Radius, double zone4Radius,
                                                    Holder<Biome> innerBiome, Holder<Biome> outerBiome,
                                                    ServerLevel level) {
-
         boolean modified = false;
         int chunkX = chunk.getPos().x;
         int chunkZ = chunk.getPos().z;
         int chunkBlockStartX = chunkX << 4;
         int chunkBlockStartZ = chunkZ << 4;
-
         int centerX = center.getX();
         int centerZ = center.getZ();
 
@@ -136,27 +132,22 @@ public class CraterBiomeHelper {
         for (int sectionY = minSection; sectionY <= maxSection; sectionY++) {
             int sectionIndex = sectionY - minSection;
             if (sectionIndex < 0 || sectionIndex >= chunk.getSections().length) continue;
-
             LevelChunkSection section = chunk.getSection(sectionIndex);
-
-            // CRITICAL: do NOT skip "hasOnlyAir()" – biomes live in air too!
             if (section == null) continue;
 
             try {
-                PalettedContainer<Holder<Biome>> biomeContainer =
-                        (PalettedContainer<Holder<Biome>>) section.getBiomes();
+                PalettedContainer<Holder<Biome>> biomeContainer = (PalettedContainer<Holder<Biome>>) section.getBiomes();
 
                 for (int qx = 0; qx < 4; qx++) {
                     for (int qz = 0; qz < 4; qz++) {
-
                         int blockX = chunkBlockStartX + (qx << 2) + 2;
                         int blockZ = chunkBlockStartZ + (qz << 2) + 2;
 
                         double dx = blockX - centerX;
                         double dz = blockZ - centerZ;
-                        double dist2D = Math.sqrt(dx * dx + dz * dz); // 2D distance, no Y
+                        double dist2D = Math.sqrt(dx * dx + dz * dz);
 
-                        // Wavy radii with gradient
+                        // Wavy radii
                         double currentR3 = getZoneRadiusWithNoise(zone3Radius, centerX, centerZ, blockX, blockZ);
                         double gradientR3Wavy = getZoneRadiusWithNoise(gradientR3, centerX, centerZ, blockX, blockZ);
                         double currentR4 = getZoneRadiusWithNoise(zone4Radius, centerX, centerZ, blockX, blockZ);
@@ -164,20 +155,24 @@ public class CraterBiomeHelper {
 
                         Holder<Biome> targetBiome = null;
 
+                        // ✅ DITHERING NOISE (Случайный шум для плавности)
+                        // Используем координаты блока для псевдо-случайности, чтобы паттерн был стабильным
+                        double dither = ((blockX & 3) * 0.25 + (blockZ & 3) * 0.25) * 0.2 - 0.1;
+
                         if (dist2D <= currentR3) {
-                            // Deep inner crater
                             targetBiome = innerBiome;
                         } else if (dist2D <= gradientR3Wavy) {
-                            // Inner gradient (inner -> outer)
+                            // Inner gradient
                             double factor = (dist2D - currentR3) / (gradientR3Wavy - currentR3);
-                            targetBiome = factor < 0.5 ? innerBiome : outerBiome;
+                            // 🔥 Смешиваем с шумом
+                            targetBiome = (factor + dither) < 0.5 ? innerBiome : outerBiome;
                         } else if (dist2D <= currentR4) {
-                            // Deep outer crater
                             targetBiome = outerBiome;
                         } else if (dist2D <= gradientR4Wavy) {
-                            // Outer gradient (outer -> vanilla)
+                            // Outer gradient
                             double factor = (dist2D - currentR4) / (gradientR4Wavy - currentR4);
-                            targetBiome = factor < 0.5 ? outerBiome : null;
+                            // 🔥 Смешиваем с шумом
+                            targetBiome = (factor + dither) < 0.5 ? outerBiome : null;
                         }
 
                         if (targetBiome != null) {
@@ -188,17 +183,12 @@ public class CraterBiomeHelper {
                         }
                     }
                 }
-            } catch (Exception ignored) {
-                // Если в каком-то секшене что-то странное с палеткой - просто пропускаем
-            }
+            } catch (Exception ignored) {}
         }
-
-        if (modified) {
-            chunk.setUnsaved(true);
-        }
-
+        if (modified) chunk.setUnsaved(true);
         return modified;
     }
+
 
     // === Sending updates ===
 
