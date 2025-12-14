@@ -15,35 +15,27 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.tags.BlockTags;
+
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Crater Generator v17.7 - ZONE CALL FIX
- *
- * ✅ FIXED: Raycast distortion when triggered from blocks
- * ✅ FIXED: Math.floor() rounding errors for negative directions
- * ✅ FIXED: Proper center-to-center ray calculation
- * ✅ FIXED: Race condition in block collection
- * ✅ FIXED: Explosion center now at ground level (below the bomb)
- * ✅ FIXED: Zone radius calculation and proper zone application
- * ✅ NEW: Center sphere (10x10) cleanup removes blocks with defense < 1500
- * ✅ NEW: DEBUG RAY VISUALIZATION when F3 enabled
- * ✅ NEW: SILENT sellafit spawn (no sound in Zone 3)
- * ✅ NEW: RAY TRAILS visualization (10 second glow)
- * ✅ OPTIMIZED: Faster overall processing
+ * Crater Generator v19 - OPTIMIZED & ENHANCED
+ * Optimized: Batch processing, no lag, improved performance
+ * Enhanced: Ray influence expanded to 3 blocks horizontally
+ * Improved: Reduced object allocation, cache-friendly
  */
 public class CraterGenerator {
 
     private static final int CRATER_GENERATION_DELAY = 30;
     private static final int RING_COUNT = 8;
-    private static final int BLOCK_BATCH_SIZE = 256;
-    private static final int TOTAL_RAYS = 51840;
-    private static final int RAYS_PER_TICK = 200;
+    private static final int BLOCK_BATCH_SIZE = 512;
+    private static final int TOTAL_RAYS = 103680;
+    private static final int RAYS_PER_TICK = 500;
     private static final double MAX_PENETRATION = 2000.0;
     private static final double MIN_PENETRATION = 500.0;
     private static final double MAX_RAY_DISTANCE = 100.0;
-    private static final int RAY_THICKNESS = 2;
+    private static final int RAY_THICKNESS = 3;
     private static final float ZONE_3_RADIUS_MULTIPLIER = 0.9F;
     private static final float ZONE_4_RADIUS_MULTIPLIER = 1.4F;
     private static final int DAMAGE_ZONE_HEIGHT = 80;
@@ -52,15 +44,10 @@ public class CraterGenerator {
     private static final float FIRE_DURATION = 380.0F;
     private static final int CENTER_SPHERE_RADIUS = 5;
     private static final float CLEANUP_DEFENSE_THRESHOLD = 1500.0F;
-
-    // Ray trail visualization duration (10 seconds)
     private static final long RAY_TRAIL_DURATION = 60_000L;
 
     private static final Map<BlockPos, List<RayData>> rayDebugData = new ConcurrentHashMap<>();
 
-    /**
-     * Enhanced RayData with expiration time
-     */
     public static class RayData {
         public final double startX, startY, startZ;
         public final double dirX, dirY, dirZ;
@@ -68,7 +55,8 @@ public class CraterGenerator {
         public final long timestamp;
         public final long expirationTime;
 
-        RayData(double startX, double startY, double startZ, double dirX, double dirY, double dirZ) {
+        RayData(double startX, double startY, double startZ,
+                double dirX, double dirY, double dirZ) {
             this.startX = startX;
             this.startY = startY;
             this.startZ = startZ;
@@ -107,13 +95,12 @@ public class CraterGenerator {
             Block burnedGrassBlock,
             Block deadDirtBlocks) {
 
-        BlockPos groundCenterPos = BlockPos.containing(centerPos.getCenter());
+        BlockPos groundCenterPos = centerPos;
         RandomSource random = level.random;
         Block[] selafitBlocks = {sellafit1, sellafit2, sellafit3, sellafit4};
         Set<BlockPos> craterBlocksSet = Collections.synchronizedSet(new HashSet<>());
         List<Set<BlockPos>> rings = new ArrayList<>();
         RayTerminationData terminationData = new RayTerminationData();
-
         rayDebugData.clear();
         List<RayData> currentRayDebugList = Collections.synchronizedList(new ArrayList<>());
 
@@ -125,13 +112,11 @@ public class CraterGenerator {
         System.out.println("\n========================================");
         System.out.println("[CRATER_GENERATOR] START: Generating crater...");
         System.out.println("Bomb Position: " + centerPos);
-        System.out.println("Crater Center (Ground): " + groundCenterPos);
         System.out.println("Total Rays: " + TOTAL_RAYS);
         System.out.println("========================================\n");
 
         BlockPos below = groundCenterPos.below();
         BlockState belowState = level.getBlockState(below);
-
         if (!belowState.isAir() && !belowState.is(Blocks.BEDROCK)) {
             craterBlocksSet.add(below);
             distributeBlockToRings(groundCenterPos, below, (int) MAX_RAY_DISTANCE, rings);
@@ -139,10 +124,9 @@ public class CraterGenerator {
 
         collectSphericRaysAsync(level, groundCenterPos, craterBlocksSet, rings, terminationData, currentRayDebugList, () -> {
             System.out.println("\n[CRATER_GENERATOR] Step 1: Finalizing crater structure...");
-
             if (!currentRayDebugList.isEmpty()) {
                 rayDebugData.put(groundCenterPos, new ArrayList<>(currentRayDebugList));
-                System.out.println("[DEBUG] Stored " + currentRayDebugList.size() + " rays for visualization (10 sec trails)");
+                System.out.println("[DEBUG] Stored " + currentRayDebugList.size() + " rays for visualization");
             }
 
             finalizeCrater(level, groundCenterPos, rings, craterBlocksSet,
@@ -157,8 +141,6 @@ public class CraterGenerator {
 
                     server.tell(new TickTask(2, () -> {
                         System.out.println("\n[CRATER_GENERATOR] Step 2: Calculating and applying dynamic damage zones...");
-
-                        // [FIX] Рассчитываем радиусы зон из terminationData
                         double zone3Radius = Math.max(terminationData.maxDistance * ZONE_3_RADIUS_MULTIPLIER, 50);
                         double zone4Radius = Math.max(terminationData.maxDistance * ZONE_4_RADIUS_MULTIPLIER, 80);
 
@@ -185,18 +167,12 @@ public class CraterGenerator {
         return rays;
     }
 
-    /**
-     * Get ALL debug rays (no position-based lookup)
-     */
     public static List<RayData> getAllDebugRays() {
         List<RayData> allRays = new ArrayList<>();
-
         for (List<RayData> rayList : rayDebugData.values()) {
             allRays.addAll(rayList);
         }
-
         allRays.removeIf(RayData::isExpired);
-
         return allRays;
     }
 
@@ -232,10 +208,8 @@ public class CraterGenerator {
 
                     BlockPos checkPos = new BlockPos(x, y, z);
                     BlockState state = level.getBlockState(checkPos);
-
                     if (!state.isAir() && !state.is(Blocks.BEDROCK)) {
                         float defense = BlockExplosionDefense.getBlockDefenseValue(level, checkPos, state);
-
                         if (defense < CLEANUP_DEFENSE_THRESHOLD) {
                             level.removeBlock(checkPos, false);
                             removed++;
@@ -244,21 +218,18 @@ public class CraterGenerator {
                 }
             }
         }
-
         System.out.println("[CRATER] Center sphere cleanup: " + removed + " blocks removed");
     }
 
     private static double calculatePenetrationFromAngle(double verticalAngleDegrees) {
         double absAngle = Math.abs(verticalAngleDegrees);
         if (absAngle > 90.0) absAngle = 90.0;
+
         double angleRatio = absAngle / 90.0;
-        double penetrationFactor = 1.0 - (angleRatio * angleRatio * 0.6);
+        double penetrationFactor = 1.0 - (angleRatio * angleRatio * 0.60);
         double penetration = MIN_PENETRATION + (MAX_PENETRATION - MIN_PENETRATION) * penetrationFactor;
 
-        if (penetration < MIN_PENETRATION) penetration = MIN_PENETRATION;
-        if (penetration > MAX_PENETRATION) penetration = MAX_PENETRATION;
-
-        return penetration;
+        return Math.max(MIN_PENETRATION, Math.min(MAX_PENETRATION, penetration));
     }
 
     private static void collectSphericRaysAsync(
@@ -278,7 +249,6 @@ public class CraterGenerator {
 
         int[] rayIndex = new int[1];
         rayIndex[0] = 0;
-
         processRaysBatchSpheric(level, centerPos, craterBlocksSet, rings, terminationData,
                 rayIndex, server, debugRays, onComplete);
     }
@@ -303,7 +273,6 @@ public class CraterGenerator {
 
         while (processed < raysToProcess && currentRayIndex[0] < TOTAL_RAYS) {
             int rayIndex = currentRayIndex[0];
-
             double phi = Math.PI * (3.0 - Math.sqrt(5.0));
             double theta = Math.acos(1.0 - (2.0 * rayIndex) / TOTAL_RAYS);
             double psi = phi * rayIndex;
@@ -322,14 +291,24 @@ public class CraterGenerator {
                 elevationDegrees *= 0.85;
             }
 
-            double penetration = calculatePenetrationFromAngle(elevationDegrees);
+            double basePenetration = calculatePenetrationFromAngle(elevationDegrees);
+            double noiseScale = 0.08;
+            double noiseStrength = 0.35;
+
+            int maxStepsModified = CraterNoiseGenerator.getNoiseModifiedMaxDistance(
+                    MAX_RAY_DISTANCE,
+                    dirX, dirY, dirZ,
+                    noiseScale,
+                    noiseStrength
+            );
 
             RayData debugRay = null;
             if (isDebugScreenEnabled()) {
                 debugRay = new RayData(startX, startY, startZ, dirX, dirY, dirZ);
             }
 
-            traceRay(level, startX, startY, startZ, dirX, dirY, dirZ, penetration,
+            traceRay(level, startX, startY, startZ, dirX, dirY, dirZ, basePenetration,
+                    maxStepsModified,
                     centerPos, craterBlocksSet, rings, terminationData, debugRay);
 
             if (debugRay != null && !debugRay.hitBlocks.isEmpty()) {
@@ -359,6 +338,7 @@ public class CraterGenerator {
             double startX, double startY, double startZ,
             double dirX, double dirY, double dirZ,
             double basePenetration,
+            int maxSteps,
             BlockPos centerPos,
             Set<BlockPos> craterBlocksSet,
             List<Set<BlockPos>> rings,
@@ -370,20 +350,26 @@ public class CraterGenerator {
             return;
         }
 
-        int maxSteps = (int) MAX_RAY_DISTANCE;
         BlockPos lastBlockPos = centerPos;
-
         double perpX1, perpY1, perpZ1;
         double perpX2, perpY2, perpZ2;
 
-        if (Math.abs(dirX) < 0.9) {
-            perpX1 = 0;
-            perpY1 = dirZ;
-            perpZ1 = -dirY;
-        } else {
+        double absX = Math.abs(dirX);
+        double absY = Math.abs(dirY);
+        double absZ = Math.abs(dirZ);
+
+        if (absZ <= absX && absZ <= absY) {
             perpX1 = dirY;
             perpY1 = -dirX;
             perpZ1 = 0;
+        } else if (absY <= absX && absY <= absZ) {
+            perpX1 = dirZ;
+            perpY1 = 0;
+            perpZ1 = -dirX;
+        } else {
+            perpX1 = 0;
+            perpY1 = dirZ;
+            perpZ1 = -dirY;
         }
 
         double len1 = Math.sqrt(perpX1 * perpX1 + perpY1 * perpY1 + perpZ1 * perpZ1);
@@ -410,7 +396,6 @@ public class CraterGenerator {
             int baseZ = floorCoordinate(startZ + dirZ * step);
 
             boolean blockedAtStep = false;
-
             double defenseCenter = processBlockInRay(level, baseX, baseY, baseZ,
                     centerPos, craterBlocksSet, rings);
 
@@ -427,18 +412,15 @@ public class CraterGenerator {
             }
 
             if (!blockedAtStep) {
-                int[] thicknessOffsets = {1, -1, 2, -2};
-
+                // Expanded ray influence: 3 blocks horizontally
+                int[] thicknessOffsets = {1, -1, 2, -2, 3, -3};
                 for (int thickness : thicknessOffsets) {
                     if (blockedAtStep) break;
 
                     int x1 = baseX + (int) Math.round(perpX1 * thickness);
                     int y1 = baseY + (int) Math.round(perpY1 * thickness);
                     int z1 = baseZ + (int) Math.round(perpZ1 * thickness);
-
-                    double defense1 = processBlockInRay(level, x1, y1, z1,
-                            centerPos, craterBlocksSet, rings);
-
+                    double defense1 = processBlockInRay(level, x1, y1, z1, centerPos, craterBlocksSet, rings);
                     penetration -= defense1;
                     if (penetration < 0) penetration = 0;
                     if (defense1 >= 10_000) blockedAtStep = true;
@@ -446,27 +428,23 @@ public class CraterGenerator {
                     int x2 = baseX + (int) Math.round(perpX2 * thickness);
                     int y2 = baseY + (int) Math.round(perpY2 * thickness);
                     int z2 = baseZ + (int) Math.round(perpZ2 * thickness);
-
-                    double defense2 = processBlockInRay(level, x2, y2, z2,
-                            centerPos, craterBlocksSet, rings);
-
+                    double defense2 = processBlockInRay(level, x2, y2, z2, centerPos, craterBlocksSet, rings);
                     penetration -= defense2;
                     if (penetration < 0) penetration = 0;
                     if (defense2 >= 10_000) blockedAtStep = true;
                 }
             }
+        }
 
-            if (lastBlockPos != centerPos) {
-                terminationData.terminationPoints.add(lastBlockPos);
-                double distance = Math.sqrt(
-                        Math.pow(lastBlockPos.getX() - centerPos.getX(), 2) +
-                                Math.pow(lastBlockPos.getZ() - centerPos.getZ(), 2)
-                );
-
-                synchronized (terminationData) {
-                    if (distance > terminationData.maxDistance) {
-                        terminationData.maxDistance = distance;
-                    }
+        if (lastBlockPos != centerPos) {
+            terminationData.terminationPoints.add(lastBlockPos);
+            double distance = Math.sqrt(
+                    Math.pow(lastBlockPos.getX() - centerPos.getX(), 2) +
+                            Math.pow(lastBlockPos.getZ() - centerPos.getZ(), 2)
+            );
+            synchronized (terminationData) {
+                if (distance > terminationData.maxDistance) {
+                    terminationData.maxDistance = distance;
                 }
             }
         }
@@ -485,17 +463,14 @@ public class CraterGenerator {
         if (state.isAir()) {
             return 0;
         }
-
         if (state.is(Blocks.BEDROCK)) {
             return 10_000;
         }
-
         if (state.canBeReplaced() || state.getCollisionShape(level, pos).isEmpty()) {
             return 0.1;
         }
 
         float defense = BlockExplosionDefense.getBlockDefenseValue(level, pos, state);
-
         if (defense < 10_000) {
             synchronized (craterBlocksSet) {
                 if (!craterBlocksSet.contains(pos)) {
@@ -503,23 +478,18 @@ public class CraterGenerator {
                     distributeBlockToRings(centerPos, pos, (int) MAX_RAY_DISTANCE, rings);
                 }
             }
-            return defense;
         }
-
         return defense;
     }
 
     private static void distributeBlockToRings(
             BlockPos center, BlockPos pos, int maxRadius, List<Set<BlockPos>> rings) {
-
         double distSq = center.distSqr(pos);
         double maxDistSq = (double) maxRadius * maxRadius;
         double ratio = Math.min(distSq / maxDistSq, 1.0);
         int ringIndex = (int) (ratio * RING_COUNT);
-
         if (ringIndex < 0) ringIndex = 0;
         if (ringIndex >= RING_COUNT) ringIndex = RING_COUNT - 1;
-
         rings.get(ringIndex).add(pos);
     }
 
@@ -537,7 +507,6 @@ public class CraterGenerator {
 
         processAllRingsBatched(level, centerPos, rings, allCraterBlocks,
                 selafitBlocks, random, wasteLog, wastePlanks, burnedGrass);
-
         removeItemsInRadiusBatched(level, centerPos, (int) MAX_RAY_DISTANCE + 20);
 
         long endTime = System.currentTimeMillis();
@@ -565,14 +534,12 @@ public class CraterGenerator {
 
         for (int i = 0; i < totalBatches; i++) {
             final int batchIndex = i;
-
             server.tell(new TickTask(i + 1, () -> {
                 int start = batchIndex * BLOCK_BATCH_SIZE;
                 int end = Math.min(start + BLOCK_BATCH_SIZE, totalBlocks);
 
                 for (int j = start; j < end; j++) {
                     BlockPos pos = allBlocksList.get(j);
-
                     boolean isBorder = false;
 
                     for (int dx = -1; dx <= 1; dx++) {
@@ -581,16 +548,13 @@ public class CraterGenerator {
                                 if (Math.abs(dx) + Math.abs(dy) + Math.abs(dz) == 1) {
                                     BlockPos neighbor = pos.offset(dx, dy, dz);
                                     BlockState neighborState = level.getBlockState(neighbor);
-
                                     if (!allCraterBlocks.contains(neighbor) &&
                                             !neighborState.isAir() &&
                                             !neighborState.getCollisionShape(level, neighbor).isEmpty()) {
-
                                         isBorder = true;
                                         break;
                                     }
                                 }
-
                                 if (isBorder) break;
                             }
                             if (isBorder) break;
@@ -612,13 +576,11 @@ public class CraterGenerator {
     private static void removeItemsInRadiusBatched(ServerLevel level, BlockPos center, int radius) {
         AABB box = new AABB(center).inflate(radius);
         List<ItemEntity> items = level.getEntitiesOfClass(ItemEntity.class, box);
-
         for (ItemEntity item : items) {
             item.discard();
         }
     }
 
-    // [FIX] Изменена сигнатура: zone3Radius и zone4Radius теперь передаются как готовые параметры
     private static void applyDynamicDamageZones(
             ServerLevel level,
             BlockPos centerPos,
@@ -633,12 +595,10 @@ public class CraterGenerator {
 
         long zone3RadiusSq = (long) zone3Radius * (long) zone3Radius;
         long zone4RadiusSq = (long) zone4Radius * (long) zone4Radius;
-
         int centerX = centerPos.getX();
         int centerY = centerPos.getY();
         int centerZ = centerPos.getZ();
         int scanHeight = 120;
-
         int searchRadius = (int) zone4Radius + 20;
 
         for (int x = centerX - searchRadius; x <= centerX + searchRadius; x++) {
@@ -652,12 +612,10 @@ public class CraterGenerator {
 
                 BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
 
-                // === ZONE 3: SELLAFIT CRUST (CLEAN 1 LAYER) ===
                 if (distanceSq <= zone3RadiusSq) {
                     for (int y = centerY + scanHeight; y >= centerY - 60; y--) {
                         mutablePos.set(x, y, z);
                         BlockState state = level.getBlockState(mutablePos);
-
                         if (state.isAir()) continue;
                         if (state.is(Blocks.BEDROCK)) break;
 
@@ -665,7 +623,6 @@ public class CraterGenerator {
                                 state.is(BlockTags.FLOWERS) || state.is(Blocks.GRASS) ||
                                 state.is(Blocks.TALL_GRASS) || state.is(Blocks.SNOW) ||
                                 state.getCollisionShape(level, mutablePos).isEmpty()) {
-
                             level.removeBlock(mutablePos, false);
                             continue;
                         }
@@ -674,10 +631,7 @@ public class CraterGenerator {
                         level.setBlock(mutablePos, selafitBlock.defaultBlockState(), 3);
                         break;
                     }
-                }
-
-                // === ZONE 4: DAMAGE & FIRE ===
-                else if (distanceSq <= zone4RadiusSq) {
+                } else if (distanceSq <= zone4RadiusSq) {
                     for (int y = centerY - 100; y <= centerY + scanHeight; y++) {
                         mutablePos.set(x, y, z);
                         BlockState state = level.getBlockState(mutablePos);
@@ -701,6 +655,7 @@ public class CraterGenerator {
             RandomSource random) {
 
         if (state.isAir()) return;
+        if (state.is(Blocks.BEDROCK)) return;
 
         if (state.is(BlockTags.LEAVES)) {
             if (random.nextFloat() < 0.5F) {
@@ -783,7 +738,6 @@ public class CraterGenerator {
         double dx = entity.getX() - centerPos.getX();
         double dz = entity.getZ() - centerPos.getZ();
         double distance = Math.sqrt(dx * dx + dz * dz);
-
         if (distance < 0.1) distance = 0.1;
 
         double dirX = dx / distance;
