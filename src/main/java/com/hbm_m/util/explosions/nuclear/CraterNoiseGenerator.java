@@ -1,4 +1,4 @@
-package com.hbm_m.util;
+package com.hbm_m.util.explosions.nuclear;
 
 /**
  * Улучшенный генератор кратеров с естественными границами

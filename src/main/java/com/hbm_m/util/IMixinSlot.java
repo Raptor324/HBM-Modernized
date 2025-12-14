@@ -1,4 +1,4 @@
-package com.hbm_m.util.mixin;
+package com.hbm_m.util;
 
 /**
  * Этот интерфейс будет "примешан" к ванильному классу Slot.

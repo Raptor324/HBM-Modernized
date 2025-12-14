@@ -1,4 +1,4 @@
-package com.hbm_m.util;
+package com.hbm_m.util.explosions;
 
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;

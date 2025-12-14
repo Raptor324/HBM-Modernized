@@ -6,7 +6,7 @@ import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
 
-import com.hbm_m.util.ShockwaveGenerator;
+import com.hbm_m.util.explosions.general.ShockwaveGenerator;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;

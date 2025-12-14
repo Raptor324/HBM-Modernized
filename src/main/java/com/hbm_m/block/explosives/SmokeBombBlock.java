@@ -4,7 +4,7 @@ import com.hbm_m.block.IDetonatable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.ExplosionParticleUtils;
-import com.hbm_m.util.ShockwaveGenerator;
+import com.hbm_m.util.explosions.general.ShockwaveGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.particles.SimpleParticleType;

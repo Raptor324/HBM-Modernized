@@ -3,7 +3,7 @@ package com.hbm_m.block.explosives;
 import com.hbm_m.block.IDetonatable;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.ExplosionParticleUtils;
-import com.hbm_m.util.MessGenerator;
+import com.hbm_m.util.explosions.freaky.MessGenerator;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;

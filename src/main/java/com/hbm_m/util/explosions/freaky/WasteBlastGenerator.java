@@ -1,5 +1,6 @@
-package com.hbm_m.util;
+package com.hbm_m.util.explosions.freaky;
 
+import com.hbm_m.util.explosions.ExplosionResistanceRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;

@@ -1,6 +1,5 @@
-package com.hbm_m.util;
+package com.hbm_m.util.explosions.general;
 
-import com.hbm_m.block.ModBlocks;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.BlockTags;

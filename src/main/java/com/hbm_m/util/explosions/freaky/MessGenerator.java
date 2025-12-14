@@ -1,4 +1,4 @@
-package com.hbm_m.util;
+package com.hbm_m.util.explosions.freaky;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;

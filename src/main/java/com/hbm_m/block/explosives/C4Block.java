@@ -1,23 +1,12 @@
 package com.hbm_m.block.explosives;
-import java.util.List;
 
 import com.hbm_m.particle.explosions.ExplosionParticleUtils;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import org.jetbrains.annotations.Nullable;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
-import java.util.List;
 
 import com.hbm_m.block.IDetonatable;
 import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.util.BlastExplosionGenerator;
+import com.hbm_m.util.explosions.general.BlastExplosionGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;

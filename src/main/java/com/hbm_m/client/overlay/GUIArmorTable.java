@@ -8,7 +8,7 @@ package com.hbm_m.client.overlay;
 import com.hbm_m.armormod.menu.ArmorTableMenu;
 import com.hbm_m.armormod.menu.IHasTooltip;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.util.mixin.IMixinSlot;
+import com.hbm_m.util.IMixinSlot;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;

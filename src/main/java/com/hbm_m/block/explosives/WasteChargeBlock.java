@@ -5,7 +5,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.particle.ModExplosionParticles;
 
 import com.hbm_m.particle.explosions.ExplosionParticleUtils;
-import com.hbm_m.util.WasteBlastGenerator;
+import com.hbm_m.util.explosions.freaky.WasteBlastGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.TickTask;

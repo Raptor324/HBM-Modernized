@@ -10,7 +10,7 @@ import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
 import com.hbm_m.item.ModBatteryItem;
 import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.util.SellafitSolidificationTracker;
+import com.hbm_m.util.explosions.trash_that_i_forgot_to_delete.SellafitSolidificationTracker;
 import com.hbm_m.world.biome.ModBiomes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.event.level.LevelEvent;
