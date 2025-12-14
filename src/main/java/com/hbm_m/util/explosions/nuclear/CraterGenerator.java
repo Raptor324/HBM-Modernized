@@ -895,7 +895,6 @@ public class CraterGenerator {
     }
 
     // Возвращает true, если нужно остановить обработку столбца (нашли землю)
-    // Возвращает true, если нужно остановить обработку столбца (нашли землю)
     private static boolean transformBlockInZone3(ServerLevel level, BlockPos pos, BlockState state,
                                                  Block[] selafitBlocks, RandomSource random,
                                                  Block wasteLog, Block wastePlanks) { // <-- Новые аргументы
@@ -1136,6 +1135,7 @@ public class CraterGenerator {
     }
 
 
+    // ЗАМЕНИТЬ СТАРЫЙ МЕТОД applyDamageToEntities НА ЭТОТ
     private static void applyDamageToEntities(
             ServerLevel level,
             BlockPos centerPos,
@@ -1143,74 +1143,80 @@ public class CraterGenerator {
             double zone4Radius,
             RandomSource random) {
 
-        int centerX = centerPos.getX();
-        int centerY = centerPos.getY();
-        int centerZ = centerPos.getZ();
+        MinecraftServer server = level.getServer();
+        if (server == null) return;
 
-        // Радиусы для новых зон (синхронизировано с applyDynamicDamageZones)
-        double zone5Radius = zone4Radius + 12.0;
         double zone6Radius = zone4Radius + 24.0;
+        int maxRadiusBlocks = (int) Math.ceil(zone6Radius + 5.0);
 
-        // Урон для зон
-        float ZONE_5_DAMAGE = 500.0F;
-        float ZONE_6_DAMAGE = 100.0F;
+        // Используем ChunkPos для перебора чанков, а не один гигантский AABB
+        net.minecraft.world.level.ChunkPos minChunk = new net.minecraft.world.level.ChunkPos(centerPos.offset(-maxRadiusBlocks, 0, -maxRadiusBlocks));
+        net.minecraft.world.level.ChunkPos maxChunk = new net.minecraft.world.level.ChunkPos(centerPos.offset(maxRadiusBlocks, 0, maxRadiusBlocks));
 
-        Vec3 explosionCenter = new Vec3(centerX + 0.5, centerY + 0.5, centerZ + 0.5);
-
-        // Используем самую большую зону (6) для поиска всех сущностей разом, чтобы не делать 4 поиска
-        // zone6Radius + запас (например, 5 блоков), чтобы точно зацепить хитбоксы на границе
-        double maxSearchRadius = zone6Radius + 5.0;
-
-        AABB searchArea = new AABB(
-                centerX - maxSearchRadius, centerY - DAMAGE_ZONE_HEIGHT, centerZ - maxSearchRadius,
-                centerX + maxSearchRadius, centerY + DAMAGE_ZONE_HEIGHT, centerZ + maxSearchRadius
-        );
-
-        List<LivingEntity> allEntities = level.getEntitiesOfClass(LivingEntity.class, searchArea);
-
-        // Квадраты радиусов для быстрой проверки дистанции (оптимизация)
-        double r3Sq = zone3Radius * zone3Radius;
-        double r4Sq = zone4Radius * zone4Radius;
-        double r5Sq = zone5Radius * zone5Radius;
-        double r6Sq = zone6Radius * zone6Radius;
-
-        for (LivingEntity entity : allEntities) {
-            // Считаем дистанцию до сущности (только горизонтальную, или полную - зависит от вашей логики)
-            // Обычно для ядерного взрыва лучше использовать 2D дистанцию (x/z), так как он идет столбом
-            // Но здесь используем 3D дистанцию от центра, как в оригинальном методе knockback
-            double distSq = entity.distanceToSqr(explosionCenter);
-
-            // Проверяем, видит ли взрыв сущность через твердые блоки (>50 def)
-            if (!isEntityExposed(level, explosionCenter, entity)) {
-                continue; // Сущность в надежном укрытии
-            }
-
-            if (distSq <= r3Sq) {
-                // === ZONE 3 ===
-                entity.hurt(level.damageSources().generic(), ZONE_3_DAMAGE);
-                entity.setSecondsOnFire((int) FIRE_DURATION / 20);
-                applyExplosionKnockback(entity, centerPos, zone3Radius);
-
-            } else if (distSq <= r4Sq) {
-                // === ZONE 4 ===
-                entity.hurt(level.damageSources().generic(), ZONE_4_DAMAGE);
-                entity.setSecondsOnFire((int) FIRE_DURATION / 20);
-                applyExplosionKnockback(entity, centerPos, zone4Radius);
-
-            } else if (distSq <= r5Sq) {
-                // === ZONE 5 ===
-                entity.hurt(level.damageSources().generic(), ZONE_5_DAMAGE);
-                entity.setSecondsOnFire((int) (FIRE_DURATION * 0.5) / 20); // Меньше огня
-                applyExplosionKnockback(entity, centerPos, zone5Radius);
-
-            } else if (distSq <= r6Sq) {
-                // === ZONE 6 ===
-                entity.hurt(level.damageSources().generic(), ZONE_6_DAMAGE);
-                // В 6 зоне не поджигаем, только урон и толчок
-                applyExplosionKnockback(entity, centerPos, zone6Radius);
+        List<net.minecraft.world.level.ChunkPos> chunksToProcess = new ArrayList<>();
+        for (int x = minChunk.x; x <= maxChunk.x; x++) {
+            for (int z = minChunk.z; z <= maxChunk.z; z++) {
+                chunksToProcess.add(new net.minecraft.world.level.ChunkPos(x, z));
             }
         }
+
+        // Запускаем пакетную обработку
+        processDamageChunkBatch(level, centerPos, chunksToProcess, 0, zone3Radius, zone4Radius, random, server);
     }
+
+    // ДОБАВИТЬ ЭТОТ НОВЫЙ МЕТОД
+    private static void processDamageChunkBatch(ServerLevel level, BlockPos centerPos, List<net.minecraft.world.level.ChunkPos> allChunks, int startIndex, double z3, double z4, RandomSource random, MinecraftServer server) {
+        int BATCH_SIZE = 16;
+        int endIndex = Math.min(startIndex + BATCH_SIZE, allChunks.size());
+
+        double z5 = z4 + 12.0;
+        double z6 = z4 + 24.0;
+        double r3Sq = z3 * z3; double r4Sq = z4 * z4; double r5Sq = z5 * z5; double r6Sq = z6 * z6;
+
+        Vec3 explosionCenter = new Vec3(centerPos.getX() + 0.5, centerPos.getY() + 0.5, centerPos.getZ() + 0.5);
+
+        for (int i = startIndex; i < endIndex; i++) {
+            net.minecraft.world.level.ChunkPos cp = allChunks.get(i);
+            // Важно: проверяем загруженность чанка
+            if (!level.hasChunk(cp.x, cp.z)) continue;
+
+            net.minecraft.world.level.chunk.LevelChunk chunk = level.getChunk(cp.x, cp.z);
+            // Сканируем только один чанк
+            AABB box = new AABB(cp.getMinBlockX(), level.getMinBuildHeight(), cp.getMinBlockZ(), cp.getMaxBlockX()+1, level.getMaxBuildHeight(), cp.getMaxBlockZ()+1);
+
+            List<LivingEntity> entities = level.getEntitiesOfClass(LivingEntity.class, box);
+
+            for (LivingEntity ent : entities) {
+                double distSq = ent.distanceToSqr(explosionCenter);
+                if (distSq > r6Sq) continue;
+                if (!isEntityExposed(level, explosionCenter, ent)) continue;
+
+                if (distSq <= r3Sq) {
+                    ent.hurt(level.damageSources().generic(), ZONE_3_DAMAGE);
+                    ent.setSecondsOnFire((int) FIRE_DURATION / 20);
+                    applyExplosionKnockback(ent, centerPos, z3);
+                } else if (distSq <= r4Sq) {
+                    ent.hurt(level.damageSources().generic(), ZONE_4_DAMAGE);
+                    ent.setSecondsOnFire((int) FIRE_DURATION / 20);
+                    applyExplosionKnockback(ent, centerPos, z4);
+                } else if (distSq <= r5Sq) {
+                    ent.hurt(level.damageSources().generic(), 500.0F);
+                    ent.setSecondsOnFire(10);
+                    applyExplosionKnockback(ent, centerPos, z5);
+                } else {
+                    ent.hurt(level.damageSources().generic(), 100.0F);
+                    applyExplosionKnockback(ent, centerPos, z6);
+                }
+            }
+        }
+
+        if (endIndex < allChunks.size()) {
+            server.tell(new TickTask(server.getTickCount() + 1, () ->
+                    processDamageChunkBatch(level, centerPos, allChunks, endIndex, z3, z4, random, server)
+            ));
+        }
+    }
+
 
     private static void cleanupItems(ServerLevel level, BlockPos center, double radius) {
         // Создаем коробку поиска (AABB)
