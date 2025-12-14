@@ -1,13 +1,11 @@
 package com.hbm_m.client.render;
 
-import com.hbm_m.block.entity.DoorBlockEntity;
-import com.hbm_m.block.entity.DoorDecl;
+import com.hbm_m.block.entity.custom.doors.DoorDecl;
 import com.hbm_m.client.model.DoorBakedModel;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;

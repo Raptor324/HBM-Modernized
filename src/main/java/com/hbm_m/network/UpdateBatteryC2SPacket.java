@@ -7,7 +7,7 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-import com.hbm_m.block.entity.machine.MachineBatteryBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineBatteryBlockEntity;
 
 public class UpdateBatteryC2SPacket {
     private final BlockPos pos;

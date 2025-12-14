@@ -2,7 +2,7 @@ package com.hbm_m.recipe;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.hbm_m.block.AnvilTier;
+import com.hbm_m.block.custom.machines.anvils.AnvilTier;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;

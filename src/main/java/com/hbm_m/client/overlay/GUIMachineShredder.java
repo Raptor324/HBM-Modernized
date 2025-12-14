@@ -1,6 +1,6 @@
 package com.hbm_m.client.overlay;
 
-import com.hbm_m.block.entity.machine.MachineShredderBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineShredderBlockEntity;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.menu.MachineShredderMenu;
 import com.mojang.blaze3d.systems.RenderSystem;

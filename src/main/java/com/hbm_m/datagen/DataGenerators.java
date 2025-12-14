@@ -5,6 +5,11 @@ package com.hbm_m.datagen;
 // Также настраиваем встроенные записи в datapack, такие как типы урона и генерация мира.
 // Используется в основном классе мода для инициализации датагенов при сборке.
 
+import com.hbm_m.datagen.assets.ModBlockStateProvider;
+import com.hbm_m.datagen.assets.ModBlockTagProvider;
+import com.hbm_m.datagen.assets.ModItemModelProvider;
+import com.hbm_m.datagen.assets.ModItemTagProvider;
+import com.hbm_m.datagen.recipes.ModRecipeProvider;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.damagesource.ModDamageTypes;
 import com.hbm_m.block.ModBlocks;
@@ -67,7 +72,6 @@ public class DataGenerators {
 
         @SuppressWarnings("deprecation")
         CompletableFuture<HolderLookup.Provider> newLookupProvider = datapackProvider.getRegistryProvider();
-        generator.addProvider(event.includeServer(), new ModLootTableProvider(packOutput));
         generator.addProvider(event.includeServer(), datapackProvider);
         generator.addProvider(event.includeServer(), new ModDamageTypeTagProvider(packOutput, newLookupProvider, existingFileHelper));
         generator.addProvider(event.includeClient(), new ModBlockStateProvider(packOutput, existingFileHelper));

@@ -1,13 +1,13 @@
 package com.hbm_m.entity.grenades;
 
-import com.hbm_m.block.IDetonatable;
+import com.hbm_m.block.custom.explosives.IDetonatable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
-import com.hbm_m.util.ShockwaveGenerator;
+import com.hbm_m.util.explosions.general.ShockwaveGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
@@ -17,8 +17,6 @@ import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;

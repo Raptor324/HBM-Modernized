@@ -1,14 +1,10 @@
 package com.hbm_m.menu;
 
-import com.hbm_m.api.energy.ILongEnergyMenu;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machine.MachineShredderBlockEntity;
-import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.network.packet.PacketSyncEnergy;
+import com.hbm_m.block.entity.custom.machines.MachineShredderBlockEntity;
+import com.hbm_m.item.custom.industrial.ItemBlades;
 import com.hbm_m.util.LongDataPacker;
-import com.hbm_m.menu.ModMenuTypes;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -21,18 +17,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.network.PacketDistributor;
 
-public class MachineShredderMenu extends AbstractContainerMenu implements ILongEnergyMenu {
+public class MachineShredderMenu extends AbstractContainerMenu {
 
     private final MachineShredderBlockEntity blockEntity;
     private final Level level;
     private final ContainerData data;
-    private final Player player; // 2. Сохраняем игрока для пакетов
-
-    // 3. Поля для клиентской энергии
-    private long clientEnergy;
-    private long clientMaxEnergy;
 
     // Индексы слотов (как в оригинале: 0-8 вход, 9-26 выход, 27-28 лезвия, 29 батарея)
     private static final int INPUT_SLOTS = 9;
@@ -43,7 +33,7 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
     private static final int BLADE_RIGHT = 28;
 
     public MachineShredderMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
-        this(containerId, playerInventory, getBlockEntity(playerInventory, extraData), new SimpleContainerData(2));
+        this(containerId, playerInventory, getBlockEntity(playerInventory, extraData), new SimpleContainerData(8));
     }
 
     public MachineShredderMenu(int containerId, Inventory playerInventory, MachineShredderBlockEntity blockEntity) {
@@ -52,13 +42,9 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
 
     public MachineShredderMenu(int containerId, Inventory playerInventory, MachineShredderBlockEntity blockEntity, ContainerData data) {
         super(ModMenuTypes.SHREDDER_MENU.get(), containerId);
-
-        checkContainerDataCount(data, 2);
-
         this.blockEntity = blockEntity;
         this.level = playerInventory.player.level();
         this.data = data;
-        this.player = playerInventory.player;
         addDataSlots(data);
 
         ItemStackHandler itemHandler = this.blockEntity.getInventory();
@@ -158,7 +144,7 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         // Из инвентаря игрока в контейнер
         else if (index >= playerInventoryStart && index < playerInventoryEnd) {
             // Проверяем тип предмета
-            boolean isBlade = slotStack.getItem() instanceof com.hbm_m.item.ItemBlades;
+            boolean isBlade = slotStack.getItem() instanceof ItemBlades;
             boolean isBattery = slotStack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).isPresent();
 
             boolean moved = false;
@@ -217,22 +203,6 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         return data.get(1);
     }
 
-    @Override
-    public void setEnergy(long energy, long maxEnergy, long delta) {
-        this.clientEnergy = energy;
-        this.clientMaxEnergy = maxEnergy;
-    }
-
-    @Override
-    public long getEnergyStatic() {
-        return blockEntity.getEnergyStored();
-    }
-
-    @Override
-    public long getMaxEnergyStatic() {
-        return blockEntity.getMaxEnergyStored();
-    }
-
     public int getScaledProgress(int width) {
         int progress = getProgress();
         int maxProgress = getMaxProgress();
@@ -240,45 +210,14 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
     }
 
     public long getEnergyLong() {
-        if (blockEntity != null && !level.isClientSide) {
-            return blockEntity.getEnergyStored();
-        }
-        return clientEnergy;
+        return LongDataPacker.unpack(data.get(2), data.get(3));
     }
 
     public long getMaxEnergyLong() {
-        if (blockEntity != null && !level.isClientSide) {
-            return blockEntity.getMaxEnergyStored();
-        }
-        return clientMaxEnergy;
+        return LongDataPacker.unpack(data.get(4), data.get(5));
     }
 
-    @Override
-    public long getEnergyDeltaStatic() {
-        return 0; // Возвращаем 0, так как дельта не используется
-    }
-
-    // Если дельта не критична для GUI, возвращаем 0, так как мы убрали её из Data
-    // Если она нужна, её стоит добавить в PacketSyncEnergy в будущем.
     public long getEnergyDeltaLong() {
-        return 0;
-    }
-
-    // 6. Добавляем отправку пакета
-    @Override
-    public void broadcastChanges() {
-        super.broadcastChanges();
-
-        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
-            ModPacketHandler.INSTANCE.send(
-                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> (net.minecraft.server.level.ServerPlayer) this.player),
-                    new com.hbm_m.network.packet.PacketSyncEnergy(
-                            this.containerId,
-                            blockEntity.getEnergyStored(),
-                            blockEntity.getMaxEnergyStored(),
-                            0L // <--- Передаем 0 как дельту
-                    )
-            );
-        }
+        return LongDataPacker.unpack(data.get(6), data.get(7));
     }
 }

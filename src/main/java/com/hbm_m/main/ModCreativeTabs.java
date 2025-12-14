@@ -1,6 +1,6 @@
 package com.hbm_m.main;
 
-import com.hbm_m.item.ModIngots;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;

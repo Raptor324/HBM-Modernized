@@ -3,7 +3,9 @@ package com.hbm_m.multiblock;
 // Утилитарный класс для управления мультиблочными структурами.
 // Позволяет определять структуру, проверять возможность постройки, строить и разрушать структуру,
 // а также генерировать VoxelShape для всей структуры. Ядро всей мультиблочной логики.
-import com.hbm_m.block.WireBlock;
+import com.hbm_m.api.energy.WireBlock;
+import com.hbm_m.block.custom.machines.UniversalMachinePartBlock;
+import com.hbm_m.block.custom.decorations.DoorBlock;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.HighlightBlocksPacket;
@@ -190,7 +192,7 @@ public class MultiblockStructureHelper {
             BlockState stateInWorld = level.getBlockState(worldPos);
 
             // If the block in the world is a phantom block part, remove it.
-            if (stateInWorld.getBlock() instanceof com.hbm_m.block.machine.UniversalMachinePartBlock) {
+            if (stateInWorld.getBlock() instanceof UniversalMachinePartBlock) {
                 level.setBlock(worldPos, Blocks.AIR.defaultBlockState(), 3);
             }
         }
@@ -405,7 +407,7 @@ public class MultiblockStructureHelper {
         if (allAABBs.isEmpty()) return Shapes.empty();
 
         // Получаем размеры мультиблока
-        int[] dims = com.hbm_m.block.DoorBlock.getDoorDimensions(doorId);
+        int[] dims = DoorBlock.getDoorDimensions(doorId);
         double widthBlocks = dims[3] + 1.0;   // X
         double heightBlocks = dims[4] + 1.0;  // Y
         double depthBlocks = dims[5] + 1.0;   // Z

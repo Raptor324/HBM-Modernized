@@ -38,11 +38,5 @@ public class ModPacketHandler {
         INSTANCE.registerMessage(id++, DetonateAllPacket.class, DetonateAllPacket::encode, DetonateAllPacket::decode, DetonateAllPacket::handle);
         INSTANCE.registerMessage(id++, AnvilCraftC2SPacket.class, AnvilCraftC2SPacket::encode, AnvilCraftC2SPacket::decode, AnvilCraftC2SPacket::handle);
         INSTANCE.registerMessage(id++, AnvilSelectRecipeC2SPacket.class, AnvilSelectRecipeC2SPacket::encode, AnvilSelectRecipeC2SPacket::decode, AnvilSelectRecipeC2SPacket::handle);
-        INSTANCE.registerMessage(id++,
-                com.hbm_m.network.packet.PacketSyncEnergy.class, // Если пакет лежит в другом пакете, укажи путь или сделай импорт
-                com.hbm_m.network.packet.PacketSyncEnergy::encode,
-                com.hbm_m.network.packet.PacketSyncEnergy::decode,
-                com.hbm_m.network.packet.PacketSyncEnergy::handle
-        );
     }
 }

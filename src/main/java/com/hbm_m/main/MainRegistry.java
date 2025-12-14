@@ -4,27 +4,26 @@ package com.hbm_m.main;
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
 import com.hbm_m.api.energy.EnergyNetworkManager;
-import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
-import com.hbm_m.item.ModBatteryItem;
+import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
 import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.util.SellafitSolidificationTracker;
+import com.hbm_m.util.explosions.trash_that_i_forgot_to_delete.SellafitSolidificationTracker;
 import com.hbm_m.world.biome.ModBiomes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.event.level.LevelEvent;
 import com.mojang.logging.LogUtils;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import com.hbm_m.armormod.item.ItemArmorMod;
+import com.hbm_m.block.custom.machines.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.ModIngots;
-import com.hbm_m.item.ModPowders;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.lib.RefStrings;
@@ -113,18 +112,15 @@ public class MainRegistry {
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
-        ModFluids.register(modEventBus);
 
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new PlayerHandler());
-
-
         // Регистрация остальных систем resources
         // ModPacketHandler.register(); // Регистрация пакетов
 
-
         // Инстанцируем ClientSetup, чтобы его конструктор вызвал регистрацию на Forge Event Bus
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> new ClientSetup());
 
         LOGGER.info("Radiation handlers registered. Using {}.", ModClothConfig.get().usePrismSystem ? "ChunkRadiationHandlerPRISM" : "ChunkRadiationHandlerSimple");
         LOGGER.info("Registered event listeners for Radiation System.");
@@ -235,7 +231,6 @@ public class MainRegistry {
 
         //СЛИТКИ И РЕСУРСЫ...
         if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
-
             // БАЗОВЫЕ ПРЕДМЕТЫ (все с ItemStack!)
             event.accept(new ItemStack(ModItems.BALL_TNT.get()));
             event.accept(new ItemStack(ModItems.ZIRCONIUM_SHARP.get()));
@@ -257,8 +252,6 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.NUGGET_SILICON.get()));
             event.accept(new ItemStack(ModItems.BILLET_SILICON.get()));
             event.accept(new ItemStack(ModItems.BILLET_PLUTONIUM.get()));
-            event.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
-                  
 
             // ✅ СЛИТКИ
             for (ModIngots ingot : ModIngots.values()) {
@@ -266,7 +259,6 @@ public class MainRegistry {
                 if (ingotItem != null && ingotItem.isPresent()) {
                     event.accept(new ItemStack(ingotItem.get()));
                 }
-              
             }
 
             // ✅ ModPowders
@@ -516,6 +508,7 @@ public class MainRegistry {
             event.accept(ModBlocks.GEYSIR_DIRT);
             event.accept(ModBlocks.GEYSIR_STONE);
 
+            event.accept(ModBlocks.NUCLEAR_FALLOUT);
             event.accept(ModBlocks.SELLAFIELD_SLAKED);
             event.accept(ModBlocks.SELLAFIELD_SLAKED1);
             event.accept(ModBlocks.SELLAFIELD_SLAKED2);
@@ -955,7 +948,7 @@ public class MainRegistry {
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.ARMOR_TABLE);
 
-            event.accept(ModBlocks.FLUID_TANK);
+            // event.accept(ModBlocks.FLUID_TANK);
             event.accept(ModBlocks.MACHINE_BATTERY);
             event.accept(ModBlocks.MACHINE_BATTERY_LITHIUM);
             event.accept(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM);

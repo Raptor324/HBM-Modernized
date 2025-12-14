@@ -3,7 +3,7 @@ package com.hbm_m.client.model;
 // Модель процедурного провода, которая генерирует геометрию на основе состояния блока.
 // Поддерживает соединения в 6 направлениях и корректно ориентирует текстуры на всех гранях.
 // Логика текстурирования унифицирована для центрального куба и "рукавов" провода.
-import com.hbm_m.block.WireBlock;
+import com.hbm_m.api.energy.WireBlock;
 import com.hbm_m.client.model.ModelHelper.UVBox;
 import com.hbm_m.client.model.ModelHelper.UVSpec;
 import net.minecraft.client.renderer.RenderType;
