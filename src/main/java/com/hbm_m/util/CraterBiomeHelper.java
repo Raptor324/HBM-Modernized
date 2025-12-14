@@ -1,281 +1,259 @@
 package com.hbm_m.util;
 
-import java.lang.reflect.Method;
-
+import com.hbm_m.world.biome.ModBiomes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Holder;
 import net.minecraft.core.registries.Registries;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraft.network.protocol.game.ClientboundLevelChunkWithLightPacket;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.util.RandomSource;
+import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.chunk.PalettedContainer;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
+import java.util.*;
+
 /**
- * ✅ CRATER BIOME HELPER v4.6 - MINECRAFT 1.20.1 COMPATIBLE (FIXED)
- *
- * ФИНАЛЬНАЯ ВЕРСИЯ БЕЗ isEmpty():
- * ✅ Правильный расчет индекса квартала в PalettedContainer
- * ✅ Безопасная работа с reflection
- * ✅ Корректная синхронизация zone3 и zone4
- * ✅ Совместимость с Minecraft 1.20.1
- * ✅ Без использования isEmpty() (версионная проблема)
- * ✅ Детальное логирование для отладки
- *
- * @author HBM_M
- * @version 4.6 (1.20.1 compatible)
+ * Crater Biome Helper v4.0 - COMPLETE REWRITE
+ * ✅ Instant application without batching
+ * ✅ Seamless wavy borders synchronized with damage zones
+ * ✅ No visual artifacts or holes in biome coverage
  */
 public class CraterBiomeHelper {
 
-    private static final String LOG_PREFIX = "[CRATER_BIOME]";
+    // Wave parameters - SYNCHRONIZED with CraterGenerator
+    private static final double ZONE_NOISE_SCALE = 0.15;
+    private static final double ZONE_NOISE_STRENGTH = 0.25;
 
-    /**
-     * 🎯 Асинхронное наложение биомов кратера
-     */
-    public static void applyBiomesAsync(ServerLevel level, BlockPos centerPos,
-                                        double zone3Radius, double zone4Radius) {
-        if (level == null || centerPos == null) {
-            System.err.println(LOG_PREFIX + " ❌ Invalid parameters: level or centerPos is null");
-            return;
-        }
-
+    public static void applyBiomesAsync(ServerLevel level, BlockPos center, double zone3Radius, double zone4Radius) {
         MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
         if (server == null) {
-            System.err.println(LOG_PREFIX + " ❌ Cannot get MinecraftServer instance");
+            System.err.println("[CraterBiomeHelper] ERROR: No MinecraftServer!");
             return;
         }
 
-        server.tell(new TickTask(1, () -> {
-            applyCraterBiomesSync(level, centerPos, zone3Radius, zone4Radius);
-        }));
-    }
-
-    /**
-     * 📍 Применяет биомы кратера (синхронная версия)
-     */
-    private static void applyCraterBiomesSync(ServerLevel level, BlockPos centerPos,
-                                              double zone3Radius, double zone4Radius) {
         long startTime = System.currentTimeMillis();
+        System.out.println("[CraterBiomeHelper] START: Applying biomes instantly");
+        System.out.println("[CraterBiomeHelper] Zone 3 radius: " + (int)zone3Radius + "m");
+        System.out.println("[CraterBiomeHelper] Zone 4 radius: " + (int)zone4Radius + "m");
 
-        System.out.println("\n╔═══════════════════════════════════════════════════════════════╗");
-        System.out.println("║ " + LOG_PREFIX + " START: Applying crater biomes                   ║");
-        System.out.println("║ Center: " + String.format("%-47s║", centerPos));
-        System.out.println("║ INNER (Zone 3): 0-" + (int)zone3Radius + "m                              ║");
-        System.out.println("║ OUTER (Zone 4): " + (int)zone3Radius + "-" + (int)zone4Radius + "m                            ║");
-        System.out.println("╚═══════════════════════════════════════════════════════════════╝\n");
+        // Get biomes from registry
+        var biomeRegistry = level.registryAccess().registryOrThrow(Registries.BIOME);
 
-        try {
-            Holder<Biome> innerCrater = getBiomeHolder(level, "hbm_m", "inner_crater");
-            Holder<Biome> outerCrater = getBiomeHolder(level, "hbm_m", "outer_crater");
+        Optional<Holder.Reference<Biome>> innerOpt = biomeRegistry.getHolder(ModBiomes.INNER_CRATER_KEY);
+        Optional<Holder.Reference<Biome>> outerOpt = biomeRegistry.getHolder(ModBiomes.OUTER_CRATER_KEY);
 
-            if (innerCrater == null || outerCrater == null) {
-                System.err.println(LOG_PREFIX + " ⚠️ WARNING: One or both crater biomes not found!");
-                System.err.println(LOG_PREFIX + " Make sure biomes 'inner_crater' and 'outer_crater' are registered!");
-
-                innerCrater = level.registryAccess()
-                        .registryOrThrow(Registries.BIOME)
-                        .getRandom(level.random)
-                        .orElse(null);
-
-                if (innerCrater == null) {
-                    System.err.println(LOG_PREFIX + " 🔴 CRITICAL: No biomes found at all!");
-                    return;
-                }
-
-                outerCrater = innerCrater;
-                System.err.println(LOG_PREFIX + " Using fallback biome for both zones");
-            }
-
-            int centerX = centerPos.getX();
-            int centerZ = centerPos.getZ();
-            int searchRadius = (int) zone4Radius + 64;
-
-            int minChunkX = (centerX - searchRadius) >> 4;
-            int maxChunkX = (centerX + searchRadius) >> 4;
-            int minChunkZ = (centerZ - searchRadius) >> 4;
-            int maxChunkZ = (centerZ + searchRadius) >> 4;
-
-            int totalChunks = (maxChunkX - minChunkX + 1) * (maxChunkZ - minChunkZ + 1);
-            int successfulChunks = 0;
-            int failedChunks = 0;
-            int innerBiomeCount = 0;
-            int outerBiomeCount = 0;
-
-            for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
-                for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
-                    try {
-                        ChunkAccess chunk = level.getChunk(chunkX, chunkZ);
-                        if (chunk == null) {
-                            failedChunks++;
-                            continue;
-                        }
-
-                        int[] stats = applyBiomesToChunk(chunk, centerPos,
-                                zone3Radius, zone4Radius,
-                                innerCrater, outerCrater,
-                                level.random);
-
-                        innerBiomeCount += stats[0];
-                        outerBiomeCount += stats[1];
-
-                        chunk.setUnsaved(true);
-                        successfulChunks++;
-
-                    } catch (Exception e) {
-                        System.err.println(LOG_PREFIX + " ⚠️ Chunk [" + chunkX + ", " + chunkZ + "]: " +
-                                e.getClass().getSimpleName() + " - " + e.getMessage());
-                        failedChunks++;
-                    }
-                }
-            }
-
-            long endTime = System.currentTimeMillis();
-            long duration = endTime - startTime;
-
-            System.out.println("\n╔═══════════════════════════════════════════════════════════════╗");
-            System.out.println("║ " + LOG_PREFIX + " ✅ COMPLETE!                                          ║");
-            System.out.println("║ Chunks processed: " + String.format("%-41s║", successfulChunks + " / " + totalChunks));
-            System.out.println("║ Chunks failed: " + String.format("%-49s║", failedChunks));
-            System.out.println("║ INNER biomes: " + String.format("%-48s║", innerBiomeCount));
-            System.out.println("║ OUTER biomes: " + String.format("%-48s║", outerBiomeCount));
-            System.out.println("║ Time: " + String.format("%-55s║", duration + " ms"));
-            System.out.println("╚═══════════════════════════════════════════════════════════════╝\n");
-
-        } catch (Exception e) {
-            System.err.println(LOG_PREFIX + " 🔴 CRITICAL ERROR:");
-            e.printStackTrace();
+        if (innerOpt.isEmpty() || outerOpt.isEmpty()) {
+            System.err.println("[CraterBiomeHelper] ERROR: Biomes not registered!");
+            return;
         }
+
+        Holder<Biome> innerBiome = innerOpt.get();
+        Holder<Biome> outerBiome = outerOpt.get();
+
+        // Calculate affected area with padding
+        int radiusBlocks = (int) Math.ceil(zone4Radius) + 30;
+        int minChunkX = (center.getX() - radiusBlocks) >> 4;
+        int maxChunkX = (center.getX() + radiusBlocks) >> 4;
+        int minChunkZ = (center.getZ() - radiusBlocks) >> 4;
+        int maxChunkZ = (center.getZ() + radiusBlocks) >> 4;
+
+        // Collect all affected chunks
+        Set<LevelChunk> affectedChunks = new HashSet<>();
+        int totalChunks = 0;
+        int modifiedChunks = 0;
+
+        // Process all chunks + neighbors for seamless edges
+        Set<ChunkPos> chunksToProcess = new HashSet<>();
+        for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+            for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                chunksToProcess.add(new ChunkPos(cx, cz));
+                // Add neighbors for seamless transitions
+                chunksToProcess.add(new ChunkPos(cx - 1, cz));
+                chunksToProcess.add(new ChunkPos(cx + 1, cz));
+                chunksToProcess.add(new ChunkPos(cx, cz - 1));
+                chunksToProcess.add(new ChunkPos(cx, cz + 1));
+            }
+        }
+
+        // MAIN PROCESSING LOOP - All at once, no batching
+        for (ChunkPos chunkPos : chunksToProcess) {
+            totalChunks++;
+            LevelChunk chunk = level.getChunkSource().getChunk(chunkPos.x, chunkPos.z, false);
+
+            if (chunk != null && !chunk.isEmpty()) {
+                if (applyBiomesToChunk(chunk, center, zone3Radius, zone4Radius, innerBiome, outerBiome, level)) {
+                    modifiedChunks++;
+                    affectedChunks.add(chunk);
+                }
+            }
+        }
+
+        // Send ALL updates in one batch
+        sendAllChunkUpdates(level, affectedChunks);
+
+        long endTime = System.currentTimeMillis();
+        System.out.println("[CraterBiomeHelper] COMPLETE! Modified " + modifiedChunks + "/" + totalChunks + " chunks in " + (endTime - startTime) + "ms");
     }
 
     /**
-     * 🔍 Получает биом из реестра
+     * Wave noise function - SYNCHRONIZED with CraterGenerator
      */
-    private static Holder<Biome> getBiomeHolder(ServerLevel level, String namespace, String biomeName) {
-        try {
-            ResourceKey<Biome> key = ResourceKey.create(
-                    Registries.BIOME,
-                    new ResourceLocation(namespace, biomeName)
-            );
-
-            return level.registryAccess()
-                    .registryOrThrow(Registries.BIOME)
-                    .getHolder(key)
-                    .orElse(null);
-
-        } catch (Exception e) {
-            System.err.println(LOG_PREFIX + " ❌ Cannot find biome: " + namespace + ":" + biomeName);
-            return null;
-        }
+    private static double getZoneWaveNoise(double x, double z) {
+        double wave1 = Math.sin(x * 0.1) * Math.cos(z * 0.1) * 0.5;
+        double wave2 = Math.sin(x * 0.05 + z * 0.08) * 0.3;
+        double wave3 = Math.cos(x * 0.15 - z * 0.12) * 0.2;
+        return (wave1 + wave2 + wave3) / 2.0;
     }
 
     /**
-     * 📍 Применяет биомы к чанку
-     * Возвращает [innerCount, outerCount]
-     *
-     * ✅ ИСПРАВЛЕНО: Удалена проверка isEmpty() (версионная несовместимость)
+     * Calculate wavy radius at specific point - SYNCHRONIZED with CraterGenerator
      */
-    private static int[] applyBiomesToChunk(ChunkAccess chunk,
-                                            BlockPos centerPos,
-                                            double zone3Radius,
-                                            double zone4Radius,
-                                            Holder<Biome> innerCrater,
-                                            Holder<Biome> outerCrater,
-                                            RandomSource random) {
+    private static double getZoneRadiusWithNoise(double baseRadius, double centerX, double centerZ, int x, int z) {
+        double relX = (x - centerX) * ZONE_NOISE_SCALE;
+        double relZ = (z - centerZ) * ZONE_NOISE_SCALE;
 
-        int centerX = centerPos.getX();
-        int centerZ = centerPos.getZ();
+        double noise = getZoneWaveNoise(relX, relZ);
+        double noiseInfluence = 1.0 + (noise * ZONE_NOISE_STRENGTH);
+        return baseRadius * noiseInfluence;
+    }
+
+    /**
+     * Apply biomes to a single chunk - NO BATCHING
+     */
+    @SuppressWarnings("unchecked")
+    private static boolean applyBiomesToChunk(LevelChunk chunk, BlockPos center,
+                                              double zone3Radius, double zone4Radius,
+                                              Holder<Biome> innerBiome, Holder<Biome> outerBiome,
+                                              ServerLevel level) {
+        boolean modified = false;
 
         int chunkX = chunk.getPos().x;
         int chunkZ = chunk.getPos().z;
+        int chunkBlockStartX = chunkX << 4;
+        int chunkBlockStartZ = chunkZ << 4;
 
-        int chunkBlockX = chunkX << 4;
-        int chunkBlockZ = chunkZ << 4;
+        int centerX = center.getX();
+        int centerZ = center.getZ();
+        int centerY = center.getY();
 
-        LevelChunkSection[] sections = chunk.getSections();
-        if (sections == null) return new int[]{0, 0};
+        double baseR3 = zone3Radius;
+        double baseR4 = zone4Radius;
 
-        int innerCount = 0;
-        int outerCount = 0;
+        // Iterate through all sections
+        int minSection = level.getMinSection();
+        int maxSection = level.getMaxSection();
 
-        double zone3RadiusSq = zone3Radius * zone3Radius;
-        double zone4RadiusSq = zone4Radius * zone4Radius;
+        for (int sectionY = minSection; sectionY <= maxSection; sectionY++) {
+            int sectionIndex = sectionY - minSection;
+            if (sectionIndex < 0 || sectionIndex >= chunk.getSections().length) continue;
 
-        // ✅ ИСПРАВЛЕНО: Убрана проверка isEmpty() (нет в 1.20.1)
-        for (LevelChunkSection section : sections) {
-            // ✅ Проверяем только null, isEmpty() не существует в 1.20.1
-            if (section == null) continue;
+            LevelChunkSection section = chunk.getSection(sectionIndex);
+            if (section == null || section.hasOnlyAir()) continue;
+
+            int sectionBlockStartY = sectionY << 4;
 
             try {
-                var biomesContainer = section.getBiomes();
-                if (biomesContainer == null) continue;
+                // Get biome container with proper casting
+                PalettedContainer<Holder<Biome>> biomeContainer =
+                        (PalettedContainer<Holder<Biome>>) section.getBiomes();
 
-                // ✅ ГЛАВНОЕ: Правильный индекс квартала
+                // Iterate through all biome quarts (4x4x4 blocks)
                 for (int qx = 0; qx < 4; qx++) {
-                    for (int qy = 0; qy < 4; qy++) {
-                        for (int qz = 0; qz < 4; qz++) {
+                    for (int qz = 0; qz < 4; qz++) {
+                        for (int qy = 0; qy < 4; qy++) {
+                            // Calculate block coordinates at quart center
+                            int blockX = chunkBlockStartX + (qx << 2) + 2;
+                            int blockY = sectionBlockStartY + (qy << 2) + 2;
+                            int blockZ = chunkBlockStartZ + (qz << 2) + 2;
 
-                            int blockX = chunkBlockX + (qx << 2) + 2;
-                            int blockZ = chunkBlockZ + (qz << 2) + 2;
+                            // Calculate wavy radii for this exact point
+                            double currentR3 = getZoneRadiusWithNoise(baseR3, centerX, centerZ, blockX, blockZ);
+                            double currentR4 = getZoneRadiusWithNoise(baseR4, centerX, centerZ, blockX, blockZ);
 
+                            // Calculate distance
                             double dx = blockX - centerX;
+                            double dy = blockY - centerY;
                             double dz = blockZ - centerZ;
-                            double distanceSq = dx * dx + dz * dz;
+                            double distSq = dx * dx + dy * dy + dz * dz;
+                            double dist = Math.sqrt(distSq);
 
-                            Holder<Biome> biomeToSet = null;
+                            // Determine target biome
+                            Holder<Biome> targetBiome = null;
 
-                            if (distanceSq <= zone3RadiusSq) {
-                                biomeToSet = innerCrater;
-                                innerCount++;
-                            } else if (distanceSq <= zone4RadiusSq) {
-                                biomeToSet = outerCrater;
-                                outerCount++;
+                            if (dist <= currentR3) {
+                                targetBiome = innerBiome;
+                            } else if (dist <= currentR4) {
+                                targetBiome = outerBiome;
                             }
 
-                            if (biomeToSet != null) {
-                                // ✅ ПРАВИЛЬНЫЙ ИНДЕКС: (qy << 4) | (qz << 2) | qx
-                                setBiomeViaReflection(biomesContainer, qx, qy, qz, biomeToSet);
+                            // Apply biome if in zone
+                            if (targetBiome != null) {
+                                try {
+                                    biomeContainer.set(qx, qy, qz, targetBiome);
+                                    modified = true;
+                                } catch (Exception e) {
+                                    System.err.println("[CraterBiomeHelper] Failed to set biome at " + blockX + "," + blockY + "," + blockZ + ": " + e.getMessage());
+                                }
                             }
                         }
                     }
                 }
-
+            } catch (ClassCastException e) {
+                System.err.println("[CraterBiomeHelper] ClassCastException in section " + sectionY + ": " + e.getMessage());
             } catch (Exception e) {
-                System.err.println(LOG_PREFIX + " ⚠️ Error in section: " + e.getMessage());
+                System.err.println("[CraterBiomeHelper] Exception in section " + sectionY + ": " + e.getMessage());
             }
         }
 
-        return new int[]{innerCount, outerCount};
+        if (modified) {
+            chunk.setUnsaved(true);
+        }
+
+        return modified;
     }
 
     /**
-     * 🔧 Устанавливает биом через reflection
-     * ✅ ИСПРАВЛЕНО: Правильный расчет индекса (qy, qz, qx)
+     * Send all chunk updates to clients at once
      */
-    private static void setBiomeViaReflection(Object paletteContainer,
-                                              int x, int y, int z,
-                                              Holder<Biome> biome) {
+    private static void sendAllChunkUpdates(ServerLevel level, Set<LevelChunk> chunks) {
+        if (chunks.isEmpty()) {
+            System.out.println("[CraterBiomeHelper] No chunks to update");
+            return;
+        }
+
+        System.out.println("[CraterBiomeHelper] Sending updates for " + chunks.size() + " chunks to all players...");
+
         try {
-            // ✅ ПРАВИЛЬНЫЙ ИНДЕКС для PalettedContainer биомов
-            // Формула: index = (y << 4) | (z << 2) | x
-            // Эквивалентно: index = y * 16 + z * 4 + x
-            int index = (y << 4) | (z << 2) | x;
+            for (LevelChunk chunk : chunks) {
+                try {
+                    // Create update packet
+                    ClientboundLevelChunkWithLightPacket packet = new ClientboundLevelChunkWithLightPacket(
+                            chunk,
+                            level.getLightEngine(),
+                            null,
+                            null
+                    );
 
-            Method setMethod = paletteContainer.getClass()
-                    .getDeclaredMethod("set", int.class, Object.class);
-
-            setMethod.setAccessible(true);
-            setMethod.invoke(paletteContainer, index, biome);
-
-        } catch (NoSuchMethodException e) {
-            System.err.println(LOG_PREFIX + " Warning: set() method not found (version difference?)");
-
+                    // Send to ALL players on server
+                    var players = level.getServer().getPlayerList().getPlayers();
+                    for (var player : players) {
+                        try {
+                            player.connection.send(packet);
+                        } catch (Exception e) {
+                            System.err.println("[CraterBiomeHelper] Failed to send to player " + player.getName().getString());
+                        }
+                    }
+                } catch (Exception e) {
+                    System.err.println("[CraterBiomeHelper] Failed to create packet for chunk " + chunk.getPos());
+                }
+            }
         } catch (Exception e) {
-            System.err.println(LOG_PREFIX + " ⚠️ Error during reflection: " + e.getClass().getSimpleName());
+            System.err.println("[CraterBiomeHelper] Critical error during broadcast!");
+            e.printStackTrace();
         }
     }
 }
