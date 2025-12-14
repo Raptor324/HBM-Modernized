@@ -32,32 +32,53 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public class CraterGenerator {
 
-    private static final int CRATER_GENERATION_DELAY = 30;
-    private static final int RING_COUNT = 8;
-    private static final int BLOCK_BATCH_SIZE = 512;
-    private static final int TOTAL_RAYS = 103680;
-    private static final int RAYS_PER_TICK = 500;
-    private static final double MAX_PENETRATION = 2000.0;
-    private static final double MIN_PENETRATION = 500.0;
-    private static final double MAX_RAY_DISTANCE = 100.0;
-    private static final int RAY_THICKNESS = 3;
+    // ==========================================
+    // НАСТРОЙКИ ПРОИЗВОДИТЕЛЬНОСТИ И ГЕНЕРАЦИИ
+    // ==========================================
+    private static final int CRATER_GENERATION_DELAY = 30;   // Задержка перед стартом (тики)
+    private static final int BLOCK_BATCH_SIZE = 512;         // Блоков за тик при финализации
+    private static final int RAYS_PER_TICK = 500;            // Лучей за тик при расчете формы
+    private static final int DAMAGE_CHUNKS_PER_TICK = 16;    // Чанков за тик при уроне сущностям
+
+    // ==========================================
+    // НАСТРОЙКИ ЛУЧЕЙ (RAY TRACING)
+    // ==========================================
+    private static final int TOTAL_RAYS = 103680;            // Общее кол-во лучей (детализация)
+    private static final int RING_COUNT = 8;                 // Кол-во колец для сортировки блоков
+    private static final int RAY_THICKNESS = 3;              // Толщина луча (для сглаживания)
+    private static final double MAX_RAY_DISTANCE = 100.0;    // Макс. длина луча (радиус кратера)
+    private static final double MAX_PENETRATION = 2000.0;    // Макс. пробивная способность
+    private static final double MIN_PENETRATION = 500.0;     // Мин. пробивная способность
+    public static long RAY_TRAIL_DURATION = 60_000L;         // Время жизни дебаг-лучей (мс)
+
+    // ==========================================
+    // НАСТРОЙКИ ЗОН ПОРАЖЕНИЯ И УРОНА
+    // ==========================================
+
+    // Множители радиусов относительно размера кратера
     private static final float ZONE_3_RADIUS_MULTIPLIER = 0.9F;
     private static final float ZONE_4_RADIUS_MULTIPLIER = 1.8F;
-    private static final int DAMAGE_ZONE_HEIGHT = 80;
-    private static final float ZONE_3_DAMAGE = 5000.0F;
-    private static final float ZONE_4_DAMAGE = 2000.0F;
-    private static final float FIRE_DURATION = 380.0F;
-    private static final int CENTER_SPHERE_RADIUS = 5;
-    private static final float CLEANUP_DEFENSE_THRESHOLD = 1500.0F;
 
-    public static long RAY_TRAIL_DURATION = 60_000L;
+    // Параметры урона
+    private static final float ZONE_3_DAMAGE = 5000.0F;      // Урон в эпицентре
+    private static final float ZONE_4_DAMAGE = 2000.0F;      // Урон во внешней зоне
+    private static final float FIRE_DURATION = 380.0F;       // Длительность горения (тики)
+    private static final int DAMAGE_ZONE_HEIGHT = 80;        // Высота зоны поражения (+/- от центра)
 
-    // Wave border constants - SYNCHRONIZED with CraterBiomeHelper
-    private static final double ZONE_NOISE_SCALE = 0.15;
-    private static final double ZONE_NOISE_STRENGTH = 0.25;
+    // ==========================================
+    // НАСТРОЙКИ ШУМА И ГРАНИЦ (BIOME SYNC)
+    // ==========================================
+    private static final int ZONE_OVERLAP = 15;              // Запас перекрытия зон (для волн)
+    private static final double ZONE_NOISE_SCALE = 0.15;     // Масштаб шума границ
+    private static final double ZONE_NOISE_STRENGTH = 0.25;  // Сила искривления границ
+    private static final float ZONE_GRADIENT_THICKNESS = 1.15F; // Толщина градиента биома (15%)
 
-    // *** NEW: Gradient zone for smooth biome transitions ***
-    private static final float ZONE_GRADIENT_THICKNESS = 1.15F;  // 15% transition zone
+    // ==========================================
+    // ПРОЧИЕ НАСТРОЙКИ
+    // ==========================================
+    private static final int CENTER_SPHERE_RADIUS = 5;       // Радиус очистки центра
+    private static final float CLEANUP_DEFENSE_THRESHOLD = 1500.0F; // Порог прочности для очистки центра
+
 
     private static final Map<BlockPos, List<RayData>> rayDebugData = new ConcurrentHashMap<>();
 
@@ -153,22 +174,18 @@ public class CraterGenerator {
                     System.out.println("\n[CRATER_GENERATOR] Step 1.5: Cleaning center sphere...");
                     cleanupCenterSphere(level, groundCenterPos);
 
+                    // [ЗАМЕНА ДЛЯ STEP 2]
                     server.tell(new TickTask(5, () -> {
-                        System.out.println("\n[CRATER_GENERATOR] Step 2: Calculating and applying dynamic damage zones...");
+                        System.out.println("\n[CRATER_GENERATOR] Step 2: Calculating and applying dynamic damage zones SEQUENTIALLY...");
+
                         double zone3Radius = Math.max(terminationData.maxDistance * ZONE_3_RADIUS_MULTIPLIER, 50);
                         double zone4Radius = Math.max(terminationData.maxDistance * ZONE_4_RADIUS_MULTIPLIER, 80);
 
-                        System.out.println("[CRATER_GENERATOR] Zone 3 Radius: " + (int)zone3Radius + "m");
-                        System.out.println("[CRATER_GENERATOR] Zone 4 Radius: " + (int)zone4Radius + "m");
+                        System.out.println("[CRATER_GENERATOR] Starting Zone Sequence...");
 
-                        applyDynamicDamageZones(level, groundCenterPos, zone3Radius, zone4Radius,
+                        // Запускаем цепочку с Зоны 3. Когда она закончится, она сама запустит Зону 4 и так далее.
+                        processZone3(level, groundCenterPos, zone3Radius, zone4Radius,
                                 wasteLogBlock, wastePlanksBlock, burnedGrassBlock, deadDirtBlocks, selafitBlocks, random);
-
-                        server.tell(new TickTask(1, () -> {
-                            System.out.println("\n[CRATER_GENERATOR] Step 3: Applying crater biomes to zones...");
-                            CraterBiomeHelper.applyBiomesAsync(level, groundCenterPos, zone3Radius, zone4Radius);
-                            System.out.println("\n[CRATER_GENERATOR] All steps complete!");
-                        }));
                     }));
                 }));
             }
@@ -671,115 +688,257 @@ public class CraterGenerator {
         }
     }
 
-    private static void applyDynamicDamageZones(
-            ServerLevel level,
-            BlockPos centerPos,
-            double zone3Radius,
-            double zone4Radius,
-            Block wasteLogBlock,
-            Block wastePlanksBlock,
-            Block burnedGrassBlock,
-            Block deadDirtBlock,
-            Block[] selafitBlocks,
-            RandomSource random) {
+    // === НОВЫЕ МЕТОДЫ ОБРАБОТКИ ЗОН (ВСТАВИТЬ ВМЕСТО applyDynamicDamageZones) ===
 
-        int centerX = centerPos.getX();
-        int centerY = centerPos.getY();
-        int centerZ = centerPos.getZ();
+    // === ОБНОВЛЕННЫЕ МЕТОДЫ С ПЕРЕКРЫТИЕМ ===
 
-        int scanHeightUp = 256;
-        int scanHeightDown = 64;
+    // ЭТАП 1: ЗОНА 3 (Эпицентр)
+    private static void processZone3(ServerLevel level, BlockPos centerPos, double r3, double r4,
+                                     Block wasteLog, Block wastePlanks, Block burnedGrass, Block deadDirt,
+                                     Block[] selafit, RandomSource random) {
+        // Сканируем от 0 до r3 + запас, чтобы поймать "выплески" зоны наружу
+        int startScan = 0;
+        int endScan = (int) Math.ceil(r3) + ZONE_OVERLAP;
 
-        // Радиус поиска +40 блоков для захвата зон 5 и 6
-        int searchRadius = (int) zone4Radius + 40;
+        processZoneBatch(level, centerPos, startScan, endScan, r3, r4, 3,
+                wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random, () -> {
+                    MinecraftServer server = level.getServer();
+                    if (server != null) {
+                        server.tell(new TickTask(server.getTickCount() + 2, () ->
+                                processZone4(level, centerPos, r3, r4, wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random)
+                        ));
+                    }
+                });
+    }
 
-        for (int x = centerX - searchRadius; x <= centerX + searchRadius; x++) {
-            long dx = x - centerX;
-            for (int z = centerZ - searchRadius; z <= centerZ + searchRadius; z++) {
-                long dz = z - centerZ;
+    // ЭТАП 2: ЗОНА 4 (Выжигание)
+    private static void processZone4(ServerLevel level, BlockPos centerPos, double r3, double r4,
+                                     Block wasteLog, Block wastePlanks, Block burnedGrass, Block deadDirt,
+                                     Block[] selafit, RandomSource random) {
+        // Начинаем РАНЬШЕ (r3 - запас), чтобы заполнить впадины, куда не достала Зона 3
+        // Заканчиваем ПОЗЖЕ (r4 + запас), чтобы сделать волнистый край
+        int startScan = Math.max(0, (int) Math.floor(r3) - ZONE_OVERLAP);
+        int endScan = (int) Math.ceil(r4) + ZONE_OVERLAP;
 
-                double distance2D = Math.sqrt(dx * dx + dz * dz);
+        processZoneBatch(level, centerPos, startScan, endScan, r3, r4, 4,
+                wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random, () -> {
+                    MinecraftServer server = level.getServer();
+                    if (server != null) {
+                        server.tell(new TickTask(server.getTickCount() + 2, () ->
+                                processZone5(level, centerPos, r3, r4, wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random)
+                        ));
+                    }
+                });
+    }
 
-                // Радиусы всех зон (с шумом)
-                double r3 = getZoneRadiusWithNoise(zone3Radius, centerX, centerZ, x, z);
-                double r4 = getZoneRadiusWithNoise(zone4Radius, centerX, centerZ, x, z);
-                double r5 = getZoneRadiusWithNoise(zone4Radius + 24.0, centerX, centerZ, x, z); // Обугливание
-                double r6 = getZoneRadiusWithNoise(zone4Radius + 48.0, centerX, centerZ, x, z); // Снос листвы
+    // ЭТАП 3: ЗОНА 5 (Обугливание)
+    private static void processZone5(ServerLevel level, BlockPos centerPos, double r3, double r4,
+                                     Block wasteLog, Block wastePlanks, Block burnedGrass, Block deadDirt,
+                                     Block[] selafit, RandomSource random) {
+        double r5 = r4 + 12.0;
+        int startScan = Math.max(0, (int) Math.floor(r4) - ZONE_OVERLAP);
+        int endScan = (int) Math.ceil(r5) + ZONE_OVERLAP;
 
-                // Если мы за пределами самой дальней зоны (6) — пропускаем
-                if (distance2D > r6) continue;
+        processZoneBatch(level, centerPos, startScan, endScan, r3, r4, 5,
+                wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random, () -> {
+                    MinecraftServer server = level.getServer();
+                    if (server != null) {
+                        server.tell(new TickTask(server.getTickCount() + 2, () ->
+                                processZone6(level, centerPos, r3, r4, wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random)
+                        ));
+                    }
+                });
+    }
 
-                boolean isZone3 = distance2D <= r3;
-                boolean isZone4 = distance2D <= r4;
-                boolean isZone5 = distance2D <= r5;
+    // ЭТАП 4: ЗОНА 6 (Снос листвы)
+    private static void processZone6(ServerLevel level, BlockPos centerPos, double r3, double r4,
+                                     Block wasteLog, Block wastePlanks, Block burnedGrass, Block deadDirt,
+                                     Block[] selafit, RandomSource random) {
+        double r5 = r4 + 12.0;
+        double r6 = r4 + 24.0;
+        int startScan = Math.max(0, (int) Math.floor(r5) - ZONE_OVERLAP);
+        int endScan = (int) Math.ceil(r6) + ZONE_OVERLAP;
+
+        processZoneBatch(level, centerPos, startScan, endScan, r3, r4, 6,
+                wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random, () -> {
+
+                    MinecraftServer server = level.getServer();
+                    if (server != null) {
+                        server.tell(new TickTask(server.getTickCount() + 1, () -> {
+                            System.out.println("\n[CRATER_GENERATOR] Step 3: Finalizing...");
+                            CraterBiomeHelper.applyBiomesAsync(level, centerPos, r3, r4);
+                            applyDamageToEntities(level, centerPos, r3, r4, random);
+                            cleanupItems(level, centerPos, r3 + 10);
+                            System.out.println("\n[CRATER_GENERATOR] All steps complete!");
+                        }));
+                    }
+                });
+    }
+
+
+    // Вспомогательный метод запуска батчинга
+    private static void processZoneBatch(
+            ServerLevel level, BlockPos center, int startRadius, int endRadius,
+            double r3Base, double r4Base, int zoneType,
+            Block wasteLog, Block wastePlanks, Block burnedGrass, Block deadDirt, Block[] selafit,
+            RandomSource random, Runnable onComplete) {
+
+        MinecraftServer server = level.getServer();
+        if (server == null) return;
+
+        int[] currentOffset = {0};
+        // batchSize = 4: Обрабатываем кольцо шириной 4 блока за один тик
+        processZoneBatchStep(level, center, startRadius, endRadius, currentOffset, 4,
+                r3Base, r4Base, zoneType, wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random, server, onComplete);
+    }
+
+    // Вспомогательный метод итерации по кольцам
+    private static void processZoneBatchStep(
+            ServerLevel level, BlockPos center, int startRadius, int endRadius,
+            int[] offsetRef, int stepSize,
+            double r3Base, double r4Base, int zoneType,
+            Block wasteLog, Block wastePlanks, Block burnedGrass, Block deadDirt, Block[] selafit,
+            RandomSource random, MinecraftServer server, Runnable onComplete) {
+
+        int currentStart = startRadius + offsetRef[0];
+        int currentEnd = Math.min(currentStart + stepSize, endRadius);
+
+        int centerX = center.getX();
+        int centerZ = center.getZ();
+
+        // Сканируем квадратное кольцо
+        for (int x = centerX - currentEnd; x <= centerX + currentEnd; x++) {
+            for (int z = centerZ - currentEnd; z <= centerZ + currentEnd; z++) {
+
+                double dx = x - centerX;
+                double dz = z - centerZ;
+                double distSq = dx * dx + dz * dz;
+                double dist = Math.sqrt(distSq);
+
+                // Оптимизация: отсекаем явно лишние блоки, НО учитываем перекрытие!
+                // Если блок совсем далеко за пределами нашего текущего батча, пропускаем
+                if (dist < currentStart || dist > currentEnd) continue;
+
+                // === ГЛАВНОЕ ИСПРАВЛЕНИЕ: ДИНАМИЧЕСКИЕ ГРАНИЦЫ ===
+                // Вычисляем шумные радиусы для конкретной точки
+                double r3Noise = getZoneRadiusWithNoise(r3Base, centerX, centerZ, x, z);
+                double r4Noise = getZoneRadiusWithNoise(r4Base, centerX, centerZ, x, z);
+                double r5Noise = getZoneRadiusWithNoise(r4Base + 12.0, centerX, centerZ, x, z);
+                double r6Noise = getZoneRadiusWithNoise(r4Base + 24.0, centerX, centerZ, x, z);
+
+                boolean inZone = false;
+
+                // Логика строгого неравенства без зазоров:
+                // Зона 3: [0 ... r3]
+                // Зона 4: (r3 ... r4]
+                // Зона 5: (r4 ... r5]
+                // Зона 6: (r5 ... r6]
+
+                if (zoneType == 3) {
+                    inZone = dist <= r3Noise;
+                } else if (zoneType == 4) {
+                    inZone = dist > r3Noise && dist <= r4Noise;
+                } else if (zoneType == 5) {
+                    inZone = dist > r4Noise && dist <= r5Noise;
+                } else if (zoneType == 6) {
+                    inZone = dist > r5Noise && dist <= r6Noise;
+                }
+
+                // Если блок физически находится в батче (например, на радиусе 50),
+                // но по шуму он принадлежит соседней зоне (например, Зона 3 там "втянулась" до 48),
+                // то мы его пропускаем. Его обработает (или уже обработал) цикл соседней зоны.
+                if (!inZone) continue;
 
                 BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
-
-                for (int y = centerY + scanHeightUp; y >= centerY - scanHeightDown; y--) {
+                for (int y = center.getY() + 80; y >= center.getY() - 64; y--) {
                     mutablePos.set(x, y, z);
-                    BlockState originalState = level.getBlockState(mutablePos);
-
-                    if (originalState.isAir()) continue;
+                    BlockState state = level.getBlockState(mutablePos);
+                    if (state.isAir()) continue;
 
                     BlockPos fixedPos = mutablePos.immutable();
 
-                    if (isZone3) {
-                        // === ZONE 3: Эпицентр ===
-                        transformBlockInZone3(level, fixedPos, originalState, selafitBlocks, random);
-                        break; // Тут поверхность уничтожена, осадок не нужен
-
-                    } else {
-                        // === ZONE 4, 5, 6 (Внешние зоны) ===
-
-                        // 1. Применяем разрушения в зависимости от зоны
-                        if (isZone4) {
-                            // ZONE 4: Полное выжигание
-                            applyZone4Effects(level, fixedPos, originalState, wasteLogBlock, wastePlanksBlock, burnedGrassBlock, deadDirtBlock, random);
-                        } else if (isZone5) {
-                            // ZONE 5: Обугливание леса
-                            applyZone5Effects(level, fixedPos, originalState, wasteLogBlock, wastePlanksBlock, random);
-                        } else {
-                            // ZONE 6: Снос листвы
-                            applyZone6Effects(level, fixedPos, originalState, random);
+                    if (zoneType == 3) {
+                        // [ИЗМЕНЕНИЕ] Теперь мы проверяем результат.
+                        // Если вернуло false (удалили листву), цикл продолжится вниз (y--).
+                        // Если вернуло true (превратили землю), делаем break.
+                        if (transformBlockInZone3(level, fixedPos, state, selafit, random, wasteLog, wastePlanks)) {
+                            break;
                         }
+                    } else if (zoneType == 4) {
+                        applyZone4Effects(level, fixedPos, state, wasteLog, wastePlanks, burnedGrass, deadDirt, random);
+                    } else if (zoneType == 5) {
+                        applyZone5Effects(level, fixedPos, state, wasteLog, wastePlanks, random);
+                    } else if (zoneType == 6) {
+                        applyZone6Effects(level, fixedPos, state, random);
+                    }
 
-                        // 2. [ИЗМЕНЕНИЕ]: Ядерный осадок выпадает во ВСЕХ внешних зонах (4, 5, 6)
+                    if (zoneType >= 4) {
                         BlockState newState = level.getBlockState(fixedPos);
                         if (!newState.isAir()) {
                             tryApplyNuclearFallout(level, fixedPos.above(), newState, random);
                         }
-
-                        // Мы не делаем break, чтобы в лесу снег мог теоретически упасть на ветки ниже,
-                        // если верхние сгорели, но так как мы идем сверху вниз и проверяем above().isAir(),
-                        // снег ляжет на самую верхнюю твердую поверхность.
                     }
                 }
             }
         }
 
-        applyDamageToEntities(level, centerPos, zone3Radius, zone4Radius, random);
-        cleanupItems(level, centerPos, zone3Radius + 10);
+        offsetRef[0] += stepSize;
+
+        if (offsetRef[0] < (endRadius - startRadius)) {
+            server.tell(new TickTask(server.getTickCount() + 1, () ->
+                    processZoneBatchStep(level, center, startRadius, endRadius, offsetRef, stepSize,
+                            r3Base, r4Base, zoneType, wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random, server, onComplete)
+            ));
+        } else {
+            onComplete.run();
+        }
     }
 
+    // Возвращает true, если нужно остановить обработку столбца (нашли землю)
+    // Возвращает true, если нужно остановить обработку столбца (нашли землю)
+    private static boolean transformBlockInZone3(ServerLevel level, BlockPos pos, BlockState state,
+                                                 Block[] selafitBlocks, RandomSource random,
+                                                 Block wasteLog, Block wastePlanks) { // <-- Новые аргументы
+        if (state.is(Blocks.BEDROCK)) return true;
 
-
-
-    private static void transformBlockInZone3(ServerLevel level, BlockPos pos, BlockState state, Block[] selafitBlocks, RandomSource random) {
-        if (state.is(Blocks.BEDROCK)) return;
-
-        // Удаляем декорации и слабые блоки
-        if (state.is(BlockTags.LEAVES) || state.is(BlockTags.LOGS) ||
-                state.is(BlockTags.FLOWERS) || state.is(Blocks.GRASS) ||
-                state.is(Blocks.TALL_GRASS) || state.is(Blocks.SNOW) ||
-                state.getCollisionShape(level, pos).isEmpty()) {
-            level.removeBlock(pos, false);
-            return;
+        // 1. ЗАМЕНА ДЕРЕВА: Если это бревна или доски — меняем на выжженные
+        // Важно: возвращаем false, чтобы спуститься ниже и заменить весь ствол/стену дома
+        if (state.is(BlockTags.LOGS)) {
+            level.setBlock(pos, wasteLog.defaultBlockState(), 3);
+            return false;
         }
 
-        // Превращаем твердый блок в случайный селафит
+        if (state.is(BlockTags.PLANKS)) {
+            level.setBlock(pos, wastePlanks.defaultBlockState(), 3);
+            return false;
+        }
+
+        // 2. УДАЛЕНИЕ: Листва, трава, мусор и ПРОЧЕЕ дерево (заборы, ступеньки, если хотите их удалять)
+        // Если хотите, чтобы заборы тоже заменялись, добавьте проверки выше.
+        // Здесь мы удаляем всё, что имеет звук дерева, но НЕ является бревном/доской (например, забор)
+        boolean isOtherWood = state.getSoundType() == net.minecraft.world.level.block.SoundType.WOOD;
+
+        boolean isFoliage = state.is(BlockTags.LEAVES) || state.is(BlockTags.FLOWERS) || state.is(Blocks.GRASS) || state.is(Blocks.TALL_GRASS) || state.is(Blocks.VINE);
+        boolean isWeak = state.getCollisionShape(level, pos).isEmpty() || state.is(Blocks.SNOW) || state.is(Blocks.SNOW_BLOCK) || state.is(BlockTags.WOOL);
+
+        if (isFoliage || isWeak || isOtherWood) {
+            level.removeBlock(pos, false);
+            return false; // Продолжаем бурить вниз
+        }
+
+        // 3. Дополнительная защита: Если блок не полный (например, решетка, плита), тоже сносим
+        if (!Block.isFaceFull(state.getCollisionShape(level, pos), net.minecraft.core.Direction.UP)) {
+            level.removeBlock(pos, false);
+            return false;
+        }
+
+        // 4. Иначе это твердая почва -> превращаем в селлафит и останавливаемся
         Block selafitBlock = selafitBlocks[random.nextInt(selafitBlocks.length)];
         level.setBlock(pos, selafitBlock.defaultBlockState(), 3);
+
+        return true; // Стоп, нашли дно
     }
+
 
     private static void applyZone4Effects(
             ServerLevel level,
