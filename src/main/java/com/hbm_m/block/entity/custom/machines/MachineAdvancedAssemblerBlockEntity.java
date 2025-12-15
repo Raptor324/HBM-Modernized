@@ -4,7 +4,7 @@ import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
-import com.hbm_m.client.ClientSoundManager;
+// import com.hbm_m.client.ClientSoundManager;
 import com.hbm_m.item.custom.industrial.ItemBlueprintFolder;
 import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
@@ -42,6 +42,8 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
+import net.minecraftforge.fml.DistExecutor;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -91,23 +93,22 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     private boolean needsClientSync = false;
     private int ticksSinceLastSync = 0;
 
+    // Поле для хранения клиентского обработчика.
+    // LazyOptional используется для безопасной инициализации только на клиенте.
+    private final LazyOptional<ClientTicker> clientTicker = DistExecutor.unsafeRunForDist(
+            () -> () -> LazyOptional.of(() -> new ClientTicker()),
+            () -> () -> LazyOptional.empty()
+    );
+
     // ContainerData: упаковываем long как два int через LongDataPacker
     protected final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
-            // Используем унаследованные методы!
-            long currentEnergy = MachineAdvancedAssemblerBlockEntity.this.getEnergyStored();
-            long maxEnergy = MachineAdvancedAssemblerBlockEntity.this.getMaxEnergyStored();
-            long delta = getEnergyDelta();
             return switch (index) {
+                // Только прогресс (индексы 0 и 1)
                 case 0 -> assemblerModule != null ? assemblerModule.getProgressInt() : 0;
                 case 1 -> assemblerModule != null ? assemblerModule.getMaxProgress() : 0;
-                case 2 -> LongDataPacker.packHigh(currentEnergy);
-                case 3 -> LongDataPacker.packLow(currentEnergy);
-                case 4 -> LongDataPacker.packHigh(maxEnergy);
-                case 5 -> LongDataPacker.packLow(maxEnergy);
-                case 6 -> LongDataPacker.packHigh(delta);
-                case 7 -> LongDataPacker.packLow(delta);
+                // Все индексы с энергией (2-7) удалены
                 default -> 0;
             };
         }
@@ -117,17 +118,17 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
         @Override
         public int getCount() {
-            return 8;
+            return 2;
         }
     };
 
     // Клиентские анимации
-    @OnlyIn(Dist.CLIENT) public final AssemblerArm[] arms = new AssemblerArm[2];
-    @OnlyIn(Dist.CLIENT) public float ringAngle;
-    @OnlyIn(Dist.CLIENT) public float prevRingAngle;
-    @OnlyIn(Dist.CLIENT) private float ringTarget;
-    @OnlyIn(Dist.CLIENT) private float ringSpeed;
-    @OnlyIn(Dist.CLIENT) private int ringDelay;
+    // @OnlyIn(Dist.CLIENT) public final AssemblerArm[] arms = new AssemblerArm[2];
+    // @OnlyIn(Dist.CLIENT) public float ringAngle;
+    // @OnlyIn(Dist.CLIENT) public float prevRingAngle;
+    // @OnlyIn(Dist.CLIENT) private float ringTarget;
+    // @OnlyIn(Dist.CLIENT) private float ringSpeed;
+    // @OnlyIn(Dist.CLIENT) private int ringDelay;
 
     public MachineAdvancedAssemblerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pos, state, 17, 100_000L, 100_000L);
@@ -136,7 +137,17 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         if (this.level != null && !this.level.isClientSide) {
             this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level);
         }
-        // Клиентские руки инициализируются на клиенте в onLoad для безопасности
+    }
+
+    public boolean isCrafting() {
+        if (level != null && level.isClientSide) {
+            return clientIsCrafting;
+        }
+        return assemblerModule != null && assemblerModule.isProcessing();
+    }
+    
+    public boolean isClientCrafting() {
+        return this.clientIsCrafting;
     }
 
     @Override
@@ -148,8 +159,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public Component getDisplayName() {
         return getDefaultName();
     }
-
-
 
     @Override
     protected void setupFluidCapability() {
@@ -246,64 +255,65 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     // Tick-хуки
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
         if (level.isClientSide) {
-            entity.clientTick(level, pos, state);
+            // Вызываем клиентский tick через LazyOptional
+            entity.clientTicker.ifPresent(ticker -> ticker.clientTick(level, pos, state, entity));
         } else {
             entity.serverTick();
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    public void clientTick(Level level, BlockPos pos, BlockState state) {
-        ClientSoundManager.updateSound(this, this.isCrafting(),
-                () -> new com.hbm_m.sound.AdvancedAssemblerSoundInstance(this.getBlockPos()));
-        this.prevRingAngle = this.ringAngle;
-        boolean craftingNow = isCrafting();
-        if (craftingNow) {
-            for (AssemblerArm arm : arms) {
-                arm.updateInterp();
-                arm.updateArm(level, pos, level.random);
-            }
-        } else {
-            for (AssemblerArm arm : arms) {
-                arm.updateInterp();
-                arm.returnToNullPos();
-            }
-        }
-        if (craftingNow && !wasCraftingLastTick) {
-            this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
-            this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
-            this.ringDelay = 0;
-            level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.5f, 1.0f, false);
-        }
-        wasCraftingLastTick = craftingNow;
-        if (craftingNow) {
-            if (this.ringAngle != this.ringTarget) {
-                float ringDelta = Mth.wrapDegrees(this.ringTarget - this.ringAngle);
-                float absDelta = Math.abs(ringDelta);
-                if (absDelta <= this.ringSpeed) {
-                    this.ringAngle = this.ringTarget;
-                    this.ringDelay = 20 + level.random.nextInt(21);
-                } else {
-                    this.ringAngle += Math.signum(ringDelta) * this.ringSpeed;
-                }
-            } else if (this.ringDelay > 0) {
-                this.ringDelay--;
-                if (this.ringDelay == 0) {
-                    level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                            ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.3f, 1.0f, false);
-                    this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
-                    this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
-                }
-            }
-        } else {
-            if (Math.abs(this.ringAngle) > 0.1f) {
-                this.ringAngle = Mth.lerp(0.1f, this.ringAngle, 0);
-            } else {
-                this.ringAngle = 0;
-            }
-        }
-    }
+    // @OnlyIn(Dist.CLIENT)
+    // public void clientTick(Level level, BlockPos pos, BlockState state) {
+    //     ClientSoundManager.updateSound(this, this.isCrafting(),
+    //             () -> new com.hbm_m.sound.AdvancedAssemblerSoundInstance(this.getBlockPos()));
+    //     this.prevRingAngle = this.ringAngle;
+    //     boolean craftingNow = isCrafting();
+    //     if (craftingNow) {
+    //         for (AssemblerArm arm : arms) {
+    //             arm.updateInterp();
+    //             arm.updateArm(level, pos, level.random);
+    //         }
+    //     } else {
+    //         for (AssemblerArm arm : arms) {
+    //             arm.updateInterp();
+    //             arm.returnToNullPos();
+    //         }
+    //     }
+    //     if (craftingNow && !wasCraftingLastTick) {
+    //         this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
+    //         this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
+    //         this.ringDelay = 0;
+    //         level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+    //                 ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.5f, 1.0f, false);
+    //     }
+    //     wasCraftingLastTick = craftingNow;
+    //     if (craftingNow) {
+    //         if (this.ringAngle != this.ringTarget) {
+    //             float ringDelta = Mth.wrapDegrees(this.ringTarget - this.ringAngle);
+    //             float absDelta = Math.abs(ringDelta);
+    //             if (absDelta <= this.ringSpeed) {
+    //                 this.ringAngle = this.ringTarget;
+    //                 this.ringDelay = 20 + level.random.nextInt(21);
+    //             } else {
+    //                 this.ringAngle += Math.signum(ringDelta) * this.ringSpeed;
+    //             }
+    //         } else if (this.ringDelay > 0) {
+    //             this.ringDelay--;
+    //             if (this.ringDelay == 0) {
+    //                 level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+    //                         ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.3f, 1.0f, false);
+    //                 this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
+    //                 this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
+    //             }
+    //         }
+    //     } else {
+    //         if (Math.abs(this.ringAngle) > 0.1f) {
+    //             this.ringAngle = Mth.lerp(0.1f, this.ringAngle, 0);
+    //         } else {
+    //             this.ringAngle = 0;
+    //         }
+    //     }
+    // }
 
     private void serverTick() {
 
@@ -537,13 +547,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         return inventory.getStackInSlot(BLUEPRINT_FOLDER_SLOT);
     }
 
-    public boolean isCrafting() {
-        if (level != null && level.isClientSide) {
-            return clientIsCrafting;
-        }
-        return assemblerModule != null && assemblerModule.isProcessing();
-    }
-
     public int getProgress() {
         return assemblerModule != null ? assemblerModule.getProgressInt() : 0;
     }
@@ -643,44 +646,257 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     public void onLoad() {
         super.onLoad();
-        // Инициализация клиентских рук безопасно на клиенте
-        if (level != null && level.isClientSide && arms[0] == null) {
-            net.minecraftforge.fml.DistExecutor.unsafeRunWhenOn(
-                    Dist.CLIENT, () -> () -> initClientArms()
-            );
-        }
-        // Модуль крафта — только сервер
         if (level != null && !level.isClientSide && assemblerModule == null) {
-            // ПЕРЕДАЕМ 'this' КАК IEnergyReceiver
             this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level);
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
-    private void initClientArms() {
-        for (int i = 0; i < arms.length; i++) {
-            arms[i] = new AssemblerArm();
-        }
-    }
+    // @OnlyIn(Dist.CLIENT)
+    // private void initClientArms() {
+    //     for (int i = 0; i < arms.length; i++) {
+    //         arms[i] = new AssemblerArm();
+    //     }
+    // }
 
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
         fluidInputHandler.invalidate();
         fluidOutputHandler.invalidate();
+        clientTicker.invalidate();
     }
 
     @Override
     public void setRemoved() {
         if (level != null && level.isClientSide) {
-            ClientSoundManager.updateSound(this, false, null);
+            // Звук теперь тоже можно остановить через ClientTicker
+            clientTicker.ifPresent(ClientTicker::onRemoved);
         }
         super.setRemoved();
     }
 
     // ==================== АНИМАЦИОННЫЕ РУКИ ====================
+    // @OnlyIn(Dist.CLIENT)
+    // public static class AssemblerArm {
+    //     public float[] angles = new float[4];
+    //     public float[] prevAngles = new float[4];
+    //     private float[] targetAngles = new float[4];
+    //     private float[] speed = new float[4];
+    //     private ArmActionState state = ArmActionState.ASSUME_POSITION;
+    //     private int actionDelay = 0;
+
+    //     private enum ArmActionState {
+    //         ASSUME_POSITION, EXTEND_STRIKER, RETRACT_STRIKER
+    //     }
+
+    //     public AssemblerArm() {
+    //         resetSpeed();
+    //     }
+
+    //     public void updateInterp() {
+    //         System.arraycopy(angles, 0, prevAngles, 0, angles.length);
+    //     }
+
+    //     public void returnToNullPos() {
+    //         Arrays.fill(targetAngles, 0);
+    //         speed[0] = speed[1] = speed[2] = 3;
+    //         speed[3] = 0.25f;
+    //         state = ArmActionState.RETRACT_STRIKER;
+    //         move();
+    //     }
+
+    //     private void resetSpeed() {
+    //         speed[0] = 15;
+    //         speed[1] = 15;
+    //         speed[2] = 15;
+    //         speed[3] = 0.5f;
+    //     }
+
+    //     public void updateArm(Level level, BlockPos pos, RandomSource random) {
+    //         resetSpeed();
+    //         if (actionDelay > 0) {
+    //             actionDelay--;
+    //             return;
+    //         }
+    //         switch (state) {
+    //             case ASSUME_POSITION:
+    //                 if (move()) {
+    //                     actionDelay = 2;
+    //                     state = ArmActionState.EXTEND_STRIKER;
+    //                     targetAngles[3] = -0.75f;
+    //                 }
+    //                 break;
+    //             case EXTEND_STRIKER:
+    //                 if (move()) {
+    //                     level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+    //                             ModSounds.ASSEMBLER_STRIKE_RANDOM.get(), SoundSource.BLOCKS, 0.5f, 1.0F, false);
+    //                     state = ArmActionState.RETRACT_STRIKER;
+    //                     targetAngles[3] = 0f;
+    //                 }
+    //                 break;
+    //             case RETRACT_STRIKER:
+    //                 if (move()) {
+    //                     actionDelay = 2 + random.nextInt(5);
+    //                     chooseNewArmPosition(random);
+    //                     state = ArmActionState.ASSUME_POSITION;
+    //                 }
+    //                 break;
+    //         }
+    //     }
+
+    //     private static final float[][] POSITIONS = {
+    //             {45, -15, -5}, {15, 15, -15}, {25, 10, -15},
+    //             {30, 0, -10}, {70, -10, -25}
+    //     };
+
+    //     public void chooseNewArmPosition(RandomSource random) {
+    //         int chosen = random.nextInt(5);
+    //         targetAngles[0] = POSITIONS[chosen][0];
+    //         targetAngles[1] = POSITIONS[chosen][1];
+    //         targetAngles[2] = POSITIONS[chosen][2];
+    //     }
+
+    //     private boolean move() {
+    //         boolean allReached = true;
+    //         for (int i = 0; i < angles.length; i++) {
+    //             float current = angles[i];
+    //             float target = targetAngles[i];
+    //             if (current == target) continue;
+    //             allReached = false;
+    //             float delta = target - current;
+    //             float absDelta = Math.abs(delta);
+    //             if (absDelta <= speed[i]) {
+    //                 angles[i] = target;
+    //             } else {
+    //                 angles[i] += Math.signum(delta) * speed[i];
+    //             }
+    //         }
+    //         return allReached;
+    //     }
+    // }
+
     @OnlyIn(Dist.CLIENT)
-    public static class AssemblerArm {
+    public float getRingAngle() {
+        if (clientTicker.isPresent()) {
+             return ((ClientTicker)clientTicker.orElseThrow(IllegalStateException::new)).ringAngle;
+        }
+        return 0;
+    }
+    
+    @OnlyIn(Dist.CLIENT)
+    public float getPrevRingAngle() {
+        if (clientTicker.isPresent()) {
+             return ((ClientTicker)clientTicker.orElseThrow(IllegalStateException::new)).prevRingAngle;
+        }
+        return 0;
+    }
+    
+    @OnlyIn(Dist.CLIENT)
+    public ClientTicker.AssemblerArm[] getArms() {
+         if (clientTicker.isPresent()) {
+             return ((ClientTicker)clientTicker.orElseThrow(IllegalStateException::new)).arms;
+        }
+        return new ClientTicker.AssemblerArm[0];
+    }
+
+    // ==================== КЛИЕНТСКИЙ ТИКЕР ====================
+    @OnlyIn(Dist.CLIENT)
+    public static class ClientTicker {
+
+        private final AssemblerArm[] arms = new AssemblerArm[2];
+        private float ringAngle;
+        private float prevRingAngle;
+        private float ringTarget;
+        private float ringSpeed;
+        private int ringDelay;
+        private boolean wasCraftingLastTick = false;
+        private com.hbm_m.sound.AdvancedAssemblerSoundInstance soundInstance;
+
+        public ClientTicker() {
+            for (int i = 0; i < arms.length; i++) {
+                arms[i] = new AssemblerArm();
+            }
+        }
+
+        // Логика из вашего старого clientTick() переезжает сюда
+        public void clientTick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
+            // Обновление звука
+            updateSound(entity);
+
+            this.prevRingAngle = this.ringAngle;
+            boolean craftingNow = entity.isClientCrafting(); // Используем метод из внешнего класса
+
+            if (craftingNow) {
+                for (AssemblerArm arm : arms) {
+                    arm.updateInterp();
+                    arm.updateArm(level, pos, level.random);
+                }
+            } else {
+                for (AssemblerArm arm : arms) {
+                    arm.updateInterp();
+                    arm.returnToNullPos();
+                }
+            }
+
+            if (craftingNow && !wasCraftingLastTick) {
+                this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
+                this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
+                this.ringDelay = 0;
+                level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                        ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.5f, 1.0f, false);
+            }
+
+            wasCraftingLastTick = craftingNow;
+
+            if (craftingNow) {
+                if (this.ringAngle != this.ringTarget) {
+                    float ringDelta = Mth.wrapDegrees(this.ringTarget - this.ringAngle);
+                    if (Math.abs(ringDelta) <= this.ringSpeed) {
+                        this.ringAngle = this.ringTarget;
+                        this.ringDelay = 20 + level.random.nextInt(21);
+                    } else {
+                        this.ringAngle += Math.signum(ringDelta) * this.ringSpeed;
+                    }
+                } else if (this.ringDelay > 0) {
+                    this.ringDelay--;
+                    if (this.ringDelay == 0) {
+                        level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                                ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.3f, 1.0f, false);
+                        this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
+                        this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
+                    }
+                }
+            } else {
+                if (Math.abs(this.ringAngle) > 0.1f) {
+                    this.ringAngle = Mth.lerp(0.1f, this.ringAngle, 0);
+                } else {
+                    this.ringAngle = 0;
+                }
+            }
+        }
+        
+        private void updateSound(MachineAdvancedAssemblerBlockEntity entity) {
+            boolean isCrafting = entity.isClientCrafting();
+            if (isCrafting && (this.soundInstance == null || this.soundInstance.isStopped())) {
+                this.soundInstance = new com.hbm_m.sound.AdvancedAssemblerSoundInstance(entity.getBlockPos());
+                net.minecraft.client.Minecraft.getInstance().getSoundManager().play(this.soundInstance);
+            } else if (!isCrafting && this.soundInstance != null && !this.soundInstance.isStopped()) {
+                // ИСПРАВЛЕНИЕ: Используем SoundManager для остановки звука
+                net.minecraft.client.Minecraft.getInstance().getSoundManager().stop(this.soundInstance);
+                this.soundInstance = null;
+            }
+        }
+
+        public void onRemoved() {
+            if (this.soundInstance != null) {
+                // ИСПРАВЛЕНИЕ: Используем SoundManager для остановки звука
+                net.minecraft.client.Minecraft.getInstance().getSoundManager().stop(this.soundInstance);
+                this.soundInstance = null;
+            }
+        }
+
+        // Класс AssemblerArm теперь находится внутри ClientTicker
+        public static class AssemblerArm {
         public float[] angles = new float[4];
         public float[] prevAngles = new float[4];
         private float[] targetAngles = new float[4];
@@ -776,6 +992,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             }
             return allReached;
         }
+    }
     }
 
     @Override

@@ -4,19 +4,19 @@ import com.hbm_m.api.energy.ConverterBlockEntity;
 import com.hbm_m.api.energy.SwitchBlockEntity;
 import com.hbm_m.api.energy.WireBlockEntity;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.custom.crates.IronCrateBlockEntity;
-import com.hbm_m.block.entity.custom.crates.SteelCrateBlockEntity;
+import com.hbm_m.block.entity.custom.crates.*;
 import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.custom.machines.*;
 import com.hbm_m.block.entity.custom.explosives.MineBlockEntity;
 import com.hbm_m.lib.RefStrings;
+
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import com.hbm_m.block.entity.custom.crates.DeshCrateBlockEntity;
+
 
 public class ModBlockEntities {
     public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
@@ -111,6 +111,11 @@ public class ModBlockEntities {
 			BLOCK_ENTITIES.register("wood_burner_be", () ->
 					BlockEntityType.Builder.of(MachineWoodBurnerBlockEntity::new,
 							ModBlocks.WOOD_BURNER.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<MachineFluidTankBlockEntity>> FLUID_TANK_BE =
+            BLOCK_ENTITIES.register("fluid_tank_be", () ->
+                    BlockEntityType.Builder.of(MachineFluidTankBlockEntity::new,
+                            ModBlocks.FLUID_TANK.get()).build(null));
 
     // ДВЕРИ
 

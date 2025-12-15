@@ -10,6 +10,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+
+import com.hbm_m.api.fluids.ModFluids;
+
 import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
 import com.hbm_m.item.custom.crates.IronCrateItem;
@@ -25,6 +28,7 @@ import com.hbm_m.item.custom.tools_and_armor.*;
 import com.hbm_m.item.tags_and_tiers.*;
 import com.hbm_m.item.custom.scanners.DepthOresScannerItem;
 import com.hbm_m.item.custom.scanners.OilDetectorItem;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
@@ -1309,6 +1313,24 @@ public class ModItems {
     public static final RegistryObject<Item> SCREWDRIVER = ITEMS.register("screwdriver",
             () -> new Item(new Item.Properties().stacksTo(1))); // В стаке только 1 штука
 
+
+        // Медленный источник (500 mB/t)
+        public static final RegistryObject<Item> INFINITE_WATER_500 = ITEMS.register("inf_water",
+                () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 500));
+
+        // Быстрый источник (5000 mB/t)
+        public static final RegistryObject<Item> INFINITE_WATER_5000 = ITEMS.register("inf_water_mk2",
+                () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 5000));
+
+
+
+    //=============================== ВЁДРА ДЛЯ ЖИДКОСТЕЙ ===============================//
+
+    public static final RegistryObject<Item> CRUDE_OIL_BUCKET = ITEMS.register("bucket_crude_oil",
+            () -> new BucketItem(ModFluids.CRUDE_OIL_SOURCE,
+                    new Item.Properties()
+                            .craftRemainder(Items.BUCKET) // Возвращает пустое ведро при крафте
+                            .stacksTo(1))); // Ведра не стакаются
 
     
 

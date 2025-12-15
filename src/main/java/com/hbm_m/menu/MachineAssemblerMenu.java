@@ -3,12 +3,13 @@ package com.hbm_m.menu;
 // меню для сборочной машины. Имеет слоты для батареи, улучшений, схемы, ввода и вывода.
 // Содержит логику для обработки Shift-клика и отображения прогресса сборки и уровня энергии.
 
+import com.hbm_m.api.energy.ILongEnergyMenu;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.custom.machines.MachineAssemblerBlockEntity;
 import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
 import com.hbm_m.main.MainRegistry;
 
-import com.hbm_m.util.LongDataPacker;
+import com.hbm_m.network.ModPacketHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -23,18 +24,22 @@ import javax.annotation.Nonnull;
 
 import org.jetbrains.annotations.NotNull;
 
-public class MachineAssemblerMenu extends AbstractContainerMenu {
+public class MachineAssemblerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
     private final MachineAssemblerBlockEntity blockEntity;
     private final Level level;
     private final ContainerData data;
+    private long clientEnergy;
+    private long clientMaxEnergy;
+    private final Player player;
 
     public MachineAssemblerMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
-        this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(9));
+        this(pContainerId, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(3));
     }
 
     public MachineAssemblerMenu(int pContainerId, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), pContainerId);
         checkContainerSize(inv, 18);
+        this.player = inv.player;
         this.blockEntity = (MachineAssemblerBlockEntity) entity;
         this.level = inv.player.level();
         this.data = data;
@@ -88,24 +93,66 @@ public class MachineAssemblerMenu extends AbstractContainerMenu {
         addDataSlots(data);
     }
 
+    @Override
+    public void setEnergy(long energy, long maxEnergy, long delta) {
+        this.clientEnergy = energy;
+        this.clientMaxEnergy = maxEnergy;
+    }
+
+    @Override
+    public long getEnergyStatic() {
+        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
+            return blockEntity.getEnergyStored();
+        }
+        return clientEnergy;
+    }
+
+    @Override
+    public long getMaxEnergyStatic() {
+        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
+            return blockEntity.getMaxEnergyStored();
+        }
+        return clientMaxEnergy;
+    }
+
     public long getEnergyLong() {
-        // Теперь энергия находится в индексах 0 (high) и 1 (low)
-        return LongDataPacker.unpack(this.data.get(2), this.data.get(3));
+        return getEnergyStatic();
     }
 
     public long getMaxEnergyLong() {
-        // Макс. энергия - в индексах 2 (high) и 3 (low)
-        return LongDataPacker.unpack(this.data.get(4), this.data.get(5));
+        return getMaxEnergyStatic();
+    }
+
+    @Override
+    public long getEnergyDeltaStatic() {
+        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
+            return blockEntity.getEnergyDelta();
+        }
+        return 0;
+    }
+
+    @Override
+    public void broadcastChanges() {
+        super.broadcastChanges();
+
+        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
+            ModPacketHandler.INSTANCE.send(
+                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> (net.minecraft.server.level.ServerPlayer) this.player),
+                    new com.hbm_m.network.packet.PacketSyncEnergy(
+                            this.containerId,
+                            blockEntity.getEnergyStored(),
+                            blockEntity.getMaxEnergyStored(),
+                            blockEntity.getEnergyDelta()
+                    )
+            );
+        }
     }
 
     public boolean isCrafting() {
         // Состояние крафта сместилось на индекс 6
-        return data.get(8) > 0;
+        return data.get(2) > 0;
     }
 
-    public long getEnergyDeltaLong() {
-        return LongDataPacker.unpack(this.data.get(6), this.data.get(7));
-    }
 
     public int getProgress() {
         // Прогресс в индексе 0

@@ -1,22 +1,14 @@
 package com.hbm_m.block.entity.custom.machines;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
-import com.hbm_m.api.energy.IEnergyConnector;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.custom.machines.MachineWoodBurnerBlock;
-import com.hbm_m.api.energy.IEnergyProvider;
 import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.api.energy.PackedEnergyCapabilityProvider;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.MachineWoodBurnerMenu;
-import com.mojang.logging.LogUtils;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.Containers;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -25,63 +17,26 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.ForgeHooks;
-import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
-import org.jetbrains.annotations.NotNull;
 import javax.annotation.Nullable;
-import org.slf4j.Logger;
 
 /**
  * Дровяной генератор энергии.
  * Сжигает топливо и производит энергию.
  */
+public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
 
-
-public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuProvider, IEnergyProvider {
-
-    private static final Logger LOGGER = LogUtils.getLogger();
-
-    private final ItemStackHandler itemHandler = new ItemStackHandler(3) {
-        @Override
-        protected void onContentsChanged(int slot) {
-            setChanged();
-        }
-
-        @Override
-        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            if (slot == FUEL_SLOT) {
-                // Только топливо в слот топлива
-                return ForgeHooks.getBurnTime(stack, null) > 0;
-            }
-            if (slot == ASH_SLOT) {
-                // Ничего нельзя положить в слот пепла
-                return false;
-            }
-            if (slot == CHARGE_SLOT) {
-                // Только заряжаемые предметы в слот зарядки
-                return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-            }
-            return false;
-        }
-    };
-
-    private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
-
-    // Энергия
-    private long energy = 0;
-    private final long capacity = 100_000L;
-    private final long generationRate = 50L; // HE за тик
-
-    // Capabilities
-    private final LazyOptional<IEnergyProvider> hbmProvider = LazyOptional.of(() -> this);
-    private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-    private final PackedEnergyCapabilityProvider feCapabilityProvider;
+    private static final int FUEL_SLOT = 0;
+    private static final int ASH_SLOT = 1;
+    private static final int CHARGE_SLOT = 2;
+    private static final int INVENTORY_SIZE = 3;
+    
+    private static final long CAPACITY = 100_000L;
+    private static final long GENERATION_RATE = 50L; // HE за тик
+    private static final long MAX_EXTRACT = GENERATION_RATE * 2; // Можем отдавать в 2 раза больше чем генерируем
 
     // GUI данные
     protected final ContainerData data;
@@ -91,38 +46,30 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
     private int maxBurnTime = 0;
     private boolean enabled = true;
 
-    private static final int FUEL_SLOT = 0;
-    private static final int ASH_SLOT = 1;
-    private static final int CHARGE_SLOT = 2;
-
     public MachineWoodBurnerBlockEntity(BlockPos pPos, BlockState pBlockState) {
-        super(ModBlockEntities.WOOD_BURNER_BE.get(), pPos, pBlockState);
-        this.feCapabilityProvider = new PackedEnergyCapabilityProvider(this);
+        super(ModBlockEntities.WOOD_BURNER_BE.get(), pPos, pBlockState, 
+              INVENTORY_SIZE, CAPACITY, 0L, MAX_EXTRACT); // Не принимает энергию, но может отдавать
 
         this.data = new ContainerData() {
             @Override
             public int get(int i) {
                 return switch (i) {
-                    case 0 -> (int) (energy & 0xFFFFFFFFL);      // energy low
-                    case 1 -> (int) (energy >> 32);              // energy high
-                    case 2 -> (int) (capacity & 0xFFFFFFFFL);    // capacity low
-                    case 3 -> (int) (capacity >> 32);            // capacity high
-                    case 4 -> burnTime;
-                    case 5 -> maxBurnTime;
-                    case 6 -> isBurning() ? 1 : 0;
-                    case 7 -> enabled ? 1 : 0;
+                    case 0 -> burnTime;
+                    case 1 -> maxBurnTime;
+                    case 2 -> isBurning() ? 1 : 0;
+                    case 3 -> enabled ? 1 : 0;
                     default -> 0;
                 };
             }
 
             @Override
             public void set(int i, int v) {
-                if (i == 7) enabled = v != 0;
+                if (i == 3) enabled = v != 0;
             }
 
             @Override
             public int getCount() {
-                return 8;
+                return 4;
             }
         };
     }
@@ -130,28 +77,8 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
     public static void tick(Level level, BlockPos pos, BlockState state, MachineWoodBurnerBlockEntity be) {
         if (level.isClientSide()) return;
 
-        EnergyNetworkManager manager = EnergyNetworkManager.get((ServerLevel) level);
-        if (!manager.hasNode(pos)) {
-            LOGGER.info("[WOOD_BURNER] Attempting to add node at {}", pos);
-            manager.addNode(pos);
-
-            // Проверяем, добавился ли узел
-            if (!manager.hasNode(pos)) {
-                // Диагностика: проверяем capability
-                BlockEntity beCheck = level.getBlockEntity(pos);
-                if (beCheck != null) {
-                    boolean hasProvider = beCheck.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent();
-                    boolean hasReceiver = beCheck.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
-                    boolean hasConnector = beCheck.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR).isPresent();
-                    LOGGER.warn("[WOOD_BURNER] Node NOT added! Capabilities: provider={}, receiver={}, connector={}",
-                            hasProvider, hasReceiver, hasConnector);
-                } else {
-                    LOGGER.warn("[WOOD_BURNER] BlockEntity is NULL at {}", pos);
-                }
-            } else {
-                LOGGER.info("[WOOD_BURNER] Node successfully added at {}", pos);
-            }
-        }
+        // Инициализация сети через базовый класс
+        be.ensureNetworkInitialized();
 
         boolean wasBurning = be.isBurning();
         boolean canCurrentlyBurn = be.canBurn();
@@ -166,7 +93,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
             be.burnTime--;
 
             // Просто генерируем энергию. Сеть сама её заберёт.
-            be.energy = Math.min(be.capacity, be.energy + be.generationRate);
+            be.setEnergyStored(Math.min(be.getMaxEnergyStored(), be.getEnergyStored() + GENERATION_RATE));
 
             be.chargeItem();
 
@@ -176,9 +103,9 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
                 // 50% шанс получить пепел
                 if (level.random.nextFloat() < 0.5f) {
-                    ItemStack ashStack = be.itemHandler.getStackInSlot(ASH_SLOT);
+                    ItemStack ashStack = be.inventory.getStackInSlot(ASH_SLOT);
                     if (ashStack.isEmpty()) {
-                        be.itemHandler.setStackInSlot(ASH_SLOT, new ItemStack(ModItems.WOOD_ASH_POWDER.get()));
+                        be.inventory.setStackInSlot(ASH_SLOT, new ItemStack(ModItems.WOOD_ASH_POWDER.get()));
                     } else if (ashStack.is(ModItems.WOOD_ASH_POWDER.get()) && ashStack.getCount() < ashStack.getMaxStackSize()) {
                         ashStack.grow(1);
                     }
@@ -195,15 +122,15 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
             level.setBlock(pos, state.setValue(MachineWoodBurnerBlock.LIT, be.isBurning()), 3);
         }
 
-        setChanged(level, pos, state);
+        be.setChanged();
     }
 
     private boolean canBurn() {
-        return !this.itemHandler.getStackInSlot(FUEL_SLOT).isEmpty() && this.energy < this.capacity;
+        return !this.inventory.getStackInSlot(FUEL_SLOT).isEmpty() && this.energy < this.capacity;
     }
 
     private void startBurning() {
-        ItemStack fuelStack = this.itemHandler.getStackInSlot(FUEL_SLOT);
+        ItemStack fuelStack = this.inventory.getStackInSlot(FUEL_SLOT);
         int burnTicks = ForgeHooks.getBurnTime(fuelStack, null);
 
         if (burnTicks > 0) {
@@ -212,7 +139,7 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
             // Особая обработка для лава ведра
             if (fuelStack.getItem() == Items.LAVA_BUCKET) {
-                this.itemHandler.setStackInSlot(FUEL_SLOT, new ItemStack(Items.BUCKET));
+                this.inventory.setStackInSlot(FUEL_SLOT, new ItemStack(Items.BUCKET));
             } else {
                 fuelStack.shrink(1);
             }
@@ -223,103 +150,24 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         return this.burnTime > 0;
     }
 
-    // --- IEnergyProvider базовые методы ---
-    @Override
-    public long getEnergyStored() {
-        return this.energy;
-    }
-
-    @Override
-    public long getMaxEnergyStored() {
-        return this.capacity;
-    }
-
-    @Override
-    public void setEnergyStored(long energy) {
-        this.energy = Math.max(0, Math.min(this.capacity, energy));
-        setChanged();
-    }
-
+    // Переопределяем скорость отдачи энергии
     @Override
     public long getProvideSpeed() {
-        return this.generationRate * 2; // Можем отдавать в 2 раза больше чем генерируем
-    }
-
-    @Override
-    public boolean canConnectEnergy(Direction side) {
-        return true;
-    }
-
-    // --- IEnergyProvider новые методы ---
-    @Override
-    public long extractEnergy(long maxExtract, boolean simulate) {
-        if (!canExtract()) return 0;
-
-        long energyExtracted = Math.min(this.energy, Math.min(getProvideSpeed(), maxExtract));
-        if (!simulate && energyExtracted > 0) {
-            setEnergyStored(this.energy - energyExtracted);
-        }
-        return energyExtracted;
-    }
-
-    @Override
-    public boolean canExtract() {
-        return this.energy > 0;
-    }
-
-    // --- Capabilities ---
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ModCapabilities.HBM_ENERGY_PROVIDER) {
-            return hbmProvider.cast();
-        }
-
-        if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
-            return hbmConnector.cast();
-        }
-
-        if (cap == ForgeCapabilities.ITEM_HANDLER) {
-            return lazyItemHandler.cast();
-        }
-
-        LazyOptional<T> feCap = feCapabilityProvider.getCapability(cap, side);
-        if (feCap.isPresent()) return feCap;
-
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void onLoad() {
-        super.onLoad();
-        lazyItemHandler = LazyOptional.of(() -> itemHandler);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        lazyItemHandler.invalidate();
-        hbmProvider.invalidate();
-        feCapabilityProvider.invalidate();
-        hbmConnector.invalidate();
+        return MAX_EXTRACT; // Можем отдавать в 2 раза больше чем генерируем
     }
 
     // --- NBT ---
     @Override
     protected void saveAdditional(CompoundTag tag) {
-        tag.put("inventory", itemHandler.serializeNBT());
-        tag.putLong("energy", energy);
+        super.saveAdditional(tag); // Сохраняет inventory и energy из базового класса
         tag.putInt("burnTime", burnTime);
         tag.putInt("maxBurnTime", maxBurnTime);
         tag.putBoolean("enabled", enabled);
-
-        super.saveAdditional(tag);
     }
 
     @Override
     public void load(CompoundTag tag) {
-        super.load(tag);
-        itemHandler.deserializeNBT(tag.getCompound("inventory"));
-        energy = tag.getLong("energy");
+        super.load(tag); // Загружает inventory и energy из базового класса
         burnTime = tag.getInt("burnTime");
         maxBurnTime = tag.getInt("maxBurnTime");
         enabled = tag.getBoolean("enabled");
@@ -339,9 +187,9 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
 
     public void drops() {
         if (level != null) {
-            SimpleContainer simpleContainer = new SimpleContainer(itemHandler.getSlots());
-            for (int i = 0; i < itemHandler.getSlots(); i++) {
-                simpleContainer.setItem(i, itemHandler.getStackInSlot(i));
+            SimpleContainer simpleContainer = new SimpleContainer(inventory.getSlots());
+            for (int i = 0; i < inventory.getSlots(); i++) {
+                simpleContainer.setItem(i, inventory.getStackInSlot(i));
             }
             Containers.dropContents(this.level, this.worldPosition, simpleContainer);
         }
@@ -359,27 +207,12 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
         }
     }
 
-    @Override
-    public void setLevel(Level pLevel) {
-        super.setLevel(pLevel);
-
-    }
-
-    @Override
-    public void setRemoved() {
-        super.setRemoved();
-        // [ВАЖНО!] Сообщаем сети, что мы удалены
-        if (this.level != null && !this.level.isClientSide) {
-            EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
-        }
-    }
-
 
 
     private void chargeItem() {
         if (this.energy <= 0) return; // Нечего заряжать
 
-        ItemStack itemToCharge = this.itemHandler.getStackInSlot(CHARGE_SLOT);
+        ItemStack itemToCharge = this.inventory.getStackInSlot(CHARGE_SLOT);
         if (itemToCharge.isEmpty()) return;
 
         // === 1. ПРОВЕРКА HBM API (Твои батарейки) ===
@@ -428,5 +261,29 @@ public class MachineWoodBurnerBlockEntity extends BlockEntity implements MenuPro
                 }
             }
         }
+    }
+
+    // --- Реализация абстрактных методов ---
+    @Override
+    protected Component getDefaultName() {
+        return Component.translatable("container.hbm_m.wood_burner");
+    }
+
+    @Override
+    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot == FUEL_SLOT) {
+            // Только топливо в слот топлива
+            return ForgeHooks.getBurnTime(stack, null) > 0;
+        }
+        if (slot == ASH_SLOT) {
+            // Ничего нельзя положить в слот пепла
+            return false;
+        }
+        if (slot == CHARGE_SLOT) {
+            // Только заряжаемые предметы в слот зарядки
+            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent() ||
+                   stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
+        }
+        return false;
     }
 }

@@ -8,7 +8,6 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.MachineShredderMenu;
 import com.hbm_m.recipe.ShredderRecipe;
 import com.hbm_m.sound.ShredderSoundInstance;
-import com.hbm_m.util.LongDataPacker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -68,18 +67,11 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     private final ContainerData containerData = new ContainerData() {
         @Override
         public int get(int index) {
-            long energy = MachineShredderBlockEntity.this.getEnergyStored();
-            long maxEnergy = MachineShredderBlockEntity.this.getMaxEnergyStored();
-            long delta = getEnergyDelta();
+            // Энергию и дельту больше не пакуем в data
             return switch (index) {
                 case 0 -> progress;
-                case 1 -> PROCESSING_SPEED;
-                case 2 -> LongDataPacker.packHigh(energy);
-                case 3 -> LongDataPacker.packLow(energy);
-                case 4 -> LongDataPacker.packHigh(maxEnergy);
-                case 5 -> LongDataPacker.packLow(maxEnergy);
-                case 6 -> LongDataPacker.packHigh(delta);
-                case 7 -> LongDataPacker.packLow(delta);
+                case 1 -> PROCESSING_SPEED; // Максимальный прогресс
+                // Индексы 2-7 удалены
                 default -> 0;
             };
         }
@@ -91,7 +83,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
 
         @Override
         public int getCount() {
-            return 8;
+            return 2;
         }
     };
 

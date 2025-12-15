@@ -1,9 +1,13 @@
 package com.hbm_m.menu;
 
+import com.hbm_m.api.energy.ILongEnergyMenu;
 import com.hbm_m.block.entity.custom.machines.MachineBatteryBlockEntity;
 import com.hbm_m.api.energy.MachineBatteryBlock;
+import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.network.packet.PacketSyncEnergy;
 import com.hbm_m.util.LongDataPacker;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
@@ -14,10 +18,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.items.SlotItemHandler;
+import net.minecraftforge.network.PacketDistributor;
 
 import java.util.Optional;
 
-public class MachineBatteryMenu extends AbstractContainerMenu {
+public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEnergyMenu {
     public final MachineBatteryBlockEntity blockEntity;
     private final Level level;
     private final ContainerData data;
@@ -26,11 +31,22 @@ public class MachineBatteryMenu extends AbstractContainerMenu {
     private static final int PLAYER_INVENTORY_END = 36;
     private static final int TE_INPUT_SLOT = 36;
     private static final int TE_OUTPUT_SLOT = 37;
+    private final Player player; // 2. Добавляем поле игрока
+
+    // 3. Поля для клиентской энергии
+    private long clientEnergy;
+    private long clientMaxEnergy;
+    private long clientDelta;
+
+    private long lastSyncedEnergy = -1;
+    private long lastSyncedMaxEnergy = -1;
+    private long lastSyncedDelta = -1; // [NEW]
 
     // Серверный конструктор
     public MachineBatteryMenu(int pContainerId, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.MACHINE_BATTERY_MENU.get(), pContainerId);
         checkContainerSize(inv, 2);
+        checkContainerDataCount(data, 3);
 
         if (!(entity instanceof MachineBatteryBlockEntity)) {
             throw new IllegalArgumentException("Wrong BlockEntity type!");
@@ -39,6 +55,7 @@ public class MachineBatteryMenu extends AbstractContainerMenu {
         blockEntity = (MachineBatteryBlockEntity) entity;
         this.level = inv.player.level();
         this.data = data;
+        this.player = inv.player; // Сохраняем игрока
 
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
@@ -55,32 +72,104 @@ public class MachineBatteryMenu extends AbstractContainerMenu {
     public MachineBatteryMenu(int pContainerId, Inventory inv, FriendlyByteBuf extraData) {
         this(pContainerId, inv,
                 inv.player.level().getBlockEntity(extraData.readBlockPos()),
-                new SimpleContainerData(8));
+                new SimpleContainerData(3));
     }
 
-    // --- Геттеры ---
+    @Override
+    public void setEnergy(long energy, long maxEnergy, long delta) { // <--- Добавили delta в аргументы
+        this.clientEnergy = energy;
+        this.clientMaxEnergy = maxEnergy;
+        this.clientDelta = delta; // <--- Сохраняем полученную дельту
+    }
+
+    @Override
+    public long getEnergyStatic() {
+        return blockEntity.getEnergyStored();
+    }
+
+    @Override
+    public long getMaxEnergyStatic() {
+        return blockEntity.getMaxEnergyStored();
+    }
+
+    @Override
+    public long getEnergyDeltaStatic() {
+        return blockEntity.getEnergyDelta();
+    }
+
+     // Если используется интерфейсом
+    public long getEnergyLong() {
+        if (blockEntity != null && !level.isClientSide) {
+            return blockEntity.getEnergyStored();
+        }
+        return clientEnergy;
+    }
+
+    public long getMaxEnergyLong() {
+        if (blockEntity != null && !level.isClientSide) {
+            return blockEntity.getMaxEnergyStored();
+        }
+        return clientMaxEnergy;
+    }
     public long getEnergy() {
-        return LongDataPacker.unpack(this.data.get(0), this.data.get(1));
+        return getEnergyLong();
     }
 
     public long getMaxEnergy() {
-        return LongDataPacker.unpack(this.data.get(2), this.data.get(3));
+        return getMaxEnergyLong();
     }
 
-    public int getEnergyDelta() {
-        return this.data.get(4);
+    public long getEnergyDelta() {
+        if (blockEntity != null && !level.isClientSide) {
+            return blockEntity.getEnergyDelta(); // Берем напрямую из BE
+        }
+        return clientDelta; // Берем из пакета
     }
+
+
+    // --- Геттеры ---
 
     public int getModeOnNoSignal() {
-        return this.data.get(5);
+        return this.data.get(0); // Было 5
     }
 
     public int getModeOnSignal() {
-        return this.data.get(6);
+        return this.data.get(1); // Было 6
     }
 
     public int getPriorityOrdinal() {
-        return this.data.get(7);
+        return this.data.get(2); // Было 7
+    }
+
+    @Override
+    public void broadcastChanges() {
+        super.broadcastChanges();
+
+        if (blockEntity != null && !this.level.isClientSide) {
+            long currentEnergy = blockEntity.getEnergyStored();
+            long currentMax = blockEntity.getMaxEnergyStored();
+            long currentDelta = blockEntity.getEnergyDelta();
+
+            // Отправляем пакет только если значения изменились
+            if (currentEnergy != lastSyncedEnergy ||
+                    currentMax != lastSyncedMaxEnergy ||
+                    currentDelta != lastSyncedDelta) {
+
+                ModPacketHandler.INSTANCE.send(
+                        PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player),
+                        new PacketSyncEnergy(
+                                this.containerId,
+                                currentEnergy,
+                                currentMax,
+                                currentDelta // [NEW] Отправляем long дельту
+                        )
+                );
+
+                lastSyncedEnergy = currentEnergy;
+                lastSyncedMaxEnergy = currentMax;
+                lastSyncedDelta = currentDelta;
+            }
+        }
     }
 
     // --- Shift-Click ---

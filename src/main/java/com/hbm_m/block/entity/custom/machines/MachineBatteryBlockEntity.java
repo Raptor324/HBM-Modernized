@@ -82,14 +82,9 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
             @Override
             public int get(int index) {
                 return switch (index) {
-                    case 0 -> LongDataPacker.packHigh(energy);
-                    case 1 -> LongDataPacker.packLow(energy);
-                    case 2 -> LongDataPacker.packHigh(capacity);
-                    case 3 -> LongDataPacker.packLow(capacity);
-                    case 4 -> (int) energyDelta;
-                    case 5 -> modeOnNoSignal;
-                    case 6 -> modeOnSignal;
-                    case 7 -> priority.ordinal();
+                    case 0 -> modeOnNoSignal;       // Сдвинули на 0
+                    case 1 -> modeOnSignal;         // Сдвинули на 1
+                    case 2 -> priority.ordinal();   // Сдвинули на 2
                     default -> 0;
                 };
             }
@@ -97,15 +92,15 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
             @Override
             public void set(int index, int value) {
                 switch (index) {
-                    case 5 -> modeOnNoSignal = value;
-                    case 6 -> modeOnSignal = value;
-                    case 7 -> priority = Priority.values()[Math.max(0, Math.min(value, Priority.values().length - 1))];
+                    case 0 -> modeOnNoSignal = value;
+                    case 1 -> modeOnSignal = value;
+                    case 2 -> priority = Priority.values()[Math.max(0, Math.min(value, Priority.values().length - 1))];
                 }
             }
 
             @Override
             public int getCount() {
-                return 8;
+                return 3; // Теперь у нас всего 3 int-параметра
             }
         };
     }
@@ -157,31 +152,95 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         be.dischargeToItem();
     }
 
-    private void chargeFromItem() {
-        itemHandler.getStackInSlot(0).getCapability(ForgeCapabilities.ENERGY).ifPresent(source -> {
-            if (!source.canExtract()) return;
-            long spaceAvailable = capacity - energy;
-            if (spaceAvailable <= 0) return;
+    // =========================================================
+    // ФИКС БАТАРЕЙ: Гибридная логика (Native Long -> Forge Int)
+    // =========================================================
 
-            int maxTransfer = (int) Math.min(transferRate, spaceAvailable);
+    private void chargeFromItem() {
+        // 0. Проверки на наличие предмета и места
+        var stack = itemHandler.getStackInSlot(0);
+        if (stack.isEmpty()) return;
+
+        long spaceAvailable = capacity - energy;
+        if (spaceAvailable <= 0) return;
+
+        // 1. ПОПЫТКА HBM (Родная система)
+        // Если это твоя батарейка, используем long на полную катушку.
+        // Это позволяет заряжать Шрабидиевую батарею со скоростью 100 млрд/тик.
+        var hbmCap = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER);
+        if (hbmCap.isPresent()) {
+            hbmCap.ifPresent(source -> {
+                if (!source.canExtract()) return;
+
+                // Math.min с long - никаких переполнений
+                long toExtract = Math.min(transferRate, spaceAvailable);
+                long extracted = source.extractEnergy(toExtract, false);
+
+                if (extracted > 0) {
+                    this.energy += extracted;
+                    setChanged();
+                }
+            });
+            return; // Успех, выходим. Forge не нужен.
+        }
+
+        // 2. ФОЛЛБЭК НА FORGE (Чужие моды / Совместимость)
+        // Если это батарейка из Mekanism/Thermal, используем int с защитой.
+        stack.getCapability(ForgeCapabilities.ENERGY).ifPresent(source -> {
+            if (!source.canExtract()) return;
+
+            long wanted = Math.min(transferRate, spaceAvailable);
+
+            // [ВАЖНО] ЗАЩИТА ОТ ПЕРЕПОЛНЕНИЯ
+            // Если мы хотим больше 2.14 млрд, обрезаем до Integer.MAX_VALUE.
+            // Без этого (int) превратит 25 млрд в отрицательное число.
+            int maxTransfer = (int) Math.min(wanted, Integer.MAX_VALUE);
+
             int extracted = source.extractEnergy(maxTransfer, false);
             if (extracted > 0) {
-                energy += extracted;
+                this.energy += extracted;
                 setChanged();
             }
         });
     }
 
     private void dischargeToItem() {
-        itemHandler.getStackInSlot(1).getCapability(ForgeCapabilities.ENERGY).ifPresent(target -> {
-            if (!target.canReceive()) return;
-            long availableEnergy = energy;
-            if (availableEnergy <= 0) return;
+        // 0. Проверки
+        var stack = itemHandler.getStackInSlot(1);
+        if (stack.isEmpty()) return;
 
-            int maxTransfer = (int) Math.min(transferRate, availableEnergy);
-            int received = target.receiveEnergy(maxTransfer, false);
-            if (received > 0) {
-                energy -= received;
+        long availableEnergy = energy;
+        if (availableEnergy <= 0) return;
+
+        // 1. ПОПЫТКА HBM (Родная система)
+        var hbmCap = stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER);
+        if (hbmCap.isPresent()) {
+            hbmCap.ifPresent(target -> {
+                if (!target.canReceive()) return;
+
+                long toTransfer = Math.min(transferRate, availableEnergy);
+                long accepted = target.receiveEnergy(toTransfer, false);
+
+                if (accepted > 0) {
+                    this.energy -= accepted;
+                    setChanged();
+                }
+            });
+            return;
+        }
+
+        // 2. ФОЛЛБЭК НА FORGE (Совместимость)
+        stack.getCapability(ForgeCapabilities.ENERGY).ifPresent(target -> {
+            if (!target.canReceive()) return;
+
+            long wanted = Math.min(transferRate, availableEnergy);
+
+            // [ВАЖНО] Защита от переполнения int
+            int maxTransfer = (int) Math.min(wanted, Integer.MAX_VALUE);
+
+            int accepted = target.receiveEnergy(maxTransfer, false);
+            if (accepted > 0) {
+                this.energy -= accepted;
                 setChanged();
             }
         });
@@ -190,6 +249,9 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     public int getCurrentMode() {
         if (level == null) return modeOnNoSignal;
         return level.hasNeighborSignal(this.worldPosition) ? modeOnSignal : modeOnNoSignal;
+    }
+    public long getEnergyDelta() {
+        return this.energyDelta;
     }
 
     // --- IEnergyProvider & IEnergyReceiver ---
@@ -334,14 +396,15 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
     }
 
     public void handleButtonPress(int buttonId) {
+        // [ИСПРАВЛЕНИЕ] Обновили индексы для кнопок
         switch (buttonId) {
-            case 0 -> this.data.set(5, (this.modeOnNoSignal + 1) % 4);
-            case 1 -> this.data.set(6, (this.modeOnSignal + 1) % 4);
+            case 0 -> this.data.set(0, (this.modeOnNoSignal + 1) % 4); // Индекс 0
+            case 1 -> this.data.set(1, (this.modeOnSignal + 1) % 4);   // Индекс 1
             case 2 -> {
                 Priority[] priorities = Priority.values();
                 int currentIndex = this.priority.ordinal();
                 int nextIndex = (currentIndex + 1) % priorities.length;
-                this.data.set(7, nextIndex);
+                this.data.set(2, nextIndex); // Индекс 2
             }
         }
         setChanged();
@@ -349,7 +412,7 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
-
+    
     @Override
     public void setRemoved() {
         super.setRemoved();

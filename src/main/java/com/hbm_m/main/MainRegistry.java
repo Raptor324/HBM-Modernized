@@ -4,6 +4,7 @@ package com.hbm_m.main;
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
 import com.hbm_m.api.energy.EnergyNetworkManager;
+import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
@@ -112,15 +113,18 @@ public class MainRegistry {
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
+        ModFluids.register(modEventBus);
 
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new PlayerHandler());
+
+
         // Регистрация остальных систем resources
         // ModPacketHandler.register(); // Регистрация пакетов
 
+
         // Инстанцируем ClientSetup, чтобы его конструктор вызвал регистрацию на Forge Event Bus
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> new ClientSetup());
 
         LOGGER.info("Radiation handlers registered. Using {}.", ModClothConfig.get().usePrismSystem ? "ChunkRadiationHandlerPRISM" : "ChunkRadiationHandlerSimple");
         LOGGER.info("Registered event listeners for Radiation System.");
@@ -231,6 +235,7 @@ public class MainRegistry {
 
         //СЛИТКИ И РЕСУРСЫ...
         if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
+
             // БАЗОВЫЕ ПРЕДМЕТЫ (все с ItemStack!)
             event.accept(new ItemStack(ModItems.BALL_TNT.get()));
             event.accept(new ItemStack(ModItems.ZIRCONIUM_SHARP.get()));
@@ -252,6 +257,8 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.NUGGET_SILICON.get()));
             event.accept(new ItemStack(ModItems.BILLET_SILICON.get()));
             event.accept(new ItemStack(ModItems.BILLET_PLUTONIUM.get()));
+            event.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
+                  
 
             // ✅ СЛИТКИ
             for (ModIngots ingot : ModIngots.values()) {
@@ -259,6 +266,7 @@ public class MainRegistry {
                 if (ingotItem != null && ingotItem.isPresent()) {
                     event.accept(new ItemStack(ingotItem.get()));
                 }
+              
             }
 
             // ✅ ModPowders
@@ -948,7 +956,7 @@ public class MainRegistry {
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.ARMOR_TABLE);
 
-            // event.accept(ModBlocks.FLUID_TANK);
+            event.accept(ModBlocks.FLUID_TANK);
             event.accept(ModBlocks.MACHINE_BATTERY);
             event.accept(ModBlocks.MACHINE_BATTERY_LITHIUM);
             event.accept(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM);
