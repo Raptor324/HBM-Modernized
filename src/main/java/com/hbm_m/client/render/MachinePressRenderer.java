@@ -1,7 +1,7 @@
 package com.hbm_m.client.render;
 
-import com.hbm_m.block.entity.machine.MachinePressBlockEntity;
-import com.hbm_m.block.machine.MachinePressBlock;
+import com.hbm_m.block.entity.custom.machines.MachinePressBlockEntity;
+import com.hbm_m.block.custom.machines.MachinePressBlock;
 import com.hbm_m.client.model.PressBakedModel;
 import com.hbm_m.client.render.shader.ImmediateFallbackRenderer;
 import com.hbm_m.client.render.shader.RenderPathManager;

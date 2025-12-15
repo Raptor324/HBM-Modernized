@@ -11,9 +11,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.network.chat.Component;
 import net.minecraft.ChatFormatting;
-import com.hbm_m.item.tools.MultiDetonatorItem;
-import com.hbm_m.item.tools.MultiDetonatorItem.PointData;
-import com.hbm_m.block.IDetonatable;
+import com.hbm_m.item.custom.grenades_and_activators.MultiDetonatorItem;
+import com.hbm_m.item.custom.grenades_and_activators.MultiDetonatorItem.PointData;
+import com.hbm_m.block.custom.explosives.IDetonatable;
 import java.util.function.Supplier;
 
 public class DetonateAllPacket {

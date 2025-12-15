@@ -2,7 +2,7 @@ package com.hbm_m.radiation;
 
 // Обработчик радиации для игроков
 
-import com.hbm_m.armormod.util.ArmorModificationHelper;
+import com.hbm_m.block.custom.machines.armormod.util.ArmorModificationHelper;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;

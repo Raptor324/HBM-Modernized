@@ -1,7 +1,6 @@
 package com.hbm_m.event;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.sound.ModSounds;
 
@@ -19,7 +18,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.NetworkHooks;
 
 import net.minecraftforge.registries.RegistryObject;
 

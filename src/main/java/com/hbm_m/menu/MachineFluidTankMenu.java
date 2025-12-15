@@ -1,7 +1,7 @@
 package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machine.MachineFluidTankBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineFluidTankBlockEntity;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -13,7 +13,6 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.registries.ForgeRegistries;
 
 public class MachineFluidTankMenu extends AbstractContainerMenu {
 

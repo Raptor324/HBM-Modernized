@@ -1,9 +1,8 @@
 package com.hbm_m.menu;
 
 import com.hbm_m.api.energy.ILongEnergyMenu;
-import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machine.MachineBatteryBlockEntity;
-import com.hbm_m.block.machine.MachineBatteryBlock;
+import com.hbm_m.block.entity.custom.machines.MachineBatteryBlockEntity;
+import com.hbm_m.api.energy.MachineBatteryBlock;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
 import com.hbm_m.util.LongDataPacker;

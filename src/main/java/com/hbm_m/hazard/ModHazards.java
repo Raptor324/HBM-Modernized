@@ -4,7 +4,7 @@ package com.hbm_m.hazard;
 // Позволяет регистрировать опасности для Item, Block и тегов.
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.ModIngots;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
 
 import net.minecraft.core.registries.Registries;
@@ -13,8 +13,6 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-
-import static com.hbm_m.item.ModItems.WIRE_SCHRABIDIUM;
 
 public class ModHazards {
 
@@ -241,6 +239,9 @@ public class ModHazards {
         HazardSystem.register(ModBlocks.URANIUM_BLOCK.get(), new HazardData(
             new HazardEntry(HazardType.RADIATION, 3.5f)
         ));
+         HazardSystem.register(ModBlocks.NUCLEAR_FALLOUT.get(), new HazardData(
+                 new HazardEntry(HazardType.RADIATION, 0.5f)
+         ));
         HazardSystem.register(ModBlocks.POLONIUM210_BLOCK.get(), new HazardData(
         new HazardEntry(HazardType.RADIATION, 750f),
         new HazardEntry(HazardType.PYROPHORIC, 5f) // Горит 8 секунд

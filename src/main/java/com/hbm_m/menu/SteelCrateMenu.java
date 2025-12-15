@@ -1,7 +1,7 @@
 package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.crates.SteelCrateBlockEntity;
+import com.hbm_m.block.entity.custom.crates.SteelCrateBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;

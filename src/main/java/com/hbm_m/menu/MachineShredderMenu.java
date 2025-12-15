@@ -2,11 +2,11 @@ package com.hbm_m.menu;
 
 import com.hbm_m.api.energy.ILongEnergyMenu;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machine.MachineShredderBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineShredderBlockEntity;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
+import com.hbm_m.item.custom.industrial.ItemBlades;
 import com.hbm_m.util.LongDataPacker;
-import com.hbm_m.menu.ModMenuTypes;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
@@ -158,7 +158,7 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         // Из инвентаря игрока в контейнер
         else if (index >= playerInventoryStart && index < playerInventoryEnd) {
             // Проверяем тип предмета
-            boolean isBlade = slotStack.getItem() instanceof com.hbm_m.item.ItemBlades;
+            boolean isBlade = slotStack.getItem() instanceof ItemBlades;
             boolean isBattery = slotStack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).isPresent();
 
             boolean moved = false;

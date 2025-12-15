@@ -11,7 +11,7 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-import com.hbm_m.block.entity.machine.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity;
 
 /**
  * Пакет от клиента к серверу для установки рецепта в продвинутой сборочной машине.

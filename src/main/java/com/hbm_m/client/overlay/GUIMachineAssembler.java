@@ -7,7 +7,7 @@ import java.util.List;
 // Основан на GuiInfoScreen и использует текстуры из ресурсов мода.
 import javax.annotation.Nonnull;
 
-import com.hbm_m.item.ItemAssemblyTemplate;
+import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.menu.MachineAssemblerMenu;
 import com.mojang.blaze3d.systems.RenderSystem;

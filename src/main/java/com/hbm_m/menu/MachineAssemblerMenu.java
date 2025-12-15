@@ -5,12 +5,11 @@ package com.hbm_m.menu;
 
 import com.hbm_m.api.energy.ILongEnergyMenu;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.machine.MachineAssemblerBlockEntity;
-import com.hbm_m.item.ItemAssemblyTemplate;
+import com.hbm_m.block.entity.custom.machines.MachineAssemblerBlockEntity;
+import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
 import com.hbm_m.main.MainRegistry;
 
 import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.util.LongDataPacker;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -102,33 +101,34 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
 
     @Override
     public long getEnergyStatic() {
-        return blockEntity.getEnergyStored();
+        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
+            return blockEntity.getEnergyStored();
+        }
+        return clientEnergy;
     }
 
     @Override
     public long getMaxEnergyStatic() {
-        return blockEntity.getMaxEnergyStored();
-    }
-
-    public long getEnergyLong() {
-        // Если сервер (blockEntity есть и мир серверный) -> берем из блока
-        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
-            return blockEntity.getEnergyStored();
-        }
-        // Если клиент -> берем из переменной, которую обновил пакет
-        return clientEnergy;
-    }
-
-    public long getMaxEnergyLong() {
         if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
             return blockEntity.getMaxEnergyStored();
         }
         return clientMaxEnergy;
     }
 
+    public long getEnergyLong() {
+        return getEnergyStatic();
+    }
+
+    public long getMaxEnergyLong() {
+        return getMaxEnergyStatic();
+    }
+
     @Override
     public long getEnergyDeltaStatic() {
-        return 0; // Возвращаем 0, так как дельта не используется
+        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
+            return blockEntity.getEnergyDelta();
+        }
+        return 0;
     }
 
     @Override
@@ -142,7 +142,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
                             this.containerId,
                             blockEntity.getEnergyStored(),
                             blockEntity.getMaxEnergyStored(),
-                            0L // <--- Передаем 0 как дельту
+                            blockEntity.getEnergyDelta()
                     )
             );
         }

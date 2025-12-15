@@ -4,7 +4,7 @@ package com.hbm_m.util;
 // Извлекает информацию о рецепте из шаблона и форматирует её для отображения в тултипе.
 // Используется в ItemAssemblyTemplate для добавления информации в тултип.
 
-import com.hbm_m.item.ItemAssemblyTemplate;
+import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
 import com.hbm_m.recipe.AssemblerRecipe;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.NonNullList;

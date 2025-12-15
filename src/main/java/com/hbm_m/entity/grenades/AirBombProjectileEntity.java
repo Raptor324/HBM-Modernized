@@ -1,6 +1,6 @@
 package com.hbm_m.entity.grenades;
 
-import com.hbm_m.block.IDetonatable;
+import com.hbm_m.block.custom.explosives.IDetonatable;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModExplosionParticles;
@@ -29,8 +29,6 @@ import net.minecraft.world.phys.HitResult;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-
-import static com.hbm_m.particle.explosions.ExplosionParticleUtils.*;
 
 public class AirBombProjectileEntity extends ThrowableItemProjectile {
 

@@ -1,6 +1,6 @@
 package com.hbm_m.client.render;
 
-import com.hbm_m.util.CraterGenerator;
+import com.hbm_m.util.explosions.nuclear.CraterGenerator;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;

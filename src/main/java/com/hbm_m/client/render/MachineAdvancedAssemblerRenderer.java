@@ -1,8 +1,8 @@
 package com.hbm_m.client.render;
 
-import com.hbm_m.block.entity.machine.MachineAdvancedAssemblerBlockEntity;
-import com.hbm_m.block.entity.machine.MachineAdvancedAssemblerBlockEntity.ClientTicker;
-import com.hbm_m.block.machine.MachineAdvancedAssemblerBlock;
+import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity.ClientTicker;
+import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
 import com.hbm_m.client.render.shader.ImmediateFallbackRenderer;
 import com.hbm_m.client.render.shader.RenderPathManager;

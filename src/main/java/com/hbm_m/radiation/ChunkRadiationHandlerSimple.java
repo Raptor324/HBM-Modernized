@@ -7,7 +7,7 @@ import com.hbm_m.capability.IChunkRadiation;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;
-import com.hbm_m.block.RadioactiveBlock;
+import com.hbm_m.block.custom.nature.RadioactiveBlock;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.block.ModBlocks;
 
