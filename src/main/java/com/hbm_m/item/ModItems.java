@@ -18,6 +18,7 @@ import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
 import com.hbm_m.item.custom.crates.IronCrateItem;
 import com.hbm_m.item.custom.crates.SteelCrateItem;
 import com.hbm_m.item.custom.industrial.*;
+import com.hbm_m.item.custom.liquids.InfiniteWaterItem;
 import com.hbm_m.item.custom.radiation_meter.ItemDosimeter;
 import com.hbm_m.item.custom.radiation_meter.ItemGeigerCounter;
 import com.hbm_m.item.custom.food.ItemConserve;
