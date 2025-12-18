@@ -1,31 +1,23 @@
 package com.hbm_m.particle.explosions;
 
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.util.Mth;
 
-/**
- * ✅ ЖЕЛТЫЙ, ДОЛГО ОСТАЕТСЯ ГОРЯЧИМ
- */
 public class LargeDarkSmoke extends AbstractExplosionParticle {
 
-    // 1. ИСТИННО ЖЕЛТЫЙ
     private final float startR = 1.0F;
-    private final float startG = 0.95F;
+    private final float startG = 0.9F;
     private final float startB = 0.0F;
-    private final float startAlpha = 1.0F;
 
-    // 2. ОРАНЖЕВЫЙ (К концу горячей фазы)
-    private final float midR = 1.0F;
-    private final float midG = 0.5F;
+    private final float midR = 0.8F;
+    private final float midG = 0.05F;
     private final float midB = 0.0F;
-    private final float midAlpha = 0.98F;
 
-    // 3. ЧЕРНЫЙ
     private final float endR = 0.1F;
     private final float endG = 0.1F;
     private final float endB = 0.1F;
-    private final float endAlpha = 0.95F;
 
     public LargeDarkSmoke(ClientLevel level, double x, double y, double z,
                           SpriteSet sprites, double xSpeed, double ySpeed, double zSpeed) {
@@ -36,7 +28,6 @@ public class LargeDarkSmoke extends AbstractExplosionParticle {
         this.zd = zSpeed;
 
         this.lifetime = 140 + this.random.nextInt(70);
-
         this.gravity = 0.0F;
         this.hasPhysics = false;
 
@@ -45,7 +36,7 @@ public class LargeDarkSmoke extends AbstractExplosionParticle {
         this.rCol = startR;
         this.gCol = startG;
         this.bCol = startB;
-        this.alpha = startAlpha;
+        this.alpha = 1.0F;
     }
 
     @Override
@@ -54,29 +45,36 @@ public class LargeDarkSmoke extends AbstractExplosionParticle {
 
         float ageProgress = (float) this.age / (float) this.lifetime;
 
-        // 🔥 ДОЛГАЯ ГОРЯЧАЯ ФАЗА (0% -> 30%)
-        // Теперь дым остается светящимся треть своей жизни
-        if (ageProgress < 0.3F) {
-            float t = ageProgress / 0.3F;
+        // ФАЗА 1: ЖЕЛТЫЙ -> КРАСНЫЙ (47.5%)
+        if (ageProgress < 0.475F) {
+            float t = ageProgress / 0.475F;
             this.rCol = Mth.lerp(t, startR, midR);
             this.gCol = Mth.lerp(t, startG, midG);
             this.bCol = Mth.lerp(t, startB, midB);
-            this.alpha = Mth.lerp(t, startAlpha, midAlpha);
-        } else {
-            // 🌑 ОСТЫВАНИЕ (30% -> 100%)
-            // Медленно превращается в черный дым
-            float t = (ageProgress - 0.3F) / 0.7F;
-            if (t > 1.0F) t = 1.0F;
+        }
+        // ФАЗА 2: КРАСНЫЙ -> ЧЕРНЫЙ (ОЧЕНЬ БЫСТРО, 5%)
+        // Почти мгновенно остывает
+        else if (ageProgress < 0.525F) {
+            float t = (ageProgress - 0.475F) / 0.05F;
             this.rCol = Mth.lerp(t, midR, endR);
             this.gCol = Mth.lerp(t, midG, endG);
             this.bCol = Mth.lerp(t, midB, endB);
-            this.alpha = Mth.lerp(t, midAlpha, endAlpha);
+        }
+        // ФАЗА 3: ЧЕРНЫЙ (47.5%)
+        else {
+            this.rCol = endR;
+            this.gCol = endG;
+            this.bCol = endB;
         }
 
-        if (ageProgress > 0.9F) {
-            float fadeOut = (ageProgress - 0.9F) / 0.1F;
-            this.alpha = endAlpha * (1.0F - fadeOut);
+        if (ageProgress > 0.98F) {
+            this.removed = true;
         }
+    }
+
+    @Override
+    public ParticleRenderType getRenderType() {
+        return ParticleRenderType.PARTICLE_SHEET_OPAQUE;
     }
 
     public static class Provider extends AbstractExplosionParticle.Provider {
