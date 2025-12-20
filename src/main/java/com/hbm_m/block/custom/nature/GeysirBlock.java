@@ -1,6 +1,6 @@
 package com.hbm_m.block.custom.nature;
 
-import com.hbm_m.particle.explosions.ExplosionParticleUtils;
+import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;

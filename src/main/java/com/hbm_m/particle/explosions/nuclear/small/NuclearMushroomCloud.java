@@ -1,4 +1,4 @@
-package com.hbm_m.particle.explosions;
+package com.hbm_m.particle.explosions.nuclear.small;
 
 import com.hbm_m.particle.ModExplosionParticles;
 import net.minecraft.client.Minecraft;
@@ -117,13 +117,31 @@ public class NuclearMushroomCloud {
     private static void spawnCondensationRing(ServerLevel level, double x, double y, double z, RandomSource random) {
         int particles = 40;
         double radius = 7.0;
+
         for (int i = 0; i < particles; i++) {
             double angle = (i / (double)particles) * Math.PI * 2;
             double offX = Math.cos(angle) * radius;
             double offZ = Math.sin(angle) * radius;
-            spawnNuclearParticle(level, x + offX, y, z + offZ, offX*0.01, 0.0, offZ*0.01, false, true, false);
+
+            // +0.5 блока вверх
+            double spawnY = y + 0.5;
+
+            // скорость по Y = 0, гравитация отключается в самом классе частицы
+            spawnNuclearParticle(
+                    level,
+                    x + offX,
+                    spawnY,
+                    z + offZ,
+                    offX * 0.01,
+                    0.0,          // было 0.0, оставляем
+                    offZ * 0.01,
+                    false,
+                    true,          // белое кольцо (MUSHROOM_SMOKE)
+                    false
+            );
         }
     }
+
 
     private static void spawnMushroomCap(ServerLevel level, double centerX, double centerY, double centerZ, RandomSource random) {
         double startY = centerY + 18;

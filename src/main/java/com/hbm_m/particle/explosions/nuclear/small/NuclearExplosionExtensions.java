@@ -1,4 +1,4 @@
-package com.hbm_m.particle.explosions;
+package com.hbm_m.particle.explosions.nuclear.small;
 
 import com.hbm_m.particle.ModExplosionParticles;
 import net.minecraft.client.Minecraft;
