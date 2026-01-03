@@ -11,7 +11,6 @@ import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
 import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
 import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.util.explosions.trash_that_i_forgot_to_delete.SellafitSolidificationTracker;
 import com.hbm_m.world.biome.ModBiomes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraftforge.event.level.LevelEvent;
@@ -140,13 +139,6 @@ public class MainRegistry {
 
             LOGGER.info("HazardSystem initialized successfully");
         });
-    }
-
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel) {
-            SellafitSolidificationTracker.clearAll();
-        }
     }
 
     @SubscribeEvent

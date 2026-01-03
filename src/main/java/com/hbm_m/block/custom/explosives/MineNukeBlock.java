@@ -2,14 +2,11 @@ package com.hbm_m.block.custom.explosives;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
-
 import com.hbm_m.util.explosions.general.ShockwaveGenerator;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
@@ -34,30 +31,29 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-
-import java.util.List;
-import java.util.Arrays;
-import java.util.Objects;
-import java.util.Random;
-
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
 
 public class MineNukeBlock extends Block implements EntityBlock {
 
     private static final float EXPLOSION_POWER = 20.0F;
     private static final int CRATER_RADIUS = 20;
     private static final int CRATER_DEPTH = 3;
+
     private static final DirectionProperty FACING = DirectionProperty.create("facing");
     private static final VoxelShape SHAPE = Shapes.box(0.25, 0, 0.25, 0.75, 0.25, 0.75);
     private static final VoxelShape COLLISION_SHAPE = Shapes.box(0.25, 0.0, 0.25, 0.75, 0.25, 0.75);
+
     private static final Random RANDOM = new Random();
 
-    // Новые параметры для урона
-    private static final float DAMAGE_RADIUS = 30.0f; // Радиус поражения урона (в блоках)
-    private static final float DAMAGE_AMOUNT = 200.0f; // 200 урона = 100 полных сердец
-    private static final float MAX_DAMAGE_DISTANCE = 25.0f; // Максимальное расстояние для полного урона
-
+    // Параметры урона
+    private static final float DAMAGE_RADIUS = 30.0f;
+    private static final float DAMAGE_AMOUNT = 200.0f;
+    private static final float MAX_DAMAGE_DISTANCE = 25.0f;
 
     public MineNukeBlock(Properties properties) {
         super(BlockBehaviour.Properties.of().strength(3.5F));
@@ -77,17 +73,15 @@ public class MineNukeBlock extends Block implements EntityBlock {
                 .withStyle(ChatFormatting.GRAY));
     }
 
-
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return COLLISION_SHAPE;
     }
+
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return COLLISION_SHAPE;
     }
-
-
 
     @Override
     public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
@@ -101,24 +95,25 @@ public class MineNukeBlock extends Block implements EntityBlock {
         super.stepOn(level, pos, state, entity);
     }
 
-
     private void detonate(Level level, BlockPos pos) {
         double x = pos.getX() + 0.5;
         double y = pos.getY() + 0.5;
         double z = pos.getZ() + 0.5;
 
-        // Повышенная громкость звука
+        // Звук
         playRandomDetonationSound(level, pos);
 
+        // Взрыв ванильный
         level.explode(null, x, y, z, EXPLOSION_POWER, false, Level.ExplosionInteraction.TNT);
 
-        // Урон в зоне действия (НОВОЕ)
         if (level instanceof ServerLevel serverLevel) {
+            // Урон
             dealExplosionDamage(serverLevel, x, y, z);
-        }
 
-        if (level instanceof ServerLevel serverLevel) {
+            // Ядерные эффекты как у гранаты: один комплексный вызов
             scheduleExplosionEffects(serverLevel, x, y, z);
+
+            // Кратер
             MinecraftServer server = serverLevel.getServer();
             if (server != null) {
                 server.tell(new TickTask(5, () -> {
@@ -136,7 +131,7 @@ public class MineNukeBlock extends Block implements EntityBlock {
         }
     }
 
-    // НОВЫЙ МЕТОД: Нанесение урона в зоне действия мины
+    // Урон от взрыва
     private void dealExplosionDamage(ServerLevel serverLevel, double x, double y, double z) {
         List<LivingEntity> entitiesNearby = serverLevel.getEntitiesOfClass(
                 LivingEntity.class,
@@ -151,47 +146,25 @@ public class MineNukeBlock extends Block implements EntityBlock {
                             Math.pow(entity.getZ() - z, 2)
             );
 
-            // Проверяем, находится ли сущность в радиусе поражения
             if (distanceToEntity <= DAMAGE_RADIUS) {
-                // Вычисляем урон в зависимости от расстояния
-                // На близком расстоянии (0-5 блоков): полный урон
-                // На среднем расстоянии (5-25 блоков): уменьшающийся урон
-                // На дальнем расстоянии (25+ блоков): минимальный урон
                 float damage = DAMAGE_AMOUNT;
 
                 if (distanceToEntity > MAX_DAMAGE_DISTANCE) {
-                    // Линейное снижение урона на расстоянии
                     float remainingDistance = DAMAGE_RADIUS - MAX_DAMAGE_DISTANCE;
                     float damageDistance = (float) distanceToEntity - MAX_DAMAGE_DISTANCE;
-                    damage = DAMAGE_AMOUNT * (1.0f - (damageDistance / remainingDistance)) * 0.5f; // Минимум 50% урона
+                    damage = DAMAGE_AMOUNT * (1.0f - (damageDistance / remainingDistance)) * 0.5f;
                 }
 
-                // Наносим урон с источником (взрыв)
                 entity.hurt(entity.damageSources().explosion(null), damage);
-
             }
         }
     }
 
+    // Эффекты как у ядерной гранаты
     private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
-        // ✅ Flash - точно те же параметры
-        level.sendParticles(
-                (SimpleParticleType) ModExplosionParticles.FLASH.get(),
-                x, y, z, 1, 0, 0, 0, 0
-        );
-
-        // ✅ Sparks - 400 частиц с ТОЧНЫМИ скоростями
-        ExplosionParticleUtils.spawnAirBombSparks(level, x, y, z);
-
-        // ✅ Shockwave через 3 тика - точно те же кольца
-        level.getServer().tell(new net.minecraft.server.TickTask(3, () ->
-                ExplosionParticleUtils.spawnAirBombShockwave(level, x, y, z)));
-
-        // ✅ Mushroom Cloud через 8 тиков - ТОЧНО те же параметры
-        level.getServer().tell(new net.minecraft.server.TickTask(8, () ->
-                ExplosionParticleUtils.spawnAirBombMushroomCloud(level, x, y, z)));
+        // Тот же комплексный эффект, что и в GrenadeNucProjectileEntity.scheduleExplosionEffects
+        ExplosionParticleUtils.spawnFullNuclearExplosion(level, x, y, z);
     }
-
 
     private void playRandomDetonationSound(Level level, BlockPos pos) {
         List<SoundEvent> sounds = Arrays.asList(
@@ -199,11 +172,21 @@ public class MineNukeBlock extends Block implements EntityBlock {
                 ModSounds.MUKE_EXPLOSION.orElse(null),
                 ModSounds.MUKE_EXPLOSION.orElse(null)
         );
+
         sounds.removeIf(Objects::isNull);
+
         if (!sounds.isEmpty()) {
             SoundEvent sound = sounds.get(RANDOM.nextInt(sounds.size()));
-            // Повышенная громкость: с 1.0F на 4.0F для дальней слышимости
-            level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, sound, SoundSource.BLOCKS, 4.0F, 1.0F);
+            level.playSound(
+                    null,
+                    pos.getX() + 0.5,
+                    pos.getY() + 0.5,
+                    pos.getZ() + 0.5,
+                    sound,
+                    SoundSource.BLOCKS,
+                    4.0F,
+                    1.0F
+            );
         }
     }
 

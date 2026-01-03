@@ -38,7 +38,7 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
     private static final EntityDataAccessor<Integer> DETONATION_TIME = SynchedEntityData.defineId(GrenadeNucProjectileEntity.class, EntityDataSerializers.INT);
 
     // Параметры ядерной гранаты
-    private static final int FUSE_SECONDS = 6;
+    private static final int FUSE_SECONDS = 7;
     private static final float EXPLOSION_POWER = 10.0f;
     private static final float RADIATION_RADIUS = 25.0f;
     private static final float MIN_BOUNCE_SPEED = 0.1f;
