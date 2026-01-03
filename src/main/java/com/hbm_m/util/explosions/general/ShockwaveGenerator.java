@@ -102,7 +102,15 @@ public class ShockwaveGenerator {
                             level.setBlock(checkPos, burnedGrass.defaultBlockState(), 3);
                             continue;
                         }
-                    } else if (horizontalDistance <= ZONE_4_RADIUS) {
+
+                    }
+                    else if (state.is(BlockTags.WOODEN_STAIRS) || state.is(BlockTags.WOODEN_SLABS) || state.is(BlockTags.LEAVES)  || state.is(BlockTags.WOODEN_TRAPDOORS) ||
+                            state.is(Blocks.TORCH) || state.is(BlockTags.WOOL_CARPETS) || state.is(BlockTags.WOOL) ||
+                            state.is(BlockTags.WOODEN_FENCES) || state.is(Blocks.PUMPKIN) || state.is(Blocks.MELON) || state.is(BlockTags.WOODEN_DOORS)) {
+                        level.removeBlock(checkPos, false);
+                    }
+
+                    else if (horizontalDistance <= ZONE_4_RADIUS) {
                         if (state.is(BlockTags.LEAVES)) {
                             if (random.nextFloat() < 0.4F) {
                                 level.removeBlock(checkPos, false);
