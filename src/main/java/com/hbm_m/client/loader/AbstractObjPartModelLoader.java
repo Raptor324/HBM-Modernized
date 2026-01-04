@@ -9,6 +9,7 @@ import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.*;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.util.GsonHelper;
 import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
 import net.minecraftforge.client.model.geometry.IGeometryLoader;
@@ -17,6 +18,10 @@ import net.minecraftforge.client.model.obj.ObjLoader;
 import net.minecraftforge.client.model.obj.ObjModel;
 import org.jetbrains.annotations.NotNull;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardOpenOption;
 import java.util.HashMap;
 import java.util.Set;
 import java.util.function.Function;
@@ -27,6 +32,16 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
     protected abstract T createBakedModel(HashMap<String, BakedModel> bakedParts, 
                                           ItemTransforms transforms,
                                           ResourceLocation modelLocation);
+    /**
+     * By default OBJ loader flips V to match vanilla/block atlas convention.
+     * Specific models can override if their UVs were authored unflipped.
+     */
+    protected boolean flipV() { return true; }
+
+    /**
+     * Опционально переназначает атлас для текстуры. По умолчанию null (оставляем как есть).
+     */
+    protected ResourceLocation mapAtlasForTexture(ResourceLocation texture) { return null; }
 
     @Override
     public ObjPartGeometry<T> read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) {
@@ -68,7 +83,7 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         private ObjModel loadObjModel() {
             try {
                 ObjModel model = ObjLoader.INSTANCE.loadModel(
-                    new ObjModel.ModelSettings(modelLocation, true, false, true, true, null)
+                    new ObjModel.ModelSettings(modelLocation, loader.flipV(), false, true, true, null)
                 );
                 MainRegistry.LOGGER.info("{}: Successfully loaded OBJ model: {}",
                     loader.getClass().getSimpleName(), modelLocation);
@@ -86,7 +101,7 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
             ModelState identityState = createIdentityState();
 
             for (String partName : partNames) {
-                SinglePartBakingContext partContext = new SinglePartBakingContext(context, partName);
+                SinglePartBakingContext partContext = new SinglePartBakingContext(context, partName, loader);
                 BakedModel bakedPart = model.bake(partContext, baker, spriteGetter,
                     identityState, overrides, modelName);
                 bakedParts.put(partName, bakedPart);
@@ -101,7 +116,7 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
                                    ItemOverrides overrides, ResourceLocation modelName) {
             if (!bakedParts.containsKey("Base")) {
                 bakedParts.put("Base", model.bake(
-                    new SinglePartBakingContext(context, "Base"),
+                    new SinglePartBakingContext(context, "Base", loader),
                     baker, spriteGetter, createIdentityState(), overrides, modelName
                 ));
             }
@@ -120,10 +135,12 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
     protected static class SinglePartBakingContext implements IGeometryBakingContext {
         private final IGeometryBakingContext parent;
         private final String visiblePart;
+        private final AbstractObjPartModelLoader<?> loader;
 
-        public SinglePartBakingContext(IGeometryBakingContext parent, String visiblePart) {
+        public SinglePartBakingContext(IGeometryBakingContext parent, String visiblePart, AbstractObjPartModelLoader<?> loader) {
             this.parent = parent;
             this.visiblePart = visiblePart;
+            this.loader = loader;
         }
 
         @Override public String getModelName() { return parent.getModelName(); }
@@ -131,7 +148,19 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         @Override public boolean useBlockLight() { return parent.useBlockLight(); }
         @Override public boolean useAmbientOcclusion() { return parent.useAmbientOcclusion(); }
         @Override public ItemTransforms getTransforms() { return parent.getTransforms(); }
-        @Override public Material getMaterial(String name) { return parent.getMaterial(name); }
+        @Override
+        public Material getMaterial(String name) {
+            Material mat = parent.getMaterial(name);
+
+            if (mat == null) return null;
+            ResourceLocation overrideAtlas = loader.mapAtlasForTexture(mat.texture());
+            if (overrideAtlas != null && !overrideAtlas.equals(mat.atlasLocation())) {
+                Material remapped = new Material(overrideAtlas, mat.texture());
+
+                return remapped;
+            }
+            return mat;
+        }
         @Override public Transformation getRootTransform() { return parent.getRootTransform(); }
         @Override public boolean hasMaterial(String name) { return parent.hasMaterial(name); }
         @Override public ResourceLocation getRenderTypeHint() { return parent.getRenderTypeHint(); }
@@ -141,5 +170,6 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
             return component.equals(this.visiblePart) ||
                    component.startsWith(this.visiblePart + "/");
         }
+
     }
 }

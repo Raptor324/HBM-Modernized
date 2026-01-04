@@ -9,6 +9,6 @@ public class ModModelLayers {
     // Это уникальный ключ для твоей брони T51.
     // "main" означает основной слой модели.
     public static final ModelLayerLocation T51_ARMOR = new ModelLayerLocation(
-            new ResourceLocation(MainRegistry.MOD_ID, "t51_armor"), "main");
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "t51_armor"), "main");
 
 }

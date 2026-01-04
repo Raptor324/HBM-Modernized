@@ -210,6 +210,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_leggings", "Поножи из звёздного металла");
                 add("item.hbm_m.starmetal_boots", "Ботинки из звёздного металла");
 
+                add("item.hbm_m.t51_helmet", "Шлем силовой брони T-51b");
+                add("item.hbm_m.t51_chestplate", "Нагрудник силовой брони T-51b");
+                add("item.hbm_m.t51_leggings", "Поножи силовой брони T-51b");
+                add("item.hbm_m.t51_boots", "Ботинки силовой брони T-51b");
+
                 add("item.hbm_m.geiger_counter", "Счетчик Гейгера");
                 add("item.hbm_m.dosimeter", "Дозиметр");
                 add("item.hbm_m.battery_creative", "Бесконечная батарейка");
@@ -964,6 +969,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_chestplate", "Starmetal Chestplate");
                 add("item.hbm_m.starmetal_leggings", "Starmetal Leggings");
                 add("item.hbm_m.starmetal_boots", "Starmetal Boots");
+
+                add("item.hbm_m.t51_helmet", "T-51b Power Armor Helmet");
+                add("item.hbm_m.t51_chestplate", "T-51b Power Armor Chestplate");
+                add("item.hbm_m.t51_leggings", "T-51b Power Armor Leggings");
+                add("item.hbm_m.t51_boots", "T-51b Power Armor Boots");
 
                 // ITEMS
                 add(ModItems.CANNED_ASBESTOS.get(), "Canned Asbestos");

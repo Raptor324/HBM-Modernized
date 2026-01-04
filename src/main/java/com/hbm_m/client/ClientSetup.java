@@ -4,6 +4,7 @@ package com.hbm_m.client;
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.model.ModModelLayers;
 import com.hbm_m.client.model.T51ArmorModel;
+import com.hbm_m.client.model.T51ArmorBakedModel;
 import com.hbm_m.client.overlay.*;
 import com.hbm_m.client.loader.*;
 import com.hbm_m.client.render.*;
@@ -41,6 +42,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraft.client.Minecraft;
@@ -163,6 +165,14 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onModelBake(ModelEvent.ModifyBakingResult event) {
         Map<ResourceLocation, BakedModel> modelRegistry = event.getModels();
+        
+        // Для GUI рендеринга: каждая часть брони теперь имеет полностью независимую конфигурацию
+        // в своем JSON файле (t51_helmet.json, t51_chestplate.json и т.д.)
+        // Модели загружаются автоматически из соответствующих JSON файлов с правильными display трансформациями
+        // Ничего дополнительного делать не нужно - Minecraft автоматически загрузит модели из JSON
+        
+        // Примечание: базовый файл t51_armor.json все еще используется для рендеринга брони на персонаже
+        // (через T51PowerArmorLayer), но для GUI каждая часть имеет свой независимый файл
         
         // Получаем ResourceLocation для нашего блока листвы
         ResourceLocation leavesLocation = new ModelResourceLocation(ModBlocks.WASTE_LEAVES.getId(), "");

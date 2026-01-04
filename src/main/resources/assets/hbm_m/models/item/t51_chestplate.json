@@ -1,0 +1,41 @@
+{
+  "loader": "hbm_m:t51_armor_parts",
+  "model": "hbm_m:models/armor/t51.obj",
+  "textures": {
+    "Helmet": "hbm_m:block/armor/t51_helmet",
+    "Chest": "hbm_m:block/armor/t51_chest",
+    "LeftArm": "hbm_m:block/armor/t51_arm",
+    "RightArm": "hbm_m:block/armor/t51_arm",
+    "LeftLeg": "hbm_m:block/armor/t51_leg",
+    "RightLeg": "hbm_m:block/armor/t51_leg",
+    "LeftBoot": "hbm_m:block/armor/t51_leg",
+    "RightBoot": "hbm_m:block/armor/t51_leg"
+  },
+  "display": {
+    "gui": {
+      "rotation": [ 210, 225, 0 ],
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.05, 0.05, 0.05 ]
+    },
+    "ground": {
+      "rotation": [ 0, 0, 0 ],
+      "translation": [ 0, 3, 0 ],
+      "scale": [ 0.25, 0.25, 0.25 ]
+    },
+    "fixed": {
+      "rotation": [ 0, 0, 0 ],
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.5, 0.5, 0.5 ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [ 75, 45, 0 ],
+      "translation": [ 0, 2.5, 0 ],
+      "scale": [ 0.02, 0.02, 0.02 ]
+    },
+    "firstperson_righthand": {
+      "rotation": [ 180, 45, 0 ],
+      "translation": [ 2, -1, 0 ],
+      "scale": [ 0.02, 0.02, 0.02 ]
+    }
+  }
+}

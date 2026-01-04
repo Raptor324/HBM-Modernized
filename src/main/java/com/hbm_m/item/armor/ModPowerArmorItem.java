@@ -47,12 +47,17 @@ public class ModPowerArmorItem extends ArmorItem {
     // --- САМОЕ ВАЖНОЕ: ПУТЬ К ТЕКСТУРЕ ---
     @Override
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
-        // Это укажет игре на файл: src/main/resources/assets/hbm_m/textures/models/armor/t51_atlas.png
-        return MainRegistry.MOD_ID + ":textures/armor/t51_atlas.png";
+        String tex = switch (slot) {
+            case HEAD -> "t51_helmet";
+            case CHEST -> "t51_chest";
+            case LEGS, FEET -> "t51_leg";
+            default -> "t51_chest";
+        };
+        return MainRegistry.MOD_ID + ":textures/armor/" + tex + ".png";
     }
 
     @Override
-    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
+    public void initializeClient(@Nonnull Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
 
             private T51ArmorModel model;
@@ -65,6 +70,7 @@ public class ModPowerArmorItem extends ArmorItem {
                 }
 
                 this.model.setAllVisible(false);
+                this.model.setRenderSlot(equipmentSlot);
 
                 switch (equipmentSlot) {
                     case HEAD -> {
@@ -76,15 +82,15 @@ public class ModPowerArmorItem extends ArmorItem {
                         this.model.leftArm.visible = true;
                     }
                     case LEGS -> {
-                        this.model.body.visible = true;
                         this.model.rightLeg.visible = true;
                         this.model.leftLeg.visible = true;
                     }
                     case FEET -> {
                         this.model.rightLeg.visible = true;
                         this.model.leftLeg.visible = true;
-                        // Если у тебя нет rightBoot/leftBoot в модели, то ничего страшного,
-                        // но в методе renderToBuffer в T51ArmorModel мы их добавили, так что они будут рисоваться.
+                    }
+                    default -> {
+                        // MAINHAND/OFFHAND are irrelevant for armor model rendering.
                     }
                 }
 
