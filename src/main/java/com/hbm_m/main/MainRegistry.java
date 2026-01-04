@@ -553,6 +553,9 @@ public class MainRegistry {
 
         // СТРОИТЕЛЬНЫЕ БЛОКИ
         if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get()) {
+            event.accept(ModBlocks.RING_TEST);
+            event.accept(ModBlocks.TEST3);
+            event.accept(ModBlocks.BLAST_FURNACE2);
             event.accept(ModBlocks.CONCRETE);
             event.accept(ModBlocks.CONCRETE_ASBESTOS);
             event.accept(ModBlocks.CONCRETE_COLORED_SAND);
