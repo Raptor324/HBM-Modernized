@@ -15,10 +15,10 @@ import net.minecraftforge.registries.RegistryObject;
 public class ModBiomes {
 
     static {
-        System.out.println("[HBM_MODS] ========================================");
-        System.out.println("[HBM_MODS] ModBiomes класс загружен!");
-        System.out.println("[HBM_MODS] DeferredRegister создан!");
-        System.out.println("[HBM_MODS] ========================================");
+        MainRegistry.LOGGER.debug("[HBM_MODS] ========================================");
+        MainRegistry.LOGGER.debug("[HBM_MODS] ModBiomes класс загружен!");
+        MainRegistry.LOGGER.debug("[HBM_MODS] DeferredRegister создан!");
+        MainRegistry.LOGGER.debug("[HBM_MODS] ========================================");
     }
 
     // ✅ ГЛАВНЫЙ DeferredRegister - ОБЯЗАТЕЛЬНО!

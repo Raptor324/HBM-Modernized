@@ -1,6 +1,8 @@
 package com.hbm_m.util;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.main.MainRegistry;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -125,7 +127,7 @@ public class CraterGenerator {
         }
 
         long endTime = System.currentTimeMillis();
-        System.out.println("[CRATER] Генерация кратера завершена за " + (endTime - startTime) + " мс");
+        MainRegistry.LOGGER.debug("[CRATER] Генерация кратера завершена за " + (endTime - startTime) + " мс");
     }
 
 
@@ -360,7 +362,7 @@ public class CraterGenerator {
             discardedCount++;
             if (discardedCount % 100 == 0) Thread.yield();
         }
-        System.out.println("[CRATER] Удалено предметов: " + discardedCount);
+        MainRegistry.LOGGER.debug("[CRATER] Удалено предметов: " + discardedCount);
     }
 
 
@@ -368,7 +370,7 @@ public class CraterGenerator {
                                                     Block wasteLogBlock, Block wastePlanksBlock,
                                                     Block burnedGrassBlock, Block[] selafitBlocks,
                                                     RandomSource random) {
-        System.out.println("[CRATER] Применение зон повреждения начато!");
+        MainRegistry.LOGGER.debug("[CRATER] Применение зон повреждения начато!");
         int centerX = centerPos.getX();
         int centerY = centerPos.getY();
         int centerZ = centerPos.getZ();
@@ -450,7 +452,7 @@ public class CraterGenerator {
             item.discard();
         }
         applyKillZoneToEntitiesOptimized(level, centerPos, random);
-        System.out.println("[CRATER] ✅ Применение зон повреждения завершено!");
+        MainRegistry.LOGGER.debug("[CRATER] ✅ Применение зон повреждения завершено!");
     }
 
 

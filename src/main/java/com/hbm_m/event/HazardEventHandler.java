@@ -74,7 +74,7 @@ public class HazardEventHandler {
                         // ContaminationUtil.radiate(level, itemEntity.blockPosition(), 32, radiationLevel / 10f * stack.getCount());
                         
                         // Временный плейсхолдер, чтобы показать, что логика работает:
-                        // System.out.println("Item " + stack.getDisplayName().getString() + " is radiating at " + radiationLevel + " RAD/s");
+                        // MainRegistry.LOGGER.debug("Item " + stack.getDisplayName().getString() + " is radiating at " + radiationLevel + " RAD/s");
                     }
                 }
             }

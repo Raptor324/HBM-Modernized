@@ -365,10 +365,10 @@ public class ModItemModelProvider extends ItemModelProvider {
 
         //---------------------------------СИЛОВАЯ БРОНЯ---------------------------------//
 
-        simpleItem(ModItems.T51_CHESTPLATE);
-        simpleItem(ModItems.T51_HELMET);
-        simpleItem(ModItems.T51_LEGGINGS);
-        simpleItem(ModItems.T51_BOOTS);
+        // simpleItem(ModItems.T51_CHESTPLATE);
+        // simpleItem(ModItems.T51_HELMET);
+        // simpleItem(ModItems.T51_LEGGINGS);
+        // simpleItem(ModItems.T51_BOOTS);
 
         trimmedArmorItem(ModItems.ALLOY_HELMET);
         trimmedArmorItem(ModItems.ALLOY_CHESTPLATE);

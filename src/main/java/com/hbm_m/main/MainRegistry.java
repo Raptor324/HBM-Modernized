@@ -259,8 +259,8 @@ public class MainRegistry {
             event.accept(ModItems.STARMETAL_HOE);
             event.accept(ModItems.STARMETAL_SHOVEL);
 
-            event.accept(ModItems.T51_CHESTPLATE);
             event.accept(ModItems.T51_HELMET);
+            event.accept(ModItems.T51_CHESTPLATE);
             event.accept(ModItems.T51_LEGGINGS);
             event.accept(ModItems.T51_BOOTS);
 
@@ -543,12 +543,12 @@ public class MainRegistry {
             event.accept(ModBlocks.CINNABAR_ORE_DEEPSLATE);
             event.accept(ModBlocks.URANIUM_ORE_DEEPSLATE);
 
-            event.accept(ModBlocks.RESOURCE_ASBESTOS.get());
-            event.accept(ModBlocks.RESOURCE_BAUXITE.get());
-            event.accept(ModBlocks.RESOURCE_HEMATITE.get());
-            event.accept(ModBlocks.RESOURCE_LIMESTONE.get());
-            event.accept(ModBlocks.RESOURCE_MALACHITE.get());
-            event.accept(ModBlocks.RESOURCE_SULFUR.get());
+            event.accept(ModBlocks.RESOURCE_ASBESTOS);
+            event.accept(ModBlocks.RESOURCE_BAUXITE);
+            event.accept(ModBlocks.RESOURCE_HEMATITE);
+            event.accept(ModBlocks.RESOURCE_LIMESTONE);
+            event.accept(ModBlocks.RESOURCE_MALACHITE);
+            event.accept(ModBlocks.RESOURCE_SULFUR);
 
             event.accept(ModItems.ALUMINUM_RAW);
             event.accept(ModItems.BERYLLIUM_RAW);
@@ -573,7 +573,8 @@ public class MainRegistry {
             event.accept(ModBlocks.STRAWBERRY_BUSH);
 
             event.accept(ModBlocks.POLONIUM210_BLOCK);
-// АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ БЛОКОВ СЛИТКОВ
+
+            // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ БЛОКОВ СЛИТКОВ
             for (ModIngots ingot : ModIngots.values()) {
                 RegistryObject<Block> ingotBlock = ModBlocks.getIngotBlock(ingot);
                 if (ingotBlock != null) {

@@ -1,5 +1,6 @@
 package com.hbm_m.util;
 
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.world.biome.ModBiomes;
 
 import net.minecraft.core.BlockPos;
@@ -33,17 +34,17 @@ public class CraterBiomeApplier {
      */
     public static void applyCraterBiomes(ServerLevel level, BlockPos centerPos, int radius) {
         long startTime = System.currentTimeMillis();
-        System.out.println("[CRATER_BIOME] ========================================");
-        System.out.println("[CRATER_BIOME] START: Applying crater biomes...");
-        System.out.println("[CRATER_BIOME] Bomb block center: " + centerPos);
-        System.out.println("[CRATER_BIOME] Center X: " + centerPos.getX());
-        System.out.println("[CRATER_BIOME] Center Z: " + centerPos.getZ());
-        System.out.println("[CRATER_BIOME] Radius: " + radius + " blocks");
-        System.out.println("[CRATER_BIOME] ========================================");
+        MainRegistry.LOGGER.debug("[CRATER_BIOME] ========================================");
+        MainRegistry.LOGGER.debug("[CRATER_BIOME] START: Applying crater biomes...");
+        MainRegistry.LOGGER.debug("[CRATER_BIOME] Bomb block center: " + centerPos);
+        MainRegistry.LOGGER.debug("[CRATER_BIOME] Center X: " + centerPos.getX());
+        MainRegistry.LOGGER.debug("[CRATER_BIOME] Center Z: " + centerPos.getZ());
+        MainRegistry.LOGGER.debug("[CRATER_BIOME] Radius: " + radius + " blocks");
+        MainRegistry.LOGGER.debug("[CRATER_BIOME] ========================================");
 
         try {
             // Get biomes from registry
-            System.out.println("[CRATER_BIOME] Searching for biomes in registry...");
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Searching for biomes in registry...");
             Holder innerCrater = getBiomeHolder(level, ModBiomes.INNER_CRATER_KEY);
             Holder outerCrater = getBiomeHolder(level, ModBiomes.OUTER_CRATER_KEY);
 
@@ -54,7 +55,7 @@ public class CraterBiomeApplier {
                 return;
             }
 
-            System.out.println("[CRATER_BIOME] SUCCESS: Both biomes found!");
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] SUCCESS: Both biomes found!");
 
             // Calculate area of biome application
             // ✅ Используем именно переданный centerPos
@@ -65,9 +66,9 @@ public class CraterBiomeApplier {
             int maxChunkZ = (centerPos.getZ() + appliedRadius) >> 4;
 
             int totalChunks = (maxChunkX - minChunkX + 1) * (maxChunkZ - minChunkZ + 1);
-            System.out.println("[CRATER_BIOME] Processing chunks: " + totalChunks);
-            System.out.println("[CRATER_BIOME] Chunk range X: " + minChunkX + " to " + maxChunkX);
-            System.out.println("[CRATER_BIOME] Chunk range Z: " + minChunkZ + " to " + maxChunkZ);
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Processing chunks: " + totalChunks);
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Chunk range X: " + minChunkX + " to " + maxChunkX);
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Chunk range Z: " + minChunkZ + " to " + maxChunkZ);
 
             int successfulChunks = 0;
             int failedChunks = 0;
@@ -96,13 +97,13 @@ public class CraterBiomeApplier {
             }
 
             long endTime = System.currentTimeMillis();
-            System.out.println("[CRATER_BIOME] ========================================");
-            System.out.println("[CRATER_BIOME] COMPLETE!");
-            System.out.println("[CRATER_BIOME] Processed: " + successfulChunks + " / " + totalChunks);
-            System.out.println("[CRATER_BIOME] Failed: " + failedChunks);
-            System.out.println("[CRATER_BIOME] Biomes applied to: " + appliedBiomes + " quarters");
-            System.out.println("[CRATER_BIOME] Time: " + (endTime - startTime) + " ms");
-            System.out.println("[CRATER_BIOME] ========================================");
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] ========================================");
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] COMPLETE!");
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Processed: " + successfulChunks + " / " + totalChunks);
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Failed: " + failedChunks);
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Biomes applied to: " + appliedBiomes + " quarters");
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Time: " + (endTime - startTime) + " ms");
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] ========================================");
 
         } catch (Exception e) {
             System.err.println("[CRATER_BIOME] CRITICAL ERROR:");
@@ -118,7 +119,7 @@ public class CraterBiomeApplier {
             var result = level.registryAccess()
                     .registryOrThrow(Registries.BIOME)
                     .getHolderOrThrow(key);
-            System.out.println("[CRATER_BIOME] Found: " + key.location());
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Found: " + key.location());
             return result;
         } catch (Exception e) {
             System.err.println("[CRATER_BIOME] WARNING: Cannot find biome: " + key.location());
@@ -213,7 +214,7 @@ public class CraterBiomeApplier {
                 var field = LevelChunkSection.class.getDeclaredField("biomes");
                 field.setAccessible(true);
                 field.set(section, biomes);
-                System.out.println("[CRATER_BIOME] ✅ Biomes saved via 'biomes' field");
+                MainRegistry.LOGGER.debug("[CRATER_BIOME] ✅ Biomes saved via 'biomes' field");
                 return;
             } catch (NoSuchFieldException ex1) {
                 // Попробуем другие имена
@@ -229,7 +230,7 @@ public class CraterBiomeApplier {
                         fullTypeName.contains("Biome")) {
                     f.setAccessible(true);
                     f.set(section, biomes);
-                    System.out.println("[CRATER_BIOME] ✅ Biomes saved via field: " + f.getName());
+                    MainRegistry.LOGGER.debug("[CRATER_BIOME] ✅ Biomes saved via field: " + f.getName());
                     return;
                 }
             }

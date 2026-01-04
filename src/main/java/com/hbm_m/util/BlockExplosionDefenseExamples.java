@@ -7,6 +7,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import java.util.*;
 
+import com.hbm_m.main.MainRegistry;
+
 /**
  * ПРИМЕРЫ ИСПОЛЬЗОВАНИЯ BlockExplosionDefense
  * С ПОЛНОЙ ТАБЛИЦЕЙ ВАНИЛЬНЫХ БЛОКОВ И ИХ УРОВНЕЙ ЗАЩИТЫ
@@ -22,10 +24,10 @@ public class BlockExplosionDefenseExamples {
      * Структура: [Блок] → [Прочность] → [Уровень защиты]
      */
     public static void printAllVanillaBlocksWithDefenseLevel() {
-        System.out.println("╔════════════════════════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║           ТАБЛИЦА ВАНИЛЬНЫХ БЛОКОВ И ИХ УРОВНЕЙ ЗАЩИТЫ (0-15)                        ║");
-        System.out.println("╚════════════════════════════════════════════════════════════════════════════════════════╝");
-        System.out.println();
+        MainRegistry.LOGGER.debug("╔════════════════════════════════════════════════════════════════════════════════════════╗");
+        MainRegistry.LOGGER.debug("║           ТАБЛИЦА ВАНИЛЬНЫХ БЛОКОВ И ИХ УРОВНЕЙ ЗАЩИТЫ (0-15)                        ║");
+        MainRegistry.LOGGER.debug("╚════════════════════════════════════════════════════════════════════════════════════════╝");
+        MainRegistry.LOGGER.debug("");
 
         Map<String, VanillaBlockInfo> blockMap = getVanillaBlocksTable();
 
@@ -40,19 +42,19 @@ public class BlockExplosionDefenseExamples {
                             block.category);
                 });
 
-        System.out.println();
-        System.out.println("═══════════════════════════════════════════════════════════════════════════════════════════");
-        System.out.println();
+        MainRegistry.LOGGER.debug("");
+        MainRegistry.LOGGER.debug("═══════════════════════════════════════════════════════════════════════════════════════════");
+        MainRegistry.LOGGER.debug("");
     }
 
     /**
      * ТАБЛИЦА: ВСЕ ВАНИЛЬНЫЕ БЛОКИ, СГРУППИРОВАННЫЕ ПО КАТЕГОРИЯМ
      */
     public static void printVanillaBlocksByCategory() {
-        System.out.println("╔════════════════════════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║        ВАНИЛЬНЫЕ БЛОКИ, СГРУППИРОВАННЫЕ ПО КАТЕГОРИЯМ И УРОВНЮ ЗАЩИТЫ                ║");
-        System.out.println("╚════════════════════════════════════════════════════════════════════════════════════════╝");
-        System.out.println();
+        MainRegistry.LOGGER.debug("╔════════════════════════════════════════════════════════════════════════════════════════╗");
+        MainRegistry.LOGGER.debug("║        ВАНИЛЬНЫЕ БЛОКИ, СГРУППИРОВАННЫЕ ПО КАТЕГОРИЯМ И УРОВНЮ ЗАЩИТЫ                ║");
+        MainRegistry.LOGGER.debug("╚════════════════════════════════════════════════════════════════════════════════════════╝");
+        MainRegistry.LOGGER.debug("");
 
         Map<String, VanillaBlockInfo> blockMap = getVanillaBlocksTable();
         Map<String, List<VanillaBlockInfo>> byCategory = new TreeMap<>();
@@ -64,8 +66,8 @@ public class BlockExplosionDefenseExamples {
 
         // Выводим каждую категорию
         byCategory.forEach((category, blocks) -> {
-            System.out.println("┌─ " + category.toUpperCase());
-            System.out.println("│");
+            MainRegistry.LOGGER.debug("┌─ " + category.toUpperCase());
+            MainRegistry.LOGGER.debug("│");
 
             blocks.stream()
                     .sorted(Comparator.comparingInt(b -> b.defenseLevel))
@@ -76,21 +78,21 @@ public class BlockExplosionDefenseExamples {
                                 block.hardness);
                     });
 
-            System.out.println("│");
+            MainRegistry.LOGGER.debug("│");
         });
 
-        System.out.println("═══════════════════════════════════════════════════════════════════════════════════════════");
-        System.out.println();
+        MainRegistry.LOGGER.debug("═══════════════════════════════════════════════════════════════════════════════════════════");
+        MainRegistry.LOGGER.debug("");
     }
 
     /**
      * ТАБЛИЦА: СТАТИСТИКА ПО УРОВНЯМ ЗАЩИТЫ
      */
     public static void printDefenseLevelStatistics() {
-        System.out.println("╔════════════════════════════════════════════════════════════════════════════════════════╗");
-        System.out.println("║                    СТАТИСТИКА ПО УРОВНЯМ ЗАЩИТЫ                                       ║");
-        System.out.println("╚════════════════════════════════════════════════════════════════════════════════════════╝");
-        System.out.println();
+        MainRegistry.LOGGER.debug("╔════════════════════════════════════════════════════════════════════════════════════════╗");
+        MainRegistry.LOGGER.debug("║                    СТАТИСТИКА ПО УРОВНЯМ ЗАЩИТЫ                                       ║");
+        MainRegistry.LOGGER.debug("╚════════════════════════════════════════════════════════════════════════════════════════╝");
+        MainRegistry.LOGGER.debug("");
 
         Map<String, VanillaBlockInfo> blockMap = getVanillaBlocksTable();
         Map<Integer, Integer> countByLevel = new TreeMap<>();
@@ -100,8 +102,8 @@ public class BlockExplosionDefenseExamples {
                 countByLevel.merge(block.defenseLevel, 1, Integer::sum)
         );
 
-        System.out.println("Уровень защиты │ Кол-во блоков │ Поведение при взрыве");
-        System.out.println("────────────────┼───────────────┼──────────────────────────────────────────────────");
+        MainRegistry.LOGGER.debug("Уровень защиты │ Кол-во блоков │ Поведение при взрыве");
+        MainRegistry.LOGGER.debug("────────────────┼───────────────┼──────────────────────────────────────────────────");
 
         for (int level = 0; level <= 15; level++) {
             int count = countByLevel.getOrDefault(level, 0);
@@ -109,9 +111,9 @@ public class BlockExplosionDefenseExamples {
             System.out.printf("      %2d        │      %3d      │ %s\n", level, count, behavior);
         }
 
-        System.out.println();
+        MainRegistry.LOGGER.debug("");
         System.out.printf("Всего блоков: %d\n", blockMap.size());
-        System.out.println();
+        MainRegistry.LOGGER.debug("");
     }
 
     /**
@@ -297,7 +299,7 @@ public class BlockExplosionDefenseExamples {
         BlockState state = level.getBlockState(pos);
         int defenseLevel = BlockExplosionDefense.getExplosionDefenseLevel(state, level, pos);
 
-        System.out.println("Блок " + state.getBlock().getName().getString() +
+        MainRegistry.LOGGER.debug("Блок " + state.getBlock().getName().getString() +
                 " имеет уровень защиты: " + defenseLevel);
     }
 
@@ -314,12 +316,12 @@ public class BlockExplosionDefenseExamples {
 
         if (result.shouldBreak) {
             if (result.replaceWithSellafit) {
-                System.out.println("Блок будет ЗАМЕНЕН на селлафит");
+                MainRegistry.LOGGER.debug("Блок будет ЗАМЕНЕН на селлафит");
             } else {
-                System.out.println("Блок будет УДАЛЕН");
+                MainRegistry.LOGGER.debug("Блок будет УДАЛЕН");
             }
         } else {
-            System.out.println("Блок останется НЕТРОНУТЫМ");
+            MainRegistry.LOGGER.debug("Блок останется НЕТРОНУТЫМ");
         }
     }
 
@@ -340,7 +342,7 @@ public class BlockExplosionDefenseExamples {
                         );
 
                 if (result.shouldBreak) {
-                    System.out.println("Блок на " + checkPos + " будет разрушен");
+                    MainRegistry.LOGGER.debug("Блок на " + checkPos + " будет разрушен");
                 }
             }
         }
@@ -360,9 +362,9 @@ public class BlockExplosionDefenseExamples {
 
         if (result.shouldBreak) {
             if (result.replaceWithSellafit) {
-                System.out.println("Базовая система: блок становится селлафитом");
+                MainRegistry.LOGGER.debug("Базовая система: блок становится селлафитом");
             } else {
-                System.out.println("Базовая система: блок удаляется");
+                MainRegistry.LOGGER.debug("Базовая система: блок удаляется");
             }
         }
     }
@@ -381,10 +383,10 @@ public class BlockExplosionDefenseExamples {
                 Blocks.OAK_LOG.defaultBlockState(),         // Должен быть 1-2
         };
 
-        System.out.println("=== ТЕСТ УРОВНЕЙ ЗАЩИТЫ ===");
+        MainRegistry.LOGGER.debug("=== ТЕСТ УРОВНЕЙ ЗАЩИТЫ ===");
         for (BlockState block : testBlocks) {
             int defenseLevel = BlockExplosionDefense.getExplosionDefenseLevel(block, level, testPos);
-            System.out.println(block.getBlock().getName().getString() + ": уровень " + defenseLevel);
+            MainRegistry.LOGGER.debug(block.getBlock().getName().getString() + ": уровень " + defenseLevel);
         }
     }
 
@@ -399,8 +401,8 @@ public class BlockExplosionDefenseExamples {
         int selafitCount = 0;
         int survivedCount = 0;
 
-        System.out.println("=== ИМИТАЦИЯ ВЗРЫВА ===");
-        System.out.println("Центр: " + centerPos + ", Радиус: " + radius);
+        MainRegistry.LOGGER.debug("=== ИМИТАЦИЯ ВЗРЫВА ===");
+        MainRegistry.LOGGER.debug("Центр: " + centerPos + ", Радиус: " + radius);
 
         for (int x = -radius; x <= radius; x++) {
             for (int z = -radius; z <= radius; z++) {
@@ -429,10 +431,10 @@ public class BlockExplosionDefenseExamples {
             }
         }
 
-        System.out.println("Результаты:");
-        System.out.println("  Удалено: " + destroyedCount);
-        System.out.println("  Селлафит: " + selafitCount);
-        System.out.println("  Выжило: " + survivedCount);
+        MainRegistry.LOGGER.debug("Результаты:");
+        MainRegistry.LOGGER.debug("  Удалено: " + destroyedCount);
+        MainRegistry.LOGGER.debug("  Селлафит: " + selafitCount);
+        MainRegistry.LOGGER.debug("  Выжило: " + survivedCount);
     }
 
     /**
@@ -442,11 +444,11 @@ public class BlockExplosionDefenseExamples {
         RandomSource random = level.random;
         int ringCount = 6;
 
-        System.out.println("=== АНАЛИЗ ПО КОЛЬЦАМ ===");
-        System.out.println("Блок: " + testBlockState.getBlock().getName().getString());
+        MainRegistry.LOGGER.debug("=== АНАЛИЗ ПО КОЛЬЦАМ ===");
+        MainRegistry.LOGGER.debug("Блок: " + testBlockState.getBlock().getName().getString());
         int defenseLevel = BlockExplosionDefense.getExplosionDefenseLevel(testBlockState, level, centerPos);
-        System.out.println("Уровень защиты: " + defenseLevel);
-        System.out.println();
+        MainRegistry.LOGGER.debug("Уровень защиты: " + defenseLevel);
+        MainRegistry.LOGGER.debug("");
 
         for (int ring = 0; ring < ringCount; ring++) {
             // Симулируем позицию в этом кольце
@@ -482,50 +484,50 @@ public class BlockExplosionDefenseExamples {
      * ПРИМЕР 8: Таблица поведения всех уровней защиты
      */
     public static void examplePrintDefenseLevelTable() {
-        System.out.println("=== ТАБЛИЦА УРОВНЕЙ ЗАЩИТЫ ===");
-        System.out.println();
-        System.out.println("КОЛЬЦА 0-3 (близко к центру, 0-66%):");
-        System.out.println("  Уровень 0:      → Разрушить 100%");
-        System.out.println("  Уровень 1-10:   → Разрушить 100%");
-        System.out.println("  Уровень 11-14:  → Селлафит 100%");
-        System.out.println("  Уровень 15:     → Ничего (неразрушимо)");
-        System.out.println();
-        System.out.println("КОЛЬЦА 4-5 (далеко от центра, 66-100%):");
-        System.out.println("  Уровень 0:      → Разрушить 100%");
-        System.out.println("  Уровень 1-5:    → Разрушить 100%");
-        System.out.println("  Уровень 6-10:   → Селлафит 100%");
-        System.out.println("  Уровень 11:     → Селлафит 30%, Ничего 70%");
-        System.out.println("  Уровень 12:     → Селлафит 15%, Ничего 85%");
-        System.out.println("  Уровень 13:     → Селлафит 5%, Ничего 95%");
-        System.out.println("  Уровень 14:     → Селлафит 1%, Ничего 99%");
-        System.out.println("  Уровень 15:     → Ничего (неразрушимо)");
+        MainRegistry.LOGGER.debug("=== ТАБЛИЦА УРОВНЕЙ ЗАЩИТЫ ===");
+        MainRegistry.LOGGER.debug("");
+        MainRegistry.LOGGER.debug("КОЛЬЦА 0-3 (близко к центру, 0-66%):");
+        MainRegistry.LOGGER.debug("  Уровень 0:      → Разрушить 100%");
+        MainRegistry.LOGGER.debug("  Уровень 1-10:   → Разрушить 100%");
+        MainRegistry.LOGGER.debug("  Уровень 11-14:  → Селлафит 100%");
+        MainRegistry.LOGGER.debug("  Уровень 15:     → Ничего (неразрушимо)");
+        MainRegistry.LOGGER.debug("");
+        MainRegistry.LOGGER.debug("КОЛЬЦА 4-5 (далеко от центра, 66-100%):");
+        MainRegistry.LOGGER.debug("  Уровень 0:      → Разрушить 100%");
+        MainRegistry.LOGGER.debug("  Уровень 1-5:    → Разрушить 100%");
+        MainRegistry.LOGGER.debug("  Уровень 6-10:   → Селлафит 100%");
+        MainRegistry.LOGGER.debug("  Уровень 11:     → Селлафит 30%, Ничего 70%");
+        MainRegistry.LOGGER.debug("  Уровень 12:     → Селлафит 15%, Ничего 85%");
+        MainRegistry.LOGGER.debug("  Уровень 13:     → Селлафит 5%, Ничего 95%");
+        MainRegistry.LOGGER.debug("  Уровень 14:     → Селлафит 1%, Ничего 99%");
+        MainRegistry.LOGGER.debug("  Уровень 15:     → Ничего (неразрушимо)");
     }
 
     /**
      * ПРИМЕР 9: Определение уровня защиты для кастомного блока
      */
     public static void exampleCustomBlockDefenseLevel() {
-        System.out.println("=== ОПРЕДЕЛЕНИЕ УРОВНЯ ЗАЩИТЫ ===");
-        System.out.println();
-        System.out.println("Стандартное преобразование прочности → уровень защиты:");
-        System.out.println("  hardness < 0.5: → Уровень 0 (Мягкие блоки)");
-        System.out.println("  hardness < 1.0: → Уровень 1 (Очень мягкие)");
-        System.out.println("  hardness < 1.5: → Уровень 2 (Мягкий камень)");
-        System.out.println("  hardness < 3.0: → Уровень 3 (Слабый камень)");
-        System.out.println("  hardness < 5.0: → Уровень 4 (Средний камень)");
-        System.out.println("  hardness < 8.0: → Уровень 5 (Средний материал)");
-        System.out.println("  hardness < 10.0: → Уровень 6 (Тяжелый материал)");
-        System.out.println("  hardness < 15.0: → Уровень 7 (Очень тяжелый)");
-        System.out.println("  hardness < 20.0: → Уровень 8 (Очень тяжелый+)");
-        System.out.println("  hardness < 30.0: → Уровень 9 (Экстремально тяжелый)");
-        System.out.println("  hardness < 50.0: → Уровень 10 (Супер тяжелый)");
-        System.out.println("  hardness < 100.0: → Уровень 12 (Практически неразрушимый)");
-        System.out.println("  hardness < 250.0: → Уровень 13 (Почти неразрушимый)");
-        System.out.println("  hardness < 1000.0: → Уровень 14 (Крайне редко разрушимый)");
-        System.out.println("  hardness < 0: → Уровень 15 (Bedrock, полностью неразрушимый)");
-        System.out.println();
-        System.out.println("Вы можете переопределить это в BlockExplosionDefense");
-        System.out.println("для кастомных материалов вашего мода!");
+        MainRegistry.LOGGER.debug("=== ОПРЕДЕЛЕНИЕ УРОВНЯ ЗАЩИТЫ ===");
+        MainRegistry.LOGGER.debug("");
+        MainRegistry.LOGGER.debug("Стандартное преобразование прочности → уровень защиты:");
+        MainRegistry.LOGGER.debug("  hardness < 0.5: → Уровень 0 (Мягкие блоки)");
+        MainRegistry.LOGGER.debug("  hardness < 1.0: → Уровень 1 (Очень мягкие)");
+        MainRegistry.LOGGER.debug("  hardness < 1.5: → Уровень 2 (Мягкий камень)");
+        MainRegistry.LOGGER.debug("  hardness < 3.0: → Уровень 3 (Слабый камень)");
+        MainRegistry.LOGGER.debug("  hardness < 5.0: → Уровень 4 (Средний камень)");
+        MainRegistry.LOGGER.debug("  hardness < 8.0: → Уровень 5 (Средний материал)");
+        MainRegistry.LOGGER.debug("  hardness < 10.0: → Уровень 6 (Тяжелый материал)");
+        MainRegistry.LOGGER.debug("  hardness < 15.0: → Уровень 7 (Очень тяжелый)");
+        MainRegistry.LOGGER.debug("  hardness < 20.0: → Уровень 8 (Очень тяжелый+)");
+        MainRegistry.LOGGER.debug("  hardness < 30.0: → Уровень 9 (Экстремально тяжелый)");
+        MainRegistry.LOGGER.debug("  hardness < 50.0: → Уровень 10 (Супер тяжелый)");
+        MainRegistry.LOGGER.debug("  hardness < 100.0: → Уровень 12 (Практически неразрушимый)");
+        MainRegistry.LOGGER.debug("  hardness < 250.0: → Уровень 13 (Почти неразрушимый)");
+        MainRegistry.LOGGER.debug("  hardness < 1000.0: → Уровень 14 (Крайне редко разрушимый)");
+        MainRegistry.LOGGER.debug("  hardness < 0: → Уровень 15 (Bedrock, полностью неразрушимый)");
+        MainRegistry.LOGGER.debug("");
+        MainRegistry.LOGGER.debug("Вы можете переопределить это в BlockExplosionDefense");
+        MainRegistry.LOGGER.debug("для кастомных материалов вашего мода!");
     }
 
     /**
@@ -543,11 +545,11 @@ public class BlockExplosionDefenseExamples {
             if (result.replaceWithSellafit) {
                 // Используйте ваши блоки селлафита
                 // fallingBlocks[randomIndex].defaultBlockState()
-                System.out.println("Создать селлафит в позиции: " + blockPos);
+                MainRegistry.LOGGER.debug("Создать селлафит в позиции: " + blockPos);
             } else {
                 // Просто удалите блок
                 level.removeBlock(blockPos, false);
-                System.out.println("Удалить блок в позиции: " + blockPos);
+                MainRegistry.LOGGER.debug("Удалить блок в позиции: " + blockPos);
             }
         }
     }
