@@ -114,7 +114,6 @@ public class ModPowerArmorItem extends ArmorItem {
         target.leftLeg.copyFrom(source.leftLeg);
     }
 
-    // ... (Остальные методы про энергию и тултипы остаются без изменений) ...
 
     @Nullable
     @Override

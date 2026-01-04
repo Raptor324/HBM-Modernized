@@ -1,6 +1,7 @@
 plugins {
     id 'maven-publish'
     id 'net.minecraftforge.gradle' version '[6.0,6.3)'
+    id 'org.parchmentmc.librarian.forgegradle' version '1.+'
     id 'java-library'
     id 'org.spongepowered.mixin' version '0.7.+'
 }
@@ -92,13 +93,13 @@ minecraft {
         client {
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
-            jvmArgs = [ "-Xmx4G", "-Xms2G"]
+            jvmArgs = [ "-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8"]
         }
 
         server {
             property 'forge.enabledGameTestNamespaces', mod_id
             args '--nogui'
-            jvmArgs = [ "-Xmx4G", "-Xms2G"]
+            jvmArgs = [ "-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8"]
         }
 
         // This run config launches GameTestServer and runs all registered gametests, then exits.
@@ -131,6 +132,10 @@ repositories {
     mavenCentral()
     maven { url = 'https://maven.minecraftforge.net/' }
     maven { url = "https://maven.shedaniel.me/" }
+    maven {
+        name = "ParchmentMC"
+        url = "https://maven.parchmentmc.org"
+    }
     maven {
         name = "Modrinth"
         url = "https://api.modrinth.com/maven"
@@ -170,6 +175,13 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:embeddium-908741:5681725")
     
     api(fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.136"))
+    
+    // HBM DevTools - раскомментируйте для использования dev-инструментов
+    // Сначала соберите DevTools: cd ../HBM-DevTools && ./gradlew build
+    // Затем раскомментируйте следующую строку:
+    // Используем fg.deobf() для правильной обработки mappings
+    // Это автоматически обработает mappings при запуске игры
+    runtimeOnly fg.deobf(files("${projectDir}/../HBM-DevTools/build/libs/hbm_devtools-1.0.0-dev.jar"))
 
     // Oculus/Iris API (optional, только для compile-time)
     // compileOnly("curse.maven:oculus-581495:6020952") {

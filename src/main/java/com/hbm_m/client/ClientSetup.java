@@ -41,7 +41,6 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraft.client.Minecraft;

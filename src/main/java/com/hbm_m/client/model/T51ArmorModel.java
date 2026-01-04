@@ -35,3 +35,6 @@ public class T51ArmorModel extends HumanoidModel<LivingEntity> {
         // Do nothing. The actual model is rendered via T51PowerArmorLayer to use Forge's OBJ loader.
     }
 }
+
+
+
