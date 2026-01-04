@@ -12,6 +12,8 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.Map;
@@ -20,8 +22,13 @@ import java.util.Map;
  * Render layer для T51 Power Armor.
  * Использует абстрактный базовый класс для общей логики рендеринга OBJ-брони.
  */
+@OnlyIn(Dist.CLIENT)
 public class T51PowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends AbstractObjArmorLayer<T, M> {
 
+    /**
+     * Атлас для текстур T51 брони.
+     * Используется стандартный BLOCK_ATLAS.
+     */
     private static final ResourceLocation T51_ATLAS_LOCATION = InventoryMenu.BLOCK_ATLAS;
 
     public T51PowerArmorLayer(RenderLayerParent<T, M> parent) {

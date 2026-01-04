@@ -4,7 +4,6 @@ package com.hbm_m.client;
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.model.ModModelLayers;
 import com.hbm_m.client.model.T51ArmorModel;
-import com.hbm_m.client.model.T51ArmorBakedModel;
 import com.hbm_m.client.overlay.*;
 import com.hbm_m.client.loader.*;
 import com.hbm_m.client.render.*;
@@ -231,6 +230,9 @@ public class ClientSetup {
                 GlobalMeshCache.clearAll();
                 DoorPartAABBRegistry.clear();
                 
+                // Очищаем кэши рендеринга брони
+                AbstractObjArmorLayer.clearAllCaches();
+                
                 // Переинициализируем immediate рендер после очистки
                 ImmediateFallbackRenderer.onShaderReload();
                 
@@ -249,6 +251,9 @@ public class ClientSetup {
         MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
         MachinePressRenderer.clearCaches();
         com.hbm_m.client.render.shader.ImmediateFallbackRenderer.forceReset();
+        
+        // Очищаем кэши рендеринга брони
+        AbstractObjArmorLayer.clearAllCaches();
     }
 
     @SubscribeEvent

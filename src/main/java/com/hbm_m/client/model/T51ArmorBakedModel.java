@@ -13,6 +13,8 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
@@ -24,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
+@OnlyIn(Dist.CLIENT)
 public class T51ArmorBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
     private static final String[] ORDER = {
@@ -177,13 +180,21 @@ public class T51ArmorBakedModel extends AbstractMultipartBakedModel implements A
             armorTypeCache.put(stack.getItem(), armorType);
             
             // Устанавливаем armorType в ThreadLocal для fallback (если ItemOverrides не применяется автоматически)
-            CURRENT_ARMOR_TYPE.set(armorType);
-            
-            // Создаем wrapper модель, которая будет рендерить только нужные части
-            BakedModel result = cache.computeIfAbsent(stack.getItem(), item -> 
-                new T51ArmorPartBakedModel(T51ArmorBakedModel.this, armorType)
-            );
-            return result;
+            // Примечание: ThreadLocal будет очищен в T51ArmorPartBakedModel.getQuads()
+            // Но на случай, если getQuads не будет вызван, очищаем здесь тоже
+            try {
+                CURRENT_ARMOR_TYPE.set(armorType);
+                
+                // Создаем wrapper модель, которая будет рендерить только нужные части
+                BakedModel result = cache.computeIfAbsent(stack.getItem(), item -> 
+                    new T51ArmorPartBakedModel(T51ArmorBakedModel.this, armorType)
+                );
+                return result;
+            } catch (Exception e) {
+                // В случае исключения очищаем ThreadLocal
+                CURRENT_ARMOR_TYPE.remove();
+                throw e;
+            }
         }
         
         /**
@@ -211,19 +222,20 @@ public class T51ArmorBakedModel extends AbstractMultipartBakedModel implements A
                                        RandomSource rand, ModelData modelData,
                                        @Nullable net.minecraft.client.renderer.RenderType renderType) {
             // Устанавливаем armorType в ThreadLocal для fallback
+            // Используем try-finally для гарантированной очистки даже при исключениях
             CURRENT_ARMOR_TYPE.set(armorType);
-            
-            // Устанавливаем armorType в ModelData для передачи в базовую модель
-            ModelData dataWithArmorType = modelData.derive()
-                .with(ARMOR_TYPE_PROPERTY, armorType)
-                .build();
-            // Используем приватный метод оригинальной модели через рефлексию или создадим публичный метод
-            // Для простоты, создадим публичный метод в T51ArmorBakedModel
-            List<BakedQuad> quads = originalModel.getItemQuadsForType(side, rand, dataWithArmorType, renderType, armorType);
-            
-            // Очищаем ThreadLocal после рендеринга
-            CURRENT_ARMOR_TYPE.remove();
-            return quads;
+            try {
+                // Устанавливаем armorType в ModelData для передачи в базовую модель
+                ModelData dataWithArmorType = modelData.derive()
+                    .with(ARMOR_TYPE_PROPERTY, armorType)
+                    .build();
+                // Используем приватный метод оригинальной модели через рефлексию или создадим публичный метод
+                // Для простоты, создадим публичный метод в T51ArmorBakedModel
+                return originalModel.getItemQuadsForType(side, rand, dataWithArmorType, renderType, armorType);
+            } finally {
+                // Очищаем ThreadLocal после рендеринга (гарантированно, даже при исключениях)
+                CURRENT_ARMOR_TYPE.remove();
+            }
         }
     }
 

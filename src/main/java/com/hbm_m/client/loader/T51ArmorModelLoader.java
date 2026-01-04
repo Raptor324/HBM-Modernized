@@ -2,7 +2,6 @@ package com.hbm_m.client.loader;
 
 import com.google.gson.JsonObject;
 import com.hbm_m.client.model.T51ArmorBakedModel;
-import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
@@ -44,13 +43,7 @@ public class T51ArmorModelLoader extends AbstractObjPartModelLoader<T51ArmorBake
         return true;
     }
 
-    private static final ResourceLocation T51_ATLAS = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/atlas/t51.png");
-
-    @Override
-    protected ResourceLocation mapAtlasForTexture(ResourceLocation texture) {
-        if (MainRegistry.MOD_ID.equals(texture.getNamespace()) && texture.getPath().startsWith("armor/t51_")) {
-            return T51_ATLAS;
-        }
-        return null;
-    }
+    // mapAtlasForTexture() не переопределен - используем стандартный BLOCK_ATLAS
+    // Кастомный атлас не используется, так как при entity рендеринге Material создается
+    // заново с BLOCK_ATLAS в T51PowerArmorLayer.T51Config
 }

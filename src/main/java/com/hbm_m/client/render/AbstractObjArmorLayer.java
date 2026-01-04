@@ -17,12 +17,17 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.ModelData;
 import org.jetbrains.annotations.NotNull;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -32,14 +37,30 @@ import net.minecraft.world.phys.Vec3;
  * @param <T> Тип сущности (LivingEntity)
  * @param <M> Тип модели (HumanoidModel)
  */
+@OnlyIn(Dist.CLIENT)
 public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends RenderLayer<T, M> {
 
     protected static final float PIXEL_SCALE = 1.0F / 16.0F;
     protected static final float DEFAULT_Z_FIGHTING_SCALE = 1.015F; // 1.5% increase
+    private static final int MAX_PIVOT_CACHE_SIZE = 100; // Максимальный размер кэша pivot'ов
+
+    // Статический кэш для BakedModel (общий для всех экземпляров)
+    private static final Map<ModelResourceLocation, BakedModel> MODEL_CACHE = new ConcurrentHashMap<>();
+    // Кэш для частей модели (ключ: ModelResourceLocation + partName)
+    private static final Map<String, BakedModel> PART_CACHE = new ConcurrentHashMap<>();
 
     protected final IArmorLayerConfig config;
     // Кэш BASE_PIVOTS с составным ключом: armorTypeId:partName
-    private final Map<String, Vec3> basePivots = new ConcurrentHashMap<>();
+    // Используем LinkedHashMap для LRU кэширования с ограничением размера
+    // Обернуто в synchronizedMap для потокобезопасности (хотя рендеринг обычно в главном потоке)
+    private final Map<String, Vec3> basePivots = Collections.synchronizedMap(
+        new LinkedHashMap<String, Vec3>(16, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, Vec3> eldest) {
+                return size() > MAX_PIVOT_CACHE_SIZE;
+            }
+        }
+    );
 
     public AbstractObjArmorLayer(RenderLayerParent<T, M> parent) {
         super(parent);
@@ -64,10 +85,20 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
     }
 
     protected final void renderSlot(PoseStack poseStack, MultiBufferSource buffer, int light, T entity, EquipmentSlot slot) {
+        // Защита от вызова на сервере
+        if (!Minecraft.getInstance().isSameThread()) {
+            return;
+        }
+
         ItemStack stack = entity.getItemBySlot(slot);
         if (!config.isItemValid(stack)) return;
 
-        BakedModel baked = Minecraft.getInstance().getModelManager().getModel(config.getBakedModelLocation());
+        // Кэшируем BakedModel для избежания повторных обращений к ModelManager
+        ModelResourceLocation modelLocation = config.getBakedModelLocation();
+        BakedModel baked = MODEL_CACHE.computeIfAbsent(modelLocation, loc -> 
+            Minecraft.getInstance().getModelManager().getModel(loc)
+        );
+        
         if (baked == Minecraft.getInstance().getModelManager().getMissingModel()) {
             if (entity.tickCount % 100 == 0) {
                 MainRegistry.LOGGER.warn("{} Model is MISSING (returned missing model)", config.getArmorTypeId());
@@ -88,29 +119,37 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
 
         switch (slot) {
             case HEAD -> {
-                BakedModel part = multipart.getPart("Helmet");
+                BakedModel part = getCachedPart(multipart, modelLocation, "Helmet");
                 if (part == null && entity.tickCount % 100 == 0) {
                     MainRegistry.LOGGER.error("Part 'Helmet' is NULL for {}", config.getArmorTypeId());
                 }
                 renderPart(poseStack, buffer, light, part, parentModel.head, "Helmet", crouching);
             }
             case CHEST -> {
-                renderPart(poseStack, buffer, light, multipart.getPart("Chest"), parentModel.body, "Chest", crouching);
-                renderPart(poseStack, buffer, light, multipart.getPart("RightArm"), parentModel.rightArm, "RightArm", crouching);
-                renderPart(poseStack, buffer, light, multipart.getPart("LeftArm"), parentModel.leftArm, "LeftArm", crouching);
+                renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "Chest"), parentModel.body, "Chest", crouching);
+                renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "RightArm"), parentModel.rightArm, "RightArm", crouching);
+                renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "LeftArm"), parentModel.leftArm, "LeftArm", crouching);
             }
             case LEGS -> {
-                renderPart(poseStack, buffer, light, multipart.getPart("RightLeg"), parentModel.rightLeg, "RightLeg", crouching);
-                renderPart(poseStack, buffer, light, multipart.getPart("LeftLeg"), parentModel.leftLeg, "LeftLeg", crouching);
+                renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "RightLeg"), parentModel.rightLeg, "RightLeg", crouching);
+                renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "LeftLeg"), parentModel.leftLeg, "LeftLeg", crouching);
             }
             case FEET -> {
-                renderPart(poseStack, buffer, light, multipart.getPart("RightBoot"), parentModel.rightLeg, "RightBoot", crouching);
-                renderPart(poseStack, buffer, light, multipart.getPart("LeftBoot"), parentModel.leftLeg, "LeftBoot", crouching);
+                renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "RightBoot"), parentModel.rightLeg, "RightBoot", crouching);
+                renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "LeftBoot"), parentModel.leftLeg, "LeftBoot", crouching);
             }
             default -> {
                 // MAINHAND/OFFHAND are irrelevant here.
             }
         }
+    }
+
+    /**
+     * Получает часть модели из кэша или загружает её.
+     */
+    private BakedModel getCachedPart(AbstractMultipartBakedModel multipart, ModelResourceLocation modelLocation, String partName) {
+        String cacheKey = modelLocation.toString() + ":" + partName;
+        return PART_CACHE.computeIfAbsent(cacheKey, key -> multipart.getPart(partName));
     }
 
     protected final void renderPart(PoseStack poseStack, MultiBufferSource buffer, int light, BakedModel partModel, ModelPart bone, String partName, boolean crouching) {
@@ -220,6 +259,25 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
         for (var q : general) {
             vc.putBulkData(pose, q, 1f, 1f, 1f, 1f, light, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, false);
         }
+    }
+
+    /**
+     * Очищает кэш pivot'ов для данного экземпляра.
+     * Вызывается при перезагрузке ресурсов или отключении от сервера.
+     */
+    public void clearPivotCache() {
+        synchronized (basePivots) {
+            basePivots.clear();
+        }
+    }
+
+    /**
+     * Очищает все статические кэши (модели и части).
+     * Вызывается при перезагрузке ресурсов или отключении от сервера.
+     */
+    public static void clearAllCaches() {
+        MODEL_CACHE.clear();
+        PART_CACHE.clear();
     }
 }
 
