@@ -641,6 +641,40 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.armor_table.casing_slot", "Обшивка");
                 add("tooltip.hbm_m.armor_table.servos_slot", "Сервоприводы");
 
+                // POWER ARMOR FSB TOOLTIPS
+                add("armor.fullSetBonus", "Полный комплект:");
+                add("armor.geigerSound", "Счетчик Гейгера");
+                add("armor.geigerHUD", "HUD Гейгера");
+                add("armor.vats", "V.A.T.S.");
+                add("armor.thermal", "Тепловизор");
+                add("armor.hardLanding", "Жесткая посадка");
+                add("armor.stepSize", "Помощь в шаге Ур.%d");
+                add("armor.dash", "Рывок x%d");
+
+                // POWER ARMOR CONTROLS
+                add("key.hbm_m.power_armor_dash", "Рывок силовой брони");
+                add("key.hbm_m.power_armor_vats", "VATS силовой брони");
+                add("key.hbm_m.power_armor_thermal", "Тепловизор силовой брони");
+
+                // ARMOR BATTERIES
+                add("item.hbm_m.armor_battery", "Батарея брони");
+                add("item.hbm_m.armor_battery_mk2", "Батарея брони MK2");
+                add("item.hbm_m.armor_battery_mk3", "Батарея брони MK3");
+
+                // ARMOR MODIFICATIONS
+                add("tooltip.hbm_m.mod.servos.description", "Увеличивает скорость движения");
+                add("tooltip.hbm_m.mod.servos.effect", "+Скорость движения");
+                add("tooltip.hbm_m.mod.cladding.description", "Защищает от коррозии и повреждений");
+                add("tooltip.hbm_m.mod.cladding.effect", "+Защита от коррозии");
+                add("tooltip.hbm_m.mod.kevlar.description", "Увеличивает защиту от пуль");
+                add("tooltip.hbm_m.mod.kevlar.effect", "+Защита от пуль");
+                add("tooltip.hbm_m.mod.extra.description", "Расширяет возможности брони");
+                add("tooltip.hbm_m.mod.extra.effect", "+Дополнительные возможности");
+                add("tooltip.hbm_m.mod.battery.description", "Увеличивает емкость батареи");
+                add("tooltip.hbm_m.mod.battery.effect", "+25% емкость батареи");
+                add("tooltip.hbm_m.mod.battery_mk2.effect", "+50% емкость батареи");
+                add("tooltip.hbm_m.mod.battery_mk3.effect", "+100% емкость батареи");
+
                 add("tooltip.hbm_m.rad_protection.value", "Сопротивление радиации: %s");
 
                 add("container.inventory", "Инвентарь");
@@ -1257,6 +1291,40 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.armor_table.plating_slot", "Plating");
                 add("tooltip.hbm_m.armor_table.casing_slot", "Casing");
                 add("tooltip.hbm_m.armor_table.servos_slot", "Servos");
+
+                // POWER ARMOR FSB TOOLTIPS
+                add("armor.fullSetBonus", "Full Set Bonus:");
+                add("armor.geigerSound", "Geiger Counter");
+                add("armor.geigerHUD", "Geiger HUD");
+                add("armor.vats", "V.A.T.S.");
+                add("armor.thermal", "Thermal Imaging");
+                add("armor.hardLanding", "Hard Landing");
+                add("armor.stepSize", "Step Assist Lv.%d");
+                add("armor.dash", "Dash x%d");
+
+                // POWER ARMOR CONTROLS
+                add("key.hbm_m.power_armor_dash", "Power Armor Dash");
+                add("key.hbm_m.power_armor_vats", "Power Armor VATS");
+                add("key.hbm_m.power_armor_thermal", "Power Armor Thermal Vision");
+
+                // ARMOR BATTERIES
+                add("item.hbm_m.armor_battery", "Armor Battery");
+                add("item.hbm_m.armor_battery_mk2", "Armor Battery MK2");
+                add("item.hbm_m.armor_battery_mk3", "Armor Battery MK3");
+
+                // ARMOR MODIFICATIONS
+                add("tooltip.hbm_m.mod.servos.description", "Increases movement speed");
+                add("tooltip.hbm_m.mod.servos.effect", "+Movement Speed");
+                add("tooltip.hbm_m.mod.cladding.description", "Protects against corrosion and damage");
+                add("tooltip.hbm_m.mod.cladding.effect", "+Corrosion Protection");
+                add("tooltip.hbm_m.mod.kevlar.description", "Increases bullet protection");
+                add("tooltip.hbm_m.mod.kevlar.effect", "+Bullet Protection");
+                add("tooltip.hbm_m.mod.extra.description", "Extends armor capabilities");
+                add("tooltip.hbm_m.mod.extra.effect", "+Extended Capabilities");
+                add("tooltip.hbm_m.mod.battery.description", "Increases battery capacity");
+                add("tooltip.hbm_m.mod.battery.effect", "+25% Battery Capacity");
+                add("tooltip.hbm_m.mod.battery_mk2.effect", "+50% Battery Capacity");
+                add("tooltip.hbm_m.mod.battery_mk3.effect", "+100% Battery Capacity");
 
                 add("gui.hbm_m.blast_furnace.accepts", "Accepts items from: %s");
                 add("direction.hbm_m.down", "Down");

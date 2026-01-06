@@ -9,6 +9,7 @@ package com.hbm_m.network;
 // Пятый аргумент - метод для обработки пакета на принимающей стороне.
 
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.network.packets.PowerArmorDashPacket;
 import com.hbm_m.network.sounds.GeigerSoundPacket;
 import com.hbm_m.network.ToggleWoodBurnerPacket;
 
@@ -38,5 +39,6 @@ public class ModPacketHandler {
         INSTANCE.registerMessage(id++, DetonateAllPacket.class, DetonateAllPacket::encode, DetonateAllPacket::decode, DetonateAllPacket::handle);
         INSTANCE.registerMessage(id++, AnvilCraftC2SPacket.class, AnvilCraftC2SPacket::encode, AnvilCraftC2SPacket::decode, AnvilCraftC2SPacket::handle);
         INSTANCE.registerMessage(id++, AnvilSelectRecipeC2SPacket.class, AnvilSelectRecipeC2SPacket::encode, AnvilSelectRecipeC2SPacket::decode, AnvilSelectRecipeC2SPacket::handle);
+        INSTANCE.registerMessage(id++, PowerArmorDashPacket.class, PowerArmorDashPacket::toBytes, PowerArmorDashPacket::new, PowerArmorDashPacket::handle);
     }
 }

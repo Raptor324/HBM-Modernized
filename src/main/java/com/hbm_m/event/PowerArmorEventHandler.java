@@ -19,8 +19,8 @@ public class PowerArmorEventHandler {
         if (!(event.getEntity() instanceof Player player)) return;
         if (player.level().isClientSide) return;
 
-        // 1. Проверяем полный сет
-        if (!ModPowerArmorItem.hasFullSet(player)) return;
+        // 1. Проверяем полный сет FSB
+        if (!ModPowerArmorItem.hasFSBArmor(player)) return;
 
         // Получаем образец брони (берем нагрудник как контроллер)
         ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);

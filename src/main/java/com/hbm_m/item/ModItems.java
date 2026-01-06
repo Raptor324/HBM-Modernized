@@ -12,6 +12,13 @@ import java.util.Set;
 
 import com.hbm_m.armormod.item.ItemModHealth;
 import com.hbm_m.armormod.item.ItemModRadProtection;
+import com.hbm_m.armormod.item.ItemModServos;
+import com.hbm_m.armormod.item.ItemModCladding;
+import com.hbm_m.armormod.item.ItemModKevlar;
+import com.hbm_m.armormod.item.ItemModExtra;
+import com.hbm_m.armormod.item.ItemModBattery;
+import com.hbm_m.armormod.item.ItemModBatteryMk2;
+import com.hbm_m.armormod.item.ItemModBatteryMk3;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
@@ -126,11 +133,18 @@ public class ModItems {
     public static final int SLOT_CHEST = 1;
     public static final int SLOT_LEGS = 2;
     public static final int SLOT_BOOTS = 3;
-    public static final int SLOT_BATTERY = 4;
-    public static final int SLOT_SPECIAL = 5;
+    public static final int SLOT_BATTERY = 8;  // Изменено согласно ArmorModificationHelper.battery
+    public static final int SLOT_SPECIAL = 7;  // Изменено согласно ArmorModificationHelper.extra
     public static final int SLOT_INSERT = 6;
-    public static final int SLOT_CLADDING = 7;
-    public static final int SLOT_SERVOS = 8;
+    public static final int SLOT_CLADDING = 5; // Изменено согласно ArmorModificationHelper.cladding
+    public static final int SLOT_SERVOS = 4;   // Изменено согласно ArmorModificationHelper.servos
+
+    // Дополнительные константы для совместимости
+    public static final int SLOT_HELMET_ONLY = 0;
+    public static final int SLOT_PLATE_ONLY = 1;
+    public static final int SLOT_LEGS_ONLY = 2;
+    public static final int SLOT_BOOTS_ONLY = 3;
+    public static final int SLOT_KEVLAR = 6;
 
     public static final int BATTERY_CAPACITY = 1_000_000;
 
@@ -497,6 +511,36 @@ public class ModItems {
                     SLOT_CLADDING,
                     0.025f
             )
+    );
+
+    // Новые модификации брони
+    public static final RegistryObject<Item> ARMOR_MOD_SERVOS = ITEMS.register("armor_mod_servos",
+            () -> new ItemModServos(new Item.Properties())
+    );
+
+    public static final RegistryObject<Item> ARMOR_MOD_CLADDING = ITEMS.register("armor_mod_cladding",
+            () -> new ItemModCladding(new Item.Properties())
+    );
+
+    public static final RegistryObject<Item> ARMOR_MOD_KEVLAR = ITEMS.register("armor_mod_kevlar",
+            () -> new ItemModKevlar(new Item.Properties())
+    );
+
+    public static final RegistryObject<Item> ARMOR_MOD_EXTRA = ITEMS.register("armor_mod_extra",
+            () -> new ItemModExtra(new Item.Properties())
+    );
+
+    // Модификаторы батареи (увеличивают заряд брони)
+    public static final RegistryObject<Item> ARMOR_BATTERY = ITEMS.register("armor_battery",
+            () -> new ItemModBattery(new Item.Properties(), 1.25D)
+    );
+
+    public static final RegistryObject<Item> ARMOR_BATTERY_MK2 = ITEMS.register("armor_battery_mk2",
+            () -> new ItemModBatteryMk2(new Item.Properties())
+    );
+
+    public static final RegistryObject<Item> ARMOR_BATTERY_MK3 = ITEMS.register("armor_battery_mk3",
+            () -> new ItemModBatteryMk3(new Item.Properties())
     );
     public static final RegistryObject<Item> CREATIVE_BATTERY = ITEMS.register("battery_creative",
             () -> new ItemCreativeBattery(

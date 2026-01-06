@@ -211,6 +211,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Блоки с кастомной OBJ моделью
         customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
         customObjBlock(ModBlocks.MACHINE_ASSEMBLER);
+        customObjBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
         customObjBlock(ModBlocks.LARGE_VEHICLE_DOOR);
         customObjBlock(ModBlocks.ROUND_AIRLOCK_DOOR);
         customObjBlock(ModBlocks.TRANSITION_SEAL);

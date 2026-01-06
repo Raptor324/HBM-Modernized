@@ -102,20 +102,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
         this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")));
 
-        // ТЕГИ ДЛЯ МОДИФИКАТОРОВ БРОНИ
-        this.tag(SLOT_SPECIAL_MODS)
-                .add(ModItems.HEART_PIECE.get())
-                .add(ModItems.HEART_CONTAINER.get())
-                .add(ModItems.HEART_BOOSTER.get())
-                .add(ModItems.HEART_FAB.get())
-                .add(ModItems.BLACK_DIAMOND.get());
 
-        this.tag(SLOT_CLADDING_MODS)
-                .add(ModItems.GHIORSIUM_CLADDING.get())
-                .add(ModItems.DESH_CLADDING.get())
-                .add(ModItems.LEAD_CLADDING.get())
-                .add(ModItems.RUBBER_CLADDING.get())
-                .add(ModItems.PAINT_CLADDING.get());
 
         this.tag(BLADES)
                 .add(ModItems.BLADE_TEST.get());
@@ -153,7 +140,15 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
                 .add(ModItems.RUBBER_CLADDING.get())
-                .add(ModItems.PAINT_CLADDING.get());
+                .add(ModItems.PAINT_CLADDING.get())
+                // Новые модификаторы брони
+                .add(ModItems.ARMOR_MOD_SERVOS.get())
+                .add(ModItems.ARMOR_MOD_CLADDING.get())
+                .add(ModItems.ARMOR_MOD_KEVLAR.get())
+                .add(ModItems.ARMOR_MOD_EXTRA.get())
+                .add(ModItems.ARMOR_BATTERY.get())
+                .add(ModItems.ARMOR_BATTERY_MK2.get())
+                .add(ModItems.ARMOR_BATTERY_MK3.get());
 
         this.tag(REQUIRES_CHESTPLATE)
                 .add(ModItems.HEART_PIECE.get())
@@ -165,16 +160,55 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
                 .add(ModItems.RUBBER_CLADDING.get())
-                .add(ModItems.PAINT_CLADDING.get());
+                .add(ModItems.PAINT_CLADDING.get())
+                // Новые модификаторы брони
+                .add(ModItems.ARMOR_MOD_SERVOS.get())
+                .add(ModItems.ARMOR_MOD_CLADDING.get())
+                .add(ModItems.ARMOR_MOD_KEVLAR.get())
+                .add(ModItems.ARMOR_MOD_EXTRA.get())
+                .add(ModItems.ARMOR_BATTERY.get())
+                .add(ModItems.ARMOR_BATTERY_MK2.get())
+                .add(ModItems.ARMOR_BATTERY_MK3.get());
 
         this.tag(REQUIRES_LEGGINGS)
                 .add(ModItems.GHIORSIUM_CLADDING.get())
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
                 .add(ModItems.RUBBER_CLADDING.get())
-                .add(ModItems.PAINT_CLADDING.get());
+                .add(ModItems.PAINT_CLADDING.get())
+                // Новые модификаторы брони
+                .add(ModItems.ARMOR_MOD_SERVOS.get())
+                .add(ModItems.ARMOR_MOD_CLADDING.get())
+                .add(ModItems.ARMOR_MOD_KEVLAR.get())
+                .add(ModItems.ARMOR_MOD_EXTRA.get())
+                .add(ModItems.ARMOR_BATTERY.get())
+                .add(ModItems.ARMOR_BATTERY_MK2.get())
+                .add(ModItems.ARMOR_BATTERY_MK3.get());
 
         this.tag(REQUIRES_BOOTS)
+                .add(ModItems.GHIORSIUM_CLADDING.get())
+                .add(ModItems.DESH_CLADDING.get())
+                .add(ModItems.LEAD_CLADDING.get())
+                .add(ModItems.RUBBER_CLADDING.get())
+                .add(ModItems.PAINT_CLADDING.get())
+                // Новые модификаторы брони
+                .add(ModItems.ARMOR_MOD_SERVOS.get())
+                .add(ModItems.ARMOR_MOD_CLADDING.get())
+                .add(ModItems.ARMOR_MOD_KEVLAR.get())
+                .add(ModItems.ARMOR_MOD_EXTRA.get())
+                .add(ModItems.ARMOR_BATTERY.get())
+                .add(ModItems.ARMOR_BATTERY_MK2.get())
+                .add(ModItems.ARMOR_BATTERY_MK3.get());
+
+        // ТЕГИ ДЛЯ МОДИФИКАТОРОВ БРОНИ
+        this.tag(SLOT_SPECIAL_MODS)
+                .add(ModItems.HEART_PIECE.get())
+                .add(ModItems.HEART_CONTAINER.get())
+                .add(ModItems.HEART_BOOSTER.get())
+                .add(ModItems.HEART_FAB.get())
+                .add(ModItems.BLACK_DIAMOND.get());
+
+        this.tag(SLOT_CLADDING_MODS)
                 .add(ModItems.GHIORSIUM_CLADDING.get())
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
@@ -187,7 +221,12 @@ public class ModItemTagProvider extends ItemTagsProvider {
         this.tag(SLOT_LEGGINGS_MODS);
         this.tag(SLOT_BOOTS_MODS);
         this.tag(SLOT_SERVOS_MODS);
-        this.tag(SLOT_BATTERY_MODS);
+        
+        this.tag(SLOT_BATTERY_MODS)
+                .add(ModItems.ARMOR_BATTERY.get())
+                .add(ModItems.ARMOR_BATTERY_MK2.get())
+                .add(ModItems.ARMOR_BATTERY_MK3.get());
+                
         this.tag(SLOT_INSERT_MODS);
 
         this.tag(UPGRADE_MODULES)

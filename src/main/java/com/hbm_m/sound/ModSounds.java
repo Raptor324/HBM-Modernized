@@ -39,6 +39,9 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> TOOL_TECH_BLEEP = registerSoundEvents("techbleep");
     public static final RegistryObject<SoundEvent> TOOL_TECH_BOOP = registerSoundEvents("techboop");
 
+    // Звуки силовой брони
+    public static final RegistryObject<SoundEvent> STEP_POWERED = registerSoundEvents("step.powered");
+
     public static final RegistryObject<SoundEvent> REPAIR_1 = registerSoundEvents("tool.repair1");
     public static final RegistryObject<SoundEvent> REPAIR_2 = registerSoundEvents("tool.repair2");
     public static final RegistryObject<SoundEvent> REPAIR_3 = registerSoundEvents("tool.repair3");

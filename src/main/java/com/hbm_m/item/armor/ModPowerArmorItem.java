@@ -1,9 +1,14 @@
 package com.hbm_m.item.armor;
 
 import com.hbm_m.api.energy.EnergyCapabilityProvider;
+import com.hbm_m.armormod.item.ItemModBattery;
+import com.hbm_m.armormod.item.ItemModBatteryMk2;
+import com.hbm_m.armormod.item.ItemModBatteryMk3;
+import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.client.model.ModModelLayers; // Импорт слоев
 import com.hbm_m.client.model.T51ArmorModel; // Импорт модели
+import com.hbm_m.item.AbstractRadiationMeterItem;
 import com.hbm_m.main.MainRegistry;       // Импорт главного класса
 import com.hbm_m.util.EnergyFormatter;
 import net.minecraft.ChatFormatting;
@@ -118,7 +123,44 @@ public class ModPowerArmorItem extends ArmorItem {
     @Nullable
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
-        return new EnergyCapabilityProvider(stack, specs.capacity, specs.maxReceive, specs.capacity);
+        long modifiedCapacity = getModifiedCapacity(stack);
+        return new EnergyCapabilityProvider(stack, modifiedCapacity, specs.maxReceive, modifiedCapacity);
+    }
+
+    /**
+     * Переопределяем методы для корректного отображения энергии в тултипе с учетом модификаторов
+     */
+    @Override
+    public boolean isBarVisible(ItemStack stack) {
+        return true; // Показываем полоску энергии
+    }
+
+    @Override
+    public int getBarWidth(ItemStack stack) {
+        long currentEnergy = getEnergy(stack);
+        long maxEnergy = getModifiedCapacity(stack);
+        if (maxEnergy <= 0) return 0;
+        return (int) Math.round(13.0 - (1.0 - (double) currentEnergy / maxEnergy) * 13.0);
+    }
+
+    @Override
+    public int getBarColor(ItemStack stack) {
+        long currentEnergy = getEnergy(stack);
+        long maxEnergy = getModifiedCapacity(stack);
+        if (maxEnergy <= 0) return 0xFFFFFF;
+
+        double ratio = (double) currentEnergy / maxEnergy;
+
+        if (ratio >= 0.5) {
+            // Зеленый для высокой энергии
+            return 0x00FF00;
+        } else if (ratio >= 0.25) {
+            // Желтый для средней энергии
+            return 0xFFFF00;
+        } else {
+            // Красный для низкой энергии
+            return 0xFF0000;
+        }
     }
 
     public long getEnergy(ItemStack stack) {
@@ -136,30 +178,13 @@ public class ModPowerArmorItem extends ArmorItem {
         }
     }
 
-    @Override
-    public boolean isBarVisible(@Nonnull ItemStack stack) { return true; }
-
-    @Override
-    public int getBarWidth(@Nonnull ItemStack stack) {
-        long current = getEnergy(stack);
-        long max = specs.capacity;
-        if (max <= 0) return 0;
-        return (int) Math.round(13.0 * current / (double) max);
-    }
-
-    @Override
-    public int getBarColor(@Nonnull ItemStack stack) {
-        long current = getEnergy(stack);
-        long max = specs.capacity;
-        float f = Math.max(0.0F, (float) current / (float) max);
-        return Mth.hsvToRgb(f / 3.0F, 1.0F, 1.0F);
-    }
 
     @Override
     public void appendHoverText(@Nonnull ItemStack stack, @Nullable Level level, @Nonnull List<Component> tooltip, @Nonnull TooltipFlag flag) {
         long current = getEnergy(stack);
+        long maxCapacity = getModifiedCapacity(stack); // Используем модифицированную емкость
         tooltip.add(Component.literal("Power Armor System").withStyle(ChatFormatting.GOLD));
-        tooltip.add(Component.literal(String.format("Charge: %s / %s HE", EnergyFormatter.format(current), EnergyFormatter.format(specs.capacity))).withStyle(ChatFormatting.AQUA));
+        tooltip.add(Component.literal(String.format("Charge: %s / %s HE", EnergyFormatter.format(current), EnergyFormatter.format(maxCapacity))).withStyle(ChatFormatting.AQUA));
         if (flag.isAdvanced()) {
             tooltip.add(Component.literal("Type: " + (specs.mode == PowerArmorSpecs.EnergyMode.CONSTANT_DRAIN ? "Active Field" : "Reactive Shield")).withStyle(ChatFormatting.DARK_GRAY));
         }
@@ -169,7 +194,17 @@ public class ModPowerArmorItem extends ArmorItem {
     @Override
     public void onArmorTick(ItemStack stack, Level world, Player player) {
         if (!world.isClientSide && this.getType() == Type.CHESTPLATE) {
-            if (hasFullSet(player)) handleActiveDrain(player);
+            if (hasFSBArmor(player)) handleActiveDrain(player);
+
+            // Geiger sound in armor - порт из ArmorFSB.onArmorTick()
+            if (hasFSBArmor(player) && specs.hasGeigerSound) {
+                // Проверяем что у игрока нет геигер-счетчика или дозиметра в инвентаре
+                if (!hasGeigerCounter(player) && !hasDosimeter(player)) {
+                    if (world.getGameTime() % 5 == 0) { // Каждые 5 тиков
+                        playArmorGeigerSound(world, player);
+                    }
+                }
+            }
         }
     }
 
@@ -201,9 +236,200 @@ public class ModPowerArmorItem extends ArmorItem {
         return ((ModPowerArmorItem) head.getItem()).getMaterial() == armorItem.getMaterial() && ((ModPowerArmorItem) legs.getItem()).getMaterial() == armorItem.getMaterial() && ((ModPowerArmorItem) feet.getItem()).getMaterial() == armorItem.getMaterial();
     }
 
+    /**
+     * Проверяет, носит ли игрок полный сет силовой брони (FSB).
+     * Аналог hasFSBArmor() из оригинального ArmorFSB.java
+     */
+    public static boolean hasFSBArmor(Player player) {
+        ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
+        if (chest.isEmpty() || !(chest.getItem() instanceof ModPowerArmorItem)) {
+            return false;
+        }
+
+        ModPowerArmorItem chestplate = (ModPowerArmorItem) chest.getItem();
+        boolean noHelmet = chestplate.getSpecs().noHelmetRequired;
+
+        // Проверяем все слоты (если noHelmet=true, то шлем не требуется)
+        int requiredSlots = noHelmet ? 3 : 4;
+        for (int i = 0; i < requiredSlots; i++) {
+            ItemStack armor = player.getItemBySlot(EquipmentSlot.values()[i + 2]); // HEAD=2, CHEST=3, LEGS=4, FEET=5
+            if (armor.isEmpty() || !(armor.getItem() instanceof ModPowerArmorItem)) {
+                return false;
+            }
+
+            // Проверяем что это один и тот же материал
+            if (((ModPowerArmorItem) armor.getItem()).getMaterial() != chestplate.getMaterial()) {
+                return false;
+            }
+
+            // Проверяем что броня включена (если такая система есть)
+            // TODO: добавить проверку isArmorEnabled если будет реализована
+        }
+
+        return true;
+    }
+
+    /**
+     * Проверяет, носит ли игрок полный сет силовой брони, игнорируя заряд.
+     * Аналог hasFSBArmorIgnoreCharge() из оригинального ArmorFSB.java
+     */
+    public static boolean hasFSBArmorIgnoreCharge(Player player) {
+        ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
+        if (chest.isEmpty() || !(chest.getItem() instanceof ModPowerArmorItem)) {
+            return false;
+        }
+
+        ModPowerArmorItem chestplate = (ModPowerArmorItem) chest.getItem();
+        boolean noHelmet = chestplate.getSpecs().noHelmetRequired;
+
+        // Проверяем все слоты (если noHelmet=true, то шлем не требуется)
+        int requiredSlots = noHelmet ? 3 : 4;
+        for (int i = 0; i < requiredSlots; i++) {
+            ItemStack armor = player.getItemBySlot(EquipmentSlot.values()[i + 2]); // HEAD=2, CHEST=3, LEGS=4, FEET=5
+            if (armor.isEmpty() || !(armor.getItem() instanceof ModPowerArmorItem)) {
+                return false;
+            }
+
+            // Проверяем что это один и тот же материал
+            if (((ModPowerArmorItem) armor.getItem()).getMaterial() != chestplate.getMaterial()) {
+                return false;
+            }
+
+            // Не проверяем заряд - игнорируем его
+        }
+
+        return true;
+    }
+
     public float getRadiationResistance(ItemStack stack) {
         long energy = getEnergy(stack);
         if (energy <= 0) return 0.0f;
         return specs.resRadiation;
+    }
+
+    /**
+     * Получает модифицированную емкость с учетом батарейных модификаторов
+     */
+    public long getModifiedCapacity(ItemStack stack) {
+        long baseCapacity = specs.capacity;
+
+        // Проверяем наличие модификаторов батареи
+        if (ArmorModificationHelper.hasMods(stack)) {
+            ItemStack batteryMod = ArmorModificationHelper.pryMod(stack, ArmorModificationHelper.battery);
+            if (!batteryMod.isEmpty()) {
+                if (batteryMod.getItem() instanceof ItemModBatteryMk3) {
+                    return (long) (baseCapacity * 2.0D); // MK3: удваивает емкость
+                } else if (batteryMod.getItem() instanceof ItemModBatteryMk2) {
+                    return (long) (baseCapacity * 1.5D); // MK2: увеличивает на 50%
+                } else if (batteryMod.getItem() instanceof ItemModBattery battery) {
+                    return (long) (baseCapacity * battery.getCapacityMultiplier()); // Обычная батарея: +25%
+                }
+            }
+        }
+
+        return baseCapacity;
+    }
+
+    /**
+     * Проверяет, есть ли у игрока геигер-счетчик в инвентаре
+     */
+    private boolean hasGeigerCounter(Player player) {
+        // Проверяем руки
+        if (isGeigerCounter(player.getMainHandItem()) || isGeigerCounter(player.getOffhandItem())) {
+            return true;
+        }
+        // Проверяем инвентарь
+        for (ItemStack stack : player.getInventory().items) {
+            if (isGeigerCounter(stack)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Проверяет, есть ли у игрока дозиметр в инвентаре
+     */
+    private boolean hasDosimeter(Player player) {
+        // Проверяем руки
+        if (isDosimeter(player.getMainHandItem()) || isDosimeter(player.getOffhandItem())) {
+            return true;
+        }
+        // Проверяем инвентарь
+        for (ItemStack stack : player.getInventory().items) {
+            if (isDosimeter(stack)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Проверяет, является ли предмет геигер-счетчиком
+     */
+    private boolean isGeigerCounter(ItemStack stack) {
+        return stack.getItem().getDescriptionId().contains("geiger_counter");
+    }
+
+    /**
+     * Проверяет, является ли предмет дозиметром
+     */
+    private boolean isDosimeter(ItemStack stack) {
+        return stack.getItem().getDescriptionId().contains("dosimeter");
+    }
+
+    /**
+     * Воспроизводит звук геигера в броне на основе уровня радиации
+     * Использует логику из AbstractRadiationMeterItem для измерения радиации
+     */
+    private void playArmorGeigerSound(Level world, Player player) {
+        // Измеряем радиацию с помощью статического метода AbstractRadiationMeterItem
+        var radiationData = AbstractRadiationMeterItem.measureRadiationStatic(world, player);
+
+        // Используем playerRad (радиацию игрока) с учетом защиты брони
+        // В AbstractRadiationMeterItem.measureRadiation уже учтена защита брони
+        float effectiveRadiation = radiationData.playerRad();
+
+        if (effectiveRadiation > 1E-5) {
+            // Определяем какой звук воспроизвести на основе уровня радиации
+            // Используем ту же логику, что и в оригинальном ArmorFSB.onArmorTick()
+            var soundOptions = new java.util.ArrayList<Integer>();
+
+            if (effectiveRadiation < 1) soundOptions.add(0);
+            if (effectiveRadiation < 5) soundOptions.add(0);
+            if (effectiveRadiation < 10) soundOptions.add(1);
+            if (effectiveRadiation > 5 && effectiveRadiation < 15) soundOptions.add(2);
+            if (effectiveRadiation > 10 && effectiveRadiation < 20) soundOptions.add(3);
+            if (effectiveRadiation > 15 && effectiveRadiation < 25) soundOptions.add(4);
+            if (effectiveRadiation > 20 && effectiveRadiation < 30) soundOptions.add(5);
+            if (effectiveRadiation > 25) soundOptions.add(6);
+
+            if (!soundOptions.isEmpty()) {
+                int r = soundOptions.get(world.random.nextInt(soundOptions.size()));
+
+                if (r > 0) {
+                    // Воспроизводим звук геигера по индексу
+                    playArmorGeigerSoundByIndex(world, player, r);
+                }
+            }
+        }
+    }
+
+    /**
+     * Воспроизводит звук геигера по индексу, используя ModSounds
+     */
+    private void playArmorGeigerSoundByIndex(Level world, Player player, int soundIndex) {
+        var soundEvent = switch (soundIndex) {
+            case 1 -> com.hbm_m.sound.ModSounds.GEIGER_1.get();
+            case 2 -> com.hbm_m.sound.ModSounds.GEIGER_2.get();
+            case 3 -> com.hbm_m.sound.ModSounds.GEIGER_3.get();
+            case 4 -> com.hbm_m.sound.ModSounds.GEIGER_4.get();
+            case 5 -> com.hbm_m.sound.ModSounds.GEIGER_5.get();
+            case 6 -> com.hbm_m.sound.ModSounds.GEIGER_6.get();
+            default -> com.hbm_m.sound.ModSounds.GEIGER_1.get();
+        };
+
+        world.playSound(null, player.getX(), player.getY(), player.getZ(),
+            soundEvent, net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
     }
 }

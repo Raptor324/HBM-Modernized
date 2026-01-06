@@ -3,6 +3,8 @@ package com.hbm_m.armormod.client;
 // Этот класс отвечает за генерацию компонентов тултипа для брони с модификациями
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
+import com.hbm_m.item.armor.ModPowerArmorItem;
+import com.hbm_m.item.armor.PowerArmorSpecs;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.nbt.CompoundTag;
@@ -95,6 +97,90 @@ public class ArmorTooltipHandler {
             result.add(Component.translatable("tooltip.hbm_m.mods").withStyle(ChatFormatting.GOLD));
             result.addAll(modsTooltipLines);
             result.add(Component.empty());
+            return Optional.of(result);
+        }
+
+        return Optional.empty();
+    }
+
+    /**
+     * Генерирует тултип для эффектов Full Set Bonus (FSB) силовой брони.
+     * Портировано из оригинального addInformation() метода ArmorFSB.java
+     *
+     * @param stack ItemStack брони
+     * @return Optional со списком компонентов тултипа, или пустой если эффектов нет
+     */
+    public static Optional<List<Component>> getFSBTooltip(ItemStack stack) {
+        if (!(stack.getItem() instanceof ModPowerArmorItem armorItem)) {
+            return Optional.empty();
+        }
+
+        PowerArmorSpecs specs = armorItem.getSpecs();
+        List<Component> fsbLines = new ArrayList<>();
+
+        // Эффекты зелий (potion effects)
+        if (!specs.passiveEffects.isEmpty()) {
+            List<String> potionList = new ArrayList<>();
+            for (var effect : specs.passiveEffects) {
+                // В 1.20.1 эффект может иметь registry name
+                String effectName = effect.getEffect().getDescriptionId();
+                potionList.add(Component.translatable(effectName).getString());
+            }
+
+            if (!potionList.isEmpty()) {
+                fsbLines.add(Component.literal(String.join(", ", potionList))
+                    .withStyle(ChatFormatting.AQUA));
+            }
+        }
+
+        // Специальные эффекты FSB
+        if (specs.hasGeigerSound) {
+            fsbLines.add(Component.literal("  ")
+                .append(Component.translatable("armor.geigerSound"))
+                .withStyle(ChatFormatting.GOLD));
+        }
+
+        if (specs.hasCustomGeiger) {
+            fsbLines.add(Component.literal("  ")
+                .append(Component.translatable("armor.geigerHUD"))
+                .withStyle(ChatFormatting.GOLD));
+        }
+
+        if (specs.hasVats) {
+            fsbLines.add(Component.literal("  ")
+                .append(Component.translatable("armor.vats"))
+                .withStyle(ChatFormatting.RED));
+        }
+
+        if (specs.hasThermal) {
+            fsbLines.add(Component.literal("  ")
+                .append(Component.translatable("armor.thermal"))
+                .withStyle(ChatFormatting.RED));
+        }
+
+        if (specs.hasHardLanding) {
+            fsbLines.add(Component.literal("  ")
+                .append(Component.translatable("armor.hardLanding"))
+                .withStyle(ChatFormatting.RED));
+        }
+
+        if (specs.stepSize != 0) {
+            fsbLines.add(Component.literal("  ")
+                .append(Component.translatable("armor.stepSize", specs.stepSize))
+                .withStyle(ChatFormatting.BLUE));
+        }
+
+        if (specs.dashCount > 0) {
+            fsbLines.add(Component.literal("  ")
+                .append(Component.translatable("armor.dash", specs.dashCount))
+                .withStyle(ChatFormatting.AQUA));
+        }
+
+        if (!fsbLines.isEmpty()) {
+            List<Component> result = new ArrayList<>();
+            result.add(Component.translatable("armor.fullSetBonus")
+                .withStyle(ChatFormatting.GOLD));
+            result.addAll(fsbLines);
             return Optional.of(result);
         }
 

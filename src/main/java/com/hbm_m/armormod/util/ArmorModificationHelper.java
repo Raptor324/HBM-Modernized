@@ -27,17 +27,203 @@ import java.util.Map;
 
 public class ArmorModificationHelper {
 
+    // Типы слотов модификаций (как в оригинальном ArmorModHandler)
+    public static final int helmet_only = 0;
+    public static final int plate_only = 1;
+    public static final int legs_only = 2;
+    public static final int boots_only = 3;
+    public static final int servos = 4;
+    public static final int cladding = 5;
+    public static final int kevlar = 6;
+    public static final int extra = 7;
+    public static final int battery = 8;
+
+    public static final int MOD_SLOTS = 9;
+
     public static final String MOD_COMPOUND_KEY = "hbm_armor_mods";
     public static final String MOD_SLOT_KEY_PREFIX = "mod_slot_";
     public static final String MODIFIER_MARKER_KEY = "hbm_mod_attribute";
 
-    // Уникальные UUID для идентификации наших модификаторов
+    // Уникальные UUID для идентификации наших модификаторов (расширено)
     public static final Map<Integer, UUID> MODIFIER_UUIDS = Map.of(
             0, UUID.fromString("8d6e5c77-133e-4056-9c80-a9e42a1a0b65"), // helmet
             1, UUID.fromString("b1b7ee0e-1d14-4400-8037-f7f2e02f21ca"), // chest
             2, UUID.fromString("30b50d2a-4858-4e5b-88d4-3e3612224238"), // legs
-            3, UUID.fromString("426ee0d0-7587-4697-aaef-4772ab202e78")  // feet
+            3, UUID.fromString("426ee0d0-7587-4697-aaef-4772ab202e78"),  // feet
+            4, UUID.fromString("e572caf4-3e65-4152-bc79-c4d4048cbd29"),  // servos
+            5, UUID.fromString("bed30902-8a6a-4769-9f65-2a9b67469fff"),  // cladding
+            6, UUID.fromString("baebf7b3-1eda-4a14-b233-068e2493e9a2"),  // kevlar
+            7, UUID.fromString("28016c1b-d992-4324-9409-a9f9f0ffb85c"),  // extra
+            8, UUID.fromString("f1c2d3e4-a5b6-4c7d-8e9f-0a1b2c3d4e5f")   // battery
     );
+
+    /**
+     * Проверяет, можно ли применить модификацию к данной броне
+     * @param armor Броня для проверки
+     * @param mod Модификация для проверки
+     * @return true если модификацию можно применить
+     */
+    public static boolean isApplicable(ItemStack armor, ItemStack mod) {
+        if (armor.isEmpty() || mod.isEmpty()) {
+            return false;
+        }
+
+        if (!(armor.getItem() instanceof ArmorItem)) {
+            return false;
+        }
+
+        if (!(mod.getItem() instanceof ItemArmorMod modItem)) {
+            return false;
+        }
+
+        ArmorItem armorItem = (ArmorItem) armor.getItem();
+        int armorSlot = armorItem.getType().getSlot().getIndex();
+        int modType = modItem.type;
+
+        // Проверяем совместимость по типу брони и модификации
+        switch (modType) {
+            case helmet_only -> {
+                return armorSlot == 3; // HEAD
+            }
+            case plate_only -> {
+                return armorSlot == 2; // CHEST
+            }
+            case legs_only -> {
+                return armorSlot == 1; // LEGS
+            }
+            case boots_only -> {
+                return armorSlot == 0; // FEET
+            }
+            case servos, cladding, kevlar, extra, battery -> {
+                // Эти модификации могут применяться к любой броне
+                return true;
+            }
+            default -> {
+                return false;
+            }
+        }
+    }
+
+    /**
+     * Применяет модификацию к броне
+     * @param armor Броня для модификации
+     * @param mod Модификация для применения
+     */
+    public static void applyMod(ItemStack armor, ItemStack mod) {
+        if (!isApplicable(armor, mod)) {
+            return;
+        }
+
+        if (!(mod.getItem() instanceof ItemArmorMod modItem)) {
+            return;
+        }
+
+        CompoundTag armorTag = armor.getOrCreateTag();
+        CompoundTag modsTag = armorTag.getCompound(MOD_COMPOUND_KEY);
+
+        // Сохраняем ItemStack модификации в NBT
+        CompoundTag modTag = new CompoundTag();
+        mod.save(modTag);
+
+        int slot = modItem.type;
+        modsTag.put(MOD_SLOT_KEY_PREFIX + slot, modTag);
+        armorTag.put(MOD_COMPOUND_KEY, modsTag);
+    }
+
+    /**
+     * Удаляет модификацию из указанного слота
+     * @param armor Броня
+     * @param slot Слот для очистки
+     */
+    public static void removeMod(ItemStack armor, int slot) {
+        if (armor.isEmpty()) {
+            return;
+        }
+
+        CompoundTag armorTag = armor.getTag();
+        if (armorTag == null || !armorTag.contains(MOD_COMPOUND_KEY)) {
+            return;
+        }
+
+        CompoundTag modsTag = armorTag.getCompound(MOD_COMPOUND_KEY);
+        modsTag.remove(MOD_SLOT_KEY_PREFIX + slot);
+
+        // Если модификаций не осталось, удаляем весь compound
+        if (modsTag.isEmpty()) {
+            armorTag.remove(MOD_COMPOUND_KEY);
+        } else {
+            armorTag.put(MOD_COMPOUND_KEY, modsTag);
+        }
+    }
+
+    /**
+     * Проверяет, есть ли модификации у брони
+     * @param armor Броня для проверки
+     * @return true если есть модификации
+     */
+    public static boolean hasMods(ItemStack armor) {
+        if (armor.isEmpty()) {
+            return false;
+        }
+
+        CompoundTag armorTag = armor.getTag();
+        return armorTag != null && armorTag.contains(MOD_COMPOUND_KEY);
+    }
+
+    /**
+     * Получает все модификации из брони
+     * @param armor Броня
+     * @return Массив ItemStack модификаций
+     */
+    public static ItemStack[] pryMods(ItemStack armor) {
+        ItemStack[] slots = new ItemStack[MOD_SLOTS];
+
+        if (!hasMods(armor)) {
+            return slots;
+        }
+
+        CompoundTag armorTag = armor.getTag();
+        if (armorTag == null) {
+            return slots;
+        }
+
+        CompoundTag modsTag = armorTag.getCompound(MOD_COMPOUND_KEY);
+
+        for (int i = 0; i < MOD_SLOTS; i++) {
+            String key = MOD_SLOT_KEY_PREFIX + i;
+            if (modsTag.contains(key)) {
+                slots[i] = ItemStack.of(modsTag.getCompound(key));
+            }
+        }
+
+        return slots;
+    }
+
+    /**
+     * Получает модификацию из конкретного слота
+     * @param armor Броня
+     * @param slot Слот
+     * @return ItemStack модификации или пустой стек
+     */
+    public static ItemStack pryMod(ItemStack armor, int slot) {
+        if (!hasMods(armor)) {
+            return ItemStack.EMPTY;
+        }
+
+        CompoundTag armorTag = armor.getTag();
+        if (armorTag == null) {
+            return ItemStack.EMPTY;
+        }
+
+        CompoundTag modsTag = armorTag.getCompound(MOD_COMPOUND_KEY);
+        String key = MOD_SLOT_KEY_PREFIX + slot;
+
+        if (modsTag.contains(key)) {
+            return ItemStack.of(modsTag.getCompound(key));
+        }
+
+        return ItemStack.EMPTY;
+    }
 
     public static void loadModsIntoTable(ItemStack armorStack, IItemHandler tableInventory) {
         // Очищаем стол перед загрузкой
@@ -140,6 +326,18 @@ public class ArmorModificationHelper {
         // Заменяем старый список новым, отфильтрованным и дополненным.
         mainTag.put("AttributeModifiers", preservedModifiers);
         if (mainTag.isEmpty()) { armorStack.setTag(null); }
+
+        // ШАГ 3: ОБРЕЗАНИЕ ЭНЕРГИИ ПО НОВОМУ МАКСИМУМУ
+        // Если броня - силовая, проверяем и корректируем уровень энергии
+        if (armorStack.getItem() instanceof com.hbm_m.item.armor.ModPowerArmorItem powerArmor) {
+            long currentEnergy = mainTag.getLong("energy");
+            long newMaxCapacity = powerArmor.getModifiedCapacity(armorStack);
+
+            // Если текущая энергия превышает новый максимум, обрезаем ее
+            if (currentEnergy > newMaxCapacity) {
+                mainTag.putLong("energy", newMaxCapacity);
+            }
+        }
     }
     /**
      * Читает NBT-тег брони и возвращает список установленных модов.

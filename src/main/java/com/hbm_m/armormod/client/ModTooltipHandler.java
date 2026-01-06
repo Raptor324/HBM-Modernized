@@ -2,6 +2,7 @@ package com.hbm_m.armormod.client;
 
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.datagen.ModItemTagProvider;
+import com.hbm_m.item.armor.ModPowerArmorItem;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.ChatFormatting;
@@ -64,15 +65,24 @@ public class ModTooltipHandler {
                 case 1 -> Component.translatable("tooltip.hbm_m.chestplate");
                 case 2 -> Component.translatable("tooltip.hbm_m.leggings");
                 case 3 -> Component.translatable("tooltip.hbm_m.boots");
-                case 4 -> Component.translatable("tooltip.hbm_m.armor_table.battery_slot");
-                case 5 -> Component.translatable("tooltip.hbm_m.armor_table.special_slot");
+                case 4 -> Component.translatable("tooltip.hbm_m.armor_table.servos_slot");
+                case 7 -> Component.translatable("tooltip.hbm_m.armor_table.special_slot");
                 case 6 -> Component.translatable("tooltip.hbm_m.armor_table.plating_slot");
-                case 7 -> Component.translatable("tooltip.hbm_m.armor_table.casing_slot");
-                case 8 -> Component.translatable("tooltip.hbm_m.armor_table.servos_slot");
+                case 5 -> Component.translatable("tooltip.hbm_m.armor_table.casing_slot");
+                case 8 -> Component.translatable("tooltip.hbm_m.armor_table.battery_slot");
                 default -> Component.literal("Unknown");
             };
             
             tooltip.add(Component.literal("  ").append(slotName).withStyle(ChatFormatting.GRAY));
+        }
+
+        // Добавляем FSB тултипы для силовой брони
+        if (event.getItemStack().getItem() instanceof ModPowerArmorItem) {
+            List<Component> tooltip = event.getToolTip();
+            ArmorTooltipHandler.getFSBTooltip(event.getItemStack()).ifPresent(fsbLines -> {
+                tooltip.add(Component.empty()); // Отступ
+                tooltip.addAll(fsbLines);
+            });
         }
     }
 }

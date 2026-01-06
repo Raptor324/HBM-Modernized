@@ -5,6 +5,9 @@ package com.hbm_m.client;
 import com.hbm_m.client.model.ModModelLayers;
 import com.hbm_m.client.model.T51ArmorModel;
 import com.hbm_m.client.overlay.*;
+import com.hbm_m.client.overlay.OverlayVATS;
+import com.hbm_m.client.overlay.OverlayThermal;
+import com.hbm_m.client.overlay.OverlayPowerArmor;
 import com.hbm_m.client.loader.*;
 import com.hbm_m.client.render.*;
 import com.hbm_m.client.render.shader.*;
@@ -164,14 +167,6 @@ public class ClientSetup {
     public static void onModelBake(ModelEvent.ModifyBakingResult event) {
         Map<ResourceLocation, BakedModel> modelRegistry = event.getModels();
         
-        // Для GUI рендеринга: каждая часть брони теперь имеет полностью независимую конфигурацию
-        // в своем JSON файле (t51_helmet.json, t51_chestplate.json и т.д.)
-        // Модели загружаются автоматически из соответствующих JSON файлов с правильными display трансформациями
-        // Ничего дополнительного делать не нужно - Minecraft автоматически загрузит модели из JSON
-        
-        // Примечание: базовый файл t51_armor.json все еще используется для рендеринга брони на персонаже
-        // (через T51PowerArmorLayer), но для GUI каждая часть имеет свой независимый файл
-        
         // Получаем ResourceLocation для нашего блока листвы
         ResourceLocation leavesLocation = new ModelResourceLocation(ModBlocks.WASTE_LEAVES.getId(), "");
 
@@ -271,6 +266,11 @@ public class ClientSetup {
         // Мы говорим: "Нарисуй оверлей с ID 'geiger_counter_hud' НАД хотбаром,
         // используя логику из объекта GeigerOverlay.GEIGER_HUD_OVERLAY".
         event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", OverlayGeiger.GEIGER_HUD_OVERLAY);
+
+        event.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "power_armor_hud", OverlayPowerArmor.POWER_ARMOR_OVERLAY);
+
+        event.registerAboveAll("vats_overlay", OverlayVATS.VATS_OVERLAY);
+        event.registerAboveAll("thermal_overlay", OverlayThermal.THERMAL_OVERLAY);
 
         event.registerAbove(VanillaGuiOverlay.PORTAL.id(), "radiation_pixels", OverlayRadiationVisuals.RADIATION_PIXELS_OVERLAY);
         

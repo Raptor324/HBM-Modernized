@@ -44,6 +44,35 @@ public abstract class AbstractRadiationMeterItem extends Item {
         return InteractionResultHolder.success(pPlayer.getItemInHand(pUsedHand));
     }
 
+    /**
+     * Измеряет радиацию в текущем месте игрока.
+     * @param level Уровень (мир)
+     * @param player Игрок
+     * @return Данные о радиации
+     */
+    public static RadiationData measureRadiationStatic(Level level, Player player) {
+        float chunkRad = 0F;
+        float invRad = 0F;
+        if (ModClothConfig.get().enableRadiation) {
+            chunkRad = ChunkRadiationManager.getRadiation(
+                level,
+                player.getBlockX(),
+                (int)Math.floor(player.getY() + player.getBbHeight() * 0.5),
+                player.getBlockZ()
+            );
+            invRad = PlayerHandler.getInventoryRadiation(player);
+        }
+
+        float playerRads = PlayerHandler.getPlayerRads(player);
+        float totalAbsoluteProtection = 0f;
+        for (ItemStack armorStack : player.getArmorSlots()) {
+            totalAbsoluteProtection += ArmorModificationHelper.getTotalAbsoluteRadProtection(armorStack);
+        }
+        float protectionPercent = ArmorModificationHelper.convertAbsoluteToPercent(totalAbsoluteProtection);
+
+        return new RadiationData(chunkRad, invRad, playerRads, protectionPercent, totalAbsoluteProtection);
+    }
+
     protected RadiationData measureRadiation(Level level, Player player) {
         float chunkRad = 0F;
         float invRad = 0F;
@@ -83,7 +112,7 @@ public abstract class AbstractRadiationMeterItem extends Item {
         }
     }
 
-    protected record RadiationData(float chunkRad, float inventoryRad, float playerRad, float protectionPercent, float protectionAbsolute) {
+    public static record RadiationData(float chunkRad, float inventoryRad, float playerRad, float protectionPercent, float protectionAbsolute) {
         public float getTotalEnvironmentRad() {
             return chunkRad + inventoryRad;
         }

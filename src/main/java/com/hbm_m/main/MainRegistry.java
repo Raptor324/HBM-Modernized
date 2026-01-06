@@ -21,6 +21,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
+import com.hbm_m.item.armor.ModPowerArmorItem;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.entity.ModEntities;
@@ -259,10 +260,11 @@ public class MainRegistry {
             event.accept(ModItems.STARMETAL_HOE);
             event.accept(ModItems.STARMETAL_SHOVEL);
 
-            event.accept(ModItems.T51_HELMET);
-            event.accept(ModItems.T51_CHESTPLATE);
-            event.accept(ModItems.T51_LEGGINGS);
-            event.accept(ModItems.T51_BOOTS);
+            // Силовая броня добавляется полностью заряженной
+            event.accept(createChargedArmorStack(ModItems.T51_HELMET.get()));
+            event.accept(createChargedArmorStack(ModItems.T51_CHESTPLATE.get()));
+            event.accept(createChargedArmorStack(ModItems.T51_LEGGINGS.get()));
+            event.accept(createChargedArmorStack(ModItems.T51_BOOTS.get()));
 
             event.accept(ModItems.ALLOY_HELMET);
             event.accept(ModItems.ALLOY_CHESTPLATE);
@@ -860,6 +862,22 @@ public class MainRegistry {
                 ClientSetup.addTemplatesClient(event);
             });
         }
+    }
+
+    /**
+     * Создает ItemStack с максимальным зарядом для силовой брони
+     */
+    private static ItemStack createChargedArmorStack(Item item) {
+        ItemStack stack = new ItemStack(item);
+
+        // Проверяем, является ли предмет силовой броней
+        if (item instanceof com.hbm_m.item.armor.ModPowerArmorItem powerArmor) {
+            // Получаем максимальную емкость и устанавливаем полный заряд
+            long maxCapacity = powerArmor.getSpecs().capacity;
+            stack.getOrCreateTag().putLong("energy", maxCapacity);
+        }
+
+        return stack;
     }
 }
 
