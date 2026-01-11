@@ -1,4 +1,4 @@
-package com.hbm_m.client.model;
+package com.hbm_m.powerarmor;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

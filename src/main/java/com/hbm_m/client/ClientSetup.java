@@ -3,7 +3,6 @@ package com.hbm_m.client;
 // Основной класс клиентской настройки мода. Здесь регистрируются все клиентские обработчики событий,
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.model.ModModelLayers;
-import com.hbm_m.client.model.T51ArmorModel;
 import com.hbm_m.client.overlay.*;
 import com.hbm_m.client.loader.*;
 import com.hbm_m.client.render.*;
@@ -28,7 +27,9 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.particle.custom.*;
 import com.hbm_m.particle.explosions.*;
+import com.hbm_m.powerarmor.AbstractObjArmorLayer;
 import com.hbm_m.powerarmor.OverlayPowerArmor;
+import com.hbm_m.powerarmor.T51ArmorModel;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.DoorDeclRegistry;
 import com.hbm_m.block.entity.ModBlockEntities;

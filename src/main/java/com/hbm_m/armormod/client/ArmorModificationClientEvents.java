@@ -2,6 +2,8 @@ package com.hbm_m.armormod.client;
 
 import com.hbm_m.client.overlay.GUIArmorTable;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.powerarmor.ArmorTooltipHandler;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ArmorItem;

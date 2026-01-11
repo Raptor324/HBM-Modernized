@@ -1,8 +1,5 @@
 package com.hbm_m.powerarmor;
 
-import com.hbm_m.client.ClientPowerArmorRender;
-import com.hbm_m.client.render.AbstractObjArmorLayer;
-import com.hbm_m.client.render.IArmorLayerConfig;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.entity.RenderLayerParent;

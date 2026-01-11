@@ -221,13 +221,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
     }
     
     private void flushBatchWithFilter(List<Matrix4f> transforms, List<Integer> lights, boolean useLinearFilter) {
-        // #region agent log
-        try {
-            java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"InstancedStaticPartRenderer.java:223\",\"message\":\"Starting flushBatchWithFilter\",\"data\":{\"instances\":" + transforms.size() + ",\"useLinearFilter\":" + useLinearFilter + "},\"sessionId\":\"debug-session\",\"runId\":\"gl-error-fix\",\"hypothesisId\":\"E\"}\n").getBytes(),
-                java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-        } catch (Exception e) {}
-        // #endregion
 
         ShaderInstance shader = ModShaders.getBlockLitShader();
         if (shader == null) {
@@ -314,13 +307,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced flush", e);
         } finally {
-            // #region agent log
-            try {
-                java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                    ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"InstancedStaticPartRenderer.java:315\",\"message\":\"Restoring GL state\",\"data\":{\"previousCullFaceEnabled\":" + previousCullFaceEnabled + "},\"sessionId\":\"debug-session\",\"runId\":\"gl-error-fix\",\"hypothesisId\":\"E\"}\n").getBytes(),
-                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-            } catch (Exception e) {}
-            // #endregion
 
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             GL30.glBindVertexArray(previousVao);

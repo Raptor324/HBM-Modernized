@@ -1,8 +1,6 @@
-package com.hbm_m.client;
+package com.hbm_m.powerarmor;
 
-import com.hbm_m.client.loader.T51ArmorModelLoader;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.powerarmor.T51PowerArmorLayer;
 
 import net.minecraft.client.renderer.entity.ArmorStandRenderer;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;

@@ -27,35 +27,15 @@ public class PowerArmorSoundHandler {
      * @param soundName Имя звука (ResourceLocation.toString())
      */
     public static void playStepSound(Player player, String soundName) {
-        // #region agent log
-        try {
-            java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:25\",\"message\":\"playStepSound START\",\"data\":{\"soundName\":\"" + soundName + "\",\"player\":\"" + player.getName().getString() + "\",\"isClientSide\":" + player.level().isClientSide + "},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-        } catch (Exception e) {}
-        // #endregion
 
         try {
-            // #region agent log
-            try {
-                java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                    ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:36\",\"message\":\"playStepSound try block entered\",\"data\":{\"soundName\":\"" + soundName + "\"},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-            } catch (Exception e) {}
-            // #endregion
+
 
             // Используем рефлексию для доступа к приватным полям Entity
             // В 1.20.1 эти поля могут иметь другие имена, но логика та же
             float nextStepDistance = getNextStepDistance(player);
             float distanceWalkedOnStepModified = getDistanceWalkedOnStepModified(player);
 
-            // #region agent log
-            try {
-                java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                    ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:44\",\"message\":\"Reflection values\",\"data\":{\"nextStepDistance\":" + nextStepDistance + ",\"distanceWalkedOnStepModified\":" + distanceWalkedOnStepModified + "},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-            } catch (Exception e) {}
-            // #endregion
 
             // Инициализируем сохраненное значение если оно не установлено
             if (player.getPersistentData().getFloat(NEXT_STEP_DISTANCE_KEY) == 0) {
@@ -86,44 +66,17 @@ public class PowerArmorSoundHandler {
             // Ограничение минимального интервала
             if (speedAdjustedCooldown < 100) speedAdjustedCooldown = 100;
 
-            // #region agent log
-            try {
-                java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                    ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:67\",\"message\":\"Speed adjusted cooldown\",\"data\":{\"speed\":" + speed + ",\"baseCooldown\":" + STEP_SOUND_COOLDOWN + ",\"adjustedCooldown\":" + speedAdjustedCooldown + ",\"timeDiff\":" + (currentTime - lastStepSound) + "},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-            } catch (Exception e) {}
-            // #endregion
 
             if ((currentTime - lastStepSound) > speedAdjustedCooldown) {
-                // #region agent log
-                try {
-                    java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                        ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:58\",\"message\":\"Step sound cooldown passed\",\"data\":{\"cooldown\":" + STEP_SOUND_COOLDOWN + ",\"timeDiff\":" + (currentTime - lastStepSound) + "},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                        java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-                } catch (Exception e) {}
-                // #endregion
+
 
                 // Получаем уровень для воспроизведения звука
                 Level level = player.level();
 
                 // Воспроизводим звук - используем ModSounds для зарегистрированных звуков
                 SoundEvent soundEvent = getSoundEvent(soundName);
-                // #region agent log
-                try {
-                    java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                        ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:64\",\"message\":\"Step sound conditions met\",\"data\":{\"soundName\":\"" + soundName + "\",\"soundEvent\":\"" + (soundEvent != null ? soundEvent.getLocation().toString() : "null") + "},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                        java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-                } catch (Exception e) {}
-                // #endregion
 
                 if (soundEvent != null) {
-                    // #region agent log
-                    try {
-                        java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                            ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:67\",\"message\":\"Playing sound\",\"data\":{\"sound\":\"" + soundEvent.getLocation().toString() + "\",\"location\":\"" + player.getX() + "," + player.getY() + "," + player.getZ() + "\"},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                            java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-                    } catch (Exception e) {}
-                    // #endregion
 
                     // Попробуем другой способ воспроизведения звука
                     if (level.isClientSide) {
@@ -137,22 +90,8 @@ public class PowerArmorSoundHandler {
 
                     // Обновляем время последнего воспроизведения
                     player.getPersistentData().putLong(LAST_STEP_SOUND_KEY, currentTime);
-
-                    // #region agent log
-                    try {
-                        java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                            ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:84\",\"message\":\"Step sound played\",\"data\":{\"sound\":\"" + soundEvent.getLocation().toString() + "\"},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                            java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-                    } catch (Exception e) {}
-                    // #endregion
                 } else {
-                    // #region agent log
-                    try {
-                        java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                            ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:87\",\"message\":\"SoundEvent is NULL\",\"data\":{\"soundName\":\"" + soundName + "\"},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                            java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-                    } catch (Exception e) {}
-                    // #endregion
+
                 }
             }
 
@@ -160,13 +99,7 @@ public class PowerArmorSoundHandler {
             player.getPersistentData().putFloat(NEXT_STEP_DISTANCE_KEY, nextStepDistance);
 
         } catch (Exception e) {
-            // #region agent log
-            try {
-                java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                    ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:60\",\"message\":\"Error playing step sound\",\"data\":{\"error\":\"" + e.getMessage() + "\"},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-            } catch (Exception ex) {}
-            // #endregion
+
             System.err.println("Error playing step sound: " + e.getMessage());
             e.printStackTrace();
         }
@@ -214,26 +147,12 @@ public class PowerArmorSoundHandler {
      */
     private static float getNextStepDistance(Player player) {
         try {
-            // #region agent log
-            try {
-                java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                    ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:184\",\"message\":\"getNextStepDistance called\",\"data\":{\"player\":\"" + player.getName().getString() + "\"},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-            } catch (Exception e) {}
-            // #endregion
 
             // Пробуем получить через рефлексию
             var field = net.minecraftforge.fml.util.ObfuscationReflectionHelper.findField(
                 net.minecraft.world.entity.Entity.class, "nextStepDistance");
             return (Float) field.get(player);
         } catch (Exception e) {
-            // #region agent log
-            try {
-                java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                    ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:195\",\"message\":\"getNextStepDistance fallback\",\"data\":{\"error\":\"" + e.getMessage() + "\"},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-            } catch (Exception ex) {}
-            // #endregion
 
             // Fallback: используем значение по умолчанию
             return 0.6F; // Стандартное значение nextStepDistance
@@ -246,26 +165,12 @@ public class PowerArmorSoundHandler {
      */
     private static float getDistanceWalkedOnStepModified(Player player) {
         try {
-            // #region agent log
-            try {
-                java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                    ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:217\",\"message\":\"getDistanceWalkedOnStepModified called\",\"data\":{\"player\":\"" + player.getName().getString() + "\"},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-            } catch (Exception e) {}
-            // #endregion
 
             // Пробуем получить через рефлексию
             var field = net.minecraftforge.fml.util.ObfuscationReflectionHelper.findField(
                 net.minecraft.world.entity.Entity.class, "distanceWalkedOnStepModified");
             return (Float) field.get(player);
         } catch (Exception e) {
-            // #region agent log
-            try {
-                java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                    ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:228\",\"message\":\"getDistanceWalkedOnStepModified fallback\",\"data\":{\"walkDistO\":" + player.walkDistO + ",\"error\":\"" + e.getMessage() + "\"},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                    java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-            } catch (Exception ex) {}
-            // #endregion
 
             // Fallback: используем текущее пройденное расстояние
             return player.walkDistO;
@@ -292,22 +197,6 @@ public class PowerArmorSoundHandler {
             // Можно добавить другие звуки по мере необходимости
             default -> null;
         };
-
-        // #region agent log
-        try {
-            java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:209\",\"message\":\"getSoundEvent result\",\"data\":{\"input\":\"" + soundName + "\",\"result\":\"" + (result != null ? result.getLocation().toString() : "null") + "\"},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-        } catch (Exception e) {}
-        // #endregion
-
-        // #region agent log
-        try {
-            java.nio.file.Files.write(java.nio.file.Paths.get("c:\\Projects\\HBM-Modernized\\.cursor\\debug.log"),
-                ("{\"timestamp\":" + System.currentTimeMillis() + ",\"location\":\"PowerArmorSoundHandler.java:135\",\"message\":\"getSoundEvent result\",\"data\":{\"input\":\"" + soundName + "\",\"result\":\"" + (result != null ? result.getLocation().toString() : "null") + "\"},\"sessionId\":\"debug-session\",\"runId\":\"hypothesis-test\",\"hypothesisId\":\"C\"}\n").getBytes(),
-                java.nio.file.StandardOpenOption.CREATE, java.nio.file.StandardOpenOption.APPEND);
-        } catch (Exception e) {}
-        // #endregion
 
         return result;
     }

@@ -1,7 +1,4 @@
-package com.hbm_m.client.model;
-
-import com.hbm_m.client.ClientPowerArmorRender;
-import com.hbm_m.powerarmor.ModPowerArmorItem;
+package com.hbm_m.powerarmor;
 
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;

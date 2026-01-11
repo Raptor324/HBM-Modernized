@@ -1,4 +1,4 @@
-package com.hbm_m.client.render;
+package com.hbm_m.powerarmor;
 
 import com.hbm_m.client.model.AbstractMultipartBakedModel;
 import com.hbm_m.main.MainRegistry;

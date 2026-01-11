@@ -1,11 +1,7 @@
-package com.hbm_m.armormod.client;
+package com.hbm_m.powerarmor;
 
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
-import com.hbm_m.powerarmor.DamageResistanceHandler;
-import com.hbm_m.powerarmor.ModArmorFSB;
-import com.hbm_m.powerarmor.ModPowerArmorItem;
-import com.hbm_m.powerarmor.PowerArmorSpecs;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;

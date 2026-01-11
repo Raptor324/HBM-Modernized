@@ -1,7 +1,6 @@
 package com.hbm_m.powerarmor;
 
 import com.hbm_m.client.model.ModModelLayers;
-import com.hbm_m.client.model.T51ArmorModel;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.item.AbstractRadiationMeterItem;
 import com.hbm_m.item.ModItems;

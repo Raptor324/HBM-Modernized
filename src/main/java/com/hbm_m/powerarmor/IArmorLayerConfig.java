@@ -1,4 +1,4 @@
-package com.hbm_m.client.render;
+package com.hbm_m.powerarmor;
 
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.client.resources.model.ModelResourceLocation;

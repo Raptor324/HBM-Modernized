@@ -1,7 +1,6 @@
 package com.hbm_m.powerarmor;
 
 import com.hbm_m.api.energy.EnergyCapabilityProvider;
-import com.hbm_m.armormod.client.ArmorTooltipHandler;
 import com.hbm_m.armormod.item.ItemModBattery;
 import com.hbm_m.armormod.item.ItemModBatteryMk2;
 import com.hbm_m.armormod.item.ItemModBatteryMk3;

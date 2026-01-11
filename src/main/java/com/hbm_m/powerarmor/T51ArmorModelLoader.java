@@ -1,7 +1,7 @@
-package com.hbm_m.client.loader;
+package com.hbm_m.powerarmor;
 
 import com.google.gson.JsonObject;
-import com.hbm_m.client.model.T51ArmorBakedModel;
+import com.hbm_m.client.loader.AbstractObjPartModelLoader;
 
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
