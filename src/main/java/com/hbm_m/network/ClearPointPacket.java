@@ -1,27 +1,25 @@
 package com.hbm_m.network;
 
-import net.minecraftforge.network.NetworkEvent;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
+import net.minecraftforge.network.NetworkEvent;
+
 import java.util.function.Supplier;
 
 /**
- * Пакет для синхронизации очистки точки между клиентом и сервером
- * ⭐ КРИТИЧНО: Гарантирует что имя сохраняется при очистке координат!
+ * Пакет для синхронизации очистки точки между клиентом и сервером.
+ * Гарантирует что имя сохраняется при очистке координат (если clearPoint так реализован).
  */
 public class ClearPointPacket {
 
-    private int pointIndex;
+    private final int pointIndex;
 
     public ClearPointPacket(int pointIndex) {
         this.pointIndex = pointIndex;
     }
 
     public ClearPointPacket() {
-        this.pointIndex = 0;
+        this(0);
     }
 
     public static void encode(ClearPointPacket msg, net.minecraft.network.FriendlyByteBuf buf) {
@@ -32,22 +30,23 @@ public class ClearPointPacket {
         return new ClearPointPacket(buf.readInt());
     }
 
-    public static boolean handle(ClearPointPacket msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            ServerPlayer player = ctx.get().getSender();
+    public static boolean handle(ClearPointPacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {
+        NetworkEvent.Context ctx = ctxSupplier.get();
+        ctx.enqueueWork(() -> {
+            ServerPlayer player = ctx.getSender();
             if (player != null) {
                 handleClearPoint(player, msg.pointIndex);
             }
         });
+        ctx.setPacketHandled(true);
         return true;
     }
 
     private static void handleClearPoint(ServerPlayer player, int pointIndex) {
-        // Получаем предмет из руки
         ItemStack mainItem = player.getMainHandItem();
         ItemStack offItem = player.getOffhandItem();
-        ItemStack detonatorStack = ItemStack.EMPTY;
 
+        ItemStack detonatorStack = ItemStack.EMPTY;
         if (mainItem.getItem() instanceof com.hbm_m.item.MultiDetonatorItem) {
             detonatorStack = mainItem;
         } else if (offItem.getItem() instanceof com.hbm_m.item.MultiDetonatorItem) {
@@ -58,11 +57,9 @@ public class ClearPointPacket {
             com.hbm_m.item.MultiDetonatorItem detonatorItem =
                     (com.hbm_m.item.MultiDetonatorItem) detonatorStack.getItem();
 
-            // ⭐ Вызываем clearPoint который сохраняет имя!
             detonatorItem.clearPoint(detonatorStack, pointIndex);
 
-            // ⭐ КРИТИЧНО: Отправляем обновленный NBT на клиент для синхронизации
-            // Это гарантирует что все клиенты видят одинаковое состояние предмета
+            // Принудительно синхронизируем изменения ItemStack
             player.containerMenu.broadcastChanges();
         }
     }

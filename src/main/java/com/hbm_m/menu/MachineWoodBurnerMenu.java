@@ -46,8 +46,9 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
 
             this.addSlot(new SlotItemHandler(h, 2, 143, 54) { // Charge slot
                 @Override public boolean mayPlace(ItemStack stack) {
-                    // Разрешаем класть только то, что может принимать FE
-                    return stack.getCapability(ForgeCapabilities.ENERGY).map(IEnergyStorage::canReceive).orElse(false);
+                    // Разрешаем класть предметы, которые могут принимать энергию
+                    return stack.getCapability(ForgeCapabilities.ENERGY).map(IEnergyStorage::canReceive).orElse(false) ||
+                           stack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered;
                 }
             });
         });
@@ -89,7 +90,8 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu {
                 }
 
                 // Пробуем в СЛОТ ЗАРЯДКИ
-                if (slotStack.getCapability(ForgeCapabilities.ENERGY).map(IEnergyStorage::canReceive).orElse(false)) {
+                if (slotStack.getCapability(ForgeCapabilities.ENERGY).map(IEnergyStorage::canReceive).orElse(false) ||
+                    slotStack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered) {
                     if (!this.moveItemStackTo(slotStack, CHARGE_SLOT, CHARGE_SLOT + 1, false)) {
                         // (Если не вышло, пробуем хотбар/инвентарь)
                     } else {

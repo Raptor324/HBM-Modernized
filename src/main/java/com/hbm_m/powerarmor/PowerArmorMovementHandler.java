@@ -1,6 +1,5 @@
-package com.hbm_m.event;
+package com.hbm_m.powerarmor;
 
-import com.hbm_m.item.armor.ModPowerArmorItem;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packets.PowerArmorDashPacket;
 import net.minecraftforge.network.PacketDistributor;

@@ -20,6 +20,7 @@ out/
 .classpath
 .project
 .settings/
+util/
 bin/
 
 # Visual Studio Code

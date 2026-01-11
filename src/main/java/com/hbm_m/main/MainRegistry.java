@@ -21,7 +21,6 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
-import com.hbm_m.item.armor.ModPowerArmorItem;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.entity.ModEntities;
@@ -30,6 +29,8 @@ import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModPowders;
 import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.particle.ModParticleTypes;
+import com.hbm_m.powerarmor.DamageResistanceHandler;
+import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
@@ -119,10 +120,6 @@ public class MainRegistry {
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new PlayerHandler());
 
-
-        // Регистрация остальных систем resources
-        // ModPacketHandler.register(); // Регистрация пакетов
-
         // Инстанцируем ClientSetup, чтобы его конструктор вызвал регистрацию на Forge Event Bus
         DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> new ClientSetup());
 
@@ -136,6 +133,9 @@ public class MainRegistry {
         event.enqueueWork(() -> {
             ModPacketHandler.register();
             ModHazards.registerHazards(); // Регистрация опасностей (радиация, биологическая опасность в будущем и тд)
+
+            // Initialize armor damage resistance stats after items are registered
+            DamageResistanceHandler.initArmorStats();
             // MinecraftForge.EVENT_BUS.addListener(this::onRenderLevelStage);
 
             LOGGER.info("HazardSystem initialized successfully");
@@ -601,7 +601,6 @@ public class MainRegistry {
         // СТРОИТЕЛЬНЫЕ БЛОКИ
         if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get()) {
 
-
             event.accept(ModBlocks.DECO_STEEL);
             event.accept(ModBlocks.CONCRETE_STAIRS);
             event.accept(ModBlocks.CONCRETE_SLAB);
@@ -871,10 +870,10 @@ public class MainRegistry {
         ItemStack stack = new ItemStack(item);
 
         // Проверяем, является ли предмет силовой броней
-        if (item instanceof com.hbm_m.item.armor.ModPowerArmorItem powerArmor) {
+        if (item instanceof com.hbm_m.powerarmor.ModArmorFSBPowered powerArmor) {
             // Получаем максимальную емкость и устанавливаем полный заряд
-            long maxCapacity = powerArmor.getSpecs().capacity;
-            stack.getOrCreateTag().putLong("energy", maxCapacity);
+            long maxCapacity = powerArmor.getMaxCharge(stack);
+            stack.getOrCreateTag().putLong("charge", maxCapacity);
         }
 
         return stack;

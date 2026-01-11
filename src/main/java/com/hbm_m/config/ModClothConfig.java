@@ -142,6 +142,16 @@ public class ModClothConfig implements ConfigData {
     @BoundedDiscrete(min = 1, max = 10)
     public int obstructionHighlightDuration = 2;
 
+    @Category("overlay")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 0, max = 500)
+    public int infoToastOffsetX = 15;
+
+    @Category("overlay")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 0, max = 500)
+    public int infoToastOffsetY = 15;
+
     // Чанк 
     @Category("chunk")
     @Gui.Tooltip
@@ -180,6 +190,11 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public boolean enableOcclusionCulling = true;
 
+    @Category("rendering")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 1, max = 32)
+    public int vatsRenderDistanceChunks = 7;
+
     // Отладка 
     @Category("debug")
     @Gui.Tooltip
@@ -200,7 +215,7 @@ public class ModClothConfig implements ConfigData {
 
     @Category("debug")
     @Gui.Tooltip
-    public boolean enableDebugLogging = true;
+    public boolean enableDebugLogging = false;
 
     @Override
     public void validatePostLoad() throws ValidationException {

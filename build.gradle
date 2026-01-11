@@ -174,10 +174,10 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:oculus-581495:6020952")
     runtimeOnly fg.deobf("curse.maven:embeddium-908741:5681725")
 
-    runtimeOnly fg.deobf("maven.modrinth:architectury-api:9.0.8+forge")
+    // runtimeOnly fg.deobf("maven.modrinth:architectury-api:9.0.8+forge")
     // runtimeOnly fg.deobf("maven.modrinth:item-transform-helper:1.20-Forge")
     
-    api(fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.136"))
+    api(fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.0.99"))
     
     // HBM DevTools - раскомментируйте для использования dev-инструментов
     // Сначала соберите DevTools: cd ../HBM-DevTools && ./gradlew build

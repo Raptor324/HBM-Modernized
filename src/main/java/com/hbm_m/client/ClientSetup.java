@@ -5,9 +5,6 @@ package com.hbm_m.client;
 import com.hbm_m.client.model.ModModelLayers;
 import com.hbm_m.client.model.T51ArmorModel;
 import com.hbm_m.client.overlay.*;
-import com.hbm_m.client.overlay.OverlayVATS;
-import com.hbm_m.client.overlay.OverlayThermal;
-import com.hbm_m.client.overlay.OverlayPowerArmor;
 import com.hbm_m.client.loader.*;
 import com.hbm_m.client.render.*;
 import com.hbm_m.client.render.shader.*;
@@ -31,6 +28,7 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.particle.custom.*;
 import com.hbm_m.particle.explosions.*;
+import com.hbm_m.powerarmor.OverlayPowerArmor;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.DoorDeclRegistry;
 import com.hbm_m.block.entity.ModBlockEntities;
@@ -267,12 +265,13 @@ public class ClientSetup {
         // используя логику из объекта GeigerOverlay.GEIGER_HUD_OVERLAY".
         event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", OverlayGeiger.GEIGER_HUD_OVERLAY);
 
-        event.registerAbove(VanillaGuiOverlay.PLAYER_HEALTH.id(), "power_armor_hud", OverlayPowerArmor.POWER_ARMOR_OVERLAY);
+        event.registerAbove(VanillaGuiOverlay.ARMOR_LEVEL.id(), "power_armor_hud", OverlayPowerArmor.POWER_ARMOR_OVERLAY);
 
-        event.registerAboveAll("vats_overlay", OverlayVATS.VATS_OVERLAY);
-        event.registerAboveAll("thermal_overlay", OverlayThermal.THERMAL_OVERLAY);
+        event.registerAboveAll("thermal_overlay", com.hbm_m.powerarmor.ModEventHandlerClient.THERMAL_OVERLAY);
 
         event.registerAbove(VanillaGuiOverlay.PORTAL.id(), "radiation_pixels", OverlayRadiationVisuals.RADIATION_PIXELS_OVERLAY);
+
+        event.registerAboveAll("info_toast", OverlayInfoToast.OVERLAY);
         
         MainRegistry.LOGGER.info("GUI overlays registered.");
     }

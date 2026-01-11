@@ -1,4 +1,4 @@
-package com.hbm_m.item.armor;
+package com.hbm_m.powerarmor;
 
 import net.minecraft.world.effect.MobEffectInstance;
 import java.util.ArrayList;
@@ -17,7 +17,27 @@ public class PowerArmorSpecs {
     public final long usagePerTick;
     public final long usagePerDamagePoint;
 
-    // --- Резисты (0.0 - 1.0) ---
+    // --- Damage Threshold (DT) - полное поглощение урона ---
+    public float dtFall = 0f;
+    public float dtExplosion = 0f;
+    public float dtKinetic = 0f;
+    public float dtProjectile = 0f;
+    public float dtFire = 0f;
+    public float dtCold = 0f;
+    public float dtRadiation = 0f;
+    public float dtEnergy = 0f; // для лазеров, электричества и т.д.
+
+    // --- Damage Resistance (DR) - процентное снижение (0.0 - 1.0) ---
+    public float drFall = 0f;
+    public float drExplosion = 0f;
+    public float drKinetic = 0f;
+    public float drProjectile = 0f;
+    public float drFire = 0f;
+    public float drCold = 0f;
+    public float drRadiation = 0f;
+    public float drEnergy = 0f;
+
+    // --- Другие резисты (для обратной совместимости) ---
     public float resFall = 0f;
     public float resExplosion = 0f;
     public float resKinetic = 0f;
@@ -67,7 +87,26 @@ public class PowerArmorSpecs {
         }
     }
 
+    // Конструктор для CONSTANT_DRAIN режима с drain и consumption
+    public PowerArmorSpecs(EnergyMode mode, long capacity, long maxReceive, long drain, long consumption) {
+        this.mode = mode;
+        this.capacity = capacity;
+        this.maxReceive = maxReceive;
+        this.usagePerTick = drain;
+        this.usagePerDamagePoint = consumption;
+    }
+
     public PowerArmorSpecs setResistances(float fall, float explosion, float kinetic, float projectile, float fire, float cold, float radiation) {
+        // Для обратной совместимости - устанавливаем только DR
+        this.drFall = fall;
+        this.drExplosion = explosion;
+        this.drKinetic = kinetic;
+        this.drProjectile = projectile;
+        this.drFire = fire;
+        this.drCold = cold;
+        this.drRadiation = radiation;
+
+        // Синхронизируем с legacy полями
         this.resFall = fall;
         this.resExplosion = explosion;
         this.resKinetic = kinetic;
@@ -75,6 +114,83 @@ public class PowerArmorSpecs {
         this.resFire = fire;
         this.resCold = cold;
         this.resRadiation = radiation;
+
+        return this;
+    }
+
+    /**
+     * Установить Damage Threshold (DT) значения для разных типов урона
+     */
+    public PowerArmorSpecs setDT(float fall, float explosion, float kinetic, float projectile, float fire, float cold, float radiation, float energy) {
+        this.dtFall = fall;
+        this.dtExplosion = explosion;
+        this.dtKinetic = kinetic;
+        this.dtProjectile = projectile;
+        this.dtFire = fire;
+        this.dtCold = cold;
+        this.dtRadiation = radiation;
+        this.dtEnergy = energy;
+        return this;
+    }
+
+    /**
+     * Установить Damage Resistance (DR) значения для разных типов урона
+     */
+    public PowerArmorSpecs setDR(float fall, float explosion, float kinetic, float projectile, float fire, float cold, float radiation, float energy) {
+        this.drFall = fall;
+        this.drExplosion = explosion;
+        this.drKinetic = kinetic;
+        this.drProjectile = projectile;
+        this.drFire = fire;
+        this.drCold = cold;
+        this.drRadiation = radiation;
+        this.drEnergy = energy;
+
+        // Синхронизируем с legacy полями
+        this.resFall = fall;
+        this.resExplosion = explosion;
+        this.resKinetic = kinetic;
+        this.resProjectile = projectile;
+        this.resFire = fire;
+        this.resCold = cold;
+        this.resRadiation = radiation;
+
+        return this;
+    }
+
+    /**
+     * Универсальный метод для установки DT и DR одновременно
+     */
+    public PowerArmorSpecs setProtection(float dtFall, float drFall, float dtExplosion, float drExplosion,
+                                       float dtKinetic, float drKinetic, float dtProjectile, float drProjectile,
+                                       float dtFire, float drFire, float dtCold, float drCold,
+                                       float dtRadiation, float drRadiation, float dtEnergy, float drEnergy) {
+        this.dtFall = dtFall;
+        this.drFall = drFall;
+        this.dtExplosion = dtExplosion;
+        this.drExplosion = drExplosion;
+        this.dtKinetic = dtKinetic;
+        this.drKinetic = drKinetic;
+        this.dtProjectile = dtProjectile;
+        this.drProjectile = drProjectile;
+        this.dtFire = dtFire;
+        this.drFire = drFire;
+        this.dtCold = dtCold;
+        this.drCold = drCold;
+        this.dtRadiation = dtRadiation;
+        this.drRadiation = drRadiation;
+        this.dtEnergy = dtEnergy;
+        this.drEnergy = drEnergy;
+
+        // Синхронизируем с legacy полями
+        this.resFall = drFall;
+        this.resExplosion = drExplosion;
+        this.resKinetic = drKinetic;
+        this.resProjectile = drProjectile;
+        this.resFire = drFire;
+        this.resCold = drCold;
+        this.resRadiation = drRadiation;
+
         return this;
     }
 

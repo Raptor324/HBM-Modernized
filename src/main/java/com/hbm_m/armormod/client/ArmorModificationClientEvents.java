@@ -1,9 +1,7 @@
 package com.hbm_m.armormod.client;
 
-// Этот класс отвечает за добавление подсказок к броне с модификациями
 import com.hbm_m.client.overlay.GUIArmorTable;
-import com.hbm_m.lib.RefStrings;
-
+import com.hbm_m.main.MainRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ArmorItem;
@@ -14,31 +12,31 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 import java.util.List;
-import java.util.Optional;
 
-@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ArmorModificationClientEvents {
 
     @SubscribeEvent
     public static void onArmorTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
+        // Работаем только с броней
         if (!(stack.getItem() instanceof ArmorItem)) {
             return;
         }
 
         List<Component> tooltip = event.getToolTip();
 
-        Optional<Component> radResistanceLine = ArmorTooltipHandler.getRadResistanceTooltip(stack);
-        radResistanceLine.ifPresent(line -> tooltip.add(1, line));
-
-        
-        // 1. Проверяем, является ли текущий открытый экран нашим столом
+        // 2. Модификации (показываем, если Shift ИЛИ открыт стол)
         boolean isArmorTableOpen = Minecraft.getInstance().screen instanceof GUIArmorTable;
-        
-        // 2. Вызываем наш обновленный хелпер, передавая ему этот флаг
-        Optional<List<Component>> modsTooltipOptional = ArmorTooltipHandler.getModificationsTooltip(stack, isArmorTableOpen);
-        
-        // 3. Добавляем результат в тултип
-        modsTooltipOptional.ifPresent(tooltip::addAll);
+        ArmorTooltipHandler.getModificationsTooltip(stack, isArmorTableOpen).ifPresent(tooltip::addAll);
+
+        // 3. Сопротивления FSB (Фиолетовый текст) - только с Shift
+        ArmorTooltipHandler.getFSBResistancesTooltip(stack).ifPresent(tooltip::addAll);
+
+        // 4. Подсказка "Зажмите Shift" (отображается, если есть что скрывать и шифт НЕ нажат)
+        ArmorTooltipHandler.getContextualHelpTooltip(stack, isArmorTableOpen).ifPresent(tooltip::add);
+
+        // 5. Рад защита (в самом низу)
+        ArmorTooltipHandler.getRadResistanceTooltip(stack).ifPresent(tooltip::add);
     }
 }

@@ -43,13 +43,11 @@ public abstract class AbstractGpuVboRenderer {
             var textureManager = minecraft.getTextureManager();
             
             //  Только текстура атласа, без lightmap
-            GL13.glActiveTexture(GL13.GL_TEXTURE0);
+            RenderSystem.activeTexture(GL13.GL_TEXTURE0);
             var blockAtlas = textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS);
-            int textureId = blockAtlas.getId();
-            GL11.glBindTexture(GL11.GL_TEXTURE_2D, textureId);
-            
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+            RenderSystem.bindTexture(blockAtlas.getId());
+            RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
         }
     }
 
@@ -185,12 +183,12 @@ public abstract class AbstractGpuVboRenderer {
         
         if (distance > thresholdBlocks) {
             // На большом расстоянии - размытая текстура (LINEAR)
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+            RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+            RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
         } else {
             // Вблизи - попиксельная текстура (NEAREST)
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+            RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+            RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
         }
     }
 
@@ -230,10 +228,10 @@ public abstract class AbstractGpuVboRenderer {
     
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-        int previousCullFace = GL11.glGetInteger(GL11.GL_CULL_FACE);
+        boolean previousCullFaceEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
         
         //  КРИТИЧНО: Сохраняем ТЕКУЩИЕ texture parameters ПЕРЕД их изменением!
-        GL13.glActiveTexture(GL13.GL_TEXTURE0);
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
         int previousMinFilter = GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER);
         int previousMagFilter = GL11.glGetTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER);
 
@@ -277,7 +275,7 @@ public abstract class AbstractGpuVboRenderer {
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
-            GL11.glDisable(GL11.GL_CULL_FACE);
+            RenderSystem.disableCull();
     
             GL30.glBindVertexArray(vaoId);
             GL11.glDrawElements(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0);
@@ -291,15 +289,17 @@ public abstract class AbstractGpuVboRenderer {
             GL30.glBindVertexArray(previousVao);
             
             // Восстанавливаем culling
-            if (previousCullFace == GL11.GL_TRUE) {
-                GL11.glEnable(GL11.GL_CULL_FACE);
+             if (previousCullFaceEnabled) {
+                RenderSystem.enableCull();
+            } else {
+                RenderSystem.disableCull();
             }
             
             RenderSystem.setShader(() -> null);
             RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
-            GL13.glActiveTexture(GL13.GL_TEXTURE0);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, previousMinFilter);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, previousMagFilter);
+            RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+            RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, previousMinFilter);
+            RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, previousMagFilter);
         }
     }
     

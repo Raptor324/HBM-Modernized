@@ -2,7 +2,6 @@ package com.hbm_m.armormod.client;
 
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.datagen.ModItemTagProvider;
-import com.hbm_m.item.armor.ModPowerArmorItem;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.ChatFormatting;
@@ -74,15 +73,6 @@ public class ModTooltipHandler {
             };
             
             tooltip.add(Component.literal("  ").append(slotName).withStyle(ChatFormatting.GRAY));
-        }
-
-        // Добавляем FSB тултипы для силовой брони
-        if (event.getItemStack().getItem() instanceof ModPowerArmorItem) {
-            List<Component> tooltip = event.getToolTip();
-            ArmorTooltipHandler.getFSBTooltip(event.getItemStack()).ifPresent(fsbLines -> {
-                tooltip.add(Component.empty()); // Отступ
-                tooltip.addAll(fsbLines);
-            });
         }
     }
 }

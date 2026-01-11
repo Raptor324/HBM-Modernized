@@ -34,7 +34,7 @@ public class EnergyFormatter {
         }
 
         if (energy < 1_000) {
-            return String.valueOf(energy);
+            return df2.format(energy); // Показываем с точностью до сотых для значений < 1000
         }
 
         // Находим подходящую приставку
@@ -49,16 +49,8 @@ public class EnergyFormatter {
 
         double value = (double) energy / THRESHOLDS[suffixIndex];
 
-        // Форматируем с помощью DecimalFormat, который сам убирает незначащие нули.
-        // Строку с .replaceAll(...) можно полностью удалить.
-        String formatted;
-        if (value >= 100) {
-            formatted = df0.format(value);  // Например, 123
-        } else if (value >= 10) {
-            formatted = df1.format(value);  // Например, 12.3
-        } else {
-            formatted = df2.format(value);  // Например, 1.23
-        }
+        // Всегда показываем 2 десятичных знака для точности до десятков
+        String formatted = df2.format(value);
 
         return formatted + SUFFIXES[suffixIndex];
     }

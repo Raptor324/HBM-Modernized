@@ -2,14 +2,19 @@ package com.hbm_m.config;
 // Обработчик привязки клавиш для открытия экрана конфигурации мода.
 // Использует AutoConfig для получения экрана настроек и регистрирует сочетание клавиш
 
-import com.hbm_m.client.overlay.OverlayVATS;
-import com.hbm_m.client.overlay.OverlayThermal;
-import com.hbm_m.event.PowerArmorMovementHandler;
-import com.hbm_m.item.armor.ModPowerArmorItem;
-import com.hbm_m.lib.RefStrings;
+import org.lwjgl.glfw.GLFW;
 
+import com.hbm_m.client.overlay.OverlayInfoToast;
+import com.hbm_m.lib.RefStrings;
+import com.hbm_m.powerarmor.ModPowerArmorItem;
+import com.hbm_m.powerarmor.PowerArmorMovementHandler;
+import com.mojang.blaze3d.platform.InputConstants;
+
+import me.shedaniel.autoconfig.AutoConfig;
+import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
@@ -17,11 +22,6 @@ import net.minecraftforge.client.settings.KeyModifier;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import org.lwjgl.glfw.GLFW;
-import com.mojang.blaze3d.platform.InputConstants;
-import net.minecraft.client.KeyMapping;
-
-import me.shedaniel.autoconfig.AutoConfig;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
 public class ModConfigKeybindHandler {
@@ -91,6 +91,7 @@ public class ModConfigKeybindHandler {
                     // TODO: Отправить пакет на сервер для выполнения dash
                     // Пока что просто вызываем локально для тестирования
                     PowerArmorMovementHandler.performDash(mc.player);
+                    OverlayInfoToast.show(Component.translatable("hud.hbm_m.dash.perform"), 60, OverlayInfoToast.ID_DASH, 0x00FF00);
                 }
             }
 
@@ -98,11 +99,13 @@ public class ModConfigKeybindHandler {
             if (POWER_ARMOR_VATS.consumeClick()) {
                 Minecraft mc = Minecraft.getInstance();
                 if (mc.player != null && ModPowerArmorItem.hasFSBArmor(mc.player)) {
-                    if (OverlayVATS.isVATSActive()) {
-                        OverlayVATS.deactivateVATS();
+                    if (com.hbm_m.powerarmor.ModEventHandlerClient.isVATSActive()) {
+                        com.hbm_m.powerarmor.ModEventHandlerClient.deactivateVATS();
+                        OverlayInfoToast.show(Component.translatable("hud.hbm_m.vats.off"), 60, OverlayInfoToast.ID_VATS, 0xFF0000);
                     } else {
-                        OverlayVATS.activateVATS();
-                    }
+                        com.hbm_m.powerarmor.ModEventHandlerClient.activateVATS();
+                        OverlayInfoToast.show(Component.translatable("hud.hbm_m.vats.on"), 60, OverlayInfoToast.ID_VATS, 0x00FF00);
+                    }                    
                 }
             }
 
@@ -110,11 +113,13 @@ public class ModConfigKeybindHandler {
             if (POWER_ARMOR_THERMAL.consumeClick()) {
                 Minecraft mc = Minecraft.getInstance();
                 if (mc.player != null && ModPowerArmorItem.hasFSBArmor(mc.player)) {
-                    if (OverlayThermal.isThermalActive()) {
-                        OverlayThermal.deactivateThermal();
+                    if (com.hbm_m.powerarmor.ModEventHandlerClient.isThermalActive()) {
+                        com.hbm_m.powerarmor.ModEventHandlerClient.deactivateThermal();
+                        OverlayInfoToast.show(Component.translatable("hud.hbm_m.thermal.off"), 60, OverlayInfoToast.ID_THERMAL, 0xFF0000);
                     } else {
-                        OverlayThermal.activateThermal();
-                    }
+                        com.hbm_m.powerarmor.ModEventHandlerClient.activateThermal();
+                        OverlayInfoToast.show(Component.translatable("hud.hbm_m.thermal.on"), 60, OverlayInfoToast.ID_THERMAL, 0x00FF00);
+                    }                    
                 }
             }
         }

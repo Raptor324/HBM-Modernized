@@ -23,10 +23,11 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeType;
-import com.hbm_m.item.armor.ModPowerArmorItem;
-import com.hbm_m.item.armor.PowerArmorSpecs;
+import com.hbm_m.item.armor.*;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.multiblock.MultiblockBlockItem;
+import com.hbm_m.powerarmor.AJRArmor;
+import com.hbm_m.powerarmor.T51Armor;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.world.effect.MobEffectInstance;
@@ -310,7 +311,7 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistryObject<Item> TITANIUM_HELMET = ITEMS.register("titanium_helmet",
-            () -> new ModArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistryObject<Item> TITANIUM_CHESTPLATE = ITEMS.register("titanium_chestplate",
             () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistryObject<Item> TITANIUM_LEGGINGS = ITEMS.register("titanium_leggings",
@@ -328,7 +329,7 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterials.STEEL, ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistryObject<Item> COBALT_HELMET = ITEMS.register("cobalt_helmet",
-            () -> new ModArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistryObject<Item> COBALT_CHESTPLATE = ITEMS.register("cobalt_chestplate",
             () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistryObject<Item> COBALT_LEGGINGS = ITEMS.register("cobalt_leggings",
@@ -346,16 +347,16 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistryObject<Item> AJR_HELMET = ITEMS.register("ajr_helmet",
-            () -> new ModArmorItem(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistryObject<Item> AJR_CHESTPLATE = ITEMS.register("ajr_chestplate",
-            () -> new ArmorItem(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistryObject<Item> AJR_LEGGINGS = ITEMS.register("ajr_leggings",
-            () -> new ArmorItem(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties()));
     public static final RegistryObject<Item> AJR_BOOTS = ITEMS.register("ajr_boots",
-            () -> new ArmorItem(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties()));
+            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistryObject<Item> ASBESTOS_HELMET = ITEMS.register("asbestos_helmet",
-            () -> new ModArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistryObject<Item> ASBESTOS_CHESTPLATE = ITEMS.register("asbestos_chestplate",
             () -> new ArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistryObject<Item> ASBESTOS_LEGGINGS = ITEMS.register("asbestos_leggings",
@@ -373,7 +374,7 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistryObject<Item> LIQUIDATOR_HELMET = ITEMS.register("liquidator_helmet",
-            () -> new ModArmorItem(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistryObject<Item> LIQUIDATOR_CHESTPLATE = ITEMS.register("liquidator_chestplate",
             () -> new ArmorItem(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistryObject<Item> LIQUIDATOR_LEGGINGS = ITEMS.register("liquidator_leggings",
@@ -402,34 +403,17 @@ public class ModItems {
 
     //-----------------------POWER ARMOR ----------------------------------
 
-    public static final PowerArmorSpecs T51_SPECS = new PowerArmorSpecs(
-            PowerArmorSpecs.EnergyMode.CONSTANT_DRAIN,
-            1000000L, // Емкость
-            5000,   // Прием
-            50      // Расход в тик
-    )
-            .setResistances(
-                    1.0f, // Падение (80%)
-                    1.0f, // Взрыв (50%)
-                    1.0f, // Кинетика (40%)
-                    1.0f, // Пули (60%)
-                    1.0f, // Огонь (20%)
-                    1.0f, // Холод (50%)
-                    0.7f  // Радиация (70%)
-            )
-            .addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200, 1)); // Сила II
-
     public static final RegistryObject<Item> T51_HELMET = ITEMS.register("t51_helmet",
-            () -> new ModPowerArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.HELMET, new Item.Properties(), T51_SPECS));
+            () -> new T51Armor(ModArmorMaterials.TITANIUM, ArmorItem.Type.HELMET, new Item.Properties()));
 
     public static final RegistryObject<Item> T51_CHESTPLATE = ITEMS.register("t51_chestplate",
-            () -> new ModPowerArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.CHESTPLATE, new Item.Properties(), T51_SPECS));
+            () -> new T51Armor(ModArmorMaterials.TITANIUM, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
 
     public static final RegistryObject<Item> T51_LEGGINGS = ITEMS.register("t51_leggings",
-            () -> new ModPowerArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.LEGGINGS, new Item.Properties(), T51_SPECS));
+            () -> new T51Armor(ModArmorMaterials.TITANIUM, ArmorItem.Type.LEGGINGS, new Item.Properties()));
 
     public static final RegistryObject<Item> T51_BOOTS = ITEMS.register("t51_boots",
-            () -> new ModPowerArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.BOOTS, new Item.Properties(), T51_SPECS));
+            () -> new T51Armor(ModArmorMaterials.TITANIUM, ArmorItem.Type.BOOTS, new Item.Properties()));
 
 
 

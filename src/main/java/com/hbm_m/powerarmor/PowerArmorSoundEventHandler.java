@@ -1,7 +1,5 @@
-package com.hbm_m.event;
+package com.hbm_m.powerarmor;
 
-import com.hbm_m.item.armor.ModPowerArmorItem;
-import com.hbm_m.item.armor.PowerArmorSoundHandler;
 import net.minecraft.world.entity.player.Player;
 import net.minecraftforge.event.entity.living.LivingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -11,7 +9,7 @@ import net.minecraftforge.fml.common.Mod;
  * Обработчик событий для звуков силовой брони.
  * Портировано из оригинальных handleTick, handleJump, handleFall методов ArmorFSB.java
  */
-@Mod.EventBusSubscriber
+@Mod.EventBusSubscriber(modid = "hbm_m")
 public class PowerArmorSoundEventHandler {
 
     /**
@@ -20,10 +18,13 @@ public class PowerArmorSoundEventHandler {
     @SubscribeEvent
     public static void onLivingUpdate(LivingEvent.LivingTickEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
-        if (player.level().isClientSide) return;
+        if (!player.level().isClientSide) return;
 
         // Проверяем полный сет FSB
-        if (!ModPowerArmorItem.hasFSBArmor(player)) return;
+        if (!ModPowerArmorItem.hasFSBArmor(player)) {
+
+            return;
+        }
 
         // Получаем нагрудник как контроллер сета
         var chestStack = player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
@@ -31,12 +32,22 @@ public class PowerArmorSoundEventHandler {
 
         var specs = armorItem.getSpecs();
 
-        // Проверка на специальные игроки (аналог ShadyUtil)
-        boolean shouldPlayStepSound = true;
-        // TODO: добавить проверку для специальных игроков если нужно
+        // Звук шага - проверяем что игрок на земле и двигается (как в оригинале)
+        boolean isMoving = Math.abs(player.getDeltaMovement().x) > 0.01 || Math.abs(player.getDeltaMovement().z) > 0.01;
 
-        // Звук шага
-        if (shouldPlayStepSound && specs.stepSound != null && player.onGround()) {
+        // Проверяем приземление - если игрок только что приземлился
+        boolean wasInAir = player.getPersistentData().getBoolean("wasInAir");
+        boolean justLanded = wasInAir && player.onGround();
+
+        // Обновляем статус нахождения в воздухе
+        player.getPersistentData().putBoolean("wasInAir", !player.onGround());
+
+        // Звук приземления
+        if (justLanded && specs.fallSound != null) {
+            PowerArmorSoundHandler.playFallSound(player, specs.fallSound);
+        }
+
+        if (specs.stepSound != null && player.onGround() && isMoving) {
             PowerArmorSoundHandler.playStepSound(player, specs.stepSound);
         }
     }
@@ -47,9 +58,11 @@ public class PowerArmorSoundEventHandler {
     @SubscribeEvent
     public static void onPlayerJump(net.minecraftforge.event.entity.living.LivingEvent.LivingJumpEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
-        if (player.level().isClientSide) return;
+        if (!player.level().isClientSide) return;
 
-        if (!ModPowerArmorItem.hasFSBArmor(player)) return;
+        if (!ModPowerArmorItem.hasFSBArmor(player)) {
+            return;
+        }
 
         var chestStack = player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
         if (!(chestStack.getItem() instanceof ModPowerArmorItem armorItem)) return;
@@ -67,9 +80,11 @@ public class PowerArmorSoundEventHandler {
     @SubscribeEvent
     public static void onPlayerFall(net.minecraftforge.event.entity.living.LivingFallEvent event) {
         if (!(event.getEntity() instanceof Player player)) return;
-        if (player.level().isClientSide) return;
+        if (!player.level().isClientSide) return;
 
-        if (!ModPowerArmorItem.hasFSBArmor(player)) return;
+        if (!ModPowerArmorItem.hasFSBArmor(player)) {
+            return;
+        }
 
         var chestStack = player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
         if (!(chestStack.getItem() instanceof ModPowerArmorItem armorItem)) return;
@@ -81,8 +96,8 @@ public class PowerArmorSoundEventHandler {
             performHardLanding(player, event.getDistance());
         }
 
-        // Звук падения
-        if (specs.fallSound != null) {
+        // Звук падения - воспроизводим для любых падений, даже небольших
+        if (specs.fallSound != null && event.getDistance() > 0.5f) {
             PowerArmorSoundHandler.playFallSound(player, specs.fallSound);
         }
     }

@@ -41,6 +41,13 @@ public class ModSounds {
 
     // Звуки силовой брони
     public static final RegistryObject<SoundEvent> STEP_POWERED = registerSoundEvents("step.powered");
+    public static final RegistryObject<SoundEvent> STEP_METAL = registerSoundEvents("step.metal");
+    public static final RegistryObject<SoundEvent> STEP_IRON_JUMP = registerSoundEvents("step.iron_jump");
+    public static final RegistryObject<SoundEvent> STEP_IRON_LAND = registerSoundEvents("step.iron_land");
+    public static final RegistryObject<SoundEvent> NULL_SOUND = registerSoundEvents("item.null_sound");
+    public static final RegistryObject<SoundEvent> MACE_SMASH_AIR = registerSoundEvents("mace.smash_air");
+    public static final RegistryObject<SoundEvent> MACE_SMASH_GROUND = registerSoundEvents("mace.smash_ground");
+    public static final RegistryObject<SoundEvent> MACE_SMASH_GROUND_HEAVY = registerSoundEvents("mace.smash_ground_heavy");
 
     public static final RegistryObject<SoundEvent> REPAIR_1 = registerSoundEvents("tool.repair1");
     public static final RegistryObject<SoundEvent> REPAIR_2 = registerSoundEvents("tool.repair2");

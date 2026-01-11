@@ -33,26 +33,19 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Абстрактный базовый класс для рендеринга OBJ-брони.
  * Содержит всю общую логику рендеринга, оставляя подклассам только конфигурацию.
- * 
- * @param <T> Тип сущности (LivingEntity)
- * @param <M> Тип модели (HumanoidModel)
  */
 @OnlyIn(Dist.CLIENT)
 public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends RenderLayer<T, M> {
 
     protected static final float PIXEL_SCALE = 1.0F / 16.0F;
-    protected static final float DEFAULT_Z_FIGHTING_SCALE = 1.015F; // 1.5% increase
-    private static final int MAX_PIVOT_CACHE_SIZE = 100; // Максимальный размер кэша pivot'ов
+    protected static final float DEFAULT_Z_FIGHTING_SCALE = 1.015F; 
+    private static final int MAX_PIVOT_CACHE_SIZE = 100; 
 
-    // Статический кэш для BakedModel (общий для всех экземпляров)
     private static final Map<ModelResourceLocation, BakedModel> MODEL_CACHE = new ConcurrentHashMap<>();
-    // Кэш для частей модели (ключ: ModelResourceLocation + partName)
     private static final Map<String, BakedModel> PART_CACHE = new ConcurrentHashMap<>();
 
     protected final IArmorLayerConfig config;
-    // Кэш BASE_PIVOTS с составным ключом: armorTypeId:partName
-    // Используем LinkedHashMap для LRU кэширования с ограничением размера
-    // Обернуто в synchronizedMap для потокобезопасности (хотя рендеринг обычно в главном потоке)
+    
     private final Map<String, Vec3> basePivots = Collections.synchronizedMap(
         new LinkedHashMap<String, Vec3>(16, 0.75f, true) {
             @Override
@@ -67,17 +60,13 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
         this.config = createConfig();
     }
 
-    /**
-     * Создает конфигурацию для данного типа брони.
-     * Должен быть реализован в подклассе.
-     */
     protected abstract IArmorLayerConfig createConfig();
 
     @Override
     public final void render(@NotNull PoseStack poseStack, @NotNull MultiBufferSource buffer, int packedLight,
                            @NotNull T entity, float limbSwing, float limbSwingAmount, float partialTick,
                            float ageInTicks, float netHeadYaw, float headPitch) {
-        // Рендерим поверх игрока только если на слоте наш тип брони
+        
         renderSlot(poseStack, buffer, packedLight, entity, EquipmentSlot.HEAD);
         renderSlot(poseStack, buffer, packedLight, entity, EquipmentSlot.CHEST);
         renderSlot(poseStack, buffer, packedLight, entity, EquipmentSlot.LEGS);
@@ -85,46 +74,24 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
     }
 
     protected final void renderSlot(PoseStack poseStack, MultiBufferSource buffer, int light, T entity, EquipmentSlot slot) {
-        // Защита от вызова на сервере
-        if (!Minecraft.getInstance().isSameThread()) {
-            return;
-        }
+        if (!Minecraft.getInstance().isSameThread()) return;
 
         ItemStack stack = entity.getItemBySlot(slot);
         if (!config.isItemValid(stack)) return;
 
-        // Кэшируем BakedModel для избежания повторных обращений к ModelManager
         ModelResourceLocation modelLocation = config.getBakedModelLocation();
         BakedModel baked = MODEL_CACHE.computeIfAbsent(modelLocation, loc -> 
             Minecraft.getInstance().getModelManager().getModel(loc)
         );
         
-        if (baked == Minecraft.getInstance().getModelManager().getMissingModel()) {
-            if (entity.tickCount % 100 == 0) {
-                MainRegistry.LOGGER.warn("{} Model is MISSING (returned missing model)", config.getArmorTypeId());
-            }
-            return;
-        }
-
-        if (!(baked instanceof AbstractMultipartBakedModel multipart)) {
-            if (entity.tickCount % 100 == 0) {
-                MainRegistry.LOGGER.warn("{} Model is NOT instance of AbstractMultipartBakedModel. It is: {}",
-                        config.getArmorTypeId(), baked.getClass().getName());
-            }
-            return;
-        }
+        if (baked == Minecraft.getInstance().getModelManager().getMissingModel()) return;
+        if (!(baked instanceof AbstractMultipartBakedModel multipart)) return;
 
         M parentModel = this.getParentModel();
         final boolean crouching = entity.isCrouching();
 
         switch (slot) {
-            case HEAD -> {
-                BakedModel part = getCachedPart(multipart, modelLocation, "Helmet");
-                if (part == null && entity.tickCount % 100 == 0) {
-                    MainRegistry.LOGGER.error("Part 'Helmet' is NULL for {}", config.getArmorTypeId());
-                }
-                renderPart(poseStack, buffer, light, part, parentModel.head, "Helmet", crouching);
-            }
+            case HEAD -> renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "Helmet"), parentModel.head, "Helmet", crouching);
             case CHEST -> {
                 renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "Chest"), parentModel.body, "Chest", crouching);
                 renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "RightArm"), parentModel.rightArm, "RightArm", crouching);
@@ -138,15 +105,10 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
                 renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "RightBoot"), parentModel.rightLeg, "RightBoot", crouching);
                 renderPart(poseStack, buffer, light, getCachedPart(multipart, modelLocation, "LeftBoot"), parentModel.leftLeg, "LeftBoot", crouching);
             }
-            default -> {
-                // MAINHAND/OFFHAND are irrelevant here.
-            }
+            default -> {}
         }
     }
 
-    /**
-     * Получает часть модели из кэша или загружает её.
-     */
     private BakedModel getCachedPart(AbstractMultipartBakedModel multipart, ModelResourceLocation modelLocation, String partName) {
         String cacheKey = modelLocation.toString() + ":" + partName;
         return PART_CACHE.computeIfAbsent(cacheKey, key -> multipart.getPart(partName));
@@ -159,14 +121,11 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
 
         final VertexConsumer vc;
         try {
-            // IMPORTANT: Forge OBJ baking gives us atlas-space UVs already,
-            // but Material.buffer() wraps the consumer with SpriteCoordinateExpander which would
-            // re-map UVs again -> "one pixel" look / fully transparent legs/boots.
-            // So we bind the atlas RenderType directly and DO NOT wrap the consumer.
-            vc = buffer.getBuffer(RenderType.entityCutoutNoCull(mat.atlasLocation()));
+            // Возвращаем стандартный RenderType для брони
+            // Т.к. оверлей больше не гадит в GL контекст, это должно работать идеально
+            vc = buffer.getBuffer(RenderType.armorCutoutNoCull(mat.atlasLocation()));
         } catch (Exception e) {
-            MainRegistry.LOGGER.error("{}: failed to get VertexConsumer for part={} atlas={} tex={}",
-                    config.getArmorTypeId(), partName, mat.atlasLocation(), mat.texture(), e);
+            MainRegistry.LOGGER.error("Failed to get buffer", e);
             return;
         }
 
@@ -174,110 +133,133 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
 
         poseStack.pushPose();
 
-        // FIXED: OBJ geometry is in global pixel coords, but when crouching, Minecraft moves the pivot.
-        // We need to apply the CURRENT pivot offset for positioning (to follow the limb),
-        // but rotate around the BASE pivot (to maintain correct rotation center).
-        //
-        // Transform: translate to current pivot -> translate to base pivot -> rotate -> translate back to base -> translate back to current
-        // Simplified: translate (current - base) -> translate to base -> rotate -> translate back
         double pivotDeltaX = (bone.x - basePivot.x) * PIXEL_SCALE;
         double pivotDeltaY = (bone.y - basePivot.y) * PIXEL_SCALE;
         double pivotDeltaZ = (bone.z - basePivot.z) * PIXEL_SCALE;
 
-        // Apply current pivot offset for positioning
         poseStack.translate(pivotDeltaX, pivotDeltaY, pivotDeltaZ);
 
-        // Rotate around base pivot
         poseStack.translate(basePivot.x * PIXEL_SCALE, basePivot.y * PIXEL_SCALE, basePivot.z * PIXEL_SCALE);
         if (bone.xRot != 0.0F || bone.yRot != 0.0F || bone.zRot != 0.0F) {
             poseStack.mulPose(new org.joml.Quaternionf().rotationZYX(bone.zRot, bone.yRot, bone.xRot));
         }
         poseStack.translate(-basePivot.x * PIXEL_SCALE, -basePivot.y * PIXEL_SCALE, -basePivot.z * PIXEL_SCALE);
 
-        // Лёгкие поправки (в блок-юнитах) для центрирования частей, как rotationPoint сдвиги в 1.7.10
         Vec3 off = config.getPartOffsets().get(partName);
         if (off != null) {
             poseStack.translate(off.x, off.y, off.z);
         }
 
-        // Масштабируем OBJ-пиксели к юнитам Minecraft
         poseStack.scale(PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
-        // Применяем небольшое увеличение масштаба для устранения z-fighting со скином игрока
         float zFightingScale = config.getZFightingScale();
         poseStack.scale(zFightingScale, zFightingScale, zFightingScale);
 
         RandomSource rand = RandomSource.create(42);
+        
         emitAllQuads(poseStack, vc, partModel, rand, light);
 
         poseStack.popPose();
     }
 
-    /**
-     * Получает базовый (стоячий) pivot для части брони.
-     * Кэширует результат с составным ключом armorTypeId:partName.
-     * Для Helmet всегда возвращает Vec3.ZERO (фиксированный pivot).
-     */
     protected Vec3 getBasePivot(String partName, ModelPart bone, boolean crouching) {
         String cacheKey = config.getArmorTypeId() + ":" + partName;
-
-        // Cache base (standing) pivot when not crouching - this is the rotation center for OBJ geometry
-        // For Helmet, use fixed (0,0,0) as base pivot since head animations can change the pivot even when standing
         Vec3 basePivot = basePivots.computeIfAbsent(cacheKey, k -> {
-            if ("Helmet".equals(partName)) {
-                return Vec3.ZERO; // Fixed base pivot for helmet
-            }
-            if (!crouching) {
-                return new Vec3(bone.x, bone.y, bone.z);
-            }
-            // If we're crouching but haven't cached base yet, use current as fallback (will update on next stand)
+            if ("Helmet".equals(partName)) return Vec3.ZERO;
+            if (!crouching) return new Vec3(bone.x, bone.y, bone.z);
             return new Vec3(bone.x, bone.y, bone.z);
         });
 
-        // Update base pivot when standing (in case it changed), but NOT for Helmet (fixed at 0,0,0)
         if (!crouching && !"Helmet".equals(partName)) {
             basePivots.put(cacheKey, new Vec3(bone.x, bone.y, bone.z));
             basePivot = new Vec3(bone.x, bone.y, bone.z);
         } else if (!crouching && "Helmet".equals(partName)) {
-            // For Helmet, always use (0,0,0) as base pivot
             basePivot = Vec3.ZERO;
         }
-
         return basePivot;
     }
 
     private static void emitAllQuads(PoseStack poseStack, VertexConsumer vc, BakedModel model, RandomSource rand, int light) {
         PoseStack.Pose pose = poseStack.last();
-
+        
         for (var dir : net.minecraft.core.Direction.values()) {
             List<net.minecraft.client.renderer.block.model.BakedQuad> quads = model.getQuads(null, dir, rand, ModelData.EMPTY, null);
-            for (var q : quads) {
-                vc.putBulkData(pose, q, 1f, 1f, 1f, 1f, light, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, false);
+            if (quads != null && !quads.isEmpty()) {
+                for (var q : quads) putQuadManual(vc, pose, q, light);
             }
         }
 
         List<net.minecraft.client.renderer.block.model.BakedQuad> general = model.getQuads(null, null, rand, ModelData.EMPTY, null);
-        for (var q : general) {
-            vc.putBulkData(pose, q, 1f, 1f, 1f, 1f, light, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, false);
+        if (general != null && !general.isEmpty()) {
+            for (var q : general) putQuadManual(vc, pose, q, light);
         }
     }
 
-    /**
-     * Очищает кэш pivot'ов для данного экземпляра.
-     * Вызывается при перезагрузке ресурсов или отключении от сервера.
-     */
+    private static void putQuadManual(VertexConsumer builder, PoseStack.Pose pose, net.minecraft.client.renderer.block.model.BakedQuad quad, int light) {
+        int[] vertexData = quad.getVertices();
+        net.minecraft.core.Vec3i faceNormal = quad.getDirection() != null ? quad.getDirection().getNormal() : new net.minecraft.core.Vec3i(0, 1, 0);
+        
+        int overlay = net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY;
+        
+        org.joml.Matrix4f posMatrix = pose.pose();
+        org.joml.Matrix3f normalMatrix = pose.normal();
+
+        for (int i = 0; i < 4; i++) {
+            int offset = i * 8;
+            
+            float x = Float.intBitsToFloat(vertexData[offset + 0]);
+            float y = Float.intBitsToFloat(vertexData[offset + 1]);
+            float z = Float.intBitsToFloat(vertexData[offset + 2]);
+            
+            // На всякий случай оставляю проверку на NaN, она дешевая и полезная
+            if (Float.isNaN(x) || Float.isNaN(y) || Float.isNaN(z)) { x=0; y=0; z=0; }
+            
+            int color = vertexData[offset + 3];
+            float a = (float)(color >> 24 & 255) / 255.0F;
+            float r = (float)(color >> 16 & 255) / 255.0F;
+            float g = (float)(color >> 8 & 255) / 255.0F;
+            float b = (float)(color & 255) / 255.0F;
+
+            float u = Float.intBitsToFloat(vertexData[offset + 4]);
+            float v = Float.intBitsToFloat(vertexData[offset + 5]);
+            if (Float.isNaN(u)) u = 0; 
+            if (Float.isNaN(v)) v = 0;
+            
+            float nx, ny, nz;
+            int packedNormal = vertexData[offset + 7];
+            
+            if (packedNormal != 0) {
+                nx = ((byte)(packedNormal & 255)) / 127.0F;
+                ny = ((byte)(packedNormal >> 8 & 255)) / 127.0F;
+                nz = ((byte)(packedNormal >> 16 & 255)) / 127.0F;
+            } else {
+                nx = faceNormal.getX();
+                ny = faceNormal.getY();
+                nz = faceNormal.getZ();
+            }
+
+            float lenSq = nx * nx + ny * ny + nz * nz;
+            if (lenSq < 1.0E-5F || Float.isNaN(lenSq)) {
+                nx = 0.0F; ny = 1.0F; nz = 0.0F;
+            }
+
+            builder.vertex(posMatrix, x, y, z)
+                   .color(r, g, b, a)
+                   .uv(u, v)
+                   .overlayCoords(overlay)
+                   .uv2(light)
+                   .normal(normalMatrix, nx, ny, nz)
+                   .endVertex();
+        }
+    }
+
     public void clearPivotCache() {
         synchronized (basePivots) {
             basePivots.clear();
         }
     }
 
-    /**
-     * Очищает все статические кэши (модели и части).
-     * Вызывается при перезагрузке ресурсов или отключении от сервера.
-     */
     public static void clearAllCaches() {
         MODEL_CACHE.clear();
         PART_CACHE.clear();
     }
 }
-

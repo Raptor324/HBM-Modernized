@@ -2,11 +2,11 @@ package com.hbm_m.block.entity.machine;
 
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.client.ClientSoundManager;
 import com.hbm_m.item.ItemBlades;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.MachineShredderMenu;
 import com.hbm_m.recipe.ShredderRecipe;
+import com.hbm_m.sound.ClientSoundManager;
 import com.hbm_m.sound.ShredderSoundInstance;
 import com.hbm_m.util.LongDataPacker;
 import net.minecraft.core.BlockPos;

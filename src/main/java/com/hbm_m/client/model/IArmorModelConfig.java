@@ -1,6 +1,7 @@
 package com.hbm_m.client.model;
 
-import com.hbm_m.item.armor.ModPowerArmorItem;
+import com.hbm_m.powerarmor.ModPowerArmorItem;
+
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;

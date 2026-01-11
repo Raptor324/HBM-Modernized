@@ -407,5 +407,58 @@
     "sounds": [
       "hbm_m:block/switch_on"
     ]
+  },
+  "step.powered": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:footsteps/powered1",
+      "hbm_m:footsteps/powered2",
+      "hbm_m:footsteps/powered3"
+    ]
+  },
+  "step.metal": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:footsteps/metal"
+    ]
+  },
+  "step.iron_jump": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:footsteps/iron_jump"
+    ]
+  },
+  "step.iron_land": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:footsteps/iron_land"
+    ]
+  },
+  "item.null_sound": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:item/null_sound"
+    ]
+  },
+  "mace.smash_air": {
+  "category": "player",
+  "sounds": [ 
+    "hbm_m:footsteps/smash_air1",
+    "hbm_m:footsteps/smash_air2",
+    "hbm_m:footsteps/smash_air3"
+   ]
+  },
+  "mace.smash_ground": {
+    "category": "player",
+    "sounds": [ 
+    "hbm_m:footsteps/smash_ground1",
+    "hbm_m:footsteps/smash_ground2",
+    "hbm_m:footsteps/smash_ground3",
+    "hbm_m:footsteps/smash_ground4"
+   ]
+  },
+  "mace.smash_ground_heavy": {
+    "category": "player",
+    "sounds": [ "hbm_m:footsteps/smash_ground_heavy" ]
   }
 }

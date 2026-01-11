@@ -329,7 +329,7 @@ public class ArmorModificationHelper {
 
         // ШАГ 3: ОБРЕЗАНИЕ ЭНЕРГИИ ПО НОВОМУ МАКСИМУМУ
         // Если броня - силовая, проверяем и корректируем уровень энергии
-        if (armorStack.getItem() instanceof com.hbm_m.item.armor.ModPowerArmorItem powerArmor) {
+        if (armorStack.getItem() instanceof com.hbm_m.powerarmor.ModPowerArmorItem powerArmor) {
             long currentEnergy = mainTag.getLong("energy");
             long newMaxCapacity = powerArmor.getModifiedCapacity(armorStack);
 

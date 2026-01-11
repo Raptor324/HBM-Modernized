@@ -1,5 +1,10 @@
 package com.hbm_m.datagen;
 
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 // Провайдер генерации локализаций (переводов) для мода.
 
 import com.hbm_m.block.ModBlocks;
@@ -7,14 +12,10 @@ import com.hbm_m.item.ModIngots;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.ModPowders;
 import com.hbm_m.lib.RefStrings;
+
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.common.data.LanguageProvider;
-
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.stream.Collectors;
 
 public class ModLanguageProvider extends LanguageProvider {
     // 1. Создаем НАШЕ СОБСТВЕННОЕ поле для хранения языка
@@ -293,11 +294,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.STAMP_IRON_44.get(), "Железный штамп .44 Magnum");
                 add(ModItems.STAMP_IRON_50.get(), "Железный штамп .50 BMG");
                 add(ModItems.STAMP_IRON_9.get(), "Железный штамп 9мм");
-
-
-
-
-                add("item.hbm_m.heart_piece", "Частичка сердца");
+                add(ModItems.HEART_PIECE.get(), "Частичка сердца");
                 add(ModItems.HEART_CONTAINER.get(), "Контейнер для сердца");
                 add(ModItems.HEART_BOOSTER.get(), "Усилитель сердца");
                 add(ModItems.HEART_FAB.get(), "Фаб-сердце");
@@ -641,20 +638,16 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.armor_table.casing_slot", "Обшивка");
                 add("tooltip.hbm_m.armor_table.servos_slot", "Сервоприводы");
 
-                // POWER ARMOR FSB TOOLTIPS
-                add("armor.fullSetBonus", "Полный комплект:");
-                add("armor.geigerSound", "Счетчик Гейгера");
-                add("armor.geigerHUD", "HUD Гейгера");
-                add("armor.vats", "V.A.T.S.");
-                add("armor.thermal", "Тепловизор");
-                add("armor.hardLanding", "Жесткая посадка");
-                add("armor.stepSize", "Помощь в шаге Ур.%d");
-                add("armor.dash", "Рывок x%d");
-
                 // POWER ARMOR CONTROLS
                 add("key.hbm_m.power_armor_dash", "Рывок силовой брони");
                 add("key.hbm_m.power_armor_vats", "VATS силовой брони");
                 add("key.hbm_m.power_armor_thermal", "Тепловизор силовой брони");
+
+                add("hud.hbm_m.vats.on", "HUD: ON");
+                add("hud.hbm_m.vats.off", "HUD: OFF");
+                add("hud.hbm_m.thermal.on", "Тепловизор: ON");
+                add("hud.hbm_m.thermal.off", "Тепловизор: OFF");
+                add("hud.hbm_m.dash.perform", "Рывок выполнен");
 
                 // ARMOR BATTERIES
                 add("item.hbm_m.armor_battery", "Батарея брони");
@@ -853,6 +846,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor", "Влияние источников радиации на чанк");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor", "Фактор рандомизации радиации в чанке");
 
+                add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "Дальность прорисовки VATS");
+
                 add("text.autoconfig.hbm_m.category.debug", "Отладка");
                 add("text.autoconfig.hbm_m.option.enableDebugRender", "Включить отладочный рендер радиации");
                 add("text.autoconfig.hbm_m.option.debugRenderTextSize", "Размер текста отладочного рендера");
@@ -873,13 +868,17 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radConfusion.@Tooltip", "Порог для эффекта замешательства (WIP)");
                 add("text.autoconfig.hbm_m.option.radBlindness.@Tooltip", "Порог для эффекта слепоты");
 
-                                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect.@Tooltip", "Включает/выключает эффект случайных мерцающих пикселей на экране, когда игрок подвергается радиационному облучению.");
+                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect.@Tooltip", "Включает/выключает эффект случайных мерцающих пикселей на экране, когда игрок подвергается радиационному облучению.");
                 add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold.@Tooltip", "Минимальный уровень входящей радиации (в RAD/с), при котором начинает появляться эффект визуальных помех.");
                 add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad.@Tooltip", "Уровень входящей радиации (в RAD/с), при котором эффект помех достигает своей максимальной силы (максимальное количество пикселей).");
                 add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots.@Tooltip", "Максимальное количество пикселей, которое может одновременно находиться на экране при пиковой интенсивности эффекта. Влияет на производительность на слабых системах.");
                 add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance.@Tooltip", "Вероятность (от 0.0 до 1.0), что новый появившийся пиксель будет зеленым, а не белым. Например, 0.1 = 10% шанс.");
                 add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime.@Tooltip", "Минимальное время (в тиках), которое один пиксель будет оставаться на экране. 20 тиков = 1 секунда.");
                 add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime.@Tooltip", "Максимальное время (в тиках), которое один пиксель будет оставаться на экране. Для каждого пикселя выбирается случайное значение между минимальным и максимальным временем жизни.");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetX", "Положение подсказки: отступ слева");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetY", "Положение подсказки: отступ сверху");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetX.@Tooltip", "Расстояние от левого края экрана.");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetY.@Tooltip", "Расстояние от верхнего края экрана.");
 
                 add("text.autoconfig.hbm_m.option.maxRad.@Tooltip", "Максимальная радиация в чанке");
                 add("text.autoconfig.hbm_m.option.fogRad.@Tooltip", "Порог радиации для появления тумана (WIP)");
@@ -895,11 +894,30 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.advHazmatMod.@Tooltip", "Защита продвинутого костюма химзащиты");
                 add("text.autoconfig.hbm_m.option.paaHazmatMod.@Tooltip", "Защита костюма PAA");
 
+                add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip", "Дальность отрисовки полосок здоровья мобов (чанки). Больше значение — дальше видно, но выше нагрузка.");
+
                 add("text.autoconfig.hbm_m.option.enableDebugRender.@Tooltip", "Показывать отладочный оверлей чанков (F3)");
                 add("text.autoconfig.hbm_m.option.debugRenderTextSize.@Tooltip", "Размер текста для отладочного оверлея");
                 add("text.autoconfig.hbm_m.option.debugRenderDistance.@Tooltip", "Дальность отладочного рендеринга (чанки)");
                 add("text.autoconfig.hbm_m.option.debugRenderInSurvival.@Tooltip", "Показывать отладочный рендер в режиме выживания");
                 add("text.autoconfig.hbm_m.option.enableDebugLogging.@Tooltip", "Если выключено, будет активно глубокое логгирование игровых событий. Не стоит включать, если не испытываете проблем");
+
+                // FSB ARMOR TOOLTIPS
+                add("tooltip.hbm_m.fsb_bonus", "Бонусы полного набора брони:");
+                add("tooltip.hbm_m.fsb_resistances", "Сопротивления при полном наборе брони:");
+                add("tooltip.hbm_m.res.fire", "Огню");
+                add("tooltip.hbm_m.res.phys", "Физическому");
+                add("tooltip.hbm_m.res.expl", "Взрывам");
+                add("tooltip.hbm_m.res.fall", "Падению");
+                add("tooltip.hbm_m.res.proj", "Лазерам");
+                add("tooltip.hbm_m.res.other", "Прочему");
+                add("armor.fsb.geigerCounter", "Счётчик Гейгера");
+                add("armor.fsb.geigerHUD", "HUD счётчика Гейгера");
+                add("armor.fsb.vats", "Детектор врагов");
+                add("armor.fsb.thermalVision", "Тепловизор");
+                add("armor.fsb.hardLanding", "Жёсткая посадка");
+                add("armor.fsb.stepSize", "Шаг: %d");
+                add("armor.fsb.dash", "Дополнительных рывков: %d");
                 break;
             
             case "en_us":
@@ -1293,14 +1311,28 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.armor_table.servos_slot", "Servos");
 
                 // POWER ARMOR FSB TOOLTIPS
-                add("armor.fullSetBonus", "Full Set Bonus:");
-                add("armor.geigerSound", "Geiger Counter");
+                add("tooltip.hbm_m.fsb_bonus", "Full Set Bonus:");
+                add("tooltip.hbm_m.fsb_resistances", "Full Set Resistance:");
+                add("tooltip.hbm_m.res.fire", "Fire");
+                add("tooltip.hbm_m.res.phys", "Physical");
+                add("tooltip.hbm_m.res.expl", "Explosion");
+                add("tooltip.hbm_m.res.fall", "Fall damage");
+                add("tooltip.hbm_m.res.proj", "Lasers");
+                add("tooltip.hbm_m.res.other", "Other");
+                add("armor.fsb.geigerCounter", "Auditory Geiger Counter");
                 add("armor.geigerHUD", "Geiger HUD");
-                add("armor.vats", "V.A.T.S.");
-                add("armor.thermal", "Thermal Imaging");
-                add("armor.hardLanding", "Hard Landing");
+                add("armor.fsb.vats", "Enemy HUD");
+                add("armor.thermal", "Thermal Sight");
+                add("armor.fsb.hardLanding", "Hard Landing");
                 add("armor.stepSize", "Step Assist Lv.%d");
                 add("armor.dash", "Dash x%d");
+
+                add("hud.hbm_m.vats.on", "HUD: ON");
+                add("hud.hbm_m.vats.off", "HUD: OFF");
+                add("hud.hbm_m.thermal.on", "Thermal Vision: ON");
+                add("hud.hbm_m.thermal.off", "Thermal Vision: OFF");
+                add("hud.hbm_m.dash.perform", "Dash Performed");
+
 
                 // POWER ARMOR CONTROLS
                 add("key.hbm_m.power_armor_dash", "Power Armor Dash");
@@ -1625,9 +1657,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.enableObstructionHighlight.@Tooltip", "If enabled, blocks obstructing multiblock placement\nwill be highlighted with a red box.");
                 add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha", "Obstruction Highlight Opacity");
                 add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha.@Tooltip", "Sets the opacity of the highlight box's fill.\n0% = Invisible, 100% = Solid.");
-
                 add("text.autoconfig.hbm_m.option.obstructionHighlightDuration", "Highlight Duration (sec)");
                 add("text.autoconfig.hbm_m.option.obstructionHighlightDuration.@Tooltip", "The duration in seconds for how long the obstruction highlight will be visible.");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetX", "Info tooltip: left offset");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetY", "Info tooltip: top offset");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetX.@Tooltip", "Distance from the left edge of the screen.");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetY.@Tooltip", "Distance from the top edge of the screen.");
 
                 add("text.autoconfig.hbm_m.category.chunk", "Chunk");
 
@@ -1640,6 +1675,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.minRadDecayAmount", "Min decay per tick");
                 add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor", "Source influence factor");
                 add("text.autoconfig.hbm_m.option.radRandomizationFactor", "Chunk radiation randomization factor");
+
+                add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "VATS render distance (chunks)");
 
                 add("text.autoconfig.hbm_m.category.debug", "Debug");
 
@@ -1691,11 +1728,34 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.advHazmatMod.@Tooltip", "Protection for advanced hazmat suit");
                 add("text.autoconfig.hbm_m.option.paaHazmatMod.@Tooltip", "Protection for PAA suit");
 
+                add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip","Max distance for mob health highlighting. Higher values increase range but reduce performance.");
+
                 add("text.autoconfig.hbm_m.option.enableDebugRender.@Tooltip", "Whether radiation debug render is enabled (F3)");
                 add("text.autoconfig.hbm_m.option.debugRenderTextSize.@Tooltip", "Debug render text size");
                 add("text.autoconfig.hbm_m.option.debugRenderDistance.@Tooltip", "Debug render distance (in chunks)");
                 add("text.autoconfig.hbm_m.option.debugRenderInSurvival.@Tooltip", "Show debug renderer in survival mode");
                 add("text.autoconfig.hbm_m.option.enableDebugLogging.@Tooltip", "If disabled, deep logging of game events will be active. Do not enable unless you experience problems");
+
+                // DAMAGE TYPES FOR POWER ARMOR TOOLTIPS
+                add("damage.type.physical", "Physical");
+                add("damage.type.explosion", "Explosion");
+                add("damage.type.fire", "Fire");
+                add("damage.type.energy", "Energy");
+                add("damage.type.radiation", "Radiation");
+                add("damage.type.cold", "Cold");
+                add("damage.type.fall", "Fall");
+                add("damage.type.projectile", "Projectile");
+                add("armor.fsb.damageResistance", "Damage Resistance:");
+
+                // DAMAGE RESISTANCE TOOLTIPS (ported from original HBM)
+                add("damage.inset", "Resistances when worn in set:");
+                add("damage.item", "Resistances when worn:");
+                add("damage.category.EN", "Energy");
+                add("damage.category.EXPL", "Explosion");
+                add("damage.category.FIRE", "Fire");
+                add("damage.category.PHYS", "Physical");
+                add("damage.exact.fall", "Fall damage");
+                add("damage.other", "Other");
                 break;
         }
     }
