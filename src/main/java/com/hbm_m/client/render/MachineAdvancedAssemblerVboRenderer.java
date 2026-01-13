@@ -1,6 +1,7 @@
 package com.hbm_m.client.render;
 
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
+import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
@@ -42,27 +43,36 @@ public class MachineAdvancedAssemblerVboRenderer {
         }      
     }
 
-    // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Применяем трансформации ЧЕРЕЗ PoseStack (как в двери)
-    public void renderAnimatedPart(PoseStack poseStack, int packedLight, String partName, 
-                                  Matrix4f transform, BlockPos blockPos, 
-                                  @Nullable BlockEntity blockEntity) {
+    public void renderAnimatedPart(PoseStack poseStack, int packedLight, String partName,
+            Matrix4f transform, BlockPos blockPos, @Nullable BlockEntity blockEntity) {
+
         BakedModel part = model.getPart(partName);
-        if (part != null) {
-            poseStack.pushPose();
-            
-            // КРИТИЧНО: Применяем трансформацию к PoseStack ПЕРЕД рендерингом
-            // Это гарантирует, что трансформация будет передана в шейдер
-            if (transform != null) {
-                poseStack.last().pose().mul(transform);
-            }
-            
-            // Рендерим с уже примененными трансформациями в PoseStack
-            GlobalMeshCache.getOrCreateRenderer("assembler_" + partName, part)
-                    .render(poseStack, packedLight, blockPos, blockEntity);
-            
-            poseStack.popPose();
+        if (part == null) {
+            MainRegistry.LOGGER.warn("Part {} not found in model", partName);
+            return;
         }
+
+        poseStack.pushPose();
+        if (transform != null) {
+            poseStack.last().pose().mul(transform);
+        }
+
+        AbstractGpuVboRenderer renderer = GlobalMeshCache.getOrCreateRenderer(
+            "assembler_" + partName, part
+        );
+        
+        if (renderer != null) {
+            renderer.render(poseStack, packedLight, blockPos, blockEntity);
+        } else {
+            MainRegistry.LOGGER.warn(
+                "Failed to create renderer for part {}, model has no renderable quads", 
+                partName
+            );
+        }
+        
+        poseStack.popPose();
     }
+
 
     // Метод совместимости с существующим кодом
     public void renderPart(PoseStack poseStack, int packedLight, String partName, 

@@ -221,7 +221,7 @@ public class ModEventHandlerClient {
         // - FPS и другие метрики
 
         // Пока просто логгируем что проверка работает
-        MainRegistry.LOGGER.debug("Performance check completed");
+        // MainRegistry.LOGGER.debug("Performance check completed");
     }
 
     /**

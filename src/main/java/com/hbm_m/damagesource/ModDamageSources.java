@@ -70,6 +70,8 @@ public final class ModDamageSources {
     public static DamageSource plasma(Entity directEntity, Entity attacker) { return create(attacker, directEntity, ModDamageTypes.PLASMA); }
     public static DamageSource laser(Entity directEntity, Entity attacker) { return create(attacker, directEntity, ModDamageTypes.LASER); }
     public static DamageSource flamethrower(Entity directEntity, Entity attacker) { return create(attacker, directEntity, ModDamageTypes.FLAMETHROWER); }
+    public static DamageSource hardlandingSmash(Entity attacker) { return create(attacker, attacker, ModDamageTypes.HARDLANDING_SMASH); }
+    
 
     // Урон, где атакующий и снаряд - это одно и то же (например, урон в ближнем бою)
     public static DamageSource electrified(Entity attacker) { return create(attacker, attacker, ModDamageTypes.ELECTRIFIED); }

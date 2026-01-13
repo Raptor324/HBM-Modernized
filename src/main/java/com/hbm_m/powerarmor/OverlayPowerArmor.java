@@ -11,7 +11,7 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.systems.RenderSystem;
-
+// рендер полосок энергии брони
 public class OverlayPowerArmor {
 
     public static void onRenderOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
@@ -47,7 +47,7 @@ public class OverlayPowerArmor {
         
         // --- ЛОГИКА ПОЗИЦИОНИРОВАНИЯ ---
         if (player.isCreative()) {
-            // Креатив: фиксированная позиция над хотбаром + сдвиг вправо
+            // Креатив: фиксированная позиция над хотбаром
             left += 1; 
             topAnchor = screenHeight - 26;
         } else {

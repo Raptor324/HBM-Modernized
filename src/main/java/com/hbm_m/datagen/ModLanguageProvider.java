@@ -767,7 +767,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("commands.hbm_m.rad.removed", "Убрано %s радиации у %s игроков.");
                 add("commands.hbm_m.rad.removed.self", "У вас убрано %s радиации.");
 
+                // СООБЩЕНИЯ О СМЕРТИ
                 add("death.attack.radiation", "Игрок %s умер от лучевой болезни");
+                add("death.attack.hardlanding_smash", "%1$s был раздавлен в лепешку %2$s");
+
                 add("advancements.hbm_m.radiation_200.title", "Ура, Радиация!");
                 add("advancements.hbm_m.radiation_200.description", "Достигнуть уровня радиации в 200 РАД");
                 add("advancements.hbm_m.radiation_1000.title", "Ай, Радиация!");
@@ -911,7 +914,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.res.fall", "Падению");
                 add("tooltip.hbm_m.res.proj", "Лазерам");
                 add("tooltip.hbm_m.res.other", "Прочему");
-                add("armor.fsb.geigerCounter", "Счётчик Гейгера");
+                add("armor.fsb.geigerCounter", "Звуковой счётчик Гейгера");
                 add("armor.fsb.geigerHUD", "HUD счётчика Гейгера");
                 add("armor.fsb.vats", "Детектор врагов");
                 add("armor.fsb.thermalVision", "Тепловизор");
@@ -1594,8 +1597,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("commands.hbm_m.rad.added.self", "You have been given %s radiation.");
                 add("commands.hbm_m.rad.removed", "Removed %s radiation from %s players.");
                 add("commands.hbm_m.rad.removed.self", "%s radiation has been removed from you.");
-
+                
+                // DEATH ATTACK MESSAGES
                 add("death.attack.radiation", "Player %s died from radiation sickness");
+                add("death.attack.hardlanding_smash", "%1$s was flattened by %2$s");
+
                 add("advancements.hbm_m.radiation_200.title", "Hooray, Radiation!");
                 add("advancements.hbm_m.radiation_200.description", "Reach a radiation level of 200 RAD");
                 add("advancements.hbm_m.radiation_1000.title", "Ouch, Radiation!");

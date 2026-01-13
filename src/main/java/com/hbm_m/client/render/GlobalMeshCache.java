@@ -61,19 +61,20 @@ public class GlobalMeshCache {
     }
 
     public static AbstractGpuVboRenderer getOrCreateRenderer(String partKey, BakedModel model) {
-        // ИСПРАВЛЕНИЕ: Проверяем размер кэша рендереров
         if (PART_RENDERERS.size() > MAX_CACHE_SIZE) {
             cleanupDeadRenderers();
         }
         
-        return PART_RENDERERS.compute(partKey, (key, existingRef) -> {
-            AbstractGpuVboRenderer renderer = (existingRef != null) ? existingRef.get() : null;
-            if (renderer == null) {
-                renderer = createRendererForPart(model);
-                return new WeakReference<>(renderer);
+        AbstractGpuVboRenderer renderer = PART_RENDERERS.compute(partKey, (key, existingRef) -> {
+            AbstractGpuVboRenderer r = (existingRef != null) ? existingRef.get() : null;
+            if (r == null) {
+                r = createRendererForPart(model);
+                return (r != null) ? new WeakReference<>(r) : null;
             }
             return existingRef;
         }).get();
+        
+        return renderer;  // МОЖЕТ БЫТЬ NULL, и это OK
     }
 
     // ==================== НОВЫЕ МЕТОДЫ: Поддержка типов для дверей ====================

@@ -47,17 +47,15 @@ import java.util.function.Consumer;
 
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID)
 public class ModPowerArmorItem extends ModArmorFSBPowered {
-
     private static final Random RANDOM = new Random();
     private int soundTickCounter = 0;
-
     private final PowerArmorSpecs specs;
 
     public ModPowerArmorItem(ArmorMaterial material, Type type, Properties properties, PowerArmorSpecs specs) {
         super(material, type, properties, MainRegistry.MOD_ID + ":textures/armor/" + getTextureName(type),
-              specs.capacity, specs.maxReceive, specs.usagePerDamagePoint, specs.usagePerTick);
+                specs.capacity, specs.maxReceive, specs.consumption, specs.drain);
         this.specs = specs;
-
+        
         // Apply FSB properties from specs
         this.enableVATS(specs.hasVats);
         this.enableThermalSight(specs.hasThermal);
@@ -69,12 +67,24 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         this.setStepSound(specs.stepSound);
         this.setJumpSound(specs.jumpSound);
         this.setFallSound(specs.fallSound);
-
+        
         // Add effects from specs
         for (var effect : specs.passiveEffects) {
             this.addEffect(effect);
         }
     }
+
+    // ========== КРИТИЧНО: Отключаем ванильную защиту ==========
+    @Override
+    public int getDefense() {
+        return 0; // Отключаем ванильные Armor Points
+    }
+
+    @Override
+    public float getToughness() {
+        return 0.0f; // Отключаем ванильную Toughness
+    }
+    // ==========================================================
 
     private static String getTextureName(Type type) {
         return switch (type) {
@@ -103,11 +113,11 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
     @Override
     public void initializeClient(@Nonnull Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
-
             private T51ArmorModel model;
 
             @Override
-            public @NotNull HumanoidModel<?> getHumanoidArmorModel(LivingEntity livingEntity, ItemStack itemStack, EquipmentSlot equipmentSlot, HumanoidModel<?> original) {
+            public @NotNull HumanoidModel<?> getHumanoidArmorModel(LivingEntity livingEntity, ItemStack itemStack, 
+                    EquipmentSlot equipmentSlot, HumanoidModel<?> original) {
                 if (this.model == null) {
                     ModelPart layer = Minecraft.getInstance().getEntityModels().bakeLayer(ModModelLayers.T51_ARMOR);
                     this.model = new T51ArmorModel(layer);
@@ -115,7 +125,6 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
 
                 this.model.setAllVisible(false);
                 this.model.setRenderSlot(equipmentSlot);
-
                 switch (equipmentSlot) {
                     case HEAD -> {
                         this.model.head.visible = true;
@@ -141,9 +150,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
                 this.model.crouching = original.crouching;
                 this.model.riding = original.riding;
                 this.model.young = original.young;
-
                 copyRotations(original, this.model);
-
                 return this.model;
             }
         });
@@ -162,7 +169,6 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
     public net.minecraft.sounds.SoundEvent getEquipSound() {
         return net.minecraft.sounds.SoundEvents.EMPTY;
     }
-
 
     /**
      * Переопределяем методы для корректного отображения энергии в тултипе с учетом модификаторов
@@ -185,9 +191,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         long currentEnergy = getCharge(stack);
         long maxEnergy = getMaxCharge(stack);
         if (maxEnergy <= 0) return 0xFFFFFF;
-
         double ratio = (double) currentEnergy / maxEnergy;
-
         if (ratio >= 0.5) {
             // Зеленый для высокой энергии
             return 0x00FF00;
@@ -202,14 +206,18 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
 
     @Override
     public void onArmorTick(ItemStack stack, Level world, Player player) {
-        if (!world.isClientSide && this.getType() == Type.CHESTPLATE) {
-            // Handle passive effects for CONSTANT_DRAIN mode (energy drain now handled in base class)
-            if (hasFSBArmor(player) && specs.mode == PowerArmorSpecs.EnergyMode.CONSTANT_DRAIN) {
+        if (!world.isClientSide() && this.getType() == Type.CHESTPLATE) {
+            // Apply passive effects if armor has energy
+            if (hasFSBArmor(player)) {
                 long energy = getCharge(stack);
-                if (energy >= specs.usagePerTick) {
-                    // Apply passive effects without draining energy (drain handled in ModArmorFSBPowered)
+
+                // Only apply effects if armor has energy
+                if (energy > 0) {
                     for (var effect : specs.passiveEffects) {
-                        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(effect.getEffect(), 40, effect.getAmplifier(), effect.isAmbient(), effect.isVisible()));
+                        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                            effect.getEffect(), 40, effect.getAmplifier(), 
+                            effect.isAmbient(), effect.isVisible()
+                        ));
                     }
                 }
             }
@@ -218,26 +226,24 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
             handlePowerArmorGeiger(stack, world, player);
         }
 
-        // Call parent method for FSB functionality
+        // Call parent method for FSB functionality AND energy drain
         super.onArmorTick(stack, world, player);
     }
 
     private void handlePowerArmorGeiger(ItemStack stack, Level world, Player player) {
         // Check if geiger is enabled for this armor
         if (!specs.hasGeigerSound) return;
-
+        
         // Check if player has full FSB armor set
         if (!hasFSBArmor(player)) return;
-
+        
         // Don't play sounds if player has separate geiger counter or dosimeter
         if (playerHasGeigerDevice(player)) return;
-
+        
         soundTickCounter++;
         final int SOUND_INTERVAL_TICKS = 5;
-
         if (soundTickCounter >= SOUND_INTERVAL_TICKS) {
             soundTickCounter = 0;
-
             if (player instanceof ServerPlayer serverPlayer) {
                 playArmorGeigerSound(serverPlayer);
             }
@@ -251,26 +257,24 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
 
     private void playArmorGeigerSound(ServerPlayer player) {
         if (!ModClothConfig.get().enableRadiation) return;
-
+        
         // Measure radiation like the geiger counter does
         float chunkRad = ChunkRadiationManager.getRadiation(
-            player.level(),
-            player.getBlockX(),
-            (int) Math.floor(player.getY() + player.getBbHeight() * 0.5),
-            player.getBlockZ()
+                player.level(),
+                player.getBlockX(),
+                (int) Math.floor(player.getY() + player.getBbHeight() * 0.5),
+                player.getBlockZ()
         );
-
         float invRad = PlayerHandler.getInventoryRadiation(player);
         float totalEnvironmentRads = chunkRad + invRad;
-
+        
         if (ModClothConfig.get().enableDebugLogging) {
             MainRegistry.LOGGER.debug("PowerArmorGeiger: chunkRad = {}, invRad = {}, totalEnvironmentRads = {}",
-                chunkRad, invRad, totalEnvironmentRads);
+                    chunkRad, invRad, totalEnvironmentRads);
         }
-
+        
         int soundIndex = 0;
         List<Integer> soundOptions = new ArrayList<>();
-
         if (totalEnvironmentRads > 0) {
             if (totalEnvironmentRads < 10) soundOptions.add(1);
             if (totalEnvironmentRads > 5 && totalEnvironmentRads < 15) soundOptions.add(2);
@@ -278,14 +282,13 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
             if (totalEnvironmentRads > 15 && totalEnvironmentRads < 25) soundOptions.add(4);
             if (totalEnvironmentRads > 20 && totalEnvironmentRads < 30) soundOptions.add(5);
             if (totalEnvironmentRads > 25) soundOptions.add(6);
-
             if (!soundOptions.isEmpty()) {
                 soundIndex = soundOptions.get(RANDOM.nextInt(soundOptions.size()));
             }
         } else if (RANDOM.nextInt(50) == 0) {
             soundIndex = 1; // Rare background click
         }
-
+        
         Optional<RegistryObject<SoundEvent>> soundRegistryObject = switch (soundIndex) {
             case 1 -> Optional.of(ModSounds.GEIGER_1);
             case 2 -> Optional.of(ModSounds.GEIGER_2);
@@ -295,12 +298,12 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
             case 6 -> Optional.of(ModSounds.GEIGER_6);
             default -> Optional.empty();
         };
-
         soundRegistryObject.ifPresent(regObject -> {
             SoundEvent soundEvent = regObject.get();
             if (soundEvent != null) {
                 ResourceLocation soundLocation = soundEvent.getLocation();
-                ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
+                ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), 
+                        new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
             }
         });
     }
@@ -310,10 +313,17 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
         ItemStack legs = player.getItemBySlot(EquipmentSlot.LEGS);
         ItemStack feet = player.getItemBySlot(EquipmentSlot.FEET);
+        
         if (head.isEmpty() || chest.isEmpty() || legs.isEmpty() || feet.isEmpty()) return false;
-        if (!(head.getItem() instanceof ModPowerArmorItem) || !(chest.getItem() instanceof ModPowerArmorItem) || !(legs.getItem() instanceof ModPowerArmorItem) || !(feet.getItem() instanceof ModPowerArmorItem)) return false;
+        if (!(head.getItem() instanceof ModPowerArmorItem) || 
+            !(chest.getItem() instanceof ModPowerArmorItem) || 
+            !(legs.getItem() instanceof ModPowerArmorItem) || 
+            !(feet.getItem() instanceof ModPowerArmorItem)) return false;
+        
         ModPowerArmorItem armorItem = (ModPowerArmorItem) chest.getItem();
-        return ((ModPowerArmorItem) head.getItem()).getMaterial() == armorItem.getMaterial() && ((ModPowerArmorItem) legs.getItem()).getMaterial() == armorItem.getMaterial() && ((ModPowerArmorItem) feet.getItem()).getMaterial() == armorItem.getMaterial();
+        return ((ModPowerArmorItem) head.getItem()).getMaterial() == armorItem.getMaterial() && 
+               ((ModPowerArmorItem) legs.getItem()).getMaterial() == armorItem.getMaterial() && 
+               ((ModPowerArmorItem) feet.getItem()).getMaterial() == armorItem.getMaterial();
     }
 
     /**
@@ -352,7 +362,6 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         return specs.resRadiation;
     }
 
-
     @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID)
     public static class PowerArmorSoundHandler {
         @SubscribeEvent
@@ -361,7 +370,8 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
             if (event.getFrom().getItem() == event.getTo().getItem()) return; // Игнорируем смену NBT
             
             // Если надели или сняли нашу броню
-            if (event.getTo().getItem() instanceof ModPowerArmorItem || event.getFrom().getItem() instanceof ModPowerArmorItem) {
+            if (event.getTo().getItem() instanceof ModPowerArmorItem || 
+                event.getFrom().getItem() instanceof ModPowerArmorItem) {
                 event.getEntity().playSound(SoundEvents.ARMOR_EQUIP_IRON, 1.0F, 1.0F);
             }
         }

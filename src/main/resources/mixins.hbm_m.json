@@ -5,11 +5,10 @@
   "compatibilityLevel": "JAVA_17",
   "refmap": "hbm_m.refmap.json",
   "mixins": [
-    "SlotMixin"
-    
+    "SlotMixin",
+    "PlayerStepSoundMixin"
   ],
   "client": [
-    "ShadowIntegrationMixin"
   ],
   "injectors": {
     "defaultRequire": 1

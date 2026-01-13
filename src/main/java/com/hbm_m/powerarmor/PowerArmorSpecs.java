@@ -5,19 +5,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class PowerArmorSpecs {
-    public enum EnergyMode {
-        CONSTANT_DRAIN,
-        DRAIN_ON_HIT
-    }
 
-    // --- Основные параметры ---
-    public final EnergyMode mode;
+    // --- Energy Configuration (matches 1.7.10) ---
     public final long capacity;
     public final long maxReceive;
-    public final long usagePerTick;
-    public final long usagePerDamagePoint;
+    public final long drain;        // Passive drain per tick
+    public final long consumption;  // Energy per damage point (via setDamage)
 
-    // --- Damage Threshold (DT) - полное поглощение урона ---
+    // --- Damage Threshold (DT) - Flat damage reduction ---
     public float dtFall = 0f;
     public float dtExplosion = 0f;
     public float dtKinetic = 0f;
@@ -25,9 +20,9 @@ public class PowerArmorSpecs {
     public float dtFire = 0f;
     public float dtCold = 0f;
     public float dtRadiation = 0f;
-    public float dtEnergy = 0f; // для лазеров, электричества и т.д.
+    public float dtEnergy = 0f;
 
-    // --- Damage Resistance (DR) - процентное снижение (0.0 - 1.0) ---
+    // --- Damage Resistance (DR) - Percentage reduction (0.0 - 1.0) ---
     public float drFall = 0f;
     public float drExplosion = 0f;
     public float drKinetic = 0f;
@@ -37,7 +32,7 @@ public class PowerArmorSpecs {
     public float drRadiation = 0f;
     public float drEnergy = 0f;
 
-    // --- Другие резисты (для обратной совместимости) ---
+    // --- Legacy resistance values (for compatibility) ---
     public float resFall = 0f;
     public float resExplosion = 0f;
     public float resKinetic = 0f;
@@ -46,58 +41,59 @@ public class PowerArmorSpecs {
     public float resCold = 0f;
     public float resRadiation = 0f;
 
-    // --- Спецэффекты (Флаги из ArmorFSB) ---
-    public boolean hasVats = false;         // Красный текст в тултипе
-    public boolean hasThermal = false;      // Красный текст + эффект (в будущем)
-    public boolean hasNightVision = false;  // (Опционально)
-    public boolean hasGeigerSound = false;  // Треск радиации
-    public boolean hasCustomGeiger = false; // HUD геигер
-    public boolean hasHardLanding = false;  // AOE урон при падении
-    public boolean noHelmetRequired = false;// Сет работает без шлема
+    // --- ArmorFSB Features ---
+    public boolean hasVats = false;
+    public boolean hasThermal = false;
+    public boolean hasNightVision = false;
+    public boolean hasGeigerSound = false;
+    public boolean hasCustomGeiger = false;
+    public boolean hasHardLanding = false;
+    public boolean noHelmetRequired = false;
 
-    // --- Движение ---
-    public float stepHeight = 0f;           // Авто-прыжок (было setStepSize)
-    public int stepSize = 0;                // Старое название для совместимости
-    public int dashCount = 0;               // Рывки (нужен отдельный хендлер пакетов)
+    // --- Movement ---
+    public float stepHeight = 0f;
+    public int stepSize = 0;
+    public int dashCount = 0;
 
-    // --- Звуки ---
-    public String stepSound = null;         // Звук шага
-    public String jumpSound = null;         // Звук прыжка
-    public String fallSound = null;         // Звук падения
+    // --- Sounds ---
+    public String stepSound = null;
+    public String jumpSound = null;
+    public String fallSound = null;
 
-    // --- Оверлеи ---
-    public String overlay = null;           // Путь к текстуре оверлея шлема
+    // --- Visual ---
+    public String overlay = null;
 
     public List<MobEffectInstance> passiveEffects = new ArrayList<>();
 
-    public PowerArmorSpecs(EnergyMode mode, long capacity, long maxReceive) {
-        this(mode, capacity, maxReceive, 10);
-    }
-
-    public PowerArmorSpecs(EnergyMode mode, long capacity, long maxReceive, long usage) {
-        this.mode = mode;
+    /**
+     * Basic constructor - matches 1.7.10 ArmorFSBPowered constructor
+     * @param capacity Maximum energy capacity
+     * @param maxReceive Maximum energy received per tick (charging)
+     * @param drain Passive energy drain per tick (when wearing full set)
+     * @param consumption Energy cost per damage point (when armor takes damage)
+     */
+    public PowerArmorSpecs(long capacity, long maxReceive, long drain, long consumption) {
         this.capacity = capacity;
         this.maxReceive = maxReceive;
-        if (mode == EnergyMode.CONSTANT_DRAIN) {
-            this.usagePerTick = usage;
-            this.usagePerDamagePoint = 0;
-        } else {
-            this.usagePerTick = 0;
-            this.usagePerDamagePoint = usage;
-        }
+        this.drain = drain;
+        this.consumption = consumption;
     }
 
-    // Конструктор для CONSTANT_DRAIN режима с drain и consumption
-    public PowerArmorSpecs(EnergyMode mode, long capacity, long maxReceive, long drain, long consumption) {
-        this.mode = mode;
-        this.capacity = capacity;
-        this.maxReceive = maxReceive;
-        this.usagePerTick = drain;
-        this.usagePerDamagePoint = consumption;
+    /**
+     * Simplified constructor with default consumption
+     */
+    public PowerArmorSpecs(long capacity, long maxReceive, long drain) {
+        this(capacity, maxReceive, drain, 10);
     }
 
-    public PowerArmorSpecs setResistances(float fall, float explosion, float kinetic, float projectile, float fire, float cold, float radiation) {
-        // Для обратной совместимости - устанавливаем только DR
+    // --- Configuration Methods ---
+
+    /**
+     * Set damage resistances (legacy method - sets DR values)
+     */
+    public PowerArmorSpecs setResistances(float fall, float explosion, float kinetic, 
+                                         float projectile, float fire, float cold, float radiation) {
+        // Set DR values
         this.drFall = fall;
         this.drExplosion = explosion;
         this.drKinetic = kinetic;
@@ -106,7 +102,7 @@ public class PowerArmorSpecs {
         this.drCold = cold;
         this.drRadiation = radiation;
 
-        // Синхронизируем с legacy полями
+        // Also set legacy values for compatibility
         this.resFall = fall;
         this.resExplosion = explosion;
         this.resKinetic = kinetic;
@@ -119,9 +115,10 @@ public class PowerArmorSpecs {
     }
 
     /**
-     * Установить Damage Threshold (DT) значения для разных типов урона
+     * Set Damage Threshold (DT) values
      */
-    public PowerArmorSpecs setDT(float fall, float explosion, float kinetic, float projectile, float fire, float cold, float radiation, float energy) {
+    public PowerArmorSpecs setDT(float fall, float explosion, float kinetic, float projectile,
+                                 float fire, float cold, float radiation, float energy) {
         this.dtFall = fall;
         this.dtExplosion = explosion;
         this.dtKinetic = kinetic;
@@ -134,9 +131,10 @@ public class PowerArmorSpecs {
     }
 
     /**
-     * Установить Damage Resistance (DR) значения для разных типов урона
+     * Set Damage Resistance (DR) values
      */
-    public PowerArmorSpecs setDR(float fall, float explosion, float kinetic, float projectile, float fire, float cold, float radiation, float energy) {
+    public PowerArmorSpecs setDR(float fall, float explosion, float kinetic, float projectile,
+                                 float fire, float cold, float radiation, float energy) {
         this.drFall = fall;
         this.drExplosion = explosion;
         this.drKinetic = kinetic;
@@ -146,7 +144,7 @@ public class PowerArmorSpecs {
         this.drRadiation = radiation;
         this.drEnergy = energy;
 
-        // Синхронизируем с legacy полями
+        // Update legacy values
         this.resFall = fall;
         this.resExplosion = explosion;
         this.resKinetic = kinetic;
@@ -159,30 +157,26 @@ public class PowerArmorSpecs {
     }
 
     /**
-     * Универсальный метод для установки DT и DR одновременно
+     * Set both DT and DR for complete protection configuration
      */
-    public PowerArmorSpecs setProtection(float dtFall, float drFall, float dtExplosion, float drExplosion,
-                                       float dtKinetic, float drKinetic, float dtProjectile, float drProjectile,
-                                       float dtFire, float drFire, float dtCold, float drCold,
-                                       float dtRadiation, float drRadiation, float dtEnergy, float drEnergy) {
-        this.dtFall = dtFall;
-        this.drFall = drFall;
-        this.dtExplosion = dtExplosion;
-        this.drExplosion = drExplosion;
-        this.dtKinetic = dtKinetic;
-        this.drKinetic = drKinetic;
-        this.dtProjectile = dtProjectile;
-        this.drProjectile = drProjectile;
-        this.dtFire = dtFire;
-        this.drFire = drFire;
-        this.dtCold = dtCold;
-        this.drCold = drCold;
-        this.dtRadiation = dtRadiation;
-        this.drRadiation = drRadiation;
-        this.dtEnergy = dtEnergy;
-        this.drEnergy = drEnergy;
+    public PowerArmorSpecs setProtection(float dtFall, float drFall, 
+                                        float dtExplosion, float drExplosion,
+                                        float dtKinetic, float drKinetic,
+                                        float dtProjectile, float drProjectile,
+                                        float dtFire, float drFire,
+                                        float dtCold, float drCold,
+                                        float dtRadiation, float drRadiation,
+                                        float dtEnergy, float drEnergy) {
+        this.dtFall = dtFall; this.drFall = drFall;
+        this.dtExplosion = dtExplosion; this.drExplosion = drExplosion;
+        this.dtKinetic = dtKinetic; this.drKinetic = drKinetic;
+        this.dtProjectile = dtProjectile; this.drProjectile = drProjectile;
+        this.dtFire = dtFire; this.drFire = drFire;
+        this.dtCold = dtCold; this.drCold = drCold;
+        this.dtRadiation = dtRadiation; this.drRadiation = drRadiation;
+        this.dtEnergy = dtEnergy; this.drEnergy = drEnergy;
 
-        // Синхронизируем с legacy полями
+        // Update legacy
         this.resFall = drFall;
         this.resExplosion = drExplosion;
         this.resKinetic = drKinetic;
@@ -207,7 +201,8 @@ public class PowerArmorSpecs {
         return this;
     }
 
-    public PowerArmorSpecs setFeatures(boolean vats, boolean thermal, boolean hardLanding, boolean geiger, boolean customGeiger) {
+    public PowerArmorSpecs setFeatures(boolean vats, boolean thermal, boolean hardLanding, 
+                                      boolean geiger, boolean customGeiger) {
         this.hasVats = vats;
         this.hasThermal = thermal;
         this.hasHardLanding = hardLanding;
@@ -215,7 +210,7 @@ public class PowerArmorSpecs {
         this.hasCustomGeiger = customGeiger;
         return this;
     }
-    
+
     public PowerArmorSpecs setMovement(float stepHeight, int dashCount) {
         this.stepHeight = stepHeight;
         this.dashCount = dashCount;
@@ -234,7 +229,7 @@ public class PowerArmorSpecs {
 
     public PowerArmorSpecs setStepSize(int stepSize) {
         this.stepSize = stepSize;
-        this.stepHeight = stepSize; // Синхронизируем для совместимости
+        this.stepHeight = stepSize;
         return this;
     }
 

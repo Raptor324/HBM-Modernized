@@ -7,7 +7,7 @@ import org.lwjgl.glfw.GLFW;
 import com.hbm_m.client.overlay.OverlayInfoToast;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
-import com.hbm_m.powerarmor.PowerArmorMovementHandler;
+import com.hbm_m.powerarmor.PowerArmorHandlers;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import me.shedaniel.autoconfig.AutoConfig;
@@ -90,7 +90,7 @@ public class ModConfigKeybindHandler {
                     // Отправляем пакет на сервер для выполнения dash
                     // TODO: Отправить пакет на сервер для выполнения dash
                     // Пока что просто вызываем локально для тестирования
-                    PowerArmorMovementHandler.performDash(mc.player);
+                    PowerArmorHandlers.performDash(mc.player);
                     OverlayInfoToast.show(Component.translatable("hud.hbm_m.dash.perform"), 60, OverlayInfoToast.ID_DASH, 0x00FF00);
                 }
             }

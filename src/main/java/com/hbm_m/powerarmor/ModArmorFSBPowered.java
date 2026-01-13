@@ -24,15 +24,14 @@ import java.util.List;
 // Full Set Bonus Powered armor - combines FSB functionality with battery system
 public class ModArmorFSBPowered extends ModArmorFSB {
 
-    private static final ThreadLocal<Boolean> DISCHARGING = ThreadLocal.withInitial(() -> false);
-
     public long maxPower = 1;
     public long chargeRate;
-    public long consumption;
-    public long drain;
+    public long consumption; // Energy cost when armor takes damage (via setDamage)
+    public long drain;       // Passive energy drain per tick
 
-    public ModArmorFSBPowered(ArmorMaterial material, Type type, Properties properties, String texture,
-                              long maxPower, long chargeRate, long consumption, long drain) {
+    public ModArmorFSBPowered(ArmorMaterial material, Type type, Properties properties, 
+                              String texture, long maxPower, long chargeRate, 
+                              long consumption, long drain) {
         super(material, type, properties, texture);
         this.maxPower = maxPower;
         this.chargeRate = chargeRate;
@@ -41,10 +40,13 @@ public class ModArmorFSBPowered extends ModArmorFSB {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.literal("Charge: " + EnergyFormatter.format(getCharge(stack)) +
-            " / " + EnergyFormatter.format(getMaxCharge(stack))).withStyle(ChatFormatting.AQUA));
-            
+    public void appendHoverText(ItemStack stack, @Nullable Level level, 
+                               List<Component> tooltip, TooltipFlag flag) {
+        tooltip.add(Component.literal("Charge: " + 
+            EnergyFormatter.format(getCharge(stack)) + " / " + 
+            EnergyFormatter.format(getMaxCharge(stack)))
+            .withStyle(ChatFormatting.AQUA));
+
         ArmorTooltipHandler.getFSBTooltip(stack).ifPresent(tooltip::addAll);
         super.appendHoverText(stack, level, tooltip, flag);
     }
@@ -80,7 +82,6 @@ public class ModArmorFSBPowered extends ModArmorFSB {
         if (stack.getItem() instanceof ModArmorFSBPowered) {
             CompoundTag tag = stack.getOrCreateTag();
             tag.putLong("charge", tag.getLong("charge") - amount);
-
             if (tag.getLong("charge") < 0) {
                 tag.putLong("charge", 0);
             }
@@ -105,7 +106,7 @@ public class ModArmorFSBPowered extends ModArmorFSB {
     }
 
     public double getDurabilityForDisplay(ItemStack stack) {
-        return 1 - (double) getCharge(stack) / (double) getMaxCharge(stack);
+        return 1 - ((double) getCharge(stack) / (double) getMaxCharge(stack));
     }
 
     public long getMaxCharge(ItemStack stack) {
@@ -113,11 +114,11 @@ public class ModArmorFSBPowered extends ModArmorFSB {
             ItemStack mod = ArmorModificationHelper.pryMod(stack, ArmorModificationHelper.battery);
             if (!mod.isEmpty()) {
                 if (mod.getItem() instanceof ItemModBatteryMk3) {
-                    return (long) (maxPower * 2.0D); // MK3: удваивает емкость
+                    return (long) (maxPower * 2.0D); // MK3: 100%
                 } else if (mod.getItem() instanceof ItemModBatteryMk2) {
-                    return (long) (maxPower * 1.5D); // MK2: увеличивает на 50%
+                    return (long) (maxPower * 1.5D); // MK2: 50%
                 } else if (mod.getItem() instanceof ItemModBattery battery) {
-                    return (long) (maxPower * battery.getCapacityMultiplier()); // Обычная батарея: +25%
+                    return (long) (maxPower * battery.getCapacityMultiplier()); // 25%
                 }
             }
         }
@@ -132,30 +133,31 @@ public class ModArmorFSBPowered extends ModArmorFSB {
         return 0;
     }
 
+    /**
+     * MATCHES 1.7.10 BEHAVIOR
+     * This is called by Minecraft when armor would take damage.
+     * Instead of damaging the item, we drain energy based on consumption.
+     */
     @Override
     public void setDamage(ItemStack stack, int damage) {
-        // Предотвращаем рекурсивный вызов при изменении энергии
-        if (DISCHARGING.get()) {
-            return;
-        }
-
-        // Тратим consumption при получении урона (как в оригинале)
+        // Don't damage the item - power armor doesn't break
+        // Instead, drain energy if consumption is configured
         if (this.consumption > 0) {
-            DISCHARGING.set(true);
-            try {
-                this.dischargeBattery(stack, (long) damage * this.consumption);
-            } finally {
-                DISCHARGING.set(false);
-            }
+            this.dischargeBattery(stack, (long) damage * this.consumption);
         }
     }
 
+    /**
+     * MATCHES 1.7.10 BEHAVIOR
+     * Passive energy drain per tick when wearing full FSB armor set.
+     */
     @Override
     public void onArmorTick(ItemStack stack, Level world, Player player) {
         super.onArmorTick(stack, world, player);
 
-        // Каждая часть брони тратит drain в простое (как в оригинале HBM)
-        if (this.drain > 0 && ModArmorFSB.hasFSBArmor(player) && !player.getAbilities().instabuild && !player.isSpectator()) {
+        // Passive drain - matches 1.7.10 exactly
+        if (this.drain > 0 && ModArmorFSB.hasFSBArmor(player) 
+            && !player.getAbilities().instabuild && !player.isSpectator()) {
             this.dischargeBattery(stack, drain);
         }
     }
