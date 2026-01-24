@@ -105,6 +105,10 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> ASSEMBLER_STRIKE_RANDOM = registerSoundEvents("block.assembler_strike_random");
     public static final RegistryObject<SoundEvent> BOUNCE_RANDOM = registerSoundEvents("item.bounce_random");
     
+    // Thermal vision sounds
+    public static final RegistryObject<SoundEvent> NVG_ON = registerSoundEvents("tool.nvg_on");
+    public static final RegistryObject<SoundEvent> NVG_OFF = registerSoundEvents("tool.nvg_off");
+    
     // Вспомогательный метод для регистрации
     private static RegistryObject<SoundEvent> registerSoundEvents(String name) {
         // Создаем ResourceLocation, избегая устаревших методов

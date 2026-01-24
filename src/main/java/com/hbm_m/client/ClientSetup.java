@@ -83,6 +83,10 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
         MinecraftForge.EVENT_BUS.register(DoorOutlineRenderer.class);
+        
+        // Initialize thermal vision world renderer reflection
+        com.hbm_m.powerarmor.ThermalVisionWorldRenderer.initializeReflection();
+        
         // MinecraftForge.EVENT_BUS.register(DoorDebugRenderer.class);
         // MinecraftForge.EVENT_BUS.register(ClientSetup.class);
 
@@ -306,6 +310,40 @@ public class ClientSetup {
             ModShaders::setBlockLitShader
         );
         MainRegistry.LOGGER.info("Successfully registered block_lit shader");
+        
+        // Register thermal vision shader for post-processing
+        VertexFormat thermalVisionFormat = new VertexFormat(
+            ImmutableMap.<String, VertexFormatElement>builder()
+                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
+                .put("UV0", DefaultVertexFormat.ELEMENT_UV0)
+                .build()
+        );
+        
+        ResourceLocation shaderLocation = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "thermal_vision");
+        MainRegistry.LOGGER.info("Attempting to register thermal_vision shader at: {}", shaderLocation);
+        
+        ShaderInstance shaderInstance = null;
+        try {
+            shaderInstance = new ShaderInstance(
+                event.getResourceProvider(),
+                shaderLocation,
+                thermalVisionFormat
+            );
+            MainRegistry.LOGGER.info("ShaderInstance created successfully for thermal_vision");
+        } catch (Exception e) {
+            MainRegistry.LOGGER.error("Exception while creating ShaderInstance for thermal_vision: {}", e.getMessage(), e);
+            return; // Don't register if creation failed
+        }
+        
+        if (shaderInstance != null) {
+            event.registerShader(shaderInstance, ModShaders::setThermalVisionShader);
+            MainRegistry.LOGGER.info("thermal_vision shader registered with event handler");
+            
+            // Note: The callback ModShaders::setThermalVisionShader is called asynchronously,
+            // so we can't verify it here immediately. The shader will be available after reload.
+        } else {
+            MainRegistry.LOGGER.error("ShaderInstance is null after creation - cannot register thermal_vision shader!");
+        }
     }
 
     private static class LeavesModelWrapper extends BakedModelWrapper<BakedModel> {

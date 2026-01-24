@@ -647,7 +647,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("hud.hbm_m.vats.off", "HUD: OFF");
                 add("hud.hbm_m.thermal.on", "Тепловизор: ON");
                 add("hud.hbm_m.thermal.off", "Тепловизор: OFF");
+                add("hud.hbm_m.thermal.warning", "Внимание: рендер тепловизора может быть нестабильным. В случае ошибок переключитесь на более простую версию в конфиге. Для данного мира это сообщение больше выводиться не будет.");
                 add("hud.hbm_m.dash.perform", "Рывок выполнен");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode", "Режим рендера тепловизора");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode.@Tooltip", "Выберите способ рендера тепловизора.");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode.FULL_SHADER", "Полный шейдер");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode.SPECTRAL_FALLBACK", "Спектральный фолбэк");
 
                 // ARMOR BATTERIES
                 add("item.hbm_m.armor_battery", "Батарея брони");
@@ -759,6 +764,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 
                 add("sounds.hbm_m.geiger_counter", "Щелчки счетчика Гейгера");
                 add("sounds.hbm_m.tool.techboop", "Пик счетчика Гейгера");
+                add("sounds.hbm_m.thermal_vision_on", "Включение тепловизора");
+                add("sounds.hbm_m.thermal_vision_off", "Выключение тепловизора");
                 
                 add("commands.hbm_m.rad.cleared", "Радиация очищена у %s игроков.");
                 add("commands.hbm_m.rad.cleared.self", "Ваша радиация очищена.");
@@ -823,19 +830,21 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.category.overlay", "Экранные наложения");
 
-                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect", "Экранный эффект радиационных помех");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold", "Порог срабатывания эффекта");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad", "Максимальная интенсивность эффекта");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots", "Макс. количество пикселей");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance", "Шанс зеленого пикселя");
-                add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime", "Мин. время жизни пикселя");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime", "Макс. время жизни пикселя");
-                add("text.autoconfig.hbm_m.option.enableObstructionHighlight", "Включить подсветку препятствий");
-                add("text.autoconfig.hbm_m.option.enableObstructionHighlight.@Tooltip", "Если включено, блоки, мешающие размещению мультиблока, \nбудут подсвечиваться красной рамкой.");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightDuration", "Длительность подсветки (сек)");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightDuration.@Tooltip", "Время в секундах, в течение которого будет видна подсветка препятствий.");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha", "Непрозрачность подсветки препятствий");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha.@Tooltip", "Устанавливает непрозрачность заливки подсветки.\n0% = Невидимая, 100% = Непрозрачная.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect", "Экранные помехи от радиации");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.enableRadiationPixelEffect", "Экранный эффект радиационных помех");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectThreshold", "Порог срабатывания эффекта");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxIntensityRad", "Максимальная интенсивность эффекта");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectMaxDots", "Макс. количество пикселей");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectGreenChance", "Шанс зеленого пикселя");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMinLifetime", "Мин. время жизни пикселя");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxLifetime", "Макс. время жизни пикселя");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight", "Подсветка препятствий мультиблоков");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.enableObstructionHighlight", "Включить подсветку препятствий");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.enableObstructionHighlight.@Tooltip", "Если включено, блоки, мешающие размещению мультиблока, \nбудут подсвечиваться красной рамкой.");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightDuration", "Длительность подсветки (сек)");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightDuration.@Tooltip", "Время в секундах, в течение которого будет видна подсветка препятствий.");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightAlpha", "Непрозрачность подсветки препятствий");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightAlpha.@Tooltip", "Устанавливает непрозрачность заливки подсветки.\n0% = Невидимая, 100% = Непрозрачная.");
 
                 add("text.autoconfig.hbm_m.category.chunk", "Чанк");
                 
@@ -871,13 +880,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radConfusion.@Tooltip", "Порог для эффекта замешательства (WIP)");
                 add("text.autoconfig.hbm_m.option.radBlindness.@Tooltip", "Порог для эффекта слепоты");
 
-                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect.@Tooltip", "Включает/выключает эффект случайных мерцающих пикселей на экране, когда игрок подвергается радиационному облучению.");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold.@Tooltip", "Минимальный уровень входящей радиации (в RAD/с), при котором начинает появляться эффект визуальных помех.");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad.@Tooltip", "Уровень входящей радиации (в RAD/с), при котором эффект помех достигает своей максимальной силы (максимальное количество пикселей).");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots.@Tooltip", "Максимальное количество пикселей, которое может одновременно находиться на экране при пиковой интенсивности эффекта. Влияет на производительность на слабых системах.");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance.@Tooltip", "Вероятность (от 0.0 до 1.0), что новый появившийся пиксель будет зеленым, а не белым. Например, 0.1 = 10% шанс.");
-                add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime.@Tooltip", "Минимальное время (в тиках), которое один пиксель будет оставаться на экране. 20 тиков = 1 секунда.");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime.@Tooltip", "Максимальное время (в тиках), которое один пиксель будет оставаться на экране. Для каждого пикселя выбирается случайное значение между минимальным и максимальным временем жизни.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.enableRadiationPixelEffect.@Tooltip", "Включает/выключает эффект случайных мерцающих пикселей на экране, когда игрок подвергается радиационному облучению.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectThreshold.@Tooltip", "Минимальный уровень входящей радиации (в RAD/с), при котором начинает появляться эффект визуальных помех.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxIntensityRad.@Tooltip", "Уровень входящей радиации (в RAD/с), при котором эффект помех достигает своей максимальной силы (максимальное количество пикселей).");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectMaxDots.@Tooltip", "Максимальное количество пикселей, которое может одновременно находиться на экране при пиковой интенсивности эффекта. Влияет на производительность на слабых системах.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectGreenChance.@Tooltip", "Вероятность (от 0.0 до 1.0), что новый появившийся пиксель будет зеленым, а не белым. Например, 0.1 = 10% шанс.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMinLifetime.@Tooltip", "Минимальное время (в тиках), которое один пиксель будет оставаться на экране. 20 тиков = 1 секунда.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxLifetime.@Tooltip", "Максимальное время (в тиках), которое один пиксель будет оставаться на экране. Для каждого пикселя выбирается случайное значение между минимальным и максимальным временем жизни.");
                 add("text.autoconfig.hbm_m.option.infoToastOffsetX", "Положение подсказки: отступ слева");
                 add("text.autoconfig.hbm_m.option.infoToastOffsetY", "Положение подсказки: отступ сверху");
                 add("text.autoconfig.hbm_m.option.infoToastOffsetX.@Tooltip", "Расстояние от левого края экрана.");
@@ -1334,7 +1343,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("hud.hbm_m.vats.off", "HUD: OFF");
                 add("hud.hbm_m.thermal.on", "Thermal Vision: ON");
                 add("hud.hbm_m.thermal.off", "Thermal Vision: OFF");
+                add("hud.hbm_m.thermal.warning", "Warning: thermal vision rendering may be unstable. If errors occur, switch to a simpler mode in the config. This message will not be shown again for this world.");
                 add("hud.hbm_m.dash.perform", "Dash Performed");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode", "Thermal Vision Render Mode");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode.@Tooltip", "Choose how thermal vision is rendered.");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode.FULL_SHADER", "Full shader");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode.SPECTRAL_FALLBACK", "Spectral fallback");
 
 
                 // POWER ARMOR CONTROLS
@@ -1590,6 +1604,8 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("sounds.hbm_m.geiger_counter", "Geiger Counter clicking");
                 add("sounds.hbm_m.tool.techboop", "Geiger counter beep");
+                add("sounds.hbm_m.thermal_vision_on", "Thermal vision activated");
+                add("sounds.hbm_m.thermal_vision_off", "Thermal vision deactivated");
                 
                 add("commands.hbm_m.rad.cleared", "Radiation cleared for %s players.");
                 add("commands.hbm_m.rad.cleared.self", "Your radiation has been cleared.");
@@ -1652,19 +1668,21 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.category.overlay", "Screen Overlays");
 
-                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect", "Enable Radiation Screen Pixel Effect");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold", "Pixel Effect Threshold");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad", "Pixel Effect Max Intensity");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots", "Max Pixel Count");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance", "Green Pixel Chance");
-                add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime", "Min Pixel Lifetime");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime", "Max Pixel Lifetime");
-                add("text.autoconfig.hbm_m.option.enableObstructionHighlight", "Enable Obstruction Highlight");
-                add("text.autoconfig.hbm_m.option.enableObstructionHighlight.@Tooltip", "If enabled, blocks obstructing multiblock placement\nwill be highlighted with a red box.");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha", "Obstruction Highlight Opacity");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha.@Tooltip", "Sets the opacity of the highlight box's fill.\n0% = Invisible, 100% = Solid.");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightDuration", "Highlight Duration (sec)");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightDuration.@Tooltip", "The duration in seconds for how long the obstruction highlight will be visible.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect", "Radiation Screen Pixel Effect");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.enableRadiationPixelEffect", "Enable Radiation Screen Pixel Effect");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectThreshold", "Pixel Effect Threshold");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxIntensityRad", "Pixel Effect Max Intensity");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectMaxDots", "Max Pixel Count");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectGreenChance", "Green Pixel Chance");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMinLifetime", "Min Pixel Lifetime");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxLifetime", "Max Pixel Lifetime");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight", "Multiblock Obstruction Highlight");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.enableObstructionHighlight", "Enable Obstruction Highlight");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.enableObstructionHighlight.@Tooltip", "If enabled, blocks obstructing multiblock placement\nwill be highlighted with a red box.");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightAlpha", "Obstruction Highlight Opacity");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightAlpha.@Tooltip", "Sets the opacity of the highlight box's fill.\n0% = Invisible, 100% = Solid.");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightDuration", "Highlight Duration (sec)");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightDuration.@Tooltip", "The duration in seconds for how long the obstruction highlight will be visible.");
                 add("text.autoconfig.hbm_m.option.infoToastOffsetX", "Info tooltip: left offset");
                 add("text.autoconfig.hbm_m.option.infoToastOffsetY", "Info tooltip: top offset");
                 add("text.autoconfig.hbm_m.option.infoToastOffsetX.@Tooltip", "Distance from the left edge of the screen.");
@@ -1712,13 +1730,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radConfusion.@Tooltip", "Threshold for confusion effect (WIP)");
                 add("text.autoconfig.hbm_m.option.radBlindness.@Tooltip", "Threshold for blindness effect");
 
-                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect.@Tooltip", "Shows random, flickering pixels on the screen when the player is exposed to incoming radiation.");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold.@Tooltip", "The minimum incoming radiation (RAD/s) required for the visual interference effect to appear.");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad.@Tooltip", "The level of incoming radiation (RAD/s) at which the pixel effect reaches its maximum strength (maximum number of pixels).");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots.@Tooltip", "The maximum number of pixels that can be on the screen at once when the effect is at its peak intensity. Affects performance on weak systems.");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance.@Tooltip", "The probability (from 0.0 to 1.0) that a newly appeared pixel will be green instead of white. E.g., 0.1 = 10% chance.");
-                add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime.@Tooltip", "The minimum time (in ticks) a single pixel will stay on the screen. 20 ticks = 1 second.");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime.@Tooltip", "The maximum time (in ticks) a single pixel will stay on the screen. A random value between min and max lifetime is chosen for each pixel.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.enableRadiationPixelEffect.@Tooltip", "Shows random, flickering pixels on the screen when the player is exposed to incoming radiation.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectThreshold.@Tooltip", "The minimum incoming radiation (RAD/s) required for the visual interference effect to appear.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxIntensityRad.@Tooltip", "The level of incoming radiation (RAD/s) at which the pixel effect reaches its maximum strength (maximum number of pixels).");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectMaxDots.@Tooltip", "The maximum number of pixels that can be on the screen at once when the effect is at its peak intensity. Affects performance on weak systems.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectGreenChance.@Tooltip", "The probability (from 0.0 to 1.0) that a newly appeared pixel will be green instead of white. E.g., 0.1 = 10% chance.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMinLifetime.@Tooltip", "The minimum time (in ticks) a single pixel will stay on the screen. 20 ticks = 1 second.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxLifetime.@Tooltip", "The maximum time (in ticks) a single pixel will stay on the screen. A random value between min and max lifetime is chosen for each pixel.");
                 
                 add("text.autoconfig.hbm_m.option.maxRad.@Tooltip", "Maximum chunk radiation");
                 add("text.autoconfig.hbm_m.option.fogRad.@Tooltip", "Chunk radiation for fog to appear (WIP)");

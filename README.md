@@ -257,7 +257,7 @@ Fork the repository and propose improvements.
 
 **The Bobcat** — author of the original HBM's Nuclear Tech Mod
 
-**Raptor324, Hyperio \& Razchexlitiel** — modernization and rework
+**Raptor324** — modernization and rework
 
 The Forge team and Mojang for development tools
 

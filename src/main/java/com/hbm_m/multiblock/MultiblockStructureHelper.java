@@ -93,7 +93,7 @@ public class MultiblockStructureHelper {
         if (!obstructions.isEmpty()) {
             if (player instanceof ServerPlayer serverPlayer) {
                 // Проверяем, включена ли опция в конфиге, перед отправкой пакета
-                if (ModClothConfig.get().enableObstructionHighlight) {
+                if (ModClothConfig.get().obstructionHighlight.enableObstructionHighlight) {
                     ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new HighlightBlocksPacket(obstructions));
                 }
             }

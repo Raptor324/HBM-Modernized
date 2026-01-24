@@ -21,7 +21,9 @@ import net.minecraft.client.player.LocalPlayer;
 // Импорты для текстур
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 // Основные импорты Forge
 import net.minecraftforge.api.distmarker.Dist;
@@ -171,6 +173,7 @@ public class ModEventHandlerClient {
         event.registerAboveAll("nuclear_flash", NUCLEAR_FLASH_OVERLAY);
 
         MainRegistry.LOGGER.info("Registered HBM nuclear flash overlay.");
+        // Примечание: Thermal overlay регистрируется в ClientSetup.java
     }
 
     /**
@@ -202,6 +205,35 @@ public class ModEventHandlerClient {
 
         if (event.phase == TickEvent.Phase.END) {
             // Обработка ввода делается в ModConfigKeybindHandler.java
+
+            // Автоматическая деактивация VATS и тепловизора, если броня их не поддерживает
+            if (mc.player != null) {
+                if (vatsActive && ModPowerArmorItem.hasFSBArmor(mc.player)) {
+                    var chestplate = mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
+                    if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
+                        if (!armorItem.getSpecs().hasVats) {
+                            vatsActive = false;
+                        }
+                    } else {
+                        vatsActive = false;
+                    }
+                } else if (vatsActive && !ModPowerArmorItem.hasFSBArmor(mc.player)) {
+                    vatsActive = false;
+                }
+
+                if (thermalActive && ModPowerArmorItem.hasFSBArmor(mc.player)) {
+                    var chestplate = mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
+                    if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
+                        if (!armorItem.getSpecs().hasThermal) {
+                            thermalActive = false;
+                        }
+                    } else {
+                        thermalActive = false;
+                    }
+                } else if (thermalActive && !ModPowerArmorItem.hasFSBArmor(mc.player)) {
+                    thermalActive = false;
+                }
+            }
 
             // TODO: Реализовать обработку высоты шага для FSB брони
             // TODO: Реализовать отдачу оружия
@@ -360,7 +392,7 @@ public class ModEventHandlerClient {
         }
     
         // 29.8% normal mod splashes
-        int rand = (int) (Math.random() * 21); // 0..20 как у тебя
+        int rand = (int) (Math.random() * 22);
         String text = switch (rand) {
             case 0 -> "Floppenheimer!";
             case 1 -> "i should dip my balls in sulfuric acid";
@@ -383,6 +415,7 @@ public class ModEventHandlerClient {
             case 18 -> "1984 is here!";
             case 19 -> "Diddy Edition!";
             case 20 -> "CREATE HARAM";
+            case 21 -> "''playing HBM'' - means fondling my balls. (c) Bob";
             default -> "Nuclear winter is coming!";
         };
         return net.minecraft.network.chat.Component.literal(text);
@@ -560,11 +593,48 @@ public class ModEventHandlerClient {
      * Тепловизор - методы управления
      */
     public static void activateThermal() {
-        thermalActive = true;
+        if (!thermalActive) {
+            thermalActive = true;
+            if (MainRegistry.LOGGER.isDebugEnabled()) {
+                MainRegistry.LOGGER.debug("[ThermalVision] Activated thermal vision");
+            }
+            // Play NVG activation sound (quieter with random pitch)
+            Minecraft mc = Minecraft.getInstance();
+            LocalPlayer player = mc.player;
+            var level = mc.level;
+            if (player != null && level != null) {
+                var soundEvent = com.hbm_m.sound.ModSounds.NVG_ON.get();
+                if (soundEvent != null) {
+                    // Quieter volume (0.3F instead of 0.5F) and random pitch variation (0.9F to 1.1F)
+                    RandomSource random = level.getRandom();
+                    float pitch = 0.9F + random.nextFloat() * 0.2F; // Random pitch between 0.9 and 1.1
+                    level.playSound(player, player.getX(), player.getY(), player.getZ(), 
+                        soundEvent, SoundSource.PLAYERS, 0.3F, pitch);
+                }
+            }
+        }
     }
 
     public static void deactivateThermal() {
-        thermalActive = false;
+        if (thermalActive) {
+            thermalActive = false;
+            if (MainRegistry.LOGGER.isDebugEnabled()) {
+                MainRegistry.LOGGER.debug("[ThermalVision] Deactivated thermal vision");
+            }
+            // Play NVG deactivation sound (louder)
+            Minecraft mc = Minecraft.getInstance();
+            LocalPlayer player = mc.player;
+            var level = mc.level;
+            if (player != null && level != null) {
+                var soundEvent = com.hbm_m.sound.ModSounds.NVG_OFF.get();
+                if (soundEvent != null) {
+                    // Louder volume (0.7F instead of 0.5F)
+                    level.playSound(player, player.getX(), player.getY(), player.getZ(), 
+                        soundEvent, SoundSource.PLAYERS, 0.7F, 1.0F);
+                }
+            }
+        }
+        ThermalVisionRenderer.clearSpectralHighlights();
     }
 
     public static boolean isThermalActive() {
@@ -582,22 +652,29 @@ public class ModEventHandlerClient {
             return;
         }
 
-        // TODO: Проверить наличие силовой брони с тепловизором через ModPowerArmorItem
+        // Проверяем наличие силовой брони с тепловизором
+        if (!ModPowerArmorItem.hasFSBArmor(player)) {
+            // Если броня снята, деактивируем тепловизор
+            thermalActive = false;
+            return;
+        }
 
-        // Рендерим полупрозрачный зеленый оверлей
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        guiGraphics.fill(0, 0, screenWidth, screenHeight, 0x4000FF00);
+        var chestplate = player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
+        if (!(chestplate.getItem() instanceof ModPowerArmorItem armorItem)) {
+            thermalActive = false;
+            return;
+        }
 
-        // Добавляем текст тепловизора
-        String thermalText = "THERMAL VISION";
-        int textX = 10;
-        int textY = 10;
+        var specs = armorItem.getSpecs();
+        // Проверяем, поддерживает ли броня тепловизор
+        if (!specs.hasThermal) {
+            // Если броня не поддерживает тепловизор, деактивируем его
+            thermalActive = false;
+            return;
+        }
 
-        guiGraphics.drawString(mc.font, thermalText, textX, textY, 0x00FF00);
-        RenderSystem.disableBlend();
-
-        // TODO: Реализовать настоящую инверсию цветов через шейдеры
+        // Используем новый рендерер тепловизора
+        ThermalVisionRenderer.renderThermalOverlay(gui, guiGraphics, partialTick, screenWidth, screenHeight);
     }
 
     // TODO: Добавить методы для HUD оверлеев

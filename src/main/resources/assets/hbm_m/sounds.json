@@ -460,5 +460,19 @@
   "mace.smash_ground_heavy": {
     "category": "player",
     "sounds": [ "hbm_m:footsteps/smash_ground_heavy" ]
+  },
+  "tool.nvg_on": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.thermal_vision_on",
+    "sounds": [
+      "hbm_m:tool/nvg_sfx"
+    ]
+  },
+  "tool.nvg_off": {
+    "category": "player",
+    "subtitle": "sounds.hbm_m.thermal_vision_off",
+    "sounds": [
+      "hbm_m:tool/off"
+    ]
   }
 }

@@ -119,17 +119,6 @@ public final class PowerArmorHandlers {
         }
     }
 
-    /**
-     * Расходует энергию всех надетых кусков силовой брони при получении урона
-     */
-    // private static void spendEnergyOnDamage(Player player, float originalDamage) {
-    //     for (ItemStack stack : player.getInventory().armor) {
-    //         if (!stack.isEmpty() && stack.getItem() instanceof ModArmorFSBPowered item) {
-    //             item.setDamage(stack, 1);
-    //         }
-    //     }
-    // }
-
     // ========== MOVEMENT HANDLING ==========
     
     @SubscribeEvent

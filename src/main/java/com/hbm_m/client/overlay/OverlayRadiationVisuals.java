@@ -40,18 +40,18 @@ public class OverlayRadiationVisuals {
         
         activePixels.removeIf(pixel -> !pixel.tick());
 
-        if (!config.enableRadiationPixelEffect || player == null || player.isCreative() || player.isSpectator()) {
+        if (!config.radiationPixelEffect.enableRadiationPixelEffect || player == null || player.isCreative() || player.isSpectator()) {
             // ... (логика отключения остается прежней)
         } else {
             float incomingRadiation = OverlayGeiger.clientTotalEnvironmentRadiation;
             
             // --- ИСПРАВЛЕНИЕ №1: Используем порог из конфига ---
             // Теперь эта настройка действительно работает.
-            float threshold = config.radiationPixelEffectThreshold; 
+            float threshold = config.radiationPixelEffect.radiationPixelEffectThreshold; 
 
             if (incomingRadiation >= threshold) {
-                int maxDots = config.radiationPixelEffectMaxDots;
-                float maxIntensityRad = config.radiationPixelMaxIntensityRad;
+                int maxDots = config.radiationPixelEffect.radiationPixelEffectMaxDots;
+                float maxIntensityRad = config.radiationPixelEffect.radiationPixelMaxIntensityRad;
 
                 float intensity = Mth.clamp(Mth.inverseLerp(incomingRadiation, threshold, maxIntensityRad), 0.0f, 1.0f);
 
@@ -90,13 +90,13 @@ public class OverlayRadiationVisuals {
         int y = random.nextInt(height);
 
         int color;
-        if (random.nextFloat() < config.radiationPixelEffectGreenChance) {
+        if (random.nextFloat() < config.radiationPixelEffect.radiationPixelEffectGreenChance) {
             color = new Color(100, 255, 100, 180).getRGB();
         } else {
             color = new Color(255, 255, 255, 180).getRGB();
         }
         
-        int lifetime = Mth.nextInt(random, config.radiationPixelMinLifetime, config.radiationPixelMaxLifetime);
+        int lifetime = Mth.nextInt(random, config.radiationPixelEffect.radiationPixelMinLifetime, config.radiationPixelEffect.radiationPixelMaxLifetime);
 
         activePixels.add(new RadiationPixel(x, y, color, lifetime));
     }

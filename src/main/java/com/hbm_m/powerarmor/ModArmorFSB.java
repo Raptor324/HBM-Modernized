@@ -232,8 +232,9 @@ public class ModArmorFSB extends ArmorItem {
         try {
             // Simplified stepping logic for 1.20.1
             if (player.level().isClientSide && player.onGround()) {
+                // Quieter step sound (0.6F instead of 1.0F)
                 player.level().playLocalSound(player.getX(), player.getY(), player.getZ(),
-                    ModSounds.STEP_METAL.get(), SoundSource.PLAYERS, 1.0F, 1.0F, false);
+                    ModSounds.STEP_METAL.get(), SoundSource.PLAYERS, 0.6F, 1.0F, false);
             }
         } catch (Exception e) {
             // Handle reflection errors gracefully

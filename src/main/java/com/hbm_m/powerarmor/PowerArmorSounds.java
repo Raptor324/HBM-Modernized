@@ -43,15 +43,6 @@ public final class PowerArmorSounds {
                 playFallSound(player, specs.fallSound);
             }
         }
-
-        // // 2. Walking Sound Logic
-        // if (player.isShiftKeyDown()) return;
-
-        // boolean isMoving = Math.abs(player.getDeltaMovement().x) > 0.01 || Math.abs(player.getDeltaMovement().z) > 0.01;
-        
-        // if (specs.stepSound != null && isGround && isMoving) {
-        //     playStepSound(player, specs.stepSound);
-        // }
     }
 
     @SubscribeEvent
