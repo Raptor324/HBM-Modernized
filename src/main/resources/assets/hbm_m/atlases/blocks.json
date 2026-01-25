@@ -1,14 +1,9 @@
 {
-    "sources": [
-      {
-        "type": "directory",
-        "source": "block/machine",
-        "prefix": "block/machine/"
-      },
-      {
-        "type": "single",
-        "resource": "hbm_m:block/machine/assembly_machine"
-      }
-    ]
-  }
-  
+  "sources": [
+    { "type": "single", "resource": "hbm_m:armor/t51_helmet" },
+    { "type": "single", "resource": "hbm_m:armor/t51_chest" },
+    { "type": "single", "resource": "hbm_m:armor/t51_arm" },
+    { "type": "single", "resource": "hbm_m:armor/t51_leg" }
+  ]
+}
+

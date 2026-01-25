@@ -1,0 +1,26 @@
+newmtl Helmet
+map_Kd hbm_m:block/armor/ajr_helmet
+
+newmtl Chest
+map_Kd hbm_m:block/armor/ajr_chest
+
+newmtl LeftArm
+map_Kd hbm_m:block/armor/ajr_arm
+
+newmtl RightArm
+map_Kd hbm_m:block/armor/ajr_arm
+
+newmtl LeftLeg
+map_Kd hbm_m:block/armor/ajr_leg
+
+newmtl RightLeg
+map_Kd hbm_m:block/armor/ajr_leg
+
+newmtl LeftBoot
+map_Kd hbm_m:block/armor/ajr_leg
+
+newmtl RightBoot
+map_Kd hbm_m:block/armor/ajr_leg
+
+newmtl RocketBox
+map_Kd hbm_m:block/armor/ajr_chest

@@ -4,13 +4,19 @@ import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.custom.machines.MachineAssemblerBlock;
 import com.hbm_m.capability.ModCapabilities;
+<<<<<<< HEAD:src/main/java/com/hbm_m/block/entity/machine/MachineAssemblerBlockEntity.java
+import com.hbm_m.item.ItemAssemblyTemplate;
+import com.hbm_m.item.ItemCreativeBattery;
+=======
 import com.hbm_m.client.ClientSoundManager;
 import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
+>>>>>>> origin/main_temp:src/main/java/com/hbm_m/block/entity/custom/machines/MachineAssemblerBlockEntity.java
 import com.hbm_m.menu.MachineAssemblerMenu;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.sound.ClientSoundManager;
 import com.hbm_m.util.LongDataPacker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -95,7 +101,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
     };
 
-    // НОВЫЙ КОНСТРУКТОР
     public MachineAssemblerBlockEntity(BlockPos pos, BlockState state) {
         // Вызываем конструктор родителя с параметрами: (..., inventorySize, capacity, receiveRate)
         super(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), pos, state,

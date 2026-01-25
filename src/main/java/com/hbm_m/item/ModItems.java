@@ -37,12 +37,21 @@ import java.util.List;
 
 import com.hbm_m.block.custom.machines.armormod.item.ItemModHealth;
 import com.hbm_m.block.custom.machines.armormod.item.ItemModRadProtection;
+import com.hbm_m.armormod.item.ItemModServos;
+import com.hbm_m.armormod.item.ItemModCladding;
+import com.hbm_m.armormod.item.ItemModKevlar;
+import com.hbm_m.armormod.item.ItemModExtra;
+import com.hbm_m.armormod.item.ItemModBattery;
+import com.hbm_m.armormod.item.ItemModBatteryMk2;
+import com.hbm_m.armormod.item.ItemModBatteryMk3;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeIfType;
 import com.hbm_m.entity.grenades.GrenadeType;
 import com.hbm_m.multiblock.MultiblockBlockItem;
+import com.hbm_m.powerarmor.AJRArmor;
+import com.hbm_m.powerarmor.T51Armor;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.world.effect.MobEffectInstance;
@@ -155,11 +164,18 @@ public class ModItems {
     public static final int SLOT_CHEST = 1;
     public static final int SLOT_LEGS = 2;
     public static final int SLOT_BOOTS = 3;
-    public static final int SLOT_BATTERY = 4;
-    public static final int SLOT_SPECIAL = 5;
+    public static final int SLOT_BATTERY = 8;  // Изменено согласно ArmorModificationHelper.battery
+    public static final int SLOT_SPECIAL = 7;  // Изменено согласно ArmorModificationHelper.extra
     public static final int SLOT_INSERT = 6;
-    public static final int SLOT_CLADDING = 7;
-    public static final int SLOT_SERVOS = 8;
+    public static final int SLOT_CLADDING = 5; // Изменено согласно ArmorModificationHelper.cladding
+    public static final int SLOT_SERVOS = 4;   // Изменено согласно ArmorModificationHelper.servos
+
+    // Дополнительные константы для совместимости
+    public static final int SLOT_HELMET_ONLY = 0;
+    public static final int SLOT_PLATE_ONLY = 1;
+    public static final int SLOT_LEGS_ONLY = 2;
+    public static final int SLOT_BOOTS_ONLY = 3;
+    public static final int SLOT_KEVLAR = 6;
 
     public static final int BATTERY_CAPACITY = 1_000_000;
 
@@ -341,7 +357,7 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterials.ALLOY, ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistryObject<Item> TITANIUM_HELMET = ITEMS.register("titanium_helmet",
-            () -> new ModArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistryObject<Item> TITANIUM_CHESTPLATE = ITEMS.register("titanium_chestplate",
             () -> new ArmorItem(ModArmorMaterials.TITANIUM, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistryObject<Item> TITANIUM_LEGGINGS = ITEMS.register("titanium_leggings",
@@ -359,7 +375,7 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterials.STEEL, ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistryObject<Item> COBALT_HELMET = ITEMS.register("cobalt_helmet",
-            () -> new ModArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistryObject<Item> COBALT_CHESTPLATE = ITEMS.register("cobalt_chestplate",
             () -> new ArmorItem(ModArmorMaterials.COBALT, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistryObject<Item> COBALT_LEGGINGS = ITEMS.register("cobalt_leggings",
@@ -377,16 +393,16 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistryObject<Item> AJR_HELMET = ITEMS.register("ajr_helmet",
-            () -> new ModArmorItem(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistryObject<Item> AJR_CHESTPLATE = ITEMS.register("ajr_chestplate",
-            () -> new ArmorItem(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistryObject<Item> AJR_LEGGINGS = ITEMS.register("ajr_leggings",
-            () -> new ArmorItem(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties()));
     public static final RegistryObject<Item> AJR_BOOTS = ITEMS.register("ajr_boots",
-            () -> new ArmorItem(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties()));
+            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistryObject<Item> ASBESTOS_HELMET = ITEMS.register("asbestos_helmet",
-            () -> new ModArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistryObject<Item> ASBESTOS_CHESTPLATE = ITEMS.register("asbestos_chestplate",
             () -> new ArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistryObject<Item> ASBESTOS_LEGGINGS = ITEMS.register("asbestos_leggings",
@@ -404,7 +420,7 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.BOOTS, new Item.Properties()));
 
     public static final RegistryObject<Item> LIQUIDATOR_HELMET = ITEMS.register("liquidator_helmet",
-            () -> new ModArmorItem(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.HELMET, new Item.Properties()));
+            () -> new ArmorItem(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistryObject<Item> LIQUIDATOR_CHESTPLATE = ITEMS.register("liquidator_chestplate",
             () -> new ArmorItem(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
     public static final RegistryObject<Item> LIQUIDATOR_LEGGINGS = ITEMS.register("liquidator_leggings",
@@ -429,6 +445,23 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterials.STARMETAL, ArmorItem.Type.LEGGINGS, new Item.Properties()));
     public static final RegistryObject<Item> STARMETAL_BOOTS = ITEMS.register("starmetal_boots",
             () -> new ArmorItem(ModArmorMaterials.STARMETAL, ArmorItem.Type.BOOTS, new Item.Properties()));
+
+
+    //-----------------------POWER ARMOR ----------------------------------
+
+    public static final RegistryObject<Item> T51_HELMET = ITEMS.register("t51_helmet",
+            () -> new T51Armor(ModArmorMaterials.TITANIUM, ArmorItem.Type.HELMET, new Item.Properties()));
+
+    public static final RegistryObject<Item> T51_CHESTPLATE = ITEMS.register("t51_chestplate",
+            () -> new T51Armor(ModArmorMaterials.TITANIUM, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+
+    public static final RegistryObject<Item> T51_LEGGINGS = ITEMS.register("t51_leggings",
+            () -> new T51Armor(ModArmorMaterials.TITANIUM, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+
+    public static final RegistryObject<Item> T51_BOOTS = ITEMS.register("t51_boots",
+            () -> new T51Armor(ModArmorMaterials.TITANIUM, ArmorItem.Type.BOOTS, new Item.Properties()));
+
+
 
     // Инструменты
     public static final RegistryObject<Item> GEIGER_COUNTER = ITEMS.register("geiger_counter",
@@ -519,6 +552,36 @@ public class ModItems {
                     SLOT_CLADDING,
                     0.025f
             )
+    );
+
+    // Новые модификации брони
+    public static final RegistryObject<Item> ARMOR_MOD_SERVOS = ITEMS.register("armor_mod_servos",
+            () -> new ItemModServos(new Item.Properties())
+    );
+
+    public static final RegistryObject<Item> ARMOR_MOD_CLADDING = ITEMS.register("armor_mod_cladding",
+            () -> new ItemModCladding(new Item.Properties())
+    );
+
+    public static final RegistryObject<Item> ARMOR_MOD_KEVLAR = ITEMS.register("armor_mod_kevlar",
+            () -> new ItemModKevlar(new Item.Properties())
+    );
+
+    public static final RegistryObject<Item> ARMOR_MOD_EXTRA = ITEMS.register("armor_mod_extra",
+            () -> new ItemModExtra(new Item.Properties())
+    );
+
+    // Модификаторы батареи (увеличивают заряд брони)
+    public static final RegistryObject<Item> ARMOR_BATTERY = ITEMS.register("armor_battery",
+            () -> new ItemModBattery(new Item.Properties(), 1.25D)
+    );
+
+    public static final RegistryObject<Item> ARMOR_BATTERY_MK2 = ITEMS.register("armor_battery_mk2",
+            () -> new ItemModBatteryMk2(new Item.Properties())
+    );
+
+    public static final RegistryObject<Item> ARMOR_BATTERY_MK3 = ITEMS.register("armor_battery_mk3",
+            () -> new ItemModBatteryMk3(new Item.Properties())
     );
     public static final RegistryObject<Item> CREATIVE_BATTERY = ITEMS.register("battery_creative",
             () -> new ItemCreativeBattery(

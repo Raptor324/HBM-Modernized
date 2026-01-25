@@ -1,24 +1,31 @@
 package com.hbm_m.multiblock;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+
 // Утилитарный класс для управления мультиблочными структурами.
 // Позволяет определять структуру, проверять возможность постройки, строить и разрушать структуру,
 // а также генерировать VoxelShape для всей структуры. Ядро всей мультиблочной логики.
 import com.hbm_m.api.energy.WireBlock;
 import com.hbm_m.block.custom.machines.UniversalMachinePartBlock;
-import com.hbm_m.block.custom.decorations.DoorBlock;
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.item.tags_and_tiers.ModTags.Blocks;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.HighlightBlocksPacket;
 import com.hbm_m.network.ModPacketHandler;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -26,13 +33,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.PacketDistributor;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Supplier;
 
 public class MultiblockStructureHelper {
 
@@ -93,7 +93,7 @@ public class MultiblockStructureHelper {
         if (!obstructions.isEmpty()) {
             if (player instanceof ServerPlayer serverPlayer) {
                 // Проверяем, включена ли опция в конфиге, перед отправкой пакета
-                if (ModClothConfig.get().enableObstructionHighlight) {
+                if (ModClothConfig.get().obstructionHighlight.enableObstructionHighlight) {
                     ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new HighlightBlocksPacket(obstructions));
                 }
             }
@@ -385,12 +385,47 @@ public class MultiblockStructureHelper {
     }
 
     /**
-     * Получает базовые AABB частей двери из реестра (автоматически извлечены из OBJ).
-     * @param doorId ID двери (например, "qe_sliding_door")
-     * @return Карта partName -> AABB или пустая если не зарегистрирована
+     * Валидация параметров в getDoorPartAABBs()
+     * Получает базовые AABB частей двери из реестра с проверкой на null и Infinity
      */
     public static Map<String, AABB> getDoorPartAABBs(String doorId) {
-        return DoorPartAABBRegistry.getAll(doorId);
+        Map<String, AABB> result = DoorPartAABBRegistry.getAll(doorId);
+
+        // Проверка на null
+        if (result == null) {
+            MainRegistry.LOGGER.error(
+                    "DoorPartAABBRegistry returned null for doorId: '{}'",
+                    doorId
+            );
+            return Collections.emptyMap();
+        }
+
+        // Валидация каждого AABB в реестре
+        Map<String, AABB> validatedResult = new HashMap<>(result);
+
+        for (Map.Entry<String, AABB> entry : validatedResult.entrySet()) {
+            AABB aabb = entry.getValue();
+
+            if (aabb == null) {
+                MainRegistry.LOGGER.warn(
+                        "DoorPartAABBRegistry contains null AABB for part '{}' in door '{}'",
+                        entry.getKey(), doorId
+                );
+                validatedResult.put(entry.getKey(), new AABB(0, 0, 0, 1, 1, 1));
+                continue;
+            }
+
+            // Проверка на Infinity и NaN
+            if (!isValidAABB(aabb, "getDoorPartAABBs")) {
+                MainRegistry.LOGGER.error(
+                        "DoorPartAABBRegistry contains invalid AABB for part '{}' in door '{}': {}",
+                        entry.getKey(), doorId, formatAABB(aabb)
+                );
+                validatedResult.put(entry.getKey(), new AABB(0, 0, 0, 1, 1, 1));
+            }
+        }
+
+        return validatedResult;
     }
 
     /**
@@ -400,69 +435,171 @@ public class MultiblockStructureHelper {
      * @param facing Направление двери
      * @return Объединённая VoxelShape или пустая если нет данных
      */
-    public static VoxelShape generateShapeFromDoorParts(String doorId, 
-                                                        java.util.List<String> visibleParts,
-                                                        Direction facing) {
+    public static VoxelShape generateShapeFromDoorParts(String doorId,
+                                                         java.util.List<String> visibleParts,
+                                                         Direction facing) {
         Map<String, AABB> allAABBs = getDoorPartAABBs(doorId);
         if (allAABBs.isEmpty()) return Shapes.empty();
 
-        // Получаем размеры мультиблока
-        int[] dims = DoorBlock.getDoorDimensions(doorId);
-        double widthBlocks = dims[3] + 1.0;   // X
-        double heightBlocks = dims[4] + 1.0;  // Y
-        double depthBlocks = dims[5] + 1.0;   // Z
+        // Получаем размеры с валидацией
+        int[] dims = com.hbm_m.block.DoorBlock.getDoorDimensions(doorId);
+
+        // Проверка на null и длину массива
+        if (dims == null || dims.length < 6) {
+            MainRegistry.LOGGER.error(
+                    "Invalid door dimensions for doorId '{}': dims is null or too short (length={})",
+                    doorId, dims != null ? dims.length : -1
+            );
+            return Shapes.empty();
+        }
+
+        // Извлечение параметров с проверкой на NaN/Infinity
+        double widthBlocks = dims[3] + 1.0;
+        double heightBlocks = dims[4] + 1.0;
+        double depthBlocks = dims[5] + 1.0;
         double offsetX = dims[0];
         double offsetY = dims[1];
         double offsetZ = dims[2];
 
+        // Полная валидация всех параметров
+        if (!isValidDoorDimension(widthBlocks, "widthBlocks", doorId) ||
+            !isValidDoorDimension(heightBlocks, "heightBlocks", doorId) ||
+            !isValidDoorDimension(depthBlocks, "depthBlocks", doorId) ||
+            !isValidDoorDimension(offsetX, "offsetX", doorId) ||
+            !isValidDoorDimension(offsetY, "offsetY", doorId) ||
+            !isValidDoorDimension(offsetZ, "offsetZ", doorId)) {
+            return Shapes.empty();
+        }
+
+        // Гарантировать минимальные размеры (избежать нулевых значений)
+        widthBlocks = Math.max(widthBlocks, 0.01);
+        heightBlocks = Math.max(heightBlocks, 0.01);
+        depthBlocks = Math.max(depthBlocks, 0.01);
+
         VoxelShape finalShape = Shapes.empty();
+
         for (String partName : visibleParts) {
             AABB raw = allAABBs.get(partName);
             if (raw == null) continue;
 
-            // ИСПРАВЛЕНИЕ: OBJ модели дверей ориентированы вертикально (Y - высота створки)
-            // Но мультиблок large_vehicle_door горизонтальный (X - ширина створки)
-            // Поэтому ПОВОРАЧИВАЕМ модель на 90°: Y_obj → X_multiblock, X_obj → Y_multiblock
-            // Для вертикальных дверей (qe_sliding_door и т.д.) поворот не нужен
-            
+            // Проверка на Infinity перед масштабированием
+            if (!isValidAABB(raw, "generateShapeFromDoorParts")) {
+                MainRegistry.LOGGER.warn(
+                        "Skipping invalid AABB for part '{}' in door '{}'",
+                        partName, doorId
+                );
+                continue;
+            }
+
             boolean needsRotation = needsModelRotation(doorId);
-            
             AABB scaled;
+
             if (needsRotation) {
-                // Поворот: Y модели → X мультиблока, X модели → Y мультиблока
                 scaled = new AABB(
-                    raw.minY * widthBlocks + offsetX,    // Y_obj -> X_world
-                    raw.minX * heightBlocks + offsetY,   // X_obj -> Y_world
-                    raw.minZ * depthBlocks + offsetZ,
-                    raw.maxY * widthBlocks + offsetX,
-                    raw.maxX * heightBlocks + offsetY,
-                    raw.maxZ * depthBlocks + offsetZ
+                        raw.minY * widthBlocks + offsetX,
+                        raw.minX * heightBlocks + offsetY,
+                        raw.minZ * depthBlocks + offsetZ,
+                        raw.maxY * widthBlocks + offsetX,
+                        raw.maxX * heightBlocks + offsetY,
+                        raw.maxZ * depthBlocks + offsetZ
                 );
             } else {
-                // Обычное масштабирование без поворота
                 scaled = new AABB(
-                    raw.minX * widthBlocks + offsetX,
-                    raw.minY * heightBlocks + offsetY,
-                    raw.minZ * depthBlocks + offsetZ,
-                    raw.maxX * widthBlocks + offsetX,
-                    raw.maxY * heightBlocks + offsetY,
-                    raw.maxZ * depthBlocks + offsetZ
+                        raw.minX * widthBlocks + offsetX,
+                        raw.minY * heightBlocks + offsetY,
+                        raw.minZ * depthBlocks + offsetZ,
+                        raw.maxX * widthBlocks + offsetX,
+                        raw.maxY * heightBlocks + offsetY,
+                        raw.maxZ * depthBlocks + offsetZ
                 );
             }
 
-            // Поворачиваем по facing
+            // Проверка результата масштабирования
+            if (!isValidAABB(scaled, "generateShapeFromDoorParts (after scaling)")) {
+                MainRegistry.LOGGER.error(
+                        "Scaled AABB is invalid for part '{}' in door '{}': {}",
+                        partName, doorId, formatAABB(scaled)
+                );
+                continue;
+            }
+
             AABB rotated = rotateAABBByFacing(scaled, facing);
 
-            // Конвертируем в VoxelShape (координаты в пикселях 0..16)
             VoxelShape partShape = Block.box(
-                rotated.minX * 16.0, rotated.minY * 16.0, rotated.minZ * 16.0,
-                rotated.maxX * 16.0, rotated.maxY * 16.0, rotated.maxZ * 16.0
+                    rotated.minX * 16.0, rotated.minY * 16.0, rotated.minZ * 16.0,
+                    rotated.maxX * 16.0, rotated.maxY * 16.0, rotated.maxZ * 16.0
             );
 
             finalShape = Shapes.or(finalShape, partShape);
         }
 
         return finalShape.optimize();
+    }
+
+    // Вспомогательный метод #1: Проверка размеров на корректность
+    private static boolean isValidDoorDimension(double value, String name, String doorId) {
+        if (Double.isNaN(value)) {
+            MainRegistry.LOGGER.error(
+                    "Door dimension '{}' is NaN for doorId '{}'",
+                    name, doorId
+            );
+            return false;
+        }
+
+        if (Double.isInfinite(value)) {
+            MainRegistry.LOGGER.error(
+                    "Door dimension '{}' is Infinity for doorId '{}': value={}",
+                    name, doorId, value
+            );
+            return false;
+        }
+
+        return true;
+    }
+
+    // Вспомогательный метод #2: Проверка AABB на валидность
+    private static boolean isValidAABB(AABB aabb, String caller) {
+        if (aabb == null) {
+            MainRegistry.LOGGER.warn("{}: AABB is null", caller);
+            return false;
+        }
+
+        double[] coords = {
+                aabb.minX, aabb.minY, aabb.minZ,
+                aabb.maxX, aabb.maxY, aabb.maxZ
+        };
+
+        for (int i = 0; i < coords.length; i++) {
+            if (Double.isNaN(coords[i])) {
+                MainRegistry.LOGGER.error(
+                        "{}: AABB coordinate at index {} is NaN",
+                        caller, i
+                );
+                return false;
+            }
+
+            if (Double.isInfinite(coords[i])) {
+                MainRegistry.LOGGER.error(
+                        "{}: AABB coordinate at index {} is Infinity: {}",
+                        caller, i, coords[i]
+                );
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+
+    //  Вспомогательный метод #3: Форматирование AABB для логирования
+
+    private static String formatAABB(AABB aabb) {
+        if (aabb == null) return "null";
+        return String.format(
+                "AABB[%.3f, %.3f, %.3f - %.3f, %.3f, %.3f]",
+                aabb.minX, aabb.minY, aabb.minZ,
+                aabb.maxX, aabb.maxY, aabb.maxZ
+        );
     }
 
     /**
@@ -482,15 +619,32 @@ public class MultiblockStructureHelper {
     }
 
     /**
-     * Поворачивает AABB вокруг оси Y в зависимости от facing двери.
+     * Валидация в rotateAABBByFacing()
+     * Поворачивает AABB с проверкой на null и Infinity координаты
      */
     public static AABB rotateAABBByFacing(AABB aabb, Direction facing) {
-        // Используем тот же алгоритм поворота, что и у rotate(BlockPos)
+        // Валидация входного AABB
+        if (aabb == null) {
+            MainRegistry.LOGGER.warn(
+                    "Attempting to rotate null AABB in rotateAABBByFacing, returning default block bounds"
+            );
+            return new AABB(0, 0, 0, 1, 1, 1);
+        }
+
+        // Проверка на Infinity и NaN перед инверсией
+        if (!isValidAABB(aabb, "rotateAABBByFacing")) {
+            MainRegistry.LOGGER.warn(
+                    "Cannot rotate invalid AABB in rotateAABBByFacing: {}, returning default block bounds",
+                    formatAABB(aabb)
+            );
+            return new AABB(0, 0, 0, 1, 1, 1);
+        }
+
         return switch (facing) {
             case SOUTH -> new AABB(-aabb.maxX, aabb.minY, -aabb.maxZ, -aabb.minX, aabb.maxY, -aabb.minZ);
-            case WEST  -> new AABB(-aabb.maxZ, aabb.minY,  aabb.minX, -aabb.minZ, aabb.maxY,  aabb.maxX);
-            case EAST  -> new AABB( aabb.minZ, aabb.minY, -aabb.maxX,  aabb.maxZ, aabb.maxY, -aabb.minX);
-            default    -> aabb; // NORTH — без изменений
+            case WEST -> new AABB(-aabb.maxZ, aabb.minY, aabb.minX, -aabb.minZ, aabb.maxY, aabb.maxX);
+            case EAST -> new AABB(aabb.minZ, aabb.minY, -aabb.maxX, aabb.maxZ, aabb.maxY, -aabb.minX);
+            default -> aabb;  // NORTH
         };
     }
 
@@ -511,7 +665,6 @@ public class MultiblockStructureHelper {
     public List<BlockPos> getAllPartPositions(BlockPos controllerPos, Direction facing) {
         List<BlockPos> positions = new ArrayList<>();
         
-        // Используем structureMap вместо partLocations
         for (BlockPos localOffset : structureMap.keySet()) {
             BlockPos worldPos = getRotatedPos(controllerPos, localOffset, facing);
             positions.add(worldPos);

@@ -20,6 +20,7 @@ out/
 .classpath
 .project
 .settings/
+util/
 bin/
 
 # Visual Studio Code
@@ -57,3 +58,5 @@ forge*changelog.txt
 .gitignore
 .cursor/
 desktop.ini
+HBM-Modernized.code-workspace
+java_pid*

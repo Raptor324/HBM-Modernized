@@ -1,11 +1,12 @@
 package com.hbm_m.world.biome;
 
 import com.hbm_m.main.MainRegistry;
-import net.minecraftforge.registries.DeferredRegister;
+
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.RegistryObject;
 
 /**
@@ -20,10 +21,10 @@ import net.minecraftforge.registries.RegistryObject;
 public class ModBiomes {
 
     static {
-        System.out.println("╔═══════════════════════════════════════════════════════════╗");
-        System.out.println("║ [HBM_MODS] ModBiomes initialization                       ║");
-        System.out.println("║ DeferredRegister for biomes created                       ║");
-        System.out.println("╚═══════════════════════════════════════════════════════════╝");
+        MainRegistry.LOGGER.debug("[HBM_MODS] ========================================");
+        MainRegistry.LOGGER.debug("[HBM_MODS] ModBiomes класс загружен!");
+        MainRegistry.LOGGER.debug("[HBM_MODS] DeferredRegister создан!");
+        MainRegistry.LOGGER.debug("[HBM_MODS] ========================================");
     }
 
     // ✅ ГЛАВНЫЙ DeferredRegister - используем правильный реестр

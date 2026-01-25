@@ -2,20 +2,20 @@ package com.hbm_m.config;
 // Конфигурация мода с использованием AutoConfig и Cloth Config.
 // Включает валидацию значений после загрузки для обеспечения корректных настроек
 
-import net.minecraft.util.Mth;
 import com.hbm_m.main.MainRegistry;
 
+import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry.BoundedDiscrete;
 import me.shedaniel.autoconfig.annotation.ConfigEntry.Category;
 import me.shedaniel.autoconfig.annotation.ConfigEntry.Gui;
-
-import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
+import net.minecraft.util.Mth;
 
 @Config(name = "hbm_m")
 public class ModClothConfig implements ConfigData {
+
     // Общие настройки 
     @Category("general")
     @Gui.Tooltip
@@ -100,47 +100,60 @@ public class ModClothConfig implements ConfigData {
     // Экранные наложения
 
     @Category("overlay")
-    @Gui.Tooltip
-    public boolean enableRadiationPixelEffect = true;
+    @Gui.CollapsibleObject(startExpanded = false)
+    public RadiationPixelEffectSettings radiationPixelEffect = new RadiationPixelEffectSettings();
+
+    public static class RadiationPixelEffectSettings {
+        @Gui.Tooltip
+        public boolean enableRadiationPixelEffect = true;
+
+        @Gui.Tooltip
+        public float radiationPixelEffectThreshold = 0.3f;
+
+        @Gui.Tooltip
+        public float radiationPixelMaxIntensityRad = 100.0f;
+
+        @Gui.Tooltip
+        @BoundedDiscrete(min = 1, max = 500)
+        public int radiationPixelEffectMaxDots = 250;
+
+        @Gui.Tooltip
+        public float radiationPixelEffectGreenChance = 0.5f;
+
+        @Gui.Tooltip
+        public int radiationPixelMinLifetime = 5;
+
+        @Gui.Tooltip
+        public int radiationPixelMaxLifetime = 20;
+    }
+
+    @Category("overlay")
+    @Gui.CollapsibleObject(startExpanded = false)
+    public obstructionHighlightSettings obstructionHighlight = new obstructionHighlightSettings();
+
+    public static class obstructionHighlightSettings {
+
+        @Gui.Tooltip
+        public boolean enableObstructionHighlight = true;
+
+        @Gui.Tooltip
+        @BoundedDiscrete(min = 0, max = 100)
+        public int obstructionHighlightAlpha = 20;
+
+        @Gui.Tooltip
+        @BoundedDiscrete(min = 1, max = 10)
+        public int obstructionHighlightDuration = 2;
+    }
 
     @Category("overlay")
     @Gui.Tooltip
-    public float radiationPixelEffectThreshold = 0.3f;
+    @BoundedDiscrete(min = 0, max = 500)
+    public int infoToastOffsetX = 15;
 
     @Category("overlay")
     @Gui.Tooltip
-    public float radiationPixelMaxIntensityRad = 100.0f;
-
-    @Category("overlay")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 1, max = 500)
-    public int radiationPixelEffectMaxDots = 250;
-
-    @Category("overlay")
-    @Gui.Tooltip
-    public float radiationPixelEffectGreenChance = 0.5f;
-
-    @Category("overlay")
-    @Gui.Tooltip
-    public int radiationPixelMinLifetime = 5;
-
-    @Category("overlay")
-    @Gui.Tooltip
-    public int radiationPixelMaxLifetime = 20;
-
-    @Category("overlay")
-    @Gui.Tooltip()
-    public boolean enableObstructionHighlight = true;
-
-    @Category("overlay")
-    @Gui.Tooltip()
-    @BoundedDiscrete(min = 0, max = 100)
-    public int obstructionHighlightAlpha = 20;
-
-    @Category("overlay")
-    @Gui.Tooltip
-    @BoundedDiscrete(min = 1, max = 10)
-    public int obstructionHighlightDuration = 2;
+    @BoundedDiscrete(min = 0, max = 500)
+    public int infoToastOffsetY = 15;
 
     // Чанк 
     @Category("chunk")
@@ -180,6 +193,22 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public boolean enableOcclusionCulling = true;
 
+    @Category("rendering")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 1, max = 32)
+    public int vatsRenderDistanceChunks = 7;
+
+    // Тепловизор
+    @Category("rendering")
+    @Gui.Tooltip
+    @Gui.EnumHandler(option = Gui.EnumHandler.EnumDisplayOption.BUTTON)
+    public ThermalRenderMode thermalRenderMode = ThermalRenderMode.FULL_SHADER;
+
+    public enum ThermalRenderMode {
+        FULL_SHADER,
+        SPECTRAL_FALLBACK
+    }
+
     // Отладка 
     @Category("debug")
     @Gui.Tooltip
@@ -200,7 +229,7 @@ public class ModClothConfig implements ConfigData {
 
     @Category("debug")
     @Gui.Tooltip
-    public boolean enableDebugLogging = true;
+    public boolean enableDebugLogging = false;
 
     @Override
     public void validatePostLoad() throws ValidationException {
@@ -230,9 +259,9 @@ public class ModClothConfig implements ConfigData {
             MainRegistry.LOGGER.warn("[HBM-M Config] Значение 'worldRadEffectsMaxScaling' было некорректным ({}). Оно было автоматически исправлено на {}.", originalScaling, this.worldRadEffectsMaxScaling);
         }
 
-        originalScaling = this.radiationPixelEffectGreenChance;
+        originalScaling = this.radiationPixelEffect.radiationPixelEffectGreenChance;
 
-        this.radiationPixelEffectGreenChance = Mth.clamp(originalScaling, 0.0F, 1.0F);
+        this.radiationPixelEffect.radiationPixelEffectGreenChance = Mth.clamp(originalScaling, 0.0F, 1.0F);
         // Здесь можно добавить валидацию для других полей, если потребуется
     }
 

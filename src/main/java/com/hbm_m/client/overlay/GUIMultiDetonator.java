@@ -114,7 +114,7 @@ public class GUIMultiDetonator extends Screen {
                     detonatorItem.setPointName(detonatorStack, finalI, name);
 
                     // ⭐ ГЛАВНОЕ: Отправляем пакет на сервер с ПОЛНЫМИ данными
-                    ModNetwork.CHANNEL.sendToServer(
+                    ModPacketHandler.INSTANCE.sendToServer(
                             new SyncPointPacket(finalI, name, finalX, finalY, finalZ, finalHasTarget)
                     );
                 }
@@ -156,7 +156,7 @@ public class GUIMultiDetonator extends Screen {
         detonatorItem.setActivePoint(detonatorStack, pointIndex);
 
         // ⭐ КРИТИЧНО: Отправляем пакет на сервер для синхронизации
-        ModNetwork.CHANNEL.sendToServer(new SetActivePointPacket(pointIndex));
+        ModPacketHandler.INSTANCE.sendToServer(new SetActivePointPacket(pointIndex));
 
         this.init();
     }
@@ -166,7 +166,7 @@ public class GUIMultiDetonator extends Screen {
         detonatorItem.clearPoint(detonatorStack, pointIndex);
 
         // ⭐ КРИТИЧНО: Отправляем пакет на сервер для синхронизации
-        ModNetwork.CHANNEL.sendToServer(new ClearPointPacket(pointIndex));
+        ModPacketHandler.INSTANCE.sendToServer(new ClearPointPacket(pointIndex));
 
         // Обновляем GUI без изменения текущего состояния
         this.init();
@@ -184,18 +184,8 @@ public class GUIMultiDetonator extends Screen {
         ItemStack stack = detonatorStack;
         if (stack.isEmpty() || !(stack.getItem() instanceof MultiDetonatorItem)) return;
 
-        // Проверяем что канал инициализирован
-        if (ModNetwork.CHANNEL == null) {
-            player.displayClientMessage(
-                    Component.literal("Сетевой канал не инициализирован!")
-                            .withStyle(ChatFormatting.RED),
-                    true
-            );
-            return;
-        }
-
         // Отправка пакета на сервер
-        ModNetwork.CHANNEL.sendToServer(new DetonateAllPacket());
+        ModPacketHandler.INSTANCE.sendToServer(new DetonateAllPacket());
         this.minecraft.setScreen(null); // закрыть GUI
     }
 

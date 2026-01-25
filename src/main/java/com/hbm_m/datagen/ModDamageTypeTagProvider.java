@@ -64,6 +64,10 @@ public class ModDamageTypeTagProvider extends DamageTypeTagsProvider {
                 ModDamageTypes.BLAST,
                 ModDamageTypes.BANG
         );
+
+        tag(DamageTypeTags.IS_FALL).add(
+                ModDamageTypes.HARDLANDING_SMASH
+        );
         
         // Тег: Урон, который является снарядом
         tag(DamageTypeTags.IS_PROJECTILE).add(

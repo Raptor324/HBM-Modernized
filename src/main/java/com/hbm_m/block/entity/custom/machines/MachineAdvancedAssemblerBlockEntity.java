@@ -3,15 +3,22 @@ package com.hbm_m.block.entity.custom.machines;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.block.entity.ModBlockEntities;
+<<<<<<< HEAD:src/main/java/com/hbm_m/block/entity/machine/MachineAdvancedAssemblerBlockEntity.java
+import com.hbm_m.block.machine.MachineAdvancedAssemblerBlock;
+import com.hbm_m.item.ItemBlueprintFolder;
+import com.hbm_m.item.ItemCreativeBattery;
+=======
 import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
 // import com.hbm_m.client.ClientSoundManager;
 import com.hbm_m.item.custom.industrial.ItemBlueprintFolder;
 import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
+>>>>>>> origin/main_temp:src/main/java/com/hbm_m/block/entity/custom/machines/MachineAdvancedAssemblerBlockEntity.java
 import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
 import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.sound.ClientSoundManager;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.util.LongDataPacker;

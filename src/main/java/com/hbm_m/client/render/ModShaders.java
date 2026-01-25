@@ -8,6 +8,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class ModShaders {
     private static ShaderInstance dynamicCutoutShader;
     private static ShaderInstance blockLitShader;
+    private static ShaderInstance thermalVisionShader;
 
     public static ShaderInstance getDynamicCutoutShader() {
         return dynamicCutoutShader;
@@ -24,5 +25,13 @@ public class ModShaders {
 
     public static void setBlockLitShader(ShaderInstance shader) {
         blockLitShader = shader;
+    }
+
+    public static ShaderInstance getThermalVisionShader() {
+        return thermalVisionShader;
+    }
+
+    public static void setThermalVisionShader(ShaderInstance shader) {
+        thermalVisionShader = shader;
     }
 }

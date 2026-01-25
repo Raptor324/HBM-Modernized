@@ -377,6 +377,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.WIRE_MAGNETIZED_TUNGSTEN);
         simpleItem(ModItems.WIRE_CARBON);
 
+        //---------------------------------СИЛОВАЯ БРОНЯ---------------------------------//
+
         trimmedArmorItem(ModItems.ALLOY_HELMET);
         trimmedArmorItem(ModItems.ALLOY_CHESTPLATE);
         trimmedArmorItem(ModItems.ALLOY_LEGGINGS);

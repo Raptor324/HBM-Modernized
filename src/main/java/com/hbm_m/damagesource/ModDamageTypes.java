@@ -71,4 +71,5 @@ public class ModDamageTypes {
     public static final ResourceKey<DamageType> LASER = createKey("laser");
     public static final ResourceKey<DamageType> BOIL = createKey("boil");
     public static final ResourceKey<DamageType> ACID_PLAYER = createKey("acid_player");
+    public static final ResourceKey<DamageType> HARDLANDING_SMASH = createKey("hardlanding_smash");
 }
