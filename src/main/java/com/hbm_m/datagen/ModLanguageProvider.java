@@ -1782,7 +1782,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("tooltip.hbm_m.grenade_nuc.line1", "Nuclear weapon!");
                 add("tooltip.hbm_m.grenade_nuc.line2", "Blast radius: 25 meters");
-                add("tooltip.hbm_m.grenade_nuc.line3", "Fuse time: 6s");
+                add("tooltip.hbm_m.grenade_nuc.line3", "Fuse time: 7s");
                 add("tooltip.hbm_m.detminer.line1", "Does not damage entities or players");
                 add("tooltip.hbm_m.detminer.line4", "Allows mining depth ores and stone");
 

@@ -4,12 +4,10 @@ import com.hbm_m.block.custom.explosives.IDetonatable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.particle.explosions.ExplosionParticleUtils;
+import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.util.explosions.general.ShockwaveGenerator;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -28,6 +26,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -39,17 +38,16 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
     private static final EntityDataAccessor<Integer> DETONATION_TIME = SynchedEntityData.defineId(GrenadeNucProjectileEntity.class, EntityDataSerializers.INT);
 
     // Параметры ядерной гранаты
-    private static final int FUSE_SECONDS = 6; // Чуть дольше, чтобы успеть убежать
-    private static final float EXPLOSION_POWER = 10.0f; // Мощный взрыв (ванильный TNT = 4.0f)
-    private static final float RADIATION_RADIUS = 25.0f; // Радиус поражения радиацией
-    private static final float MIN_BOUNCE_SPEED = 0.1f; // Тяжелая граната, меньше скачет
-    private static final float BOUNCE_MULTIPLIER = 0.4f; // Гасит скорость сильнее при отскоке
+    private static final int FUSE_SECONDS = 7;
+    private static final float EXPLOSION_POWER = 10.0f;
+    private static final float RADIATION_RADIUS = 25.0f;
+    private static final float MIN_BOUNCE_SPEED = 0.1f;
+    private static final float BOUNCE_MULTIPLIER = 0.4f;
 
     // Новые параметры для урона
-    private static final float DAMAGE_RADIUS = 25.0f; // Радиус поражения урона (в блоках)
-    private static final float DAMAGE_AMOUNT = 200.0f; // 150 урона = 75 полных сердец
-    private static final float MAX_DAMAGE_DISTANCE = 25.0f; // Максимальное расстояние для полного урона
-
+    private static final float DAMAGE_RADIUS = 25.0f;
+    private static final float DAMAGE_AMOUNT = 200.0f;
+    private static final float MAX_DAMAGE_DISTANCE = 25.0f;
     private static final Random RANDOM = new Random();
 
     public GrenadeNucProjectileEntity(EntityType<? extends ThrowableItemProjectile> entityType, Level level) {
@@ -57,7 +55,6 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
     }
 
     public GrenadeNucProjectileEntity(Level level, LivingEntity thrower) {
-        // Убедись, что зарегистрировал GRENADE_NUC_PROJECTILE в ModEntities
         super(ModEntities.GRENADE_NUC_PROJECTILE.get(), thrower, level);
     }
 
@@ -70,7 +67,6 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
 
     @Override
     protected Item getDefaultItem() {
-        // Ссылка на предмет ядерной гранаты
         return ModItems.GRENADE_NUC.get();
     }
 
@@ -91,7 +87,6 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
     protected void onHit(HitResult result) {
         super.onHit(result);
         if (!this.level().isClientSide) {
-            // Активация таймера при первом касании
             if (!this.entityData.get(TIMER_ACTIVATED)) {
                 this.entityData.set(TIMER_ACTIVATED, true);
                 this.entityData.set(DETONATION_TIME, this.tickCount + (FUSE_SECONDS * 20));
@@ -106,20 +101,19 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
     private void handleBounce(BlockHitResult result) {
         Vec3 velocity = this.getDeltaMovement();
         float speed = (float) velocity.length();
+
         if (speed < MIN_BOUNCE_SPEED) {
             this.setDeltaMovement(Vec3.ZERO);
-            this.setNoGravity(true); // Останавливаемся, если скорость слишком мала
+            this.setNoGravity(true);
             return;
         }
 
-        // Тяжелый звук удара
         BlockPos blockPos = result.getBlockPos();
         this.level().playSound(null, blockPos, ModSounds.BOUNCE_RANDOM.get(), SoundSource.NEUTRAL, 2.5F, 0.6F);
+
         Vec3 currentVelocity = this.getDeltaMovement();
         Vec3 hitNormal = Vec3.atLowerCornerOf(result.getDirection().getNormal());
         Vec3 reflectedVelocity = currentVelocity.subtract(hitNormal.scale(2 * currentVelocity.dot(hitNormal)));
-
-        // Отскок слабее, так как граната тяжелая
         this.setDeltaMovement(reflectedVelocity.scale(BOUNCE_MULTIPLIER));
     }
 
@@ -130,37 +124,25 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
             double y = pos.getY() + 0.5;
             double z = pos.getZ() + 0.5;
 
-            // 1. Удаляем гранату
             this.discard();
-
-            // 2. Основной взрыв (без разрушения блоков - за это кратер)
             serverLevel.explode(this, x, y, z, 9.0F, true, Level.ExplosionInteraction.NONE);
-
-            // 3. Цепная детонация соседних IDetonatable блоков
             triggerNearbyDetonations(serverLevel, pos, null);
-
-            // 4. Урон в зоне действия (НОВОЕ)
             dealExplosionDamage(serverLevel, x, y, z);
 
-            // 5. Поэтапные эффекты взрыва
+            // ЗАМЕНА ЭФФЕКТА
             scheduleExplosionEffects(serverLevel, x, y, z);
 
-            // 6. Звук взрыва с повышенной громкостью (ИЗМЕНЕННОЕ)
             playRandomDetonationSound(level(), pos);
 
-            // 7. Отложенный кратер (через 1.5 секунды = 30 тиков)
             if (serverLevel.getServer() != null) {
                 serverLevel.getServer().tell(new net.minecraft.server.TickTask(30, () -> {
-                    // Дополнительный взрыв для физики
                     serverLevel.explode(null, x, y, z, 9.0F, Level.ExplosionInteraction.NONE);
-
-                    // Генерация кратера с ядерными блоками (замени на свои)
                     ShockwaveGenerator.generateCrater(
                             serverLevel,
                             pos,
-                            25, // CRATER_RADIUS = 20 блоков (под гранату поменьше)
-                            10, // CRATER_DEPTH = 6 блоков
-                            ModBlocks.WASTE_LOG.get(), // заменить на твои радиоактивные блоки
+                            25,
+                            10,
+                            ModBlocks.WASTE_LOG.get(),
                             ModBlocks.WASTE_PLANKS.get(),
                             ModBlocks.BURNED_GRASS.get()
                     );
@@ -169,7 +151,6 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
         }
     }
 
-    // НОВЫЙ МЕТОД: Нанесение урона в зоне действия гранаты
     private void dealExplosionDamage(ServerLevel serverLevel, double x, double y, double z) {
         List<LivingEntity> entitiesNearby = serverLevel.getEntitiesOfClass(
                 LivingEntity.class,
@@ -184,24 +165,14 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
                             Math.pow(entity.getZ() - z, 2)
             );
 
-            // Проверяем, находится ли сущность в радиусе поражения
             if (distanceToEntity <= DAMAGE_RADIUS) {
-                // Вычисляем урон в зависимости от расстояния
-                // На близком расстоянии (0-5 блоков): полный урон
-                // На среднем расстоянии (5-20 блоков): уменьшающийся урон
-                // На дальнем расстоянии (20+ блоков): минимальный урон
                 float damage = DAMAGE_AMOUNT;
-
                 if (distanceToEntity > MAX_DAMAGE_DISTANCE) {
-                    // Линейное снижение урона на расстоянии
                     float remainingDistance = DAMAGE_RADIUS - MAX_DAMAGE_DISTANCE;
                     float damageDistance = (float) distanceToEntity - MAX_DAMAGE_DISTANCE;
-                    damage = DAMAGE_AMOUNT * (1.0f - (damageDistance / remainingDistance)) * 0.5f; // Минимум 50% урона
+                    damage = DAMAGE_AMOUNT * (1.0f - (damageDistance / remainingDistance)) * 0.5f;
                 }
-
-                // Наносим урон с источником (взрыв) - метатель тоже получает урон!
                 entity.hurt(entity.damageSources().explosion(null), damage);
-
             }
         }
     }
@@ -215,7 +186,6 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
         sounds.removeIf(Objects::isNull);
         if (!sounds.isEmpty()) {
             SoundEvent sound = sounds.get(RANDOM.nextInt(sounds.size()));
-            // Повышенная громкость: с 1.0F на 4.0F для дальней слышимости
             level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, sound, SoundSource.BLOCKS, 4.0F, 1.0F);
         }
     }
@@ -234,30 +204,15 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
         this.entityData.set(DETONATION_TIME, tag.getInt("DetonationTime"));
     }
 
-    // === ПЕРЕНЕСЕННЫЕ МЕТОДЫ ИЗ SmokeBombBlock ===
-
+    // === ЗАМЕНА ЭФФЕКТА ===
     private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
-        // ✅ Flash - точно те же параметры
-        level.sendParticles(
-                (SimpleParticleType) ModExplosionParticles.FLASH.get(),
-                x, y, z, 1, 0, 0, 0, 0
-        );
 
-        // ✅ Sparks - 400 частиц с ТОЧНЫМИ скоростями
-        ExplosionParticleUtils.spawnAirBombSparks(level, x, y, z);
-
-        // ✅ Shockwave через 3 тика - точно те же кольца
-        level.getServer().tell(new net.minecraft.server.TickTask(3, () ->
-                ExplosionParticleUtils.spawnAirBombShockwave(level, x, y, z)));
-
-        // ✅ Mushroom Cloud через 8 тиков - ТОЧНО те же параметры
-        level.getServer().tell(new net.minecraft.server.TickTask(8, () ->
-                ExplosionParticleUtils.spawnAirBombMushroomCloud(level, x, y, z)));
+        // ✅ ИСПОЛЬЗУЕМ НОВЫЙ КОМПЛЕКСНЫЙ ЭФФЕКТ
+        ExplosionParticleUtils.spawnFullNuclearExplosion(level, x, y, z);
     }
 
-
     private void triggerNearbyDetonations(ServerLevel serverLevel, BlockPos pos, Player player) {
-        int DETONATION_RADIUS = 8; // Немного больше для ядерки
+        int DETONATION_RADIUS = 8;
         for (int x = -DETONATION_RADIUS; x <= DETONATION_RADIUS; x++) {
             for (int y = -DETONATION_RADIUS; y <= DETONATION_RADIUS; y++) {
                 for (int z = -DETONATION_RADIUS; z <= DETONATION_RADIUS; z++) {
@@ -267,7 +222,7 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
                         BlockState checkState = serverLevel.getBlockState(checkPos);
                         Block block = checkState.getBlock();
                         if (block instanceof IDetonatable detonatable) {
-                            int delay = (int)(dist * 1.5); // Быстрее цепная реакция
+                            int delay = (int)(dist * 1.5);
                             serverLevel.getServer().tell(new net.minecraft.server.TickTask(delay, () -> {
                                 detonatable.onDetonate(serverLevel, checkPos, checkState, player);
                             }));

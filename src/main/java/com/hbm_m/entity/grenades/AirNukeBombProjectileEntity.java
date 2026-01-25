@@ -5,7 +5,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.particle.explosions.ExplosionParticleUtils;
+import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.util.explosions.nuclear.CraterGenerator;
 import net.minecraft.core.BlockPos;

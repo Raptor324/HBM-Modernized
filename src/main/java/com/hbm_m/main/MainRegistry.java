@@ -19,6 +19,18 @@ import com.hbm_m.entity.ModEntities;
 import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
+import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
+import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.world.biome.ModBiomes;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraftforge.event.level.LevelEvent;
+import com.mojang.logging.LogUtils;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import com.hbm_m.block.custom.machines.armormod.item.ItemArmorMod;
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.entity.ModEntities;
 import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
@@ -139,13 +151,6 @@ public class MainRegistry {
 
             LOGGER.info("HazardSystem initialized successfully");
         });
-    }
-
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel) {
-            SellafitSolidificationTracker.clearAll();
-        }
     }
 
     @SubscribeEvent
@@ -642,6 +647,9 @@ public class MainRegistry {
 
         // СТРОИТЕЛЬНЫЕ БЛОКИ
         if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get()) {
+            event.accept(ModBlocks.RING_TEST);
+            event.accept(ModBlocks.TEST3);
+            event.accept(ModBlocks.BLAST_FURNACE2);
 
             event.accept(ModBlocks.DECO_STEEL);
             event.accept(ModBlocks.CONCRETE_STAIRS);

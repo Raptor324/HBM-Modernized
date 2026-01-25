@@ -16,6 +16,18 @@ public class ModExplosionParticles {
     public static final DeferredRegister<ParticleType<?>> PARTICLE_TYPES =
             DeferredRegister.create(ForgeRegistries.PARTICLE_TYPES, RefStrings.MODID);
 
+
+
+    // ⚡ ИСКРЫ (оранжевые разлетающиеся)
+    public static final RegistryObject<ParticleType<?>> LARGE_DARK_SMOKE =
+            PARTICLE_TYPES.register("large_dark_smoke", () -> new SimpleParticleType(true));
+
+    public static final RegistryObject<ParticleType<?>> LARGE_EXPLOSION_SPARK =
+            PARTICLE_TYPES.register("large_explosion_spark", () -> new SimpleParticleType(true));
+
+    public static final RegistryObject<ParticleType<?>> DARK_WAVE_SMOKE =
+            PARTICLE_TYPES.register("dark_wave_smoke", () -> new SimpleParticleType(true));
+
     // ✅ ГЛАВНЫЕ ЭФФЕКТЫ ВЗРЫВА (все как искры!)
 
     // 🔥 ВСПЫШКА (яркий белый свет)

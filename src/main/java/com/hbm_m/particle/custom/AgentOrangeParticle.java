@@ -1,12 +1,11 @@
-package com.hbm_m.particle.explosions;
+package com.hbm_m.particle.custom;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.sound.ModSounds;
+import com.hbm_m.particle.explosions.AbstractExplosionParticle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.core.BlockPos;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.effect.MobEffectInstance;

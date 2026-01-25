@@ -4,7 +4,7 @@ import com.hbm_m.block.custom.explosives.IDetonatable;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.particle.explosions.ExplosionParticleUtils;
+import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
