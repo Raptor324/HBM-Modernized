@@ -75,15 +75,15 @@ public class ArmorTableMenu extends AbstractContainerMenu {
         // Слот 0: Центральный слот для брони
         this.addSlot(new CentralArmorSlot(armorInventory, 0, 44, 63));
         // Слоты 1-9: Слоты для модов
-        this.addSlot(new ModificationSlot(modsInventory, 0, 26, 27));
-        this.addSlot(new ModificationSlot(modsInventory, 1, 62, 27));
-        this.addSlot(new ModificationSlot(modsInventory, 2, 98, 27));
-        this.addSlot(new ModificationSlot(modsInventory, 3, 134, 45));
-        this.addSlot(new ModificationSlot(modsInventory, 4, 8, 63));
-        this.addSlot(new ModificationSlot(modsInventory, 5, 26, 99));
-        this.addSlot(new ModificationSlot(modsInventory, 6, 62, 99));
-        this.addSlot(new ModificationSlot(modsInventory, 7, 98, 99));
-        this.addSlot(new ModificationSlot(modsInventory, 8, 134, 81));
+        this.addSlot(new ModificationSlot(modsInventory, 0, 26, 27)); // Шлем
+        this.addSlot(new ModificationSlot(modsInventory, 1, 62, 27)); // Нагрудник
+        this.addSlot(new ModificationSlot(modsInventory, 2, 98, 27)); // Поножи
+        this.addSlot(new ModificationSlot(modsInventory, 3, 134, 45)); // Ботинки
+        this.addSlot(new ModificationSlot(modsInventory, 4, 134, 81)); // Сервоприводы
+        this.addSlot(new ModificationSlot(modsInventory, 5, 98, 99)); // Обшивка
+        this.addSlot(new ModificationSlot(modsInventory, 6, 62, 99)); // Пластина
+        this.addSlot(new ModificationSlot(modsInventory, 7, 26, 99)); // Особое
+        this.addSlot(new ModificationSlot(modsInventory, 8, 8, 63)); // Аккумулятор
         
         addPlayerInventory(pPlayerInventory);
         addPlayerHotbar(pPlayerInventory);
@@ -301,11 +301,11 @@ public class ArmorTableMenu extends AbstractContainerMenu {
             1, "tooltip.hbm_m.armor_table.chestplate_slot",
             2, "tooltip.hbm_m.armor_table.leggings_slot",
             3, "tooltip.hbm_m.armor_table.boots_slot",
-            4, "tooltip.hbm_m.armor_table.battery_slot",
-            5, "tooltip.hbm_m.armor_table.special_slot",
+            4, "tooltip.hbm_m.armor_table.servos_slot",
+            5, "tooltip.hbm_m.armor_table.casing_slot",
             6, "tooltip.hbm_m.armor_table.plating_slot",
-            7, "tooltip.hbm_m.armor_table.casing_slot",
-            8, "tooltip.hbm_m.armor_table.servos_slot"
+            7, "tooltip.hbm_m.armor_table.special_slot",
+            8, "tooltip.hbm_m.armor_table.battery_slot"
         );
         
         public ModificationSlot(ItemStackHandler handler, int index, int x, int y) {

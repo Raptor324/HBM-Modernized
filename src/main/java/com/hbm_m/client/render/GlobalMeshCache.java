@@ -1,5 +1,6 @@
 package com.hbm_m.client.render;
 
+import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
@@ -60,19 +61,20 @@ public class GlobalMeshCache {
     }
 
     public static AbstractGpuVboRenderer getOrCreateRenderer(String partKey, BakedModel model) {
-        // ИСПРАВЛЕНИЕ: Проверяем размер кэша рендереров
         if (PART_RENDERERS.size() > MAX_CACHE_SIZE) {
             cleanupDeadRenderers();
         }
         
-        return PART_RENDERERS.compute(partKey, (key, existingRef) -> {
-            AbstractGpuVboRenderer renderer = (existingRef != null) ? existingRef.get() : null;
-            if (renderer == null) {
-                renderer = createRendererForPart(model);
-                return new WeakReference<>(renderer);
+        AbstractGpuVboRenderer renderer = PART_RENDERERS.compute(partKey, (key, existingRef) -> {
+            AbstractGpuVboRenderer r = (existingRef != null) ? existingRef.get() : null;
+            if (r == null) {
+                r = createRendererForPart(model);
+                return (r != null) ? new WeakReference<>(r) : null;
             }
             return existingRef;
         }).get();
+        
+        return renderer;  // МОЖЕТ БЫТЬ NULL, и это OK
     }
 
     // ==================== НОВЫЕ МЕТОДЫ: Поддержка типов для дверей ====================
@@ -234,9 +236,9 @@ public class GlobalMeshCache {
     }
 
     public static void logCacheStats() {
-        System.out.println("GlobalMeshCache stats:");
-        System.out.println("  Compiled quads: " + getCachedQuadsCount());
-        System.out.println("  GPU buffers: " + getCachedBuffersCount());
-        System.out.println("  Renderers: " + getCachedRenderersCount());
+        MainRegistry.LOGGER.debug("GlobalMeshCache stats:");
+        MainRegistry.LOGGER.debug("  Compiled quads: " + getCachedQuadsCount());
+        MainRegistry.LOGGER.debug("  GPU buffers: " + getCachedBuffersCount());
+        MainRegistry.LOGGER.debug("  Renderers: " + getCachedRenderersCount());
     }
 }

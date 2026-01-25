@@ -403,5 +403,10 @@ public class ModHazards {
         HazardSystem.registerArmorProtection(ModItems.COBALT_CHESTPLATE.get(), 0.05f);
         HazardSystem.registerArmorProtection(ModItems.COBALT_LEGGINGS.get(), 0.037f);
         HazardSystem.registerArmorProtection(ModItems.COBALT_BOOTS.get(), 0.012f);
+
+        HazardSystem.registerArmorProtection(ModItems.T51_HELMET.get(), 0.2f);
+        HazardSystem.registerArmorProtection(ModItems.T51_CHESTPLATE.get(), 0.4f);
+        HazardSystem.registerArmorProtection(ModItems.T51_LEGGINGS.get(), 0.3f);
+        HazardSystem.registerArmorProtection(ModItems.T51_BOOTS.get(), 0.1f);
     }
 }

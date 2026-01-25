@@ -64,11 +64,11 @@ public class ModTooltipHandler {
                 case 1 -> Component.translatable("tooltip.hbm_m.chestplate");
                 case 2 -> Component.translatable("tooltip.hbm_m.leggings");
                 case 3 -> Component.translatable("tooltip.hbm_m.boots");
-                case 4 -> Component.translatable("tooltip.hbm_m.armor_table.battery_slot");
-                case 5 -> Component.translatable("tooltip.hbm_m.armor_table.special_slot");
+                case 4 -> Component.translatable("tooltip.hbm_m.armor_table.servos_slot");
+                case 7 -> Component.translatable("tooltip.hbm_m.armor_table.special_slot");
                 case 6 -> Component.translatable("tooltip.hbm_m.armor_table.plating_slot");
-                case 7 -> Component.translatable("tooltip.hbm_m.armor_table.casing_slot");
-                case 8 -> Component.translatable("tooltip.hbm_m.armor_table.servos_slot");
+                case 5 -> Component.translatable("tooltip.hbm_m.armor_table.casing_slot");
+                case 8 -> Component.translatable("tooltip.hbm_m.armor_table.battery_slot");
                 default -> Component.literal("Unknown");
             };
             

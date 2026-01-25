@@ -1,10 +1,9 @@
 package com.hbm_m.event;
 
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-import com.hbm_m.network.ModNetwork;
+import com.hbm_m.network.ModPacketHandler;
 
 /**
  * Обработчик FML событий для инициализации сетевых каналов
@@ -17,6 +16,6 @@ public class ModEventHandler {
     @SubscribeEvent
     public static void onCommonSetup(FMLCommonSetupEvent event) {
         // Инициализируем сетевые каналы в правильное время
-        ModNetwork.registerChannels();
+        ModPacketHandler.register();
     }
 }

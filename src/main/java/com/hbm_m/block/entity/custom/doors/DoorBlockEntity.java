@@ -20,7 +20,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.custom.decorations.DoorBlock;
-import com.hbm_m.client.ClientSoundManager;
+import com.hbm_m.sound.ClientSoundManager;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;

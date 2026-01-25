@@ -1,5 +1,11 @@
 package com.hbm_m.client.render;
 
+import java.util.concurrent.ConcurrentHashMap;
+
+import javax.annotation.Nullable;
+
+import org.joml.Matrix4f;
+
 import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity.ClientTicker;
 import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
@@ -11,6 +17,7 @@ import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -26,12 +33,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.annotation.Nullable;
-
-import org.joml.Matrix4f;
 
 @OnlyIn(Dist.CLIENT)
 public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<MachineAdvancedAssemblerBlockEntity, MachineAdvancedAssemblerBakedModel> {
@@ -111,6 +112,10 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         int blockLight = LightTexture.block(packedLight);
         int skyLight = LightTexture.sky(packedLight);
         int dynamicLight = LightTexture.pack(blockLight, skyLight);
+
+        if (!instancersInitialized) {
+            initializeInstancedRenderers(model);
+        }
         
         //  Occlusion check
 

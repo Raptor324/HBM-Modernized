@@ -1,4 +1,4 @@
-package com.hbm_m.client;
+package com.hbm_m.sound;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;

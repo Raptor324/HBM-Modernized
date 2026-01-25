@@ -221,6 +221,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
     }
     
     private void flushBatchWithFilter(List<Matrix4f> transforms, List<Integer> lights, boolean useLinearFilter) {
+
         ShaderInstance shader = ModShaders.getBlockLitShader();
         if (shader == null) {
             return;
@@ -228,7 +229,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
         
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-        int previousCullFace = GL11.glGetInteger(GL11.GL_CULL_FACE);
+        boolean previousCullFaceEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
         
         try {
             instanceBuffer.clear();
@@ -277,20 +278,21 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
             
             //  Применяем нужный фильтр для этого батча
             if (useLinearFilter) {
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+                RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+                RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
             } else {
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-                GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+                RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+                RenderSystem.texParameter(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
             }
             
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LESS);
             RenderSystem.depthMask(true);
-            GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
-            GL11.glPolygonOffset(1.0f, 1.0f);
+            // Убрал polygon offset который вызывает GL ошибки
+            // RenderSystem.enablePolygonOffset();
+            // RenderSystem.polygonOffset(1.0f, 1.0f);
 
-            GL11.glDisable(GL11.GL_CULL_FACE);
+            RenderSystem.disableCull();
             
             if (indexCount > 0) {
                 GL31.glDrawElementsInstanced(
@@ -305,12 +307,15 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced flush", e);
         } finally {
+
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             GL30.glBindVertexArray(previousVao);
-            GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);
-            GL11.glEnable(GL11.GL_CULL_FACE);
-            if (previousCullFace == GL11.GL_TRUE) {
-                GL11.glEnable(GL11.GL_CULL_FACE);
+            // Убрал polygon offset cleanup
+            // RenderSystem.disablePolygonOffset();
+            if (previousCullFaceEnabled) {
+                RenderSystem.enableCull();
+            } else {
+                RenderSystem.disableCull();
             }
         }
     }
