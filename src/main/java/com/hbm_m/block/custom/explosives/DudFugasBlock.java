@@ -1,7 +1,7 @@
 package com.hbm_m.block.custom.explosives;
 
 import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.particle.explosions.ExplosionParticleUtils;
+import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

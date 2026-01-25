@@ -4,12 +4,10 @@ import com.hbm_m.block.custom.explosives.IDetonatable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.particle.explosions.ExplosionParticleUtils;
+import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.util.explosions.general.ShockwaveGenerator;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -40,7 +38,7 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
     private static final EntityDataAccessor<Integer> DETONATION_TIME = SynchedEntityData.defineId(GrenadeNucProjectileEntity.class, EntityDataSerializers.INT);
 
     // Параметры ядерной гранаты
-    private static final int FUSE_SECONDS = 6;
+    private static final int FUSE_SECONDS = 7;
     private static final float EXPLOSION_POWER = 10.0f;
     private static final float RADIATION_RADIUS = 25.0f;
     private static final float MIN_BOUNCE_SPEED = 0.1f;

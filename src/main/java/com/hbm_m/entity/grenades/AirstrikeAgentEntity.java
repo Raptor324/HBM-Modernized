@@ -1,7 +1,7 @@
 package com.hbm_m.entity.grenades;
 
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.particle.explosions.ExplosionParticleUtils;
+import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;

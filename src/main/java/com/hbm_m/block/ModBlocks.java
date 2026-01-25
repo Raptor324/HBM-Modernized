@@ -454,6 +454,16 @@ public class ModBlocks {
 
     // ============ ТЕХНИЧЕСКИЕ И ДЕКОРАТИВНЫЕ БЛОКИ (Обновлено) ============
 
+    public static final RegistryObject<Block> RING_TEST = registerBlock("ring_test",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistryObject<Block> BLAST_FURNACE2 = registerBlock("blast_furnace2",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistryObject<Block> TEST3 = registerBlock("test3",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+
     public static final RegistryObject<Block> DORNIER = registerBlock("dornier",
             () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 

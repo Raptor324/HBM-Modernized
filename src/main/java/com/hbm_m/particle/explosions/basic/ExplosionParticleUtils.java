@@ -1,6 +1,7 @@
-package com.hbm_m.particle.explosions;
+package com.hbm_m.particle.explosions.basic;
 
 import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.particle.explosions.nuclear.small.NuclearMushroomCloud;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.SimpleParticleType;

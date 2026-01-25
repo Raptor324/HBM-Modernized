@@ -1,5 +1,7 @@
-package com.hbm_m.particle.explosions;
+package com.hbm_m.particle.explosions.nuclear.small;
 
+import com.hbm_m.particle.explosions.AbstractExplosionParticle;
+import com.hbm_m.particle.explosions.basic.CameraShakeHandler;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SpriteSet;

@@ -1,5 +1,6 @@
-package com.hbm_m.particle.explosions;
+package com.hbm_m.particle.explosions.basic;
 
+import com.hbm_m.particle.explosions.AbstractExplosionParticle;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SpriteSet;
