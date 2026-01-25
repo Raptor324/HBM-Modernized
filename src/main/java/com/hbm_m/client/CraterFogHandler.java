@@ -33,8 +33,8 @@ public class CraterFogHandler {
 
         if (level.getBiome(player.blockPosition()).is(CraterBiomes.OUTER_CRATER_KEY)) {
             // Настраиваем туман: start - где начинается, end - где заканчивается (чем меньше, тем ближе и гуще)
-            event.setNearPlaneDistance(0.05F); // Туман начинается почти у носа
-            event.setFarPlaneDistance(200.0F);  // Туман полностью непрозрачный уже в 6 блоках
+            event.setNearPlaneDistance(0.07F); // Туман начинается почти у носа
+            event.setFarPlaneDistance(180.0F);  // Туман полностью непрозрачный уже в 6 блоках
             event.setCanceled(true); // Отключаем стандартный туман
         }
     }

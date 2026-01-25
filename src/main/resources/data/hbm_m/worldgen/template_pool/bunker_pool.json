@@ -1,6 +1,5 @@
 {
   "name": "hbm_m:bunker_pool",
-  "description": "Template pool for Bunker structure",
   "fallback": "minecraft:empty",
   "elements": [
     {
@@ -9,7 +8,7 @@
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
         "location": "hbm_m:bunker",
-        "processors": "minecraft:empty"
+        "processors": "hbm_m:foundation_processor"
       }
     }
   ]

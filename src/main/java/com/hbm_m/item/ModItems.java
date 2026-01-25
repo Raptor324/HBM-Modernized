@@ -10,8 +10,33 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
-import com.hbm_m.armormod.item.ItemModHealth;
-import com.hbm_m.armormod.item.ItemModRadProtection;
+
+import com.hbm_m.api.fluids.ModFluids;
+
+import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
+import com.hbm_m.item.custom.crates.IronCrateItem;
+import com.hbm_m.item.custom.crates.SteelCrateItem;
+import com.hbm_m.item.custom.industrial.*;
+import com.hbm_m.item.custom.radiation_meter.ItemDosimeter;
+import com.hbm_m.item.custom.radiation_meter.ItemGeigerCounter;
+import com.hbm_m.item.custom.food.ItemConserve;
+import com.hbm_m.item.custom.food.ItemEnergyDrink;
+import com.hbm_m.item.custom.food.ModFoods;
+import com.hbm_m.item.custom.grenades_and_activators.*;
+import com.hbm_m.item.custom.tools_and_armor.*;
+import com.hbm_m.item.tags_and_tiers.*;
+import com.hbm_m.item.custom.scanners.DepthOresScannerItem;
+import com.hbm_m.item.custom.scanners.OilDetectorItem;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.Level;
+import org.jetbrains.annotations.Nullable;
+import java.util.List;
+
+import com.hbm_m.block.custom.machines.armormod.item.ItemModHealth;
+import com.hbm_m.block.custom.machines.armormod.item.ItemModRadProtection;
 import com.hbm_m.armormod.item.ItemModServos;
 import com.hbm_m.armormod.item.ItemModCladding;
 import com.hbm_m.armormod.item.ItemModKevlar;
@@ -22,8 +47,8 @@ import com.hbm_m.armormod.item.ItemModBatteryMk3;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
+import com.hbm_m.entity.grenades.GrenadeIfType;
 import com.hbm_m.entity.grenades.GrenadeType;
-import com.hbm_m.lib.RefStrings;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.powerarmor.AJRArmor;
 import com.hbm_m.powerarmor.T51Armor;
@@ -36,80 +61,87 @@ import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
+import static com.hbm_m.lib.RefStrings.MODID;
+
 
 public class ModItems {
     // Создаем отложенный регистратор для предметов.
     // Это стандартный способ регистрации объектов в Forge.
     public static final DeferredRegister<Item> ITEMS =
-            DeferredRegister.create(ForgeRegistries.ITEMS, RefStrings.MODID);
+            DeferredRegister.create(ForgeRegistries.ITEMS, MODID);
 
-    // АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ СЛИТКОВ 
-    // 1. Создаем карту для хранения всех RegistryObject'ов наших слитков
     public static final Map<ModIngots, RegistryObject<Item>> INGOTS = new EnumMap<>(ModIngots.class);
     public static final Map<ModPowders, RegistryObject<Item>> POWDERS = new EnumMap<>(ModPowders.class);
     public static final Map<ModIngots, RegistryObject<Item>> INGOT_POWDERS = new EnumMap<>(ModIngots.class);
     public static final Map<ModIngots, RegistryObject<Item>> INGOT_POWDERS_TINY = new EnumMap<>(ModIngots.class);
+
     private static final Set<String> POWDER_TINY_NAMES = Set.of(
             "actinium", "boron", "cerium", "cobalt", "cs137", "i131",
             "lanthanium", "lithium", "meteorite", "neodymium", "niobium",
             "sr90", "steel", "xe135");
     private static final Map<String, RegistryObject<Item>> POWDER_ITEMS_BY_ID = new HashMap<>();
-    // 2. Используем статический блок для заполнения карты
-    static {
-        for (ModIngots ingot : ModIngots.values()) {
-            // Регистрируем предмет. Имя будет, например, "ingot_uranium"
-            // Важно: мы стандартизируем имена, добавляя префикс "ingot_"
-            RegistryObject<Item> registeredItem;
 
-            // Пример того, как сделать один из слитков особенным
+    private static final Set<String> ENABLED_MODPOWDERS = Set.of("iron", "gold", "coal"); // Только ModPowders!
+    private static final Set<String> ENABLED_INGOT_POWDERS = Set.of(
+            "uranium", "plutonium",
+            "actinium", "steel", "advanced_alloy", "aluminum", "schrabidium", "lead",
+            "red_copper", "asbestos", "titanium", "cobalt", "tungsten",
+            "beryllium", "bismuth", "polymer", "bakelite", "desh", "les",
+            "magnetized_tungsten", "combine_steel", "dura_steel",
+            "euphemium", "dineutronium", "australium", "tantalium",
+            "meteorite", "lanthanium", "neodymium", "niobium", "cerium", "cadmium",
+            "caesium", "strontium", "tennessine", "bromide", "zirconium", "iodine",
+            "astatine", "neptunium", "polonium", "boron", "schrabidate",
+            "au198", "ra226", "thorium", "selenium", "co60",
+            "sr90", "calcium", "ferrouranium"
+    );
+
+    private static final Set<String> ENABLED_TINY_POWDERS = Set.of(
+            "actinium", "boron", "cerium", "cobalt", "cs137", "i131", "lanthanium", "lithium",
+            "meteorite", "neodymium", "niobium", "sr90", "steel", "xe135"
+    );
+
+    static {
+        // 1. СЛИТКИ (ВСЕГДА) ✅ OK
+        for (ModIngots ingot : ModIngots.values()) {
+            RegistryObject<Item> registeredItem;
             if (ingot == ModIngots.URANIUM) {
-                registeredItem = ITEMS.register(ingot.getName() + "_ingot", // Имя в реестре: uranium_ingot
-                        () -> new RadioactiveItem(new Item.Properties()));
+                registeredItem = ITEMS.register(ingot.getName() + "_ingot", () -> new RadioactiveItem(new Item.Properties()));
             } else {
-                registeredItem = ITEMS.register(ingot.getName() + "_ingot", // Имя в реестре: steel_ingot
-                        () -> new Item(new Item.Properties()));
+                registeredItem = ITEMS.register(ingot.getName() + "_ingot", () -> new Item(new Item.Properties()));
             }
-            
-            // Кладём зарегистрированный объект в нашу карту
             INGOTS.put(ingot, registeredItem);
         }
-    }
-    static {
 
-        for (ModPowders powders : ModPowders.values()) {
-            // Регистрируем предмет. Имя будет, например, "ingot_uranium"
-            // Важно: мы стандартизируем имена, добавляя префикс "ingot_"
-            RegistryObject<Item> registeredItem;
-
-            // Пример того, как сделать один из слитков особенным
-            if (powders == ModPowders.IRON) {
-                registeredItem = ITEMS.register(powders.getName() + "_powder",
-                        () -> new RadioactiveItem(new Item.Properties()));
-            } else {
-                registeredItem = ITEMS.register(powders.getName() + "_powder",
-                        () -> new Item(new Item.Properties()));
-            }
-
-            // Кладём зарегистрированный объект в нашу карту
-            POWDERS.put(powders, registeredItem);
-            POWDER_ITEMS_BY_ID.put(powders.getName() + "_powder", registeredItem);
-        }
-
-    }
-
-    static {
-        for (ModIngots ingot : ModIngots.values()) {
-            String baseName = ingot.getName();
-            String powderId = baseName + "_powder";
-
-            RegistryObject<Item> powderItem = POWDER_ITEMS_BY_ID.get(powderId);
-            if (powderItem == null) {
-                powderItem = ITEMS.register(powderId, () -> new Item(new Item.Properties()));
+        // 2. ModPowders (ТОЛЬКО ИЗ ENABLED_MODPOWDERS) ✅ ИСПРАВЛЕНО!
+        for (ModPowders powder : ModPowders.values()) {
+            String baseName = powder.name(); // или powder.getName() если есть
+            if (ENABLED_MODPOWDERS.contains(baseName)) {
+                String powderId = baseName + "_powder";
+                RegistryObject<Item> powderItem = ITEMS.register(powderId,
+                        () -> powder == ModPowders.IRON ? new RadioactiveItem(new Item.Properties()) : new Item(new Item.Properties()));
+                POWDERS.put(powder, powderItem);
                 POWDER_ITEMS_BY_ID.put(powderId, powderItem);
             }
-            INGOT_POWDERS.put(ingot, powderItem);
+        }
 
-            if (POWDER_TINY_NAMES.contains(baseName)) {
+        // 3. Порошки из слитков (ТОЛЬКО ИЗ ENABLED_INGOT_POWDERS) ✅ ИСПРАВЛЕНО!
+        for (ModIngots ingot : ModIngots.values()) {
+            String baseName = ingot.getName();
+
+            // Основной порошок
+            if (ENABLED_INGOT_POWDERS.contains(baseName)) {
+                String powderId = baseName + "_powder";
+                RegistryObject<Item> powderItem = POWDER_ITEMS_BY_ID.get(powderId);
+                if (powderItem == null) {
+                    powderItem = ITEMS.register(powderId, () -> new Item(new Item.Properties()));
+                    POWDER_ITEMS_BY_ID.put(powderId, powderItem);
+                }
+                INGOT_POWDERS.put(ingot, powderItem);
+            }
+
+            // Маленький порошок ✅ OK
+            if (POWDER_TINY_NAMES.contains(baseName) && ENABLED_TINY_POWDERS.contains(baseName)) {
                 String tinyId = baseName + "_powder_tiny";
                 RegistryObject<Item> tinyItem = ITEMS.register(tinyId, () -> new Item(new Item.Properties()));
                 INGOT_POWDERS_TINY.put(ingot, tinyItem);
@@ -117,17 +149,17 @@ public class ModItems {
         }
     }
 
-    
-    
-    // УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА 
+    // УДОБНЫЙ МЕТОД ДЛЯ ПОЛУЧЕНИЯ СЛИТКА
     public static RegistryObject<Item> getIngot(ModIngots ingot) {
         return INGOTS.get(ingot);
     }
+
     public static RegistryObject<Item> getPowders(ModPowders powders) {return POWDERS.get(powders);}
     public static RegistryObject<Item> getPowder(ModIngots ingot) { return INGOT_POWDERS.get(ingot); }
     public static Optional<RegistryObject<Item>> getTinyPowder(ModIngots ingot) {
         return Optional.ofNullable(INGOT_POWDERS_TINY.get(ingot));
     }
+    
     public static final int SLOT_HELMET = 0;
     public static final int SLOT_CHEST = 1;
     public static final int SLOT_LEGS = 2;
@@ -294,9 +326,25 @@ public class ModItems {
     public static final RegistryObject<Item> GRENADESMART = ITEMS.register("grenadesmart",
         () -> new GrenadeItem(new Item.Properties(), GrenadeType.SMART, ModEntities.GRENADESMART_PROJECTILE));
 
-    public static final RegistryObject<Item> GRENADEIF = ITEMS.register("grenadeif",
-        () -> new GrenadeItem(new Item.Properties(), GrenadeType.IF, ModEntities.GRENADEIF_PROJECTILE));
+    public static final RegistryObject<Item> GRENADE_IF = ITEMS.register("grenade_if",
+            () -> new GrenadeIfItem(new Item.Properties(), GrenadeIfType.GRENADE_IF, ModEntities.GRENADE_IF_PROJECTILE));
 
+    public static final RegistryObject<Item> GRENADE_IF_HE = ITEMS.register("grenade_if_he",
+            () -> new GrenadeIfItem(new Item.Properties(), GrenadeIfType.GRENADE_IF_HE, ModEntities.GRENADE_IF_HE_PROJECTILE));
+
+    public static final RegistryObject<Item> GRENADE_IF_SLIME = ITEMS.register("grenade_if_slime",
+            () -> new GrenadeIfItem(new Item.Properties(), GrenadeIfType.GRENADE_IF_SLIME, ModEntities.GRENADE_IF_SLIME_PROJECTILE));
+
+    public static final RegistryObject<Item> GRENADE_IF_FIRE = ITEMS.register("grenade_if_fire",
+            () -> new GrenadeIfItem(new Item.Properties(), GrenadeIfType.GRENADE_IF_FIRE, ModEntities.GRENADE_IF_FIRE_PROJECTILE));
+
+    public static final RegistryObject<Item> GRENADE_NUC = ITEMS.register("grenade_nuc",
+            () -> new GrenadeNucItem(new Item.Properties(), ModEntities.GRENADE_NUC_PROJECTILE));
+
+    public static final RegistryObject<Item> AIRBOMB_A = ITEMS.register("airbomb_a",
+            () -> new AirBombItem(new Item.Properties(), ModEntities.AIRBOMB_PROJECTILE));
+    public static final RegistryObject<Item> AIRNUKEBOMB_A = ITEMS.register("airnukebomb_a",
+            () -> new AirNukeBombItem(new Item.Properties(), ModEntities.AIRNUKEBOMB_PROJECTILE));
 
     // БРОНЯ ГОРНЯКА:
     public static final RegistryObject<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet",
@@ -422,6 +470,17 @@ public class ModItems {
     public static final RegistryObject<Item> DOSIMETER = ITEMS.register("dosimeter",
             () -> new ItemDosimeter(new Item.Properties().stacksTo(1)));
 
+
+
+
+    public static final RegistryObject<Item> CRATE_IRON = ITEMS.register("crate_iron",
+            () -> new IronCrateItem(ModBlocks.CRATE_IRON.get(), new Item.Properties()));
+    public static final RegistryObject<Item> CRATE_STEEL = ITEMS.register("crate_steel",
+            () -> new SteelCrateItem(ModBlocks.CRATE_STEEL.get(), new Item.Properties()));
+
+
+
+
     // Модификаторы брони
     public static final RegistryObject<Item> HEART_PIECE = ITEMS.register("heart_piece",
             () -> new ItemModHealth(
@@ -546,9 +605,6 @@ public class ModItems {
     );
 
 
-
-
-
     public static final RegistryObject<Item> RADAWAY = ITEMS.register("radaway",
             () -> new ItemSimpleConsumable(new Item.Properties(), (player, stack) -> {
                 // Это лямбда-выражение определяет, что произойдет при использовании предмета.
@@ -585,6 +641,24 @@ public class ModItems {
     public static final RegistryObject<Item> DETONATOR = ITEMS.register("detonator",
             () -> new DetonatorItem(new Item.Properties()));
 
+    public static final RegistryObject<Item> BILLET_PLUTONIUM = ITEMS.register("billet_plutonium",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> BALL_TNT = ITEMS.register("ball_tnt",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> CROWBAR = ITEMS.register("crowbar",
+            () -> new Item(new Item.Properties()) {
+                @Override
+                public void appendHoverText(ItemStack stack, @Nullable Level level,
+                                            @Nullable List<Component> tooltip, TooltipFlag flag) {
+                    if (tooltip == null) return;
+
+                    tooltip.add(Component.translatable("tooltip.hbm_m.crowbar.line1")
+                            .withStyle(ChatFormatting.GRAY));
+                    tooltip.add(Component.translatable("tooltip.hbm_m.crowbar.line2")
+                            .withStyle(ChatFormatting.GRAY));
+                }
+            });
+
 
     public static final RegistryObject<Item> MALACHITE_CHUNK = ITEMS.register("malachite_chunk",
             () -> new Item(new Item.Properties()));
@@ -592,11 +666,26 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> CAN_KEY = ITEMS.register("can_key",
             () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> CROWBAR = ITEMS.register("crowbar",
+    public static final RegistryObject<Item> DEFUSER = ITEMS.register("defuser",
+            () -> new Item(new Item.Properties()) {
+                @Override
+                public void appendHoverText(ItemStack stack, @Nullable Level level,
+                                            @Nullable List<Component> tooltip, TooltipFlag flag) {
+                    if (tooltip == null) return;
+
+                    tooltip.add(Component.translatable("tooltip.hbm_m.defuser.line1")
+                            .withStyle(ChatFormatting.GRAY));
+                }
+            });
+    public static final RegistryObject<Item> POWDER_COAL = ITEMS.register("powder_coal",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> POWDER_COAL_SMALL = ITEMS.register("powder_coal_small",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> BOLT_STEEL = ITEMS.register("bolt_steel",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> ZIRCONIUM_SHARP = ITEMS.register("zirconium_sharp",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> COIL_TUNGSTEN = ITEMS.register("coil_tungsten",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> COIL_GOLD_TORUS = ITEMS.register("coil_gold_torus",
             () -> new Item(new Item.Properties()));
@@ -709,7 +798,11 @@ public class ModItems {
     public static final RegistryObject<Item> BATTLE_COUNTER = ITEMS.register("battle_counter",
             () -> new Item(new Item.Properties()));
 
+    public static final RegistryObject<Item> MAN_CORE = ITEMS.register("man_core",
+            () -> new Item(new Item.Properties()));
 
+    public static final RegistryObject<Item> CRT_DISPLAY = ITEMS.register("crt_display",
+            () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> PLATE_IRON = ITEMS.register("plate_iron",
             () -> new Item(new Item.Properties()));
@@ -867,6 +960,9 @@ public class ModItems {
     public static final RegistryObject<Item> SULFUR = ITEMS.register("sulfur",
             () -> new Item(new Item.Properties()));
 
+    public static final RegistryObject<Item> SEQUESTRUM = ITEMS.register("sequestrum",
+            () -> new Item(new Item.Properties()));
+
     public static final RegistryObject<Item> FLUORITE = ITEMS.register("fluorite",
             () -> new Item(new Item.Properties()));
 
@@ -952,7 +1048,16 @@ public class ModItems {
 
 
     public static final RegistryObject<Item> BLADE_TEST = ITEMS.register("blade_test",
-            () -> new ItemBlades(new Item.Properties(), 48));
+            () -> new ItemBlades(new Item.Properties()));
+
+    public static final RegistryObject<Item> BLADE_STEEL = ITEMS.register("blade_steel",
+            () -> new ItemBlades(new Item.Properties(), 200));
+
+    public static final RegistryObject<Item> BLADE_TITANIUM = ITEMS.register("blade_titanium",
+            () -> new ItemBlades(new Item.Properties(), 350));
+
+    public static final RegistryObject<Item> BLADE_ALLOY = ITEMS.register("blade_alloy",
+            () -> new ItemBlades(new Item.Properties(), 700));
 
     // Железные штампы (48 использований)
     public static final RegistryObject<Item> STAMP_IRON_FLAT = ITEMS.register("stamp_iron_flat",
@@ -1239,7 +1344,14 @@ public class ModItems {
             ));
 
 
-
+    public static final RegistryObject<Item> AIRSTRIKE_TEST = ITEMS.register("airstrike_test",
+            () -> new AirstrikeItem(new Item.Properties()));
+    public static final RegistryObject<Item> AIRSTRIKE_AGENT= ITEMS.register("airstrike_agent",
+            () -> new AirstrikeAgentItem(new Item.Properties()));
+    public static final RegistryObject<Item> AIRSTRIKE_HEAVY = ITEMS.register("airstrike_heavy",
+            () -> new AirstrikeHeavyItem(new Item.Properties()));
+    public static final RegistryObject<Item> AIRSTRIKE_NUKE = ITEMS.register("airstrike_nuke",
+            () -> new AirstrikeNukeItem(new Item.Properties()));
     public static final RegistryObject<Item> WIRE_RED_COPPER = ITEMS.register("wire_red_copper",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> WIRE_ADVANCED_ALLOY = ITEMS.register("wire_advanced_alloy",
@@ -1264,6 +1376,24 @@ public class ModItems {
     public static final RegistryObject<Item> SCREWDRIVER = ITEMS.register("screwdriver",
             () -> new Item(new Item.Properties().stacksTo(1))); // В стаке только 1 штука
 
+
+        // Медленный источник (500 mB/t)
+        public static final RegistryObject<Item> INFINITE_WATER_500 = ITEMS.register("inf_water",
+                () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 500));
+
+        // Быстрый источник (5000 mB/t)
+        public static final RegistryObject<Item> INFINITE_WATER_5000 = ITEMS.register("inf_water_mk2",
+                () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 5000));
+
+
+
+    //=============================== ВЁДРА ДЛЯ ЖИДКОСТЕЙ ===============================//
+
+    public static final RegistryObject<Item> CRUDE_OIL_BUCKET = ITEMS.register("bucket_crude_oil",
+            () -> new BucketItem(ModFluids.CRUDE_OIL_SOURCE,
+                    new Item.Properties()
+                            .craftRemainder(Items.BUCKET) // Возвращает пустое ведро при крафте
+                            .stacksTo(1))); // Ведра не стакаются
 
     
 

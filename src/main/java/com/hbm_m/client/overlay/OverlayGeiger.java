@@ -5,7 +5,7 @@ package com.hbm_m.client.overlay;
 // Рендерит прогресс-бар для радиации игрока и иконки/текст для радиации окружающей среды.
 // Использует IGuiOverlay из Forge для интеграции с GUI игры.
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.item.ItemGeigerCounter;
+import com.hbm_m.item.custom.radiation_meter.ItemGeigerCounter;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.client.Minecraft;

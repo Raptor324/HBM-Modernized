@@ -11,7 +11,6 @@ package com.hbm_m.network;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.packets.PowerArmorDashPacket;
 import com.hbm_m.network.sounds.GeigerSoundPacket;
-import com.hbm_m.network.ToggleWoodBurnerPacket;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkRegistry;
@@ -52,5 +51,11 @@ public class ModPacketHandler {
         INSTANCE.registerMessage(id++, AnvilSelectRecipeC2SPacket.class, AnvilSelectRecipeC2SPacket::encode, AnvilSelectRecipeC2SPacket::decode, AnvilSelectRecipeC2SPacket::handle);
 
         INSTANCE.registerMessage(id++, PowerArmorDashPacket.class, PowerArmorDashPacket::toBytes, PowerArmorDashPacket::new, PowerArmorDashPacket::handle);
+        INSTANCE.registerMessage(id++,
+                com.hbm_m.network.packet.PacketSyncEnergy.class, // Если пакет лежит в другом пакете, укажи путь или сделай импорт
+                com.hbm_m.network.packet.PacketSyncEnergy::encode,
+                com.hbm_m.network.packet.PacketSyncEnergy::decode,
+                com.hbm_m.network.packet.PacketSyncEnergy::handle
+        );
     }
 }

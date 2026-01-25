@@ -1,13 +1,16 @@
 package com.hbm_m.network;
 
+import java.util.function.Supplier;
+
+import javax.swing.text.html.HTML.Tag;
+
+import com.hbm_m.item.custom.grenades_and_activators.MultiDetonatorItem;
+
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
 
 /**
  * Пакет для синхронизации ПОЛНЫХ данных точки (координаты + имя).
@@ -72,13 +75,16 @@ public class SyncPointPacket {
         ItemStack offItem = player.getOffhandItem();
 
         ItemStack detonatorStack = ItemStack.EMPTY;
-        if (mainItem.getItem() instanceof com.hbm_m.item.MultiDetonatorItem) {
+
+        if (mainItem.getItem() instanceof MultiDetonatorItem) {
             detonatorStack = mainItem;
-        } else if (offItem.getItem() instanceof com.hbm_m.item.MultiDetonatorItem) {
+        } else if (offItem.getItem() instanceof MultiDetonatorItem) {
             detonatorStack = offItem;
         }
 
-        if (detonatorStack.isEmpty()) return;
+        if (!detonatorStack.isEmpty()) {
+            MultiDetonatorItem detonatorItem =
+                    (MultiDetonatorItem) detonatorStack.getItem();
 
         CompoundTag nbt = detonatorStack.getOrCreateTag();
 

@@ -7,12 +7,15 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 
 // Утилитарный класс для управления мультиблочными структурами.
 // Позволяет определять структуру, проверять возможность постройки, строить и разрушать структуру,
 // а также генерировать VoxelShape для всей структуры. Ядро всей мультиблочной логики.
-import com.hbm_m.block.WireBlock;
+import com.hbm_m.api.energy.WireBlock;
+import com.hbm_m.block.custom.machines.UniversalMachinePartBlock;
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.item.tags_and_tiers.ModTags.Blocks;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.HighlightBlocksPacket;
 import com.hbm_m.network.ModPacketHandler;
@@ -23,9 +26,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -192,7 +193,7 @@ public class MultiblockStructureHelper {
             BlockState stateInWorld = level.getBlockState(worldPos);
 
             // If the block in the world is a phantom block part, remove it.
-            if (stateInWorld.getBlock() instanceof com.hbm_m.block.machine.UniversalMachinePartBlock) {
+            if (stateInWorld.getBlock() instanceof UniversalMachinePartBlock) {
                 level.setBlock(worldPos, Blocks.AIR.defaultBlockState(), 3);
             }
         }

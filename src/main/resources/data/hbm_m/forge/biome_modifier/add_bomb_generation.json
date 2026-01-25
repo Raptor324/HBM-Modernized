@@ -1,0 +1,11 @@
+{
+  "type": "forge:add_features",
+  "biomes": "#minecraft:is_overworld",
+  "features": [
+    "hbm_m:mine_ap",
+    "hbm_m:dud_fugas_tong",
+    "hbm_m:dud_salted",
+    "hbm_m:dud_nuke"
+  ],
+  "step": "surface_structures"
+}

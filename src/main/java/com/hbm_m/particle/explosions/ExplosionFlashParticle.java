@@ -1,64 +1,52 @@
 package com.hbm_m.particle.explosions;
 
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.*;
-import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.client.particle.SpriteSet;
 
-@OnlyIn(Dist.CLIENT)
-public class ExplosionFlashParticle extends TextureSheetParticle {
+/**
+ * ✅ Яркая белая вспышка взрыва
+ * Основное освещение в центре взрыва
+ */
+public class ExplosionFlashParticle extends AbstractExplosionParticle {
 
-    private final SpriteSet spriteSet;
+    public ExplosionFlashParticle(ClientLevel level, double x, double y, double z,
+                                  SpriteSet sprites, double xSpeed, double ySpeed, double zSpeed) {
+        super(level, x, y, z, sprites);
 
-    protected ExplosionFlashParticle(ClientLevel level, double x, double y, double z,
-                                     double xSpeed, double ySpeed, double zSpeed,
-                                     SpriteSet spriteSet) {
-        super(level, x, y, z, xSpeed, ySpeed, zSpeed);
-        this.spriteSet = spriteSet;
+        // ✅ ВРЕМЯ ЖИЗНИ: 10-20 тиков (быстрая вспышка)
+        this.lifetime = 10 + this.random.nextInt(10);
 
-        // Настройки вспышки
-        this.lifetime = 80; // Быстро исчезает
-        this.gravity = 0.0F; // Не падает
-        this.friction = 1.0F; // Не двигается
+        // ✅ ФИЗИКА: нет гравитации для вспышки
+        this.gravity = 0.0F;
+        this.hasPhysics = false;
 
-        // Большой размер для яркой вспышки
-        this.quadSize = 15.0F;
+        // ✅ РАЗМЕР: крупный (1.0-1.5)
+        this.quadSize = 1.0F + this.random.nextFloat() * 0.5F;
 
+        // ✅ ЦВЕТ: белый (максимум всех каналов)
+        this.rCol = 1.0F;
+        this.gCol = 1.0F;
+        this.bCol = 1.0F;
 
-
-        this.setSpriteFromAge(spriteSet);
+        // ✅ ПРОЗРАЧНОСТЬ: высокая в начале
+        this.alpha = 1.0F;
     }
 
     @Override
     public void tick() {
         super.tick();
 
-        // Быстро уменьшаем яркость и размер
-        this.alpha = 10.0F - ((float)this.age / (float)this.lifetime);
-        this.quadSize = 15.0F * this.alpha;
+        // ✅ Быстрое исчезновение (вспышка)
+        float fadeProgress = (float) this.age / (float) this.lifetime;
+        this.alpha = 1.0F - fadeProgress;
 
-        this.setSpriteFromAge(spriteSet);
+        // ✅ Медленное увеличение размера
+        this.quadSize *= 1.02F;
     }
 
-    @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public static class Provider implements ParticleProvider<SimpleParticleType> {
-        private final SpriteSet spriteSet;
-
-        public Provider(SpriteSet spriteSet) {
-            this.spriteSet = spriteSet;
-        }
-
-        @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level,
-                                       double x, double y, double z,
-                                       double xSpeed, double ySpeed, double zSpeed) {
-            return new ExplosionFlashParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, this.spriteSet);
+    public static class Provider extends AbstractExplosionParticle.Provider<ExplosionFlashParticle> {
+        public Provider(SpriteSet sprites) {
+            super(sprites, ExplosionFlashParticle::new);
         }
     }
 }

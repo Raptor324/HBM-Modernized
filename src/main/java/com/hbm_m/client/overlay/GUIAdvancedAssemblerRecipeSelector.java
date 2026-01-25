@@ -1,6 +1,6 @@
 package com.hbm_m.client.overlay;
 
-import com.hbm_m.block.entity.machine.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.SetAssemblerRecipeC2SPacket;

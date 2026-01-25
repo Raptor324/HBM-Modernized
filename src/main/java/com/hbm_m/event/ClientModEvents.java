@@ -28,7 +28,6 @@ import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-// @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientModEvents {
 
@@ -91,7 +90,7 @@ public class ClientModEvents {
             OcclusionCullingHelper.onFrameStart();
             
         } else if (event.phase == TickEvent.Phase.END) {
-            // ИСПРАВЛЕНО: Проверяем render path только в конце тика
+            // Проверяем render path только в конце тика
             RenderPathManager.checkAndUpdate();
             
             // Периодическая очистка памяти immediate рендера
@@ -102,7 +101,7 @@ public class ClientModEvents {
                 // Очищаем кеши рендереров
                 DoorRenderer.clearAllCaches();
                 
-                // НОВОЕ: Очищаем глобальные кеши
+                // Очищаем глобальные кеши
                 GlobalMeshCache.clearAll();
                 DoorPartAABBRegistry.clear();
                 

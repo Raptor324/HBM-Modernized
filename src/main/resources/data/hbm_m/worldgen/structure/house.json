@@ -1,9 +1,17 @@
 {
   "type": "minecraft:jigsaw",
-  "biomes": "#minecraft:is_overworld",
+  "biomes": [
+    "minecraft:plains",
+    "minecraft:forest",
+    "minecraft:birch_forest",
+    "minecraft:dark_forest",
+    "minecraft:taiga",
+    "minecraft:savanna",
+    "minecraft:desert"
+  ],
   "spawn_overrides": {},
   "step": "surface_structures",
-  "terrain_adaptation": "bottom",
+  "terrain_adaptation": "beard_box",
   "start_pool": "hbm_m:house_pool",
   "size": 1,
   "start_height": {

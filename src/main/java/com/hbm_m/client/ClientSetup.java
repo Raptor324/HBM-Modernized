@@ -1,42 +1,88 @@
 package com.hbm_m.client;
 
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import javax.annotation.Nonnull;
+
+import com.google.common.collect.ImmutableMap;
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.entity.custom.doors.DoorDeclRegistry;
+import com.hbm_m.client.loader.DoorModelLoader;
+import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
+import com.hbm_m.client.loader.PressModelLoader;
+import com.hbm_m.client.loader.ProceduralWireLoader;
+import com.hbm_m.client.loader.TemplateModelLoader;
 // Основной класс клиентской настройки мода. Здесь регистрируются все клиентские обработчики событий,
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.model.ModModelLayers;
-import com.hbm_m.client.overlay.*;
-import com.hbm_m.client.loader.*;
-import com.hbm_m.client.render.*;
-import com.hbm_m.client.render.shader.*;
-import com.hbm_m.config.*;
-import com.hbm_m.client.tooltip.*;
+import com.hbm_m.client.overlay.GUIAnvil;
+import com.hbm_m.client.overlay.GUIArmorTable;
+import com.hbm_m.client.overlay.GUIBlastFurnace;
+import com.hbm_m.client.overlay.GUIMachineAdvancedAssembler;
+import com.hbm_m.client.overlay.GUIMachineAssembler;
+import com.hbm_m.client.overlay.GUIMachineBattery;
+import com.hbm_m.client.overlay.GUIMachineFluidTank;
+import com.hbm_m.client.overlay.GUIMachinePress;
+import com.hbm_m.client.overlay.GUIMachineShredder;
+import com.hbm_m.client.overlay.GUIMachineWoodBurner;
+import com.hbm_m.client.overlay.OverlayGeiger;
+import com.hbm_m.client.overlay.OverlayInfoToast;
+import com.hbm_m.client.overlay.OverlayRadiationVisuals;
+import com.hbm_m.client.overlay.crates.GUIDeshCrate;
+import com.hbm_m.client.overlay.crates.GUIIronCrate;
+import com.hbm_m.client.overlay.crates.GUISteelCrate;
+import com.hbm_m.client.render.AirBombProjectileEntityRenderer;
+import com.hbm_m.client.render.AirNukeBombProjectileEntityRenderer;
+import com.hbm_m.client.render.AirstrikeEntityRenderer;
+import com.hbm_m.client.render.AirstrikeNukeEntityRenderer;
+import com.hbm_m.client.render.DoorRenderer;
+import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
+import com.hbm_m.client.render.MachineAdvancedAssemblerVboRenderer;
+import com.hbm_m.client.render.MachinePressRenderer;
+import com.hbm_m.client.render.ModShaders;
+import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.shader.ImmediateFallbackRenderer;
+import com.hbm_m.client.render.shader.RenderPathManager;
+import com.hbm_m.client.render.shader.ShaderReloadListener;
+import com.hbm_m.client.tooltip.ItemTooltipComponent;
+import com.hbm_m.client.tooltip.ItemTooltipComponentRenderer;
+import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.config.ModConfigKeybindHandler;
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.item.ItemAssemblyTemplate;
-import com.hbm_m.item.ItemBlueprintFolder;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.ModTags;
+import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
+import com.hbm_m.item.custom.industrial.ItemBlueprintFolder;
+import com.hbm_m.item.tags_and_tiers.ModTags;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.multiblock.DoorPartAABBRegistry;
-import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
-import com.hbm_m.recipe.AssemblerRecipe;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormat;
-import com.mojang.blaze3d.vertex.VertexFormatElement;
-import com.google.common.collect.ImmutableMap;
-import com.hbm_m.particle.custom.*;
-import com.hbm_m.particle.explosions.*;
+import com.hbm_m.particle.custom.DarkParticle;
+import com.hbm_m.particle.custom.RadFogParticle;
 import com.hbm_m.powerarmor.PowerArmorEmptyModel;
 import com.hbm_m.powerarmor.T51ArmorModel;
 import com.hbm_m.powerarmor.layer.AbstractObjArmorLayer;
 import com.hbm_m.powerarmor.overlay.OverlayPowerArmor;
-import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.DoorDeclRegistry;
-import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.recipe.AssemblerRecipe;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormat;
+import com.mojang.blaze3d.vertex.VertexFormatElement;
 
+import net.minecraft.client.GraphicsStatus;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.screens.MenuScreens;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
+import net.minecraft.client.renderer.entity.EntityRenderers;
+import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
@@ -44,32 +90,17 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.event.*;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.gui.screens.MenuScreens;
-
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
-import net.minecraft.client.renderer.entity.EntityRenderers;
-import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
-import net.minecraftforge.common.MinecraftForge;
-import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraft.client.GraphicsStatus;
-import net.minecraftforge.client.ChunkRenderTypeSet;
-
-import javax.annotation.Nonnull;
-
-import java.io.IOException;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public class ClientSetup {
@@ -89,9 +120,18 @@ public class ClientSetup {
         // MinecraftForge.EVENT_BUS.register(ClientSetup.class);
 
         // Register Entity Renders
-
-
-
+        ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADE_IF_FIRE_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADE_IF_SLIME_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
+        ModEntities.GRENADE_IF_HE_PROJECTILE.ifPresent(entityType ->
+                EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
         ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
         );
@@ -107,7 +147,7 @@ public class ClientSetup {
         ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType ->
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
         );
-        ModEntities.GRENADEIF_PROJECTILE.ifPresent(entityType ->
+        ModEntities.GRENADE_IF_PROJECTILE.ifPresent(entityType ->
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
         );
 
@@ -127,6 +167,7 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.IRON_CRATE_MENU.get(), GUIIronCrate::new);
             MenuScreens.register(ModMenuTypes.STEEL_CRATE_MENU.get(), GUISteelCrate::new);
             MenuScreens.register(ModMenuTypes.DESH_CRATE_MENU.get(), GUIDeshCrate::new);
+            MenuScreens.register(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
 
             // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
@@ -145,21 +186,6 @@ public class ClientSetup {
             MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
             MainRegistry.LOGGER.info("Initial render path check completed");
         });
-    }
-    @SubscribeEvent
-    public static void registerParticleFactories(RegisterParticleProvidersEvent event) {
-
-        event.registerSpriteSet(ModParticleTypes.EXPLOSION_WAVE.get(),
-                ExplosionWaveParticle.Provider::new);
-
-        event.registerSpriteSet(ModExplosionParticles.FLASH.get(),
-                FlashParticle.Provider::new);
-        event.registerSpriteSet(ModExplosionParticles.SHOCKWAVE.get(),
-                ShockwaveParticle.Provider::new);
-        event.registerSpriteSet(ModExplosionParticles.MUSHROOM_SMOKE.get(),
-                MushroomSmokeParticle.Provider::new);
-        event.registerSpriteSet(ModExplosionParticles.EXPLOSION_SPARK.get(),
-                ExplosionSparkParticle.Provider::new);
     }
 
 
@@ -207,7 +233,16 @@ public class ClientSetup {
         ModConfigKeybindHandler.onRegisterKeyMappings(event);
         MainRegistry.LOGGER.info("Registered key mappings.");
     }
+    @SubscribeEvent
+    public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
+        event.registerEntityRenderer(ModEntities.AIRNUKEBOMB_PROJECTILE.get(),
+                AirNukeBombProjectileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.AIRBOMB_PROJECTILE.get(),
+                AirBombProjectileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.AIRSTRIKE_NUKE_ENTITY.get(), AirstrikeNukeEntityRenderer::new);
 
+        event.registerEntityRenderer(ModEntities.AIRSTRIKE_ENTITY.get(), AirstrikeEntityRenderer::new);
+    }
     @SubscribeEvent
     public static void onResourceReload(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(new ShaderReloadListener());
@@ -362,7 +397,6 @@ public class ClientSetup {
             return ChunkRenderTypeSet.of(RenderType.solid());
         }
     }
-    
     public static void addTemplatesClient(BuildCreativeModeTabContentsEvent event) {
         if (Minecraft.getInstance().level != null) {
             RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();

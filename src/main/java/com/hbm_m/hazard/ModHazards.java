@@ -4,7 +4,7 @@ package com.hbm_m.hazard;
 // Позволяет регистрировать опасности для Item, Block и тегов.
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.ModIngots;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
 
 import net.minecraft.core.registries.Registries;
@@ -13,8 +13,6 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Blocks;
-
-import static com.hbm_m.item.ModItems.WIRE_SCHRABIDIUM;
 
 public class ModHazards {
 
@@ -241,6 +239,9 @@ public class ModHazards {
         HazardSystem.register(ModBlocks.URANIUM_BLOCK.get(), new HazardData(
             new HazardEntry(HazardType.RADIATION, 3.5f)
         ));
+         HazardSystem.register(ModBlocks.NUCLEAR_FALLOUT.get(), new HazardData(
+                 new HazardEntry(HazardType.RADIATION, 0.5f)
+         ));
         HazardSystem.register(ModBlocks.POLONIUM210_BLOCK.get(), new HazardData(
         new HazardEntry(HazardType.RADIATION, 750f),
         new HazardEntry(HazardType.PYROPHORIC, 5f) // Горит 8 секунд
@@ -250,28 +251,36 @@ public class ModHazards {
         ));
 
          HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED.get(), new HazardData(
-                 new HazardEntry(HazardType.RADIATION, 5f)
+                 new HazardEntry(HazardType.RADIATION, 0.1f)
          ));
 
          HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED1.get(), new HazardData(
-                 new HazardEntry(HazardType.RADIATION, 5f)
+                 new HazardEntry(HazardType.RADIATION, 0.1f)
          ));
 
          HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED2.get(), new HazardData(
-                 new HazardEntry(HazardType.RADIATION, 5f)
+                 new HazardEntry(HazardType.RADIATION, 0.1f)
          ));
 
          HazardSystem.register(ModBlocks.SELLAFIELD_SLAKED3.get(), new HazardData(
-                 new HazardEntry(HazardType.RADIATION, 5f)
+                 new HazardEntry(HazardType.RADIATION, 0.1f)
+         ));
+
+         HazardSystem.register(ModBlocks.BARREL_YELLOW.get(), new HazardData(
+                 new HazardEntry(HazardType.RADIATION, 150f)
+         ));
+
+         HazardSystem.register(ModBlocks.BARREL_VITRIFIED.get(), new HazardData(
+                 new HazardEntry(HazardType.RADIATION, 15f)
+         ));
+
+         HazardSystem.register(ModBlocks.BARREL_TAINT.get(), new HazardData(
+                 new HazardEntry(HazardType.RADIATION, 67f)
          ));
 
         HazardSystem.register(ModBlocks.PLUTONIUM_FUEL_BLOCK.get(), new HazardData(
             new HazardEntry(HazardType.RADIATION, 42.5f)
         ));
-
-         HazardSystem.register(ModBlocks.DET_MINER.get(), new HazardData(
-                 new HazardEntry(HazardType.EXPLOSIVE_ON_FIRE, 8.0f)
-         ));
 
         // ПРЕДМЕТЫ 
         // Порох взрывается в огне. Сила взрыва 1/4 от ТНТ (4.0f / 4 = 1.0f) за единицу.
@@ -283,7 +292,16 @@ public class ModHazards {
                  new HazardEntry(HazardType.RADIATION, 0.5f)
          ));
 
-        HazardSystem.register(ModItems.PLATE_SCHRABIDIUM.get(), new HazardData(
+         HazardSystem.register(ModItems.MAN_CORE.get(), new HazardData(
+                 new HazardEntry(HazardType.RADIATION, 5f)
+         ));
+
+         HazardSystem.register(ModItems.BILLET_PLUTONIUM.get(), new HazardData(
+                 new HazardEntry(HazardType.RADIATION, 0.5f)
+         ));
+
+
+         HazardSystem.register(ModItems.PLATE_SCHRABIDIUM.get(), new HazardData(
             new HazardEntry(HazardType.RADIATION, 15.0f)
         ));
 

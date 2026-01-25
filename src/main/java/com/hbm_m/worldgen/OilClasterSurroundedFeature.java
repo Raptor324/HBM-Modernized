@@ -20,9 +20,9 @@ public class OilClasterSurroundedFeature extends Feature<NoneFeatureConfiguratio
         LevelAccessor level = context.level();
 
         // Размер твоей структуры (замени на реальные размеры)
-        int sizeX = 5;
-        int sizeY = 5;
-        int sizeZ = 5;
+        int sizeX = 50;
+        int sizeY = 50;
+        int sizeZ = 25;
 
         // Проверяем, что вокруг структуры только камень (или другой нужный блок)
         for (int x = -1; x <= sizeX; x++) {

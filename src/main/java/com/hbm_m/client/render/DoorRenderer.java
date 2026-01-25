@@ -1,8 +1,8 @@
 package com.hbm_m.client.render;
 
-import com.hbm_m.block.entity.DoorBlockEntity;
+import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
 import com.hbm_m.client.model.DoorBakedModel;
-import com.hbm_m.block.entity.DoorDecl;
+import com.hbm_m.block.entity.custom.doors.DoorDecl;
 import com.hbm_m.client.render.shader.RenderPathManager;
 import com.hbm_m.client.render.shader.ImmediateFallbackRenderer;
 import com.hbm_m.main.MainRegistry;
@@ -20,7 +20,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import java.util.Arrays;
 import java.util.concurrent.ConcurrentHashMap;
 
 @OnlyIn(Dist.CLIENT)

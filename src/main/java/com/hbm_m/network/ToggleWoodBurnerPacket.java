@@ -9,7 +9,7 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-import com.hbm_m.block.entity.machine.MachineWoodBurnerBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineWoodBurnerBlockEntity;
 
 public class ToggleWoodBurnerPacket {
     private final BlockPos pos;

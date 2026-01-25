@@ -23,7 +23,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
 
 import com.hbm_m.util.EnergyFormatter;
 
@@ -126,7 +125,7 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
 
     /**
      * Отрисовывает призрачные предметы в пустых входных слотах.
-     * Использует группировку из BaseMachineBlockEntity.
+     * Группирует одинаковые ингредиенты и показывает суммарное количество.
      */
 
     private void renderGhostItems(GuiGraphics guiGraphics) {
@@ -137,20 +136,49 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             return;
         }
 
+        // Группируем одинаковые предметы и суммируем их количество
+        java.util.Map<ItemStack, Integer> groupedItems = new java.util.LinkedHashMap<>();
+        for (ItemStack stack : ghostItems) {
+            if (stack.isEmpty()) {
+                continue;
+            }
+            
+            // Ищем уже существующий предмет в группе
+            ItemStack found = null;
+            for (ItemStack key : groupedItems.keySet()) {
+                if (ItemStack.isSameItemSameTags(key, stack)) {
+                    found = key;
+                    break;
+                }
+            }
+            
+            if (found != null) {
+                // Увеличиваем количество
+                groupedItems.put(found, groupedItems.get(found) + stack.getCount());
+            } else {
+                // Добавляем новый предмет
+                ItemStack copy = stack.copy();
+                copy.setCount(1); // Нормализуем количество для ключа
+                groupedItems.put(copy, stack.getCount());
+            }
+        }
+
         // Слоты 4-15 (handler) соответствуют слотам 40-51 в menu
         int inputSlotsStart = 4; // 40
         int inputSlotsCount = 12;
 
         // Отрисовываем сгруппированные предметы
-        for (int i = 0; i < Math.min(ghostItems.size(), inputSlotsCount); i++) {
-            ItemStack ghostStack = ghostItems.get(i);
-
-            if (ghostStack.isEmpty()) {
-                continue;
+        int slotOffset = 0;
+        for (java.util.Map.Entry<ItemStack, Integer> entry : groupedItems.entrySet()) {
+            if (slotOffset >= inputSlotsCount) {
+                break; // Превышен лимит слотов
             }
+            
+            ItemStack ghostStack = entry.getKey().copy();
+            ghostStack.setCount(entry.getValue()); // Устанавливаем суммарное количество
 
             // Получаем слот
-            int slotIndex = inputSlotsStart + i;
+            int slotIndex = inputSlotsStart + slotOffset;
             if (slotIndex >= this.menu.slots.size()) break;
 
             net.minecraft.world.inventory.Slot slot = this.menu.slots.get(slotIndex);
@@ -182,6 +210,8 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
 
                 guiGraphics.pose().popPose();
             }
+            
+            slotOffset++;
         }
     }
 
@@ -203,7 +233,6 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             // Получаем long значения
             long energy = this.menu.getEnergyLong();
             long maxEnergy = this.menu.getMaxEnergyLong();
-            long delta = this.menu.getEnergyDeltaLong();
 
             // Форматируем их
             String energyStr = EnergyFormatter.format(energy);

@@ -1,8 +1,7 @@
 pluginManagement {
     repositories {
-        maven {
-            url 'file:///C:/local-maven-repo'
-        }
+        maven { url 'file:///C:/local-maven-repo' }
+        maven { url = 'https://maven.parchmentmc.org' }
         gradlePluginPortal()
         maven {
             name = 'MinecraftForge'

@@ -1,67 +1,56 @@
 package com.hbm_m.particle.explosions;
 
 import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.particle.*;
-import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraft.client.particle.SpriteSet;
 
-@OnlyIn(Dist.CLIENT)
-public class ExplosionFireParticle extends TextureSheetParticle {
+/**
+ * ✅ Огонь взрыва (красно-оранжевый пламя)
+ * Основание взрыва
+ */
+public class ExplosionFireParticle extends AbstractExplosionParticle {
 
-    private final SpriteSet spriteSet;
-
-    protected ExplosionFireParticle(ClientLevel level, double x, double y, double z,
-                                    double xSpeed, double ySpeed, double zSpeed,
-                                    SpriteSet spriteSet) {
-        super(level, x, y, z, xSpeed, ySpeed, zSpeed);
-        this.spriteSet = spriteSet;
-
-        // Настройки огня
-        this.lifetime = 80 + this.random.nextInt(110);
-        this.gravity = 0F; // Поднимается вверх
-        this.friction = 0.9F;
-
-        this.quadSize = 2.0F + this.random.nextFloat();
+    public ExplosionFireParticle(ClientLevel level, double x, double y, double z,
+                                 SpriteSet sprites, double xSpeed, double ySpeed, double zSpeed) {
+        super(level, x, y, z, sprites);
 
         this.xd = xSpeed;
-        this.yd = ySpeed + 0.1;
+        this.yd = ySpeed;
         this.zd = zSpeed;
 
+        // ✅ ВРЕМЯ ЖИЗНИ: 30-50 тиков
+        this.lifetime = 30 + this.random.nextInt(20);
 
-        this.setSpriteFromAge(spriteSet);
+        // ✅ ФИЗИКА: средняя гравитация (пламя поднимается медленнее чем искры)
+        this.gravity = 0.1F;
+        this.hasPhysics = false;
+
+        // ✅ РАЗМЕР: крупный (0.6-1.0)
+        this.quadSize = 0.6F + this.random.nextFloat() * 0.4F;
+
+        // ✅ ЦВЕТ: красно-оранжевый огонь
+        this.rCol = 1.0F;              // Red: максимум
+        this.gCol = 0.4F + this.random.nextFloat() * 0.3F;  // Green: 0.4-0.7
+        this.bCol = 0.0F;              // Blue: минимум (красный огонь)
+
+        // ✅ ПРОЗРАЧНОСТЬ
+        this.alpha = 0.9F;
     }
 
     @Override
     public void tick() {
         super.tick();
 
-        // Затухает и становится краснее
-        float agePercent = (float)this.age / (float)this.lifetime;
-        this.alpha = 1.0F - agePercent;
-        this.gCol = 0.6F * (1.0F - agePercent);
+        // ✅ Плавное исчезновение
+        float fadeProgress = (float) this.age / (float) this.lifetime;
+        this.alpha = 0.9F * (1.0F - fadeProgress);
 
-        this.setSpriteFromAge(spriteSet);
+        // ✅ Медленное сжатие
+        this.quadSize *= 0.97F;
     }
 
-    @Override
-    public ParticleRenderType getRenderType() {
-        return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public static class Provider implements ParticleProvider<SimpleParticleType> {
-        private final SpriteSet spriteSet;
-
-        public Provider(SpriteSet spriteSet) {
-            this.spriteSet = spriteSet;
-        }
-
-        @Override
-        public Particle createParticle(SimpleParticleType type, ClientLevel level,
-                                       double x, double y, double z,
-                                       double xSpeed, double ySpeed, double zSpeed) {
-            return new ExplosionFireParticle(level, x, y, z, xSpeed, ySpeed, zSpeed, this.spriteSet);
+    public static class Provider extends AbstractExplosionParticle.Provider<ExplosionFireParticle> {
+        public Provider(SpriteSet sprites) {
+            super(sprites, ExplosionFireParticle::new);
         }
     }
 }

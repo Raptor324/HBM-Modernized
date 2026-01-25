@@ -1,7 +1,7 @@
 package com.hbm_m.menu;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.IronCrateBlockEntity;
+import com.hbm_m.block.entity.custom.crates.IronCrateBlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -17,19 +17,19 @@ import org.jetbrains.annotations.NotNull;
 
 /**
  * Menu для Iron Crate (36 слотов: 4 ряда × 9 колонок)
+ * 🔒 НЕ МОЖНО ПЕРЕМЕСТИТЬ ЯЩИК пока меню открыто!
  */
 public class IronCrateMenu extends AbstractContainerMenu {
 
     public final IronCrateBlockEntity blockEntity;
     private final Level level;
+    private final ItemStack protectedCrate;
 
-    // ===== ИЗМЕНЕНО: Константы для 36 слотов =====
-    private static final int CRATE_SLOTS = 36;        // 4 ряда × 9 колонок
+    private static final int CRATE_SLOTS = 36;
     private static final int PLAYER_INVENTORY_START = 36;
     private static final int PLAYER_HOTBAR_START = 63;
 
     // ==================== CONSTRUCTORS ====================
-
     public IronCrateMenu(int containerId, Inventory inv, FriendlyByteBuf extraData) {
         this(containerId, inv, extraData.readBlockPos());
     }
@@ -49,25 +49,20 @@ public class IronCrateMenu extends AbstractContainerMenu {
         }
 
         this.level = inv.player.level();
+        // 🔒 Получаем ItemStack ящика из BlockEntity для защиты
+        this.protectedCrate = new ItemStack(ModBlocks.CRATE_IRON.get());
 
-        // Добавляем слоты крейта (4 ряда × 9 колонок)
         addCrateSlots();
-
-        // Добавляем инвентарь игрока
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
     }
 
     // ==================== SLOT SETUP ====================
 
-    /**
-     * Добавляет 36 слотов крейта (4 ряда × 9 колонок)
-     */
     private void addCrateSlots() {
-        int startX = 8;   // Отступ слева
-        int startY = 18;  // Отступ сверху
+        int startX = 8;
+        int startY = 18;
 
-        // ===== ИЗМЕНЕНО: 4 ряда вместо 6 =====
         for (int row = 0; row < 4; row++) {
             for (int col = 0; col < 9; col++) {
                 int index = row * 9 + col;
@@ -81,45 +76,60 @@ public class IronCrateMenu extends AbstractContainerMenu {
         }
     }
 
-    /**
-     * Добавляет основной инвентарь игрока (3 ряда × 9 колонок)
-     */
     private void addPlayerInventory(Inventory playerInventory) {
         int startX = 8;
-        // ===== ИЗМЕНЕНО: Позиция инвентаря ближе (4 ряда крейта вместо 6) =====
-        int startY = 104; // 18 (начало) + 4*18 (4 ряда) + 14 (отступ) = 104
+        int startY = 104;
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(
-                        playerInventory,
+                // 🔒 ЗАЩИЩЕННЫЕ СЛОТЫ
+                this.addSlot(new ProtectedSlot(playerInventory,
                         col + row * 9 + 9,
                         startX + col * 18,
-                        startY + row * 18
-                ));
+                        startY + row * 18,
+                        protectedCrate));
             }
         }
     }
 
-    /**
-     * Добавляет хотбар игрока (1 ряд × 9 колонок)
-     */
     private void addPlayerHotbar(Inventory playerInventory) {
         int startX = 8;
-        // ===== ИЗМЕНЕНО: Позиция хотбара ниже =====
-        int startY = 162; // 104 + 3*18 (инвентарь) + 4 (отступ) = 162
+        int startY = 162;
 
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(
-                    playerInventory,
+            // 🔒 ЗАЩИЩЕННЫЙ ХОТБАР
+            this.addSlot(new ProtectedSlot(playerInventory,
                     col,
                     startX + col * 18,
-                    startY
-            ));
+                    startY,
+                    protectedCrate));
         }
     }
 
-    // ==================== SHIFT-CLICK HANDLING ====================
+    // ==================== PROTECTED SLOT ====================
+    private static class ProtectedSlot extends Slot {
+        private final ItemStack protectedCrate;
+
+        public ProtectedSlot(Inventory inv, int index, int x, int y, ItemStack protectedCrate) {
+            super(inv, index, x, y);
+            this.protectedCrate = protectedCrate;
+        }
+
+        @Override
+        public boolean mayPickup(Player player) {
+            // 🔒 ЗАПРЕТ: нельзя взять ящик из инвентаря пока меню открыто
+            ItemStack slotItem = this.getItem();
+            return !ItemStack.isSameItemSameTags(slotItem, protectedCrate);
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            // Дополнительная защита: нельзя положить ящик в слот
+            return !ItemStack.isSameItemSameTags(stack, protectedCrate);
+        }
+    }
+
+    // ==================== SHIFT-CLICK ====================
 
     @Override
     public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
@@ -131,14 +141,11 @@ public class IronCrateMenu extends AbstractContainerMenu {
         ItemStack sourceStack = sourceSlot.getItem();
         ItemStack copyOfSourceStack = sourceStack.copy();
 
-        // Из крейта в инвентарь игрока
         if (index < CRATE_SLOTS) {
             if (!this.moveItemStackTo(sourceStack, PLAYER_INVENTORY_START, PLAYER_HOTBAR_START + 9, true)) {
                 return ItemStack.EMPTY;
             }
-        }
-        // Из инвентаря игрока в крейт
-        else {
+        } else {
             if (!this.moveItemStackTo(sourceStack, 0, CRATE_SLOTS, false)) {
                 return ItemStack.EMPTY;
             }
@@ -153,8 +160,6 @@ public class IronCrateMenu extends AbstractContainerMenu {
         sourceSlot.onTake(player, sourceStack);
         return copyOfSourceStack;
     }
-
-    // ==================== VALIDATION ====================
 
     @Override
     public boolean stillValid(@NotNull Player player) {

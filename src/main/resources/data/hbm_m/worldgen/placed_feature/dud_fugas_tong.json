@@ -1,0 +1,36 @@
+{
+  "type": "minecraft:placed_feature",
+  "feature": "hbm_m:dud_fugas_tong",
+  "placement": [
+    {
+      "type": "minecraft:rarity_filter",
+      "chance": 900
+    },
+    {
+      "type": "minecraft:in_square"
+    },
+    {
+      "type": "minecraft:heightmap",
+      "heightmap": "MOTION_BLOCKING_NO_LEAVES"
+    },
+    {
+      "type": "minecraft:block_predicate_filter",
+      "predicate": {
+        "type": "minecraft:matching_blocks",
+        "offset": [0, -1, 0],
+        "blocks": [
+          "minecraft:grass_block",
+          "minecraft:dirt",
+          "minecraft:sand",
+          "minecraft:red_sand",
+          "minecraft:podzol",
+          "minecraft:coarse_dirt",
+          "minecraft:mycelium"
+        ]
+      }
+    },
+    {
+      "type": "minecraft:biome"
+    }
+  ]
+}

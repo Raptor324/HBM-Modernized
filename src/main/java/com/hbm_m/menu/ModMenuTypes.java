@@ -1,6 +1,6 @@
 package com.hbm_m.menu;
 
-import com.hbm_m.armormod.menu.ArmorTableMenu;
+import com.hbm_m.block.custom.machines.armormod.menu.ArmorTableMenu;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.world.inventory.MenuType;
 import net.minecraftforge.common.extensions.IForgeMenuType;
@@ -44,11 +44,17 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<IronCrateMenu>> IRON_CRATE_MENU =
             MENUS.register("iron_crate_menu", () -> IForgeMenuType.create(IronCrateMenu::new));
 
+    public static final RegistryObject<MenuType<IronCrateMenu>> PORTABLE_IRON_CRATE_MENU =
+            MENUS.register("portable_iron_crate_menu", () -> IForgeMenuType.create(IronCrateMenu::new));
+
     public static final RegistryObject<MenuType<SteelCrateMenu>> STEEL_CRATE_MENU =
             MENUS.register("steel_crate_menu", () -> IForgeMenuType.create(SteelCrateMenu::new));
 
     public static final RegistryObject<MenuType<DeshCrateMenu>> DESH_CRATE_MENU =
             MENUS.register("desh_crate_menu", () -> IForgeMenuType.create(DeshCrateMenu::new));
+
+    public static final RegistryObject<MenuType<MachineFluidTankMenu>> FLUID_TANK_MENU =
+            MENUS.register("fluid_tank_menu", () -> IForgeMenuType.create(MachineFluidTankMenu::new));
 
     public static void register(IEventBus eventBus) {
         MENUS.register(eventBus);
