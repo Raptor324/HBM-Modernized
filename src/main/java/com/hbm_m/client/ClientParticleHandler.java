@@ -1,7 +1,12 @@
 package com.hbm_m.client;
 
 import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.particle.explosions.*;
+import com.hbm_m.particle.custom.AgentOrangeParticle;
+import com.hbm_m.particle.explosions.basic.*;
+import com.hbm_m.particle.explosions.nuclear.small.DarkSmokeParticle;
+import com.hbm_m.particle.explosions.nuclear.small.DarkWaveSmokeParticle;
+import com.hbm_m.particle.explosions.nuclear.small.LargeDarkSmoke;
+import com.hbm_m.particle.explosions.nuclear.small.LargeExplosionSpark;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
@@ -61,6 +66,18 @@ public class ClientParticleHandler {
         event.registerSpriteSet(
                 (SimpleParticleType) ModExplosionParticles.FIRE_SPARK.get(),
                 FireSparkParticle.Provider::new);
+
+        event.registerSpriteSet(
+                (SimpleParticleType) ModExplosionParticles.LARGE_EXPLOSION_SPARK.get(),
+                LargeExplosionSpark.Provider::new);
+
+        event.registerSpriteSet(
+                (SimpleParticleType) ModExplosionParticles.LARGE_DARK_SMOKE.get(),
+                LargeDarkSmoke.Provider::new);
+
+        event.registerSpriteSet(
+                (SimpleParticleType) ModExplosionParticles.DARK_WAVE_SMOKE.get(),
+                DarkWaveSmokeParticle.Provider::new);
 
     }
 }

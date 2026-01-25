@@ -1,4 +1,4 @@
-package com.hbm_m.item;
+package com.hbm_m.item.custom.liquids;
 
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
