@@ -5,7 +5,7 @@ preserve_hierarchy: true
 
 files:
   - source: /src/generated/resources/assets/hbm_m/lang/en_us.json
-    translation: /src/generated/resources/assets/hbm_m/lang/%two_letters_code%_%two_letters_code%.json
+    translation: /src/generated/resources/assets/hbm_m/lang/%locale_with_underscore%.json
     
     ignore:
       - /src/generated/resources/assets/hbm/lang/ru_ru.json
