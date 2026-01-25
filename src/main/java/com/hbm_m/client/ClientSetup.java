@@ -1,11 +1,11 @@
 package com.hbm_m.client;
-
+// Основной класс клиентской настройки мода. Здесь регистрируются все клиентские обработчики событий,
+// GUI, рендереры, модели и т.д.
 import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
 import javax.annotation.Nonnull;
 
 import com.google.common.collect.ImmutableMap;
@@ -17,8 +17,6 @@ import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.ProceduralWireLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
-// Основной класс клиентской настройки мода. Здесь регистрируются все клиентские обработчики событий,
-// GUI, рендереры, модели и т.д.
 import com.hbm_m.client.model.ModModelLayers;
 import com.hbm_m.client.overlay.GUIAnvil;
 import com.hbm_m.client.overlay.GUIArmorTable;
