@@ -1,6 +1,5 @@
 package com.hbm_m.util;
 
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.core.BlockPos;
@@ -13,7 +12,6 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.tags.BlockTags;
-import net.minecraft.tags.FluidTags;
 
 import net.minecraftforge.server.ServerLifecycleHooks;
 import net.minecraft.server.MinecraftServer;

@@ -19,7 +19,7 @@ import java.util.function.Supplier;
 
 public class DetonateAllPacket {
 
-    // Поле оставлено для совместимости с твоим encode/decode
+    // Поле оставлено для совместимости с encode/decode TODO: Check
     private final CompoundTag tag;
 
     public DetonateAllPacket(CompoundTag tag) {

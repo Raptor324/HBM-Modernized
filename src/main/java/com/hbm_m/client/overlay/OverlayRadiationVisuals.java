@@ -41,12 +41,8 @@ public class OverlayRadiationVisuals {
         activePixels.removeIf(pixel -> !pixel.tick());
 
         if (!config.radiationPixelEffect.enableRadiationPixelEffect || player == null || player.isCreative() || player.isSpectator()) {
-            // ... (логика отключения остается прежней)
         } else {
             float incomingRadiation = OverlayGeiger.clientTotalEnvironmentRadiation;
-            
-            // --- ИСПРАВЛЕНИЕ №1: Используем порог из конфига ---
-            // Теперь эта настройка действительно работает.
             float threshold = config.radiationPixelEffect.radiationPixelEffectThreshold; 
 
             if (incomingRadiation >= threshold) {
@@ -55,7 +51,6 @@ public class OverlayRadiationVisuals {
 
                 float intensity = Mth.clamp(Mth.inverseLerp(incomingRadiation, threshold, maxIntensityRad), 0.0f, 1.0f);
 
-                // --- ИСПРАВЛЕНИЕ №2: Вероятностный спавн пикселей ---
                 // 1. Вычисляем желаемое количество НОВЫХ пикселей как float, не отбрасывая дробную часть.
                 float desiredNewPixels = maxDots * intensity * 0.1f;
 

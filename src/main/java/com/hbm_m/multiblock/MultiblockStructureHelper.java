@@ -391,7 +391,7 @@ public class MultiblockStructureHelper {
     public static Map<String, AABB> getDoorPartAABBs(String doorId) {
         Map<String, AABB> result = DoorPartAABBRegistry.getAll(doorId);
 
-        // ✅ Проверка на null
+        // Проверка на null
         if (result == null) {
             MainRegistry.LOGGER.error(
                     "DoorPartAABBRegistry returned null for doorId: '{}'",
@@ -400,7 +400,7 @@ public class MultiblockStructureHelper {
             return Collections.emptyMap();
         }
 
-        // ✅ Валидация каждого AABB в реестре
+        // Валидация каждого AABB в реестре
         Map<String, AABB> validatedResult = new HashMap<>(result);
 
         for (Map.Entry<String, AABB> entry : validatedResult.entrySet()) {
@@ -415,7 +415,7 @@ public class MultiblockStructureHelper {
                 continue;
             }
 
-            // ✅ Проверка на Infinity и NaN
+            // Проверка на Infinity и NaN
             if (!isValidAABB(aabb, "getDoorPartAABBs")) {
                 MainRegistry.LOGGER.error(
                         "DoorPartAABBRegistry contains invalid AABB for part '{}' in door '{}': {}",
@@ -441,10 +441,10 @@ public class MultiblockStructureHelper {
         Map<String, AABB> allAABBs = getDoorPartAABBs(doorId);
         if (allAABBs.isEmpty()) return Shapes.empty();
 
-        // ✅ ИСПРАВЛЕНИЕ: Получаем размеры с валидацией
+        // Получаем размеры с валидацией
         int[] dims = com.hbm_m.block.DoorBlock.getDoorDimensions(doorId);
 
-        // ✅ Проверка на null и длину массива
+        // Проверка на null и длину массива
         if (dims == null || dims.length < 6) {
             MainRegistry.LOGGER.error(
                     "Invalid door dimensions for doorId '{}': dims is null or too short (length={})",
@@ -453,7 +453,7 @@ public class MultiblockStructureHelper {
             return Shapes.empty();
         }
 
-        // ✅ Извлечение параметров с проверкой на NaN/Infinity
+        // Извлечение параметров с проверкой на NaN/Infinity
         double widthBlocks = dims[3] + 1.0;
         double heightBlocks = dims[4] + 1.0;
         double depthBlocks = dims[5] + 1.0;
@@ -461,7 +461,7 @@ public class MultiblockStructureHelper {
         double offsetY = dims[1];
         double offsetZ = dims[2];
 
-        // ✅ НОВОЕ: Полная валидация всех параметров
+        // Полная валидация всех параметров
         if (!isValidDoorDimension(widthBlocks, "widthBlocks", doorId) ||
             !isValidDoorDimension(heightBlocks, "heightBlocks", doorId) ||
             !isValidDoorDimension(depthBlocks, "depthBlocks", doorId) ||
@@ -471,7 +471,7 @@ public class MultiblockStructureHelper {
             return Shapes.empty();
         }
 
-        // ✅ НОВОЕ: Гарантировать минимальные размеры (избежать нулевых значений)
+        // Гарантировать минимальные размеры (избежать нулевых значений)
         widthBlocks = Math.max(widthBlocks, 0.01);
         heightBlocks = Math.max(heightBlocks, 0.01);
         depthBlocks = Math.max(depthBlocks, 0.01);
@@ -482,7 +482,7 @@ public class MultiblockStructureHelper {
             AABB raw = allAABBs.get(partName);
             if (raw == null) continue;
 
-            // ✅ НОВОЕ: Проверка на Infinity перед масштабированием
+            // Проверка на Infinity перед масштабированием
             if (!isValidAABB(raw, "generateShapeFromDoorParts")) {
                 MainRegistry.LOGGER.warn(
                         "Skipping invalid AABB for part '{}' in door '{}'",
@@ -536,9 +536,7 @@ public class MultiblockStructureHelper {
         return finalShape.optimize();
     }
 
-    /**
-     * ✅ ВСПОМОГАТЕЛЬНЫЙ МЕТОД #1: Проверка размеров на корректность
-     */
+    // Вспомогательный метод #1: Проверка размеров на корректность
     private static boolean isValidDoorDimension(double value, String name, String doorId) {
         if (Double.isNaN(value)) {
             MainRegistry.LOGGER.error(
@@ -559,9 +557,7 @@ public class MultiblockStructureHelper {
         return true;
     }
 
-    /**
-     * ✅ ВСПОМОГАТЕЛЬНЫЙ МЕТОД #2: Проверка AABB на валидность
-     */
+    // Вспомогательный метод #2: Проверка AABB на валидность
     private static boolean isValidAABB(AABB aabb, String caller) {
         if (aabb == null) {
             MainRegistry.LOGGER.warn("{}: AABB is null", caller);
@@ -595,7 +591,7 @@ public class MultiblockStructureHelper {
     }
 
 
-    //  ВСПОМОГАТЕЛЬНЫЙ МЕТОД #3: Форматирование AABB для логирования
+    //  Вспомогательный метод #3: Форматирование AABB для логирования
 
     private static String formatAABB(AABB aabb) {
         if (aabb == null) return "null";

@@ -8,9 +8,9 @@ import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
 
-/**
- * Пакет для синхронизации dash движения силовой брони
- */
+
+// Пакет для синхронизации dash движения силовой брони
+
 public class PowerArmorDashPacket {
 
     private final int playerId;
