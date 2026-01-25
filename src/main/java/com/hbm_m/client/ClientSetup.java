@@ -27,9 +27,10 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.particle.custom.*;
 import com.hbm_m.particle.explosions.*;
-import com.hbm_m.powerarmor.AbstractObjArmorLayer;
-import com.hbm_m.powerarmor.OverlayPowerArmor;
+import com.hbm_m.powerarmor.PowerArmorEmptyModel;
 import com.hbm_m.powerarmor.T51ArmorModel;
+import com.hbm_m.powerarmor.layer.AbstractObjArmorLayer;
+import com.hbm_m.powerarmor.overlay.OverlayPowerArmor;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.DoorDeclRegistry;
 import com.hbm_m.block.entity.ModBlockEntities;
@@ -83,10 +84,7 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
         MinecraftForge.EVENT_BUS.register(DoorOutlineRenderer.class);
-        
-        // Initialize thermal vision world renderer reflection
-        com.hbm_m.powerarmor.ThermalVisionWorldRenderer.initializeReflection();
-        
+
         // MinecraftForge.EVENT_BUS.register(DoorDebugRenderer.class);
         // MinecraftForge.EVENT_BUS.register(ClientSetup.class);
 
@@ -409,6 +407,9 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
+        // Generic dummy armor model for all power armor items.
+        event.registerLayerDefinition(ModModelLayers.POWER_ARMOR, PowerArmorEmptyModel::createBodyLayer);
+
         // Мы говорим игре: "Когда спросят слой T51_ARMOR, используй метод createBodyLayer из ModelT51"
         event.registerLayerDefinition(ModModelLayers.T51_ARMOR, T51ArmorModel::createBodyLayer);
     }

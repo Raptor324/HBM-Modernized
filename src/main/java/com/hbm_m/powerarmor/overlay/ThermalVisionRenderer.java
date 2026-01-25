@@ -1,15 +1,14 @@
-package com.hbm_m.powerarmor;
+package com.hbm_m.powerarmor.overlay;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
-import java.util.Set;
 
 import org.joml.Matrix4f;
 
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.powerarmor.ModEventHandlerClient;
 import com.hbm_m.config.ModClothConfig;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -24,16 +23,12 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.ItemBlockRenderTypes;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.ClipContext;
-import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
@@ -46,10 +41,9 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/**
- * Handles all thermal vision rendering effects.
- * Optimized for performance and compatibility with shader mods (Oculus/Embeddium).
- */
+
+// Handles all thermal vision rendering effects.
+
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ThermalVisionRenderer {
@@ -57,23 +51,23 @@ public class ThermalVisionRenderer {
     private static final Random RANDOM = new Random();
     private static boolean isActive = false;
     
-    /**
-     * Public method to check if thermal vision is currently active.
-     */
+
+    // Public method to check if thermal vision is currently active.
+
     public static boolean isThermalVisionActive() {
         return isActive;
     }
     private static final ResourceLocation WHITE_TEXTURE = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/misc/white.png");
-    // Use entityCutoutNoCull for uniform white rendering
-    // NoCull ensures all faces are visible, Cutout ensures solid rendering
-    private static final RenderType THERMAL_ENTITY_WHITE = RenderType.entityCutoutNoCull(WHITE_TEXTURE);
+    // Solid entity render type used for thermal entity passes (outline + white silhouette).
+    private static final RenderType THERMAL_ENTITY_SOLID = RenderType.entityCutoutNoCull(WHITE_TEXTURE);
+    // Outline-only render type for spectral fallback (draws only outline, not a filled second model).
+    private static final RenderType THERMAL_ENTITY_OUTLINE = RenderType.outline(WHITE_TEXTURE);
     private static boolean isRenderingThermalEntityOverlay = false;
     
     // Caches for optimization
     private static final Map<Integer, Boolean> entityVisibilityCache = new HashMap<>();
     private static final java.util.Set<Integer> spectralHighlighted = new java.util.HashSet<>();
     private static final java.util.Set<Integer> spectralHighlightedThisFrame = new java.util.HashSet<>();
-    private static final Set<Block> forcedOpaqueTranslucentBlocks = new HashSet<>();
     private static long lastCacheClearTime = 0;
     private static long lastInterferenceUpdate = 0;
     private static int interferenceOffset = 0;
@@ -105,31 +99,9 @@ public class ThermalVisionRenderer {
         
         // Update active state from ModEventHandlerClient
         boolean newActive = ModEventHandlerClient.isThermalActive();
-        boolean wasActive = isActive;
         if (newActive != isActive) {
             isActive = newActive;
-            
-            // Apply/remove translucent override only when state changes
-            // Note: This feature may not work due to checkClientLoading restriction
-            // The try-catch in applyOpaqueTranslucentOverride will handle failures gracefully
-            if (isActive && !isSpectralFallbackMode()) {
-                applyOpaqueTranslucentOverride(true);
-            } else if (wasActive) {
-                applyOpaqueTranslucentOverride(false);
-            }
         }
-    }
-
-    /**
-     * Intercepts translucent block rendering to make them opaque.
-     * NOTE: This approach is currently not implemented due to complexity.
-     * The reflection-based approach should be used instead.
-     */
-    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.HIGH)
-    public static void onRenderTranslucentBlocks(RenderLevelStageEvent event) {
-        // Disabled: Direct interception of translucent rendering is complex and may cause performance issues
-        // Using reflection-based render layer override instead
-        return;
     }
 
     /**
@@ -149,7 +121,7 @@ public class ThermalVisionRenderer {
         }
 
         if (isSpectralFallbackMode()) {
-            reconcileSpectralHighlights();
+            // Spectral fallback intentionally does not alter world rendering.
             return;
         }
         
@@ -183,8 +155,47 @@ public class ThermalVisionRenderer {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || entity == mc.player) return;
         if (entity.isInvisible()) return;
-        // Disable legacy aura/white overlay rendering to avoid duplicate models.
-        // Entity highlighting should be handled either by the shader or by spectral fallback.
+        if (!(event.getRenderer() instanceof net.minecraft.client.renderer.entity.LivingEntityRenderer<?, ?>)) {
+            return;
+        }
+
+        if (isSpectralFallbackMode()) {
+            // Render ONLY outline (no second filled model), and only if visible (no through walls).
+            if (entity instanceof net.minecraft.world.entity.player.Player) return;
+            if (!isEntityVisibleForThermal(mc.player, entity)) return;
+
+            float partialTick = event.getPartialTick();
+            float entityYaw = Mth.lerp(partialTick, entity.yRotO, entity.getYRot());
+
+            PoseStack poseStack = event.getPoseStack();
+            poseStack.pushPose();
+
+            MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
+            MultiBufferSource outlineSource = new ThermalOutlineOnlyBufferSource(bufferSource);
+            int packedLight = 0xF000F0;
+
+            @SuppressWarnings("unchecked")
+            net.minecraft.client.renderer.entity.LivingEntityRenderer<LivingEntity, ?> renderer =
+                (net.minecraft.client.renderer.entity.LivingEntityRenderer<LivingEntity, ?>) event.getRenderer();
+
+            isRenderingThermalEntityOverlay = true;
+            try {
+                renderer.render(entity, entityYaw, partialTick, poseStack, outlineSource, packedLight);
+            } catch (Exception e) {
+                com.hbm_m.main.MainRegistry.LOGGER.error("[ThermalVision] Error rendering fallback outline for {}", entity.getType(), e);
+            } finally {
+                isRenderingThermalEntityOverlay = false;
+                poseStack.popPose();
+                try {
+                    bufferSource.endBatch(THERMAL_ENTITY_OUTLINE);
+                } catch (Exception e) {
+                    com.hbm_m.main.MainRegistry.LOGGER.error("[ThermalVision] Error ending fallback outline batch", e);
+                }
+            }
+            return;
+        }
+
+        // FULL_SHADER is handled in Pre (cancel + custom render)
         return;
 
     }
@@ -206,7 +217,7 @@ public class ThermalVisionRenderer {
         if (entity instanceof net.minecraft.world.entity.player.Player) return;
 
         if (isSpectralFallbackMode()) {
-            handleSpectralHighlight(mc.player, entity);
+            // Fallback handled in Post (outline-only pass).
             return;
         }
 
@@ -219,7 +230,7 @@ public class ThermalVisionRenderer {
         poseStack.pushPose();
 
         MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
-        MultiBufferSource whiteSource = new ThermalWhiteBufferSource(bufferSource);
+        MultiBufferSource whiteSource = new ThermalSolidColorBufferSource(bufferSource, 255, 255, 255, 255);
         int fullBright = 0xF000F0;
 
         @SuppressWarnings("unchecked")
@@ -228,6 +239,7 @@ public class ThermalVisionRenderer {
 
         isRenderingThermalEntityOverlay = true;
         try {
+            // Single-pass solid white (no scaled duplicate model).
             renderer.render(entity, entityYaw, partialTick, poseStack, whiteSource, fullBright);
         } catch (Exception e) {
             com.hbm_m.main.MainRegistry.LOGGER.error("[ThermalVision] Error rendering white entity for {}", entity.getType(), e);
@@ -235,7 +247,7 @@ public class ThermalVisionRenderer {
             isRenderingThermalEntityOverlay = false;
             poseStack.popPose();
             try {
-                bufferSource.endBatch(THERMAL_ENTITY_WHITE);
+                bufferSource.endBatch(THERMAL_ENTITY_SOLID);
             } catch (Exception e) {
                 com.hbm_m.main.MainRegistry.LOGGER.error("[ThermalVision] Error ending white entity batch", e);
             }
@@ -243,14 +255,22 @@ public class ThermalVisionRenderer {
     }
 
     /**
-     * BufferSource wrapper for rendering entity aura (glowing outline).
-     * Uses reduced alpha and additive blending for glow effect.
+     * MultiBufferSource which forces a single solid color for all entity vertex data,
+     * while routing all entity-related RenderTypes into our own solid RenderType.
      */
-    private static final class ThermalAuraBufferSource implements MultiBufferSource {
+    private static final class ThermalSolidColorBufferSource implements MultiBufferSource {
         private final MultiBufferSource delegate;
+        private final int r;
+        private final int g;
+        private final int b;
+        private final int a;
 
-        private ThermalAuraBufferSource(MultiBufferSource delegate) {
+        private ThermalSolidColorBufferSource(MultiBufferSource delegate, int r, int g, int b, int a) {
             this.delegate = delegate;
+            this.r = r;
+            this.g = g;
+            this.b = b;
+            this.a = a;
         }
 
         @Override
@@ -258,222 +278,86 @@ public class ThermalVisionRenderer {
             VertexFormat format = renderType.format();
             String name = renderType != null ? renderType.toString() : "null";
             String lower = name.toLowerCase(Locale.ROOT);
-            
-            // Exclude problematic RenderTypes
-            if (lower.contains("text") || lower.contains("font") || 
-                lower.contains("gui") || lower.contains("overlay") || 
+
+            // Exclude non-entity types to avoid crashes
+            if (lower.contains("text") || lower.contains("font") ||
+                lower.contains("gui") || lower.contains("overlay") ||
                 lower.contains("line") || lower.contains("particle")) {
                 return delegate.getBuffer(renderType);
             }
-            
-            // Wrap entity RenderTypes with aura consumer (reduced alpha for glow)
-            if (format == DefaultVertexFormat.NEW_ENTITY || lower.contains("entity")) {
-                try {
-                    VertexConsumer originalBuffer = delegate.getBuffer(THERMAL_ENTITY_WHITE);
-                    return new ThermalAuraVertexConsumer(originalBuffer);
-                } catch (Exception e) {
-                    return delegate.getBuffer(renderType);
-                }
+
+            // Route entity-ish render types into our solid pass render type
+            if (format == DefaultVertexFormat.NEW_ENTITY || lower.contains("entity") || lower.contains("armor") || lower.contains("glint") || lower.contains("item")) {
+                VertexConsumer originalBuffer = delegate.getBuffer(THERMAL_ENTITY_SOLID);
+                return new SolidColorVertexConsumer(originalBuffer, r, g, b, a);
             }
-            
+
             return delegate.getBuffer(renderType);
         }
     }
-    
+
     /**
-     * VertexConsumer wrapper for aura effect - white color with reduced alpha for glow.
+     * VertexConsumer wrapper forcing a constant RGBA + fullbright + fixed UV.
+     * Used for both outline (black) and white-hot pass.
      */
-    private static final class ThermalAuraVertexConsumer implements VertexConsumer {
+    private static final class SolidColorVertexConsumer implements VertexConsumer {
         private final VertexConsumer delegate;
-        
-        private ThermalAuraVertexConsumer(VertexConsumer delegate) {
+        private final int r;
+        private final int g;
+        private final int b;
+        private final int a;
+
+        private SolidColorVertexConsumer(VertexConsumer delegate, int r, int g, int b, int a) {
             this.delegate = delegate;
+            this.r = r;
+            this.g = g;
+            this.b = b;
+            this.a = a;
         }
-        
+
         @Override
         public VertexConsumer vertex(double x, double y, double z) {
             return delegate.vertex(x, y, z);
         }
-        
+
         @Override
         public VertexConsumer color(int red, int green, int blue, int alpha) {
-            // White color with full alpha for maximum glow visibility on dark textures
-            return delegate.color(255, 255, 255, 255);
+            return delegate.color(r, g, b, a);
         }
-        
+
         @Override
         public VertexConsumer uv(float u, float v) {
-            // Fixed UV to eliminate texture details
             return delegate.uv(0.5f, 0.5f);
         }
-        
+
         @Override
         public VertexConsumer overlayCoords(int u, int v) {
             return delegate.overlayCoords(0, 0);
         }
-        
+
         @Override
         public VertexConsumer uv2(int u, int v) {
             return delegate.uv2(0xF0, 0xF0);
         }
-        
+
         @Override
         public VertexConsumer normal(float x, float y, float z) {
             return delegate.normal(0.0f, 0.0f, 1.0f);
         }
-        
+
         @Override
         public void endVertex() {
             delegate.endVertex();
         }
-        
+
         @Override
         public void defaultColor(int red, int green, int blue, int alpha) {
-            // Full alpha for brighter aura
-            delegate.defaultColor(255, 255, 255, 255);
+            delegate.defaultColor(r, g, b, a);
         }
-        
+
         @Override
         public void unsetDefaultColor() {
-            // Keep white as default
-        }
-    }
-
-    private static final class ThermalWhiteBufferSource implements MultiBufferSource {
-        private final MultiBufferSource delegate;
-
-        private ThermalWhiteBufferSource(MultiBufferSource delegate) {
-            this.delegate = delegate;
-        }
-
-        @Override
-        public VertexConsumer getBuffer(RenderType renderType) {
-            // Override ALL entity-related RenderTypes to force white rendering
-            // This includes base model, cape, armor layers, held items, etc.
-            VertexFormat format = renderType.format();
-            String name = renderType != null ? renderType.toString() : "null";
-            String lower = name.toLowerCase(Locale.ROOT);
-            
-            // CRITICAL: Exclude problematic RenderTypes that cause crashes
-            // These have different vertex formats or are not entity-related
-            if (lower.contains("text") || lower.contains("font") || 
-                lower.contains("gui") || lower.contains("overlay") || 
-                lower.contains("line") || lower.contains("particle")) {
-                return delegate.getBuffer(renderType);
-            }
-            
-            // Override ALL RenderTypes with NEW_ENTITY format (all entity parts use this)
-            // This includes: base model, cape, armor, held items, etc.
-            if (format == DefaultVertexFormat.NEW_ENTITY) {
-                try {
-                    // Wrap the buffer with a white color consumer to force solid white
-                    // This ensures ALL parts of the mob (body, cape, armor, items) are white
-                    VertexConsumer originalBuffer = delegate.getBuffer(THERMAL_ENTITY_WHITE);
-                    return new WhiteColorVertexConsumer(originalBuffer);
-                } catch (Exception e) {
-                    // If white buffer fails, fall back to original to avoid crash
-                    return delegate.getBuffer(renderType);
-                }
-            }
-            
-            // ALSO check for entity/armor/item-related RenderTypes by name
-            // This catches edge cases like cow spots, villager capes, armor layers, glints, held items, etc.
-            if (lower.contains("entity") || lower.contains("armor") || lower.contains("glint") || lower.contains("item")) {
-                try {
-                    // Try to wrap with white consumer for entity-related types
-                    VertexConsumer originalBuffer = delegate.getBuffer(THERMAL_ENTITY_WHITE);
-                    return new WhiteColorVertexConsumer(originalBuffer);
-                } catch (Exception e) {
-                    // If white buffer fails, fall back to original
-                    return delegate.getBuffer(renderType);
-                }
-            }
-
-            // For non-entity formats, return original buffer to avoid crashes
-            return delegate.getBuffer(renderType);
-        }
-    }
-    
-    /**
-     * VertexConsumer wrapper that forces all vertices to be white (fullbright).
-     * This ensures entities are rendered as solid white silhouettes without any
-     * texture detail variations - completely uniform white color.
-     * 
-     * NOTE: This class is lightweight and creates minimal overhead.
-     * Each entity render creates one instance per RenderType, which is acceptable.
-     */
-    private static final class WhiteColorVertexConsumer implements VertexConsumer {
-        private final VertexConsumer delegate;
-        
-        private WhiteColorVertexConsumer(VertexConsumer delegate) {
-            this.delegate = delegate;
-            // NOTE: Do NOT call defaultColor() here - BufferBuilder may not be ready yet
-            // We'll set it when color() is first called, or rely on color() override
-        }
-        
-        @Override
-        public VertexConsumer vertex(double x, double y, double z) {
-            // CRITICAL: Call vertex first, then color will be applied via defaultColor
-            // This ensures proper order and avoids IllegalStateException
-            return delegate.vertex(x, y, z);
-        }
-        
-        @Override
-        public VertexConsumer color(int red, int green, int blue, int alpha) {
-            // CRITICAL: Force white color with full alpha - completely ignore original color
-            // This eliminates any texture-based color variations
-            // NOTE: Do NOT log here - this is called thousands of times per frame!
-            // Always return white color regardless of input
-            // This ensures all vertices are white, making mobs uniformly visible
-            return delegate.color(255, 255, 255, 255);
-        }
-        
-        @Override
-        public VertexConsumer uv(float u, float v) {
-            // CRITICAL: Set UV to fixed value (center of texture) to eliminate texture detail variations
-            // This makes the entire mob appear as a solid white silhouette without texture details
-            // Using 0.5, 0.5 ensures we sample a consistent pixel from the white texture
-            // All vertices will use the same texture pixel, making the mob uniformly white
-            return delegate.uv(0.5f, 0.5f);
-        }
-        
-        @Override
-        public VertexConsumer overlayCoords(int u, int v) {
-            // Force no overlay (no hurt/flash tinting) to keep uniform white tone
-            return delegate.overlayCoords(0, 0);
-        }
-        
-        @Override
-        public VertexConsumer uv2(int u, int v) {
-            // CRITICAL: Set lightmap to fullbright (0xF0, 0xF0 = sky light 15, block light 15)
-            // This ensures uniform brightness regardless of time of day
-            return delegate.uv2(0xF0, 0xF0);
-        }
-        
-        @Override
-        public VertexConsumer normal(float x, float y, float z) {
-            // CRITICAL: Set normal to face camera (0, 0, 1) to eliminate lighting variations
-            // This ensures uniform brightness regardless of surface orientation
-            // Without this, different parts of the mob may appear darker/lighter based on normals
-            // Setting all normals to the same value ensures completely uniform lighting
-            return delegate.normal(0.0f, 0.0f, 1.0f);
-        }
-        
-        @Override
-        public void endVertex() {
-            delegate.endVertex();
-        }
-        
-        @Override
-        public void defaultColor(int red, int green, int blue, int alpha) {
-            // Always set default color to white
-            delegate.defaultColor(255, 255, 255, 255);
-        }
-        
-        @Override
-        public void unsetDefaultColor() {
-            // Don't unset - keep white as default
-            // delegate.unsetDefaultColor();
+            // keep forced default
         }
     }
 
@@ -580,179 +464,53 @@ public class ThermalVisionRenderer {
         Vec3 start = player.getEyePosition();
         Vec3 end = entity.getEyePosition();
         
-        ClipContext ctx = new ClipContext(start, end, ClipContext.Block.VISUAL, ClipContext.Fluid.NONE, player);
+        // COLLIDER ignores non-solid visuals (tall grass etc), but still blocks on glass/walls.
+        ClipContext ctx = new ClipContext(start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, player);
         BlockHitResult hit = player.level().clip(ctx);
         
-        if (hit.getType() == HitResult.Type.BLOCK) {
-            BlockState state = player.level().getBlockState(hit.getBlockPos());
-            // Check for glass or other transparent but solid blocks
-            // If it can occlude, it blocks thermal vision (so you can't see through walls)
-            // But we also want to block vision through glass
-            
-            // Standard check: if it's not air and not something passable like grass
-            // We consider it blocking for thermal vision
-            return state.isAir() || !state.canOcclude();
-        }
-        
-        return true;
+        // If anything solid is hit, entity is NOT visible (no through walls/glass).
+        return hit.getType() != HitResult.Type.BLOCK;
     }
 
     private static boolean isSpectralFallbackMode() {
         return ModClothConfig.get().thermalRenderMode == ModClothConfig.ThermalRenderMode.SPECTRAL_FALLBACK;
     }
 
-    private static void handleSpectralHighlight(LocalPlayer player, LivingEntity entity) {
-        if (player == null || player.level() == null) {
-            return;
-        }
-        if (!isEntityVisibleForThermal(player, entity)) {
-            return;
-        }
-        entity.setGlowingTag(true);
-        spectralHighlightedThisFrame.add(entity.getId());
-    }
+
 
     /**
-     * Attempts to make translucent blocks (water, glass, etc.) render as opaque solid blocks.
-     * Uses try-catch to handle IllegalStateException from checkClientLoading check.
-     * 
-     * NOTE: This approach has limitations:
-     * - Already-rendered chunks may not update immediately (may require chunk reload)
-     * - The checkClientLoading check will fail during runtime, so this feature may not work
-     * - This is a known limitation of Minecraft 1.20.1 - render layers can only be set during client loading
-     * 
-     * @param enable If true, force translucent blocks to solid; if false, restore original render types
+     * MultiBufferSource which routes entity render types into an OUTLINE RenderType,
+     * forcing a constant white color. This produces a glowing-style outline without
+     * drawing a second filled model.
      */
-    private static void applyOpaqueTranslucentOverride(boolean enable) {
-        // Store original render types and override translucent -> solid
-        // Use reflection to bypass the "client loading only" check
-        if (enable) {
-            if (!forcedOpaqueTranslucentBlocks.isEmpty()) {
-                return; // Already applied
-            }
-            int count = 0;
-            
-            // Mixin bypasses checkClientLoading when thermal vision is active
-            // We can now call setRenderLayer directly without reflection
-            try {
-                for (Block block : BuiltInRegistries.BLOCK) {
-                    try {
-                        BlockState defaultState = block.defaultBlockState();
-                        RenderType currentType = ItemBlockRenderTypes.getChunkRenderType(defaultState);
-                        
-                        // Check if block is translucent by multiple methods
-                        boolean isTranslucent = false;
-                        
-                        // Method 1: Direct comparison
-                        if (currentType == RenderType.translucent() || currentType == RenderType.tripwire()) {
-                            isTranslucent = true;
-                        }
-                        // Method 2: Check by render type name
-                        else {
-                            String typeName = currentType.toString().toLowerCase(Locale.ROOT);
-                            if (typeName.contains("translucent") || typeName.contains("tripwire")) {
-                                isTranslucent = true;
-                            }
-                        }
-                        // Method 3: Check common translucent blocks by ID
-                        if (!isTranslucent) {
-                            var blockId = BuiltInRegistries.BLOCK.getKey(block);
-                            if (blockId != null) {
-                                String idStr = blockId.toString().toLowerCase(Locale.ROOT);
-                                // Common translucent blocks: water, ice, glass, stained glass, etc.
-                                if (idStr.contains("water") || idStr.contains("glass") || 
-                                    idStr.contains("ice") || idStr.contains("slime") ||
-                                    idStr.contains("honey") || idStr.contains("bubble")) {
-                                    // Check if it's actually translucent
-                                    RenderType checkType = ItemBlockRenderTypes.getChunkRenderType(defaultState);
-                                    String checkName = checkType.toString().toLowerCase(Locale.ROOT);
-                                    if (checkName.contains("translucent") || checkName.contains("cutout")) {
-                                        isTranslucent = true;
-                                    }
-                                }
-                            }
-                        }
-                        
-                        if (isTranslucent) {
-                            // Force to solid render type
-                            // Try-catch fallback: catch IllegalStateException if checkClientLoading fails
-                            try {
-                                ItemBlockRenderTypes.setRenderLayer(block, RenderType.solid());
-                                forcedOpaqueTranslucentBlocks.add(block);
-                                count++;
-                            } catch (IllegalStateException e) {
-                                // checkClientLoading check failed - this is expected during runtime
-                                // Log only first few errors to avoid spam
-                                if (count < 3 && com.hbm_m.main.MainRegistry.LOGGER.isDebugEnabled()) {
-                                    com.hbm_m.main.MainRegistry.LOGGER.debug("[ThermalVision] Cannot change render layer for {} at runtime: {}", block, e.getMessage());
-                                }
-                            }
-                        }
-                    } catch (Exception e) {
-                        // Log first few errors for debugging
-                        if (count < 5 && com.hbm_m.main.MainRegistry.LOGGER.isDebugEnabled()) {
-                            com.hbm_m.main.MainRegistry.LOGGER.debug("[ThermalVision] Error checking block {}: {}", block, e.getMessage());
-                        }
-                    }
-                }
-                
-                if (count > 0) {
-                    com.hbm_m.main.MainRegistry.LOGGER.info("[ThermalVision] Successfully forced {} translucent blocks to solid", count);
-                } else {
-                    com.hbm_m.main.MainRegistry.LOGGER.warn("[ThermalVision] No translucent blocks were converted to solid. This feature may not work due to runtime restrictions.");
-                }
-            } catch (Exception e) {
-                com.hbm_m.main.MainRegistry.LOGGER.error("[ThermalVision] Failed to apply opaque override: {}", e.getMessage());
-                com.hbm_m.main.MainRegistry.LOGGER.debug("[ThermalVision] Error details: ", e);
-            }
-        } else {
-            if (forcedOpaqueTranslucentBlocks.isEmpty()) {
-                return;
-            }
-            int count = forcedOpaqueTranslucentBlocks.size();
-            
-            // Try-catch fallback: catch IllegalStateException if checkClientLoading fails
-            try {
-                // Restore original translucent render type
-                for (Block block : forcedOpaqueTranslucentBlocks) {
-                    try {
-                        ItemBlockRenderTypes.setRenderLayer(block, RenderType.translucent());
-                    } catch (IllegalStateException e) {
-                        // checkClientLoading check failed - ignore restoration errors
-                        // This is expected during runtime
-                    } catch (Exception ignored) {
-                        // ignore other restoration errors
-                    }
-                }
-                
-                forcedOpaqueTranslucentBlocks.clear();
-                com.hbm_m.main.MainRegistry.LOGGER.info("[ThermalVision] Restored {} blocks to translucent", count);
-            } catch (Exception e) {
-                com.hbm_m.main.MainRegistry.LOGGER.error("[ThermalVision] Failed to restore translucent blocks: {}", e.getMessage());
-                forcedOpaqueTranslucentBlocks.clear();
-            }
-        }
-    }
+    private static final class ThermalOutlineOnlyBufferSource implements MultiBufferSource {
+        private final MultiBufferSource delegate;
 
-    private static void reconcileSpectralHighlights() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
-            clearSpectralHighlights();
-            return;
+        private ThermalOutlineOnlyBufferSource(MultiBufferSource delegate) {
+            this.delegate = delegate;
         }
 
-        for (Integer id : spectralHighlighted) {
-            if (!spectralHighlightedThisFrame.contains(id)) {
-                net.minecraft.world.entity.Entity entity = mc.level.getEntity(id);
-                if (entity instanceof LivingEntity living) {
-                    living.setGlowingTag(false);
-                }
-            }
-        }
+        @Override
+        public VertexConsumer getBuffer(RenderType renderType) {
+            VertexFormat format = renderType.format();
+            String name = renderType != null ? renderType.toString() : "null";
+            String lower = name.toLowerCase(Locale.ROOT);
 
-        spectralHighlighted.clear();
-        spectralHighlighted.addAll(spectralHighlightedThisFrame);
-        spectralHighlightedThisFrame.clear();
+            // Exclude non-entity types
+            if (lower.contains("text") || lower.contains("font") ||
+                lower.contains("gui") || lower.contains("overlay") ||
+                lower.contains("line") || lower.contains("particle")) {
+                return delegate.getBuffer(renderType);
+            }
+
+            // Route entity-ish render types into our outline-only RenderType.
+            if (format == DefaultVertexFormat.NEW_ENTITY || lower.contains("entity") || lower.contains("armor") || lower.contains("glint") || lower.contains("item")) {
+                VertexConsumer originalBuffer = delegate.getBuffer(THERMAL_ENTITY_OUTLINE);
+                return new SolidColorVertexConsumer(originalBuffer, 255, 255, 255, 255);
+            }
+
+            return delegate.getBuffer(renderType);
+        }
     }
     
     /**

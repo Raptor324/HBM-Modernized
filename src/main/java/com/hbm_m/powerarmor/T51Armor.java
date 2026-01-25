@@ -24,8 +24,8 @@ public class T51Armor extends ModPowerArmorItem {
 			0F, 0.1F,   // Radiation: DT=0, DR=10%
 			0F, 0.1F    // Energy: DT=0, DR=10%
 	)
-	.setFeatures(true, true, true, true) // VATS=true, Thermal=false, HardLanding=true, Geiger=true
-	.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 100, 0)) // Strength I
+	.setFeatures(true, false, true, true)
+	.addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 100, 0))
 	.setStepSound("hbm_m:step.metal")
 	.setJumpSound("hbm_m:step.iron_jump")
 	.setFallSound("hbm_m:step.iron_land");

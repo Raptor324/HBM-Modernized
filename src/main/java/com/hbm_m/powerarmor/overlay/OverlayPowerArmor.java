@@ -1,4 +1,4 @@
-package com.hbm_m.powerarmor;
+package com.hbm_m.powerarmor.overlay;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -10,6 +10,7 @@ import net.minecraftforge.client.gui.overlay.ForgeGui;
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.mojang.blaze3d.systems.RenderSystem;
 // рендер полосок энергии брони
 public class OverlayPowerArmor {
@@ -45,7 +46,7 @@ public class OverlayPowerArmor {
         int left = screenWidth / 2 - 91;
         int topAnchor;
         
-        // --- ЛОГИКА ПОЗИЦИОНИРОВАНИЯ ---
+        //ЛОГИКА ПОЗИЦИОНИРОВАНИЯ
         if (player.isCreative()) {
             // Креатив: фиксированная позиция над хотбаром
             left += 1; 
@@ -60,7 +61,6 @@ public class OverlayPowerArmor {
         }
         
         int height = topAnchor;
-        // -------------------------------
     
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();

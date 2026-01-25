@@ -91,7 +91,7 @@ public final class PowerArmorStepSoundHandler {
         if (customSound != null) {
             // Отменяем оригинальный звук и играем кастомный (с защитой от рекурсии)
             // Уменьшаем громкость шагов (умножаем на 0.6 для более тихого звука)
-            float quieterVolume = volume * 0.6F;
+            float quieterVolume = volume * 0.5F;
             HBM_M_SUPPRESS.set(true);
             try {
                 event.setSound(null);

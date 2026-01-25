@@ -1,4 +1,4 @@
-package com.hbm_m.powerarmor;
+package com.hbm_m.powerarmor.resist;
 
 import java.util.HashMap;
 

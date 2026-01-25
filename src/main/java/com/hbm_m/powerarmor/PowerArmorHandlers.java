@@ -5,6 +5,7 @@ import java.util.List;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packets.PowerArmorDashPacket;
+import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.core.BlockPos;
@@ -421,7 +422,7 @@ public final class PowerArmorHandlers {
         PowerArmorSpecs specs = armorItem.getSpecs();
         float fallDist = event.getDistance();
         
-        // --- ЗАЩИТА ОТ УРОНА (В самом конце) ---
+        // ЗАЩИТА ОТ УРОНА (В самом конце)
         if (fallDist > 2.0F) {
             // Если полная защита от падения через DT/DR
             if (specs.drFall >= 1.0F || specs.dtFall > 1000) {

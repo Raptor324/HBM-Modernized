@@ -1,9 +1,11 @@
-package com.hbm_m.powerarmor;
+package com.hbm_m.powerarmor.overlay;
 
 import org.joml.Matrix4f;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.powerarmor.ModEventHandlerClient;
+import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.ChatFormatting;

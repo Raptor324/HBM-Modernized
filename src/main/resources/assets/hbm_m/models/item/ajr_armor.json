@@ -1,0 +1,15 @@
+{
+  "loader": "hbm_m:ajr_armor_parts",
+  "model": "hbm_m:models/armor/ajr.obj",
+  "textures": {
+    "Helmet": "hbm_m:block/armor/ajr_helmet",
+    "Chest": "hbm_m:block/armor/ajr_chest",
+    "LeftArm": "hbm_m:block/armor/ajr_arm",
+    "RightArm": "hbm_m:block/armor/ajr_arm",
+    "LeftLeg": "hbm_m:block/armor/ajr_leg",
+    "RightLeg": "hbm_m:block/armor/ajr_leg",
+    "LeftBoot": "hbm_m:block/armor/ajr_leg",
+    "RightBoot": "hbm_m:block/armor/ajr_leg"
+  }
+}
+

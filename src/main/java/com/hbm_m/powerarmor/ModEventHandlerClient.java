@@ -3,6 +3,7 @@ package com.hbm_m.powerarmor;
 // Импорты HBM Modernized
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.powerarmor.overlay.ThermalVisionRenderer;
 import com.mojang.blaze3d.platform.GlStateManager;
 // Импорты для рендеринга
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -415,7 +416,7 @@ public class ModEventHandlerClient {
             case 18 -> "1984 is here!";
             case 19 -> "Diddy Edition!";
             case 20 -> "CREATE HARAM";
-            case 21 -> "''playing HBM'' - means fondling my balls. (c) Bob";
+            case 21 -> "''playing HBM'' - means fondling my balls. © Bob";
             default -> "Nuclear winter is coming!";
         };
         return net.minecraft.network.chat.Component.literal(text);
@@ -594,22 +595,30 @@ public class ModEventHandlerClient {
      */
     public static void activateThermal() {
         if (!thermalActive) {
+            // First-time per-world warning gate for shader mode:
+            // - Show chat message once per world
+            // - Do NOT enable on first press (requires second press)
+            // Only applies to FULL_SHADER; fallback modes are considered stable.
+            Minecraft mc = Minecraft.getInstance();
+            if (com.hbm_m.config.ModClothConfig.get().thermalRenderMode == com.hbm_m.config.ModClothConfig.ThermalRenderMode.FULL_SHADER) {
+                if (com.hbm_m.powerarmor.overlay.ThermalVisionWarningStore.shouldBlockFirstActivation(mc)) {
+                    return;
+                }
+            }
+
             thermalActive = true;
             if (MainRegistry.LOGGER.isDebugEnabled()) {
                 MainRegistry.LOGGER.debug("[ThermalVision] Activated thermal vision");
             }
-            // Play NVG activation sound (quieter with random pitch)
-            Minecraft mc = Minecraft.getInstance();
             LocalPlayer player = mc.player;
             var level = mc.level;
             if (player != null && level != null) {
                 var soundEvent = com.hbm_m.sound.ModSounds.NVG_ON.get();
                 if (soundEvent != null) {
-                    // Quieter volume (0.3F instead of 0.5F) and random pitch variation (0.9F to 1.1F)
                     RandomSource random = level.getRandom();
-                    float pitch = 0.9F + random.nextFloat() * 0.2F; // Random pitch between 0.9 and 1.1
+                    float pitch = 0.9F + random.nextFloat() * 0.2F;
                     level.playSound(player, player.getX(), player.getY(), player.getZ(), 
-                        soundEvent, SoundSource.PLAYERS, 0.3F, pitch);
+                        soundEvent, SoundSource.PLAYERS, 0.2F, pitch);
                 }
             }
         }
@@ -621,16 +630,16 @@ public class ModEventHandlerClient {
             if (MainRegistry.LOGGER.isDebugEnabled()) {
                 MainRegistry.LOGGER.debug("[ThermalVision] Deactivated thermal vision");
             }
-            // Play NVG deactivation sound (louder)
             Minecraft mc = Minecraft.getInstance();
             LocalPlayer player = mc.player;
             var level = mc.level;
             if (player != null && level != null) {
                 var soundEvent = com.hbm_m.sound.ModSounds.NVG_OFF.get();
                 if (soundEvent != null) {
-                    // Louder volume (0.7F instead of 0.5F)
-                    level.playSound(player, player.getX(), player.getY(), player.getZ(), 
-                        soundEvent, SoundSource.PLAYERS, 0.7F, 1.0F);
+                    RandomSource random = level.getRandom();
+                    float pitch = 0.9F + random.nextFloat() * 0.2F; // Random pitch between 0.9 and 1.1
+                    level.playSound(player, player.getX(), player.getY(), player.getZ(),
+                        soundEvent, SoundSource.PLAYERS, 0.6F, pitch);
                 }
             }
         }
@@ -642,7 +651,7 @@ public class ModEventHandlerClient {
     }  
 
     /**
-     * Рендерит тепловизор оверлей
+     * Рендерит оверлей тепловизора
      */
     public static void onRenderThermalOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         Minecraft mc = Minecraft.getInstance();
@@ -673,7 +682,6 @@ public class ModEventHandlerClient {
             return;
         }
 
-        // Используем новый рендерер тепловизора
         ThermalVisionRenderer.renderThermalOverlay(gui, guiGraphics, partialTick, screenWidth, screenHeight);
     }
 

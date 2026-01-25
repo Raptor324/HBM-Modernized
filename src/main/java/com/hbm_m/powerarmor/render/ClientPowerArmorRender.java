@@ -1,6 +1,8 @@
-package com.hbm_m.powerarmor;
+package com.hbm_m.powerarmor.render;
 
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.powerarmor.layer.AJRPowerArmorLayer;
+import com.hbm_m.powerarmor.layer.T51PowerArmorLayer;
 
 import net.minecraft.client.renderer.entity.ArmorStandRenderer;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
@@ -20,14 +22,19 @@ public final class ClientPowerArmorRender {
     public static final ResourceLocation T51_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "t51_armor");
     public static final ModelResourceLocation T51_MODEL_BAKED = new ModelResourceLocation(T51_MODEL_ID, "inventory");
 
+    public static final ResourceLocation AJR_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "ajr_armor");
+    public static final ModelResourceLocation AJR_MODEL_BAKED = new ModelResourceLocation(AJR_MODEL_ID, "inventory");
+
     @SubscribeEvent
     public static void onRegisterGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {
         event.register("t51_armor_parts", new T51ArmorModelLoader());
+        event.register("ajr_armor_parts", new AJRArmorModelLoader());
     }
 
     @SubscribeEvent
     public static void onRegisterAdditionalModels(ModelEvent.RegisterAdditional event) {
         event.register(T51_MODEL_BAKED);
+        event.register(AJR_MODEL_BAKED);
     }
 
     @SubscribeEvent
@@ -36,17 +43,20 @@ public final class ClientPowerArmorRender {
         PlayerRenderer defaultRenderer = event.getSkin("default");
         if (defaultRenderer != null) {
             defaultRenderer.addLayer(new T51PowerArmorLayer<>(defaultRenderer));
+            defaultRenderer.addLayer(new AJRPowerArmorLayer<>(defaultRenderer));
         }
 
         PlayerRenderer slimRenderer = event.getSkin("slim");
         if (slimRenderer != null) {
             slimRenderer.addLayer(new T51PowerArmorLayer<>(slimRenderer));
+            slimRenderer.addLayer(new AJRPowerArmorLayer<>(slimRenderer));
         }
 
         // Регистрируем для стойки для брони
         var armorStandRenderer = event.getRenderer(EntityType.ARMOR_STAND);
         if (armorStandRenderer instanceof ArmorStandRenderer standRenderer) {
             standRenderer.addLayer(new T51PowerArmorLayer<>(standRenderer));
+            standRenderer.addLayer(new AJRPowerArmorLayer<>(standRenderer));
         }
 
         // Регистрируем для мобов, которые могут носить броню
@@ -80,6 +90,7 @@ public final class ClientPowerArmorRender {
             if (renderer instanceof HumanoidMobRenderer humanoidRenderer) {
                 // Используем сырые типы для обхода проблем с дженериками
                 humanoidRenderer.addLayer(new T51PowerArmorLayer(humanoidRenderer));
+                humanoidRenderer.addLayer(new AJRPowerArmorLayer(humanoidRenderer));
                 if (MainRegistry.LOGGER.isDebugEnabled()) {
                     MainRegistry.LOGGER.debug("Registered T51PowerArmorLayer for {}", entityType.toShortString());
                 }

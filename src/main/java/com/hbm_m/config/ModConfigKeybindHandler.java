@@ -136,12 +136,11 @@ public class ModConfigKeybindHandler {
                                 com.hbm_m.powerarmor.ModEventHandlerClient.deactivateThermal();
                                 OverlayInfoToast.show(Component.translatable("hud.hbm_m.thermal.off"), 60, OverlayInfoToast.ID_THERMAL, 0xFF0000);
                             } else {
-                                // First-time per-world warning gate (do not enable on first press)
-                                if (com.hbm_m.powerarmor.ThermalVisionWarningStore.shouldBlockFirstActivation(mc)) {
-                                    return;
-                                }
                                 com.hbm_m.powerarmor.ModEventHandlerClient.activateThermal();
-                                OverlayInfoToast.show(Component.translatable("hud.hbm_m.thermal.on"), 60, OverlayInfoToast.ID_THERMAL, 0x00FF00);
+                                // If activation was blocked by first-use warning, do not show "ON" toast.
+                                if (com.hbm_m.powerarmor.ModEventHandlerClient.isThermalActive()) {
+                                    OverlayInfoToast.show(Component.translatable("hud.hbm_m.thermal.on"), 60, OverlayInfoToast.ID_THERMAL, 0x00FF00);
+                                }
                             }
                         }
                     }

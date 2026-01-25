@@ -1,6 +1,41 @@
 {
-    "parent": "item/generated",
-    "textures": {
-        "layer0": "hbm_m:item/ajr_leggings"
+  "loader": "hbm_m:ajr_armor_parts",
+  "model": "hbm_m:models/armor/ajr.obj",
+  "textures": {
+    "Helmet": "hbm_m:block/armor/ajr_helmet",
+    "Chest": "hbm_m:block/armor/ajr_chest",
+    "LeftArm": "hbm_m:block/armor/ajr_arm",
+    "RightArm": "hbm_m:block/armor/ajr_arm",
+    "LeftLeg": "hbm_m:block/armor/ajr_leg",
+    "RightLeg": "hbm_m:block/armor/ajr_leg",
+    "LeftBoot": "hbm_m:block/armor/ajr_leg",
+    "RightBoot": "hbm_m:block/armor/ajr_leg"
+  },
+  "display": {
+    "gui": {
+      "rotation": [ 0, 180, 180 ],
+      "translation": [ 0.5, 14, 0 ],
+      "scale": [ 0.055, 0.055, 0.055 ]
+    },
+    "ground": {
+      "rotation": [ 30, 225, -180 ],
+      "translation": [ 0, 4, 0 ],
+      "scale": [ 0.05, 0.05, 0.05 ]
+    },
+    "fixed": {
+      "rotation": [ 0, 0, 0 ],
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.05, 0.05, 0.05 ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [ 30, 225, -180 ],
+      "translation": [ 0, 4.5, 0 ],
+      "scale": [ 0.02, 0.02, 0.02 ]
+    },
+    "firstperson_righthand": {
+      "rotation": [ 30, 225, -180 ],
+      "translation": [ 2, 2.5, 0 ],
+      "scale": [ 0.03, 0.03, 0.03 ]
     }
+  }
 }

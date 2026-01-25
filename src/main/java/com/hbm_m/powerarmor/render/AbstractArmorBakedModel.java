@@ -1,4 +1,4 @@
-package com.hbm_m.powerarmor;
+package com.hbm_m.powerarmor.render;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -20,7 +20,7 @@ import net.minecraftforge.client.model.data.ModelProperty;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.client.model.AbstractMultipartBakedModel;
-import com.hbm_m.client.model.AbstractMultipartBakedModel.PartNamesProvider;
+import com.hbm_m.powerarmor.ModPowerArmorItem;
 
 import java.util.ArrayList;
 import java.util.Collections;

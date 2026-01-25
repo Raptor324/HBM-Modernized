@@ -647,7 +647,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("hud.hbm_m.vats.off", "HUD: OFF");
                 add("hud.hbm_m.thermal.on", "Тепловизор: ON");
                 add("hud.hbm_m.thermal.off", "Тепловизор: OFF");
-                add("hud.hbm_m.thermal.warning", "Внимание: рендер тепловизора может быть нестабильным. В случае ошибок переключитесь на более простую версию в конфиге. Для данного мира это сообщение больше выводиться не будет.");
+                add("hud.hbm_m.thermal.warning", "Внимание: шейдерная версия тепловизора экспериментальная и может быть нестабильной. В случае проблем переключитесь на более простую версию в конфиге (Alt + 0, вкладка Рендеринг). Чтобы включить тепловизор, нажмите еще раз. Это сообщение больше не будет показано для данного мира.");
                 add("hud.hbm_m.dash.perform", "Рывок выполнен");
                 add("text.autoconfig.hbm_m.option.thermalRenderMode", "Режим рендера тепловизора");
                 add("text.autoconfig.hbm_m.option.thermalRenderMode.@Tooltip", "Выберите способ рендера тепловизора.");
@@ -1334,16 +1334,16 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("armor.fsb.geigerCounter", "Auditory Geiger Counter");
                 add("armor.geigerHUD", "Geiger HUD");
                 add("armor.fsb.vats", "Enemy HUD");
-                add("armor.thermal", "Thermal Sight");
+                add("armor.fsb.thermalVision", "Thermal Sight");
                 add("armor.fsb.hardLanding", "Hard Landing");
-                add("armor.stepSize", "Step Assist Lv.%d");
-                add("armor.dash", "Dash x%d");
+                add("armor.fsb.stepSize", "Step Assist Lv.%d");
+                add("armor.fsb.dash", "Dash x%d");
 
                 add("hud.hbm_m.vats.on", "HUD: ON");
                 add("hud.hbm_m.vats.off", "HUD: OFF");
                 add("hud.hbm_m.thermal.on", "Thermal Vision: ON");
                 add("hud.hbm_m.thermal.off", "Thermal Vision: OFF");
-                add("hud.hbm_m.thermal.warning", "Warning: thermal vision rendering may be unstable. If errors occur, switch to a simpler mode in the config. This message will not be shown again for this world.");
+                add("hud.hbm_m.thermal.warning", "Warning: the shader thermal vision mode is experimental and may be unstable. If problems occur, switch to a simpler mode in the config (Alt + 0, Rendering tab). To enable thermal vision, press again. This message will not be shown again for this world.");
                 add("hud.hbm_m.dash.perform", "Dash Performed");
                 add("text.autoconfig.hbm_m.option.thermalRenderMode", "Thermal Vision Render Mode");
                 add("text.autoconfig.hbm_m.option.thermalRenderMode.@Tooltip", "Choose how thermal vision is rendered.");

@@ -465,14 +465,14 @@
     "category": "player",
     "subtitle": "sounds.hbm_m.thermal_vision_on",
     "sounds": [
-      "hbm_m:tool/nvg_sfx"
+      "hbm_m:tool/nvg_on"
     ]
   },
   "tool.nvg_off": {
     "category": "player",
     "subtitle": "sounds.hbm_m.thermal_vision_off",
     "sounds": [
-      "hbm_m:tool/off"
+      "hbm_m:tool/nvg_off"
     ]
   }
 }

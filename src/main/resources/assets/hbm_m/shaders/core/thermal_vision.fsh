@@ -104,50 +104,6 @@ void main() {
     vec3 originalColor = texture(Sampler0, uv).rgb;
     float originalLuminance = dot(originalColor, vec3(0.299, 0.587, 0.114));
     
-    // DETECT GLASS/WATER: Make translucent blocks (glass, water) appear opaque
-    // Glass typically has: high brightness, neutral color (low saturation)
-    // Water typically has: blue tint, medium-high brightness
-    // Ice typically has: high brightness with slight blue tint
-    // We detect these patterns and make them opaque gray
-    bool isGlassOrWater = false;
-    
-    // Calculate color components
-    float r = originalColor.r;
-    float g = originalColor.g;
-    float b = originalColor.b;
-    
-    // Calculate saturation (colorfulness) - helps distinguish glass from colored blocks
-    float maxColor = max(max(r, g), b);
-    float minColor = min(min(r, g), b);
-    float saturation = maxColor > 0.001 ? (maxColor - minColor) / maxColor : 0.0;
-    
-    // Check for blue tint (water/ice) - blue is stronger than red/green
-    float blueTint = b - max(r, g);
-    bool hasStrongBlueTint = blueTint > 0.2 && b > 0.4; // Strong blue = water
-    bool hasWeakBlueTint = blueTint > 0.08 && blueTint < 0.2 && b > 0.5; // Weak blue = ice
-    
-    // Check for glass-like properties: high brightness + very low saturation (neutral gray/white)
-    // Glass is usually bright and colorless (low saturation)
-    bool isGlassLike = originalLuminance > 0.45 && saturation < 0.25 && maxColor > 0.55;
-    
-    // Exclude sky (very bright, high blue) and foliage (green tint)
-    float greenTint = g - max(r, b);
-    bool isSky = originalLuminance > 0.8 && b > 0.7 && saturation > 0.2; // Bright blue sky
-    bool isFoliage = greenTint > 0.15 && g > 0.3; // Green foliage
-    
-    // Combine checks: glass, water, or ice (but not sky or foliage)
-    isGlassOrWater = (hasStrongBlueTint || hasWeakBlueTint || isGlassLike) && !isSky && !isFoliage;
-    
-    // If detected as glass/water, replace with opaque gray based on luminance
-    // This makes them visible but opaque in thermal vision
-    if (isGlassOrWater) {
-        // Use medium-gray for glass/water blocks, preserve some brightness information
-        // Darker water/glass -> darker gray, brighter -> lighter gray
-        float glassLuminance = clamp(originalLuminance * 0.6 + 0.25, 0.25, 0.55);
-        originalColor = vec3(glassLuminance);
-        originalLuminance = glassLuminance;
-    }
-    
     // Apply reduced blur to preserve more detail while removing texture colors
     // This improves visibility at low brightness settings
     vec3 blurred = blurSample(Sampler0, uv, texelSize);
@@ -171,7 +127,7 @@ void main() {
     } else { // Day time
         // During day, moderate boost for slightly dark areas
         float darkFactor = 1.0 - smoothstep(0.0, 0.5, originalLuminance);
-        brightnessBoost = 1.0 + darkFactor * 0.3; // Up to 1.3x boost
+        brightnessBoost = 1.0 + darkFactor * 0.2; // Up to 1.2x boost (slightly darker daytime)
     }
     
     // Apply brightness boost to luminance BEFORE quantization
@@ -192,15 +148,17 @@ void main() {
     // Boost hot areas (simulate bright entities/torches) as white highlights
     float heat = pow(quantized, 0.45);
     heat = smoothstep(0.35, 0.9, heat);
-    vec3 hotspot = vec3(heat * 0.7);
+    // Day is currently too bright => slightly reduce hotspot intensity during day
+    float hotspotStrength = mix(0.70, 0.55, state); // Night: 0.70, Day: 0.55
+    vec3 hotspot = vec3(heat * hotspotStrength);
     
     // BALANCED AMBIENT: Slightly darker at night, darker during day
     // Reduced since we now boost luminance directly based on original brightness
-    float ambient = mix(0.25, 0.15, state); // Night: 0.25 (reduced from 0.3), Day: 0.15
+    float ambient = mix(0.25, 0.10, state); // Night: 0.25, Day: 0.10 (darker daytime)
     
     // ADAPTIVE BASE BRIGHTNESS: Different multipliers for day/night
     // Reduced multipliers since brightness boost is applied earlier
-    float baseMultiplier = mix(1.1, 0.7, state); // Night: 1.1 (reduced from 1.2), Day: 0.7
+    float baseMultiplier = mix(1.1, 0.55, state); // Night: 1.1, Day: 0.55 (darker daytime)
     vec3 baseThermal = vec3(quantized) * (ambient + baseMultiplier);
     
     // Combine quantized grayscale with hotspots (white), keep overall B/W
@@ -211,7 +169,7 @@ void main() {
     // Increased contrast boost for better separation between light and dark areas
     // Night: stronger contrast to separate dark roads from dark background
     // Day: increased contrast to better distinguish landscape features
-    float contrastBoost = mix(1.4, 1.2, state); // Night: 1.4x (increased from 1.2x), Day: 1.2x (increased from 1.05x)
+    float contrastBoost = mix(1.4, 1.15, state); // Day: slightly reduced to avoid over-bright look
     thermal = pow(thermal, vec3(1.0 / contrastBoost)); // Inverse gamma for contrast
     
     // Static horizontal scanlines (thicker and less frequent)
@@ -232,7 +190,7 @@ void main() {
     // FINAL ADAPTIVE GAMMA: Apply gamma correction based on time of day
     // Night: slightly higher gamma (darker) for more realistic night look
     // Day: higher gamma (darker) to avoid being too bright
-    float gamma = mix(0.85, 1.1, state); // Night: 0.85 (darker than before), Day: 1.1 (darker)
+    float gamma = mix(0.85, 1.2, state); // Day: higher gamma => darker output
     thermal = pow(thermal, vec3(gamma));
     
     // Final clamp to ensure values stay in valid range

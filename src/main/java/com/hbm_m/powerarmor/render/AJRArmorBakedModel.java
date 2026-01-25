@@ -1,4 +1,4 @@
-package com.hbm_m.powerarmor;
+package com.hbm_m.powerarmor.render;
 
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
@@ -9,48 +9,45 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.Map;
 
+import com.hbm_m.powerarmor.AJRArmor;
+import com.hbm_m.powerarmor.ModPowerArmorItem;
+
 /**
- * Модель для рендеринга T51 Power Armor в GUI и руке.
- * Использует абстрактный базовый класс для общей логики рендеринга.
+ * Baked model for rendering AJR armor in GUI/hand.
+ * Uses the shared multipart baked model infrastructure (same as T51).
  */
 @OnlyIn(Dist.CLIENT)
-public class T51ArmorBakedModel extends AbstractArmorBakedModel {
+public class AJRArmorBakedModel extends AbstractArmorBakedModel {
 
-    private static final String[] T51_ORDER = {
+    private static final String[] AJR_ORDER = {
             "Helmet", "Chest", "RightArm", "LeftArm", "RightLeg", "LeftLeg", "RightBoot", "LeftBoot"
     };
 
-    private static final T51ModelConfig CONFIG = new T51ModelConfig();
+    private static final AJRModelConfig CONFIG = new AJRModelConfig();
 
-    public T51ArmorBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
+    public AJRArmorBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
         super(parts, transforms, CONFIG);
     }
 
     @Override
-    public T51ArmorBakedModel withTransforms(ItemTransforms newTransforms) {
-        return new T51ArmorBakedModel(this.parts, newTransforms);
+    public AJRArmorBakedModel withTransforms(ItemTransforms newTransforms) {
+        return new AJRArmorBakedModel(this.parts, newTransforms);
     }
 
-    /**
-     * Конфигурация для T51 Power Armor.
-     */
-    private static class T51ModelConfig implements IArmorModelConfig {
+    private static class AJRModelConfig implements IArmorModelConfig {
         @Override
         public String getArmorSetId() {
-            return "t51";
+            return "ajr";
         }
 
         @Override
         public String[] getPartOrder() {
-            return T51_ORDER;
+            return AJR_ORDER;
         }
 
         @Override
         public String[] getPartsForType(ArmorItem.Type armorType) {
-            if (armorType == null) {
-                // Если тип не указан, рендерим все части (fallback)
-                return T51_ORDER;
-            }
+            if (armorType == null) return AJR_ORDER;
 
             return switch (armorType) {
                 case HELMET -> new String[]{"Helmet"};
@@ -62,12 +59,18 @@ public class T51ArmorBakedModel extends AbstractArmorBakedModel {
 
         @Override
         public Class<? extends ModPowerArmorItem> getArmorItemClass() {
-            return ModPowerArmorItem.class;
+            return AJRArmor.class;
         }
 
         @Override
         public ModelResourceLocation getBaseModelLocation() {
-            return ClientPowerArmorRender.T51_MODEL_BAKED;
+            return ClientPowerArmorRender.AJR_MODEL_BAKED;
+        }
+
+        @Override
+        public boolean isItemValid(net.minecraft.world.item.ItemStack stack) {
+            return stack.getItem() instanceof AJRArmor;
         }
     }
 }
+

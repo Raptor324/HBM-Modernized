@@ -1,6 +1,9 @@
-package com.hbm_m.powerarmor;
+package com.hbm_m.powerarmor.layer;
 
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.powerarmor.T51Armor;
+import com.hbm_m.powerarmor.render.ClientPowerArmorRender;
+
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.resources.model.Material;
@@ -90,7 +93,7 @@ public class T51PowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<
 
         @Override
         public boolean isItemValid(@NotNull ItemStack stack) {
-            return stack.getItem() instanceof ModPowerArmorItem;
+            return stack.getItem() instanceof T51Armor;
         }
     }
 }

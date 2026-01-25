@@ -1,4 +1,4 @@
-package com.hbm_m.powerarmor;
+package com.hbm_m.powerarmor.overlay;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -13,6 +13,7 @@ import com.hbm_m.main.MainRegistry;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ServerData;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.level.storage.LevelResource;
 
 /**
  * Stores per-world thermal vision warning acknowledgement (client-side).
@@ -86,8 +87,15 @@ public final class ThermalVisionWarningStore {
 
     private static String getWorldKey(Minecraft mc) {
         if (mc.getSingleplayerServer() != null) {
-            String levelName = mc.getSingleplayerServer().getWorldData().getLevelName();
-            return "sp:" + levelName;
+            // Use actual save folder path (unique per-world), not just display name.
+            try {
+                String path = mc.getSingleplayerServer().getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize().toString();
+                return "sp:" + path;
+            } catch (Exception e) {
+                // Fallback if path cannot be resolved for some reason
+                String levelName = mc.getSingleplayerServer().getWorldData().getLevelName();
+                return "sp:" + levelName;
+            }
         }
 
         if (mc.getConnection() != null) {

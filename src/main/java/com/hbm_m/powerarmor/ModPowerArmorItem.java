@@ -2,7 +2,6 @@ package com.hbm_m.powerarmor;
 
 import com.hbm_m.client.model.ModModelLayers;
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.item.AbstractRadiationMeterItem;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
@@ -10,12 +9,9 @@ import com.hbm_m.network.sounds.GeigerSoundPacket;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.sound.ModSounds;
-import com.hbm_m.util.EnergyFormatter;
-import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
-import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
@@ -26,19 +22,17 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
 import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import org.jetbrains.annotations.NotNull;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -52,7 +46,9 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
     private final PowerArmorSpecs specs;
 
     public ModPowerArmorItem(ArmorMaterial material, Type type, Properties properties, PowerArmorSpecs specs) {
-        super(material, type, properties, MainRegistry.MOD_ID + ":textures/armor/" + getTextureName(type),
+        // NOTE: the texture passed to the base class is not used for rendering because we override getArmorTexture()
+        // below. Keep this value generic to avoid hard-coding a specific armor set (e.g. T51) into the base class.
+        super(material, type, properties, MainRegistry.MOD_ID + ":textures/block/armor/power_armor.png",
                 specs.capacity, specs.maxReceive, specs.consumption, specs.drain);
         this.specs = specs;
         
@@ -74,7 +70,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         }
     }
 
-    // ========== КРИТИЧНО: Отключаем ванильную защиту ==========
+    // Отключаем ванильную защиту
     @Override
     public int getDefense() {
         return 0; // Отключаем ванильные Armor Points
@@ -84,47 +80,64 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
     public float getToughness() {
         return 0.0f; // Отключаем ванильную Toughness
     }
-    // ==========================================================
-
-    private static String getTextureName(Type type) {
-        return switch (type) {
-            case HELMET -> "t51_helmet";
-            case CHESTPLATE -> "t51_chest";
-            case LEGGINGS, BOOTS -> "t51_leg";
-        } + ".png";
-    }
 
     public PowerArmorSpecs getSpecs() {
         return specs;
     }
 
-    // --- САМОЕ ВАЖНОЕ: ПУТЬ К ТЕКСТУРЕ ---
+    // ПУТЬ К ТЕКСТУРЕ
     @Override
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
-        String tex = switch (slot) {
-            case HEAD -> "t51_helmet";
-            case CHEST -> "t51_chest";
-            case LEGS, FEET -> "t51_leg";
-            default -> "t51_chest";
+        String tex = resolveArmorTextureName(stack, slot);
+        return MainRegistry.MOD_ID + ":textures/block/armor/" + tex + ".png";
+    }
+
+    /**
+     * Resolves the armor texture name (without extension) based on the item's registry id.
+     *
+     * Examples:
+     * - hbm_m:t51_helmet     -> t51_helmet / t51_chest / t51_leg (depending on slot)
+     * - hbm_m:ajr_chestplate -> ajr_helmet / ajr_chest / ajr_leg (depending on slot)
+     */
+    private static String resolveArmorTextureName(ItemStack stack, EquipmentSlot slot) {
+        ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        String path = id != null ? id.getPath() : "";
+
+        String prefix = stripKnownArmorSuffix(path);
+        return switch (slot) {
+            case HEAD -> prefix + "_helmet";
+            case CHEST -> prefix + "_chest";
+            case LEGS, FEET -> prefix + "_leg";
+            default -> prefix + "_chest";
         };
-        return MainRegistry.MOD_ID + ":textures/armor/" + tex + ".png";
+    }
+
+    private static String stripKnownArmorSuffix(String itemPath) {
+        if (itemPath == null || itemPath.isBlank()) return "power_armor";
+
+        if (itemPath.endsWith("_helmet")) return itemPath.substring(0, itemPath.length() - "_helmet".length());
+        if (itemPath.endsWith("_chestplate")) return itemPath.substring(0, itemPath.length() - "_chestplate".length());
+        if (itemPath.endsWith("_leggings")) return itemPath.substring(0, itemPath.length() - "_leggings".length());
+        if (itemPath.endsWith("_boots")) return itemPath.substring(0, itemPath.length() - "_boots".length());
+
+        // Fallback: treat the whole path as a "prefix" if it doesn't match a known armor naming scheme.
+        return itemPath;
     }
 
     @Override
-    public void initializeClient(@Nonnull Consumer<IClientItemExtensions> consumer) {
+    public void initializeClient(Consumer<IClientItemExtensions> consumer) {
         consumer.accept(new IClientItemExtensions() {
-            private T51ArmorModel model;
+            private PowerArmorEmptyModel model;
 
             @Override
             public @NotNull HumanoidModel<?> getHumanoidArmorModel(LivingEntity livingEntity, ItemStack itemStack, 
                     EquipmentSlot equipmentSlot, HumanoidModel<?> original) {
                 if (this.model == null) {
-                    ModelPart layer = Minecraft.getInstance().getEntityModels().bakeLayer(ModModelLayers.T51_ARMOR);
-                    this.model = new T51ArmorModel(layer);
+                    ModelPart layer = Minecraft.getInstance().getEntityModels().bakeLayer(ModModelLayers.POWER_ARMOR);
+                    this.model = new PowerArmorEmptyModel(layer);
                 }
 
                 this.model.setAllVisible(false);
-                this.model.setRenderSlot(equipmentSlot);
                 switch (equipmentSlot) {
                     case HEAD -> {
                         this.model.head.visible = true;

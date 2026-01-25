@@ -1,6 +1,7 @@
-package com.hbm_m.powerarmor;
+package com.hbm_m.powerarmor.overlay;
 
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.powerarmor.ModPowerArmorItem;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
@@ -20,7 +21,7 @@ public final class PowerArmorHardLandingCameraShakeClient {
     private static float maxFall = 0.0F;
 
     private static long shakeStartMs = 0L;
-    private static long shakeDurationMs = 350L; // коротко и приятно
+    private static long shakeDurationMs = 350L;
     private static float shakeStrength = 0.0F;  // в градусах
     final static float SHAKE_MIN_FALL = 1.5F;   // старт тряски (как у молота)
     final static float SHAKE_FULL_FALL = 8.0F;  // к этой высоте уже почти максимум
@@ -86,6 +87,6 @@ public final class PowerArmorHardLandingCameraShakeClient {
 
         event.setPitch(event.getPitch() + offset);
         event.setYaw(event.getYaw() + offset * 0.6F);
-        event.setRoll(event.getRoll() + offset * 0.8F); // если roll поддерживается в твоей Forge сборке
+        event.setRoll(event.getRoll() + offset * 0.8F);
     }
 }

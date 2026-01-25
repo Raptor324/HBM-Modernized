@@ -1,50 +1,47 @@
 package com.hbm_m.main;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+
 // Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
 import com.hbm_m.api.energy.EnergyNetworkManager;
-import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.event.CrateBreaker;
-import com.hbm_m.handler.MobGearHandler;
-import com.hbm_m.item.ModBatteryItem;
-import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.util.SellafitSolidificationTracker;
-import com.hbm_m.world.biome.ModBiomes;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.event.level.LevelEvent;
-import com.hbm_m.item.ModBatteryItem;
-import com.hbm_m.particle.ModExplosionParticles;
-import com.mojang.logging.LogUtils;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.level.LevelEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.capability.ChunkRadiationProvider;
+import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.client.ClientSetup;
+import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.item.ModItems;
+import com.hbm_m.event.CrateBreaker;
+import com.hbm_m.handler.MobGearHandler;
+import com.hbm_m.hazard.ModHazards;
+import com.hbm_m.item.ModBatteryItem;
 import com.hbm_m.item.ModIngots;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.item.ModPowders;
-import com.hbm_m.menu.ModMenuTypes;
-import com.hbm_m.particle.ModParticleTypes;
-import com.hbm_m.powerarmor.DamageResistanceHandler;
-import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.menu.ModMenuTypes;
+import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.particle.ModParticleTypes;
+import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.sound.ModSounds;
-import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.client.ClientSetup;
-import com.hbm_m.capability.ChunkRadiationProvider;
-import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.effect.ModEffects;
-import com.hbm_m.hazard.ModHazards;
+import com.hbm_m.util.SellafitSolidificationTracker;
+import com.hbm_m.world.biome.ModBiomes;
 import com.hbm_m.worldgen.ModWorldGen;
+import com.mojang.logging.LogUtils;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
@@ -54,19 +51,16 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
-
-import java.util.List;
-import java.util.stream.Collectors;
-
-import org.apache.logging.log4j.LogManager;
-import org.slf4j.Logger;
+import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraftforge.registries.RegistryObject;
 
 @Mod(RefStrings.MODID)
 public class MainRegistry {
@@ -265,7 +259,11 @@ public class MainRegistry {
             event.accept(createChargedArmorStack(ModItems.T51_CHESTPLATE.get()));
             event.accept(createChargedArmorStack(ModItems.T51_LEGGINGS.get()));
             event.accept(createChargedArmorStack(ModItems.T51_BOOTS.get()));
-
+            event.accept(createChargedArmorStack(ModItems.AJR_HELMET.get()));
+            event.accept(createChargedArmorStack(ModItems.AJR_CHESTPLATE.get()));
+            event.accept(createChargedArmorStack(ModItems.AJR_LEGGINGS.get()));
+            event.accept(createChargedArmorStack(ModItems.AJR_BOOTS.get()));
+            
             event.accept(ModItems.ALLOY_HELMET);
             event.accept(ModItems.ALLOY_CHESTPLATE);
             event.accept(ModItems.ALLOY_LEGGINGS);
@@ -282,10 +280,7 @@ public class MainRegistry {
             event.accept(ModItems.SECURITY_CHESTPLATE);
             event.accept(ModItems.SECURITY_LEGGINGS);
             event.accept(ModItems.SECURITY_BOOTS);
-            event.accept(ModItems.AJR_HELMET);
-            event.accept(ModItems.AJR_CHESTPLATE);
-            event.accept(ModItems.AJR_LEGGINGS);
-            event.accept(ModItems.AJR_BOOTS);
+        
             event.accept(ModItems.STEEL_HELMET);
             event.accept(ModItems.STEEL_CHESTPLATE);
             event.accept(ModItems.STEEL_LEGGINGS);

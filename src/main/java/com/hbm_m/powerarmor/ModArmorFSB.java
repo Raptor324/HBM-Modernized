@@ -64,17 +64,6 @@ public class ModArmorFSB extends ArmorItem {
         return this;
     }
 
-    // @Override
-    // public int getDefense() {
-    //     return 0; // Отключаем ванильную защиту
-    // }
-
-    // @Override
-    // public float getToughness() {
-    //     return 0; // Отключаем toughness
-    // }
-
-
     public ModArmorFSB setNoHelmet(boolean noHelmet) {
         this.noHelmet = noHelmet;
         return this;

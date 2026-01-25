@@ -1,4 +1,6 @@
-package com.hbm_m.powerarmor;
+package com.hbm_m.powerarmor.render;
+
+import com.hbm_m.powerarmor.ModPowerArmorItem;
 
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.ArmorItem;
