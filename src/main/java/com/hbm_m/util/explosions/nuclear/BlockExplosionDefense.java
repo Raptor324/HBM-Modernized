@@ -3,6 +3,7 @@ package com.hbm_m.util.explosions.nuclear;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -14,22 +15,68 @@ import net.minecraftforge.fml.common.Mod;
 import com.hbm_m.block.ModBlocks;
 
 /**
- * 💥 СИСТЕМА ЗАЩИТЫ БЛОКОВ С КОЭФФИЦИЕНТОМ ПРОБИТИЯ v3.0
+ *  СИСТЕМА ЗАЩИТЫ БЛОКОВ С КОЭФФИЦИЕНТОМ ПРОБИТИЯ v3.0
  *
- * ✅ Логичные коэффициенты по материалам:
- * ✅ Бетон: 250
- * ✅ Бетонные кирпичи: 350
- * ✅ Метеорит: 500
- * ✅ Кафель, мозаика: 180-220
- * ✅ Специальный бетон (усиленный): 400-600
- * ✅ Тултип с золотым цветом взрывоустойчивости (ИНТЕГРИРОВАН)
+ *  Логичные коэффициенты по материалам:
+ *  Бетон: 250
+ *  Бетонные кирпичи: 350
+ *  Метеорит: 500
+ *  Кафель, мозаика: 180-220
+ *  Специальный бетон (усиленный): 400-600
+ *  Тултип с золотым цветом взрывоустойчивости
  */
 
 @Mod.EventBusSubscriber(modid = "hbm_m", bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class BlockExplosionDefense {
 
     /**
-     * ✅ ГЛАВНЫЙ МЕТОД: Получить коэффициент защиты блока
+     * Small helper result used by crater generation code.
+     */
+    public static final class ExplosionDefenseResult {
+        public final boolean shouldBreak;
+        public final float blastPower;
+        public final float defenseValue;
+
+        public ExplosionDefenseResult(boolean shouldBreak, float blastPower, float defenseValue) {
+            this.shouldBreak = shouldBreak;
+            this.blastPower = blastPower;
+            this.defenseValue = defenseValue;
+        }
+    }
+
+    /**
+     * Compatibility method for crater-generation logic.
+     *
+     * <p>Computes a simple "blast power vs defense" heuristic and returns whether the block
+     * should break.</p>
+     */
+    public static ExplosionDefenseResult calculateExplosionDamage(
+            ServerLevel level,
+            BlockPos pos,
+            BlockPos center,
+            float radius,
+            RandomSource random
+    ) {
+        if (level == null) {
+            return new ExplosionDefenseResult(false, 0F, 0F);
+        }
+
+        BlockState state = level.getBlockState(pos);
+        if (state == null || state.isAir()) {
+            return new ExplosionDefenseResult(false, 0F, 0F);
+        }
+
+        float dist = (float) Math.sqrt(pos.distSqr(center));
+        float falloff = radius <= 0F ? 0F : Math.max(0F, 1F - (dist / radius));
+        float blastPower = (20F + (random != null ? random.nextFloat() * 10F : 0F)) * falloff;
+
+        float defenseValue = getBlockDefenseValue(level, pos, state);
+        boolean shouldBreak = blastPower > defenseValue;
+        return new ExplosionDefenseResult(shouldBreak, blastPower, defenseValue);
+    }
+
+    /**
+     * ГЛАВНЫЙ МЕТОД: Получить коэффициент защиты блока
      * Основано на взрывоустойчивости и типе материала
      */
     public static float getBlockDefenseValue(ServerLevel level, BlockPos pos, BlockState state) {
@@ -125,7 +172,7 @@ public class BlockExplosionDefense {
     // ========== ОБРАБОТЧИК ТУЛТИПОВ (EventHandler встроен в класс) ==========
 
     /**
-     * ✅ ОБРАБОТЧИК СОБЫТИЙ ТУЛТИПОВ
+     * ОБРАБОТЧИК СОБЫТИЙ ТУЛТИПОВ
      * Автоматически добавляет информацию о взрывоустойчивости к блокам
      */
     @SubscribeEvent
@@ -157,7 +204,7 @@ public class BlockExplosionDefense {
     }
 
     /**
-     * ✅ Проверка: это ли один из наших модульных блоков
+     *  Проверка: это ли один из наших модульных блоков
      */
     private static boolean isModularBlock(Block block) {
         return isConcreteBlock(block) ||
@@ -171,7 +218,7 @@ public class BlockExplosionDefense {
     }
 
     /**
-     * ✅ Получить защиту по типу блока
+     *  Получить защиту по типу блока
      */
     private static float getDefenseValueForBlock(Block block) {
         if (isConcreteBlock(block)) return 250.0F;
@@ -189,7 +236,7 @@ public class BlockExplosionDefense {
     // ========== ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ КЛАССИФИКАЦИИ ==========
 
     /**
-     * ✅ Базовые БЕТОННЫЕ блоки - 250
+     *  Базовые БЕТОННЫЕ блоки - 250
      */
     private static boolean isConcreteBlock(Block block) {
         return block == ModBlocks.CONCRETE_BLACK.get() ||
@@ -222,7 +269,7 @@ public class BlockExplosionDefense {
     }
 
     /**
-     * ✅ УСИЛЕННЫЙ БЕТОН - 400
+     *  УСИЛЕННЫЙ БЕТОН - 400
      */
     private static boolean isSpecialConcreteBlock(Block block) {
         return block == ModBlocks.CONCRETE_SUPER.get() ||
@@ -236,7 +283,7 @@ public class BlockExplosionDefense {
     }
 
     /**
-     * ✅ МЕТЕОРИТ - 500
+     *  МЕТЕОРИТ - 500
      */
     private static boolean isMeteorBlock(Block block) {
         return block == ModBlocks.METEOR.get() ||
@@ -252,7 +299,7 @@ public class BlockExplosionDefense {
     }
 
     /**
-     * ✅ БЕТОННЫЕ КИРПИЧИ - 350
+     *  БЕТОННЫЕ КИРПИЧИ - 350
      */
     private static boolean isBrickBlock(Block block) {
         return block == ModBlocks.BRICK_BASE.get() ||
@@ -263,7 +310,7 @@ public class BlockExplosionDefense {
     }
 
     /**
-     * ✅ КАФЕЛЬ И МОЗАИКА - 200
+     *  КАФЕЛЬ И МОЗАИКА - 200
      */
     private static boolean isTileBlock(Block block) {
         return block == ModBlocks.CONCRETE_TILE.get() ||
@@ -276,7 +323,7 @@ public class BlockExplosionDefense {
     }
 
     /**
-     * ✅ DEPTH МАТЕРИАЛЫ - 280
+     *  DEPTH МАТЕРИАЛЫ - 280
      */
     private static boolean isDepthBlock(Block block) {
         return block == ModBlocks.DEPTH_BRICK.get() ||
@@ -285,7 +332,7 @@ public class BlockExplosionDefense {
     }
 
     /**
-     * ✅ ГНЕЙСС - 260
+     *  ГНЕЙСС - 260
      */
     private static boolean isGneissBlock(Block block) {
         return block == ModBlocks.GNEISS_BRICK.get() ||
@@ -294,7 +341,7 @@ public class BlockExplosionDefense {
     }
 
     /**
-     * ✅ БАЗАЛЬТ - 240
+     *  БАЗАЛЬТ - 240
      */
     private static boolean isBasaltBlock(Block block) {
         return block == ModBlocks.BASALT_BRICK.get() ||
@@ -304,7 +351,7 @@ public class BlockExplosionDefense {
     }
 
     /**
-     * ✅ ЛЕСТНИЦЫ (STAIRS) - 150 (половина от базового)
+     *  ЛЕСТНИЦЫ (STAIRS) - 150 (половина от базового)
      */
     private static boolean isStairsBlock(Block block) {
         return block == ModBlocks.CONCRETE_ASBESTOS_STAIRS.get() ||
@@ -363,7 +410,7 @@ public class BlockExplosionDefense {
     }
 
     /**
-     * ✅ Получить взрывоустойчивость блока
+     *  Получить взрывоустойчивость блока
      */
     public static float getBlastResistance(BlockState state) {
         if (state == null) return 0.0F;
@@ -371,7 +418,7 @@ public class BlockExplosionDefense {
     }
 
     /**
-     * ✅ Получить уровень защиты по диапазонам (для обратной совместимости)
+     *  Получить уровень защиты по диапазонам (для обратной совместимости)
      */
     public static int getDefenseLevelFromResistance(float blastRes) {
         if (blastRes < 0) return 15;

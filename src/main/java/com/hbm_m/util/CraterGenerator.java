@@ -1,6 +1,7 @@
 package com.hbm_m.util;
 
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.util.explosions.nuclear.BlockExplosionDefense;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;

@@ -27,7 +27,10 @@ bin/
 .vscode/
 .cursor
 # ================= Generated Files =================
-/src/generated/
+src/generated/resources/.cache
+src/generated/resources/assets/hbm_m/blockstates/
+src/generated/resources/assets/hbm_m/models/
+src/generated/resources/data/
 
 # ================= Logs & Temporary Files =================
 # Логи, дампы ошибок и временные файлы.
