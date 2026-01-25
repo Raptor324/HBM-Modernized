@@ -1,7 +1,7 @@
 package com.hbm_m.main;
 
 import java.util.List;
-import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 // Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
@@ -12,6 +12,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.client.ClientSetup;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
@@ -20,6 +21,7 @@ import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
 import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.lib.RefStrings;
@@ -35,14 +37,18 @@ import com.hbm_m.sound.ModSounds;
 import com.hbm_m.util.explosions.trash_that_i_forgot_to_delete.SellafitSolidificationTracker;
 import com.hbm_m.world.biome.ModBiomes;
 import com.hbm_m.worldgen.ModWorldGen;
+import com.hbm_m.block.custom.machines.armormod.item.ItemArmorMod;
 import com.mojang.logging.LogUtils;
+import org.slf4j.Logger;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.chunk.LevelChunk;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
@@ -50,9 +56,11 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
 import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 @Mod(RefStrings.MODID)
@@ -305,33 +313,7 @@ public class MainRegistry {
             }
         }
 
-        //СЛИТКИ И РЕСУРСЫ
-        if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
-
-            event.accept(ModItems.ZIRCONIUM_SHARP);
-            event.accept(ModItems.BORAX);
-            event.accept(ModItems.DUST.get());
-            event.accept(ModItems.DUST_TINY.get());
-            event.accept(ModItems.CINNABAR);
-            event.accept(ModItems.FIRECLAY_BALL);
-            event.accept(ModItems.SULFUR);
-            event.accept(ModItems.LIGNITE);
-            event.accept(ModItems.FLUORITE);
-            event.accept(ModItems.RAREGROUND_ORE_CHUNK);
-            event.accept(ModItems.FIREBRICK);
-            event.accept(ModItems.WOOD_ASH_POWDER);
-            event.accept(ModItems.SCRAP);
-            event.accept(ModItems.NUGGET_SILICON);
-            event.accept(ModItems.BILLET_SILICON);
-            // Проходимся циклом по ВСЕМ слиткам
-            for (RegistryObject<Item> ingotObject : ModItems.INGOTS.values()) {
-
-                event.accept(ingotObject.get());
-                if (ModClothConfig.get().enableDebugLogging) {
-                    LOGGER.info("Added {} to NTM Resources tab", ingotObject.get());
-                }
-            }
-        //СЛИТКИ И РЕСУРСЫ...
+        // СЛИТКИ И РЕСУРСЫ
         if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
 
             // БАЗОВЫЕ ПРЕДМЕТЫ (все с ItemStack!)
@@ -358,7 +340,7 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
                   
 
-            // ✅ СЛИТКИ
+            // СЛИТКИ
             for (ModIngots ingot : ModIngots.values()) {
                 RegistryObject<Item> ingotItem = ModItems.getIngot(ingot);
                 if (ingotItem != null && ingotItem.isPresent()) {
@@ -367,7 +349,7 @@ public class MainRegistry {
               
             }
 
-            // ✅ ModPowders
+            // ModPowders
             for (ModPowders powder : ModPowders.values()) {
                 RegistryObject<Item> powderItem = ModItems.getPowders(powder);
                 if (powderItem != null && powderItem.isPresent()) {
@@ -375,7 +357,7 @@ public class MainRegistry {
                 }
             }
 
-            // ✅ ОДИН ЦИКЛ ДЛЯ ВСЕХ ПОРОШКОВ ИЗ СЛИТКОВ (обычные + маленькие)
+            // ОДИН ЦИКЛ ДЛЯ ВСЕХ ПОРОШКОВ ИЗ СЛИТКОВ (обычные + маленькие)
             for (ModIngots ingot : ModIngots.values()) {
                 // Обычный порошок
                 RegistryObject<Item> powder = ModItems.getPowder(ingot);

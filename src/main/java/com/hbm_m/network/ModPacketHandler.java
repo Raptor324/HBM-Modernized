@@ -19,6 +19,7 @@ import net.minecraftforge.network.simple.SimpleChannel;
 public class ModPacketHandler {
 
     private static final String PROTOCOL_VERSION = "1";
+    private static boolean REGISTERED = false;
 
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "main_channel"),
@@ -28,6 +29,11 @@ public class ModPacketHandler {
     );
 
     public static void register() {
+        if (REGISTERED) {
+            return;
+        }
+        REGISTERED = true;
+
         int id = 0;
 
         INSTANCE.registerMessage(id++, GeigerSoundPacket.class, GeigerSoundPacket::encode, GeigerSoundPacket::decode, GeigerSoundPacket::handle);

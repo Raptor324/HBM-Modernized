@@ -5,6 +5,7 @@ import java.util.function.Supplier;
 import com.hbm_m.item.custom.grenades_and_activators.MultiDetonatorItem;
 
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
 
 public class SetActivePointPacket {
@@ -44,15 +45,15 @@ public class SetActivePointPacket {
         ItemStack offItem = player.getOffhandItem();
 
         ItemStack detonatorStack = ItemStack.EMPTY;
-        if (mainItem.getItem() instanceof com.hbm_m.item.MultiDetonatorItem) {
+        if (mainItem.getItem() instanceof MultiDetonatorItem) {
             detonatorStack = mainItem;
         } else if (offItem.getItem() instanceof MultiDetonatorItem) {
             detonatorStack = offItem;
         }
 
         if (!detonatorStack.isEmpty()) {
-            com.hbm_m.item.MultiDetonatorItem detonatorItem =
-                    (com.hbm_m.item.MultiDetonatorItem) detonatorStack.getItem();
+            MultiDetonatorItem detonatorItem =
+                    (MultiDetonatorItem) detonatorStack.getItem();
 
             detonatorItem.setActivePoint(detonatorStack, pointIndex);
 

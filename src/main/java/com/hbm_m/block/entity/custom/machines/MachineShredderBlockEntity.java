@@ -2,12 +2,7 @@ package com.hbm_m.block.entity.custom.machines;
 
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
-<<<<<<< HEAD:src/main/java/com/hbm_m/block/entity/machine/MachineShredderBlockEntity.java
-import com.hbm_m.item.ItemBlades;
-=======
-import com.hbm_m.client.ClientSoundManager;
 import com.hbm_m.item.custom.industrial.ItemBlades;
->>>>>>> origin/main_temp:src/main/java/com/hbm_m/block/entity/custom/machines/MachineShredderBlockEntity.java
 import com.hbm_m.item.ModItems;
 import com.hbm_m.menu.MachineShredderMenu;
 import com.hbm_m.recipe.ShredderRecipe;

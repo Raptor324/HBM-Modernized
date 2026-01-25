@@ -1,7 +1,7 @@
 package com.hbm_m.powerarmor;
 
-import com.hbm_m.armormod.item.ItemArmorMod;
-import com.hbm_m.armormod.util.ArmorModificationHelper;
+import com.hbm_m.block.custom.machines.armormod.item.ItemArmorMod;
+import com.hbm_m.block.custom.machines.armormod.util.ArmorModificationHelper;
 import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 
 import net.minecraft.ChatFormatting;

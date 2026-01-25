@@ -1,10 +1,10 @@
 package com.hbm_m.powerarmor;
 
 import com.hbm_m.api.energy.EnergyCapabilityProvider;
-import com.hbm_m.armormod.item.ItemModBattery;
-import com.hbm_m.armormod.item.ItemModBatteryMk2;
-import com.hbm_m.armormod.item.ItemModBatteryMk3;
-import com.hbm_m.armormod.util.ArmorModificationHelper;
+import com.hbm_m.block.custom.machines.armormod.item.ItemModBattery;
+import com.hbm_m.block.custom.machines.armormod.item.ItemModBatteryMk2;
+import com.hbm_m.block.custom.machines.armormod.item.ItemModBatteryMk3;
+import com.hbm_m.block.custom.machines.armormod.util.ArmorModificationHelper;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.util.EnergyFormatter;
 import net.minecraft.ChatFormatting;

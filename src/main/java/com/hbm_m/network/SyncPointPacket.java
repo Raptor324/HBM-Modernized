@@ -2,12 +2,11 @@ package com.hbm_m.network;
 
 import java.util.function.Supplier;
 
-import javax.swing.text.html.HTML.Tag;
-
 import com.hbm_m.item.custom.grenades_and_activators.MultiDetonatorItem;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
+import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.network.NetworkEvent;
@@ -82,9 +81,9 @@ public class SyncPointPacket {
             detonatorStack = offItem;
         }
 
-        if (!detonatorStack.isEmpty()) {
-            MultiDetonatorItem detonatorItem =
-                    (MultiDetonatorItem) detonatorStack.getItem();
+        if (detonatorStack.isEmpty()) {
+            return;
+        }
 
         CompoundTag nbt = detonatorStack.getOrCreateTag();
 

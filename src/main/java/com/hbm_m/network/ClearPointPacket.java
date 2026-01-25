@@ -49,7 +49,7 @@ public class ClearPointPacket {
         ItemStack offItem = player.getOffhandItem();
 
         ItemStack detonatorStack = ItemStack.EMPTY;
-        if (mainItem.getItem() instanceof com.hbm_m.item.MultiDetonatorItem) {
+        if (mainItem.getItem() instanceof MultiDetonatorItem) {
             detonatorStack = mainItem;
         } else if (offItem.getItem() instanceof MultiDetonatorItem) {
             detonatorStack = offItem;

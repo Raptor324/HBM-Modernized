@@ -1,8 +1,8 @@
-package com.hbm_m.armormod.item;
+package com.hbm_m.block.custom.machines.armormod.item;
 
-import com.hbm_m.armormod.util.ArmorModificationHelper;
+import com.hbm_m.block.custom.machines.armormod.util.ArmorModificationHelper;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Item;
 
 import java.util.List;
 
@@ -11,7 +11,7 @@ import java.util.List;
  */
 public class ItemModCladding extends ItemArmorMod {
 
-    public ItemModCladding(Properties properties) {
+    public ItemModCladding(Item.Properties properties) {
         super(properties, ArmorModificationHelper.cladding);
     }
 

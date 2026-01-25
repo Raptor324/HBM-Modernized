@@ -12,9 +12,9 @@ import java.util.function.Supplier;
 // Позволяет определять структуру, проверять возможность постройки, строить и разрушать структуру,
 // а также генерировать VoxelShape для всей структуры. Ядро всей мультиблочной логики.
 import com.hbm_m.api.energy.WireBlock;
+import com.hbm_m.block.custom.decorations.DoorBlock;
 import com.hbm_m.block.custom.machines.UniversalMachinePartBlock;
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.item.tags_and_tiers.ModTags.Blocks;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.HighlightBlocksPacket;
 import com.hbm_m.network.ModPacketHandler;
@@ -25,7 +25,9 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.tags.BlockTags;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -442,7 +444,7 @@ public class MultiblockStructureHelper {
         if (allAABBs.isEmpty()) return Shapes.empty();
 
         // Получаем размеры с валидацией
-        int[] dims = com.hbm_m.block.DoorBlock.getDoorDimensions(doorId);
+        int[] dims = DoorBlock.getDoorDimensions(doorId);
 
         // Проверка на null и длину массива
         if (dims == null || dims.length < 6) {
