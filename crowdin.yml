@@ -8,10 +8,10 @@ files:
     translation: /src/generated/resources/assets/hbm_m/lang/%locale_with_underscore%.json
     
     ignore:
-      - /src/generated/resources/assets/hbm/lang/ru_ru.json
+      - /src/generated/resources/assets/hbm_m/lang/ru_ru.json
 
     languages_mapping:
-      two_letters_code:
+      locale_with_underscore:
         af: af_za
         ar: ar_sa
         ast: ast_es
