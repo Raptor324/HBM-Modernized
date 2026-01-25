@@ -1,0 +1,3 @@
+files:
+  - source: src/generated/resources/assets/hbm_m/lang
+    translation: src/generated/resources/assets/hbm_m/lang
