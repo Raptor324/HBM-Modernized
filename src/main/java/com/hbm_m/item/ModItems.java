@@ -287,6 +287,12 @@ public class ModItems {
             () -> new SwordItem(ModToolTiers.TITANIUM, 2, 3, new Item.Properties()));
     public static final RegistryObject<Item> TITANIUM_AXE = ITEMS.register("titanium_axe",
             () -> new AxeItem(ModToolTiers.TITANIUM, 8, 1, new Item.Properties()));
+
+    // Meteorite swords (registered so recipes can produce them)
+    public static final RegistryObject<Item> METEORITE_SWORD = ITEMS.register("meteorite_sword",
+            () -> new SwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
+    public static final RegistryObject<Item> METEORITE_SWORD_SEARED = ITEMS.register("meteorite_sword_seared",
+            () -> new SwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
     public static final RegistryObject<Item> TITANIUM_PICKAXE = ITEMS.register("titanium_pickaxe",
             () -> new PickaxeItem(ModToolTiers.TITANIUM, 1, 1, new Item.Properties()));
     public static final RegistryObject<Item> TITANIUM_SHOVEL = ITEMS.register("titanium_shovel",

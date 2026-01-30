@@ -1,13 +1,26 @@
 package com.hbm_m.block.entity;
+import com.hbm_m.block.entity.custom.machines.OreAcidizerBlockEntity;
 
 import com.hbm_m.api.energy.ConverterBlockEntity;
 import com.hbm_m.api.energy.SwitchBlockEntity;
 import com.hbm_m.api.energy.WireBlockEntity;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.custom.crates.*;
+import com.hbm_m.block.entity.custom.crates.DeshCrateBlockEntity;
+import com.hbm_m.block.entity.custom.crates.IronCrateBlockEntity;
+import com.hbm_m.block.entity.custom.crates.SteelCrateBlockEntity;
 import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
-import com.hbm_m.block.entity.custom.machines.*;
 import com.hbm_m.block.entity.custom.explosives.MineBlockEntity;
+import com.hbm_m.block.entity.custom.machines.AnvilBlockEntity;
+import com.hbm_m.block.entity.custom.machines.BlastFurnaceBlockEntity;
+import com.hbm_m.block.entity.custom.machines.GeigerCounterBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineAssemblerBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineBatteryBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineFluidTankBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachinePressBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineShredderBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineWoodBurnerBlockEntity;
+import com.hbm_m.block.entity.custom.machines.UniversalMachinePartBlockEntity;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.world.level.block.Block;
@@ -19,8 +32,14 @@ import net.minecraftforge.registries.RegistryObject;
 
 
 public class ModBlockEntities {
-    public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
-		DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, RefStrings.MODID);
+
+        public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
+                DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, RefStrings.MODID);
+
+        public static final RegistryObject<BlockEntityType<OreAcidizerBlockEntity>> ORE_ACIDIZER =
+                BLOCK_ENTITIES.register("ore_acidizer", () ->
+                        BlockEntityType.Builder.of(OreAcidizerBlockEntity::new, ModBlocks.ORE_ACIDIZER.get())
+                                .build(null));
 
     public static final RegistryObject<BlockEntityType<GeigerCounterBlockEntity>> GEIGER_COUNTER_BE =
 		BLOCK_ENTITIES.register("geiger_counter_be", () ->
@@ -90,6 +109,7 @@ public class ModBlockEntities {
 		BLOCK_ENTITIES.register("wire_be", () ->
 			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get())
 				.build(null));
+
 
 
     public static final RegistryObject<BlockEntityType<SwitchBlockEntity>> SWITCH_BE =

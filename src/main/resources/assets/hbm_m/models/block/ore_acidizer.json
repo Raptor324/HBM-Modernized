@@ -1,0 +1,17 @@
+{
+  "loader": "forge:composite",
+  "textures": {
+    "particle": "hbm_m:block/ore_acidizer"
+  },
+  "children": {
+    "acidizer_model": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/acidizer.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:block/ore_acidizer"
+      }
+    }
+  }
+}

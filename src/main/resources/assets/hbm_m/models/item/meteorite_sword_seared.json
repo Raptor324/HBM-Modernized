@@ -1,0 +1,28 @@
+{
+	"parent": "item/handheld",
+	"textures": {
+		"layer0": "hbm_m:item/meteorite_sword_seared"
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [0, -90, 0],
+			"translation": [0, 9, 0],
+			"scale": [1.5, 2.5, 1.0]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [0, -90, 0],
+			"translation": [0, 9, 0],
+			"scale": [1.5, 2.5, 1.0]
+		},
+		"firstperson_righthand": {
+			"rotation": [0, 90, 0],
+			"translation": [0, -9, 0],
+			"scale": [1.5, 2.5, 1.0]
+		},
+		"firstperson_lefthand": {
+			"rotation": [0, 90, 0],
+			"translation": [0, 9, 0],
+			"scale": [1.5, 2.5, 1.0]
+		}
+	}
+}

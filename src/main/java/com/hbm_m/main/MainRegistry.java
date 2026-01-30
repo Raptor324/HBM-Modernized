@@ -825,6 +825,8 @@ public class MainRegistry {
 
         // ИНСТРУМЕНТЫ
         if (event.getTab() == ModCreativeTabs.NTM_INSTRUMENTS_TAB.get()) {
+            event.accept(ModItems.METEORITE_SWORD);
+            event.accept(ModItems.METEORITE_SWORD_SEARED);
 
 
             // БРОНЯ
@@ -929,6 +931,7 @@ public class MainRegistry {
 
         // СТАНКИ
         if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
+            event.accept(ModBlocks.ORE_ACIDIZER);
             event.accept(ModBlocks.CRATE_IRON);
             event.accept(ModBlocks.CRATE_STEEL);
             event.accept(ModBlocks.BARREL_CORRODED);

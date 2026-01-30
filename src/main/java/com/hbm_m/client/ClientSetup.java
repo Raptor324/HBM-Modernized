@@ -1,3 +1,4 @@
+// ...existing code...
 package com.hbm_m.client;
 
 // Основной класс клиентской настройки мода. Здесь регистрируются все клиентские обработчики событий,
@@ -118,6 +119,7 @@ public class ClientSetup {
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
         event.enqueueWork(() -> {
+                        MenuScreens.register(ModMenuTypes.ORE_ACIDIZER_MENU.get(), com.hbm_m.client.screen.OreAcidizerScreen::new);
             // Здесь мы связываем наш тип меню с классом экрана
             MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
             MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);

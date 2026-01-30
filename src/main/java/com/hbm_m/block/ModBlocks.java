@@ -1,3 +1,6 @@
+// ...existing code...
+// ...existing code...
+
 package com.hbm_m.block;
 
 import com.hbm_m.api.energy.ConverterBlock;
@@ -22,7 +25,6 @@ import com.hbm_m.block.custom.nature.GeysirBlock;
 import com.hbm_m.block.custom.nature.RadioactiveBlock;
 import com.hbm_m.item.custom.fekal_electric.MachineBatteryBlockItem;
 
-import com.hbm_m.api.fluids.ModFluids;
 
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.item.ModItems;
@@ -223,6 +225,9 @@ public class ModBlocks {
     public static final RegistryObject<Block> ANVIL_DNT = registerAnvil("anvil_dnt", AnvilTier.PARTICLE);
     public static final RegistryObject<Block> ANVIL_OSMIRIDIUM = registerAnvil("anvil_osmiridium", AnvilTier.GERALD);
     public static final RegistryObject<Block> ANVIL_MURKY = registerAnvil("anvil_murky", AnvilTier.MURKY);
+
+    public static final RegistryObject<Block> ORE_ACIDIZER = registerBlock("ore_acidizer",
+            () -> new OreAcidizerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
     public static List<RegistryObject<Block>> getAnvilBlocks() {
         return List.of(ANVIL_IRON, ANVIL_LEAD, ANVIL_STEEL, ANVIL_DESH, ANVIL_FERROURANIUM, ANVIL_SATURNITE, ANVIL_BISMUTH_BRONZE, ANVIL_ARSENIC_BRONZE, ANVIL_SCHRABIDATE, ANVIL_DNT, ANVIL_OSMIRIDIUM, ANVIL_MURKY);
@@ -1110,13 +1115,13 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.COAL_BLOCK).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
 
-    // -----------------------<РАСТЕНИЯ>-----------------------------
+        // -----------------------<РАСТЕНИЯ>-----------------------------
     public static final RegistryObject<Block> STRAWBERRY_BUSH = registerBlock("strawberry_bush",
             () -> new FlowerBlock(() -> MobEffects.LUCK, 5,
                     BlockBehaviour.Properties.copy(Blocks.ALLIUM).noOcclusion().noCollission()));
 
 
-    // -----------------------<РУДЫ>-----------------------------
+        // -----------------------<РУДЫ>-----------------------------
 
 
     public static final RegistryObject<Block> RESOURCE_ASBESTOS = registerBlock("resource_asbestos",
