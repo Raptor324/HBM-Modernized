@@ -3,7 +3,7 @@ package com.hbm_m.powerarmor;
 // Импорты HBM Modernized
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.powerarmor.overlay.ThermalVisionRenderer;
+// import com.hbm_m.powerarmor.overlay.ThermalVisionRenderer;
 import com.mojang.blaze3d.platform.GlStateManager;
 // Импорты для рендеринга
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -434,12 +434,12 @@ public class ModEventHandlerClient {
     /**
      * Обработка рендеринга игроков (перед рендерингом)
      */
-    @SubscribeEvent
-    public static void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
-        // TODO: Реализовать невидимость (MainRegistry.proxy.isVanished)
-        // TODO: Реализовать плащи (RenderAccessoryUtility.getCloakFromPlayer)
-        // TODO: Реализовать анимацию оружия (IHoldableWeapon)
-    }
+    // @SubscribeEvent
+    // public static void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
+    //     // TODO: Реализовать невидимость (MainRegistry.proxy.isVanished)
+    //     // TODO: Реализовать плащи (RenderAccessoryUtility.getCloakFromPlayer)
+    //     // TODO: Реализовать анимацию оружия (IHoldableWeapon)
+    // }
 
     /**
      * Обработка рендеринга брони
@@ -453,24 +453,24 @@ public class ModEventHandlerClient {
     /**
      * Обработка рендеринга сущностей (перед рендерингом, высокий приоритет)
      */
-    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.HIGHEST)
-    public static void onRenderLivingPre(RenderLivingEvent.Pre event) {
-        // TODO: Реализовать невидимость сущностей (MainRegistry.proxy.isVanished)
-    }
+    // @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.HIGHEST)
+    // public static void onRenderLivingPre(RenderLivingEvent.Pre event) {
+    //     // TODO: Реализовать невидимость сущностей (MainRegistry.proxy.isVanished)
+    // }
 
-    /**
-     * Обработка рендеринга сущностей (перед рендерингом)
-     */
-    @SubscribeEvent
-    public static void onRenderLivingPreNormal(RenderLivingEvent.Pre event) {
-        Minecraft mc = Minecraft.getInstance();
-        LocalPlayer player = mc.player;
+    // /**
+    //  * Обработка рендеринга сущностей (перед рендерингом)
+    //  */
+    // @SubscribeEvent
+    // public static void onRenderLivingPreNormal(RenderLivingEvent.Pre event) {
+    //     Minecraft mc = Minecraft.getInstance();
+    //     LocalPlayer player = mc.player;
 
-        if (player == null) return;
+    //     if (player == null) return;
 
-        // TODO: Реализовать VATS систему для отображения здоровья сущностей
-        // TODO: Проверить наличие FSB брони и VATS режима
-    }
+    //     // TODO: Реализовать VATS систему для отображения здоровья сущностей
+    //     // TODO: Проверить наличие FSB брони и VATS режима
+    // }
 
     /**
      * Обработка воспроизведения звуков
@@ -643,7 +643,7 @@ public class ModEventHandlerClient {
                 }
             }
         }
-        ThermalVisionRenderer.clearSpectralHighlights();
+        // ThermalVisionRenderer.clearSpectralHighlights();
     }
 
     public static boolean isThermalActive() {
@@ -682,7 +682,7 @@ public class ModEventHandlerClient {
             return;
         }
 
-        ThermalVisionRenderer.renderThermalOverlay(gui, guiGraphics, partialTick, screenWidth, screenHeight);
+        guiGraphics.drawString(mc.font, "THERMAL VISION", 10, 10, 0x00FF00);
     }
 
     // TODO: Добавить методы для HUD оверлеев

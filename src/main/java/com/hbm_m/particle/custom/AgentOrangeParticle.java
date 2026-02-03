@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.Blocks;
 import java.util.List;
 
 /**
- * ✅ AGENT ORANGE - ОТРАВЛЕННАЯ ЧАСТИЦА
+ *  AGENT ORANGE - ОТРАВЛЕННАЯ ЧАСТИЦА
  *
  * ☠️ ОСОБЕННОСТИ:
  * - 🟠 ЯРКО-ОРАНЖЕВЫЙ цвет
@@ -41,15 +41,15 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
         this.yd = ySpeed;
         this.zd = zSpeed;
 
-        // ✅ ВРЕМЯ ЖИЗНИ: 60-100 тиков
+        //  ВРЕМЯ ЖИЗНИ: 60-100 тиков
         this.lifetime = 60 + this.random.nextInt(40);
 
-        // ✅ ВЫСОКАЯ ГРАВИТАЦИЯ (падает вниз)
+        //  ВЫСОКАЯ ГРАВИТАЦИЯ (падает вниз)
         this.gravity = 0.15F;
 
         this.hasPhysics = false;
 
-        // ✅ РАЗМЕР: 0.6 - 1.8
+        //  РАЗМЕР: 0.6 - 1.8
         this.quadSize = 0.9F + this.random.nextFloat() * 1.2F;
 // 🟠 ЦВЕТ: ТЁМНО-ОРАНЖЕВЫЙ (было светлее)
         this.rCol = 0.8F;                                   // Красный = 80% (было 100%)
@@ -57,7 +57,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
         this.bCol = 0.0F;                                   // Синий = 0%
 
 
-        // ✅ ПРОЗРАЧНОСТЬ
+        //  ПРОЗРАЧНОСТЬ
         this.alpha = 0.9F;
     }
 
@@ -86,7 +86,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
         }
 
         // ════════════════════════════════════════════════════════════════
-        // ✅ ФИЗИКА
+        //  ФИЗИКА
         // ════════════════════════════════════════════════════════════════
 
         float fadeProgress = (float) this.age / (float) this.lifetime;
@@ -96,7 +96,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
 
         this.yd -= this.gravity;
 
-        // ✅ Применяем движение
+        //  Применяем движение
         this.x += this.xd;
         this.y += this.yd;
         this.z += this.zd;
@@ -105,14 +105,14 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
         this.zd *= 0.98F;
 
         // ════════════════════════════════════════════════════════════════
-// ✅ ПРОВЕРКА СТОЛКНОВЕНИЯ С БЛОКАМИ (ПОСЛЕ движения и эффектов!)
+//  ПРОВЕРКА СТОЛКНОВЕНИЯ С БЛОКАМИ (ПОСЛЕ движения и эффектов!)
 // ════════════════════════════════════════════════════════════════
 
-// ✅ Проверяем блок НИЖЕ (на который упали)
+//  Проверяем блок НИЖЕ (на который упали)
         BlockPos belowPos = BlockPos.containing(this.x, this.y - 0.3, this.z);
         var belowState = this.level.getBlockState(belowPos);
 
-// ✅ Если под нами твёрдый блок И мы падаем вниз - исчезаем
+//  Если под нами твёрдый блок И мы падаем вниз - исчезаем
         if (this.yd < 0 && !belowState.isAir() && belowState.isSolidRender(this.level, belowPos)) {
             // ☠️ Последняя коррупция перед исчезновением
             corruptNearbyBlocks();
@@ -141,7 +141,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
      * Наносит урон и накладывает Wither 2 всем мобам в радиусе
      */
     private void checkMobCollision() {
-        // ✅ Проверяем, что мы на интегрированном сервере
+        //  Проверяем, что мы на интегрированном сервере
         Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.getSingleplayerServer() == null) {
             return; // Не работает на выделенных серверах (пока)
@@ -151,7 +151,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
         var serverLevel = server.getLevel(this.level.dimension());
         if (serverLevel == null) return;
 
-        // ✅ Получаем мобов из СЕРВЕРНОГО уровня (не клиентского!)
+        //  Получаем мобов из СЕРВЕРНОГО уровня (не клиентского!)
         List<LivingEntity> nearbyMobs = serverLevel.getEntitiesOfClass(
                 LivingEntity.class,
                 new net.minecraft.world.phys.AABB(
@@ -160,24 +160,24 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
                 )
         );
 
-        // ✅ ВЫПОЛНЯЕМ НА СЕРВЕРНОМ ПОТОКЕ!
+        //  ВЫПОЛНЯЕМ НА СЕРВЕРНОМ ПОТОКЕ!
         if (!nearbyMobs.isEmpty()) {
             System.out.println("[AgentOrange] Найдено " + nearbyMobs.size() + " сущностей");
 
             server.execute(() -> {
                 for (LivingEntity living : nearbyMobs) {
-                    // ✅ Проверяем invulnerableTime на СЕРВЕРЕ
+                    //  Проверяем invulnerableTime на СЕРВЕРЕ
                     if (living.invulnerableTime > 10) {
                         continue; // Пропускаем, если недавно получал урон
                     }
 
-                    // ✅ УРОН 4 сердца (8 HP) на СЕРВЕРНОЙ стороне
+                    //  УРОН 4 сердца (8 HP) на СЕРВЕРНОЙ стороне
                     boolean damaged = living.hurt(serverLevel.damageSources().magic(), 8.0F);
 
                     if (damaged) {
-                        System.out.println("[AgentOrange] ✅ Нанесён урон: " + living.getName().getString());
+                        System.out.println("[AgentOrange]  Нанесён урон: " + living.getName().getString());
 
-                        // ✅ WITHER 2 на 10 секунд
+                        //  WITHER 2 на 10 секунд
                         MobEffectInstance wither = new MobEffectInstance(
                                 MobEffects.WITHER,
                                 200,  // 10 секунд
@@ -188,7 +188,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
                         );
                         living.addEffect(wither);
 
-                        System.out.println("[AgentOrange] ✅ Применён Wither 2");
+                        System.out.println("[AgentOrange]  Применён Wither 2");
                     }
                 }
             });
@@ -286,7 +286,7 @@ public class AgentOrangeParticle extends AbstractExplosionParticle {
     }
 
     /**
-     * ✅ ПРОВЕРКА: можно ли коррупировать землю?
+     *  ПРОВЕРКА: можно ли коррупировать землю?
      */
     private boolean isCorruptibleGround(BlockPos pos) {
         var block = this.level.getBlockState(pos).getBlock();

@@ -1,6 +1,5 @@
-package com.hbm_m.powerarmor;
+package com.hbm_m.powerarmor.layer;
 
-import com.hbm_m.powerarmor.layer.AbstractObjArmorLayer;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.model.HumanoidModel;

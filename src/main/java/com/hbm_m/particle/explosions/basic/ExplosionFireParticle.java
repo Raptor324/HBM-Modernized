@@ -5,7 +5,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SpriteSet;
 
 /**
- * ✅ Огонь взрыва (красно-оранжевый пламя)
+ *  Огонь взрыва (красно-оранжевый пламя)
  * Основание взрыва
  */
 public class ExplosionFireParticle extends AbstractExplosionParticle {
@@ -18,22 +18,22 @@ public class ExplosionFireParticle extends AbstractExplosionParticle {
         this.yd = ySpeed;
         this.zd = zSpeed;
 
-        // ✅ ВРЕМЯ ЖИЗНИ: 30-50 тиков
+        //  ВРЕМЯ ЖИЗНИ: 30-50 тиков
         this.lifetime = 30 + this.random.nextInt(20);
 
-        // ✅ ФИЗИКА: средняя гравитация (пламя поднимается медленнее чем искры)
+        //  ФИЗИКА: средняя гравитация (пламя поднимается медленнее чем искры)
         this.gravity = 0.1F;
         this.hasPhysics = false;
 
-        // ✅ РАЗМЕР: крупный (0.6-1.0)
+        //  РАЗМЕР: крупный (0.6-1.0)
         this.quadSize = 0.6F + this.random.nextFloat() * 0.4F;
 
-        // ✅ ЦВЕТ: красно-оранжевый огонь
+        //  ЦВЕТ: красно-оранжевый огонь
         this.rCol = 1.0F;              // Red: максимум
         this.gCol = 0.4F + this.random.nextFloat() * 0.3F;  // Green: 0.4-0.7
         this.bCol = 0.0F;              // Blue: минимум (красный огонь)
 
-        // ✅ ПРОЗРАЧНОСТЬ
+        //  ПРОЗРАЧНОСТЬ
         this.alpha = 0.9F;
     }
 
@@ -41,11 +41,11 @@ public class ExplosionFireParticle extends AbstractExplosionParticle {
     public void tick() {
         super.tick();
 
-        // ✅ Плавное исчезновение
+        //  Плавное исчезновение
         float fadeProgress = (float) this.age / (float) this.lifetime;
         this.alpha = 0.9F * (1.0F - fadeProgress);
 
-        // ✅ Медленное сжатие
+        //  Медленное сжатие
         this.quadSize *= 0.97F;
     }
 

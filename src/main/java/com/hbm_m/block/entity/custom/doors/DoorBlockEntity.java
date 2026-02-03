@@ -1,6 +1,14 @@
 package com.hbm_m.block.entity.custom.doors;
 
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.block.custom.decorations.DoorBlock;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.multiblock.IMultiblockPart;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.sound.ClientSoundManager;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -17,13 +25,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.Nullable;
-
-import com.hbm_m.block.custom.decorations.DoorBlock;
-import com.hbm_m.sound.ClientSoundManager;
-import com.hbm_m.multiblock.IMultiblockPart;
-import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.PartRole;
 
 public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     

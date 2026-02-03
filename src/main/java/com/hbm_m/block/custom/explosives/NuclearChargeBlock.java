@@ -24,7 +24,7 @@ import javax.annotation.Nullable;
 import java.util.List;
 
 /**
- * ✅ ЯДЕРНЫЙ БЛОК v6 - АНИМИРОВАННЫЙ РОСТ
+ *  ЯДЕРНЫЙ БЛОК v6 - АНИМИРОВАННЫЙ РОСТ
  * Управляет таймингами появления каждой части гриба.
  */
 public class NuclearChargeBlock extends Block implements IDetonatable {

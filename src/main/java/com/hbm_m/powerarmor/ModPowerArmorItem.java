@@ -1,21 +1,33 @@
 package com.hbm_m.powerarmor;
 
-import com.hbm_m.client.model.ModModelLayers;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+import java.util.function.Consumer;
+
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.sounds.GeigerSoundPacket;
+import com.hbm_m.powerarmor.layer.ModModelLayers;
+import com.hbm_m.powerarmor.layer.PowerArmorEmptyModel;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.sound.ModSounds;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
@@ -31,18 +43,11 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
-import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-import java.util.function.Consumer;
-
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID)
 public class ModPowerArmorItem extends ModArmorFSBPowered {
     private static final Random RANDOM = new Random();
-    private int soundTickCounter = 0;
+    private static final String TAG_HAS_GEIGER_DEVICE = "hbm_has_geiger_device";
+    private static final String TAG_GEIGER_CHECK_TICK = "hbm_geiger_check_tick";
     private final PowerArmorSpecs specs;
 
     public ModPowerArmorItem(ArmorMaterial material, Type type, Properties properties, PowerArmorSpecs specs) {
@@ -219,48 +224,99 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
 
     @Override
     public void onArmorTick(ItemStack stack, Level world, Player player) {
-        if (!world.isClientSide() && this.getType() == Type.CHESTPLATE) {
-            // Apply passive effects if armor has energy
-            if (hasFSBArmor(player)) {
-                long energy = getCharge(stack);
-
-                // Only apply effects if armor has energy
-                if (energy > 0) {
-                    for (var effect : specs.passiveEffects) {
-                        player.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-                            effect.getEffect(), 40, effect.getAmplifier(), 
-                            effect.isAmbient(), effect.isVisible()
-                        ));
-                    }
-                }
+        if (world.isClientSide()) return; // Клиентские эффекты обрабатываются отдельно
+        
+        // Применяем эффекты ТОЛЬКО для нагрудника (избегаем дублирования от 4 предметов)
+        if (this.getType() == Type.CHESTPLATE && hasFSBArmor(player)) {
+            long energy = getCharge(stack);
+            
+            if (energy > 0) {
+                applyPassiveEffects(player, specs.passiveEffects);
+            } else {
+                removePassiveEffects(player, specs.passiveEffects);
             }
-
-            // Handle geiger sound for power armor
+            
             handlePowerArmorGeiger(stack, world, player);
         }
-
-        // Call parent method for FSB functionality AND energy drain
+        
+        // Дрен энергии обрабатывается в родительском классе
         super.onArmorTick(stack, world, player);
     }
 
+    private void applyPassiveEffects(Player player, List<MobEffectInstance> effects) {
+        for (var effect : effects) {
+            MobEffectInstance current = player.getEffect(effect.getEffect());
+            // Применяем эффект ТОЛЬКО если:
+            // 1) Его нет у игрока ИЛИ
+            // 2) Его длительность < 20 тиков (чтобы избежать мерцания при обновлении)
+            if (current == null || current.getDuration() < 20) {
+                int duration = Math.max(40, effect.getDuration()); // Минимум 2 секунды
+                player.addEffect(new MobEffectInstance(
+                    effect.getEffect(),
+                    duration,
+                    effect.getAmplifier(),
+                    effect.isAmbient(),
+                    effect.isVisible(),
+                    true // showParticles
+                ));
+            }
+        }
+    }
+    
+    private void removePassiveEffects(Player player, List<MobEffectInstance> effects) {
+        for (var effect : effects) {
+            player.removeEffect(effect.getEffect());
+        }
+    }
+
+    @Override
+    public boolean isDamageable(ItemStack stack) {
+        return false; // Силовая броня не изнашивается ванильным способом
+    }
+
+    @Override
+    public int getMaxDamage(ItemStack stack) {
+        return 0; // Нулевая прочность = отключение ванильной системы
+    }
+
     private void handlePowerArmorGeiger(ItemStack stack, Level world, Player player) {
-        // Check if geiger is enabled for this armor
         if (!specs.hasGeigerSound) return;
-        
-        // Check if player has full FSB armor set
         if (!hasFSBArmor(player)) return;
         
-        // Don't play sounds if player has separate geiger counter or dosimeter
-        if (playerHasGeigerDevice(player)) return;
+        // Оптимизированная проверка гейгера (кэширование + редкие обновления)
+        if (hasExternalGeigerDeviceCached(player)) return;
         
-        soundTickCounter++;
+        // Таймер на игроке (НЕ на классе предмета!)
+        CompoundTag data = player.getPersistentData();
+        int counter = data.getInt("hbm_power_armor_geiger_tick");
+        counter++;
+        
         final int SOUND_INTERVAL_TICKS = 5;
-        if (soundTickCounter >= SOUND_INTERVAL_TICKS) {
-            soundTickCounter = 0;
+        if (counter >= SOUND_INTERVAL_TICKS) {
+            counter = 0;
             if (player instanceof ServerPlayer serverPlayer) {
                 playArmorGeigerSound(serverPlayer);
             }
         }
+        
+        data.putInt("hbm_power_armor_geiger_tick", counter);
+    }
+
+    private boolean hasExternalGeigerDeviceCached(Player player) {
+        CompoundTag data = player.getPersistentData();
+        long currentTick = player.level().getGameTime();
+        long lastCheckTick = data.getLong(TAG_GEIGER_CHECK_TICK);
+        
+        // Проверяем устройство не чаще 1 раза в 20 тиков (~1 секунда)
+        if (currentTick - lastCheckTick > 20) {
+            boolean hasDevice = playerHasGeigerDevice(player);
+            data.putBoolean(TAG_HAS_GEIGER_DEVICE, hasDevice);
+            data.putInt(TAG_GEIGER_CHECK_TICK, (int) currentTick);
+            return hasDevice;
+        }
+        
+        // Возвращаем кэшированное значение
+        return data.getBoolean(TAG_HAS_GEIGER_DEVICE);
     }
 
     private boolean playerHasGeigerDevice(Player player) {

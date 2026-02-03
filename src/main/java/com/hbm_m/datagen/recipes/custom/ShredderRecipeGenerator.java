@@ -24,7 +24,7 @@ import java.util.function.Function;
  */
 public final class ShredderRecipeGenerator {
 
-    // ✅ ВАШ СПИСОК Порошков!
+    //  ВАШ СПИСОК Порошков!
     private static final Set<String> ENABLED_POWDERS = Set.of(
             "uranium", "u233", "u235", "u238", "th232", "plutonium", "pu238", "pu239", "pu240", "pu241",
             "actinium", "steel", "advanced_alloy", "aluminum", "schrabidium", "saturnite", "lead",
@@ -83,7 +83,7 @@ public final class ShredderRecipeGenerator {
     }
 
     private static void registerMetalPowders(Consumer<FinishedRecipe> writer) {
-        // ✅ ПРОВЕРКА NULL для ModPowders!
+        //  ПРОВЕРКА NULL для ModPowders!
         if (ModItems.getPowders(ModPowders.IRON) != null) {
             ShredderRecipeBuilder.shredderRecipe(Items.IRON_INGOT,
                             new ItemStack(ModItems.getPowders(ModPowders.IRON).get(), 1))
@@ -96,7 +96,7 @@ public final class ShredderRecipeGenerator {
                     .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/gold_ingot_to_powder"));
         }
 
-        // ✅ Остальные с проверками
+        //  Остальные с проверками
         if (ModItems.getPowders(ModPowders.COAL) != null) {
             if (ModItems.POWDER_COAL_SMALL != null) {
                 ShredderRecipeBuilder.shredderRecipe(ModItems.getPowders(ModPowders.COAL).get(),
@@ -114,7 +114,7 @@ public final class ShredderRecipeGenerator {
         ShredderRecipeBuilder.shredderRecipe(ModItems.SCRAP.get(), new ItemStack(ModItems.DUST.get(), 1))
                 .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/scrap_to_dust"));
 
-        // ✅ ЦИКЛ ТОЛЬКО по ВАШЕМУ списку ENABLED_POWDERS!
+        //  ЦИКЛ ТОЛЬКО по ВАШЕМУ списку ENABLED_POWDERS!
         for (String powderName : ENABLED_POWDERS) {
             ModIngots ingot = ModIngots.byName(powderName).orElse(null);
             if (ingot == null) continue;

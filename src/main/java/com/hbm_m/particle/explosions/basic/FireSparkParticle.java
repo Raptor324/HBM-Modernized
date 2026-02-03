@@ -1,6 +1,9 @@
 package com.hbm_m.particle.explosions.basic;
 
+import java.util.List;
+
 import com.hbm_m.particle.explosions.AbstractExplosionParticle;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SpriteSet;
@@ -9,8 +12,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-
-import java.util.List;
 
 /**
  * 🔥 ОГНЕННАЯ ИСКРА
@@ -32,22 +33,22 @@ public class FireSparkParticle extends AbstractExplosionParticle {
         this.yd = ySpeed;
         this.zd = zSpeed;
 
-        // ✅ ВРЕМЯ ЖИЗНИ: 20-35 тиков
+        //  ВРЕМЯ ЖИЗНИ: 20-35 тиков
         this.lifetime = 20 + this.random.nextInt(15);
 
-        // ✅ ФИЗИКА
+        //  ФИЗИКА
         this.gravity = 0.3F;
         this.hasPhysics = false;
 
-        // ✅ ВНЕШНИЙ ВИД: размер 0.3-0.6
+        //  ВНЕШНИЙ ВИД: размер 0.3-0.6
         this.quadSize = 0.3F + this.random.nextFloat() * 0.3F;
 
-        // ✅ ЦВЕТ: оранжево-желтый (горячий!)
+        //  ЦВЕТ: оранжево-желтый (горячий!)
         this.rCol = 1.0F;          // Red: максимум
         this.gCol = 0.6F + this.random.nextFloat() * 0.3F;  // Green: 0.6-0.9
         this.bCol = 0.1F;          // Blue: минимум (оранжевый оттенок)
 
-        // ✅ ПРОЗРАЧНОСТЬ
+        //  ПРОЗРАЧНОСТЬ
         this.alpha = 1.0F;
     }
 
@@ -74,7 +75,7 @@ public class FireSparkParticle extends AbstractExplosionParticle {
         }
 
         // ════════════════════════════════════════════════════════════════
-        // ✅ ФИЗИКА
+        //  ФИЗИКА
         // ════════════════════════════════════════════════════════════════
 
         this.yd -= this.gravity;
@@ -93,14 +94,14 @@ public class FireSparkParticle extends AbstractExplosionParticle {
         this.yd *= 0.98F;
         this.zd *= 0.98F;
 
-        // ✅ ПРОВЕРКА СТОЛКНОВЕНИЯ С БЛОКАМИ (для поджога)
+        //  ПРОВЕРКА СТОЛКНОВЕНИЯ С БЛОКАМИ (для поджога)
         checkBlockCollision(oldX, oldY, oldZ);
 
-        // ✅ Плавное исчезновение
+        //  Плавное исчезновение
         float fadeProgress = (float) this.age / (float) this.lifetime;
         this.alpha = Math.max(0.6F, 1.0F - fadeProgress);
 
-        // ✅ Сжатие (эффект сгорания)
+        //  Сжатие (эффект сгорания)
         this.quadSize *= 0.98F;
     }
 
@@ -115,7 +116,7 @@ public class FireSparkParticle extends AbstractExplosionParticle {
         var serverLevel = server.getLevel(this.level.dimension());
         if (serverLevel == null) return;
 
-        // ✅ Получаем мобов из СЕРВЕРНОГО уровня
+        //  Получаем мобов из СЕРВЕРНОГО уровня
         List<LivingEntity> nearbyMobs = serverLevel.getEntitiesOfClass(
                 LivingEntity.class,
                 new net.minecraft.world.phys.AABB(
@@ -127,7 +128,7 @@ public class FireSparkParticle extends AbstractExplosionParticle {
         if (!nearbyMobs.isEmpty()) {
             server.execute(() -> {
                 for (LivingEntity living : nearbyMobs) {
-                    // ✅ ПОДЖОГ НА 10 СЕКУНД (200 тиков)
+                    //  ПОДЖОГ НА 10 СЕКУНД (200 тиков)
                     living.setSecondsOnFire(10);
                     System.out.println("[FireSpark] 🔥 Поджог: " + living.getName().getString());
                 }
@@ -144,7 +145,7 @@ public class FireSparkParticle extends AbstractExplosionParticle {
         BlockPos currentPos = BlockPos.containing(this.x, this.y, this.z);
         BlockState blockState = this.level.getBlockState(currentPos);
 
-        // ✅ Если попали в твёрдый блок
+        //  Если попали в твёрдый блок
         if (!blockState.isAir() && blockState.isSolidRender(this.level, currentPos)) {
             // 🔥 Определяем сторону столкновения
             Direction hitSide = determineHitSide(oldX, oldY, oldZ, currentPos);
@@ -201,10 +202,10 @@ public class FireSparkParticle extends AbstractExplosionParticle {
         var serverLevel = server.getLevel(this.level.dimension());
         if (serverLevel == null) return;
 
-        // ✅ Позиция, где нужно поставить огонь (рядом с блоком)
+        //  Позиция, где нужно поставить огонь (рядом с блоком)
         BlockPos firePos = blockPos.relative(side);
 
-        // ✅ Проверяем, можно ли поставить огонь
+        //  Проверяем, можно ли поставить огонь
         if (serverLevel.isEmptyBlock(firePos) || serverLevel.getBlockState(firePos).canBeReplaced()) {
             // 🔥 Проверяем, что под огнём есть блок (если ставим сверху)
             if (side == Direction.UP) {

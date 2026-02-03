@@ -1,9 +1,7 @@
 {
   "sources": [
-    { "type": "single", "resource": "hbm_m:armor/t51_helmet" },
-    { "type": "single", "resource": "hbm_m:armor/t51_chest" },
-    { "type": "single", "resource": "hbm_m:armor/t51_arm" },
-    { "type": "single", "resource": "hbm_m:armor/t51_leg" }
+    { "type": "directory", "source": "block/armor", "prefix": "block/armor/" },
+    { "type": "single", "resource": "hbm_m:armor/bismuth" }
   ]
 }
 

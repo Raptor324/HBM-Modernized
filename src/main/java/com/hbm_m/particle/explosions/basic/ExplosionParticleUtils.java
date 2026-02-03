@@ -13,7 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * ✅ УТИЛИТЫ ДЛЯ ВЗРЫВНЫХ ЭФФЕКТОВ
+ *  УТИЛИТЫ ДЛЯ ВЗРЫВНЫХ ЭФФЕКТОВ
  *
  * Группирует все эффекты для разных типов взрывов:
  * - spawnAirBombExplosion() - фугасный взрыв
@@ -28,7 +28,7 @@ public class ExplosionParticleUtils {
     // ════════════════════════════════════════════════════════════════════════
 
     /**
-     * ✅ ПОЛНЫЙ ЭФФЕКТ ФУГАСНОГО ВЗРЫВА
+     *  ПОЛНЫЙ ЭФФЕКТ ФУГАСНОГО ВЗРЫВА
      *
      * Включает: искры, огненный шар, шапку, ударную волну
      */
@@ -39,7 +39,7 @@ public class ExplosionParticleUtils {
     }
 
     /**
-     * ✅ Спавн 400 оранжевых искр
+     *  Спавн 400 оранжевых искр
      */
     public static void spawnAirBombSparks(ServerLevel level, double x, double y, double z) {
         level.getServer().execute(() -> {
@@ -73,7 +73,7 @@ public class ExplosionParticleUtils {
     }
 
     /**
-     * ✅ Спавн 400 оранжевых искр
+     *  Спавн 400 оранжевых искр
      */
     public static void spawnAirBombFireSparks(ServerLevel level, double x, double y, double z) {
         level.getServer().execute(() -> {
@@ -107,7 +107,7 @@ public class ExplosionParticleUtils {
     }
 
     /**
-     * ✅ КОЛЬЦО УДАРНОЙ ВОЛНЫ
+     *  КОЛЬЦО УДАРНОЙ ВОЛНЫ
      */
     public static void spawnAirBombShockwave(ServerLevel level, double x, double y, double z) {
         level.getServer().execute(() -> {
@@ -144,7 +144,7 @@ public class ExplosionParticleUtils {
     }
 
     /**
-     * ✅ ГРИБОВИДНОЕ ОБЛАКО (огненный шар + шапка)
+     *  ГРИБОВИДНОЕ ОБЛАКО (огненный шар + шапка)
      */
     public static void spawnAirBombMushroomCloud(ServerLevel level, double x, double y, double z) {
         level.getServer().execute(() -> {
@@ -209,7 +209,7 @@ public class ExplosionParticleUtils {
      */
     public static void spawnAgentOrange(ServerLevel level, double x, double y, double z, int particleCount) {
 
-        // ✅ ТОЛЬКО СПАВН ЧАСТИЦ (логика внутри самой частицы!)
+        //  ТОЛЬКО СПАВН ЧАСТИЦ (логика внутри самой частицы!)
         level.getServer().execute(() -> {
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
@@ -250,7 +250,7 @@ public class ExplosionParticleUtils {
 
 
     /**
-     * ✅ Спавн одной крупной дымовой частицы
+     *  Спавн одной крупной дымовой частицы
      */
     public static void spawnCustomNuclearSmoke(ServerLevel level, double x, double y, double z,
                                                double xSpeed, double ySpeed, double zSpeed) {
@@ -270,7 +270,7 @@ public class ExplosionParticleUtils {
     }
 
     /**
-     * ✅ Сферический спавн множества крупных дымов
+     *  Сферический спавн множества крупных дымов
      */
     public static void spawnLargeDarkSmokes(ServerLevel level, double x, double y, double z, int particleCount) {
         level.getServer().execute(() -> {
@@ -306,7 +306,7 @@ public class ExplosionParticleUtils {
     }
 
     /**
-     * ✅ УЛУЧШЕННОЕ ЯДЕРНОЕ ГРИБНОЕ ОБЛАКО (100 блоков высоты, с реалистичной шапкой!)
+     *  УЛУЧШЕННОЕ ЯДЕРНОЕ ГРИБНОЕ ОБЛАКО (100 блоков высоты, с реалистичной шапкой!)
      *
      * НОВАЯ СТРУКТУРА:
      * - НОЖКА (0-12): Толстый столб со скоростью вверх
@@ -321,7 +321,7 @@ public class ExplosionParticleUtils {
 
 
     /**
-     * ✅ Усиленная ударная волна (больше частиц и скорость)
+     *  Усиленная ударная волна (больше частиц и скорость)
      */
     public static void spawnEnhancedShockwave(ServerLevel level, double x, double y, double z) {
         level.getServer().execute(() -> {
@@ -358,7 +358,7 @@ public class ExplosionParticleUtils {
     }
 
     /**
-     * ✅ Полный ядерный взрыв: искры + волна + гриб с шапкой
+     *  Полный ядерный взрыв: искры + волна + гриб с шапкой
      *
      * Это ГЛАВНЫЙ метод для вызова из блока!
      */
@@ -390,11 +390,11 @@ public class ExplosionParticleUtils {
                 if (clientLevel == null) return;
 
                 for (int i = 0; i < particleCount; i++) {
-                    // ✅ ГОРИЗОНТАЛЬНОЕ СМЕЩЕНИЕ
+                    //  ГОРИЗОНТАЛЬНОЕ СМЕЩЕНИЕ
                     double offsetX = (level.random.nextDouble() - 0.5) * horizontalSpread;
                     double offsetZ = (level.random.nextDouble() - 0.5) * horizontalSpread;
 
-                    // ✅ СКОРОСТИ
+                    //  СКОРОСТИ
                     double xSpeed = offsetX * 0.08; // Медленный разлёт в стороны
                     double ySpeed = verticalSpeed + (level.random.nextDouble() - 0.5) * 0.05; // В основном вверх
                     double zSpeed = offsetZ * 0.08;
@@ -412,7 +412,7 @@ public class ExplosionParticleUtils {
 
 
     /**
-     * ✅ Универсальный метод для спавна ЛЮБОГО типа взрывных частиц
+     *  Универсальный метод для спавна ЛЮБОГО типа взрывных частиц
      */
     public static void spawnCustomExplosion(double x, double y, double z, float intensity, SimpleParticleType particleType) {
         ClientLevel level = Minecraft.getInstance().level;

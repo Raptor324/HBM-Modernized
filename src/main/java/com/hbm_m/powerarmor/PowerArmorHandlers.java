@@ -50,7 +50,13 @@ import net.minecraftforge.network.PacketDistributor;
  */
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public final class PowerArmorHandlers {
+
+    private static final String TAG_DASH_COOLDOWN = "hbm_power_armor_dash_cooldown";
+    private static final int DASH_COOLDOWN_TICKS = 20; // 1 секунда
+    private static final long DASH_ENERGY_COST = 5000; // 5к энергии за деш
+
     private PowerArmorHandlers() {}
+    private static final ThreadLocal<Float> DAMAGE_CACHE = ThreadLocal.withInitial(() -> null);
 
     // ========== DAMAGE HANDLING ==========
     
@@ -64,42 +70,35 @@ public final class PowerArmorHandlers {
         if (player.level().isClientSide) return;
         if (player.getAbilities().instabuild || player.isSpectator()) return;
         
-        // ========== ARROW DEFLECTION CHECK (FIRST!) ==========
-        // Проверяем отскок стрел ДО всех других расчетов
+        // ========== ARROW DEFLECTION CHECK ==========
         if (DamageResistanceHandler.shouldDeflectProjectile(player, event.getSource())) {
-            // Отменяем урон
             event.setCanceled(true);
-            
-            // Отскакиваем снаряд назад
             Entity projectile = event.getSource().getDirectEntity();
             if (projectile instanceof Projectile proj) {
-                // Отражаем снаряд обратно с уменьшенной скоростью
                 Vec3 velocity = proj.getDeltaMovement();
                 proj.setDeltaMovement(velocity.scale(-0.5));
                 proj.hurtMarked = true;
             }
-            
-            return; // Стрела отскочила - дальше ничего не обрабатываем
+            return;
         }
         
         // ========== NORMAL DAMAGE HANDLING ==========
         if (!ModArmorFSB.hasFSBArmor(player)) return;
-
         ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
         if (!(chestStack.getItem() instanceof ModPowerArmorItem)) return;
-
-        // Рассчитываем урон через DT/DR систему
+        
+        // Рассчитываем урон через систему DT/DR
         float calculatedDamage = DamageResistanceHandler.calculateDamage(
             player,
             event.getSource(),
             event.getAmount(),
-            DamageResistanceHandler.currentPDT,
-            DamageResistanceHandler.currentPDR
+            0F, // pierceDT (временно 0, система подготовлена для будущего использования)
+            0F  // pierceDR
         );
-
+        
+        // Кэшируем результат в ThreadLocal (безопасно для многопоточности)
         if (calculatedDamage < event.getAmount()) {
-            // spendEnergyOnDamage(player, event.getAmount());
-            event.getEntity().getPersistentData().putFloat("hbm_power_armor_damage", calculatedDamage);
+            DAMAGE_CACHE.set(calculatedDamage);
         }
     }
 
@@ -112,11 +111,11 @@ public final class PowerArmorHandlers {
         if (player.level().isClientSide) return;
         if (player.getAbilities().instabuild || player.isSpectator()) return;
         
-        CompoundTag persistentData = player.getPersistentData();
-        if (persistentData.contains("hbm_power_armor_damage")) {
-            float powerArmorDamage = persistentData.getFloat("hbm_power_armor_damage");
-            event.setAmount(powerArmorDamage);
-            persistentData.remove("hbm_power_armor_damage");
+        CompoundTag data = player.getPersistentData();
+        if (data.contains("hbm_power_armor_damage")) {
+            float calculated = data.getFloat("hbm_power_armor_damage");
+            event.setAmount(calculated);
+            data.remove("hbm_power_armor_damage");
         }
     }
 
@@ -126,6 +125,13 @@ public final class PowerArmorHandlers {
     public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
         if (event.phase != TickEvent.Phase.START) return;
         Player player = event.player;
+        
+        // Обработка кулдауна даша
+        CompoundTag tag = player.getPersistentData();
+        int cooldown = tag.getInt(TAG_DASH_COOLDOWN);
+        if (cooldown > 0) {
+            tag.putInt(TAG_DASH_COOLDOWN, cooldown - 1);
+        }
         
         if (player instanceof ServerPlayer sp) {
             handleHardLanding(sp);
@@ -149,24 +155,44 @@ public final class PowerArmorHandlers {
     }
 
     public static void performDash(Player player) {
-        if (!(player instanceof ServerPlayer)) return;
+        if (!(player instanceof ServerPlayer serverPlayer)) return;
         if (!ModPowerArmorItem.hasFSBArmor(player)) return;
         
-        var chestplate = player.getItemBySlot(EquipmentSlot.CHEST);
-        if (!(chestplate.getItem() instanceof ModPowerArmorItem armorItem)) return;
+        ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
+        if (!(chestStack.getItem() instanceof ModPowerArmorItem armorItem)) return;
         
-        var specs = armorItem.getSpecs();
+        PowerArmorSpecs specs = armorItem.getSpecs();
         if (specs.dashCount <= 0) return;
         
+        // Проверка кулдауна
+        CompoundTag tag = player.getPersistentData();
+        int cooldown = tag.getInt(TAG_DASH_COOLDOWN);
+        if (cooldown > 0) return;
+        
+        // Проверка энергии
+        long currentEnergy = ((ModArmorFSBPowered) armorItem).getCharge(chestStack);
+        if (currentEnergy < DASH_ENERGY_COST) return;
+        
+        // Расход энергии
+        ((ModArmorFSBPowered) armorItem).dischargeBattery(chestStack, DASH_ENERGY_COST);
+        
+        // Применение даша
         Vec3 lookDirection = player.getLookAngle();
         double dashSpeed = 1.5 + (specs.dashCount * 0.5);
         Vec3 dashVelocity = lookDirection.scale(dashSpeed);
         player.setDeltaMovement(dashVelocity.x, Math.max(dashVelocity.y, 0.2), dashVelocity.z);
         
+        // Установка кулдауна
+        tag.putInt(TAG_DASH_COOLDOWN, DASH_COOLDOWN_TICKS);
+        
+        // Отправка визуального эффекта другим игрокам
         ModPacketHandler.INSTANCE.send(
             PacketDistributor.TRACKING_ENTITY.with(() -> player),
             new PowerArmorDashPacket(player.getId(), dashVelocity)
         );
+        
+        // Синхронизация энергии клиенту
+        ((ModArmorFSBPowered) armorItem).syncEnergyToClient(player, chestStack, player.level(), EquipmentSlot.CHEST);
     }
 
     // ========== HARD LANDING ==========
@@ -410,25 +436,25 @@ public final class PowerArmorHandlers {
         return brokeAny;
     }
 
-    @SubscribeEvent
-    public static void onLivingFall(LivingFallEvent event) {
-        if (!(event.getEntity() instanceof Player player)) return;
-        if (player.level().isClientSide) return;
-        if (!ModArmorFSB.hasFSBArmor(player)) return;
+    // @SubscribeEvent
+    // public static void onLivingFall(LivingFallEvent event) {
+    //     if (!(event.getEntity() instanceof Player player)) return;
+    //     if (player.level().isClientSide) return;
+    //     if (!ModArmorFSB.hasFSBArmor(player)) return;
         
-        ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
-        if (!(chestStack.getItem() instanceof ModPowerArmorItem armorItem)) return;
+    //     ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
+    //     if (!(chestStack.getItem() instanceof ModPowerArmorItem armorItem)) return;
         
-        PowerArmorSpecs specs = armorItem.getSpecs();
-        float fallDist = event.getDistance();
+    //     PowerArmorSpecs specs = armorItem.getSpecs();
+    //     float fallDist = event.getDistance();
         
-        // ЗАЩИТА ОТ УРОНА (В самом конце)
-        if (fallDist > 2.0F) {
-            // Если полная защита от падения через DT/DR
-            if (specs.drFall >= 1.0F || specs.dtFall > 1000) {
-                event.setDistance(0);
-                event.setCanceled(true);
-            }
-        }
-    }
+    //     // ЗАЩИТА ОТ УРОНА (В самом конце)
+    //     if (fallDist > 2.0F) {
+    //         // Если полная защита от падения через DT/DR
+    //         if (specs.drFall >= 1.0F || specs.dtFall > 1000) {
+    //             event.setDistance(0);
+    //             event.setCanceled(true);
+    //         }
+    //     }
+    // }
 }

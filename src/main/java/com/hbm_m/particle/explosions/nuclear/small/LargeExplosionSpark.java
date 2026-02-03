@@ -5,7 +5,7 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SpriteSet;
 
 /**
- * ✅ УВЕЛИЧЕННЫЕ ИСКРЫ ДЛЯ ЯДЕРНОГО ВЗРЫВА
+ *  УВЕЛИЧЕННЫЕ ИСКРЫ ДЛЯ ЯДЕРНОГО ВЗРЫВА
  * 
  * Параметры:
  * - Размер: 0.6-1.2 (в 2x раза больше обычных)
@@ -23,22 +23,22 @@ public class LargeExplosionSpark extends AbstractExplosionParticle {
         this.yd = ySpeed;
         this.zd = zSpeed;
 
-        // ✅ ВРЕМЯ ЖИЗНИ: 30-60 тиков (дольше обычных)
+        //  ВРЕМЯ ЖИЗНИ: 30-60 тиков (дольше обычных)
         this.lifetime = 30 + this.random.nextInt(30);
 
-        // ✅ ФИЗИКА: меньше гравитация (медленнее падают)
+        //  ФИЗИКА: меньше гравитация (медленнее падают)
         this.gravity = 0.2F;
         this.hasPhysics = false;
 
-        // ✅ ВНЕШНИЙ ВИД: размер 0.6-1.2 (ДВЕ СКОРОСТИ)
+        //  ВНЕШНИЙ ВИД: размер 0.6-1.2 (ДВЕ СКОРОСТИ)
         this.quadSize = 0.6F + this.random.nextFloat() * 0.6F;
 
-        // ✅ ЦВЕТ: ярко-оранжево-красный
+        //  ЦВЕТ: ярко-оранжево-красный
         this.rCol = 1.0F; // Red: максимум
         this.gCol = 0.5F + this.random.nextFloat() * 0.3F; // Green: 0.5-0.8
         this.bCol = 0.0F; // Blue: практически нет (яркий оранжевый-красный)
 
-        // ✅ ПРОЗРАЧНОСТЬ
+        //  ПРОЗРАЧНОСТЬ
         this.alpha = 1.0F;
     }
 
@@ -46,14 +46,14 @@ public class LargeExplosionSpark extends AbstractExplosionParticle {
     public void tick() {
         super.tick();
 
-        // ✅ Плавное исчезновение (fade out)
+        //  Плавное исчезновение (fade out)
         float fadeProgress = (float) this.age / (float) this.lifetime;
         this.alpha = Math.max(0.7F, 1.0F - fadeProgress);
 
-        // ✅ Медленное сжатие (эффект сгорания)
+        //  Медленное сжатие (эффект сгорания)
         this.quadSize *= 0.97F;
 
-        // ✅ Легкое вращение/колебание размера для динамики
+        //  Легкое вращение/колебание размера для динамики
         if (this.age % 2 == 0) {
             this.quadSize *= 1.01F;
         }

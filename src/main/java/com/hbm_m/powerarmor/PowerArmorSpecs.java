@@ -209,7 +209,7 @@ public class PowerArmorSpecs {
         this.hasGeigerSound = geiger;
         this.hasCustomGeiger = customGeiger;
         return this;
-    }
+    } //TODO че за херня, почему 2 метода
 
     public PowerArmorSpecs setMovement(float stepHeight, int dashCount) {
         this.stepHeight = stepHeight;

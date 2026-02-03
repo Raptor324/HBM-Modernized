@@ -56,12 +56,12 @@ public class ModItemTagProvider extends ItemTagsProvider {
     @Override
     protected void addTags(@Nonnull HolderLookup.Provider provider) {
 
-        // ✅ АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ СЛИТКОВ
+        //  АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ СЛИТКОВ
         TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots")));
 
         for (ModIngots ingot : ModIngots.values()) {
             RegistryObject<Item> ingotObject = ModItems.getIngot(ingot);
-            // ✅ ПРОВЕРКА НА NULL И НА РЕГИСТРАЦИЮ
+            //  ПРОВЕРКА НА NULL И НА РЕГИСТРАЦИЮ
             if (ingotObject != null && ingotObject.isPresent()) {
                 String ingotName = ingot.getName();
                 this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots/" + ingotName)))
@@ -70,12 +70,12 @@ public class ModItemTagProvider extends ItemTagsProvider {
             }
         }
 
-        // ✅ АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ ПОРОШКОВ
+        //  АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ ПОРОШКОВ
         TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders")));
 
         for (ModPowders powder : ModPowders.values()) {
             RegistryObject<Item> powderObject = ModItems.getPowders(powder);
-            // ✅ ПОЛНАЯ ПРОВЕРКА - ИСПРАВЛЕНА ОСНОВНАЯ ОШИБКА!
+            //  ПОЛНАЯ ПРОВЕРКА - ИСПРАВЛЕНА ОСНОВНАЯ ОШИБКА!
             if (powderObject != null && powderObject.isPresent()) {
                 String powderName = powder.getName();
                 this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + powderName)))
@@ -84,25 +84,25 @@ public class ModItemTagProvider extends ItemTagsProvider {
             }
         }
 
-        // ✅ ПОРОШКИ ИЗ СЛИТКОВ
+        //  ПОРОШКИ ИЗ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
             RegistryObject<Item> powderObject = ModItems.getPowder(ingot);
-            if (powderObject != null && powderObject.isPresent()) {  // ✅ ДОБАВЛЕНА ПРОВЕРКА isPresent()
+            if (powderObject != null && powderObject.isPresent()) {  //  ДОБАВЛЕНА ПРОВЕРКА isPresent()
                 this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName())))
                         .add(powderObject.get());
                 powdersTagBuilder.add(powderObject.getKey());
             }
 
-            // ✅ МАЛЕНЬКИЕ ПОРОШКИ С ПРОВЕРКОЙ
+            //  МАЛЕНЬКИЕ ПОРОШКИ С ПРОВЕРКОЙ
             ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
-                if (tiny != null && tiny.isPresent()) {  // ✅ ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА
+                if (tiny != null && tiny.isPresent()) {  //  ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА
                     this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName() + "/tiny")))
                             .add(tiny.get());
                 }
             });
         }
 
-        // ✅ БАЗОВЫЕ ПОРОШКИ (всегда существуют)
+        //  БАЗОВЫЕ ПОРОШКИ (всегда существуют)
         powdersTagBuilder.add(ModItems.DUST.getKey());
         powdersTagBuilder.add(ModItems.DUST_TINY.getKey());
 

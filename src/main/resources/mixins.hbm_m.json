@@ -11,6 +11,9 @@
   "server": [
   ],
   "client": [
+    // "LevelRendererMixin",
+    "GameRendererMixin",
+    "LightTextureMixin"
   ],
   "injectors": {
     "defaultRequire": 1

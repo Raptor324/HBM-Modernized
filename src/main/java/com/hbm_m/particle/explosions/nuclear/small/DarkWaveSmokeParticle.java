@@ -11,7 +11,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * ✅ ВОЛНОВОЙ ДЫМ - НЕ ПРОХОДИТ СКВОЗЬ БЛОКИ
+ *  ВОЛНОВОЙ ДЫМ - НЕ ПРОХОДИТ СКВОЗЬ БЛОКИ
  *
  * Особенности:
  * - Проверяет столкновения с блоками
@@ -62,7 +62,7 @@ public class DarkWaveSmokeParticle extends AbstractExplosionParticle {
         this.zd = zSpeed;
         this.originY = y;
 
-        // ✅ СОХРАНЯЕМ ЭПИЦЕНТР ВЗРЫВА
+        //  СОХРАНЯЕМ ЭПИЦЕНТР ВЗРЫВА
         // Предполагаем, что частица спавнится на начальном радиусе от центра
         // Вычисляем центр взрыва на основе начальной позиции и скорости
         // Центр = текущая позиция - (направление движения * начальный радиус)
@@ -166,7 +166,7 @@ public class DarkWaveSmokeParticle extends AbstractExplosionParticle {
     }
 
     /**
-     * ✅ ПРОВЕРКА СТОЛКНОВЕНИЯ С ИГРОКОМ
+     *  ПРОВЕРКА СТОЛКНОВЕНИЯ С ИГРОКОМ
      *
      * Если игрок находится в радиусе PLAYER_EFFECT_RADIUS от частицы,
      * применяется эффект тряски камеры с учётом расстояния от эпицентра
@@ -183,7 +183,7 @@ public class DarkWaveSmokeParticle extends AbstractExplosionParticle {
 
         // Если игрок в радиусе воздействия
         if (distanceSq < PLAYER_EFFECT_RADIUS * PLAYER_EFFECT_RADIUS) {
-            // ✅ Применяем эффект тряски с учётом расстояния от эпицентра
+            //  Применяем эффект тряски с учётом расстояния от эпицентра
             applyShockwaveEffect(player, distanceSq);
 
             // Устанавливаем кулдаун (10 тиков = 0.5 секунды)
@@ -192,7 +192,7 @@ public class DarkWaveSmokeParticle extends AbstractExplosionParticle {
     }
 
     /**
-     * ✅ ВЫЧИСЛЕНИЕ РАССТОЯНИЯ ОТ ЭПИЦЕНТРА ВЗРЫВА
+     *  ВЫЧИСЛЕНИЕ РАССТОЯНИЯ ОТ ЭПИЦЕНТРА ВЗРЫВА
      *
      * @return Горизонтальное расстояние от центра взрыва (в блоках)
      */
@@ -205,7 +205,7 @@ public class DarkWaveSmokeParticle extends AbstractExplosionParticle {
     }
 
     /**
-     * ✅ ПРИМЕНЕНИЕ ЭФФЕКТА УДАРНОЙ ВОЛНЫ
+     *  ПРИМЕНЕНИЕ ЭФФЕКТА УДАРНОЙ ВОЛНЫ
      *
      * Сила эффекта зависит от:
      * 1. Расстояния до игрока (чем ближе - тем сильнее)
@@ -248,10 +248,10 @@ public class DarkWaveSmokeParticle extends AbstractExplosionParticle {
         // Применяем минимальную интенсивность
         float finalIntensity = Math.max(baseIntensity, MIN_SHAKE_INTENSITY * distanceFalloff);
 
-        // ✅ Применяем тряску камеры через CameraShakeHandler
+        //  Применяем тряску камеры через CameraShakeHandler
         CameraShakeHandler.addShake(finalIntensity, 10); // 10 тиков тряски
 
-        // ✅ Опционально: звуковой эффект с громкостью зависящей от силы
+        //  Опционально: звуковой эффект с громкостью зависящей от силы
         // player.playSound(SoundEvents.GENERIC_EXPLODE, finalIntensity * 0.5F, 1.0F + distanceFalloff * 0.5F);
     }
 

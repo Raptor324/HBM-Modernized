@@ -1,5 +1,9 @@
 package com.hbm_m.api.energy;
 
+import java.util.List;
+
+import javax.annotation.Nullable;
+
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.custom.machines.MachineBatteryBlockEntity;
 import com.hbm_m.util.EnergyFormatter;
@@ -20,7 +24,11 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Mirror;
+import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -31,12 +39,9 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.network.NetworkHooks;
 
-import javax.annotation.Nullable;
-import java.util.List;
-
 /**
  * Универсальный класс блока для всех энергохранилищ.
- * ✅ Корректно интегрирован в энергосеть HBM.
+ *  Корректно интегрирован в энергосеть HBM.
  */
 public class MachineBatteryBlock extends BaseEntityBlock {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
@@ -89,7 +94,7 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         return createTickerHelper(type, ModBlockEntities.MACHINE_BATTERY_BE.get(), MachineBatteryBlockEntity::tick);
     }
 
-    // ✅ Регистрация в энергосети
+    //  Регистрация в энергосети
 
 
     @Override

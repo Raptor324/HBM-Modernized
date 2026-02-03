@@ -3,12 +3,15 @@ package com.hbm_m.main;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.slf4j.Logger;
+
 // Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.custom.machines.armormod.item.ItemArmorMod;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.capability.ModCapabilities;
@@ -19,18 +22,6 @@ import com.hbm_m.entity.ModEntities;
 import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
-import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
-import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.world.biome.ModBiomes;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.event.level.LevelEvent;
-import com.mojang.logging.LogUtils;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.fml.javafmlmod.FMLJavaModLoadingContext;
-import com.hbm_m.block.custom.machines.armormod.item.ItemArmorMod;
-import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.entity.ModEntities;
 import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
@@ -46,12 +37,9 @@ import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.sound.ModSounds;
-import com.hbm_m.util.explosions.trash_that_i_forgot_to_delete.SellafitSolidificationTracker;
 import com.hbm_m.world.biome.ModBiomes;
 import com.hbm_m.worldgen.ModWorldGen;
-import com.hbm_m.block.custom.machines.armormod.item.ItemArmorMod;
 import com.mojang.logging.LogUtils;
-import org.slf4j.Logger;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -121,8 +109,8 @@ public class MainRegistry {
         registerCapabilities(modEventBus);
 
 
-        // ✅ ЭТА СТРОКА ДОЛЖНА БЫТЬ ПОСЛЕДНЕЙ!
-        ModWorldGen.PROCESSORS.register(modEventBus);  // ✅ ОСТАВИ!
+        //  ЭТА СТРОКА ДОЛЖНА БЫТЬ ПОСЛЕДНЕЙ!
+        ModWorldGen.PROCESSORS.register(modEventBus);  //  ОСТАВИ!
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
@@ -266,10 +254,26 @@ public class MainRegistry {
             event.accept(createChargedArmorStack(ModItems.T51_CHESTPLATE.get()));
             event.accept(createChargedArmorStack(ModItems.T51_LEGGINGS.get()));
             event.accept(createChargedArmorStack(ModItems.T51_BOOTS.get()));
+
             event.accept(createChargedArmorStack(ModItems.AJR_HELMET.get()));
             event.accept(createChargedArmorStack(ModItems.AJR_CHESTPLATE.get()));
             event.accept(createChargedArmorStack(ModItems.AJR_LEGGINGS.get()));
             event.accept(createChargedArmorStack(ModItems.AJR_BOOTS.get()));
+
+            event.accept(createChargedArmorStack(ModItems.AJRO_HELMET.get()));
+            event.accept(createChargedArmorStack(ModItems.AJRO_CHESTPLATE.get()));
+            event.accept(createChargedArmorStack(ModItems.AJRO_LEGGINGS.get()));
+            event.accept(createChargedArmorStack(ModItems.AJRO_BOOTS.get()));
+
+            event.accept(createChargedArmorStack(ModItems.BISMUTH_HELMET.get()));
+            event.accept(createChargedArmorStack(ModItems.BISMUTH_CHESTPLATE.get()));
+            event.accept(createChargedArmorStack(ModItems.BISMUTH_LEGGINGS.get()));
+            event.accept(createChargedArmorStack(ModItems.BISMUTH_BOOTS.get()));
+            
+            event.accept(createChargedArmorStack(ModItems.DNT_HELMET.get()));
+            event.accept(createChargedArmorStack(ModItems.DNT_CHESTPLATE.get()));
+            event.accept(createChargedArmorStack(ModItems.DNT_LEGGINGS.get()));
+            event.accept(createChargedArmorStack(ModItems.DNT_BOOTS.get()));
             
             event.accept(ModItems.ALLOY_HELMET);
             event.accept(ModItems.ALLOY_CHESTPLATE);

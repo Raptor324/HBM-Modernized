@@ -408,5 +408,11 @@ public class ModHazards {
         HazardSystem.registerArmorProtection(ModItems.T51_CHESTPLATE.get(), 0.4f);
         HazardSystem.registerArmorProtection(ModItems.T51_LEGGINGS.get(), 0.3f);
         HazardSystem.registerArmorProtection(ModItems.T51_BOOTS.get(), 0.1f);
+
+        // Bismuth power armor (tier above AJR, strong "other" resist in original)
+        HazardSystem.registerArmorProtection(ModItems.BISMUTH_HELMET.get(), 0.26f);
+        HazardSystem.registerArmorProtection(ModItems.BISMUTH_CHESTPLATE.get(), 0.52f);
+        HazardSystem.registerArmorProtection(ModItems.BISMUTH_LEGGINGS.get(), 0.39f);
+        HazardSystem.registerArmorProtection(ModItems.BISMUTH_BOOTS.get(), 0.13f);
     }
 }

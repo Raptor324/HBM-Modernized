@@ -8,7 +8,7 @@ import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 /**
- * ✅ ВСЕ ЧАСТИЦЫ теперь как ИСКРЫ - видны на 256+ блоков!
+ *  ВСЕ ЧАСТИЦЫ теперь как ИСКРЫ - видны на 256+ блоков!
  * Все используют alwaysShow=true + AbstractExplosionParticle + LongRangeParticleRenderType
  */
 public class ModExplosionParticles {
@@ -28,7 +28,7 @@ public class ModExplosionParticles {
     public static final RegistryObject<ParticleType<?>> DARK_WAVE_SMOKE =
             PARTICLE_TYPES.register("dark_wave_smoke", () -> new SimpleParticleType(true));
 
-    // ✅ ГЛАВНЫЕ ЭФФЕКТЫ ВЗРЫВА (все как искры!)
+    //  ГЛАВНЫЕ ЭФФЕКТЫ ВЗРЫВА (все как искры!)
 
     // 🔥 ВСПЫШКА (яркий белый свет)
     public static final RegistryObject<ParticleType<?>> EXPLOSION_FLASH =
@@ -64,7 +64,7 @@ public class ModExplosionParticles {
     public static final RegistryObject<ParticleType<?>> FIRE_SPARK =
             PARTICLE_TYPES.register("fire_spark", () -> new SimpleParticleType(true));
 
-    // ✅ СТАРЫЕ/ЗАПАСНЫЕ (можно удалить если не используются)
+    //  СТАРЫЕ/ЗАПАСНЫЕ (можно удалить если не используются)
     public static final RegistryObject<ParticleType<?>> FLASH =
             PARTICLE_TYPES.register("flash", () -> new SimpleParticleType(true));
 

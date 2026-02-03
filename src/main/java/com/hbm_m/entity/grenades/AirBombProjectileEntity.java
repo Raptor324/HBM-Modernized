@@ -1,11 +1,16 @@
 package com.hbm_m.entity.grenades;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 import com.hbm_m.block.custom.explosives.IDetonatable;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
@@ -26,16 +31,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-
 public class AirBombProjectileEntity extends ThrowableItemProjectile {
 
     private static final EntityDataAccessor<Float> SYNCHED_YAW =
             SynchedEntityData.defineId(AirBombProjectileEntity.class, EntityDataSerializers.FLOAT);
 
-    // ✅ Параметры взрыва
+    //  Параметры взрыва
     private static final float EXPLOSION_POWER = 12.0f;
     private static final float EXPLOSION_POWER2 = 20.0f;
     private static final float DAMAGE_RADIUS = 28.0f;
@@ -137,7 +138,7 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
 
             this.discard();
 
-            // ✅ Все кастомные эффекты
+            //  Все кастомные эффекты
             triggerNearbyDetonations(serverLevel, pos, null);
             dealExplosionDamage(serverLevel, x, y, z);
             scheduleExplosionEffects(serverLevel, x, y, z);

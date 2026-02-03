@@ -1,10 +1,10 @@
 package com.hbm_m.client.render;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.entity.grenades.AirstrikeEntity;
 import com.hbm_m.entity.grenades.AirstrikeNukeEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.block.BlockRenderDispatcher;
 import net.minecraft.client.renderer.entity.EntityRenderer;
@@ -32,13 +32,13 @@ public class AirstrikeNukeEntityRenderer extends EntityRenderer<AirstrikeNukeEnt
 
         poseStack.pushPose(); // ← Добавьте pushPose()
 
-        // ✅ ОДИН поворот: 180° + направление движения
+        //  ОДИН поворот: 180° + направление движения
         poseStack.mulPose(Axis.YP.rotationDegrees(-entity.getYRot()));
 
-        // ✅ Смещение центра модели
+        //  Смещение центра модели
         poseStack.translate(-0.5, 0.0, -0.5);
 
-        // ✅ Масштаб x3
+        //  Масштаб x3
         poseStack.scale(10.0F, 10.0F, 10.0F);
 
         BlockState state = ModBlocks.B29.get().defaultBlockState();

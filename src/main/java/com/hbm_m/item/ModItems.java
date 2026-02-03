@@ -1,68 +1,101 @@
 package com.hbm_m.item;
 
+import static com.hbm_m.lib.RefStrings.MODID;
+
 // Класс для регистрации всех предметов мода.
 // Использует DeferredRegister для отложенной регистрации. Здесь так же регистрируются моды для брони.
 // Слитки регистрируются автоматически на основе перечисления ModIngots.
 
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.ModFluids;
-
-import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
-import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
-import com.hbm_m.item.custom.crates.IronCrateItem;
-import com.hbm_m.item.custom.crates.SteelCrateItem;
-import com.hbm_m.item.custom.industrial.*;
-import com.hbm_m.item.custom.liquids.InfiniteWaterItem;
-import com.hbm_m.item.custom.radiation_meter.ItemDosimeter;
-import com.hbm_m.item.custom.radiation_meter.ItemGeigerCounter;
-import com.hbm_m.item.custom.food.ItemConserve;
-import com.hbm_m.item.custom.food.ItemEnergyDrink;
-import com.hbm_m.item.custom.food.ModFoods;
-import com.hbm_m.item.custom.grenades_and_activators.*;
-import com.hbm_m.item.custom.tools_and_armor.*;
-import com.hbm_m.item.tags_and_tiers.*;
-import com.hbm_m.item.custom.scanners.DepthOresScannerItem;
-import com.hbm_m.item.custom.scanners.OilDetectorItem;
-
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
-import java.util.List;
-
-import com.hbm_m.block.custom.machines.armormod.item.ItemModHealth;
-import com.hbm_m.block.custom.machines.armormod.item.ItemModRadProtection;
-import com.hbm_m.block.custom.machines.armormod.item.ItemModServos;
-import com.hbm_m.block.custom.machines.armormod.item.ItemModCladding;
-import com.hbm_m.block.custom.machines.armormod.item.ItemModKevlar;
-import com.hbm_m.block.custom.machines.armormod.item.ItemModExtra;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.custom.machines.armormod.item.ItemModBattery;
 import com.hbm_m.block.custom.machines.armormod.item.ItemModBatteryMk2;
 import com.hbm_m.block.custom.machines.armormod.item.ItemModBatteryMk3;
-import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.custom.machines.armormod.item.ItemModCladding;
+import com.hbm_m.block.custom.machines.armormod.item.ItemModExtra;
+import com.hbm_m.block.custom.machines.armormod.item.ItemModHealth;
+import com.hbm_m.block.custom.machines.armormod.item.ItemModKevlar;
+import com.hbm_m.block.custom.machines.armormod.item.ItemModRadProtection;
+import com.hbm_m.block.custom.machines.armormod.item.ItemModServos;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeIfType;
 import com.hbm_m.entity.grenades.GrenadeType;
+import com.hbm_m.item.custom.crates.IronCrateItem;
+import com.hbm_m.item.custom.crates.SteelCrateItem;
+import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
+import com.hbm_m.item.custom.food.ItemConserve;
+import com.hbm_m.item.custom.food.ItemEnergyDrink;
+import com.hbm_m.item.custom.food.ModFoods;
+import com.hbm_m.item.custom.grenades_and_activators.AirBombItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirNukeBombItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirstrikeAgentItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirstrikeHeavyItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirstrikeItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirstrikeNukeItem;
+import com.hbm_m.item.custom.grenades_and_activators.DetonatorItem;
+import com.hbm_m.item.custom.grenades_and_activators.GrenadeIfItem;
+import com.hbm_m.item.custom.grenades_and_activators.GrenadeItem;
+import com.hbm_m.item.custom.grenades_and_activators.GrenadeNucItem;
+import com.hbm_m.item.custom.grenades_and_activators.MultiDetonatorItem;
+import com.hbm_m.item.custom.grenades_and_activators.RangeDetonatorItem;
+import com.hbm_m.item.custom.industrial.FuelItem;
+import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
+import com.hbm_m.item.custom.industrial.ItemBlades;
+import com.hbm_m.item.custom.industrial.ItemBlueprintFolder;
+import com.hbm_m.item.custom.industrial.ItemStamp;
+import com.hbm_m.item.custom.industrial.ItemTemplateFolder;
+import com.hbm_m.item.custom.liquids.InfiniteWaterItem;
+import com.hbm_m.item.custom.radiation_meter.ItemDosimeter;
+import com.hbm_m.item.custom.radiation_meter.ItemGeigerCounter;
+import com.hbm_m.item.custom.scanners.DepthOresScannerItem;
+import com.hbm_m.item.custom.scanners.OilDetectorItem;
+import com.hbm_m.item.custom.tools_and_armor.ModArmorMaterials;
+import com.hbm_m.item.custom.tools_and_armor.ModAxeItem;
+import com.hbm_m.item.custom.tools_and_armor.ModPickaxeItem;
+import com.hbm_m.item.custom.tools_and_armor.ModShovelItem;
+import com.hbm_m.item.custom.tools_and_armor.ModToolTiers;
+import com.hbm_m.item.tags_and_tiers.ItemSimpleConsumable;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.tags_and_tiers.RadioactiveItem;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.powerarmor.AJRArmor;
+import com.hbm_m.powerarmor.AJROArmor;
+import com.hbm_m.powerarmor.BismuthArmor;
+import com.hbm_m.powerarmor.DNTArmor;
 import com.hbm_m.powerarmor.T51Armor;
 import com.hbm_m.sound.ModSounds;
 
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.item.*;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.HoeItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.world.item.ShovelItem;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-
-import static com.hbm_m.lib.RefStrings.MODID;
 
 
 public class ModItems {
@@ -103,7 +136,7 @@ public class ModItems {
     );
 
     static {
-        // 1. СЛИТКИ (ВСЕГДА) ✅ OK
+        // 1. СЛИТКИ (ВСЕГДА)  OK
         for (ModIngots ingot : ModIngots.values()) {
             RegistryObject<Item> registeredItem;
             if (ingot == ModIngots.URANIUM) {
@@ -114,7 +147,7 @@ public class ModItems {
             INGOTS.put(ingot, registeredItem);
         }
 
-        // 2. ModPowders (ТОЛЬКО ИЗ ENABLED_MODPOWDERS) ✅ ИСПРАВЛЕНО!
+        // 2. ModPowders (ТОЛЬКО ИЗ ENABLED_MODPOWDERS)  ИСПРАВЛЕНО!
         for (ModPowders powder : ModPowders.values()) {
             String baseName = powder.name(); // или powder.getName() если есть
             if (ENABLED_MODPOWDERS.contains(baseName)) {
@@ -126,7 +159,7 @@ public class ModItems {
             }
         }
 
-        // 3. Порошки из слитков (ТОЛЬКО ИЗ ENABLED_INGOT_POWDERS) ✅ ИСПРАВЛЕНО!
+        // 3. Порошки из слитков (ТОЛЬКО ИЗ ENABLED_INGOT_POWDERS)  ИСПРАВЛЕНО!
         for (ModIngots ingot : ModIngots.values()) {
             String baseName = ingot.getName();
 
@@ -141,7 +174,7 @@ public class ModItems {
                 INGOT_POWDERS.put(ingot, powderItem);
             }
 
-            // Маленький порошок ✅ OK
+            // Маленький порошок  OK
             if (POWDER_TINY_NAMES.contains(baseName) && ENABLED_TINY_POWDERS.contains(baseName)) {
                 String tinyId = baseName + "_powder_tiny";
                 RegistryObject<Item> tinyItem = ITEMS.register(tinyId, () -> new Item(new Item.Properties()));
@@ -393,15 +426,6 @@ public class ModItems {
     public static final RegistryObject<Item> SECURITY_BOOTS = ITEMS.register("security_boots",
             () -> new ArmorItem(ModArmorMaterials.SECURITY, ArmorItem.Type.BOOTS, new Item.Properties()));
 
-    public static final RegistryObject<Item> AJR_HELMET = ITEMS.register("ajr_helmet",
-            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties()));
-    public static final RegistryObject<Item> AJR_CHESTPLATE = ITEMS.register("ajr_chestplate",
-            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
-    public static final RegistryObject<Item> AJR_LEGGINGS = ITEMS.register("ajr_leggings",
-            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties()));
-    public static final RegistryObject<Item> AJR_BOOTS = ITEMS.register("ajr_boots",
-            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties()));
-
     public static final RegistryObject<Item> ASBESTOS_HELMET = ITEMS.register("asbestos_helmet",
             () -> new ArmorItem(ModArmorMaterials.ASBESTOS, ArmorItem.Type.HELMET, new Item.Properties()));
     public static final RegistryObject<Item> ASBESTOS_CHESTPLATE = ITEMS.register("asbestos_chestplate",
@@ -461,6 +485,54 @@ public class ModItems {
 
     public static final RegistryObject<Item> T51_BOOTS = ITEMS.register("t51_boots",
             () -> new T51Armor(ModArmorMaterials.TITANIUM, ArmorItem.Type.BOOTS, new Item.Properties()));
+
+    public static final RegistryObject<Item> AJR_HELMET = ITEMS.register("ajr_helmet",
+            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties()));
+
+    public static final RegistryObject<Item> AJR_CHESTPLATE = ITEMS.register("ajr_chestplate",
+            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+
+    public static final RegistryObject<Item> AJR_LEGGINGS = ITEMS.register("ajr_leggings",
+            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+
+    public static final RegistryObject<Item> AJR_BOOTS = ITEMS.register("ajr_boots",
+            () -> new AJRArmor(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties()));
+
+	public static final RegistryObject<Item> AJRO_HELMET = ITEMS.register("ajro_helmet",
+            () -> new AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.HELMET, new Item.Properties()));
+
+    public static final RegistryObject<Item> AJRO_CHESTPLATE = ITEMS.register("ajro_chestplate",
+            () -> new AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+
+    public static final RegistryObject<Item> AJRO_LEGGINGS = ITEMS.register("ajro_leggings",
+            () -> new AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+			
+    public static final RegistryObject<Item> AJRO_BOOTS = ITEMS.register("ajro_boots",
+            () -> new AJROArmor(ModArmorMaterials.AJR, ArmorItem.Type.BOOTS, new Item.Properties()));
+
+    public static final RegistryObject<Item> DNT_HELMET = ITEMS.register("dnt_helmet",
+            () -> new DNTArmor(ModArmorMaterials.STARMETAL, ArmorItem.Type.HELMET, new Item.Properties()));
+
+    public static final RegistryObject<Item> DNT_CHESTPLATE = ITEMS.register("dnt_chestplate",
+            () -> new DNTArmor(ModArmorMaterials.STARMETAL, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+
+    public static final RegistryObject<Item> DNT_LEGGINGS = ITEMS.register("dnt_leggings",
+            () -> new DNTArmor(ModArmorMaterials.STARMETAL, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+
+    public static final RegistryObject<Item> DNT_BOOTS = ITEMS.register("dnt_boots",
+            () -> new DNTArmor(ModArmorMaterials.STARMETAL, ArmorItem.Type.BOOTS, new Item.Properties()));
+
+    public static final RegistryObject<Item> BISMUTH_HELMET = ITEMS.register("bismuth_helmet",
+            () -> new BismuthArmor(ModArmorMaterials.BISMUTH, ArmorItem.Type.HELMET, new Item.Properties()));
+
+    public static final RegistryObject<Item> BISMUTH_CHESTPLATE = ITEMS.register("bismuth_chestplate",
+            () -> new BismuthArmor(ModArmorMaterials.BISMUTH, ArmorItem.Type.CHESTPLATE, new Item.Properties()));
+
+    public static final RegistryObject<Item> BISMUTH_LEGGINGS = ITEMS.register("bismuth_leggings",
+            () -> new BismuthArmor(ModArmorMaterials.BISMUTH, ArmorItem.Type.LEGGINGS, new Item.Properties()));
+
+    public static final RegistryObject<Item> BISMUTH_BOOTS = ITEMS.register("bismuth_boots",
+            () -> new BismuthArmor(ModArmorMaterials.BISMUTH, ArmorItem.Type.BOOTS, new Item.Properties()));
 
 
 

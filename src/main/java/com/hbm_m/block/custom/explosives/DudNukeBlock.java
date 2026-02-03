@@ -1,9 +1,17 @@
 package com.hbm_m.block.custom.explosives;
 
+import java.util.List;
+
+import javax.annotation.Nullable;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.util.explosions.nuclear.CraterGenerator;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -27,19 +35,14 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.server.ServerLifecycleHooks;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import javax.annotation.Nullable;
-import java.util.List;
 
 /**
- * ✅ ДАДО-БОЕВАЯ ГОЛОВКА v4
+ *  ДАДО-БОЕВАЯ ГОЛОВКА v4
  *
  * Улучшения:
- * ✅ Полностью динамический размер кратера
- * ✅ Радиус определяется ТОЛЬКО силой пробития лучей
- * ✅ Синхронизация лучей исправлена
+ *  Полностью динамический размер кратера
+ *  Радиус определяется ТОЛЬКО силой пробития лучей
+ *  Синхронизация лучей исправлена
  */
 public class DudNukeBlock extends Block implements IDetonatable {
 
@@ -120,7 +123,7 @@ public class DudNukeBlock extends Block implements IDetonatable {
             // Запускаем поэтапную систему частиц
             scheduleExplosionEffects(serverLevel, x, y, z);
 
-            // ✅ ГЕНЕРАЦИЯ КРАТЕРА (радиус определяется лучами!)
+            //  ГЕНЕРАЦИЯ КРАТЕРА (радиус определяется лучами!)
             MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
             if (server != null) {
                 server.tell(new TickTask(CRATER_GENERATION_DELAY, () -> {
@@ -148,23 +151,23 @@ public class DudNukeBlock extends Block implements IDetonatable {
     }
 
     /**
-     * ✅ Планирование эффектов взрыва
+     *  Планирование эффектов взрыва
      */
     private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
-        // ✅ Flash
+        //  Flash
         level.sendParticles(
                 (SimpleParticleType) ModExplosionParticles.FLASH.get(),
                 x, y, z, 1, 0, 0, 0, 0
         );
 
-        // ✅ Sparks
+        //  Sparks
         ExplosionParticleUtils.spawnAirBombSparks(level, x, y, z);
 
-        // ✅ Shockwave через 3 тика
+        //  Shockwave через 3 тика
         level.getServer().tell(new TickTask(3, () ->
                 ExplosionParticleUtils.spawnAirBombShockwave(level, x, y, z)));
 
-        // ✅ Mushroom Cloud через 8 тиков
+        //  Mushroom Cloud через 8 тиков
         level.getServer().tell(new TickTask(8, () ->
                 ExplosionParticleUtils.spawnAirBombMushroomCloud(level, x, y, z)));
     }

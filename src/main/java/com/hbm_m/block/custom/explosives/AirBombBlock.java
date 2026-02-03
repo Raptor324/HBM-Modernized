@@ -3,6 +3,7 @@ package com.hbm_m.block.custom.explosives;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.AirBombProjectileEntity;
 import com.hbm_m.item.ModItems;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -48,13 +49,13 @@ public class AirBombBlock extends Block implements IDetonatable {
         return SHAPE;
     }
 
-    // ✅ ДЕТОНАЦИЯ КАК У ВЗРЫВНОГО ЗАРЯДА
+    //  ДЕТОНАЦИЯ КАК У ВЗРЫВНОГО ЗАРЯДА
     @Override
     public boolean onDetonate(Level level, BlockPos pos, BlockState state, Player player) {
         if (!level.isClientSide) {
             ServerLevel serverLevel = (ServerLevel) level;
 
-            // ✅ СПАВНИМ АВИАБОМБУ НАВЕРХ
+            //  СПАВНИМ АВИАБОМБУ НАВЕРХ
             spawnAirBombEntity(serverLevel, pos);
 
             return true;
@@ -62,13 +63,13 @@ public class AirBombBlock extends Block implements IDetonatable {
         return false;
     }
 
-    // ✅ СОЗДАЁТ ПАДАЮЩУЮ АВИАБОМБУ
+    //  СОЗДАЁТ ПАДАЮЩУЮ АВИАБОМБУ
     private void spawnAirBombEntity(ServerLevel level, BlockPos pos) {
         AirBombProjectileEntity airBomb = new AirBombProjectileEntity(
                 ModEntities.AIRBOMB_PROJECTILE.get(), level
         );
 
-        // ✅ Направление по блоку (ПОВЕРНУТО на 180°)
+        //  Направление по блоку (ПОВЕРНУТО на 180°)
         float blockYaw = switch (level.getBlockState(pos).getValue(FACING)) {
             case NORTH -> 0.0F;    // Было 180° → 0°
             case SOUTH -> 180.0F;  // Было 0° → 180°

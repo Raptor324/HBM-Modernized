@@ -1,5 +1,9 @@
 package com.hbm_m.powerarmor.layer;
 
+import java.util.Map;
+
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.powerarmor.T51Armor;
 import com.hbm_m.powerarmor.render.ClientPowerArmorRender;
@@ -12,12 +16,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.Map;
 
 /**
  * Render layer для T51 Power Armor.
@@ -56,17 +56,6 @@ public class T51PowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<
             "LeftBoot", withTex("block/armor/t51_leg")
         );
 
-        private static final Map<String, Vec3> PART_OFFSETS = Map.of(
-            "Helmet", Vec3.ZERO,
-            "Chest", Vec3.ZERO,
-            "RightArm", Vec3.ZERO,
-            "LeftArm", Vec3.ZERO,
-            "RightLeg", Vec3.ZERO,
-            "LeftLeg", Vec3.ZERO,
-            "RightBoot", Vec3.ZERO,
-            "LeftBoot", Vec3.ZERO
-        );
-
         private static Material withTex(String path) {
             return new Material(T51_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
         }
@@ -84,11 +73,6 @@ public class T51PowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<
         @Override
         public Map<String, Material> getPartMaterials() {
             return PART_MATERIALS;
-        }
-
-        @Override
-        public Map<String, Vec3> getPartOffsets() {
-            return PART_OFFSETS;
         }
 
         @Override

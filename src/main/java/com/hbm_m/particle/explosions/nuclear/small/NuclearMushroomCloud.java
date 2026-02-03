@@ -12,7 +12,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * ✅ ЯДЕРНЫЙ ВЗРЫВ (БЕЗ ЗАДЕРЖЕК, МГНОВЕННЫЙ)
+ *  ЯДЕРНЫЙ ВЗРЫВ (БЕЗ ЗАДЕРЖЕК, МГНОВЕННЫЙ)
  */
 public class NuclearMushroomCloud {
 

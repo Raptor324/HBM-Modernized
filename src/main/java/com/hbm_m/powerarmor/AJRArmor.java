@@ -4,15 +4,14 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.ArmorMaterial;
 
-// AJR Power Armor with full set bonus - advanced power armor with superior protection
 public class AJRArmor extends ModPowerArmorItem {
 
-    // AJR Specifications - exact values from original HBM 1.7.10 (superior to T-51)
+    // AJR Specifications
     public static final PowerArmorSpecs AJR_SPECS = new PowerArmorSpecs(
-            1500000L, // Capacity (higher than T-51)
-            15000,    // Max receive (higher charge rate)
-            7,        // Usage per tick (higher drain)
-            1500      // Usage per damage point (higher consumption)
+            1500000L,
+            15000,
+            7,
+            1500
     )
     .setProtection(
             0F, 1.0F,   // Fall: DT=0, DR=100%
@@ -25,8 +24,8 @@ public class AJRArmor extends ModPowerArmorItem {
             0F, 0.15F   // Energy: DT=0, DR=15%
     )
     .setFeatures(true, false, true, true) // VATS=true, Thermal=false, HardLanding=true, Geiger=true
-    .addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 200, 2)) // Strength III
-    .addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 200, 1)) // Resistance II
+    .addEffect(new MobEffectInstance(MobEffects.DAMAGE_BOOST, 50, 2)) // Strength III
+    .addEffect(new MobEffectInstance(MobEffects.DAMAGE_RESISTANCE, 50, 1)) // Resistance II
     .setStepSound("hbm_m:step.metal")
     .setJumpSound("hbm_m:step.iron_jump")
     .setFallSound("hbm_m:step.iron_land");

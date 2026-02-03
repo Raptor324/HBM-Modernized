@@ -1,12 +1,18 @@
 package com.hbm_m.entity.grenades;
 
-import com.hbm_m.block.custom.explosives.IDetonatable;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Objects;
+import java.util.Random;
+
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.custom.explosives.IDetonatable;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.util.explosions.general.ShockwaveGenerator;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -26,11 +32,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
-
-import java.util.Arrays;
-import java.util.List;
-import java.util.Objects;
-import java.util.Random;
 
 public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
 
@@ -207,7 +208,7 @@ public class GrenadeNucProjectileEntity extends ThrowableItemProjectile {
     // === ЗАМЕНА ЭФФЕКТА ===
     private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
 
-        // ✅ ИСПОЛЬЗУЕМ НОВЫЙ КОМПЛЕКСНЫЙ ЭФФЕКТ
+        //  ИСПОЛЬЗУЕМ НОВЫЙ КОМПЛЕКСНЫЙ ЭФФЕКТ
         ExplosionParticleUtils.spawnFullNuclearExplosion(level, x, y, z);
     }
 

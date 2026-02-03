@@ -1,15 +1,28 @@
 package com.hbm_m.api.energy;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.EnumMap;
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Queue;
+import java.util.Set;
+import java.util.UUID;
+
+import org.slf4j.Logger;
+
 import com.hbm_m.block.entity.custom.machines.MachineBatteryBlockEntity;
 import com.hbm_m.capability.ModCapabilities;
 import com.mojang.logging.LogUtils;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import org.slf4j.Logger;
-
-import java.util.*;
 
 /**
  * ===================================================================
@@ -30,6 +43,7 @@ public class EnergyNetwork {
 
     public void tick(ServerLevel level) {
         // 1. Валидация узлов
+        // System.out.println("TEST HOTSWAP");
         int sizeBefore = nodes.size();
         nodes.removeIf(node -> !node.isValid(level) || node.getNetwork() != this);
 

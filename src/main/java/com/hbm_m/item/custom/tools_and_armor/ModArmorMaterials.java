@@ -46,7 +46,12 @@ public enum ModArmorMaterials implements ArmorMaterial {
             SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModItems.PLATE_STEEL.get())),
 
     TITANIUM("titanium", 26, new int[]{ 5, 7, 5, 4 }, 15,
-    SoundEvents.ARMOR_EQUIP_IRON, 1f, 0.05f, () -> Ingredient.of(ModItems.PLATE_IRON.get()));
+    SoundEvents.ARMOR_EQUIP_IRON, 1f, 0.05f, () -> Ingredient.of(ModItems.PLATE_IRON.get())),
+
+    // Used by Bismuth power armor (ported from 1.7.10 HBM_BISMUTH).
+    // Note: vanilla defense is ignored for power armor items (see ModPowerArmorItem#getDefense()).
+    BISMUTH("bismuth", 100, new int[]{ 3, 8, 6, 3 }, 100,
+            SoundEvents.ARMOR_EQUIP_IRON, 2f, 0.2f, () -> Ingredient.of(ModItems.PLATE_BISMUTH.get()));
 
 
 

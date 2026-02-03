@@ -1,15 +1,18 @@
 package com.hbm_m.powerarmor.render;
 
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.powerarmor.layer.AJROPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.AJRPowerArmorLayer;
+import com.hbm_m.powerarmor.layer.BismuthPowerArmorLayer;
+import com.hbm_m.powerarmor.layer.DNTPowerArmorLayer;
 import com.hbm_m.powerarmor.layer.T51PowerArmorLayer;
 
 import net.minecraft.client.renderer.entity.ArmorStandRenderer;
 import net.minecraft.client.renderer.entity.HumanoidMobRenderer;
 import net.minecraft.client.renderer.entity.player.PlayerRenderer;
-import net.minecraft.world.entity.EntityType;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.EntityType;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.ModelEvent;
@@ -25,16 +28,30 @@ public final class ClientPowerArmorRender {
     public static final ResourceLocation AJR_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "ajr_armor");
     public static final ModelResourceLocation AJR_MODEL_BAKED = new ModelResourceLocation(AJR_MODEL_ID, "inventory");
 
+    public static final ResourceLocation AJRO_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "ajro_armor");
+    public static final ModelResourceLocation AJRO_MODEL_BAKED = new ModelResourceLocation(AJRO_MODEL_ID, "inventory");
+
+    public static final ResourceLocation BISMUTH_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "bismuth_armor");
+    public static final ModelResourceLocation BISMUTH_MODEL_BAKED = new ModelResourceLocation(BISMUTH_MODEL_ID, "inventory");
+
+    public static final ResourceLocation DNT_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "dnt_armor");
+    public static final ModelResourceLocation DNT_MODEL_BAKED = new ModelResourceLocation(DNT_MODEL_ID, "inventory");
+
     @SubscribeEvent
     public static void onRegisterGeometryLoaders(ModelEvent.RegisterGeometryLoaders event) {
         event.register("t51_armor_parts", new T51ArmorModelLoader());
         event.register("ajr_armor_parts", new AJRArmorModelLoader());
+        event.register("bismuth_armor_parts", new BismuthArmorModelLoader());
+        event.register("dnt_armor_parts", new DNTArmorModelLoader());
     }
 
     @SubscribeEvent
     public static void onRegisterAdditionalModels(ModelEvent.RegisterAdditional event) {
         event.register(T51_MODEL_BAKED);
         event.register(AJR_MODEL_BAKED);
+        event.register(AJRO_MODEL_BAKED);
+        event.register(BISMUTH_MODEL_BAKED);
+        event.register(DNT_MODEL_BAKED);
     }
 
     @SubscribeEvent
@@ -44,12 +61,18 @@ public final class ClientPowerArmorRender {
         if (defaultRenderer != null) {
             defaultRenderer.addLayer(new T51PowerArmorLayer<>(defaultRenderer));
             defaultRenderer.addLayer(new AJRPowerArmorLayer<>(defaultRenderer));
+            defaultRenderer.addLayer(new AJROPowerArmorLayer<>(defaultRenderer));
+            defaultRenderer.addLayer(new BismuthPowerArmorLayer<>(defaultRenderer));
+            defaultRenderer.addLayer(new DNTPowerArmorLayer<>(defaultRenderer));
         }
 
         PlayerRenderer slimRenderer = event.getSkin("slim");
         if (slimRenderer != null) {
             slimRenderer.addLayer(new T51PowerArmorLayer<>(slimRenderer));
             slimRenderer.addLayer(new AJRPowerArmorLayer<>(slimRenderer));
+            slimRenderer.addLayer(new AJROPowerArmorLayer<>(slimRenderer));
+            slimRenderer.addLayer(new BismuthPowerArmorLayer<>(slimRenderer));
+            slimRenderer.addLayer(new DNTPowerArmorLayer<>(slimRenderer));
         }
 
         // Регистрируем для стойки для брони
@@ -57,6 +80,9 @@ public final class ClientPowerArmorRender {
         if (armorStandRenderer instanceof ArmorStandRenderer standRenderer) {
             standRenderer.addLayer(new T51PowerArmorLayer<>(standRenderer));
             standRenderer.addLayer(new AJRPowerArmorLayer<>(standRenderer));
+            standRenderer.addLayer(new AJROPowerArmorLayer<>(standRenderer));
+            standRenderer.addLayer(new BismuthPowerArmorLayer<>(standRenderer));
+            standRenderer.addLayer(new DNTPowerArmorLayer<>(standRenderer));
         }
 
         // Регистрируем для мобов, которые могут носить броню
@@ -91,6 +117,9 @@ public final class ClientPowerArmorRender {
                 // Используем сырые типы для обхода проблем с дженериками
                 humanoidRenderer.addLayer(new T51PowerArmorLayer(humanoidRenderer));
                 humanoidRenderer.addLayer(new AJRPowerArmorLayer(humanoidRenderer));
+                humanoidRenderer.addLayer(new AJROPowerArmorLayer(humanoidRenderer));
+                humanoidRenderer.addLayer(new BismuthPowerArmorLayer(humanoidRenderer));
+                humanoidRenderer.addLayer(new DNTPowerArmorLayer(humanoidRenderer));
                 if (MainRegistry.LOGGER.isDebugEnabled()) {
                     MainRegistry.LOGGER.debug("Registered T51PowerArmorLayer for {}", entityType.toShortString());
                 }

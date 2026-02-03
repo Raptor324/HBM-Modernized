@@ -135,7 +135,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED2);
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED3);
 
-        // ✅ ДОБАВЛЕНО: Модель для ядерных осадков
+        //  ДОБАВЛЕНО: Модель для ядерных осадков
         // Эта функция автоматически создаст все 8 состояний высоты для блока
         // и свяжет их с моделями, которые выглядят как снег, но с вашей текстурой.
         registerSnowLayerBlock(ModBlocks.NUCLEAR_FALLOUT, "nuclear_fallout");
@@ -1101,7 +1101,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         ));
     }
 
-    // ✅ ИСПРАВЛЕННЫЙ МЕТОД: Использует правильные ванильные модели
+    //  ИСПРАВЛЕННЫЙ МЕТОД: Использует правильные ванильные модели
     private void registerSnowLayerBlock(RegistryObject<Block> block, String baseName) {
         // Получаем текстуру нашего блока (nuclear_fallout.png)
         ResourceLocation texture = blockTexture(block.get());

@@ -1,16 +1,22 @@
 package com.hbm_m.block.custom.machines;
 
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.api.energy.EnergyNetworkManager;
+import java.util.Map;
+import java.util.function.Supplier;
+
+import javax.annotation.Nullable;
+
 // Этот класс реализует блок продвинутой сборочной машины,
 // которая является мультиблочной структурой 3x3x3 с центральным контроллером
 import com.google.common.collect.ImmutableMap;
+import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -22,7 +28,10 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -32,10 +41,6 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.network.NetworkHooks;
-
-import javax.annotation.Nullable;
-import java.util.Map;
-import java.util.function.Supplier;
 
 public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IMultiblockController {
 

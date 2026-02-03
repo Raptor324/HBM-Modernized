@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureManager;
 
 /**
- * ✅ ИСПРАВЛЕННЫЙ: Кастомный тип рендера для дальних частиц
+ *  ИСПРАВЛЕННЫЙ: Кастомный тип рендера для дальних частиц
  */
 public class LongRangeParticleRenderType implements ParticleRenderType {
 
@@ -27,43 +27,43 @@ public class LongRangeParticleRenderType implements ParticleRenderType {
 
     @Override
     public void begin(BufferBuilder buffer, TextureManager textureManager) {
-        // ✅ Включаем прозрачность (альфа-блендинг)
+        //  Включаем прозрачность (альфа-блендинг)
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
 
-        // ✅ ОТКЛЮЧАЕМ запись в depth buffer (depthMask = false)
+        //  ОТКЛЮЧАЕМ запись в depth buffer (depthMask = false)
         // Это позволяет прозрачным частицам правильно отображаться за объектами
         RenderSystem.depthMask(false);
 
-        // ✅ Устанавливаем particle shader
+        //  Устанавливаем particle shader
         RenderSystem.setShader(GameRenderer::getParticleShader);
 
-        // ✅ ОБЯЗАТЕЛЬНО привязываем текстуру частиц
+        //  ОБЯЗАТЕЛЬНО привязываем текстуру частиц
         // Без этого будут фиолетовые квадраты
         RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_PARTICLES);
 
-        // ✅ Включаем тест глубины (depth test)
+        //  Включаем тест глубины (depth test)
         RenderSystem.enableDepthTest();
 
-        // ✅ Функция глубины: 515 = GL_LEQUAL
+        //  Функция глубины: 515 = GL_LEQUAL
         // Это стандартная функция для прозрачных объектов
         RenderSystem.depthFunc(515);
 
-        // ✅ ГЛАВНОЕ: ОТКЛЮЧАЕМ FACE CULLING
+        //  ГЛАВНОЕ: ОТКЛЮЧАЕМ FACE CULLING
         // Если не отключить, частицы будут исчезать при определенном угле обзора
         RenderSystem.disableCull();
 
-        // ✅ Запускаем буфер вершин
+        //  Запускаем буфер вершин
         // QUADS = 4 вершины на одну частицу
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.PARTICLE);
     }
 
     @Override
     public void end(Tesselator tesselator) {
-        // ✅ Отправляем все вершины на рендер
+        //  Отправляем все вершины на рендер
         tesselator.end();
 
-        // ✅ ВОССТАНАВЛИВАЕМ состояние RenderSystem для остальной игры
+        //  ВОССТАНАВЛИВАЕМ состояние RenderSystem для остальной игры
         RenderSystem.enableCull();           // Включаем face culling обратно
         RenderSystem.depthMask(true);        // Включаем запись в depth buffer
         RenderSystem.disableBlend();         // Отключаем альфа-блендинг

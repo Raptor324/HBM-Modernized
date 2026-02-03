@@ -11,7 +11,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * ✅ ОБРАБОТЧИК ТРЯСКИ КАМЕРЫ И GUI
+ *  ОБРАБОТЧИК ТРЯСКИ КАМЕРЫ И GUI
  *
  * Управляет эффектом тряски камеры и интерфейса при воздействии ударной волны
  * Создаёт резкие импульсные толчки вместо мелкого дрожания
@@ -36,21 +36,21 @@ public class CameraShakeHandler {
     private static float targetOffsetY = 0.0F;
     private static float targetOffsetRoll = 0.0F;
 
-    // ✅ УВЕЛИЧЕНА АМПЛИТУДА: было 5.0F, стало 12.0F
+    //  УВЕЛИЧЕНА АМПЛИТУДА: было 5.0F, стало 12.0F
     private static final float VISUAL_MULTIPLIER = 12.0F;
 
-    // ✅ МНОЖИТЕЛЬ ДЛЯ GUI (меньше чем для камеры, чтобы не было слишком сильно)
+    //  МНОЖИТЕЛЬ ДЛЯ GUI (меньше чем для камеры, чтобы не было слишком сильно)
     private static final float GUI_MULTIPLIER = 2.5F;
 
-    // ✅ СКОРОСТЬ СМЕНЫ НАПРАВЛЕНИЯ: чем больше - тем быстрее меняется
+    //  СКОРОСТЬ СМЕНЫ НАПРАВЛЕНИЯ: чем больше - тем быстрее меняется
     private static final float INTERPOLATION_SPEED = 0.4F; // 0.4 = быстрая смена
 
-    // ✅ ЧАСТОТА ОБНОВЛЕНИЯ ЦЕЛЕВЫХ ЗНАЧЕНИЙ (в тиках)
+    //  ЧАСТОТА ОБНОВЛЕНИЯ ЦЕЛЕВЫХ ЗНАЧЕНИЙ (в тиках)
     private static int updateCounter = 0;
     private static final int UPDATE_FREQUENCY = 2; // Каждые 2 тика = 10 раз в секунду
 
     /**
-     * ✅ ДОБАВИТЬ ЭФФЕКТ ТРЯСКИ
+     *  ДОБАВИТЬ ЭФФЕКТ ТРЯСКИ
      */
     public static void addShake(float intensity, int duration) {
         if (intensity > shakeIntensity) {
@@ -68,7 +68,7 @@ public class CameraShakeHandler {
     }
 
     /**
-     * ✅ ГЕНЕРАЦИЯ НОВОЙ ЦЕЛЕВОЙ ПОЗИЦИИ
+     *  ГЕНЕРАЦИЯ НОВОЙ ЦЕЛЕВОЙ ПОЗИЦИИ
      */
     private static void generateNewTarget() {
         targetOffsetX = (float) (Math.random() - 0.5) * 2.0F * shakeIntensity * VISUAL_MULTIPLIER;
@@ -77,7 +77,7 @@ public class CameraShakeHandler {
     }
 
     /**
-     * ✅ ОБНОВЛЕНИЕ ТРЯСКИ
+     *  ОБНОВЛЕНИЕ ТРЯСКИ
      */
     public static void tick() {
         if (shakeDuration > 0) {
@@ -122,7 +122,7 @@ public class CameraShakeHandler {
     }
 
     /**
-     * ✅ СОБЫТИЕ ИЗМЕНЕНИЯ КАМЕРЫ
+     *  СОБЫТИЕ ИЗМЕНЕНИЯ КАМЕРЫ
      */
     @SubscribeEvent
     public static void onCameraSetup(ViewportEvent.ComputeCameraAngles event) {
@@ -134,7 +134,7 @@ public class CameraShakeHandler {
     }
 
     /**
-     * ✅ НОВОЕ: СОБЫТИЕ РЕНДЕРА GUI (ПОКАЧИВАНИЕ ИНТЕРФЕЙСА)
+     *  НОВОЕ: СОБЫТИЕ РЕНДЕРА GUI (ПОКАЧИВАНИЕ ИНТЕРФЕЙСА)
      *
      * Применяет трансформации к PoseStack для смещения всего GUI
      * EventPriority.HIGHEST = самый ранний приоритет, чтобы эффект применялся ко всему GUI
@@ -176,7 +176,7 @@ public class CameraShakeHandler {
     }
 
     /**
-     * ✅ НОВОЕ: ВОССТАНОВЛЕНИЕ МАТРИЦЫ ПОСЛЕ РЕНДЕРА GUI
+     *  НОВОЕ: ВОССТАНОВЛЕНИЕ МАТРИЦЫ ПОСЛЕ РЕНДЕРА GUI
      *
      * Возвращаем PoseStack в исходное состояние после рендера всего GUI
      */
@@ -191,7 +191,7 @@ public class CameraShakeHandler {
     }
 
     /**
-     * ✅ СОБЫТИЕ РЕНДЕРА (для обновления тряски)
+     *  СОБЫТИЕ РЕНДЕРА (для обновления тряски)
      */
     @SubscribeEvent
     public static void onRenderTick(net.minecraftforge.event.TickEvent.RenderTickEvent event) {

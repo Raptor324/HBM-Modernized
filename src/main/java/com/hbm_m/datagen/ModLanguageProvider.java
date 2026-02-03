@@ -273,6 +273,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.t51_leggings", "Поножи силовой брони T-51b");
                 add("item.hbm_m.t51_boots", "Ботинки силовой брони T-51b");
 
+                add("item.hbm_m.bismuth_helmet", "Висмутовый шлем силовой брони");
+                add("item.hbm_m.bismuth_chestplate", "Висмутовый нагрудник силовой брони");
+                add("item.hbm_m.bismuth_leggings", "Висмутовые поножи силовой брони");
+                add("item.hbm_m.bismuth_boots", "Висмутовые ботинки силовой брони");
+
                 add("item.hbm_m.geiger_counter", "Счетчик Гейгера");
                 add("item.hbm_m.dosimeter", "Дозиметр");
                 add("item.hbm_m.battery_creative", "Бесконечная батарейка");
@@ -424,7 +429,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
 // MULTI DETONATOR TOOLTIPS
                 add("tooltip.hbm_m.multi_detonator.active_point", "➤ %s:");
-                add("tooltip.hbm_m.multi_detonator.point_set", "✅ %s:");
+                add("tooltip.hbm_m.multi_detonator.point_set", " %s:");
                 add("tooltip.hbm_m.multi_detonator.coordinates", "   %d, %d, %d");
                 add("tooltip.hbm_m.multi_detonator.point_empty", "○ Точка %d:");
                 add("tooltip.hbm_m.multi_detonator.not_set", "   Не установлена");
@@ -1503,6 +1508,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.t51_leggings", "T-51b Power Armor Leggings");
                 add("item.hbm_m.t51_boots", "T-51b Power Armor Boots");
 
+                add("item.hbm_m.bismuth_helmet", "Bismuth Power Armor Helmet");
+                add("item.hbm_m.bismuth_chestplate", "Bismuth Power Armor Chestplate");
+                add("item.hbm_m.bismuth_leggings", "Bismuth Power Armor Leggings");
+                add("item.hbm_m.bismuth_boots", "Bismuth Power Armor Boots");
+
                 // ITEMS
                 add(ModItems.CANNED_ASBESTOS.get(), "Canned Asbestos");
                 add(ModItems.CANNED_ASS.get(), "Canned Ass Meat");
@@ -1757,7 +1767,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
 // MULTI DETONATOR TOOLTIPS
                 add("tooltip.hbm_m.multi_detonator.active_point", "➤ %s:");
-                add("tooltip.hbm_m.multi_detonator.point_set", "✅ %s:");
+                add("tooltip.hbm_m.multi_detonator.point_set", " %s:");
                 add("tooltip.hbm_m.multi_detonator.coordinates", "   %d, %d, %d");
                 add("tooltip.hbm_m.multi_detonator.point_empty", "○ Point %d:");
                 add("tooltip.hbm_m.multi_detonator.not_set", "   Not set");

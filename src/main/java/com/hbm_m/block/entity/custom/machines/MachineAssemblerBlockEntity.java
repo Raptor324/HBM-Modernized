@@ -1,17 +1,26 @@
 package com.hbm_m.block.entity.custom.machines;
 
+import java.util.HashSet;
+import java.util.IdentityHashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.api.energy.EnergyNetworkManager;
-import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.custom.machines.MachineAssemblerBlock;
+import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
 import com.hbm_m.menu.MachineAssemblerMenu;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.sound.ClientSoundManager;
-import com.hbm_m.util.LongDataPacker;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -34,10 +43,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.*;
 
 /**
  * Сборочная машина (Assembler) - мультиблочная структура для автоматизированного крафта.
@@ -280,7 +285,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                     sendUpdateToClient();
                 }
 
-                // ✅ ИЗМЕНЕНО: Используем setEnergyStored для автоматического пробуждения
+                //  ИЗМЕНЕНО: Используем setEnergyStored для автоматического пробуждения
                 this.setEnergyStored(this.getEnergyStored() - energyPerTick);
                 progress++;
                 setChanged();

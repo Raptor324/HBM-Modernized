@@ -1,6 +1,7 @@
 package com.hbm_m.block.custom.nature;
 
 import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
@@ -20,7 +21,7 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
  */
 public class GeysirBlock extends Block {
 
-    // ✅ Свойство: активен ли гейзер в данный момент
+    //  Свойство: активен ли гейзер в данный момент
     public static final BooleanProperty ACTIVE = BooleanProperty.create("active");
 
     // ⏱️ НАСТРОЙКИ ПЕРИОДА
@@ -52,7 +53,7 @@ public class GeysirBlock extends Block {
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!level.isClientSide) {
-            // ✅ Начинаем тиковать блок
+            //  Начинаем тиковать блок
             level.scheduleTick(pos, this, 1);
         }
     }
@@ -70,7 +71,7 @@ public class GeysirBlock extends Block {
         long cycleTime = gameTime % (ERUPTION_INTERVAL + ERUPTION_DURATION + ERUPTION_COOLDOWN);
 
         if (cycleTime >= ERUPTION_INTERVAL && cycleTime < ERUPTION_INTERVAL + ERUPTION_DURATION) {
-            // ✅ ФАЗА ИЗВЕРЖЕНИЯ (30 сек прошло, извергается 3 секунды)
+            //  ФАЗА ИЗВЕРЖЕНИЯ (30 сек прошло, извергается 3 секунды)
             if (!isActive) {
                 // Активируем гейзер
                 level.setBlock(pos, state.setValue(ACTIVE, true), 3);
@@ -95,7 +96,7 @@ public class GeysirBlock extends Block {
      * ☠️ СПАВН СТРУИ AGENT ORANGE
      * <p>
      * Выбрасывает частицы вертикально вверх с разбросом
-     * ✅ Использует ExplosionParticleUtils.spawnAgentOrange()
+     *  Использует ExplosionParticleUtils.spawnAgentOrange()
      * <p>
      * СТРУКТУРА СТРУИ:
      * - 0-15 блоков: Узкая вертикальная струя

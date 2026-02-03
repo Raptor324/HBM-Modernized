@@ -1,8 +1,14 @@
 package com.hbm_m.entity.grenades;
 
+import java.util.Random;
+import java.util.UUID;
+
+import javax.annotation.Nonnull;
+
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
@@ -19,10 +25,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 
-import javax.annotation.Nonnull;
-import java.util.Random;
-import java.util.UUID;
-
 /**
  * ☠️ САМОЛЁТ-РАСПЫЛИТЕЛЬ AGENT ORANGE
  *
@@ -30,7 +32,7 @@ import java.util.UUID;
  */
 public class AirstrikeAgentEntity extends Entity {
 
-    // ✅ Параметры полёта
+    //  Параметры полёта
     private static final double AIRSTRIKE_HEIGHT = 50.0;
     private static final double SPAWN_DISTANCE = 150.0;
     private static final double ATTACK_RADIUS = 30.0;
@@ -52,7 +54,7 @@ public class AirstrikeAgentEntity extends Entity {
 
     private static final Random RANDOM = new Random();
 
-    // ✅ 8 НАПРАВЛЕНИЙ
+    //  8 НАПРАВЛЕНИЙ
     private static final double[] DIRECTION_ANGLES = {
             0.0, Math.PI/4, Math.PI/2, 3*Math.PI/4,
             Math.PI, 5*Math.PI/4, 3*Math.PI/2, 7*Math.PI/4
@@ -217,7 +219,7 @@ public class AirstrikeAgentEntity extends Entity {
         // итоговая позиция распыления: 2 блока влево от направления
         Vec3 sprayPos = base.add(lateralOffset);
 
-        // ✅ СПАВНИМ ГУСТОЕ ОБЛАКО AGENT ORANGE
+        //  СПАВНИМ ГУСТОЕ ОБЛАКО AGENT ORANGE
         ExplosionParticleUtils.spawnAgentOrange(
                 serverLevel,
                 sprayPos.x,

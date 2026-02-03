@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import javax.annotation.Nonnull;
 
 import com.google.common.collect.ImmutableMap;
@@ -17,7 +18,6 @@ import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.ProceduralWireLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
-import com.hbm_m.client.model.ModModelLayers;
 import com.hbm_m.client.overlay.GUIAnvil;
 import com.hbm_m.client.overlay.GUIArmorTable;
 import com.hbm_m.client.overlay.GUIBlastFurnace;
@@ -40,6 +40,7 @@ import com.hbm_m.client.render.AirstrikeEntityRenderer;
 import com.hbm_m.client.render.AirstrikeNukeEntityRenderer;
 import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.HbmThermalHandler;
 import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.MachineAdvancedAssemblerVboRenderer;
 import com.hbm_m.client.render.MachinePressRenderer;
@@ -64,9 +65,9 @@ import com.hbm_m.multiblock.DoorPartAABBRegistry;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.DarkParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
-import com.hbm_m.powerarmor.PowerArmorEmptyModel;
-import com.hbm_m.powerarmor.T51ArmorModel;
 import com.hbm_m.powerarmor.layer.AbstractObjArmorLayer;
+import com.hbm_m.powerarmor.layer.ModModelLayers;
+import com.hbm_m.powerarmor.layer.PowerArmorEmptyModel;
 import com.hbm_m.powerarmor.overlay.OverlayPowerArmor;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -90,7 +91,14 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.ChunkRenderTypeSet;
-import net.minecraftforge.client.event.*;
+import net.minecraftforge.client.event.EntityRenderersEvent;
+import net.minecraftforge.client.event.ModelEvent;
+import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
+import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
+import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
+import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
+import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
+import net.minecraftforge.client.event.RegisterShadersEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.model.data.ModelData;
@@ -179,8 +187,9 @@ public class ClientSetup {
             } catch (Exception e) {
                 MainRegistry.LOGGER.error("Failed to initialize VBO render system", e);
             }
+            MinecraftForge.EVENT_BUS.register(HbmThermalHandler.INSTANCE);
             
-            // ДОБАВИТЬ: Регистрация обработчика отключения от сервера
+            // Регистрация обработчика отключения от сервера
             MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
             MainRegistry.LOGGER.info("Initial render path check completed");
         });
@@ -244,6 +253,7 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onResourceReload(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(new ShaderReloadListener());
+        event.registerReloadListener(HbmThermalHandler.INSTANCE);
         event.registerReloadListener((preparationBarrier, resourceManager,
                 preparationsProfiler, reloadProfiler,
                 backgroundExecutor, gameExecutor) -> {
@@ -343,38 +353,38 @@ public class ClientSetup {
         MainRegistry.LOGGER.info("Successfully registered block_lit shader");
         
         // Register thermal vision shader for post-processing
-        VertexFormat thermalVisionFormat = new VertexFormat(
-            ImmutableMap.<String, VertexFormatElement>builder()
-                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
-                .put("UV0", DefaultVertexFormat.ELEMENT_UV0)
-                .build()
-        );
+        // VertexFormat thermalVisionFormat = new VertexFormat(
+        //     ImmutableMap.<String, VertexFormatElement>builder()
+        //         .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
+        //         .put("UV0", DefaultVertexFormat.ELEMENT_UV0)
+        //         .build()
+        // );
         
-        ResourceLocation shaderLocation = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "thermal_vision");
-        MainRegistry.LOGGER.info("Attempting to register thermal_vision shader at: {}", shaderLocation);
+        // ResourceLocation shaderLocation = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "thermal_vision");
+        // MainRegistry.LOGGER.info("Attempting to register thermal_vision shader at: {}", shaderLocation);
         
-        ShaderInstance shaderInstance = null;
-        try {
-            shaderInstance = new ShaderInstance(
-                event.getResourceProvider(),
-                shaderLocation,
-                thermalVisionFormat
-            );
-            MainRegistry.LOGGER.info("ShaderInstance created successfully for thermal_vision");
-        } catch (Exception e) {
-            MainRegistry.LOGGER.error("Exception while creating ShaderInstance for thermal_vision: {}", e.getMessage(), e);
-            return; // Don't register if creation failed
-        }
+        // ShaderInstance shaderInstance = null;
+        // try {
+        //     shaderInstance = new ShaderInstance(
+        //         event.getResourceProvider(),
+        //         shaderLocation,
+        //         thermalVisionFormat
+        //     );
+        //     MainRegistry.LOGGER.info("ShaderInstance created successfully for thermal_vision");
+        // } catch (Exception e) {
+        //     MainRegistry.LOGGER.error("Exception while creating ShaderInstance for thermal_vision: {}", e.getMessage(), e);
+        //     return; // Don't register if creation failed
+        // }
         
-        if (shaderInstance != null) {
-            event.registerShader(shaderInstance, ModShaders::setThermalVisionShader);
-            MainRegistry.LOGGER.info("thermal_vision shader registered with event handler");
+        // if (shaderInstance != null) {
+        //     event.registerShader(shaderInstance, ModShaders::setThermalVisionShader);
+        //     MainRegistry.LOGGER.info("thermal_vision shader registered with event handler");
             
-            // Note: The callback ModShaders::setThermalVisionShader is called asynchronously,
-            // so we can't verify it here immediately. The shader will be available after reload.
-        } else {
-            MainRegistry.LOGGER.error("ShaderInstance is null after creation - cannot register thermal_vision shader!");
-        }
+        //     // Note: The callback ModShaders::setThermalVisionShader is called asynchronously,
+        //     // so we can't verify it here immediately. The shader will be available after reload.
+        // } else {
+        //     MainRegistry.LOGGER.error("ShaderInstance is null after creation - cannot register thermal_vision shader!");
+        // }
     }
 
     private static class LeavesModelWrapper extends BakedModelWrapper<BakedModel> {
@@ -441,8 +451,5 @@ public class ClientSetup {
     public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         // Generic dummy armor model for all power armor items.
         event.registerLayerDefinition(ModModelLayers.POWER_ARMOR, PowerArmorEmptyModel::createBodyLayer);
-
-        // Мы говорим игре: "Когда спросят слой T51_ARMOR, используй метод createBodyLayer из ModelT51"
-        event.registerLayerDefinition(ModModelLayers.T51_ARMOR, T51ArmorModel::createBodyLayer);
     }
 }

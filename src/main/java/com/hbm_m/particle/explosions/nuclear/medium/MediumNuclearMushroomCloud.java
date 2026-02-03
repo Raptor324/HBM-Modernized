@@ -1,6 +1,10 @@
 package com.hbm_m.particle.explosions.nuclear.medium;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.hbm_m.particle.ModExplosionParticles;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -8,11 +12,9 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
- * ✅ УТИЛИТА СПАВНА ЧАСТЕЙ ЯДЕРНОГО ВЗРЫВА
+ *  УТИЛИТА СПАВНА ЧАСТЕЙ ЯДЕРНОГО ВЗРЫВА
  * Методы сделаны public static для вызова из NuclearChargeBlock.
  */
 public class MediumNuclearMushroomCloud {

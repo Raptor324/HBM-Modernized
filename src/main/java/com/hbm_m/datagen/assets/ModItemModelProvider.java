@@ -45,7 +45,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 
     @Override
     protected void registerModels() {
-        // ✅ ИСПРАВЛЕННЫЙ ЦИКЛ ДЛЯ СЛИТКОВ
+        //  ИСПРАВЛЕННЫЙ ЦИКЛ ДЛЯ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
             RegistryObject<Item> ingotObject = ModItems.getIngot(ingot);
             if (ingotObject != null && ingotObject.isPresent()) {
@@ -53,7 +53,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             }
         }
 
-        // ✅ ИСПРАВЛЕННЫЙ ЦИКЛ ДЛЯ ModPowders (ОСНОВНАЯ ОШИБКА!)
+        //  ИСПРАВЛЕННЫЙ ЦИКЛ ДЛЯ ModPowders (ОСНОВНАЯ ОШИБКА!)
         for (ModPowders powder : ModPowders.values()) {
             RegistryObject<Item> powderObject = ModItems.getPowders(powder);
             if (powderObject != null && powderObject.isPresent()) {
@@ -61,7 +61,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             }
         }
 
-        // ✅ ИСПРАВЛЕННЫЙ ЦИКЛ ДЛЯ ПОРОШКОВ ИЗ СЛИТКОВ
+        //  ИСПРАВЛЕННЫЙ ЦИКЛ ДЛЯ ПОРОШКОВ ИЗ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
             RegistryObject<Item> powder = ModItems.getPowder(ingot);
             if (powder != null && powder.isPresent() && powderTextureExists(ingot.getName())) {
@@ -482,7 +482,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("layer0", modLoc("item/ingot/" + textureFileName));
     }
 
-    // ✅ ОСНОВНОЕ ИСПРАВЛЕНИЕ - powdersItem с проверкой!
+    //  ОСНОВНОЕ ИСПРАВЛЕНИЕ - powdersItem с проверкой!
     private void powdersItem(RegistryObject<Item> itemObject) {
         String registrationName = itemObject.getId().getPath();
         String baseName = registrationName.replace("_powder", "");

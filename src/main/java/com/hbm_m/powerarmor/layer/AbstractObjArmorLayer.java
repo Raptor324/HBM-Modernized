@@ -1,9 +1,18 @@
 package com.hbm_m.powerarmor.layer;
 
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.client.model.AbstractMultipartBakedModel;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
@@ -13,22 +22,15 @@ import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.Material;
+import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.ModelData;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import net.minecraft.client.resources.model.ModelResourceLocation;
-import net.minecraft.world.phys.Vec3;
 
 /**
  * Абстрактный базовый класс для рендеринга OBJ-брони.
@@ -80,10 +82,10 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
         if (!config.isItemValid(stack)) return;
 
         ModelResourceLocation modelLocation = config.getBakedModelLocation();
-        BakedModel baked = MODEL_CACHE.computeIfAbsent(modelLocation, loc -> 
+        BakedModel baked = MODEL_CACHE.computeIfAbsent(modelLocation, loc ->
             Minecraft.getInstance().getModelManager().getModel(loc)
         );
-        
+
         if (baked == Minecraft.getInstance().getModelManager().getMissingModel()) return;
         if (!(baked instanceof AbstractMultipartBakedModel multipart)) return;
 
@@ -144,11 +146,6 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
             poseStack.mulPose(new org.joml.Quaternionf().rotationZYX(bone.zRot, bone.yRot, bone.xRot));
         }
         poseStack.translate(-basePivot.x * PIXEL_SCALE, -basePivot.y * PIXEL_SCALE, -basePivot.z * PIXEL_SCALE);
-
-        Vec3 off = config.getPartOffsets().get(partName);
-        if (off != null) {
-            poseStack.translate(off.x, off.y, off.z);
-        }
 
         poseStack.scale(PIXEL_SCALE, PIXEL_SCALE, PIXEL_SCALE);
         float zFightingScale = config.getZFightingScale();

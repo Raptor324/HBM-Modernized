@@ -41,14 +41,14 @@ public class StructureFoundationProcessor extends StructureProcessor {
                 structurePos.getX(), structurePos.getY() - 1, structurePos.getZ()
         );
 
-        // ✅ МАКСИМАЛЬНАЯ ГЛУБИНА = 64 блока (было бесконечно!)
+        //  МАКСИМАЛЬНАЯ ГЛУБИНА = 64 блока (было бесконечно!)
         final int MAX_FOUNDATION_DEPTH = 64;
         int blocksFilled = 0;
 
         while (pos.getY() > level.getMinBuildHeight() + 10 && blocksFilled < MAX_FOUNDATION_DEPTH) {
             BlockState currentState = level.getBlockState(pos);
 
-            // ✅ ОСТАНОВИТЬСЯ на твердых блоках
+            //  ОСТАНОВИТЬСЯ на твердых блоках
             if (currentState.is(Blocks.STONE) ||
                     currentState.is(Blocks.DIRT) ||
                     currentState.is(Blocks.GRAVEL) ||
@@ -61,7 +61,7 @@ public class StructureFoundationProcessor extends StructureProcessor {
                 break;
             }
 
-            // ✅ ЗАПОЛНИТЬ ТОЛЬКО ВОЗДУХ
+            //  ЗАПОЛНИТЬ ТОЛЬКО ВОЗДУХ
             if (currentState.isAir()) {
                 level.setBlock(pos, Blocks.STONE.defaultBlockState(), 3);
                 blocksFilled++;

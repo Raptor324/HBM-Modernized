@@ -6,10 +6,12 @@ import com.hbm_m.block.custom.machines.armormod.item.ItemModBatteryMk2;
 import com.hbm_m.block.custom.machines.armormod.item.ItemModBatteryMk3;
 import com.hbm_m.block.custom.machines.armormod.util.ArmorModificationHelper;
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.util.EnergyFormatter;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorMaterial;
@@ -17,6 +19,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.network.PacketDistributor;
 
 import javax.annotation.Nullable;
 import java.util.List;
@@ -28,6 +31,11 @@ public class ModArmorFSBPowered extends ModArmorFSB {
     public long chargeRate;
     public long consumption; // Energy cost when armor takes damage (via setDamage)
     public long drain;       // Passive energy drain per tick
+
+    public static final int ARMOR_SLOT_HEAD = 0;
+    public static final int ARMOR_SLOT_CHEST = 1;
+    public static final int ARMOR_SLOT_LEGS = 2;
+    public static final int ARMOR_SLOT_FEET = 3;
 
     public ModArmorFSBPowered(ArmorMaterial material, Type type, Properties properties, 
                               String texture, long maxPower, long chargeRate, 
@@ -56,15 +64,16 @@ public class ModArmorFSBPowered extends ModArmorFSB {
         return getCharge(stack) > 0;
     }
 
+    // @Override
     public void chargeBattery(ItemStack stack, long amount) {
-        if (stack.getItem() instanceof ModArmorFSBPowered) {
-            if (stack.hasTag()) {
-                stack.getTag().putLong("charge", stack.getTag().getLong("charge") + amount);
-            } else {
-                stack.setTag(new CompoundTag());
-                stack.getTag().putLong("charge", amount);
-            }
-        }
+        if (!(stack.getItem() instanceof ModArmorFSBPowered)) return;
+        
+        long prev = getCharge(stack);
+        CompoundTag tag = stack.getOrCreateTag();
+        long newCharge = Math.min(prev + amount, getMaxCharge(stack));
+        tag.putLong("charge", newCharge);
+        
+        // Синхронизация (вызов в onArmorTick или при получении урона)
     }
 
     public void setCharge(ItemStack stack, long amount) {
@@ -78,13 +87,15 @@ public class ModArmorFSBPowered extends ModArmorFSB {
         }
     }
 
+
     public void dischargeBattery(ItemStack stack, long amount) {
         if (stack.getItem() instanceof ModArmorFSBPowered) {
             CompoundTag tag = stack.getOrCreateTag();
-            tag.putLong("charge", tag.getLong("charge") - amount);
-            if (tag.getLong("charge") < 0) {
-                tag.putLong("charge", 0);
-            }
+            long prev = tag.getLong("charge");
+            long newCharge = Math.max(0, prev - amount);
+            tag.putLong("charge", newCharge);
+            
+            // Синхронизация будет вызвана в onArmorTick() или при получении урона
         }
     }
 
@@ -147,6 +158,18 @@ public class ModArmorFSBPowered extends ModArmorFSB {
         }
     }
 
+    private int getArmorContainerId(Player player, EquipmentSlot slot) {
+        int slotIndex = switch (slot) {
+            case HEAD -> ARMOR_SLOT_HEAD;
+            case CHEST -> ARMOR_SLOT_CHEST;
+            case LEGS -> ARMOR_SLOT_LEGS;
+            case FEET -> ARMOR_SLOT_FEET;
+            default -> -1;
+        };
+        // Отрицательное значение = броня (не инвентарь)
+        return -(player.getId() * 4 + slotIndex);
+    }
+
     /**
      * MATCHES 1.7.10 BEHAVIOR
      * Passive energy drain per tick when wearing full FSB armor set.
@@ -155,11 +178,38 @@ public class ModArmorFSBPowered extends ModArmorFSB {
     public void onArmorTick(ItemStack stack, Level world, Player player) {
         super.onArmorTick(stack, world, player);
 
-        // Passive drain - matches 1.7.10 exactly
         if (this.drain > 0 && ModArmorFSB.hasFSBArmor(player) 
             && !player.getAbilities().instabuild && !player.isSpectator()) {
+            
+            long prevCharge = getCharge(stack);
             this.dischargeBattery(stack, drain);
+            long newCharge = getCharge(stack);
+            long maxCharge = getMaxCharge(stack);
+            
+            // Синхронизируем при изменении >5% или при полной разрядке
+            if (maxCharge > 0 && (Math.abs(newCharge - prevCharge) > maxCharge * 0.05 || newCharge == 0)) {
+                syncEnergyToClient(player, stack, world, player.getEquipmentSlotForItem(stack));
+            }
         }
+    }
+
+    public void syncEnergyToClient(Player player, ItemStack stack, Level world, EquipmentSlot slot) {
+        if (world.isClientSide() || !(player instanceof ServerPlayer)) return;
+        
+        long current = getCharge(stack);
+        long max = getMaxCharge(stack);
+        int containerId = getArmorContainerId(player, slot);
+        
+        // Отправляем пакет через существующий канал
+        ModPacketHandler.INSTANCE.send(
+            PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+            new com.hbm_m.network.packet.PacketSyncEnergy(
+                containerId, 
+                current, 
+                max, 
+                0 // delta не используется для брони
+            )
+        );
     }
 
     @Nullable

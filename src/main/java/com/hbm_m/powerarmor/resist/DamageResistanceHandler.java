@@ -27,9 +27,9 @@ import net.minecraftforge.fml.common.Mod;
 public class DamageResistanceHandler {
     
     /** Currently cached DT reduction */
-    public static float currentPDT = 0F;
-    /** Currently cached armor piercing % */
-    public static float currentPDR = 0F;
+    // public static float currentPDT = 0F;
+    // /** Currently cached armor piercing % */
+    // public static float currentPDR = 0F;
 
     public static final String CATEGORY_EXPLOSION = "EXPL";
     public static final String CATEGORY_FIRE = "FIRE";
@@ -87,24 +87,28 @@ public class DamageResistanceHandler {
 
     /**
      * Calculate damage with full DT+DR system
+     * @param pierceDT Armor piercing value that reduces DT (e.g., 3.0 = ignores 3 points of DT)
+     * @param pierceDR Armor piercing percentage that reduces DR effectiveness (0.0-1.0)
      */
-    public static float calculateDamage(LivingEntity entity, DamageSource damage, float amount, float pierceDT, float pierceDR) {
+    public static float calculateDamage(LivingEntity entity, DamageSource damage, 
+                                    float amount, float pierceDT, float pierceDR) {
         if (damage.is(DamageTypes.GENERIC_KILL)) return amount;
         
+        // Получаем базовые значения защиты
         float[] vals = getDTDR(entity, damage, amount, pierceDT, pierceDR);
         float dt = vals[0];
         float dr = vals[1];
         
-        // Apply pierce DT
+        // Применяем бронепробиваемость
         dt = Math.max(0F, dt - pierceDT);
         if (dt >= amount) return 0F;
         
-        // Subtract threshold
         amount -= dt;
         
-        // Apply pierce DR and calculate final damage
-        dr *= Math.max(0F, Math.min(2F, 1F - pierceDR));
-        return amount *= (1F - dr);
+        // pierceDR: 0.0 = нет пробития, 1.0 = полное игнорирование DR
+        dr *= Math.max(0F, 1F - pierceDR);
+        
+        return amount * (1F - dr);
     }
 
     /**
@@ -199,18 +203,18 @@ public class DamageResistanceHandler {
     /**
      * Setup pierce values for current damage calculation
      */
-    public static void setup(float dt, float dr) {
-        currentPDT = dt;
-        currentPDR = dr;
-    }
+    // public static void setup(float dt, float dr) {
+    //     currentPDT = dt;
+    //     currentPDR = dr;
+    // }
 
     /**
      * Reset pierce values
      */
-    public static void reset() {
-        currentPDT = 0;
-        currentPDR = 0;
-    }
+    // public static void reset() {
+    //     currentPDT = 0;
+    //     currentPDR = 0;
+    // }
 
     /**
      * Register armor set with resistance stats
@@ -382,6 +386,18 @@ public class DamageResistanceHandler {
                         .addExact("fall", 0F, 1F)
                         .setOther(0F, 0.15F)
                         .setDeflectArrows(true));  // ← AJR тоже отражает стрелы
+
+        // ========== BISMUTH POWER ARMOR ==========
+        // Ported from 1.7.10: CATEGORY_PHYSICAL 2/0.15, CATEGORY_FIRE 5/0.5, CATEGORY_EXPLOSION 5/0.25,
+        // fall 0/1, other 2/0.25
+        registerSet(ModItems.BISMUTH_HELMET.get(), ModItems.BISMUTH_CHESTPLATE.get(),
+                ModItems.BISMUTH_LEGGINGS.get(), ModItems.BISMUTH_BOOTS.get(),
+                new ResistanceStats()
+                        .addCategory(CATEGORY_PHYSICAL, 2F, 0.15F)
+                        .addCategory(CATEGORY_FIRE, 5F, 0.5F)
+                        .addCategory(CATEGORY_EXPLOSION, 5F, 0.25F)
+                        .addExact("fall", 0F, 1F)
+                        .setOther(2F, 0.25F));
         
         /*
         ПРИМЕРЫ ИСПОЛЬЗОВАНИЯ deflectArrows:

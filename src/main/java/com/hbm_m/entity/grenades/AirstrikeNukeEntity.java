@@ -1,7 +1,13 @@
 package com.hbm_m.entity.grenades;
 
+import java.util.Random;
+import java.util.UUID;
+
+import javax.annotation.Nonnull;
+
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.sound.ModSounds;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
@@ -18,13 +24,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.network.NetworkHooks;
 
-import javax.annotation.Nonnull;
-import java.util.Random;
-import java.util.UUID;
-
 public class AirstrikeNukeEntity extends Entity {
 
-    // ✅ Параметры (увеличено расстояние спавна самолёта)
+    //  Параметры (увеличено расстояние спавна самолёта)
     private static final double AIRSTRIKE_HEIGHT = 110.0;
     private static final double SPAWN_DISTANCE = 150.0;
     private static final double ATTACK_RADIUS = 75;
@@ -44,7 +46,7 @@ public class AirstrikeNukeEntity extends Entity {
 
     private static final Random RANDOM = new Random();
 
-    // ✅ 8 НАПРАВЛЕНИЙ
+    //  8 НАПРАВЛЕНИЙ
     private static final double[] DIRECTION_ANGLES = {
             0.0, Math.PI/4, Math.PI/2, 3*Math.PI/4,
             Math.PI, 5*Math.PI/4, 3*Math.PI/2, 7*Math.PI/4
@@ -217,20 +219,20 @@ public class AirstrikeNukeEntity extends Entity {
         LivingEntity owner = getOwner();
         if (owner == null) return;
 
-        // ✅ Направление самолёта (нормализованное)
+        //  Направление самолёта (нормализованное)
         Vec3 planeDirection = this.getDeltaMovement().normalize();
 
-        // ✅ ПЕРПЕНДИКУЛЯРНОЕ НАПРАВЛЕНИЕ ВЛЕВО (90° против часовой)
+        //  ПЕРПЕНДИКУЛЯРНОЕ НАПРАВЛЕНИЕ ВЛЕВО (90° против часовой)
         Vec3 leftDirection = new Vec3(planeDirection.z, 0, -planeDirection.x).normalize();
 
-        // ✅ ТОЧКА СБРОСА: +3 блока ВПЕРЁД + 2 блока ВЛЕВО
+        //  ТОЧКА СБРОСА: +3 блока ВПЕРЁД + 2 блока ВЛЕВО
         Vec3 dropPos = new Vec3(
                 this.getX() + planeDirection.x * 10.0 + leftDirection.x * 4.0,   // +3 вперёд +2 влево
                 this.getY() - 2.0,                                              // под самолётом
                 this.getZ() + planeDirection.z * 10.0 + leftDirection.z * 4.0    // +3 вперёд +2 влево
         );
 
-        // ✅ ПЕРЕДАЁМ YAW САМОЛЁТА БОМБЕ!
+        //  ПЕРЕДАЁМ YAW САМОЛЁТА БОМБЕ!
         AirNukeBombProjectileEntity airBomb = new AirNukeBombProjectileEntity(
                 serverLevel, owner, this.getYRot()
         );

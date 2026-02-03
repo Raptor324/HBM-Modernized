@@ -1,11 +1,10 @@
 package com.hbm_m.powerarmor.layer;
 
+import java.util.Map;
+
 import net.minecraft.client.resources.model.Material;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.phys.Vec3;
-
-import java.util.Map;
 
 /**
  * Конфигурация для рендеринга OBJ-брони.
@@ -29,13 +28,6 @@ public interface IArmorLayerConfig {
      * Значение - Material с атласом и текстурой.
      */
     Map<String, Material> getPartMaterials();
-
-    /**
-     * Оффсеты для каждой части брони (в блоках Minecraft).
-     * Используется для тонкой настройки позиционирования частей.
-     * Ключ - имя части, значение - Vec3 оффсет.
-     */
-    Map<String, Vec3> getPartOffsets();
 
     /**
      * Масштаб для устранения z-fighting со скином игрока.

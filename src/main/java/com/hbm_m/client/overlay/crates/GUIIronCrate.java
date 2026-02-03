@@ -1,5 +1,7 @@
 package com.hbm_m.client.overlay.crates;
 
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.menu.IronCrateMenu;
 import com.hbm_m.sound.ModSounds;
 
@@ -10,9 +12,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.player.Inventory;
-import org.jetbrains.annotations.NotNull;
-
-import com.mojang.blaze3d.platform.InputConstants;
 
 /**
  * GUI экран для Iron Crate (36 слотов: 4 ряда × 9 колонок)
@@ -65,7 +64,7 @@ public class GUIIronCrate extends AbstractContainerScreen<IronCrateMenu> {
         renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
-    // ✅ ИСПРАВЛЕНО: Правильная сигнатура для Minecraft 1.20.1 Forge
+    //  ИСПРАВЛЕНО: Правильная сигнатура для Minecraft 1.20.1 Forge
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         // Проверяем клавишу инвентаря (E) или Escape

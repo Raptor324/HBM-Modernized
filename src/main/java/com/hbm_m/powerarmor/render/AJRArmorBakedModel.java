@@ -1,16 +1,17 @@
 package com.hbm_m.powerarmor.render;
 
+import java.util.Map;
+
+import com.hbm_m.powerarmor.AJRArmor;
+import com.hbm_m.powerarmor.AJROArmor;
+import com.hbm_m.powerarmor.ModPowerArmorItem;
+
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
-import java.util.Map;
-
-import com.hbm_m.powerarmor.AJRArmor;
-import com.hbm_m.powerarmor.ModPowerArmorItem;
 
 /**
  * Baked model for rendering AJR armor in GUI/hand.
@@ -69,7 +70,8 @@ public class AJRArmorBakedModel extends AbstractArmorBakedModel {
 
         @Override
         public boolean isItemValid(net.minecraft.world.item.ItemStack stack) {
-            return stack.getItem() instanceof AJRArmor;
+            return stack.getItem() instanceof AJRArmor
+                || stack.getItem() instanceof AJROArmor;
         }
     }
 }

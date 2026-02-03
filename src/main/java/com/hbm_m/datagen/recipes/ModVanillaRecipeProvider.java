@@ -50,7 +50,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerOreAndRawCooking(writer);
     }
 
-    // ✅ БЕЗОПАСНАЯ ПРОВЕРКА NULL
+    //  БЕЗОПАСНАЯ ПРОВЕРКА NULL
     private boolean isItemSafe(RegistryObject<?> itemObj) {
         return itemObj != null && itemObj.get() != null;
     }
@@ -528,9 +528,9 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerSmelting(writer, ModItems.FIRECLAY_BALL.get(), ModItems.FIREBRICK.get(), 0.1F, 100, "firebrick_smelting");
     }
 
-    //переплавка порошков - ✅ ИСПРАВЛЕННАЯ ВЕРСИЯ
+    //переплавка порошков -  ИСПРАВЛЕННАЯ ВЕРСИЯ
     private void registerPowderCooking(Consumer<FinishedRecipe> writer) {
-        // ✅ ПРОВЕРЯЕМ КАЖДЫЙ ПОРОШОК ПЕРЕД ИСПОЛЬЗОВАНИЕМ
+        //  ПРОВЕРЯЕМ КАЖДЫЙ ПОРОШОК ПЕРЕД ИСПОЛЬЗОВАНИЕМ
         Item ironPowder = safePowder(ModPowders.IRON);
         Item goldPowder = safePowder(ModPowders.GOLD);
         Item coalPowder = safePowder(ModPowders.COAL);
@@ -808,12 +808,12 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModBlocks.BARBED_WIRE.get()), has(ModBlocks.BARBED_WIRE.get()))
                 .save(writer, recipeId("crafting/" + name));
     }
-    // ✅ ИСПРАВЛЕННЫЙ МЕТОД - ВСЕ СТРОКИ ОДИНАКОВОЙ ШИРИНЫ (3x3)
+    //  ИСПРАВЛЕННЫЙ МЕТОД - ВСЕ СТРОКИ ОДИНАКОВОЙ ШИРИНЫ (3x3)
     private void buildStamp(Consumer<FinishedRecipe> writer, Item result, ItemLike material, String name) {
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, result)
                 .pattern("###")
                 .pattern("$$$")
-                .pattern("   ")  // ✅ БЫЛО " ", ТЕПЕРЬ "   " (3 пробела для ширины 3)
+                .pattern("   ")  //  БЫЛО " ", ТЕПЕРЬ "   " (3 пробела для ширины 3)
                 .define('#', Items.BRICK)
                 .define('$', material)
                 .unlockedBy(getHasName(material), has(material))

@@ -1,0 +1,42 @@
+{
+  "loader": "hbm_m:dnt_armor_parts",
+  "model": "hbm_m:models/armor/dnt.obj",
+  "textures": {
+    "Helmet": "hbm_m:block/armor/dnt_helmet",
+    "Chest": "hbm_m:block/armor/dnt_chest",
+    "LeftArm": "hbm_m:block/armor/dnt_arm",
+    "RightArm": "hbm_m:block/armor/dnt_arm",
+    "LeftLeg": "hbm_m:block/armor/dnt_leg",
+    "RightLeg": "hbm_m:block/armor/dnt_leg",
+    "LeftBoot": "hbm_m:block/armor/dnt_leg",
+    "RightBoot": "hbm_m:block/armor/dnt_leg"
+  },
+  "display": {
+    "gui": {
+      "rotation": [ 0, 180, 180 ],
+      "translation": [ 0.3, 10, 0 ],
+      "scale": [ 0.05, 0.05, 0.05 ]
+    },
+    "ground": {
+      "rotation": [ 30, 225, -180 ],
+      "translation": [ 0, 3, 0 ],
+      "scale": [ 0.05, 0.05, 0.05 ]
+    },
+    "fixed": {
+      "rotation": [ 0, 0, 0 ],
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.05, 0.05, 0.05 ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [ 30, 225, -180 ],
+      "translation": [ 0, 2.5, 0 ],
+      "scale": [ 0.02, 0.02, 0.02 ]
+    },
+    "firstperson_righthand": {
+      "rotation": [ 180, 45, 0 ],
+      "translation": [ 2, 1, 0 ],
+      "scale": [ 0.03, 0.03, 0.03 ]
+    }
+  }
+}
+

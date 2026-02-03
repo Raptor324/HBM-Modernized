@@ -4,6 +4,7 @@ plugins {
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
     id 'java-library'
     id 'org.spongepowered.mixin' version '0.7.+'
+    id 'eclipse'
 }
 
 group = mod_group_id
@@ -174,6 +175,8 @@ dependencies {
     runtimeOnly fg.deobf("maven.modrinth:spark:1.10.53-forge")
     runtimeOnly fg.deobf("curse.maven:oculus-581495:6020952")
     runtimeOnly fg.deobf("curse.maven:embeddium-908741:5681725")
+    runtimeOnly fg.deobf("curse.maven:modernfix-790626:7515215")
+    runtimeOnly fg.deobf("curse.maven:smooth-boot-reloaded-633412:5016280")
     
     api(fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.136"))
     
@@ -301,6 +304,13 @@ tasks.withType(JavaExec).configureEach {
         standardInput = System.in
     }
 }
+
+eclipse {
+    classpath {
+        defaultOutputDir = file('build/classes/java/main')
+    }
+}
+
 // Создаем новую задачу с именем 'cleanObjFiles'
 // task cleanObjFiles(type: DefaultTask) {
 //     description = 'Removes mtllib and usemtl lines from all .obj files in resources.'
