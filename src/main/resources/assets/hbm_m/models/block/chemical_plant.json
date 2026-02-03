@@ -1,0 +1,17 @@
+{
+  "textures": {
+    "particle": "hbm_m:block/machine/chemical_plant"
+  },
+  "loader": "forge:composite",
+  "children": {
+    "chemical_plant_model": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/chemical_plant.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:block/machine/chemical_plant"
+      }
+    }
+  }
+}

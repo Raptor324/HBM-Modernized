@@ -3,47 +3,89 @@
 
 package com.hbm_m.block;
 
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+
 import com.hbm_m.api.energy.ConverterBlock;
 import com.hbm_m.api.energy.MachineBatteryBlock;
 import com.hbm_m.api.energy.SwitchBlock;
 import com.hbm_m.api.energy.WireBlock;
-import com.hbm_m.block.custom.explosives.*;
-import com.hbm_m.block.custom.machines.*;
-import com.hbm_m.block.custom.machines.anvils.AnvilBlock;
-import com.hbm_m.block.custom.machines.BlastFurnaceBlock;
-import com.hbm_m.block.custom.machines.anvils.AnvilTier;
-import com.hbm_m.block.custom.machines.crates.DeshCrateBlock;
-import com.hbm_m.block.custom.machines.crates.IronCrateBlock;
-import com.hbm_m.block.custom.machines.crates.SteelCrateBlock;
 import com.hbm_m.block.custom.decorations.CageLampBlock;
 import com.hbm_m.block.custom.decorations.CrtBlock;
 import com.hbm_m.block.custom.decorations.DecoSteelBlock;
 import com.hbm_m.block.custom.decorations.DoorBlock;
-import com.hbm_m.block.custom.weapons.*;
+import com.hbm_m.block.custom.explosives.AirBombBlock;
+import com.hbm_m.block.custom.explosives.AirNukeBombBlock;
+import com.hbm_m.block.custom.explosives.C4Block;
+import com.hbm_m.block.custom.explosives.DetMinerBlock;
+import com.hbm_m.block.custom.explosives.DudFugasBlock;
+import com.hbm_m.block.custom.explosives.DudNukeBlock;
+import com.hbm_m.block.custom.explosives.ExplosiveChargeBlock;
+import com.hbm_m.block.custom.explosives.GigaDetBlock;
+import com.hbm_m.block.custom.explosives.MineBlock;
+import com.hbm_m.block.custom.explosives.MineNukeBlock;
+import com.hbm_m.block.custom.explosives.NuclearChargeBlock;
+import com.hbm_m.block.custom.explosives.SmokeBombBlock;
+import com.hbm_m.block.custom.explosives.WasteChargeBlock;
+import com.hbm_m.block.custom.machines.ArmorTableBlock;
+import com.hbm_m.block.custom.machines.BlastFurnaceBlock;
+import com.hbm_m.block.custom.machines.BlastFurnaceExtensionBlock;
+import com.hbm_m.block.custom.machines.CentrifugeBlock;
+import com.hbm_m.block.custom.machines.ChemicalPlantBlock;
+import com.hbm_m.block.custom.machines.GeigerCounterBlock;
+import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
+import com.hbm_m.block.custom.machines.MachineAssemblerBlock;
+import com.hbm_m.block.custom.machines.MachineFluidTankBlock;
+import com.hbm_m.block.custom.machines.MachinePressBlock;
+import com.hbm_m.block.custom.machines.MachineShredderBlock;
+import com.hbm_m.block.custom.machines.MachineWoodBurnerBlock;
+import com.hbm_m.block.custom.machines.HydraulicFrackiningTowerBlock;
+import com.hbm_m.block.custom.machines.OreAcidizerBlock;
+import com.hbm_m.block.custom.machines.UniversalMachinePartBlock;
+import com.hbm_m.block.custom.machines.anvils.AnvilBlock;
+import com.hbm_m.block.custom.machines.anvils.AnvilTier;
+import com.hbm_m.block.custom.machines.crates.DeshCrateBlock;
+import com.hbm_m.block.custom.machines.crates.IronCrateBlock;
+import com.hbm_m.block.custom.machines.crates.SteelCrateBlock;
 import com.hbm_m.block.custom.nature.DepthOreBlock;
 import com.hbm_m.block.custom.nature.GeysirBlock;
 import com.hbm_m.block.custom.nature.RadioactiveBlock;
-import com.hbm_m.item.custom.fekal_electric.MachineBatteryBlockItem;
-
-
-import com.hbm_m.lib.RefStrings;
+import com.hbm_m.block.custom.weapons.BarbedWireBlock;
+import com.hbm_m.block.custom.weapons.BarbedWireFireBlock;
+import com.hbm_m.block.custom.weapons.BarbedWirePoisonBlock;
+import com.hbm_m.block.custom.weapons.BarbedWireRadBlock;
+import com.hbm_m.block.custom.weapons.BarbedWireWitherBlock;
+import com.hbm_m.block.custom.weapons.FallingSellafit;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.custom.fekal_electric.MachineBatteryBlockItem;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.lib.RefStrings;
 
+import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.BarrelBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DropExperienceBlock;
+import net.minecraft.world.level.block.FlowerBlock;
+import net.minecraft.world.level.block.GlassBlock;
+import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.SnowLayerBlock;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import net.minecraft.util.valueproviders.UniformInt;
-
-import java.util.*;
-import java.util.function.Supplier;
 
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS =
@@ -254,6 +296,12 @@ public class ModBlocks {
     public static final RegistryObject<Block> WOOD_BURNER = registerBlockWithoutItem("wood_burner",
             () -> new MachineWoodBurnerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
+    public static final RegistryObject<Block> CHEMICAL_PLANT = registerBlock("chemical_plant",
+            () -> new ChemicalPlantBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+
+    public static final RegistryObject<Block> CENTRIFUGE = registerBlock("centrifuge",
+            () -> new CentrifugeBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+
     public static final RegistryObject<Block> ARMOR_TABLE = registerBlock("armor_table",
             () -> new ArmorTableBlock(TABLE_PROPERTIES));
 
@@ -269,6 +317,9 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> ADVANCED_ASSEMBLY_MACHINE = registerBlockWithoutItem("advanced_assembly_machine",
             () -> new MachineAdvancedAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
+
+    public static final RegistryObject<Block> HYDRAULIC_FRACKINING_TOWER = registerBlockWithoutItem("hydraulic_frackining_tower",
+            () -> new HydraulicFrackiningTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion()));
 
     public static final RegistryObject<Block> UNIVERSAL_MACHINE_PART = registerBlockWithoutItem("universal_machine_part",
             () -> new UniversalMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));

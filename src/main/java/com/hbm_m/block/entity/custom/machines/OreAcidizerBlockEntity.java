@@ -3,6 +3,7 @@ package com.hbm_m.block.entity.custom.machines;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
@@ -20,10 +21,20 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.menu.OreAcidizerMenu;
 import net.minecraft.world.level.block.state.BlockState;
 import com.hbm_m.block.entity.ModBlockEntities;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import com.hbm_m.multiblock.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.block.custom.machines.UniversalMachinePartBlock;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.capability.templates.FluidTank;
+import net.minecraft.nbt.CompoundTag;
 
 public class OreAcidizerBlockEntity extends BlockEntity implements MenuProvider {
     private final ItemStackHandler itemHandler = new ItemStackHandler(8);
     private final LazyOptional<IItemHandler> handlerOptional = LazyOptional.of(() -> itemHandler);
+
+    private final FluidTank fluidTank = new FluidTank(16_000);
+    private final LazyOptional<IFluidHandler> fluidOptional = LazyOptional.of(() -> fluidTank);
 
     public IItemHandler getInventory() {
         return itemHandler;
@@ -49,27 +60,51 @@ public class OreAcidizerBlockEntity extends BlockEntity implements MenuProvider 
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return handlerOptional.cast();
         }
+        if (cap == ForgeCapabilities.FLUID_HANDLER) {
+            return fluidOptional.cast();
+        }
         return super.getCapability(cap, side);
     }
     public OreAcidizerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ORE_ACIDIZER.get(), pos, state);
     }
 
-    // Multiblock check: 3x3x7 (controller is at bottom center)
+    // Multiblock check based on the controller's structure helper (parts are UniversalMachinePartBlock).
     public boolean isMultiblockFormed() {
         if (level == null) return false;
-        BlockPos base = getBlockPos();
-        // Check a 3x3x7 pillar, controller at (0,0,0) (bottom center)
-        for (int y = 0; y < 7; y++) {
-            for (int x = -1; x <= 1; x++) {
-                for (int z = -1; z <= 1; z++) {
-                    BlockPos checkPos = base.offset(x, y, z);
-                    if (!(level.getBlockState(checkPos).getBlock() instanceof com.hbm_m.block.custom.machines.OreAcidizerBlock)) {
-                        return false;
-                    }
-                }
+        BlockPos controllerPos = getBlockPos();
+        BlockState controllerState = level.getBlockState(controllerPos);
+        if (!(controllerState.getBlock() instanceof IMultiblockController controller)) return false;
+
+        Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
+        MultiblockStructureHelper helper = controller.getStructureHelper();
+
+        for (BlockPos localOffset : helper.getStructureMap().keySet()) {
+            if (localOffset.equals(BlockPos.ZERO)) continue;
+            BlockPos partPos = helper.getRotatedPos(controllerPos, localOffset, facing);
+            if (!(level.getBlockState(partPos).getBlock() instanceof UniversalMachinePartBlock)) {
+                return false;
             }
         }
+
         return true;
+    }
+
+    @Override
+    protected void saveAdditional(CompoundTag tag) {
+        super.saveAdditional(tag);
+        tag.put("Inventory", itemHandler.serializeNBT());
+        tag.put("Tank", fluidTank.writeToNBT(new CompoundTag()));
+    }
+
+    @Override
+    public void load(CompoundTag tag) {
+        super.load(tag);
+        if (tag.contains("Inventory")) {
+            itemHandler.deserializeNBT(tag.getCompound("Inventory"));
+        }
+        if (tag.contains("Tank")) {
+            fluidTank.readFromNBT(tag.getCompound("Tank"));
+        }
     }
 }

@@ -6,53 +6,83 @@ package com.hbm_m.item;
 
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.ModFluids;
-
-import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
-import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
-import com.hbm_m.item.custom.crates.IronCrateItem;
-import com.hbm_m.item.custom.crates.SteelCrateItem;
-import com.hbm_m.item.custom.industrial.*;
-import com.hbm_m.item.custom.radiation_meter.ItemDosimeter;
-import com.hbm_m.item.custom.radiation_meter.ItemGeigerCounter;
-import com.hbm_m.item.custom.food.ItemConserve;
-import com.hbm_m.item.custom.food.ItemEnergyDrink;
-import com.hbm_m.item.custom.food.ModFoods;
-import com.hbm_m.item.custom.grenades_and_activators.*;
-import com.hbm_m.item.custom.tools_and_armor.*;
-import com.hbm_m.item.tags_and_tiers.*;
-import com.hbm_m.item.custom.scanners.DepthOresScannerItem;
-import com.hbm_m.item.custom.scanners.OilDetectorItem;
-
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
-import java.util.List;
-
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.custom.machines.armormod.item.ItemModHealth;
 import com.hbm_m.block.custom.machines.armormod.item.ItemModRadProtection;
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeIfType;
 import com.hbm_m.entity.grenades.GrenadeType;
+import com.hbm_m.item.custom.crates.IronCrateItem;
+import com.hbm_m.item.custom.crates.SteelCrateItem;
+import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
+import com.hbm_m.item.custom.food.ItemConserve;
+import com.hbm_m.item.custom.food.ItemEnergyDrink;
+import com.hbm_m.item.custom.food.ModFoods;
+import com.hbm_m.item.custom.grenades_and_activators.AirBombItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirNukeBombItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirstrikeAgentItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirstrikeHeavyItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirstrikeItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirstrikeNukeItem;
+import com.hbm_m.item.custom.grenades_and_activators.DetonatorItem;
+import com.hbm_m.item.custom.grenades_and_activators.GrenadeIfItem;
+import com.hbm_m.item.custom.grenades_and_activators.GrenadeItem;
+import com.hbm_m.item.custom.grenades_and_activators.GrenadeNucItem;
+import com.hbm_m.item.custom.grenades_and_activators.MultiDetonatorItem;
+import com.hbm_m.item.custom.grenades_and_activators.RangeDetonatorItem;
+import com.hbm_m.item.custom.industrial.FuelItem;
+import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
+import com.hbm_m.item.custom.industrial.ItemBlades;
+import com.hbm_m.item.custom.industrial.ItemBlueprintFolder;
+import com.hbm_m.item.custom.industrial.ItemStamp;
+import com.hbm_m.item.custom.industrial.ItemTemplateFolder;
+import com.hbm_m.item.custom.radiation_meter.ItemDosimeter;
+import com.hbm_m.item.custom.radiation_meter.ItemGeigerCounter;
+import com.hbm_m.item.custom.scanners.DepthOresScannerItem;
+import com.hbm_m.item.custom.scanners.OilDetectorItem;
+import com.hbm_m.item.custom.tools_and_armor.ModArmorItem;
+import com.hbm_m.item.custom.tools_and_armor.ModArmorMaterials;
+import com.hbm_m.item.custom.tools_and_armor.ModAxeItem;
+import com.hbm_m.item.custom.tools_and_armor.ModPickaxeItem;
+import com.hbm_m.item.custom.tools_and_armor.ModShovelItem;
+import com.hbm_m.item.custom.tools_and_armor.ModToolTiers;
+import com.hbm_m.item.tags_and_tiers.ItemSimpleConsumable;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.tags_and_tiers.RadioactiveItem;
+import static com.hbm_m.lib.RefStrings.MODID;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
 
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.item.*;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.HoeItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.world.item.ShovelItem;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-
-import static com.hbm_m.lib.RefStrings.MODID;
 
 
 public class ModItems {
@@ -929,6 +959,111 @@ public class ModItems {
 
 
 
+    // Crystals (auto-generated from textures/crystall/*.png)
+    public static final RegistryObject<Item> CRYSTAL_ALUMINIUM = ITEMS.register("crystal_aluminium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_BERYLLIUM = ITEMS.register("crystal_beryllium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_CHARRED = ITEMS.register("crystal_charred",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_CINNEBAR = ITEMS.register("crystal_cinnebar",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_COAL = ITEMS.register("crystal_coal",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_COBALT = ITEMS.register("crystal_cobalt",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_COPPER = ITEMS.register("crystal_copper",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_DIAMOND = ITEMS.register("crystal_diamond",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_FLUORITE = ITEMS.register("crystal_fluorite",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_GOLD = ITEMS.register("crystal_gold",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_HARDENED = ITEMS.register("crystal_hardened",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_HORN = ITEMS.register("crystal_horn",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_IRON = ITEMS.register("crystal_iron",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_LAPIS = ITEMS.register("crystal_lapis",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_LEAD = ITEMS.register("crystal_lead",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_LITHIUM = ITEMS.register("crystal_lithium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_NITER = ITEMS.register("crystal_niter",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_OSMIRIDIUM = ITEMS.register("crystal_osmiridium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_PHOSPHORUS = ITEMS.register("crystal_phosphorus",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_PLUTONIUM = ITEMS.register("crystal_plutonium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_PULSAR = ITEMS.register("crystal_pulsar",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_RARE = ITEMS.register("crystal_rare",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_REDSTONE = ITEMS.register("crystal_redstone",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_SCHRABIDIUM = ITEMS.register("crystal_schrabidium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_SCHRARANIUM = ITEMS.register("crystal_schraranium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_STARMETAL = ITEMS.register("crystal_starmetal",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_SULFUR = ITEMS.register("crystal_sulfur",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_THORIUM = ITEMS.register("crystal_thorium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_TITANIUM = ITEMS.register("crystal_titanium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_TRIXITE = ITEMS.register("crystal_trixite",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_TUNGSTEN = ITEMS.register("crystal_tungsten",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_URANIUM = ITEMS.register("crystal_uranium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_VIRUS = ITEMS.register("crystal_virus",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_XEN = ITEMS.register("crystal_xen",
+            () -> new Item(new Item.Properties()));
+
+
+
 
     // Здесь мы регистрируем мультиблочные структуры для того, чтобы MultiblockBlockItem при установке мог обрабатывать их на наличие препятствующих блоков.
 
@@ -937,6 +1072,9 @@ public class ModItems {
             
     public static final RegistryObject<Item> ADVANCED_ASSEMBLY_MACHINE = ITEMS.register("advanced_assembly_machine",
         () -> new MultiblockBlockItem(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> HYDRAULIC_FRACKINING_TOWER = ITEMS.register("hydraulic_frackining_tower",
+                () -> new MultiblockBlockItem(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> PRESS = ITEMS.register("press",
         () -> new MultiblockBlockItem(ModBlocks.PRESS.get(), new Item.Properties()));

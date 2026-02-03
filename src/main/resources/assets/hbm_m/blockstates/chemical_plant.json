@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "hbm_m:block/chemical_plant" },
+    "facing=east":  { "model": "hbm_m:block/chemical_plant", "y": 90 },
+    "facing=south": { "model": "hbm_m:block/chemical_plant", "y": 180 },
+    "facing=west":  { "model": "hbm_m:block/chemical_plant", "y": 270 }
+  }
+}

@@ -61,11 +61,12 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     @NotNull
     @Override
     public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (this.controllerPos == null || this.level == null) {
+        var level = this.level;
+        if (this.controllerPos == null || level == null) {
             return super.getCapability(cap, side);
         }
 
-        BlockEntity controllerBE = this.level.getBlockEntity(this.controllerPos);
+        BlockEntity controllerBE = level.getBlockEntity(this.controllerPos);
         if (controllerBE == null) {
             return super.getCapability(cap, side);
         }
@@ -97,6 +98,11 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             }
 
             // Для других машин (если появятся) можно делегировать напрямую
+            return controllerBE.getCapability(cap, side);
+        }
+
+        // === ДЕЛЕГИРОВАНИЕ ЖИДКОСТЕЙ ===
+        if (cap == ForgeCapabilities.FLUID_HANDLER && this.role == PartRole.FLUID_CONNECTOR) {
             return controllerBE.getCapability(cap, side);
         }
 

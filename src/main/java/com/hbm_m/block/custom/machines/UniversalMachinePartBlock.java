@@ -63,48 +63,9 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
 
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        // 1. Get the BlockEntity of this part
-        if (!(pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part)) {
-            return SMALL_INTERACT_SHAPE;
-        }
-
-        // 2. Find the controller's position
-        BlockPos controllerPos = part.getControllerPos();
-        if (controllerPos == null) {
-            return SMALL_INTERACT_SHAPE;
-        }
-
-        // 3. Get the controller's state and block
-        BlockState controllerState = pLevel.getBlockState(controllerPos);
-        if (!(controllerState.getBlock() instanceof IMultiblockController controller)) {
-            return SMALL_INTERACT_SHAPE;
-        }
-
-        if (controller instanceof DoorBlock) {
-            VoxelShape masterShape = controller.getStructureHelper()
-                    .generateShapeFromParts(controllerState.getValue(DoorBlock.FACING));
-
-            if (masterShape.isEmpty()) {
-                return SMALL_INTERACT_SHAPE;
-            }
-
-            // Сдвигаем форму структуры относительно этого фантома
-            BlockPos offset = pPos.subtract(controllerPos);
-            return masterShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
-        }
-
-        // 4. Для обычных мультиблоков - показываем полную форму
-        VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState);
-        if (masterShape == null) {
-            masterShape = controller.getStructureHelper().generateShapeFromParts(controllerState.getValue(FACING));
-        }
-
-        if (masterShape.isEmpty()) {
-            return SMALL_INTERACT_SHAPE;
-        }
-
-        BlockPos offset = pPos.subtract(controllerPos);
-        return masterShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
+        // Keep the selection/outline shape simple.
+        // Using the whole multiblock shape here causes huge "yellow" selection boxes.
+        return Shapes.block();
     }
 
     @Override
@@ -112,19 +73,19 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
 
         // 1. Get the BlockEntity of this part
         if (!(pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part)) {
-            return Shapes.empty(); // Для коллизии возвращаем пустоту, если что-то не так
+            return Shapes.block();
         }
 
         // 2. Find the controller's position
         BlockPos controllerPos = part.getControllerPos();
         if (controllerPos == null) {
-            return Shapes.empty();
+            return Shapes.block();
         }
 
         // 3. Get the controller's state and block
         BlockState controllerState = pLevel.getBlockState(controllerPos);
         if (!(controllerState.getBlock() instanceof IMultiblockController controller)) {
-            return Shapes.empty();
+            return Shapes.block();
         }
 
         if (controller instanceof DoorBlock) {
@@ -151,18 +112,9 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
             return Shapes.empty();
         }
 
-        // 4. Для обычных мультиблоков (не дверей) - используем стандартную логику
-        VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState);
-        if (masterShape == null) {
-            masterShape = controller.getStructureHelper().generateShapeFromParts(controllerState.getValue(FACING));
-        }
-
-        if (masterShape.isEmpty()) {
-            return Shapes.empty();
-        }
-
-        BlockPos offset = pPos.subtract(controllerPos);
-        return masterShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
+        // 4. For regular multiblocks, make each phantom part a solid block.
+        // This avoids "global" collision shapes extending outside the block space.
+        return Shapes.block();
     }
 
     @Override

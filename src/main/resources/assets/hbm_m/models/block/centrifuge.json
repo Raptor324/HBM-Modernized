@@ -1,0 +1,17 @@
+{
+  "textures": {
+    "particle": "hbm_m:block/machine/centrifuge"
+  },
+  "loader": "forge:composite",
+  "children": {
+    "centrifuge_model": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/centrifuge.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:block/machine/centrifuge"
+      }
+    }
+  }
+}

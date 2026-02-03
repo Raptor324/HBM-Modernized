@@ -46,17 +46,23 @@ public class OreAcidizerBlock extends BaseEntityBlock implements IMultiblockCont
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
-    // Multiblock: 3x3x7, Controller unten Mitte (0,0,0)
+    // Legacy-inspired layout (old "MachineCrystallizer" dimensions):
+    // forward length 5, left/right 1, up 2 (3 tall). Controller at back-bottom-center (0,0,0).
     private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
         ImmutableMap.Builder<BlockPos, Supplier<BlockState>> builder = ImmutableMap.builder();
-        for (int y = 0; y < 7; y++) {
+
+        Supplier<BlockState> phantom = () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState();
+
+        // 3 (wide) x 3 (tall) x 5 (long)
+        for (int y = 0; y <= 2; y++) {
             for (int x = -1; x <= 1; x++) {
-                for (int z = -1; z <= 1; z++) {
-                    if (y == 0 && x == 0 && z == 0) continue; // Controller-Block
-                    builder.put(new BlockPos(x, y, z), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+                for (int z = 0; z <= 4; z++) {
+                    if (y == 0 && x == 0 && z == 0) continue; // controller
+                    builder.put(new BlockPos(x, y, z), phantom);
                 }
             }
         }
+
         return builder.build();
     }
 
@@ -70,7 +76,21 @@ public class OreAcidizerBlock extends BaseEntityBlock implements IMultiblockCont
 
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
-        // Optional: Hier können spezielle Rollen für bestimmte Teile definiert werden
+        int x = localOffset.getX();
+        int y = localOffset.getY();
+        int z = localOffset.getZ();
+
+        // Provide at least one fluid connector for piping.
+        if (x == 0 && y == 2 && z == 4) {
+            return PartRole.FLUID_CONNECTOR;
+        }
+
+        // Simple item IO on the sides roughly mid-body.
+        if (y == 0 && z == 2) {
+            if (x == -1) return PartRole.ITEM_INPUT;
+            if (x == 1) return PartRole.ITEM_OUTPUT;
+        }
+
         return PartRole.DEFAULT;
     }
 

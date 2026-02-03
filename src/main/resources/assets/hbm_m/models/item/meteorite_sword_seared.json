@@ -1,28 +1,46 @@
 {
-	"parent": "item/handheld",
+	"loader": "forge:obj",
+	"model": "hbm_m:models/item/meteorite_blade.obj",
+	"flip_v": true,
 	"textures": {
-		"layer0": "hbm_m:item/meteorite_sword_seared"
+		"particle": "hbm_m:item/meteorite_sword_seared",
+		"UV2": "hbm_m:item/meteorite_sword_seared"
 	},
 	"display": {
+		"gui": {
+			"rotation": [30, 225, 0],
+			"translation": [0, 0, 0],
+			"scale": [0.55, 0.55, 0.55]
+		},
+		"ground": {
+			"rotation": [0, 0, 0],
+			"translation": [0, 2, 0],
+			"scale": [0.35, 0.35, 0.35]
+		},
+		"fixed": {
+			"rotation": [0, 180, 0],
+			"translation": [0, 0, 0],
+			"scale": [0.5, 0.5, 0.5]
+		},
 		"thirdperson_righthand": {
-			"rotation": [0, -90, 0],
-			"translation": [0, 9, 0],
-			"scale": [1.5, 2.5, 1.0]
+			"rotation": [45, -90, 55],
+			"translation": [-1.0, 2.2, -0.5],
+			"scale": [0.5, 0.5, 0.5]
 		},
 		"thirdperson_lefthand": {
-			"rotation": [0, -90, 0],
-			"translation": [0, 9, 0],
-			"scale": [1.5, 2.5, 1.0]
+			"rotation": [45, 90, -55],
+			"translation": [0.0, 2.5, 0.0],
+			"scale": [0.5, 0.5, 0.5]
 		},
 		"firstperson_righthand": {
-			"rotation": [0, 90, 0],
-			"translation": [0, -9, 0],
-			"scale": [1.5, 2.5, 1.0]
+			"rotation": [45, -90, 45],
+			"translation": [1.0, 3.3, 1.0],
+			"scale": [0.5, 0.5, 0.5]
 		},
 		"firstperson_lefthand": {
-			"rotation": [0, 90, 0],
-			"translation": [0, 9, 0],
-			"scale": [1.5, 2.5, 1.0]
+			"rotation": [45, 90, -45],
+			"translation": [1.0, 3.3, 1.0],
+			"scale": [0.5, 0.5, 0.5]
 		}
 	}
 }
