@@ -4,6 +4,7 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -87,10 +88,18 @@ public final class ThermalVisionWarningStore {
 
     private static String getWorldKey(Minecraft mc) {
         if (mc.getSingleplayerServer() != null) {
-            // Use actual save folder path (unique per-world), not just display name.
             try {
-                String path = mc.getSingleplayerServer().getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize().toString();
-                return "sp:" + path;
+                // Используем путь к сейву + время создания папки мира.
+                // creationTime стабилен для конкретного мира и меняется только если сейв был удалён и мир создан заново в той же папке.
+                Path root = mc.getSingleplayerServer().getWorldPath(LevelResource.ROOT).toAbsolutePath().normalize();
+                long stamp = 0L;
+                try {
+                    BasicFileAttributes attrs = Files.readAttributes(root, BasicFileAttributes.class);
+                    stamp = attrs.creationTime().toMillis();
+                } catch (IOException ignored) {
+                    // В худшем случае fallback ниже даст достаточно уникальный ключ.
+                }
+                return "sp:" + root.toString() + "#" + stamp;
             } catch (Exception e) {
                 // Fallback if path cannot be resolved for some reason
                 String levelName = mc.getSingleplayerServer().getWorldData().getLevelName();

@@ -1,6 +1,10 @@
 package com.hbm_m.powerarmor;
 
+import java.util.HashSet;
+import java.util.Set;
+
 // Импорты HBM Modernized
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 // import com.hbm_m.powerarmor.overlay.ThermalVisionRenderer;
@@ -9,7 +13,9 @@ import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
+import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
 // Импорты Minecraft
@@ -19,21 +25,23 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.SplashRenderer;
 import net.minecraft.client.gui.screens.TitleScreen;
 import net.minecraft.client.player.LocalPlayer;
-// Импорты для текстур
+import net.minecraft.client.renderer.LevelRenderer;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 // Основные импорты Forge
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RenderItemInFrameEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.client.event.RenderLivingEvent;
-// Дополнительные импорты событий
-import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.client.event.ScreenEvent;
 // Импорты Forge GUI
 import net.minecraftforge.client.gui.overlay.ForgeGui;
@@ -81,6 +89,11 @@ public class ModEventHandlerClient {
 
     // Состояние тепловизора
     private static boolean thermalActive = false;
+
+    // Состояние spectral fallback (подсветка мобов и ночное зрение)
+    private static final Set<Integer> spectralHighlighted = new HashSet<>();
+    private static final Set<Integer> spectralHighlightedThisTick = new HashSet<>();
+    private static boolean spectralNightVisionApplied = false;
 
     // Система сплешей
     private static String modSplashText; // null = ванилла
@@ -236,6 +249,8 @@ public class ModEventHandlerClient {
                 }
             }
 
+            handleThermalSpectralFallback(mc);
+
             // TODO: Реализовать обработку высоты шага для FSB брони
             // TODO: Реализовать отдачу оружия
         }
@@ -255,6 +270,138 @@ public class ModEventHandlerClient {
 
         // Пока просто логгируем что проверка работает
         // MainRegistry.LOGGER.debug("Performance check completed");
+    }
+
+    /**
+     * Обработка вспомогательных эффектов тепловизора:
+     * - в режиме ORIGINAL_FALLBACK даём игроку ночное зрение и подсвечиваем всех живых существ белым контуром;
+     * - в режиме FULL_SHADER не трогаем эффекты, вся яркость управляется шейдером и миксинами.
+     */
+    private static void handleThermalSpectralFallback(Minecraft mc) {
+        // Если тепловизор не активен – чистим все эффекты и выходим
+        if (!thermalActive) {
+            clearSpectralHighlights(mc);
+            clearSpectralNightVision(mc);
+            return;
+        }
+
+        if (mc.level == null || mc.player == null) {
+            clearSpectralHighlights(mc);
+            clearSpectralNightVision(mc);
+            return;
+        }
+
+        // Во всех режимах, кроме ORIGINAL_FALLBACK, вспомогательные эффекты не нужны.
+        if (ModClothConfig.get().thermalRenderMode != ModClothConfig.ThermalRenderMode.ORIGINAL_FALLBACK) {
+            clearSpectralHighlights(mc);
+            clearSpectralNightVision(mc);
+            return;
+        }
+
+        LocalPlayer player = mc.player;
+
+        // Фолбек-режим: выдаём длительный бафф ночного зрения, а при выключении тепловизора
+        // снимаем его вручную. Так избегаем ванильного "мигания" эффекта на низких таймерах.
+        MobEffectInstance currentNv = player.getEffect(MobEffects.NIGHT_VISION);
+        if (currentNv == null) {
+            player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 6000, 0, false, false, false));
+            spectralNightVisionApplied = true;
+        }
+
+        // Подсветка всех живых существ (кроме самого игрока), только при прямой видимости.
+        // Используем стандартный ванильный эффект GLOWING + client-only флаг glowingTag.
+        // Локально каждый тик продлеваем очень короткий невидимый эффект, а при потере
+        // прямой видимости сразу его снимаем, чтобы не было X‑ray сквозь стены.
+        spectralHighlightedThisTick.clear();
+        for (Entity entity : mc.level.entitiesForRendering()) {
+            if (entity instanceof LivingEntity living && entity != player) {
+                int id = entity.getId();
+
+                // Проверяем, виден ли энтити с глаз игрока.
+                if (canSeeEntity(player, entity)) {
+                    // Короткий, бесчастичный эффект подсветки как у спектральной стрелы.
+                    MobEffectInstance glow = living.getEffect(MobEffects.GLOWING);
+                    if (glow == null || glow.getDuration() <= 10 || !glow.isVisible()) {
+                        living.addEffect(new MobEffectInstance(MobEffects.GLOWING, 20, 0, false, false, false));
+                    }
+
+                    living.setGlowingTag(true);
+                    spectralHighlighted.add(id);
+                    spectralHighlightedThisTick.add(id);
+                } else if (spectralHighlighted.contains(id)) {
+                    // Если сущность больше не видна (закрыта блоками) — снимаем локальный glow.
+                    living.setGlowingTag(false);
+                    MobEffectInstance glow = living.getEffect(MobEffects.GLOWING);
+                    if (glow != null && !glow.isVisible()) {
+                        living.removeEffect(MobEffects.GLOWING);
+                    }
+                }
+            }
+        }
+
+        // Снимаем подсветку с тех, кого больше нет в текущем кадре
+        if (!spectralHighlighted.isEmpty()) {
+            java.util.Iterator<Integer> it = spectralHighlighted.iterator();
+            while (it.hasNext()) {
+                int id = it.next();
+                if (!spectralHighlightedThisTick.contains(id)) {
+                    Entity entity = mc.level.getEntity(id);
+                    if (entity instanceof LivingEntity living) {
+                        living.setGlowingTag(false);
+                    }
+                    it.remove();
+                }
+            }
+        }
+    }
+
+    private static void clearSpectralHighlights(Minecraft mc) {
+        if (mc.level == null) {
+            spectralHighlighted.clear();
+            spectralHighlightedThisTick.clear();
+            return;
+        }
+
+        for (Integer id : spectralHighlighted) {
+            Entity entity = mc.level.getEntity(id);
+            if (entity instanceof LivingEntity living) {
+                living.setGlowingTag(false);
+                MobEffectInstance glow = living.getEffect(MobEffects.GLOWING);
+                if (glow != null && !glow.isVisible()) {
+                    living.removeEffect(MobEffects.GLOWING);
+                }
+            }
+        }
+
+        spectralHighlighted.clear();
+        spectralHighlightedThisTick.clear();
+    }
+
+    private static void clearSpectralNightVision(Minecraft mc) {
+        if (!spectralNightVisionApplied) {
+            return;
+        }
+
+        LocalPlayer player = mc.player;
+        if (player != null) {
+            player.removeEffect(MobEffects.NIGHT_VISION);
+        }
+
+        spectralNightVisionApplied = false;
+    }
+
+    /**
+     * Проверка прямой видимости сущности с глаз игрока.
+     * Используется только в клиентском ORIGINAL_FALLBACK‑режиме тепловизора,
+     * чтобы локальный glow не работал как X‑ray сквозь стены.
+     */
+    private static boolean canSeeEntity(LocalPlayer player, Entity entity) {
+        if (player == null || entity == null) {
+            return false;
+        }
+        // Используем готовую проверку линии обзора из Minecraft,
+        // чтобы поведение совпадало с ванильной логикой видимости.
+        return player.hasLineOfSight(entity);
     }
 
     /**
@@ -527,12 +674,20 @@ public class ModEventHandlerClient {
     //     // Обработка тика мира
     // }
 
+
     /**
-     * Обработка рендеринга мира после основного рендеринга
+     * Дополнительный рендер‑хук для ORIGINAL_FALLBACK:
+     * рисуем простые белые боксы вокруг живых сущностей, видимые только
+     * для игрока с включённым тепловизором и не сквозь блоки
+     * (используем depth‑buffer основного рендера).
+     *
+     * Используем тот же паттерн, что и большинство примеров Forge:
+     * Stage.AFTER_ENTITIES + translate(-camPos) поверх poseStack,
+     * в которой уже учтён поворот камеры.
      */
     @SubscribeEvent
-    public static void onRenderWorldLast(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+    public static void onRenderWorldThermalFallback(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
             return;
         }
 
@@ -543,26 +698,54 @@ public class ModEventHandlerClient {
             return;
         }
 
-        // TODO: Реализовать рендеринг арматуры (BlockRebar.renderRebar)
-        // TODO: Реализовать рендеринг капсулы (HTTPHandler.capsule)
-
-        // Получаем HUD настройки игрока
-        // TODO: Получить HbmPlayerProps и проверить enableHUD
-
-        boolean hudOn = true; // TODO: Получить из HbmPlayerProps
-        boolean thermalSights = false;
-
-        if (hudOn) {
-            // TODO: Реализовать рендеринг маркеров (RenderOverhead.renderMarkers)
-            // TODO: Реализовать проверку термального зрения для FSB брони
-            // TODO: Реализовать проверку термального зрения для оружия
-
-            if (thermalSights) {
-                // TODO: Реализовать термальное зрение (RenderOverhead.renderThermalSight)
-            }
+        if (!thermalActive) {
+            return;
+        }
+        if (ModClothConfig.get().thermalRenderMode != ModClothConfig.ThermalRenderMode.ORIGINAL_FALLBACK) {
+            return;
         }
 
-        // TODO: Реализовать превью действий (RenderOverhead.renderActionPreview)
+        renderThermalFallbackOutlines(mc, event);
+    }
+
+    /**
+     * Рисует белые контуры вокруг всех видимых живых сущностей.
+     * Это чисто клиентский эффект: никаких эффектов/пакетов на сервер.
+     */
+    private static void renderThermalFallbackOutlines(Minecraft mc, RenderLevelStageEvent event) {
+        PoseStack poseStack = event.getPoseStack();
+        var bufferSource = mc.renderBuffers().bufferSource();
+        VertexConsumer consumer = bufferSource.getBuffer(RenderType.lines());
+
+        LocalPlayer player = mc.player;
+        var camPos = mc.getEntityRenderDispatcher().camera.getPosition();
+
+        poseStack.pushPose();
+        // Как в типичных примерах Forge: Stage.AFTER_ENTITIES уже учитывает
+        // поворот камеры, поэтому добавляем только сдвиг в -camPos.
+        poseStack.translate(-camPos.x, -camPos.y, -camPos.z);
+
+        try {
+            for (Entity entity : mc.level.entitiesForRendering()) {
+                if (!(entity instanceof LivingEntity living)) continue;
+                if (entity == player) continue;
+                if (!player.hasLineOfSight(entity)) continue;
+
+                var worldBox = living.getBoundingBox().inflate(0.05);
+
+                // Ярко‑красная рамка (R,G,B,A)
+                LevelRenderer.renderLineBox(
+                        poseStack,
+                        consumer,
+                        worldBox.minX, worldBox.minY, worldBox.minZ,
+                        worldBox.maxX, worldBox.maxY, worldBox.maxZ,
+                        1.0F, 0.0F, 0.0F, 0.9F
+                );
+            }
+        } finally {
+            poseStack.popPose();
+            bufferSource.endBatch(RenderType.lines());
+        }
     }
 
     /**
@@ -595,15 +778,12 @@ public class ModEventHandlerClient {
      */
     public static void activateThermal() {
         if (!thermalActive) {
-            // First-time per-world warning gate for shader mode:
-            // - Show chat message once per world
-            // - Do NOT enable on first press (requires second press)
-            // Only applies to FULL_SHADER; fallback modes are considered stable.
             Minecraft mc = Minecraft.getInstance();
-            if (com.hbm_m.config.ModClothConfig.get().thermalRenderMode == com.hbm_m.config.ModClothConfig.ThermalRenderMode.FULL_SHADER) {
-                if (com.hbm_m.powerarmor.overlay.ThermalVisionWarningStore.shouldBlockFirstActivation(mc)) {
-                    return;
-                }
+            // First-time per-world warning gate:
+            // - Показываем предупреждение один раз на мир/сервер
+            // - Не включаем тепловизор при первом нажатии, независимо от режима.
+            if (com.hbm_m.powerarmor.overlay.ThermalVisionWarningStore.shouldBlockFirstActivation(mc)) {
+                return;
             }
 
             thermalActive = true;

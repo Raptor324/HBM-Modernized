@@ -26,6 +26,7 @@ bin/
 # Visual Studio Code
 .vscode/
 .cursor
+.cursorignore
 # ================= Generated Files =================
 src/generated/resources/.cache
 src/generated/resources/assets/hbm_m/blockstates/
@@ -64,3 +65,4 @@ forge*changelog.txt
 desktop.ini
 HBM-Modernized.code-workspace
 java_pid*
+serve.py

@@ -173,8 +173,8 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     runtimeOnly fg.deobf("maven.modrinth:spark:1.10.53-forge")
-    runtimeOnly fg.deobf("curse.maven:oculus-581495:6020952")
-    runtimeOnly fg.deobf("curse.maven:embeddium-908741:5681725")
+    // runtimeOnly fg.deobf("curse.maven:oculus-581495:6020952")
+    // runtimeOnly fg.deobf("curse.maven:embeddium-908741:5681725")
     runtimeOnly fg.deobf("curse.maven:modernfix-790626:7515215")
     runtimeOnly fg.deobf("curse.maven:smooth-boot-reloaded-633412:5016280")
     
@@ -192,7 +192,6 @@ dependencies {
     //     transitive = false
     // }
     
-    // implementation 'org.spongepowered:mixin:0.8.5'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     
 

@@ -1,5 +1,5 @@
 // package com.hbm_m.powerarmor.overlay;
-
+// Более не используется.
 // import java.util.HashMap;
 // import java.util.Locale;
 // import java.util.Map;
@@ -241,7 +241,7 @@
 //     }
 
 //     private static boolean isSpectralFallbackMode() {
-//         return ModClothConfig.get().thermalRenderMode == ModClothConfig.ThermalRenderMode.SPECTRAL_FALLBACK;
+//         return ModClothConfig.get().thermalRenderMode == ModClothConfig.ThermalRenderMode.ORIGINAL_FALLBACK;
 //     }
 
 //     /**

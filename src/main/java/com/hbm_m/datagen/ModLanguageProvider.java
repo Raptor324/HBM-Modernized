@@ -1115,7 +1115,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.thermalRenderMode", "Режим рендера тепловизора");
                 add("text.autoconfig.hbm_m.option.thermalRenderMode.@Tooltip", "Выберите способ рендера тепловизора.");
                 add("text.autoconfig.hbm_m.option.thermalRenderMode.FULL_SHADER", "Полный шейдер");
-                add("text.autoconfig.hbm_m.option.thermalRenderMode.SPECTRAL_FALLBACK", "Спектральный фолбэк");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode.ORIGINAL_FALLBACK", "Спектральный фолбэк");
 
                 // ARMOR BATTERIES
                 add("item.hbm_m.armor_battery", "Батарея брони");
@@ -2219,7 +2219,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.thermalRenderMode", "Thermal Vision Render Mode");
                 add("text.autoconfig.hbm_m.option.thermalRenderMode.@Tooltip", "Choose how thermal vision is rendered.");
                 add("text.autoconfig.hbm_m.option.thermalRenderMode.FULL_SHADER", "Full shader");
-                add("text.autoconfig.hbm_m.option.thermalRenderMode.SPECTRAL_FALLBACK", "Spectral fallback");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode.ORIGINAL_FALLBACK", "Spectral fallback");
 
 
                 // POWER ARMOR CONTROLS

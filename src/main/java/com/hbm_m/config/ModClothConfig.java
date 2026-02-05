@@ -206,7 +206,7 @@ public class ModClothConfig implements ConfigData {
 
     public enum ThermalRenderMode {
         FULL_SHADER,
-        SPECTRAL_FALLBACK
+        ORIGINAL_FALLBACK
     }
 
     // Отладка 
