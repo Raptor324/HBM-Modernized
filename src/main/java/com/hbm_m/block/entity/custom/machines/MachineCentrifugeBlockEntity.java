@@ -3,6 +3,7 @@ package com.hbm_m.block.entity.custom.machines;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.menu.MachineCentrifugeMenu;
+import com.hbm_m.recipe.CentrifugeRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
@@ -151,17 +152,48 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             return false;
         }
 
-        for (int i = 0; i < OUTPUT_SLOTS; i++) {
-            ItemStack output = inventory.getStackInSlot(OUTPUT_SLOT_START + i);
-            if (output.isEmpty()) {
-                return true;
+        if (level == null) {
+            return false;
+        }
+
+        var recipeOpt = getCurrentRecipe();
+        if (recipeOpt.isEmpty()) {
+            // Fallback legacy behavior (current placeholder): move input into any output slot.
+            for (int i = 0; i < OUTPUT_SLOTS; i++) {
+                ItemStack output = inventory.getStackInSlot(OUTPUT_SLOT_START + i);
+                if (output.isEmpty()) {
+                    return true;
+                }
+                if (ItemStack.isSameItemSameTags(input, output) && output.getCount() < output.getMaxStackSize()) {
+                    return true;
+                }
             }
-            if (ItemStack.isSameItemSameTags(input, output) && output.getCount() < output.getMaxStackSize()) {
-                return true;
+            return false;
+        }
+
+        var recipe = recipeOpt.get();
+        var outputs = recipe.getOutputs();
+        for (int i = 0; i < OUTPUT_SLOTS && i < outputs.size(); i++) {
+            ItemStack result = outputs.get(i);
+            if (result.isEmpty()) {
+                continue;
+            }
+
+            ItemStack outputSlot = inventory.getStackInSlot(OUTPUT_SLOT_START + i);
+            if (outputSlot.isEmpty()) {
+                continue;
+            }
+
+            if (!ItemStack.isSameItemSameTags(outputSlot, result)) {
+                return false;
+            }
+
+            if (outputSlot.getCount() + result.getCount() > outputSlot.getMaxStackSize()) {
+                return false;
             }
         }
 
-        return false;
+        return true;
     }
 
     private void finishCycle() {
@@ -170,24 +202,58 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        for (int i = 0; i < OUTPUT_SLOTS; i++) {
-            int slot = OUTPUT_SLOT_START + i;
-            ItemStack output = inventory.getStackInSlot(slot);
+        var recipeOpt = getCurrentRecipe();
+        if (recipeOpt.isEmpty()) {
+            // Fallback legacy behavior (current placeholder): move input into any output slot.
+            for (int i = 0; i < OUTPUT_SLOTS; i++) {
+                int slot = OUTPUT_SLOT_START + i;
+                ItemStack output = inventory.getStackInSlot(slot);
 
-            if (output.isEmpty()) {
-                ItemStack moved = input.copy();
-                moved.setCount(1);
-                inventory.setStackInSlot(slot, moved);
-                input.shrink(1);
-                return;
+                if (output.isEmpty()) {
+                    ItemStack moved = input.copy();
+                    moved.setCount(1);
+                    inventory.setStackInSlot(slot, moved);
+                    input.shrink(1);
+                    return;
+                }
+
+                if (ItemStack.isSameItemSameTags(input, output) && output.getCount() < output.getMaxStackSize()) {
+                    output.grow(1);
+                    input.shrink(1);
+                    return;
+                }
             }
+            return;
+        }
 
-            if (ItemStack.isSameItemSameTags(input, output) && output.getCount() < output.getMaxStackSize()) {
-                output.grow(1);
-                input.shrink(1);
-                return;
+        var outputs = recipeOpt.get().getOutputs();
+        for (int i = 0; i < OUTPUT_SLOTS && i < outputs.size(); i++) {
+            ItemStack result = outputs.get(i);
+            if (result.isEmpty()) continue;
+
+            int slot = OUTPUT_SLOT_START + i;
+            ItemStack outputSlot = inventory.getStackInSlot(slot);
+            if (outputSlot.isEmpty()) {
+                inventory.setStackInSlot(slot, result.copy());
+            } else if (ItemStack.isSameItemSameTags(outputSlot, result)) {
+                outputSlot.grow(result.getCount());
             }
         }
+
+        input.shrink(1);
+    }
+
+    private java.util.Optional<CentrifugeRecipe> getCurrentRecipe() {
+        if (level == null) {
+            return java.util.Optional.empty();
+        }
+
+        SimpleContainer container = new SimpleContainer(inventory.getSlots());
+        for (int i = 0; i < inventory.getSlots(); i++) {
+            container.setItem(i, inventory.getStackInSlot(i));
+        }
+
+        return level.getRecipeManager().getRecipeFor(CentrifugeRecipe.Type.INSTANCE, container, level);
     }
 
     private void chargeFromBattery() {

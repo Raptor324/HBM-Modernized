@@ -1,0 +1,10 @@
+{
+  "type": "hbm_m:centrifuge",
+  "ingredient": { "tag": "forge:ores/cinnabar" },
+  "results": [
+    { "item": "hbm_m:cinnabar", "count": 2 },
+    { "item": "hbm_m:cinnabar", "count": 2 },
+    { "item": "hbm_m:sulfur", "count": 1 },
+    { "item": "minecraft:gravel", "count": 1 }
+  ]
+}

@@ -135,8 +135,8 @@ public class ModItems {
         }
 
         // 2. ModPowders (ТОЛЬКО ИЗ ENABLED_MODPOWDERS) ✅ ИСПРАВЛЕНО!
-        for (ModPowders powder : ModPowders.values()) {
-            String baseName = powder.name(); // или powder.getName() если есть
+                for (ModPowders powder : ModPowders.values()) {
+                        String baseName = powder.getName();
             if (ENABLED_MODPOWDERS.contains(baseName)) {
                 String powderId = baseName + "_powder";
                 RegistryObject<Item> powderItem = ITEMS.register(powderId,
