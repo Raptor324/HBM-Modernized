@@ -345,11 +345,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.STAMP_IRON_44.get(), "Железный штамп .44 Magnum");
                 add(ModItems.STAMP_IRON_50.get(), "Железный штамп .50 BMG");
                 add(ModItems.STAMP_IRON_9.get(), "Железный штамп 9мм");
-
-
-
-
-                add("item.hbm_m.heart_piece", "Частичка сердца");
+                add(ModItems.HEART_PIECE.get(), "Частичка сердца");
                 add(ModItems.HEART_CONTAINER.get(), "Контейнер для сердца");
                 add(ModItems.HEART_BOOSTER.get(), "Усилитель сердца");
                 add(ModItems.HEART_FAB.get(), "Фаб-сердце");
