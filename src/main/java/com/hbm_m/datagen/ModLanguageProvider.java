@@ -1,26 +1,27 @@
 package com.hbm_m.datagen;
 
-// Провайдер генерации локализаций (переводов) для мода.
-
-import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
-import com.hbm_m.lib.RefStrings;
-import net.minecraft.data.PackOutput;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.Block;
-import net.minecraftforge.common.data.LanguageProvider;
-import net.minecraftforge.registries.RegistryObject;
+import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
+import static com.hbm_m.block.ModBlocks.getIngotBlock;
 
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
-import static com.hbm_m.block.ModBlocks.getIngotBlock;
+// Провайдер генерации локализаций (переводов) для мода.
+
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.lib.RefStrings;
+
+import net.minecraft.data.PackOutput;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.level.block.Block;
+import net.minecraftforge.common.data.LanguageProvider;
+import net.minecraftforge.registries.RegistryObject;
 
 public class ModLanguageProvider extends LanguageProvider {
     // 1. Создаем НАШЕ СОБСТВЕННОЕ поле для хранения языка
@@ -1057,7 +1058,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.sulfur_ore", "Серная руда");
                 add("block.hbm_m.cobalt_ore", "Кобальтовая руда");
                 add("block.hbm_m.lignite_ore", "Руда бурого угля");
-                add("block.hbm_m.uranium_ore_h", "Обогащённая урановая руда");
+                // add("block.hbm_m.uranium_ore_h", "Обогащённая урановая руда");
                 add("block.hbm_m.uranium_ore_deepslate", "Глубинная урановая руда");
                 add("block.hbm_m.thorium_ore", "Ториевая руда");
                 add("block.hbm_m.thorium_ore_deepslate", "Глубинная ториевая руда");
@@ -1094,8 +1095,12 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("container.inventory", "Инвентарь");
                 add("container.hbm_m.armor_table", "Стол модификации брони");
-                add("container.hbm_m.machine_assembler", "Сборочная машина");
+                add("container.hbm_m.machine_assembler", "Сборочная машина (Старая)");
                 add("container.hbm_m.advanced_assembly_machine", "Сборочная машина");
+                add(ModBlocks.ORE_ACIDIZER.get(), "Рудный окислитель");
+                add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Башня гидроразрыва пласта");
+                add(ModBlocks.CHEMICAL_PLANT.get(), "Химический завод");
+                add(ModBlocks.CENTRIFUGE.get(), "Центрифуга");
                 add("container.hbm_m.wood_burner", "Дровяной генератор");
                 add("container.hbm_m.machine_battery", "Энергохранилище");
                 add("container.hbm_m.press", "Пресс");
@@ -1103,7 +1108,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.anvil", "Наковальня %s");
                 add("container.hbm_m.crate_iron", "Железный ящик");
                 add("container.hbm_m.crate_steel", "Стальной ящик");
-                add("container.hbm_m.crate_desh", "Душ ящик");
+                add("container.hbm_m.crate_desh", "Деш ящик");
 
                 add("gui.hbm_m.battery.priority.0", "Приоритет: Низкий");
                 add("gui.hbm_m.battery.priority.0.desc", "Низший приоритет. Опустошается в первую очередь, заполняется в последнюю");
@@ -2158,6 +2163,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.armor_table", "Armor Modification Table");
                 add("block.hbm_m.machine_assembler", "Assembly Machine (Legacy)");
                 add("block.hbm_m.advanced_assembly_machine", "Assembly Machine");
+                add(ModBlocks.ORE_ACIDIZER.get(), "Ore Acidizer");
+                add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Hydraulic Fracking Tower");
+                add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant");
+                add(ModBlocks.CENTRIFUGE.get(), "Centrifuge");
                 add("block.hbm_m.machine_battery", "Machine Battery");
                 add("block.hbm_m.shredder", "Shredder");
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
@@ -2226,7 +2235,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.asbestos_ore", "Asbestos Ore");
                 add("block.hbm_m.sulfur_ore", "Sulfur Ore");
                 add("block.hbm_m.cobalt_ore", "Cobalt Ore");
-                add("block.hbm_m.uranium_ore_h", "High-Yield Uranium Ore");
+                // add("block.hbm_m.uranium_ore_h", "High-Yield Uranium Ore");
                 add("block.hbm_m.uranium_ore_deepslate", "Deepslate Uranium Ore");
                 add("block.hbm_m.thorium_ore", "Thorium Ore");
                 add("block.hbm_m.thorium_ore_deepslate", "Deepslate Thorium Ore");

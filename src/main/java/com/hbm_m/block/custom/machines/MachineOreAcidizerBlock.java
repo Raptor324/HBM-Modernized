@@ -57,8 +57,8 @@ public class MachineOreAcidizerBlock extends BaseEntityBlock implements IMultibl
         
         String[] midLayer = {
             "OOO",
-            "LOO",
-            "OOO"
+            "OOO",
+            "OLO"
         };
 
         Map<Character, PartRole> roleMap = Map.of(

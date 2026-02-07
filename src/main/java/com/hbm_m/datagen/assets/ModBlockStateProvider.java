@@ -4,11 +4,16 @@ package com.hbm_m.datagen.assets;
 // Используется в классе DataGenerators для регистрации.
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.main.MainRegistry;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.main.MainRegistry;
+
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.DoorBlock;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.SnowLayerBlock;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
 import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.client.model.generators.VariantBlockStateBuilder;
@@ -30,6 +35,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.STRAWBERRY_BUSH.get(), models().cross(blockTexture(ModBlocks.STRAWBERRY_BUSH.get()).getPath(),
                 blockTexture(ModBlocks.STRAWBERRY_BUSH.get())).renderType("cutout"));
         // Блоки слитков теперь генерируются автоматически в цикле ниже
+
         blockWithItem(ModBlocks.GIGA_DET);
         blockWithItem(ModBlocks.POLONIUM210_BLOCK);
         blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
@@ -103,7 +109,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.VINYL_TILE_SMALL);
         blockWithItem(ModBlocks.RESOURCE_ASBESTOS);
         blockWithItem(ModBlocks.RESOURCE_BAUXITE);
-        blockWithItem(ModBlocks.SEQUESTRUM_ORE);
         blockWithItem(ModBlocks.RESOURCE_HEMATITE);
         blockWithItem(ModBlocks.RESOURCE_LIMESTONE);
         blockWithItem(ModBlocks.RESOURCE_MALACHITE);
@@ -115,9 +120,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.DEPTH_ZIRCONIUM);
         blockWithItem(ModBlocks.DEPTH_STONE);
         blockWithItem(ModBlocks.DEPTH_BORAX);
-        oreWithItem(ModBlocks.URANIUM_ORE);
         blockWithItem(ModBlocks.WASTE_LEAVES);
-        blockWithItem(ModBlocks.ORE_OIL);
         blockWithItem(ModBlocks.BEDROCK_OIL);
         blockWithItem(ModBlocks.REINFORCED_STONE);
         blockWithItem(ModBlocks.CONCRETE_HAZARD);
@@ -135,7 +138,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED2);
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED3);
 
-        // ✅ ДОБАВЛЕНО: Модель для ядерных осадков
+        // Модель для ядерных осадков
         // Эта функция автоматически создаст все 8 состояний высоты для блока
         // и свяжет их с моделями, которые выглядят как снег, но с вашей текстурой.
         registerSnowLayerBlock(ModBlocks.NUCLEAR_FALLOUT, "nuclear_fallout");
@@ -281,9 +284,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
 
-        blockWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
-        blockWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);
-
         simpleBlockWithItem(ModBlocks.REINFORCED_GLASS.get(),
                 models().cubeAll(ModBlocks.REINFORCED_GLASS.getId().getPath(),
                                 blockTexture(ModBlocks.REINFORCED_GLASS.get()))
@@ -335,8 +335,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         );
 
         // Блоки с кастомной OBJ моделью
-        customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
-        customObjBlock(ModBlocks.MACHINE_ASSEMBLER);
+        // Doors
+        
         customObjBlock(ModBlocks.LARGE_VEHICLE_DOOR);
         customObjBlock(ModBlocks.ROUND_AIRLOCK_DOOR);
         customObjBlock(ModBlocks.TRANSITION_SEAL);
@@ -349,6 +349,26 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.SLIDE_DOOR);
         customObjBlock(ModBlocks.SLIDING_SEAL_DOOR);
         customObjBlock(ModBlocks.SECURE_ACCESS_DOOR);
+
+        // Machines
+        customObjBlock(ModBlocks.ORE_ACIDIZER);
+        customObjBlock(ModBlocks.CHEMICAL_PLANT);
+        customObjBlock(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
+        customObjBlock(ModBlocks.CENTRIFUGE);
+        customObjBlock(ModBlocks.MACHINE_ASSEMBLER);
+        customObjBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
+        customObjBlock(ModBlocks.PRESS);
+
+        // Decor
+        customObjBlock(ModBlocks.CRT_BROKEN);
+        customObjBlock(ModBlocks.CRT_BSOD);
+        customObjBlock(ModBlocks.CRT_CLEAN);
+        customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
+
+        // Other
+        customObjBlock(ModBlocks.AIRBOMB);
+        customObjBlock(ModBlocks.BALEBOMB_TEST);
+        
 
         simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath()));
         simpleBlockWithItem(ModBlocks.WIRE_COATED.get(), models().getExistingFile(modLoc("block/wire_coated")));
@@ -979,9 +999,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 new ModelFile.UncheckedModelFile(modLoc("block/shredder")));
 
         // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ СЛИТКОВ
-        // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            // !!! ДОБАВЛЕНА ПРОВЕРКА !!!
             if (ModBlocks.hasIngotBlock(ingot)) {
                 RegistryObject<Block> blockRegistryObject = ModBlocks.getIngotBlock(ingot);
                 if (blockRegistryObject != null) {
@@ -991,6 +1009,34 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
 
         registerAnvils();
+
+        // === ГЕНЕРАЦИЯ BLOCKSTATE ФАЙЛОВ ДЛЯ РУД ===
+        // Используем oreWithItem() для всех руд
+        oreWithItem(ModBlocks.URANIUM_ORE);
+        oreWithItem(ModBlocks.URANIUM_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.LIGNITE_ORE);
+        oreWithItem(ModBlocks.ALUMINUM_ORE);
+        oreWithItem(ModBlocks.ALUMINUM_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.LEAD_ORE);
+        oreWithItem(ModBlocks.LEAD_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.RAREGROUND_ORE);
+        oreWithItem(ModBlocks.RAREGROUND_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.FLUORITE_ORE);
+        oreWithItem(ModBlocks.BERYLLIUM_ORE);
+        oreWithItem(ModBlocks.BERYLLIUM_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.ASBESTOS_ORE);
+        oreWithItem(ModBlocks.CINNABAR_ORE);
+        oreWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.COBALT_ORE);
+        oreWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.TUNGSTEN_ORE);
+        oreWithItem(ModBlocks.THORIUM_ORE);
+        oreWithItem(ModBlocks.THORIUM_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.TITANIUM_ORE);
+        oreWithItem(ModBlocks.TITANIUM_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.SULFUR_ORE);
+        oreWithItem(ModBlocks.ORE_OIL);
+        oreWithItem(ModBlocks.SEQUESTRUM_ORE);
     }
 
     /**
@@ -1020,21 +1066,31 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
     }
     private void oreWithItem(RegistryObject<Block> blockObject) {
-        // 1. Получаем регистрационное имя блока (например, "uranium_block")
+        // 1. Получаем регистрационное имя блока (например, "uranium_ore")
         String registrationName = blockObject.getId().getPath();
 
-        // 2. Трансформируем его в базовое имя (удаляем "_block" -> "uranium")
-        String baseName = registrationName.replace("_ore", "");
+        // 2. Пробуем два варианта имени текстуры:
+        //    - "ore_" + registrationName (например: ore_uranium)
+        //    - registrationName (например: uranium_ore_deepslate)
+        String textureName = "ore_" + registrationName;
+        ResourceLocation textureLocation = modLoc("textures/block/" + textureName + ".png");
 
-        // 3. Создаем имя файла текстуры (добавляем "ore_" -> "ore_uranium")
-        String textureName = "ore_" + baseName;
+        if (!existingFileHelper.exists(textureLocation, net.minecraft.server.packs.PackType.CLIENT_RESOURCES)) {
+            // Пробуем без префикса "ore_"
+            textureName = registrationName;
+            textureLocation = modLoc("textures/block/" + textureName + ".png");
+            if (!existingFileHelper.exists(textureLocation, net.minecraft.server.packs.PackType.CLIENT_RESOURCES)) {
+                MainRegistry.LOGGER.warn("Texture not found for block {} (tried: {} and {}). Skipping model generation.",
+                        registrationName, "ore_" + registrationName, registrationName);
+                return;
+            }
+        }
 
-        // 4. Создаем модель блока, ЯВНО указывая путь к текстуре
-        //    Метод models().cubeAll() создает модель типа "block/cube_all" с указанной текстурой.
+        // 3. Создаем модель блока
         simpleBlock(blockObject.get(), models().cubeAll(registrationName, modLoc("block/" + textureName)));
 
-        // 5. Создаем модель для предмета-блока, как и раньше
-        simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
+        // 4. Создаем модель для предмета-блока
+        simpleBlockItem(blockObject.get(), models().getExistingFile(modLoc("block/" + textureName)));
     }
 
     /**

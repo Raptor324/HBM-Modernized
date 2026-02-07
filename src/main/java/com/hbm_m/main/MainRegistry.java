@@ -298,7 +298,7 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.CRYSTAL_XEN.get()));
                   
 
-            // ✅ СЛИТКИ
+            // СЛИТКИ
             for (ModIngots ingot : ModIngots.values()) {
                 RegistryObject<Item> ingotItem = ModItems.getIngot(ingot);
                 if (ingotItem != null && ingotItem.isPresent()) {
@@ -307,7 +307,7 @@ public class MainRegistry {
               
             }
 
-            // ✅ ModPowders
+            // ModPowders
             for (ModPowders powder : ModPowders.values()) {
                 RegistryObject<Item> powderItem = ModItems.getPowders(powder);
                 if (powderItem != null && powderItem.isPresent()) {
@@ -528,6 +528,7 @@ public class MainRegistry {
             event.accept(ModBlocks.LEAD_ORE_DEEPSLATE);
             event.accept(ModBlocks.CINNABAR_ORE);
             event.accept(ModBlocks.CINNABAR_ORE_DEEPSLATE);
+            event.accept(ModBlocks.URANIUM_ORE);
             event.accept(ModBlocks.URANIUM_ORE_DEEPSLATE);
 
             event.accept(ModBlocks.RESOURCE_ASBESTOS.get());
@@ -584,15 +585,6 @@ public class MainRegistry {
                         }
                     }
                 }
-            }
-            if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added uranium block to NTM Resources tab");
-                LOGGER.info("Added polonium210 block to NTM Resources tab");
-                LOGGER.info("Added plutonium block to NTM Resources tab");
-                LOGGER.info("Added plutonium fuel block to NTM Resources tab");
-                LOGGER.info("Added uranium ore to NTM Resources tab");
-                LOGGER.info("Added waste leaves block to NTM Resources tab");
-                LOGGER.info("Added waste grass block to NTM Resources tab");
             }
         }
 
@@ -969,8 +961,6 @@ public class MainRegistry {
 
         // СТАНКИ
         if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
-            event.accept(ModBlocks.ORE_ACIDIZER);
-            event.accept(ModItems.HYDRAULIC_FRACKINING_TOWER);
             event.accept(ModBlocks.CRATE_IRON);
             event.accept(ModBlocks.CRATE_STEEL);
             event.accept(ModBlocks.BARREL_CORRODED);
@@ -996,6 +986,8 @@ public class MainRegistry {
             event.accept(ModBlocks.WOOD_BURNER);
             event.accept(ModBlocks.CHEMICAL_PLANT);
             event.accept(ModBlocks.CENTRIFUGE);
+            event.accept(ModBlocks.ORE_ACIDIZER);
+            event.accept(ModItems.HYDRAULIC_FRACKINING_TOWER);
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.ARMOR_TABLE);

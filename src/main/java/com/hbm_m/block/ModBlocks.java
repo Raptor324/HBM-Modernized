@@ -158,11 +158,7 @@ public class ModBlocks {
             // Проверяем, есть ли этот слиток в "белом списке"
             if (ENABLED_INGOT_BLOCKS.contains(name)) {
 
-                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-                // Раньше было: String blockName = name + "_block";
-                // Теперь ставим приставку в начало:
                 String blockName = "block_" + name;
-                // -----------------------
 
                 RegistryObject<Block> registeredBlock;
 
@@ -181,7 +177,7 @@ public class ModBlocks {
         }
     }
 
-    // Вспомогательный метод получения блока (безопасный)
+    // Вспомогательный метод получения блока
     public static RegistryObject<Block> getIngotBlock(ModIngots ingot) {
         RegistryObject<Block> block = INGOT_BLOCKS.get(ingot);
         if (block == null) {
@@ -191,7 +187,7 @@ public class ModBlocks {
         return block;
     }
 
-    // Оставляем вашу логику определения радиоактивности без изменений
+    // Оставляем логику определения радиоактивности без изменений
     private static boolean isRadioactiveIngot(ModIngots ingot) {
         String name = ingot.getName().toLowerCase();
         return name.contains("uranium") ||
@@ -237,11 +233,6 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> POLONIUM210_BLOCK = registerBlock("polonium210_block",
             () -> new RadioactiveBlock(INGOT_BLOCK_PROPERTIES));
-
-    public static final RegistryObject<Block> URANIUM_ORE = registerBlock("uranium_ore",
-            () -> new DropExperienceBlock(BlockBehaviour.Properties.copy(Blocks.STONE)
-                    .strength(3.0F, 3.0F).requiresCorrectToolForDrops(),
-                    UniformInt.of(2, 5)));
 
     public static final RegistryObject<Block> WASTE_GRASS = registerBlock("waste_grass",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.DIRT).sound(SoundType.GRAVEL)));
@@ -1326,8 +1317,11 @@ public class ModBlocks {
     public static final RegistryObject<Block> ALUMINUM_ORE = registerBlock("aluminum_ore",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
-    public static final RegistryObject<Block> URANIUM_ORE_H = registerBlock("uranium_ore_h",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+    // public static final RegistryObject<Block> URANIUM_ORE_H = registerBlock("uranium_ore_h",
+    //         () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+
+	public static final RegistryObject<Block> URANIUM_ORE = registerBlock("uranium_ore",
+            () -> new DropExperienceBlock(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0F, 3.0F).requiresCorrectToolForDrops()));
 
     public static final RegistryObject<Block> LEAD_ORE = registerBlock("lead_ore",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
