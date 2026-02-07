@@ -512,7 +512,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add(ModBlocks.DUD_SALTED.get(), "Неразорвавшаяся солёная бомба");
                 add(ModBlocks.DUD_NUKE.get(), "Неразорвавшаяся ядерная бомба");
-                add(ModBlocks.DUD_FUGAS_TONG.get(), "Неразорвавшаяся фугасная бомба");
+                add(ModBlocks.DUD_CONVENTIONAL.get(), "Неразорвавшаяся фугасная бомба");
                 add(ModBlocks.MINE_FAT.get(), "Мина 'Толстяк'");
                 add(ModBlocks.MINE_AP.get(), "Противопехотная мина");
                 add(ModItems.GRENADE_NUC.get(), "Ядерная граната");
@@ -1001,6 +1001,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.armor_table", "Стол модификации брони");
                 add("block.hbm_m.machine_assembler", "Сборочная машина (Старая)");
                 add("block.hbm_m.advanced_assembly_machine", "Сборочная машина");
+                add(ModBlocks.FLUID_TANK.get(), "Цистерна");
                 add("block.hbm_m.machine_battery", "Энергохранилище");
 
 
@@ -1624,7 +1625,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("desc.gui.template", "Insert Assembly Template");
                 add("desc.gui.assembler.warning", "No valid template!");
 
-// === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
+                // === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
                 add("tooltip.hbm_m.crowbar.line1", "Tool for prying open containers.");
                 add("tooltip.hbm_m.crowbar.line2", "Opens crates on right-click");
                 add("tooltip.hbm_m.defuser.line1", "Device for disarming mines and bombs");
@@ -1996,7 +1997,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add(ModBlocks.DUD_SALTED.get(), "Unexploded Salted Bomb");
                 add(ModBlocks.DUD_NUKE.get(), "Unexploded Nuclear Bomb");
-                add(ModBlocks.DUD_FUGAS_TONG.get(), "Unexploded High-Explosive Bomb");
+                add(ModBlocks.DUD_CONVENTIONAL.get(), "Unexploded High-Explosive Bomb");
                 add(ModBlocks.MINE_FAT.get(), "FatMan Mine");
                 add(ModBlocks.MINE_AP.get(), "Anti-Personnel Mine");
                 add(ModItems.GRENADE_NUC.get(), "Nuclear Grenade");
@@ -2167,6 +2168,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Hydraulic Fracking Tower");
                 add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant");
                 add(ModBlocks.CENTRIFUGE.get(), "Centrifuge");
+                add(ModBlocks.FLUID_TANK.get(), "Tank");
                 add("block.hbm_m.machine_battery", "Machine Battery");
                 add("block.hbm_m.shredder", "Shredder");
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");

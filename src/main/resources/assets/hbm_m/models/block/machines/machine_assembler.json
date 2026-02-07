@@ -1,28 +1,29 @@
 {
   "loader": "forge:composite",
   "textures": {
-    "particle": "hbm_m:block/crt_clean"
+    "particle": "hbm_m:block/machine/assembler_base_new"
   },
   "children": {
-    "crt_clean_model": {
+    "assembler_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/crt.obj",
+      "model": "hbm_m:models/block/machines/machine_assembler.obj",
       "flip_v": true,
+      "render_type": "minecraft:cutout",
       "textures": {
-        "default": "hbm_m:block/crt_clean"
+        "default": "hbm_m:block/machine/assembler_base_new"
       }
     }
   },
   "transform": {
-    "translation": [0.50, 0.0, 0.5],
+    "translation": [1.0, 0.0, 1.0],
     "rotation": [0, 0, 0],
     "scale": 1.0
   },
   "display": {
     "gui": {
-      "rotation": [ 30, 45, 180 ],
-      "translation": [ 0.5, 1, 0.5 ],
-      "scale": [ 0.65, 0.65, 0.65 ]
+      "rotation": [ 30, 45, 0 ],
+      "translation": [ -2, -0.7, 0 ],
+      "scale": [ 0.2, 0.2, 0.2 ]
     },
     "ground": {
       "rotation": [ 0, 0, 0 ],
@@ -30,19 +31,19 @@
       "scale": [ 0.25, 0.25, 0.25 ]
     },
     "fixed": {
-      "rotation": [ 0, 0, 0 ],
+      "rotation": [ 0, 180, 0 ],
       "translation": [ 0, 0, 0 ],
       "scale": [ 0.5, 0.5, 0.5 ]
     },
     "thirdperson_righthand": {
-      "rotation": [ 75, 180, 0 ],
+      "rotation": [ 75, 315, 0 ],
       "translation": [ 0, 2.5, 0 ],
-      "scale": [ 0.375, 0.375, 0.375 ]
+      "scale": [ 0.15, 0.15, 0.15 ]
     },
     "firstperson_righthand": {
-      "rotation": [ 0, 180, 0 ],
-      "translation": [ 2, -1, 0 ],
-      "scale": [ 0.4, 0.4, 0.4 ]
+      "rotation": [ 0, 315, 0 ],
+      "translation": [ -1, 2.5, 0 ],
+      "scale": [ 0.2, 0.2, 0.2 ]
     },
     "head": {
       "rotation": [ 0, 180, 0 ],

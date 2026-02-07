@@ -224,7 +224,7 @@ public class MainRegistry {
             event.accept(ModBlocks.EXPLOSIVE_CHARGE);
             event.accept(ModBlocks.NUCLEAR_CHARGE);
             event.accept(ModBlocks.C4);
-            event.accept(ModBlocks.DUD_FUGAS_TONG);
+            event.accept(ModBlocks.DUD_CONVENTIONAL);
             event.accept(ModBlocks.DUD_NUKE);
             event.accept(ModBlocks.DUD_SALTED);
 

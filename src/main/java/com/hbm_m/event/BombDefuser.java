@@ -32,7 +32,7 @@ public class BombDefuser {
     private static final List<RegistryObject<Block>> BOMBS = List.of(
             ModBlocks.MINE_AP,
             ModBlocks.MINE_FAT,
-            ModBlocks.DUD_FUGAS_TONG,
+            ModBlocks.DUD_CONVENTIONAL,
             ModBlocks.DUD_SALTED,
             ModBlocks.DUD_NUKE
     );
@@ -55,7 +55,7 @@ public class BombDefuser {
                     new DropAmount(ModItems.PLATE_STEEL, 3),
                     new DropAmount(ModItems.BALL_TNT, 2)
             ),
-            ModBlocks.DUD_FUGAS_TONG, List.of(
+            ModBlocks.DUD_CONVENTIONAL, List.of(
                     new DropAmount(ModItems.PLATE_STEEL, 8),
                     new DropAmount(ModItems.BALL_TNT, 16)
             ),

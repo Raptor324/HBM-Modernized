@@ -65,7 +65,6 @@ import com.hbm_m.item.custom.fekal_electric.MachineBatteryBlockItem;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
 
-import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -530,7 +529,7 @@ public class ModBlocks {
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops()));
 
-    public static final RegistryObject<Block> DUD_FUGAS_TONG = registerBlock("dud_fugas_tong",
+    public static final RegistryObject<Block> DUD_CONVENTIONAL = registerBlock("dud_conventional",
             () -> new DudFugasBlock(BlockBehaviour.Properties.of()
                     .strength(31F, 6.0F)
                     .sound(SoundType.STONE)

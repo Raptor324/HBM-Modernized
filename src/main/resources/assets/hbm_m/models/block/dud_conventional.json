@@ -1,28 +1,28 @@
 {
   "loader": "forge:composite",
   "textures": {
-    "particle": "hbm_m:block/crt_clean"
+    "particle": "hbm_m:block/dud_conventional"
   },
   "children": {
-    "crt_clean_model": {
+    "dud_conventional_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/crt.obj",
+      "model": "hbm_m:models/block/dud_conventional.obj",
       "flip_v": true,
       "textures": {
-        "default": "hbm_m:block/crt_clean"
+        "default": "hbm_m:block/dud_conventional"
       }
     }
   },
   "transform": {
-    "translation": [0.50, 0.0, 0.5],
-    "rotation": [0, 0, 0],
+    "translation": [0.50, -2, 1],
+    "rotation": [65, 0, 0],
     "scale": 1.0
   },
   "display": {
     "gui": {
-      "rotation": [ 30, 45, 180 ],
-      "translation": [ 0.5, 1, 0.5 ],
-      "scale": [ 0.65, 0.65, 0.65 ]
+      "rotation": [ 30, 45, 0 ],
+      "translation": [ 0, 2, 0 ],
+      "scale": [ 0.115, 0.115, 0.115 ]
     },
     "ground": {
       "rotation": [ 0, 0, 0 ],
@@ -37,12 +37,12 @@
     "thirdperson_righthand": {
       "rotation": [ 75, 180, 0 ],
       "translation": [ 0, 2.5, 0 ],
-      "scale": [ 0.375, 0.375, 0.375 ]
+      "scale": [ 0.1, 0.1, 0.1 ]
     },
     "firstperson_righthand": {
       "rotation": [ 0, 180, 0 ],
       "translation": [ 2, -1, 0 ],
-      "scale": [ 0.4, 0.4, 0.4 ]
+      "scale": [ 0.1, 0.1, 0.1 ]
     },
     "head": {
       "rotation": [ 0, 180, 0 ],
