@@ -1,6 +1,6 @@
 package com.hbm_m.menu;
 
-import com.hbm_m.block.entity.custom.machines.OreAcidizerBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineOreAcidizerBlockEntity;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -11,7 +11,7 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 
 public class OreAcidizerMenu extends AbstractContainerMenu {
-    private final OreAcidizerBlockEntity blockEntity;
+    private final MachineOreAcidizerBlockEntity blockEntity;
     private final ContainerData data;
 
     public OreAcidizerMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
@@ -20,7 +20,7 @@ public class OreAcidizerMenu extends AbstractContainerMenu {
 
     public OreAcidizerMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.ORE_ACIDIZER_MENU.get(), id);
-        this.blockEntity = (OreAcidizerBlockEntity) entity;
+        this.blockEntity = (MachineOreAcidizerBlockEntity) entity;
         this.data = data;
         IItemHandler handler = this.blockEntity.getInventory();
 

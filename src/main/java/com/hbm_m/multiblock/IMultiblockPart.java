@@ -32,4 +32,9 @@ public interface IMultiblockPart {
      * Возвращает текущую роль части (может быть DEFAULT если не назначено).
      */
     PartRole getPartRole();
+
+    // Метод для работы с направлениями лестниц.
+    void setAllowedClimbSides(java.util.Set<net.minecraft.core.Direction> sides);
+    
+    java.util.Set<net.minecraft.core.Direction> getAllowedClimbSides();
 }

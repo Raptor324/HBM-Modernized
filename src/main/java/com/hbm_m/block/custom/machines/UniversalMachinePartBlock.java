@@ -1,5 +1,7 @@
 package com.hbm_m.block.custom.machines;
 
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.custom.decorations.DoorBlock;
 import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
 // Этот класс реализует фантомный блок, который является частью каждой мультиблочной структуры.
@@ -10,15 +12,18 @@ import com.hbm_m.block.entity.custom.machines.UniversalMachinePartBlockEntity;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -32,7 +37,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import org.jetbrains.annotations.Nullable;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 
 public class UniversalMachinePartBlock extends BaseEntityBlock {
 
@@ -61,11 +67,52 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
         return RenderShape.INVISIBLE;
     }
 
+    /**
+     * Проверяет, потерял ли блок связь с контроллером (осиротел).
+     */
+    private boolean isOrphaned(BlockGetter level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof IMultiblockPart part)) {
+            return false;
+        }
+
+        BlockPos controllerPos = part.getControllerPos();
+        if (controllerPos == null) {
+            return true; // Нет контроллера = осиротел
+        }
+
+        BlockState controllerState = level.getBlockState(controllerPos);
+        if (!(controllerState.getBlock() instanceof IMultiblockController)) {
+            return true; // Контроллер не существует или не является контроллером = осиротел
+        }
+
+        return false; // Контроллер валиден
+    }
+
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        // Keep the selection/outline shape simple.
-        // Using the whole multiblock shape here causes huge "yellow" selection boxes.
-        return Shapes.block();
+        if (!(pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part)) {
+            return Shapes.block();
+        }
+
+        BlockPos controllerPos = part.getControllerPos();
+        if (controllerPos == null) return Shapes.block();
+
+        BlockState controllerState = pLevel.getBlockState(controllerPos);
+        if (!(controllerState.getBlock() instanceof IMultiblockController controller)) {
+            return Shapes.block();
+        }
+        
+        VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState);
+        if (masterShape == null || masterShape.isEmpty()) {
+            Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
+            masterShape = controller.getStructureHelper().generateShapeFromParts(facing);
+        }
+
+        // Сдвигаем мастер-форму. 
+        // Поскольку masterShape уже построена ОТНОСИТЕЛЬНО контроллера (где контроллер = 0,0,0),
+        // нам нужно просто сдвинуть её на вектор "от текущего блока к контроллеру".
+        BlockPos vecToController = controllerPos.subtract(pPos);
+        return masterShape.move(vecToController.getX(), vecToController.getY(), vecToController.getZ());
     }
 
     @Override
@@ -88,18 +135,28 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
             return Shapes.block();
         }
 
+        // Сначала проверяем, есть ли у контроллера общая сложная форма (как у вашего MachineAssembler)
+        VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState);
+        
+        // Если мастер-форма определена (она не пустая), используем её для коллизии
+        if (masterShape != null && !masterShape.isEmpty()) {
+            // Сдвигаем мастер-форму относительно текущего фантомного блока
+            BlockPos vecToController = controllerPos.subtract(pPos);
+            return masterShape.move(vecToController.getX(), vecToController.getY(), vecToController.getZ());
+        }
+
         if (controller instanceof DoorBlock) {
             BlockEntity controllerBE = pLevel.getBlockEntity(controllerPos);
             if (controllerBE instanceof DoorBlockEntity doorBE) {
                 byte doorState = doorBE.getState();
 
-                // Если дверь открыта или открывается - НЕТ коллизии
-                if (doorState == 1 || doorState == 3) {
+                // Если дверь открыта, открывается или закрывается - НЕТ коллизии
+                if (doorState == 1 || doorState == 2 || doorState == 3) {
                     return Shapes.empty();
                 }
 
-                // Если дверь закрыта или закрывается - полная коллизия структуры
-                VoxelShape masterShape = controller.getStructureHelper()
+                // Если дверь закрыта - полная коллизия структуры
+                VoxelShape generated = controller.getStructureHelper()
                         .generateShapeFromParts(controllerState.getValue(DoorBlock.FACING));
 
                 if (masterShape.isEmpty()) {
@@ -107,14 +164,27 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
                 }
 
                 BlockPos offset = pPos.subtract(controllerPos);
-                return masterShape.move(-offset.getX(), -offset.getY(), -offset.getZ());
+                return generated.move(-offset.getX(), -offset.getY(), -offset.getZ());
             }
             return Shapes.empty();
         }
 
-        // 4. For regular multiblocks, make each phantom part a solid block.
-        // This avoids "global" collision shapes extending outside the block space.
-        return Shapes.block();
+        // 4. Общая логика для всех остальных частей мультиблока
+        MultiblockStructureHelper helper = controller.getStructureHelper();
+        Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
+
+        // Нам нужно найти локальную позицию блока в сетке (gridPos)
+        // worldOffset = worldPos - controllerWorldPos
+        BlockPos worldOffset = pPos.subtract(controllerPos);
+        
+        // Поворачиваем смещение обратно, чтобы понять, какой это блок в исходной схеме
+        // localOffset = rotateBack(worldOffset)
+        BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
+        
+        // gridPos = localOffset + controllerOffset (смещение самого контроллера в схеме)
+        BlockPos gridPos = localOffset.offset(helper.getControllerOffset());
+
+        return helper.getSpecificCollisionShape(gridPos, facing);
     }
 
     @Override
@@ -123,6 +193,68 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
 
         // Делегируем всю логику в MultiblockStructureHelper
         MultiblockStructureHelper.onNeighborChangedForPart(pLevel, pPos, pFromPos);
+
+        // Немедленная проверка на клиенте при изменении соседей (оптимизация для быстрого обнаружения)
+        // Это особенно важно, когда контроллер был разрушен - блок сразу станет осиротевшим
+        if (pLevel.isClientSide()) {
+            if (isOrphaned(pLevel, pPos)) {
+                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                    com.hbm_m.client.ClientRenderHandler.addOrphanedPhantomBlock(pPos);
+                });
+            } else {
+                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                    com.hbm_m.client.ClientRenderHandler.removeOrphanedPhantomBlock(pPos);
+                });
+            }
+        }
+    }
+
+    /**
+     * Позволяет блокам с ролью LADDER быть использованными как лестница.
+     * Работает с любых боковых сторон.
+     */
+    @Override
+    public boolean isLadder(BlockState pState, LevelReader pLevel, BlockPos pPos, LivingEntity pEntity) {
+        // Проверяем, что это мультиблочная часть с ролью LADDER
+        if (pLevel instanceof Level level && level.getBlockEntity(pPos) instanceof IMultiblockPart part) {
+            PartRole role = part.getPartRole();
+            
+            if (role == PartRole.LADDER) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
+    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        // Если это не полный блок (например, труба или плита), возвращаем пустую форму.
+        // Это скажет игре: "Не выталкивай игрока из этого блока".
+        if (isFullBlockInGrid(level, pos)) {
+            return Shapes.block();
+        }
+        return Shapes.empty();
+    }
+
+    private boolean isFullBlockInGrid(BlockGetter level, BlockPos pos) {
+        if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null) {
+                BlockState controllerState = level.getBlockState(controllerPos);
+                if (controllerState.getBlock() instanceof IMultiblockController controller) {
+                    MultiblockStructureHelper helper = controller.getStructureHelper();
+                    Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
+                    
+                    // Вычисляем позицию в сетке
+                    BlockPos worldOffset = pos.subtract(controllerPos);
+                    BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
+                    BlockPos gridPos = localOffset.offset(helper.getControllerOffset());
+                    
+                    return helper.isFullBlock(gridPos, facing);
+                }
+            }
+        }
+        return true; // По умолчанию считаем полным для безопасности
     }
 
     @Override
@@ -157,10 +289,16 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
         if (!pState.is(pNewState.getBlock())) {
             if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart partBe) {
                 BlockPos controllerPos = partBe.getControllerPos();
-                if (controllerPos != null) {
+                if (controllerPos != null && !pLevel.isClientSide()) {
                     BlockState controllerState = pLevel.getBlockState(controllerPos);
-                    // Check if the controller block is still there before trying to destroy it
-                    if (controllerState.getBlock() instanceof IMultiblockController) {
+                    // Проверяем, что контроллер ещё существует
+                    if (controllerState.getBlock() instanceof IMultiblockController controller) {
+                        // Вызываем разрушение структуры
+                        if (controllerState.hasProperty(HorizontalDirectionalBlock.FACING)) {
+                            Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
+                            controller.getStructureHelper().destroyStructure(pLevel, controllerPos, facing);
+                        }
+                        // Ломаем контроллер
                         pLevel.destroyBlock(controllerPos, true);
                     }
                 }
@@ -182,6 +320,17 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
         return ItemStack.EMPTY;
     }
 
-    // добавляем в класс константу небольшого хитбокса (в конце класса или рядом с другими полями)
-    private static final VoxelShape SMALL_INTERACT_SHAPE = Shapes.box(0.45, 0.0, 0.45, 0.55, 0.5, 0.55);
+    /**
+     * Возвращает скорость разрушения блока. Для осиротевших блоков возвращает очень большое значение,
+     * чтобы они ломались мгновенно даже рукой.
+     */
+    @Override
+    public float getDestroyProgress(BlockState pState, Player pPlayer, BlockGetter pLevel, BlockPos pPos) {
+        // Если блок осиротел (потерял связь с контроллером), делаем его мгновенно ломаемым
+        if (isOrphaned(pLevel, pPos)) {
+            return 1.0f; // Максимальная скорость разрушения (мгновенно)
+        }
+        // Для нормальных блоков используем стандартную логику
+        return super.getDestroyProgress(pState, pPlayer, pLevel, pPos);
+    }
 }

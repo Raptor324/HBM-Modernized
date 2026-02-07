@@ -1,6 +1,14 @@
 package com.hbm_m.block.entity.custom.doors;
 
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.block.custom.decorations.DoorBlock;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.client.ClientSoundManager;
+import com.hbm_m.multiblock.IMultiblockPart;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -17,13 +25,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.Nullable;
-
-import com.hbm_m.block.custom.decorations.DoorBlock;
-import com.hbm_m.client.ClientSoundManager;
-import com.hbm_m.multiblock.IMultiblockPart;
-import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.PartRole;
 
 public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     
@@ -38,6 +39,8 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     // Мультиблок данные
     private BlockPos controllerPos = null;
     private PartRole partRole = PartRole.DEFAULT;
+
+    private java.util.Set<Direction> allowedClimbSides = java.util.EnumSet.noneOf(Direction.class);
     
     @OnlyIn(Dist.CLIENT)
     private Object loopingSound;
@@ -469,6 +472,11 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         if (controllerPos != null) {
             tag.putLong("controllerPos", controllerPos.asLong());
         }
+        if (!allowedClimbSides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedClimbSides) mask |= (1 << dir.get3DDataValue());
+            tag.putInt("climbSides", mask);
+        }
         tag.putString("partRole", partRole.name());
     }
 
@@ -495,6 +503,16 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
                 this.partRole = PartRole.valueOf(tag.getString("partRole"));
             } catch (IllegalArgumentException e) {
                 this.partRole = PartRole.DEFAULT;
+            }
+        }
+        
+        if (tag.contains("climbSides")) {
+            int mask = tag.getInt("climbSides");
+            allowedClimbSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) {
+                    allowedClimbSides.add(dir);
+                }
             }
         }
 
@@ -546,5 +564,16 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             }
         }
         return new AABB(worldPosition).inflate(radius);
+    }
+
+    @Override
+    public void setAllowedClimbSides(java.util.Set<Direction> sides) {
+        this.allowedClimbSides = java.util.EnumSet.copyOf(sides);
+        this.setChanged();
+    }
+
+    @Override
+    public java.util.Set<Direction> getAllowedClimbSides() {
+        return this.allowedClimbSides;
     }
 }

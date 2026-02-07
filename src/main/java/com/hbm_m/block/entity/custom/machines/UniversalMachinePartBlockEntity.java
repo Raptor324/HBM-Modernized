@@ -1,9 +1,13 @@
 package com.hbm_m.block.entity.custom.machines;
 
-import com.hbm_m.capability.ModCapabilities;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.PartRole;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -18,13 +22,12 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class UniversalMachinePartBlockEntity extends BlockEntity implements IMultiblockPart {
 
     private BlockPos controllerPos;
     private PartRole role = PartRole.DEFAULT;
+    private java.util.Set<Direction> allowedClimbSides = java.util.EnumSet.noneOf(Direction.class);
 
     public UniversalMachinePartBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.UNIVERSAL_MACHINE_PART_BE.get(), pPos, pBlockState);
@@ -58,6 +61,20 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         return this.role;
     }
 
+    @Override
+    public void setAllowedClimbSides(java.util.Set<Direction> sides) {
+        this.allowedClimbSides = java.util.EnumSet.copyOf(sides);
+        this.setChanged();
+        if (level != null && !level.isClientSide()) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
+    }
+
+    @Override
+    public java.util.Set<Direction> getAllowedClimbSides() {
+        return this.allowedClimbSides;
+    }
+
     @NotNull
     @Override
     public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
@@ -74,7 +91,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         // === ДЕЛЕГИРОВАНИЕ ЭНЕРГИИ ===
         if (this.role == PartRole.ENERGY_CONNECTOR) {
 
-            // [🔥 ФИКС] HBM API (Provider, Receiver, Connector)
+            // HBM API (Provider, Receiver, Connector)
             if (cap == ModCapabilities.HBM_ENERGY_PROVIDER ||
                     cap == ModCapabilities.HBM_ENERGY_RECEIVER ||
                     cap == ModCapabilities.HBM_ENERGY_CONNECTOR)
@@ -92,7 +109,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         if (cap == ForgeCapabilities.ITEM_HANDLER &&
                 (this.role == PartRole.ITEM_INPUT || this.role == PartRole.ITEM_OUTPUT))
         {
-            // [🔥 УЛУЧШЕНИЕ] MachineAssemblerBlockEntity вернет специальный proxy-handler
+            // MachineAssemblerBlockEntity вернет специальный proxy-handler
             if (controllerBE instanceof MachineAssemblerBlockEntity assembler) {
                 return assembler.getItemHandlerForPart(this.role).cast();
             }
@@ -116,6 +133,12 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             pTag.put("ControllerPos", NbtUtils.writeBlockPos(this.controllerPos));
         }
         pTag.putString("PartRole", this.role.name());
+
+        if (!allowedClimbSides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedClimbSides) mask |= (1 << dir.get3DDataValue());
+            pTag.putInt("ClimbSides", mask);
+        }
     }
 
     @Override
@@ -129,6 +152,13 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
                 this.role = PartRole.valueOf(pTag.getString("PartRole"));
             } catch (IllegalArgumentException e) {
                 this.role = PartRole.DEFAULT;
+            }
+        }
+        if (pTag.contains("ClimbSides")) {
+            int mask = pTag.getInt("ClimbSides");
+            allowedClimbSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) allowedClimbSides.add(dir);
             }
         }
     }
@@ -146,7 +176,14 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
 
     @Override
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        super.onDataPacket(net, pkt);
-        // УДАЛЕНЫ все updateNeighborsAt - они вызывают cascade updates
+        CompoundTag tag = pkt.getTag();
+        if (tag != null) {
+            handleUpdateTag(tag);
+            
+            // Принудительно обновляем состояние блока на клиенте, чтобы обновилась визуализация/логика
+            if (level != null && level.isClientSide) {
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL);
+            }
+        }
     }
 }

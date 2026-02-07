@@ -1,7 +1,4 @@
 package com.hbm_m.block.entity;
-import com.hbm_m.block.entity.custom.machines.OreAcidizerBlockEntity;
-import com.hbm_m.block.entity.custom.machines.HydraulicFrackiningTowerBlockEntity;
-
 import com.hbm_m.api.energy.ConverterBlockEntity;
 import com.hbm_m.api.energy.SwitchBlockEntity;
 import com.hbm_m.api.energy.WireBlockEntity;
@@ -17,9 +14,11 @@ import com.hbm_m.block.entity.custom.machines.GeigerCounterBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineAssemblerBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineBatteryBlockEntity;
-import com.hbm_m.block.entity.custom.machines.ChemicalPlantBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineCentrifugeBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineFluidTankBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineHydraulicFrackiningTowerBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineOreAcidizerBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachinePressBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineShredderBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineWoodBurnerBlockEntity;
@@ -39,14 +38,14 @@ public class ModBlockEntities {
         public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
                 DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, RefStrings.MODID);
 
-        public static final RegistryObject<BlockEntityType<OreAcidizerBlockEntity>> ORE_ACIDIZER =
+        public static final RegistryObject<BlockEntityType<MachineOreAcidizerBlockEntity>> ORE_ACIDIZER =
                 BLOCK_ENTITIES.register("ore_acidizer", () ->
-                        BlockEntityType.Builder.of(OreAcidizerBlockEntity::new, ModBlocks.ORE_ACIDIZER.get())
+                        BlockEntityType.Builder.of(MachineOreAcidizerBlockEntity::new, ModBlocks.ORE_ACIDIZER.get())
                                 .build(null));
 
-        public static final RegistryObject<BlockEntityType<HydraulicFrackiningTowerBlockEntity>> HYDRAULIC_FRACKINING_TOWER_BE =
+        public static final RegistryObject<BlockEntityType<MachineHydraulicFrackiningTowerBlockEntity>> HYDRAULIC_FRACKINING_TOWER_BE =
                 BLOCK_ENTITIES.register("hydraulic_frackining_tower_be", () ->
-                        BlockEntityType.Builder.of(HydraulicFrackiningTowerBlockEntity::new, ModBlocks.HYDRAULIC_FRACKINING_TOWER.get())
+                        BlockEntityType.Builder.of(MachineHydraulicFrackiningTowerBlockEntity::new, ModBlocks.HYDRAULIC_FRACKINING_TOWER.get())
                                 .build(null));
 
     public static final RegistryObject<BlockEntityType<GeigerCounterBlockEntity>> GEIGER_COUNTER_BE =
@@ -145,9 +144,9 @@ public class ModBlockEntities {
 					BlockEntityType.Builder.of(MachineWoodBurnerBlockEntity::new,
 							ModBlocks.WOOD_BURNER.get()).build(null));
 
-            public static final RegistryObject<BlockEntityType<ChemicalPlantBlockEntity>> CHEMICAL_PLANT_BE =
+            public static final RegistryObject<BlockEntityType<MachineChemicalPlantBlockEntity>> CHEMICAL_PLANT_BE =
                     BLOCK_ENTITIES.register("chemical_plant_be", () ->
-                            BlockEntityType.Builder.of(ChemicalPlantBlockEntity::new,
+                            BlockEntityType.Builder.of(MachineChemicalPlantBlockEntity::new,
                                     ModBlocks.CHEMICAL_PLANT.get()).build(null));
 
     public static final RegistryObject<BlockEntityType<MachineFluidTankBlockEntity>> FLUID_TANK_BE =

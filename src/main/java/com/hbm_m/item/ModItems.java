@@ -1,5 +1,7 @@
 package com.hbm_m.item;
 
+import static com.hbm_m.lib.RefStrings.MODID;
+
 // Класс для регистрации всех предметов мода.
 // Использует DeferredRegister для отложенной регистрации. Здесь так же регистрируются моды для брони.
 // Слитки регистрируются автоматически на основе перечисления ModIngots.
@@ -60,7 +62,6 @@ import com.hbm_m.item.tags_and_tiers.ItemSimpleConsumable;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.item.tags_and_tiers.RadioactiveItem;
-import static com.hbm_m.lib.RefStrings.MODID;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
 
@@ -1073,8 +1074,20 @@ public class ModItems {
     public static final RegistryObject<Item> ADVANCED_ASSEMBLY_MACHINE = ITEMS.register("advanced_assembly_machine",
         () -> new MultiblockBlockItem(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get(), new Item.Properties()));
 
-        public static final RegistryObject<Item> HYDRAULIC_FRACKINING_TOWER = ITEMS.register("hydraulic_frackining_tower",
-                () -> new MultiblockBlockItem(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), new Item.Properties()));
+    public static final RegistryObject<Item> HYDRAULIC_FRACKINING_TOWER = ITEMS.register("hydraulic_frackining_tower",
+        () -> new MultiblockBlockItem(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> CHEMICAL_PLANT = ITEMS.register("chemical_plant",
+        () -> new MultiblockBlockItem(ModBlocks.CHEMICAL_PLANT.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> ORE_ACIDIZER = ITEMS.register("ore_acidizer",
+        () -> new MultiblockBlockItem(ModBlocks.ORE_ACIDIZER.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> CENTRIFUGE = ITEMS.register("centrifuge",
+        () -> new MultiblockBlockItem(ModBlocks.CENTRIFUGE.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> FLUID_TANK = ITEMS.register("fluid_tank",
+        () -> new MultiblockBlockItem(ModBlocks.FLUID_TANK.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> PRESS = ITEMS.register("press",
         () -> new MultiblockBlockItem(ModBlocks.PRESS.get(), new Item.Properties()));
@@ -1471,12 +1484,11 @@ public class ModItems {
     //=============================== ВЁДРА ДЛЯ ЖИДКОСТЕЙ ===============================//
 
     public static final RegistryObject<Item> CRUDE_OIL_BUCKET = ITEMS.register("bucket_crude_oil",
-            () -> new BucketItem(ModFluids.CRUDE_OIL_SOURCE,
+            () -> new BucketItem(
+                    () -> ModFluids.CRUDE_OIL_SOURCE.get(),
                     new Item.Properties()
-                            .craftRemainder(Items.BUCKET) // Возвращает пустое ведро при крафте
-                            .stacksTo(1))); // Ведра не стакаются
-
-    
+                            .craftRemainder(Items.BUCKET)
+                            .stacksTo(1)));
 
 
     // Метод для регистрации всех предметов, вызывается в основном классе мода.

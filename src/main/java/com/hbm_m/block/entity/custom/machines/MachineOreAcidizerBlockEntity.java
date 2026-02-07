@@ -29,7 +29,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraft.nbt.CompoundTag;
 
-public class OreAcidizerBlockEntity extends BlockEntity implements MenuProvider {
+public class MachineOreAcidizerBlockEntity extends BlockEntity implements MenuProvider {
     private final ItemStackHandler itemHandler = new ItemStackHandler(8);
     private final LazyOptional<IItemHandler> handlerOptional = LazyOptional.of(() -> itemHandler);
 
@@ -65,7 +65,7 @@ public class OreAcidizerBlockEntity extends BlockEntity implements MenuProvider 
         }
         return super.getCapability(cap, side);
     }
-    public OreAcidizerBlockEntity(BlockPos pos, BlockState state) {
+    public MachineOreAcidizerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ORE_ACIDIZER.get(), pos, state);
     }
 

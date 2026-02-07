@@ -1,9 +1,13 @@
 package com.hbm_m.client.render;
 
-import com.hbm_m.block.entity.custom.machines.ChemicalPlantBlockEntity;
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
+
+import com.hbm_m.block.entity.custom.machines.MachineChemicalPlantBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -14,16 +18,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
 
-public class ChemicalPlantRenderer implements BlockEntityRenderer<ChemicalPlantBlockEntity> {
+public class ChemicalPlantRenderer implements BlockEntityRenderer<MachineChemicalPlantBlockEntity> {
 
     public ChemicalPlantRenderer(BlockEntityRendererProvider.Context context) {
     }
 
     @Override
-    public void render(ChemicalPlantBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
+    public void render(MachineChemicalPlantBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
         // Placeholder fluid overlay.
         FluidStack fluid = blockEntity.getFluid();
         if (!fluid.isEmpty()) {
@@ -38,7 +40,7 @@ public class ChemicalPlantRenderer implements BlockEntityRenderer<ChemicalPlantB
         poseStack.popPose();
     }
 
-    private static void renderFluid(ChemicalPlantBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay, FluidStack fluid) {
+    private static void renderFluid(MachineChemicalPlantBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay, FluidStack fluid) {
         IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid.getFluid());
         ResourceLocation stillTexture = ext.getStillTexture(fluid);
         if (stillTexture == null) {

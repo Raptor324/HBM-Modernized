@@ -5,9 +5,9 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-public class HydraulicFrackiningTowerBlockEntity extends BlockEntity {
+public class MachineHydraulicFrackiningTowerBlockEntity extends BlockEntity {
 
-    public HydraulicFrackiningTowerBlockEntity(BlockPos pos, BlockState state) {
+    public MachineHydraulicFrackiningTowerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), pos, state);
     }
 }
