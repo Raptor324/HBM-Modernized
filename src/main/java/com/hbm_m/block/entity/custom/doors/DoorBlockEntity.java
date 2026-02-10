@@ -32,6 +32,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     private int openTicks = 0;
     public long animStartTime = 0;
     private boolean locked = false;
+    private boolean lastRedstoneState = false;
 
     private String doorDeclId;
     
@@ -124,6 +125,58 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         return state.hasProperty(DoorBlock.FACING)
             ? state.getValue(DoorBlock.FACING)
             : Direction.NORTH;
+    }
+
+    public void checkRedstonePower() {
+        if (level == null || level.isClientSide) return;
+    
+        BlockState blockState = getBlockState();
+        if (!(blockState.getBlock() instanceof DoorBlock doorBlock)) return;
+    
+        MultiblockStructureHelper helper = doorBlock.getStructureHelper();
+        Direction facing = blockState.getValue(DoorBlock.FACING);
+        
+        // Проверяем сам контроллер
+        boolean isPowered = level.hasNeighborSignal(worldPosition);
+    
+        // Если контроллер не запитан, проверяем все фантомы
+        if (!isPowered) {
+            for (BlockPos partPos : helper.getAllPartPositions(worldPosition, facing)) {
+                if (level.hasNeighborSignal(partPos)) {
+                    isPowered = true;
+                    break;
+                }
+            }
+        }
+    
+        // Передаем итоговый результат в логику обработки
+        updateRedstoneState(isPowered);
+    }
+
+    /**
+     * Логика обработки редстоун-импульсов
+     */
+    private void updateRedstoneState(boolean powered) {
+        if (powered == this.lastRedstoneState) return;
+        this.lastRedstoneState = powered;
+    
+        if (powered) {
+            // Если дверь закрыта или в процессе закрытия — открываем
+            if (state == 0 || state == 2) {
+                open();
+            }
+        } else {
+            // Сигнал пропал
+            if (state == 1) { // Полностью открыта
+                close();
+            } else if (state == 3) { // В процессе открытия
+                int openTime = getDoorDecl().getOpenTime();
+                if (openTime <= 25) { // Только для быстрых дверей
+                    close();
+                }
+            }
+        }
+        setChanged();
     }
 
     /**
@@ -458,6 +511,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         tag.putLong("animStartTime", animStartTime);
         tag.putString("doorDeclId", doorDeclId);
         tag.putBoolean("locked", locked);
+        tag.putBoolean("redstoneState", lastRedstoneState);
         if (controllerPos != null) {
             tag.putLong("controllerPos", controllerPos.asLong());
         }
@@ -478,6 +532,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         this.openTicks = tag.getInt("openTicks");
         this.animStartTime = tag.getLong("animStartTime");
         this.locked = tag.getBoolean("locked");
+        this.lastRedstoneState = tag.getBoolean("redstoneState");
         
         if (tag.contains("controllerPos")) {
             this.controllerPos = BlockPos.of(tag.getLong("controllerPos"));

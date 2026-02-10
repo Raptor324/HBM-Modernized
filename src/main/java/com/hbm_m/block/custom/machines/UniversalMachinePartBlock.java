@@ -228,6 +228,16 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
                 });
             }
         }
+        if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null) {
+                BlockEntity be = pLevel.getBlockEntity(controllerPos);
+                if (be instanceof DoorBlockEntity doorBE) {
+                    // Фантом не говорит "у меня нет сигнала", он говорит "перепроверь всю дверь"
+                    doorBE.checkRedstonePower();
+                }
+            }
+        }
     }
 
     /**
@@ -332,6 +342,8 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
         super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
     }
 
+    
+
     @Override
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
         if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
@@ -372,13 +384,5 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
     @Override
     public int getLightBlock(BlockState state, BlockGetter world, BlockPos pos) {
         return 0;
-    }
-
-    @Override
-    public VoxelShape getVisualShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ:
-        // Возвращая здесь Shapes.empty(), мы говорим камере: "ты не внутри блока".
-        // Это убирает текстуру на весь экран и эффект "замуровывания".
-        return Shapes.empty();
     }
 }

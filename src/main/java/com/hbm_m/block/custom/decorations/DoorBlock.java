@@ -291,6 +291,18 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     }
 
     @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean isMoving) {
+        super.neighborChanged(state, level, pos, neighborBlock, neighborPos, isMoving);
+        if (level.isClientSide) return;
+
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof DoorBlockEntity doorBE) {
+            // Запускаем агрегированную проверку сигнала
+            doorBE.checkRedstonePower();
+        }
+    }
+
+    @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.ENTITYBLOCK_ANIMATED;
     }
