@@ -19,7 +19,6 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -80,7 +79,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     }
 
     public boolean isController() {
-        return controllerPos != null && controllerPos.equals(worldPosition);
+        return (controllerPos != null && controllerPos.equals(worldPosition)) || controllerPos == null;
     }
 
     @Nullable
@@ -104,21 +103,16 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
 
     // ==================== Публичные методы ====================
 
-    @OnlyIn(Dist.CLIENT)
     public DoorDecl getDoorDecl() {
-        if (level == null) return null;
-        
-        BlockState state = getBlockState();
-        Block block = state.getBlock();
-        
-        if (block instanceof DoorBlock doorBlock) {
-            // КРИТИЧНО: убедитесь, что getDoorDeclId() возвращает правильный ID!
-            String declId = doorBlock.getDoorDeclId();
-            return DoorDeclRegistry.getById(declId);
+        // Если ID потерян, используем fallback
+        if (doorDeclId == null || doorDeclId.isEmpty()) {
+            if (getBlockState().getBlock() instanceof DoorBlock db) {
+                return DoorDeclRegistry.getById(db.getDoorDeclId());
+            }
+            return DoorDecl.LARGE_VEHICLE_DOOR;
         }
-        return null;
+        return DoorDeclRegistry.getById(doorDeclId);
     }
-    
     
     // Для серверной логики используем строковый ID
     public String getDoorDeclId() {
@@ -135,46 +129,41 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     /**
      * Получает время открытия двери в тиках (серверная версия без клиентских зависимостей).
      */
+    // private int getServerOpenTime() {
+    //     return switch (doorDeclId) {
+    //         case "qe_sliding_door" -> 10;
+    //         case "sliding_seal_door" -> 20;
+    //         case "sliding_blast_door" -> 24;
+    //         case "secure_access_door" -> 120;
+    //         case "qe_containment_door" -> 160;
+    //         case "water_door" -> 60;
+    //         case "large_vehicle_door" -> 60;
+    //         case "fire_door" -> 160;
+    //         case "silo_hatch" -> 60;
+    //         case "silo_hatch_large" -> 60;
+    //         default -> 60;
+    //     };
+    // }    
+
     private int getServerOpenTime() {
-        return switch (doorDeclId) {
-            case "qe_sliding_door" -> 10;
-            case "sliding_seal_door" -> 20;
-            case "sliding_blast_door" -> 24;
-            case "secure_access_door" -> 120;
-            case "qe_containment_door" -> 160;
-            case "water_door" -> 60;
-            case "large_vehicle_door" -> 60;
-            case "fire_door" -> 160;
-            case "silo_hatch" -> 60;
-            case "silo_hatch_large" -> 60;
-            default -> 60;
-        };
-    }    
+        DoorDecl decl = getDoorDecl();
+        return decl != null ? decl.getOpenTime() : 60;
+    }
 
     // ОБНОВИТЕ существующий метод getOpenProgress(float):
     public float getOpenProgress(float partialTick) {
-        int openTime = getServerOpenTime(); // Используем серверную таблицу
+        int openTime = getServerOpenTime();
+        if (openTime <= 0) return state == 1 || state == 3 ? 1f : 0f;
         
-        // ИСПРАВЛЕНО: Не используем doorDecl на сервере
-        if (level != null && level.isClientSide) {
-            DoorDecl decl = getDoorDecl();
-            if (decl != null) {
-                openTime = decl.getOpenTime();
-                if (openTime == 0) {
-                    return state == 1 || state == 3 ? 1f : 0f;
-                }
-            }
-        }
-
         long currentTime = System.currentTimeMillis();
         long elapsedTime = currentTime - animStartTime;
-        int totalTime = openTime * 50; // тики в миллисекунды
+        int totalTimeMs = openTime * 50; 
 
         return switch (state) {
             case 0 -> 0f;
             case 1 -> 1f;
-            case 2 -> Math.max(0f, 1f - ((float) elapsedTime / totalTime));
-            case 3 -> Math.min(1f, (float) elapsedTime / totalTime);
+            case 2 -> Math.max(0f, 1f - ((float) elapsedTime / totalTimeMs));
+            case 3 -> Math.min(1f, (float) elapsedTime / totalTimeMs);
             default -> 0f;
         };
     }
@@ -256,21 +245,20 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     // ==================== Server Tick ====================
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, DoorBlockEntity be) {
-        int openTime = be.getServerOpenTime(); // Используем серверный метод
+        int openTime = be.getServerOpenTime();
         boolean shouldSync = false;
     
-        if (be.state == 3) { // Открывается
+        if (be.state == 3) { // Opening
             be.openTicks++;
-            be.updatePhantomBlocks(level, pos, openTime);
             if (be.openTicks >= openTime) {
                 be.state = 1;
                 be.openTicks = openTime;
                 shouldSync = true;
+                // ВАЖНО: Финальное обновление соседей, чтобы убрать коллизию окончательно, если еще осталась
                 be.notifyNeighborsOfStateChange(level, pos);
             }
-        } else if (be.state == 2) { // Закрывается
+        } else if (be.state == 2) { // Closing
             be.openTicks--;
-            be.updatePhantomBlocks(level, pos, openTime);
             if (be.openTicks <= 0) {
                 be.state = 0;
                 be.openTicks = 0;
@@ -285,109 +273,108 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     }
 
     private void notifyNeighborsOfStateChange(Level level, BlockPos controllerPos) {
-        // Получаем structureHelper из блока
         BlockState blockState = getBlockState();
-        if (!(blockState.getBlock() instanceof DoorBlock doorBlock)) {
-            return;
-        }
+        if (!(blockState.getBlock() instanceof DoorBlock doorBlock)) return;
         
         Direction facing = blockState.getValue(DoorBlock.FACING);
         MultiblockStructureHelper structureHelper = doorBlock.getStructureHelper();
         
-        // Обновляем ВСЕ блоки мультиблока
         for (BlockPos partPos : structureHelper.getAllPartPositions(controllerPos, facing)) {
             BlockState partState = level.getBlockState(partPos);
-            // Принудительно обновляем блок для пересчета коллизии
+            // Флаг 3 (UPDATE_ALL) заставляет клиент перерисовать блок и обновить коллизию
             level.sendBlockUpdated(partPos, partState, partState, 3);
+            level.getLightEngine().checkBlock(partPos);
+            level.updateNeighborsAt(partPos, blockState.getBlock());
         }
+        level.getLightEngine().checkBlock(controllerPos);
     }
 
-    private void updatePhantomBlocks(Level level, BlockPos controllerPos, int openTime) {
-        Direction facing = getFacing();
+    public DoorDecl getServerDoorDecl() {
+        return DoorDeclRegistry.getById(this.doorDeclId);
+    }
+
+    // private void updatePhantomBlocks(Level level, BlockPos controllerPos, int openTime) {
+    //     Direction facing = getFacing();
         
-        // ИСПРАВЛЕНО: Используем фиксированные значения для сервера
-        // Для клиента можно получить из DoorDecl, но для сервера используем стандартные
-        int[][] ranges = {
-            {0, 0, 0, -5, 6, 2},  // Левая створка
-            {0, 0, 0, 4, 6, 2}    // Правая створка
-        };
+    //     // ИСПРАВЛЕНО: Используем фиксированные значения для сервера
+    //     // Для клиента можно получить из DoorDecl, но для сервера используем стандартные
+    //     int[][] ranges = {
+    //         {0, 0, 0, -5, 6, 2},  // Левая створка
+    //         {0, 0, 0, 4, 6, 2}    // Правая створка
+    //     };
         
-        for (int i = 0; i < ranges.length; i++) {
-            int[] range = ranges[i];
-            float time = getDoorRangeOpenTime(openTicks, openTime);
+    //     for (int i = 0; i < ranges.length; i++) {
+    //         int[] range = ranges[i];
+    //         float time = getDoorRangeOpenTime(openTicks, openTime);
             
-            for (int j = 0; j < Math.abs(range[3]); j++) {
-                float threshold = (float) j / Math.max(1, Math.abs(range[3] - 1));
-                if (state == 3 && threshold > time) break;
-                if (state == 2 && threshold < time) continue;
+    //         for (int j = 0; j < Math.abs(range[3]); j++) {
+    //             float threshold = (float) j / Math.max(1, Math.abs(range[3] - 1));
+    //             if (state == 3 && threshold > time) break;
+    //             if (state == 2 && threshold < time) continue;
                 
-                for (int k = 0; k < range[4]; k++) {
-                    BlockPos offset = calculateOffset(range, j, k, facing);
-                    BlockPos targetPos = controllerPos.offset(offset.getX(), offset.getY(), offset.getZ());
+    //             for (int k = 0; k < range[4]; k++) {
+    //                 BlockPos offset = calculateOffset(range, j, k, facing);
+    //                 BlockPos targetPos = controllerPos.offset(offset.getX(), offset.getY(), offset.getZ());
                     
-                    if (!targetPos.equals(controllerPos)) {
-                        BlockState currentState = level.getBlockState(targetPos);
-                        if (currentState.hasProperty(DoorBlock.OPEN)) {
-                            boolean shouldOpen = (state == 3);
-                            level.setBlock(targetPos,
-                                currentState.setValue(DoorBlock.OPEN, shouldOpen), 3);
-                        }
-                    }
-                }
-            }
-        }
-    }
+    //                 if (!targetPos.equals(controllerPos)) {
+    //                     BlockState currentState = level.getBlockState(targetPos);
+    //                     if (currentState.hasProperty(DoorBlock.OPEN)) {
+    //                         boolean shouldOpen = (state == 3);
+    //                         level.setBlock(targetPos,
+    //                             currentState.setValue(DoorBlock.OPEN, shouldOpen), 3);
+    //                     }
+    //                 }
+    //             }
+    //         }
+    //     }
+    // }
 
-    private float getDoorRangeOpenTime(int currentTick, int maxTime) {
-        if (maxTime == 0) return 0;
-        return Math.max(0, Math.min(1, (float) currentTick / maxTime));
-    }
+    // private float getDoorRangeOpenTime(int currentTick, int maxTime) {
+    //     if (maxTime == 0) return 0;
+    //     return Math.max(0, Math.min(1, (float) currentTick / maxTime));
+    // }
 
-    private BlockPos calculateOffset(int[] range, int j, int k, Direction facing) {
-        BlockPos add = BlockPos.ZERO;
-        switch (range[5]) {
-            case 0: add = new BlockPos(0, k, (int) Math.signum(range[3]) * j); break;
-            case 1: add = new BlockPos(k, (int) Math.signum(range[3]) * j, 0); break;
-            case 2: add = new BlockPos((int) Math.signum(range[3]) * j, k, 0); break;
-        }
+    // private BlockPos calculateOffset(int[] range, int j, int k, Direction facing) {
+    //     BlockPos add = BlockPos.ZERO;
+    //     switch (range[5]) {
+    //         case 0: add = new BlockPos(0, k, (int) Math.signum(range[3]) * j); break;
+    //         case 1: add = new BlockPos(k, (int) Math.signum(range[3]) * j, 0); break;
+    //         case 2: add = new BlockPos((int) Math.signum(range[3]) * j, k, 0); break;
+    //     }
         
-        BlockPos startPos = new BlockPos(range[0], range[1], range[2]);
-        return rotatePos(startPos.offset(add), facing);
-    }
+    //     BlockPos startPos = new BlockPos(range[0], range[1], range[2]);
+    //     return rotatePos(startPos.offset(add), facing);
+    // }
 
-    private BlockPos rotatePos(BlockPos pos, Direction facing) {
-        return switch (facing) {
-            case NORTH -> pos;
-            case SOUTH -> new BlockPos(-pos.getX(), pos.getY(), -pos.getZ());
-            case WEST -> new BlockPos(-pos.getZ(), pos.getY(), pos.getX());
-            case EAST -> new BlockPos(pos.getZ(), pos.getY(), -pos.getX());
-            default -> pos;
-        };
-    }
+    // private BlockPos rotatePos(BlockPos pos, Direction facing) {
+    //     return switch (facing) {
+    //         case NORTH -> pos;
+    //         case SOUTH -> new BlockPos(-pos.getX(), pos.getY(), -pos.getZ());
+    //         case WEST -> new BlockPos(-pos.getZ(), pos.getY(), pos.getX());
+    //         case EAST -> new BlockPos(pos.getZ(), pos.getY(), -pos.getX());
+    //         default -> pos;
+    //     };
+    // }
 
     // ==================== Client Sound Handling ====================
     @OnlyIn(Dist.CLIENT)
     private void handleNewState(byte oldState, byte newState) {
         if (oldState == newState) return;
-        
-        // КРИТИЧЕСКИ ВАЖНО: звук воспроизводится ТОЛЬКО на контроллере (главном блоке)!
-        // Это предотвращает дублирование звука в многоблочных структурах
-        if (!isController()) {
-            return; // Не воспроизводим звук на дочерних блоках
-        }
+        if (!isController()) return;
         
         DoorDecl decl = getDoorDecl();
+        if (decl == null) return;
         
-        if (oldState == 0 && newState == 3) {
-            handleSoundTransition(decl.getOpenSoundStart(), decl.getOpenSoundLoop());
+        if (oldState == 0 && newState == 3) { // Начинает открываться
+            handleSoundTransition(decl.getOpenSoundStart(), decl.getOpenSoundLoop(), decl.getSoundLoop2());
             
-        } else if (oldState == 1 && newState == 2) {
-            handleSoundTransition(decl.getCloseSoundStart(), decl.getCloseSoundLoop());
+        } else if (oldState == 1 && newState == 2) { // Начинает закрываться
+            handleSoundTransition(decl.getCloseSoundStart(), decl.getCloseSoundLoop(), decl.getSoundLoop2());
             
-        } else if (oldState == 3 && newState == 1) {
+        } else if (oldState == 3 && newState == 1) { // Полностью открылась
             handleSoundEnd(decl.getOpenSoundEnd());
             
-        } else if (oldState == 2 && newState == 0) {
+        } else if (oldState == 2 && newState == 0) { // Полностью закрылась
             handleSoundEnd(decl.getCloseSoundEnd());
             
         } else {
@@ -396,28 +383,30 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     }
 
     @OnlyIn(Dist.CLIENT)
-    private void handleSoundTransition(SoundEvent startSound, SoundEvent loopSound) {
-        // 1. Воспроизводим разовый звук начала
+    private void handleSoundTransition(SoundEvent startSound, SoundEvent loopSound, SoundEvent loopSound2) {
+        // 1. Разовый звук старта
         if (startSound != null) {
             ClientSoundManager.playOneShotSound(worldPosition, startSound, getDoorDecl().getSoundVolume());
         }
         
-        // 2. Запускаем зацикленный звук движения
+        // 2. Первый цикл (основной)
         if (loopSound != null) {
-            ClientSoundManager.updateDoorSound(
-                worldPosition,
-                true, // дверь движется
-                () -> createLoopingSound(loopSound)
-            );
+            ClientSoundManager.updateDoorSound(worldPosition, "loop1", true, () -> createLoopingSound(loopSound));
+        }
+        
+        // 3. Второй цикл (дополнительный, например сирена)
+        if (loopSound2 != null) {
+            ClientSoundManager.updateDoorSound(worldPosition, "loop2", true, () -> createLoopingSound(loopSound2));
         }
     }
 
     @OnlyIn(Dist.CLIENT)
     private void handleSoundEnd(SoundEvent endSound) {
-        // 1. Останавливаем зацикленный звук движения
-        ClientSoundManager.stopSound(worldPosition);
+        // Останавливаем ОБА цикла
+        ClientSoundManager.stopSpecificSound(worldPosition, "loop1");
+        ClientSoundManager.stopSpecificSound(worldPosition, "loop2");
         
-        // 2. Воспроизводим разовый звук конца
+        // Воспроизводим звук финиша
         if (endSound != null) {
             ClientSoundManager.playOneShotSound(worldPosition, endSound, getDoorDecl().getSoundVolume());
         }

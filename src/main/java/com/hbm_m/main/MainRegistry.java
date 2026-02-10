@@ -13,6 +13,7 @@ import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.custom.machines.armormod.item.ItemArmorMod;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.entity.custom.doors.DoorDeclRegistry;
 import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.client.ClientSetup;
@@ -87,7 +88,7 @@ public class MainRegistry {
 
         IEventBus modEventBus = context.getModEventBus();
         // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS
-        // Добавь эту:
+        DoorDeclRegistry.init();
 
         MinecraftForge.EVENT_BUS.register(new CrateBreaker());
         MinecraftForge.EVENT_BUS.register(new BombDefuser());
@@ -108,8 +109,7 @@ public class MainRegistry {
         registerCapabilities(modEventBus);
 
 
-        // ✅ ЭТА СТРОКА ДОЛЖНА БЫТЬ ПОСЛЕДНЕЙ!
-        ModWorldGen.PROCESSORS.register(modEventBus);  // ✅ ОСТАВИ!
+        ModWorldGen.PROCESSORS.register(modEventBus);
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
@@ -119,10 +119,7 @@ public class MainRegistry {
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new PlayerHandler());
 
-
         // Регистрация остальных систем resources
-        // ModPacketHandler.register(); // Регистрация пакетов
-
 
         // Инстанцируем ClientSetup, чтобы его конструктор вызвал регистрацию на Forge Event Bus
 
@@ -827,6 +824,7 @@ public class MainRegistry {
             event.accept(ModBlocks.CRT_BSOD);
             event.accept(ModBlocks.TOASTER);
             event.accept(ModBlocks.BARREL_PINK);
+            event.accept(ModBlocks.BARREL_RED);
             event.accept(ModBlocks.BARREL_LOX);
             event.accept(ModBlocks.BARREL_YELLOW);
             event.accept(ModBlocks.BARREL_VITRIFIED);

@@ -324,7 +324,8 @@ public class ModBlocks {
                             .strength(10.0F, 1000.0F)
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
-                            .noOcclusion(),
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
                     "large_vehicle_door"
             ));
 
@@ -334,7 +335,8 @@ public class ModBlocks {
                             .strength(10.0F, 1000.0F)
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
-                            .noOcclusion(),
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
                     "round_airlock_door"
             ));
 
@@ -344,7 +346,8 @@ public class ModBlocks {
                             .strength(10.0F, 1000.0F)
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
-                            .noOcclusion(),
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
                     "transition_seal"
             ));
 
@@ -354,7 +357,8 @@ public class ModBlocks {
                             .strength(10.0F, 1000.0F)
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
-                            .noOcclusion(),
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
                     "fire_door"
             ));
 
@@ -364,7 +368,8 @@ public class ModBlocks {
                             .strength(10.0F, 1000.0F)
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
-                            .noOcclusion(),
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
                     "sliding_blast_door"
             ));
 
@@ -374,7 +379,8 @@ public class ModBlocks {
                             .strength(10.0F, 1000.0F)
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
-                            .noOcclusion(),
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
                     "sliding_seal_door"
             ));
 
@@ -384,7 +390,8 @@ public class ModBlocks {
                             .strength(10.0F, 1000.0F)
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
-                            .noOcclusion(),
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
                     "secure_access_door"
             ));
 
@@ -394,7 +401,8 @@ public class ModBlocks {
                             .strength(10.0F, 1000.0F)
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
-                            .noOcclusion(),
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
                     "qe_sliding_door"
             ));
 
@@ -404,7 +412,8 @@ public class ModBlocks {
                             .strength(10.0F, 1000.0F)
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
-                            .noOcclusion(),
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
                     "qe_containment_door"
             ));
 
@@ -414,7 +423,8 @@ public class ModBlocks {
                             .strength(10.0F, 1000.0F)
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
-                            .noOcclusion(),
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
                     "water_door"
             ));
 
@@ -424,7 +434,8 @@ public class ModBlocks {
                             .strength(10.0F, 1000.0F)
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
-                            .noOcclusion(),
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
                     "silo_hatch"
             ));
 
@@ -434,7 +445,8 @@ public class ModBlocks {
                             .strength(10.0F, 1000.0F)
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
-                            .noOcclusion(),
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
                     "silo_hatch_large"
             ));
 

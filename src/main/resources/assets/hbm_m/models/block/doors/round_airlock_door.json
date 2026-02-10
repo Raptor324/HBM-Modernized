@@ -3,8 +3,8 @@
   "model": "hbm_m:models/block/doors/round_airlock_door.obj",
   "parts": ["frame", "doorLeft", "doorRight"],
   "textures": {
-    "texture0": "hbm_m:block/round_airlock_door",
-    "particle": "hbm_m:block/round_airlock_door"
+    "texture0": "hbm_m:block/doors/airlock_door",
+    "particle": "hbm_m:block/doors/airlock_door"
   },
   "transform": {
         "rotation": [0, 0, 0],

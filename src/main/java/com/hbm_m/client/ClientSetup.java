@@ -20,7 +20,7 @@ import com.hbm_m.item.tags_and_tiers.ModTags;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.ModMenuTypes;
-import com.hbm_m.multiblock.DoorPartAABBRegistry;
+// import com.hbm_m.multiblock.DoorPartAABBRegistry;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -80,7 +80,7 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
-        MinecraftForge.EVENT_BUS.register(DoorOutlineRenderer.class);
+        // MinecraftForge.EVENT_BUS.register(DoorOutlineRenderer.class);
         // MinecraftForge.EVENT_BUS.register(DoorDebugRenderer.class);
         // MinecraftForge.EVENT_BUS.register(ClientSetup.class);
 
@@ -184,7 +184,7 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onModelRegister(ModelEvent.RegisterGeometryLoaders event) {
-        DoorDeclRegistry.init();
+        // DoorDeclRegistry.init();
         MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
 
         event.register("procedural_wire", new ProceduralWireLoader());
@@ -226,7 +226,7 @@ public class ClientSetup {
                 
                 // ИСПРАВЛЕНО: НЕ вызываем reset(), вместо этого очищаем только кеши
                 GlobalMeshCache.clearAll();
-                DoorPartAABBRegistry.clear();
+                // DoorPartAABBRegistry.clear();
                 
                 // Переинициализируем immediate рендер после очистки
                 ImmediateFallbackRenderer.onShaderReload();

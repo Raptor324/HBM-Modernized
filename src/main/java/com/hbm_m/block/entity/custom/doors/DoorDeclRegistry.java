@@ -23,7 +23,6 @@ public class DoorDeclRegistry {
         return REGISTRY.getOrDefault(id, DoorDecl.LARGE_VEHICLE_DOOR);
     }
     
-    // Вызывается из ClientSetup
     public static void init() {
         register("large_vehicle_door", DoorDecl.LARGE_VEHICLE_DOOR);
         register("round_airlock_door", DoorDecl.ROUND_AIRLOCK_DOOR);

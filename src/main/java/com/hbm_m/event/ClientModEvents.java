@@ -12,7 +12,7 @@ import com.hbm_m.client.render.shader.RenderPathManager;
 // Подсказки показываются при наведении на предмет в инвентаре.
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.multiblock.DoorPartAABBRegistry;
+// import com.hbm_m.multiblock.DoorPartAABBRegistry;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -106,7 +106,7 @@ public class ClientModEvents {
                 
                 // Очищаем глобальные кеши
                 GlobalMeshCache.clearAll();
-                DoorPartAABBRegistry.clear();
+                // DoorPartAABBRegistry.clear();
                 
                 // Принудительно очищаем состояние Tesselator
                 ImmediateFallbackRenderer.forceReset();

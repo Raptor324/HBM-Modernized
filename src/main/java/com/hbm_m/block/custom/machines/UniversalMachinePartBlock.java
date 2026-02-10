@@ -1,9 +1,13 @@
 package com.hbm_m.block.custom.machines;
 
+import java.util.Map;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.custom.decorations.DoorBlock;
 import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
+import com.hbm_m.block.entity.custom.doors.DoorDecl;
+import com.hbm_m.block.entity.custom.doors.DoorDeclRegistry;
 // Этот класс реализует фантомный блок, который является частью каждой мультиблочной структуры.
 // Фантомные блоки невидимы и не имеют коллизии, но позволяют игроку взаимодействовать с контроллером структуры,
 // наведя курсор на любую часть структуры. Форма фантомного блока определяется формой всей структуры, сдвинутой так,
@@ -98,90 +102,107 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
         if (controllerPos == null) return Shapes.block();
 
         BlockState controllerState = pLevel.getBlockState(controllerPos);
-        if (!(controllerState.getBlock() instanceof IMultiblockController controller)) {
+        Block controllerBlock = controllerState.getBlock();
+
+        if (!(controllerBlock instanceof IMultiblockController controller)) {
             return Shapes.block();
         }
-        
-        VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState);
-        if (masterShape == null || masterShape.isEmpty()) {
+
+        VoxelShape masterShape;
+
+        // 1. Определяем "Мастер-форму" (общий контур всего мультиблока)
+        if (controllerBlock instanceof DoorBlock doorBlock) {
+            DoorDecl decl = DoorDeclRegistry.getById(doorBlock.getDoorDeclId());
+
+            if (decl != null && decl.isDynamicShape()) {
+                // Для люков берем динамически собранную форму (которую мы реализовали в DoorBlock)
+                masterShape = doorBlock.getShape(controllerState, pLevel, controllerPos, pContext);
+            } else {
+                // Для обычных дверей берем статическую форму всей структуры
+                Direction facing = controllerState.getValue(DoorBlock.FACING);
+                masterShape = controller.getStructureHelper().generateShapeFromParts(facing);
+            }
+        } else {
+            // Логика для остальных мультиблоков (Assembler и т.д.)
             Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
             masterShape = controller.getStructureHelper().generateShapeFromParts(facing);
         }
 
-        // Сдвигаем мастер-форму. 
-        // Поскольку masterShape уже построена ОТНОСИТЕЛЬНО контроллера (где контроллер = 0,0,0),
-        // нам нужно просто сдвинуть её на вектор "от текущего блока к контроллеру".
+        // Сдвигаем общую форму мультиблока относительно текущего фантомного блока.
+        // Без этого рамка будет смещена.
         BlockPos vecToController = controllerPos.subtract(pPos);
         return masterShape.move(vecToController.getX(), vecToController.getY(), vecToController.getZ());
     }
 
+
     @Override
     public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
 
-        // 1. Get the BlockEntity of this part
+        // 1. Получаем TileEntity этой части
         if (!(pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part)) {
             return Shapes.block();
         }
 
-        // 2. Find the controller's position
+        // 2. Находим позицию контроллера
         BlockPos controllerPos = part.getControllerPos();
         if (controllerPos == null) {
             return Shapes.block();
         }
 
-        // 3. Get the controller's state and block
+        // 3. Получаем состояние и блок контроллера
         BlockState controllerState = pLevel.getBlockState(controllerPos);
-        if (!(controllerState.getBlock() instanceof IMultiblockController controller)) {
+        Block controllerBlock = controllerState.getBlock(); // Получаем блок один раз
+
+        if (!(controllerBlock instanceof IMultiblockController controller)) {
             return Shapes.block();
         }
 
-        // Сначала проверяем, есть ли у контроллера общая сложная форма (как у вашего MachineAssembler)
+        // Сначала проверяем, есть ли у контроллера общая сложная форма (мастер-шейп)
         VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState);
         
-        // Если мастер-форма определена (она не пустая), используем её для коллизии
         if (masterShape != null && !masterShape.isEmpty()) {
-            // Сдвигаем мастер-форму относительно текущего фантомного блока
             BlockPos vecToController = controllerPos.subtract(pPos);
             return masterShape.move(vecToController.getX(), vecToController.getY(), vecToController.getZ());
         }
 
-        if (controller instanceof DoorBlock) {
+        // Используем pattern matching или приведение типов, чтобы задействовать переменную doorBlock
+        if (controllerBlock instanceof DoorBlock doorBlock) {
             BlockEntity controllerBE = pLevel.getBlockEntity(controllerPos);
+            
             if (controllerBE instanceof DoorBlockEntity doorBE) {
-                byte doorState = doorBE.getState();
+                String declId = doorBlock.getDoorDeclId();
+                DoorDecl decl = com.hbm_m.block.entity.custom.doors.DoorDeclRegistry.getById(declId);
+                
+                if (decl != null && decl.getStructureDefinition() != null) {
+                    DoorDecl.DoorStructureDefinition def = decl.getStructureDefinition();
+                    
+                    Direction facing = controllerState.getValue(DoorBlock.FACING);
+                    BlockPos worldOffset = pPos.subtract(controllerPos);
+                    BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
 
-                // Если дверь открыта, открывается или закрывается - НЕТ коллизии
-                if (doorState == 1 || doorState == 2 || doorState == 3) {
-                    return Shapes.empty();
+                    // Считаем открытой, если состояние не 0 (0 = закрыта)
+                    boolean isOpen = doorBE.getState() != 0; 
+                    
+                    // Выбираем карту коллизии используя переменную
+                    Map<BlockPos, VoxelShape> map = isOpen ? def.getOpenShapes() : def.getClosedShapes();
+                    
+                    VoxelShape shape = map.get(localOffset);
+                    if (shape != null) {
+                        if (!shape.isEmpty()) {
+                            return MultiblockStructureHelper.rotateShape(shape, facing);
+                        }
+                        return shape;
+                    }
                 }
-
-                // Если дверь закрыта - полная коллизия структуры
-                VoxelShape generated = controller.getStructureHelper()
-                        .generateShapeFromParts(controllerState.getValue(DoorBlock.FACING));
-
-                if (masterShape.isEmpty()) {
-                    return Shapes.empty();
-                }
-
-                BlockPos offset = pPos.subtract(controllerPos);
-                return generated.move(-offset.getX(), -offset.getY(), -offset.getZ());
             }
-            return Shapes.empty();
-        }
+       }
 
-        // 4. Общая логика для всех остальных частей мультиблока
+        // 4. Общая логика для всех остальных частей мультиблока (MachineAssembler и т.д.)
         MultiblockStructureHelper helper = controller.getStructureHelper();
         Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
 
-        // Нам нужно найти локальную позицию блока в сетке (gridPos)
-        // worldOffset = worldPos - controllerWorldPos
         BlockPos worldOffset = pPos.subtract(controllerPos);
-        
-        // Поворачиваем смещение обратно, чтобы понять, какой это блок в исходной схеме
-        // localOffset = rotateBack(worldOffset)
         BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
-        
-        // gridPos = localOffset + controllerOffset (смещение самого контроллера в схеме)
         BlockPos gridPos = localOffset.offset(helper.getControllerOffset());
 
         return helper.getSpecificCollisionShape(gridPos, facing);
@@ -230,10 +251,14 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
     public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
         // Если это не полный блок (например, труба или плита), возвращаем пустую форму.
         // Это скажет игре: "Не выталкивай игрока из этого блока".
-        if (isFullBlockInGrid(level, pos)) {
-            return Shapes.block();
+        if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
+            BlockPos ctrlPos = part.getControllerPos();
+            if (ctrlPos != null && level.getBlockState(ctrlPos).getBlock() instanceof DoorBlock) {
+                return Shapes.empty();
+            }
         }
-        return Shapes.empty();
+        
+        return isFullBlockInGrid(level, pos) ? Shapes.block() : Shapes.empty();
     }
 
     private boolean isFullBlockInGrid(BlockGetter level, BlockPos pos) {
@@ -332,5 +357,28 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
         }
         // Для нормальных блоков используем стандартную логику
         return super.getDestroyProgress(pState, pPlayer, pLevel, pPos);
+    }
+
+    @Override
+    public boolean propagatesSkylightDown(BlockState state, BlockGetter reader, BlockPos pos) {
+        return true;
+    }
+
+    @Override
+    public float getShadeBrightness(BlockState state, BlockGetter world, BlockPos pos) {
+        return 1.0F;
+    }
+
+    @Override
+    public int getLightBlock(BlockState state, BlockGetter world, BlockPos pos) {
+        return 0;
+    }
+
+    @Override
+    public VoxelShape getVisualShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ:
+        // Возвращая здесь Shapes.empty(), мы говорим камере: "ты не внутри блока".
+        // Это убирает текстуру на весь экран и эффект "замуровывания".
+        return Shapes.empty();
     }
 }

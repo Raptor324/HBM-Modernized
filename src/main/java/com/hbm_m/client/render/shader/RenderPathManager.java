@@ -2,7 +2,7 @@ package com.hbm_m.client.render.shader;
 
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.multiblock.DoorPartAABBRegistry;
+// import com.hbm_m.multiblock.DoorPartAABBRegistry;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
@@ -161,7 +161,7 @@ public class RenderPathManager {
     private static void clearCaches() {
         try {
             GlobalMeshCache.clearAll();
-            DoorPartAABBRegistry.clear();
+            // DoorPartAABBRegistry.clear();
             MainRegistry.LOGGER.info("Caches cleared after render path change");
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error clearing caches", e);
