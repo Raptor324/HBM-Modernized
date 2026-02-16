@@ -2,12 +2,10 @@ package com.hbm_m.block.entity.custom.doors;
 
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.client.loader.ColladaAnimationParser;
 // import com.hbm_m.client.model.DoorBakedModel;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.lib.RefStrings;
@@ -119,6 +117,31 @@ public abstract class DoorDecl {
     public abstract ResourceLocation getBlockId();
 
     public abstract String[] getPartNames();
+
+    /**
+     * Путь к DAE-файлу с анимациями. Если null — используются procedural-анимации (getTranslation/getRotation).
+     */
+    @Nullable
+    public ResourceLocation getColladaAnimationSource() {
+        return null;
+    }
+
+    /**
+     * Маппинг имени части (OBJ/JSON) на имя объекта в DAE.
+     * По умолчанию возвращает partName. Для transition_seal: Cylinder.001 → Cylinder_001.
+     */
+    public String getDaeObjectName(String partName) {
+        return partName;
+    }
+
+    /**
+     * Инвертировать время анимации DAE.
+     * Если true: closed (progress=0) → последний keyframe, open (progress=1) → первый keyframe.
+     * Нужно когда Blender экспортировал анимацию с rest pose = открытое состояние.
+     */
+    public boolean isColladaAnimationInverted() {
+        return false;
+    }
 
     /**
      * Сохраняет извлечённые AABB (вызывается из DoorBakedModel).
@@ -736,93 +759,44 @@ public abstract class DoorDecl {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "transition_seal");
         }
     
+        @Override
+        public ResourceLocation getColladaAnimationSource() {
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/transition_seal.dae");
+        }
+    
+        @Override
+        public String getDaeObjectName(String partName) {
+            // DAE обычно заменяет точки на подчеркивания
+            return partName.replace('.', '_');
+        }
+    
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            // В 1.7.10 логика была: "всё кроме базы едет вверх".
+            // Здесь мы повторяем это: Рама стоит, всё остальное (дверь, шестерни, замки) едет вверх.
+            if ("frame".equals(partName) || "base".equals(partName)) {
+                set(trans, 0, 0, 0);
+            } else {
+                // Процедурный подъем на 3.5 блока
+                set(trans, 0, 3.5F * getNormTime(openTicks), 0);
+            }
+        }
+    
         @Override 
         public int getOpenTime() { 
             return 480; 
         }
-
+    
         @Override
         public String[] getPartNames() {
-            return new String[] { "frame", "door" };
-        }
-        
-        private Map<String, List<ColladaAnimationParser.AnimationChannel>> animations = Collections.emptyMap();
-        private boolean animationsInitialized = false;
-    
-        // private void initializeAnimations() {
-        //     if (animationsInitialized) return;
-        //     animationsInitialized = true;
-            
-        //     try {
-        //         // Проверяем, доступен ли Minecraft (не доступен во время генерации данных)
-        //         if (Minecraft.getInstance() == null) {
-        //             animations = Collections.emptyMap();
-        //             return;
-        //         }
-                
-        //         ResourceManager rm = Minecraft.getInstance().getResourceManager();
-        //         Resource resource = rm.getResource(
-        //             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/sliding_blast_door.dae")
-        //         ).orElse(null);
-
-        //         if (resource == null) {
-        //             MainRegistry.LOGGER.error("DoorDecl: missing sliding_blast_door.dae for {}", getBlockId());
-        //             animations = Collections.emptyMap();
-        //         } else {
-        //             animations = ColladaAnimationParser.parse(resource.open());
-        //         }
-        //     } catch (Exception e) {
-        //         e.printStackTrace();
-        //         animations = Collections.emptyMap();
-        //     }
-        // }
-        
-        @Override
-        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-            // initializeAnimations();
-            if (!animations.containsKey(partName)) {
-                super.getTranslation(partName, openTicks, child, trans);
-                return;
-            }
-            
-            float progress = getNormTime(openTicks);
-            float time = progress * (getOpenTime() / 20.0f); // Конвертируем в секунды
-            
-            for (ColladaAnimationParser.AnimationChannel channel : animations.get(partName)) {
-                if (channel.property.startsWith("location")) {
-                    float value = channel.getValue(time);
-                    
-                    if (channel.property.endsWith(".X")) trans[0] = value;
-                    else if (channel.property.endsWith(".Y")) trans[1] = value;
-                    else if (channel.property.endsWith(".Z")) trans[2] = value;
-                }
-            }
-        }
-        
-        @Override
-        public void getRotation(String partName, float openTicks, float[] rot) {
-            // initializeAnimations();
-            if (!animations.containsKey(partName)) {
-                super.getRotation(partName, openTicks, rot);
-                return;
-            }
-            
-            float progress = getNormTime(openTicks);
-            float time = progress * (getOpenTime() / 20.0f);
-            
-            for (ColladaAnimationParser.AnimationChannel channel : animations.get(partName)) {
-                if (channel.property.startsWith("rotation")) {
-                    float value = (float) Math.toDegrees(channel.getValue(time)); // COLLADA в радианах
-                    
-                    if (channel.property.endsWith(".X")) rot[0] = value;
-                    else if (channel.property.endsWith(".Y")) rot[1] = value;
-                    else if (channel.property.endsWith(".Z")) rot[2] = value;
-                }
-            }
+            return new String[] { 
+                "frame", "door", "Cylinder.001", "Cylinder.003", "Cylinder.005", "Cube.006", "Cylinder.007", "Cylinder.008", "Circle", "Cylinder.009", "Cylinder.010", "Cylinder.011", "door.005", "door.002", "door.008", "ring.001", "door.003", "door.004", "ring.002", "door.006"
+            };
         }
         
         @Override
         public void doOffsetTransform(LegacyAnimator animator) {
+            // Глобальное смещение всей модели (как в 1.7.10 GL11.glTranslated)
             animator.translate(0.0f, 0.0f, 0.5f);
         }
         
@@ -830,17 +804,6 @@ public abstract class DoorDecl {
         public int[][] getDoorOpenRanges() {
             return new int[][] { { -9, 2, 0, 20, 20, 1 } };
         }
-    
-        // @Override
-        // public List<AABB> getCollisionBounds(float progress, Direction facing) {
-        //     List<AABB> bounds = new ArrayList<>();
-        //     if (progress >= 0.99f) return bounds;
-            
-        //     double movement = progress * 3.5;
-        //     AABB door = new AABB(-9.0, 0.0, 0.0, 11.0, Math.max(0.5, 20.0 - movement), 1.0);
-        //     bounds.add(rotateAABB(door, facing));
-        //     return bounds;
-        // }
     
         @Override 
         public SoundEvent getOpenSoundStart() { 
@@ -936,99 +899,55 @@ public abstract class DoorDecl {
         public ResourceLocation getBlockId() {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_blast_door");
         }
-    
-        // Кеш загруженных анимаций - ПОТОКОБЕЗОПАСНЫЙ
-        private volatile Map<String, List<ColladaAnimationParser.AnimationChannel>> animations = null;
-        private final Object animationLock = new Object();
-        private volatile Float cachedAnimationDuration = null;
-    
-        // private Map<String, List<ColladaAnimationParser.AnimationChannel>> getAnimations() {
-        //     if (animations == null) {
-        //         synchronized (animationLock) {
-        //             if (animations == null) {
-        //                 try {
-        //                     ResourceManager rm = Minecraft.getInstance().getResourceManager();
-        //                     Resource resource = rm.getResource(
-        //                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/sliding_blast_door.dae")
-        //                     ).orElseThrow();
-        //                     animations = ColladaAnimationParser.parse(resource.open());
-                            
-        //                     // Вычисляем максимальную длительность
-        //                     float maxTime = 0f;
-        //                     for (List<ColladaAnimationParser.AnimationChannel> channels : animations.values()) {
-        //                         for (ColladaAnimationParser.AnimationChannel channel : channels) {
-        //                             if (channel.times != null && channel.times.length > 0) {
-        //                                 maxTime = Math.max(maxTime, channel.times[channel.times.length - 1]);
-        //                             }
-        //                         }
-        //                     }
-        //                     cachedAnimationDuration = maxTime > 0 ? maxTime : 1.25f;
-                            
-        //                     MainRegistry.LOGGER.info("Loaded animations for SLIDE_DOOR: {} parts, duration: {}s", 
-        //                         animations.size(), cachedAnimationDuration);
-        //                 } catch (Exception e) {
-        //                     MainRegistry.LOGGER.error("Failed to load SLIDE_DOOR animations", e);
-        //                     animations = Collections.emptyMap();
-        //                     cachedAnimationDuration = 1.25f;
-        //                 }
-        //             }
-        //         }
-        //     }
-        //     return animations;
-        // }
+
+        @Override
+        public ResourceLocation getColladaAnimationSource() {
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/sliding_blast_door.dae");
+        }
+
+        /** Blender: frame 0 = open. Закрытое состояние = последний keyframe */
+        @Override
+        public boolean isColladaAnimationInverted() {
+            return false;
+        }
+
+        @Override
+        public String[] getChildren(String partName) {
+            return switch (partName) {
+                case "DoorLeft" -> new String[] { "DoorCircleLeft", "Window" };
+                case "DoorRight" -> new String[] { "DoorCircleRight" };
+                default -> super.getChildren(partName);
+            };
+        }
+
+        @Override
+        public boolean doesRender(String partName, boolean child) {
+            if (!child && ("DoorCircleLeft".equals(partName) || "Window".equals(partName) || "DoorCircleRight".equals(partName))) {
+                return false;
+            }
+            return true;
+        }
+
+        /** Fallback: DAE анимирует по X (влево-вправо). Если DAE недоступен — процедурно по X */
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            float progress = getNormTime(openTicks);
+            switch (partName) {
+                case "DoorFrame" -> set(trans, 0, 0, 0);
+                case "DoorLeft" -> set(trans, 2.5F * progress, 0, 0);   // +X влево-вправо (как в DAE)
+                case "DoorRight" -> set(trans, -2.5F * progress, 0, 0);  // -X
+                default -> super.getTranslation(partName, openTicks, child, trans);
+            }
+        }
 
         @Override
         public String[] getPartNames() {
-            return new String[] { "frame", "door" };
+            return new String[] { "DoorFrame", "DoorLeft", "DoorRight", "Window", "DoorCircleLeft", "DoorCircleRight" };
         }
     
         @Override
         public int getOpenTime() {
-            // Map<String, List<ColladaAnimationParser.AnimationChannel>> anims = getAnimations();
-            // if (cachedAnimationDuration != null && cachedAnimationDuration > 0) {
-            //     return Math.round(cachedAnimationDuration * 20f); // 1.25s * 20 = 25 тиков
-            // }
-            return 25;
-        }
-    
-        @Override
-        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
-            // Map<String, List<ColladaAnimationParser.AnimationChannel>> anims = getAnimations();
-            
-            // Инициализируем нулями (КРИТИЧНО: закрытое состояние по умолчанию!)
-            trans[0] = 0f;
-            trans[1] = 0f;
-            trans[2] = 0f;
-            
-            // if (anims.isEmpty() || !anims.containsKey(partName)) {
-            //     return;
-            // }
-    
-            float progress = getNormTime(openTicks);
-            float time = progress * cachedAnimationDuration;
-    
-            // Ищем канал transform (матричная анимация)
-            // for (ColladaAnimationParser.AnimationChannel channel : anims.get(partName)) {
-            //     if ("transform".equals(channel.property)) {
-            //         // Извлекаем translation из матрицы
-            //         float[] translation = channel.getTranslationFromMatrix(time);
-            //         trans[0] = translation[0];
-            //         trans[1] = translation[1];
-            //         trans[2] = translation[2];
-                    
-            //         MainRegistry.LOGGER.debug("Part {} at time {}: translation = [{}, {}, {}]",
-            //             partName, time, trans[0], trans[1], trans[2]);
-            //         return;
-            //     }
-                
-            //     // Fallback: если есть отдельные каналы location
-            //     if (channel.property.startsWith("location")) {
-            //         float value = channel.getValue(time);
-            //         if (channel.property.endsWith(".X")) trans[0] = value;
-            //         else if (channel.property.endsWith(".Y")) trans[1] = value;
-            //         else if (channel.property.endsWith(".Z")) trans[2] = value;
-            //     }
-            // }
+            return 24;
         }
     
         @Override

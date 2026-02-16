@@ -22,6 +22,7 @@ import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
+import com.hbm_m.event.ScrewdriverInteractionHandler;
 import com.hbm_m.handler.MobGearHandler;
 import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.item.ModItems;
@@ -93,6 +94,7 @@ public class MainRegistry {
         MinecraftForge.EVENT_BUS.register(new CrateBreaker());
         MinecraftForge.EVENT_BUS.register(new BombDefuser());
         MinecraftForge.EVENT_BUS.register(new MobGearHandler());
+        // MinecraftForge.EVENT_BUS.register(ScrewdriverInteractionHandler.class);
         ModBiomes.BIOMES.register(modEventBus);
         ModBlocks.BLOCKS.register(modEventBus);
         ModEntities.ENTITY_TYPES.register(modEventBus);
@@ -948,6 +950,7 @@ public class MainRegistry {
             //СПЕЦ. ИНСТРУМЕНТЫ
             event.accept(ModItems.DEFUSER);
             event.accept(ModItems.CROWBAR);
+            event.accept(ModItems.SCREWDRIVER);
 
             event.accept(ModItems.DOSIMETER);
             event.accept(ModItems.GEIGER_COUNTER);

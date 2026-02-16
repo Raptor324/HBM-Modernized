@@ -1,16 +1,18 @@
 package com.hbm_m.client.render;
 
+import org.joml.Matrix4f;
+
+import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity.ClientTicker;
-import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
-import com.hbm_m.client.render.shader.ImmediateFallbackRenderer;
-import com.hbm_m.client.render.shader.RenderPathManager;
+import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -27,24 +29,23 @@ import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.annotation.Nullable;
-
-import org.joml.Matrix4f;
-
 @OnlyIn(Dist.CLIENT)
 public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<MachineAdvancedAssemblerBlockEntity, MachineAdvancedAssemblerBakedModel> {
 
     private MachineAdvancedAssemblerVboRenderer gpu;
     private MachineAdvancedAssemblerBakedModel cachedModel;
     
-    // Instanced рендереры для статических частей
-    private static volatile InstancedStaticPartRenderer instancedBase;
-    private static volatile InstancedStaticPartRenderer instancedFrame;
+    // Instanced рендереры для анимированных частей (Frame — в BlockState/BakedModel)
+    private static volatile InstancedStaticPartRenderer instancedRing;
+    private static volatile InstancedStaticPartRenderer instancedArmLower1;
+    private static volatile InstancedStaticPartRenderer instancedArmUpper1;
+    private static volatile InstancedStaticPartRenderer instancedHead1;
+    private static volatile InstancedStaticPartRenderer instancedSpike1;
+    private static volatile InstancedStaticPartRenderer instancedArmLower2;
+    private static volatile InstancedStaticPartRenderer instancedArmUpper2;
+    private static volatile InstancedStaticPartRenderer instancedHead2;
+    private static volatile InstancedStaticPartRenderer instancedSpike2;
     private static volatile boolean instancersInitialized = false;
-    // private static MultiBufferSource.BufferSource cachedIconBuffer = null;
-    private static final ConcurrentHashMap<String, ImmediateFallbackRenderer> fallbackRenderers = new ConcurrentHashMap<>();
 
 
     public MachineAdvancedAssemblerRenderer(BlockEntityRendererProvider.Context ctx) {}
@@ -53,34 +54,46 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         if (instancersInitialized) return;
         
         try {
-            BakedModel baseModel = model.getPart("Base");
-            InstancedStaticPartRenderer tempBase = null;
-            if (baseModel != null) {
-                var baseData = ObjModelVboBuilder.buildSinglePart(baseModel);
-                tempBase = new InstancedStaticPartRenderer(baseData);
-            }
+            MainRegistry.LOGGER.info("MachineAdvancedAssemblerRenderer: Initializing instanced renderers...");
             
-            BakedModel frameModel = model.getPart("Frame");
-            InstancedStaticPartRenderer tempFrame = null;
-            if (frameModel != null) {
-                var frameData = ObjModelVboBuilder.buildSinglePart(frameModel);
-                tempFrame = new InstancedStaticPartRenderer(frameData);
-            }
+            // Анимированные части (Frame — в BlockState/BakedModel)
+            instancedRing = createInstancedForPart(model, "Ring");
+            instancedArmLower1 = createInstancedForPart(model, "ArmLower1");
+            instancedArmUpper1 = createInstancedForPart(model, "ArmUpper1");
+            instancedHead1 = createInstancedForPart(model, "Head1");
+            instancedSpike1 = createInstancedForPart(model, "Spike1");
+            instancedArmLower2 = createInstancedForPart(model, "ArmLower2");
+            instancedArmUpper2 = createInstancedForPart(model, "ArmUpper2");
+            instancedHead2 = createInstancedForPart(model, "Head2");
+            instancedSpike2 = createInstancedForPart(model, "Spike2");
             
-            //  КРИТИЧНО: Устанавливаем поля ДО флага
-            instancedBase = tempBase;
-            instancedFrame = tempFrame;
-            
-            //  Memory barrier: все записи видны после этого
+            // Memory barrier: все записи видны после этого
             instancersInitialized = true;
+            
             
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Failed to initialize instanced renderers", e);
-            instancedBase = null;
-            instancedFrame = null;
+            instancedRing = null;
+            instancedArmLower1 = null;
+            instancedArmUpper1 = null;
+            instancedHead1 = null;
+            instancedSpike1 = null;
+            instancedArmLower2 = null;
+            instancedArmUpper2 = null;
+            instancedHead2 = null;
+            instancedSpike2 = null;
         }
     }
     
+    private static InstancedStaticPartRenderer createInstancedForPart(MachineAdvancedAssemblerBakedModel model, String partName) {
+        BakedModel part = model.getPart(partName);
+        if (part == null) return null;
+        var data = ObjModelVboBuilder.buildSinglePart(part, partName);
+        if (data == null) return null;
+        var quads = GlobalMeshCache.getOrCompile("assembler_" + partName, part);
+        return new InstancedStaticPartRenderer(data, quads);
+    }
+
     //  Wrapper с double-check locking
     private void initializeInstancedRenderers(MachineAdvancedAssemblerBakedModel model) {
         if (!instancersInitialized) {  // Первая проверка без лока
@@ -107,169 +120,32 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                             int packedOverlay,
                             PoseStack poseStack,
                             MultiBufferSource bufferSource) {
+        var state = be.getBlockState();
+        boolean renderActive = state.hasProperty(MachineAdvancedAssemblerBlock.RENDER_ACTIVE) 
+                && state.getValue(MachineAdvancedAssemblerBlock.RENDER_ACTIVE);
+        boolean shaderActive = ShaderCompatibilityDetector.isExternalShaderActive();
+
+        // Шейдер активен + машина спит → всё в BakedModel, BER не рендерит.
+        if (shaderActive && !renderActive) {
+            return;
+        }
+                                
         BlockPos blockPos = be.getBlockPos();
         int blockLight = LightTexture.block(packedLight);
         int skyLight = LightTexture.sky(packedLight);
         int dynamicLight = LightTexture.pack(blockLight, skyLight);
         
-        //  Occlusion check
-
         var minecraft = Minecraft.getInstance();
         AABB renderBounds = be.getRenderBoundingBox();
         if (!OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
             return;
         }
         
-        boolean useFallback = RenderPathManager.shouldUseFallback();
-        
-        if (useFallback) {
-            // ═══════════════════════════════════════════════════════
-            // FALLBACK PATH: Immediate mode рендер (совместим с шейдерами)
-            // ═══════════════════════════════════════════════════════
-            renderWithFallback(be, model, partialTick, poseStack, dynamicLight);
-        } else {
-            // ═══════════════════════════════════════════════════════
-            // OPTIMIZED PATH: VBO рендер с кастомным шейдером
-            // ═══════════════════════════════════════════════════════
-            renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos);
-        }
+        renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource);
         
         if (bufferSource instanceof MultiBufferSource.BufferSource bufferSrc) {
             bufferSrc.endBatch();
         }
-    }
-
-    private void renderWithFallback(MachineAdvancedAssemblerBlockEntity be,
-                                    MachineAdvancedAssemblerBakedModel model,
-                                    float partialTick,
-                                    PoseStack poseStack,
-                                    int packedLight) {
-        try {
-            BlockPos blockPos = be.getBlockPos();
-            
-            // Рендер статических частей - каждая часть рендерится НЕЗАВИСИМО
-            renderFallbackPart("Base", model.getPart("Base"), poseStack, packedLight, 
-                            null, blockPos, be.getLevel(), be);
-            
-            if (be.frame) {
-                renderFallbackPart("Frame", model.getPart("Frame"), poseStack, packedLight, 
-                                null, blockPos, be.getLevel(), be);
-            }
-
-            // КЛЮЧЕВОЕ ИСПРАВЛЕНИЕ: Рендер анимированных частей с трансформациями
-            boolean shouldUpdateAnimation = !shouldSkipAnimationUpdate(be.getBlockPos());
-            if (shouldUpdateAnimation) {
-                renderAnimatedFallback(be, model, partialTick, poseStack, packedLight, blockPos);
-            }
-
-        } catch (Exception e) {
-            MainRegistry.LOGGER.error("Error in fallback render", e);
-        } finally {
-            // КРИТИЧНО: Завершаем batch как в DoorRenderer
-            ImmediateFallbackRenderer.endBatch();
-        }
-    }
-
-    /**
-     *  НОВЫЙ МЕТОД: Анимированный рендер в fallback режиме
-     */
-    private void renderAnimatedFallback(MachineAdvancedAssemblerBlockEntity be,
-                                    MachineAdvancedAssemblerBakedModel model,
-                                    float partialTick,
-                                    PoseStack poseStack,
-                                    int packedLight,
-                                    BlockPos blockPos) {
-        
-        // Кольцо с вращением
-        float ring = Mth.lerp(partialTick, be.getPrevRingAngle(), be.getRingAngle());
-        Matrix4f ringMat = new Matrix4f().rotateY((float) Math.toRadians(ring));
-
-        renderFallbackPart("Ring", model.getPart("Ring"), poseStack, packedLight,
-                ringMat, blockPos, be.getLevel(), be);
-
-        ClientTicker.AssemblerArm[] arms = be.getArms();
-        if (arms.length >= 2) {
-            renderArmFallback(arms[0], false, model, partialTick, poseStack, packedLight,
-                    ringMat, blockPos, be);
-            renderArmFallback(arms[1], true, model, partialTick, poseStack, packedLight,
-                    ringMat, blockPos, be);
-        }
-    }
-
-    private void renderFallbackPart(String partName, BakedModel partModel,
-                                    PoseStack poseStack, int packedLight,
-                                    @Nullable Matrix4f additionalTransform,
-                                    BlockPos blockPos,
-                                    net.minecraft.world.level.Level level,
-                                    MachineAdvancedAssemblerBlockEntity blockEntity) {
-        if (partModel == null) {
-            return;
-        }
-        try {
-            poseStack.pushPose();
-            if (additionalTransform != null) {
-                poseStack.last().pose().mul(additionalTransform);
-            }
-            ImmediateFallbackRenderer renderer = fallbackRenderers.computeIfAbsent(
-                partName,
-                k -> new ImmediateFallbackRenderer(partModel)
-            );
-            renderer.render(poseStack, packedLight, null, blockPos, level, blockEntity);
-            poseStack.popPose();
-        } catch (Exception e) {
-            MainRegistry.LOGGER.error("Error rendering fallback part {}: {}", partName, e.getMessage());
-            fallbackRenderers.remove(partName);
-        }
-    }
-
-    private void renderArmFallback(ClientTicker.AssemblerArm arm,
-                                   boolean inverted,
-                                   MachineAdvancedAssemblerBakedModel model,
-                                   float partialTick,
-                                   PoseStack poseStack,
-                                   int packedLight,
-                                   Matrix4f baseTransform,
-                                   BlockPos blockPos,
-                                   MachineAdvancedAssemblerBlockEntity blockEntity) {
-        if (arm == null) return; // Защита от NPE
-
-        float a0 = Mth.lerp(partialTick, arm.prevAngles[0], arm.angles[0]);
-        float a1 = Mth.lerp(partialTick, arm.prevAngles[1], arm.angles[1]);
-        float a2 = Mth.lerp(partialTick, arm.prevAngles[2], arm.angles[2]);
-        float a3 = Mth.lerp(partialTick, arm.prevAngles[3], arm.angles[3]);
-        float angleSign = inverted ? -1f : 1f;
-        float zBase = inverted ? -0.9375f : 0.9375f;
-
-        String lowerName = inverted ? "ArmLower2" : "ArmLower1";
-        String upperName = inverted ? "ArmUpper2" : "ArmUpper1";
-        String headName = inverted ? "Head2" : "Head1";
-        String spikeName = inverted ? "Spike2" : "Spike1";
-
-        Matrix4f lowerMat = new Matrix4f(baseTransform)
-                .translate(0, 1.625f, zBase)
-                .rotateX((float) Math.toRadians(angleSign * a0))
-                .translate(0, -1.625f, -zBase);
-        renderFallbackPart(lowerName, model.getPart(lowerName), poseStack, packedLight,
-                lowerMat, blockPos, blockEntity.getLevel(), blockEntity);
-
-        Matrix4f upperMat = new Matrix4f(lowerMat)
-                .translate(0, 2.375f, zBase)
-                .rotateX((float) Math.toRadians(angleSign * a1))
-                .translate(0, -2.375f, -zBase);
-        renderFallbackPart(upperName, model.getPart(upperName), poseStack, packedLight,
-                upperMat, blockPos, blockEntity.getLevel(), blockEntity);
-
-        Matrix4f headMat = new Matrix4f(upperMat)
-                .translate(0, 2.375f, zBase * 0.4667f)
-                .rotateX((float) Math.toRadians(angleSign * a2))
-                .translate(0, -2.375f, -zBase * 0.4667f);
-        renderFallbackPart(headName, model.getPart(headName), poseStack, packedLight,
-                headMat, blockPos, blockEntity.getLevel(), blockEntity);
-
-        Matrix4f spikeMat = new Matrix4f(headMat)
-                .translate(0, a3, 0);
-        renderFallbackPart(spikeName, model.getPart(spikeName), poseStack, packedLight,
-                spikeMat, blockPos, blockEntity.getLevel(), blockEntity);
     }
 
     @Override
@@ -288,10 +164,13 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                             float partialTick,
                             PoseStack poseStack,
                             int dynamicLight,
-                            BlockPos blockPos) {
-        
-        // Существующий код инициализации...
-        if (!instancersInitialized) {
+                            BlockPos blockPos,
+                            MultiBufferSource bufferSource) {
+        // Нет стороннего шейдера → полный VBO (инстансинг или прямой VBO).
+        // Сторонний шейдер активен → статичная геометрия (Base/Frame в чанке) + putBulkData для анимированных частей.
+        boolean useVboPath = !ShaderCompatibilityDetector.isExternalShaderActive();
+
+        if (useVboPath && !instancersInitialized) {
             initializeInstancedRenderers(model);
         }
 
@@ -300,25 +179,23 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
             gpu = new MachineAdvancedAssemblerVboRenderer(model);
         }
 
-        boolean shouldUpdateAnimation = !shouldSkipAnimationUpdate(blockPos);
-        
-        // ИСПРАВЛЕНИЕ: Передаем blockEntity для корректной работы culling и освещения
-        if (instancedBase != null) {
-            instancedBase.addInstance(poseStack, dynamicLight, blockPos, be);
-        } else {
-            gpu.renderStaticBase(poseStack, dynamicLight, blockPos, be);
-        }
-
-        if (be.frame) {
-            if (instancedFrame != null) {
-                instancedFrame.addInstance(poseStack, dynamicLight, blockPos, be);
-            } else {
-                gpu.renderStaticFrame(poseStack, dynamicLight, blockPos, be);
+        // Нет шейдера: Base и Frame рендерит BER (VBO). Шейдер активен: Base+Frame в BakedModel.
+        if (useVboPath) {
+            var blockState = be.getBlockState();
+            poseStack.pushPose();
+            poseStack.translate(-0.5f, 0.0f, -0.5f);
+            gpu.renderStaticBase(poseStack, dynamicLight, blockPos, be, bufferSource);
+            poseStack.popPose();
+            if (blockState.hasProperty(MachineAdvancedAssemblerBlock.FRAME) && blockState.getValue(MachineAdvancedAssemblerBlock.FRAME)) {
+                poseStack.pushPose();
+                poseStack.translate(-0.5f, 0.0f, -0.5f);
+                gpu.renderStaticFrame(poseStack, dynamicLight, blockPos, be, bufferSource);
+                poseStack.popPose();
             }
         }
 
-        if (shouldUpdateAnimation) {
-            renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos);
+        if (!shouldSkipAnimationUpdate(blockPos)) {
+            renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useVboPath);
         }
     }
 
@@ -346,32 +223,72 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     }
 
     /**
-     * ВАЖНО: Вызывать в конце рендера ВСЕХ машин для флаша батчей
+     * ВАЖНО: Вызывать в конце рендера ВСЕХ машин для флаша батчей.
+     * При useInstancedBatching использует матрицы из события.
      */
-    public static void flushInstancedBatches() {
-        if (instancedBase != null) instancedBase.flush();
-        if (instancedFrame != null) instancedFrame.flush();
+    public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+        if (instancedRing != null) instancedRing.flush(event);
+        if (instancedArmLower1 != null) instancedArmLower1.flush(event);
+        if (instancedArmUpper1 != null) instancedArmUpper1.flush(event);
+        if (instancedHead1 != null) instancedHead1.flush(event);
+        if (instancedSpike1 != null) instancedSpike1.flush(event);
+        if (instancedArmLower2 != null) instancedArmLower2.flush(event);
+        if (instancedArmUpper2 != null) instancedArmUpper2.flush(event);
+        if (instancedHead2 != null) instancedHead2.flush(event);
+        if (instancedSpike2 != null) instancedSpike2.flush(event);
+    }
+
+    /**
+     * Очищает кэши instanced рендереров (вызывается при периодической очистке памяти)
+     */
+    public static void clearCaches() {
+        cleanupInstanced(instancedRing); instancedRing = null;
+        cleanupInstanced(instancedArmLower1); instancedArmLower1 = null;
+        cleanupInstanced(instancedArmUpper1); instancedArmUpper1 = null;
+        cleanupInstanced(instancedHead1); instancedHead1 = null;
+        cleanupInstanced(instancedSpike1); instancedSpike1 = null;
+        cleanupInstanced(instancedArmLower2); instancedArmLower2 = null;
+        cleanupInstanced(instancedArmUpper2); instancedArmUpper2 = null;
+        cleanupInstanced(instancedHead2); instancedHead2 = null;
+        cleanupInstanced(instancedSpike2);         instancedSpike2 = null;
+        instancersInitialized = false;
+        MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
+    }
+
+    private static void cleanupInstanced(InstancedStaticPartRenderer r) {
+        if (r != null) r.cleanup();
     }
 
     private void renderAnimated(MachineAdvancedAssemblerBlockEntity be, float pt,
-                                PoseStack pose, int blockLight, BlockPos blockPos) {
-        // ИСПРАВЛЕНИЕ: Используем геттеры
+                                PoseStack pose, int blockLight, BlockPos blockPos,
+                                MultiBufferSource bufferSource, boolean useVboPath) {
         float ring = Mth.lerp(pt, be.getPrevRingAngle(), be.getRingAngle());
-        Matrix4f ringMat = new Matrix4f().rotateY((float) Math.toRadians(ring));
+        Matrix4f ringMat = new Matrix4f()
+                .rotateY((float) Math.toRadians(ring))
+                .translate(-0.5f, 0.0f, -0.5f);
 
-        gpu.renderAnimatedPart(pose, blockLight, "Ring", ringMat, blockPos, be);
+        // Инстансинг только когда нет стороннего шейдера (VBO путь)
+        boolean useBatching = useVboPath && ModClothConfig.useInstancedBatching();
+        if (useBatching && instancedRing != null && instancedRing.isInitialized()) {
+            pose.pushPose();
+            pose.last().pose().mul(ringMat);
+            instancedRing.addInstance(pose, blockLight, blockPos, be, bufferSource);
+            pose.popPose();
+        } else {
+            gpu.renderAnimatedPart(pose, blockLight, "Ring", ringMat, blockPos, be, bufferSource);
+        }
 
-        // ИСПРАВЛЕНИЕ: Получаем массив рук через геттер
         ClientTicker.AssemblerArm[] arms = be.getArms();
         if (arms.length >= 2) {
-            renderArm(arms[0], false, pt, pose, blockLight, ringMat, blockPos, be);
-            renderArm(arms[1], true, pt, pose, blockLight, ringMat, blockPos, be);
+            renderArm(arms[0], false, pt, pose, blockLight, ringMat, blockPos, be, bufferSource, useBatching);
+            renderArm(arms[1], true, pt, pose, blockLight, ringMat, blockPos, be, bufferSource, useBatching);
         }
     }
 
     private void renderArm(ClientTicker.AssemblerArm arm, boolean inverted,
                            float pt, PoseStack pose, int blockLight, Matrix4f baseTransform,
-                           BlockPos blockPos, MachineAdvancedAssemblerBlockEntity be) {
+                           BlockPos blockPos, MachineAdvancedAssemblerBlockEntity be,
+                           MultiBufferSource bufferSource, boolean useInstanced) {
         if (arm == null) return;
 
         float a0 = Mth.lerp(pt, arm.prevAngles[0], arm.angles[0]);
@@ -381,32 +298,49 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         float angleSign = inverted ? -1f : 1f;
         float zBase = inverted ? -0.9375f : 0.9375f;
 
-        String lowerName = inverted ? "ArmLower2" : "ArmLower1";
-        String upperName = inverted ? "ArmUpper2" : "ArmUpper1";
-        String headName = inverted ? "Head2" : "Head1";
-        String spikeName = inverted ? "Spike2" : "Spike1";
-
         Matrix4f lowerMat = new Matrix4f(baseTransform)
-                .translate(0, 1.625f, zBase)
+                .translate(0.5f, 1.625f, 0.5f + zBase)
                 .rotateX((float) Math.toRadians(angleSign * a0))
-                .translate(0, -1.625f, -zBase);
-        gpu.renderAnimatedPart(pose, blockLight, lowerName, lowerMat, blockPos, be);
+                .translate(-0.5f, -1.625f, -(0.5f + zBase));
+
+        addInstanceOrRender(useInstanced, inverted ? instancedArmLower2 : instancedArmLower1,
+                pose, blockLight, blockPos, be, "ArmLower1", "ArmLower2", lowerMat, inverted, bufferSource);
 
         Matrix4f upperMat = new Matrix4f(lowerMat)
-                .translate(0, 2.375f, zBase)
+                .translate(0.5f, 2.375f, 0.5f + zBase)
                 .rotateX((float) Math.toRadians(angleSign * a1))
-                .translate(0, -2.375f, -zBase);
-        gpu.renderAnimatedPart(pose, blockLight, upperName, upperMat, blockPos, be);
+                .translate(-0.5f, -2.375f, -(0.5f + zBase));
+
+        addInstanceOrRender(useInstanced, inverted ? instancedArmUpper2 : instancedArmUpper1,
+                pose, blockLight, blockPos, be, "ArmUpper1", "ArmUpper2", upperMat, inverted, bufferSource);
 
         Matrix4f headMat = new Matrix4f(upperMat)
-                .translate(0, 2.375f, zBase * 0.4667f)
+                .translate(0.5f, 2.375f, 0.5f + (zBase * 0.4667f))
                 .rotateX((float) Math.toRadians(angleSign * a2))
-                .translate(0, -2.375f, -zBase * 0.4667f);
-        gpu.renderAnimatedPart(pose, blockLight, headName, headMat, blockPos, be);
+                .translate(-0.5f, -2.375f, -(0.5f + (zBase * 0.4667f)));
+
+        addInstanceOrRender(useInstanced, inverted ? instancedHead2 : instancedHead1,
+                pose, blockLight, blockPos, be, "Head1", "Head2", headMat, inverted, bufferSource);
 
         Matrix4f spikeMat = new Matrix4f(headMat)
                 .translate(0, a3, 0);
-        gpu.renderAnimatedPart(pose, blockLight, spikeName, spikeMat, blockPos, be);
+        addInstanceOrRender(useInstanced, inverted ? instancedSpike2 : instancedSpike1,
+                pose, blockLight, blockPos, be, "Spike1", "Spike2", spikeMat, inverted, bufferSource);
+    }
+
+    private void addInstanceOrRender(boolean useInstanced, InstancedStaticPartRenderer instanced,
+            PoseStack pose, int blockLight, BlockPos blockPos, MachineAdvancedAssemblerBlockEntity be,
+            String name1, String name2, Matrix4f transform, boolean inverted,
+            MultiBufferSource bufferSource) {
+        String partName = inverted ? name2 : name1;
+        if (useInstanced && instanced != null && instanced.isInitialized()) {
+            pose.pushPose();
+            pose.last().pose().mul(transform);
+            instanced.addInstance(pose, blockLight, blockPos, be, bufferSource);
+            pose.popPose();
+        } else {
+            gpu.renderAnimatedPart(pose, blockLight, partName, transform, blockPos, be, bufferSource);
+        }
     }
 
     private void renderRecipeIconDirect(MachineAdvancedAssemblerBlockEntity be,
@@ -467,29 +401,12 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         return true; 
     }
 
-    @Override 
-    public int getViewDistance() { 
-        return 128; 
-    }
+    @Override public int getViewDistance() { return 128; }
     
     public void onResourceManagerReload() {
-        if (instancedBase != null) {
-            instancedBase.cleanup();
-            instancedBase = null;
-        }
-        if (instancedFrame != null) {
-            instancedFrame.cleanup();
-            instancedFrame = null;
-        }
-        instancersInitialized = false;
-        
-        //  Очищаем fallback кэш
-        fallbackRenderers.clear();
-        
-        MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
+        clearCaches();
         gpu = null;
         cachedModel = null;
-        
         MainRegistry.LOGGER.debug("Assembler renderer resources reloaded");
     }
 }

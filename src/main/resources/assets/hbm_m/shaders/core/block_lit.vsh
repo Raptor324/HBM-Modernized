@@ -26,6 +26,10 @@ void main() {
     float bright;
     
     if (UseInstancing == 1) {
+        // ВАЖНО: mat4(vec4, vec4, vec4, vec4) конструирует матрицу по СТОЛБЦАМ!
+        // InstMatRow0-3 содержат строки матрицы в column-major формате из JOML
+        // Поэтому нужно транспонировать, чтобы получить правильную матрицу
+        // modelView = transpose(mat4(InstMatRow0, InstMatRow1, InstMatRow2, InstMatRow3));
         modelView = mat4(InstMatRow0, InstMatRow1, InstMatRow2, InstMatRow3);
         bright = InstBrightness;
     } else {

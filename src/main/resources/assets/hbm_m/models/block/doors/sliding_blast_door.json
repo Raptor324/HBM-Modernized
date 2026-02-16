@@ -1,6 +1,6 @@
 {
   "loader": "hbm_m:door",
-  "model": "hbm_m:models/block/doors/sliding_blast_door.obj",
+  "model": "hbm_m:models/block/doors/sliding_blast_door_v2.obj",
   "parts": ["DoorFrame", "DoorLeft", "DoorRight", "Window", "DoorCircleLeft", "DoorCircleRight"],
   "textures": {
     "texture0": "hbm_m:block/sliding_blast_door",

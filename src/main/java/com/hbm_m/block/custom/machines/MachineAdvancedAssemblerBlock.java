@@ -5,9 +5,6 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-// Этот класс реализует блок продвинутой сборочной машины,
-// которая является мультиблочной структурой 3x3x3 с центральным контроллером
-import com.google.common.collect.ImmutableMap;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
@@ -38,6 +35,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -49,18 +47,23 @@ import net.minecraftforge.network.NetworkHooks;
 public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    /** Рама видима, когда сверху сбормашины стоят блоки. Хранится в BlockState для запекания в чанк (Embeddium/Sodium). */
+    public static final BooleanProperty FRAME = BooleanProperty.create("frame");
+    public static final BooleanProperty RENDER_ACTIVE = BooleanProperty.create("render_active");
 
     private final MultiblockStructureHelper structureHelper;
 
     public MachineAdvancedAssemblerBlock(Properties pProperties) {
         super(pProperties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        // Используем новый рецептоподобный способ определения структуры
+        this.registerDefaultState(this.stateDefinition.any()
+        .setValue(FACING, Direction.NORTH)
+        .setValue(FRAME, false)
+        .setValue(RENDER_ACTIVE, false));
+
         this.structureHelper = defineStructureNew();
-        // this.structureHelper = new MultiblockStructureHelper(defineStructure(), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
-    // --- Связь с энергосетью HBM ---
+
 
     @Override
     public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
@@ -119,8 +122,8 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
-    @Override public RenderShape getRenderShape(BlockState pState) { return RenderShape.ENTITYBLOCK_ANIMATED; }
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) { pBuilder.add(FACING); }
+    @Override public RenderShape getRenderShape(BlockState pState) { return RenderShape.MODEL; }
+    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) { pBuilder.add(FACING, FRAME, RENDER_ACTIVE); }
     @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext pContext) { return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection().getOpposite()); }
     @Nullable @Override public BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) { return new MachineAdvancedAssemblerBlockEntity(pPos, pState); }
 

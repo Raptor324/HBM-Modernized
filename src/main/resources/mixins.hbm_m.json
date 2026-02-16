@@ -8,7 +8,6 @@
     "SlotMixin"
   ],
   "client": [
-    "ShadowIntegrationMixin"
   ],
   "injectors": {
     "defaultRequire": 1

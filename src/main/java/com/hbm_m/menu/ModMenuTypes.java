@@ -26,7 +26,6 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<MachineAdvancedAssemblerMenu>> ADVANCED_ASSEMBLY_MACHINE_MENU =
             MENUS.register("advanced_assembly_machine_menu", () -> IForgeMenuType.create(MachineAdvancedAssemblerMenu::new));
 
-    // ✅ ИСПРАВЛЕНО: Правильная регистрация с IForgeMenuType
     public static final RegistryObject<MenuType<MachineBatteryMenu>> MACHINE_BATTERY_MENU =
             MENUS.register("machine_battery_menu", () -> IForgeMenuType.create(MachineBatteryMenu::new));
 

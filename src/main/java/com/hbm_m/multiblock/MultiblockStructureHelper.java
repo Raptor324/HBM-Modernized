@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 // Позволяет определять структуру, проверять возможность постройки, строить и разрушать структуру,
 // а также генерировать VoxelShape для всей структуры. Ядро всей мультиблочной логики.
 import com.hbm_m.api.energy.WireBlock;
+import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.custom.machines.UniversalMachinePartBlock;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
@@ -757,8 +758,20 @@ public class MultiblockStructureHelper {
         // Вычисляем видимость рамки
         boolean visible = helper.computeFrameVisible(level, controllerPos, facing);
 
-        // Применяем изменения через интерфейс BlockEntity
-        frameSupportable.setFrameVisible(visible);
+        // MachineAdvancedAssemblerBlock: храним FRAME в BlockState для запекания в чанк (Embeddium/Sodium)
+        if (block instanceof MachineAdvancedAssemblerBlock) {
+            BlockState currentState = level.getBlockState(controllerPos);
+            if (currentState.hasProperty(MachineAdvancedAssemblerBlock.FRAME)
+                    && currentState.getValue(MachineAdvancedAssemblerBlock.FRAME) != visible) {
+                level.setBlock(controllerPos, currentState.setValue(MachineAdvancedAssemblerBlock.FRAME, visible), 3);
+            }
+            return;
+        }
+
+        // Остальные контроллеры (двери и т.д.): применяем через интерфейс BlockEntity
+        if (be instanceof IFrameSupportable fs) {
+            fs.setFrameVisible(visible);
+        }
     }
 
 

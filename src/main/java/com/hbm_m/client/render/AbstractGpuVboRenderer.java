@@ -1,13 +1,24 @@
 package com.hbm_m.client.render;
 
+import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.blaze3d.vertex.BufferUploader;
+import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.BufferBuilder;
+import com.mojang.blaze3d.vertex.Tesselator;
+import com.mojang.blaze3d.vertex.VertexFormat;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -23,6 +34,8 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.system.MemoryUtil;
 
+import java.util.List;
+
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 
@@ -34,7 +47,17 @@ public abstract class AbstractGpuVboRenderer {
     protected int eboId = -1;
     protected int indexCount = 0;
     protected boolean initialized = false;
+    /** При true — init уже провалился, не пытаемся снова и не логируем */
+    protected boolean initFailed = false;
     protected abstract VboData buildVboData();
+
+    /**
+     * Квады для Iris-совместимого пути (BufferBuilder + GameRenderer shader).
+     * Переопределяется в рендерерах, созданных через GlobalMeshCache.
+     */
+    protected List<BakedQuad> getQuadsForIrisPath() {
+        return null;
+    }
 
 
     static final class TextureBinder {
@@ -194,27 +217,88 @@ public abstract class AbstractGpuVboRenderer {
         }
     }
 
+    private void renderToBufferSource(PoseStack poseStack, int packedLight, List<BakedQuad> quads, MultiBufferSource bufferSource) {
+        if (quads == null || quads.isEmpty() || bufferSource == null) return;
+        var consumer = bufferSource.getBuffer(RenderType.solid());
+        var pose = poseStack.last();
+        // При использовании bufferSource мы НЕ вызываем endBatch(), движок сам отрисует когда надо
+        for (BakedQuad quad : quads) {
+            // Используем стандартный putBulkData, он корректно работает с Iris
+            consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+        }
+    }
+
+    /**
+     * Iris-совместимый рендер: BufferBuilder + drawWithShader (fallback когда bufferSource недоступен).
+     * @deprecated Предпочитать renderToBufferSource — drawWithShader конфликтует с Iris uniforms.
+     */
+    private void renderIrisCompatible(PoseStack poseStack, int packedLight, List<BakedQuad> quads) {
+        if (quads == null || quads.isEmpty()) return;
+        Tesselator tesselator = Tesselator.getInstance();
+        BufferBuilder buffer = tesselator.getBuilder();
+        if (buffer.building()) {
+            try {
+                BufferUploader.drawWithShader(buffer.end());
+            } catch (Exception e) {
+                buffer.discard();
+            }
+        }
+        // НЕ использовать IrisBufferHelper — дать MixinBufferBuilder расширить BLOCK до TERRAIN
+        buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+        var pose = poseStack.last();
+        for (BakedQuad quad : quads) {
+            buffer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+        }
+        var builtBuffer = buffer.end();
+        if (builtBuffer.drawState().vertexCount() > 0) {
+            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
+            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+            RenderSystem.enableDepthTest();
+            RenderSystem.depthFunc(GL11.GL_LEQUAL);
+            RenderSystem.depthMask(true);
+            GL11.glDisable(GL11.GL_CULL_FACE);
+            BufferUploader.drawWithShader(builtBuffer);
+            RenderSystem.enableCull();
+            RenderSystem.depthFunc(GL11.GL_LESS);
+        }
+    }
+
     public void render(PoseStack poseStack, int packedLight, BlockPos blockPos) {
-        render(poseStack, packedLight, blockPos, null);
+        render(poseStack, packedLight, blockPos, null, null);
     }
 
     public void render(PoseStack poseStack, int packedLight, BlockPos blockPos, 
                     @Nullable BlockEntity blockEntity) {
-        //  CULLING CHECK - ранний выход
-        if (!shouldRenderWithCulling(blockPos, blockEntity)) {
+        render(poseStack, packedLight, blockPos, blockEntity, null);
+    }
+
+    public void render(PoseStack poseStack, int packedLight, BlockPos blockPos, 
+                    @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
+        if (!shouldRenderWithCulling(blockPos, blockEntity)) return;
+
+        if (ShaderCompatibilityDetector.isExternalShaderActive()) {
+            List<BakedQuad> irisQuads = getQuadsForIrisPath();
+            // Если у нас есть квады и буфер - рисуем через ванильный пайплайн
+            if (irisQuads != null && bufferSource != null) {
+                renderToBufferSource(poseStack, packedLight, irisQuads, bufferSource);
+            }
+            // И ВЫХОДИМ, чтобы не трогать GL напрямую
             return;
         }
-        if (!initialized) {
+
+        if (!initialized && !initFailed) {
             try {
                 initVbo();
             } catch (Exception e) {
-                MainRegistry.LOGGER.error("Failed to initialize VBO", e);
+                initFailed = true;
+                MainRegistry.LOGGER.debug("VBO init failed (part has no geometry or other error), skipping: {}", e.getMessage());
                 vaoId = -1;
                 vboId = -1;
                 eboId = -1;
                 return;
             }
         }
+        if (initFailed) return;
         if (!initialized || vaoId <= 0 || vboId <= 0) {
             return;
         }
@@ -295,7 +379,7 @@ public abstract class AbstractGpuVboRenderer {
                 GL11.glEnable(GL11.GL_CULL_FACE);
             }
             
-            RenderSystem.setShader(() -> null);
+            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
             GL13.glActiveTexture(GL13.GL_TEXTURE0);
             GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, previousMinFilter);
@@ -342,6 +426,7 @@ public abstract class AbstractGpuVboRenderer {
         this.vboId = -1;
         this.eboId = -1;
         this.initialized = false;
+        this.initFailed = false;
 
         // Планируем реальные GL-вызовы на рендер-тред
         RenderSystem.recordRenderCall(() -> {

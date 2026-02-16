@@ -1,5 +1,14 @@
 package com.hbm_m.client.render;
 
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.lwjgl.system.MemoryUtil;
+
+import com.hbm_m.main.MainRegistry;
+
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
@@ -8,31 +17,34 @@ import net.minecraft.util.RandomSource;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.ModelData;
-import org.lwjgl.system.MemoryUtil;
-import com.hbm_m.main.MainRegistry;
-
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.util.ArrayList;
-import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class ObjModelVboBuilder {
 
     public static AbstractGpuVboRenderer.VboData buildSinglePart(BakedModel modelPart) {
+        return buildSinglePart(modelPart, "unknown");
+    }
+    
+    public static AbstractGpuVboRenderer.VboData buildSinglePart(BakedModel modelPart, String partName) {
         List<BakedQuad> quads = new ArrayList<>();
         
         // Загружаем квады для ВСЕХ направлений + null
-        quads.addAll(modelPart.getQuads(null, null, RandomSource.create(42), ModelData.EMPTY, RenderType.solid()));
+        List<BakedQuad> nullQuads = modelPart.getQuads(null, null, RandomSource.create(42), ModelData.EMPTY, RenderType.solid());
+        quads.addAll(nullQuads);
+        
         for (Direction direction : Direction.values()) {
-            quads.addAll(modelPart.getQuads(null, direction, RandomSource.create(42), ModelData.EMPTY, RenderType.solid()));
+            List<BakedQuad> dirQuads = modelPart.getQuads(null, direction, RandomSource.create(42), ModelData.EMPTY, RenderType.solid());
+            quads.addAll(dirQuads);
         }
 
-        // ИСПРАВЛЕНИЕ: Если квадов нет - возвращаем null вместо пустых буферов
+        // Если квадов нет - возвращаем null (часть без геометрии, пропускаем без спама)
         if (quads.isEmpty()) {
-            MainRegistry.LOGGER.warn("No quads found in model part, returning null VboData");
+            MainRegistry.LOGGER.debug("VBO Builder: Part '{}' has NO QUADS, skipping", partName);
             return null;
         }
+        
+        MainRegistry.LOGGER.debug("VBO Builder: Part '{}' has {} quads (null-face: {}, directional: {})", 
+            partName, quads.size(), nullQuads.size(), quads.size() - nullQuads.size());
 
         List<Float> vertices = new ArrayList<>();
         List<Integer> indices = new ArrayList<>();

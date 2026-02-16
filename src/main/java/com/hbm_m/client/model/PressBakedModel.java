@@ -51,7 +51,8 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
 
     @Override
     protected boolean shouldSkipWorldRendering(@Nullable BlockState state) {
-        return state != null && state.hasBlockEntity();
+        // Base запекается в чанк Embeddium/Sodium; BER рендерит только Head
+        return false;
     }
 
     @Override
@@ -63,14 +64,16 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                     RandomSource rand, ModelData modelData,
                                     @Nullable net.minecraft.client.renderer.RenderType renderType) {
-        if (shouldSkipWorldRendering(state)) {
-            return Collections.emptyList();
-        }
-
+        // ITEM RENDER (Инвентарь/Рука)
         if (state == null) {
             return getItemQuads(side, rand, modelData, renderType);
         }
 
+        // WORLD RENDER: Base запекается в чанк Embeddium/Sodium — нулевая нагрузка на CPU
+        BakedModel basePart = parts.get(BASE);
+        if (basePart != null) {
+            return basePart.getQuads(state, side, rand, modelData, renderType);
+        }
         return Collections.emptyList();
     }
 

@@ -5,9 +5,7 @@ package com.hbm_m.client;
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.overlay.*;
 import com.hbm_m.client.loader.*;
-import com.hbm_m.client.overlay.crates.GUIDeshCrate;
-import com.hbm_m.client.overlay.crates.GUIIronCrate;
-import com.hbm_m.client.overlay.crates.GUISteelCrate;
+import com.hbm_m.client.overlay.crates.*;
 import com.hbm_m.client.render.*;
 import com.hbm_m.client.render.shader.*;
 import com.hbm_m.config.*;
@@ -119,8 +117,7 @@ public class ClientSetup {
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
         event.enqueueWork(() -> {
-                        MenuScreens.register(ModMenuTypes.ORE_ACIDIZER_MENU.get(), com.hbm_m.client.screen.OreAcidizerScreen::new);
-            // Здесь мы связываем наш тип меню с классом экрана
+            MenuScreens.register(ModMenuTypes.ORE_ACIDIZER_MENU.get(), com.hbm_m.client.screen.OreAcidizerScreen::new);
             MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
             MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
             MenuScreens.register(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
@@ -143,16 +140,8 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), ChemicalPlantRenderer::new);
 
             OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
-            try {
-                RenderPathManager.updateRenderPath();
-                MainRegistry.LOGGER.info("VBO render system initialized successfully");
-            } catch (Exception e) {
-                MainRegistry.LOGGER.error("Failed to initialize VBO render system", e);
-            }
-            
-            // ДОБАВИТЬ: Регистрация обработчика отключения от сервера
             MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
-            MainRegistry.LOGGER.info("Initial render path check completed");
+            MainRegistry.LOGGER.info("VBO render system initialized successfully");
         });
     }
 
@@ -218,24 +207,21 @@ public class ClientSetup {
                 preparationsProfiler, reloadProfiler,
                 backgroundExecutor, gameExecutor) -> {
             return preparationBarrier.wait(null).thenRunAsync(() -> {
-                // Очищаем глобальный кэш VBO
-                MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
-                ImmediateFallbackRenderer.clearGlobalCache();
-                DoorRenderer.clearAllCaches();
-                MachinePressRenderer.clearCaches();
-                
-                // ИСПРАВЛЕНО: НЕ вызываем reset(), вместо этого очищаем только кеши
-                GlobalMeshCache.clearAll();
-                // DoorPartAABBRegistry.clear();
-                
-                // Переинициализируем immediate рендер после очистки
-                ImmediateFallbackRenderer.onShaderReload();
-                
-                // ИСПРАВЛЕНО: Вместо reset() просто обновляем путь на основе текущего состояния
-                // Это сохранит ручное переключение, если оно было активно
-                RenderPathManager.updateRenderPath();
-                
-                MainRegistry.LOGGER.info("VBO cache cleanup completed, render path preserved");
+                // КРИТИЧНО: Откладываем очистку кэшей на render thread, чтобы избежать
+                // race condition с активным рендером (EXCEPTION_ACCESS_VIOLATION при
+                // включении шейдера — clearCaches вызывался во время render pass).
+                com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
+                    try {
+                        MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
+                        MachineAdvancedAssemblerRenderer.clearCaches();
+                        DoorRenderer.clearAllCaches();
+                        MachinePressRenderer.clearCaches();
+                        GlobalMeshCache.clearAll();
+                        MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");
+                    } catch (Exception e) {
+                        MainRegistry.LOGGER.error("Error during deferred VBO cache cleanup", e);
+                    }
+                });
             }, gameExecutor);
         });
     }
@@ -245,7 +231,6 @@ public class ClientSetup {
         DoorRenderer.clearAllCaches();
         MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
         MachinePressRenderer.clearCaches();
-        com.hbm_m.client.render.shader.ImmediateFallbackRenderer.forceReset();
     }
 
     @SubscribeEvent

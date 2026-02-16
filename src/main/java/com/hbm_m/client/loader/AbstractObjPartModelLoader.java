@@ -1,13 +1,24 @@
 package com.hbm_m.client.loader;
 
+import java.util.HashMap;
+import java.util.Set;
+import java.util.function.Function;
+
+import org.jetbrains.annotations.NotNull;
+
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.math.Transformation;
+
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.*;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.Material;
+import net.minecraft.client.resources.model.ModelBaker;
+import net.minecraft.client.resources.model.ModelState;
+import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
@@ -15,11 +26,6 @@ import net.minecraftforge.client.model.geometry.IGeometryLoader;
 import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 import net.minecraftforge.client.model.obj.ObjLoader;
 import net.minecraftforge.client.model.obj.ObjModel;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.HashMap;
-import java.util.Set;
-import java.util.function.Function;
 
 public abstract class AbstractObjPartModelLoader<T extends BakedModel> implements IGeometryLoader<AbstractObjPartModelLoader.ObjPartGeometry<T>> {
 
@@ -85,11 +91,28 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
             HashMap<String, BakedModel> bakedParts = new HashMap<>();
             ModelState identityState = createIdentityState();
 
+            MainRegistry.LOGGER.info("{}: Baking {} parts: {}", 
+                loader.getClass().getSimpleName(), partNames.size(), partNames);
+
             for (String partName : partNames) {
                 SinglePartBakingContext partContext = new SinglePartBakingContext(context, partName);
                 BakedModel bakedPart = model.bake(partContext, baker, spriteGetter,
                     identityState, overrides, modelName);
                 bakedParts.put(partName, bakedPart);
+                
+                // Логируем информацию о запечённой части
+                if (bakedPart != null) {
+                    int quadCount = 0;
+                    for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
+                        quadCount += bakedPart.getQuads(null, dir, net.minecraft.util.RandomSource.create(42)).size();
+                    }
+                    quadCount += bakedPart.getQuads(null, null, net.minecraft.util.RandomSource.create(42)).size();
+                    MainRegistry.LOGGER.info("{}: Baked part '{}' -> {} quads, model: {}", 
+                        loader.getClass().getSimpleName(), partName, quadCount, bakedPart.getClass().getSimpleName());
+                } else {
+                    MainRegistry.LOGGER.warn("{}: Part '{}' baked to NULL!", 
+                        loader.getClass().getSimpleName(), partName);
+                }
             }
 
             return bakedParts;
@@ -100,10 +123,24 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
                                    Function<Material, TextureAtlasSprite> spriteGetter,
                                    ItemOverrides overrides, ResourceLocation modelName) {
             if (!bakedParts.containsKey("Base")) {
-                bakedParts.put("Base", model.bake(
+                MainRegistry.LOGGER.info("{}: Creating fallback 'Base' part", loader.getClass().getSimpleName());
+                BakedModel baseModel = model.bake(
                     new SinglePartBakingContext(context, "Base"),
                     baker, spriteGetter, createIdentityState(), overrides, modelName
-                ));
+                );
+                bakedParts.put("Base", baseModel);
+                
+                if (baseModel != null) {
+                    int quadCount = 0;
+                    for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
+                        quadCount += baseModel.getQuads(null, dir, net.minecraft.util.RandomSource.create(42)).size();
+                    }
+                    quadCount += baseModel.getQuads(null, null, net.minecraft.util.RandomSource.create(42)).size();
+                    MainRegistry.LOGGER.info("{}: Fallback 'Base' part has {} quads", 
+                        loader.getClass().getSimpleName(), quadCount);
+                } else {
+                    MainRegistry.LOGGER.warn("{}: Fallback 'Base' part is NULL!", loader.getClass().getSimpleName());
+                }
             }
         }
 

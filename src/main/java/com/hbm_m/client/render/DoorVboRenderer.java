@@ -1,23 +1,29 @@
 package com.hbm_m.client.render;
 
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.entity.custom.doors.DoorDecl;
 import com.hbm_m.client.model.DoorBakedModel;
+import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.mojang.blaze3d.vertex.PoseStack;
+
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.concurrent.ConcurrentHashMap;
 
 @OnlyIn(Dist.CLIENT)
 public class DoorVboRenderer extends AbstractGpuVboRenderer {
 
     private final DoorBakedModel model;
     private final String partName;
-    private final String cacheKey;
+    private final String quadCacheKey;
 
     // Кэш VBO рендереров для каждой анимированной части двери (НЕ включая frame)
     private static final ConcurrentHashMap<String, DoorVboRenderer> partRenderers = new ConcurrentHashMap<>();
@@ -27,10 +33,10 @@ public class DoorVboRenderer extends AbstractGpuVboRenderer {
     private static final ThreadLocal<float[]> originBuffer = ThreadLocal.withInitial(() -> new float[3]);
     private static final ThreadLocal<float[]> rotationBuffer = ThreadLocal.withInitial(() -> new float[3]);
 
-    private DoorVboRenderer(DoorBakedModel model, String partName) {
+    private DoorVboRenderer(DoorBakedModel model, String partName, String quadCacheKey) {
         this.model = model;
         this.partName = partName;
-        this.cacheKey = "door_" + partName;
+        this.quadCacheKey = quadCacheKey;
     }
 
     /**
@@ -39,23 +45,43 @@ public class DoorVboRenderer extends AbstractGpuVboRenderer {
      */
     public static DoorVboRenderer getOrCreate(DoorBakedModel model, String partName, String doorType) {
         // Защита от создания VBO рендерера для статических частей
-        if ("frame".equals(partName)) {
-            throw new IllegalArgumentException("Frame part should use InstancedStaticPartRenderer, not DoorVboRenderer!");
-        }
-        
-        if ("Base".equals(partName)) {
-            throw new IllegalArgumentException("Base part is empty and should not be rendered!");
+        // ИСПРАВЛЕНИЕ: Проверяем все варианты регистра
+        if (isStaticPart(partName)) {
+            throw new IllegalArgumentException("Static part '" + partName + "' should use InstancedStaticPartRenderer, not DoorVboRenderer!");
         }
     
-        // ИСПРАВЛЕНИЕ: Включаем тип двери в ключ кэша
-        String key = "door_" + doorType + "_" + partName + "_" + System.identityHashCode(model);
-        return partRenderers.computeIfAbsent(key, k -> new DoorVboRenderer(model, partName));
+        String key = "door_" + doorType + "_" + partName;
+        return partRenderers.computeIfAbsent(key, k -> new DoorVboRenderer(model, partName, key));
+    }
+
+    /**
+     * Получает или создает VBO рендерер с поддержкой выбора модели.
+     * Включает тип модели и скин в ключ кэша.
+     */
+    public static DoorVboRenderer getOrCreate(DoorBakedModel model, String partName, 
+                                              String doorType, DoorModelSelection selection) {
+        // Защита от создания VBO рендерера для статических частей
+        // ИСПРАВЛЕНИЕ: Проверяем все варианты регистра
+        if (isStaticPart(partName)) {
+            throw new IllegalArgumentException("Static part '" + partName + "' should use InstancedStaticPartRenderer!");
+        }
+    
+        String key = "door_" + doorType + "_" + selection.getModelType().getId() + 
+                     "_" + selection.getSkin().getId() + "_" + partName;
+        return partRenderers.computeIfAbsent(key, k -> new DoorVboRenderer(model, partName, key));
+    }
+    
+    /**
+     * Проверяет, является ли часть статической (не должна рендериться через DoorVboRenderer)
+     */
+    public static boolean isStaticPart(String partName) {
+        return "frame".equalsIgnoreCase(partName) || 
+               "DoorFrame".equals(partName) ||
+               "Base".equals(partName);
     }
 
     public static DoorVboRenderer getOrCreate(DoorBakedModel model, String partName) {
-        // Пытаемся определить тип двери по модели
-        String doorType = "unknown_" + System.identityHashCode(model);
-        return getOrCreate(model, partName, doorType);
+        return getOrCreate(model, partName, "unknown");
     }
 
     @Override
@@ -74,16 +100,23 @@ public class DoorVboRenderer extends AbstractGpuVboRenderer {
         return vboData;
     }
 
+    @Override
+    protected List<BakedQuad> getQuadsForIrisPath() {
+        BakedModel partModel = model.getPart(partName);
+        if (partModel == null) return null;
+        return GlobalMeshCache.getOrCompile(quadCacheKey, partModel);
+    }
+
     // Рендер геометрии в текущей позе.
     public void renderPart(PoseStack poseStack, int packedLight, BlockPos blockPos,
                         @Nullable BlockEntity blockEntity, DoorDecl doorDecl,
-                        float openTicks, boolean child) {
+                        float openTicks, boolean child, @Nullable MultiBufferSource bufferSource) {
         // Всё ещё уважаем doesRender, чтобы не рисовать скрытые части
         if (!doorDecl.doesRender(partName, child)) return;
 
         // НИКАКИХ дополнительных трансформаций: PoseStack уже содержит
         // origin/rotation/translation из DoorRenderer.renderHierarchyVbo(...)
-        super.render(poseStack, packedLight, blockPos, blockEntity);
+        super.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
     }
 
 

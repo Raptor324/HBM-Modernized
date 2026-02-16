@@ -4,6 +4,7 @@ package com.hbm_m.datagen.assets;
 // Используется в классе DataGenerators для регистрации.
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.custom.machines.BlastFurnaceBlock;
+import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.custom.machines.MachineWoodBurnerBlock;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
@@ -401,7 +402,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
         customMachineBlock(ModBlocks.CENTRIFUGE);
         customMachineBlock(ModBlocks.MACHINE_ASSEMBLER);
-        customMachineBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
+        registerAdvancedAssemblyMachineBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
         customMachineBlock(ModBlocks.PRESS);
 
         // Машины со свойством LIT (включен/выключен)
@@ -1221,6 +1222,33 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // JSON модель должна лежать в resources/assets/hbm_m/models/block/<название>.json
         horizontalBlock(blockObject.get(),
             models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath())));
+    }
+
+    /**
+     * Advanced Assembly Machine: FACING + FRAME (frame в BlockState для запекания в чанк).
+     * Одна модель — getQuads возвращает Base+Frame при frame=true.
+     */
+    private void registerAdvancedAssemblyMachineBlock(RegistryObject<? extends Block> blockObject) {
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        // Используем одну и ту же модель для всех состояний.
+        // Логика отображения (Baked vs BER) скрыта внутри самого MachineAdvancedAssemblerBakedModel.
+        ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
+        
+        for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
+            for (boolean frame : new boolean[]{false, true}) {
+                // Добавляем перебор состояния RENDER_ACTIVE
+                for (boolean renderActive : new boolean[]{false, true}) {
+                    builder.partialState()
+                        .with(MachineAdvancedAssemblerBlock.FACING, facing)
+                        .with(MachineAdvancedAssemblerBlock.FRAME, frame)
+                        .with(MachineAdvancedAssemblerBlock.RENDER_ACTIVE, renderActive)
+                        .modelForState()
+                        .modelFile(modelFile)
+                        .rotationY(getRotationY(facing))
+                        .addModel();
+                }
+            }
+        }
     }
 
     /**

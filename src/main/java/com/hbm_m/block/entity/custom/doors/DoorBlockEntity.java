@@ -5,6 +5,11 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.block.custom.decorations.DoorBlock;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.client.ClientSoundManager;
+import com.hbm_m.client.model.variant.DoorModelRegistry;
+import com.hbm_m.client.model.variant.DoorModelSelection;
+import com.hbm_m.client.model.variant.DoorModelType;
+import com.hbm_m.client.model.variant.DoorSkin;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -24,6 +29,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelProperty;
 
 public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     
@@ -33,6 +40,24 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     public long animStartTime = 0;
     private boolean locked = false;
     private boolean lastRedstoneState = false;
+
+    /**
+     * Property для передачи выбора модели через ModelData
+     */
+    @OnlyIn(Dist.CLIENT)
+    public static final ModelProperty<DoorModelSelection> MODEL_SELECTION_PROPERTY = 
+        new ModelProperty<>();
+    
+    /**
+     * Текущий выбор модели и скина
+     */
+    private DoorModelSelection modelSelection = DoorModelSelection.DEFAULT;
+    
+    /**
+     * Кэшированные ModelData для производительности
+     */
+    @OnlyIn(Dist.CLIENT)
+    private ModelData cachedModelData;
 
     private String doorDeclId;
     
@@ -52,6 +77,70 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
 
     public DoorBlockEntity(BlockPos pos, BlockState state) {
         this(pos, state, "large_vehicle_door");
+    }
+
+    /**
+     * Получить текущий выбор модели
+     */
+    public DoorModelSelection getModelSelection() {
+        return modelSelection;
+    }
+    
+    /**
+     * Установить выбор модели
+     */
+    public void setModelSelection(DoorModelSelection selection) {
+        if (!this.modelSelection.equals(selection)) {
+            this.modelSelection = selection;
+            setChanged();
+            
+            // Инвалидируем кэш
+            if (level != null && level.isClientSide) {
+                this.cachedModelData = null;
+                requestModelDataUpdate();
+            }
+            
+            syncToClient();
+        }
+    }
+    
+    /**
+     * Установить тип модели
+     */
+    public void setModelType(DoorModelType type) {
+        // Сохраняем текущий скин если переключаемся в рамках MODERN
+        DoorSkin skin = type.isLegacy() ? DoorSkin.DEFAULT : this.modelSelection.getSkin();
+        setModelSelection(new DoorModelSelection(type, skin));
+    }
+    
+    /**
+     * Установить скин (только для MODERN модели)
+     */
+    public void setSkin(DoorSkin skin) {
+        if (this.modelSelection.isModern()) {
+            setModelSelection(new DoorModelSelection(DoorModelType.MODERN, skin));
+        }
+    }
+    
+    /**
+     * Быстрое переключение типа модели
+     */
+    public void toggleModelType() {
+        DoorModelType newType = modelSelection.getModelType().isLegacy() 
+            ? DoorModelType.MODERN 
+            : DoorModelType.LEGACY;
+        setModelType(newType);
+    }
+    
+    /**
+     * Сбросить к выбору по умолчанию
+     */
+    public void resetToDefault() {
+        if (level != null) {
+            DoorModelRegistry registry = DoorModelRegistry.getInstance();
+            DoorModelSelection defaultSelection = registry.getDefaultSelection(doorDeclId);
+            setModelSelection(defaultSelection);
+        }
     }
 
     // ==================== IMultiblockPart ====================
@@ -99,6 +188,9 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         this.state = 0;
         this.openTicks = 0;
         this.animStartTime = System.currentTimeMillis();
+        if (level != null && level.isClientSide) {
+            initModelSelection();
+        }
         syncToClient();
     }
 
@@ -512,6 +604,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         tag.putString("doorDeclId", doorDeclId);
         tag.putBoolean("locked", locked);
         tag.putBoolean("redstoneState", lastRedstoneState);
+        modelSelection.save(tag);
         if (controllerPos != null) {
             tag.putLong("controllerPos", controllerPos.asLong());
         }
@@ -533,6 +626,14 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         this.animStartTime = tag.getLong("animStartTime");
         this.locked = tag.getBoolean("locked");
         this.lastRedstoneState = tag.getBoolean("redstoneState");
+
+        if (tag.contains("modelType")) {
+            this.modelSelection = DoorModelSelection.load(tag);
+        } else {
+            // Совместимость со старыми сохранениями
+            this.modelSelection = DoorModelSelection.DEFAULT;
+        }
+        this.cachedModelData = null;
         
         if (tag.contains("controllerPos")) {
             this.controllerPos = BlockPos.of(tag.getLong("controllerPos"));
@@ -560,8 +661,43 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             }
         }
 
-        if (level != null && level.isClientSide && oldState != this.state) {
+        if (level != null && level.isClientSide) {
+            initModelSelection();
             handleNewState(oldState, this.state);
+        }
+    }
+
+    @OnlyIn(Dist.CLIENT)
+    @Override
+    public ModelData getModelData() {
+        if (cachedModelData == null) {
+            cachedModelData = ModelData.builder()
+                .with(MODEL_SELECTION_PROPERTY, modelSelection)
+                .build();
+        }
+        return cachedModelData;
+    }
+
+    /**
+     * Инициализирует выбор модели на основе конфигурации.
+     * Вызывается автоматически при загрузке на клиенте.
+     */
+    @OnlyIn(Dist.CLIENT)
+    public void initModelSelection() {
+        // Если уже установлен не-default выбор - оставляем как есть
+        if (modelSelection != null && !modelSelection.equals(DoorModelSelection.DEFAULT)) {
+            return;
+        }
+        
+        DoorModelRegistry registry = DoorModelRegistry.getInstance();
+        if (registry.isInitialized()) {
+            DoorModelSelection defaultSelection = registry.getDefaultSelection(doorDeclId);
+            if (defaultSelection != null && !defaultSelection.equals(DoorModelSelection.DEFAULT)) {
+                this.modelSelection = defaultSelection;
+                this.cachedModelData = null;
+                MainRegistry.LOGGER.debug("Initialized model selection for door {}: {}", 
+                    doorDeclId, defaultSelection);
+            }
         }
     }
 

@@ -27,7 +27,9 @@ bin/
 .cursor
 # ================= Generated Files =================
 /src/generated/
-
+AGENTS.md
+*.diff
+/plans
 # ================= Logs & Temporary Files =================
 # Логи, дампы ошибок и временные файлы.
 *.log

@@ -1,14 +1,17 @@
 package com.hbm_m.client.render;
 
-import com.hbm_m.block.entity.custom.machines.MachinePressBlockEntity;
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+
 import com.hbm_m.block.custom.machines.MachinePressBlock;
+import com.hbm_m.block.entity.custom.machines.MachinePressBlockEntity;
 import com.hbm_m.client.model.PressBakedModel;
-import com.hbm_m.client.render.shader.ImmediateFallbackRenderer;
-import com.hbm_m.client.render.shader.RenderPathManager;
+import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -21,15 +24,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
-
-import java.util.concurrent.ConcurrentHashMap;
 
 @OnlyIn(Dist.CLIENT)
 public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePressBlockEntity, PressBakedModel> {
 
-    private static final String BASE_PART = "Base";
     private static final String HEAD_PART = "Head";
 
     private static final float PIXEL = 1.0F / 16.0F;
@@ -41,9 +39,8 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
     private MachinePressVboRenderer gpuRenderer;
     private PressBakedModel cachedModel;
 
-    private static volatile InstancedStaticPartRenderer instancedBase;
+    private static volatile InstancedStaticPartRenderer instancedHead;
     private static volatile boolean instancerInitialized = false;
-    private static final ConcurrentHashMap<String, ImmediateFallbackRenderer> FALLBACK_RENDERERS = new ConcurrentHashMap<>();
 
     public MachinePressRenderer(BlockEntityRendererProvider.Context ctx) {}
 
@@ -73,12 +70,7 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
         int skyLight = LightTexture.sky(packedLight);
         int dynamicLight = LightTexture.pack(blockLight, skyLight);
 
-        Matrix4f headTransform;
-        if (RenderPathManager.shouldUseFallback()) {
-            headTransform = renderWithFallback(blockEntity, model, poseStack, dynamicLight, partialTick, blockPos);
-        } else {
-            headTransform = renderWithVbo(blockEntity, model, poseStack, dynamicLight, partialTick, blockPos);
-        }
+        Matrix4f headTransform = renderWithVbo(blockEntity, model, poseStack, dynamicLight, partialTick, blockPos, bufferSource);
 
         renderStampItem(blockEntity, poseStack, bufferSource, dynamicLight, packedOverlay, headTransform);
         renderWorkpiece(blockEntity, model, poseStack, bufferSource, dynamicLight, packedOverlay);
@@ -89,9 +81,10 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
     }
 
     private Matrix4f renderWithVbo(MachinePressBlockEntity blockEntity, PressBakedModel model,
-                               PoseStack poseStack, int packedLight, float partialTick, BlockPos blockPos) {
+                               PoseStack poseStack, int packedLight, float partialTick, BlockPos blockPos,
+                               MultiBufferSource bufferSource) {
         if (!instancerInitialized) {
-            initializeInstancedBase(model);
+            initializeInstancedHead(model);
         }
 
         if (cachedModel != model || gpuRenderer == null) {
@@ -99,59 +92,25 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
             gpuRenderer = new MachinePressVboRenderer(model);
         }
 
-        if (instancedBase != null) {
-            instancedBase.addInstance(poseStack, packedLight, blockPos, blockEntity);
-        } else {
-            gpuRenderer.renderStaticBase(poseStack, packedLight, blockPos, blockEntity);
-        }
+        // Base рендерится через BlockState/BakedModel (запечён в чанк Embeddium/Sodium)
 
         boolean freezeAnimation = shouldSkipAnimationUpdate(blockPos);
         Matrix4f headTransform = buildHeadTransform(model, blockEntity, partialTick, freezeAnimation);
-        gpuRenderer.renderAnimatedHead(poseStack, packedLight, headTransform, blockPos, blockEntity);
-        return headTransform;
-    }
-
-    private Matrix4f renderWithFallback(MachinePressBlockEntity blockEntity, PressBakedModel model,
-                                    PoseStack poseStack, int packedLight, float partialTick, BlockPos blockPos) {
-        Matrix4f headMatrix = null;
-        try {
-            renderFallbackPart(BASE_PART, model.getPart(BASE_PART), poseStack, packedLight, blockEntity);
-            boolean freezeAnimation = shouldSkipAnimationUpdate(blockPos);
-            headMatrix = buildHeadTransform(model, blockEntity, partialTick, freezeAnimation);
-            renderFallbackPart(HEAD_PART, model.getPart(HEAD_PART), poseStack, packedLight, blockEntity, headMatrix);
-        } catch (Exception e) {
-            MainRegistry.LOGGER.error("Failed to render press fallback path", e);
-        } finally {
-            ImmediateFallbackRenderer.endBatch();
-        }
-        return headMatrix;
-    }
-
-    private void renderFallbackPart(String partName, BakedModel partModel, PoseStack poseStack,
-                                    int packedLight, MachinePressBlockEntity blockEntity) {
-        renderFallbackPart(partName, partModel, poseStack, packedLight, blockEntity, null);
-    }
-
-    private void renderFallbackPart(String partName, BakedModel partModel, PoseStack poseStack,
-                                    int packedLight, MachinePressBlockEntity blockEntity,
-                                    Matrix4f additionalTransform) {
-        if (partModel == null || blockEntity.getLevel() == null) {
-            return;
-        }
-        poseStack.pushPose();
-        if (additionalTransform != null) {
-            poseStack.last().pose().mul(additionalTransform);
-        }
-        try {
-            ImmediateFallbackRenderer renderer = FALLBACK_RENDERERS.computeIfAbsent(partName,
-                key -> new ImmediateFallbackRenderer(partModel));
-            renderer.render(poseStack, packedLight, null, blockEntity.getBlockPos(), blockEntity.getLevel(), blockEntity);
-        } catch (Exception e) {
-            MainRegistry.LOGGER.error("Error rendering press fallback part {}", partName, e);
-            FALLBACK_RENDERERS.remove(partName);
-        } finally {
+        boolean useInstancedHead = instancedHead != null && instancedHead.isInitialized();
+        boolean useBatching = ModClothConfig.useInstancedBatching();
+        boolean inShadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
+        if (useBatching && !inShadowPass && useInstancedHead) {
+            poseStack.pushPose();
+            poseStack.last().pose().mul(headTransform);
+            instancedHead.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource);
             poseStack.popPose();
+        } else {
+            if (instancedHead != null && !instancedHead.isInitialized()) {
+                MainRegistry.LOGGER.warn("MachinePressRenderer: instancedHead exists but NOT initialized, using fallback");
+            }
+            gpuRenderer.renderAnimatedHead(poseStack, packedLight, headTransform, blockPos, blockEntity, bufferSource);
         }
+        return headTransform;
     }
 
     private Matrix4f buildHeadTransform(PressBakedModel model, MachinePressBlockEntity blockEntity,
@@ -265,39 +224,37 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
         poseStack.popPose();
     }
 
-    private static synchronized void initializeInstancedBase(PressBakedModel model) {
+    private static synchronized void initializeInstancedHead(PressBakedModel model) {
         if (instancerInitialized) {
             return;
         }
         try {
-            BakedModel baseModel = model.getPart(BASE_PART);
-            if (baseModel != null) {
-                var data = ObjModelVboBuilder.buildSinglePart(baseModel);
-                if (data != null) {
-                    instancedBase = new InstancedStaticPartRenderer(data);
+            BakedModel headModel = model.getPart(HEAD_PART);
+            if (headModel != null) {
+                var headData = ObjModelVboBuilder.buildSinglePart(headModel, HEAD_PART);
+                if (headData != null) {
+                    var headQuads = GlobalMeshCache.getOrCompile("press_head", headModel);
+                    instancedHead = new InstancedStaticPartRenderer(headData, headQuads);
                 }
             }
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Failed to initialize press instanced renderer", e);
-            instancedBase = null;
+            instancedHead = null;
         } finally {
             instancerInitialized = true;
         }
     }
 
-    public static void flushInstancedBatches() {
-        if (instancedBase != null) {
-            instancedBase.flush();
-        }
+    public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+        if (instancedHead != null) instancedHead.flush(event);
     }
 
     public static void clearCaches() {
-        if (instancedBase != null) {
-            instancedBase.cleanup();
-            instancedBase = null;
+        if (instancedHead != null) {
+            instancedHead.cleanup();
+            instancedHead = null;
         }
         instancerInitialized = false;
-        FALLBACK_RENDERERS.clear();
     }
 }
 
