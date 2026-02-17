@@ -3,8 +3,8 @@
   "model": "hbm_m:models/block/doors/silo_hatch.obj",
   "parts": ["Frame", "Hatch"],
   "textures": {
-    "texture0": "hbm_m:block/silo_hatch",
-    "particle": "hbm_m:block/silo_hatch"
+    "default": "hbm_m:block/doors/silo_hatch",
+    "particle": "hbm_m:block/doors/silo_hatch"
   },
   "display": {
     "gui": {

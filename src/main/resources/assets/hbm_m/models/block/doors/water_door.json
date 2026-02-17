@@ -3,8 +3,8 @@
   "model": "hbm_m:models/block/doors/water_door.obj",
   "parts": ["spinny_upper", "spinny_lower", "frame", "door", "bolt"],
   "textures": {
-    "texture0": "hbm_m:block/water_door",
-    "particle": "hbm_m:block/water_door"
+    "default": "hbm_m:block/doors/water_door_old",
+    "particle": "hbm_m:block/doors/water_door_old"
   },
   
   "display": {

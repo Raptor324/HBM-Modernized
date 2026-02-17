@@ -3,8 +3,8 @@
   "model": "hbm_m:models/block/doors/fire_door.obj",
   "parts": ["frame", "door"],
   "textures": {
-    "texture0": "hbm_m:block/fire_door",
-    "particle": "hbm_m:block/fire_door"
+    "default": "hbm_m:block/doors/fire_door_old",
+    "particle": "hbm_m:block/doors/fire_door_old"
   },
   "transform": {
         "rotation": [0, 0, 0],

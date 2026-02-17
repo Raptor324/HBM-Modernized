@@ -3,8 +3,8 @@
   "model": "hbm_m:models/block/doors/qe_sliding_door.obj",
   "parts": ["leftDoor", "rightDoor"],
   "textures": {
-    "texture0": "hbm_m:block/qe_sliding_door",
-    "particle": "hbm_m:block/qe_sliding_door"
+    "default": "hbm_m:block/doors/qe_sliding_door_old",
+    "particle": "hbm_m:block/doors/qe_sliding_door_old"
   },
   "transform": {
         "rotation": [0, 0, 0],

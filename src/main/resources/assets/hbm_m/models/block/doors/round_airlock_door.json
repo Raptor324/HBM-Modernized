@@ -1,10 +1,10 @@
 {
   "loader": "hbm_m:door",
-  "model": "hbm_m:models/block/doors/round_airlock_door.obj",
+  "model": "hbm_m:models/block/doors/round_airlock_door_old.obj",
   "parts": ["frame", "doorLeft", "doorRight"],
   "textures": {
-    "texture0": "hbm_m:block/doors/airlock_door",
-    "particle": "hbm_m:block/doors/airlock_door"
+    "default": "hbm_m:block/doors/round_airlock_door_old",
+    "particle": "hbm_m:block/doors/round_airlock_door_old"
   },
   "transform": {
         "rotation": [0, 0, 0],

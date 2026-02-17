@@ -14,9 +14,11 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
@@ -69,7 +71,7 @@ public class DoorModelSelectionScreen extends Screen {
     private static final int SKIN_BTN_NORMAL_V = 215;
     // Начальное положение кнопки: (66, 78), сетка 4x2
     private static final int SKIN_GRID_START_X = 28;
-    private static final int SKIN_GRID_START_Y = 80;
+    private static final int SKIN_GRID_START_Y = 78;
     private static final int SKIN_GRID_COLS = 4;
     private static final int SKIN_GRID_ROWS = 2;
     private static final int SKIN_GRID_GAP = 20;
@@ -185,7 +187,7 @@ public class DoorModelSelectionScreen extends Screen {
             String label = selection.getSkin().getDisplayName();
             int labelWidth = font.width(label);
             int labelX = x + (SKIN_BTN_SIZE - labelWidth) / 2;
-            int labelY = y + SKIN_BTN_SIZE + 2;
+            int labelY = y + SKIN_BTN_SIZE ;
             guiGraphics.drawString(font, label, labelX, labelY, 0xFFFFFF);
         }
     }
@@ -232,8 +234,19 @@ public class DoorModelSelectionScreen extends Screen {
         };
     }
 
+    private void playButtonClickSound() {
+        if (minecraft != null && minecraft.getSoundManager() != null) {
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+        }
+    }
+
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // ПКМ — выход из GUI
+        if (button == 1) {
+            onClose();
+            return true;
+        }
         if (button != 0) return super.mouseClicked(mouseX, mouseY, button);
 
         int lx = toLocalX(mouseX);
@@ -245,12 +258,14 @@ public class DoorModelSelectionScreen extends Screen {
         int btnY = PAGE_Y;
 
         if (lx >= leftX && lx < leftX + PAGE_BTN_W && ly >= btnY && ly < btnY + PAGE_BTN_H) {
+            playButtonClickSound();
             if (totalPages > 1) {
                 currentPage = Math.max(0, currentPage - 1);
             }
             return true;
         }
         if (lx >= rightX && lx < rightX + PAGE_BTN_W && ly >= btnY && ly < btnY + PAGE_BTN_H) {
+            playButtonClickSound();
             if (totalPages > 1) {
                 currentPage = Math.min(totalPages - 1, currentPage + 1);
             }
@@ -269,6 +284,7 @@ public class DoorModelSelectionScreen extends Screen {
             int y = SKIN_GRID_START_Y + row * SKIN_GRID_ROW_HEIGHT;
 
             if (lx >= x && lx < x + SKIN_BTN_SIZE && ly >= y && ly < y + SKIN_BTN_SIZE) {
+                playButtonClickSound();
                 DoorModelSelection newSelection = flatSelectionList.get(flatIndex);
                 selectedSelection = newSelection;
                 if (!newSelection.equals(currentSelection)) {

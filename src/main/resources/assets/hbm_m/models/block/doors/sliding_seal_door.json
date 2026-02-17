@@ -3,8 +3,8 @@
   "model": "hbm_m:models/block/doors/sliding_seal_door.obj",
   "parts": ["door", "frame"],
   "textures": {
-    "texture0": "hbm_m:block/sliding_seal_door",
-    "particle": "hbm_m:block/sliding_seal_door"
+    "default": "hbm_m:block/doors/sliding_seal_door_old",
+    "particle": "hbm_m:block/doors/sliding_seal_door_old"
   },
   "display": {
     "gui": {
