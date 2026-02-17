@@ -35,7 +35,9 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     private MachineAdvancedAssemblerVboRenderer gpu;
     private MachineAdvancedAssemblerBakedModel cachedModel;
     
-    // Instanced рендереры для анимированных частей (Frame — в BlockState/BakedModel)
+    // Instanced рендереры
+    private static volatile InstancedStaticPartRenderer instancedBase;
+    private static volatile InstancedStaticPartRenderer instancedFrame;
     private static volatile InstancedStaticPartRenderer instancedRing;
     private static volatile InstancedStaticPartRenderer instancedArmLower1;
     private static volatile InstancedStaticPartRenderer instancedArmUpper1;
@@ -49,6 +51,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
     // --- GC Optimization: Reusable Matrices ---
     // Используем поля класса вместо создания новых объектов в каждом кадре
+    private final Matrix4f matBase = new Matrix4f();
     private final Matrix4f matRing = new Matrix4f();
     private final Matrix4f matLower = new Matrix4f();
     private final Matrix4f matUpper = new Matrix4f();
@@ -63,6 +66,9 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         
         try {
             MainRegistry.LOGGER.info("MachineAdvancedAssemblerRenderer: Initializing instanced renderers...");
+
+            instancedBase = createInstancedForPart(model, "Base");
+            instancedFrame = createInstancedForPart(model, "Frame");
             
             // Анимированные части (Frame — в BlockState/BakedModel)
             instancedRing = createInstancedForPart(model, "Ring");
@@ -81,15 +87,8 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
             
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Failed to initialize instanced renderers", e);
-            instancedRing = null;
-            instancedArmLower1 = null;
-            instancedArmUpper1 = null;
-            instancedHead1 = null;
-            instancedSpike1 = null;
-            instancedArmLower2 = null;
-            instancedArmUpper2 = null;
-            instancedHead2 = null;
-            instancedSpike2 = null;
+            // Сброс при ошибке, чтобы попытаться снова или не крашить
+            clearCaches();
         }
     }
     
@@ -174,8 +173,6 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                             int dynamicLight,
                             BlockPos blockPos,
                             MultiBufferSource bufferSource) {
-        // Нет стороннего шейдера → полный VBO (инстансинг или прямой VBO).
-        // Сторонний шейдер активен → статичная геометрия (Base/Frame в чанке) + putBulkData для анимированных частей.
         boolean useVboPath = !ShaderCompatibilityDetector.isExternalShaderActive();
 
         if (useVboPath && !instancersInitialized) {
@@ -187,35 +184,74 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
             gpu = new MachineAdvancedAssemblerVboRenderer(model);
         }
 
-        // Нет шейдера: Base и Frame рендерит BER (VBO). Шейдер активен: Base+Frame в BakedModel.
-        if (useVboPath) {
-            var blockState = be.getBlockState();
+        boolean useBatching = useVboPath && ModClothConfig.useInstancedBatching();
+        var blockState = be.getBlockState();
+
+        // 1. Рендер статики (Base + Frame)
+        poseStack.pushPose();
+        poseStack.translate(-0.5f, 0.0f, -0.5f); // Центровка модели
+
+        // Base
+        if (useBatching && instancedBase != null && instancedBase.isInitialized()) {
             poseStack.pushPose();
-            poseStack.translate(-0.5f, 0.0f, -0.5f);
-            gpu.renderStaticBase(poseStack, dynamicLight, blockPos, be, bufferSource);
+            // Base не вращается, но нужна Identity матрица для корректного позиционирования инстанса
+            instancedBase.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
             poseStack.popPose();
-            if (blockState.hasProperty(MachineAdvancedAssemblerBlock.FRAME) && blockState.getValue(MachineAdvancedAssemblerBlock.FRAME)) {
-                poseStack.pushPose();
-                poseStack.translate(-0.5f, 0.0f, -0.5f);
-                gpu.renderStaticFrame(poseStack, dynamicLight, blockPos, be, bufferSource);
-                poseStack.popPose();
-            }
+        } else {
+            gpu.renderStaticBase(poseStack, dynamicLight, blockPos, be, bufferSource);
         }
 
-        if (!shouldSkipAnimationUpdate(blockPos)) {
-            renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useVboPath);
+        // Frame
+        if (blockState.hasProperty(MachineAdvancedAssemblerBlock.FRAME) && blockState.getValue(MachineAdvancedAssemblerBlock.FRAME)) {
+                if (useBatching && instancedFrame != null && instancedFrame.isInitialized()) {
+                poseStack.pushPose();
+                instancedFrame.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
+                poseStack.popPose();
+            } else {
+                gpu.renderStaticFrame(poseStack, dynamicLight, blockPos, be, bufferSource);
+            }
+        }
+        poseStack.popPose();
+
+        // 2. Рендер анимаций
+        // Если игрок далеко - пропускаем вычисления анимаций, но рисуем детали в дефолтной позе (или не рисуем, если так задумано для LOD)
+        boolean skipAnimation = shouldSkipAnimationUpdate(blockPos);
+        
+        // Если скипаем анимацию, ставим partialTick = 0 (дефолтная поза) или просто рендерим без lerp
+        // В данном случае, чтобы детали не исчезали, мы рендерим их, но не обновляем углы (или берем статические 0)
+        // Для оптимизации: если очень далеко, можно вообще не рисовать мелкие детали (arms).
+        if (!skipAnimation) {
+            renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useBatching);
+        } else {
+            // LOD: Рисуем только кольцо статично, руки не рисуем (они мелкие)
+            // Это сэкономит GPU на дальних дистанциях
+            renderStaticLOD(poseStack, dynamicLight, blockPos, be, bufferSource, useBatching);
+        }
+    }
+
+    // Упрощенный рендер для дальних дистанций
+    private void renderStaticLOD(PoseStack pose, int blockLight, BlockPos blockPos, 
+                                MachineAdvancedAssemblerBlockEntity be, MultiBufferSource bufferSource, boolean useBatching) {
+        matRing.identity().translate(-0.5f, 0.0f, -0.5f);
+        if (useBatching && instancedRing != null) {
+            pose.pushPose();
+            pose.last().pose().mul(matRing);
+            instancedRing.addInstance(pose, blockLight, blockPos, be, bufferSource);
+            pose.popPose();
+        } else {
+            gpu.renderAnimatedPart(pose, blockLight, "Ring", matRing, blockPos, be, bufferSource);
         }
     }
 
     /**
-     *  НОВОЕ: Проверка, нужно ли пропустить фрейм на основе дистанции
+     *  Проверка, нужно ли пропустить фрейм на основе дистанции
      */
     private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
         var minecraft = Minecraft.getInstance();
         var camera = minecraft.gameRenderer.getMainCamera();
         var cameraPos = camera.getPosition();
         
-        // Вычисляем квадрат дистанции (избегаем sqrt для производительности)
+        // Вычисляем квадрат дистанции
         double dx = blockPos.getX() + 0.5 - cameraPos.x;
         double dy = blockPos.getY() + 0.5 - cameraPos.y;
         double dz = blockPos.getZ() + 0.5 - cameraPos.z;
@@ -235,6 +271,8 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
      * При useInstancedBatching использует матрицы из события.
      */
     public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+        if (instancedBase != null) instancedBase.flush(event);
+        if (instancedFrame != null) instancedFrame.flush(event);
         if (instancedRing != null) instancedRing.flush(event);
         if (instancedArmLower1 != null) instancedArmLower1.flush(event);
         if (instancedArmUpper1 != null) instancedArmUpper1.flush(event);
@@ -250,6 +288,8 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
      * Очищает кэши instanced рендереров (вызывается при периодической очистке памяти)
      */
     public static void clearCaches() {
+        cleanupInstanced(instancedBase); instancedBase = null;
+        cleanupInstanced(instancedFrame); instancedFrame = null;
         cleanupInstanced(instancedRing); instancedRing = null;
         cleanupInstanced(instancedArmLower1); instancedArmLower1 = null;
         cleanupInstanced(instancedArmUpper1); instancedArmUpper1 = null;
@@ -358,6 +398,8 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         var selectedRecipeId = be.getSelectedRecipeId();
         if (selectedRecipeId == null) return;
 
+        if (shouldSkipAnimationUpdate(be.getBlockPos())) return;
+
         var mc = Minecraft.getInstance();
         if (mc.player == null) return;
 
@@ -406,10 +448,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
     @Override 
     public boolean shouldRenderOffScreen(MachineAdvancedAssemblerBlockEntity be) {
-        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
-            return false;
-        }
-        return true;
+        return !ShaderCompatibilityDetector.isRenderingShadowPass();
     }
 
     @Override public int getViewDistance() { return 128; }
