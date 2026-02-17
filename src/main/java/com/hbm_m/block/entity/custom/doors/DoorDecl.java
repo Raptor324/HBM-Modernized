@@ -972,14 +972,6 @@ public abstract class DoorDecl {
         public boolean isDynamicShape() {
             return true;
         }
-
-        // @Override
-        // public void doOffsetTransform(LegacyAnimator animator) {
-        //     // Поворот на 90° вокруг оси Y (как в старой версии)
-        //     animator.rotate(90.0f, 0.0f, 1.0f, 0.0f);
-        // }
-
-        // @Override public int getBakedModelRotationOffsetY() { return 90; }
         
         @Override public double[][] getClippingPlanes() {
             return new double[][] { { 0, -1, 0, 5 } };
