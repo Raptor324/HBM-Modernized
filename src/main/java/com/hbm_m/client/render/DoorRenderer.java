@@ -25,8 +25,6 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -64,27 +62,24 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         try {
             BakedModel frameModel = model.getPart(framePartName);
             if (frameModel != null) {
-                MainRegistry.LOGGER.info("DoorRenderer: Initializing frame instancer for '{}' (doorType: {}, key: {})", 
-                    framePartName, doorType, frameKey);
-                    
                 var frameData = ObjModelVboBuilder.buildSinglePart(frameModel, framePartName);
                 if (frameData != null) {
                     var frameQuads = GlobalMeshCache.getOrCompile(frameKey, frameModel);
                     InstancedStaticPartRenderer frameRenderer = new InstancedStaticPartRenderer(frameData, frameQuads);
                     instancedFrameCache.put(frameKey, frameRenderer);
                     frameInitializationFlags.put(frameKey, true);
-                    MainRegistry.LOGGER.info("DoorRenderer: SUCCESS - Frame renderer created for key '{}' part '{}'", 
-                                            frameKey, framePartName);
+                    MainRegistry.LOGGER.debug("DoorRenderer: Frame instancer created for '{}' (key: {})", framePartName, frameKey);
                 } else {
-                    MainRegistry.LOGGER.warn("DoorRenderer: FAILED - No VboData for frame part '{}' (doorType: {})", 
-                                            framePartName, doorType);
+                    frameInitializationFlags.put(frameKey, true);
+                    MainRegistry.LOGGER.debug("DoorRenderer: Frame part '{}' has no geometry (doorType: {}), using fallback", framePartName, doorType);
                 }
             } else {
-                MainRegistry.LOGGER.warn("DoorRenderer: Frame model is NULL for part '{}' (doorType: {})", 
-                                        framePartName, doorType);
+                frameInitializationFlags.put(frameKey, true);
+                MainRegistry.LOGGER.debug("DoorRenderer: Frame model is null for '{}' (doorType: {})", framePartName, doorType);
             }
         } catch (Exception e) {
-            MainRegistry.LOGGER.error("Failed to initialize door frame instanced renderer for type: " + doorType, e);
+            frameInitializationFlags.put(frameKey, true);
+            MainRegistry.LOGGER.debug("DoorRenderer: Failed to init frame for {}: {}", doorType, e.getMessage());
         }
     }
 
@@ -158,6 +153,16 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
 
         float openTicks = be.getOpenProgress(partialTick) * doorDecl.getOpenTime();
         boolean isOpen = be.isOpen();
+        
+        // Проверяем наличие стороннего шейдера (Iris/Oculus)
+        boolean shaderActive = ShaderCompatibilityDetector.isExternalShaderActive();
+        // Дверь движется (state 2=закрывается, 3=открывается)
+        boolean isMoving = be.isMoving();
+        
+        // Шейдер активен + дверь НЕ движется → всё в BakedModel, BER не рендерит
+        if (shaderActive && !isMoving) {
+            return;
+        }
 
         // Применяем базовое смещение модели
         doorDecl.doOffsetTransform(animator);
@@ -176,6 +181,10 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             String frameKey = "frame_" + doorType;
             String[] partNames = model.getPartNames();
             String staticFramePart = detectFramePart(partNames);
+            
+            // Проверяем наличие стороннего шейдера
+            boolean shaderActive = ShaderCompatibilityDetector.isExternalShaderActive();
+            boolean isMoving = be.isMoving();
 
             // Load animation data once (можно отключить в конфиге при проблемах)
             ColladaAnimationData animData = null;
@@ -188,6 +197,31 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                 poseStack.mulPoseMatrix(ColladaAnimationParser.Z_UP_TO_Y_UP);
             }
 
+            // IRIS/OCULUS PATH: При активном шейдере и движущейся двери
+            // Frame уже отрендерен через BakedModel - рендерим только анимированные части
+            if (shaderActive && isMoving) {
+                // Пропускаем shadow pass - Iris сам сделает тени от основной геометрии
+                if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+                    return;
+                }
+                
+                // Рендерим только анимированные части через putBulkData
+                for (String partName : partNames) {
+                    if (staticFramePart != null && staticFramePart.equals(partName)) {
+                        continue; // Frame уже в BakedModel
+                    }
+                    if (isChildInDae(partName, doorDecl, animData, partNames)) {
+                        continue; // Skip, will be rendered as child
+                    }
+                    
+                    renderAnimatedPartForIris(partName, doorType, be, model, doorDecl, openTicks, 
+                                             poseStack, packedLight, animData, bufferSource, false);
+                }
+                return;
+            }
+
+            // VANILLA VBO PATH: Нет шейдера - полный VBO рендер
+            
             // 1. Instanced Frame Render
             if (staticFramePart != null) {
                 if (!frameInitializationFlags.getOrDefault(frameKey, false)) {
@@ -244,6 +278,63 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             MainRegistry.LOGGER.error("Error in VBO door render", e);
         }
     }
+    
+    /**
+     * Рендер анимированной части через putBulkData для Iris/Oculus пути.
+     * doorType в ключе кэша — иначе qe_containment_door показывал бы створку fire_door.
+     * @param child true при рекурсивном вызове для дочерних частей (water_door: spinny_upper/lower)
+     */
+    private void renderAnimatedPartForIris(String partName, String doorType, DoorBlockEntity be, DoorBakedModel model,
+                                           DoorDecl doorDecl, float openTicks, PoseStack poseStack,
+                                           int packedLight, ColladaAnimationData animData,
+                                           MultiBufferSource bufferSource, boolean child) {
+        if (!doorDecl.doesRender(partName, child)) return;
+        
+        poseStack.pushPose();
+        doPartTransform(poseStack, doorDecl, partName, openTicks, child, animData);
+        
+        BakedModel partModel = model.getPart(partName);
+        if (partModel != null) {
+            var quads = GlobalMeshCache.getOrCompile("door_anim_" + doorType + "_" + partName, partModel);
+            if (quads != null && !quads.isEmpty() && bufferSource != null) {
+                float brightness = ModClothConfig.get().doorAnimatedPartBrightness / 100f;
+                var consumer = bufferSource.getBuffer(RenderType.solid());
+                var pose = poseStack.last();
+                for (var quad : quads) {
+                    consumer.putBulkData(pose, quad, brightness, brightness, brightness, 1f, packedLight, 
+                                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, false);
+                }
+            }
+        }
+        
+        // Рекурсивно дети из DoorDecl (child=true — water_door.doesRender("spinny_*", true) вернёт true)
+        for (String c : doorDecl.getChildren(partName)) {
+            renderAnimatedPartForIris(c, doorType, be, model, doorDecl, openTicks, poseStack, 
+                                     packedLight, animData, bufferSource, true);
+        }
+
+        // Рекурсивно дети из DAE (как в renderHierarchyVbo)
+        if (animData != null) {
+            String daeName = doorDecl.getDaeObjectName(partName);
+            List<String> daeChildren = animData.getChildren(daeName);
+            for (String childDaeName : daeChildren) {
+                for (String potentialChild : model.getPartNames()) {
+                    if (doorDecl.getDaeObjectName(potentialChild).equals(childDaeName)) {
+                        boolean alreadyHandled = false;
+                        for (String c : doorDecl.getChildren(partName)) {
+                            if (c.equals(potentialChild)) { alreadyHandled = true; break; }
+                        }
+                        if (!alreadyHandled) {
+                            renderAnimatedPartForIris(potentialChild, doorType, be, model, doorDecl, openTicks,
+                                    poseStack, packedLight, animData, bufferSource, true);
+                        }
+                    }
+                }
+            }
+        }
+        
+        poseStack.popPose();
+    }
 
     private boolean isChildInDae(String partName, DoorDecl doorDecl, ColladaAnimationData animData, String[] allPartNames) {
         if (animData == null) return false;
@@ -274,7 +365,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         // Рендерим текущую часть ТОЛЬКО если у неё есть mesh
         boolean isStaticPart = "frame".equalsIgnoreCase(partName) || 
                                "DoorFrame".equals(partName) ||
-                               "Base".equals(partName);
+                               "base".equalsIgnoreCase(partName);
         if (!isStaticPart) {
             BakedModel partModel = model.getPart(partName);
             String doorType = getDoorTypeKey(doorDecl);
@@ -384,6 +475,12 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         for (String p : partNames) {
             if ("DoorFrame".equals(p)) return "DoorFrame";
         }
+        for (String p : partNames) {
+            if ("base".equals(p)) return "base";
+        }
+        for (String p : partNames) {
+            if ("Base".equals(p)) return "Base";
+        }
         return null;
     }
 
@@ -428,8 +525,13 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
     }
 
     @Override 
-    public boolean shouldRenderOffScreen(DoorBlockEntity be) { 
-        return true; 
+    public boolean shouldRenderOffScreen(DoorBlockEntity be) {
+        // Во время shadow pass не включаем двери в global list — избегаем краша
+        // Oculus/Embeddium (ReferenceOpenHashSet.wrapped is null при итерации)
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            return false;
+        }
+        return true;
     }
 
     /**

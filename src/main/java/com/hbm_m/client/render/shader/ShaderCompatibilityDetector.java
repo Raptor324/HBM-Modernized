@@ -19,6 +19,8 @@ public class ShaderCompatibilityDetector {
     
     // Кэш результата для оптимизации внутри одного кадра
     private static boolean lastState = false;
+    /** Отложенная инвалидация — обрабатывается в ClientTickEvent.END */
+    private static volatile boolean pendingChunkInvalidation = false;
 
     private static void init() {
         if (initialized) return;
@@ -57,7 +59,8 @@ public class ShaderCompatibilityDetector {
             if (isActive != lastState) {
                 MainRegistry.LOGGER.info("Shader state changed: {}", isActive ? "Active" : "Inactive");
                 lastState = isActive;
-                scheduleChunkInvalidation();
+                // Откладываем инвалидацию — вызов из render loop ломает итерацию Sodium (wrapped is null)
+                pendingChunkInvalidation = true;
             }
             return isActive;
         } catch (Exception e) {
@@ -66,19 +69,19 @@ public class ShaderCompatibilityDetector {
     }
 
     /**
-     * Инвалидирует чанки при смене шейдера, чтобы BakedModel пересобрал геометрию.
-     * Без этого при переключении Iris геометрия остаётся старой до F3+A.
+     * Вызывать из ClientTickEvent.END — инвалидирует чанки при смене шейдера.
+     * НЕ вызывать из render loop — ломает итерацию Sodium (ReferenceOpenHashSet.wrapped is null).
      */
-    private static void scheduleChunkInvalidation() {
+    public static void processPendingChunkInvalidation() {
+        if (!pendingChunkInvalidation) return;
+        pendingChunkInvalidation = false;
         Minecraft mc = Minecraft.getInstance();
         if (mc.level != null && mc.levelRenderer != null) {
-            mc.execute(() -> {
-                try {
-                    mc.levelRenderer.allChanged();
-                } catch (Exception e) {
-                    MainRegistry.LOGGER.debug("Chunk invalidation on shader change: {}", e.getMessage());
-                }
-            });
+            try {
+                mc.levelRenderer.allChanged();
+            } catch (Exception e) {
+                MainRegistry.LOGGER.debug("Chunk invalidation on shader change: {}", e.getMessage());
+            }
         }
     }
 

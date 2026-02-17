@@ -1,11 +1,14 @@
 package com.hbm_m.event;
 
 // import com.hbm_m.client.render.DoorDebugRenderer;
+import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
+import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.MachinePressRenderer;
 import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 // Обработчик событий клиента, добавляющий подсказки к предметам (опасности, OreDict теги).
 // Подсказки показываются при наведении на предмет в инвентаре.
@@ -87,6 +90,12 @@ public class ClientModEvents {
             OcclusionCullingHelper.onFrameStart();
             
         } else if (event.phase == TickEvent.Phase.END) {
+            // Обработка задержки анимации дверей (перед переключением на baked model)
+            DoorBlockEntity.processAnimationDelayQueue();
+            // Инвалидация чанков дверей при смене состояния (baked model после открытия/закрытия)
+            DoorChunkInvalidationHelper.processPendingInvalidations();
+            // Инвалидация чанков при смене шейдера (вне render loop — избегаем краша Sodium)
+            ShaderCompatibilityDetector.processPendingChunkInvalidation();
             // Периодическая очистка памяти
             memoryCleanupCounter++;
             if (memoryCleanupCounter >= MEMORY_CLEANUP_INTERVAL) {

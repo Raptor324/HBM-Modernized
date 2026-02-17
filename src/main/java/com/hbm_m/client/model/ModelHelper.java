@@ -1,16 +1,19 @@
 package com.hbm_m.client.model;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+import org.joml.Vector4f;
+
 // Утилитарный класс для создания кубоидов с настраиваемыми UV координатами для каждой грани. Необходим для процедурной генерации модели провода.
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
-import org.joml.Vector3f;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
 
 public class ModelHelper {
 
@@ -150,6 +153,36 @@ public class ModelHelper {
         return result;
     }
 
+    /**
+     * Смещает квады на (dx, dy, dz). Для выравнивания baked model с BER (translate 0.5, 0, 0.5).
+     */
+    public static List<BakedQuad> translateQuads(List<BakedQuad> quads, float dx, float dy, float dz) {
+        if (quads == null || quads.isEmpty() || (dx == 0 && dy == 0 && dz == 0)) {
+            return quads;
+        }
+        List<BakedQuad> result = new ArrayList<>(quads.size());
+        for (BakedQuad quad : quads) {
+            int[] verts = quad.getVertices();
+            if (verts.length < 4 * MIN_STRIDE) {
+                result.add(quad);
+                continue;
+            }
+            int stride = verts.length / 4;
+            int[] newVerts = verts.clone();
+            for (int v = 0; v < 4; v++) {
+                int i = v * stride;
+                float x = Float.intBitsToFloat(verts[i + POSITION_OFFSET]);
+                float y = Float.intBitsToFloat(verts[i + POSITION_OFFSET + 1]);
+                float z = Float.intBitsToFloat(verts[i + POSITION_OFFSET + 2]);
+                newVerts[i] = Float.floatToIntBits(x + dx);
+                newVerts[i + 1] = Float.floatToIntBits(y + dy);
+                newVerts[i + 2] = Float.floatToIntBits(z + dz);
+            }
+            result.add(new BakedQuad(newVerts, quad.getTintIndex(), quad.getDirection(), quad.getSprite(), quad.isShade()));
+        }
+        return result;
+    }
+
     private static Direction rotateDirection(Direction dir, int angleDeg) {
         if (dir.getAxis() == Direction.Axis.Y) return dir;
         int steps = (angleDeg / 90) % 4;
@@ -159,5 +192,69 @@ public class ModelHelper {
             r = r.getClockWise(Direction.Axis.Y);
         }
         return r;
+    }
+
+    /**
+     * Применяет произвольную матрицу 4x4 к вершинам квадов (позиция и нормаль).
+     * Используется для трансформации door panel в open/closed состоянии в BakedModel.
+     */
+    public static List<BakedQuad> transformQuadsByMatrix(List<BakedQuad> quads, Matrix4f matrix) {
+        if (quads == null || quads.isEmpty()) {
+            return quads;
+        }
+        Matrix4f normalMatrix = new Matrix4f(matrix).invert().transpose();
+        List<BakedQuad> result = new ArrayList<>(quads.size());
+        Vector4f pos = new Vector4f();
+        Vector4f norm = new Vector4f();
+        for (BakedQuad quad : quads) {
+            int[] verts = quad.getVertices();
+            if (verts.length < 4 * MIN_STRIDE) {
+                result.add(quad);
+                continue;
+            }
+            int stride = verts.length / 4;
+            int normalOffset = stride - 1;
+            int[] newVerts = verts.clone();
+            for (int v = 0; v < 4; v++) {
+                int i = v * stride;
+                float x = Float.intBitsToFloat(verts[i + POSITION_OFFSET]);
+                float y = Float.intBitsToFloat(verts[i + POSITION_OFFSET + 1]);
+                float z = Float.intBitsToFloat(verts[i + POSITION_OFFSET + 2]);
+                pos.set(x, y, z, 1f);
+                pos.mul(matrix);
+                newVerts[i] = Float.floatToIntBits(pos.x());
+                newVerts[i + 1] = Float.floatToIntBits(pos.y());
+                newVerts[i + 2] = Float.floatToIntBits(pos.z());
+                if (normalOffset < stride) {
+                    int packedNormal = verts[i + normalOffset];
+                    byte nxb = (byte) (packedNormal & 0xFF);
+                    byte nyb = (byte) ((packedNormal >> 8) & 0xFF);
+                    byte nzb = (byte) ((packedNormal >> 16) & 0xFF);
+                    norm.set(nxb / 127f, nyb / 127f, nzb / 127f, 0f);
+                    norm.mul(normalMatrix);
+                    norm.normalize();
+                    int newPacked = ((byte) (norm.x * 127) & 0xFF)
+                            | (((byte) (norm.y * 127) & 0xFF) << 8)
+                            | (((byte) (norm.z * 127) & 0xFF) << 16);
+                    newVerts[i + normalOffset] = newPacked;
+                }
+            }
+            int packedN = newVerts[normalOffset];
+            byte nxb = (byte) (packedN & 0xFF);
+            byte nyb = (byte) ((packedN >> 8) & 0xFF);
+            byte nzb = (byte) ((packedN >> 16) & 0xFF);
+            Direction transformedDir = directionFromNormal(nxb / 127f, nyb / 127f, nzb / 127f);
+            if (transformedDir == null) transformedDir = quad.getDirection();
+            result.add(new BakedQuad(newVerts, quad.getTintIndex(), transformedDir, quad.getSprite(), quad.isShade()));
+        }
+        return result;
+    }
+
+    private static Direction directionFromNormal(float dx, float dy, float dz) {
+        float ax = Math.abs(dx), ay = Math.abs(dy), az = Math.abs(dz);
+        if (ax >= ay && ax >= az) return dx > 0 ? Direction.EAST : Direction.WEST;
+        if (ay >= ax && ay >= az) return dy > 0 ? Direction.UP : Direction.DOWN;
+        if (az >= ax && az >= ay) return dz > 0 ? Direction.SOUTH : Direction.NORTH;
+        return null;
     }
 }

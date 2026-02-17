@@ -33,6 +33,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.BlockHitResult;
@@ -44,7 +45,10 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<PartRole> PART_ROLE = EnumProperty.create("part_role", PartRole.class);
-    // public static final BooleanProperty OPEN = BooleanProperty.create("open");
+    /** Дверь движется (открывается или закрывается). Используется для переключения рендера при Iris/Oculus. */
+    public static final BooleanProperty DOOR_MOVING = BooleanProperty.create("door_moving");
+    /** Дверь полностью открыта. Используется для baked-геометрии (створка в правильной позиции). */
+    public static final BooleanProperty OPEN = BooleanProperty.create("open");
     private final Map<Direction, VoxelShape> shapeCache = new java.util.EnumMap<>(Direction.class);
 
     private final String doorDeclId;
@@ -90,7 +94,9 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
        
        registerDefaultState(stateDefinition.any()
            .setValue(FACING, Direction.NORTH)
-           .setValue(PART_ROLE, PartRole.DEFAULT));
+           .setValue(PART_ROLE, PartRole.DEFAULT)
+           .setValue(DOOR_MOVING, false)
+           .setValue(OPEN, false));
    }
 
     private static Map<BlockPos, Supplier<BlockState>> createStructureForDoor(String doorDeclId) {
@@ -304,7 +310,9 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.ENTITYBLOCK_ANIMATED;
+        // MODEL — BakedModel запекается в чанк (нужно для Iris/Oculus).
+        // ENTITYBLOCK_ANIMATED не использует BakedModel для world render.
+        return RenderShape.MODEL;
     }
 
 
@@ -321,8 +329,7 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING, PART_ROLE);
-            // , OPEN);
+        builder.add(FACING, PART_ROLE, DOOR_MOVING, OPEN);
     }
 
 

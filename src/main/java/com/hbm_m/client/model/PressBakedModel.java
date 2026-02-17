@@ -72,7 +72,18 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
         // WORLD RENDER: Base запекается в чанк Embeddium/Sodium — нулевая нагрузка на CPU
         BakedModel basePart = parts.get(BASE);
         if (basePart != null) {
-            return basePart.getQuads(state, side, rand, modelData, renderType);
+            List<BakedQuad> partQuads = new ArrayList<>();
+            for (Direction d : Direction.values()) {
+                partQuads.addAll(basePart.getQuads(state, d, rand, modelData, renderType));
+            }
+            partQuads.addAll(basePart.getQuads(state, null, rand, modelData, renderType));
+            if (!partQuads.isEmpty()) {
+                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
+                if (side != null) {
+                    return translated.stream().filter(q -> q.getDirection() == side).toList();
+                }
+                return translated;
+            }
         }
         return Collections.emptyList();
     }

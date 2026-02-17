@@ -262,19 +262,22 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
-        MainRegistry.LOGGER.info("Registering custom shaders...");
+        MainRegistry.LOGGER.info("Registering optimized shaders...");
+        
         VertexFormat blockLitFormat = new VertexFormat(
             ImmutableMap.<String, VertexFormatElement>builder()
-                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
-                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
-                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
-                .put("InstMatRow0", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
-                .put("InstMatRow1", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
-                .put("InstMatRow2", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
-                .put("InstMatRow3", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
-                .put("InstLight",   DefaultVertexFormat.ELEMENT_UV2)    // vec2
+                .put("Position", DefaultVertexFormat.ELEMENT_POSITION) // Loc 0
+                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)   // Loc 1
+                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)      // Loc 2
+                
+                // Новые атрибуты:
+                .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3)) // Loc 3
+                .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4)) // Loc 4
+                .put("InstBrightness", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1)) // Loc 5
+                
                 .build()
         );
+        
         event.registerShader(
             new ShaderInstance(
                 event.getResourceProvider(),

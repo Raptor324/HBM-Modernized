@@ -47,6 +47,14 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     private static volatile InstancedStaticPartRenderer instancedSpike2;
     private static volatile boolean instancersInitialized = false;
 
+    // --- GC Optimization: Reusable Matrices ---
+    // Используем поля класса вместо создания новых объектов в каждом кадре
+    private final Matrix4f matRing = new Matrix4f();
+    private final Matrix4f matLower = new Matrix4f();
+    private final Matrix4f matUpper = new Matrix4f();
+    private final Matrix4f matHead = new Matrix4f();
+    private final Matrix4f matSpike = new Matrix4f();
+
 
     public MachineAdvancedAssemblerRenderer(BlockEntityRendererProvider.Context ctx) {}
 
@@ -263,25 +271,25 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                                 PoseStack pose, int blockLight, BlockPos blockPos,
                                 MultiBufferSource bufferSource, boolean useVboPath) {
         float ring = Mth.lerp(pt, be.getPrevRingAngle(), be.getRingAngle());
-        Matrix4f ringMat = new Matrix4f()
-                .rotateY((float) Math.toRadians(ring))
-                .translate(-0.5f, 0.0f, -0.5f);
+        matRing.identity()
+               .rotateY((float) Math.toRadians(ring))
+               .translate(-0.5f, 0.0f, -0.5f);
 
         // Инстансинг только когда нет стороннего шейдера (VBO путь)
         boolean useBatching = useVboPath && ModClothConfig.useInstancedBatching();
         if (useBatching && instancedRing != null && instancedRing.isInitialized()) {
             pose.pushPose();
-            pose.last().pose().mul(ringMat);
+            pose.last().pose().mul(matRing);
             instancedRing.addInstance(pose, blockLight, blockPos, be, bufferSource);
             pose.popPose();
         } else {
-            gpu.renderAnimatedPart(pose, blockLight, "Ring", ringMat, blockPos, be, bufferSource);
+            gpu.renderAnimatedPart(pose, blockLight, "Ring", matRing, blockPos, be, bufferSource);
         }
 
         ClientTicker.AssemblerArm[] arms = be.getArms();
         if (arms.length >= 2) {
-            renderArm(arms[0], false, pt, pose, blockLight, ringMat, blockPos, be, bufferSource, useBatching);
-            renderArm(arms[1], true, pt, pose, blockLight, ringMat, blockPos, be, bufferSource, useBatching);
+            renderArm(arms[0], false, pt, pose, blockLight, matRing, blockPos, be, bufferSource, useBatching);
+            renderArm(arms[1], true, pt, pose, blockLight, matRing, blockPos, be, bufferSource, useBatching);
         }
     }
 
@@ -298,34 +306,34 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         float angleSign = inverted ? -1f : 1f;
         float zBase = inverted ? -0.9375f : 0.9375f;
 
-        Matrix4f lowerMat = new Matrix4f(baseTransform)
+        matLower.set(baseTransform)
                 .translate(0.5f, 1.625f, 0.5f + zBase)
                 .rotateX((float) Math.toRadians(angleSign * a0))
                 .translate(-0.5f, -1.625f, -(0.5f + zBase));
 
         addInstanceOrRender(useInstanced, inverted ? instancedArmLower2 : instancedArmLower1,
-                pose, blockLight, blockPos, be, "ArmLower1", "ArmLower2", lowerMat, inverted, bufferSource);
+                pose, blockLight, blockPos, be, "ArmLower1", "ArmLower2", matLower, inverted, bufferSource);
 
-        Matrix4f upperMat = new Matrix4f(lowerMat)
+        matUpper.set(matLower)
                 .translate(0.5f, 2.375f, 0.5f + zBase)
                 .rotateX((float) Math.toRadians(angleSign * a1))
                 .translate(-0.5f, -2.375f, -(0.5f + zBase));
 
         addInstanceOrRender(useInstanced, inverted ? instancedArmUpper2 : instancedArmUpper1,
-                pose, blockLight, blockPos, be, "ArmUpper1", "ArmUpper2", upperMat, inverted, bufferSource);
+                pose, blockLight, blockPos, be, "ArmUpper1", "ArmUpper2", matUpper, inverted, bufferSource);
 
-        Matrix4f headMat = new Matrix4f(upperMat)
+        matHead.set(matUpper)
                 .translate(0.5f, 2.375f, 0.5f + (zBase * 0.4667f))
                 .rotateX((float) Math.toRadians(angleSign * a2))
                 .translate(-0.5f, -2.375f, -(0.5f + (zBase * 0.4667f)));
 
         addInstanceOrRender(useInstanced, inverted ? instancedHead2 : instancedHead1,
-                pose, blockLight, blockPos, be, "Head1", "Head2", headMat, inverted, bufferSource);
+                pose, blockLight, blockPos, be, "Head1", "Head2", matHead, inverted, bufferSource);
 
-        Matrix4f spikeMat = new Matrix4f(headMat)
+        matSpike.set(matHead)
                 .translate(0, a3, 0);
         addInstanceOrRender(useInstanced, inverted ? instancedSpike2 : instancedSpike1,
-                pose, blockLight, blockPos, be, "Spike1", "Spike2", spikeMat, inverted, bufferSource);
+                pose, blockLight, blockPos, be, "Spike1", "Spike2", matSpike, inverted, bufferSource);
     }
 
     private void addInstanceOrRender(boolean useInstanced, InstancedStaticPartRenderer instanced,
@@ -397,8 +405,11 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     }
 
     @Override 
-    public boolean shouldRenderOffScreen(MachineAdvancedAssemblerBlockEntity be) { 
-        return true; 
+    public boolean shouldRenderOffScreen(MachineAdvancedAssemblerBlockEntity be) {
+        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            return false;
+        }
+        return true;
     }
 
     @Override public int getViewDistance() { return 128; }

@@ -172,64 +172,9 @@ public abstract class DoorDecl {
         return !cachedPartAABBs.isEmpty();
     }
 
-    /**
-     * Возвращает BakedModel для конкретной части
-     */
-    // @Nullable
-    // public BakedModel getModelPart(String partName) {
-    //     if (modelCache.containsKey(partName)) {
-    //         return modelCache.get(partName);
-    //     }
-
-    //     // Для дверей используем DoorBakedModel напрямую
-    //     try {
-    //         ModelManager modelManager = Minecraft.getInstance().getModelManager();
-    //         ModelResourceLocation modelLocation = new ModelResourceLocation(getBlockId(), "");
-    //         BakedModel baseModel = modelManager.getModel(modelLocation);
-            
-    //         if (baseModel instanceof DoorBakedModel doorModel) {
-    //             BakedModel partModel = doorModel.getPart(partName);
-    //             if (partModel != null) {
-    //                 modelCache.put(partName, partModel);
-    //                 return partModel;
-    //             }
-    //         }
-            
-    //         MainRegistry.LOGGER.warn("Could not find part '{}' in door model", partName);
-    //         return null;
-            
-    //     } catch (Exception e) {
-    //         MainRegistry.LOGGER.error("Error loading door part model for '{}'", partName, e);
-    //         return null;
-    //     }
-    // }
-
-    /**
-     * Возвращает текстуру для конкретной части
-     * Теперь берется из BakedModel автоматически!
-     */
-    // public ResourceLocation getTextureForPart(int skinIndex, String partName) {
-    //     BakedModel model = getModelPart(partName);
-    //     if (model != null && !model.getQuads(null, null, null).isEmpty()) {
-    //         // Текстура берется из BakedModel, не нужно хардкодить
-    //         return model.getParticleIcon().atlasLocation();
-    //     }
-
-    //     // Fallback: используем blockstate атлас
-    //     return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/atlas/blocks.png");
-    // }
-
-    // public ResourceLocation getTextureForPart(String partName) {
-    //     return getTextureForPart(0, partName);
-    // }
-
     public int getBlockOffset() { return 0; }
 
     public boolean remoteControllable() { return false; }
-
-    // public float getDoorRangeOpenTime(int currentTick, int rangeIndex) {
-    //     return getNormTime(currentTick);
-    // }
 
     public boolean hasSkins() { return false; }
 
@@ -259,6 +204,13 @@ public abstract class DoorDecl {
     }
 
     public void doOffsetTransform(LegacyAnimator animator) {}
+
+    /**
+     * Доп. поворот Y (градусы) для baked model — должен совпадать с doOffsetTransform,
+     * чтобы BakedModel и BER были выровнены. По умолчанию 0.
+     */
+    public int getBakedModelRotationOffsetY() { return 0; }
+
     public double[][] getClippingPlanes() { return new double[0][]; }
 
     // Трансформации
@@ -501,53 +453,6 @@ public abstract class DoorDecl {
     }
     
 
-    // Возвращает локальные AABB створок относительно контроллера (без поворота/переноса)
-    // public List<AABB> getLocalDynamicBoxes(float progress) {
-    //     int[] d = getDimensions();
-    //     final double ox = d[0], oy = d[1], oz = d[2];
-    //     final int sx = d[3], sy = d[4], sz = d[5];
-        
-    //     // ИСПРАВЛЕНО: учитываем, что структура создается с <=
-    //     final double minX = ox;
-    //     final double maxX = ox + sx + 1;  // +1 из-за <= в createStructureForDoor
-    //     final double minY = oy;
-    //     final double maxY = oy + sy + 1;  // +1 из-за <=
-    //     final double minZ = oz;
-    //     final double maxZ = oz + (sz == 0 ? 1 : sz + 1);  // +1 для толщины или из-за <=
-        
-    //     final double totalWidth = maxX - minX;
-    //     final double half = totalWidth / 2.0;
-    //     final double centerX = minX + half;
-        
-    //     final double move = Math.min(Math.max(progress, 0f), 1f) * half;
-        
-    //     // Пороги разъезда створок
-    //     final double cutLeft = centerX - move;
-    //     final double cutRight = centerX + move;
-        
-    //     List<AABB> boxes = new ArrayList<>();
-        
-    //     // Создаем коллижн боксы для створок
-    //     for (double x = minX; x < maxX; x += 1.0) {
-    //         double cellMinX = x;
-    //         double cellMaxX = x + 1.0;
-            
-    //         // Левая створка: часть ячейки слева от cutLeft
-    //         double leftPartMaxX = Math.min(cellMaxX, cutLeft);
-    //         if (leftPartMaxX - cellMinX > 1e-6) {
-    //             boxes.add(new AABB(cellMinX, minY, minZ, leftPartMaxX, maxY, maxZ));
-    //         }
-            
-    //         // Правая створка: часть ячейки справа от cutRight
-    //         double rightPartMinX = Math.max(cellMinX, cutRight);
-    //         if (cellMaxX - rightPartMinX > 1e-6) {
-    //             boxes.add(new AABB(rightPartMinX, minY, minZ, cellMaxX, maxY, maxZ));
-    //         }
-    //     }
-        
-    //     return boxes;
-    // }    
-
     // ==================== Реализации ====================
 
     public static final DoorDecl LARGE_VEHICLE_DOOR = new DoorDecl() {
@@ -562,6 +467,7 @@ public abstract class DoorDecl {
             builder.addSymbol('H', Block.box(0, 0, 0, 8, 16, 16), PartRole.DEFAULT);    // левый вертикальный полублок
             builder.addSymbol('G', Block.box(8, 0, 0, 16, 16, 16), PartRole.DEFAULT);   // правый вертикальный полублок
             builder.addSymbol('T', Block.box(0, 10, 0, 16, 16, 16), PartRole.DEFAULT); // полублок в верхнем положении
+            builder.addSymbol('M', Block.box(0, 0, 0, 16, 1, 16), PartRole.DEFAULT); // плита в нижнем положении
             // Схема ЗАКРЫТОЙ двери (Вид спереди, Y сверху вниз)
             String[] closed = {
                 "XXXXXXX",
@@ -579,7 +485,7 @@ public abstract class DoorDecl {
                 "HOOOOOG",
                 "HOOOOOG",
                 "HOOOOOG",
-                "HOOOOOG"
+                "HMMMMMG"
             };
             
             // Регистрируем структуру (C - центр/контроллер)
@@ -648,6 +554,7 @@ public abstract class DoorDecl {
             builder.addSymbol('H', Block.box(0, 0, 0, 8, 16, 16), PartRole.DEFAULT);    // левый вертикальный полублок
             builder.addSymbol('G', Block.box(8, 0, 0, 16, 16, 16), PartRole.DEFAULT);   // правый вертикальный полублок
             builder.addSymbol('T', Block.box(0, 10, 0, 16, 16, 16), PartRole.DEFAULT); // полублок в верхнем положении
+            builder.addSymbol('M', Block.box(0, 0, 0, 16, 3, 16), PartRole.DEFAULT); // плита в нижнем положении
             String[] closed = {
                 "####",
                 "####",
@@ -659,7 +566,7 @@ public abstract class DoorDecl {
                 "HTTG",
                 "HOOG",
                 "HOOG",
-                "HOOG"
+                "HMMG"
             };
             
             // Регистрируем структуру (C - центр/контроллер)
@@ -698,53 +605,6 @@ public abstract class DoorDecl {
         public String[] getPartNames() {
             return new String[] { "frame", "door" };
         }
-
-        // @Override
-        // public boolean isDynamicShape() {
-        //     return true;
-        // }
-
-        // @Override
-        // public List<AABB> getCollisionBounds(float progress, Direction facing) {
-        //     List<AABB> bounds = new ArrayList<>();
-        //     if (progress >= 0.99f) {
-        //         return bounds; // Полностью открыта
-        //     }
-
-        //     // Получаем РЕАЛЬНЫЕ dimensions из DoorBlock
-        //     int[] d = getDimensions(); // [-1, 0, 0, 3, 3, 0]
-        //     double ox = d[0];  // -1
-        //     double oy = d[1];  // 0
-        //     double oz = d[2];  // 0
-        //     double sx = d[3];  // 3 (итого 4 блока: -1, 0, 1, 2)
-        //     double sy = d[4];  // 3 (итого 4 блока высоты)
-        //     double sz = d[5];  // 0 (итого 1 блок глубины)
-
-        //     double half = sx / 2.0;  // 1.5
-        //     double move = Math.min(progress, 1.0) * half;  // максимум 1.5 блока
-
-        //     // Левая створка: X от ox до (ox + half - move)
-        //     double leftMaxX = Math.max(ox, ox + half - move);
-        //     if (leftMaxX - ox > 0.05) {
-        //         // X: от -1.0 до (-1.0 + 1.5 - move)
-        //         // Y: от 0.0 до 4.0
-        //         // Z: от 0.0 до 1.0
-        //         AABB leftDoor = new AABB(ox, oy, oz, leftMaxX, oy + sy, oz + sz + 1.0);
-        //         bounds.add(rotateAABB(leftDoor, facing));
-        //     }
-
-        //     // Правая створка: X от (ox + half + move) до (ox + sx)
-        //     double rightMinX = Math.min(ox + sx, ox + half + move);
-        //     if (ox + sx - rightMinX > 0.05) {
-        //         // X: от (0.5 + move) до 2.0
-        //         // Y: от 0.0 до 4.0
-        //         // Z: от 0.0 до 1.0
-        //         AABB rightDoor = new AABB(rightMinX, oy, oz, ox + sx, oy + sy, oz + sz + 1.0);
-        //         bounds.add(rotateAABB(rightDoor, facing));
-        //     }
-
-        //     return bounds;
-        // }
 
         @Override public SoundEvent getOpenSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
         @Override public SoundEvent getOpenSoundLoop() { return ModSounds.GARAGE_MOVE.get(); }
@@ -827,6 +687,7 @@ public abstract class DoorDecl {
             builder.addSymbol('H', Block.box(0, 0, 0, 8, 16, 16), PartRole.DEFAULT);    // левый вертикальный полублок
             builder.addSymbol('G', Block.box(8, 0, 0, 16, 16, 16), PartRole.DEFAULT);   // правый вертикальный полублок
             builder.addSymbol('T', Block.box(0, 12, 0, 16, 16, 16), PartRole.DEFAULT); // полублок в верхнем положении
+            builder.addSymbol('M', Block.box(0, 0, 0, 16, 3, 16), PartRole.DEFAULT); // плита в нижнем положении
 
             // Вид спереди (Y сверху вниз)
             // Дверь 4 блока в ширину, 3 в высоту
@@ -840,7 +701,7 @@ public abstract class DoorDecl {
             String[] open = {
                 "HTTG", // Верхняя рама остается? Если нет, ставь OOOO
                 "HOOG", // Проход
-                "HOOG"  // Контроллер остается твердым, остальное проход
+                "HMMG"  // Контроллер остается твердым, остальное проход
             };
 
             // Если C - это контроллер, метод parseVertical сам посчитает координаты остальных блоков
@@ -875,18 +736,6 @@ public abstract class DoorDecl {
         @Override public int[][] getDoorOpenRanges() {
             return new int[][] { { -1, 0, 0, 3, 4, 1 } };
         }
-
-        // @Override
-        // public List<AABB> getCollisionBounds(float progress, Direction facing) {
-        //     List<AABB> bounds = new ArrayList<>();
-        //     if (progress >= 0.99f) return bounds;
-            
-        //     // Противопожарная дверь, движется вверх
-        //     double movement = progress * 3.0;
-        //     AABB door = new AABB(-1.0, 0.0, 0.0, 2.0, Math.max(0.1, 4.0 - movement), 1.0);
-        //     bounds.add(rotateAABB(door, facing));
-        //     return bounds;
-        // }
 
         @Override public SoundEvent getOpenSoundEnd() { return ModSounds.WGH_STOP.get(); }
         @Override public SoundEvent getOpenSoundLoop() { return ModSounds.WGH_START.get(); }
@@ -954,6 +803,8 @@ public abstract class DoorDecl {
         public void doOffsetTransform(LegacyAnimator animator) {
             animator.rotate(-90.0f, 0.0f, 1.0f, 0.0f);
         }
+
+        @Override public int getBakedModelRotationOffsetY() { return -90; }
     
         @Override
         public double[][] getClippingPlanes() {
@@ -977,19 +828,6 @@ public abstract class DoorDecl {
         public int getSkinCount() {
             return 3;
         }
-    
-        // @Override
-        // public List<AABB> getCollisionBounds(float progress, Direction facing) {
-        //     List<AABB> bounds = new ArrayList<>();
-        //     if (progress >= 0.99f) return bounds;
-            
-        //     double movement = progress * 1.5;
-        //     if (movement < 1.0) {
-        //         AABB door = new AABB(-2.0, 0.0, 0.0, 3.0, 5.0, 1.0 - movement);
-        //         bounds.add(rotateAABB(door, facing));
-        //     }
-        //     return bounds;
-        // }
     
         @Override
         public SoundEvent getOpenSoundEnd() {
@@ -1069,20 +907,6 @@ public abstract class DoorDecl {
             return new int[][] { { 0, 0, 0, 1, 2, 2 } };
         }
 
-        // @Override
-        // public List<AABB> getCollisionBounds(float progress, Direction facing) {
-        //     List<AABB> bounds = new ArrayList<>();
-        //     if (progress >= 0.99f) return bounds;
-            
-        //     // Герметичная раздвижная дверь
-        //     double movement = progress * 1.0;
-        //     if (movement < 1.0) {
-        //         AABB door = new AABB(0.0, 0.0, 1.0 - 0.25, 1.0, 2.0, 1.0);
-        //         bounds.add(rotateAABB(door, facing));
-        //     }
-        //     return bounds;
-        // }
-
         @Override public SoundEvent getOpenSoundEnd() { return ModSounds.METAL_STOP_1.get(); }
         @Override public SoundEvent getOpenSoundStart() { return ModSounds.DOOR_MOVE_2.get(); }
         @Override public float getSoundVolume() { return 2.0f; }
@@ -1154,6 +978,8 @@ public abstract class DoorDecl {
             // Поворот на 90° вокруг оси Y (как в старой версии)
             animator.rotate(90.0f, 0.0f, 1.0f, 0.0f);
         }
+
+        @Override public int getBakedModelRotationOffsetY() { return 90; }
         
         @Override public double[][] getClippingPlanes() {
             return new double[][] { { 0, -1, 0, 5 } };
@@ -1162,18 +988,6 @@ public abstract class DoorDecl {
         @Override public int[][] getDoorOpenRanges() {
             return new int[][] { { -2, 1, 0, 4, 5, 1 } };
         }
-    
-        // @Override
-        // public List<AABB> getCollisionBounds(float progress, Direction facing) {
-        //     List<AABB> bounds = new ArrayList<>();
-        //     if (progress >= 0.99f) return bounds;
-            
-        //     // Дверь безопасного доступа, движется вверх
-        //     double movement = progress * 3.5;
-        //     AABB door = new AABB(-2.0, 0.0, 0.0, 3.0, Math.max(0.0625, 5.0 - movement), 1.0);
-        //     bounds.add(rotateAABB(door, facing));
-        //     return bounds;
-        // }
     
         @Override public SoundEvent getCloseSoundLoop() { return ModSounds.GARAGE_MOVE.get(); }
         @Override public SoundEvent getCloseSoundEnd() { return ModSounds.GARAGE_STOP.get(); }
@@ -1238,20 +1052,6 @@ public abstract class DoorDecl {
             return new int[][] { { 0, 0, 0, 2, 2, 2 } };
         }
 
-        // @Override
-        // public List<AABB> getCollisionBounds(float progress, Direction facing) {
-        //     List<AABB> bounds = new ArrayList<>();
-        //     if (progress >= 0.99f) return bounds;
-            
-        //     // Быстрая раздвижная дверь
-        //     double movement = progress * 0.99;
-        //     if (movement < 0.99) {
-        //         AABB door = new AABB(0.0, 0.0, 1.0 - 0.1875, 2.0, 2.0, 1.0);
-        //         bounds.add(rotateAABB(door, facing));
-        //     }
-        //     return bounds;
-        // }
-
         @Override public SoundEvent getOpenSoundEnd() { return ModSounds.SLIDING_DOOR_OPENED.get(); }
         @Override public SoundEvent getCloseSoundEnd() { return ModSounds.SLIDING_DOOR_SHUT.get(); }
         @Override public SoundEvent getOpenSoundLoop() { return ModSounds.SLIDING_DOOR_OPENING.get(); }
@@ -1272,6 +1072,7 @@ public abstract class DoorDecl {
             builder.addSymbol('H', Block.box(0, 0, 4, 4, 16, 12), PartRole.DEFAULT);    // левый вертикальный полублок
             builder.addSymbol('G', Block.box(12, 0, 4, 16, 16, 12), PartRole.DEFAULT);   // правый вертикальный полублок
             builder.addSymbol('T', Block.box(0, 6, 0, 16, 16, 16), PartRole.DEFAULT); // полублок в верхнем положении
+            builder.addSymbol('M', Block.box(0, 0, 0, 16, 3, 16), PartRole.DEFAULT); // плита в нижнем положении
 
             // Схема 2x2
             // C - контроллер (0, 0, 0)
@@ -1286,7 +1087,7 @@ public abstract class DoorDecl {
             String[] open = {
                 "TTT",
                 "H G",
-                "H G"
+                "HMG"
             };
 
             // Регистрируем структуру
@@ -1302,18 +1103,6 @@ public abstract class DoorDecl {
         public String[] getPartNames() {
             return new String[] { "frame", "door" };
         }
-    
-        // @Override
-        // public ResourceLocation getTextureForPart(int skinIndex, String partName) {
-        //     if ("decal".equals(partName)) {
-        //         // Возвращаем текстуру декали
-        //         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, 
-        //             "block/qe_containment_decal");
-        //     }
-        //     // Основная текстура для остальных частей
-        //     return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, 
-        //         "block/qe_containment_door");
-        // }
     
         @Override 
         public int getOpenTime() { 
@@ -1339,17 +1128,6 @@ public abstract class DoorDecl {
         public int[][] getDoorOpenRanges() {
             return new int[][] { { -1, 0, 0, 3, 3, 1 } };
         }
-    
-        // @Override
-        // public List<AABB> getCollisionBounds(float progress, Direction facing) {
-        //     List<AABB> bounds = new ArrayList<>();
-        //     if (progress >= 0.99f) return bounds;
-            
-        //     double movement = progress * 3.0;
-        //     AABB door = new AABB(-1.0, 0.0, 0.5, 2.0, Math.max(0.1, 3.0 - movement), 1.0);
-        //     bounds.add(rotateAABB(door, facing));
-        //     return bounds;
-        // }
     
         @Override 
         public SoundEvent getOpenSoundEnd() { 
@@ -1474,27 +1252,11 @@ public abstract class DoorDecl {
             return super.getChildren(partName);
         }
     
-        // @Override
-        // public float getDoorRangeOpenTime(int ticks, int idx) {
-        //     return getNormTime(ticks, 35, 40);
-        // }
-    
         @Override
         public int[][] getDoorOpenRanges() {
             // Фантомные блоки для обнаружения игроков/сущностей
             return new int[][] { { 1, 0, 0, -3, 3, 2 } };
         }
-    
-        // @Override
-        // public List<AABB> getCollisionBounds(float progress, Direction facing) {
-        //     List<AABB> bounds = new ArrayList<>();
-        //     if (progress >= 0.99f) return bounds;
-            
-        //     // Водонепроницаемая дверь со сложной анимацией
-        //     AABB door = new AABB(0.0, 0.0, 0.75, 1.0, 3.0, 1.0);
-        //     bounds.add(rotateAABB(door, facing));
-        //     return bounds;
-        // }
     
         private float smoothstep(float t) {
             // Плавная интерполяция (кубический Эрмит)

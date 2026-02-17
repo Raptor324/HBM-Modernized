@@ -1,5 +1,11 @@
 package com.hbm_m.client.model;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 
@@ -11,11 +17,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.model.data.ModelData;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 
 public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
@@ -191,6 +192,6 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
             case WEST -> 270;
             case EAST -> 90;
             default -> 0;
-        } + 90) % 360;
+        } + 270) % 360;
     }
 }

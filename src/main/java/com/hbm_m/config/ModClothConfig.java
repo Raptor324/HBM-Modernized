@@ -2,17 +2,16 @@ package com.hbm_m.config;
 // Конфигурация мода с использованием AutoConfig и Cloth Config.
 // Включает валидацию значений после загрузки для обеспечения корректных настроек
 
-import net.minecraft.util.Mth;
 import com.hbm_m.main.MainRegistry;
 
+import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry.BoundedDiscrete;
 import me.shedaniel.autoconfig.annotation.ConfigEntry.Category;
 import me.shedaniel.autoconfig.annotation.ConfigEntry.Gui;
-
-import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
+import net.minecraft.util.Mth;
 
 @Config(name = "hbm_m")
 public class ModClothConfig implements ConfigData {
@@ -191,6 +190,12 @@ public class ModClothConfig implements ConfigData {
     @Category("rendering")
     @Gui.Tooltip
     public boolean useColladaZUpConversion = true;
+
+    /** Яркость анимированной части двери (Iris/Oculus). 1.0 = без изменений, 0.85 = темнее для выравнивания с baked model. */
+    @Category("rendering")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 50, max = 100)
+    public int doorAnimatedPartBrightness = 88;
 
     // Отладка 
     @Category("debug")

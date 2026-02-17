@@ -3,18 +3,19 @@ package com.hbm_m.datagen.assets;
 // Провайдер генерации состояний блоков и моделей для блоков мода.
 // Используется в классе DataGenerators для регистрации.
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.custom.decorations.DoorBlock;
 import com.hbm_m.block.custom.machines.BlastFurnaceBlock;
 import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.custom.machines.MachineWoodBurnerBlock;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.DoorBlock;
 import net.minecraft.world.level.block.SlabBlock;
 import net.minecraft.world.level.block.SnowLayerBlock;
 import net.minecraft.world.level.block.StairBlock;
@@ -341,9 +342,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
 
 
-        doorBlockWithRenderType(((DoorBlock) ModBlocks.METAL_DOOR.get()), modLoc("block/metal_door_bottom"), modLoc("block/metal_door_top"), "cutout");
-        doorBlockWithRenderType(((DoorBlock) ModBlocks.DOOR_BUNKER.get()), modLoc("block/door_bunker_bottom"), modLoc("block/door_bunker_top"), "cutout");
-        doorBlockWithRenderType(((DoorBlock) ModBlocks.DOOR_OFFICE.get()), modLoc("block/door_office_bottom"), modLoc("block/door_office_top"), "cutout");
+        doorBlockWithRenderType(((net.minecraft.world.level.block.DoorBlock) ModBlocks.METAL_DOOR.get()), modLoc("block/metal_door_bottom"), modLoc("block/metal_door_top"), "cutout");
+        doorBlockWithRenderType(((net.minecraft.world.level.block.DoorBlock) ModBlocks.DOOR_BUNKER.get()), modLoc("block/door_bunker_bottom"), modLoc("block/door_bunker_top"), "cutout");
+        doorBlockWithRenderType(((net.minecraft.world.level.block.DoorBlock) ModBlocks.DOOR_OFFICE.get()), modLoc("block/door_office_bottom"), modLoc("block/door_office_top"), "cutout");
 
         columnBlockWithItem(
                 ModBlocks.WASTE_GRASS,
@@ -1211,10 +1212,28 @@ public class ModBlockStateProvider extends BlockStateProvider {
     }
 
     private <T extends Block> void customDoorBlock(RegistryObject<T> blockObject) {
-        // Создаём только blockstate, который ссылается на JSON модель
-        // JSON модель должна лежать в resources/assets/hbm_m/models/block/<название>.json
-        horizontalBlock(blockObject.get(),
-            models().getExistingFile(modLoc("block/doors/" + blockObject.getId().getPath())));
+        // Регистрируем все варианты blockstate для двери (FACING + PART_ROLE + DOOR_MOVING + OPEN)
+        // rotationY(0): поворот обрабатывается внутри DoorBakedModel (совпадение с BER + doOffsetTransform)
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        ModelFile modelFile = models().getExistingFile(modLoc("block/doors/" + blockObject.getId().getPath()));
+        
+        for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
+            for (PartRole partRole : PartRole.values()) {
+                for (boolean doorMoving : new boolean[]{false, true}) {
+                    for (boolean open : new boolean[]{false, true}) {
+                        builder.partialState()
+                            .with(DoorBlock.FACING, facing)
+                            .with(DoorBlock.PART_ROLE, partRole)
+                            .with(DoorBlock.DOOR_MOVING, doorMoving)
+                            .with(DoorBlock.OPEN, open)
+                            .modelForState()
+                            .modelFile(modelFile)
+                            .rotationY(0)
+                            .addModel();
+                    }
+                }
+            }
+        }
     }
 
     private <T extends Block> void customMachineBlock(RegistryObject<T> blockObject) {

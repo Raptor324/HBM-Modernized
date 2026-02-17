@@ -1,5 +1,10 @@
 package com.hbm_m.block.entity.custom.doors;
 
+import java.lang.ref.WeakReference;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.custom.decorations.DoorBlock;
@@ -9,6 +14,7 @@ import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.model.variant.DoorModelType;
 import com.hbm_m.client.model.variant.DoorSkin;
+import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -20,6 +26,8 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
@@ -49,6 +57,31 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         new ModelProperty<>();
     
     /**
+     * Property для передачи состояния движения двери через ModelData
+     * Используется для переключения между baked geometry и BER рендером при активном шейдере
+     */
+    @OnlyIn(Dist.CLIENT)
+    public static final ModelProperty<Boolean> DOOR_MOVING_PROPERTY = 
+        new ModelProperty<>();
+
+    /**
+     * Property для передачи состояния open/closed через ModelData.
+     * Используется в baked-модели когда BlockState может быть не синхронизирован.
+     */
+    @OnlyIn(Dist.CLIENT)
+    public static final ModelProperty<Boolean> OPEN_PROPERTY = 
+        new ModelProperty<>();
+
+    /**
+     * Property: true когда дверь в положении open/closed (state 0/1), но BER ещё рисует створки
+     * (период overlap). BakedModel показывает полную геометрию, BER — анимированные части.
+     * Наслоение устраняет моргание при переключении.
+     */
+    @OnlyIn(Dist.CLIENT)
+    public static final ModelProperty<Boolean> OVERLAP_PROPERTY = 
+        new ModelProperty<>();
+    
+    /**
      * Текущий выбор модели и скина
      */
     private DoorModelSelection modelSelection = DoorModelSelection.DEFAULT;
@@ -69,6 +102,41 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     
     @OnlyIn(Dist.CLIENT)
     private Object loopingSound;
+
+    /**
+     * Задержка (мс): baked model и BER наслаиваются — оба рисуют створки в open/closed.
+     * Устраняет моргание при переключении. После истечения — только baked model.
+     */
+    private static final long ANIMATION_DELAY_MS = 500;
+
+    @OnlyIn(Dist.CLIENT)
+    private long animationDelayUntilMs = 0;
+
+    @OnlyIn(Dist.CLIENT)
+    private static final List<DelayEntry> ANIMATION_DELAY_QUEUE = new ArrayList<>();
+
+    @OnlyIn(Dist.CLIENT)
+    private static record DelayEntry(long untilMs, WeakReference<DoorBlockEntity> ref) {}
+
+    /** Вызывать из ClientTickEvent. По истечении delay — отключаем BER, оставляем только baked model. */
+    @OnlyIn(Dist.CLIENT)
+    public static void processAnimationDelayQueue() {
+        long now = System.currentTimeMillis();
+        Iterator<DelayEntry> it = ANIMATION_DELAY_QUEUE.iterator();
+        while (it.hasNext()) {
+            DelayEntry entry = it.next();
+            if (now >= entry.untilMs) {
+                DoorBlockEntity be = entry.ref.get();
+                if (be != null && !be.isRemoved() && be.level != null) {
+                    be.animationDelayUntilMs = 0;
+                    be.cachedModelData = null;
+                    be.requestModelDataUpdate();
+                    DoorChunkInvalidationHelper.scheduleChunkInvalidation(be.worldPosition);
+                }
+                it.remove();
+            }
+        }
+    }
 
     public DoorBlockEntity(BlockPos pos, BlockState state, String doorDeclId) {
         super(ModBlockEntities.DOOR_ENTITY.get(), pos, state);
@@ -98,6 +166,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             if (level != null && level.isClientSide) {
                 this.cachedModelData = null;
                 requestModelDataUpdate();
+                DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
             }
             
             syncToClient();
@@ -362,10 +431,16 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     }
 
     /**
-     * Проверяет, находится ли дверь в процессе движения
+     * Проверяет, находится ли дверь в процессе движения.
+     * На клиенте: включает задержку + grace period после полного открытия/закрытия —
+     * анимированная часть остаётся видимой, пока baked model не пересоберётся.
      */
     public boolean isMoving() {
-        return state == 2 || state == 3;
+        if (state == 2 || state == 3) return true;
+        if (level != null && level.isClientSide) {
+            if (animationDelayUntilMs > 0 && System.currentTimeMillis() < animationDelayUntilMs) return true;
+        }
+        return false;
     }
 
     private void setState(byte newState) {
@@ -375,6 +450,36 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             this.openTicks = 0;
         } else if (newState == 2) {
             this.openTicks = getServerOpenTime(); // Используем серверный метод
+        }
+        // Обновляем BlockState с DOOR_MOVING и OPEN при изменении состояния
+        if (level != null && !level.isClientSide) {
+            boolean isMoving = newState == 2 || newState == 3;
+            boolean isOpen = newState == 1;
+            BlockState currentState = getBlockState();
+            if (currentState.getBlock() instanceof DoorBlock) {
+                boolean needsUpdate = false;
+                BlockState newBlockState = currentState;
+                if (currentState.hasProperty(DoorBlock.DOOR_MOVING)
+                        && currentState.getValue(DoorBlock.DOOR_MOVING) != isMoving) {
+                    newBlockState = newBlockState.setValue(DoorBlock.DOOR_MOVING, isMoving);
+                    needsUpdate = true;
+                }
+                if (currentState.hasProperty(DoorBlock.OPEN)
+                        && (newState == 0 || newState == 1)
+                        && currentState.getValue(DoorBlock.OPEN) != isOpen) {
+                    newBlockState = newBlockState.setValue(DoorBlock.OPEN, isOpen);
+                    needsUpdate = true;
+                }
+                if (needsUpdate) {
+                    level.setBlock(worldPosition, newBlockState, 3);
+                }
+            }
+        }
+        // Инвалидируем кэш ModelData при изменении состояния движения
+        if (level != null && level.isClientSide) {
+            this.cachedModelData = null;
+            requestModelDataUpdate();
+            DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
         }
         syncToClient();
     }
@@ -399,7 +504,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
                 be.state = 1;
                 be.openTicks = openTime;
                 shouldSync = true;
-                // ВАЖНО: Финальное обновление соседей, чтобы убрать коллизию окончательно, если еще осталась
+                // Обновляем BlockState OPEN для baked-геометрии
+                if (state.hasProperty(DoorBlock.OPEN)) {
+                    level.setBlock(pos, state.setValue(DoorBlock.DOOR_MOVING, false).setValue(DoorBlock.OPEN, true), 3);
+                }
                 be.notifyNeighborsOfStateChange(level, pos);
             }
         } else if (be.state == 2) { // Closing
@@ -408,6 +516,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
                 be.state = 0;
                 be.openTicks = 0;
                 shouldSync = true;
+                // Обновляем BlockState OPEN для baked-геометрии
+                if (state.hasProperty(DoorBlock.OPEN)) {
+                    level.setBlock(pos, state.setValue(DoorBlock.DOOR_MOVING, false).setValue(DoorBlock.OPEN, false), 3);
+                }
                 be.notifyNeighborsOfStateChange(level, pos);
             }
         }
@@ -423,6 +535,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         
         Direction facing = blockState.getValue(DoorBlock.FACING);
         MultiblockStructureHelper structureHelper = doorBlock.getStructureHelper();
+        
+        // Контроллер не входит в getAllPartPositions (BlockPos.ZERO исключён из structureMap)
+        BlockState controllerState = level.getBlockState(controllerPos);
+        level.sendBlockUpdated(controllerPos, controllerState, controllerState, 3);
         
         for (BlockPos partPos : structureHelper.getAllPartPositions(controllerPos, facing)) {
             BlockState partState = level.getBlockState(partPos);
@@ -664,6 +780,16 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         if (level != null && level.isClientSide) {
             initModelSelection();
             handleNewState(oldState, this.state);
+            // ИСПРАВЛЕНИЕ МОРГАНИЯ: при получении state 2/3 (движение) используем клиентское время.
+            // Серверный animStartTime приводит к рассинхрону часов и скачкам прогресса анимации.
+            if (this.state == 2 || this.state == 3) {
+                this.animStartTime = System.currentTimeMillis();
+            }
+            // Задержка: при переходе из moving (2/3) в static (0/1) — анимированная часть остаётся ещё ANIMATION_DELAY_MS
+            if ((oldState == 2 || oldState == 3) && (this.state == 0 || this.state == 1)) {
+                animationDelayUntilMs = System.currentTimeMillis() + ANIMATION_DELAY_MS;
+                ANIMATION_DELAY_QUEUE.add(new DelayEntry(animationDelayUntilMs, new WeakReference<>(this)));
+            }
         }
     }
 
@@ -671,8 +797,16 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     @Override
     public ModelData getModelData() {
         if (cachedModelData == null) {
+            // isMoving: state 2/3 или период overlap (BER продолжает рисовать створки)
+            boolean inDelay = animationDelayUntilMs > 0 && System.currentTimeMillis() < animationDelayUntilMs;
+            boolean isOverlap = (state == 0 || state == 1) && inDelay;
+            boolean isMoving = state == 2 || state == 3 || isOverlap;
+            boolean isOpen = state == 1;
             cachedModelData = ModelData.builder()
                 .with(MODEL_SELECTION_PROPERTY, modelSelection)
+                .with(DOOR_MOVING_PROPERTY, isMoving)
+                .with(OPEN_PROPERTY, isOpen)
+                .with(OVERLAP_PROPERTY, isOverlap)
                 .build();
         }
         return cachedModelData;
@@ -724,13 +858,26 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
             load(tag);
+            // Инвалидируем чанк — baked model должен пересобраться с новым ModelData (OPEN, DOOR_MOVING)
+            if (level != null && level.isClientSide) {
+                requestModelDataUpdate();
+                DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
+            }
         }
     }
 
     private void syncToClient() {
-        if (level != null && !level.isClientSide) {
+        if (level != null && !level.isClientSide && level instanceof ServerLevel serverLevel) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
             setChanged();
+            // Явно отправляем BlockEntity пакет — клиент должен получить state/OPEN/DOOR_MOVING
+            // для baked model (ModelData) и BER. Без этого клиентский BlockEntity остаётся со старым state.
+            var packet = ClientboundBlockEntityDataPacket.create(this);
+            for (ServerPlayer player : serverLevel.players()) {
+                if (player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) < 64 * 64) {
+                    player.connection.send(packet);
+                }
+            }
         }
     }
 

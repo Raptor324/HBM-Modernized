@@ -72,7 +72,7 @@ public class GlobalMeshCache {
     }
 
     public static AbstractGpuVboRenderer getOrCreateRenderer(String partKey, BakedModel model) {
-        // ИСПРАВЛЕНИЕ: Проверяем размер кэша рендереров
+        if (FAILED_RENDERER_KEYS.contains(partKey)) return null;
         if (PART_RENDERERS.size() > MAX_CACHE_SIZE) {
             cleanupDeadRenderers();
         }
@@ -80,11 +80,10 @@ public class GlobalMeshCache {
         WeakReference<AbstractGpuVboRenderer> ref = PART_RENDERERS.compute(partKey, (key, existingRef) -> {
             AbstractGpuVboRenderer renderer = (existingRef != null) ? existingRef.get() : null;
             if (renderer == null) {
-                // Извлекаем имя части из ключа (формат: "entityType:partName" или просто "partName")
                 String partName = key.contains(":") ? key.substring(key.lastIndexOf(":") + 1) : key;
                 renderer = createRendererForPart(model, partName);
                 if (renderer == null) {
-                    // Не кэшируем null - возвращаем существующий (тоже null)
+                    FAILED_RENDERER_KEYS.add(key);
                     return existingRef;
                 }
                 return new WeakReference<>(renderer);
@@ -202,6 +201,8 @@ public class GlobalMeshCache {
         });
     }
 
+    private static final java.util.Set<String> FAILED_RENDERER_KEYS = ConcurrentHashMap.newKeySet();
+
     private static AbstractGpuVboRenderer createRendererForPart(BakedModel model) {
         return createRendererForPart(model, "unknown");
     }
@@ -210,15 +211,12 @@ public class GlobalMeshCache {
         // ПРЕДВАРИТЕЛЬНАЯ проверка: есть ли квады в модели
         List<BakedQuad> quads = compileMesh(model);
         if (quads.isEmpty()) {
-            MainRegistry.LOGGER.warn("GlobalMeshCache: Part '{}' has no quads, skipping renderer creation. Model: {}", 
-                partName, model.getClass().getSimpleName());
             return null;
         }
         
         // Создаем рендерер с ПРЕДВАРИТЕЛЬНО построенными данными
         final AbstractGpuVboRenderer.VboData prebuiltData = ObjModelVboBuilder.buildSinglePart(model, partName);
         if (prebuiltData == null) {
-            MainRegistry.LOGGER.warn("GlobalMeshCache: VboData is null for part '{}', skipping renderer creation", partName);
             return null;
         }
         
@@ -263,6 +261,7 @@ public class GlobalMeshCache {
             }
         }
         PART_RENDERERS.clear();
+        FAILED_RENDERER_KEYS.clear();
         clear(); // Очищаем также quads и buffers
     }
 
