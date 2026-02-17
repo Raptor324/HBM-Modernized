@@ -1,116 +1,75 @@
 package com.hbm_m.event;
 
 import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
-import com.hbm_m.client.model.variant.DoorModelSelection;
-import com.hbm_m.client.model.variant.DoorModelType;
 import com.hbm_m.client.overlay.DoorModelSelectionScreen;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.main.MainRegistry;
-
+import com.hbm_m.multiblock.IMultiblockPart;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
 /**
- * Обработчик взаимодействия с дверями через отвертку.
- * 
- * Клик отверткой ПКМ:
- * - Обычный клик: открывает меню выбора модели
- * - Shift + клик: быстрое переключение Legacy <-> Modern
- * 
- * @author HBM-M Team
+ * Отмена взаимодействия с дверью при клике отверткой.
+ * Блокирует открытие/закрытие двери и открывает GUI выбора скина.
  */
-@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
+@Mod.EventBusSubscriber(modid = com.hbm_m.main.MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ScrewdriverInteractionHandler {
-    
+
     @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
+        if (!isScrewdriver(event)) return;
+
         Level level = event.getLevel();
-        if (level == null) return;
-        
-        Player player = event.getEntity();
-        ItemStack heldItem = event.getItemStack();
-        
-        // Отладочное логирование
-        MainRegistry.LOGGER.debug("ScrewdriverInteraction: Checking item {} (isScrewdriver: {})", 
-            heldItem.getItem(), isScrewdriver(heldItem));
-        
-        if (!isScrewdriver(heldItem)) return;
-        
         BlockPos pos = event.getPos();
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        
-        MainRegistry.LOGGER.debug("ScrewdriverInteraction: Screwdriver detected, checking block at {}. BlockEntity: {}", 
-            pos, blockEntity != null ? blockEntity.getClass().getSimpleName() : "null");
-        
-        if (!(blockEntity instanceof DoorBlockEntity doorEntity)) {
-            MainRegistry.LOGGER.debug("ScrewdriverInteraction: Not a door block entity");
-            return;
-        }
-        
-        if (!doorEntity.isController()) {
-            MainRegistry.LOGGER.debug("ScrewdriverInteraction: Door is not controller");
-            return;
-        }
-        
-        MainRegistry.LOGGER.info("ScrewdriverInteraction: Opening door model selection screen for door at {}", pos);
+        DoorBlockEntity doorEntity = resolveDoorController(level, pos);
+        if (doorEntity == null) return;
+
         event.setCanceled(true);
-        
+
         if (level.isClientSide) {
-            handleClientSide(player, doorEntity);
+            openSelectionMenu(doorEntity);
         }
     }
-    
-    private static boolean isScrewdriver(ItemStack stack) {
-        if (stack.isEmpty()) return false;
-        // Проверяем напрямую по предмету из реестра мода
-        return stack.getItem() == ModItems.SCREWDRIVER.get();
+
+    private static boolean isScrewdriver(PlayerInteractEvent.RightClickBlock event) {
+        net.minecraft.world.entity.player.Player player = event.getEntity();
+        return isScrewdriverStack(player.getItemInHand(event.getHand()))
+                || isScrewdriverStack(player.getItemInHand(event.getHand() == net.minecraft.world.InteractionHand.MAIN_HAND
+                        ? net.minecraft.world.InteractionHand.OFF_HAND : net.minecraft.world.InteractionHand.MAIN_HAND));
     }
-    
-    private static void handleClientSide(Player player, DoorBlockEntity doorEntity) {
-        // Shift + клик = быстрое переключение
-        if (player.isShiftKeyDown()) {
-            quickToggle(doorEntity);
-            return;
+
+    private static boolean isScrewdriverStack(net.minecraft.world.item.ItemStack stack) {
+        return !stack.isEmpty() && stack.getItem() == ModItems.SCREWDRIVER.get();
+    }
+
+    private static DoorBlockEntity resolveDoorController(Level level, BlockPos clickedPos) {
+        BlockEntity be = level.getBlockEntity(clickedPos);
+        if (be instanceof DoorBlockEntity doorBE && doorBE.isController()) {
+            return doorBE;
         }
-        
-        // Обычный клик = открытие меню
-        openSelectionMenu(doorEntity);
-    }
-    
-    private static void quickToggle(DoorBlockEntity doorEntity) {
-        DoorModelSelection current = doorEntity.getModelSelection();
-        DoorModelType newType = current.isLegacy() ? DoorModelType.MODERN : DoorModelType.LEGACY;
-        
-        doorEntity.setModelType(newType);
-        
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.player != null) {
-            mc.player.displayClientMessage(
-                net.minecraft.network.chat.Component.translatable(
-                    "message.hbm_m.door_model_toggled",
-                    newType.getDisplayName()
-                ),
-                true
-            );
+        if (be instanceof IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null) {
+                BlockEntity ctrlBe = level.getBlockEntity(controllerPos);
+                if (ctrlBe instanceof DoorBlockEntity doorBE && doorBE.isController()) {
+                    return doorBE;
+                }
+            }
         }
+        return null;
     }
-    
+
     private static void openSelectionMenu(DoorBlockEntity doorEntity) {
         Minecraft mc = Minecraft.getInstance();
-        
         mc.setScreen(new DoorModelSelectionScreen(
-            doorEntity.getBlockPos(),
-            doorEntity.getDoorDeclId(),
-            doorEntity.getModelSelection()
+                doorEntity.getBlockPos(),
+                doorEntity.getDoorDeclId(),
+                doorEntity.getModelSelection()
         ));
     }
 }

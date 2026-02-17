@@ -13,6 +13,7 @@ import com.hbm_m.block.entity.custom.doors.DoorDeclRegistry;
 // наведя курсор на любую часть структуры. Форма фантомного блока определяется формой всей структуры, сдвинутой так,
 // чтобы правильно отображаться на позиции этой части.
 import com.hbm_m.block.entity.custom.machines.UniversalMachinePartBlockEntity;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -306,6 +307,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
 
             BlockState controllerState = pLevel.getBlockState(controllerPos);
             if (controllerState.getBlock() instanceof IMultiblockController) {
+                BlockEntity ctrlBe = pLevel.getBlockEntity(controllerPos);
+                if (ctrlBe instanceof DoorBlockEntity && hasScrewdriver(pPlayer)) {
+                    return InteractionResult.sidedSuccess(pLevel.isClientSide());
+                }
                 // Redirect the interaction to the main controller block
                 return controllerState.use(pLevel, pPlayer, pHand, pHit.withPosition(controllerPos));
             } else {
@@ -317,6 +322,11 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
             }
         }
         return InteractionResult.PASS;
+    }
+
+    private static boolean hasScrewdriver(net.minecraft.world.entity.player.Player player) {
+        return player.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND).getItem() == ModItems.SCREWDRIVER.get()
+                || player.getItemInHand(net.minecraft.world.InteractionHand.OFF_HAND).getItem() == ModItems.SCREWDRIVER.get();
     }
 
     @Override

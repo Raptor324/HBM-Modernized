@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.custom.doors.DoorDecl;
 import com.hbm_m.block.entity.custom.doors.DoorDeclRegistry;
@@ -205,6 +206,9 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (hasScrewdriver(player)) {
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
         if (level.isClientSide) return InteractionResult.SUCCESS;
         
         BlockEntity be = level.getBlockEntity(pos);
@@ -220,6 +224,11 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
             return InteractionResult.SUCCESS;
         }
         return InteractionResult.PASS;
+    }
+
+    private static boolean hasScrewdriver(Player player) {
+        return player.getItemInHand(InteractionHand.MAIN_HAND).getItem() == ModItems.SCREWDRIVER.get()
+                || player.getItemInHand(InteractionHand.OFF_HAND).getItem() == ModItems.SCREWDRIVER.get();
     }
 
     @Override

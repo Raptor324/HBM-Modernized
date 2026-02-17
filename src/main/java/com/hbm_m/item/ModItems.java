@@ -58,6 +58,7 @@ import com.hbm_m.item.custom.tools_and_armor.ModAxeItem;
 import com.hbm_m.item.custom.tools_and_armor.ModPickaxeItem;
 import com.hbm_m.item.custom.tools_and_armor.ModShovelItem;
 import com.hbm_m.item.custom.tools_and_armor.ModToolTiers;
+import com.hbm_m.item.custom.tools_and_armor.ScrewdriverItem;
 import com.hbm_m.item.tags_and_tiers.ItemSimpleConsumable;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
@@ -1468,16 +1469,15 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> SCREWDRIVER = ITEMS.register("screwdriver",
-            () -> new Item(new Item.Properties().stacksTo(1))); // В стаке только 1 штука
+            () -> new ScrewdriverItem(new Item.Properties().stacksTo(1)));
 
+	// Медленный источник (500 mB/t)
+	public static final RegistryObject<Item> INFINITE_WATER_500 = ITEMS.register("inf_water",
+			() -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 500));
 
-        // Медленный источник (500 mB/t)
-        public static final RegistryObject<Item> INFINITE_WATER_500 = ITEMS.register("inf_water",
-                () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 500));
-
-        // Быстрый источник (5000 mB/t)
-        public static final RegistryObject<Item> INFINITE_WATER_5000 = ITEMS.register("inf_water_mk2",
-                () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 5000));
+	// Быстрый источник (5000 mB/t)
+	public static final RegistryObject<Item> INFINITE_WATER_5000 = ITEMS.register("inf_water_mk2",
+            () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 5000));
 
 
 

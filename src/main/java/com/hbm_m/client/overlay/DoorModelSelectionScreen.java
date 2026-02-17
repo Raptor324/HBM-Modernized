@@ -1,69 +1,99 @@
 package com.hbm_m.client.overlay;
 
-import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
-import com.hbm_m.client.model.variant.*;
-import com.hbm_m.main.MainRegistry;
+import java.util.ArrayList;
+import java.util.List;
+
+import com.hbm_m.client.model.variant.DoorModelRegistry;
+import com.hbm_m.client.model.variant.DoorModelSelection;
+import com.hbm_m.client.model.variant.DoorModelType;
+import com.hbm_m.client.model.variant.DoorSkin;
+import com.hbm_m.item.ModItems;
+import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ServerboundDoorModelPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.Minecraft;
+
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
-import java.util.List;
-
 /**
  * UI Меню для выбора модели и скина двери.
- * 
- * Макет:
- * ┌─────────────────────────────────────┐
- * │   Выбор модели двери                │
- * │   (large_vehicle_door)              │
- * ├─────────────────────────────────────┤
- * │   Модель:                           │
- * │   [► Старая модель]                 │
- * │   [  Новая модель]                  │
- * │                                     │
- * │   Скин (только для новой):          │
- * │   [▼ По умолчанию          ]        │
- * │   [  Чистый                ]        │
- * │   [  Ржавый                ]        │
- * │   [  Военный               ]        │
- * ├─────────────────────────────────────┤
- * │   [По умолчанию]    [Применить] [X] │
- * └─────────────────────────────────────┘
- * 
+ * Использует текстуру door_modification_GUI.png с кнопками скинов в сетке 4x2.
+ *
  * @author HBM-M Team
  */
 @OnlyIn(Dist.CLIENT)
 public class DoorModelSelectionScreen extends Screen {
-    
-    private static final int MENU_WIDTH = 280;
-    private static final int MENU_HEIGHT = 320;
-    private static final int BUTTON_WIDTH = 200;
-    private static final int BUTTON_HEIGHT = 22;
-    
+
+    // Масштаб GUI (1.0 = нативно, 1.5 = увеличенно). Масштабирование через PoseStack — без дублирования текстуры.
+    private static final float GUI_SCALE = 1.5f;
+
+    // Размеры текстуры: 256x256
+    private static final int TEX_WIDTH = 256;
+    private static final int TEX_HEIGHT = 256;
+
+    // Основное окно: 218x175, UV (38, 0)
+    private static final int BG_U = 38;
+    private static final int BG_V = 0;
+    private static final int MENU_WIDTH = 218;
+    private static final int MENU_HEIGHT = 175;
+
+    // Кнопки перелистывания: 40x11
+    // Нажатая влево: UV (57, 194), нажатая вправо: UV (106, 194)
+    // Обычная влево: UV (57, 212), обычная вправо: UV (106, 212)
+    private static final int PAGE_LEFT_U = 57;
+    private static final int PAGE_LEFT_PRESSED_V = 194;
+    private static final int PAGE_LEFT_NORMAL_V = 212;
+    private static final int PAGE_RIGHT_U = 106;
+    private static final int PAGE_RIGHT_PRESSED_V = 194;
+    private static final int PAGE_RIGHT_NORMAL_V = 212;
+    private static final int PAGE_BTN_W = 40;
+    private static final int PAGE_BTN_H = 11;
+    // Позиции кнопок в GUI: левая (74, 148), правая (157, 148)
+    private static final int PAGE_LEFT_X = 36;
+    private static final int PAGE_RIGHT_X = 119;
+    private static final int PAGE_Y = 148;
+
+    // Кнопки выбора скина: 20x20
+    // Нажатая: UV (168, 191), обычная: UV (168, 215)
+    private static final int SKIN_BTN_SIZE = 20;
+    private static final int SKIN_BTN_PRESSED_U = 168;
+    private static final int SKIN_BTN_PRESSED_V = 191;
+    private static final int SKIN_BTN_NORMAL_U = 168;
+    private static final int SKIN_BTN_NORMAL_V = 215;
+    // Начальное положение кнопки: (66, 78), сетка 4x2
+    private static final int SKIN_GRID_START_X = 28;
+    private static final int SKIN_GRID_START_Y = 80;
+    private static final int SKIN_GRID_COLS = 4;
+    private static final int SKIN_GRID_ROWS = 2;
+    private static final int SKIN_GRID_GAP = 20;
+    private static final int SKIN_GRID_ROW_HEIGHT = 32;
+    private static final int ITEMS_PER_PAGE = SKIN_GRID_COLS * SKIN_GRID_ROWS;
+
+    private static final ResourceLocation TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/door_modification_GUI.png");
+
     // Данные двери
     private final BlockPos doorPos;
     private final String doorId;
     private DoorModelSelection currentSelection;
     private DoorModelSelection selectedSelection;
-    
-    // Доступные скины
-    private List<DoorSkin> availableSkins;
-    
+
+    // Плоский список вариантов (LEGACY+default, MODERN+skin1..N)
+    private List<DoorModelSelection> flatSelectionList;
+    private int currentPage = 0;
+    private int totalPages = 1;
+
     // UI
     private int leftPos;
     private int topPos;
-    private Button legacyButton;
-    private Button modernButton;
-    private int selectedSkinIndex = 0;
-    
+
     public DoorModelSelectionScreen(BlockPos doorPos, String doorId, DoorModelSelection currentSelection) {
         super(Component.translatable("gui.hbm_m.door_model_selection.title"));
         this.doorPos = doorPos;
@@ -71,195 +101,195 @@ public class DoorModelSelectionScreen extends Screen {
         this.currentSelection = currentSelection;
         this.selectedSelection = currentSelection;
     }
-    
+
     @Override
     protected void init() {
         super.init();
-        
-        this.leftPos = (this.width - MENU_WIDTH) / 2;
-        this.topPos = (this.height - MENU_HEIGHT) / 2;
-        
+        int scaledW = (int) (MENU_WIDTH * GUI_SCALE);
+        int scaledH = (int) (MENU_HEIGHT * GUI_SCALE);
+        this.leftPos = (this.width - scaledW) / 2;
+        this.topPos = (this.height - scaledH) / 2;
+        buildFlatSelectionList();
+        this.totalPages = Math.max(1, (flatSelectionList.size() + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE);
+    }
+
+    /** Преобразует экранные координаты мыши в локальные координаты GUI (с учётом масштаба). */
+    private int toLocalX(double screenX) {
+        return (int) ((screenX - leftPos) / GUI_SCALE);
+    }
+    private int toLocalY(double screenY) {
+        return (int) ((screenY - topPos) / GUI_SCALE);
+    }
+
+    /**
+     * Собирает плоский список: LEGACY+default, затем MODERN+skin1..N
+     */
+    private void buildFlatSelectionList() {
+        flatSelectionList = new ArrayList<>();
         DoorModelRegistry registry = DoorModelRegistry.getInstance();
-        this.availableSkins = registry.getSkins(doorId);
-        updateSkinIndex();
-        
-        int sectionY = topPos + 45 + 18; // Место для заголовка "Модель:"
-        
-        // Кнопка LEGACY
-        addRenderableWidget(Button.builder(
-            Component.literal((selectedSelection.isLegacy() ? "► " : "  ") + DoorModelType.LEGACY.getDisplayName()),
-            btn -> selectModelType(DoorModelType.LEGACY)
-        ).bounds(leftPos + (MENU_WIDTH - BUTTON_WIDTH) / 2, sectionY, BUTTON_WIDTH, BUTTON_HEIGHT).build());
-        sectionY += BUTTON_HEIGHT + 4;
-        
-        // Кнопка MODERN
-        addRenderableWidget(Button.builder(
-            Component.literal((selectedSelection.isModern() ? "► " : "  ") + DoorModelType.MODERN.getDisplayName()),
-            btn -> selectModelType(DoorModelType.MODERN)
-        ).bounds(leftPos + (MENU_WIDTH - BUTTON_WIDTH) / 2, sectionY, BUTTON_WIDTH, BUTTON_HEIGHT).build());
-        sectionY += BUTTON_HEIGHT + 15;
-        
-        // Скины (только для MODERN)
-        if (selectedSelection.isModern() && availableSkins.size() > 1) {
-            sectionY += 18; // Место для заголовка "Скин:"
-            
-            for (int i = 0; i < Math.min(availableSkins.size(), 5); i++) {
-                final int skinIndex = i;
-                DoorSkin skin = availableSkins.get(i);
-                boolean isSelected = skin.equals(selectedSelection.getSkin());
-                
-                addRenderableWidget(Button.builder(
-                    Component.literal((isSelected ? "► " : "  ") + skin.getDisplayName()),
-                    btn -> selectSkin(skinIndex)
-                ).bounds(leftPos + (MENU_WIDTH - BUTTON_WIDTH) / 2, sectionY, BUTTON_WIDTH, BUTTON_HEIGHT).build());
-                sectionY += BUTTON_HEIGHT + 2;
-            }
-        }
-        
-        // Кнопки действий
-        int bottomY = topPos + MENU_HEIGHT - 55;
-        
-        addRenderableWidget(Button.builder(
-            Component.translatable("gui.hbm_m.door_model_selection.set_default"),
-            btn -> setAsDefault()
-        ).bounds(leftPos + 15, bottomY, 90, 20).build());
-        
-        addRenderableWidget(Button.builder(
-            Component.translatable("gui.hbm_m.door_model_selection.apply"),
-            btn -> applySelection()
-        ).bounds(leftPos + MENU_WIDTH - 115, bottomY, 100, 20).build());
-        
-        addRenderableWidget(Button.builder(
-            Component.translatable("gui.hbm_m.door_model_selection.cancel"),
-            btn -> onClose()
-        ).bounds(leftPos + MENU_WIDTH - 115, bottomY + 25, 100, 20).build());
-    }
-    
-    private void updateSkinIndex() {
-        selectedSkinIndex = 0;
-        for (int i = 0; i < availableSkins.size(); i++) {
-            if (availableSkins.get(i).equals(selectedSelection.getSkin())) {
-                selectedSkinIndex = i;
-                break;
-            }
+
+        // LEGACY: один вариант
+        flatSelectionList.add(DoorModelSelection.legacy());
+
+        // MODERN: по одному варианту на каждый скин
+        List<DoorSkin> modernSkins = registry.getSkins(doorId);
+        for (DoorSkin skin : modernSkins) {
+            flatSelectionList.add(new DoorModelSelection(DoorModelType.MODERN, skin));
         }
     }
-    
-    private void selectModelType(DoorModelType type) {
-        DoorSkin skin = type.isLegacy() 
-            ? DoorSkin.DEFAULT 
-            : availableSkins.get(selectedSkinIndex);
-        
-        selectedSelection = new DoorModelSelection(type, skin);
-        
-        // Пересоздаём UI
-        rebuildWidgets();
-    }
-    
-    private void selectSkin(int index) {
-        if (selectedSelection.isModern() && index >= 0 && index < availableSkins.size()) {
-            selectedSelection = new DoorModelSelection(DoorModelType.MODERN, availableSkins.get(index));
-            rebuildWidgets();
-        }
-    }
-    
-    private void setAsDefault() {
-        // Сохраняем как настройку по умолчанию
-        DoorModelRegistry registry = DoorModelRegistry.getInstance();
-        registry.setDefaultSelection(doorId, selectedSelection);
-        
-        // Показываем уведомление
-        if (minecraft != null && minecraft.player != null) {
-            minecraft.player.displayClientMessage(
-                Component.translatable("message.hbm_m.door_model_default_set", 
-                    selectedSelection.getDisplayName()),
-                true
-            );
-        }
-    }
-    
-    private void applySelection() {
-        if (!selectedSelection.equals(currentSelection)) {
-            // Отправляем пакет на сервер
-            ServerboundDoorModelPacket.send(doorPos, selectedSelection);
-        }
-        onClose();
-    }
-    
+
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         renderBackground(guiGraphics);
+        int localMouseX = toLocalX(mouseX);
+        int localMouseY = toLocalY(mouseY);
+        guiGraphics.pose().pushPose();
+        guiGraphics.pose().translate(leftPos, topPos, 0);
+        guiGraphics.pose().scale(GUI_SCALE, GUI_SCALE, 1f);
         renderMenuPanel(guiGraphics);
-        renderTitle(guiGraphics);
+        renderSkinButtons(guiGraphics, localMouseX, localMouseY);
+        renderPageButtons(guiGraphics, localMouseX, localMouseY);
+        guiGraphics.pose().popPose();
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-        renderInfo(guiGraphics);
     }
-    
+
     private void renderMenuPanel(GuiGraphics guiGraphics) {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.enableBlend();
-        
-        // Фон
-        guiGraphics.fillGradient(
-            leftPos, topPos, 
-            leftPos + MENU_WIDTH, topPos + MENU_HEIGHT,
-            0xC0101010, 0xD0101010
-        );
-        
-        // Рамка
-        int border = 0xFF606060;
-        guiGraphics.fill(leftPos, topPos, leftPos + MENU_WIDTH, topPos + 1, border);
-        guiGraphics.fill(leftPos, topPos + MENU_HEIGHT - 1, leftPos + MENU_WIDTH, topPos + MENU_HEIGHT, border);
-        guiGraphics.fill(leftPos, topPos, leftPos + 1, topPos + MENU_HEIGHT, border);
-        guiGraphics.fill(leftPos + MENU_WIDTH - 1, topPos, leftPos + MENU_WIDTH, topPos + MENU_HEIGHT, border);
+        guiGraphics.blit(TEXTURE, 0, 0, BG_U, BG_V, MENU_WIDTH, MENU_HEIGHT, TEX_WIDTH, TEX_HEIGHT);
     }
-    
-    private void renderTitle(GuiGraphics guiGraphics) {
-        Component title = Component.translatable("gui.hbm_m.door_model_selection.title");
-        guiGraphics.drawString(font, title, 
-            leftPos + (MENU_WIDTH - font.width(title)) / 2, 
-            topPos + 12, 
-            0xFFFFFF
-        );
-        
-        // ID двери
-        if (doorId != null && !doorId.isEmpty()) {
-            guiGraphics.drawString(font, Component.literal("(" + doorId + ")"), 
-                leftPos + (MENU_WIDTH - font.width("(" + doorId + ")")) / 2, 
-                topPos + 25, 
-                0x808080
-            );
-        }
-        
-        // Заголовки секций
-        guiGraphics.drawString(font, 
-            Component.translatable("gui.hbm_m.door_model_selection.model_type"),
-            leftPos + 15, topPos + 45, 0xFFFF80);
-        
-        if (selectedSelection.isModern() && availableSkins.size() > 1) {
-            int sectionY = topPos + 45 + 18 + BUTTON_HEIGHT + 4 + BUTTON_HEIGHT + 15;
-            guiGraphics.drawString(font, 
-                Component.translatable("gui.hbm_m.door_model_selection.skin"),
-                leftPos + 15, sectionY, 0xFFFF80);
+
+    private void renderSkinButtons(GuiGraphics guiGraphics, int localMouseX, int localMouseY) {
+        ItemStack doorStack = getDoorItemStack();
+        int startIndex = currentPage * ITEMS_PER_PAGE;
+
+        for (int pageIndex = 0; pageIndex < ITEMS_PER_PAGE; pageIndex++) {
+            int flatIndex = startIndex + pageIndex;
+            if (flatIndex >= flatSelectionList.size()) break;
+
+            int col = pageIndex % SKIN_GRID_COLS;
+            int row = pageIndex / SKIN_GRID_COLS;
+            int x = SKIN_GRID_START_X + col * (SKIN_BTN_SIZE + SKIN_GRID_GAP);
+            int y = SKIN_GRID_START_Y + row * SKIN_GRID_ROW_HEIGHT;
+
+            DoorModelSelection selection = flatSelectionList.get(flatIndex);
+            boolean hovered = localMouseX >= x && localMouseX < x + SKIN_BTN_SIZE && localMouseY >= y && localMouseY < y + SKIN_BTN_SIZE;
+            boolean selected = selection.equals(selectedSelection);
+
+            int u = (hovered || selected) ? SKIN_BTN_PRESSED_U : SKIN_BTN_NORMAL_U;
+            int v = (hovered || selected) ? SKIN_BTN_PRESSED_V : SKIN_BTN_NORMAL_V;
+            guiGraphics.blit(TEXTURE, x, y, u, v, SKIN_BTN_SIZE, SKIN_BTN_SIZE, TEX_WIDTH, TEX_HEIGHT);
+
+            guiGraphics.renderFakeItem(doorStack, x + 2, y + 2);
+
+            String label = selection.getSkin().getDisplayName();
+            int labelWidth = font.width(label);
+            int labelX = x + (SKIN_BTN_SIZE - labelWidth) / 2;
+            int labelY = y + SKIN_BTN_SIZE + 2;
+            guiGraphics.drawString(font, label, labelX, labelY, 0xFFFFFF);
         }
     }
-    
-    private void renderInfo(GuiGraphics guiGraphics) {
-        Component current = Component.translatable(
-            "gui.hbm_m.door_model_selection.current",
-            selectedSelection.getDisplayName()
-        );
-        guiGraphics.drawString(font, current, leftPos + 10, topPos + MENU_HEIGHT - 25, 0xAAAAAA);
+
+    private void renderPageButtons(GuiGraphics guiGraphics, int localMouseX, int localMouseY) {
+        int leftX = PAGE_LEFT_X;
+        int rightX = PAGE_RIGHT_X;
+        int btnY = PAGE_Y;
+
+        boolean canFlip = totalPages > 1;
+        boolean leftHovered = canFlip && localMouseX >= leftX && localMouseX < leftX + PAGE_BTN_W && localMouseY >= btnY && localMouseY < btnY + PAGE_BTN_H;
+        boolean rightHovered = canFlip && localMouseX >= rightX && localMouseX < rightX + PAGE_BTN_W && localMouseY >= btnY && localMouseY < btnY + PAGE_BTN_H;
+
+        int leftV = leftHovered ? PAGE_LEFT_PRESSED_V : PAGE_LEFT_NORMAL_V;
+        int rightV = rightHovered ? PAGE_RIGHT_PRESSED_V : PAGE_RIGHT_NORMAL_V;
+
+        guiGraphics.blit(TEXTURE, leftX, btnY, PAGE_LEFT_U, leftV, PAGE_BTN_W, PAGE_BTN_H, TEX_WIDTH, TEX_HEIGHT);
+        guiGraphics.blit(TEXTURE, rightX, btnY, PAGE_RIGHT_U, rightV, PAGE_BTN_W, PAGE_BTN_H, TEX_WIDTH, TEX_HEIGHT);
     }
-    
+
+    private ItemStack getDoorItemStack() {
+        Item doorItem = getDoorItemForId(doorId);
+        return new ItemStack(doorItem);
+    }
+
+    private static Item getDoorItemForId(String doorId) {
+        if (doorId == null || doorId.isEmpty()) {
+            return ModItems.LARGE_VEHICLE_DOOR.get();
+        }
+        return switch (doorId) {
+            case "large_vehicle_door" -> ModItems.LARGE_VEHICLE_DOOR.get();
+            case "round_airlock_door" -> ModItems.ROUND_AIRLOCK_DOOR.get();
+            case "transition_seal" -> ModItems.TRANSITION_SEAL.get();
+            case "fire_door" -> ModItems.FIRE_DOOR.get();
+            case "sliding_blast_door" -> ModItems.SLIDE_DOOR.get();
+            case "sliding_seal_door" -> ModItems.SLIDING_SEAL_DOOR.get();
+            case "secure_access_door" -> ModItems.SECURE_ACCESS_DOOR.get();
+            case "qe_sliding_door" -> ModItems.QE_SLIDING.get();
+            case "qe_containment_door" -> ModItems.QE_CONTAINMENT.get();
+            case "water_door" -> ModItems.WATER_DOOR.get();
+            case "silo_hatch" -> ModItems.SILO_HATCH.get();
+            case "silo_hatch_large" -> ModItems.SILO_HATCH_LARGE.get();
+            default -> ModItems.LARGE_VEHICLE_DOOR.get();
+        };
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (button != 0) return super.mouseClicked(mouseX, mouseY, button);
+
+        int lx = toLocalX(mouseX);
+        int ly = toLocalY(mouseY);
+
+        // Кнопки перелистывания — всегда кликабельны, но при скинах < 8 ничего не делают
+        int leftX = PAGE_LEFT_X;
+        int rightX = PAGE_RIGHT_X;
+        int btnY = PAGE_Y;
+
+        if (lx >= leftX && lx < leftX + PAGE_BTN_W && ly >= btnY && ly < btnY + PAGE_BTN_H) {
+            if (totalPages > 1) {
+                currentPage = Math.max(0, currentPage - 1);
+            }
+            return true;
+        }
+        if (lx >= rightX && lx < rightX + PAGE_BTN_W && ly >= btnY && ly < btnY + PAGE_BTN_H) {
+            if (totalPages > 1) {
+                currentPage = Math.min(totalPages - 1, currentPage + 1);
+            }
+            return true;
+        }
+
+        // Кнопки выбора скина
+        int startIndex = currentPage * ITEMS_PER_PAGE;
+        for (int pageIndex = 0; pageIndex < ITEMS_PER_PAGE; pageIndex++) {
+            int flatIndex = startIndex + pageIndex;
+            if (flatIndex >= flatSelectionList.size()) break;
+
+            int col = pageIndex % SKIN_GRID_COLS;
+            int row = pageIndex / SKIN_GRID_COLS;
+            int x = SKIN_GRID_START_X + col * (SKIN_BTN_SIZE + SKIN_GRID_GAP);
+            int y = SKIN_GRID_START_Y + row * SKIN_GRID_ROW_HEIGHT;
+
+            if (lx >= x && lx < x + SKIN_BTN_SIZE && ly >= y && ly < y + SKIN_BTN_SIZE) {
+                DoorModelSelection newSelection = flatSelectionList.get(flatIndex);
+                selectedSelection = newSelection;
+                if (!newSelection.equals(currentSelection)) {
+                    ServerboundDoorModelPacket.send(doorPos, newSelection);
+                    currentSelection = newSelection;
+                }
+                return true;
+            }
+        }
+
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
     @Override
     public boolean isPauseScreen() {
         return false;
     }
-    
+
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-        if (keyCode == 256) { // ESC
+        if (keyCode == 256) {
             onClose();
             return true;
         }
