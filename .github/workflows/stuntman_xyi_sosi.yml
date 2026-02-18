@@ -65,7 +65,8 @@ jobs:
               authorAvatar = payload.comment.user.avatar_url;
               authorUrl = payload.comment.user.html_url;
               url = payload.comment.html_url;
-              bodyContent = payload.comment.body;
+
+              bodyContent = payload.comment.body || "";
               title = payload.issue.title;
               issueNumber = payload.issue.number;
               
@@ -78,7 +79,8 @@ jobs:
               authorAvatar = payload.issue.user.avatar_url;
               authorUrl = payload.issue.user.html_url;
               url = payload.issue.html_url;
-              bodyContent = payload.issue.body;
+
+              bodyContent = payload.issue.body || "";
               title = payload.issue.title;
               issueNumber = payload.issue.number;
               
@@ -91,7 +93,7 @@ jobs:
 
             if (isViolation) {
               console.log(`Violation: ${violationReason}. Deleting...`);
-              
+
               const warningMessage = `@${author}, your message has been automatically removed because it violates community guidelines.`;
 
               if (objectType === "Issue") {
@@ -160,6 +162,8 @@ jobs:
 
                 const embedColor = objectType === "Issue" ? 3066993 : 15105570;
 
+                const descriptionText = bodyContent ? bodyContent : "*No description provided.*";
+
                 const discordPayload = {
                   username: "GitHub",
                   avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
@@ -171,7 +175,7 @@ jobs:
                     },
                     title: embedTitle,
                     url: url,
-                    description: bodyContent.length > 2000 ? bodyContent.substring(0, 1997) + "..." : bodyContent,
+                    description: descriptionText.length > 2000 ? descriptionText.substring(0, 1997) + "..." : descriptionText,
                     color: embedColor
                   }]
                 };
