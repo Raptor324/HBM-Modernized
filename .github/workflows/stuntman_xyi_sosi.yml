@@ -22,10 +22,7 @@ jobs:
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
         with:
           script: |
-  
-            
             const payload = context.payload;
-            
             const CAPS_THRESHOLD = 0.70; 
             const MIN_LENGTH_FOR_CAPS = 15; 
 
@@ -51,24 +48,42 @@ jobs:
 
             let objectType = "";
             let author = "";
+            let authorAvatar = "";
+            let authorUrl = "";
             let url = "";
+            let bodyContent = "";
+            let title = "";
+            let repoFullName = payload.repository.full_name;
+            let repoUrl = payload.repository.html_url;
+            let issueNumber = 0;
             let isViolation = false;
             let violationReason = "";
 
             if (payload.comment) {
               objectType = "Comment";
               author = payload.comment.user.login;
+              authorAvatar = payload.comment.user.avatar_url;
+              authorUrl = payload.comment.user.html_url;
               url = payload.comment.html_url;
-              const check = analyzeText(payload.comment.body);
+              bodyContent = payload.comment.body;
+              title = payload.issue.title;
+              issueNumber = payload.issue.number;
+              
+              const check = analyzeText(bodyContent);
               if (!check.safe) { isViolation = true; violationReason = check.reason; }
             } 
             else if (payload.issue) {
               objectType = "Issue";
               author = payload.issue.user.login;
+              authorAvatar = payload.issue.user.avatar_url;
+              authorUrl = payload.issue.user.html_url;
               url = payload.issue.html_url;
+              bodyContent = payload.issue.body;
+              title = payload.issue.title;
+              issueNumber = payload.issue.number;
               
-              const titleCheck = analyzeText(payload.issue.title);
-              const bodyCheck = analyzeText(payload.issue.body);
+              const titleCheck = analyzeText(title);
+              const bodyCheck = analyzeText(bodyContent);
               
               if (!titleCheck.safe) { isViolation = true; violationReason = titleCheck.reason; }
               else if (!bodyCheck.safe) { isViolation = true; violationReason = bodyCheck.reason; }
@@ -77,8 +92,7 @@ jobs:
             if (isViolation) {
               console.log(`Violation: ${violationReason}. Deleting...`);
               
-              let reasonText = violationReason === "caps_lock" ? "много капса" : "запрещенные слова";
-              const warningMessage = `@${author}, ваше сообщение удалено: ${reasonText}.`;
+              const warningMessage = `@${author}, your message has been automatically removed because it violates community guidelines.`;
 
               if (objectType === "Issue") {
                 if (!process.env.ADMIN_TOKEN) {
@@ -114,7 +128,6 @@ jobs:
               }
 
               if (objectType === "Comment") {
-
                 try {
                   await github.rest.issues.deleteComment({
                     owner: context.repo.owner,
@@ -134,19 +147,44 @@ jobs:
             }
 
             console.log("Safe content. Sending to Discord.");
-            let contentText = "";
-            if (objectType === "Issue") {
-               contentText = `🆕 **New Issue** by __${author}__\n**Title:** ${payload.issue.title}\n${url}`;
-            } else {
-               contentText = `💬 **New Comment** on Issue #${payload.issue.number}\n**Author:** ${author}\n${url}`;
-            }
-
+            
             if (process.env.DISCORD_WEBHOOK) {
-                await fetch(process.env.DISCORD_WEBHOOK, {
+                let safeWebhookUrl = process.env.DISCORD_WEBHOOK;
+                if (safeWebhookUrl.endsWith('/github')) {
+                    safeWebhookUrl = safeWebhookUrl.replace(/\/github$/, '');
+                }
+
+                const embedTitle = objectType === "Issue" 
+                  ? `[${repoFullName}] Issue opened: #${issueNumber} ${title}`
+                  : `[${repoFullName}] New comment on issue #${issueNumber}: ${title}`;
+
+                const embedColor = objectType === "Issue" ? 3066993 : 15105570;
+
+                const discordPayload = {
+                  username: "GitHub",
+                  avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+                  embeds: [{
+                    author: {
+                      name: author,
+                      url: authorUrl,
+                      icon_url: authorAvatar
+                    },
+                    title: embedTitle,
+                    url: url,
+                    description: bodyContent.length > 2000 ? bodyContent.substring(0, 1997) + "..." : bodyContent,
+                    color: embedColor
+                  }]
+                };
+
+                const resp = await fetch(safeWebhookUrl, {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ content: contentText })
+                  body: JSON.stringify(discordPayload)
                 });
+                
+                if (!resp.ok) {
+                    console.log("Discord API Error:", await resp.text());
+                }
             } else {
                 console.log("Discord Webhook secret is missing.");
             }
