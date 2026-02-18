@@ -42,11 +42,16 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     @Override
     public void setPartRole(PartRole role) {
         if (this.role != role) {
+            boolean wasEnergy = this.role.canReceiveEnergy() || this.role.canSendEnergy();
+            boolean isEnergy = role.canReceiveEnergy() || role.canSendEnergy();
             this.role = role;
             this.setChanged();
             if (level != null && !level.isClientSide()) {
-                // ТОЛЬКО отправляем обновление BlockEntity, БЕЗ updateNeighborsAt
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+                // Уведомляем соседей (провода и др.), чтобы обновили визуальное соединение
+                if (wasEnergy || isEnergy) {
+                    level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
+                }
             }
         }
     }
@@ -89,7 +94,8 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         }
 
         // === ДЕЛЕГИРОВАНИЕ ЭНЕРГИИ ===
-        if (this.role == PartRole.ENERGY_CONNECTOR) {
+        // ENERGY_CONNECTOR и UNIVERSAL_CONNECTOR оба принимают/отдают энергию (PartRole.canReceiveEnergy/canSendEnergy)
+        if (this.role.canReceiveEnergy() || this.role.canSendEnergy()) {
 
             // HBM API (Provider, Receiver, Connector)
             if (cap == ModCapabilities.HBM_ENERGY_PROVIDER ||
