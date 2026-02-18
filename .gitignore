@@ -27,6 +27,8 @@ bin/
 .cursor
 # ================= Generated Files =================
 /src/generated/
+/plans
+.cursorignore
 
 # ================= Logs & Temporary Files =================
 # Логи, дампы ошибок и временные файлы.
@@ -57,3 +59,7 @@ forge*changelog.txt
 .gitignore
 .cursor/
 desktop.ini
+AGENTS.md
+libs/
+.gitignore
+HBM-Modernized.code-workspace
