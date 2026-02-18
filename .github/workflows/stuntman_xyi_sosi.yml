@@ -1,0 +1,140 @@
+name: Moderation & Discord Notifier
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  moderate-and-notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install dependencies for script
+        run: npm install @actions/github
+
+      - name: Moderation Logic
+        uses: actions/github-script@v6
+        env:
+          BAD_WORDS_LIST: ${{ secrets.BAD_WORDS }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }} # Токен для удаления Issue
+        with:
+          script: |
+            const { getOctokit } = require("@actions/github");
+            const payload = context.payload;
+            
+            const CAPS_THRESHOLD = 0.70; 
+            const MIN_LENGTH_FOR_CAPS = 15; 
+
+            function analyzeText(text) {
+              if (!text) return { safe: true };
+              
+              const badWords = (process.env.BAD_WORDS_LIST || "").split(',').map(w => w.trim().toLowerCase()).filter(w => w.length > 0);
+              const lowerText = text.toLowerCase();
+              
+              if (badWords.some(word => lowerText.includes(word))) {
+                return { safe: false, reason: "bad_word" };
+              }
+
+              const lettersOnly = text.replace(/[^a-zA-Zа-яА-ЯёЁ]/g, "");
+              if (lettersOnly.length > MIN_LENGTH_FOR_CAPS) {
+                const upperCaseCount = lettersOnly.replace(/[^A-ZА-ЯЁ]/g, "").length;
+                if ((upperCaseCount / lettersOnly.length) > CAPS_THRESHOLD) {
+                  return { safe: false, reason: "caps_lock" };
+                }
+              }
+              return { safe: true };
+            }
+
+            let objectType = "";
+            let author = "";
+            let url = "";
+            let isViolation = false;
+            let violationReason = "";
+
+            if (payload.comment) {
+              objectType = "Comment";
+              author = payload.comment.user.login;
+              url = payload.comment.html_url;
+              const check = analyzeText(payload.comment.body);
+              if (!check.safe) { isViolation = true; violationReason = check.reason; }
+            } 
+            else if (payload.issue) {
+              objectType = "Issue";
+              author = payload.issue.user.login;
+              url = payload.issue.html_url;
+              
+              const titleCheck = analyzeText(payload.issue.title);
+              const bodyCheck = analyzeText(payload.issue.body);
+              
+              if (!titleCheck.safe) { isViolation = true; violationReason = titleCheck.reason; }
+              else if (!bodyCheck.safe) { isViolation = true; violationReason = bodyCheck.reason; }
+            }
+
+
+            if (isViolation) {
+              console.log(`Violation: ${violationReason}. Deleting...`);
+              
+              let reasonText = violationReason === "caps_lock" ? "много капса" : "запрещенные слова";
+              const warningMessage = `@${author}, ваше сообщение удалено: ${reasonText}.`;
+
+              if (objectType === "Issue") {
+                const adminOctokit = getOctokit(process.env.ADMIN_TOKEN);
+                const nodeId = payload.issue.node_id;
+
+                const query = `
+                  mutation($issueId: ID!) {
+                    deleteIssue(input: {issueId: $issueId}) {
+                      clientMutationId
+                    }
+                  }
+                `;
+                
+                try {
+                  await adminOctokit.graphql(query, { issueId: nodeId });
+                  console.log("Issue successfully deleted via GraphQL.");
+                } catch (error) {
+                  console.error("Failed to delete issue. Check ADMIN_TOKEN scopes.", error);
+                }
+                return;
+              }
+
+              if (objectType === "Comment") {
+                try {
+                  await github.rest.issues.deleteComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    comment_id: payload.comment.id
+                  });
+                } catch(e) { console.error(e); }
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: payload.issue.number,
+                  body: warningMessage
+                });
+                return;
+              }
+            }
+
+            console.log("Safe content. Sending to Discord.");
+            let contentText = "";
+            if (objectType === "Issue") {
+               contentText = `🆕 **New Issue** by __${author}__\n**Title:** ${payload.issue.title}\n${url}`;
+            } else {
+               contentText = `💬 **New Comment** on Issue #${payload.issue.number}\n**Author:** ${author}\n${url}`;
+            }
+
+            if (process.env.DISCORD_WEBHOOK) {
+                await fetch(process.env.DISCORD_WEBHOOK, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ content: contentText })
+                });
+            }
