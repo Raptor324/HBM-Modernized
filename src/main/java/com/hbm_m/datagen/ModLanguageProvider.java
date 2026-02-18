@@ -1122,6 +1122,28 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.battery.condition.no_signal", "Когда НЕТ редстоун-сигнала:");
                 add("gui.hbm_m.battery.condition.with_signal", "Когда ЕСТЬ редстоун-сигнал:");
 
+                add("gui.hbm_m.door_model_selection.title", "Выбор модели двери");
+                add("door.model_type.hbm_m.legacy", "Классическая");
+                add("door.skin.hbm_m.round_airlock_door.default", "Стандартная");
+                add("door.skin.hbm_m.round_airlock_door.clean", "Чистая");
+                add("door.skin.hbm_m.round_airlock_door.green", "Зелёная");
+                add("door.skin.hbm_m.fire_door.default", "Стандартная");
+                add("door.skin.hbm_m.fire_door.black", "Чёрная");
+                add("door.skin.hbm_m.fire_door.orange", "Оранжевая");
+                add("door.skin.hbm_m.secure_access_door.default", "Стандартная");
+                add("door.skin.hbm_m.secure_access_door.gray", "Серая");
+                add("door.skin.hbm_m.sliding_blast_door.default", "Стандартная");
+                add("door.skin.hbm_m.sliding_blast_door.variant1", "Вариант 1");
+                add("door.skin.hbm_m.sliding_blast_door.variant2", "Вариант 2");
+                add("door.skin.hbm_m.sliding_seal_door.default", "Стандартная");
+                add("door.skin.hbm_m.large_vehicle_door.default", "Стандартная");
+                add("door.skin.hbm_m.water_door.default", "Стандартная");
+                add("door.skin.hbm_m.qe_sliding_door.default", "Стандартная");
+                add("door.skin.hbm_m.qe_containment_door.default", "Стандартная");
+
+                add(ModItems.SCREWDRIVER.get(), "Отвёртка");
+                add("tooltip.hbm_m.screwdriver", "Клик ПКМ - настройка конвертера энергии и смена скина двери");
+
                 add("gui.hbm_m.battery.mode.both", "Режим: Приём и Передача");
                 add("gui.hbm_m.battery.mode.both.desc", "Разрешены все операции с энергией.");
                 add("gui.hbm_m.battery.mode.input", "Режим: Только Приём");
@@ -2290,6 +2312,28 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("gui.hbm_m.battery.condition.no_signal", "When there is NO redstone signal:");
                 add("gui.hbm_m.battery.condition.with_signal", "When there IS a redstone signal:");
+
+                add("gui.hbm_m.door_model_selection.title", "Door Model Selection");
+                add("door.model_type.hbm_m.legacy", "Legacy");
+                add("door.skin.hbm_m.round_airlock_door.default", "Standard");
+                add("door.skin.hbm_m.round_airlock_door.clean", "Clean");
+                add("door.skin.hbm_m.round_airlock_door.green", "Green");
+                add("door.skin.hbm_m.fire_door.default", "Standard");
+                add("door.skin.hbm_m.fire_door.black", "Black");
+                add("door.skin.hbm_m.fire_door.orange", "Orange");
+                add("door.skin.hbm_m.secure_access_door.default", "Standard");
+                add("door.skin.hbm_m.secure_access_door.gray", "Gray");
+                add("door.skin.hbm_m.sliding_blast_door.default", "Standard");
+                add("door.skin.hbm_m.sliding_blast_door.variant1", "Variant 1");
+                add("door.skin.hbm_m.sliding_blast_door.variant2", "Variant 2");
+                add("door.skin.hbm_m.sliding_seal_door.default", "Standard");
+                add("door.skin.hbm_m.large_vehicle_door.default", "Standard");
+                add("door.skin.hbm_m.water_door.default", "Standard");
+                add("door.skin.hbm_m.qe_sliding_door.default", "Standard");
+                add("door.skin.hbm_m.qe_containment_door.default", "Standard");
+
+                add(ModItems.SCREWDRIVER.get(), "Screwdriver");
+                add("tooltip.hbm_m.screwdriver", "RMB click - Configure energy converter and change door skin");
 
                 add("gui.hbm_m.battery.mode.both", "Mode: Input & Output");
                 add("gui.hbm_m.battery.mode.both.desc", "All energy operations are allowed.");

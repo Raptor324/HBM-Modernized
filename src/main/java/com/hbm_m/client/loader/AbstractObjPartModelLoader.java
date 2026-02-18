@@ -40,17 +40,21 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         MainRegistry.LOGGER.debug("{}: model string='{}'", this.getClass().getSimpleName(), modelStr);
         ResourceLocation model = ResourceLocation.parse(modelStr);
         Set<String> partNames = getPartNames(jsonObject);
-        return new ObjPartGeometry<>(model, partNames, this);
+        boolean flipV = GsonHelper.getAsBoolean(jsonObject, "flip_v", true);
+        return new ObjPartGeometry<>(model, partNames, flipV, this);
     }
 
     public static class ObjPartGeometry<T extends BakedModel> implements IUnbakedGeometry<ObjPartGeometry<T>> {
         private final ResourceLocation modelLocation;
         private final Set<String> partNames;
+        private final boolean flipV;
         private final AbstractObjPartModelLoader<T> loader;
 
-        public ObjPartGeometry(ResourceLocation modelLocation, Set<String> partNames, AbstractObjPartModelLoader<T> loader) {
+        public ObjPartGeometry(ResourceLocation modelLocation, Set<String> partNames, boolean flipV,
+                               AbstractObjPartModelLoader<T> loader) {
             this.modelLocation = modelLocation;
             this.partNames = partNames;
+            this.flipV = flipV;
             this.loader = loader;
         }
 
@@ -68,13 +72,13 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
             ensureBasePart(model, bakedParts, context, baker, spriteGetter, overrides, modelName);
 
             MainRegistry.LOGGER.info("{}: Total baked parts: {}", loader.getClass().getSimpleName(), bakedParts.size());
-            return loader.createBakedModel(bakedParts, context.getTransforms(), modelLocation);
+            return loader.createBakedModel(bakedParts, context.getTransforms(), modelName);
         }
 
         private ObjModel loadObjModel() {
             try {
                 ObjModel model = ObjLoader.INSTANCE.loadModel(
-                    new ObjModel.ModelSettings(modelLocation, true, false, true, true, null)
+                    new ObjModel.ModelSettings(modelLocation, flipV, false, true, true, null)
                 );
                 MainRegistry.LOGGER.info("{}: Successfully loaded OBJ model: {}",
                     loader.getClass().getSimpleName(), modelLocation);

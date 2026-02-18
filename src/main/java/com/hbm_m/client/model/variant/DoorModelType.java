@@ -16,27 +16,21 @@ public enum DoorModelType {
     /**
      * Старая модель двери - одна фиксированная текстура
      */
-    LEGACY("legacy", "Old model"),
+    LEGACY("legacy"),
     
     /**
      * Новая модель двери - поддерживает выбор текстуры/скина
      */
-    MODERN("modern", "Modern model");
+    MODERN("modern");
     
     private final String id;
-    private final String displayName;
     
-    DoorModelType(String id, String displayName) {
+    DoorModelType(String id) {
         this.id = id;
-        this.displayName = displayName;
     }
     
     public String getId() {
         return id;
-    }
-    
-    public String getDisplayName() {
-        return displayName;
     }
     
     public boolean isLegacy() {

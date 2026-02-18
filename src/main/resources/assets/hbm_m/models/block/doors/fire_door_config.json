@@ -1,0 +1,13 @@
+{
+    "door_id":"fire_door",
+    "legacy_model":"hbm_m:block/doors/fire_door_legacy",
+    "modern_model":{
+        "model":"hbm_m:block/doors/fire_door_modern",
+        "skins":[
+            {"id":"default","name":"Standard","texture":"hbm_m:block/doors/fire_door"},
+            {"id":"black","name":"Black","texture":"hbm_m:block/doors/fire_door_black","model":"hbm_m:block/doors/fire_door_modern_black"},
+            {"id":"orange","name":"Orange","texture":"hbm_m:block/doors/fire_door_orange","model":"hbm_m:block/doors/fire_door_modern_orange"}
+        ]
+    },
+    "default":{"type":"modern","skin":"default"}
+}

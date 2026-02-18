@@ -6,23 +6,17 @@ import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
-// import com.hbm_m.client.model.DoorBakedModel;
+import com.hbm_m.client.model.variant.DoorModelSelection;
+import com.hbm_m.client.model.variant.DoorSkin;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.lib.RefStrings;
-// import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.sound.ModSounds;
 
-// import net.minecraft.client.Minecraft;
-// import net.minecraft.client.resources.model.BakedModel;
-// import net.minecraft.client.resources.model.ModelManager;
-// import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-// import net.minecraft.server.packs.resources.Resource;
-// import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.block.Block;
@@ -117,6 +111,14 @@ public abstract class DoorDecl {
     public abstract ResourceLocation getBlockId();
 
     public abstract String[] getPartNames();
+
+    /**
+     * Выбор модели по умолчанию при первой установке двери.
+     * По умолчанию LEGACY. Для round_airlock_door — MODERN + default.
+     */
+    public DoorModelSelection getDefaultModelSelection() {
+        return DoorModelSelection.DEFAULT;
+    }
 
     /**
      * Путь к DAE-файлу с анимациями. Если null — используются procedural-анимации (getTranslation/getRotation).
@@ -218,17 +220,50 @@ public abstract class DoorDecl {
         trans[0] = 0; trans[1] = 0; trans[2] = 0;
     }
 
+    /**
+     * Смещение с учётом выбора модели (legacy/modern).
+     * По умолчанию делегирует в {@link #getTranslation(String, float, boolean, float[])}.
+     */
+    public void getTranslation(String partName, float openTicks, boolean child, float[] trans, @Nullable DoorModelSelection selection) {
+        getTranslation(partName, openTicks, child, trans);
+    }
+
     public void getOrigin(String partName, float[] orig) {
         orig[0] = 0; orig[1] = 0; orig[2] = 0;
+    }
+
+    /**
+     * Пивот вращения с учётом выбора модели (legacy/modern).
+     * Позволяет задать разные пивоты для новой модели, где части могут иметь иное положение.
+     * По умолчанию делегирует в {@link #getOrigin(String, float[])}.
+     */
+    public void getOrigin(String partName, float[] orig, @Nullable DoorModelSelection selection) {
+        getOrigin(partName, orig);
     }
 
     public void getRotation(String partName, float openTicks, float[] rot) {
         rot[0] = 0; rot[1] = 0; rot[2] = 0;
     }
 
+    /**
+     * Поворот с учётом выбора модели (legacy/modern).
+     * По умолчанию делегирует в {@link #getRotation(String, float, float[])}.
+     */
+    public void getRotation(String partName, float openTicks, float[] rot, @Nullable DoorModelSelection selection) {
+        getRotation(partName, openTicks, rot);
+    }
+
     public boolean doesRender(String partName, boolean child) { return true; }
 
     public String[] getChildren(String partName) { return new String[0]; }
+
+    /**
+     * Дочерние части с учётом выбора модели (legacy/modern).
+     * По умолчанию делегирует в {@link #getChildren(String)}.
+     */
+    public String[] getChildren(String partName, @Nullable DoorModelSelection selection) {
+        return getChildren(partName);
+    }
 
     protected float getNormTime(float time) {
         return getNormTime(time, 0, getOpenTime());
@@ -502,6 +537,11 @@ public abstract class DoorDecl {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "large_vehicle_door");
         }
 
+        @Override
+        public DoorModelSelection getDefaultModelSelection() {
+            return DoorModelSelection.modern(DoorSkin.DEFAULT);
+        }
+
         @Override 
         public int getOpenTime() { 
             return 60; 
@@ -575,6 +615,11 @@ public abstract class DoorDecl {
         @Override
         public ResourceLocation getBlockId() {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "round_airlock_door");
+        }
+
+        @Override
+        public DoorModelSelection getDefaultModelSelection() {
+            return DoorModelSelection.modern(DoorSkin.DEFAULT);
         }
 
         @Override public int getOpenTime() { return 60; }
@@ -718,6 +763,11 @@ public abstract class DoorDecl {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "fire_door");
         }
 
+        @Override
+        public DoorModelSelection getDefaultModelSelection() {
+            return DoorModelSelection.modern(DoorSkin.DEFAULT);
+        }
+
         @Override public int getOpenTime() { return 160; }
 
         @Override
@@ -750,6 +800,11 @@ public abstract class DoorDecl {
         }
 
         @Override
+        public DoorModelSelection getDefaultModelSelection() {
+            return DoorModelSelection.modern(DoorSkin.DEFAULT);
+        }
+
+        @Override
         public ResourceLocation getColladaAnimationSource() {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/sliding_blast_door.dae");
         }
@@ -770,8 +825,22 @@ public abstract class DoorDecl {
         }
 
         @Override
+        public String[] getChildren(String partName, @Nullable DoorModelSelection selection) {
+            if (selection != null && selection.isModern()) {
+                // OBJ: LeftDoor->RightLock, RightDoor->LeftLock
+                return switch (partName) {
+                    case "LeftDoor" -> new String[] { "RightLock" };
+                    case "RightDoor" -> new String[] { "LeftLock" };
+                    default -> getChildren(partName);
+                };
+            }
+            return getChildren(partName);
+        }
+
+        @Override
         public boolean doesRender(String partName, boolean child) {
-            if (!child && ("DoorCircleLeft".equals(partName) || "Window".equals(partName) || "DoorCircleRight".equals(partName))) {
+            if (!child && ("DoorCircleLeft".equals(partName) || "Window".equals(partName) || "DoorCircleRight".equals(partName)
+                    || "RightLock".equals(partName) || "LeftLock".equals(partName))) {
                 return false;
             }
             return true;
@@ -787,6 +856,50 @@ public abstract class DoorDecl {
                 case "DoorRight" -> set(trans, -2.5F * progress, 0, 0);  // -X
                 default -> super.getTranslation(partName, openTicks, child, trans);
             }
+        }
+
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans, @Nullable DoorModelSelection selection) {
+            if (selection != null && selection.isModern()) {
+                // RenderSlidingBlastDoor 1.7.10: maxOpen=2.125, LeftDoor +Z, RightDoor -Z (после -90°Y: +X/-X)
+                float progress = getNormTime(openTicks);
+                float open = Math.min(2.125f, 2.125f * progress);
+                switch (partName) {
+                    case "DoorFrame", "Frame" -> set(trans, 0, 0, 0);
+                    case "DoorLeft", "LeftDoor" -> set(trans, open, 0, 0);
+                    case "DoorRight", "RightDoor" -> set(trans, -open, 0, 0);
+                    default -> getTranslation(partName, openTicks, child, trans);
+                }
+                return;
+            }
+            getTranslation(partName, openTicks, child, trans);
+        }
+
+        @Override
+        public void getOrigin(String partName, float[] orig, @Nullable DoorModelSelection selection) {
+            if (selection != null && selection.isModern()) {
+                // RenderSlidingBlastDoor 1.7.10: пивот замков (0, 1.8125, 0)
+                if ("DoorCircleLeft".equals(partName) || "DoorCircleRight".equals(partName)
+                        || "RightLock".equals(partName) || "LeftLock".equals(partName)) {
+                    set(orig, 0F, 1.8125F, 0F);
+                    return;
+                }
+            }
+            getOrigin(partName, orig);
+        }
+
+        @Override
+        public void getRotation(String partName, float openTicks, float[] rot, @Nullable DoorModelSelection selection) {
+            if (selection != null && selection.isModern()) {
+                // RenderSlidingBlastDoor 1.7.10: rotate 90+lock вокруг X, lock 0..90
+                if ("DoorCircleLeft".equals(partName) || "DoorCircleRight".equals(partName)
+                        || "RightLock".equals(partName) || "LeftLock".equals(partName)) {
+                    float lock = 90f * getNormTime(openTicks);
+                    set(rot, 90f + lock, 0f, 0f);
+                    return;
+                }
+            }
+            getRotation(partName, openTicks, rot);
         }
 
         @Override
@@ -883,6 +996,11 @@ public abstract class DoorDecl {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_seal_door");
         }
 
+        @Override
+        public DoorModelSelection getDefaultModelSelection() {
+            return DoorModelSelection.modern(DoorSkin.DEFAULT);
+        }
+
         @Override public int getOpenTime() { return 20; }
 
         @Override
@@ -925,12 +1043,13 @@ public abstract class DoorDecl {
             builder.addSymbol('H', Block.box(0, 0, 0, 8, 16, 16), PartRole.DEFAULT);    // левый вертикальный полублок
             builder.addSymbol('G', Block.box(8, 0, 0, 16, 16, 16), PartRole.DEFAULT);   // правый вертикальный полублок
             builder.addSymbol('T', Block.box(0, 6, 0, 16, 16, 16), PartRole.DEFAULT); // полублок в верхнем положении
+            builder.addSymbol('M', Block.box(0, 0, 6, 16, 16, 10), PartRole.DEFAULT); // тонкая стена
             // Схема ЗАКРЫТОЙ двери (Вид спереди, Y сверху вниз)
             String[] closed = {
                 "XXXXX",
-                "XXXXX",
-                "XXXXX",
-                "XXXXX",
+                "MMMMM",
+                "MMMMM",
+                "MMMMM",
                 "XXCXX"
             };
 
@@ -950,6 +1069,11 @@ public abstract class DoorDecl {
         @Override
         public ResourceLocation getBlockId() {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "secure_access_door");
+        }
+
+        @Override
+        public DoorModelSelection getDefaultModelSelection() {
+            return DoorModelSelection.modern(DoorSkin.DEFAULT);
         }
 
         @Override
@@ -1025,6 +1149,11 @@ public abstract class DoorDecl {
         }
 
         @Override
+        public DoorModelSelection getDefaultModelSelection() {
+            return DoorModelSelection.modern(DoorSkin.DEFAULT);
+        }
+
+        @Override
         public String[] getPartNames() {
             return new String[] { "frame", "door" };
         }
@@ -1089,6 +1218,11 @@ public abstract class DoorDecl {
         @Override
         public ResourceLocation getBlockId() {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "qe_containment_door");
+        }
+
+        @Override
+        public DoorModelSelection getDefaultModelSelection() {
+            return DoorModelSelection.modern(DoorSkin.DEFAULT);
         }
 
         @Override
@@ -1177,6 +1311,11 @@ public abstract class DoorDecl {
         public ResourceLocation getBlockId() {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "water_door");
         }
+
+        @Override
+        public DoorModelSelection getDefaultModelSelection() {
+            return DoorModelSelection.modern(DoorSkin.DEFAULT);
+        }
     
         @Override
         public int getOpenTime() { 
@@ -1213,6 +1352,22 @@ public abstract class DoorDecl {
             }
             super.getOrigin(partName, orig);
         }
+
+        @Override
+        public void getOrigin(String partName, float[] orig, @Nullable DoorModelSelection selection) {
+            // RenderWaterDoor 1.7.10: пивоты (0.40625, 2.28125, 0) и (0.40625, 0.71875, 0).
+            // Modern модель имеет transform rotation[0,90,0] — пивот в преобразованной СК: (z,y,-x)
+            if (selection != null && selection.isModern()) {
+                if ("spinny_upper".equals(partName)) {
+                    set(orig, 0F, 2.28125F, -0.40625F);
+                    return;
+                } else if ("spinny_lower".equals(partName)) {
+                    set(orig, 0F, 0.71875F, -0.40625F);
+                    return;
+                }
+            }
+            getOrigin(partName, orig);
+        }
     
         @Override
         public void getRotation(String partName, float openTicks, float[] rot) {
@@ -1221,7 +1376,7 @@ public abstract class DoorDecl {
                 float spinnyProgress = Math.min(1.0f, openTicks / 30.0f);
                 set(rot, smoothstep(spinnyProgress) * 360.0f, 0.0f, 0.0f);
                 return;
-            } 
+            }
             // Дверь и bolt вращаются ВО ВТОРОЙ фазе (30-60 тиков)
             else if ("door".equals(partName) || "bolt".equals(partName)) {
                 float doorProgress = Math.max(0.0f, Math.min(1.0f, (openTicks - 30.0f) / 30.0f));
@@ -1229,6 +1384,17 @@ public abstract class DoorDecl {
                 return;
             }
             super.getRotation(partName, openTicks, rot);
+        }
+
+        @Override
+        public void getRotation(String partName, float openTicks, float[] rot, @Nullable DoorModelSelection selection) {
+            // Modern: вентили вращаются вокруг X (как legacy)
+            if (selection != null && selection.isModern() && partName.startsWith("spinny")) {
+                float boltProgress = Math.min(1.0f, openTicks / 30.0f);
+                set(rot, smoothstep(boltProgress) * 360.0f, 0.0f, 0.0f);
+                return;
+            }
+            getRotation(partName, openTicks, rot);
         }
     
         @Override
@@ -1268,6 +1434,11 @@ public abstract class DoorDecl {
         @Override 
         public SoundEvent getOpenSoundStart() { 
             return ModSounds.LEVER_1.get(); 
+        }
+        
+        @Override 
+        public SoundEvent getCloseSoundStart() { 
+            return null; // LEVER_1 только в начале открытия и в конце закрытия
         }
         
         @Override 

@@ -1,5 +1,7 @@
 package com.hbm_m.client.model.variant;
 
+import com.hbm_m.lib.RefStrings;
+import net.minecraft.network.chat.Component;
 import net.minecraft.nbt.CompoundTag;
 
 import java.util.Objects;
@@ -52,7 +54,7 @@ public class DoorModelSelection {
      * Создать выбор для MODERN модели по ID скина
      */
     public static DoorModelSelection modern(String skinId) {
-        return new DoorModelSelection(DoorModelType.MODERN, DoorSkin.of(skinId, skinId));
+        return new DoorModelSelection(DoorModelType.MODERN, DoorSkin.of(skinId));
     }
     
     // ==================== Геттеры ====================
@@ -105,7 +107,7 @@ public class DoorModelSelection {
         // Скин загружаем по ID (полный скин будет получен из реестра)
         DoorSkin skin = skinId.isEmpty() || "default".equals(skinId) 
             ? DoorSkin.DEFAULT 
-            : DoorSkin.of(skinId, skinId);
+            : DoorSkin.of(skinId);
         
         return new DoorModelSelection(type, skin);
     }
@@ -147,16 +149,14 @@ public class DoorModelSelection {
     }
     
     /**
-     * Краткое описание для отображения
+     * Краткое описание для отображения — через локализацию.
+     * LEGACY: door.model_type.{modid}.legacy
+     * MODERN: door.skin.{modid}.{doorId}.{skinId}
      */
-    public String getDisplayName() {
-        if (isLegacy()) {
-            return modelType.getDisplayName();
+    public Component getDisplayName(String doorId) {
+        if (modelType.isLegacy()) {
+            return Component.translatable("door.model_type." + RefStrings.MODID + ".legacy");
         }
-        // Для MODERN показываем название скина
-        if (skin.isDefault()) {
-            return modelType.getDisplayName() + " (стандарт)";
-        }
-        return modelType.getDisplayName() + " - " + skin.getDisplayName();
+        return skin.getDisplayName(doorId);
     }
 }

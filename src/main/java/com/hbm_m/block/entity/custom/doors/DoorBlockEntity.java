@@ -141,6 +141,8 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     public DoorBlockEntity(BlockPos pos, BlockState state, String doorDeclId) {
         super(ModBlockEntities.DOOR_ENTITY.get(), pos, state);
         this.doorDeclId = doorDeclId;
+        DoorDecl decl = DoorDeclRegistry.getById(doorDeclId);
+        this.modelSelection = decl != null ? decl.getDefaultModelSelection() : DoorModelSelection.DEFAULT;
     }
 
     public DoorBlockEntity(BlockPos pos, BlockState state) {

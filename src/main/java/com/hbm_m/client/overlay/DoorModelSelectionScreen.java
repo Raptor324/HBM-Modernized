@@ -10,6 +10,7 @@ import com.hbm_m.client.model.variant.DoorSkin;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ServerboundDoorModelPacket;
+import com.hbm_m.sound.ModSounds;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -33,8 +34,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class DoorModelSelectionScreen extends Screen {
 
-    // Масштаб GUI (1.0 = нативно, 1.5 = увеличенно). Масштабирование через PoseStack — без дублирования текстуры.
-    private static final float GUI_SCALE = 1.5f;
+    // Масштаб GUI. Масштабирование через PoseStack — без дублирования текстуры.
+    private static final float GUI_SCALE = 1.7f;
 
     // Размеры текстуры: 256x256
     private static final int TEX_WIDTH = 256;
@@ -113,6 +114,17 @@ public class DoorModelSelectionScreen extends Screen {
         this.topPos = (this.height - scaledH) / 2;
         buildFlatSelectionList();
         this.totalPages = Math.max(1, (flatSelectionList.size() + ITEMS_PER_PAGE - 1) / ITEMS_PER_PAGE);
+        if (minecraft != null && minecraft.getSoundManager() != null) {
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(ModSounds.METAL_BOX_OPEN.get(), 1.0F, 1.5F));
+        }
+    }
+
+    @Override
+    public void onClose() {
+        if (minecraft != null && minecraft.getSoundManager() != null) {
+            minecraft.getSoundManager().play(SimpleSoundInstance.forUI(ModSounds.METAL_BOX_CLOSE.get(), 1.0F,0.9F));
+        }
+        super.onClose();
     }
 
     /** Преобразует экранные координаты мыши в локальные координаты GUI (с учётом масштаба). */
@@ -182,9 +194,10 @@ public class DoorModelSelectionScreen extends Screen {
             int v = (hovered || selected) ? SKIN_BTN_PRESSED_V : SKIN_BTN_NORMAL_V;
             guiGraphics.blit(TEXTURE, x, y, u, v, SKIN_BTN_SIZE, SKIN_BTN_SIZE, TEX_WIDTH, TEX_HEIGHT);
 
-            guiGraphics.renderFakeItem(doorStack, x + 2, y + 2);
+            DoorModelFakeItemRenderer.renderDoorModel(guiGraphics, selection, doorId, doorStack, x + 2, y + 2, SKIN_BTN_SIZE - 4);
 
-            String label = selection.getSkin().getDisplayName();
+            Component labelComponent = selection.getDisplayName(doorId);
+            String label = labelComponent.getString();
             int labelWidth = font.width(label);
             int labelX = x + (SKIN_BTN_SIZE - labelWidth) / 2;
             int labelY = y + SKIN_BTN_SIZE ;

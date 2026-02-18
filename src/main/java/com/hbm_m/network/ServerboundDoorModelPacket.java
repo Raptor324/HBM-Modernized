@@ -47,7 +47,7 @@ public class ServerboundDoorModelPacket {
         String skinId = buffer.readUtf(64);
         
         DoorModelType type = DoorModelType.fromId(typeId);
-        DoorSkin skin = DoorSkin.of(skinId, skinId);
+        DoorSkin skin = DoorSkin.of(skinId);
         
         DoorModelSelection selection = new DoorModelSelection(type, skin);
         return new ServerboundDoorModelPacket(blockPos, selection);
@@ -90,7 +90,7 @@ public class ServerboundDoorModelPacket {
             doorEntity.setModelSelection(msg.selection);
             
             MainRegistry.LOGGER.debug("Door model changed: {} -> {} at {}", 
-                doorEntity.getDoorDeclId(), msg.selection.getDisplayName(), msg.blockPos);
+                doorEntity.getDoorDeclId(), msg.selection.getDisplayName(doorEntity.getDoorDeclId()).getString(), msg.blockPos);
             
         });
         

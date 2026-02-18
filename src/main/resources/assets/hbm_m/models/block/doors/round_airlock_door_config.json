@@ -1,32 +1,13 @@
 {
-  "door_id": "large_vehicle_door",
-  "legacy_model": "hbm_m:block/doors/round_airlock_door_old",
-  "modern_model": {
-    "model": "hbm_m:block/doors/round_airlock_door",
-    "skins": [
-      {
-        "id": "default",
-        "name": "Standard"
-      },
-      {
-        "id": "clean",
-        "name": "Clean",
-        "texture": "hbm_m:block/doors/large_vehicle_door_clean"
-      },
-      {
-        "id": "rusted",
-        "name": "Rusted",
-        "texture": "hbm_m:block/doors/large_vehicle_door_rusted"
-      },
-      {
-        "id": "military",
-        "name": "Military",
-        "texture": "hbm_m:block/doors/large_vehicle_door_military"
-      }
-    ]
-  },
-  "default": {
-    "type": "legacy",
-    "skin": "default"
-  }
+    "door_id": "round_airlock_door",
+    "legacy_model": "hbm_m:block/doors/round_airlock_door_legacy",
+    "modern_model": {
+        "model": "hbm_m:block/doors/round_airlock_door_modern",
+        "skins": [
+        {"id": "default", "name": "Standard", "texture": "hbm_m:block/doors/round_airlock_door"},
+        {"id": "clean", "name": "Clean", "texture": "hbm_m:block/doors/round_airlock_door_clean", "model": "hbm_m:block/doors/round_airlock_door_modern_clean"},
+        {"id": "green", "name": "Green", "texture": "hbm_m:block/doors/round_airlock_door_green", "model": "hbm_m:block/doors/round_airlock_door_modern_green"}
+        ]
+    },
+    "default": {"type": "modern", "skin": "default"}
 }

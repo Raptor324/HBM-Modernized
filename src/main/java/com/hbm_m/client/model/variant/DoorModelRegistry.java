@@ -104,6 +104,32 @@ public class DoorModelRegistry implements ResourceManagerReloadListener {
     }
     
     /**
+     * Получает путь к модели с учётом скина (для MODERN — скин может иметь свою модель).
+     * Важно: скин из NBT (DoorSkin.of) имеет modelPath=null — разрешаем через реестр по skinId.
+     */
+    public ResourceLocation getModelPath(String doorId, DoorModelSelection selection) {
+        DoorConfig config = doorConfigs.get(doorId);
+        if (config == null) return null;
+        
+        if (selection.getModelType().isLegacy()) {
+            return config.getLegacyModel();
+        }
+        // MODERN: проверяем modelPath скина (может быть null при загрузке из NBT)
+        ResourceLocation skinModel = selection.getSkin().getModelPath();
+        if (skinModel != null) {
+            return skinModel;
+        }
+        // Скин загружен из NBT без modelPath — разрешаем через реестр по skinId
+        if (!selection.getSkin().isDefault()) {
+            DoorSkin resolvedSkin = config.getSkinById(selection.getSkin().getId());
+            if (resolvedSkin != null && resolvedSkin.getModelPath() != null) {
+                return resolvedSkin.getModelPath();
+            }
+        }
+        return config.getModernModel();
+    }
+    
+    /**
      * Получает список скинов для двери
      */
     public List<DoorSkin> getSkins(String doorId) {

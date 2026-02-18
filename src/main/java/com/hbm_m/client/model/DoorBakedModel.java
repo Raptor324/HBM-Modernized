@@ -11,20 +11,27 @@ import org.joml.Matrix4f;
 import com.hbm_m.block.custom.decorations.DoorBlock;
 import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.custom.doors.DoorDecl;
+import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.block.entity.custom.doors.DoorDeclRegistry;
 import com.hbm_m.client.loader.ColladaAnimationData;
+import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
@@ -98,6 +105,31 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     }
     
     /**
+     * Получает части модели с учётом выбора (legacy/modern/skin).
+     * Если в ModelData есть выбор и реестр имеет конфиг — используем модель из реестра.
+     */
+    private Map<String, BakedModel> getPartsForModelData(ModelData modelData) {
+        var selection = modelData.get(DoorBlockEntity.MODEL_SELECTION_PROPERTY);
+        if (selection == null) return parts;
+        
+        String doorType = extractDoorTypeFromPath(doorId.getPath());
+        DoorModelRegistry registry = DoorModelRegistry.getInstance();
+        if (!registry.isRegistered(doorType)) return parts;
+        
+        ResourceLocation modelPath = registry.getModelPath(doorType, selection);
+        if (modelPath == null) return parts;
+        
+        BakedModel selectionModel = Minecraft.getInstance().getModelManager().getModel(modelPath);
+        if (selectionModel == null || selectionModel == Minecraft.getInstance().getModelManager().getMissingModel()) {
+            return parts;
+        }
+        if (selectionModel instanceof DoorBakedModel doorModel) {
+            return doorModel.getParts();
+        }
+        return parts;
+    }
+
+    /**
      * Возвращает квады только статичных частей (frame) для Iris-пути при движущейся двери.
      * Подвижные части скрыты — их рендерит BER через putBulkData.
      */
@@ -106,9 +138,10 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
                                                 @Nullable net.minecraft.client.renderer.RenderType renderType) {
         List<BakedQuad> result = new ArrayList<>();
         int rotationY = getRotationYForFacing(state);
+        Map<String, BakedModel> partsToUse = getPartsForModelData(modelData);
         
         for (String partName : STATIC_PART_NAMES) {
-            BakedModel part = parts.get(partName);
+            BakedModel part = partsToUse.get(partName);
             if (part == null) continue;
             List<BakedQuad> partQuads = new ArrayList<>();
             for (Direction d : Direction.values()) {
@@ -160,10 +193,13 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
             }
         }
 
+        Map<String, BakedModel> partsToUse = getPartsForModelData(modelData);
+        String[] partNamesToUse = partsToUse.keySet().toArray(new String[0]);
+
         List<BakedQuad> allQuads = new ArrayList<>();
         java.util.Map<String, Matrix4f> transformCache = new java.util.HashMap<>();
-        for (String partName : cachedPartNames) {
-            BakedModel part = parts.get(partName);
+        for (String partName : partNamesToUse) {
+            BakedModel part = partsToUse.get(partName);
             if (part == null) continue;
 
             List<BakedQuad> partQuads = new ArrayList<>();
@@ -178,7 +214,8 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
                 List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
                 allQuads.addAll(ModelHelper.transformQuadsByFacing(translated, rotationY));
             } else {
-                Matrix4f transform = buildPartTransformWithParent(doorDecl, partName, openTicks, animData, cachedPartNames, transformCache);
+                DoorModelSelection selection = modelData.get(DoorBlockEntity.MODEL_SELECTION_PROPERTY);
+                Matrix4f transform = buildPartTransformWithParent(doorDecl, partName, openTicks, animData, partNamesToUse, transformCache, selection);
                 if (transform != null) {
                     partQuads = ModelHelper.transformQuadsByMatrix(partQuads, transform);
                 }
@@ -233,17 +270,17 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     @Nullable
     private static Matrix4f buildPartTransformWithParent(DoorDecl doorDecl, String partName,
             float openTicks, ColladaAnimationData animData, String[] allPartNames,
-            java.util.Map<String, Matrix4f> transformCache) {
-        String parentName = findParent(doorDecl, partName, allPartNames);
+            java.util.Map<String, Matrix4f> transformCache, DoorModelSelection selection) {
+        String parentName = findParent(doorDecl, partName, allPartNames, selection);
         Matrix4f parentMat = null;
         if (parentName != null) {
             parentMat = transformCache.get(parentName);
             if (parentMat == null) {
-                parentMat = buildPartTransformWithParent(doorDecl, parentName, openTicks, animData, allPartNames, transformCache);
+                parentMat = buildPartTransformWithParent(doorDecl, parentName, openTicks, animData, allPartNames, transformCache, selection);
                 if (parentMat != null) transformCache.put(parentName, parentMat);
             }
         }
-        Matrix4f mat = buildPartTransformMatrix(doorDecl, partName, openTicks, parentName != null, animData);
+        Matrix4f mat = buildPartTransformMatrix(doorDecl, partName, openTicks, parentName != null, animData, selection);
         if (mat == null) return null;
         if (parentMat != null) {
             mat = new Matrix4f(parentMat).mul(mat);
@@ -253,9 +290,9 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     }
 
     @Nullable
-    private static String findParent(DoorDecl doorDecl, String partName, String[] allPartNames) {
+    private static String findParent(DoorDecl doorDecl, String partName, String[] allPartNames, DoorModelSelection selection) {
         for (String p : allPartNames) {
-            for (String c : doorDecl.getChildren(p)) {
+            for (String c : doorDecl.getChildren(p, selection)) {
                 if (c.equals(partName)) return p;
             }
         }
@@ -267,13 +304,13 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
      */
     @Nullable
     private static Matrix4f buildPartTransformMatrix(DoorDecl doorDecl, String partName,
-            float openTicks, boolean child, ColladaAnimationData animData) {
+            float openTicks, boolean child, ColladaAnimationData animData, DoorModelSelection selection) {
         float[] origin = new float[3];
         float[] rotation = new float[3];
         float[] translation = new float[3];
-        doorDecl.getOrigin(partName, origin);
-        doorDecl.getRotation(partName, openTicks, rotation);
-        doorDecl.getTranslation(partName, openTicks, child, translation);
+        doorDecl.getOrigin(partName, origin, selection);
+        doorDecl.getRotation(partName, openTicks, rotation, selection);
+        doorDecl.getTranslation(partName, openTicks, child, translation, selection);
 
         Matrix4f mat = new Matrix4f();
         mat.translate(origin[0], origin[1], origin[2]);
@@ -340,6 +377,54 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         this.cachedItemQuads = allQuads;
     }
     
+    @Override
+    public ItemOverrides getOverrides() {
+        return DoorItemOverrides.INSTANCE;
+    }
+
+    /**
+     * ItemOverrides для превью в GUI выбора модели двери.
+     * Если в NBT стека есть "hbm_m:door_preview" с modelType и skin — возвращаем модель из реестра.
+     * Иначе — исходная модель. Используется renderFakeItem для корректного порядка рендера частей.
+     */
+    private static final class DoorItemOverrides extends ItemOverrides {
+        static final DoorItemOverrides INSTANCE = new DoorItemOverrides();
+
+        private DoorItemOverrides() {
+            super();
+        }
+
+        @Override
+        @Nullable
+        public BakedModel resolve(BakedModel model, ItemStack stack, @Nullable ClientLevel level,
+                                 @Nullable LivingEntity entity, int seed) {
+            CompoundTag tag = stack.getTag();
+            if (tag == null || !tag.contains("hbm_m:door_preview")) {
+                return model;
+            }
+            CompoundTag preview = tag.getCompound("hbm_m:door_preview");
+            if (!preview.contains("modelType")) {
+                return model;
+            }
+            String doorId = preview.contains("doorId") ? preview.getString("doorId")
+                : net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem()).getPath();
+            DoorModelSelection selection = DoorModelSelection.load(preview);
+            DoorModelRegistry registry = DoorModelRegistry.getInstance();
+            if (!registry.isRegistered(doorId)) {
+                return model;
+            }
+            ResourceLocation modelPath = registry.getModelPath(doorId, selection);
+            if (modelPath == null) {
+                return model;
+            }
+            BakedModel override = Minecraft.getInstance().getModelManager().getModel(modelPath);
+            if (override == null || override == Minecraft.getInstance().getModelManager().getMissingModel()) {
+                return model;
+            }
+            return override;
+        }
+    }
+
     @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         // cutoutMipped для прозрачных текстур (стекло, решётки и т.д.)

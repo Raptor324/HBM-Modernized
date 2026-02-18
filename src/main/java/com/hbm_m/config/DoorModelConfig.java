@@ -52,7 +52,7 @@ public class DoorModelConfig implements ConfigData {
         // Затем глобальные настройки
         return new DoorModelSelection(
             DoorModelType.fromId(globalDefaultType),
-            DoorSkin.of(globalDefaultSkin, globalDefaultSkin)
+            DoorSkin.of(globalDefaultSkin)
         );
     }
     
@@ -74,7 +74,7 @@ public class DoorModelConfig implements ConfigData {
             String skinId = parts.length > 1 ? parts[1] : "default";
             return new DoorModelSelection(
                 type,
-                DoorSkin.of(skinId, skinId)
+                DoorSkin.of(skinId)
             );
         } catch (Exception e) {
             MainRegistry.LOGGER.warn("Invalid door model config value: {}", value);

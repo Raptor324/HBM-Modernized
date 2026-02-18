@@ -93,7 +93,7 @@ minecraft {
         client {
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
-            jvmArgs = [ "-Xmx4G", "-Xms2G"]
+            jvmArgs = [ "-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8"]
         }
 
         server {

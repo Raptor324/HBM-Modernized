@@ -8,6 +8,7 @@ import org.joml.Matrix4f;
 
 import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.custom.doors.DoorDecl;
+import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.loader.ColladaAnimationData;
 import com.hbm_m.client.loader.ColladaAnimationParser;
 import com.hbm_m.client.model.DoorBakedModel;
@@ -22,7 +23,9 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.AABB;
@@ -108,6 +111,11 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                 + "_" + selection.getSkin().getId() + "_" + partName;
     }
 
+    /** Ключ для frame/частей — включает selection для корректного кэша скинов */
+    private static String getSelectionCacheKey(DoorModelSelection selection) {
+        return selection.getModelType().getId() + "_" + selection.getSkin().getId();
+    }
+
     /** Проверяет, есть ли у части геометрия (квады). Результат кэшируется. */
     private static boolean partHasGeometry(BakedModel partModel, String partName, String cacheKey) {
         if (partModel == null) return false;
@@ -123,6 +131,34 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             return false;
         }
         return true;
+    }
+
+    /**
+     * Для дверей с конфигом — загружаем модель из реестра по выбору (legacy/modern).
+     * Иначе используем модель из blockstate.
+     */
+    @Override
+    protected BakedModel getModel(DoorBlockEntity blockEntity) {
+        DoorDecl doorDecl = blockEntity.getDoorDecl();
+        if (doorDecl == null) {
+            return super.getModel(blockEntity);
+        }
+        String doorType = getDoorTypeKey(doorDecl);
+        DoorModelRegistry registry = DoorModelRegistry.getInstance();
+        if (!registry.isRegistered(doorType)) {
+            return super.getModel(blockEntity);
+        }
+        var selection = blockEntity.getModelSelection();
+        ResourceLocation modelPath = registry.getModelPath(doorType, selection);
+        if (modelPath == null) {
+            return super.getModel(blockEntity);
+        }
+        ModelManager modelManager = Minecraft.getInstance().getModelManager();
+        BakedModel selectionModel = modelManager.getModel(modelPath);
+        if (selectionModel == null || selectionModel == modelManager.getMissingModel()) {
+            return super.getModel(blockEntity);
+        }
+        return selectionModel;
     }
 
     @Override
@@ -178,7 +214,8 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                             int packedLight, BlockPos blockPos, MultiBufferSource bufferSource) {
         try {
             String doorType = getDoorTypeKey(doorDecl);
-            String frameKey = "frame_" + doorType;
+            DoorModelSelection selection = be.getModelSelection();
+            String frameKey = "frame_" + doorType + "_" + getSelectionCacheKey(selection);
             String[] partNames = model.getPartNames();
             String staticFramePart = detectFramePart(partNames);
             
@@ -214,7 +251,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                         continue; // Skip, will be rendered as child
                     }
                     
-                    renderAnimatedPartForIris(partName, doorType, be, model, doorDecl, openTicks, 
+                    renderAnimatedPartForIris(partName, doorType, selection, be, model, doorDecl, openTicks, 
                                              poseStack, packedLight, animData, bufferSource, false);
                 }
                 return;
@@ -246,7 +283,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                     if (frameModel != null) {
                         poseStack.pushPose();
                         try {
-                            String fallbackKey = "door_" + doorType + "_" + staticFramePart;
+                            String fallbackKey = "door_" + doorType + "_" + getSelectionCacheKey(selection) + "_" + staticFramePart;
                             var fallbackRenderer = GlobalMeshCache.getOrCreateRenderer(fallbackKey, frameModel);
                             if (fallbackRenderer != null) {
                                 fallbackRenderer.render(poseStack, packedLight, blockPos, be, bufferSource);
@@ -284,18 +321,20 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
      * doorType в ключе кэша — иначе qe_containment_door показывал бы створку fire_door.
      * @param child true при рекурсивном вызове для дочерних частей (water_door: spinny_upper/lower)
      */
-    private void renderAnimatedPartForIris(String partName, String doorType, DoorBlockEntity be, DoorBakedModel model,
+    private void renderAnimatedPartForIris(String partName, String doorType, DoorModelSelection selection,
+                                           DoorBlockEntity be, DoorBakedModel model,
                                            DoorDecl doorDecl, float openTicks, PoseStack poseStack,
                                            int packedLight, ColladaAnimationData animData,
                                            MultiBufferSource bufferSource, boolean child) {
         if (!doorDecl.doesRender(partName, child)) return;
         
         poseStack.pushPose();
-        doPartTransform(poseStack, doorDecl, partName, openTicks, child, animData);
+        doPartTransform(poseStack, doorDecl, partName, openTicks, child, animData, selection);
         
         BakedModel partModel = model.getPart(partName);
         if (partModel != null) {
-            var quads = GlobalMeshCache.getOrCompile("door_anim_" + doorType + "_" + partName, partModel);
+            String animCacheKey = "door_anim_" + doorType + "_" + getSelectionCacheKey(selection) + "_" + partName;
+            var quads = GlobalMeshCache.getOrCompile(animCacheKey, partModel);
             if (quads != null && !quads.isEmpty() && bufferSource != null) {
                 float brightness = ModClothConfig.get().doorAnimatedPartBrightness / 100f;
                 var consumer = bufferSource.getBuffer(RenderType.solid());
@@ -308,8 +347,8 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         }
         
         // Рекурсивно дети из DoorDecl (child=true — water_door.doesRender("spinny_*", true) вернёт true)
-        for (String c : doorDecl.getChildren(partName)) {
-            renderAnimatedPartForIris(c, doorType, be, model, doorDecl, openTicks, poseStack, 
+        for (String c : doorDecl.getChildren(partName, selection)) {
+            renderAnimatedPartForIris(c, doorType, selection, be, model, doorDecl, openTicks, poseStack, 
                                      packedLight, animData, bufferSource, true);
         }
 
@@ -321,11 +360,11 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                 for (String potentialChild : model.getPartNames()) {
                     if (doorDecl.getDaeObjectName(potentialChild).equals(childDaeName)) {
                         boolean alreadyHandled = false;
-                        for (String c : doorDecl.getChildren(partName)) {
+                        for (String c : doorDecl.getChildren(partName, selection)) {
                             if (c.equals(potentialChild)) { alreadyHandled = true; break; }
                         }
                         if (!alreadyHandled) {
-                            renderAnimatedPartForIris(potentialChild, doorType, be, model, doorDecl, openTicks,
+                            renderAnimatedPartForIris(potentialChild, doorType, selection, be, model, doorDecl, openTicks,
                                     poseStack, packedLight, animData, bufferSource, true);
                         }
                     }
@@ -359,19 +398,20 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                                     MultiBufferSource bufferSource) {
         if (!doorDecl.doesRender(partName, child)) return;
         
+        DoorModelSelection selection = be.getModelSelection();
         poseStack.pushPose();
-        doPartTransform(poseStack, doorDecl, partName, openTicks, child, animData);
+        doPartTransform(poseStack, doorDecl, partName, openTicks, child, animData, selection);
         
         // Рендерим текущую часть ТОЛЬКО если у неё есть mesh
         boolean isStaticPart = "frame".equalsIgnoreCase(partName) || 
+                               "Frame".equals(partName) ||
                                "DoorFrame".equals(partName) ||
                                "base".equalsIgnoreCase(partName);
         if (!isStaticPart) {
             BakedModel partModel = model.getPart(partName);
             String doorType = getDoorTypeKey(doorDecl);
-            String geomCacheKey = "geom_" + doorType + "_" + partName;
+            String geomCacheKey = "geom_" + doorType + "_" + getSelectionCacheKey(selection) + "_" + partName;
             if (partModel != null && partHasGeometry(partModel, partName, geomCacheKey)) {
-                DoorModelSelection selection = be.getModelSelection();
                 String partCacheKey = getPartCacheKey(doorType, partName, selection);
 
                 boolean useBatching = ModClothConfig.useInstancedBatching();
@@ -393,7 +433,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         }
         
         // Рекурсивно дети с child=true (from DoorDecl)
-        for (String c : doorDecl.getChildren(partName)) {
+        for (String c : doorDecl.getChildren(partName, selection)) {
             renderHierarchyVbo(c, true, be, model, doorDecl, openTicks, poseStack, packedLight, blockPos, animData, bufferSource);
         }
 
@@ -407,7 +447,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                     if (doorDecl.getDaeObjectName(potentialChild).equals(childDaeName)) {
                         // Avoid double rendering if it was already in DoorDecl children
                         boolean alreadyHandled = false;
-                        for (String c : doorDecl.getChildren(partName)) {
+                        for (String c : doorDecl.getChildren(partName, selection)) {
                             if (c.equals(potentialChild)) {
                                 alreadyHandled = true;
                                 break;
@@ -491,11 +531,12 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
      * И полная матрица DAE (включая translation) — оба источника нужны для корректных пивотов и смещений.
      */
     private void doPartTransform(PoseStack poseStack, DoorDecl doorDecl,
-                                String partName, float openTicks, boolean child, ColladaAnimationData animData) {
+                                String partName, float openTicks, boolean child, ColladaAnimationData animData,
+                                DoorModelSelection selection) {
         
         // 1. Процедурная трансформация (origin → rotation → translation)
-        doorDecl.getOrigin(partName, origin);
-        doorDecl.getRotation(partName, openTicks, rotation);
+        doorDecl.getOrigin(partName, origin, selection);
+        doorDecl.getRotation(partName, openTicks, rotation, selection);
         
         // Смещаемся к Pivot Point
         poseStack.translate(origin[0], origin[1], origin[2]);
@@ -506,7 +547,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         if (rotation[2] != 0) poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(rotation[2]));
         
         // 1.2 Процедурное перемещение
-        doorDecl.getTranslation(partName, openTicks, child, translation);
+        doorDecl.getTranslation(partName, openTicks, child, translation, selection);
         poseStack.translate(-origin[0] + translation[0], -origin[1] + translation[1], -origin[2] + translation[2]);
 
         // 2. Полная матрица DAE (rotation + translation) — НЕ обнуляем m30,m31,m32, пивоты в DAE важны

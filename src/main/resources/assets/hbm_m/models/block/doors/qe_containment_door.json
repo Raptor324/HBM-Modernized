@@ -3,9 +3,9 @@
   "model": "hbm_m:models/block/doors/qe_containment_door.obj",
   "parts": ["frame", "door", "decal"],
   "textures": {
-    "door": "hbm_m:block/doors/qe_containment_door_old",
+    "door": "hbm_m:block/doors/qe_containment_door",
     "decal": "hbm_m:block/doors/qe_containment_decal",
-    "particle": "hbm_m:block/doors/qe_containment_door_old"
+    "particle": "hbm_m:block/doors/qe_containment_door"
   },
   "display": {
     "gui": {

@@ -81,10 +81,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         if (ModItems.DUST_TINY != null && ModItems.DUST_TINY.isPresent()) powderTexture(ModItems.DUST_TINY, "powders/tiny/dust_tiny");
 
         withExistingParent("large_vehicle_door", 
-            modLoc("block/doors/large_vehicle_door"));
+            modLoc("block/doors/large_vehicle_door_modern"));
 
         withExistingParent("round_airlock_door", 
-            modLoc("block/doors/round_airlock_door"));
+            modLoc("block/doors/round_airlock_door_modern"));
 
         withExistingParent("transition_seal", 
             modLoc("block/doors/transition_seal"));
@@ -96,25 +96,25 @@ public class ModItemModelProvider extends ItemModelProvider {
             modLoc("block/doors/silo_hatch_large"));
 
         withExistingParent("qe_containment_door", 
-            modLoc("block/doors/qe_containment_door"));
+            modLoc("block/doors/qe_containment_door_modern"));
 
         withExistingParent("water_door", 
-            modLoc("block/doors/water_door"));
+            modLoc("block/doors/water_door_modern"));
 
         withExistingParent("fire_door", 
-            modLoc("block/doors/fire_door"));
+            modLoc("block/doors/fire_door_modern"));
 
         withExistingParent("sliding_blast_door", 
-            modLoc("block/doors/sliding_blast_door"));
+            modLoc("block/doors/sliding_blast_door_modern"));
 
         withExistingParent("sliding_seal_door", 
-            modLoc("block/doors/sliding_seal_door"));
+            modLoc("block/doors/sliding_seal_door_modern"));
 
         withExistingParent("secure_access_door", 
-            modLoc("block/doors/secure_access_door"));
+            modLoc("block/doors/secure_access_door_modern"));
 
         withExistingParent("qe_sliding_door", 
-            modLoc("block/doors/qe_sliding_door"));
+            modLoc("block/doors/qe_sliding_door_modern"));
 
         // Door items (flat icons like vanilla doors)
         withExistingParent(ModBlocks.METAL_DOOR.getId().getPath(), "item/generated")
