@@ -2,7 +2,6 @@
     "loader":"hbm_m:door",
     "model":"hbm_m:models/block/doors/large_vehicle_door.obj",
     "parts":["frame","doorLeft","doorRight"],
-    "flip_v": true,
     "textures":{
         "default":"hbm_m:block/doors/large_vehicle_door",
         "particle":"hbm_m:block/doors/large_vehicle_door"

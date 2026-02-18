@@ -1123,26 +1123,27 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.battery.condition.with_signal", "Когда ЕСТЬ редстоун-сигнал:");
 
                 add("gui.hbm_m.door_model_selection.title", "Выбор модели двери");
-                add("door.model_type.hbm_m.legacy", "Классическая");
-                add("door.skin.hbm_m.round_airlock_door.default", "Стандартная");
+                add("door.model_type.hbm_m.legacy", "Классика");
+                add("door.skin.hbm_m.round_airlock_door.default", "Новая");
                 add("door.skin.hbm_m.round_airlock_door.clean", "Чистая");
                 add("door.skin.hbm_m.round_airlock_door.green", "Зелёная");
-                add("door.skin.hbm_m.fire_door.default", "Стандартная");
+                add("door.skin.hbm_m.fire_door.default", "Новая");
                 add("door.skin.hbm_m.fire_door.black", "Чёрная");
                 add("door.skin.hbm_m.fire_door.orange", "Оранжевая");
-                add("door.skin.hbm_m.secure_access_door.default", "Стандартная");
+                add("door.skin.hbm_m.secure_access_door.default", "Новая");
                 add("door.skin.hbm_m.secure_access_door.gray", "Серая");
-                add("door.skin.hbm_m.sliding_blast_door.default", "Стандартная");
+                add("door.skin.hbm_m.sliding_blast_door.default", "Новая");
                 add("door.skin.hbm_m.sliding_blast_door.variant1", "Вариант 1");
                 add("door.skin.hbm_m.sliding_blast_door.variant2", "Вариант 2");
-                add("door.skin.hbm_m.sliding_seal_door.default", "Стандартная");
-                add("door.skin.hbm_m.large_vehicle_door.default", "Стандартная");
-                add("door.skin.hbm_m.water_door.default", "Стандартная");
-                add("door.skin.hbm_m.qe_sliding_door.default", "Стандартная");
-                add("door.skin.hbm_m.qe_containment_door.default", "Стандартная");
+                add("door.skin.hbm_m.sliding_seal_door.default", "Новая");
+                add("door.skin.hbm_m.large_vehicle_door.default", "Новая");
+                add("door.skin.hbm_m.water_door.default", "Новая");
+                add("door.skin.hbm_m.qe_sliding_door.default", "Новая");
+                add("door.skin.hbm_m.qe_containment_door.default", "Новая");
 
                 add(ModItems.SCREWDRIVER.get(), "Отвёртка");
-                add("tooltip.hbm_m.screwdriver", "Клик ПКМ - настройка конвертера энергии и смена скина двери");
+                add("tooltip.hbm_m.screwdriver", "Клик ПКМ - настройка конвертера энергии или смена скина двери");
+                add("tooltip.hbm_m.door_skin", "Используй отвёртку, чтобы сменить скин!");
 
                 add("gui.hbm_m.battery.mode.both", "Режим: Приём и Передача");
                 add("gui.hbm_m.battery.mode.both.desc", "Разрешены все операции с энергией.");
@@ -1301,7 +1302,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Дистанция для рендеринга динамических частей .obj моделей");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Включить куллинг моделей");
-                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Батчинг статических частей (frame, Base)");
+                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Батчинг частей obj моделей");
                 add("text.autoconfig.hbm_m.option.useColladaDoorAnimations", "Анимации дверей из DAE (COLLADA)");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion", "Конвертация Z-up→Y-up для DAE (Blender)");
 
@@ -1346,7 +1347,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Дистанция для рендеринга динамических частей .obj моделей (в чанках)");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Включить куллинг моделей (выключите, если ваши модели рендерятся некорректно)");
-                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Использовать батчинг для статических частей (frame, Base). При проблемах отключите.");
+                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Использовать батчинговый рендер для частей obj. Сильно повышает производительность рендеринга в бесшейдерном режиме, при проблемах отключите.");
                 add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Использовать анимации из DAE для transition_seal и sliding_blast_door. Отключите при проблемах — будет procedural fallback.");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Конвертировать систему координат Blender (Z-up) в Minecraft (Y-up). Отключите для тестирования.");
 
@@ -2333,7 +2334,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.qe_containment_door.default", "Standard");
 
                 add(ModItems.SCREWDRIVER.get(), "Screwdriver");
-                add("tooltip.hbm_m.screwdriver", "RMB click - Configure energy converter and change door skin");
+                add("tooltip.hbm_m.screwdriver", "RMB click - Configure energy converter or change door skin");
+                add("tooltip.hbm_m.door_skin", "Use the screwdriver to change the skin!");
 
                 add("gui.hbm_m.battery.mode.both", "Mode: Input & Output");
                 add("gui.hbm_m.battery.mode.both.desc", "All energy operations are allowed.");
@@ -2489,7 +2491,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Distance for .obj model dynamic parts rendering");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Enable model occlusion culling");
-                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Instanced batching for static parts (frame, Base)");
+                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Instanced batching for obj model parts");
                 add("text.autoconfig.hbm_m.option.useColladaDoorAnimations", "Door animations from DAE (COLLADA)");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion", "Z-up to Y-up conversion for DAE (Blender)");
 
@@ -2541,7 +2543,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Distance for .obj model dynamic parts rendering (in chunks)");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Enable model occlusion culling (disable if your models are not rendering correctly)");
-                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Use batching for static parts (frame, Base). Disable if you experience rendering issues.");
+                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Use batch rendering for obj parts. This greatly improves rendering performance in shaderless mode. If you experience issues, disable it");
                 add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Use DAE animations for transition_seal and sliding_blast_door. Disable if broken — falls back to procedural.");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Convert Blender (Z-up) to Minecraft (Y-up) coordinate system. Disable for testing.");
 

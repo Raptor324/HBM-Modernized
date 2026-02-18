@@ -6,6 +6,11 @@
         "default":"hbm_m:block/doors/sliding_seal_door",
         "particle":"hbm_m:block/doors/sliding_seal_door"
     },
+    "transform": {
+		"rotation": [0, 0, 0],
+		"translation": [ 0.125, 0, 0 ],
+		"scale": 1.0
+	},
     "display":{
         "gui":{
             "rotation":[30,225,0],

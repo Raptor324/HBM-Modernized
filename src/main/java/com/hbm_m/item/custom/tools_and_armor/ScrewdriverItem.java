@@ -1,12 +1,18 @@
 package com.hbm_m.item.custom.tools_and_armor;
 
+import java.util.List;
+
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
 import com.hbm_m.client.overlay.DoorModelSelectionScreen;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.multiblock.IMultiblockPart;
+
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
-import net.minecraft.network.chat.Component;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
@@ -17,9 +23,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 /**
  * Отвертка для настройки дверей и конвертера энергии.
@@ -33,7 +36,7 @@ public class ScrewdriverItem extends Item {
 
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip." + RefStrings.MODID + ".screwdriver"));
+        tooltip.add(Component.translatable("tooltip." + RefStrings.MODID + ".screwdriver").withStyle(ChatFormatting.GRAY));
     }
 
     @Override
