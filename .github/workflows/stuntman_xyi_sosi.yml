@@ -1,4 +1,4 @@
-name: Moderation & Discord Notifier
+name: Moderator & Discord Notifier
 
 on:
   issues:
@@ -14,17 +14,15 @@ jobs:
   moderate-and-notify:
     runs-on: ubuntu-latest
     steps:
-      - name: Install dependencies for script
-        run: npm install @actions/github
-
       - name: Moderation Logic
         uses: actions/github-script@v6
         env:
           BAD_WORDS_LIST: ${{ secrets.BAD_WORDS }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
-          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }} # Токен для удаления Issue
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
         with:
           script: |
+
             const { getOctokit } = require("@actions/github");
             const payload = context.payload;
             
@@ -33,7 +31,7 @@ jobs:
 
             function analyzeText(text) {
               if (!text) return { safe: true };
-              
+
               const badWords = (process.env.BAD_WORDS_LIST || "").split(',').map(w => w.trim().toLowerCase()).filter(w => w.length > 0);
               const lowerText = text.toLowerCase();
               
@@ -76,7 +74,6 @@ jobs:
               else if (!bodyCheck.safe) { isViolation = true; violationReason = bodyCheck.reason; }
             }
 
-
             if (isViolation) {
               console.log(`Violation: ${violationReason}. Deleting...`);
               
@@ -84,6 +81,11 @@ jobs:
               const warningMessage = `@${author}, ваше сообщение удалено: ${reasonText}.`;
 
               if (objectType === "Issue") {
+                if (!process.env.ADMIN_TOKEN) {
+                    console.log("Error: ADMIN_TOKEN secret is missing. Cannot delete issue.");
+                    return;
+                }
+
                 const adminOctokit = getOctokit(process.env.ADMIN_TOKEN);
                 const nodeId = payload.issue.node_id;
 
@@ -99,7 +101,7 @@ jobs:
                   await adminOctokit.graphql(query, { issueId: nodeId });
                   console.log("Issue successfully deleted via GraphQL.");
                 } catch (error) {
-                  console.error("Failed to delete issue. Check ADMIN_TOKEN scopes.", error);
+                  console.error("Failed to delete issue. Ensure ADMIN_TOKEN has 'repo' scope.", error);
                 }
                 return;
               }
@@ -111,7 +113,7 @@ jobs:
                     repo: context.repo.repo,
                     comment_id: payload.comment.id
                   });
-                } catch(e) { console.error(e); }
+                } catch(e) { console.error("Error deleting comment:", e); }
 
                 await github.rest.issues.createComment({
                   owner: context.repo.owner,
@@ -137,4 +139,6 @@ jobs:
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ content: contentText })
                 });
+            } else {
+                console.log("Discord Webhook secret is missing.");
             }
