@@ -1,4 +1,4 @@
-name: Moderator & Discord Notifier
+name: Moderation & Discord Notifier
 
 on:
   issues:
@@ -15,15 +15,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Moderation Logic
-        uses: actions/github-script@v6
+        uses: actions/github-script@v7
         env:
           BAD_WORDS_LIST: ${{ secrets.BAD_WORDS }}
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
           ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
         with:
           script: |
-
-            const { getOctokit } = require("@actions/github");
+  
+            
             const payload = context.payload;
             
             const CAPS_THRESHOLD = 0.70; 
@@ -31,7 +31,7 @@ jobs:
 
             function analyzeText(text) {
               if (!text) return { safe: true };
-
+              
               const badWords = (process.env.BAD_WORDS_LIST || "").split(',').map(w => w.trim().toLowerCase()).filter(w => w.length > 0);
               const lowerText = text.toLowerCase();
               
@@ -82,12 +82,9 @@ jobs:
 
               if (objectType === "Issue") {
                 if (!process.env.ADMIN_TOKEN) {
-                    console.log("Error: ADMIN_TOKEN secret is missing. Cannot delete issue.");
+                    console.log("Error: ADMIN_TOKEN secret is missing.");
                     return;
                 }
-
-                const adminOctokit = getOctokit(process.env.ADMIN_TOKEN);
-                const nodeId = payload.issue.node_id;
 
                 const query = `
                   mutation($issueId: ID!) {
@@ -97,16 +94,27 @@ jobs:
                   }
                 `;
                 
-                try {
-                  await adminOctokit.graphql(query, { issueId: nodeId });
-                  console.log("Issue successfully deleted via GraphQL.");
-                } catch (error) {
-                  console.error("Failed to delete issue. Ensure ADMIN_TOKEN has 'repo' scope.", error);
+                const variables = { issueId: payload.issue.node_id };
+
+                const response = await fetch('https://api.github.com/graphql', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${process.env.ADMIN_TOKEN}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ query, variables })
+                });
+
+                if (!response.ok) {
+                   console.error("GraphQL Error:", await response.text());
+                } else {
+                   console.log("Issue successfully deleted.");
                 }
                 return;
               }
 
               if (objectType === "Comment") {
+
                 try {
                   await github.rest.issues.deleteComment({
                     owner: context.repo.owner,
