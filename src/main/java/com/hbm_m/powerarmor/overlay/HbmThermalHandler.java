@@ -29,8 +29,6 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
     private static int lastWidth = 0;
     private static int lastHeight = 0;
     
-    private static boolean seeThroughWalls = false;
-
     // Tracks whether this frame actually has any "hot" entities to render
     private static boolean hasHotEntitiesThisFrame = false;
 
@@ -123,35 +121,36 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
         // Disable shadows globally to ensure no renderer tries to draw them
         mc.options.entityShadows().set(false);
         mc.getEntityRenderDispatcher().setRenderShadow(false);
+        boolean pushedPose = false;
 
         try {
             thermalBuffer.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
             thermalBuffer.clear(Minecraft.ON_OSX);
 
-            if (!seeThroughWalls) {
-                if (mc.getMainRenderTarget().isStencilEnabled() && !thermalBuffer.isStencilEnabled()) {
-                    thermalBuffer.enableStencil();
-                }
-                try {
-                    thermalBuffer.copyDepthFrom(mc.getMainRenderTarget());
-                } catch (Throwable ignored) {
-                    seeThroughWalls = true;
-                }
+            if (mc.getMainRenderTarget().isStencilEnabled() && !thermalBuffer.isStencilEnabled()) {
+                thermalBuffer.enableStencil();
+            }
+            try {
+                thermalBuffer.copyDepthFrom(mc.getMainRenderTarget());
+            } catch (Throwable depthCopyError) {
+                // Никогда не рисуем "сквозь стены" в FULL_SHADER режиме: если depth не скопирован,
+                // пропускаем thermal entities в этом кадре.
+                MainRegistry.LOGGER.debug("Thermal depth copy failed, skipping thermal entity pass this frame", depthCopyError);
+                hasHotEntitiesThisFrame = false;
+                return;
             }
             
             thermalBuffer.bindWrite(true);
+            RenderSystem.enableDepthTest();
 
             var camera = mc.gameRenderer.getMainCamera();
             var cameraPos = camera.getPosition();
 
             poseStack.pushPose();
+            pushedPose = true;
             net.minecraft.client.renderer.MultiBufferSource.BufferSource originalBufferSource =
                     net.minecraft.client.renderer.MultiBufferSource.immediate(new BufferBuilder(256));
             ShadowIgnoringBufferSource bufferSource = new ShadowIgnoringBufferSource(originalBufferSource);
-            
-            RenderSystem.enablePolygonOffset();
-            RenderSystem.polygonOffset(-1.0F, -1.0F);
-            // mc.getEntityRenderDispatcher().setRenderShadow(false); // Already set above
 
             for (Entity entity : mc.level.entitiesForRendering()) {
                 if (isHotEntity(entity)) {
@@ -177,8 +176,9 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error rendering thermal entities", e);
         } finally {
-            RenderSystem.disablePolygonOffset();
-            poseStack.popPose();
+            if (pushedPose) {
+                poseStack.popPose();
+            }
             // Restore shadows
             mc.options.entityShadows().set(oldShadowOption);
             mc.getEntityRenderDispatcher().setRenderShadow(oldShadowOption);

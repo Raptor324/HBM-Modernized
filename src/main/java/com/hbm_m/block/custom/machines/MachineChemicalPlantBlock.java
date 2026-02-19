@@ -12,6 +12,7 @@ import com.hbm_m.block.entity.custom.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.util.BlockBreakDropContext;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -121,7 +122,8 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
                 }
 
                 BlockEntity be = level.getBlockEntity(pos);
-                if (be instanceof MachineChemicalPlantBlockEntity plant) {
+                if (!BlockBreakDropContext.consumeSkipInventoryDrop(pos) &&
+                        be instanceof MachineChemicalPlantBlockEntity plant) {
                     plant.drops(); // Метод для выпадения содержимого инвентаря
                 }
                 
@@ -140,6 +142,14 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
+    }
+
+    @Override
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide() && player.getAbilities().instabuild) {
+            BlockBreakDropContext.markSkipInventoryDrop(pos);
+        }
+        super.playerWillDestroy(level, pos, state, player);
     }
 
     @Override

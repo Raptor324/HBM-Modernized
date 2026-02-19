@@ -449,7 +449,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.FILE_CABINET);
 
         simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath()));
-        simpleBlockWithItem(ModBlocks.WIRE_COATED.get(), models().getExistingFile(modLoc("block/wire_coated")));
+        simpleBlock(ModBlocks.WIRE_COATED.get(), models().getExistingFile(modLoc("block/wire_coated")));
 
 
         blockWithItem(ModBlocks.CONVERTER_BLOCK);

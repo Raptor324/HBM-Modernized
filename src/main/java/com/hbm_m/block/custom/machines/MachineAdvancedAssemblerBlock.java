@@ -13,6 +13,7 @@ import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.util.BlockBreakDropContext;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -106,7 +107,8 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
 
                 // --- ИСПРАВЛЕННАЯ ЛОГИКА ДРОПА ---
                 BlockEntity blockEntity = level.getBlockEntity(pos);
-                if (blockEntity instanceof MachineAdvancedAssemblerBlockEntity) {
+                if (!BlockBreakDropContext.consumeSkipInventoryDrop(pos) &&
+                        blockEntity instanceof MachineAdvancedAssemblerBlockEntity) {
                     // Получаем capability инвентаря
                     blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
                         // Проходимся по всем слотам и выбрасываем их содержимое
@@ -141,6 +143,14 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
             }
         }
         return InteractionResult.sidedSuccess(pLevel.isClientSide());
+    }
+
+    @Override
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide() && player.getAbilities().instabuild) {
+            BlockBreakDropContext.markSkipInventoryDrop(pos);
+        }
+        super.playerWillDestroy(level, pos, state, player);
     }
     
     

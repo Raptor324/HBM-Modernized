@@ -357,7 +357,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
 
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
-        int previousCullFace = GL11.glGetInteger(GL11.GL_CULL_FACE);
+        boolean cullWasEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+        boolean depthTestWasEnabled = GL11.glIsEnabled(GL11.GL_DEPTH_TEST);
+        boolean depthMaskWasEnabled = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
+        int previousDepthFunc = GL11.glGetInteger(GL11.GL_DEPTH_FUNC);
 
         try {
             GL30.glBindVertexArray(vaoId);
@@ -416,9 +419,18 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
 
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             GL30.glBindVertexArray(previousVao);
-            // Убрал polygon offset cleanup
-            // RenderSystem.disablePolygonOffset();
-            RenderSystem.enableCull();
+            RenderSystem.depthMask(depthMaskWasEnabled);
+            RenderSystem.depthFunc(previousDepthFunc);
+            if (depthTestWasEnabled) {
+                RenderSystem.enableDepthTest();
+            } else {
+                RenderSystem.disableDepthTest();
+            }
+            if (cullWasEnabled) {
+                RenderSystem.enableCull();
+            } else {
+                RenderSystem.disableCull();
+            }
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
         }
     }

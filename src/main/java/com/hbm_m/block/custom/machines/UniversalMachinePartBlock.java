@@ -18,6 +18,7 @@ import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.util.BlockBreakDropContext;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -350,6 +351,24 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
             }
         }
         super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
+    }
+
+    @Override
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof IMultiblockPart partBe) {
+            BlockPos controllerPos = partBe.getControllerPos();
+            if (controllerPos != null) {
+                BlockState controllerState = level.getBlockState(controllerPos);
+                if (controllerState.getBlock() instanceof IMultiblockController) {
+                    boolean dropController = !player.getAbilities().instabuild;
+                    if (!dropController) {
+                        BlockBreakDropContext.markSkipInventoryDrop(controllerPos);
+                    }
+                    level.destroyBlock(controllerPos, dropController);
+                }
+            }
+        }
+        super.playerWillDestroy(level, pos, state, player);
     }
 
     

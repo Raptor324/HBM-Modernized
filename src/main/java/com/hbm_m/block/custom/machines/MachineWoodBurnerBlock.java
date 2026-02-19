@@ -7,6 +7,7 @@ import com.hbm_m.block.entity.custom.machines.MachineWoodBurnerBlockEntity;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.util.BlockBreakDropContext;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -112,7 +113,8 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
 
             // Дроп предметов
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof MachineWoodBurnerBlockEntity) {
+            if (!BlockBreakDropContext.consumeSkipInventoryDrop(pos) &&
+                    blockEntity instanceof MachineWoodBurnerBlockEntity) {
                 blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
                     for (int i = 0; i < handler.getSlots(); i++) {
                         Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), handler.getStackInSlot(i));
@@ -140,6 +142,14 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
+    }
+
+    @Override
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide() && player.getAbilities().instabuild) {
+            BlockBreakDropContext.markSkipInventoryDrop(pos);
+        }
+        super.playerWillDestroy(level, pos, state, player);
     }
 
     @Nullable

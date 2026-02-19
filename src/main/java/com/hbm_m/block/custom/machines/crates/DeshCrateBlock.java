@@ -74,6 +74,11 @@ public class DeshCrateBlock extends BaseEntityBlock {
 
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (player.getAbilities().instabuild) {
+            super.playerWillDestroy(level, pos, state, player);
+            return;
+        }
+
         BlockEntity blockEntity = level.getBlockEntity(pos);
 
         if (blockEntity instanceof DeshCrateBlockEntity crateEntity) {

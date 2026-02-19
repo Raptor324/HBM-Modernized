@@ -1,0 +1,14 @@
+{
+  "loader": "forge:separate_transforms",
+  "base": {
+    "parent": "hbm_m:block/wire_coated"
+  },
+  "perspectives": {
+    "gui": {
+      "parent": "minecraft:item/generated",
+      "textures": {
+        "layer0": "hbm_m:item/red_cable_icon"
+      }
+    }
+  }
+}

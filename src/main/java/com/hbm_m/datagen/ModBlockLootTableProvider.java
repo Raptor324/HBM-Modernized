@@ -8,6 +8,7 @@ import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.block.Block;
@@ -16,11 +17,14 @@ import net.minecraft.world.level.storage.loot.LootTable;
 import net.minecraft.world.level.storage.loot.entries.AlternativesEntry;
 import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount;
+import net.minecraft.world.level.storage.loot.functions.CopyNbtFunction;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
+import net.minecraft.world.level.storage.loot.providers.nbt.ContextNbtProvider;
 import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
 import net.minecraft.world.level.storage.loot.predicates.MatchTool;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
+import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
 import java.util.Set;
@@ -32,15 +36,38 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
     }
     @Override
     protected void generate() {
-        // 1) Автоматический dropSelf для ВСЕХ блоков
+        // 1) Базовые лут-таблицы для всех блоков:
+        // - если есть обычный BlockItem -> dropSelf
+        // - если BlockItem нет (registerBlockWithoutItem) -> пробуем дропнуть item с тем же id
         for (RegistryObject<Block> entry : ModBlocks.BLOCKS.getEntries()) {
-            this.dropSelf(entry.get());
+            Block block = entry.get();
+            if (block.asItem() != Items.AIR) {
+                this.dropSelf(block);
+                continue;
+            }
+
+            Item mappedItem = ForgeRegistries.ITEMS.getValue(entry.getId());
+            if (mappedItem != null && mappedItem != Items.AIR) {
+                dropMappedItem(block, mappedItem);
+            } else {
+                // Блок без Item (или без соответствующего id в ITEMS) — явно пустая таблица,
+                // чтобы пройти строгую валидацию datagen.
+                dropEmptyTable(block);
+            }
         }
+
+        // 1.1) Батареи должны сохранять заряд/режимы в BlockEntityTag при дропе.
+        dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY.get());
+        dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY_LITHIUM.get());
+        dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get());
+        dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get());
 
         // 2)  ПЕРЕОПРЕДЕЛЯЕМ для ящиков - ПУСТЫЕ таблицы!
         dropEmptyTable(ModBlocks.CRATE_IRON.get());
         dropEmptyTable(ModBlocks.CRATE_STEEL.get());
         dropEmptyTable(ModBlocks.CRATE_DESH.get());
+        // Фантомные части мультиблока не должны дропаться отдельно.
+        dropEmptyTable(ModBlocks.UNIVERSAL_MACHINE_PART.get());
 
         // 2) ОСОБЫЕ СЛУЧАИ: руды переопределяют свою таблицу
 
@@ -270,6 +297,41 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                         .when(LootItemRandomChanceCondition.randomChance(0.0f))); // 0% шанс!
 
         this.add(block, emptyTable);
+    }
+
+    private void dropMappedItem(Block block, Item item) {
+        LootTable.Builder tableBuilder = LootTable.lootTable()
+                .withPool(
+                        LootPool.lootPool()
+                                .setRolls(ConstantValue.exactly(1.0f))
+                                .setBonusRolls(ConstantValue.exactly(0.0f))
+                                .add(this.applyExplosionDecay(block, LootItem.lootTableItem(item)))
+                );
+        this.add(block, tableBuilder);
+    }
+
+    private void dropMachineBatteryWithNbt(Block block) {
+        LootTable.Builder tableBuilder = LootTable.lootTable()
+                .withPool(
+                        LootPool.lootPool()
+                                .setRolls(ConstantValue.exactly(1.0f))
+                                .setBonusRolls(ConstantValue.exactly(0.0f))
+                                .add(this.applyExplosionDecay(
+                                        block,
+                                        LootItem.lootTableItem(block.asItem())
+                                                .apply(
+                                                        CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY)
+                                                                .copy("Energy", "BlockEntityTag.Energy", CopyNbtFunction.MergeStrategy.REPLACE)
+                                                                .copy("lastEnergy", "BlockEntityTag.lastEnergy", CopyNbtFunction.MergeStrategy.REPLACE)
+                                                                .copy("energyDelta", "BlockEntityTag.energyDelta", CopyNbtFunction.MergeStrategy.REPLACE)
+                                                                .copy("modeOnNoSignal", "BlockEntityTag.modeOnNoSignal", CopyNbtFunction.MergeStrategy.REPLACE)
+                                                                .copy("modeOnSignal", "BlockEntityTag.modeOnSignal", CopyNbtFunction.MergeStrategy.REPLACE)
+                                                                .copy("priority", "BlockEntityTag.priority", CopyNbtFunction.MergeStrategy.REPLACE)
+                                                                .copy("Inventory", "BlockEntityTag.Inventory", CopyNbtFunction.MergeStrategy.REPLACE)
+                                                )
+                                ))
+                );
+        this.add(block, tableBuilder);
     }
     /**
      * Руда тип 1:
