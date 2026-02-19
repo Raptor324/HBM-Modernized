@@ -1,0 +1,13 @@
+{
+    "door_id":"sliding_blast_door",
+    "legacy_model":"hbm_m:block/doors/sliding_blast_door_legacy",
+    "modern_model":{
+        "model":"hbm_m:block/doors/sliding_blast_door_modern",
+        "skins":[
+            {"id":"default","name":"Standard","texture":"hbm_m:block/doors/sliding_blast_door"},
+            {"id":"variant1","name":"Variant 1","texture":"hbm_m:block/doors/sliding_blast_door_variant1_old","model":"hbm_m:block/doors/sliding_blast_door_modern_variant1"},
+            {"id":"variant2","name":"Variant 2","texture":"hbm_m:block/doors/sliding_blast_door_variant2_old","model":"hbm_m:block/doors/sliding_blast_door_modern_variant2"}
+        ]
+    },
+    "default":{"type":"modern","skin":"default"}
+}

@@ -1,12 +1,14 @@
 package com.hbm_m.datagen.assets;
 
 import java.util.LinkedHashMap;
+
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
+
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -45,7 +47,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 
     @Override
     protected void registerModels() {
-        //  ИСПРАВЛЕННЫЙ ЦИКЛ ДЛЯ СЛИТКОВ
+        // ЦИКЛ ДЛЯ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
             RegistryObject<Item> ingotObject = ModItems.getIngot(ingot);
             if (ingotObject != null && ingotObject.isPresent()) {
@@ -53,7 +55,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             }
         }
 
-        //  ИСПРАВЛЕННЫЙ ЦИКЛ ДЛЯ ModPowders (ОСНОВНАЯ ОШИБКА!)
+        // ЦИКЛ ДЛЯ ModPowders
         for (ModPowders powder : ModPowders.values()) {
             RegistryObject<Item> powderObject = ModItems.getPowders(powder);
             if (powderObject != null && powderObject.isPresent()) {
@@ -61,7 +63,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             }
         }
 
-        //  ИСПРАВЛЕННЫЙ ЦИКЛ ДЛЯ ПОРОШКОВ ИЗ СЛИТКОВ
+        // ЦИКЛ ДЛЯ ПОРОШКОВ ИЗ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
             RegistryObject<Item> powder = ModItems.getPowder(ingot);
             if (powder != null && powder.isPresent() && powderTextureExists(ingot.getName())) {
@@ -79,40 +81,40 @@ public class ModItemModelProvider extends ItemModelProvider {
         if (ModItems.DUST_TINY != null && ModItems.DUST_TINY.isPresent()) powderTexture(ModItems.DUST_TINY, "powders/tiny/dust_tiny");
 
         withExistingParent("large_vehicle_door", 
-            modLoc("block/large_vehicle_door"));
+            modLoc("block/doors/large_vehicle_door_modern"));
 
         withExistingParent("round_airlock_door", 
-            modLoc("block/round_airlock_door"));
+            modLoc("block/doors/round_airlock_door_modern"));
 
         withExistingParent("transition_seal", 
-            modLoc("block/transition_seal"));
+            modLoc("block/doors/transition_seal"));
 
         withExistingParent("silo_hatch", 
-            modLoc("block/silo_hatch"));
+            modLoc("block/doors/silo_hatch"));
 
         withExistingParent("silo_hatch_large", 
-            modLoc("block/silo_hatch_large"));
+            modLoc("block/doors/silo_hatch_large"));
 
         withExistingParent("qe_containment_door", 
-            modLoc("block/qe_containment_door"));
+            modLoc("block/doors/qe_containment_door_modern"));
 
         withExistingParent("water_door", 
-            modLoc("block/water_door"));
+            modLoc("block/doors/water_door_modern"));
 
         withExistingParent("fire_door", 
-            modLoc("block/fire_door"));
+            modLoc("block/doors/fire_door_modern"));
 
         withExistingParent("sliding_blast_door", 
-            modLoc("block/sliding_blast_door"));
+            modLoc("block/doors/sliding_blast_door_modern"));
 
         withExistingParent("sliding_seal_door", 
-            modLoc("block/sliding_seal_door"));
+            modLoc("block/doors/sliding_seal_door_modern"));
 
         withExistingParent("secure_access_door", 
-            modLoc("block/secure_access_door"));
+            modLoc("block/doors/secure_access_door_modern"));
 
         withExistingParent("qe_sliding_door", 
-            modLoc("block/qe_sliding_door"));
+            modLoc("block/doors/qe_sliding_door_modern"));
 
         // Door items (flat icons like vanilla doors)
         withExistingParent(ModBlocks.METAL_DOOR.getId().getPath(), "item/generated")
@@ -204,9 +206,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.CAN_OVERCHARGE);
         simpleItem(ModItems.CAN_REDBOMB);
         simpleItem(ModItems.CAN_SMART);
-
-
-
 
         simpleItem(ModItems.GRENADE_NUC);
         simpleItem(ModItems.GRENADE_IF_HE);
@@ -376,8 +375,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.WIRE_GOLD);
         simpleItem(ModItems.WIRE_MAGNETIZED_TUNGSTEN);
         simpleItem(ModItems.WIRE_CARBON);
-
-        //---------------------------------СИЛОВАЯ БРОНЯ---------------------------------//
+        simpleItem(ModItems.ALUMINUM_RAW);
+        simpleItem(ModItems.BERYLLIUM_RAW);
 
         trimmedArmorItem(ModItems.ALLOY_HELMET);
         trimmedArmorItem(ModItems.ALLOY_CHESTPLATE);
@@ -435,7 +434,22 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.GRENADEHE);
         simpleItem(ModItems.GRENADEFIRE);
 
-        ModBlocks.getAnvilBlocks().forEach(this::blockItemFromBlockModel);
+        ModBlocks.getAnvilBlocks().forEach(this::blockItemFromBlockModelMachine);
+        
+        // Регистрация моделей предметов для машин с кастомными 3D моделями
+        blockItemFromBlockModelMachine(ModBlocks.PRESS);
+        blockItemFromBlockModelMachine(ModBlocks.BLAST_FURNACE);
+        blockItemFromBlockModelMachine(ModBlocks.WOOD_BURNER);
+        blockItemFromBlockModelMachine(ModBlocks.CHEMICAL_PLANT);
+        blockItemFromBlockModelMachine(ModBlocks.CENTRIFUGE);
+        blockItemFromBlockModelMachine(ModBlocks.ORE_ACIDIZER);
+        blockItemFromBlockModelMachine(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_ASSEMBLER);
+        blockItemFromBlockModelMachine(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
+        blockItemFromBlockModelMachine(ModBlocks.FLUID_TANK);
+        blockItemFromBlockModel(ModBlocks.DUD_CONVENTIONAL);
+        blockItemFromBlockModel(ModBlocks.DUD_NUKE);
+        blockItemFromBlockModel(ModBlocks.DUD_SALTED);
     };
 
     /**
@@ -461,6 +475,10 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
     }
 
+    private ItemModelBuilder blockItemFromBlockModelMachine(RegistryObject<Block> block) {
+        return withExistingParent(block.getId().getPath(), modLoc("block/machines/" + block.getId().getPath()));
+    }
+
     private ItemModelBuilder blockItemFromBlockModel(RegistryObject<Block> block) {
         return withExistingParent(block.getId().getPath(), modLoc("block/" + block.getId().getPath()));
     }
@@ -482,7 +500,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("layer0", modLoc("item/ingot/" + textureFileName));
     }
 
-    //  ОСНОВНОЕ ИСПРАВЛЕНИЕ - powdersItem с проверкой!
     private void powdersItem(RegistryObject<Item> itemObject) {
         String registrationName = itemObject.getId().getPath();
         String baseName = registrationName.replace("_powder", "");
@@ -515,7 +532,7 @@ public class ModItemModelProvider extends ItemModelProvider {
     }
 
     private void trimmedArmorItem(RegistryObject<Item> itemRegistryObject) {
-        final String MOD_ID = MainRegistry.MOD_ID; // Change this to your mod id
+        final String MOD_ID = MainRegistry.MOD_ID;
 
         if(itemRegistryObject.get() instanceof ArmorItem armorItem) {
             trimMaterials.entrySet().forEach(entry -> {

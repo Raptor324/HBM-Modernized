@@ -1,15 +1,12 @@
 package com.hbm_m.api.fluids;
 
-import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.ModItems;
-import com.hbm_m.main.MainRegistry; // Твой главный класс
+import java.util.function.Consumer;
+import java.util.function.Supplier;
+
+import com.hbm_m.main.MainRegistry;
+
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
-import net.minecraft.world.item.BucketItem;
-import net.minecraft.world.item.Item;
-import net.minecraft.world.item.Rarity;
-import net.minecraft.world.level.block.LiquidBlock;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.FlowingFluid;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
@@ -20,20 +17,15 @@ import net.minecraftforge.fluids.ForgeFlowingFluid;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import org.joml.Vector3f;
-
-import java.util.function.Consumer;
 
 public class ModFluids {
     public static final DeferredRegister<FluidType> FLUID_TYPES = DeferredRegister.create(ForgeRegistries.Keys.FLUID_TYPES, MainRegistry.MOD_ID);
     public static final DeferredRegister<Fluid> FLUIDS = DeferredRegister.create(ForgeRegistries.FLUIDS, MainRegistry.MOD_ID);
-    // Не забудь добавить регистр блоков и предметов, если их еще нет
 
     //=====================================================================================//
-    // 1. Тип Жидкости (свойства: звук, вязкость, плотность)
+    // 1. Тип Жидкости
     //=====================================================================================//
 
-    // 1. Тип Жидкости (свойства: звук, вязкость, плотность)
     public static final RegistryObject<FluidType> CRUDE_OIL_TYPE = FLUID_TYPES.register("crude_oil", () -> new FluidType(
             FluidType.Properties.create()
                     .descriptionId("fluid.hbm_m.crude_oil")
@@ -42,18 +34,10 @@ public class ModFluids {
                     .density(900)
                     .viscosity(2000)
 
-
-
-
-
-
-
     ) {
-        // ВОТ ЗДЕСЬ МАГИЯ: Мы сразу указываем клиентские свойства (текстуры)
         @Override
         public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
             consumer.accept(new IClientFluidTypeExtensions() {
-                // Пути к текстурам
                 private static final ResourceLocation OIL_STILL = new ResourceLocation(MainRegistry.MOD_ID, "block/crude_oil");
                 private static final ResourceLocation OIL_FLOW = new ResourceLocation(MainRegistry.MOD_ID, "block/crude_oil");
 
@@ -69,26 +53,59 @@ public class ModFluids {
 
                 @Override
                 public int getTintColor() {
-                    return 0xFFFFFFFF; // Белый (без окраски)
+                    return 0xFFFFFFFF;
                 }
             });
         }
     });
 
-    // 2. Сама жидкость (Source - источник, Flowing - течение)
-    // Свойства для ForgeFlowingFluid
-    private static final ForgeFlowingFluid.Properties OIL_PROPERTIES = new ForgeFlowingFluid.Properties(
-            CRUDE_OIL_TYPE,
-            ModFluids.CRUDE_OIL_SOURCE,
-            ModFluids.CRUDE_OIL_FLOWING
-    )
-            .bucket(ModItems.CRUDE_OIL_BUCKET);
+    //=====================================================================================//
+    // 2. Suppliers для Fluid (чтобы избежать ошибок инициализации)
+    //=====================================================================================//
 
-    public static final RegistryObject<FlowingFluid> CRUDE_OIL_SOURCE = FLUIDS.register("crude_oil_source",
-            () -> new ForgeFlowingFluid.Source(OIL_PROPERTIES));
+    private static final class OilFluidSuppliers {
+        static final Supplier<Fluid> SOURCE = () -> OilFluids.source;
+        static final Supplier<Fluid> FLOWING = () -> OilFluids.flowing;
+    }
 
-    public static final RegistryObject<FlowingFluid> CRUDE_OIL_FLOWING = FLUIDS.register("crude_oil_flowing",
-            () -> new ForgeFlowingFluid.Flowing(OIL_PROPERTIES));
+    //=====================================================================================//
+    // 3. Holder для Fluid объектов
+    //=====================================================================================//
+
+    private static final class OilFluids {
+        static FlowingFluid source;
+        static FlowingFluid flowing;
+    }
+
+    //=====================================================================================//
+    // 4. Properties (bucket добавляется в ModItems)
+    //=====================================================================================//
+
+    private static ForgeFlowingFluid.Properties createOilProperties() {
+        return new ForgeFlowingFluid.Properties(
+                CRUDE_OIL_TYPE,
+                OilFluidSuppliers.SOURCE,
+                OilFluidSuppliers.FLOWING
+        );
+    }
+
+    //=====================================================================================//
+    // 5. Регистрация Fluid
+    //=====================================================================================//
+
+    public static final RegistryObject<Fluid> CRUDE_OIL_SOURCE = FLUIDS.register("crude_oil_source", () -> {
+        OilFluids.source = new ForgeFlowingFluid.Source(createOilProperties());
+        OilFluids.flowing = new ForgeFlowingFluid.Flowing(createOilProperties());
+        return OilFluids.source;
+    });
+
+    public static final RegistryObject<Fluid> CRUDE_OIL_FLOWING = FLUIDS.register("crude_oil_flowing", () -> {
+        return OilFluids.flowing;
+    });
+
+    //=====================================================================================//
+    // 6. Метод регистрации
+    //=====================================================================================//
 
     public static void register(IEventBus eventBus) {
         FLUID_TYPES.register(eventBus);

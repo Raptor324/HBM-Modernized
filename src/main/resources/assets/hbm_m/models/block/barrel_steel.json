@@ -6,7 +6,7 @@
   "children": {
     "barrel_steel_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/barrel_steel.obj",
+      "model": "hbm_m:models/block/barrel.obj",
       "flip_v": true,
       "textures": {
         "default": "hbm_m:block/barrel_steel"

@@ -1,6 +1,7 @@
 package com.hbm_m.worldgen;
 
 import com.hbm_m.lib.RefStrings;
+
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -23,7 +24,6 @@ public class ModWorldGen {
             DeferredRegister.create(ForgeRegistries.FEATURES, RefStrings.MODID);
 
 
-    //  ПРАВИЛЬНЫЙ УНИВЕРСАЛЬНЫЙ СПОСОБ!
     public static final DeferredRegister<StructureProcessorType<?>> PROCESSORS =
             DeferredRegister.create(Registries.STRUCTURE_PROCESSOR, RefStrings.MODID);
 

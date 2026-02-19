@@ -1,8 +1,14 @@
 package com.hbm_m.event;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.sound.ModSounds;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -18,11 +24,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.registries.RegistryObject;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-@Mod.EventBusSubscriber(modid = "hbm_m", bus = Mod.EventBusSubscriber.Bus.FORGE)
+@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class BombDefuser {
 
     private static final Random RANDOM = new Random();
@@ -30,7 +32,7 @@ public class BombDefuser {
     private static final List<RegistryObject<Block>> BOMBS = List.of(
             ModBlocks.MINE_AP,
             ModBlocks.MINE_FAT,
-            ModBlocks.DUD_FUGAS_TONG,
+            ModBlocks.DUD_CONVENTIONAL,
             ModBlocks.DUD_SALTED,
             ModBlocks.DUD_NUKE
     );
@@ -53,7 +55,7 @@ public class BombDefuser {
                     new DropAmount(ModItems.PLATE_STEEL, 3),
                     new DropAmount(ModItems.BALL_TNT, 2)
             ),
-            ModBlocks.DUD_FUGAS_TONG, List.of(
+            ModBlocks.DUD_CONVENTIONAL, List.of(
                     new DropAmount(ModItems.PLATE_STEEL, 8),
                     new DropAmount(ModItems.BALL_TNT, 16)
             ),

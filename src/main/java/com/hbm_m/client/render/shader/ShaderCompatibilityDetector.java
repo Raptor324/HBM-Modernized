@@ -1,80 +1,102 @@
 package com.hbm_m.client.render.shader;
 
+import java.lang.reflect.Method;
+
 import com.hbm_m.main.MainRegistry;
 
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
 
-import java.lang.reflect.Method;
-
-/**
- * Детектор активных шейдерпаков через Reflection API
- * Вызывается только при событиях перезагрузки ресурсов
- */
 @OnlyIn(Dist.CLIENT)
 public class ShaderCompatibilityDetector {
+
+    private static boolean initialized = false;
+    private static Method irisIsShaderPackInUse = null;
+    private static Method irisIsRenderingShadowPass = null;
+    private static Object irisApiInstance = null;
     
-    /**
-     * Проверяет, активен ли какой-либо шейдерпак
-     * @return true если шейдер активен, false иначе
-     */
+    // Кэш результата для оптимизации внутри одного кадра
+    private static boolean lastState = false;
+    /** Отложенная инвалидация — обрабатывается в ClientTickEvent.END */
+    private static volatile boolean pendingChunkInvalidation = false;
+
+    private static void init() {
+        if (initialized) return;
+        
+        if (ModList.get().isLoaded("oculus") || ModList.get().isLoaded("iris")) {
+            try {
+                Class<?> irisApiClass = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
+                Method getInstanceMethod = irisApiClass.getMethod("getInstance");
+                irisApiInstance = getInstanceMethod.invoke(null);
+                irisIsShaderPackInUse = irisApiClass.getMethod("isShaderPackInUse");
+                irisIsRenderingShadowPass = irisApiClass.getMethod("isRenderingShadowPass");
+                MainRegistry.LOGGER.info("ShaderCompatibilityDetector: API found and cached.");
+            } catch (Exception e) {
+                MainRegistry.LOGGER.error("ShaderCompatibilityDetector: Failed to cache API", e);
+            }
+        }
+        initialized = true;
+    }
+
     public static boolean isExternalShaderActive() {
-        return checkOculusShader() || checkIrisShader();
-    }
-    
-    /**
-     * Проверка Oculus через Reflection API
-     */
-    private static boolean checkOculusShader() {
-        if (!ModList.get().isLoaded("oculus")) {
+        if (!initialized) {
+            init();
+        }
+
+        // Если API не найдено, значит шейдеров точно нет
+        if (irisIsShaderPackInUse == null || irisApiInstance == null) {
             return false;
         }
-        
+
+        // Оптимизация: проверяем только один раз за кадр (Java-side frame counter можно эмулировать временем)
+        // Но даже без этого reflection call быстрый.
         try {
-            // IrisApi - общий API для Oculus и Iris
-            Class<?> irisApiClass = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
-            Method getInstanceMethod = irisApiClass.getMethod("getInstance");
-            Object apiInstance = getInstanceMethod.invoke(null);
+            Boolean inUse = (Boolean) irisIsShaderPackInUse.invoke(irisApiInstance);
+            boolean isActive = inUse != null && inUse;
             
-            Method isShaderPackInUseMethod = irisApiClass.getMethod("isShaderPackInUse");
-            Boolean inUse = (Boolean) isShaderPackInUseMethod.invoke(apiInstance);
-            
-            if (inUse != null && inUse) {
-                MainRegistry.LOGGER.info("Oculus shader pack detected as active");
-                return true;
+            if (isActive != lastState) {
+                MainRegistry.LOGGER.info("Shader state changed: {}", isActive ? "Active" : "Inactive");
+                lastState = isActive;
+                // Откладываем инвалидацию — вызов из render loop ломает итерацию Sodium (wrapped is null)
+                pendingChunkInvalidation = true;
             }
+            return isActive;
         } catch (Exception e) {
-            MainRegistry.LOGGER.debug("Oculus shader detection failed: {}", e.getMessage());
-        }
-        
-        return false;
-    }
-    
-    /**
-     * Проверка Iris (для Fabric порта или совместимости)
-     */
-    private static boolean checkIrisShader() {
-        if (!ModList.get().isLoaded("iris")) {
             return false;
         }
-        
-        try {
-            Class<?> irisApiClass = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
-            Method getInstanceMethod = irisApiClass.getMethod("getInstance");
-            Object apiInstance = getInstanceMethod.invoke(null);
-            
-            Method isShaderPackInUseMethod = irisApiClass.getMethod("isShaderPackInUse");
-            Boolean inUse = (Boolean) isShaderPackInUseMethod.invoke(apiInstance);
-            
-            if (inUse != null && inUse) {
-                MainRegistry.LOGGER.info("Iris shader pack detected as active");
-                return true;
+    }
+
+    /**
+     * Вызывать из ClientTickEvent.END — инвалидирует чанки при смене шейдера.
+     * НЕ вызывать из render loop — ломает итерацию Sodium (ReferenceOpenHashSet.wrapped is null).
+     */
+    public static void processPendingChunkInvalidation() {
+        if (!pendingChunkInvalidation) return;
+        pendingChunkInvalidation = false;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null && mc.levelRenderer != null) {
+            try {
+                mc.levelRenderer.allChanged();
+            } catch (Exception e) {
+                MainRegistry.LOGGER.debug("Chunk invalidation on shader change: {}", e.getMessage());
             }
-        } catch (Exception e) {
-            MainRegistry.LOGGER.debug("Iris shader detection failed: {}", e.getMessage());
         }
-        
-        return false;
+    }
+
+    /**
+     * Проверяет, рендерится ли сейчас shadow pass Iris (для realtime shadows).
+     * Используется для пропуска рендера HBM-моделей в shadow pass — даёт ~2x FPS при включённых тенях.
+     */
+    public static boolean isRenderingShadowPass() {
+        if (!initialized) init();
+        if (irisIsRenderingShadowPass == null || irisApiInstance == null) return false;
+        try {
+            Boolean result = (Boolean) irisIsRenderingShadowPass.invoke(irisApiInstance);
+            return result != null && result;
+        } catch (Exception e) {
+            return false;
+        }
     }
 }

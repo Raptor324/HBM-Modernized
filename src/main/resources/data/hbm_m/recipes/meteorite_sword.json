@@ -1,0 +1,23 @@
+{
+  "type": "minecraft:crafting_shaped",
+  "pattern": [
+    " M ",
+    "PMP",
+    " S "
+  ],
+  "key": {
+    "M": {
+      "item": "hbm_m:meteorite_forged"
+    },
+    "P": {
+      "item": "hbm_m:plate_gold"
+    },
+    "S": {
+      "item": "minecraft:stick"
+    }
+  },
+  "result": {
+    "item": "hbm_m:meteorite_sword",
+    "count": 1
+  }
+}

@@ -18,6 +18,15 @@ import org.joml.Matrix4f;
 public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends BakedModel>
         implements BlockEntityRenderer<T> {
 
+    /**
+     * Получает модель для рендеринга. По умолчанию — из blockstate.
+     * Можно переопределить для выбора модели по данным BlockEntity (например, двери с разными скинами).
+     */
+    protected BakedModel getModel(T blockEntity) {
+        return Minecraft.getInstance().getBlockRenderer()
+            .getBlockModel(blockEntity.getBlockState());
+    }
+
     protected abstract M getModelType(BakedModel rawModel);
     protected abstract Direction getFacing(T blockEntity);
     protected abstract void renderParts(T blockEntity, M model, LegacyAnimator animator, float partialTick,
@@ -49,8 +58,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
             gpuStateSetup = true;
         }
         
-        BakedModel rawModel = Minecraft.getInstance().getBlockRenderer()
-            .getBlockModel(blockEntity.getBlockState());
+        BakedModel rawModel = getModel(blockEntity);
         M model = getModelType(rawModel);
         
         if (model == null) return;
@@ -69,9 +77,6 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
             RT_SOLID.clearRenderState();
             net.minecraft.client.Minecraft.getInstance().gameRenderer.lightTexture().turnOffLightLayer();
             gpuStateSetup = false;
-        }
-        if (com.hbm_m.client.render.shader.RenderPathManager.shouldUseFallback()) {
-            com.hbm_m.client.render.shader.ImmediateFallbackRenderer.endBatch();
         }
     }
 

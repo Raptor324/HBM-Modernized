@@ -522,7 +522,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add(ModBlocks.DUD_SALTED.get(), "Неразорвавшаяся солёная бомба");
                 add(ModBlocks.DUD_NUKE.get(), "Неразорвавшаяся ядерная бомба");
-                add(ModBlocks.DUD_FUGAS_TONG.get(), "Неразорвавшаяся фугасная бомба");
+                add(ModBlocks.DUD_CONVENTIONAL.get(), "Неразорвавшаяся фугасная бомба");
                 add(ModBlocks.MINE_FAT.get(), "Мина 'Толстяк'");
                 add(ModBlocks.MINE_AP.get(), "Противопехотная мина");
                 add(ModItems.GRENADE_NUC.get(), "Ядерная граната");
@@ -1011,6 +1011,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.armor_table", "Стол модификации брони");
                 add("block.hbm_m.machine_assembler", "Сборочная машина (Старая)");
                 add("block.hbm_m.advanced_assembly_machine", "Сборочная машина");
+                add(ModBlocks.FLUID_TANK.get(), "Цистерна");
                 add("block.hbm_m.machine_battery", "Энергохранилище");
 
 
@@ -1068,7 +1069,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.sulfur_ore", "Серная руда");
                 add("block.hbm_m.cobalt_ore", "Кобальтовая руда");
                 add("block.hbm_m.lignite_ore", "Руда бурого угля");
-                add("block.hbm_m.uranium_ore_h", "Обогащённая урановая руда");
+                // add("block.hbm_m.uranium_ore_h", "Обогащённая урановая руда");
                 add("block.hbm_m.uranium_ore_deepslate", "Глубинная урановая руда");
                 add("block.hbm_m.thorium_ore", "Ториевая руда");
                 add("block.hbm_m.thorium_ore_deepslate", "Глубинная ториевая руда");
@@ -1140,8 +1141,12 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("container.inventory", "Инвентарь");
                 add("container.hbm_m.armor_table", "Стол модификации брони");
-                add("container.hbm_m.machine_assembler", "Сборочная машина");
+                add("container.hbm_m.machine_assembler", "Сборочная машина (Старая)");
                 add("container.hbm_m.advanced_assembly_machine", "Сборочная машина");
+                add(ModBlocks.ORE_ACIDIZER.get(), "Рудный окислитель");
+                add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Башня гидроразрыва пласта");
+                add(ModBlocks.CHEMICAL_PLANT.get(), "Химический завод");
+                add(ModBlocks.CENTRIFUGE.get(), "Центрифуга");
                 add("container.hbm_m.wood_burner", "Дровяной генератор");
                 add("container.hbm_m.machine_battery", "Энергохранилище");
                 add("container.hbm_m.press", "Пресс");
@@ -1149,7 +1154,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.anvil", "Наковальня %s");
                 add("container.hbm_m.crate_iron", "Железный ящик");
                 add("container.hbm_m.crate_steel", "Стальной ящик");
-                add("container.hbm_m.crate_desh", "Душ ящик");
+                add("container.hbm_m.crate_desh", "Деш ящик");
 
                 add("gui.hbm_m.battery.priority.0", "Приоритет: Низкий");
                 add("gui.hbm_m.battery.priority.0.desc", "Низший приоритет. Опустошается в первую очередь, заполняется в последнюю");
@@ -1161,6 +1166,29 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("gui.hbm_m.battery.condition.no_signal", "Когда НЕТ редстоун-сигнала:");
                 add("gui.hbm_m.battery.condition.with_signal", "Когда ЕСТЬ редстоун-сигнал:");
+
+                add("gui.hbm_m.door_model_selection.title", "Выбор модели двери");
+                add("door.model_type.hbm_m.legacy", "Классика");
+                add("door.skin.hbm_m.round_airlock_door.default", "Новая");
+                add("door.skin.hbm_m.round_airlock_door.clean", "Чистая");
+                add("door.skin.hbm_m.round_airlock_door.green", "Зелёная");
+                add("door.skin.hbm_m.fire_door.default", "Новая");
+                add("door.skin.hbm_m.fire_door.black", "Чёрная");
+                add("door.skin.hbm_m.fire_door.orange", "Оранжевая");
+                add("door.skin.hbm_m.secure_access_door.default", "Новая");
+                add("door.skin.hbm_m.secure_access_door.gray", "Серая");
+                add("door.skin.hbm_m.sliding_blast_door.default", "Новая");
+                add("door.skin.hbm_m.sliding_blast_door.variant1", "Вариант 1");
+                add("door.skin.hbm_m.sliding_blast_door.variant2", "Вариант 2");
+                add("door.skin.hbm_m.sliding_seal_door.default", "Новая");
+                add("door.skin.hbm_m.large_vehicle_door.default", "Новая");
+                add("door.skin.hbm_m.water_door.default", "Новая");
+                add("door.skin.hbm_m.qe_sliding_door.default", "Новая");
+                add("door.skin.hbm_m.qe_containment_door.default", "Новая");
+
+                add(ModItems.SCREWDRIVER.get(), "Отвёртка");
+                add("tooltip.hbm_m.screwdriver", "Клик ПКМ - настройка конвертера энергии или смена скина двери");
+                add("tooltip.hbm_m.door_skin", "Используй отвёртку, чтобы сменить скин!");
 
                 add("gui.hbm_m.battery.mode.both", "Режим: Приём и Передача");
                 add("gui.hbm_m.battery.mode.both.desc", "Разрешены все операции с энергией.");
@@ -1326,6 +1354,9 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Дистанция для рендеринга динамических частей .obj моделей");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Включить куллинг моделей");
+                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Батчинг частей obj моделей");
+                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations", "Анимации дверей из DAE (COLLADA)");
+                add("text.autoconfig.hbm_m.option.useColladaZUpConversion", "Конвертация Z-up→Y-up для DAE (Blender)");
 
                 add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "Дальность прорисовки VATS");
 
@@ -1374,6 +1405,9 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Дистанция для рендеринга динамических частей .obj моделей (в чанках)");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Включить куллинг моделей (выключите, если ваши модели рендерятся некорректно)");
+                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Использовать батчинговый рендер для частей obj. Сильно повышает производительность рендеринга в бесшейдерном режиме, при проблемах отключите.");
+                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Использовать анимации из DAE для transition_seal и sliding_blast_door. Отключите при проблемах — будет procedural fallback.");
+                add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Конвертировать систему координат Blender (Z-up) в Minecraft (Y-up). Отключите для тестирования.");
 
                 add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip", "Дальность отрисовки полосок здоровья мобов (чанки). Больше значение — дальше видно, но выше нагрузка.");
 
@@ -1707,7 +1741,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("desc.gui.template", "Insert Assembly Template");
                 add("desc.gui.assembler.warning", "No valid template!");
 
-// === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
+                // === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
                 add("tooltip.hbm_m.crowbar.line1", "Tool for prying open containers.");
                 add("tooltip.hbm_m.crowbar.line2", "Opens crates on right-click");
                 add("tooltip.hbm_m.defuser.line1", "Device for disarming mines and bombs");
@@ -2079,7 +2113,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add(ModBlocks.DUD_SALTED.get(), "Unexploded Salted Bomb");
                 add(ModBlocks.DUD_NUKE.get(), "Unexploded Nuclear Bomb");
-                add(ModBlocks.DUD_FUGAS_TONG.get(), "Unexploded High-Explosive Bomb");
+                add(ModBlocks.DUD_CONVENTIONAL.get(), "Unexploded High-Explosive Bomb");
                 add(ModBlocks.MINE_FAT.get(), "FatMan Mine");
                 add(ModBlocks.MINE_AP.get(), "Anti-Personnel Mine");
                 add(ModItems.GRENADE_NUC.get(), "Nuclear Grenade");
@@ -2299,6 +2333,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.armor_table", "Armor Modification Table");
                 add("block.hbm_m.machine_assembler", "Assembly Machine (Legacy)");
                 add("block.hbm_m.advanced_assembly_machine", "Assembly Machine");
+                add(ModBlocks.ORE_ACIDIZER.get(), "Ore Acidizer");
+                add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Hydraulic Fracking Tower");
+                add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant");
+                add(ModBlocks.CENTRIFUGE.get(), "Centrifuge");
+                add(ModBlocks.FLUID_TANK.get(), "Tank");
                 add("block.hbm_m.machine_battery", "Machine Battery");
                 add("block.hbm_m.shredder", "Shredder");
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
@@ -2367,7 +2406,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.asbestos_ore", "Asbestos Ore");
                 add("block.hbm_m.sulfur_ore", "Sulfur Ore");
                 add("block.hbm_m.cobalt_ore", "Cobalt Ore");
-                add("block.hbm_m.uranium_ore_h", "High-Yield Uranium Ore");
+                // add("block.hbm_m.uranium_ore_h", "High-Yield Uranium Ore");
                 add("block.hbm_m.uranium_ore_deepslate", "Deepslate Uranium Ore");
                 add("block.hbm_m.thorium_ore", "Thorium Ore");
                 add("block.hbm_m.thorium_ore_deepslate", "Deepslate Thorium Ore");
@@ -2414,6 +2453,29 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("gui.hbm_m.battery.condition.no_signal", "When there is NO redstone signal:");
                 add("gui.hbm_m.battery.condition.with_signal", "When there IS a redstone signal:");
+
+                add("gui.hbm_m.door_model_selection.title", "Door Model Selection");
+                add("door.model_type.hbm_m.legacy", "Legacy");
+                add("door.skin.hbm_m.round_airlock_door.default", "Standard");
+                add("door.skin.hbm_m.round_airlock_door.clean", "Clean");
+                add("door.skin.hbm_m.round_airlock_door.green", "Green");
+                add("door.skin.hbm_m.fire_door.default", "Standard");
+                add("door.skin.hbm_m.fire_door.black", "Black");
+                add("door.skin.hbm_m.fire_door.orange", "Orange");
+                add("door.skin.hbm_m.secure_access_door.default", "Standard");
+                add("door.skin.hbm_m.secure_access_door.gray", "Gray");
+                add("door.skin.hbm_m.sliding_blast_door.default", "Standard");
+                add("door.skin.hbm_m.sliding_blast_door.variant1", "Variant 1");
+                add("door.skin.hbm_m.sliding_blast_door.variant2", "Variant 2");
+                add("door.skin.hbm_m.sliding_seal_door.default", "Standard");
+                add("door.skin.hbm_m.large_vehicle_door.default", "Standard");
+                add("door.skin.hbm_m.water_door.default", "Standard");
+                add("door.skin.hbm_m.qe_sliding_door.default", "Standard");
+                add("door.skin.hbm_m.qe_containment_door.default", "Standard");
+
+                add(ModItems.SCREWDRIVER.get(), "Screwdriver");
+                add("tooltip.hbm_m.screwdriver", "RMB click - Configure energy converter or change door skin");
+                add("tooltip.hbm_m.door_skin", "Use the screwdriver to change the skin!");
 
                 add("gui.hbm_m.battery.mode.both", "Mode: Input & Output");
                 add("gui.hbm_m.battery.mode.both.desc", "All energy operations are allowed.");
@@ -2579,6 +2641,9 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Distance for .obj model dynamic parts rendering");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Enable model occlusion culling");
+                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Instanced batching for obj model parts");
+                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations", "Door animations from DAE (COLLADA)");
+                add("text.autoconfig.hbm_m.option.useColladaZUpConversion", "Z-up to Y-up conversion for DAE (Blender)");
 
                 add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "VATS render distance (chunks)");
 
@@ -2630,6 +2695,9 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Distance for .obj model dynamic parts rendering (in chunks)");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Enable model occlusion culling (disable if your models are not rendering correctly)");
+                add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Use batch rendering for obj parts. This greatly improves rendering performance in shaderless mode. If you experience issues, disable it");
+                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Use DAE animations for transition_seal and sliding_blast_door. Disable if broken — falls back to procedural.");
+                add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Convert Blender (Z-up) to Minecraft (Y-up) coordinate system. Disable for testing.");
 
                 add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip","Max distance for mob health highlighting. Higher values increase range but reduce performance.");
 

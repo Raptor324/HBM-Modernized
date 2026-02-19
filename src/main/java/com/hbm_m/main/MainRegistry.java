@@ -8,11 +8,13 @@ import org.slf4j.Logger;
 // Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
+
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.custom.machines.armormod.item.ItemArmorMod;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.entity.custom.doors.DoorDeclRegistry;
 import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.client.ClientSetup;
@@ -88,7 +90,7 @@ public class MainRegistry {
 
         IEventBus modEventBus = context.getModEventBus();
         // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS
-        // Добавь эту:
+        DoorDeclRegistry.init();
 
         MinecraftForge.EVENT_BUS.register(new CrateBreaker());
         MinecraftForge.EVENT_BUS.register(new BombDefuser());
@@ -109,8 +111,7 @@ public class MainRegistry {
         registerCapabilities(modEventBus);
 
 
-        //  ЭТА СТРОКА ДОЛЖНА БЫТЬ ПОСЛЕДНЕЙ!
-        ModWorldGen.PROCESSORS.register(modEventBus);  //  ОСТАВИ!
+        ModWorldGen.PROCESSORS.register(modEventBus);
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
@@ -119,6 +120,8 @@ public class MainRegistry {
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new PlayerHandler());
+
+        // Регистрация остальных систем resources
 
         // Инстанцируем ClientSetup, чтобы его конструктор вызвал регистрацию на Forge Event Bus
 
@@ -216,7 +219,7 @@ public class MainRegistry {
             event.accept(ModBlocks.EXPLOSIVE_CHARGE);
             event.accept(ModBlocks.NUCLEAR_CHARGE);
             event.accept(ModBlocks.C4);
-            event.accept(ModBlocks.DUD_FUGAS_TONG);
+            event.accept(ModBlocks.DUD_CONVENTIONAL);
             event.accept(ModBlocks.DUD_NUKE);
             event.accept(ModBlocks.DUD_SALTED);
 
@@ -347,6 +350,44 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.BILLET_SILICON.get()));
             event.accept(new ItemStack(ModItems.BILLET_PLUTONIUM.get()));
             event.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
+
+
+
+            // Crystals (textures/crystall/*.png)
+            event.accept(new ItemStack(ModItems.CRYSTAL_ALUMINIUM.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_BERYLLIUM.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_CHARRED.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_CINNEBAR.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_COAL.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_COBALT.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_COPPER.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_DIAMOND.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_FLUORITE.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_GOLD.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_HARDENED.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_HORN.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_IRON.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_LAPIS.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_LEAD.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_LITHIUM.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_NITER.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_OSMIRIDIUM.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_PHOSPHORUS.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_PLUTONIUM.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_PULSAR.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_RARE.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_REDSTONE.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_SCHRABIDIUM.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_SCHRARANIUM.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_STARMETAL.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_SULFUR.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_THORIUM.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_TITANIUM.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_TRIXITE.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_TUNGSTEN.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_URANIUM.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_VIRUS.get()));
+            event.accept(new ItemStack(ModItems.CRYSTAL_XEN.get()));
                   
 
             // СЛИТКИ
@@ -579,6 +620,7 @@ public class MainRegistry {
             event.accept(ModBlocks.LEAD_ORE_DEEPSLATE);
             event.accept(ModBlocks.CINNABAR_ORE);
             event.accept(ModBlocks.CINNABAR_ORE_DEEPSLATE);
+            event.accept(ModBlocks.URANIUM_ORE);
             event.accept(ModBlocks.URANIUM_ORE_DEEPSLATE);
 
             event.accept(ModBlocks.RESOURCE_ASBESTOS);
@@ -636,15 +678,6 @@ public class MainRegistry {
                         }
                     }
                 }
-            }
-            if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added uranium block to NTM Resources tab");
-                LOGGER.info("Added polonium210 block to NTM Resources tab");
-                LOGGER.info("Added plutonium block to NTM Resources tab");
-                LOGGER.info("Added plutonium fuel block to NTM Resources tab");
-                LOGGER.info("Added uranium ore to NTM Resources tab");
-                LOGGER.info("Added waste leaves block to NTM Resources tab");
-                LOGGER.info("Added waste grass block to NTM Resources tab");
             }
         }
 
@@ -894,6 +927,7 @@ public class MainRegistry {
             event.accept(ModBlocks.CRT_BSOD);
             event.accept(ModBlocks.TOASTER);
             event.accept(ModBlocks.BARREL_PINK);
+            event.accept(ModBlocks.BARREL_RED);
             event.accept(ModBlocks.BARREL_LOX);
             event.accept(ModBlocks.BARREL_YELLOW);
             event.accept(ModBlocks.BARREL_VITRIFIED);
@@ -922,6 +956,8 @@ public class MainRegistry {
 
         // ИНСТРУМЕНТЫ
         if (event.getTab() == ModCreativeTabs.NTM_INSTRUMENTS_TAB.get()) {
+            event.accept(ModItems.METEORITE_SWORD);
+            event.accept(ModItems.METEORITE_SWORD_SEARED);
 
 
             // БРОНЯ
@@ -1015,6 +1051,7 @@ public class MainRegistry {
             //СПЕЦ. ИНСТРУМЕНТЫ
             event.accept(ModItems.DEFUSER);
             event.accept(ModItems.CROWBAR);
+            event.accept(ModItems.SCREWDRIVER);
 
             event.accept(ModItems.DOSIMETER);
             event.accept(ModItems.GEIGER_COUNTER);
@@ -1049,6 +1086,10 @@ public class MainRegistry {
             event.accept(ModBlocks.BLAST_FURNACE_EXTENSION);
             event.accept(ModBlocks.SHREDDER);
             event.accept(ModBlocks.WOOD_BURNER);
+            event.accept(ModBlocks.CHEMICAL_PLANT);
+            event.accept(ModBlocks.CENTRIFUGE);
+            event.accept(ModBlocks.ORE_ACIDIZER);
+            event.accept(ModItems.HYDRAULIC_FRACKINING_TOWER);
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.ARMOR_TABLE);

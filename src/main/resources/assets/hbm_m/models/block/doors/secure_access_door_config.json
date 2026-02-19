@@ -1,0 +1,12 @@
+{
+    "door_id":"secure_access_door",
+    "legacy_model":"hbm_m:block/doors/secure_access_door_legacy",
+    "modern_model":{
+        "model":"hbm_m:block/doors/secure_access_door_modern",
+        "skins":[
+            {"id":"default","name":"Standard","texture":"hbm_m:block/doors/secure_access_door"},
+            {"id":"gray","name":"Gray","texture":"hbm_m:block/doors/secure_access_door_gray","model":"hbm_m:block/doors/secure_access_door_modern_gray"}
+        ]
+    },
+    "default":{"type":"modern","skin":"default"}
+}

@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "hbm_m:titanium_ore",
+    "hbm_m:titanium_ore_deepslate"
+  ]
+}
