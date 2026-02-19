@@ -30,6 +30,9 @@ bin/
 AGENTS.md
 *.diff
 /plans
+/plans
+.cursorignore
+
 # ================= Logs & Temporary Files =================
 # Логи, дампы ошибок и временные файлы.
 *.log
@@ -59,6 +62,7 @@ forge*changelog.txt
 .gitignore
 .cursor/
 desktop.ini
+AGENTS.md
+libs/
+.gitignore
 HBM-Modernized.code-workspace
-libs
-.cursorignore
