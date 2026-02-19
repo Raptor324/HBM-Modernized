@@ -1,7 +1,17 @@
 package com.hbm_m.block.entity.custom.machines;
 
-import com.hbm_m.api.energy.*;
+import java.util.List;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.api.energy.EnergyNetworkManager;
+import com.hbm_m.api.energy.IEnergyConnector;
+import com.hbm_m.api.energy.IEnergyProvider;
+import com.hbm_m.api.energy.IEnergyReceiver;
+import com.hbm_m.api.energy.PackedEnergyCapabilityProvider;
 import com.hbm_m.capability.ModCapabilities;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -22,10 +32,6 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 /**
  * Базовый класс для всех машин с энергией.
@@ -56,7 +62,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     private final PackedEnergyCapabilityProvider feCapabilityProvider;
 
     /**
-     * ✅ ОСНОВНОЙ КОНСТРУКТОР для машин-потребителей.
+     *  ОСНОВНОЙ КОНСТРУКТОР для машин-потребителей.
      * По умолчанию, maxExtract = 0, потому что нехуй высасывать энергию из того, что
      * должно её жрать. Машина - не батарейка. Запомни это, или я приду к тебе во сне.
      */
@@ -66,7 +72,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     }
 
     /**
-     * ✅ ПОЛНЫЙ КОНСТРУКТОР. Используй это только для тех ебанутых случаев, когда
+     *  ПОЛНЫЙ КОНСТРУКТОР. Используй это только для тех ебанутых случаев, когда
      * машина должна ВДРУГ начать отдавать энергию. Для батарей, например.
      * Хотя ты же сказал, что они ничего не наследуют. Ну, пусть будет. На всякий.
      */

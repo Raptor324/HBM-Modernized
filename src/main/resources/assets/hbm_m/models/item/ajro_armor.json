@@ -1,0 +1,11 @@
+{
+  "loader": "hbm_m:ajr_armor_parts",
+  "model": "hbm_m:models/armor/ajr.obj",
+  "textures": {
+    "helmet": "hbm_m:block/armor/ajro_helmet",
+    "chest": "hbm_m:block/armor/ajro_chest",
+    "arm": "hbm_m:block/armor/ajro_arm",
+    "leg": "hbm_m:block/armor/ajro_leg"
+  }
+}
+

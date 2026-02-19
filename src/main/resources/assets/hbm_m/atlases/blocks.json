@@ -1,14 +1,7 @@
 {
-    "sources": [
-      {
-        "type": "directory",
-        "source": "block/machine",
-        "prefix": "block/machine/"
-      },
-      {
-        "type": "single",
-        "resource": "hbm_m:block/machine/assembly_machine"
-      }
-    ]
-  }
-  
+  "sources": [
+    { "type": "directory", "source": "block/armor", "prefix": "block/armor/" },
+    { "type": "single", "resource": "hbm_m:armor/bismuth" }
+  ]
+}
+

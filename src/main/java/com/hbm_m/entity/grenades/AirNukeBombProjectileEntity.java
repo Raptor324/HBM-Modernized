@@ -1,23 +1,28 @@
 package com.hbm_m.entity.grenades;
 
-import com.hbm_m.block.custom.explosives.IDetonatable;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.custom.explosives.IDetonatable;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModExplosionParticles;
-import com.hbm_m.particle.explosions.ExplosionParticleUtils;
+import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.util.explosions.nuclear.CraterGenerator;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.server.TickTask;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
@@ -29,17 +34,13 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
-
 /**
- * ✅ АВИАБОМБА v4
+ *  АВИАБОМБА v4
  *
  * Улучшения:
- * ✅ Полностью динамический размер кратера
- * ✅ Радиус определяется ТОЛЬКО силой пробития лучей
- * ✅ Синхронизация лучей исправлена
+ *  Полностью динамический размер кратера
+ *  Радиус определяется ТОЛЬКО силой пробития лучей
+ *  Синхронизация лучей исправлена
  */
 public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
 
@@ -140,16 +141,16 @@ public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
 
             this.discard();
 
-            // ✅ ЯДЕРНЫЙ ВЗРЫВ: сначала эффекты, потом кратер
+            //  ЯДЕРНЫЙ ВЗРЫВ: сначала эффекты, потом кратер
             triggerNearbyDetonations(serverLevel, pos, null);
             dealExplosionDamage(serverLevel, x, y, z);
             scheduleExplosionEffects(serverLevel, x, y, z);
             playDetonationSound(serverLevel, pos);
 
-            // ✅ ОСНОВНОЙ ЯДЕРНЫЙ ВЗРЫВ (без разрушения блоков)
+            //  ОСНОВНОЙ ЯДЕРНЫЙ ВЗРЫВ (без разрушения блоков)
             serverLevel.explode(null, x, y, z, EXPLOSION_POWER, Level.ExplosionInteraction.NONE);
 
-            // ✅ ГЕНЕРАТОР КРАТЕРА (радиус определяется лучами!)
+            //  ГЕНЕРАТОР КРАТЕРА (радиус определяется лучами!)
             if (serverLevel.getServer() != null) {
                 serverLevel.getServer().tell(new TickTask(CRATER_GENERATION_DELAY, () -> {
                     CraterGenerator.generateCrater(
@@ -184,20 +185,20 @@ public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
     }
 
     private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
-        // ✅ Flash
+        //  Flash
         level.sendParticles(
                 (SimpleParticleType) ModExplosionParticles.FLASH.get(),
                 x, y, z, 1, 0, 0, 0, 0
         );
 
-        // ✅ Sparks
+        //  Sparks
         ExplosionParticleUtils.spawnAirBombSparks(level, x, y, z);
 
-        // ✅ Shockwave через 3 тика
+        //  Shockwave через 3 тика
         level.getServer().tell(new TickTask(3, () ->
                 ExplosionParticleUtils.spawnAirBombShockwave(level, x, y, z)));
 
-        // ✅ Mushroom Cloud через 8 тиков
+        //  Mushroom Cloud через 8 тиков
         level.getServer().tell(new TickTask(8, () ->
                 ExplosionParticleUtils.spawnAirBombMushroomCloud(level, x, y, z)));
     }

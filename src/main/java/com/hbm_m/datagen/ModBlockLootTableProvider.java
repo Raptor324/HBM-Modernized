@@ -37,7 +37,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
             this.dropSelf(entry.get());
         }
 
-        // 2) ✅ ПЕРЕОПРЕДЕЛЯЕМ для ящиков - ПУСТЫЕ таблицы!
+        // 2)  ПЕРЕОПРЕДЕЛЯЕМ для ящиков - ПУСТЫЕ таблицы!
         dropEmptyTable(ModBlocks.CRATE_IRON.get());
         dropEmptyTable(ModBlocks.CRATE_STEEL.get());
         dropEmptyTable(ModBlocks.CRATE_DESH.get());

@@ -1,0 +1,24 @@
+newmtl Helmet
+map_Kd hbm_m:block/armor/t51_helmet
+
+newmtl Chest
+map_Kd hbm_m:block/armor/t51_chest
+
+newmtl LeftArm
+map_Kd hbm_m:block/armor/t51_arm
+
+newmtl RightArm
+map_Kd hbm_m:block/armor/t51_arm
+
+newmtl LeftLeg
+map_Kd hbm_m:block/armor/t51_leg
+
+newmtl RightLeg
+map_Kd hbm_m:block/armor/t51_leg
+
+newmtl LeftBoot
+map_Kd hbm_m:block/armor/t51_leg
+
+newmtl RightBoot
+map_Kd hbm_m:block/armor/t51_leg
+

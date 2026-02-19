@@ -1,6 +1,37 @@
 {
-    "parent": "item/generated",
-    "textures": {
-        "layer0": "hbm_m:item/ajr_helmet"
+  "loader": "hbm_m:ajr_armor_parts",
+  "model": "hbm_m:models/armor/ajr.obj",
+  "textures": {
+    "helmet": "hbm_m:block/armor/ajr_helmet",
+    "chest": "hbm_m:block/armor/ajr_chest",
+    "arm": "hbm_m:block/armor/ajr_arm",
+    "leg": "hbm_m:block/armor/ajr_leg"
+  },
+  "display": {
+    "gui": {
+      "rotation": [ 0, 180, 0 ],
+      "translation": [ -0.5, 4.5, 0 ],
+      "scale": [ 0.06, 0.06, 0.06 ]
+    },
+    "ground": {
+      "rotation": [ 0, 0, 0 ],
+      "translation": [ 0, 3, 0 ],
+      "scale": [ 0.05, 0.05, 0.05 ]
+    },
+    "fixed": {
+      "rotation": [ 0, 0, 0 ],
+      "translation": [ 0, 0, 0 ],
+      "scale": [ 0.05, 0.05, 0.05 ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [ 75, 45, 0 ],
+      "translation": [ 0, 2.5, 0 ],
+      "scale": [ 0.02, 0.02, 0.02 ]
+    },
+    "firstperson_righthand": {
+      "rotation": [ 0, 45, 0 ],
+      "translation": [ 2, 1, 0 ],
+      "scale": [ 0.03, 0.03, 0.03 ]
     }
+  }
 }

@@ -1,7 +1,10 @@
 package com.hbm_m.block.entity.custom.crates;
 
-import com.hbm_m.block.entity.ModBlockEntities;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.menu.SteelCrateMenu;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -17,16 +20,14 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.ItemStackHandler;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * BlockEntity для Steel Crate (54 слота)
- * ✅ ТОЧНАЯ КОПИЯ IronCrateBlockEntity с 54 слотами
+ *  ТОЧНАЯ КОПИЯ IronCrateBlockEntity с 54 слотами
  */
 public class SteelCrateBlockEntity extends BlockEntity implements MenuProvider {
 
-    private static final int SLOTS = 54; // ✅ 54 СЛОТА ДЛЯ STEEL
+    private static final int SLOTS = 54; //  54 СЛОТА ДЛЯ STEEL
 
     private final ItemStackHandler itemHandler = new ItemStackHandler(SLOTS) {
         @Override
@@ -43,11 +44,11 @@ public class SteelCrateBlockEntity extends BlockEntity implements MenuProvider {
     private LazyOptional<ItemStackHandler> lazyItemHandler = LazyOptional.empty();
 
     public SteelCrateBlockEntity(BlockPos pos, BlockState state) {
-        // ✅ ТОЧНО КАК В IRON
+        //  ТОЧНО КАК В IRON
         super(com.hbm_m.block.entity.ModBlockEntities.STEEL_CRATE_BE.get(), pos, state);
     }
 
-    // ✅ ТОЧНО КАК В IRON
+    //  ТОЧНО КАК В IRON
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
@@ -56,28 +57,28 @@ public class SteelCrateBlockEntity extends BlockEntity implements MenuProvider {
         return super.getCapability(cap, side);
     }
 
-    // ✅ ТОЧНО КАК В IRON
+    //  ТОЧНО КАК В IRON
     @Override
     public void onLoad() {
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
     }
 
-    // ✅ ТОЧНО КАК В IRON
+    //  ТОЧНО КАК В IRON
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
         lazyItemHandler.invalidate();
     }
 
-    // ✅ ТОЧНО КАК В IRON
+    //  ТОЧНО КАК В IRON
     @Override
     protected void saveAdditional(CompoundTag tag) {
         tag.put("inventory", itemHandler.serializeNBT());
         super.saveAdditional(tag);
     }
 
-    // ✅ ТОЧНО КАК В IRON
+    //  ТОЧНО КАК В IRON
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
@@ -117,7 +118,7 @@ public class SteelCrateBlockEntity extends BlockEntity implements MenuProvider {
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        // ✅ SteelCrateMenu вместо IronCrateMenu
+        //  SteelCrateMenu вместо IronCrateMenu
         return new SteelCrateMenu(containerId, playerInventory, this);
     }
 

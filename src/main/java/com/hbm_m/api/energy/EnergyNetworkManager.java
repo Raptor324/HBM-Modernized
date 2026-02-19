@@ -1,17 +1,25 @@
 package com.hbm_m.api.energy;
 
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.LinkedList;
+import java.util.Queue;
+import java.util.Set;
+
+import javax.annotation.Nullable;
+
+import org.slf4j.Logger;
+
 import com.google.common.collect.Sets;
 import com.mojang.logging.LogUtils;
-import it.unimi.dsi.fastutil.longs.*;
+
+import it.unimi.dsi.fastutil.longs.Long2ObjectMap;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.saveddata.SavedData;
-import org.slf4j.Logger;
-
-import javax.annotation.Nullable;
-import java.util.*;
 
 public class EnergyNetworkManager extends SavedData {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -51,7 +59,7 @@ public class EnergyNetworkManager extends SavedData {
     }
 
     /**
-     * ✅ НОВЫЙ МЕТОД: Полностью перестраивает все сети.
+     *  НОВЫЙ МЕТОД: Полностью перестраивает все сети.
      * Вызывается при загрузке мира, чтобы исправить любые сломанные состояния.
      */
 

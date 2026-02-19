@@ -268,6 +268,16 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_leggings", "Поножи из звёздного металла");
                 add("item.hbm_m.starmetal_boots", "Ботинки из звёздного металла");
 
+                add("item.hbm_m.t51_helmet", "Шлем силовой брони T-51b");
+                add("item.hbm_m.t51_chestplate", "Нагрудник силовой брони T-51b");
+                add("item.hbm_m.t51_leggings", "Поножи силовой брони T-51b");
+                add("item.hbm_m.t51_boots", "Ботинки силовой брони T-51b");
+
+                add("item.hbm_m.bismuth_helmet", "Висмутовый шлем силовой брони");
+                add("item.hbm_m.bismuth_chestplate", "Висмутовый нагрудник силовой брони");
+                add("item.hbm_m.bismuth_leggings", "Висмутовые поножи силовой брони");
+                add("item.hbm_m.bismuth_boots", "Висмутовые ботинки силовой брони");
+
                 add("item.hbm_m.geiger_counter", "Счетчик Гейгера");
                 add("item.hbm_m.dosimeter", "Дозиметр");
                 add("item.hbm_m.battery_creative", "Бесконечная батарейка");
@@ -419,7 +429,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
 // MULTI DETONATOR TOOLTIPS
                 add("tooltip.hbm_m.multi_detonator.active_point", "➤ %s:");
-                add("tooltip.hbm_m.multi_detonator.point_set", "✅ %s:");
+                add("tooltip.hbm_m.multi_detonator.point_set", " %s:");
                 add("tooltip.hbm_m.multi_detonator.coordinates", "   %d, %d, %d");
                 add("tooltip.hbm_m.multi_detonator.point_empty", "○ Точка %d:");
                 add("tooltip.hbm_m.multi_detonator.not_set", "   Не установлена");
@@ -1092,6 +1102,41 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.armor_table.casing_slot", "Обшивка");
                 add("tooltip.hbm_m.armor_table.servos_slot", "Сервоприводы");
 
+                // POWER ARMOR CONTROLS
+                add("key.hbm_m.power_armor_dash", "Рывок силовой брони");
+                add("key.hbm_m.power_armor_vats", "VATS силовой брони");
+                add("key.hbm_m.power_armor_thermal", "Тепловизор силовой брони");
+
+                add("hud.hbm_m.vats.on", "HUD: ON");
+                add("hud.hbm_m.vats.off", "HUD: OFF");
+                add("hud.hbm_m.thermal.on", "Тепловизор: ON");
+                add("hud.hbm_m.thermal.off", "Тепловизор: OFF");
+                add("hud.hbm_m.thermal.warning", "Внимание: шейдерная версия тепловизора экспериментальная и может быть нестабильной. В случае проблем переключитесь на более простую версию в конфиге (Alt + 0, вкладка Рендеринг). Чтобы включить тепловизор, нажмите еще раз. Это сообщение больше не будет показано для данного мира.");
+                add("hud.hbm_m.dash.perform", "Рывок выполнен");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode", "Режим рендера тепловизора");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode.@Tooltip", "Выберите способ рендера тепловизора.");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode.FULL_SHADER", "Полный шейдер");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode.ORIGINAL_FALLBACK", "Спектральный фолбэк");
+
+                // ARMOR BATTERIES
+                add("item.hbm_m.armor_battery", "Батарея брони");
+                add("item.hbm_m.armor_battery_mk2", "Батарея брони MK2");
+                add("item.hbm_m.armor_battery_mk3", "Батарея брони MK3");
+
+                // ARMOR MODIFICATIONS
+                add("tooltip.hbm_m.mod.servos.description", "Увеличивает скорость движения");
+                add("tooltip.hbm_m.mod.servos.effect", "+Скорость движения");
+                add("tooltip.hbm_m.mod.cladding.description", "Защищает от коррозии и повреждений");
+                add("tooltip.hbm_m.mod.cladding.effect", "+Защита от коррозии");
+                add("tooltip.hbm_m.mod.kevlar.description", "Увеличивает защиту от пуль");
+                add("tooltip.hbm_m.mod.kevlar.effect", "+Защита от пуль");
+                add("tooltip.hbm_m.mod.extra.description", "Расширяет возможности брони");
+                add("tooltip.hbm_m.mod.extra.effect", "+Дополнительные возможности");
+                add("tooltip.hbm_m.mod.battery.description", "Увеличивает емкость батареи");
+                add("tooltip.hbm_m.mod.battery.effect", "+25% емкость батареи");
+                add("tooltip.hbm_m.mod.battery_mk2.effect", "+50% емкость батареи");
+                add("tooltip.hbm_m.mod.battery_mk3.effect", "+100% емкость батареи");
+
                 add("tooltip.hbm_m.rad_protection.value", "Сопротивление радиации: %s");
 
                 add("container.inventory", "Инвентарь");
@@ -1211,6 +1256,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 
                 add("sounds.hbm_m.geiger_counter", "Щелчки счетчика Гейгера");
                 add("sounds.hbm_m.tool.techboop", "Пик счетчика Гейгера");
+                add("sounds.hbm_m.thermal_vision_on", "Включение тепловизора");
+                add("sounds.hbm_m.thermal_vision_off", "Выключение тепловизора");
                 
                 add("commands.hbm_m.rad.cleared", "Радиация очищена у %s игроков.");
                 add("commands.hbm_m.rad.cleared.self", "Ваша радиация очищена.");
@@ -1219,7 +1266,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("commands.hbm_m.rad.removed", "Убрано %s радиации у %s игроков.");
                 add("commands.hbm_m.rad.removed.self", "У вас убрано %s радиации.");
 
+                // СООБЩЕНИЯ О СМЕРТИ
                 add("death.attack.radiation", "Игрок %s умер от лучевой болезни");
+                add("death.attack.hardlanding_smash", "%1$s был раздавлен в лепешку %2$s");
+
                 add("advancements.hbm_m.radiation_200.title", "Ура, Радиация!");
                 add("advancements.hbm_m.radiation_200.description", "Достигнуть уровня радиации в 200 РАД");
                 add("advancements.hbm_m.radiation_1000.title", "Ай, Радиация!");
@@ -1272,19 +1322,21 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.category.overlay", "Экранные наложения");
 
-                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect", "Экранный эффект радиационных помех");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold", "Порог срабатывания эффекта");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad", "Максимальная интенсивность эффекта");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots", "Макс. количество пикселей");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance", "Шанс зеленого пикселя");
-                add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime", "Мин. время жизни пикселя");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime", "Макс. время жизни пикселя");
-                add("text.autoconfig.hbm_m.option.enableObstructionHighlight", "Включить подсветку препятствий");
-                add("text.autoconfig.hbm_m.option.enableObstructionHighlight.@Tooltip", "Если включено, блоки, мешающие размещению мультиблока, \nбудут подсвечиваться красной рамкой.");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightDuration", "Длительность подсветки (сек)");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightDuration.@Tooltip", "Время в секундах, в течение которого будет видна подсветка препятствий.");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha", "Непрозрачность подсветки препятствий");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha.@Tooltip", "Устанавливает непрозрачность заливки подсветки.\n0% = Невидимая, 100% = Непрозрачная.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect", "Экранные помехи от радиации");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.enableRadiationPixelEffect", "Экранный эффект радиационных помех");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectThreshold", "Порог срабатывания эффекта");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxIntensityRad", "Максимальная интенсивность эффекта");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectMaxDots", "Макс. количество пикселей");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectGreenChance", "Шанс зеленого пикселя");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMinLifetime", "Мин. время жизни пикселя");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxLifetime", "Макс. время жизни пикселя");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight", "Подсветка препятствий мультиблоков");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.enableObstructionHighlight", "Включить подсветку препятствий");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.enableObstructionHighlight.@Tooltip", "Если включено, блоки, мешающие размещению мультиблока, \nбудут подсвечиваться красной рамкой.");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightDuration", "Длительность подсветки (сек)");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightDuration.@Tooltip", "Время в секундах, в течение которого будет видна подсветка препятствий.");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightAlpha", "Непрозрачность подсветки препятствий");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightAlpha.@Tooltip", "Устанавливает непрозрачность заливки подсветки.\n0% = Невидимая, 100% = Непрозрачная.");
 
                 add("text.autoconfig.hbm_m.category.chunk", "Чанк");
                 
@@ -1305,6 +1357,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Батчинг частей obj моделей");
                 add("text.autoconfig.hbm_m.option.useColladaDoorAnimations", "Анимации дверей из DAE (COLLADA)");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion", "Конвертация Z-up→Y-up для DAE (Blender)");
+
+                add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "Дальность прорисовки VATS");
 
                 add("text.autoconfig.hbm_m.category.debug", "Отладка");
 
@@ -1327,13 +1381,17 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radConfusion.@Tooltip", "Порог для эффекта замешательства (WIP)");
                 add("text.autoconfig.hbm_m.option.radBlindness.@Tooltip", "Порог для эффекта слепоты");
 
-                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect.@Tooltip", "Включает/выключает эффект случайных мерцающих пикселей на экране, когда игрок подвергается радиационному облучению.");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold.@Tooltip", "Минимальный уровень входящей радиации (в RAD/с), при котором начинает появляться эффект визуальных помех.");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad.@Tooltip", "Уровень входящей радиации (в RAD/с), при котором эффект помех достигает своей максимальной силы (максимальное количество пикселей).");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots.@Tooltip", "Максимальное количество пикселей, которое может одновременно находиться на экране при пиковой интенсивности эффекта. Влияет на производительность на слабых системах.");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance.@Tooltip", "Вероятность (от 0.0 до 1.0), что новый появившийся пиксель будет зеленым, а не белым. Например, 0.1 = 10% шанс.");
-                add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime.@Tooltip", "Минимальное время (в тиках), которое один пиксель будет оставаться на экране. 20 тиков = 1 секунда.");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime.@Tooltip", "Максимальное время (в тиках), которое один пиксель будет оставаться на экране. Для каждого пикселя выбирается случайное значение между минимальным и максимальным временем жизни.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.enableRadiationPixelEffect.@Tooltip", "Включает/выключает эффект случайных мерцающих пикселей на экране, когда игрок подвергается радиационному облучению.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectThreshold.@Tooltip", "Минимальный уровень входящей радиации (в RAD/с), при котором начинает появляться эффект визуальных помех.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxIntensityRad.@Tooltip", "Уровень входящей радиации (в RAD/с), при котором эффект помех достигает своей максимальной силы (максимальное количество пикселей).");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectMaxDots.@Tooltip", "Максимальное количество пикселей, которое может одновременно находиться на экране при пиковой интенсивности эффекта. Влияет на производительность на слабых системах.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectGreenChance.@Tooltip", "Вероятность (от 0.0 до 1.0), что новый появившийся пиксель будет зеленым, а не белым. Например, 0.1 = 10% шанс.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMinLifetime.@Tooltip", "Минимальное время (в тиках), которое один пиксель будет оставаться на экране. 20 тиков = 1 секунда.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxLifetime.@Tooltip", "Максимальное время (в тиках), которое один пиксель будет оставаться на экране. Для каждого пикселя выбирается случайное значение между минимальным и максимальным временем жизни.");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetX", "Положение подсказки: отступ слева");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetY", "Положение подсказки: отступ сверху");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetX.@Tooltip", "Расстояние от левого края экрана.");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetY.@Tooltip", "Расстояние от верхнего края экрана.");
 
                 add("text.autoconfig.hbm_m.option.maxRad.@Tooltip", "Максимальная радиация в чанке");
                 add("text.autoconfig.hbm_m.option.fogRad.@Tooltip", "Порог радиации для появления тумана (WIP)");
@@ -1351,11 +1409,30 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Использовать анимации из DAE для transition_seal и sliding_blast_door. Отключите при проблемах — будет procedural fallback.");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Конвертировать систему координат Blender (Z-up) в Minecraft (Y-up). Отключите для тестирования.");
 
+                add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip", "Дальность отрисовки полосок здоровья мобов (чанки). Больше значение — дальше видно, но выше нагрузка.");
+
                 add("text.autoconfig.hbm_m.option.enableDebugRender.@Tooltip", "Показывать отладочный оверлей радиации в чанках (F3)");
                 add("text.autoconfig.hbm_m.option.debugRenderTextSize.@Tooltip", "Размер текста для отладочного оверлея");
                 add("text.autoconfig.hbm_m.option.debugRenderDistance.@Tooltip", "Дальность отладочного рендеринга (чанки)");
                 add("text.autoconfig.hbm_m.option.debugRenderInSurvival.@Tooltip", "Показывать отладочный рендер в режиме выживания");
                 add("text.autoconfig.hbm_m.option.enableDebugLogging.@Tooltip", "Если выключено, будет активно глубокое логгирование игровых событий. Не стоит включать, если не испытываете проблем");
+
+                // FSB ARMOR TOOLTIPS
+                add("tooltip.hbm_m.fsb_bonus", "Бонусы полного набора брони:");
+                add("tooltip.hbm_m.fsb_resistances", "Сопротивления при полном наборе брони:");
+                add("tooltip.hbm_m.res.fire", "Огню");
+                add("tooltip.hbm_m.res.phys", "Физическому");
+                add("tooltip.hbm_m.res.expl", "Взрывам");
+                add("tooltip.hbm_m.res.fall", "Падению");
+                add("tooltip.hbm_m.res.proj", "Лазерам");
+                add("tooltip.hbm_m.res.other", "Прочему");
+                add("armor.fsb.geigerCounter", "Звуковой счётчик Гейгера");
+                add("armor.fsb.geigerHUD", "HUD счётчика Гейгера");
+                add("armor.fsb.vats", "Детектор врагов");
+                add("armor.fsb.thermalVision", "Тепловизор");
+                add("armor.fsb.hardLanding", "Жёсткая посадка");
+                add("armor.fsb.stepSize", "Шаг: %d");
+                add("armor.fsb.dash", "Дополнительных рывков: %d");
                 break;
             
             case "en_us":
@@ -1459,6 +1536,16 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_chestplate", "Starmetal Chestplate");
                 add("item.hbm_m.starmetal_leggings", "Starmetal Leggings");
                 add("item.hbm_m.starmetal_boots", "Starmetal Boots");
+
+                add("item.hbm_m.t51_helmet", "T-51b Power Armor Helmet");
+                add("item.hbm_m.t51_chestplate", "T-51b Power Armor Chestplate");
+                add("item.hbm_m.t51_leggings", "T-51b Power Armor Leggings");
+                add("item.hbm_m.t51_boots", "T-51b Power Armor Boots");
+
+                add("item.hbm_m.bismuth_helmet", "Bismuth Power Armor Helmet");
+                add("item.hbm_m.bismuth_chestplate", "Bismuth Power Armor Chestplate");
+                add("item.hbm_m.bismuth_leggings", "Bismuth Power Armor Leggings");
+                add("item.hbm_m.bismuth_boots", "Bismuth Power Armor Boots");
 
                 // ITEMS
                 add(ModItems.CANNED_ASBESTOS.get(), "Canned Asbestos");
@@ -1714,7 +1801,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
 // MULTI DETONATOR TOOLTIPS
                 add("tooltip.hbm_m.multi_detonator.active_point", "➤ %s:");
-                add("tooltip.hbm_m.multi_detonator.point_set", "✅ %s:");
+                add("tooltip.hbm_m.multi_detonator.point_set", " %s:");
                 add("tooltip.hbm_m.multi_detonator.coordinates", "   %d, %d, %d");
                 add("tooltip.hbm_m.multi_detonator.point_empty", "○ Point %d:");
                 add("tooltip.hbm_m.multi_detonator.not_set", "   Not set");
@@ -1739,7 +1826,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("tooltip.hbm_m.grenade_nuc.line1", "Nuclear weapon!");
                 add("tooltip.hbm_m.grenade_nuc.line2", "Blast radius: 25 meters");
-                add("tooltip.hbm_m.grenade_nuc.line3", "Fuse time: 6s");
+                add("tooltip.hbm_m.grenade_nuc.line3", "Fuse time: 7s");
                 add("tooltip.hbm_m.detminer.line1", "Does not damage entities or players");
                 add("tooltip.hbm_m.detminer.line4", "Allows mining depth ores and stone");
 
@@ -2140,6 +2227,59 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.armor_table.casing_slot", "Casing");
                 add("tooltip.hbm_m.armor_table.servos_slot", "Servos");
 
+                // POWER ARMOR FSB TOOLTIPS
+                add("tooltip.hbm_m.fsb_bonus", "Full Set Bonus:");
+                add("tooltip.hbm_m.fsb_resistances", "Full Set Resistance:");
+                add("tooltip.hbm_m.res.fire", "Fire");
+                add("tooltip.hbm_m.res.phys", "Physical");
+                add("tooltip.hbm_m.res.expl", "Explosion");
+                add("tooltip.hbm_m.res.fall", "Fall damage");
+                add("tooltip.hbm_m.res.proj", "Lasers");
+                add("tooltip.hbm_m.res.other", "Other");
+                add("armor.fsb.geigerCounter", "Auditory Geiger Counter");
+                add("armor.geigerHUD", "Geiger HUD");
+                add("armor.fsb.vats", "Enemy HUD");
+                add("armor.fsb.thermalVision", "Thermal Sight");
+                add("armor.fsb.hardLanding", "Hard Landing");
+                add("armor.fsb.stepSize", "Step Assist Lv.%d");
+                add("armor.fsb.dash", "Dash x%d");
+
+                add("hud.hbm_m.vats.on", "HUD: ON");
+                add("hud.hbm_m.vats.off", "HUD: OFF");
+                add("hud.hbm_m.thermal.on", "Thermal Vision: ON");
+                add("hud.hbm_m.thermal.off", "Thermal Vision: OFF");
+                add("hud.hbm_m.thermal.warning", "Warning: the shader thermal vision mode is experimental and may be unstable. If problems occur, switch to a simpler mode in the config (Alt + 0, Rendering tab). To enable thermal vision, press again. This message will not be shown again for this world.");
+                add("hud.hbm_m.dash.perform", "Dash Performed");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode", "Thermal Vision Render Mode");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode.@Tooltip", "Choose how thermal vision is rendered.");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode.FULL_SHADER", "Full shader");
+                add("text.autoconfig.hbm_m.option.thermalRenderMode.ORIGINAL_FALLBACK", "Spectral fallback");
+
+
+                // POWER ARMOR CONTROLS
+                add("key.hbm_m.power_armor_dash", "Power Armor Dash");
+                add("key.hbm_m.power_armor_vats", "Power Armor VATS");
+                add("key.hbm_m.power_armor_thermal", "Power Armor Thermal Vision");
+
+                // ARMOR BATTERIES
+                add("item.hbm_m.armor_battery", "Armor Battery");
+                add("item.hbm_m.armor_battery_mk2", "Armor Battery MK2");
+                add("item.hbm_m.armor_battery_mk3", "Armor Battery MK3");
+
+                // ARMOR MODIFICATIONS
+                add("tooltip.hbm_m.mod.servos.description", "Increases movement speed");
+                add("tooltip.hbm_m.mod.servos.effect", "+Movement Speed");
+                add("tooltip.hbm_m.mod.cladding.description", "Protects against corrosion and damage");
+                add("tooltip.hbm_m.mod.cladding.effect", "+Corrosion Protection");
+                add("tooltip.hbm_m.mod.kevlar.description", "Increases bullet protection");
+                add("tooltip.hbm_m.mod.kevlar.effect", "+Bullet Protection");
+                add("tooltip.hbm_m.mod.extra.description", "Extends armor capabilities");
+                add("tooltip.hbm_m.mod.extra.effect", "+Extended Capabilities");
+                add("tooltip.hbm_m.mod.battery.description", "Increases battery capacity");
+                add("tooltip.hbm_m.mod.battery.effect", "+25% Battery Capacity");
+                add("tooltip.hbm_m.mod.battery_mk2.effect", "+50% Battery Capacity");
+                add("tooltip.hbm_m.mod.battery_mk3.effect", "+100% Battery Capacity");
+
                 add("gui.hbm_m.blast_furnace.accepts", "Accepts items from: %s");
                 add("direction.hbm_m.down", "Down");
                 add("direction.hbm_m.up", "Up");
@@ -2401,6 +2541,8 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("sounds.hbm_m.geiger_counter", "Geiger Counter clicking");
                 add("sounds.hbm_m.tool.techboop", "Geiger counter beep");
+                add("sounds.hbm_m.thermal_vision_on", "Thermal vision activated");
+                add("sounds.hbm_m.thermal_vision_off", "Thermal vision deactivated");
                 
                 add("commands.hbm_m.rad.cleared", "Radiation cleared for %s players.");
                 add("commands.hbm_m.rad.cleared.self", "Your radiation has been cleared.");
@@ -2408,8 +2550,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("commands.hbm_m.rad.added.self", "You have been given %s radiation.");
                 add("commands.hbm_m.rad.removed", "Removed %s radiation from %s players.");
                 add("commands.hbm_m.rad.removed.self", "%s radiation has been removed from you.");
-
+                
+                // DEATH ATTACK MESSAGES
                 add("death.attack.radiation", "Player %s died from radiation sickness");
+                add("death.attack.hardlanding_smash", "%1$s was flattened by %2$s");
+
                 add("advancements.hbm_m.radiation_200.title", "Hooray, Radiation!");
                 add("advancements.hbm_m.radiation_200.description", "Reach a radiation level of 200 RAD");
                 add("advancements.hbm_m.radiation_1000.title", "Ouch, Radiation!");
@@ -2460,20 +2605,25 @@ public class ModLanguageProvider extends LanguageProvider {
 
                 add("text.autoconfig.hbm_m.category.overlay", "Screen Overlays");
 
-                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect", "Enable Radiation Screen Pixel Effect");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold", "Pixel Effect Threshold");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad", "Pixel Effect Max Intensity");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots", "Max Pixel Count");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance", "Green Pixel Chance");
-                add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime", "Min Pixel Lifetime");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime", "Max Pixel Lifetime");
-                add("text.autoconfig.hbm_m.option.enableObstructionHighlight", "Enable Obstruction Highlight");
-                add("text.autoconfig.hbm_m.option.enableObstructionHighlight.@Tooltip", "If enabled, blocks obstructing multiblock placement\nwill be highlighted with a red box.");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha", "Obstruction Highlight Opacity");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightAlpha.@Tooltip", "Sets the opacity of the highlight box's fill.\n0% = Invisible, 100% = Solid.");
-
-                add("text.autoconfig.hbm_m.option.obstructionHighlightDuration", "Highlight Duration (sec)");
-                add("text.autoconfig.hbm_m.option.obstructionHighlightDuration.@Tooltip", "The duration in seconds for how long the obstruction highlight will be visible.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect", "Radiation Screen Pixel Effect");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.enableRadiationPixelEffect", "Enable Radiation Screen Pixel Effect");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectThreshold", "Pixel Effect Threshold");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxIntensityRad", "Pixel Effect Max Intensity");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectMaxDots", "Max Pixel Count");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectGreenChance", "Green Pixel Chance");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMinLifetime", "Min Pixel Lifetime");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxLifetime", "Max Pixel Lifetime");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight", "Multiblock Obstruction Highlight");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.enableObstructionHighlight", "Enable Obstruction Highlight");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.enableObstructionHighlight.@Tooltip", "If enabled, blocks obstructing multiblock placement\nwill be highlighted with a red box.");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightAlpha", "Obstruction Highlight Opacity");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightAlpha.@Tooltip", "Sets the opacity of the highlight box's fill.\n0% = Invisible, 100% = Solid.");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightDuration", "Highlight Duration (sec)");
+                add("text.autoconfig.hbm_m.option.obstructionHighlight.obstructionHighlightDuration.@Tooltip", "The duration in seconds for how long the obstruction highlight will be visible.");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetX", "Info tooltip: left offset");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetY", "Info tooltip: top offset");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetX.@Tooltip", "Distance from the left edge of the screen.");
+                add("text.autoconfig.hbm_m.option.infoToastOffsetY.@Tooltip", "Distance from the top edge of the screen.");
 
                 add("text.autoconfig.hbm_m.category.chunk", "Chunk");
 
@@ -2494,6 +2644,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering", "Instanced batching for obj model parts");
                 add("text.autoconfig.hbm_m.option.useColladaDoorAnimations", "Door animations from DAE (COLLADA)");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion", "Z-up to Y-up conversion for DAE (Blender)");
+
+                add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "VATS render distance (chunks)");
 
                 add("text.autoconfig.hbm_m.category.debug", "Debug");
 
@@ -2523,13 +2675,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.radConfusion.@Tooltip", "Threshold for confusion effect (WIP)");
                 add("text.autoconfig.hbm_m.option.radBlindness.@Tooltip", "Threshold for blindness effect");
 
-                add("text.autoconfig.hbm_m.option.enableRadiationPixelEffect.@Tooltip", "Shows random, flickering pixels on the screen when the player is exposed to incoming radiation.");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectThreshold.@Tooltip", "The minimum incoming radiation (RAD/s) required for the visual interference effect to appear.");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxIntensityRad.@Tooltip", "The level of incoming radiation (RAD/s) at which the pixel effect reaches its maximum strength (maximum number of pixels).");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectMaxDots.@Tooltip", "The maximum number of pixels that can be on the screen at once when the effect is at its peak intensity. Affects performance on weak systems.");
-                add("text.autoconfig.hbm_m.option.radiationPixelEffectGreenChance.@Tooltip", "The probability (from 0.0 to 1.0) that a newly appeared pixel will be green instead of white. E.g., 0.1 = 10% chance.");
-                add("text.autoconfig.hbm_m.option.radiationPixelMinLifetime.@Tooltip", "The minimum time (in ticks) a single pixel will stay on the screen. 20 ticks = 1 second.");
-                add("text.autoconfig.hbm_m.option.radiationPixelMaxLifetime.@Tooltip", "The maximum time (in ticks) a single pixel will stay on the screen. A random value between min and max lifetime is chosen for each pixel.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.enableRadiationPixelEffect.@Tooltip", "Shows random, flickering pixels on the screen when the player is exposed to incoming radiation.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectThreshold.@Tooltip", "The minimum incoming radiation (RAD/s) required for the visual interference effect to appear.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxIntensityRad.@Tooltip", "The level of incoming radiation (RAD/s) at which the pixel effect reaches its maximum strength (maximum number of pixels).");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectMaxDots.@Tooltip", "The maximum number of pixels that can be on the screen at once when the effect is at its peak intensity. Affects performance on weak systems.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelEffectGreenChance.@Tooltip", "The probability (from 0.0 to 1.0) that a newly appeared pixel will be green instead of white. E.g., 0.1 = 10% chance.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMinLifetime.@Tooltip", "The minimum time (in ticks) a single pixel will stay on the screen. 20 ticks = 1 second.");
+                add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxLifetime.@Tooltip", "The maximum time (in ticks) a single pixel will stay on the screen. A random value between min and max lifetime is chosen for each pixel.");
                 
                 add("text.autoconfig.hbm_m.option.maxRad.@Tooltip", "Maximum chunk radiation");
                 add("text.autoconfig.hbm_m.option.fogRad.@Tooltip", "Chunk radiation for fog to appear (WIP)");
@@ -2547,11 +2699,34 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Use DAE animations for transition_seal and sliding_blast_door. Disable if broken — falls back to procedural.");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Convert Blender (Z-up) to Minecraft (Y-up) coordinate system. Disable for testing.");
 
+                add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip","Max distance for mob health highlighting. Higher values increase range but reduce performance.");
+
                 add("text.autoconfig.hbm_m.option.enableDebugRender.@Tooltip", "Whether radiation debug render is enabled (F3)");
                 add("text.autoconfig.hbm_m.option.debugRenderTextSize.@Tooltip", "Debug render text size");
                 add("text.autoconfig.hbm_m.option.debugRenderDistance.@Tooltip", "Debug render distance (in chunks)");
                 add("text.autoconfig.hbm_m.option.debugRenderInSurvival.@Tooltip", "Show debug renderer in survival mode");
                 add("text.autoconfig.hbm_m.option.enableDebugLogging.@Tooltip", "If disabled, deep logging of game events will be active. Do not enable unless you experience problems");
+
+                // DAMAGE TYPES FOR POWER ARMOR TOOLTIPS
+                add("damage.type.physical", "Physical");
+                add("damage.type.explosion", "Explosion");
+                add("damage.type.fire", "Fire");
+                add("damage.type.energy", "Energy");
+                add("damage.type.radiation", "Radiation");
+                add("damage.type.cold", "Cold");
+                add("damage.type.fall", "Fall");
+                add("damage.type.projectile", "Projectile");
+                add("armor.fsb.damageResistance", "Damage Resistance:");
+
+                // DAMAGE RESISTANCE TOOLTIPS (ported from original HBM)
+                add("damage.inset", "Resistances when worn in set:");
+                add("damage.item", "Resistances when worn:");
+                add("damage.category.EN", "Energy");
+                add("damage.category.EXPL", "Explosion");
+                add("damage.category.FIRE", "Fire");
+                add("damage.category.PHYS", "Physical");
+                add("damage.exact.fall", "Fall damage");
+                add("damage.other", "Other");
                 break;
         }
     }

@@ -1,6 +1,7 @@
 package com.hbm_m.item.custom.grenades_and_activators;
 
 import com.hbm_m.entity.grenades.AirNukeBombProjectileEntity;
+
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.stats.Stats;
@@ -29,7 +30,7 @@ public class AirNukeBombItem extends Item {
                 1.5F, 0.4F / (level.getRandom().nextFloat() * 0.4F + 0.8F));
 
         if (!level.isClientSide) {
-            // ✅ СИНХРОНИЗАЦИЯ НАПРАВЛЕНИЯ ИГРОКА
+            //  СИНХРОНИЗАЦИЯ НАПРАВЛЕНИЯ ИГРОКА
             AirNukeBombProjectileEntity grenade = new AirNukeBombProjectileEntity(
                     level, player, player.getYRot()  // ← Yaw игрока для синхронизации!
             );

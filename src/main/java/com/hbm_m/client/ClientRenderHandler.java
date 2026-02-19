@@ -56,7 +56,7 @@ public class ClientRenderHandler {
     }
 
     public static void highlightBlocks(List<BlockPos> positions) {
-        long duration = ModClothConfig.get().obstructionHighlightDuration * 1000L;
+        long duration = ModClothConfig.get().obstructionHighlight.obstructionHighlightDuration * 1000L;
         long expiryTime = System.currentTimeMillis() + duration;
         highlightedBlocks.clear(); // Очищаем старые, чтобы не было дубликатов
         for (BlockPos pos : positions) {
@@ -222,7 +222,7 @@ public class ClientRenderHandler {
         Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
         long currentTime = System.currentTimeMillis();
         VertexConsumer fillConsumer = mc.renderBuffers().bufferSource().getBuffer(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
-        float alpha = ModClothConfig.get().obstructionHighlightAlpha / 100.0f;
+        float alpha = ModClothConfig.get().obstructionHighlight.obstructionHighlightAlpha / 100.0f;
 
         poseStack.pushPose();
         // Переводим в camera-relative координаты один раз

@@ -20,12 +20,18 @@ out/
 .classpath
 .project
 .settings/
+util/
 bin/
 
 # Visual Studio Code
 .vscode/
 .cursor
+.cursorignore
 # ================= Generated Files =================
+src/generated/resources/.cache
+src/generated/resources/assets/hbm_m/blockstates/
+src/generated/resources/assets/hbm_m/models/
+src/generated/resources/data/
 /src/generated/
 AGENTS.md
 *.diff
@@ -44,6 +50,7 @@ logs/
 /OLD/
 agent
 ideas
+libs/
 # ================= OS Specific =================
 # Системные файлы, которые могут случайно появиться.
 .DS_Store
@@ -62,7 +69,8 @@ forge*changelog.txt
 .gitignore
 .cursor/
 desktop.ini
+HBM-Modernized.code-workspace
+java_pid*
+serve.py
 AGENTS.md
 libs/
-.gitignore
-HBM-Modernized.code-workspace

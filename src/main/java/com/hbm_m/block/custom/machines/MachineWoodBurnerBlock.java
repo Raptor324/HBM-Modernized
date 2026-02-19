@@ -37,7 +37,7 @@ import java.util.function.Supplier;
 
 /**
  * Дровяной генератор энергии (мультиблок 2x2x2).
- * ✅ Корректно интегрирован в энергосеть HBM.
+ *  Корректно интегрирован в энергосеть HBM.
  */
 public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -67,7 +67,7 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
-    // ✅ ИСПРАВЛЕНО: Регистрация ВСЕХ блоков структуры в энергосети
+    //  ИСПРАВЛЕНО: Регистрация ВСЕХ блоков структуры в энергосети
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
@@ -79,10 +79,10 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
             // Строим структуру
             helper.placeStructure(level, pos, facing, this);
 
-            // ✅ Регистрируем КОНТРОЛЛЕР в сети (он IEnergyProvider)
+            //  Регистрируем КОНТРОЛЛЕР в сети (он IEnergyProvider)
             EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
 
-            // ✅ Регистрируем энергетические коннекторы (parts с PartRole.ENERGY_CONNECTOR)
+            //  Регистрируем энергетические коннекторы (parts с PartRole.ENERGY_CONNECTOR)
             for (BlockPos localPos : helper.getStructureMap().keySet()) {
                 if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
                     BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
@@ -92,17 +92,17 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
         }
     }
 
-    // ✅ ИСПРАВЛЕНО: Удаление из сети при разрушении
+    //  ИСПРАВЛЕНО: Удаление из сети при разрушении
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock() && !level.isClientSide()) {
             MultiblockStructureHelper helper = getStructureHelper();
             Direction facing = state.getValue(FACING);
 
-            // ✅ Удаляем контроллер из сети
+            //  Удаляем контроллер из сети
             EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
 
-            // ✅ Удаляем энергетические коннекторы
+            //  Удаляем энергетические коннекторы
             for (BlockPos localPos : helper.getStructureMap().keySet()) {
                 if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
                     BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);

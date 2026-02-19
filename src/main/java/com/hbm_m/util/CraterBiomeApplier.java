@@ -1,0 +1,249 @@
+package com.hbm_m.util;
+
+import com.hbm_m.main.MainRegistry;
+import com.hbm_m.world.biome.ModBiomes;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Holder;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.chunk.ChunkAccess;
+import net.minecraft.world.level.chunk.LevelChunkSection;
+import net.minecraft.world.level.chunk.PalettedContainer;
+
+/**
+ * ИСПРАВЛЕННАЯ ВЕРСИЯ 2 - ЦЕНТР РАВЕН ЦЕНТРУ БОМБЫ
+ *
+ * ИСПРАВЛЕНИЯ:
+ * Использует переданный centerPos напрямую - это позиция блока бомбы
+ * Правильное вычисление координат кварталов относительно переданного центра
+ * Корректная сохранение изменённых биомов в секции
+ * Полная диагностика с логированием центра
+ */
+
+public class CraterBiomeApplier {
+
+    // Радиусы из CraterGenerator для соответствия
+    private static final int INNER_CRATER_RADIUS = 190;
+    private static final int OUTER_CRATER_RADIUS = 260;
+
+    /**
+     * Main method - applies biomes to crater
+     * centerPos - это позиция БЛОКА БОМБЫ, используем её как центр
+     */
+    public static void applyCraterBiomes(ServerLevel level, BlockPos centerPos, int radius) {
+        long startTime = System.currentTimeMillis();
+        MainRegistry.LOGGER.debug("[CRATER_BIOME] ========================================");
+        MainRegistry.LOGGER.debug("[CRATER_BIOME] START: Applying crater biomes...");
+        MainRegistry.LOGGER.debug("[CRATER_BIOME] Bomb block center: " + centerPos);
+        MainRegistry.LOGGER.debug("[CRATER_BIOME] Center X: " + centerPos.getX());
+        MainRegistry.LOGGER.debug("[CRATER_BIOME] Center Z: " + centerPos.getZ());
+        MainRegistry.LOGGER.debug("[CRATER_BIOME] Radius: " + radius + " blocks");
+        MainRegistry.LOGGER.debug("[CRATER_BIOME] ========================================");
+
+        try {
+            // Get biomes from registry
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Searching for biomes in registry...");
+            Holder innerCrater = getBiomeHolder(level, ModBiomes.INNER_CRATER_KEY);
+            Holder outerCrater = getBiomeHolder(level, ModBiomes.OUTER_CRATER_KEY);
+
+            if (innerCrater == null || outerCrater == null) {
+                System.err.println("[CRATER_BIOME] ERROR: One or both biomes NOT found in registry!");
+                System.err.println("[CRATER_BIOME] Inner Crater: " + (innerCrater != null ? "OK" : "NULL"));
+                System.err.println("[CRATER_BIOME] Outer Crater: " + (outerCrater != null ? "OK" : "NULL"));
+                return;
+            }
+
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] SUCCESS: Both biomes found!");
+
+            // Calculate area of biome application
+            // ✅ Используем именно переданный centerPos
+            int appliedRadius = Math.max(OUTER_CRATER_RADIUS, radius) + 32;
+            int minChunkX = (centerPos.getX() - appliedRadius) >> 4;
+            int maxChunkX = (centerPos.getX() + appliedRadius) >> 4;
+            int minChunkZ = (centerPos.getZ() - appliedRadius) >> 4;
+            int maxChunkZ = (centerPos.getZ() + appliedRadius) >> 4;
+
+            int totalChunks = (maxChunkX - minChunkX + 1) * (maxChunkZ - minChunkZ + 1);
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Processing chunks: " + totalChunks);
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Chunk range X: " + minChunkX + " to " + maxChunkX);
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Chunk range Z: " + minChunkZ + " to " + maxChunkZ);
+
+            int successfulChunks = 0;
+            int failedChunks = 0;
+            int appliedBiomes = 0;
+
+            for (int chunkX = minChunkX; chunkX <= maxChunkX; chunkX++) {
+                for (int chunkZ = minChunkZ; chunkZ <= maxChunkZ; chunkZ++) {
+                    try {
+                        ChunkAccess chunk = level.getChunk(chunkX, chunkZ);
+                        if (chunk == null) {
+                            failedChunks++;
+                            continue;
+                        }
+
+                        int resultBiomes = applyBiomesToChunk(chunk, centerPos, innerCrater, outerCrater);
+                        appliedBiomes += resultBiomes;
+                        chunk.setUnsaved(true);
+                        successfulChunks++;
+
+                    } catch (Exception e) {
+                        System.err.println("[CRATER_BIOME] ERROR: Chunk [" + chunkX + ", " + chunkZ + "] failed: " + e.getMessage());
+                        e.printStackTrace();
+                        failedChunks++;
+                    }
+                }
+            }
+
+            long endTime = System.currentTimeMillis();
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] ========================================");
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] COMPLETE!");
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Processed: " + successfulChunks + " / " + totalChunks);
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Failed: " + failedChunks);
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Biomes applied to: " + appliedBiomes + " quarters");
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Time: " + (endTime - startTime) + " ms");
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] ========================================");
+
+        } catch (Exception e) {
+            System.err.println("[CRATER_BIOME] CRITICAL ERROR:");
+            e.printStackTrace();
+        }
+    }
+
+    /**
+     * Get biome holder from registry
+     */
+    private static Holder getBiomeHolder(ServerLevel level, net.minecraft.resources.ResourceKey key) {
+        try {
+            var result = level.registryAccess()
+                    .registryOrThrow(Registries.BIOME)
+                    .getHolderOrThrow(key);
+            MainRegistry.LOGGER.debug("[CRATER_BIOME] Found: " + key.location());
+            return result;
+        } catch (Exception e) {
+            System.err.println("[CRATER_BIOME] WARNING: Cannot find biome: " + key.location());
+            System.err.println("[CRATER_BIOME] " + e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * ИСПРАВЛЕННЫЙ МЕТОД V2 - ЦЕНТР РАВЕН ПЕРЕДАННОМУ CENTERPOS
+     *
+     * КЛЮЧЕВЫЕ ИСПРАВЛЕНИЯ:
+     * 1. Вычисляем реальные координаты каждого квартала ОТНОСИТЕЛЬНО ПЕРЕДАННОГО centerPos
+     * 2. centerPos - это позиция блока бомбы, используем его напрямую
+     * 3. Правильно считаем расстояние от центра бомбы
+     * 4. Сохраняем изменённые биомы обратно в секцию
+     */
+    private static int applyBiomesToChunk(ChunkAccess chunk,
+                                          BlockPos centerPos,
+                                          Holder innerCrater,
+                                          Holder outerCrater) {
+        int centerX = centerPos.getX();
+        int centerZ = centerPos.getZ();
+        int chunkX = chunk.getPos().x;
+        int chunkZ = chunk.getPos().z;
+        int chunkBlockX = chunkX << 4;
+        int chunkBlockZ = chunkZ << 4;
+
+        LevelChunkSection[] sections = chunk.getSections();
+        if (sections == null) return 0;
+
+        int appliedBiomesCount = 0;
+        boolean chunkHasChanges = false;
+
+        for (LevelChunkSection section : sections) {
+            if (section == null) continue;
+            var biomesRO = section.getBiomes();
+            if (biomesRO == null) continue;
+            var biomes = biomesRO.recreate();
+
+            boolean sectionChanged = false;
+
+            for (int qx = 0; qx < 4; qx++) {
+                for (int qy = 0; qy < 4; qy++) {
+                    for (int qz = 0; qz < 4; qz++) {
+                        int blockX = chunkBlockX + (qx << 2) + 2;
+                        int blockZ = chunkBlockZ + (qz << 2) + 2;
+
+                        double dx = blockX - centerX;
+                        double dz = blockZ - centerZ;
+                        double distance = Math.sqrt(dx * dx + dz * dz);
+
+                        Holder biomeToSet = null;
+
+                        if (distance <= INNER_CRATER_RADIUS) {
+                            biomeToSet = innerCrater;
+                        } else if (distance <= OUTER_CRATER_RADIUS) {
+                            biomeToSet = outerCrater;
+                        }
+
+                        if (biomeToSet != null) {
+                            biomes.set(qx, qy, qz, biomeToSet);
+                            sectionChanged = true;
+                            appliedBiomesCount++;
+                        }
+                    }
+                }
+            }
+
+            if (sectionChanged) {
+                chunkHasChanges = true;
+                saveBiomesToSection(section, biomes);
+            }
+        }
+
+        if (chunkHasChanges) {
+            chunk.setUnsaved(true);
+        }
+
+        return appliedBiomesCount;
+    }
+
+
+    /**
+     * Сохраняет изменённые биомы в секцию
+     * Использует reflection для обхода приватного поля
+     */
+    private static void saveBiomesToSection(LevelChunkSection section, PalettedContainer<Holder<Biome>> biomes) {
+        try {
+            // Попытка 1: Найти и установить поле "biomes"
+            try {
+                var field = LevelChunkSection.class.getDeclaredField("biomes");
+                field.setAccessible(true);
+                field.set(section, biomes);
+                MainRegistry.LOGGER.debug("[CRATER_BIOME] ✅ Biomes saved via 'biomes' field");
+                return;
+            } catch (NoSuchFieldException ex1) {
+                // Попробуем другие имена
+            }
+
+            // Попытка 2: Поиск по типу поля
+            var fields = LevelChunkSection.class.getDeclaredFields();
+            for (var f : fields) {
+                String fullTypeName = f.getType().getTypeName();
+
+                // Ищем PaletteContainer<Biome> или похожее
+                if (fullTypeName.contains("PaletteContainer") &&
+                        fullTypeName.contains("Biome")) {
+                    f.setAccessible(true);
+                    f.set(section, biomes);
+                    MainRegistry.LOGGER.debug("[CRATER_BIOME] ✅ Biomes saved via field: " + f.getName());
+                    return;
+                }
+            }
+
+            System.err.println("[CRATER_BIOME] ⚠️ WARNING: Could not find biome field in LevelChunkSection");
+            System.err.println("[CRATER_BIOME] Available fields:");
+            for (var f : fields) {
+                System.err.println("[CRATER_BIOME]   - " + f.getName() + " (" + f.getType().getSimpleName() + ")");
+            }
+
+        } catch (Exception e) {
+            System.err.println("[CRATER_BIOME] ERROR: Could not save biomes: " + e.getMessage());
+            e.printStackTrace();
+        }
+    }
+}

@@ -1,8 +1,10 @@
 package com.hbm_m.entity.grenades;
 
-import com.hbm_m.item.ModItems;
-import net.minecraft.world.item.Item;
 import java.util.function.Supplier;
+
+import com.hbm_m.item.ModItems;
+
+import net.minecraft.world.item.Item;
 
 public enum GrenadeType {
     // Добавлено значение урона (4-й параметр):
@@ -24,7 +26,7 @@ public enum GrenadeType {
     private final int maxBounces;
     private final float bounceMultiplier;
     private final float explosionPower;
-    private final float customDamage;  // ✅ Новый параметр урона
+    private final float customDamage;  //  Новый параметр урона
     private final boolean causesFire;
     private final boolean explodesOnEntity;
     private final Supplier<Item> itemSupplier;
@@ -34,7 +36,7 @@ public enum GrenadeType {
         this.maxBounces = maxBounces;
         this.bounceMultiplier = bounceMultiplier;
         this.explosionPower = explosionPower;
-        this.customDamage = customDamage;  // ✅ Сохранено
+        this.customDamage = customDamage;  //  Сохранено
         this.causesFire = causesFire;
         this.explodesOnEntity = explodesOnEntity;
         this.itemSupplier = itemSupplier;
@@ -43,7 +45,7 @@ public enum GrenadeType {
     public int getMaxBounces() { return maxBounces; }
     public float getBounceMultiplier() { return bounceMultiplier; }
     public float getExplosionPower() { return explosionPower; }
-    public float getCustomDamage() { return customDamage; }  // ✅ Новый геттер
+    public float getCustomDamage() { return customDamage; }  //  Новый геттер
     public boolean causesFire() { return causesFire; }
     public boolean explodesOnEntity() { return explodesOnEntity; }
     public Item getItem() { return itemSupplier.get(); }

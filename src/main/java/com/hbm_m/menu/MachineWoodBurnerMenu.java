@@ -2,8 +2,9 @@ package com.hbm_m.menu;
 
 import com.hbm_m.api.energy.ILongEnergyMenu;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.block.entity.custom.machines.MachineWoodBurnerBlockEntity;
+import com.hbm_m.network.ModPacketHandler;
+
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -11,9 +12,9 @@ import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.ForgeHooks;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
 import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
 public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
     
@@ -58,8 +59,9 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
 
             this.addSlot(new SlotItemHandler(h, 2, 143, 54) { // Charge slot
                 @Override public boolean mayPlace(ItemStack stack) {
+                    // Разрешаем класть предметы, которые могут принимать энергию
                     return stack.getCapability(ForgeCapabilities.ENERGY).map(IEnergyStorage::canReceive).orElse(false) ||
-                           stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
+                           stack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered;
                 }
             });
         });
@@ -164,7 +166,10 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
                         return itemstack;
                     }
                 }
-                if (slotStack.getCapability(ForgeCapabilities.ENERGY).map(IEnergyStorage::canReceive).orElse(false)) {
+
+                // Пробуем в СЛОТ ЗАРЯДКИ
+                if (slotStack.getCapability(ForgeCapabilities.ENERGY).map(IEnergyStorage::canReceive).orElse(false) ||
+                    slotStack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered) {
                     if (!this.moveItemStackTo(slotStack, CHARGE_SLOT, CHARGE_SLOT + 1, false)) {
                         // continue
                     } else {

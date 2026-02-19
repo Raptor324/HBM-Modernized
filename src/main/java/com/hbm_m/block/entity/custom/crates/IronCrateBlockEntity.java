@@ -1,5 +1,8 @@
 package com.hbm_m.block.entity.custom.crates;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.menu.IronCrateMenu;
 
@@ -18,8 +21,6 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.ItemStackHandler;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class IronCrateBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -43,7 +44,7 @@ public class IronCrateBlockEntity extends BlockEntity implements MenuProvider {
         super(ModBlockEntities.IRON_CRATE_BE.get(), pos, state);
     }
 
-    // ✅ ПРАВИЛЬНАЯ СИГНАТУРА МЕТОДА
+    //  ПРАВИЛЬНАЯ СИГНАТУРА МЕТОДА
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {

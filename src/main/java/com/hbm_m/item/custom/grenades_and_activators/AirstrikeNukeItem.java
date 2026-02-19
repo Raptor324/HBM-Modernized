@@ -1,7 +1,12 @@
 package com.hbm_m.item.custom.grenades_and_activators;
 
+import java.util.List;
+
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.entity.grenades.AirstrikeNukeEntity;
 import com.hbm_m.sound.ModSounds;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -15,9 +20,6 @@ import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.List;
 
 public class AirstrikeNukeItem extends Item {
 
@@ -28,12 +30,12 @@ public class AirstrikeNukeItem extends Item {
     }
     @Override
     public boolean isFoil(ItemStack stack) {
-        return true;  // ✅ ПОСТОЯННЫЙ ПЕРЕЛИВ ДЛЯ ВСЕХ экземпляров!
+        return true;  //  ПОСТОЯННЫЙ ПЕРЕЛИВ ДЛЯ ВСЕХ экземпляров!
     }
 
     @Override
     public boolean isEnchantable(ItemStack stack) {
-        return false;  // ✅ НЕ добавляется в стол зачарований
+        return false;  //  НЕ добавляется в стол зачарований
     }
 
     @Override

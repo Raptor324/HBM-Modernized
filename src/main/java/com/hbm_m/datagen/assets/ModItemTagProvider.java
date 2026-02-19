@@ -56,12 +56,12 @@ public class ModItemTagProvider extends ItemTagsProvider {
     @Override
     protected void addTags(@Nonnull HolderLookup.Provider provider) {
 
-        // ✅ АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ СЛИТКОВ
+        //  АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ СЛИТКОВ
         TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots")));
 
         for (ModIngots ingot : ModIngots.values()) {
             RegistryObject<Item> ingotObject = ModItems.getIngot(ingot);
-            // ✅ ПРОВЕРКА НА NULL И НА РЕГИСТРАЦИЮ
+            //  ПРОВЕРКА НА NULL И НА РЕГИСТРАЦИЮ
             if (ingotObject != null && ingotObject.isPresent()) {
                 String ingotName = ingot.getName();
                 this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots/" + ingotName)))
@@ -70,12 +70,12 @@ public class ModItemTagProvider extends ItemTagsProvider {
             }
         }
 
-        // ✅ АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ ПОРОШКОВ
+        //  АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ ПОРОШКОВ
         TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders")));
 
         for (ModPowders powder : ModPowders.values()) {
             RegistryObject<Item> powderObject = ModItems.getPowders(powder);
-            // ✅ ПОЛНАЯ ПРОВЕРКА - ИСПРАВЛЕНА ОСНОВНАЯ ОШИБКА!
+            //  ПОЛНАЯ ПРОВЕРКА - ИСПРАВЛЕНА ОСНОВНАЯ ОШИБКА!
             if (powderObject != null && powderObject.isPresent()) {
                 String powderName = powder.getName();
                 this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + powderName)))
@@ -84,25 +84,25 @@ public class ModItemTagProvider extends ItemTagsProvider {
             }
         }
 
-        // ✅ ПОРОШКИ ИЗ СЛИТКОВ
+        //  ПОРОШКИ ИЗ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
             RegistryObject<Item> powderObject = ModItems.getPowder(ingot);
-            if (powderObject != null && powderObject.isPresent()) {  // ✅ ДОБАВЛЕНА ПРОВЕРКА isPresent()
+            if (powderObject != null && powderObject.isPresent()) {  //  ДОБАВЛЕНА ПРОВЕРКА isPresent()
                 this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName())))
                         .add(powderObject.get());
                 powdersTagBuilder.add(powderObject.getKey());
             }
 
-            // ✅ МАЛЕНЬКИЕ ПОРОШКИ С ПРОВЕРКОЙ
+            //  МАЛЕНЬКИЕ ПОРОШКИ С ПРОВЕРКОЙ
             ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
-                if (tiny != null && tiny.isPresent()) {  // ✅ ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА
+                if (tiny != null && tiny.isPresent()) {  //  ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА
                     this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName() + "/tiny")))
                             .add(tiny.get());
                 }
             });
         }
 
-        // ✅ БАЗОВЫЕ ПОРОШКИ (всегда существуют)
+        //  БАЗОВЫЕ ПОРОШКИ (всегда существуют)
         powdersTagBuilder.add(ModItems.DUST.getKey());
         powdersTagBuilder.add(ModItems.DUST_TINY.getKey());
 
@@ -115,20 +115,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
         this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")));
 
-        // ТЕГИ ДЛЯ МОДИФИКАТОРОВ БРОНИ
-        this.tag(SLOT_SPECIAL_MODS)
-                .add(ModItems.HEART_PIECE.get())
-                .add(ModItems.HEART_CONTAINER.get())
-                .add(ModItems.HEART_BOOSTER.get())
-                .add(ModItems.HEART_FAB.get())
-                .add(ModItems.BLACK_DIAMOND.get());
 
-        this.tag(SLOT_CLADDING_MODS)
-                .add(ModItems.GHIORSIUM_CLADDING.get())
-                .add(ModItems.DESH_CLADDING.get())
-                .add(ModItems.LEAD_CLADDING.get())
-                .add(ModItems.RUBBER_CLADDING.get())
-                .add(ModItems.PAINT_CLADDING.get());
 
         this.tag(BLADES)
                 .add(ModItems.BLADE_STEEL.get())
@@ -169,7 +156,15 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
                 .add(ModItems.RUBBER_CLADDING.get())
-                .add(ModItems.PAINT_CLADDING.get());
+                .add(ModItems.PAINT_CLADDING.get())
+                // Новые модификаторы брони
+                .add(ModItems.ARMOR_MOD_SERVOS.get())
+                .add(ModItems.ARMOR_MOD_CLADDING.get())
+                .add(ModItems.ARMOR_MOD_KEVLAR.get())
+                .add(ModItems.ARMOR_MOD_EXTRA.get())
+                .add(ModItems.ARMOR_BATTERY.get())
+                .add(ModItems.ARMOR_BATTERY_MK2.get())
+                .add(ModItems.ARMOR_BATTERY_MK3.get());
 
         this.tag(REQUIRES_CHESTPLATE)
                 .add(ModItems.HEART_PIECE.get())
@@ -181,16 +176,55 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
                 .add(ModItems.RUBBER_CLADDING.get())
-                .add(ModItems.PAINT_CLADDING.get());
+                .add(ModItems.PAINT_CLADDING.get())
+                // Новые модификаторы брони
+                .add(ModItems.ARMOR_MOD_SERVOS.get())
+                .add(ModItems.ARMOR_MOD_CLADDING.get())
+                .add(ModItems.ARMOR_MOD_KEVLAR.get())
+                .add(ModItems.ARMOR_MOD_EXTRA.get())
+                .add(ModItems.ARMOR_BATTERY.get())
+                .add(ModItems.ARMOR_BATTERY_MK2.get())
+                .add(ModItems.ARMOR_BATTERY_MK3.get());
 
         this.tag(REQUIRES_LEGGINGS)
                 .add(ModItems.GHIORSIUM_CLADDING.get())
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
                 .add(ModItems.RUBBER_CLADDING.get())
-                .add(ModItems.PAINT_CLADDING.get());
+                .add(ModItems.PAINT_CLADDING.get())
+                // Новые модификаторы брони
+                .add(ModItems.ARMOR_MOD_SERVOS.get())
+                .add(ModItems.ARMOR_MOD_CLADDING.get())
+                .add(ModItems.ARMOR_MOD_KEVLAR.get())
+                .add(ModItems.ARMOR_MOD_EXTRA.get())
+                .add(ModItems.ARMOR_BATTERY.get())
+                .add(ModItems.ARMOR_BATTERY_MK2.get())
+                .add(ModItems.ARMOR_BATTERY_MK3.get());
 
         this.tag(REQUIRES_BOOTS)
+                .add(ModItems.GHIORSIUM_CLADDING.get())
+                .add(ModItems.DESH_CLADDING.get())
+                .add(ModItems.LEAD_CLADDING.get())
+                .add(ModItems.RUBBER_CLADDING.get())
+                .add(ModItems.PAINT_CLADDING.get())
+                // Новые модификаторы брони
+                .add(ModItems.ARMOR_MOD_SERVOS.get())
+                .add(ModItems.ARMOR_MOD_CLADDING.get())
+                .add(ModItems.ARMOR_MOD_KEVLAR.get())
+                .add(ModItems.ARMOR_MOD_EXTRA.get())
+                .add(ModItems.ARMOR_BATTERY.get())
+                .add(ModItems.ARMOR_BATTERY_MK2.get())
+                .add(ModItems.ARMOR_BATTERY_MK3.get());
+
+        // ТЕГИ ДЛЯ МОДИФИКАТОРОВ БРОНИ
+        this.tag(SLOT_SPECIAL_MODS)
+                .add(ModItems.HEART_PIECE.get())
+                .add(ModItems.HEART_CONTAINER.get())
+                .add(ModItems.HEART_BOOSTER.get())
+                .add(ModItems.HEART_FAB.get())
+                .add(ModItems.BLACK_DIAMOND.get());
+
+        this.tag(SLOT_CLADDING_MODS)
                 .add(ModItems.GHIORSIUM_CLADDING.get())
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
@@ -203,7 +237,12 @@ public class ModItemTagProvider extends ItemTagsProvider {
         this.tag(SLOT_LEGGINGS_MODS);
         this.tag(SLOT_BOOTS_MODS);
         this.tag(SLOT_SERVOS_MODS);
-        this.tag(SLOT_BATTERY_MODS);
+        
+        this.tag(SLOT_BATTERY_MODS)
+                .add(ModItems.ARMOR_BATTERY.get())
+                .add(ModItems.ARMOR_BATTERY_MK2.get())
+                .add(ModItems.ARMOR_BATTERY_MK3.get());
+                
         this.tag(SLOT_INSERT_MODS);
 
         this.tag(UPGRADE_MODULES)

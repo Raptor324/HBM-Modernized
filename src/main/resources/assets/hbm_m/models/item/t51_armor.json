@@ -1,0 +1,15 @@
+{
+  "loader": "hbm_m:t51_armor_parts",
+  "model": "hbm_m:models/armor/t51.obj",
+
+  "textures": {
+    "Helmet": "hbm_m:block/armor/t51_helmet",
+    "Chest": "hbm_m:block/armor/t51_chest",
+    "LeftArm": "hbm_m:block/armor/t51_arm",
+    "RightArm": "hbm_m:block/armor/t51_arm",
+    "LeftLeg": "hbm_m:block/armor/t51_leg",
+    "RightLeg": "hbm_m:block/armor/t51_leg",
+    "LeftBoot": "hbm_m:block/armor/t51_leg",
+    "RightBoot": "hbm_m:block/armor/t51_leg"
+  }
+}

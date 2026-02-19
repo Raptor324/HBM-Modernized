@@ -48,7 +48,7 @@ import net.minecraftforge.network.NetworkHooks;
 
 /**
  * Сборочная машина (мультиблок 3x2x3).
- * Корректно интегрирована в энергосеть HBM.
+ *  Корректно интегрирована в энергосеть HBM.
  */
 public class MachineAssemblerBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -171,7 +171,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
         return builder.build();
     }
 
-    // ✅ ДОБАВЛЕНО: Регистрация в энергосети
+    //  ДОБАВЛЕНО: Регистрация в энергосети
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
@@ -182,10 +182,10 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
             // Строим структуру
             getStructureHelper().placeStructure(level, pos, facing, this);
 
-            // ✅ Регистрируем контроллер (IEnergyReceiver)
+            //  Регистрируем контроллер (IEnergyReceiver)
             EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
 
-            // ✅ Регистрируем энергетические коннекторы
+            //  Регистрируем энергетические коннекторы
             for (BlockPos localPos : getStructureHelper().getStructureMap().keySet()) {
                 if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
                     BlockPos worldPos = getStructureHelper().getRotatedPos(pos, localPos, facing);
@@ -195,16 +195,16 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
         }
     }
 
-    // ✅ ДОБАВЛЕНО: Удаление из энергосети
+    //  ДОБАВЛЕНО: Удаление из энергосети
     @Override
     public void onRemove(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos, @Nonnull BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
             Direction facing = state.getValue(FACING);
 
-            // ✅ Удаляем контроллер из сети
+            //  Удаляем контроллер из сети
             EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
 
-            // ✅ Удаляем энергетические коннекторы
+            //  Удаляем энергетические коннекторы
             for (BlockPos localPos : getStructureHelper().getStructureMap().keySet()) {
                 if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
                     BlockPos worldPos = getStructureHelper().getRotatedPos(pos, localPos, facing);

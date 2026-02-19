@@ -406,20 +406,19 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
             // GL11.glEnable(GL11.GL_POLYGON_OFFSET_FILL);
             // GL11.glPolygonOffset(1.0f, 1.0f);
 
-            GL11.glDisable(GL11.GL_CULL_FACE);
+            RenderSystem.disableCull();
             
             GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0, instanceCount);
             
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced flush", e);
         } finally {
+
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             GL30.glBindVertexArray(previousVao);
-            GL11.glDisable(GL11.GL_POLYGON_OFFSET_FILL);
-            GL11.glEnable(GL11.GL_CULL_FACE);
-            if (previousCullFace == GL11.GL_TRUE) {
-                GL11.glEnable(GL11.GL_CULL_FACE);
-            }
+            // Убрал polygon offset cleanup
+            // RenderSystem.disablePolygonOffset();
+            RenderSystem.enableCull();
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
         }
     }

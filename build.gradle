@@ -4,6 +4,7 @@ plugins {
     id 'org.parchmentmc.librarian.forgegradle' version '1.+'
     id 'java-library'
     id 'org.spongepowered.mixin' version '0.7.+'
+    id 'eclipse'
 }
 
 group = mod_group_id
@@ -19,6 +20,7 @@ mixin {
 
     debug.verbose = true
     debug.export = true
+    // Refmap name is auto-generated from the config name in Mixin Gradle plugin 0.7+
 }
 
 // Mojang ships Java 17 to end users in 1.18+, so your mod should target Java 17.
@@ -100,8 +102,6 @@ minecraft {
             property 'forge.enabledGameTestNamespaces', mod_id
             args '--nogui'
             jvmArgs = [ "-Xmx4G", "-Xms2G"]
-
-
         }
 
         // This run config launches GameTestServer and runs all registered gametests, then exits.
@@ -134,6 +134,10 @@ repositories {
     mavenCentral()
     maven { url = 'https://maven.minecraftforge.net/' }
     maven { url = "https://maven.shedaniel.me/" }
+    maven {
+        name = "ParchmentMC"
+        url = "https://maven.parchmentmc.org"
+    }
     maven {
         name = "Modrinth"
         url = "https://api.modrinth.com/maven"
@@ -169,22 +173,28 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     runtimeOnly fg.deobf("maven.modrinth:spark:1.10.53-forge")
-
+    runtimeOnly fg.deobf("curse.maven:oculus-581495:6020952")
     // JEI is optional at runtime, but we compile against its API/classes for our integration.
     compileOnly fg.deobf("curse.maven:jei-238222:7270446")
-    runtimeOnly fg.deobf("curse.maven:jei-238222:7270446")
-    implementation fg.deobf("curse.maven:embeddium-908741:5681725")
-    implementation fg.deobf("curse.maven:oculus-581495:6020952")
+    runtimeOnly fg.deobf("curse.maven:embeddium-908741:5681725")
+    runtimeOnly fg.deobf("curse.maven:modernfix-790626:7515215")
+    runtimeOnly fg.deobf("curse.maven:smooth-boot-reloaded-633412:5016280")
 
     
     api(fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.136"))
+    
+    // HBM DevTools - раскомментируйте для использования dev-инструментов
+    // Сначала соберите DevTools: cd ../HBM-DevTools && ./gradlew build
+    // Затем раскомментируйте следующую строку:
+    // Используем fg.deobf() для правильной обработки mappings
+    // Это автоматически обработает mappings при запуске игры
+    // runtimeOnly fg.deobf(files("${projectDir}/../HBM-DevTools/build/libs/hbm_devtools-1.0.0-dev.jar"))
 
     // Oculus/Iris API (optional, только для compile-time)
     // compileOnly("curse.maven:oculus-581495:6020952") {
     //     transitive = false
     // }
     
-    // implementation 'org.spongepowered:mixin:0.8.5'
     annotationProcessor 'org.spongepowered:mixin:0.8.5:processor'
     
 
@@ -238,6 +248,26 @@ tasks.named('jar', Jar).configure {
         ])
     }
 
+    // Копируем refmap в JAR (Mixin плагин генерирует его во время компиляции)
+    // Refmap может быть в разных местах в зависимости от настроек Mixin плагина
+    // Проверяем оба возможных места и копируем если файл существует
+    from("${project.buildDir}/classes/java/main") {
+        include "mixins.hbm_m.refmap.json"
+        into(".")
+        // Не падаем если файл не найден
+    }
+    
+    from("${project.buildDir}/resources/main") {
+        include "mixins.hbm_m.refmap.json"
+        into(".")
+    }
+    
+    // Также копируем из sourceSets.main.output.classesDirs если там есть
+    from(sourceSets.main.output.classesDirs) {
+        include "mixins.hbm_m.refmap.json"
+        into(".")
+    }
+
     // This is the preferred method to reobfuscate your jar file
     finalizedBy 'reobfJar'
 }
@@ -276,6 +306,13 @@ tasks.withType(JavaExec).configureEach {
         standardInput = System.in
     }
 }
+
+eclipse {
+    classpath {
+        defaultOutputDir = file('build/classes/java/main')
+    }
+}
+
 // Создаем новую задачу с именем 'cleanObjFiles'
 // task cleanObjFiles(type: DefaultTask) {
 //     description = 'Removes mtllib and usemtl lines from all .obj files in resources.'

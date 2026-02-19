@@ -10,6 +10,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
+
 import com.hbm_m.api.energy.ConverterBlock;
 import com.hbm_m.api.energy.MachineBatteryBlock;
 import com.hbm_m.api.energy.SwitchBlock;
@@ -32,6 +33,7 @@ import com.hbm_m.block.custom.explosives.NuclearChargeBlock;
 import com.hbm_m.block.custom.explosives.SmokeBombBlock;
 import com.hbm_m.block.custom.explosives.WasteChargeBlock;
 import com.hbm_m.block.custom.machines.ArmorTableBlock;
+
 import com.hbm_m.block.custom.machines.BlastFurnaceBlock;
 import com.hbm_m.block.custom.machines.BlastFurnaceExtensionBlock;
 import com.hbm_m.block.custom.machines.GeigerCounterBlock;
@@ -65,6 +67,7 @@ import com.hbm_m.item.custom.fekal_electric.MachineBatteryBlockItem;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
 
+import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -616,7 +619,7 @@ public class ModBlocks {
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops()));
 
-    // ✅ ДОБАВЛЕНО: Ядерные осадки (как снег)
+    //  ДОБАВЛЕНО: Ядерные осадки (как снег)
     public static final RegistryObject<Block> NUCLEAR_FALLOUT = registerBlock("nuclear_fallout",
             () -> new SnowLayerBlock(BlockBehaviour.Properties.copy(Blocks.SNOW)
                     .strength(0.1F)
@@ -635,6 +638,16 @@ public class ModBlocks {
 
 
     // ============ ТЕХНИЧЕСКИЕ И ДЕКОРАТИВНЫЕ БЛОКИ (Обновлено) ============
+
+    public static final RegistryObject<Block> RING_TEST = registerBlock("ring_test",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistryObject<Block> BLAST_FURNACE2 = registerBlock("blast_furnace2",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistryObject<Block> TEST3 = registerBlock("test3",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
 
     public static final RegistryObject<Block> DORNIER = registerBlock("dornier",
             () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
@@ -1273,10 +1286,11 @@ public class ModBlocks {
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
 
 
+    // ✅ ПРАВИЛЬНО - РЕГИСТРИРУЙТЕ ПРОСТО!
     public static final RegistryObject<Block> CRATE_IRON = BLOCKS.register("crate_iron",
             () -> new IronCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
                     .sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops()));
-
+    // ✅ ПРАВИЛЬНО - РЕГИСТРИРУЙТЕ ПРОСТО!
     public static final RegistryObject<Block> CRATE_STEEL = BLOCKS.register("crate_steel",
             () -> new SteelCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
                     .sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops()));

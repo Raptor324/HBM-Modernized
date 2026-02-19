@@ -280,9 +280,9 @@ public class GlobalMeshCache {
     }
 
     public static void logCacheStats() {
-        System.out.println("GlobalMeshCache stats:");
-        System.out.println("  Compiled quads: " + getCachedQuadsCount());
-        System.out.println("  GPU buffers: " + getCachedBuffersCount());
-        System.out.println("  Renderers: " + getCachedRenderersCount());
+        MainRegistry.LOGGER.debug("GlobalMeshCache stats:");
+        MainRegistry.LOGGER.debug("  Compiled quads: " + getCachedQuadsCount());
+        MainRegistry.LOGGER.debug("  GPU buffers: " + getCachedBuffersCount());
+        MainRegistry.LOGGER.debug("  Renderers: " + getCachedRenderersCount());
     }
 }

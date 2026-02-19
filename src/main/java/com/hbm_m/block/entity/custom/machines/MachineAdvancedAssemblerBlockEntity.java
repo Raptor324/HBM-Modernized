@@ -1,18 +1,24 @@
 package com.hbm_m.block.entity.custom.machines;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.api.energy.EnergyNetworkManager;
-import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
-// import com.hbm_m.client.ClientSoundManager;
-import com.hbm_m.item.custom.industrial.ItemBlueprintFolder;
+import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.item.custom.industrial.ItemBlueprintFolder;
 import com.hbm_m.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
 import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.sound.ModSounds;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -41,12 +47,6 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.fml.DistExecutor;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Arrays;
-import java.util.List;
 
 /**
  * Advanced Assembler Block Entity:
@@ -802,7 +802,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             }
         }
 
-        // Логика из вашего старого clientTick() переезжает сюда
         public void clientTick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
             // Обновление звука
             updateSound(entity);

@@ -114,6 +114,22 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         return Collections.emptyList();
     }
 
+    /**
+     * Vanilla BakedModel legacy methods (still required by the interface).
+     * Delegate to Forge's extended overloads.
+     */
+    @Override
+    @Deprecated
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
+        return getQuads(state, side, rand, ModelData.EMPTY, null);
+    }
+
+    @Override
+    @Deprecated
+    public TextureAtlasSprite getParticleIcon() {
+        return getParticleIcon(ModelData.EMPTY);
+    }
+
     protected abstract boolean shouldSkipWorldRendering(@Nullable BlockState state);
 
     protected boolean shouldSkipSideRendering(@Nullable BlockState state, @Nullable Direction side) {

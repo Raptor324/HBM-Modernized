@@ -49,6 +49,16 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> TOOL_TECH_BLEEP = registerSoundEvents("techbleep");
     public static final RegistryObject<SoundEvent> TOOL_TECH_BOOP = registerSoundEvents("techboop");
 
+    // Звуки силовой брони
+    public static final RegistryObject<SoundEvent> STEP_POWERED = registerSoundEvents("step.powered");
+    public static final RegistryObject<SoundEvent> STEP_METAL = registerSoundEvents("step.metal");
+    public static final RegistryObject<SoundEvent> STEP_IRON_JUMP = registerSoundEvents("step.iron_jump");
+    public static final RegistryObject<SoundEvent> STEP_IRON_LAND = registerSoundEvents("step.iron_land");
+    public static final RegistryObject<SoundEvent> NULL_SOUND = registerSoundEvents("item.null_sound");
+    public static final RegistryObject<SoundEvent> MACE_SMASH_AIR = registerSoundEvents("mace.smash_air");
+    public static final RegistryObject<SoundEvent> MACE_SMASH_GROUND = registerSoundEvents("mace.smash_ground");
+    public static final RegistryObject<SoundEvent> MACE_SMASH_GROUND_HEAVY = registerSoundEvents("mace.smash_ground_heavy");
+
     public static final RegistryObject<SoundEvent> REPAIR_1 = registerSoundEvents("tool.repair1");
     public static final RegistryObject<SoundEvent> REPAIR_2 = registerSoundEvents("tool.repair2");
     public static final RegistryObject<SoundEvent> REPAIR_3 = registerSoundEvents("tool.repair3");
@@ -106,6 +116,10 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> EXTRACT_RANDOM = registerSoundEvents("tool.extract_random");
     public static final RegistryObject<SoundEvent> ASSEMBLER_STRIKE_RANDOM = registerSoundEvents("block.assembler_strike_random");
     public static final RegistryObject<SoundEvent> BOUNCE_RANDOM = registerSoundEvents("item.bounce_random");
+    
+    // Thermal vision sounds
+    public static final RegistryObject<SoundEvent> NVG_ON = registerSoundEvents("tool.nvg_on");
+    public static final RegistryObject<SoundEvent> NVG_OFF = registerSoundEvents("tool.nvg_off");
     
     // Вспомогательный метод для регистрации
     private static RegistryObject<SoundEvent> registerSoundEvents(String name) {

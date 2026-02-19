@@ -1,5 +1,10 @@
 package com.hbm_m.datagen.assets;
 
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+
+import javax.annotation.Nonnull;
+
 // Провайдер генерации тегов блоков для мода.
 // Здесь мы определяем, какими инструментами можно добывать наши блоки и руды,
 // а также создаем теги для совместимости с другими модами (например, для систем хранения).
@@ -7,19 +12,21 @@ package com.hbm_m.datagen.assets;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
+
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
-import net.minecraft.tags.BlockTags;
-import net.minecraft.world.level.block.*;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.tags.BlockTags;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.BushBlock;
+import net.minecraft.world.level.block.FlowerBlock;
+import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.WebBlock;
 import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.data.BlockTagsProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 import net.minecraftforge.registries.RegistryObject;
-
-import javax.annotation.Nonnull;
-import java.util.Set;
-import java.util.concurrent.CompletableFuture;
 
 public class ModBlockTagProvider extends BlockTagsProvider {
 

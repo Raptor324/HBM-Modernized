@@ -14,6 +14,7 @@ import java.util.function.Supplier;
 // а также генерировать VoxelShape для всей структуры. Ядро всей мультиблочной логики.
 import com.hbm_m.api.energy.WireBlock;
 import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
+import com.hbm_m.block.custom.decorations.DoorBlock;
 import com.hbm_m.block.custom.machines.UniversalMachinePartBlock;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
@@ -515,7 +516,7 @@ public class MultiblockStructureHelper {
         if (!obstructions.isEmpty()) {
             if (player instanceof ServerPlayer serverPlayer) {
                 // Проверяем, включена ли опция в конфиге, перед отправкой пакета
-                if (ModClothConfig.get().enableObstructionHighlight) {
+                if (ModClothConfig.get().obstructionHighlight.enableObstructionHighlight) {
                     ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new HighlightBlocksPacket(obstructions));
                 }
             }
@@ -902,9 +903,8 @@ public class MultiblockStructureHelper {
     }
 
     /**
-     * Получает базовые AABB частей двери из реестра (автоматически извлечены из OBJ).
-     * @param doorId ID двери (например, "qe_sliding_door")
-     * @return Карта partName -> AABB или пустая если не зарегистрирована
+     * Валидация параметров в getDoorPartAABBs()
+     * Получает базовые AABB частей двери из реестра с проверкой на null и Infinity
      */
     // public static Map<String, AABB> getDoorPartAABBs(String doorId) {
     //     return DoorPartAABBRegistry.getAll(doorId);
@@ -999,7 +999,8 @@ public class MultiblockStructureHelper {
     // }
 
     /**
-     * Поворачивает AABB вокруг оси Y в зависимости от facing двери.
+     * Валидация в rotateAABBByFacing()
+     * Поворачивает AABB с проверкой на null и Infinity координаты
      */
     // public static AABB rotateAABBByFacing(AABB aabb, Direction facing) {
     //     // Используем тот же алгоритм поворота, что и у rotate(BlockPos)
@@ -1032,7 +1033,6 @@ public class MultiblockStructureHelper {
     public List<BlockPos> getAllPartPositions(BlockPos controllerPos, Direction facing) {
         List<BlockPos> positions = new ArrayList<>();
         
-        // Используем structureMap вместо partLocations
         for (BlockPos localOffset : structureMap.keySet()) {
             BlockPos worldPos = getRotatedPos(controllerPos, localOffset, facing);
             positions.add(worldPos);

@@ -1,12 +1,13 @@
 package com.hbm_m.main;
 
-// Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
-// Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
-// Также здесь настраиваются обработчики событий и системы радиации.
 import java.util.List;
 import java.util.stream.Collectors;
 
 import org.slf4j.Logger;
+
+// Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
+// Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
+// Также здесь настраиваются обработчики событий и системы радиации.
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.fluids.ModFluids;
@@ -33,17 +34,18 @@ import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
+import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.sound.ModSounds;
-import com.hbm_m.util.explosions.trash_that_i_forgot_to_delete.SellafitSolidificationTracker;
 import com.hbm_m.world.biome.ModBiomes;
 import com.hbm_m.worldgen.ModWorldGen;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -133,17 +135,13 @@ public class MainRegistry {
         event.enqueueWork(() -> {
             ModPacketHandler.register();
             ModHazards.registerHazards(); // Регистрация опасностей (радиация, биологическая опасность в будущем и тд)
+
+            // Initialize armor damage resistance stats after items are registered
+            DamageResistanceHandler.initArmorStats();
             // MinecraftForge.EVENT_BUS.addListener(this::onRenderLevelStage);
 
             LOGGER.info("HazardSystem initialized successfully");
         });
-    }
-
-    @SubscribeEvent
-    public static void onLevelUnload(LevelEvent.Unload event) {
-        if (event.getLevel() instanceof ServerLevel) {
-            SellafitSolidificationTracker.clearAll();
-        }
     }
 
     @SubscribeEvent
@@ -230,7 +228,104 @@ public class MainRegistry {
             }
         }
 
-        //СЛИТКИ И РЕСУРСЫ...
+        // БРОНЯ И ИНСТРУМЕНТЫ
+        if (event.getTabKey() == CreativeModeTabs.COMBAT) {
+
+            event.accept(ModItems.ALLOY_SWORD);
+            event.accept(ModItems.ALLOY_AXE);
+            event.accept(ModItems.ALLOY_PICKAXE);
+            event.accept(ModItems.ALLOY_HOE);
+            event.accept(ModItems.ALLOY_SHOVEL);
+            event.accept(ModItems.STEEL_SWORD);
+            event.accept(ModItems.STEEL_AXE);
+            event.accept(ModItems.STEEL_PICKAXE);
+            event.accept(ModItems.STEEL_HOE);
+            event.accept(ModItems.STEEL_SHOVEL);
+            event.accept(ModItems.TITANIUM_SWORD);
+            event.accept(ModItems.TITANIUM_AXE);
+            event.accept(ModItems.TITANIUM_PICKAXE);
+            event.accept(ModItems.TITANIUM_HOE);
+            event.accept(ModItems.TITANIUM_SHOVEL);
+            event.accept(ModItems.STARMETAL_SWORD);
+            event.accept(ModItems.STARMETAL_AXE);
+            event.accept(ModItems.STARMETAL_PICKAXE);
+            event.accept(ModItems.STARMETAL_HOE);
+            event.accept(ModItems.STARMETAL_SHOVEL);
+
+            // Силовая броня добавляется полностью заряженной
+            event.accept(createChargedArmorStack(ModItems.T51_HELMET.get()));
+            event.accept(createChargedArmorStack(ModItems.T51_CHESTPLATE.get()));
+            event.accept(createChargedArmorStack(ModItems.T51_LEGGINGS.get()));
+            event.accept(createChargedArmorStack(ModItems.T51_BOOTS.get()));
+
+            event.accept(createChargedArmorStack(ModItems.AJR_HELMET.get()));
+            event.accept(createChargedArmorStack(ModItems.AJR_CHESTPLATE.get()));
+            event.accept(createChargedArmorStack(ModItems.AJR_LEGGINGS.get()));
+            event.accept(createChargedArmorStack(ModItems.AJR_BOOTS.get()));
+
+            event.accept(createChargedArmorStack(ModItems.AJRO_HELMET.get()));
+            event.accept(createChargedArmorStack(ModItems.AJRO_CHESTPLATE.get()));
+            event.accept(createChargedArmorStack(ModItems.AJRO_LEGGINGS.get()));
+            event.accept(createChargedArmorStack(ModItems.AJRO_BOOTS.get()));
+
+            event.accept(createChargedArmorStack(ModItems.BISMUTH_HELMET.get()));
+            event.accept(createChargedArmorStack(ModItems.BISMUTH_CHESTPLATE.get()));
+            event.accept(createChargedArmorStack(ModItems.BISMUTH_LEGGINGS.get()));
+            event.accept(createChargedArmorStack(ModItems.BISMUTH_BOOTS.get()));
+            
+            event.accept(createChargedArmorStack(ModItems.DNT_HELMET.get()));
+            event.accept(createChargedArmorStack(ModItems.DNT_CHESTPLATE.get()));
+            event.accept(createChargedArmorStack(ModItems.DNT_LEGGINGS.get()));
+            event.accept(createChargedArmorStack(ModItems.DNT_BOOTS.get()));
+            
+            event.accept(ModItems.ALLOY_HELMET);
+            event.accept(ModItems.ALLOY_CHESTPLATE);
+            event.accept(ModItems.ALLOY_LEGGINGS);
+            event.accept(ModItems.ALLOY_BOOTS);
+            event.accept(ModItems.COBALT_HELMET);
+            event.accept(ModItems.COBALT_CHESTPLATE);
+            event.accept(ModItems.COBALT_LEGGINGS);
+            event.accept(ModItems.COBALT_BOOTS);
+            event.accept(ModItems.TITANIUM_HELMET);
+            event.accept(ModItems.TITANIUM_CHESTPLATE);
+            event.accept(ModItems.TITANIUM_LEGGINGS);
+            event.accept(ModItems.TITANIUM_BOOTS);
+            event.accept(ModItems.SECURITY_HELMET);
+            event.accept(ModItems.SECURITY_CHESTPLATE);
+            event.accept(ModItems.SECURITY_LEGGINGS);
+            event.accept(ModItems.SECURITY_BOOTS);
+        
+            event.accept(ModItems.STEEL_HELMET);
+            event.accept(ModItems.STEEL_CHESTPLATE);
+            event.accept(ModItems.STEEL_LEGGINGS);
+            event.accept(ModItems.STEEL_BOOTS);
+            event.accept(ModItems.ASBESTOS_HELMET);
+            event.accept(ModItems.ASBESTOS_CHESTPLATE);
+            event.accept(ModItems.ASBESTOS_LEGGINGS);
+            event.accept(ModItems.ASBESTOS_BOOTS);
+            event.accept(ModItems.HAZMAT_HELMET);
+            event.accept(ModItems.HAZMAT_CHESTPLATE);
+            event.accept(ModItems.HAZMAT_LEGGINGS);
+            event.accept(ModItems.HAZMAT_BOOTS);
+            event.accept(ModItems.LIQUIDATOR_HELMET);
+            event.accept(ModItems.LIQUIDATOR_CHESTPLATE);
+            event.accept(ModItems.LIQUIDATOR_LEGGINGS);
+            event.accept(ModItems.LIQUIDATOR_BOOTS);
+            event.accept(ModItems.PAA_HELMET);
+            event.accept(ModItems.PAA_CHESTPLATE);
+            event.accept(ModItems.PAA_LEGGINGS);
+            event.accept(ModItems.PAA_BOOTS);
+            event.accept(ModItems.STARMETAL_HELMET);
+            event.accept(ModItems.STARMETAL_CHESTPLATE);
+            event.accept(ModItems.STARMETAL_LEGGINGS);
+            event.accept(ModItems.STARMETAL_BOOTS);
+
+            if (ModClothConfig.get().enableDebugLogging) {
+                LOGGER.info("Added Alloy Sword to vanilla Combat tab");
+            }
+        }
+
+        // СЛИТКИ И РЕСУРСЫ
         if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
 
             // БАЗОВЫЕ ПРЕДМЕТЫ (все с ItemStack!)
@@ -312,7 +407,7 @@ public class MainRegistry {
                 }
             }
 
-            // ✅ ОДИН ЦИКЛ ДЛЯ ВСЕХ ПОРОШКОВ ИЗ СЛИТКОВ (обычные + маленькие)
+            // ОДИН ЦИКЛ ДЛЯ ВСЕХ ПОРОШКОВ ИЗ СЛИТКОВ (обычные + маленькие)
             for (ModIngots ingot : ModIngots.values()) {
                 // Обычный порошок
                 RegistryObject<Item> powder = ModItems.getPowder(ingot);
@@ -528,12 +623,12 @@ public class MainRegistry {
             event.accept(ModBlocks.URANIUM_ORE);
             event.accept(ModBlocks.URANIUM_ORE_DEEPSLATE);
 
-            event.accept(ModBlocks.RESOURCE_ASBESTOS.get());
-            event.accept(ModBlocks.RESOURCE_BAUXITE.get());
-            event.accept(ModBlocks.RESOURCE_HEMATITE.get());
-            event.accept(ModBlocks.RESOURCE_LIMESTONE.get());
-            event.accept(ModBlocks.RESOURCE_MALACHITE.get());
-            event.accept(ModBlocks.RESOURCE_SULFUR.get());
+            event.accept(ModBlocks.RESOURCE_ASBESTOS);
+            event.accept(ModBlocks.RESOURCE_BAUXITE);
+            event.accept(ModBlocks.RESOURCE_HEMATITE);
+            event.accept(ModBlocks.RESOURCE_LIMESTONE);
+            event.accept(ModBlocks.RESOURCE_MALACHITE);
+            event.accept(ModBlocks.RESOURCE_SULFUR);
 
             event.accept(ModItems.ALUMINUM_RAW);
             event.accept(ModItems.BERYLLIUM_RAW);
@@ -568,7 +663,8 @@ public class MainRegistry {
             event.accept(ModBlocks.STRAWBERRY_BUSH);
 
             event.accept(ModBlocks.POLONIUM210_BLOCK);
-// АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ БЛОКОВ СЛИТКОВ
+
+            // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ БЛОКОВ СЛИТКОВ
             for (ModIngots ingot : ModIngots.values()) {
 
                 // !!! ВАЖНОЕ ИСПРАВЛЕНИЕ: ПРОВЕРКА НАЛИЧИЯ БЛОКА !!!
@@ -588,6 +684,13 @@ public class MainRegistry {
 
         // СТРОИТЕЛЬНЫЕ БЛОКИ
         if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get()) {
+            event.accept(ModBlocks.RING_TEST);
+            event.accept(ModBlocks.TEST3);
+            event.accept(ModBlocks.BLAST_FURNACE2);
+
+            event.accept(ModBlocks.DECO_STEEL);
+            event.accept(ModBlocks.CONCRETE_STAIRS);
+            event.accept(ModBlocks.CONCRETE_SLAB);
             event.accept(ModBlocks.CONCRETE);
             event.accept(ModBlocks.CONCRETE_ASBESTOS);
             event.accept(ModBlocks.CONCRETE_COLORED_SAND);
@@ -1131,6 +1234,22 @@ public class MainRegistry {
                 ClientSetup.addTemplatesClient(event);
             });
         }
+    }
+
+    /**
+     * Создает ItemStack с максимальным зарядом для силовой брони
+     */
+    private static ItemStack createChargedArmorStack(Item item) {
+        ItemStack stack = new ItemStack(item);
+
+        // Проверяем, является ли предмет силовой броней
+        if (item instanceof com.hbm_m.powerarmor.ModArmorFSBPowered powerArmor) {
+            // Получаем максимальную емкость и устанавливаем полный заряд
+            long maxCapacity = powerArmor.getMaxCharge(stack);
+            stack.getOrCreateTag().putLong("charge", maxCapacity);
+        }
+
+        return stack;
     }
 }
 

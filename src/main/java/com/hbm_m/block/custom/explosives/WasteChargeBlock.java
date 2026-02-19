@@ -3,7 +3,7 @@ package com.hbm_m.block.custom.explosives;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.particle.ModExplosionParticles;
 
-import com.hbm_m.particle.explosions.ExplosionParticleUtils;
+import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.util.explosions.freaky.WasteBlastGenerator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -83,20 +83,20 @@ public class WasteChargeBlock extends Block implements IDetonatable {
     }
 
     private void scheduleExplosionEffects(ServerLevel level, double x, double y, double z) {
-        // ✅ Flash - точно те же параметры
+        //  Flash - точно те же параметры
         level.sendParticles(
                 (SimpleParticleType) ModExplosionParticles.FLASH.get(),
                 x, y, z, 1, 0, 0, 0, 0
         );
 
-        // ✅ Sparks - 400 частиц с ТОЧНЫМИ скоростями
+        //  Sparks - 400 частиц с ТОЧНЫМИ скоростями
         ExplosionParticleUtils.spawnAirBombSparks(level, x, y, z);
 
-        // ✅ Shockwave через 3 тика - точно те же кольца
+        //  Shockwave через 3 тика - точно те же кольца
         level.getServer().tell(new net.minecraft.server.TickTask(3, () ->
                 ExplosionParticleUtils.spawnAirBombShockwave(level, x, y, z)));
 
-        // ✅ Mushroom Cloud через 8 тиков - ТОЧНО те же параметры
+        //  Mushroom Cloud через 8 тиков - ТОЧНО те же параметры
         level.getServer().tell(new net.minecraft.server.TickTask(8, () ->
                 ExplosionParticleUtils.spawnAirBombMushroomCloud(level, x, y, z)));
     }

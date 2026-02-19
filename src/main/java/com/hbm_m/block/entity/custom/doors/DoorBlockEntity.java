@@ -1,24 +1,25 @@
 package com.hbm_m.block.entity.custom.doors;
 
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.block.custom.decorations.DoorBlock;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.jetbrains.annotations.Nullable;
-
-import com.hbm_m.block.custom.decorations.DoorBlock;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.client.ClientSoundManager;
+import com.hbm_m.multiblock.IMultiblockPart;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.sound.ClientSoundManager;
+
 import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.model.variant.DoorModelType;
 import com.hbm_m.client.model.variant.DoorSkin;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.multiblock.IMultiblockPart;
-import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -39,6 +40,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
+
 
 public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     

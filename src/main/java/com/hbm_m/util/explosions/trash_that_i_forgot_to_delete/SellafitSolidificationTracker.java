@@ -6,6 +6,8 @@ import net.minecraft.server.level.ServerLevel;
 import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
+import com.hbm_m.main.MainRegistry;
+
 /**
  * ОПТИМИЗИРОВАННЫЙ ТРЕКЕР ЗАТВЕРДЕВАНИЯ СЕЛЛАФИТА v2
  *
@@ -189,7 +191,7 @@ public class SellafitSolidificationTracker {
         }
 
         if (!keysToRemove.isEmpty()) {
-            System.out.println("[SELLAFIT] Очищено старых записей: " + keysToRemove.size());
+            MainRegistry.LOGGER.debug("[SELLAFIT] Очищено старых записей: " + keysToRemove.size());
         }
     }
 }

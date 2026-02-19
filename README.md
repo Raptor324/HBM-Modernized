@@ -49,6 +49,34 @@ A modern reimagining of the legendary HBM's Nuclear Tech Mod for Minecraft 1.20.
 
 ***
 
+## 🛠️ Development Tools
+
+### Localization Linter
+Check for unused localization keys in `ModLanguageProvider.java`:
+
+**Quick Start:**
+```bash
+# Windows
+util/check_localization.bat
+
+# Unix/Linux/Mac
+make -C util lint-console
+
+# PowerShell
+.\util\check_localization.ps1
+```
+
+**IDE Integration:**
+- Run with GCC format for IDE error parsing:
+  ```bash
+  python util/localization_linter.py --format gcc
+  ```
+- Most IDEs can parse GCC-style error output
+
+📖 **Documentation:** [`util/LOCALIZATION_QUICK_START.md`](util/LOCALIZATION_QUICK_START.md)
+
+***
+
 ## 🏭 Industry and Machines
 
 ### Multiblock Structures
@@ -229,7 +257,7 @@ Fork the repository and propose improvements.
 
 **The Bobcat** — author of the original HBM's Nuclear Tech Mod
 
-**Raptor324, Hyperio \& Razchexlitiel** — modernization and rework
+**Raptor324** — modernization and rework
 
 The Forge team and Mojang for development tools
 

@@ -3,11 +3,16 @@
   "minVersion": "0.8",
   "package": "com.hbm_m.mixin",
   "compatibilityLevel": "JAVA_17",
-  "refmap": "hbm_m.refmap.json",
+  "refmap": "mixins.hbm_m.refmap.json",
   "mixins": [
-    "SlotMixin"
+    "SlotMixin",
+    "PlayerStepSoundMixin"
+  ],
+  "server": [
   ],
   "client": [
+    "GameRendererMixin",
+    "LightTextureMixin"
   ],
   "injectors": {
     "defaultRequire": 1
