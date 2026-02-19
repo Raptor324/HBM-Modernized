@@ -1,0 +1,13 @@
+{
+    "door_id": "round_airlock_door",
+    "legacy_model": "hbm_m:block/doors/round_airlock_door_legacy",
+    "modern_model": {
+        "model": "hbm_m:block/doors/round_airlock_door_modern",
+        "skins": [
+        {"id": "default", "name": "Standard", "texture": "hbm_m:block/doors/round_airlock_door"},
+        {"id": "clean", "name": "Clean", "texture": "hbm_m:block/doors/round_airlock_door_clean", "model": "hbm_m:block/doors/round_airlock_door_modern_clean"},
+        {"id": "green", "name": "Green", "texture": "hbm_m:block/doors/round_airlock_door_green", "model": "hbm_m:block/doors/round_airlock_door_modern_green"}
+        ]
+    },
+    "default": {"type": "modern", "skin": "default"}
+}

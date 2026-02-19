@@ -4,9 +4,7 @@ package com.hbm_m.client;
 // GUI, рендереры, модели и т.д.
 import com.hbm_m.client.overlay.*;
 import com.hbm_m.client.loader.*;
-import com.hbm_m.client.overlay.crates.GUIDeshCrate;
-import com.hbm_m.client.overlay.crates.GUIIronCrate;
-import com.hbm_m.client.overlay.crates.GUISteelCrate;
+import com.hbm_m.client.overlay.crates.*;
 import com.hbm_m.client.render.*;
 import com.hbm_m.client.render.shader.*;
 import com.hbm_m.config.*;
@@ -19,7 +17,7 @@ import com.hbm_m.item.tags_and_tiers.ModTags;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.menu.ModMenuTypes;
-import com.hbm_m.multiblock.DoorPartAABBRegistry;
+// import com.hbm_m.multiblock.DoorPartAABBRegistry;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -79,7 +77,7 @@ public class ClientSetup {
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
-        MinecraftForge.EVENT_BUS.register(DoorOutlineRenderer.class);
+        // MinecraftForge.EVENT_BUS.register(DoorOutlineRenderer.class);
         // MinecraftForge.EVENT_BUS.register(DoorDebugRenderer.class);
         // MinecraftForge.EVENT_BUS.register(ClientSetup.class);
 
@@ -118,7 +116,7 @@ public class ClientSetup {
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
         event.enqueueWork(() -> {
-            // Здесь мы связываем наш тип меню с классом экрана
+            MenuScreens.register(ModMenuTypes.ORE_ACIDIZER_MENU.get(), com.hbm_m.client.screen.OreAcidizerScreen::new);
             MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
             MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
             MenuScreens.register(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
@@ -128,6 +126,7 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), GUIMachineShredder::new);
             MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
             MenuScreens.register(ModMenuTypes.ANVIL_MENU.get(), GUIAnvil::new);
+            MenuScreens.register(ModMenuTypes.CENTRIFUGE_MENU.get(), GUIMachineCentrifuge::new);
             MenuScreens.register(ModMenuTypes.IRON_CRATE_MENU.get(), GUIIronCrate::new);
             MenuScreens.register(ModMenuTypes.STEEL_CRATE_MENU.get(), GUISteelCrate::new);
             MenuScreens.register(ModMenuTypes.DESH_CRATE_MENU.get(), GUIDeshCrate::new);
@@ -137,18 +136,11 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), ChemicalPlantRenderer::new);
 
             OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
-            try {
-                RenderPathManager.updateRenderPath();
-                MainRegistry.LOGGER.info("VBO render system initialized successfully");
-            } catch (Exception e) {
-                MainRegistry.LOGGER.error("Failed to initialize VBO render system", e);
-            }
-            
-            // ДОБАВИТЬ: Регистрация обработчика отключения от сервера
             MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
-            MainRegistry.LOGGER.info("Initial render path check completed");
+            MainRegistry.LOGGER.info("VBO render system initialized successfully");
         });
     }
 
@@ -179,8 +171,48 @@ public class ClientSetup {
     }
 
     @SubscribeEvent
+    public static void onModelRegisterAdditional(ModelEvent.RegisterAdditional event) {
+        // Регистрируем модели вариантов дверей, чтобы они загружались в ModelManager
+        // round_airlock_door
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_clean"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_green"));
+        // large_vehicle_door
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_legacy"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern"));
+        // fire_door
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_legacy"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_black"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_orange"));
+        // secure_access_door
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_legacy"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_gray"));
+        // water_door
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_legacy"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_modern"));
+        // qe_containment_door
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_legacy"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern"));
+        // qe_sliding_door
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_legacy"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern"));
+        // sliding_blast_door
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_legacy"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant1"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant2"));
+        // sliding_seal_door
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_legacy"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern"));
+        MainRegistry.LOGGER.debug("Registered door variant models for loading");
+    }
+
+    @SubscribeEvent
     public static void onModelRegister(ModelEvent.RegisterGeometryLoaders event) {
-        DoorDeclRegistry.init();
+        // DoorDeclRegistry.init();
         MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
 
         event.register("procedural_wire", new ProceduralWireLoader());
@@ -210,28 +242,26 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onResourceReload(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(new ShaderReloadListener());
+        event.registerReloadListener(com.hbm_m.client.model.variant.DoorModelRegistry.getInstance());
         event.registerReloadListener((preparationBarrier, resourceManager,
                 preparationsProfiler, reloadProfiler,
                 backgroundExecutor, gameExecutor) -> {
             return preparationBarrier.wait(null).thenRunAsync(() -> {
-                // Очищаем глобальный кэш VBO
-                MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
-                ImmediateFallbackRenderer.clearGlobalCache();
-                DoorRenderer.clearAllCaches();
-                MachinePressRenderer.clearCaches();
-                
-                // ИСПРАВЛЕНО: НЕ вызываем reset(), вместо этого очищаем только кеши
-                GlobalMeshCache.clearAll();
-                DoorPartAABBRegistry.clear();
-                
-                // Переинициализируем immediate рендер после очистки
-                ImmediateFallbackRenderer.onShaderReload();
-                
-                // ИСПРАВЛЕНО: Вместо reset() просто обновляем путь на основе текущего состояния
-                // Это сохранит ручное переключение, если оно было активно
-                RenderPathManager.updateRenderPath();
-                
-                MainRegistry.LOGGER.info("VBO cache cleanup completed, render path preserved");
+                // КРИТИЧНО: Откладываем очистку кэшей на render thread, чтобы избежать
+                // race condition с активным рендером (EXCEPTION_ACCESS_VIOLATION при
+                // включении шейдера — clearCaches вызывался во время render pass).
+                com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
+                    try {
+                        MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
+                        MachineAdvancedAssemblerRenderer.clearCaches();
+                        DoorRenderer.clearAllCaches();
+                        MachinePressRenderer.clearCaches();
+                        GlobalMeshCache.clearAll();
+                        MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");
+                    } catch (Exception e) {
+                        MainRegistry.LOGGER.error("Error during deferred VBO cache cleanup", e);
+                    }
+                });
             }, gameExecutor);
         });
     }
@@ -241,7 +271,6 @@ public class ClientSetup {
         DoorRenderer.clearAllCaches();
         MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
         MachinePressRenderer.clearCaches();
-        com.hbm_m.client.render.shader.ImmediateFallbackRenderer.forceReset();
     }
 
     @SubscribeEvent
@@ -273,19 +302,22 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
-        MainRegistry.LOGGER.info("Registering custom shaders...");
+        MainRegistry.LOGGER.info("Registering optimized shaders...");
+        
         VertexFormat blockLitFormat = new VertexFormat(
             ImmutableMap.<String, VertexFormatElement>builder()
-                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
-                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
-                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
-                .put("InstMatRow0", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
-                .put("InstMatRow1", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
-                .put("InstMatRow2", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
-                .put("InstMatRow3", DefaultVertexFormat.ELEMENT_NORMAL) // vec4
-                .put("InstLight",   DefaultVertexFormat.ELEMENT_UV2)    // vec2
+                .put("Position", DefaultVertexFormat.ELEMENT_POSITION) // Loc 0
+                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)   // Loc 1
+                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)      // Loc 2
+                
+                // Новые атрибуты:
+                .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3)) // Loc 3
+                .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4)) // Loc 4
+                .put("InstBrightness", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1)) // Loc 5
+                
                 .build()
         );
+        
         event.registerShader(
             new ShaderInstance(
                 event.getResourceProvider(),

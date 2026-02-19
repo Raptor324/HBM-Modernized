@@ -93,7 +93,7 @@ minecraft {
         client {
             // Comma-separated list of namespaces to load gametests from. Empty = all namespaces.
             property 'forge.enabledGameTestNamespaces', mod_id
-            jvmArgs = [ "-Xmx4G", "-Xms2G"]
+            jvmArgs = [ "-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8"]
         }
 
         server {
@@ -170,7 +170,11 @@ dependencies {
 
     runtimeOnly fg.deobf("maven.modrinth:spark:1.10.53-forge")
 
+    // JEI is optional at runtime, but we compile against its API/classes for our integration.
+    compileOnly fg.deobf("curse.maven:jei-238222:7270446")
     runtimeOnly fg.deobf("curse.maven:jei-238222:7270446")
+    implementation fg.deobf("curse.maven:embeddium-908741:5681725")
+    implementation fg.deobf("curse.maven:oculus-581495:6020952")
 
     
     api(fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.136"))

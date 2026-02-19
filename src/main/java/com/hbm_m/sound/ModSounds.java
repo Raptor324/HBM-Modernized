@@ -72,6 +72,8 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> ASSEMBLER_STRIKE_1 = registerSoundEvents("block.assembler_strike1");
     public static final RegistryObject<SoundEvent> ASSEMBLER_STRIKE_2 = registerSoundEvents("block.assembler_strike2");
     public static final RegistryObject<SoundEvent> MOTOR = registerSoundEvents("block.motor");
+    public static final RegistryObject<SoundEvent> METAL_BOX_OPEN = registerSoundEvents("block.metal_box_open");
+    public static final RegistryObject<SoundEvent> METAL_BOX_CLOSE = registerSoundEvents("block.metal_box_close");
     public static final RegistryObject<SoundEvent> PRESS_OPERATE = registerSoundEvents("block.press_operate");
     public static final RegistryObject<SoundEvent> SHREDDER = registerSoundEvents("block.shredder");
 

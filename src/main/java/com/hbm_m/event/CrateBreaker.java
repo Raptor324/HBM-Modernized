@@ -1,7 +1,12 @@
 package com.hbm_m.event;
 
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.core.BlockPos;
@@ -9,23 +14,17 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-
 import net.minecraftforge.registries.RegistryObject;
 
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
-
-@Mod.EventBusSubscriber(modid = "hbm_m", bus = Mod.EventBusSubscriber.Bus.FORGE)
+@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CrateBreaker {
 
     private static final Random RANDOM = new Random();

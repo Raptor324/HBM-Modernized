@@ -1,0 +1,11 @@
+{
+    "door_id":"qe_containment_door",
+    "legacy_model":"hbm_m:block/doors/qe_containment_door_legacy",
+    "modern_model":{
+        "model":"hbm_m:block/doors/qe_containment_door_modern",
+        "skins":[
+            {"id":"default","name":"Standard","texture":"hbm_m:block/doors/qe_containment_door"}
+        ]
+    },
+    "default":{"type":"modern","skin":"default"}
+}

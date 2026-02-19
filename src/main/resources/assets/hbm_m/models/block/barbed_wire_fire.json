@@ -6,7 +6,7 @@
   "children": {
     "barbed_wire_fire_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/barbed_wire_fire.obj",
+      "model": "hbm_m:models/block/barbed_wire.obj",
       "flip_v": true,
       "textures": {
         "default": "hbm_m:block/barbed_wire_fire"
@@ -14,7 +14,7 @@
     }
   },
   "transform": {
-    "translation": [0.50, 0.0, 0.5],
+    "translation": [0.5, 0.0, 0.5],
     "rotation": [0, 0, 0],
     "scale": 1.0
   },

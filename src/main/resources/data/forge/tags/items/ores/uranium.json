@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "hbm_m:uranium_ore",
+    "hbm_m:uranium_ore_deepslate"
+  ]
+}

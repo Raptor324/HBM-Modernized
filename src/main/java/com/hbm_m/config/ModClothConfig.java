@@ -2,17 +2,16 @@ package com.hbm_m.config;
 // Конфигурация мода с использованием AutoConfig и Cloth Config.
 // Включает валидацию значений после загрузки для обеспечения корректных настроек
 
-import net.minecraft.util.Mth;
 import com.hbm_m.main.MainRegistry;
 
+import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.ConfigData;
 import me.shedaniel.autoconfig.annotation.Config;
 import me.shedaniel.autoconfig.annotation.ConfigEntry.BoundedDiscrete;
 import me.shedaniel.autoconfig.annotation.ConfigEntry.Category;
 import me.shedaniel.autoconfig.annotation.ConfigEntry.Gui;
-
-import me.shedaniel.autoconfig.AutoConfig;
 import me.shedaniel.autoconfig.serializer.Toml4jConfigSerializer;
+import net.minecraft.util.Mth;
 
 @Config(name = "hbm_m")
 public class ModClothConfig implements ConfigData {
@@ -180,6 +179,24 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public boolean enableOcclusionCulling = true;
 
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean useInstancedStaticRendering = true;
+
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean useColladaDoorAnimations = true;
+
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean useColladaZUpConversion = true;
+
+    /** Яркость анимированной части двери (Iris/Oculus). 1.0 = без изменений, 0.85 = темнее для выравнивания с baked model. */
+    @Category("rendering")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 50, max = 100)
+    public int doorAnimatedPartBrightness = 88;
+
     // Отладка 
     @Category("debug")
     @Gui.Tooltip
@@ -238,11 +255,43 @@ public class ModClothConfig implements ConfigData {
 
     // Регистрация конфига (вызывать в инициализации мода) 
     public static void register() {
+        // Основной конфиг мода
         AutoConfig.register(ModClothConfig.class, Toml4jConfigSerializer::new);
+        
+        // Конфиг моделей дверей
+        AutoConfig.register(DoorModelConfig.class, Toml4jConfigSerializer::new);
     }
 
     // Получение текущих настроек 
     public static ModClothConfig get() {
         return AutoConfig.getConfigHolder(ModClothConfig.class).getConfig();
+    }
+
+    /** Использовать батчинг для статических частей (frame, Base). При проблемах отключите. */
+    public static boolean useInstancedBatching() {
+        return get().useInstancedStaticRendering;
+    }
+
+    /**
+     * Получение конфига моделей дверей
+     */
+    public static DoorModelConfig getDoorModelConfig() {
+        try {
+            return AutoConfig.getConfigHolder(DoorModelConfig.class).getConfig();
+        } catch (Exception e) {
+            MainRegistry.LOGGER.warn("Failed to get DoorModelConfig, returning new instance");
+            return new DoorModelConfig();
+        }
+    }
+    
+    /**
+     * Сохранение конфига моделей дверей
+     */
+    public static void saveDoorModelConfig() {
+        try {
+            AutoConfig.getConfigHolder(DoorModelConfig.class).save();
+        } catch (Exception e) {
+            MainRegistry.LOGGER.error("Failed to save DoorModelConfig", e);
+        }
     }
 }

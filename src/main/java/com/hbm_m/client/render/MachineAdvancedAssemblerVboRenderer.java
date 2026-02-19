@@ -1,15 +1,17 @@
 package com.hbm_m.client.render;
 
+import org.jetbrains.annotations.Nullable;
+import org.joml.Matrix4f;
+
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
 import com.mojang.blaze3d.vertex.PoseStack;
+
+import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
-import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix4f;
 
 
 @OnlyIn(Dist.CLIENT)
@@ -23,22 +25,32 @@ public class MachineAdvancedAssemblerVboRenderer {
         this.model = model;
     }
 
-    // ИСПРАВЛЕНИЕ: Статические части без трансформаций
+    // Статические части без трансформаций
     public void renderStaticBase(PoseStack poseStack, int packedLight, BlockPos blockPos, 
                                 @Nullable BlockEntity blockEntity) {
+        renderStaticBase(poseStack, packedLight, blockPos, blockEntity, null);
+    }
+
+    public void renderStaticBase(PoseStack poseStack, int packedLight, BlockPos blockPos, 
+                                @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         BakedModel part = model.getPart(BASE);
         if (part != null) {
-            GlobalMeshCache.getOrCreateRenderer("assembler_" + BASE, part)
-                    .render(poseStack, packedLight, blockPos, blockEntity);
+            var r = GlobalMeshCache.getOrCreateRenderer("assembler_" + BASE, part);
+            if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
         }
     }
 
     public void renderStaticFrame(PoseStack poseStack, int packedLight, BlockPos blockPos,
                                  @Nullable BlockEntity blockEntity) {
+        renderStaticFrame(poseStack, packedLight, blockPos, blockEntity, null);
+    }
+
+    public void renderStaticFrame(PoseStack poseStack, int packedLight, BlockPos blockPos,
+                                 @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         BakedModel part = model.getPart(FRAME);
         if (part != null) {
-            GlobalMeshCache.getOrCreateRenderer("assembler_" + FRAME, part)
-                    .render(poseStack, packedLight, blockPos, blockEntity);
+            var r = GlobalMeshCache.getOrCreateRenderer("assembler_" + FRAME, part);
+            if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
         }      
     }
 
@@ -46,19 +58,23 @@ public class MachineAdvancedAssemblerVboRenderer {
     public void renderAnimatedPart(PoseStack poseStack, int packedLight, String partName, 
                                   Matrix4f transform, BlockPos blockPos, 
                                   @Nullable BlockEntity blockEntity) {
+        renderAnimatedPart(poseStack, packedLight, partName, transform, blockPos, blockEntity, null);
+    }
+
+    public void renderAnimatedPart(PoseStack poseStack, int packedLight, String partName, 
+                                  Matrix4f transform, BlockPos blockPos, 
+                                  @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         BakedModel part = model.getPart(partName);
         if (part != null) {
             poseStack.pushPose();
             
             // КРИТИЧНО: Применяем трансформацию к PoseStack ПЕРЕД рендерингом
-            // Это гарантирует, что трансформация будет передана в шейдер
             if (transform != null) {
                 poseStack.last().pose().mul(transform);
             }
             
-            // Рендерим с уже примененными трансформациями в PoseStack
-            GlobalMeshCache.getOrCreateRenderer("assembler_" + partName, part)
-                    .render(poseStack, packedLight, blockPos, blockEntity);
+            var r = GlobalMeshCache.getOrCreateRenderer("assembler_" + partName, part);
+            if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
             
             poseStack.popPose();
         }

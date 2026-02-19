@@ -3,12 +3,24 @@ package com.hbm_m.datagen.assets;
 // Провайдер генерации состояний блоков и моделей для блоков мода.
 // Используется в классе DataGenerators для регистрации.
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.custom.decorations.DoorBlock;
+import com.hbm_m.block.custom.machines.BlastFurnaceBlock;
+import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
+import com.hbm_m.block.custom.machines.MachineWoodBurnerBlock;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.main.MainRegistry;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.main.MainRegistry;
+import com.hbm_m.multiblock.PartRole;
+
+import net.minecraft.core.Direction;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.SnowLayerBlock;
+import net.minecraft.world.level.block.StairBlock;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraftforge.client.model.generators.BlockStateProvider;
 import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.client.model.generators.VariantBlockStateBuilder;
@@ -30,6 +42,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.STRAWBERRY_BUSH.get(), models().cross(blockTexture(ModBlocks.STRAWBERRY_BUSH.get()).getPath(),
                 blockTexture(ModBlocks.STRAWBERRY_BUSH.get())).renderType("cutout"));
         // Блоки слитков теперь генерируются автоматически в цикле ниже
+
         blockWithItem(ModBlocks.GIGA_DET);
         blockWithItem(ModBlocks.POLONIUM210_BLOCK);
         blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
@@ -103,7 +116,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.VINYL_TILE_SMALL);
         blockWithItem(ModBlocks.RESOURCE_ASBESTOS);
         blockWithItem(ModBlocks.RESOURCE_BAUXITE);
-        blockWithItem(ModBlocks.SEQUESTRUM_ORE);
         blockWithItem(ModBlocks.RESOURCE_HEMATITE);
         blockWithItem(ModBlocks.RESOURCE_LIMESTONE);
         blockWithItem(ModBlocks.RESOURCE_MALACHITE);
@@ -115,9 +127,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.DEPTH_ZIRCONIUM);
         blockWithItem(ModBlocks.DEPTH_STONE);
         blockWithItem(ModBlocks.DEPTH_BORAX);
-        oreWithItem(ModBlocks.URANIUM_ORE);
         blockWithItem(ModBlocks.WASTE_LEAVES);
-        blockWithItem(ModBlocks.ORE_OIL);
         blockWithItem(ModBlocks.BEDROCK_OIL);
         blockWithItem(ModBlocks.REINFORCED_STONE);
         blockWithItem(ModBlocks.CONCRETE_HAZARD);
@@ -134,8 +144,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED1);
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED2);
         blockWithItem(ModBlocks.SELLAFIELD_SLAKED3);
+        blockWithItem(ModBlocks.FREAKY_ALIEN_BLOCK);
 
-        // ✅ ДОБАВЛЕНО: Модель для ядерных осадков
+        // Модель для ядерных осадков
         // Эта функция автоматически создаст все 8 состояний высоты для блока
         // и свяжет их с моделями, которые выглядят как снег, но с вашей текстурой.
         registerSnowLayerBlock(ModBlocks.NUCLEAR_FALLOUT, "nuclear_fallout");
@@ -179,6 +190,15 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/waste_log_side"),
                         modLoc("block/waste_log_top"),
                         modLoc("block/waste_log_top")
+                )
+        );
+
+		simpleBlockWithItem(ModBlocks.NUCLEAR_CHARGE.get(),
+                models().cubeBottomTop(
+                        ModBlocks.NUCLEAR_CHARGE.getId().getPath(),
+                        modLoc("block/nuclear_charge"),
+                        modLoc("block/nuclear_charge_top"),
+                        modLoc("block/nuclear_charge")
                 )
         );
 
@@ -249,10 +269,19 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
 
+		simpleBlockWithItem(ModBlocks.C4.get(),
+                models().cubeBottomTop(
+                        ModBlocks.C4.getId().getPath(),
+                        modLoc("block/c4block_side"),
+                        modLoc("block/c4block_top"),
+                        modLoc("block/c4block_bottom")
+                )
+        );
+
         simpleBlock(ModBlocks.BLAST_FURNACE_EXTENSION.get(),
-                models().getExistingFile(modLoc("block/difurnace_extension")));
+                models().getExistingFile(modLoc("block/machines/difurnace_extension")));
         simpleBlockItem(ModBlocks.BLAST_FURNACE_EXTENSION.get(),
-                models().getExistingFile(modLoc("block/difurnace_extension")));
+                models().getExistingFile(modLoc("block/machines/difurnace_extension")));
 
         simpleBlockWithItem(ModBlocks.CRATE_IRON.get(),
                 models().cubeBottomTop(
@@ -280,9 +309,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/crate_desh_top")
                 )
         );
-
-        blockWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
-        blockWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);
 
         simpleBlockWithItem(ModBlocks.REINFORCED_GLASS.get(),
                 models().cubeAll(ModBlocks.REINFORCED_GLASS.getId().getPath(),
@@ -316,9 +342,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
 
 
-        doorBlockWithRenderType(((DoorBlock) ModBlocks.METAL_DOOR.get()), modLoc("block/metal_door_bottom"), modLoc("block/metal_door_top"), "cutout");
-        doorBlockWithRenderType(((DoorBlock) ModBlocks.DOOR_BUNKER.get()), modLoc("block/door_bunker_bottom"), modLoc("block/door_bunker_top"), "cutout");
-        doorBlockWithRenderType(((DoorBlock) ModBlocks.DOOR_OFFICE.get()), modLoc("block/door_office_bottom"), modLoc("block/door_office_top"), "cutout");
+        doorBlockWithRenderType(((net.minecraft.world.level.block.DoorBlock) ModBlocks.METAL_DOOR.get()), modLoc("block/metal_door_bottom"), modLoc("block/metal_door_top"), "cutout");
+        doorBlockWithRenderType(((net.minecraft.world.level.block.DoorBlock) ModBlocks.DOOR_BUNKER.get()), modLoc("block/door_bunker_bottom"), modLoc("block/door_bunker_top"), "cutout");
+        doorBlockWithRenderType(((net.minecraft.world.level.block.DoorBlock) ModBlocks.DOOR_OFFICE.get()), modLoc("block/door_office_bottom"), modLoc("block/door_office_top"), "cutout");
 
         columnBlockWithItem(
                 ModBlocks.WASTE_GRASS,
@@ -328,27 +354,99 @@ public class ModBlockStateProvider extends BlockStateProvider {
         );
 
         columnBlockWithItem(
+                ModBlocks.DET_MINER,
+                modLoc("block/det_miner_side"),
+                modLoc("block/det_miner_top"),
+                modLoc("block/det_miner_top")
+        );
+
+        columnBlockWithItem(
                 ModBlocks.ARMOR_TABLE,
                 modLoc("block/armor_table_side"),
                 modLoc("block/armor_table_top"),
                 modLoc("block/armor_table_bottom")
         );
 
+		columnBlockWithItem(
+                ModBlocks.WASTE_CHARGE,
+                modLoc("block/waste_charge"),
+                modLoc("block/waste_charge_top"),
+                modLoc("block/waste_charge_bottom")
+        );
+
+        columnBlockWithItem(
+                ModBlocks.SMOKE_BOMB,
+                modLoc("block/smoke_bomb_side"),
+                modLoc("block/smoke_bomb_top"),
+                modLoc("block/smoke_bomb_bottom")
+        );
+
         // Блоки с кастомной OBJ моделью
+        // Doors
+        
+        customDoorBlock(ModBlocks.LARGE_VEHICLE_DOOR);
+        customDoorBlock(ModBlocks.ROUND_AIRLOCK_DOOR);
+        customDoorBlock(ModBlocks.TRANSITION_SEAL);
+        customDoorBlock(ModBlocks.SILO_HATCH);
+        customDoorBlock(ModBlocks.SILO_HATCH_LARGE);
+        customDoorBlock(ModBlocks.QE_SLIDING);
+        customDoorBlock(ModBlocks.QE_CONTAINMENT);
+        customDoorBlock(ModBlocks.WATER_DOOR);
+        customDoorBlock(ModBlocks.FIRE_DOOR);
+        customDoorBlock(ModBlocks.SLIDE_DOOR);
+        customDoorBlock(ModBlocks.SLIDING_SEAL_DOOR);
+        customDoorBlock(ModBlocks.SECURE_ACCESS_DOOR);
+
+        // Machines
+        customMachineBlock(ModBlocks.ORE_ACIDIZER);
+        customMachineBlock(ModBlocks.CHEMICAL_PLANT);
+        customMachineBlock(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
+        customMachineBlock(ModBlocks.CENTRIFUGE);
+        customMachineBlock(ModBlocks.MACHINE_ASSEMBLER);
+        registerAdvancedAssemblyMachineBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
+        customMachineBlock(ModBlocks.PRESS);
+
+        // Машины со свойством LIT (включен/выключен)
+        registerLitMachineBlock(ModBlocks.BLAST_FURNACE, 
+            BlastFurnaceBlock.FACING, BlastFurnaceBlock.LIT, 
+            "blast_furnace", "blast_furnace_on");
+        registerLitMachineBlock(ModBlocks.WOOD_BURNER, 
+            MachineWoodBurnerBlock.FACING, MachineWoodBurnerBlock.LIT, 
+            "wood_burner", "wood_burner");
+
+        // FluidTank - только FACING
+        horizontalBlock(ModBlocks.FLUID_TANK.get(),
+            models().getExistingFile(modLoc("block/machines/fluid_tank")));
+
+        // Decor
+        customObjBlock(ModBlocks.CRT_BROKEN);
+        customObjBlock(ModBlocks.CRT_BSOD);
+        customObjBlock(ModBlocks.CRT_CLEAN);
         customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
-        customObjBlock(ModBlocks.MACHINE_ASSEMBLER);
-        customObjBlock(ModBlocks.LARGE_VEHICLE_DOOR);
-        customObjBlock(ModBlocks.ROUND_AIRLOCK_DOOR);
-        customObjBlock(ModBlocks.TRANSITION_SEAL);
-        customObjBlock(ModBlocks.SILO_HATCH);
-        customObjBlock(ModBlocks.SILO_HATCH_LARGE);
-        customObjBlock(ModBlocks.QE_SLIDING);
-        customObjBlock(ModBlocks.QE_CONTAINMENT);
-        customObjBlock(ModBlocks.WATER_DOOR);
-        customObjBlock(ModBlocks.FIRE_DOOR);
-        customObjBlock(ModBlocks.SLIDE_DOOR);
-        customObjBlock(ModBlocks.SLIDING_SEAL_DOOR);
-        customObjBlock(ModBlocks.SECURE_ACCESS_DOOR);
+        customObjBlock(ModBlocks.TAPE_RECORDER);
+        customObjBlock(ModBlocks.TOASTER);
+
+        // Other
+        customObjBlock(ModBlocks.AIRBOMB);
+        customObjBlock(ModBlocks.BALEBOMB_TEST);
+        customObjBlock(ModBlocks.BARREL_CORRODED);
+        customObjBlock(ModBlocks.BARREL_IRON);
+        customObjBlock(ModBlocks.BARREL_LOX);
+        customObjBlock(ModBlocks.BARREL_PINK);
+        customObjBlock(ModBlocks.BARREL_RED);
+        customObjBlock(ModBlocks.BARREL_PLASTIC);
+        customObjBlock(ModBlocks.BARREL_STEEL);
+        customObjBlock(ModBlocks.BARREL_TAINT);
+        customObjBlock(ModBlocks.BARREL_TCALLOY);
+        customObjBlock(ModBlocks.BARREL_VITRIFIED);
+        customObjBlock(ModBlocks.BARREL_YELLOW);
+        customObjBlock(ModBlocks.DUD_CONVENTIONAL);
+        customObjBlock(ModBlocks.DUD_NUKE);
+        customObjBlock(ModBlocks.DUD_SALTED);
+        simpleBlockWithItem(ModBlocks.MINE_AP.get(), models().getExistingFile(modLoc("block/mine_ap")));
+        simpleBlockWithItem(ModBlocks.MINE_FAT.get(), models().getExistingFile(modLoc("block/mine_fat")));
+        customObjBlock(ModBlocks.CRATE_CONSERVE);
+        customObjBlock(ModBlocks.FILE_CABINET);
 
         simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath()));
         simpleBlockWithItem(ModBlocks.WIRE_COATED.get(), models().getExistingFile(modLoc("block/wire_coated")));
@@ -384,6 +482,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/machine_battery_dineutronium_front"),
                 modLoc("block/machine_battery_dineutronium_top")
         );
+
+        // orientableBlockWithItem(
+        //         ModBlocks.SHREDDER,
+        //         modLoc("block/shredder_side"),
+        //         modLoc("block/shredder_front"),
+        //         modLoc("block/shredder_top")
+        // );
 
         // Генерация моделей для ступенек
         stairsBlock((StairBlock) ModBlocks.REINFORCED_STONE_STAIRS.get(),
@@ -979,9 +1084,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 new ModelFile.UncheckedModelFile(modLoc("block/shredder")));
 
         // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ СЛИТКОВ
-        // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            // !!! ДОБАВЛЕНА ПРОВЕРКА !!!
             if (ModBlocks.hasIngotBlock(ingot)) {
                 RegistryObject<Block> blockRegistryObject = ModBlocks.getIngotBlock(ingot);
                 if (blockRegistryObject != null) {
@@ -991,6 +1094,34 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
 
         registerAnvils();
+
+        // === ГЕНЕРАЦИЯ BLOCKSTATE ФАЙЛОВ ДЛЯ РУД ===
+        // Используем oreWithItem() для всех руд
+        oreWithItem(ModBlocks.URANIUM_ORE);
+        oreWithItem(ModBlocks.URANIUM_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.LIGNITE_ORE);
+        oreWithItem(ModBlocks.ALUMINUM_ORE);
+        oreWithItem(ModBlocks.ALUMINUM_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.LEAD_ORE);
+        oreWithItem(ModBlocks.LEAD_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.RAREGROUND_ORE);
+        oreWithItem(ModBlocks.RAREGROUND_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.FLUORITE_ORE);
+        oreWithItem(ModBlocks.BERYLLIUM_ORE);
+        oreWithItem(ModBlocks.BERYLLIUM_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.ASBESTOS_ORE);
+        oreWithItem(ModBlocks.CINNABAR_ORE);
+        oreWithItem(ModBlocks.CINNABAR_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.COBALT_ORE);
+        oreWithItem(ModBlocks.COBALT_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.TUNGSTEN_ORE);
+        oreWithItem(ModBlocks.THORIUM_ORE);
+        oreWithItem(ModBlocks.THORIUM_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.TITANIUM_ORE);
+        oreWithItem(ModBlocks.TITANIUM_ORE_DEEPSLATE);
+        oreWithItem(ModBlocks.SULFUR_ORE);
+        oreWithItem(ModBlocks.ORE_OIL);
+        oreWithItem(ModBlocks.SEQUESTRUM_ORE);
     }
 
     /**
@@ -1020,21 +1151,31 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
     }
     private void oreWithItem(RegistryObject<Block> blockObject) {
-        // 1. Получаем регистрационное имя блока (например, "uranium_block")
+        // 1. Получаем регистрационное имя блока (например, "uranium_ore")
         String registrationName = blockObject.getId().getPath();
 
-        // 2. Трансформируем его в базовое имя (удаляем "_block" -> "uranium")
-        String baseName = registrationName.replace("_ore", "");
+        // 2. Пробуем два варианта имени текстуры:
+        //    - "ore_" + registrationName (например: ore_uranium)
+        //    - registrationName (например: uranium_ore_deepslate)
+        String textureName = "ore_" + registrationName;
+        ResourceLocation textureLocation = modLoc("textures/block/" + textureName + ".png");
 
-        // 3. Создаем имя файла текстуры (добавляем "ore_" -> "ore_uranium")
-        String textureName = "ore_" + baseName;
+        if (!existingFileHelper.exists(textureLocation, net.minecraft.server.packs.PackType.CLIENT_RESOURCES)) {
+            // Пробуем без префикса "ore_"
+            textureName = registrationName;
+            textureLocation = modLoc("textures/block/" + textureName + ".png");
+            if (!existingFileHelper.exists(textureLocation, net.minecraft.server.packs.PackType.CLIENT_RESOURCES)) {
+                MainRegistry.LOGGER.warn("Texture not found for block {} (tried: {} and {}). Skipping model generation.",
+                        registrationName, "ore_" + registrationName, registrationName);
+                return;
+            }
+        }
 
-        // 4. Создаем модель блока, ЯВНО указывая путь к текстуре
-        //    Метод models().cubeAll() создает модель типа "block/cube_all" с указанной текстурой.
+        // 3. Создаем модель блока
         simpleBlock(blockObject.get(), models().cubeAll(registrationName, modLoc("block/" + textureName)));
 
-        // 5. Создаем модель для предмета-блока, как и раньше
-        simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
+        // 4. Создаем модель для предмета-блока
+        simpleBlockItem(blockObject.get(), models().getExistingFile(modLoc("block/" + textureName)));
     }
 
     /**
@@ -1070,6 +1211,65 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/" + blockObject.getId().getPath())));
     }
 
+    private <T extends Block> void customDoorBlock(RegistryObject<T> blockObject) {
+        // Регистрируем все варианты blockstate для двери (FACING + PART_ROLE + DOOR_MOVING + OPEN)
+        // rotationY(0): поворот обрабатывается внутри DoorBakedModel (совпадение с BER + doOffsetTransform)
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        ModelFile modelFile = models().getExistingFile(modLoc("block/doors/" + blockObject.getId().getPath()));
+        
+        for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
+            for (PartRole partRole : PartRole.values()) {
+                for (boolean doorMoving : new boolean[]{false, true}) {
+                    for (boolean open : new boolean[]{false, true}) {
+                        builder.partialState()
+                            .with(DoorBlock.FACING, facing)
+                            .with(DoorBlock.PART_ROLE, partRole)
+                            .with(DoorBlock.DOOR_MOVING, doorMoving)
+                            .with(DoorBlock.OPEN, open)
+                            .modelForState()
+                            .modelFile(modelFile)
+                            .rotationY(0)
+                            .addModel();
+                    }
+                }
+            }
+        }
+    }
+
+    private <T extends Block> void customMachineBlock(RegistryObject<T> blockObject) {
+        // Создаём только blockstate, который ссылается на JSON модель
+        // JSON модель должна лежать в resources/assets/hbm_m/models/block/<название>.json
+        horizontalBlock(blockObject.get(),
+            models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath())));
+    }
+
+    /**
+     * Advanced Assembly Machine: FACING + FRAME (frame в BlockState для запекания в чанк).
+     * Одна модель — getQuads возвращает Base+Frame при frame=true.
+     */
+    private void registerAdvancedAssemblyMachineBlock(RegistryObject<? extends Block> blockObject) {
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        // Используем одну и ту же модель для всех состояний.
+        // Логика отображения (Baked vs BER) скрыта внутри самого MachineAdvancedAssemblerBakedModel.
+        ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
+        
+        for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
+            for (boolean frame : new boolean[]{false, true}) {
+                // Добавляем перебор состояния RENDER_ACTIVE
+                for (boolean renderActive : new boolean[]{false, true}) {
+                    builder.partialState()
+                        .with(MachineAdvancedAssemblerBlock.FACING, facing)
+                        .with(MachineAdvancedAssemblerBlock.FRAME, frame)
+                        .with(MachineAdvancedAssemblerBlock.RENDER_ACTIVE, renderActive)
+                        .modelForState()
+                        .modelFile(modelFile)
+                        .rotationY(getRotationY(facing))
+                        .addModel();
+                }
+            }
+        }
+    }
+
     /**
      * Генерирует модель и состояние для горизонтально-ориентированного блока.
      * @param blockObject Блок
@@ -1097,11 +1297,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
     private void registerAnvils() {
         ModBlocks.getAnvilBlocks().forEach(reg -> horizontalBlock(
                 reg.get(),
-                models().getExistingFile(modLoc("block/" + reg.getId().getPath()))
+                models().getExistingFile(modLoc("block/machines/" + reg.getId().getPath()))
         ));
     }
 
-    // ✅ ИСПРАВЛЕННЫЙ МЕТОД: Использует правильные ванильные модели
     private void registerSnowLayerBlock(RegistryObject<Block> block, String baseName) {
         // Получаем текстуру нашего блока (nuclear_fallout.png)
         ResourceLocation texture = blockTexture(block.get());
@@ -1154,6 +1353,55 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block.get(), models().withExistingParent(baseName + "_inventory", mcLoc("block/snow_height2")).texture("texture", texture).texture("particle", texture));
     }
 
+    /**
+     * Регистрирует blockstate для машин со свойством LIT (включен/выключен).
+     * Генерирует варианты для каждого направления FACING и состояния LIT.
+     */
+    private void registerLitMachineBlock(RegistryObject<? extends Block> blockObject, 
+                                          DirectionProperty facingProperty,
+                                          BooleanProperty litProperty,
+                                          String offModel, String onModel) {
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        
+        // Создаём модели для состояний lit=false и lit=true
+        ModelFile offModelFile = models().getExistingFile(modLoc("block/machines/" + offModel));
+        ModelFile onModelFile = models().getExistingFile(modLoc("block/machines/" + onModel));
+        
+        // Для каждого направления FACING создаём варианты для LIT=false и LIT=true
+        for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
+            // Состояние выключено (lit=false)
+            builder.partialState()
+                .with(facingProperty, facing)
+                .with(litProperty, false)
+                .modelForState()
+                .modelFile(offModelFile)
+                .rotationY(getRotationY(facing))
+                .addModel();
+            
+            // Состояние включено (lit=true)
+            builder.partialState()
+                .with(facingProperty, facing)
+                .with(litProperty, true)
+                .modelForState()
+                .modelFile(onModelFile)
+                .rotationY(getRotationY(facing))
+                .addModel();
+        }
+        
+        // Модель для предмета (используем выключенную модель)
+        // simpleBlockItem(blockObject.get(), offModelFile);
+    }
 
-
+    /**
+     * Возвращает угол поворота Y для направления в градусах.
+     */
+    private int getRotationY(Direction facing) {
+        return switch (facing) {
+            case SOUTH -> 180;
+            case WEST -> 270;
+            case NORTH -> 0;
+            case EAST -> 90;
+            default -> 0;
+        };
+    }
 }

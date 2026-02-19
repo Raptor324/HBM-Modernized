@@ -1,0 +1,10 @@
+{
+  "type": "hbm_m:centrifuge",
+  "ingredient": { "tag": "forge:ores/aluminum" },
+  "results": [
+    { "item": "hbm_m:aluminum_powder", "count": 1 },
+    { "item": "hbm_m:aluminum_powder", "count": 1 },
+    { "item": "hbm_m:titanium_powder", "count": 1 },
+    { "item": "minecraft:gravel", "count": 1 }
+  ]
+}

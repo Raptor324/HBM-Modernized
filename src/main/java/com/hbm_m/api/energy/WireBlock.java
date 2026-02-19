@@ -1,8 +1,15 @@
 package com.hbm_m.api.energy;
 
+import java.util.Map;
+
+import javax.annotation.Nullable;
+
+import org.slf4j.Logger;
+
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.capability.ModCapabilities;
 import com.mojang.logging.LogUtils;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -13,21 +20,17 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityTicker;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.util.LazyOptional;
-import org.slf4j.Logger;
-
-import javax.annotation.Nullable;
-import java.util.Map;
 
 public class WireBlock extends BaseEntityBlock {
     private static final Logger LOGGER = LogUtils.getLogger();
@@ -83,23 +86,30 @@ public class WireBlock extends BaseEntityBlock {
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        // [🔥 БЫЛО: this.getConnectionState(context.getLevel(), context.getClickedPos())]
-        return this.getConnectionState(context.getLevel(), context.getClickedPos()); // [ОСТАВЬ КАК ЕСТЬ, мы меняем getConnectionState]
+
+        return this.getConnectionState(context.getLevel(), context.getClickedPos());
     }
 
     @Override
     public BlockState updateShape(BlockState state, Direction facing, BlockState facingState,
                                   LevelAccessor level, BlockPos currentPos, BlockPos facingPos) {
         BooleanProperty property = getProperty(facing);
-        // [🔥 ИЗМЕНЕНО: Добавляем 'facingState' в вызов]
         boolean canConnect = canVisuallyConnectTo(level, facingPos, facing.getOpposite(), facingState);
         return state.setValue(property, canConnect);
+    }
 
-
+    @Override
+    public void neighborChanged(BlockState state, Level level, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
+        super.neighborChanged(state, level, pos, block, fromPos, isMoving);
+        // Сосед изменился (например, часть мультиблока получила роль коннектора).
+        // Пересчитываем соединения и обновляем визуал.
+        BlockState newState = getConnectionState(level, pos);
+        if (!newState.equals(state)) {
+            level.setBlock(pos, newState, Block.UPDATE_CLIENTS);
+        }
     }
 
     private BlockState getConnectionState(LevelAccessor level, BlockPos pos) {
-        // [🔥 ИЗМЕНЕНО: Мы также получаем и передаем BlockState соседа]
         return this.defaultBlockState()
                 .setValue(DOWN,  canVisuallyConnectTo(level, pos.relative(Direction.DOWN),  Direction.UP,    level.getBlockState(pos.relative(Direction.DOWN))))
                 .setValue(UP,    canVisuallyConnectTo(level, pos.relative(Direction.UP),    Direction.DOWN,  level.getBlockState(pos.relative(Direction.UP))))
@@ -111,61 +121,33 @@ public class WireBlock extends BaseEntityBlock {
 
     private boolean canVisuallyConnectTo(LevelAccessor world, BlockPos neighborPos, Direction sideFromNeighbor, BlockState neighborState) {
 
-        // 1. К другим проводам?
         if (neighborState.is(this)) {
             return true;
         }
 
-        // 2. [🔥 НОВАЯ ЛОГИКА]
-        // Это Рубильник или Батарея? (Блоки, которые *всегда* должны быть подключены)
-        // Мы проверяем BlockState, а не BlockEntity, чтобы это работало мгновенно.
         Block block = neighborState.getBlock();
         if (block instanceof SwitchBlock || block instanceof MachineBatteryBlock) {
             return true;
         }
 
-        // 3. [🔥 СТАРАЯ ЛОГИКА]
-        // Это часть мультиблока или другая машина?
-        // Для *всего остального* (включая UniversalMachinePartBlock),
-        // мы должны строго проверять capability.
-
         BlockEntity be = world.getBlockEntity(neighborPos);
         if (be == null) {
-            // BE еще не загрузился.
-            // Если это не Рубильник и не Батарея (проверили в п.2),
-            // то мы не можем знать, коннектор это или нет.
-            // Безопаснее сказать "нет". "Тикающий" WireBlockEntity
-            // или обновление соседнего блока позже это исправят.
             return false;
         }
 
-        // 4. BE существует. Проверяем ЛЮБОЙ HBM capability.
-        //    Это поймает машины (Provider/Receiver) и коннекторы (Connector).
-
-        //    Проверяем HBM_CONNECTOR
         LazyOptional<IEnergyConnector> hbmCap = be.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, sideFromNeighbor);
         if (hbmCap.isPresent()) {
-            // Сосед - это Провод, Рубильник "Вкл" или Батарея "Оба".
-            // Спрашиваем у него, можно ли (вдруг он на что-то смотрит).
-            // [ВАЖНО] UniversalMachinePartBlockEntity с ролью "DEFAULT"
-            // не будет иметь этого capability, и вернет false.
-            // А с ролью "ENERGY_CONNECTOR" - будет (если контроллер его имеет).
             return hbmCap.resolve().map(c -> c.canConnectEnergy(sideFromNeighbor)).orElse(false);
         }
 
-        //    Проверяем HBM_PROVIDER (Машины, Батареи "Выход")
-        //    (Это поймает энерго-порты твоего Генератора)
         if (be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, sideFromNeighbor).isPresent()) {
             return true;
         }
 
-        //    Проверяем HBM_RECEIVER (Машины, Батареи "Вход")
-        //    (Это поймает энерго-порты твоего Сборщика)
         if (be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, sideFromNeighbor).isPresent()) {
             return true;
         }
 
-        // 5. Это не наш HBM-блок. Проверяем Forge Energy (для модов).
         return be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY, sideFromNeighbor).isPresent();
     }
 
@@ -184,8 +166,6 @@ public class WireBlock extends BaseEntityBlock {
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         if (!level.isClientSide && !oldState.is(this)) {
             LOGGER.info("[WIRE] Block placed at {}, adding to network immediately", pos);
-            // УБИРАЕМ: level.scheduleTick(pos, this, 1);
-            // ДОБАВЛЯЕМ СРАЗУ:
             EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
         }
         super.onPlace(state, level, pos, oldState, isMoving);

@@ -10,7 +10,6 @@ package com.hbm_m.network;
 
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.sounds.GeigerSoundPacket;
-import com.hbm_m.network.ToggleWoodBurnerPacket;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraftforge.network.NetworkRegistry;
@@ -43,6 +42,12 @@ public class ModPacketHandler {
                 com.hbm_m.network.packet.PacketSyncEnergy::encode,
                 com.hbm_m.network.packet.PacketSyncEnergy::decode,
                 com.hbm_m.network.packet.PacketSyncEnergy::handle
+        );
+        INSTANCE.registerMessage(id++,
+            ServerboundDoorModelPacket.class,
+            ServerboundDoorModelPacket::encode,
+            ServerboundDoorModelPacket::decode,
+            ServerboundDoorModelPacket::handle
         );
     }
 }

@@ -20,10 +20,14 @@ public class DoorDeclRegistry {
     }
     
     public static DoorDecl getById(String id) {
-        return REGISTRY.getOrDefault(id, DoorDecl.LARGE_VEHICLE_DOOR);
+        DoorDecl decl = REGISTRY.get(id);
+        // round_airlock_door.json ссылается на round_airlock_door_old.obj — нормализуем суффикс _old
+        if (decl == null && id.endsWith("_old")) {
+            decl = REGISTRY.get(id.substring(0, id.length() - 4));
+        }
+        return decl != null ? decl : DoorDecl.LARGE_VEHICLE_DOOR;
     }
     
-    // Вызывается из ClientSetup
     public static void init() {
         register("large_vehicle_door", DoorDecl.LARGE_VEHICLE_DOOR);
         register("round_airlock_door", DoorDecl.ROUND_AIRLOCK_DOOR);

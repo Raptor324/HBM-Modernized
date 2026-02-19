@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "hbm_m:cinnabar_ore",
+    "hbm_m:cinnabar_ore_deepslate"
+  ]
+}

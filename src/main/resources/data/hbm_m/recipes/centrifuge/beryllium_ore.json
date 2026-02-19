@@ -1,0 +1,10 @@
+{
+  "type": "hbm_m:centrifuge",
+  "ingredient": { "tag": "forge:ores/beryllium" },
+  "results": [
+    { "item": "hbm_m:beryllium_powder", "count": 1 },
+    { "item": "hbm_m:beryllium_powder", "count": 1 },
+    { "item": "minecraft:emerald", "count": 1 },
+    { "item": "minecraft:gravel", "count": 1 }
+  ]
+}

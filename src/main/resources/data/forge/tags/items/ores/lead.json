@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "hbm_m:lead_ore",
+    "hbm_m:lead_ore_deepslate"
+  ]
+}

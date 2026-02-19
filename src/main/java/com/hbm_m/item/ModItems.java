@@ -1,58 +1,91 @@
 package com.hbm_m.item;
 
+import static com.hbm_m.lib.RefStrings.MODID;
+
 // Класс для регистрации всех предметов мода.
 // Использует DeferredRegister для отложенной регистрации. Здесь так же регистрируются моды для брони.
 // Слитки регистрируются автоматически на основе перечисления ModIngots.
 
 import java.util.EnumMap;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.ModFluids;
-
-import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
-import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
-import com.hbm_m.item.custom.crates.IronCrateItem;
-import com.hbm_m.item.custom.crates.SteelCrateItem;
-import com.hbm_m.item.custom.industrial.*;
-import com.hbm_m.item.custom.radiation_meter.ItemDosimeter;
-import com.hbm_m.item.custom.radiation_meter.ItemGeigerCounter;
-import com.hbm_m.item.custom.food.ItemConserve;
-import com.hbm_m.item.custom.food.ItemEnergyDrink;
-import com.hbm_m.item.custom.food.ModFoods;
-import com.hbm_m.item.custom.grenades_and_activators.*;
-import com.hbm_m.item.custom.tools_and_armor.*;
-import com.hbm_m.item.tags_and_tiers.*;
-import com.hbm_m.item.custom.scanners.DepthOresScannerItem;
-import com.hbm_m.item.custom.scanners.OilDetectorItem;
-
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
-import java.util.List;
-
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.custom.machines.armormod.item.ItemModHealth;
 import com.hbm_m.block.custom.machines.armormod.item.ItemModRadProtection;
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeIfType;
 import com.hbm_m.entity.grenades.GrenadeType;
+import com.hbm_m.item.custom.crates.IronCrateItem;
+import com.hbm_m.item.custom.crates.SteelCrateItem;
+import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
+import com.hbm_m.item.custom.food.ItemConserve;
+import com.hbm_m.item.custom.food.ItemEnergyDrink;
+import com.hbm_m.item.custom.food.ModFoods;
+import com.hbm_m.item.custom.grenades_and_activators.AirBombItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirNukeBombItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirstrikeAgentItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirstrikeHeavyItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirstrikeItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirstrikeNukeItem;
+import com.hbm_m.item.custom.grenades_and_activators.DetonatorItem;
+import com.hbm_m.item.custom.grenades_and_activators.GrenadeIfItem;
+import com.hbm_m.item.custom.grenades_and_activators.GrenadeItem;
+import com.hbm_m.item.custom.grenades_and_activators.GrenadeNucItem;
+import com.hbm_m.item.custom.grenades_and_activators.MultiDetonatorItem;
+import com.hbm_m.item.custom.grenades_and_activators.RangeDetonatorItem;
+import com.hbm_m.item.custom.industrial.FuelItem;
+import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
+import com.hbm_m.item.custom.industrial.ItemBlades;
+import com.hbm_m.item.custom.industrial.ItemBlueprintFolder;
+import com.hbm_m.item.custom.industrial.ItemStamp;
+import com.hbm_m.item.custom.industrial.ItemTemplateFolder;
+import com.hbm_m.item.custom.radiation_meter.ItemDosimeter;
+import com.hbm_m.item.custom.radiation_meter.ItemGeigerCounter;
+import com.hbm_m.item.custom.scanners.DepthOresScannerItem;
+import com.hbm_m.item.custom.scanners.OilDetectorItem;
+import com.hbm_m.item.custom.tools_and_armor.ModArmorItem;
+import com.hbm_m.item.custom.tools_and_armor.ModArmorMaterials;
+import com.hbm_m.item.custom.tools_and_armor.ModAxeItem;
+import com.hbm_m.item.custom.tools_and_armor.ModPickaxeItem;
+import com.hbm_m.item.custom.tools_and_armor.ModShovelItem;
+import com.hbm_m.item.custom.tools_and_armor.ModToolTiers;
+import com.hbm_m.item.custom.tools_and_armor.ScrewdriverItem;
+import com.hbm_m.item.tags_and_tiers.ItemSimpleConsumable;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.tags_and_tiers.RadioactiveItem;
+import com.hbm_m.multiblock.DoorBlockItem;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.sound.ModSounds;
 
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
-import net.minecraft.world.item.*;
+import net.minecraft.world.item.ArmorItem;
+import net.minecraft.world.item.AxeItem;
+import net.minecraft.world.item.BucketItem;
+import net.minecraft.world.item.HoeItem;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.world.item.ShovelItem;
+import net.minecraft.world.item.SwordItem;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-
-import static com.hbm_m.lib.RefStrings.MODID;
 
 
 public class ModItems {
@@ -105,8 +138,8 @@ public class ModItems {
         }
 
         // 2. ModPowders (ТОЛЬКО ИЗ ENABLED_MODPOWDERS) ✅ ИСПРАВЛЕНО!
-        for (ModPowders powder : ModPowders.values()) {
-            String baseName = powder.name(); // или powder.getName() если есть
+                for (ModPowders powder : ModPowders.values()) {
+                        String baseName = powder.getName();
             if (ENABLED_MODPOWDERS.contains(baseName)) {
                 String powderId = baseName + "_powder";
                 RegistryObject<Item> powderItem = ITEMS.register(powderId,
@@ -287,6 +320,12 @@ public class ModItems {
             () -> new SwordItem(ModToolTiers.TITANIUM, 2, 3, new Item.Properties()));
     public static final RegistryObject<Item> TITANIUM_AXE = ITEMS.register("titanium_axe",
             () -> new AxeItem(ModToolTiers.TITANIUM, 8, 1, new Item.Properties()));
+
+    // Meteorite swords (registered so recipes can produce them)
+    public static final RegistryObject<Item> METEORITE_SWORD = ITEMS.register("meteorite_sword",
+            () -> new SwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
+    public static final RegistryObject<Item> METEORITE_SWORD_SEARED = ITEMS.register("meteorite_sword_seared",
+            () -> new SwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
     public static final RegistryObject<Item> TITANIUM_PICKAXE = ITEMS.register("titanium_pickaxe",
             () -> new PickaxeItem(ModToolTiers.TITANIUM, 1, 1, new Item.Properties()));
     public static final RegistryObject<Item> TITANIUM_SHOVEL = ITEMS.register("titanium_shovel",
@@ -923,6 +962,111 @@ public class ModItems {
 
 
 
+    // Crystals (auto-generated from textures/crystall/*.png)
+    public static final RegistryObject<Item> CRYSTAL_ALUMINIUM = ITEMS.register("crystal_aluminium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_BERYLLIUM = ITEMS.register("crystal_beryllium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_CHARRED = ITEMS.register("crystal_charred",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_CINNEBAR = ITEMS.register("crystal_cinnebar",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_COAL = ITEMS.register("crystal_coal",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_COBALT = ITEMS.register("crystal_cobalt",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_COPPER = ITEMS.register("crystal_copper",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_DIAMOND = ITEMS.register("crystal_diamond",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_FLUORITE = ITEMS.register("crystal_fluorite",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_GOLD = ITEMS.register("crystal_gold",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_HARDENED = ITEMS.register("crystal_hardened",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_HORN = ITEMS.register("crystal_horn",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_IRON = ITEMS.register("crystal_iron",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_LAPIS = ITEMS.register("crystal_lapis",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_LEAD = ITEMS.register("crystal_lead",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_LITHIUM = ITEMS.register("crystal_lithium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_NITER = ITEMS.register("crystal_niter",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_OSMIRIDIUM = ITEMS.register("crystal_osmiridium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_PHOSPHORUS = ITEMS.register("crystal_phosphorus",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_PLUTONIUM = ITEMS.register("crystal_plutonium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_PULSAR = ITEMS.register("crystal_pulsar",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_RARE = ITEMS.register("crystal_rare",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_REDSTONE = ITEMS.register("crystal_redstone",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_SCHRABIDIUM = ITEMS.register("crystal_schrabidium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_SCHRARANIUM = ITEMS.register("crystal_schraranium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_STARMETAL = ITEMS.register("crystal_starmetal",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_SULFUR = ITEMS.register("crystal_sulfur",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_THORIUM = ITEMS.register("crystal_thorium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_TITANIUM = ITEMS.register("crystal_titanium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_TRIXITE = ITEMS.register("crystal_trixite",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_TUNGSTEN = ITEMS.register("crystal_tungsten",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_URANIUM = ITEMS.register("crystal_uranium",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_VIRUS = ITEMS.register("crystal_virus",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CRYSTAL_XEN = ITEMS.register("crystal_xen",
+            () -> new Item(new Item.Properties()));
+
+
+
 
     // Здесь мы регистрируем мультиблочные структуры для того, чтобы MultiblockBlockItem при установке мог обрабатывать их на наличие препятствующих блоков.
 
@@ -932,6 +1076,21 @@ public class ModItems {
     public static final RegistryObject<Item> ADVANCED_ASSEMBLY_MACHINE = ITEMS.register("advanced_assembly_machine",
         () -> new MultiblockBlockItem(ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get(), new Item.Properties()));
 
+    public static final RegistryObject<Item> HYDRAULIC_FRACKINING_TOWER = ITEMS.register("hydraulic_frackining_tower",
+        () -> new MultiblockBlockItem(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> CHEMICAL_PLANT = ITEMS.register("chemical_plant",
+        () -> new MultiblockBlockItem(ModBlocks.CHEMICAL_PLANT.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> ORE_ACIDIZER = ITEMS.register("ore_acidizer",
+        () -> new MultiblockBlockItem(ModBlocks.ORE_ACIDIZER.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> CENTRIFUGE = ITEMS.register("centrifuge",
+        () -> new MultiblockBlockItem(ModBlocks.CENTRIFUGE.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> FLUID_TANK = ITEMS.register("fluid_tank",
+        () -> new MultiblockBlockItem(ModBlocks.FLUID_TANK.get(), new Item.Properties()));
+
     public static final RegistryObject<Item> PRESS = ITEMS.register("press",
         () -> new MultiblockBlockItem(ModBlocks.PRESS.get(), new Item.Properties()));
 
@@ -939,40 +1098,40 @@ public class ModItems {
         () -> new MultiblockBlockItem(ModBlocks.WOOD_BURNER.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> LARGE_VEHICLE_DOOR = ITEMS.register("large_vehicle_door",
-        () -> new MultiblockBlockItem(ModBlocks.LARGE_VEHICLE_DOOR.get(), new Item.Properties()));
+        () -> new DoorBlockItem(ModBlocks.LARGE_VEHICLE_DOOR.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> ROUND_AIRLOCK_DOOR = ITEMS.register("round_airlock_door",
-        () -> new MultiblockBlockItem(ModBlocks.ROUND_AIRLOCK_DOOR.get(), new Item.Properties()));
+        () -> new DoorBlockItem(ModBlocks.ROUND_AIRLOCK_DOOR.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> TRANSITION_SEAL = ITEMS.register("transition_seal",
-        () -> new MultiblockBlockItem(ModBlocks.TRANSITION_SEAL.get(), new Item.Properties()));
+        () -> new DoorBlockItem(ModBlocks.TRANSITION_SEAL.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> SILO_HATCH = ITEMS.register("silo_hatch",
-        () -> new MultiblockBlockItem(ModBlocks.SILO_HATCH.get(), new Item.Properties()));
+        () -> new DoorBlockItem(ModBlocks.SILO_HATCH.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> SILO_HATCH_LARGE = ITEMS.register("silo_hatch_large",
-        () -> new MultiblockBlockItem(ModBlocks.SILO_HATCH_LARGE.get(), new Item.Properties()));
+        () -> new DoorBlockItem(ModBlocks.SILO_HATCH_LARGE.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> QE_CONTAINMENT = ITEMS.register("qe_containment_door",
-        () -> new MultiblockBlockItem(ModBlocks.QE_CONTAINMENT.get(), new Item.Properties()));
+        () -> new DoorBlockItem(ModBlocks.QE_CONTAINMENT.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> WATER_DOOR = ITEMS.register("water_door",
-        () -> new MultiblockBlockItem(ModBlocks.WATER_DOOR.get(), new Item.Properties()));
+        () -> new DoorBlockItem(ModBlocks.WATER_DOOR.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> FIRE_DOOR = ITEMS.register("fire_door",
-        () -> new MultiblockBlockItem(ModBlocks.FIRE_DOOR.get(), new Item.Properties()));
+        () -> new DoorBlockItem(ModBlocks.FIRE_DOOR.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> SLIDE_DOOR = ITEMS.register("sliding_blast_door",
-        () -> new MultiblockBlockItem(ModBlocks.SLIDE_DOOR.get(), new Item.Properties()));
+        () -> new DoorBlockItem(ModBlocks.SLIDE_DOOR.get(), new Item.Properties()));
         
     public static final RegistryObject<Item> SLIDING_SEAL_DOOR = ITEMS.register("sliding_seal_door",
-        () -> new MultiblockBlockItem(ModBlocks.SLIDING_SEAL_DOOR.get(), new Item.Properties()));
+        () -> new DoorBlockItem(ModBlocks.SLIDING_SEAL_DOOR.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> SECURE_ACCESS_DOOR = ITEMS.register("secure_access_door",
-        () -> new MultiblockBlockItem(ModBlocks.SECURE_ACCESS_DOOR.get(), new Item.Properties()));
+        () -> new DoorBlockItem(ModBlocks.SECURE_ACCESS_DOOR.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> QE_SLIDING = ITEMS.register("qe_sliding_door",
-        () -> new MultiblockBlockItem(ModBlocks.QE_SLIDING.get(), new Item.Properties()));
+        () -> new DoorBlockItem(ModBlocks.QE_SLIDING.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> STAMP_STONE_FLAT = ITEMS.register("stamp_stone_flat",
             () -> new ItemStamp(new Item.Properties(), 32));
@@ -1311,28 +1470,26 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> SCREWDRIVER = ITEMS.register("screwdriver",
-            () -> new Item(new Item.Properties().stacksTo(1))); // В стаке только 1 штука
+            () -> new ScrewdriverItem(new Item.Properties().stacksTo(1)));
 
+	// Медленный источник (500 mB/t)
+	public static final RegistryObject<Item> INFINITE_WATER_500 = ITEMS.register("inf_water",
+			() -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 500));
 
-        // Медленный источник (500 mB/t)
-        public static final RegistryObject<Item> INFINITE_WATER_500 = ITEMS.register("inf_water",
-                () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 500));
-
-        // Быстрый источник (5000 mB/t)
-        public static final RegistryObject<Item> INFINITE_WATER_5000 = ITEMS.register("inf_water_mk2",
-                () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 5000));
+	// Быстрый источник (5000 mB/t)
+	public static final RegistryObject<Item> INFINITE_WATER_5000 = ITEMS.register("inf_water_mk2",
+            () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 5000));
 
 
 
     //=============================== ВЁДРА ДЛЯ ЖИДКОСТЕЙ ===============================//
 
     public static final RegistryObject<Item> CRUDE_OIL_BUCKET = ITEMS.register("bucket_crude_oil",
-            () -> new BucketItem(ModFluids.CRUDE_OIL_SOURCE,
+            () -> new BucketItem(
+                    () -> ModFluids.CRUDE_OIL_SOURCE.get(),
                     new Item.Properties()
-                            .craftRemainder(Items.BUCKET) // Возвращает пустое ведро при крафте
-                            .stacksTo(1))); // Ведра не стакаются
-
-    
+                            .craftRemainder(Items.BUCKET)
+                            .stacksTo(1)));
 
 
     // Метод для регистрации всех предметов, вызывается в основном классе мода.

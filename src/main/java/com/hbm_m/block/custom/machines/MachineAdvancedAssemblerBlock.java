@@ -1,16 +1,19 @@
 package com.hbm_m.block.custom.machines;
 
-import com.hbm_m.block.entity.ModBlockEntities;
+import java.util.Map;
+import java.util.function.Supplier;
+
+import javax.annotation.Nullable;
+
 import com.hbm_m.api.energy.EnergyNetworkManager;
-// Этот класс реализует блок продвинутой сборочной машины,
-// которая является мультиблочной структурой 3x3x3 с центральным контроллером
-import com.google.common.collect.ImmutableMap;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -21,35 +24,46 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.BaseEntityBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.network.NetworkHooks;
-
-import javax.annotation.Nullable;
-import java.util.Map;
-import java.util.function.Supplier;
 
 public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    /** Рама видима, когда сверху сбормашины стоят блоки. Хранится в BlockState для запекания в чанк (Embeddium/Sodium). */
+    public static final BooleanProperty FRAME = BooleanProperty.create("frame");
+    public static final BooleanProperty RENDER_ACTIVE = BooleanProperty.create("render_active");
 
     private final MultiblockStructureHelper structureHelper;
 
     public MachineAdvancedAssemblerBlock(Properties pProperties) {
         super(pProperties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = new MultiblockStructureHelper(defineStructure(), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+        this.registerDefaultState(this.stateDefinition.any()
+        .setValue(FACING, Direction.NORTH)
+        .setValue(FRAME, false)
+        .setValue(RENDER_ACTIVE, false));
+
+        this.structureHelper = defineStructureNew();
     }
 
-    // --- Связь с энергосетью HBM ---
+
 
     @Override
     public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
@@ -101,7 +115,6 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
                         }
                     });
                 }
-                // ------------------------------------
 
                 helper.destroyStructure(level, pos, facing);
             }
@@ -109,10 +122,8 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
-    // --- Остальной код ---
-
-    @Override public RenderShape getRenderShape(BlockState pState) { return RenderShape.ENTITYBLOCK_ANIMATED; }
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) { pBuilder.add(FACING); }
+    @Override public RenderShape getRenderShape(BlockState pState) { return RenderShape.MODEL; }
+    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) { pBuilder.add(FACING, FRAME, RENDER_ACTIVE); }
     @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext pContext) { return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection().getOpposite()); }
     @Nullable @Override public BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) { return new MachineAdvancedAssemblerBlockEntity(pPos, pState); }
 
@@ -131,16 +142,97 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
         }
         return InteractionResult.sidedSuccess(pLevel.isClientSide());
     }
-
-    // --- IMultiblockController ---
-    @Override public MultiblockStructureHelper getStructureHelper() { return this.structureHelper; }
-    private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
-        ImmutableMap.Builder<BlockPos, Supplier<BlockState>> builder = ImmutableMap.builder();
-        for (int y = 0; y <= 2; y++) for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) {
-            if (x == 0 && y == 0 && z == 0) continue;
-            builder.put(new BlockPos(x, y, z), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    
+    
+    @Override
+    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        MultiblockStructureHelper helper = getStructureHelper();
+        if (helper != null) {
+            // Теперь это вернет идеально подогнанную форму 3х3х3
+            return helper.generateShapeFromParts(pState.getValue(FACING));
         }
-        return builder.build();
+        return Shapes.block();
     }
-    @Override public PartRole getPartRole(BlockPos localOffset) { return localOffset.getY() == 0 ? PartRole.ENERGY_CONNECTOR : PartRole.DEFAULT; }
+    
+    @Override public MultiblockStructureHelper getStructureHelper() { return this.structureHelper; }
+    
+    /**
+     * Определяет структуру мультиблока используя рецептоподобный способ с ролями.
+     * ВАЖНО: Структура ОБЯЗАТЕЛЬНО должна содержать ровно ОДИН контроллер (символ с ролью CONTROLLER).
+     * 
+     * @return MultiblockStructureHelper с определённой структурой и ролями
+     */
+    private static MultiblockStructureHelper defineStructureNew() {
+        // - 'A' = DEFAULT (обычная часть структуры)
+        // - 'B' = UNIVERSAL_CONNECTOR (универсальный коннектор)
+        // - 'L' = LADDER (по нему можно взобраться как по лестнице)
+        // - 'C' = CONTROLLER (блок контроллера - ОБЯЗАТЕЛЬНО, ровно 1!)
+        // - '.' = пустота (символ не в roleMap, будет игнорирован)
+        
+        // Слои структуры 3x3x3
+        String[] layer0 = {
+            "BBB",  // 'B' в углах - универсальные коннекторы
+            "BCB",
+            "BBB"
+        };
+        
+        String[] layer1 = {
+            "AAA",  // Средний слой - обычные блоки
+            "AAA",  // 'C' в центре - контроллер структуры
+            "AAA"
+        };
+        
+        String[] layer2 = {
+            "AAA",
+            "AAA",  // 'L' - лестница для подъёма
+            "AAA"
+        };
+        
+        // === roleMap: программист сам определяет маппинг ===
+        // ВАЖНО: роль CONTROLLER ОБЯЗАТЕЛЬНА и должен быть ровно ОДИН контроллер!
+        Map<Character, PartRole> roleMap = Map.of(
+            'A', PartRole.DEFAULT,              // Обычная часть структуры
+            'B', PartRole.UNIVERSAL_CONNECTOR, // Универсальный коннектор
+            'L', PartRole.LADDER,              // Лестница
+            'C', PartRole.CONTROLLER           // Контроллер (ОБЯЗАТЕЛЬНО!)
+        );
+        
+        // === symbolMap: какой BlockState использовать для каждого символа ===
+        // Контроллер 'C' НЕ добавляется в symbolMap - он размещается игроком отдельно!
+        Map<Character, Supplier<BlockState>> symbolMap = Map.of(
+            'A', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
+            'B', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
+            'L', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
+            // 'C' НЕ здесь - контроллер это отдельный блок
+        );
+        
+        // Используем createFromLayersWithRoles - автоматически найдёт позицию контроллера
+        return MultiblockStructureHelper.createFromLayersWithRoles(
+            new String[][]{layer0, layer1, layer2},
+            symbolMap,
+            () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
+            roleMap
+        );
+    }
+    
+    /**
+     * Старый способ определения структуры
+     */
+    // private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
+    //     ImmutableMap.Builder<BlockPos, Supplier<BlockState>> builder = ImmutableMap.builder();
+    //     for (int y = 0; y <= 2; y++) for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) {
+    //         if (x == 0 && y == 0 && z == 0) continue;
+    //         builder.put(new BlockPos(x, y, z), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    //     }
+    //     return builder.build();
+    // }
+    
+    @Override 
+    public PartRole getPartRole(BlockPos localOffset) { 
+        // Используем универсальный метод разрешения ролей из хелпера
+        if (structureHelper != null) {
+            return structureHelper.resolvePartRole(localOffset, this);
+        }
+        return PartRole.DEFAULT;
+    }
 }

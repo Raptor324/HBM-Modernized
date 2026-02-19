@@ -1,47 +1,90 @@
+// ...existing code...
+// ...existing code...
+
 package com.hbm_m.block;
+
+import java.util.ArrayList;
+import java.util.EnumMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
 
 import com.hbm_m.api.energy.ConverterBlock;
 import com.hbm_m.api.energy.MachineBatteryBlock;
 import com.hbm_m.api.energy.SwitchBlock;
 import com.hbm_m.api.energy.WireBlock;
-import com.hbm_m.block.custom.explosives.*;
-import com.hbm_m.block.custom.machines.*;
-import com.hbm_m.block.custom.machines.anvils.AnvilBlock;
-import com.hbm_m.block.custom.machines.BlastFurnaceBlock;
-import com.hbm_m.block.custom.machines.anvils.AnvilTier;
-import com.hbm_m.block.custom.machines.crates.DeshCrateBlock;
-import com.hbm_m.block.custom.machines.crates.IronCrateBlock;
-import com.hbm_m.block.custom.machines.crates.SteelCrateBlock;
 import com.hbm_m.block.custom.decorations.CageLampBlock;
 import com.hbm_m.block.custom.decorations.CrtBlock;
 import com.hbm_m.block.custom.decorations.DecoSteelBlock;
 import com.hbm_m.block.custom.decorations.DoorBlock;
-import com.hbm_m.block.custom.weapons.*;
+import com.hbm_m.block.custom.explosives.AirBombBlock;
+import com.hbm_m.block.custom.explosives.AirNukeBombBlock;
+import com.hbm_m.block.custom.explosives.C4Block;
+import com.hbm_m.block.custom.explosives.DetMinerBlock;
+import com.hbm_m.block.custom.explosives.DudFugasBlock;
+import com.hbm_m.block.custom.explosives.DudNukeBlock;
+import com.hbm_m.block.custom.explosives.ExplosiveChargeBlock;
+import com.hbm_m.block.custom.explosives.GigaDetBlock;
+import com.hbm_m.block.custom.explosives.MineBlock;
+import com.hbm_m.block.custom.explosives.MineNukeBlock;
+import com.hbm_m.block.custom.explosives.NuclearChargeBlock;
+import com.hbm_m.block.custom.explosives.SmokeBombBlock;
+import com.hbm_m.block.custom.explosives.WasteChargeBlock;
+import com.hbm_m.block.custom.machines.ArmorTableBlock;
+import com.hbm_m.block.custom.machines.BlastFurnaceBlock;
+import com.hbm_m.block.custom.machines.BlastFurnaceExtensionBlock;
+import com.hbm_m.block.custom.machines.GeigerCounterBlock;
+import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
+import com.hbm_m.block.custom.machines.MachineAssemblerBlock;
+import com.hbm_m.block.custom.machines.MachineCentrifugeBlock;
+import com.hbm_m.block.custom.machines.MachineChemicalPlantBlock;
+import com.hbm_m.block.custom.machines.MachineFluidTankBlock;
+import com.hbm_m.block.custom.machines.MachineHydraulicFrackiningTowerBlock;
+import com.hbm_m.block.custom.machines.MachineOreAcidizerBlock;
+import com.hbm_m.block.custom.machines.MachinePressBlock;
+import com.hbm_m.block.custom.machines.MachineShredderBlock;
+import com.hbm_m.block.custom.machines.MachineWoodBurnerBlock;
+import com.hbm_m.block.custom.machines.UniversalMachinePartBlock;
+import com.hbm_m.block.custom.machines.anvils.AnvilBlock;
+import com.hbm_m.block.custom.machines.anvils.AnvilTier;
+import com.hbm_m.block.custom.machines.crates.DeshCrateBlock;
+import com.hbm_m.block.custom.machines.crates.IronCrateBlock;
+import com.hbm_m.block.custom.machines.crates.SteelCrateBlock;
 import com.hbm_m.block.custom.nature.DepthOreBlock;
 import com.hbm_m.block.custom.nature.GeysirBlock;
 import com.hbm_m.block.custom.nature.RadioactiveBlock;
-import com.hbm_m.item.custom.fekal_electric.MachineBatteryBlockItem;
-
-import com.hbm_m.api.fluids.ModFluids;
-
-import com.hbm_m.lib.RefStrings;
+import com.hbm_m.block.custom.weapons.BarbedWireBlock;
+import com.hbm_m.block.custom.weapons.BarbedWireFireBlock;
+import com.hbm_m.block.custom.weapons.BarbedWirePoisonBlock;
+import com.hbm_m.block.custom.weapons.BarbedWireRadBlock;
+import com.hbm_m.block.custom.weapons.BarbedWireWitherBlock;
+import com.hbm_m.block.custom.weapons.FallingSellafit;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.custom.fekal_electric.MachineBatteryBlockItem;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
-import net.minecraft.world.level.block.*;
+import net.minecraft.world.level.block.BarrelBlock;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.DropExperienceBlock;
+import net.minecraft.world.level.block.FlowerBlock;
+import net.minecraft.world.level.block.GlassBlock;
+import net.minecraft.world.level.block.LeavesBlock;
+import net.minecraft.world.level.block.SlabBlock;
+import net.minecraft.world.level.block.SnowLayerBlock;
+import net.minecraft.world.level.block.SoundType;
+import net.minecraft.world.level.block.StairBlock;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.properties.BlockSetType;
 import net.minecraft.world.level.material.MapColor;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import net.minecraft.util.valueproviders.UniformInt;
-
-import java.util.*;
-import java.util.function.Supplier;
 
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS =
@@ -114,11 +157,7 @@ public class ModBlocks {
             // Проверяем, есть ли этот слиток в "белом списке"
             if (ENABLED_INGOT_BLOCKS.contains(name)) {
 
-                // --- ИЗМЕНЕНИЕ ЗДЕСЬ ---
-                // Раньше было: String blockName = name + "_block";
-                // Теперь ставим приставку в начало:
                 String blockName = "block_" + name;
-                // -----------------------
 
                 RegistryObject<Block> registeredBlock;
 
@@ -137,7 +176,7 @@ public class ModBlocks {
         }
     }
 
-    // Вспомогательный метод получения блока (безопасный)
+    // Вспомогательный метод получения блока
     public static RegistryObject<Block> getIngotBlock(ModIngots ingot) {
         RegistryObject<Block> block = INGOT_BLOCKS.get(ingot);
         if (block == null) {
@@ -147,7 +186,7 @@ public class ModBlocks {
         return block;
     }
 
-    // Оставляем вашу логику определения радиоактивности без изменений
+    // Оставляем логику определения радиоактивности без изменений
     private static boolean isRadioactiveIngot(ModIngots ingot) {
         String name = ingot.getName().toLowerCase();
         return name.contains("uranium") ||
@@ -193,11 +232,6 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> POLONIUM210_BLOCK = registerBlock("polonium210_block",
             () -> new RadioactiveBlock(INGOT_BLOCK_PROPERTIES));
-
-    public static final RegistryObject<Block> URANIUM_ORE = registerBlock("uranium_ore",
-            () -> new DropExperienceBlock(BlockBehaviour.Properties.copy(Blocks.STONE)
-                    .strength(3.0F, 3.0F).requiresCorrectToolForDrops(),
-                    UniformInt.of(2, 5)));
 
     public static final RegistryObject<Block> WASTE_GRASS = registerBlock("waste_grass",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.DIRT).sound(SoundType.GRAVEL)));
@@ -253,20 +287,168 @@ public class ModBlocks {
             () -> new ArmorTableBlock(TABLE_PROPERTIES));
 
     public static final RegistryObject<Block> SHREDDER = registerBlock("shredder",
-            () -> new MachineShredderBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
+            () -> new MachineShredderBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
 
     public static final RegistryObject<Block> SWITCH = registerBlock("switch",
-            () -> new SwitchBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
-
+            () -> new SwitchBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
 
     public static final RegistryObject<Block> MACHINE_ASSEMBLER = registerBlockWithoutItem("machine_assembler",
-            () -> new MachineAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
+            () -> new MachineAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f)));
 
     public static final RegistryObject<Block> ADVANCED_ASSEMBLY_MACHINE = registerBlockWithoutItem("advanced_assembly_machine",
             () -> new MachineAdvancedAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
 
+    public static final RegistryObject<Block> HYDRAULIC_FRACKINING_TOWER = registerBlockWithoutItem("hydraulic_frackining_tower",
+            () -> new MachineHydraulicFrackiningTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistryObject<Block> ORE_ACIDIZER = registerBlockWithoutItem("ore_acidizer",
+            () -> new MachineOreAcidizerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+	public static final RegistryObject<Block> CHEMICAL_PLANT = registerBlockWithoutItem("chemical_plant",
+            () -> new MachineChemicalPlantBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistryObject<Block> CENTRIFUGE = registerBlockWithoutItem("centrifuge",
+            () -> new MachineCentrifugeBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).isSuffocating((state, world, pos) -> false)));
+
     public static final RegistryObject<Block> UNIVERSAL_MACHINE_PART = registerBlockWithoutItem("universal_machine_part",
-            () -> new UniversalMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().noParticlesOnBreak()));
+            () -> new UniversalMachinePartBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).noParticlesOnBreak()));
+
+	public static final RegistryObject<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
+            () -> new MachineFluidTankBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    //---------------------------<ДВЕРИ>-------------------------------------
+
+    public static final RegistryObject<DoorBlock> LARGE_VEHICLE_DOOR = registerBlockWithoutItem("large_vehicle_door",
+            () -> new DoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
+                    "large_vehicle_door"
+            ));
+
+    public static final RegistryObject<DoorBlock> ROUND_AIRLOCK_DOOR = registerBlockWithoutItem("round_airlock_door",
+            () -> new DoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
+                    "round_airlock_door"
+            ));
+
+    public static final RegistryObject<Block> TRANSITION_SEAL = registerBlockWithoutItem("transition_seal",
+            () -> new DoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
+                    "transition_seal"
+            ));
+
+    public static final RegistryObject<Block> FIRE_DOOR = registerBlockWithoutItem("fire_door",
+            () -> new DoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
+                    "fire_door"
+            ));
+
+    public static final RegistryObject<Block> SLIDE_DOOR = registerBlockWithoutItem("sliding_blast_door",
+            () -> new DoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
+                    "sliding_blast_door"
+            ));
+
+    public static final RegistryObject<Block> SLIDING_SEAL_DOOR = registerBlockWithoutItem("sliding_seal_door",
+            () -> new DoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
+                    "sliding_seal_door"
+            ));
+
+    public static final RegistryObject<Block> SECURE_ACCESS_DOOR = registerBlockWithoutItem("secure_access_door",
+            () -> new DoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
+                    "secure_access_door"
+            ));
+
+    public static final RegistryObject<Block> QE_SLIDING = registerBlockWithoutItem("qe_sliding_door",
+            () -> new DoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
+                    "qe_sliding_door"
+            ));
+
+    public static final RegistryObject<Block> QE_CONTAINMENT = registerBlockWithoutItem("qe_containment_door",
+            () -> new DoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
+                    "qe_containment_door"
+            ));
+
+    public static final RegistryObject<Block> WATER_DOOR = registerBlockWithoutItem("water_door",
+            () -> new DoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
+                    "water_door"
+            ));
+
+    public static final RegistryObject<Block> SILO_HATCH = registerBlockWithoutItem("silo_hatch",
+            () -> new DoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
+                    "silo_hatch"
+            ));
+
+    public static final RegistryObject<Block> SILO_HATCH_LARGE = registerBlockWithoutItem("silo_hatch_large",
+            () -> new DoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
+                    "silo_hatch_large"
+            ));
 
 
     //---------------------------<БЛОКИ>-------------------------------------
@@ -359,7 +541,7 @@ public class ModBlocks {
                     .sound(SoundType.STONE)
                     .requiresCorrectToolForDrops()));
 
-    public static final RegistryObject<Block> DUD_FUGAS_TONG = registerBlock("dud_fugas_tong",
+    public static final RegistryObject<Block> DUD_CONVENTIONAL = registerBlock("dud_conventional",
             () -> new DudFugasBlock(BlockBehaviour.Properties.of()
                     .strength(31F, 6.0F)
                     .sound(SoundType.STONE)
@@ -1091,11 +1273,10 @@ public class ModBlocks {
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
 
 
-    // ✅ ПРАВИЛЬНО - РЕГИСТРИРУЙТЕ ПРОСТО!
     public static final RegistryObject<Block> CRATE_IRON = BLOCKS.register("crate_iron",
             () -> new IronCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
                     .sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops()));
-    // ✅ ПРАВИЛЬНО - РЕГИСТРИРУЙТЕ ПРОСТО!
+
     public static final RegistryObject<Block> CRATE_STEEL = BLOCKS.register("crate_steel",
             () -> new SteelCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
                     .sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops()));
@@ -1110,13 +1291,13 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.COAL_BLOCK).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
 
-    // -----------------------<РАСТЕНИЯ>-----------------------------
+        // -----------------------<РАСТЕНИЯ>-----------------------------
     public static final RegistryObject<Block> STRAWBERRY_BUSH = registerBlock("strawberry_bush",
             () -> new FlowerBlock(() -> MobEffects.LUCK, 5,
                     BlockBehaviour.Properties.copy(Blocks.ALLIUM).noOcclusion().noCollission()));
 
 
-    // -----------------------<РУДЫ>-----------------------------
+        // -----------------------<РУДЫ>-----------------------------
 
 
     public static final RegistryObject<Block> RESOURCE_ASBESTOS = registerBlock("resource_asbestos",
@@ -1147,8 +1328,11 @@ public class ModBlocks {
     public static final RegistryObject<Block> ALUMINUM_ORE = registerBlock("aluminum_ore",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
-    public static final RegistryObject<Block> URANIUM_ORE_H = registerBlock("uranium_ore_h",
-            () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+    // public static final RegistryObject<Block> URANIUM_ORE_H = registerBlock("uranium_ore_h",
+    //         () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+
+	public static final RegistryObject<Block> URANIUM_ORE = registerBlock("uranium_ore",
+            () -> new DropExperienceBlock(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0F, 3.0F).requiresCorrectToolForDrops()));
 
     public static final RegistryObject<Block> LEAD_ORE = registerBlock("lead_ore",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
@@ -1213,135 +1397,6 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> CINNABAR_ORE_DEEPSLATE = registerBlock("cinnabar_ore_deepslate",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.DEEPSLATE).strength(5.0f, 5.0f).requiresCorrectToolForDrops()));
-
-
-    // ДВЕРИ
-
-    public static final RegistryObject<DoorBlock> LARGE_VEHICLE_DOOR = registerBlockWithoutItem("large_vehicle_door",
-            () -> new DoorBlock(
-                    BlockBehaviour.Properties.of()
-                            .strength(10.0F, 1000.0F)
-                            .requiresCorrectToolForDrops()
-                            .sound(SoundType.METAL)
-                            .noOcclusion(),
-                    "large_vehicle_door"
-            ));
-
-    public static final RegistryObject<DoorBlock> ROUND_AIRLOCK_DOOR = registerBlockWithoutItem("round_airlock_door",
-            () -> new DoorBlock(
-                    BlockBehaviour.Properties.of()
-                            .strength(10.0F, 1000.0F)
-                            .requiresCorrectToolForDrops()
-                            .sound(SoundType.METAL)
-                            .noOcclusion(),
-                    "round_airlock_door"
-            ));
-
-    public static final RegistryObject<Block> TRANSITION_SEAL = registerBlockWithoutItem("transition_seal",
-            () -> new DoorBlock(
-                    BlockBehaviour.Properties.of()
-                            .strength(10.0F, 1000.0F)
-                            .requiresCorrectToolForDrops()
-                            .sound(SoundType.METAL)
-                            .noOcclusion(),
-                    "transition_seal"
-            ));
-
-    public static final RegistryObject<Block> FIRE_DOOR = registerBlockWithoutItem("fire_door",
-            () -> new DoorBlock(
-                    BlockBehaviour.Properties.of()
-                            .strength(10.0F, 1000.0F)
-                            .requiresCorrectToolForDrops()
-                            .sound(SoundType.METAL)
-                            .noOcclusion(),
-                    "fire_door"
-            ));
-
-    public static final RegistryObject<Block> SLIDE_DOOR = registerBlockWithoutItem("sliding_blast_door",
-            () -> new DoorBlock(
-                    BlockBehaviour.Properties.of()
-                            .strength(10.0F, 1000.0F)
-                            .requiresCorrectToolForDrops()
-                            .sound(SoundType.METAL)
-                            .noOcclusion(),
-                    "sliding_blast_door"
-            ));
-
-    public static final RegistryObject<Block> SLIDING_SEAL_DOOR = registerBlockWithoutItem("sliding_seal_door",
-            () -> new DoorBlock(
-                    BlockBehaviour.Properties.of()
-                            .strength(10.0F, 1000.0F)
-                            .requiresCorrectToolForDrops()
-                            .sound(SoundType.METAL)
-                            .noOcclusion(),
-                    "sliding_seal_door"
-            ));
-
-    public static final RegistryObject<Block> SECURE_ACCESS_DOOR = registerBlockWithoutItem("secure_access_door",
-            () -> new DoorBlock(
-                    BlockBehaviour.Properties.of()
-                            .strength(10.0F, 1000.0F)
-                            .requiresCorrectToolForDrops()
-                            .sound(SoundType.METAL)
-                            .noOcclusion(),
-                    "secure_access_door"
-            ));
-
-    public static final RegistryObject<Block> QE_SLIDING = registerBlockWithoutItem("qe_sliding_door",
-            () -> new DoorBlock(
-                    BlockBehaviour.Properties.of()
-                            .strength(10.0F, 1000.0F)
-                            .requiresCorrectToolForDrops()
-                            .sound(SoundType.METAL)
-                            .noOcclusion(),
-                    "qe_sliding_door"
-            ));
-
-    public static final RegistryObject<Block> QE_CONTAINMENT = registerBlockWithoutItem("qe_containment_door",
-            () -> new DoorBlock(
-                    BlockBehaviour.Properties.of()
-                            .strength(10.0F, 1000.0F)
-                            .requiresCorrectToolForDrops()
-                            .sound(SoundType.METAL)
-                            .noOcclusion(),
-                    "qe_containment_door"
-            ));
-
-    public static final RegistryObject<Block> WATER_DOOR = registerBlockWithoutItem("water_door",
-            () -> new DoorBlock(
-                    BlockBehaviour.Properties.of()
-                            .strength(10.0F, 1000.0F)
-                            .requiresCorrectToolForDrops()
-                            .sound(SoundType.METAL)
-                            .noOcclusion(),
-                    "water_door"
-            ));
-
-    public static final RegistryObject<Block> SILO_HATCH = registerBlockWithoutItem("silo_hatch",
-            () -> new DoorBlock(
-                    BlockBehaviour.Properties.of()
-                            .strength(10.0F, 1000.0F)
-                            .requiresCorrectToolForDrops()
-                            .sound(SoundType.METAL)
-                            .noOcclusion(),
-                    "silo_hatch"
-            ));
-
-    public static final RegistryObject<Block> SILO_HATCH_LARGE = registerBlockWithoutItem("silo_hatch_large",
-            () -> new DoorBlock(
-                    BlockBehaviour.Properties.of()
-                            .strength(10.0F, 1000.0F)
-                            .requiresCorrectToolForDrops()
-                            .sound(SoundType.METAL)
-                            .noOcclusion(),
-                    "silo_hatch_large"
-            ));
-
-    public static final RegistryObject<Block> FLUID_TANK = registerBlock("fluid_tank",
-            () -> new MachineFluidTankBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
-                    .strength(4.0f)           // Прочность
-                    .requiresCorrectToolForDrops() // Нужна кирка
-                    .noOcclusion()));         // Если модель будет не полным кубом (прозрачность)
 
     //======================= ЖИДКОСТИ ==========================================//
 

@@ -27,6 +27,9 @@ bin/
 .cursor
 # ================= Generated Files =================
 /src/generated/
+AGENTS.md
+*.diff
+/plans
 /plans
 .cursorignore
 

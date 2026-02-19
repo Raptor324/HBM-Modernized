@@ -80,7 +80,7 @@
     "category": "player",
     "subtitle": "sounds.hbm_m.bomber2",
     "sounds": [
-      "hbm_m:bomber3"
+      "hbm_m:bomber2"
     ]
   },
   "bombwhistle": {
@@ -167,17 +167,6 @@
       "hbm_m:mukeexplosion"
     ]
   },
-
-
-
-
-
-
-
-
-
-
-
 
   "techboop": {
     "category": "player",
@@ -362,6 +351,18 @@
     "subtitle": "sounds.hbm_m.subtitle.motor",
     "sounds": [
       "hbm_m:block/motor"
+    ]
+  },
+  "block.metal_box_open": {
+    "subtitle": "sounds.hbm_m.subtitle.metal_box_open",
+    "sounds": [
+      "hbm_m:block/door/metal_box_open"
+    ]
+  },
+  "block.metal_box_close": {
+    "subtitle": "sounds.hbm_m.subtitle.metal_box_close",
+    "sounds": [
+      "hbm_m:block/door/metal_box_close"
     ]
   },
   "item.bounce1": {
