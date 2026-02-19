@@ -50,10 +50,10 @@ import com.hbm_m.client.render.MachinePressRenderer;
 import com.hbm_m.client.render.ModShaders;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.ShaderReloadListener;
-import com.hbm_m.client.tooltip.ItemTooltipComponent;
-import com.hbm_m.client.tooltip.ItemTooltipComponentRenderer;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponent;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponentRenderer;
+import com.hbm_m.client.tooltip.ItemTooltipComponent;
+import com.hbm_m.client.tooltip.ItemTooltipComponentRenderer;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.ModConfigKeybindHandler;
 import com.hbm_m.entity.ModEntities;
@@ -237,6 +237,7 @@ public class ClientSetup {
         // large_vehicle_door
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_legacy"));
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
         // fire_door
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_legacy"));
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern"));

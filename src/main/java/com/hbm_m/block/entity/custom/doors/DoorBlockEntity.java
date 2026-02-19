@@ -199,7 +199,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         this.openTicks = 0;
         this.animStartTime = System.currentTimeMillis();
         if (level != null && level.isClientSide) {
-            initModelSelection();
+            initModelSelection(true); // Новая дверь — применить default из конфига
         }
         syncToClient();
     }
@@ -684,7 +684,8 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         this.locked = tag.getBoolean("locked");
         this.lastRedstoneState = tag.getBoolean("redstoneState");
 
-        if (tag.contains("modelType")) {
+        boolean hadModelSelectionInNbt = tag.contains("modelType");
+        if (hadModelSelectionInNbt) {
             this.modelSelection = DoorModelSelection.load(tag);
         } else {
             // Совместимость со старыми сохранениями
@@ -719,7 +720,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         }
 
         if (level != null && level.isClientSide) {
-            initModelSelection();
+            initModelSelection(!hadModelSelectionInNbt);
             handleNewState(oldState, this.state);
             // ИСПРАВЛЕНИЕ МОРГАНИЯ: при получении state 2/3 (движение) используем клиентское время.
             // Серверный animStartTime приводит к рассинхрону часов и скачкам прогресса анимации.
@@ -754,13 +755,15 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
 
     /**
      * Инициализирует выбор модели на основе конфигурации.
-     * Вызывается автоматически при загрузке на клиенте.
+     * Вызывается только для старых сохранений (без modelType в NBT).
+     * Если hadModelSelectionInNbt=false — применить default из JSON (MODERN и т.д.).
+     * Если hadModelSelectionInNbt=true — не перезаписывать: значение уже загружено из NBT
+     * (в т.ч. явный выбор LEGACY, который равен DoorModelSelection.DEFAULT).
      */
     @OnlyIn(Dist.CLIENT)
-    public void initModelSelection() {
-        // Если уже установлен не-default выбор - оставляем как есть
-        if (modelSelection != null && !modelSelection.equals(DoorModelSelection.DEFAULT)) {
-            return;
+    public void initModelSelection(boolean applyConfigDefault) {
+        if (!applyConfigDefault) {
+            return; // Значение из NBT — не перезаписывать
         }
         
         DoorModelRegistry registry = DoorModelRegistry.getInstance();

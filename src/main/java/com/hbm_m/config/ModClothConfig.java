@@ -285,11 +285,7 @@ public class ModClothConfig implements ConfigData {
 
     // Регистрация конфига (вызывать в инициализации мода) 
     public static void register() {
-        // Основной конфиг мода
         AutoConfig.register(ModClothConfig.class, Toml4jConfigSerializer::new);
-        
-        // Конфиг моделей дверей
-        AutoConfig.register(DoorModelConfig.class, Toml4jConfigSerializer::new);
     }
 
     // Получение текущих настроек 
@@ -300,28 +296,5 @@ public class ModClothConfig implements ConfigData {
     /** Использовать батчинг для статических частей (frame, Base). При проблемах отключите. */
     public static boolean useInstancedBatching() {
         return get().useInstancedStaticRendering;
-    }
-
-    /**
-     * Получение конфига моделей дверей
-     */
-    public static DoorModelConfig getDoorModelConfig() {
-        try {
-            return AutoConfig.getConfigHolder(DoorModelConfig.class).getConfig();
-        } catch (Exception e) {
-            MainRegistry.LOGGER.warn("Failed to get DoorModelConfig, returning new instance");
-            return new DoorModelConfig();
-        }
-    }
-    
-    /**
-     * Сохранение конфига моделей дверей
-     */
-    public static void saveDoorModelConfig() {
-        try {
-            AutoConfig.getConfigHolder(DoorModelConfig.class).save();
-        } catch (Exception e) {
-            MainRegistry.LOGGER.error("Failed to save DoorModelConfig", e);
-        }
     }
 }

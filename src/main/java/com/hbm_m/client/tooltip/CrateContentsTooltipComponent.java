@@ -1,11 +1,11 @@
 package com.hbm_m.client.tooltip;
 
+import java.util.List;
+
 import net.minecraft.world.inventory.tooltip.TooltipComponent;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
-import java.util.List;
 
 /**
  * Tooltip component for crate contents preview rows.

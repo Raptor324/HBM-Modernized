@@ -10,7 +10,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 
-
 import com.hbm_m.api.energy.ConverterBlock;
 import com.hbm_m.api.energy.MachineBatteryBlock;
 import com.hbm_m.api.energy.SwitchBlock;
@@ -33,7 +32,6 @@ import com.hbm_m.block.custom.explosives.NuclearChargeBlock;
 import com.hbm_m.block.custom.explosives.SmokeBombBlock;
 import com.hbm_m.block.custom.explosives.WasteChargeBlock;
 import com.hbm_m.block.custom.machines.ArmorTableBlock;
-
 import com.hbm_m.block.custom.machines.BlastFurnaceBlock;
 import com.hbm_m.block.custom.machines.BlastFurnaceExtensionBlock;
 import com.hbm_m.block.custom.machines.GeigerCounterBlock;
@@ -69,7 +67,6 @@ import com.hbm_m.item.custom.fekal_electric.MachineBatteryBlockItem;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
 
-import net.minecraft.util.valueproviders.UniformInt;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
@@ -601,14 +598,6 @@ public class ModBlocks {
                     .noOcclusion()
                     .lightLevel(state -> 15)));
 
-    public static final RegistryObject<Block> FLUORESCENT_LAMP = registerBlock("fluorescent_lamp",
-            () -> new CageLampBlock(BlockBehaviour.Properties.of()
-                    .strength(0.5F, 6.0F)
-                    .sound(SoundType.STONE)
-                    .requiresCorrectToolForDrops()
-                    .noOcclusion()
-                    .lightLevel(state -> 15)));
-
     public static final RegistryObject<Block> C4 = registerBlock("c4",
             () -> new C4Block(BlockBehaviour.Properties.of()
                     .strength(0.5F, 6.0F)
@@ -1063,6 +1052,9 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> CONCRETE_TILE_STAIRS = registerBlock("concrete_tile_stairs",
             () -> new StairBlock(CONCRETE_TILE.get().defaultBlockState(), BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
+	public static final RegistryObject<Block> DEPTH_STONE_STAIRS = registerBlock("depth_stone_stairs",
+            () -> new StairBlock(DEPTH_BRICK.get().defaultBlockState(), BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistryObject<Block> DEPTH_BRICK_STAIRS = registerBlock("depth_brick_stairs",
             () -> new StairBlock(DEPTH_BRICK.get().defaultBlockState(), BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));

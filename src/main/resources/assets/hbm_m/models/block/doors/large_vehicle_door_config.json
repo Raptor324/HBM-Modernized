@@ -4,10 +4,8 @@
 	"modern_model":{
 		"model":"hbm_m:block/doors/large_vehicle_door_modern",
 		"skins":[
-			{"id":"default",
-			"name":"Standard",
-			"texture":"hbm_m:block/doors/large_vehicle_door"
-			}
+			{"id":"default","name":"Standard","texture":"hbm_m:block/doors/large_vehicle_door"},
+			{"id":"rad","name":"Rad","texture":"hbm_m:block/doors/large_vehicle_door_rad", "model":"hbm_m:block/doors/large_vehicle_door_modern_rad"}
 		]
 	},
 	"default":{"type":"modern","skin":"default"}

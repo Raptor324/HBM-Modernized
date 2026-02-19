@@ -991,6 +991,7 @@ public class MainRegistry {
             event.accept(ModBlocks.CONCRETE_FLAT_STAIRS);
             event.accept(ModBlocks.CONCRETE_TILE_STAIRS);
             event.accept(ModBlocks.DEPTH_BRICK_STAIRS);
+            event.accept(ModBlocks.DEPTH_STONE_STAIRS);
             event.accept(ModBlocks.DEPTH_TILES_STAIRS);
             event.accept(ModBlocks.DEPTH_NETHER_BRICK_STAIRS);
             event.accept(ModBlocks.DEPTH_NETHER_TILES_STAIRS);
@@ -1039,7 +1040,6 @@ public class MainRegistry {
             event.accept(ModBlocks.CRT_CLEAN);
             event.accept(ModBlocks.CRT_BSOD);
             event.accept(ModBlocks.TOASTER);
-            event.accept(ModBlocks.FLUORESCENT_LAMP);
 
             event.accept(ModBlocks.DOOR_OFFICE);
             event.accept(ModBlocks.DOOR_BUNKER);

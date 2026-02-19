@@ -4,8 +4,6 @@ import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
-import com.hbm_m.config.DoorModelConfig;
-import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
@@ -159,46 +157,22 @@ public class DoorModelRegistry implements ResourceManagerReloadListener {
     /**
      * Получает выбор модели по умолчанию для двери.
      * ПРИОРИТЕТ:
-     * 1. Cloth Config (пользовательские настройки)
+     * 1. defaultSelections (установленные через API)
      * 2. JSON конфиг (default секция)
      * 3. LEGACY по умолчанию
      */
     public DoorModelSelection getDefaultSelection(String doorId) {
-        // 1. Сначала проверяем Cloth Config (пользовательские настройки через UI)
-        DoorModelSelection clothSelection = getSelectionFromClothConfig(doorId);
-        if (clothSelection != null) {
-            return clothSelection;
-        }
-        
-        // 2. Затем пользовательские настройки (установленные через API)
         DoorModelSelection custom = defaultSelections.get(doorId);
         if (custom != null) {
             return custom;
         }
         
-        // 3. Затем настройки из JSON конфига
         DoorConfig config = doorConfigs.get(doorId);
         if (config != null && config.getDefaultSelection() != null) {
             return config.getDefaultSelection();
         }
         
-        // 4. По умолчанию - LEGACY
         return DoorModelSelection.DEFAULT;
-    }
-    
-    /**
-     * Получает выбор из Cloth Config
-     */
-    private DoorModelSelection getSelectionFromClothConfig(String doorId) {
-        try {
-            DoorModelConfig config = ModClothConfig.getDoorModelConfig();
-            if (config != null) {
-                return config.getDefaultForDoor(doorId);
-            }
-        } catch (Exception e) {
-            MainRegistry.LOGGER.debug("Could not load Cloth Config for door models: {}", e.getMessage());
-        }
-        return null;
     }
     
     /**

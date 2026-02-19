@@ -1,5 +1,9 @@
 package com.hbm_m.client.tooltip;
 
+import java.util.List;
+
+import javax.annotation.Nonnull;
+
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
@@ -7,9 +11,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
-import javax.annotation.Nonnull;
-import java.util.List;
 
 /**
  * Client renderer for crate tooltip rows (item icon + name).

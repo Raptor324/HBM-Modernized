@@ -1,10 +1,15 @@
 package com.hbm_m.datagen.recipes;
 
+import java.util.function.Consumer;
+
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.lib.RefStrings;
+
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeCategory;
@@ -18,9 +23,6 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.registries.RegistryObject;
-import org.jetbrains.annotations.NotNull;
-
-import java.util.function.Consumer;
 
 public class ModVanillaRecipeProvider extends RecipeProvider {
 

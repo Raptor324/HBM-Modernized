@@ -499,13 +499,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/machine_battery_dineutronium_top")
         );
 
-        // orientableBlockWithItem(
-        //         ModBlocks.SHREDDER,
-        //         modLoc("block/shredder_side"),
-        //         modLoc("block/shredder_front"),
-        //         modLoc("block/shredder_top")
-        // );
-
         // Генерация моделей для ступенек
         stairsBlock((StairBlock) ModBlocks.REINFORCED_STONE_STAIRS.get(),
                 modLoc("block/reinforced_stone"));
@@ -695,6 +688,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         stairsBlock((StairBlock) ModBlocks.BASALT_BRICK_STAIRS.get(), modLoc("block/basalt_brick"));
         simpleBlockItem(ModBlocks.BASALT_BRICK_STAIRS.get(), models().getExistingFile(modLoc("block/basalt_brick_stairs")));
+
+        stairsBlock((StairBlock) ModBlocks.DEPTH_STONE_STAIRS.get(), modLoc("block/depth_stone"));
+        simpleBlockItem(ModBlocks.DEPTH_STONE_STAIRS.get(), models().getExistingFile(modLoc("block/basalt_brick_stairs")));
 
         stairsBlock((StairBlock) ModBlocks.METEOR_POLISHED_STAIRS.get(), modLoc("block/meteor_polished"));
         simpleBlockItem(ModBlocks.METEOR_POLISHED_STAIRS.get(), models().getExistingFile(modLoc("block/meteor_polished_stairs")));
@@ -1035,6 +1031,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 modLoc("block/depth_tiles"));
         simpleBlockItem(ModBlocks.DEPTH_TILES_SLAB.get(),
                 models().getExistingFile(modLoc("block/depth_tiles_slab")));
+
+        slabBlock((SlabBlock) ModBlocks.DEPTH_STONE_SLAB.get(),
+                blockTexture(ModBlocks.DEPTH_STONE.get()),
+                modLoc("block/depth_stone"));
+        simpleBlockItem(ModBlocks.DEPTH_STONE_SLAB.get(),
+                models().getExistingFile(modLoc("block/depth_stone_slab")));
 
         slabBlock((SlabBlock) ModBlocks.GNEISS_BRICK_SLAB.get(),
                 blockTexture(ModBlocks.GNEISS_BRICK.get()),

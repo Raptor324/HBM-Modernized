@@ -29,10 +29,6 @@ public class BlastFurnaceRecipe implements Recipe<SimpleContainer> {
 
     @Override
     public boolean matches(SimpleContainer container, Level level) {
-        if(level.isClientSide()) {
-            return false;
-        }
-
         ItemStack input1 = container.getItem(1); // INPUT_SLOT_1
         ItemStack input2 = container.getItem(2); // INPUT_SLOT_2
 

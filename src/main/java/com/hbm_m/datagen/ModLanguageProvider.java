@@ -1207,6 +1207,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.sliding_blast_door.variant2", "Вариант 2");
                 add("door.skin.hbm_m.sliding_seal_door.default", "Новая");
                 add("door.skin.hbm_m.large_vehicle_door.default", "Новая");
+                add("door.skin.hbm_m.large_vehicle_door.rad", "Радиация");
                 add("door.skin.hbm_m.water_door.default", "Новая");
                 add("door.skin.hbm_m.qe_sliding_door.default", "Новая");
                 add("door.skin.hbm_m.qe_containment_door.default", "Новая");
@@ -2527,6 +2528,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.sliding_blast_door.variant2", "Variant 2");
                 add("door.skin.hbm_m.sliding_seal_door.default", "Standard");
                 add("door.skin.hbm_m.large_vehicle_door.default", "Standard");
+                add("door.skin.hbm_m.large_vehicle_door.rad", "Radiation");
                 add("door.skin.hbm_m.water_door.default", "Standard");
                 add("door.skin.hbm_m.qe_sliding_door.default", "Standard");
                 add("door.skin.hbm_m.qe_containment_door.default", "Standard");

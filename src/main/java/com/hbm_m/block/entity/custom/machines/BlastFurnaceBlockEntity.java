@@ -338,11 +338,21 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         if (item == Items.BLAZE_ROD) {
             return 1_000;
         }
+        if (item == Items.DRIED_KELP) {
+            return 15;
+        }
+        if (item == Items.DRIED_KELP_BLOCK) {
+            return 150;
+        }
         if (item == Items.BLAZE_POWDER) {
             return 300;
         }
         if (item == ModItems.LIGNITE.get()) {
             return 150;
+        }
+        // Coal powder (original: powder_coal 200)
+        if (item == ModItems.POWDER_COAL.get()) {
+            return 200;
         }
         return 0;
     }
