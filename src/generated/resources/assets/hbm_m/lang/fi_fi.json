@@ -416,6 +416,7 @@
   "door.skin.hbm_m.fire_door.default": "Standard",
   "door.skin.hbm_m.fire_door.orange": "Orange",
   "door.skin.hbm_m.large_vehicle_door.default": "Standard",
+  "door.skin.hbm_m.large_vehicle_door.rad": "Radiation",
   "door.skin.hbm_m.qe_containment_door.default": "Standard",
   "door.skin.hbm_m.qe_sliding_door.default": "Standard",
   "door.skin.hbm_m.round_airlock_door.clean": "Clean",
