@@ -35,6 +35,8 @@ import com.hbm_m.client.overlay.OverlayRadiationVisuals;
 import com.hbm_m.client.overlay.crates.GUIDeshCrate;
 import com.hbm_m.client.overlay.crates.GUIIronCrate;
 import com.hbm_m.client.overlay.crates.GUISteelCrate;
+import com.hbm_m.client.overlay.crates.GUITemplateCrate;
+import com.hbm_m.client.overlay.crates.GUITungstenCrate;
 import com.hbm_m.client.render.AirBombProjectileEntityRenderer;
 import com.hbm_m.client.render.AirNukeBombProjectileEntityRenderer;
 import com.hbm_m.client.render.AirstrikeEntityRenderer;
@@ -50,6 +52,8 @@ import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.ShaderReloadListener;
 import com.hbm_m.client.tooltip.ItemTooltipComponent;
 import com.hbm_m.client.tooltip.ItemTooltipComponentRenderer;
+import com.hbm_m.client.tooltip.CrateContentsTooltipComponent;
+import com.hbm_m.client.tooltip.CrateContentsTooltipComponentRenderer;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.ModConfigKeybindHandler;
 import com.hbm_m.entity.ModEntities;
@@ -172,6 +176,8 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.IRON_CRATE_MENU.get(), GUIIronCrate::new);
             MenuScreens.register(ModMenuTypes.STEEL_CRATE_MENU.get(), GUISteelCrate::new);
             MenuScreens.register(ModMenuTypes.DESH_CRATE_MENU.get(), GUIDeshCrate::new);
+            MenuScreens.register(ModMenuTypes.TUNGSTEN_CRATE_MENU.get(), GUITungstenCrate::new);
+            MenuScreens.register(ModMenuTypes.TEMPLATE_CRATE_MENU.get(), GUITemplateCrate::new);
             MenuScreens.register(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
 
             // Register BlockEntity renderers
@@ -358,6 +364,7 @@ public class ClientSetup {
     @SubscribeEvent
     public static void registerTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
         event.register(ItemTooltipComponent.class, ItemTooltipComponentRenderer::new);
+        event.register(CrateContentsTooltipComponent.class, CrateContentsTooltipComponentRenderer::new);
     }
 
     @SubscribeEvent

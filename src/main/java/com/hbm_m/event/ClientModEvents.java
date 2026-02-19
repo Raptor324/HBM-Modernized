@@ -1,7 +1,7 @@
 package com.hbm_m.event;
 
 // import com.hbm_m.client.render.DoorDebugRenderer;
-import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
+import com.hbm_m.client.overlay.DoorAnimationDelayHelper;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
@@ -91,7 +91,7 @@ public class ClientModEvents {
             
         } else if (event.phase == TickEvent.Phase.END) {
             // Обработка задержки анимации дверей (перед переключением на baked model)
-            DoorBlockEntity.processAnimationDelayQueue();
+            DoorAnimationDelayHelper.processQueue();
             // Инвалидация чанков дверей при смене состояния (baked model после открытия/закрытия)
             DoorChunkInvalidationHelper.processPendingInvalidations();
             // Инвалидация чанков при смене шейдера (вне render loop — избегаем краша Sodium)

@@ -3,10 +3,6 @@ package com.hbm_m.block.entity.custom.doors;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.custom.decorations.DoorBlock;
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.multiblock.IMultiblockPart;
@@ -14,7 +10,9 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.sound.ClientSoundManager;
 
+import com.hbm_m.client.model.variant.DoorModelProperties;
 import com.hbm_m.client.model.variant.DoorModelRegistry;
+import com.hbm_m.client.overlay.DoorAnimationDelayHelper;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.model.variant.DoorModelType;
 import com.hbm_m.client.model.variant.DoorSkin;
@@ -39,7 +37,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.client.model.data.ModelProperty;
 
 
 public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
@@ -51,38 +48,6 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     private boolean locked = false;
     private boolean lastRedstoneState = false;
 
-    /**
-     * Property для передачи выбора модели через ModelData
-     */
-    @OnlyIn(Dist.CLIENT)
-    public static final ModelProperty<DoorModelSelection> MODEL_SELECTION_PROPERTY = 
-        new ModelProperty<>();
-    
-    /**
-     * Property для передачи состояния движения двери через ModelData
-     * Используется для переключения между baked geometry и BER рендером при активном шейдере
-     */
-    @OnlyIn(Dist.CLIENT)
-    public static final ModelProperty<Boolean> DOOR_MOVING_PROPERTY = 
-        new ModelProperty<>();
-
-    /**
-     * Property для передачи состояния open/closed через ModelData.
-     * Используется в baked-модели когда BlockState может быть не синхронизирован.
-     */
-    @OnlyIn(Dist.CLIENT)
-    public static final ModelProperty<Boolean> OPEN_PROPERTY = 
-        new ModelProperty<>();
-
-    /**
-     * Property: true когда дверь в положении open/closed (state 0/1), но BER ещё рисует створки
-     * (период overlap). BakedModel показывает полную геометрию, BER — анимированные части.
-     * Наслоение устраняет моргание при переключении.
-     */
-    @OnlyIn(Dist.CLIENT)
-    public static final ModelProperty<Boolean> OVERLAP_PROPERTY = 
-        new ModelProperty<>();
-    
     /**
      * Текущий выбор модели и скина
      */
@@ -105,39 +70,11 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     @OnlyIn(Dist.CLIENT)
     private Object loopingSound;
 
-    /**
-     * Задержка (мс): baked model и BER наслаиваются — оба рисуют створки в open/closed.
-     * Устраняет моргание при переключении. После истечения — только baked model.
-     */
-    private static final long ANIMATION_DELAY_MS = 500;
-
+    /** Called from DoorAnimationDelayHelper when delay expires. Client-only. */
     @OnlyIn(Dist.CLIENT)
-    private long animationDelayUntilMs = 0;
-
-    @OnlyIn(Dist.CLIENT)
-    private static final List<DelayEntry> ANIMATION_DELAY_QUEUE = new ArrayList<>();
-
-    @OnlyIn(Dist.CLIENT)
-    private static record DelayEntry(long untilMs, WeakReference<DoorBlockEntity> ref) {}
-
-    /** Вызывать из ClientTickEvent. По истечении delay — отключаем BER, оставляем только baked model. */
-    @OnlyIn(Dist.CLIENT)
-    public static void processAnimationDelayQueue() {
-        long now = System.currentTimeMillis();
-        Iterator<DelayEntry> it = ANIMATION_DELAY_QUEUE.iterator();
-        while (it.hasNext()) {
-            DelayEntry entry = it.next();
-            if (now >= entry.untilMs) {
-                DoorBlockEntity be = entry.ref.get();
-                if (be != null && !be.isRemoved() && be.level != null) {
-                    be.animationDelayUntilMs = 0;
-                    be.cachedModelData = null;
-                    be.requestModelDataUpdate();
-                    DoorChunkInvalidationHelper.scheduleChunkInvalidation(be.worldPosition);
-                }
-                it.remove();
-            }
-        }
+    public void clearAnimationDelayClient() {
+        this.cachedModelData = null;
+        requestModelDataUpdate();
     }
 
     public DoorBlockEntity(BlockPos pos, BlockState state, String doorDeclId) {
@@ -441,8 +378,8 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
      */
     public boolean isMoving() {
         if (state == 2 || state == 3) return true;
-        if (level != null && level.isClientSide) {
-            if (animationDelayUntilMs > 0 && System.currentTimeMillis() < animationDelayUntilMs) return true;
+        if (level != null && level.isClientSide && DoorAnimationDelayHelper.isInDelayPeriod(this)) {
+            return true;
         }
         return false;
     }
@@ -789,10 +726,9 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             if (this.state == 2 || this.state == 3) {
                 this.animStartTime = System.currentTimeMillis();
             }
-            // Задержка: при переходе из moving (2/3) в static (0/1) — анимированная часть остаётся ещё ANIMATION_DELAY_MS
+            // Задержка: при переходе из moving (2/3) в static (0/1) — анимированная часть остаётся ещё 500ms
             if ((oldState == 2 || oldState == 3) && (this.state == 0 || this.state == 1)) {
-                animationDelayUntilMs = System.currentTimeMillis() + ANIMATION_DELAY_MS;
-                ANIMATION_DELAY_QUEUE.add(new DelayEntry(animationDelayUntilMs, new WeakReference<>(this)));
+                DoorAnimationDelayHelper.addToQueue(this, 500);
             }
         }
     }
@@ -802,15 +738,15 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     public ModelData getModelData() {
         if (cachedModelData == null) {
             // isMoving: state 2/3 или период overlap (BER продолжает рисовать створки)
-            boolean inDelay = animationDelayUntilMs > 0 && System.currentTimeMillis() < animationDelayUntilMs;
+            boolean inDelay = DoorAnimationDelayHelper.isInDelayPeriod(this);
             boolean isOverlap = (state == 0 || state == 1) && inDelay;
             boolean isMoving = state == 2 || state == 3 || isOverlap;
             boolean isOpen = state == 1;
             cachedModelData = ModelData.builder()
-                .with(MODEL_SELECTION_PROPERTY, modelSelection)
-                .with(DOOR_MOVING_PROPERTY, isMoving)
-                .with(OPEN_PROPERTY, isOpen)
-                .with(OVERLAP_PROPERTY, isOverlap)
+                .with(DoorModelProperties.MODEL_SELECTION_PROPERTY, modelSelection)
+                .with(DoorModelProperties.DOOR_MOVING_PROPERTY, isMoving)
+                .with(DoorModelProperties.OPEN_PROPERTY, isOpen)
+                .with(DoorModelProperties.OVERLAP_PROPERTY, isOverlap)
                 .build();
         }
         return cachedModelData;

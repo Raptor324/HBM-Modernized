@@ -1,5 +1,6 @@
 package com.hbm_m.client.render;
 
+import com.hbm_m.block.entity.custom.doors.DoorAnimator;
 import com.mojang.blaze3d.vertex.*;
 import com.mojang.math.Axis;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -15,7 +16,7 @@ import org.joml.Matrix4f;
 import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
-public class LegacyAnimator {
+public class LegacyAnimator implements DoorAnimator {
 
     protected final PoseStack poseStack;
     final VertexConsumer buffer;

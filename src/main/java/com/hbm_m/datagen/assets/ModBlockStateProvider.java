@@ -310,6 +310,22 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
 
+        simpleBlockWithItem(ModBlocks.CRATE_TUNGSTEN.get(),
+                models().cubeBottomTop(
+                        ModBlocks.CRATE_TUNGSTEN.getId().getPath(),
+                        modLoc("block/crate_tungsten_side"),
+                        modLoc("block/crate_tungsten_top"),
+                        modLoc("block/crate_tungsten_top")
+                )
+        );
+
+        simpleBlockWithItem(ModBlocks.CRATE_TEMPLATE.get(),
+                models().cubeAll(
+                        ModBlocks.CRATE_TEMPLATE.getId().getPath(),
+                        modLoc("block/crate_template")
+                )
+        );
+
         simpleBlockWithItem(ModBlocks.REINFORCED_GLASS.get(),
                 models().cubeAll(ModBlocks.REINFORCED_GLASS.getId().getPath(),
                                 blockTexture(ModBlocks.REINFORCED_GLASS.get()))

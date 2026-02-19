@@ -71,11 +71,11 @@ public class ModCreativeTabs {
                     .icon(() -> new ItemStack(ModItems.PLATE_DESH.get()))
                     .build());
 
-    public static final RegistryObject<CreativeModeTab> NTM_INSTRUMENTS_TAB = CREATIVE_MODE_TABS.register("ntm_instruments_tab",
-            () -> CreativeModeTab.builder()
-                    .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_instruments_tab"))
-                    .icon(() -> new ItemStack(ModItems.GEIGER_COUNTER.get()))
-                    .build());
+//     public static final RegistryObject<CreativeModeTab> NTM_INSTRUMENTS_TAB = CREATIVE_MODE_TABS.register("ntm_instruments_tab",
+//             () -> CreativeModeTab.builder()
+//                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_instruments_tab"))
+//                     .icon(() -> new ItemStack(ModItems.GEIGER_COUNTER.get()))
+//                     .build());
 
     // Метод для регистрации всех вкладок
     public static void register(IEventBus eventBus) {

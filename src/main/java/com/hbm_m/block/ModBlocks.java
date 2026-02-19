@@ -53,6 +53,8 @@ import com.hbm_m.block.custom.machines.anvils.AnvilTier;
 import com.hbm_m.block.custom.machines.crates.DeshCrateBlock;
 import com.hbm_m.block.custom.machines.crates.IronCrateBlock;
 import com.hbm_m.block.custom.machines.crates.SteelCrateBlock;
+import com.hbm_m.block.custom.machines.crates.TemplateCrateBlock;
+import com.hbm_m.block.custom.machines.crates.TungstenCrateBlock;
 import com.hbm_m.block.custom.nature.DepthOreBlock;
 import com.hbm_m.block.custom.nature.GeysirBlock;
 import com.hbm_m.block.custom.nature.RadioactiveBlock;
@@ -638,16 +640,6 @@ public class ModBlocks {
 
 
     // ============ ТЕХНИЧЕСКИЕ И ДЕКОРАТИВНЫЕ БЛОКИ (Обновлено) ============
-
-    public static final RegistryObject<Block> RING_TEST = registerBlock("ring_test",
-            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
-
-    public static final RegistryObject<Block> BLAST_FURNACE2 = registerBlock("blast_furnace2",
-            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
-
-    public static final RegistryObject<Block> TEST3 = registerBlock("test3",
-            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
-
 
     public static final RegistryObject<Block> DORNIER = registerBlock("dornier",
             () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
@@ -1286,17 +1278,23 @@ public class ModBlocks {
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
 
 
-    // ✅ ПРАВИЛЬНО - РЕГИСТРИРУЙТЕ ПРОСТО!
-    public static final RegistryObject<Block> CRATE_IRON = BLOCKS.register("crate_iron",
-            () -> new IronCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
-                    .sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops()));
-    // ✅ ПРАВИЛЬНО - РЕГИСТРИРУЙТЕ ПРОСТО!
-    public static final RegistryObject<Block> CRATE_STEEL = BLOCKS.register("crate_steel",
-            () -> new SteelCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)
-                    .sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops()));
+    private static final BlockBehaviour.Properties CRATE_PROPERTIES =
+            BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(0.5f, 1f).requiresCorrectToolForDrops();
 
-    public static final RegistryObject<Block> CRATE_DESH = registerBlock("crate_desh",
+    public static final RegistryObject<Block> CRATE_IRON = registerBlockWithoutItem("crate_iron",
+            () -> new IronCrateBlock(CRATE_PROPERTIES));
+
+    public static final RegistryObject<Block> CRATE_STEEL = registerBlockWithoutItem("crate_steel",
+            () -> new SteelCrateBlock(CRATE_PROPERTIES));
+
+    public static final RegistryObject<Block> CRATE_DESH = registerBlockWithoutItem("crate_desh",
             () -> new DeshCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(1.5f, 2f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> CRATE_TUNGSTEN = registerBlockWithoutItem("crate_tungsten",
+            () -> new TungstenCrateBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.METAL).strength(2.0f, 3f).requiresCorrectToolForDrops()));
+
+    public static final RegistryObject<Block> CRATE_TEMPLATE = registerBlockWithoutItem("crate_template",
+            () -> new TemplateCrateBlock(CRATE_PROPERTIES));
 
     public static final RegistryObject<Block> WASTE_PLANKS = registerBlock("waste_planks",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.OAK_WOOD).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
@@ -1342,8 +1340,6 @@ public class ModBlocks {
     public static final RegistryObject<Block> ALUMINUM_ORE = registerBlock("aluminum_ore",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
-    // public static final RegistryObject<Block> URANIUM_ORE_H = registerBlock("uranium_ore_h",
-    //         () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
 	public static final RegistryObject<Block> URANIUM_ORE = registerBlock("uranium_ore",
             () -> new DropExperienceBlock(BlockBehaviour.Properties.copy(Blocks.STONE).strength(3.0F, 3.0F).requiresCorrectToolForDrops()));

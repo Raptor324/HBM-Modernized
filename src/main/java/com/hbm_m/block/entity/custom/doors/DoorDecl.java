@@ -8,7 +8,6 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.model.variant.DoorSkin;
-import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.sound.ModSounds;
@@ -205,7 +204,7 @@ public abstract class DoorDecl {
         return Component.translatable("door.locked");
     }
 
-    public void doOffsetTransform(LegacyAnimator animator) {}
+    public void doOffsetTransform(DoorAnimator animator) {}
 
     /**
      * Доп. поворот Y (градусы) для baked model — должен совпадать с doOffsetTransform,
@@ -700,7 +699,7 @@ public abstract class DoorDecl {
         }
         
         @Override
-        public void doOffsetTransform(LegacyAnimator animator) {
+        public void doOffsetTransform(DoorAnimator animator) {
             // Глобальное смещение всей модели (как в 1.7.10 GL11.glTranslated)
             animator.translate(0.0f, 0.0f, 0.5f);
         }
@@ -913,7 +912,7 @@ public abstract class DoorDecl {
         }
     
         @Override
-        public void doOffsetTransform(LegacyAnimator animator) {
+        public void doOffsetTransform(DoorAnimator animator) {
             animator.rotate(-90.0f, 0.0f, 1.0f, 0.0f);
         }
 

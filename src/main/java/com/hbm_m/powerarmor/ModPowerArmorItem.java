@@ -43,7 +43,6 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
 
-@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID)
 public class ModPowerArmorItem extends ModArmorFSBPowered {
     private static final Random RANDOM = new Random();
     private static final String TAG_HAS_GEIGER_DEVICE = "hbm_has_geiger_device";

@@ -66,6 +66,8 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropEmptyTable(ModBlocks.CRATE_IRON.get());
         dropEmptyTable(ModBlocks.CRATE_STEEL.get());
         dropEmptyTable(ModBlocks.CRATE_DESH.get());
+        dropEmptyTable(ModBlocks.CRATE_TUNGSTEN.get());
+        dropEmptyTable(ModBlocks.CRATE_TEMPLATE.get());
         // Фантомные части мультиблока не должны дропаться отдельно.
         dropEmptyTable(ModBlocks.UNIVERSAL_MACHINE_PART.get());
 

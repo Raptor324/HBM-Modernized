@@ -1,16 +1,16 @@
 package com.hbm_m.event;
 
 import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
-import com.hbm_m.client.overlay.DoorModelSelectionScreen;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.multiblock.IMultiblockPart;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 
 /**
@@ -65,11 +65,7 @@ public class ScrewdriverInteractionHandler {
     }
 
     private static void openSelectionMenu(DoorBlockEntity doorEntity) {
-        Minecraft mc = Minecraft.getInstance();
-        mc.setScreen(new DoorModelSelectionScreen(
-                doorEntity.getBlockPos(),
-                doorEntity.getDoorDeclId(),
-                doorEntity.getModelSelection()
-        ));
+        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
+                com.hbm_m.client.overlay.DoorSelectionClientHooks.openSelectionMenu(doorEntity));
     }
 }

@@ -634,6 +634,24 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('B', ModBlocks.CRATE_STEEL.get())
                 .unlockedBy(getHasName(ModItems.PLATE_DESH.get()), has(ModItems.PLATE_DESH.get()))
                 .save(writer, recipeId("crafting/crate_desh"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.CRATE_TUNGSTEN.get())
+                .pattern("AAA")
+                .pattern("B B")
+                .pattern("BBB")
+                .define('A', ModItems.PLATE_STEEL.get())
+                .define('B', ModItems.getIngot(ModIngots.TUNGSTEN).get())
+                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.TUNGSTEN).get()), has(ModItems.getIngot(ModIngots.TUNGSTEN).get()))
+                .save(writer, recipeId("crafting/crate_tungsten"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.CRATE_TEMPLATE.get())
+                .pattern("ABA")
+                .pattern("B B")
+                .pattern("ABA")
+                .define('A', Items.IRON_INGOT)
+                .define('B', Items.REDSTONE)
+                .unlockedBy(getHasName(Items.REDSTONE), has(Items.REDSTONE))
+                .save(writer, recipeId("crafting/crate_template"));
     }
 
     //крафты штампов

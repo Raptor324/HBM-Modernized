@@ -192,13 +192,11 @@ public class BlockExplosionDefense {
             // Определяем коэффициент защиты по типу блока
             float defenseValue = getDefenseValueForBlock(block);
 
-            // Добавляем строку в тултип золотым цветом
+            // Добавляем локализованную строку в тултип
             if (defenseValue >= 10_000.0F) {
-                event.getToolTip().add(Component.literal("§6Взрывоустойчивость: §cНЕДОЕМИЕ§r"));
+                event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.unbreakable"));
             } else if (defenseValue > 0) {
-                event.getToolTip().add(Component.literal(
-                        String.format("§6Взрывоустойчивость: §e%.0f§r", defenseValue)
-                ));
+                event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.value", String.format("%.0f", defenseValue)));
             }
         }
     }

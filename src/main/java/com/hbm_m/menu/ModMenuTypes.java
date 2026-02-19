@@ -60,6 +60,12 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<DeshCrateMenu>> DESH_CRATE_MENU =
             MENUS.register("desh_crate_menu", () -> IForgeMenuType.create(DeshCrateMenu::new));
 
+    public static final RegistryObject<MenuType<TungstenCrateMenu>> TUNGSTEN_CRATE_MENU =
+            MENUS.register("tungsten_crate_menu", () -> IForgeMenuType.create(TungstenCrateMenu::new));
+
+    public static final RegistryObject<MenuType<TemplateCrateMenu>> TEMPLATE_CRATE_MENU =
+            MENUS.register("template_crate_menu", () -> IForgeMenuType.create(TemplateCrateMenu::new));
+
     public static final RegistryObject<MenuType<MachineFluidTankMenu>> FLUID_TANK_MENU =
             MENUS.register("fluid_tank_menu", () -> IForgeMenuType.create(MachineFluidTankMenu::new));
 

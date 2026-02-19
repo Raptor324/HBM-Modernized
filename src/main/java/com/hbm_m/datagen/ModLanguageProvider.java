@@ -233,11 +233,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.security_leggings", "Поножи охранника");
                 add("item.hbm_m.security_boots", "Ботинки охранника");
 
-                add("item.hbm_m.ajr_helmet", "Шлем Стальных Рейнджеров");
-                add("item.hbm_m.ajr_chestplate", "Нагрудник Стальных Рейнджеров");
-                add("item.hbm_m.ajr_leggings", "Поножи Стальных Рейнджеров");
-                add("item.hbm_m.ajr_boots", "Ботинки Стальных Рейнджеров");
-
                 add("item.hbm_m.steel_helmet", "Стальной шлем");
                 add("item.hbm_m.steel_chestplate", "Стальной нагрудник");
                 add("item.hbm_m.steel_leggings", "Стальные поножи");
@@ -268,15 +263,30 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_leggings", "Поножи из звёздного металла");
                 add("item.hbm_m.starmetal_boots", "Ботинки из звёздного металла");
 
-                add("item.hbm_m.t51_helmet", "Шлем силовой брони T-51b");
-                add("item.hbm_m.t51_chestplate", "Нагрудник силовой брони T-51b");
-                add("item.hbm_m.t51_leggings", "Поножи силовой брони T-51b");
-                add("item.hbm_m.t51_boots", "Ботинки силовой брони T-51b");
+                add(ModItems.T51_HELMET.get(), "Шлем силовой брони T-51b");
+                add(ModItems.T51_CHESTPLATE.get(), "Нагрудник силовой брони T-51b");
+                add(ModItems.T51_LEGGINGS.get(), "Поножи силовой брони T-51b");
+                add(ModItems.T51_BOOTS.get(), "Ботинки силовой брони T-51b");
 
-                add("item.hbm_m.bismuth_helmet", "Висмутовый шлем силовой брони");
-                add("item.hbm_m.bismuth_chestplate", "Висмутовый нагрудник силовой брони");
-                add("item.hbm_m.bismuth_leggings", "Висмутовые поножи силовой брони");
-                add("item.hbm_m.bismuth_boots", "Висмутовые ботинки силовой брони");
+                add(ModItems.AJR_HELMET.get(), "Шлем Стальных Рейнджеров");
+                add(ModItems.AJR_CHESTPLATE.get(), "Нагрудник Стальных Рейнджеров");
+                add(ModItems.AJR_LEGGINGS.get(), "Поножи Стальных Рейнджеров");
+                add(ModItems.AJR_BOOTS.get(), "Ботинки Стальных Рейнджеров");
+
+                add(ModItems.BISMUTH_HELMET.get(), "Висмутовый шлем силовой брони");
+                add(ModItems.BISMUTH_CHESTPLATE.get(), "Висмутовый нагрудник силовой брони");
+                add(ModItems.BISMUTH_LEGGINGS.get(), "Висмутовые поножи силовой брони");
+                add(ModItems.BISMUTH_BOOTS.get(), "Висмутовые ботинки силовой брони");
+
+                add(ModItems.AJRO_HELMET.get(), "Шлем силовой брони AJR");
+                add(ModItems.AJRO_CHESTPLATE.get(), "Нагрудник силовой брони AJR");
+                add(ModItems.AJRO_LEGGINGS.get(), "Поножи силовой брони AJR");
+                add(ModItems.AJRO_BOOTS.get(), "Ботинки силовой брони AJR");
+
+                add(ModItems.DNT_HELMET.get(), "Шлем DNT-Нанокостюма");
+                add(ModItems.DNT_CHESTPLATE.get(), "Нагрудник DNT-Нанокостюма");
+                add(ModItems.DNT_LEGGINGS.get(), "Поножи DNT-Нанокостюма");
+                add(ModItems.DNT_BOOTS.get(), "Ботинки DNT-Нанокостюма");
 
                 add("item.hbm_m.geiger_counter", "Счетчик Гейгера");
                 add("item.hbm_m.dosimeter", "Дозиметр");
@@ -420,6 +430,18 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.depth_ores_scanner.scans_chunks", "Сканирует чанки в поисках");
                 add("tooltip.hbm_m.depth_ores_scanner.deep_clusters", "глубинных кластеров под игроком");
                 add("tooltip.hbm_m.depth_ores_scanner.depth_warning", "Работает на глубине -30 и ниже!");
+                add("tooltip.hbm_m.explosion_defense.unbreakable", "§6Взрывоустойчивость: §cНЕДОЕМИЕ§r");
+                add("tooltip.hbm_m.explosion_defense.value", "§6Взрывоустойчивость: §e%s§r");
+
+                add("tooltip.hbm_m.airstrike.common", "Вызывает авиаудар в целевую точку");
+                add("tooltip.hbm_m.airstrike.normal", "Дождь из случайных гранат");
+                add("tooltip.hbm_m.airstrike.heavy", "3 мощных фугасных бомбы");
+                add("tooltip.hbm_m.airstrike.agent", "Химическое оружие 'Agent Orange'");
+                add("tooltip.hbm_m.airstrike.nuke", "1 тактическая ядерная бомба");
+
+                add("message.hbm_m.airstrike.not_loaded", "Целевой чанк не загружен!");
+                add("message.hbm_m.airstrike.called", "Авиаудар вызван на координатах: %d, %d, %d");
+                add("message.hbm_m.airstrike.no_target", "Нет целевого блока в видимости!");
                 // DEPTH ORES SCANNER (сообщения)
                 add("message.hbm_m.depth_ores_scanner.invalid_height", "Сканер работает только на высоте -30 или ниже!");
                 add("message.hbm_m.depth_ores_scanner.directly_below", "Глубинный кластер прямо под нами!");
@@ -445,10 +467,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("message.hbm_m.multi_detonator.activated", "%s активирован!");
                 add("message.hbm_m.multi_detonator.activation_error", "Ошибка при активации!");
                 add("message.hbm_m.multi_detonator.incompatible_block", "Блок несовместим!");
-
-
-
-
 
 // ДЕТЕКТОР НЕФТИ (тултип)
                 add("tooltip.hbm_m.oil_detector.scans_chunks", "Сканирует чанки в поисках");
@@ -488,7 +506,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.grenade_if.default.line2", "Аллах одобряет!");
 
                 // ru_ru case
-                // ru_ru case
                 add(ModBlocks.BARREL_IRON.get(), "Железная бочка");
                 add(ModBlocks.BARREL_STEEL.get(), "Стальная бочка");
                 add(ModBlocks.BARREL_TCALLOY.get(), "Бочка из технециевой стали");
@@ -510,6 +527,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.BARREL_YELLOW.get(), "Бочка с ядерными отходами");
                 add(ModBlocks.BARREL_VITRIFIED.get(), "Бочка с остеклованными ядерными отходами");
                 add(ModBlocks.BARREL_TAINT.get(), "Бочка с говном");
+// MULTIBLOCK DOORS
+                add(ModBlocks.LARGE_VEHICLE_DOOR.get(), "Дверь для крупногабаритного транспорта");
+                add(ModBlocks.ROUND_AIRLOCK_DOOR.get(), "Круглая воздушная дверь");
+                add(ModBlocks.TRANSITION_SEAL.get(), "Транзитный люк (WIP)");
+                add(ModBlocks.SLIDE_DOOR.get(), "Скользящая взрывная дверь (WIP)");
                 add(ModBlocks.FIRE_DOOR.get(), "Пожарная дверь");
                 add(ModBlocks.SLIDING_SEAL_DOOR.get(), "Скользящая герметичная дверь");
                 add(ModBlocks.SECURE_ACCESS_DOOR.get(), "Усиленная дверь");
@@ -518,7 +540,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.WATER_DOOR.get(), "Подводный люк");
                 add(ModBlocks.SILO_HATCH.get(), "Малый люк");
                 add(ModBlocks.SILO_HATCH_LARGE.get(), "Люк ракетной шахты");
-
 
                 add(ModBlocks.DUD_SALTED.get(), "Неразорвавшаяся солёная бомба");
                 add(ModBlocks.DUD_NUKE.get(), "Неразорвавшаяся ядерная бомба");
@@ -659,7 +680,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CONCRETE_MAGENTA_SLAB.get(), "Пурпурная бетонная плита");
                 add(ModBlocks.CONCRETE_ORANGE_SLAB.get(), "Оранжевая бетонная плита");
                 add(ModBlocks.CONCRETE_PINK_SLAB.get(), "Розовая бетонная плита");
-                add(ModItems.AIRSTRIKE_TEST.get(), "Авиаудар");
+                add(ModItems.AIRSTRIKE_TEST.get(), "Устройство для обозначения авиаудара");
+                add(ModItems.AIRSTRIKE_HEAVY.get(), "Устройство для обозначения авиаудара");
+                add(ModItems.AIRSTRIKE_AGENT.get(), "Устройство для обозначения авиаудара");
+                add(ModItems.AIRSTRIKE_NUKE.get(), "Устройство для обозначения авиаудара");
                 add(ModBlocks.CONCRETE_PURPLE_SLAB.get(), "Фиолетовая бетонная плита");
                 add(ModBlocks.CONCRETE_RED_SLAB.get(), "Красная бетонная плита");
                 add(ModBlocks.CONCRETE_SILVER_SLAB.get(), "Серебристая бетонная плита");
@@ -1036,8 +1060,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_mossy_slab", "Плита из замшелого бетона");
                 add("block.hbm_m.concrete_mossy_stairs", "Ступени из замшелого бетона");
                 add("block.hbm_m.switch", "Рубильник");
-                add("block.hbm_m.large_vehicle_door", "Дверь для крупногабаритного транспорта");
-                add("block.hbm_m.round_airlock_door", "Круглая воздушная дверь");
                 add("block.hbm_m.strawberry_bush", "Куст клубники");
                 add("block.hbm_m.strawberry", "Клубника");
                 add("block.hbm_m.brick_concrete", "Бетонные кирпичи");
@@ -1069,7 +1091,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.sulfur_ore", "Серная руда");
                 add("block.hbm_m.cobalt_ore", "Кобальтовая руда");
                 add("block.hbm_m.lignite_ore", "Руда бурого угля");
-                // add("block.hbm_m.uranium_ore_h", "Обогащённая урановая руда");
                 add("block.hbm_m.uranium_ore_deepslate", "Глубинная урановая руда");
                 add("block.hbm_m.thorium_ore", "Ториевая руда");
                 add("block.hbm_m.thorium_ore_deepslate", "Глубинная ториевая руда");
@@ -1084,6 +1105,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.crate_iron", "Железный ящик");
                 add("block.hbm_m.crate_steel", "Стальной ящик");
                 add("block.hbm_m.crate_desh", "Деш ящик");
+                add("block.hbm_m.crate_tungsten", "Вольфрамовый ящик");
+                add("block.hbm_m.crate_template", "Шаблонный ящик");
 
                 add("block.hbm_m.waste_grass", "Мёртвая трава");
                 add("block.hbm_m.waste_leaves", "Мёртвая листва");
@@ -1155,6 +1178,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.crate_iron", "Железный ящик");
                 add("container.hbm_m.crate_steel", "Стальной ящик");
                 add("container.hbm_m.crate_desh", "Деш ящик");
+                add("container.hbm_m.crate_tungsten", "Вольфрамовый ящик");
+                add("container.hbm_m.crate_template", "Шаблонный ящик");
 
                 add("gui.hbm_m.battery.priority.0", "Приоритет: Низкий");
                 add("gui.hbm_m.battery.priority.0.desc", "Низший приоритет. Опустошается в первую очередь, заполняется в последнюю");
@@ -1502,11 +1527,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.security_leggings", "Security Leggings");
                 add("item.hbm_m.security_boots", "Security Boots");
 
-                add("item.hbm_m.ajr_helmet", "Steel Ranger Helmet");
-                add("item.hbm_m.ajr_chestplate", "Steel Ranger Chestplate");
-                add("item.hbm_m.ajr_leggings", "Steel Ranger Leggings");
-                add("item.hbm_m.ajr_boots", "Steel Ranger Boots");
-
                 add("item.hbm_m.steel_helmet", "Steel Helmet");
                 add("item.hbm_m.steel_chestplate", "Steel Chestplate");
                 add("item.hbm_m.steel_leggings", "Steel Leggings");
@@ -1537,15 +1557,31 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_leggings", "Starmetal Leggings");
                 add("item.hbm_m.starmetal_boots", "Starmetal Boots");
 
-                add("item.hbm_m.t51_helmet", "T-51b Power Armor Helmet");
-                add("item.hbm_m.t51_chestplate", "T-51b Power Armor Chestplate");
-                add("item.hbm_m.t51_leggings", "T-51b Power Armor Leggings");
-                add("item.hbm_m.t51_boots", "T-51b Power Armor Boots");
+                add(ModItems.T51_HELMET.get(), "T-51b Power Armor Helmet");
+                add(ModItems.T51_CHESTPLATE.get(), "T-51b Power Armor Chestplate");
+                add(ModItems.T51_LEGGINGS.get(), "T-51b Power Armor Leggings");
+                add(ModItems.T51_BOOTS.get(), "T-51b Power Armor Boots");
 
-                add("item.hbm_m.bismuth_helmet", "Bismuth Power Armor Helmet");
-                add("item.hbm_m.bismuth_chestplate", "Bismuth Power Armor Chestplate");
-                add("item.hbm_m.bismuth_leggings", "Bismuth Power Armor Leggings");
-                add("item.hbm_m.bismuth_boots", "Bismuth Power Armor Boots");
+                add(ModItems.AJR_HELMET.get(), "Steel Ranger Helmet");
+                add(ModItems.AJR_CHESTPLATE.get(), "Steel Ranger Chestplate");
+                add(ModItems.AJR_LEGGINGS.get(), "Steel Ranger Leggings");
+                add(ModItems.AJR_BOOTS.get(), "Steel Ranger Boots");
+
+                add(ModItems.AJRO_HELMET.get(), "AJR Power Armor Helmet");
+                add(ModItems.AJRO_CHESTPLATE.get(), "AJR Power Armor Chestplate");
+                add(ModItems.AJRO_LEGGINGS.get(), "AJR Power Armor Leggings");
+                add(ModItems.AJRO_BOOTS.get(), "AJR Power Armor Boots");
+
+                add(ModItems.BISMUTH_HELMET.get(), "Bismuth Power Armor Helmet");
+                add(ModItems.BISMUTH_CHESTPLATE.get(), "Bismuth Power Armor Chestplate");
+                add(ModItems.BISMUTH_LEGGINGS.get(), "Bismuth Power Armor Leggings");
+                add(ModItems.BISMUTH_BOOTS.get(), "Bismuth Power Armor Boots");
+
+                add(ModItems.DNT_HELMET.get(), "DNT Nano Suit Helmet");
+                add(ModItems.DNT_CHESTPLATE.get(), "DNT Nano Suit Chestplate");
+                add(ModItems.DNT_LEGGINGS.get(), "DNT Nano Suit Leggings");
+                add(ModItems.DNT_BOOTS.get(), "DNT Nano Suit Boots");
+
 
                 // ITEMS
                 add(ModItems.CANNED_ASBESTOS.get(), "Canned Asbestos");
@@ -1782,6 +1818,18 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.depth_ores_scanner.scans_chunks", "Scans chunks for");
                 add("tooltip.hbm_m.depth_ores_scanner.deep_clusters", "depth clusters beneath the player");
                 add("tooltip.hbm_m.depth_ores_scanner.depth_warning", "works at depth -30 and below!");
+                add("tooltip.hbm_m.explosion_defense.unbreakable", "§6Blast Resistance: §cUNBREAKABLE§r");
+                add("tooltip.hbm_m.explosion_defense.value", "§6Blast Resistance: §e%s§r");
+
+                add("tooltip.hbm_m.airstrike.common", "Calls an airstrike at the target point");
+                add("tooltip.hbm_m.airstrike.normal", "Rain of random grenades");
+                add("tooltip.hbm_m.airstrike.heavy", "3 powerful high-explosive bombs");
+                add("tooltip.hbm_m.airstrike.agent", "Chemical weapon 'Agent Orange'");
+                add("tooltip.hbm_m.airstrike.nuke", "1 tactical nuclear bomb");
+
+                add("message.hbm_m.airstrike.not_loaded", "Target chunk not loaded!");
+                add("message.hbm_m.airstrike.called", "Airstrike called at coordinates: %d, %d, %d");
+                add("message.hbm_m.airstrike.no_target", "No target block in sight!");
 // DEPTH ORES SCANNER (сообщения)
                 add("message.hbm_m.depth_ores_scanner.invalid_height", "Scanner works only at height -30 or below!");
                 add("message.hbm_m.depth_ores_scanner.directly_below", "Depth cluster directly below us!");
@@ -2101,6 +2149,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.BARREL_IRON.get(), "Iron Barrel");
                 add(ModBlocks.BARREL_STEEL.get(), "Steel Barrel");
                 add(ModBlocks.BARREL_TCALLOY.get(), "Iron Barrel");
+
+                // MULTIBLOCK DOORS
+                add(ModBlocks.LARGE_VEHICLE_DOOR.get(), "Large Vehicle Door");
+                add(ModBlocks.ROUND_AIRLOCK_DOOR.get(), "Round Airlock Door");
                 add(ModBlocks.FIRE_DOOR.get(), "Fire Door");
                 add(ModBlocks.SLIDING_SEAL_DOOR.get(), "Sliding Seal Door");
                 add(ModBlocks.SECURE_ACCESS_DOOR.get(), "Secure Access Door");
@@ -2109,6 +2161,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.WATER_DOOR.get(), "Waterproof Hatch");
                 add(ModBlocks.SILO_HATCH.get(), "Silo Hatch");
                 add(ModBlocks.SILO_HATCH_LARGE.get(), "Large Silo Hatch");
+                add(ModBlocks.TRANSITION_SEAL.get(), "Transition Seal (WIP)");
+                add(ModBlocks.SLIDE_DOOR.get(), "Sliding Blast Door (WIP)");
 
 
                 add(ModBlocks.DUD_SALTED.get(), "Unexploded Salted Bomb");
@@ -2347,6 +2401,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.crate_iron", "Iron Crate");
                 add("block.hbm_m.crate_steel", "Steel Crate");
                 add("block.hbm_m.crate_desh", "Desh Crate");
+                add("block.hbm_m.crate_tungsten", "Tungsten Crate");
+                add("block.hbm_m.crate_template", "Template Crate");
 
                 add("block.hbm_m.det_miner", "Det Miner");
                 add("block.hbm_m.concrete_vent", "Concrete Vent");
@@ -2378,8 +2434,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_hazard_stairs", "Concrete Stairs with Hazard line");
                 add("block.hbm_m.concrete_stairs", "Concrete Stairs");
                 add("block.hbm_m.concrete_slab", "Concrete Slab");
-                add("block.hbm_m.large_vehicle_door", "Large Vehicle Door");
-                add("block.hbm_m.round_airlock_door", "Round Airlock Door");
                 add("block.hbm_m.strawberry_bush", "Strawberry Bush");
 
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");
@@ -2388,7 +2442,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 // ORES
                 add(ModBlocks.SEQUESTRUM_ORE.get(), "Salpeter Ore");
                 add(ModItems.SEQUESTRUM.get(), "Salpeter");
-                add(ModItems.AIRSTRIKE_TEST.get(), "Airstrike");
+                add(ModItems.AIRSTRIKE_TEST.get(), "Airstrike Designator");
+                add(ModItems.AIRSTRIKE_HEAVY.get(), "Airstrike Designator");
+                add(ModItems.AIRSTRIKE_AGENT.get(), "Airstrike Designator");
+                add(ModItems.AIRSTRIKE_NUKE.get(), "Airstrike Designator");
                 add(ModBlocks.RESOURCE_ASBESTOS.get(), "Asbestos Cluster");
                 add(ModBlocks.RESOURCE_BAUXITE.get(), "Bauxite");
                 add(ModBlocks.RESOURCE_HEMATITE.get(), "Hematite");
@@ -2406,7 +2463,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.asbestos_ore", "Asbestos Ore");
                 add("block.hbm_m.sulfur_ore", "Sulfur Ore");
                 add("block.hbm_m.cobalt_ore", "Cobalt Ore");
-                // add("block.hbm_m.uranium_ore_h", "High-Yield Uranium Ore");
                 add("block.hbm_m.uranium_ore_deepslate", "Deepslate Uranium Ore");
                 add("block.hbm_m.thorium_ore", "Thorium Ore");
                 add("block.hbm_m.thorium_ore_deepslate", "Deepslate Thorium Ore");
@@ -2443,6 +2499,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.crate_iron", "Iron Crate");
                 add("container.hbm_m.crate_steel", "Steel Crate");
                 add("container.hbm_m.crate_desh", "Desh Crate");
+                add("container.hbm_m.crate_tungsten", "Tungsten Crate");
+                add("container.hbm_m.crate_template", "Template Crate");
                 add("gui.hbm_m.battery.priority.0", "Priority: Low");
                 add("gui.hbm_m.battery.priority.0.desc", "Lowest priority. Will be drained first and filled last.");
                 add("gui.hbm_m.battery.priority.1", "Priority: Normal");

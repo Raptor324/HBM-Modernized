@@ -1,6 +1,9 @@
 package com.hbm_m.item.custom.grenades_and_activators;
 
+import com.hbm_m.entity.grenades.AirstrikeAgentEntity;
 import com.hbm_m.entity.grenades.AirstrikeEntity;
+import com.hbm_m.entity.grenades.AirstrikeHeavyEntity;
+import com.hbm_m.entity.grenades.AirstrikeNukeEntity;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -23,8 +26,49 @@ public class AirstrikeItem extends Item {
 
     private static final int MAX_RANGE = 256;
 
-    public AirstrikeItem(Properties properties) {
+    public enum AirstrikeType {
+        NORMAL("normal", AirstrikeEntity::new),
+        HEAVY("heavy", AirstrikeHeavyEntity::new),
+        AGENT("agent", AirstrikeAgentEntity::new),
+        NUKE("nuke", AirstrikeNukeEntity::new);
+
+        private final String name;
+        private final AirstrikeEntityFactory factory;
+
+        AirstrikeType(String name, AirstrikeEntityFactory factory) {
+            this.name = name;
+            this.factory = factory;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public AirstrikeEntityFactory getFactory() {
+            return factory;
+        }
+    }
+
+    @FunctionalInterface
+    public interface AirstrikeEntityFactory {
+        Object create(Level level, Player player, BlockPos pos);
+    }
+
+    private final AirstrikeType type;
+
+    public AirstrikeItem(Properties properties, AirstrikeType type) {
         super(properties.stacksTo(1));
+        this.type = type;
+    }
+
+    @Override
+    public boolean isFoil(ItemStack stack) {
+        return type == AirstrikeType.NUKE;
+    }
+
+    @Override
+    public boolean isEnchantable(ItemStack stack) {
+        return false;
     }
 
     @Override
@@ -38,18 +82,20 @@ public class AirstrikeItem extends Item {
 
                 if (!level.isLoaded(targetPos)) {
                     player.displayClientMessage(
-                            Component.literal("Целевой чанк не загружен!").withStyle(ChatFormatting.RED),
+                            Component.translatable("message.hbm_m.airstrike.not_loaded").withStyle(ChatFormatting.RED),
                             true
                     );
                     return InteractionResultHolder.fail(stack);
                 }
 
-                // Создаем сущность самолета
-                AirstrikeEntity airplane = new AirstrikeEntity(level, player, targetPos);
-                level.addFreshEntity(airplane);
+                // Создаем сущность самолета через фабрику
+                Object airplane = type.getFactory().create(level, player, targetPos);
+                if (airplane instanceof net.minecraft.world.entity.Entity entity) {
+                    level.addFreshEntity(entity);
+                }
 
                 player.displayClientMessage(
-                        Component.literal("Авиаудар вызван на координатах: " + targetPos.getX() + ", " + targetPos.getY() + ", " + targetPos.getZ())
+                        Component.translatable("message.hbm_m.airstrike.called", targetPos.getX(), targetPos.getY(), targetPos.getZ())
                                 .withStyle(ChatFormatting.GREEN),
                         true
                 );
@@ -66,7 +112,7 @@ public class AirstrikeItem extends Item {
 
             } else {
                 player.displayClientMessage(
-                        Component.literal("Нет целевого блока в видимости!").withStyle(ChatFormatting.RED),
+                        Component.translatable("message.hbm_m.airstrike.no_target").withStyle(ChatFormatting.RED),
                         true
                 );
                 return InteractionResultHolder.fail(stack);
@@ -78,21 +124,14 @@ public class AirstrikeItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
-        tooltip.add(Component.literal("Вызывает авиаудар в целевую точку").withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("Дождь из случайных гранат").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.airstrike.common").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.airstrike." + type.getName()).withStyle(ChatFormatting.GRAY));
     }
 
-    // Вспомогательный метод для трассировки луча, идентичный player.pick
     protected static BlockHitResult getPlayerPOVHitResult(Level pLevel, Player pPlayer, ClipContext.Fluid pFluid) {
-        float f = pPlayer.getXRot();
-        float f1 = pPlayer.getYRot();
-        double d0 = pPlayer.getX();
-        double d1 = pPlayer.getEyeY();
-        double d2 = pPlayer.getZ();
-        double d3 = MAX_RANGE;
         return pLevel.clip(new ClipContext(
                 pPlayer.getEyePosition(),
-                pPlayer.getEyePosition().add(pPlayer.getViewVector(1.0F).scale(d3)),
+                pPlayer.getEyePosition().add(pPlayer.getViewVector(1.0F).scale(MAX_RANGE)),
                 ClipContext.Block.OUTLINE, pFluid, pPlayer));
     }
 }

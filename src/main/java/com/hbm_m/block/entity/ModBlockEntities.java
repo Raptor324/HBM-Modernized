@@ -6,6 +6,8 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.custom.crates.DeshCrateBlockEntity;
 import com.hbm_m.block.entity.custom.crates.IronCrateBlockEntity;
 import com.hbm_m.block.entity.custom.crates.SteelCrateBlockEntity;
+import com.hbm_m.block.entity.custom.crates.TemplateCrateBlockEntity;
+import com.hbm_m.block.entity.custom.crates.TungstenCrateBlockEntity;
 import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.custom.explosives.MineBlockEntity;
 import com.hbm_m.block.entity.custom.machines.AnvilBlockEntity;
@@ -192,6 +194,20 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.<DeshCrateBlockEntity>of(
                             DeshCrateBlockEntity::new,
                             ModBlocks.CRATE_DESH.get()
+                    ).build(null));
+
+    public static final RegistryObject<BlockEntityType<TungstenCrateBlockEntity>> TUNGSTEN_CRATE_BE =
+            BLOCK_ENTITIES.register("tungsten_crate_be", () ->
+                    BlockEntityType.Builder.<TungstenCrateBlockEntity>of(
+                            TungstenCrateBlockEntity::new,
+                            ModBlocks.CRATE_TUNGSTEN.get()
+                    ).build(null));
+
+    public static final RegistryObject<BlockEntityType<TemplateCrateBlockEntity>> TEMPLATE_CRATE_BE =
+            BLOCK_ENTITIES.register("template_crate_be", () ->
+                    BlockEntityType.Builder.<TemplateCrateBlockEntity>of(
+                            TemplateCrateBlockEntity::new,
+                            ModBlocks.CRATE_TEMPLATE.get()
                     ).build(null));
 
     public static final RegistryObject<BlockEntityType<ConverterBlockEntity>> CONVERTER_BE =

@@ -5,12 +5,10 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
-import com.hbm_m.client.overlay.DoorModelSelectionScreen;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.multiblock.IMultiblockPart;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionResult;
@@ -50,7 +48,8 @@ public class ScrewdriverItem extends Item {
         if (doorEntity == null) return InteractionResult.PASS;
 
         if (level.isClientSide) {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> openGui(doorEntity));
+            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
+                    com.hbm_m.client.overlay.DoorSelectionClientHooks.openSelectionMenu(doorEntity));
         }
         // CONSUME явно помечает взаимодействие как обработанное — блок use() не вызывается
         return InteractionResult.CONSUME;
@@ -73,11 +72,4 @@ public class ScrewdriverItem extends Item {
         return null;
     }
 
-    private static void openGui(DoorBlockEntity doorEntity) {
-        Minecraft.getInstance().setScreen(new DoorModelSelectionScreen(
-                doorEntity.getBlockPos(),
-                doorEntity.getDoorDeclId(),
-                doorEntity.getModelSelection()
-        ));
-    }
 }

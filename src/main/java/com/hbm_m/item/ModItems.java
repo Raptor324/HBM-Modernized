@@ -30,8 +30,8 @@ import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeIfType;
 import com.hbm_m.entity.grenades.GrenadeType;
-import com.hbm_m.item.custom.crates.IronCrateItem;
-import com.hbm_m.item.custom.crates.SteelCrateItem;
+import com.hbm_m.item.custom.crates.CrateItem;
+import com.hbm_m.block.custom.machines.crates.CrateType;
 import com.hbm_m.item.custom.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
 import com.hbm_m.item.custom.food.ItemConserve;
@@ -39,10 +39,8 @@ import com.hbm_m.item.custom.food.ItemEnergyDrink;
 import com.hbm_m.item.custom.food.ModFoods;
 import com.hbm_m.item.custom.grenades_and_activators.AirBombItem;
 import com.hbm_m.item.custom.grenades_and_activators.AirNukeBombItem;
-import com.hbm_m.item.custom.grenades_and_activators.AirstrikeAgentItem;
-import com.hbm_m.item.custom.grenades_and_activators.AirstrikeHeavyItem;
 import com.hbm_m.item.custom.grenades_and_activators.AirstrikeItem;
-import com.hbm_m.item.custom.grenades_and_activators.AirstrikeNukeItem;
+import com.hbm_m.item.custom.grenades_and_activators.AirstrikeItem.AirstrikeType;
 import com.hbm_m.item.custom.grenades_and_activators.DetonatorItem;
 import com.hbm_m.item.custom.grenades_and_activators.GrenadeIfItem;
 import com.hbm_m.item.custom.grenades_and_activators.GrenadeItem;
@@ -555,9 +553,15 @@ public class ModItems {
 
 
     public static final RegistryObject<Item> CRATE_IRON = ITEMS.register("crate_iron",
-            () -> new IronCrateItem(ModBlocks.CRATE_IRON.get(), new Item.Properties()));
+            () -> new CrateItem(ModBlocks.CRATE_IRON.get(), new Item.Properties(), CrateType.IRON.getSlotCount()));
     public static final RegistryObject<Item> CRATE_STEEL = ITEMS.register("crate_steel",
-            () -> new SteelCrateItem(ModBlocks.CRATE_STEEL.get(), new Item.Properties()));
+            () -> new CrateItem(ModBlocks.CRATE_STEEL.get(), new Item.Properties(), CrateType.STEEL.getSlotCount()));
+    public static final RegistryObject<Item> CRATE_DESH = ITEMS.register("crate_desh",
+            () -> new CrateItem(ModBlocks.CRATE_DESH.get(), new Item.Properties(), CrateType.DESH.getSlotCount()));
+    public static final RegistryObject<Item> CRATE_TUNGSTEN = ITEMS.register("crate_tungsten",
+            () -> new CrateItem(ModBlocks.CRATE_TUNGSTEN.get(), new Item.Properties(), CrateType.TUNGSTEN.getSlotCount()));
+    public static final RegistryObject<Item> CRATE_TEMPLATE = ITEMS.register("crate_template",
+            () -> new CrateItem(ModBlocks.CRATE_TEMPLATE.get(), new Item.Properties(), CrateType.TEMPLATE.getSlotCount()));
 
 
 
@@ -1546,13 +1550,13 @@ public class ModItems {
 
 
     public static final RegistryObject<Item> AIRSTRIKE_TEST = ITEMS.register("airstrike_test",
-            () -> new AirstrikeItem(new Item.Properties()));
+            () -> new AirstrikeItem(new Item.Properties(), AirstrikeType.NORMAL));
     public static final RegistryObject<Item> AIRSTRIKE_AGENT= ITEMS.register("airstrike_agent",
-            () -> new AirstrikeAgentItem(new Item.Properties()));
+            () -> new AirstrikeItem(new Item.Properties(), AirstrikeType.AGENT));
     public static final RegistryObject<Item> AIRSTRIKE_HEAVY = ITEMS.register("airstrike_heavy",
-            () -> new AirstrikeHeavyItem(new Item.Properties()));
+            () -> new AirstrikeItem(new Item.Properties(), AirstrikeType.HEAVY));
     public static final RegistryObject<Item> AIRSTRIKE_NUKE = ITEMS.register("airstrike_nuke",
-            () -> new AirstrikeNukeItem(new Item.Properties()));
+            () -> new AirstrikeItem(new Item.Properties(), AirstrikeType.NUKE));
     public static final RegistryObject<Item> WIRE_RED_COPPER = ITEMS.register("wire_red_copper",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> WIRE_ADVANCED_ALLOY = ITEMS.register("wire_advanced_alloy",

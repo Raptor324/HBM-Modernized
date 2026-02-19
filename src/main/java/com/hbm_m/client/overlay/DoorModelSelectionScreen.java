@@ -80,7 +80,7 @@ public class DoorModelSelectionScreen extends Screen {
     private static final int ITEMS_PER_PAGE = SKIN_GRID_COLS * SKIN_GRID_ROWS;
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/door_modification_GUI.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/door_modification_gui.png");
 
     // Данные двери
     private final BlockPos doorPos;

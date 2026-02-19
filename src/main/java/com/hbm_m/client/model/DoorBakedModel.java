@@ -9,7 +9,7 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import com.hbm_m.block.custom.decorations.DoorBlock;
-import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
+import com.hbm_m.client.model.variant.DoorModelProperties;
 import com.hbm_m.block.entity.custom.doors.DoorDecl;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.block.entity.custom.doors.DoorDeclRegistry;
@@ -93,9 +93,9 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         
         // Движется ли дверь: BlockState обновляется первым (при block update), ModelData — при packet BlockEntity
         boolean isMoving = state.hasProperty(DoorBlock.DOOR_MOVING) && state.getValue(DoorBlock.DOOR_MOVING);
-        Boolean movingFromData = modelData.get(DoorBlockEntity.DOOR_MOVING_PROPERTY);
+        Boolean movingFromData = modelData.get(DoorModelProperties.DOOR_MOVING_PROPERTY);
         if (movingFromData != null) isMoving = movingFromData;
-        Boolean isOverlap = modelData.get(DoorBlockEntity.OVERLAP_PROPERTY);
+        Boolean isOverlap = modelData.get(DoorModelProperties.OVERLAP_PROPERTY);
         // Период overlap: дверь в open/closed, baked model и BER наслаиваются — устраняет моргание
         if (Boolean.TRUE.equals(isOverlap) || !isMoving) {
             return getAllPartQuads(state, side, rand, modelData, renderType);
@@ -109,7 +109,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
      * Если в ModelData есть выбор и реестр имеет конфиг — используем модель из реестра.
      */
     private Map<String, BakedModel> getPartsForModelData(ModelData modelData) {
-        var selection = modelData.get(DoorBlockEntity.MODEL_SELECTION_PROPERTY);
+        var selection = modelData.get(DoorModelProperties.MODEL_SELECTION_PROPERTY);
         if (selection == null) return parts;
         
         String doorType = extractDoorTypeFromPath(doorId.getPath());
@@ -179,7 +179,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
 
         // OPEN: BlockState обновляется первым, ModelData — при packet BlockEntity
         boolean isOpen = state.hasProperty(DoorBlock.OPEN) && state.getValue(DoorBlock.OPEN);
-        Boolean openFromData = modelData.get(DoorBlockEntity.OPEN_PROPERTY);
+        Boolean openFromData = modelData.get(DoorModelProperties.OPEN_PROPERTY);
         if (openFromData != null) isOpen = openFromData;
         float openTicks = isOpen ? doorDecl.getOpenTime() : 0f;
 
@@ -214,7 +214,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
                 List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
                 allQuads.addAll(ModelHelper.transformQuadsByFacing(translated, rotationY));
             } else {
-                DoorModelSelection selection = modelData.get(DoorBlockEntity.MODEL_SELECTION_PROPERTY);
+                DoorModelSelection selection = modelData.get(DoorModelProperties.MODEL_SELECTION_PROPERTY);
                 Matrix4f transform = buildPartTransformWithParent(doorDecl, partName, openTicks, animData, partNamesToUse, transformCache, selection);
                 if (transform != null) {
                     partQuads = ModelHelper.transformQuadsByMatrix(partQuads, transform);

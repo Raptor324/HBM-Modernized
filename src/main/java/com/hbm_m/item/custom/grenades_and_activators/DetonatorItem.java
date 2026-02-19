@@ -1,6 +1,12 @@
 package com.hbm_m.item.custom.grenades_and_activators;
 
+import java.util.List;
+
+import javax.annotation.Nullable;
+
+import com.hbm_m.block.custom.explosives.IDetonatable;
 import com.hbm_m.sound.ModSounds;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -17,10 +23,6 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import com.hbm_m.block.custom.explosives.IDetonatable;
-
-import javax.annotation.Nullable;
-import java.util.List;
 
 public class DetonatorItem extends Item {
 
@@ -97,7 +99,7 @@ public class DetonatorItem extends Item {
             if (!level.isClientSide) {
                 player.displayClientMessage(
 
-                        Component.literal("Позиция сохранена: " + pos.getX() + ", " + pos.getY() + ", " + pos.getZ())
+                        Component.translatable("message.hbm_m.detonator.saved", pos.getX(), pos.getY(), pos.getZ())
                                 .withStyle(ChatFormatting.GREEN),
                         true
                 );
@@ -122,7 +124,7 @@ public class DetonatorItem extends Item {
             if (!stack.hasTag()) {
                 if (!level.isClientSide) {
                     player.displayClientMessage(
-                            Component.literal("Нет сохраненной позиции!")
+                            Component.translatable("message.hbm_m.detonator.no_saved_position")
                                     .withStyle(ChatFormatting.RED),
                             true
                     );
@@ -139,7 +141,7 @@ public class DetonatorItem extends Item {
             if (!nbt.contains(NBT_HAS_TARGET) || !nbt.getBoolean(NBT_HAS_TARGET)) {
                 if (!level.isClientSide) {
                     player.displayClientMessage(
-                            Component.literal("Нет сохраненной позиции!")
+                            Component.translatable("message.hbm_m.detonator.no_saved_position")
                                     .withStyle(ChatFormatting.RED),
                             true
                     );
@@ -161,7 +163,7 @@ public class DetonatorItem extends Item {
                 // Проверяем, загружен ли чанк
                 if (!level.isLoaded(targetPos)) {
                     player.displayClientMessage(
-                            Component.literal("Позиция не совместима или не прогружена")
+                            Component.translatable("message.hbm_m.detonator.pos_not_compatible")
                                     .withStyle(ChatFormatting.RED),
                             true
                     );
@@ -183,7 +185,7 @@ public class DetonatorItem extends Item {
 
                     if (success) {
                         player.displayClientMessage(
-                                Component.literal("Успешно активировано")
+                                Component.translatable("message.hbm_m.detonator.activated")
                                         .withStyle(ChatFormatting.GREEN),
                                 true
                         );
@@ -195,7 +197,7 @@ public class DetonatorItem extends Item {
                         return InteractionResultHolder.success(stack);
                     } else {
                         player.displayClientMessage(
-                                Component.literal("Позиция не совместима или не прогружена")
+                                Component.translatable("message.hbm_m.detonator.pos_not_compatible")
                                         .withStyle(ChatFormatting.RED),
                                 true
                         );
@@ -210,7 +212,7 @@ public class DetonatorItem extends Item {
 
                 } else {
                     player.displayClientMessage(
-                            Component.literal("Позиция не совместима или не прогружена")
+                            Component.translatable("message.hbm_m.detonator.pos_not_compatible")
                                     .withStyle(ChatFormatting.RED),
                             true
                     );
