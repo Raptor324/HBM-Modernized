@@ -19,7 +19,8 @@ import com.hbm_m.multiblock.IFrameSupportable;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.sound.ModSounds;
-
+import com.hbm_m.main.MainRegistry;
+import com.hbm_m.util.LongDataPacker;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -73,9 +74,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     protected LazyOptional<IFluidHandler> fluidInputHandler = LazyOptional.empty();
     protected LazyOptional<IFluidHandler> fluidOutputHandler = LazyOptional.empty();
 
-    // Состояние мультиблочной "рамки"
-    public boolean frame = false;
-
     // Выбор рецепта и кеш
     @Nullable private ResourceLocation selectedRecipeId = null;
     @Nullable private AssemblerRecipe cachedRecipe = null;
@@ -86,11 +84,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     // Крафт состояние на клиенте
     private boolean clientIsCrafting = false;
-    private boolean wasCraftingLastTick = false;
     public long lastUseTick = 0;
 
     private boolean needsClientSync = false;
     private int ticksSinceLastSync = 0;
+
+    private int renderCooldownTimer = 0; 
 
     // Поле для хранения клиентского обработчика.
     // LazyOptional используется для безопасной инициализации только на клиенте.
@@ -234,21 +233,27 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public boolean setFrameVisible(boolean visible) {
-        if (this.frame != visible) {
-            this.frame = visible;
-            setChanged();
-            if (level != null && !level.isClientSide) {
-                sendUpdateToClient();
-                MainRegistry.LOGGER.debug("[FRAME SET] Состояние рамки изменено на " + visible);
+        // MachineAdvancedAssemblerBlock хранит FRAME в BlockState (MultiblockStructureHelper обновляет напрямую)
+        if (level != null && !level.isClientSide) {
+            BlockState state = getBlockState();
+            if (state.getBlock() instanceof MachineAdvancedAssemblerBlock
+                    && state.hasProperty(MachineAdvancedAssemblerBlock.FRAME)
+                    && state.getValue(MachineAdvancedAssemblerBlock.FRAME) != visible) {
+                level.setBlock(worldPosition, state.setValue(MachineAdvancedAssemblerBlock.FRAME, visible), 3);
+                return true;
             }
-            return true;
         }
         return false;
     }
 
     @Override
     public boolean isFrameVisible() {
-        return this.frame;
+        BlockState state = getBlockState();
+        if (state.getBlock() instanceof MachineAdvancedAssemblerBlock
+                && state.hasProperty(MachineAdvancedAssemblerBlock.FRAME)) {
+            return state.getValue(MachineAdvancedAssemblerBlock.FRAME);
+        }
+        return false;
     }
 
     // Tick-хуки
@@ -261,58 +266,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
     }
 
-    // @OnlyIn(Dist.CLIENT)
-    // public void clientTick(Level level, BlockPos pos, BlockState state) {
-    //     ClientSoundManager.updateSound(this, this.isCrafting(),
-    //             () -> new com.hbm_m.sound.AdvancedAssemblerSoundInstance(this.getBlockPos()));
-    //     this.prevRingAngle = this.ringAngle;
-    //     boolean craftingNow = isCrafting();
-    //     if (craftingNow) {
-    //         for (AssemblerArm arm : arms) {
-    //             arm.updateInterp();
-    //             arm.updateArm(level, pos, level.random);
-    //         }
-    //     } else {
-    //         for (AssemblerArm arm : arms) {
-    //             arm.updateInterp();
-    //             arm.returnToNullPos();
-    //         }
-    //     }
-    //     if (craftingNow && !wasCraftingLastTick) {
-    //         this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
-    //         this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
-    //         this.ringDelay = 0;
-    //         level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-    //                 ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.5f, 1.0f, false);
-    //     }
-    //     wasCraftingLastTick = craftingNow;
-    //     if (craftingNow) {
-    //         if (this.ringAngle != this.ringTarget) {
-    //             float ringDelta = Mth.wrapDegrees(this.ringTarget - this.ringAngle);
-    //             float absDelta = Math.abs(ringDelta);
-    //             if (absDelta <= this.ringSpeed) {
-    //                 this.ringAngle = this.ringTarget;
-    //                 this.ringDelay = 20 + level.random.nextInt(21);
-    //             } else {
-    //                 this.ringAngle += Math.signum(ringDelta) * this.ringSpeed;
-    //             }
-    //         } else if (this.ringDelay > 0) {
-    //             this.ringDelay--;
-    //             if (this.ringDelay == 0) {
-    //                 level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-    //                         ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.3f, 1.0f, false);
-    //                 this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
-    //                 this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
-    //             }
-    //         }
-    //     } else {
-    //         if (Math.abs(this.ringAngle) > 0.1f) {
-    //             this.ringAngle = Mth.lerp(0.1f, this.ringAngle, 0);
-    //         } else {
-    //             this.ringAngle = 0;
-    //         }
-    //     }
-    // }
 
     private void serverTick() {
 
@@ -348,7 +301,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                             level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
                                     SoundSource.BLOCKS, 0.5f, 1.0f);
                             needsClientSync = true;
-                            return;
+                            // return;
                         }
                     }
                 }
@@ -404,6 +357,32 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 sendUpdateToClient();
                 needsClientSync = false;
                 ticksSinceLastSync = 0;
+            }
+
+            if (isCraftingNow) {
+                // Если машина работает, ресет таймера на 5 секунд (100 тиков)
+                renderCooldownTimer = 100;
+            } else {
+                // Если не работает, уменьшаем таймер
+                if (renderCooldownTimer > 0) {
+                    renderCooldownTimer--;
+                }
+            }
+            
+            boolean shouldRenderActive = renderCooldownTimer > 0;
+            
+            BlockState currentState = getBlockState();
+            if (currentState.getBlock() instanceof MachineAdvancedAssemblerBlock &&
+                currentState.hasProperty(MachineAdvancedAssemblerBlock.RENDER_ACTIVE)) {
+                
+                boolean currentActive = currentState.getValue(MachineAdvancedAssemblerBlock.RENDER_ACTIVE);
+                
+                // Если состояние изменилось, обновляем блок (это вызовет перестройку чанка)
+                if (currentActive != shouldRenderActive) {
+                    level.setBlock(worldPosition, 
+                        currentState.setValue(MachineAdvancedAssemblerBlock.RENDER_ACTIVE, shouldRenderActive), 
+                        3); // Flag 3 = update client + block update
+                }
             }
         }
     }
@@ -568,7 +547,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         tag.put("input_tank", inputTank.writeToNBT(new CompoundTag()));
         tag.put("output_tank", outputTank.writeToNBT(new CompoundTag()));
         tag.putLong("last_use_tick", lastUseTick);
-        tag.putBoolean("FrameVisible", frame);
+        // Frame хранится в BlockState (FRAME property)
         tag.putBoolean("HasRecipe", selectedRecipeId != null);
         if (selectedRecipeId != null) {
             tag.putString("SelectedRecipe", selectedRecipeId.toString());
@@ -588,7 +567,15 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         inputTank.readFromNBT(tag.getCompound("input_tank"));
         outputTank.readFromNBT(tag.getCompound("output_tank"));
         lastUseTick = tag.getLong("last_use_tick");
-        frame = tag.getBoolean("FrameVisible");
+        // Миграция: старые сохранения имели FrameVisible в NBT — синхронизируем в BlockState
+        if (tag.contains("FrameVisible") && level != null && !level.isClientSide) {
+            boolean frameVal = tag.getBoolean("FrameVisible");
+            BlockState state = getBlockState();
+            if (state.getBlock() instanceof MachineAdvancedAssemblerBlock
+                    && state.hasProperty(MachineAdvancedAssemblerBlock.FRAME)) {
+                level.setBlock(worldPosition, state.setValue(MachineAdvancedAssemblerBlock.FRAME, frameVal), 3);
+            }
+        }
         clientIsCrafting = tag.getBoolean("is_crafting");
         if (tag.contains("HasRecipe") && tag.getBoolean("HasRecipe")) {
             selectedRecipeId = ResourceLocation.tryParse(tag.getString("SelectedRecipe"));

@@ -8,12 +8,13 @@ import org.slf4j.Logger;
 // Главный класс мода, отвечающий за инициализацию и регистрацию всех систем мода.
 // Здесь регистрируются блоки, предметы, меню, вкладки креативногоного режима, звуки, частицы, рецепты, эффекты и тд.
 // Также здесь настраиваются обработчики событий и системы радиации.
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.slf4j.Logger;
+
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.fluids.ModFluids;
-import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.custom.machines.armormod.item.ItemArmorMod;
-import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.client.ClientSetup;
 import com.hbm_m.config.ModClothConfig;
@@ -32,18 +33,21 @@ import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
-import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
+import com.hbm_m.lib.RefStrings;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.sound.ModSounds;
-import com.hbm_m.world.biome.ModBiomes;
+import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.client.ClientSetup;
+import com.hbm_m.capability.ChunkRadiationProvider;
+import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.effect.ModEffects;
+import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.worldgen.ModWorldGen;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
@@ -88,7 +92,7 @@ public class MainRegistry {
 
         IEventBus modEventBus = context.getModEventBus();
         // ПРЯМАЯ РЕГИСТРАЦИЯ DEFERRED REGISTERS
-        // Добавь эту:
+        DoorDeclRegistry.init();
 
         MinecraftForge.EVENT_BUS.register(new CrateBreaker());
         MinecraftForge.EVENT_BUS.register(new BombDefuser());
@@ -109,8 +113,8 @@ public class MainRegistry {
         registerCapabilities(modEventBus);
 
 
-        //  ЭТА СТРОКА ДОЛЖНА БЫТЬ ПОСЛЕДНЕЙ!
-        ModWorldGen.PROCESSORS.register(modEventBus);  //  ОСТАВИ!
+        // ✅ ЭТА СТРОКА ДОЛЖНА БЫТЬ ПОСЛЕДНЕЙ!
+        ModWorldGen.PROCESSORS.register(modEventBus);  // ✅ ОСТАВИ!
 
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
@@ -119,6 +123,11 @@ public class MainRegistry {
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new PlayerHandler());
+
+
+        // Регистрация остальных систем resources
+        // ModPacketHandler.register(); // Регистрация пакетов
+
 
         // Инстанцируем ClientSetup, чтобы его конструктор вызвал регистрацию на Forge Event Bus
 
@@ -216,7 +225,7 @@ public class MainRegistry {
             event.accept(ModBlocks.EXPLOSIVE_CHARGE);
             event.accept(ModBlocks.NUCLEAR_CHARGE);
             event.accept(ModBlocks.C4);
-            event.accept(ModBlocks.DUD_FUGAS_TONG);
+            event.accept(ModBlocks.DUD_CONVENTIONAL);
             event.accept(ModBlocks.DUD_NUKE);
             event.accept(ModBlocks.DUD_SALTED);
 
@@ -347,9 +356,9 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.BILLET_SILICON.get()));
             event.accept(new ItemStack(ModItems.BILLET_PLUTONIUM.get()));
             event.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
-                  
 
-            // СЛИТКИ
+
+            // ✅ СЛИТКИ
             for (ModIngots ingot : ModIngots.values()) {
                 RegistryObject<Item> ingotItem = ModItems.getIngot(ingot);
                 if (ingotItem != null && ingotItem.isPresent()) {
@@ -579,6 +588,7 @@ public class MainRegistry {
             event.accept(ModBlocks.LEAD_ORE_DEEPSLATE);
             event.accept(ModBlocks.CINNABAR_ORE);
             event.accept(ModBlocks.CINNABAR_ORE_DEEPSLATE);
+            event.accept(ModBlocks.URANIUM_ORE);
             event.accept(ModBlocks.URANIUM_ORE_DEEPSLATE);
 
             event.accept(ModBlocks.RESOURCE_ASBESTOS);
@@ -636,15 +646,6 @@ public class MainRegistry {
                         }
                     }
                 }
-            }
-            if (ModClothConfig.get().enableDebugLogging) {
-                LOGGER.info("Added uranium block to NTM Resources tab");
-                LOGGER.info("Added polonium210 block to NTM Resources tab");
-                LOGGER.info("Added plutonium block to NTM Resources tab");
-                LOGGER.info("Added plutonium fuel block to NTM Resources tab");
-                LOGGER.info("Added uranium ore to NTM Resources tab");
-                LOGGER.info("Added waste leaves block to NTM Resources tab");
-                LOGGER.info("Added waste grass block to NTM Resources tab");
             }
         }
 
@@ -894,6 +895,7 @@ public class MainRegistry {
             event.accept(ModBlocks.CRT_BSOD);
             event.accept(ModBlocks.TOASTER);
             event.accept(ModBlocks.BARREL_PINK);
+            event.accept(ModBlocks.BARREL_RED);
             event.accept(ModBlocks.BARREL_LOX);
             event.accept(ModBlocks.BARREL_YELLOW);
             event.accept(ModBlocks.BARREL_VITRIFIED);
@@ -922,6 +924,8 @@ public class MainRegistry {
 
         // ИНСТРУМЕНТЫ
         if (event.getTab() == ModCreativeTabs.NTM_INSTRUMENTS_TAB.get()) {
+            event.accept(ModItems.METEORITE_SWORD);
+            event.accept(ModItems.METEORITE_SWORD_SEARED);
 
 
             // БРОНЯ
@@ -1015,6 +1019,7 @@ public class MainRegistry {
             //СПЕЦ. ИНСТРУМЕНТЫ
             event.accept(ModItems.DEFUSER);
             event.accept(ModItems.CROWBAR);
+            event.accept(ModItems.SCREWDRIVER);
 
             event.accept(ModItems.DOSIMETER);
             event.accept(ModItems.GEIGER_COUNTER);
@@ -1049,6 +1054,10 @@ public class MainRegistry {
             event.accept(ModBlocks.BLAST_FURNACE_EXTENSION);
             event.accept(ModBlocks.SHREDDER);
             event.accept(ModBlocks.WOOD_BURNER);
+            event.accept(ModBlocks.CHEMICAL_PLANT);
+            event.accept(ModBlocks.CENTRIFUGE);
+            event.accept(ModBlocks.ORE_ACIDIZER);
+            event.accept(ModItems.HYDRAULIC_FRACKINING_TOWER);
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.ARMOR_TABLE);

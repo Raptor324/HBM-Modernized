@@ -48,7 +48,7 @@ import net.minecraftforge.network.NetworkHooks;
 
 /**
  * Сборочная машина (мультиблок 3x2x3).
- *  Корректно интегрирована в энергосеть HBM.
+ * ✅ Корректно интегрирована в энергосеть HBM.
  */
 public class MachineAssemblerBlock extends BaseEntityBlock implements IMultiblockController {
 

@@ -3,6 +3,7 @@ package com.hbm_m.client.render;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.TagKey;
+import net.minecraft.util.Mth;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
@@ -10,25 +11,28 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
 import javax.annotation.Nullable;
 import com.hbm_m.config.ModClothConfig;
 
-import java.util.concurrent.ConcurrentHashMap;
-
-/**
- * Супер-быстрая система occlusion culling.
- * Цель: добавить максимум 3-5 FPS нагрузки.
- */
 @OnlyIn(Dist.CLIENT)
 public final class OcclusionCullingHelper {
     
-    private static final ConcurrentHashMap<BlockPos, CachedResult> occlusionCache = new ConcurrentHashMap<>();
+    // Мапа для кэширования результатов
+    private static final Long2ObjectOpenHashMap<CachedResult> occlusionCache = new Long2ObjectOpenHashMap<>();
     private static long currentFrame = 0;
     
-    //  Только нужные константы
-    private static final double NEAR_DISTANCE = 24.0;
-    private static final double MID_DISTANCE = 48.0;
+    // Счетчик обновлений в текущем кадре
+    private static int updatesThisFrame = 0;
+    
+    // БАЛАНСИРОВКА:
+    // Обрабатываем не более 50 машин за кадр.
+    // Если машин 150, обновление видимости займет 3 кадра (50мс). Это незаметно для глаза, но спасает CPU.
+    private static final int MAX_UPDATES_PER_FRAME = 50; 
+    
+    // Reusable mutable pos
+    private static final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
     
     @Nullable
     private static TagKey<Block> transparentBlocksTag = null;
@@ -40,193 +44,191 @@ public final class OcclusionCullingHelper {
     }
     
     private static class CachedResult {
-        final boolean visible;
-        final long frame;
-        final double distance;
+        boolean visible;
+        long frame;
         
-        CachedResult(boolean visible, long frame, double distance) {
+        CachedResult(boolean visible, long frame) {
             this.visible = visible;
             this.frame = frame;
-            this.distance = distance;
         }
         
-        boolean isValid(long currentFrame, double currentDistance) {
-            //  ИСПОЛЬЗУЕМ distance для адаптивного TTL
-            int ttl;
-            if (this.distance < NEAR_DISTANCE) {
-                ttl = 2; // Ближние: короткий кеш
-            } else if (this.distance < MID_DISTANCE) {
-                ttl = 5; // Средние: средний кеш
-            } else {
-                ttl = 10; // Дальние: длинный кеш
-            }
-            
-            return currentFrame - frame < ttl;
+        void update(boolean visible, long frame) {
+            this.visible = visible;
+            this.frame = frame;
         }
     }
     
     public static boolean shouldRender(BlockPos pos, Level level, AABB renderBounds) {
-        if (level == null || pos == null || renderBounds == null) {
-            return false;
-        }
+        if (!ModClothConfig.get().enableOcclusionCulling) return true;
         
-        if (!ModClothConfig.get().enableOcclusionCulling) {
-            return true;
-        }
+        long posLong = pos.asLong();
+        CachedResult cached = occlusionCache.get(posLong);
         
-        Minecraft mc = Minecraft.getInstance();
-        var cameraPos = mc.gameRenderer.getMainCamera().getPosition();
-        Vec3 center = renderBounds.getCenter();
-        
-        double dx = center.x - cameraPos.x;
-        double dy = center.y - cameraPos.y;
-        double dz = center.z - cameraPos.z;
-        double distanceSq = dx * dx + dy * dy + dz * dz;
-        double distance = Math.sqrt(distanceSq);
-        
-        // Проверка кеша
-        CachedResult cached = occlusionCache.get(pos);
-        if (cached != null && cached.isValid(currentFrame, distance)) {
+        // 1. Если результат свежий (обновлен в этом кадре или пару кадров назад) - берем его
+        // Для дальних объектов можно увеличить TTL, но пока оставим жесткую проверку для точности
+        if (cached != null && (currentFrame - cached.frame < 5)) { 
             return cached.visible;
         }
         
-        // Адаптивная проверка
-        boolean visible = !isOccludedFast(pos, level, renderBounds, cameraPos, distance, distanceSq);
+        // 2. БАЛАНСИРОВКА: Если лимит исчерпан, возвращаем ПОСЛЕДНИЙ известный результат.
+        // Если кэша нет совсем - возвращаем true (безопасно, чтобы не мерцало при появлении).
+        if (updatesThisFrame >= MAX_UPDATES_PER_FRAME) {
+            return cached != null ? cached.visible : true;
+        }
+
+        updatesThisFrame++;
         
-        occlusionCache.put(pos, new CachedResult(visible, currentFrame, distance));
+        var mc = Minecraft.getInstance();
+        Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
         
+        // Центр машины
+        double centerX = pos.getX() + 0.5;
+        double centerY = pos.getY() + 0.5;
+        double centerZ = pos.getZ() + 0.5;
+
+        // Квадрат дистанции
+        double dx = centerX - cameraPos.x;
+        double dy = centerY - cameraPos.y;
+        double dz = centerZ - cameraPos.z;
+        double distSq = dx*dx + dy*dy + dz*dz;
+        
+        // Всегда рисуем то, что совсем рядом (меньше 4 блоков)
+        if (distSq < 16.0) {
+            updateCache(posLong, cached, true);
+            return true;
+        }
+
+        // Проверяем видимость центра
+        boolean visible = !isRayOccluded(cameraPos, centerX, centerY, centerZ, level);
+        
+        // Если центр закрыт, но машина близко (< 32 блоков), проверим еще и углы,
+        // чтобы большая машина не исчезала, когда её центр за столбом.
+        if (!visible && distSq < 1024.0) {
+             if (!isRayOccluded(cameraPos, renderBounds.minX, renderBounds.minY, renderBounds.minZ, level)) visible = true;
+             else if (!isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.maxY, renderBounds.maxZ, level)) visible = true;
+        }
+
+        updateCache(posLong, cached, visible);
         return visible;
     }
-    
-    /**
-     * Максимально быстрая проверка окклюзии
-     */
-    private static boolean isOccludedFast(BlockPos centerPos, Level level, AABB bounds, 
-                                         Vec3 cameraPos, double distance, double distanceSq) {
-        // Ранний выход: очень близко
-        if (distance < 4.0) {
-            return false;
-        }
-        
-        // Ранний выход: очень далеко
-        if (distance > 192.0) {
-            return false;
-        }
-        
-        //  Определяем количество точек по квадрату дистанции (быстрее)
-        int numPoints;
-        double nearSq = NEAR_DISTANCE * NEAR_DISTANCE;
-        double midSq = MID_DISTANCE * MID_DISTANCE;
-        
-        if (distanceSq < nearSq) {
-            numPoints = 3; // Ближние: центр + 2 угла
-        } else if (distanceSq < midSq) {
-            numPoints = 2; // Средние: центр + 1 угол
+
+    private static void updateCache(long key, CachedResult existing, boolean visible) {
+        if (existing == null) {
+            occlusionCache.put(key, new CachedResult(visible, currentFrame));
         } else {
-            numPoints = 1; // Дальние: только центр
+            existing.update(visible, currentFrame);
         }
-        
-        // Проверяем точки БЕЗ создания массива
-        if (!isPointOccludedFast(cameraPos, bounds.getCenter(), level, bounds, distance)) {
-            return false;
-        }
-        
-        if (numPoints >= 2) {
-            Vec3 corner1 = new Vec3(bounds.minX, bounds.minY, bounds.minZ);
-            if (!isPointOccludedFast(cameraPos, corner1, level, bounds, distance)) {
-                return false;
-            }
-        }
-        
-        if (numPoints >= 3) {
-            Vec3 corner2 = new Vec3(bounds.maxX, bounds.maxY, bounds.maxZ);
-            if (!isPointOccludedFast(cameraPos, corner2, level, bounds, distance)) {
-                return false;
-            }
-        }
-        
-        return true;
     }
     
     /**
-     * Ультра-быстрый ray-casting
+     * Быстрый Raycast (Voxel Traversal Algorithm).
+     * Идет от камеры к цели по сетке блоков.
+     * Возвращает TRUE, если луч ПЕРЕКРЫТ твердым блоком.
      */
-    private static boolean isPointOccludedFast(Vec3 cameraPos, Vec3 targetPoint, Level level, 
-                                              AABB structureBounds, double distance) {
-        double dx = targetPoint.x - cameraPos.x;
-        double dy = targetPoint.y - cameraPos.y;
-        double dz = targetPoint.z - cameraPos.z;
-        double rayDistance = Math.sqrt(dx * dx + dy * dy + dz * dz);
+    private static boolean isRayOccluded(Vec3 start, double endX, double endY, double endZ, Level level) {
+        double startX = start.x;
+        double startY = start.y;
+        double startZ = start.z;
+
+        // Позиция "курсора" в сетке блоков
+        int currentX = Mth.floor(startX);
+        int currentY = Mth.floor(startY);
+        int currentZ = Mth.floor(startZ);
+
+        int targetX = Mth.floor(endX);
+        int targetY = Mth.floor(endY);
+        int targetZ = Mth.floor(endZ);
+
+        // Направление шага (+1 или -1)
+        int stepX = Integer.signum(targetX - currentX);
+        int stepY = Integer.signum(targetY - currentY);
+        int stepZ = Integer.signum(targetZ - currentZ);
+
+        if (stepX == 0 && stepY == 0 && stepZ == 0) return false; // Мы уже внутри целевого блока
+
+        // Дельты (насколько нужно пройти по лучу, чтобы пересечь границу блока по оси)
+        double dx = endX - startX;
+        double dy = endY - startY;
+        double dz = endZ - startZ;
         
-        if (rayDistance < 2.0) {
-            return false;
+        // Избегаем деления на ноль
+        double deltaX = (stepX == 0) ? Double.MAX_VALUE : Math.abs(1.0 / dx);
+        double deltaY = (stepY == 0) ? Double.MAX_VALUE : Math.abs(1.0 / dy);
+        double deltaZ = (stepZ == 0) ? Double.MAX_VALUE : Math.abs(1.0 / dz);
+
+        // Max (насколько далеко мы уже прошли до следующей границы)
+        // (currentX + (stepX > 0 ? 1 : 0) - startX) * stepX -> расстояние до границы
+        // Делим на dx (но dx может быть < 0, так что умножаем на deltaX)
+        double maxX = (stepX == 0) ? Double.MAX_VALUE : ((currentX + (stepX > 0 ? 1 : 0) - startX) / dx);
+        // Исправление для отрицательных направлений: tMax должен быть положительным расстоянием по лучу
+        if (maxX < 0) maxX = Math.abs(maxX); // hack fix, правильнее ниже:
+        
+        // Правильный расчет tMax (расстояние по лучу до первой границы)
+        maxX = (stepX == 0) ? Double.MAX_VALUE : (stepX > 0 ? (currentX + 1 - startX) * deltaX : (startX - currentX) * deltaX);
+        double maxY = (stepY == 0) ? Double.MAX_VALUE : (stepY > 0 ? (currentY + 1 - startY) * deltaY : (startY - currentY) * deltaY);
+        double maxZ = (stepZ == 0) ? Double.MAX_VALUE : (stepZ > 0 ? (currentZ + 1 - startZ) * deltaZ : (startZ - currentZ) * deltaZ);
+
+        // Ограничитель (чтобы не улететь в бесконечность, если что-то пойдет не так)
+        int maxSteps = 100; 
+
+        while (maxSteps-- > 0) {
+            // Если мы пришли в целевой блок - значит препятствий не было
+            if (currentX == targetX && currentY == targetY && currentZ == targetZ) {
+                return false;
+            }
+
+            // Проверяем текущий блок на непрозрачность
+            // Исключаем стартовый блок (где камера), чтобы не клипаться головой
+            if (currentX != Mth.floor(startX) || currentY != Mth.floor(startY) || currentZ != Mth.floor(startZ)) {
+                mutablePos.set(currentX, currentY, currentZ);
+                if (isOccluder(level, mutablePos)) {
+                    return true; // Нашли стену!
+                }
+            }
+
+            // Шагаем к следующему блоку по оси, до границы которой ближе всего
+            if (maxX < maxY) {
+                if (maxX < maxZ) {
+                    currentX += stepX;
+                    maxX += deltaX;
+                } else {
+                    currentZ += stepZ;
+                    maxZ += deltaZ;
+                }
+            } else {
+                if (maxY < maxZ) {
+                    currentY += stepY;
+                    maxY += deltaY;
+                } else {
+                    currentZ += stepZ;
+                    maxZ += deltaZ;
+                }
+            }
         }
         
-        dx /= rayDistance;
-        dy /= rayDistance;
-        dz /= rayDistance;
-        
-        // Агрессивный шаг по дистанции
-        double stepSize;
-        if (distance < NEAR_DISTANCE) {
-            stepSize = 1.0;
-        } else if (distance < MID_DISTANCE) {
-            stepSize = 1.5;
-        } else {
-            stepSize = 2.0;
-        }
-        
-        int steps = (int) Math.ceil(rayDistance / stepSize);
-        steps = Math.min(steps, 16);
-        
-        for (int i = 1; i < steps; i++) {
-            double t = i / (double) steps * rayDistance;
-            BlockPos checkPos = BlockPos.containing(
-                cameraPos.x + dx * t,
-                cameraPos.y + dy * t,
-                cameraPos.z + dz * t
-            );
-            
-            if (structureBounds.contains(checkPos.getX() + 0.5, checkPos.getY() + 0.5, checkPos.getZ() + 0.5)) {
-                continue;
-            }
-            
-            var blockState = level.getBlockState(checkPos);
-            
-            if (blockState.isAir()) {
-                continue;
-            }
-            
-            if (isOccludingBlockFast(blockState, level, checkPos)) {
-                return true;
-            }
-        }
-        
-        return false;
+        return false; // Дошли до лимита шагов, считаем что видно
     }
     
-    /**
-     * Супер-быстрая проверка блока
-     */
-    private static boolean isOccludingBlockFast(BlockState blockState, Level level, BlockPos pos) {
-        if (transparentBlocksTag != null && blockState.is(transparentBlocksTag)) {
-            return false;
-        }
+    private static boolean isOccluder(Level level, BlockPos pos) {
+        // Быстрая проверка чанка (опционально, level.getBlockState само проверит, но это может сэкономить время)
+        if (!level.hasChunkAt(pos)) return false; 
+
+        BlockState state = level.getBlockState(pos);
+        if (state.isAir()) return false;
         
-        if (!blockState.isSolidRender(level, pos)) {
-            return false;
-        }
+        if (transparentBlocksTag != null && state.is(transparentBlocksTag)) return false;
         
-        return true;
+        // Основная проверка: перекрывает ли блок обзор
+        return state.isSolidRender(level, pos);
     }
     
     public static void onFrameStart() {
         currentFrame++;
+        updatesThisFrame = 0;
         
-        if (currentFrame % 60 == 0) {
-            occlusionCache.entrySet().removeIf(entry -> 
-                currentFrame - entry.getValue().frame > 20
-            );
+        // Очистка старого кеша раз в ~10 секунд
+        if (currentFrame % 600 == 0) {
+            occlusionCache.long2ObjectEntrySet().removeIf(e -> currentFrame - e.getValue().frame > 600);
         }
     }
     

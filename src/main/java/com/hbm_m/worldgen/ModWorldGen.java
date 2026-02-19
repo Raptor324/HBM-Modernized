@@ -23,7 +23,7 @@ public class ModWorldGen {
             DeferredRegister.create(ForgeRegistries.FEATURES, RefStrings.MODID);
 
 
-    //  ПРАВИЛЬНЫЙ УНИВЕРСАЛЬНЫЙ СПОСОБ!
+    // ✅ ПРАВИЛЬНЫЙ УНИВЕРСАЛЬНЫЙ СПОСОБ!
     public static final DeferredRegister<StructureProcessorType<?>> PROCESSORS =
             DeferredRegister.create(Registries.STRUCTURE_PROCESSOR, RefStrings.MODID);
 

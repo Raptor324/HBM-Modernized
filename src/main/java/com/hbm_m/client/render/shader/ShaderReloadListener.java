@@ -34,14 +34,9 @@ public class ShaderReloadListener extends SimplePreparableReloadListener<Void> {
         profiler.push("hbm_shader_detection_apply");
         
         try {
-            MainRegistry.LOGGER.debug("ShaderReloadListener: Checking for external shaders...");
-            
-            // Обновляем путь рендера на основе детектирования шейдеров
-            RenderPathManager.updateRenderPath();
-            
-            MainRegistry.LOGGER.debug("ShaderReloadListener: Detection complete");
+            MainRegistry.LOGGER.debug("ShaderReloadListener: Resource reload complete");
         } catch (Exception e) {
-            MainRegistry.LOGGER.error("Error during shader detection", e);
+            MainRegistry.LOGGER.error("Error during shader reload", e);
         } finally {
             profiler.pop();
         }

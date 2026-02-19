@@ -6,7 +6,7 @@
   "children": {
     "crt_broken_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/crt_broken.obj",
+      "model": "hbm_m:models/block/crt.obj",
       "flip_v": true,
       "textures": {
         "default": "hbm_m:block/crt_broken"

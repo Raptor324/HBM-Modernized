@@ -1,0 +1,11 @@
+{
+    "door_id":"sliding_seal_door",
+    "legacy_model":"hbm_m:block/doors/sliding_seal_door_legacy",
+    "modern_model":{
+        "model":"hbm_m:block/doors/sliding_seal_door_modern",
+        "skins":[
+            {"id":"default","name":"Standard","texture":"hbm_m:block/doors/sliding_seal_door"}
+        ]
+    },
+    "default":{"type":"modern","skin":"default"}
+}

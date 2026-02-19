@@ -1,0 +1,14 @@
+{
+	"door_id":"large_vehicle_door",
+	"legacy_model":"hbm_m:block/doors/large_vehicle_door_legacy",
+	"modern_model":{
+		"model":"hbm_m:block/doors/large_vehicle_door_modern",
+		"skins":[
+			{"id":"default",
+			"name":"Standard",
+			"texture":"hbm_m:block/doors/large_vehicle_door"
+			}
+		]
+	},
+	"default":{"type":"modern","skin":"default"}
+}

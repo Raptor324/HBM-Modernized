@@ -3,7 +3,7 @@ package com.hbm_m.multiblock;
 // Item для главного блока-контроллера мультиблочной структуры.
 // Выполняет проверку структуры перед установкой блока в мир. Если что-то мешает постройке, установка не происходит. Мешающие блоки выделяются красным.
 
-import net.minecraft.core.BlockPos;
+// import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
@@ -31,7 +31,7 @@ public class MultiblockBlockItem extends BlockItem {
         
         Level level = pContext.getLevel();
         Player player = pContext.getPlayer();
-        BlockPos pos = pContext.getClickedPos();
+        // BlockPos pos = pContext.getClickedPos();
         
         // Пытаемся получить направление из BlockState.
         // Это делает код устойчивым к блокам, у которых может не быть свойства FACING.

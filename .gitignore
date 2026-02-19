@@ -32,6 +32,11 @@ src/generated/resources/.cache
 src/generated/resources/assets/hbm_m/blockstates/
 src/generated/resources/assets/hbm_m/models/
 src/generated/resources/data/
+AGENTS.md
+*.diff
+/plans
+/plans
+.cursorignore
 
 # ================= Logs & Temporary Files =================
 # Логи, дампы ошибок и временные файлы.
@@ -63,6 +68,9 @@ forge*changelog.txt
 .gitignore
 .cursor/
 desktop.ini
+AGENTS.md
+libs/
+.gitignore
 HBM-Modernized.code-workspace
 java_pid*
 serve.py

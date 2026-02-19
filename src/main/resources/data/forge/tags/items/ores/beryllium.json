@@ -1,0 +1,7 @@
+{
+  "replace": false,
+  "values": [
+    "hbm_m:beryllium_ore",
+    "hbm_m:beryllium_ore_deepslate"
+  ]
+}

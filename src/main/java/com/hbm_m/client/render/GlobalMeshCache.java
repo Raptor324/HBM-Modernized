@@ -1,19 +1,14 @@
 package com.hbm_m.client.render;
 
-import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.vertex.*;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.ModelData;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-
-import java.lang.ref.WeakReference;
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 @OnlyIn(Dist.CLIENT)
 public class GlobalMeshCache {
@@ -61,20 +56,19 @@ public class GlobalMeshCache {
     }
 
     public static AbstractGpuVboRenderer getOrCreateRenderer(String partKey, BakedModel model) {
+        // ИСПРАВЛЕНИЕ: Проверяем размер кэша рендереров
         if (PART_RENDERERS.size() > MAX_CACHE_SIZE) {
             cleanupDeadRenderers();
         }
         
-        AbstractGpuVboRenderer renderer = PART_RENDERERS.compute(partKey, (key, existingRef) -> {
-            AbstractGpuVboRenderer r = (existingRef != null) ? existingRef.get() : null;
-            if (r == null) {
-                r = createRendererForPart(model);
-                return (r != null) ? new WeakReference<>(r) : null;
+        return PART_RENDERERS.compute(partKey, (key, existingRef) -> {
+            AbstractGpuVboRenderer renderer = (existingRef != null) ? existingRef.get() : null;
+            if (renderer == null) {
+                renderer = createRendererForPart(model);
+                return new WeakReference<>(renderer);
             }
             return existingRef;
         }).get();
-        
-        return renderer;  // МОЖЕТ БЫТЬ NULL, и это OK
     }
 
     // ==================== НОВЫЕ МЕТОДЫ: Поддержка типов для дверей ====================
@@ -105,10 +99,10 @@ public class GlobalMeshCache {
         if (modelPart == null) return Collections.emptyList();
         
         List<BakedQuad> quads = new ArrayList<>();
-        quads.addAll(modelPart.getQuads(null, null, RANDOM_SOURCE, ModelData.EMPTY, null));
+        quads.addAll(modelPart.getQuads(null, null, RANDOM_SOURCE, ModelData.EMPTY, RenderType.solid()));
         
         for (Direction direction : Direction.values()) {
-            quads.addAll(modelPart.getQuads(null, direction, RANDOM_SOURCE, ModelData.EMPTY, null));
+            quads.addAll(modelPart.getQuads(null, direction, RANDOM_SOURCE, ModelData.EMPTY, RenderType.solid()));
         }
         
         return Collections.unmodifiableList(quads);
@@ -155,7 +149,7 @@ public class GlobalMeshCache {
         if (quads.isEmpty()) return null;
 
         BufferBuilder builder = new BufferBuilder(quads.size() * 32);
-        builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
+        IrisBufferHelper.begin(builder, VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
 
         PoseStack.Pose neutralPose = new PoseStack().last();
         float r = 1.0F, g = 1.0F, b = 1.0F, a = 1.0F;
@@ -185,16 +179,43 @@ public class GlobalMeshCache {
         });
     }
 
+    private static final java.util.Set<String> FAILED_RENDERER_KEYS = ConcurrentHashMap.newKeySet();
+
     private static AbstractGpuVboRenderer createRendererForPart(BakedModel model) {
+        return createRendererForPart(model, "unknown");
+    }
+    
+    private static AbstractGpuVboRenderer createRendererForPart(BakedModel model, String partName) {
+        // ПРЕДВАРИТЕЛЬНАЯ проверка: есть ли квады в модели
+        List<BakedQuad> quads = compileMesh(model);
+        if (quads.isEmpty()) {
+            return null;
+        }
+        
+        // Создаем рендерер с ПРЕДВАРИТЕЛЬНО построенными данными
+        final AbstractGpuVboRenderer.VboData prebuiltData = ObjModelVboBuilder.buildSinglePart(model, partName);
+        if (prebuiltData == null) {
+            return null;
+        }
+        
+        MainRegistry.LOGGER.debug("GlobalMeshCache: Successfully created renderer for part '{}' with {} vertices", 
+            partName, prebuiltData.byteBuffer.remaining() / 32);
+        
+        final List<BakedQuad> quadsForIris = quads;
         return new AbstractGpuVboRenderer() {
-            private VboData cachedData;
+            private boolean dataInitialized = false;
 
             @Override
-            protected VboData buildVboData() {
-                if (cachedData == null) {
-                    cachedData = ObjModelVboBuilder.buildSinglePart(model);
+            protected AbstractGpuVboRenderer.VboData buildVboData() {
+                if (!dataInitialized) {
+                    dataInitialized = true;
                 }
-                return cachedData;
+                return prebuiltData;
+            }
+
+            @Override
+            protected List<BakedQuad> getQuadsForIrisPath() {
+                return quadsForIris;
             }
         };
     }
@@ -218,6 +239,7 @@ public class GlobalMeshCache {
             }
         }
         PART_RENDERERS.clear();
+        FAILED_RENDERER_KEYS.clear();
         clear(); // Очищаем также quads и buffers
     }
 

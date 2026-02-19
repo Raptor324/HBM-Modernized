@@ -63,5 +63,11 @@ public class ModPacketHandler {
                 com.hbm_m.network.packet.PacketSyncEnergy::decode,
                 com.hbm_m.network.packet.PacketSyncEnergy::handle
         );
+        INSTANCE.registerMessage(id++,
+            ServerboundDoorModelPacket.class,
+            ServerboundDoorModelPacket::encode,
+            ServerboundDoorModelPacket::decode,
+            ServerboundDoorModelPacket::handle
+        );
     }
 }

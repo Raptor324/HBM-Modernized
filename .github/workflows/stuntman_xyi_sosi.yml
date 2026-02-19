@@ -1,0 +1,194 @@
+name: Moderation & Discord Notifier
+
+on:
+  issues:
+    types: [opened, edited]
+  issue_comment:
+    types: [created, edited]
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  moderate-and-notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Moderation Logic
+        uses: actions/github-script@v7
+        env:
+          BAD_WORDS_LIST: ${{ secrets.BAD_WORDS }}
+          DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+          ADMIN_TOKEN: ${{ secrets.ADMIN_TOKEN }}
+        with:
+          script: |
+            const payload = context.payload;
+            const CAPS_THRESHOLD = 0.70; 
+            const MIN_LENGTH_FOR_CAPS = 15; 
+
+            function analyzeText(text) {
+              if (!text) return { safe: true };
+              
+              const badWords = (process.env.BAD_WORDS_LIST || "").split(',').map(w => w.trim().toLowerCase()).filter(w => w.length > 0);
+              const lowerText = text.toLowerCase();
+              
+              if (badWords.some(word => lowerText.includes(word))) {
+                return { safe: false, reason: "bad_word" };
+              }
+
+              const lettersOnly = text.replace(/[^a-zA-Zа-яА-ЯёЁ]/g, "");
+              if (lettersOnly.length > MIN_LENGTH_FOR_CAPS) {
+                const upperCaseCount = lettersOnly.replace(/[^A-ZА-ЯЁ]/g, "").length;
+                if ((upperCaseCount / lettersOnly.length) > CAPS_THRESHOLD) {
+                  return { safe: false, reason: "caps_lock" };
+                }
+              }
+              return { safe: true };
+            }
+
+            let objectType = "";
+            let author = "";
+            let authorAvatar = "";
+            let authorUrl = "";
+            let url = "";
+            let bodyContent = "";
+            let title = "";
+            let repoFullName = payload.repository.full_name;
+            let repoUrl = payload.repository.html_url;
+            let issueNumber = 0;
+            let isViolation = false;
+            let violationReason = "";
+
+            if (payload.comment) {
+              objectType = "Comment";
+              author = payload.comment.user.login;
+              authorAvatar = payload.comment.user.avatar_url;
+              authorUrl = payload.comment.user.html_url;
+              url = payload.comment.html_url;
+
+              bodyContent = payload.comment.body || "";
+              title = payload.issue.title;
+              issueNumber = payload.issue.number;
+              
+              const check = analyzeText(bodyContent);
+              if (!check.safe) { isViolation = true; violationReason = check.reason; }
+            } 
+            else if (payload.issue) {
+              objectType = "Issue";
+              author = payload.issue.user.login;
+              authorAvatar = payload.issue.user.avatar_url;
+              authorUrl = payload.issue.user.html_url;
+              url = payload.issue.html_url;
+
+              bodyContent = payload.issue.body || "";
+              title = payload.issue.title;
+              issueNumber = payload.issue.number;
+              
+              const titleCheck = analyzeText(title);
+              const bodyCheck = analyzeText(bodyContent);
+              
+              if (!titleCheck.safe) { isViolation = true; violationReason = titleCheck.reason; }
+              else if (!bodyCheck.safe) { isViolation = true; violationReason = bodyCheck.reason; }
+            }
+
+            if (isViolation) {
+              console.log(`Violation: ${violationReason}. Deleting...`);
+
+              const warningMessage = `@${author}, your message has been automatically removed because it violates community guidelines.`;
+
+              if (objectType === "Issue") {
+                if (!process.env.ADMIN_TOKEN) {
+                    console.log("Error: ADMIN_TOKEN secret is missing.");
+                    return;
+                }
+
+                const query = `
+                  mutation($issueId: ID!) {
+                    deleteIssue(input: {issueId: $issueId}) {
+                      clientMutationId
+                    }
+                  }
+                `;
+                
+                const variables = { issueId: payload.issue.node_id };
+
+                const response = await fetch('https://api.github.com/graphql', {
+                  method: 'POST',
+                  headers: {
+                    'Authorization': `Bearer ${process.env.ADMIN_TOKEN}`,
+                    'Content-Type': 'application/json',
+                  },
+                  body: JSON.stringify({ query, variables })
+                });
+
+                if (!response.ok) {
+                   console.error("GraphQL Error:", await response.text());
+                } else {
+                   console.log("Issue successfully deleted.");
+                }
+                return;
+              }
+
+              if (objectType === "Comment") {
+                try {
+                  await github.rest.issues.deleteComment({
+                    owner: context.repo.owner,
+                    repo: context.repo.repo,
+                    comment_id: payload.comment.id
+                  });
+                } catch(e) { console.error("Error deleting comment:", e); }
+
+                await github.rest.issues.createComment({
+                  owner: context.repo.owner,
+                  repo: context.repo.repo,
+                  issue_number: payload.issue.number,
+                  body: warningMessage
+                });
+                return;
+              }
+            }
+
+            console.log("Safe content. Sending to Discord.");
+            
+            if (process.env.DISCORD_WEBHOOK) {
+                let safeWebhookUrl = process.env.DISCORD_WEBHOOK;
+                if (safeWebhookUrl.endsWith('/github')) {
+                    safeWebhookUrl = safeWebhookUrl.replace(/\/github$/, '');
+                }
+
+                const embedTitle = objectType === "Issue" 
+                  ? `[${repoFullName}] Issue opened: #${issueNumber} ${title}`
+                  : `[${repoFullName}] New comment on issue #${issueNumber}: ${title}`;
+
+                const embedColor = objectType === "Issue" ? 3066993 : 15105570;
+
+                const descriptionText = bodyContent ? bodyContent : "*No description provided.*";
+
+                const discordPayload = {
+                  username: "GitHub",
+                  avatar_url: "https://github.githubassets.com/images/modules/logos_page/GitHub-Mark.png",
+                  embeds: [{
+                    author: {
+                      name: author,
+                      url: authorUrl,
+                      icon_url: authorAvatar
+                    },
+                    title: embedTitle,
+                    url: url,
+                    description: descriptionText.length > 2000 ? descriptionText.substring(0, 1997) + "..." : descriptionText,
+                    color: embedColor
+                  }]
+                };
+
+                const resp = await fetch(safeWebhookUrl, {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify(discordPayload)
+                });
+                
+                if (!resp.ok) {
+                    console.log("Discord API Error:", await resp.text());
+                }
+            } else {
+                console.log("Discord Webhook secret is missing.");
+            }

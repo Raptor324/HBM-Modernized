@@ -22,9 +22,6 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     protected final Map<String, BakedModel> parts;
     protected final ItemTransforms transforms;
     private TextureAtlasSprite cachedParticleIcon;
-    
-    // УДАЛЕНО: Опасная рефлексия, которая вызывает краш JVM
-    // Теперь используем только безопасные методы
 
     protected AbstractMultipartBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
         this.parts = parts;
