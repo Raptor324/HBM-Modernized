@@ -1242,6 +1242,9 @@ public class ModItems {
     public static final RegistryObject<Item> QE_SLIDING = ITEMS.register("qe_sliding_door",
         () -> new DoorBlockItem(ModBlocks.QE_SLIDING.get(), new Item.Properties()));
 
+    public static final RegistryObject<Item> VAULT_DOOR = ITEMS.register("vault_door",
+        () -> new DoorBlockItem(ModBlocks.VAULT_DOOR.get(), new Item.Properties()));
+
     public static final RegistryObject<Item> STAMP_STONE_FLAT = ITEMS.register("stamp_stone_flat",
             () -> new ItemStamp(new Item.Properties(), 32));
     public static final RegistryObject<Item> STAMP_STONE_PLATE = ITEMS.register("stamp_stone_plate",

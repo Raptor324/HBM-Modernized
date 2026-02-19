@@ -229,7 +229,6 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('%', Items.GLASS_PANE)
                 .define('#', ModItems.getIngot(ModIngots.BERYLLIUM).get())
                 .define('@', ModItems.VACUUM_TUBE.get())
-
                 .unlockedBy(getHasName(ModItems.VACUUM_TUBE.get()), has(ModItems.VACUUM_TUBE.get()))
                 .save(writer, recipeId("crafting/dosimeter"));
 
@@ -262,6 +261,15 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('$', ModItems.PLATE_GOLD.get())
                 .unlockedBy(getHasName(ModItems.CONTROLLER_CHASSIS.get()), has(ModItems.CONTROLLER_CHASSIS.get()))
                 .save(writer, recipeId("crafting/depth_ores_scanner"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.SCREWDRIVER.get())
+                .pattern("  #")
+                .pattern(" # ")
+                .pattern("$  ")
+                .define('#', Items.IRON_INGOT)
+                .define('$', ModItems.getIngot(ModIngots.STEEL).get())
+                .unlockedBy(getHasName(ModItems.getIngot(ModIngots.STEEL).get()), has(ModItems.getIngot(ModIngots.STEEL).get()))
+                .save(writer, recipeId("crafting/screwdriver"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.CONVERTER_BLOCK.get())
                 .pattern("###")

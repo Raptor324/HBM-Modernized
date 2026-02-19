@@ -472,6 +472,14 @@
         "subtitle": "sounds.hbm_m.subtitle.wgh_stop",
         "sounds": [ "hbm_m:block/door/wgh_stop" ]
     },
+    "block.vault_scrape_new": {
+        "subtitle": "sounds.hbm_m.subtitle.vault_scrape",
+        "sounds": [ "hbm_m:block/door/vault_scrape_new" ]
+    },
+    "block.vault_thud_new": {
+        "subtitle": "sounds.hbm_m.subtitle.vault_thud",
+        "sounds": [ "hbm_m:block/door/vault_thud_new" ]
+    },
 
   "block.switch.on": {
     "subtitle": "subtitle.hbm_m.block.switch.on",

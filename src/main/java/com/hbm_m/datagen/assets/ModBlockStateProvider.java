@@ -412,6 +412,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customDoorBlock(ModBlocks.SLIDE_DOOR);
         customDoorBlock(ModBlocks.SLIDING_SEAL_DOOR);
         customDoorBlock(ModBlocks.SECURE_ACCESS_DOOR);
+        customDoorBlock(ModBlocks.VAULT_DOOR);
 
         // Machines
         customMachineBlock(ModBlocks.ORE_ACIDIZER);

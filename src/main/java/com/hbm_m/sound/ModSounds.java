@@ -106,6 +106,8 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> TRANSITION_SEAL_CLOSE = registerSoundEvents("block.transition_seal_close");
     public static final RegistryObject<SoundEvent> WGH_START = registerSoundEvents("block.wgh_start");
     public static final RegistryObject<SoundEvent> WGH_STOP = registerSoundEvents("block.wgh_stop");
+    public static final RegistryObject<SoundEvent> VAULT_SCRAPE = registerSoundEvents("block.vault_scrape_new");
+    public static final RegistryObject<SoundEvent> VAULT_THUD = registerSoundEvents("block.vault_thud_new");
 
     public static final RegistryObject<SoundEvent> SWITCH_ON = registerSoundEvents("block.switch.on");
 

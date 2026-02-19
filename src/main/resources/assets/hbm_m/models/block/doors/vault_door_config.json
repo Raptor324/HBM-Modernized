@@ -1,0 +1,14 @@
+{
+  "door_id": "vault_door",
+  "legacy_model": "hbm_m:block/doors/vault_door_legacy",
+  "modern_model": {
+    "model": "hbm_m:block/doors/vault_door_modern",
+    "skins": [
+      {"id": "default", "name": "Default", "texture": "hbm_m:block/doors/vault_door_3"},
+      {"id": "skin_3", "name": "Vault 3", "texture": "hbm_m:block/doors/vault_door_3"},
+      {"id": "skin_4", "name": "Vault 4", "texture": "hbm_m:block/doors/vault_door_4"},
+      {"id": "skin_s", "name": "Vault S", "texture": "hbm_m:block/doors/vault_door_s"}
+    ]
+  },
+  "default": {"type": "modern", "skin": "skin_3"}
+}

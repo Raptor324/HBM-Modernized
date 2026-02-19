@@ -41,6 +41,6 @@ public class DoorDeclRegistry {
         register("water_door", DoorDecl.WATER_DOOR);
         register("silo_hatch", DoorDecl.SILO_HATCH);
         register("silo_hatch_large", DoorDecl.SILO_HATCH_LARGE);
-        // Добавь другие двери здесь
+        register("vault_door", DoorDecl.VAULT_DOOR);
     }
 }

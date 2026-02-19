@@ -3,7 +3,7 @@
     "model":"hbm_m:models/block/doors/large_vehicle_door.obj",
     "parts":["frame","doorLeft","doorRight"],
     "textures":{
-        "default":"hbm_m:block/doors/large_vehicle_door_rad",
+        "default":"hbm_m:block/doors/large_vehicle_door_skin_rad",
         "particle":"hbm_m:block/doors/large_vehicle_door_rad"
     },
     "transform": {

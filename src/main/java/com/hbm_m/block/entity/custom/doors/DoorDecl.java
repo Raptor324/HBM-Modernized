@@ -1589,4 +1589,158 @@ public abstract class DoorDecl {
         @Override public SoundEvent getCloseSoundEnd() { return ModSounds.DOOR_WGH_BIG_STOP.get(); }
         @Override public float getSoundVolume() { return 2.0f; }
     };
+
+    public static final DoorDecl VAULT_DOOR = new DoorDecl() {
+        {
+            DoorStructureDefinition.Builder builder = DoorStructureDefinition.create();
+            
+            VoxelShape thinDoorShape = Block.box(0, 0, 4, 16, 16, 12);
+            
+            builder.addSymbol('#', thinDoorShape, PartRole.DEFAULT);
+            builder.addSymbol('C', thinDoorShape, PartRole.CONTROLLER);
+
+            String[] closed = {
+                "#####",
+                "#####",
+                "#####",
+                "#####",
+                "##C##"
+            };
+
+            String[] open = {
+                "#####",
+                "#...#",
+                "#...#",
+                "#...#",
+                "#####"
+            };
+
+            defineStructure(builder.parseVertical(closed, open, 'C'));
+        }
+
+        @Override
+        public ResourceLocation getBlockId() {
+            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "vault_door");
+        }
+
+        @Override
+        public DoorModelSelection getDefaultModelSelection() {
+            return DoorModelSelection.modern(DoorSkin.of("skin_3"));
+        }
+
+        @Override
+        public String[] getPartNames() {
+            return new String[] { "Label", "Frame", "Door" };
+        }
+    
+        @Override 
+        public int getOpenTime() { 
+            return 120; 
+        }
+    
+        @Override
+        public boolean hasSkins() {
+            return true;
+        }
+    
+        @Override
+        public int getSkinCount() {
+            return 3;
+        }
+    
+        @Override
+        public AABB getBlockBound(int x, int y, int z, boolean open, boolean forCollision) {
+            if (!open || y == 0) return new AABB(0, 0, 0, 1, 1, 1);
+            return super.getBlockBound(x, y, z, open, forCollision);
+        }
+    
+        @Override
+        public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            if ("Frame".equals(partName)) {
+                super.getTranslation(partName, openTicks, child, trans);
+                return;
+            }
+            float pull = getVaultPull(openTicks);
+            float slide = getVaultSlide(openTicks);
+            set(trans, -pull, 0, slide);
+        }
+    
+        @Override
+        public void getOrigin(String partName, float[] orig) {
+            if ("Door".equals(partName) || "Label".equals(partName)) {
+                set(orig, 0, 2.5f, 0);
+            } else {
+                super.getOrigin(partName, orig);
+            }
+        }
+    
+        @Override
+        public void getRotation(String partName, float openTicks, float[] rot) {
+            if ("Door".equals(partName) || "Label".equals(partName)) {
+                float slide = getVaultSlide(openTicks);
+                double diameter = 4.25;
+                double circumference = diameter * Math.PI;
+                float slideScaled = slide * 5f;
+                float rollDeg = (float) (360.0 * slideScaled / circumference);
+                set(rot, rollDeg, 0, 0);
+            } else {
+                super.getRotation(partName, openTicks, rot);
+            }
+        }
+    
+        private float getVaultPull(float openTicks) {
+            if (openTicks <= 40) return getNormTime(openTicks, 0, 40);
+            return 1f;
+        }
+    
+        private float getVaultSlide(float openTicks) {
+            if (openTicks <= 40) return 0f;
+            return getNormTime(openTicks, 40, 120);
+        }
+    
+        @Override 
+        public double[][] getClippingPlanes() {
+            return new double[][] { { 0, -1, 0, 3.0001 } };
+        }
+    
+        @Override 
+        public int[][] getDoorOpenRanges() {
+            return new int[][] { { -1, 1, 0, 3, 3, 2 } };
+        }
+    
+        @Override 
+        public SoundEvent getOpenSoundStart() { 
+            return ModSounds.VAULT_SCRAPE.get(); 
+        }
+        
+        @Override 
+        public SoundEvent getOpenSoundEnd() { 
+            return ModSounds.VAULT_THUD.get(); 
+        }
+        
+        @Override 
+        public SoundEvent getOpenSoundLoop() { 
+            return ModSounds.VAULT_SCRAPE.get(); 
+        }
+        
+        @Override 
+        public SoundEvent getCloseSoundStart() { 
+            return ModSounds.VAULT_SCRAPE.get(); 
+        }
+        
+        @Override 
+        public SoundEvent getCloseSoundEnd() { 
+            return ModSounds.VAULT_THUD.get(); 
+        }
+        
+        @Override 
+        public SoundEvent getCloseSoundLoop() { 
+            return ModSounds.VAULT_SCRAPE.get(); 
+        }
+        
+        @Override 
+        public float getSoundVolume() { 
+            return 2.0f; 
+        }
+    }; 
 }

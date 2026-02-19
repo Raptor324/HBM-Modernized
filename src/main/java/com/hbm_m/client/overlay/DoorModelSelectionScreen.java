@@ -243,6 +243,7 @@ public class DoorModelSelectionScreen extends Screen {
             case "water_door" -> ModItems.WATER_DOOR.get();
             case "silo_hatch" -> ModItems.SILO_HATCH.get();
             case "silo_hatch_large" -> ModItems.SILO_HATCH_LARGE.get();
+            case "vault_door" -> ModItems.VAULT_DOOR.get();
             default -> ModItems.LARGE_VEHICLE_DOOR.get();
         };
     }

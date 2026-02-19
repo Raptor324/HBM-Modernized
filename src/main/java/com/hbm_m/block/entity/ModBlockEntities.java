@@ -173,7 +173,8 @@ public class ModBlockEntities {
                         ModBlocks.QE_CONTAINMENT.get(),
                         ModBlocks.WATER_DOOR.get(),
                         ModBlocks.SILO_HATCH.get(),
-                        ModBlocks.SILO_HATCH_LARGE.get())
+                        ModBlocks.SILO_HATCH_LARGE.get(),
+                        ModBlocks.VAULT_DOOR.get())
                     .build(null));
 
     public static final RegistryObject<BlockEntityType<IronCrateBlockEntity>> IRON_CRATE_BE =

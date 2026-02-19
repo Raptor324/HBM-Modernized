@@ -264,6 +264,10 @@ public class ClientSetup {
         // sliding_seal_door
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_legacy"));
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern"));
+
+        // vault_door
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_legacy"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_modern"));
         MainRegistry.LOGGER.debug("Registered door variant models for loading");
     }
 

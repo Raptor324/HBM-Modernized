@@ -452,6 +452,17 @@ public class ModBlocks {
                     "silo_hatch_large"
             ));
 
+    public static final RegistryObject<DoorBlock> VAULT_DOOR = registerBlockWithoutItem("vault_door",
+            () -> new DoorBlock(
+                    BlockBehaviour.Properties.of()
+                            .strength(10.0F, 1000.0F)
+                            .requiresCorrectToolForDrops()
+                            .sound(SoundType.METAL)
+                            .noOcclusion()
+                            .isViewBlocking((state, level, pos) -> false),
+                    "vault_door"
+            ));
+
 
     //---------------------------<БЛОКИ>-------------------------------------
     public static final RegistryObject<Block> REINFORCED_STONE = registerBlock("reinforced_stone",

@@ -1054,6 +1054,7 @@ public class MainRegistry {
             event.accept(ModBlocks.WATER_DOOR);
             event.accept(ModBlocks.SILO_HATCH);
             event.accept(ModBlocks.SILO_HATCH_LARGE);
+            event.accept(ModBlocks.VAULT_DOOR);
             event.accept(ModBlocks.TRANSITION_SEAL);
             event.accept(ModBlocks.SLIDE_DOOR);
         }

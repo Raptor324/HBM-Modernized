@@ -489,6 +489,8 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             return "silo_hatch";
         } else if (doorDecl == DoorDecl.SILO_HATCH_LARGE) {
             return "silo_hatch_large";
+        } else if (doorDecl == DoorDecl.VAULT_DOOR) {
+            return "vault_door";
         }
         throw new IllegalStateException("Unknown door type: " + doorDecl.getClass().getName());
     }

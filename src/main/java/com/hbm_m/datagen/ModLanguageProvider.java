@@ -537,6 +537,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.SECURE_ACCESS_DOOR.get(), "Усиленная дверь");
                 add(ModBlocks.QE_CONTAINMENT.get(), "QE дверь биологического сдерживания");
                 add(ModBlocks.QE_SLIDING.get(), "QE раздвижная дверь");
+                add(ModBlocks.VAULT_DOOR.get(), "Дверь убежища Vault-Tec");
                 add(ModBlocks.WATER_DOOR.get(), "Подводный люк");
                 add(ModBlocks.SILO_HATCH.get(), "Малый люк");
                 add(ModBlocks.SILO_HATCH_LARGE.get(), "Люк ракетной шахты");
@@ -1211,6 +1212,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.water_door.default", "Новая");
                 add("door.skin.hbm_m.qe_sliding_door.default", "Новая");
                 add("door.skin.hbm_m.qe_containment_door.default", "Новая");
+                add("door.skin.hbm_m.vault_door.default", "По умолчанию");
+                add("door.skin.hbm_m.vault_door.skin_3", "Vault 3");
+                add("door.skin.hbm_m.vault_door.skin_4", "Vault 4");
+                add("door.skin.hbm_m.vault_door.skin_s", "Vault S");
 
                 add(ModItems.SCREWDRIVER.get(), "Отвёртка");
                 add("tooltip.hbm_m.screwdriver", "Клик ПКМ - настройка конвертера энергии или смена скина двери");
@@ -2159,6 +2164,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.SECURE_ACCESS_DOOR.get(), "Secure Access Door");
                 add(ModBlocks.QE_CONTAINMENT.get(), "QE Containment Door");
                 add(ModBlocks.QE_SLIDING.get(), "QE Sliding Door");
+                add(ModBlocks.VAULT_DOOR.get(), "Vault-Tec Blast Door");
                 add(ModBlocks.WATER_DOOR.get(), "Waterproof Hatch");
                 add(ModBlocks.SILO_HATCH.get(), "Silo Hatch");
                 add(ModBlocks.SILO_HATCH_LARGE.get(), "Large Silo Hatch");
@@ -2532,6 +2538,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.water_door.default", "Standard");
                 add("door.skin.hbm_m.qe_sliding_door.default", "Standard");
                 add("door.skin.hbm_m.qe_containment_door.default", "Standard");
+                add("door.skin.hbm_m.vault_door.default", "Default");
+                add("door.skin.hbm_m.vault_door.skin_3", "Vault 3");
+                add("door.skin.hbm_m.vault_door.skin_4", "Vault 4");
+                add("door.skin.hbm_m.vault_door.skin_s", "Vault S");
 
                 add(ModItems.SCREWDRIVER.get(), "Screwdriver");
                 add("tooltip.hbm_m.screwdriver", "RMB click - Configure energy converter or change door skin");
