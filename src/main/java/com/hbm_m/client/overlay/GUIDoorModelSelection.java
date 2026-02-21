@@ -27,12 +27,12 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * UI Меню для выбора модели и скина двери.
- * Использует текстуру door_modification_GUI.png с кнопками скинов в сетке 4x2.
+ * Использует текстуру gui_door_modification.png с кнопками скинов в сетке 4x2.
  *
  * @author HBM-M Team
  */
 @OnlyIn(Dist.CLIENT)
-public class DoorModelSelectionScreen extends Screen {
+public class GUIDoorModelSelection extends Screen {
 
     // Масштаб GUI. Масштабирование через PoseStack — без дублирования текстуры.
     private static final float GUI_SCALE = 1.7f;
@@ -80,7 +80,7 @@ public class DoorModelSelectionScreen extends Screen {
     private static final int ITEMS_PER_PAGE = SKIN_GRID_COLS * SKIN_GRID_ROWS;
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/door_modification_gui.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_door_modification.png");
 
     // Данные двери
     private final BlockPos doorPos;
@@ -97,7 +97,7 @@ public class DoorModelSelectionScreen extends Screen {
     private int leftPos;
     private int topPos;
 
-    public DoorModelSelectionScreen(BlockPos doorPos, String doorId, DoorModelSelection currentSelection) {
+    public GUIDoorModelSelection(BlockPos doorPos, String doorId, DoorModelSelection currentSelection) {
         super(Component.translatable("gui.hbm_m.door_model_selection.title"));
         this.doorPos = doorPos;
         this.doorId = doorId;
