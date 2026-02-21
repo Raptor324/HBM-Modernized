@@ -105,7 +105,6 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
                     }
                 }
 
-                // --- ИСПРАВЛЕННАЯ ЛОГИКА ДРОПА ---
                 BlockEntity blockEntity = level.getBlockEntity(pos);
                 if (!BlockBreakDropContext.consumeSkipInventoryDrop(pos) &&
                         blockEntity instanceof MachineAdvancedAssemblerBlockEntity) {

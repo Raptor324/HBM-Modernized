@@ -1,19 +1,12 @@
 {
-  "textures": {
-    "particle": "hbm_m:block/machine/chemical_plant"
-  },
-  "loader": "forge:composite",
-  "children": {
-    "chemical_plant_model": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/machines/chemical_plant.obj",
-      "flip_v": true,
-      "render_type": "minecraft:cutout",
-      "textures": {
-        "default": "hbm_m:block/machine/chemical_plant"
-      }
-    }
-  },
+  "loader": "forge:obj",
+    "model": "hbm_m:models/block/machines/chemical_plant.obj",
+    "flip_v": true,
+    "render_type": "minecraft:cutout",
+    "textures": {
+      "default": "hbm_m:block/machine/chemical_plant",
+      "fluid": "hbm_m:gui/fluids/sulfuric_acid.png"
+    },
   "transform": {
       "translation": [0.5, 0, 0.5],
       "rotation": [0, 0, 0],

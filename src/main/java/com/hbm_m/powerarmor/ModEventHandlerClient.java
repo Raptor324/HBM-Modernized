@@ -540,30 +540,31 @@ public class ModEventHandlerClient {
         }
     
         // 29.8% normal mod splashes
-        int rand = (int) (Math.random() * 22);
+        int rand = (int) (Math.random() * 23);
         String text = switch (rand) {
             case 0 -> "Floppenheimer!";
             case 1 -> "i should dip my balls in sulfuric acid";
             case 2 -> "All answers are popbob!";
             case 3 -> "None may enter The Orb!";
-            case 4 -> "Wacarb was here";
-            case 5 -> "SpongeBoy me Bob I am overdosing on ketamine agagagagaga";
-            case 6 -> ChatFormatting.RED + "I know where you live, " + System.getProperty("user.name");
-            case 7 -> "Nice toes, now hand them over.";
-            case 8 -> "I smell burnt toast!";
-            case 9 -> "Imagine being scared by splash texts!";
-            case 10 -> "Semantic versioning? More like pedantic versioning.";
-            case 11 -> "Now with HBM's Nuclear Tech Modernized!";
-            case 12 -> "Caution: May contain radiation!";
-            case 13 -> "More fallout than you can handle!";
-            case 14 -> "Nuclear apocalypse approved!";
-            case 15 -> "Tactical nuclear penguin!";
-            case 16 -> "Explosions per minute!";
-            case 17 -> "Lead lined underwear not included!";
-            case 18 -> "1984 is here!";
-            case 19 -> "Diddy Edition!";
-            case 20 -> "CREATE HARAM";
-            case 21 -> "''playing HBM'' - means fondling my balls. © Bob";
+            case 4 -> "Wacarb wasn't here";
+            case 5 -> "STUNTMAN WAS HERE";
+            case 6 -> "SpongeBoy me Bob I am overdosing on ketamine agagagagaga";
+            case 7 -> ChatFormatting.RED + "I know where you live, " + System.getProperty("user.name");
+            case 8 -> "Nice toes, now hand them over.";
+            case 9 -> "I smell burnt toast!";
+            case 10 -> "Imagine being scared by splash texts!";
+            case 11 -> "Semantic versioning? More like pedantic versioning.";
+            case 12 -> "Now with HBM's Nuclear Tech Modernized!";
+            case 13 -> "Caution: May contain radiation!";
+            case 14 -> "More fallout than you can handle!";
+            case 15 -> "Nuclear apocalypse approved!";
+            case 16 -> "Tactical nuclear penguin!";
+            case 17 -> "Explosions per minute!";
+            case 18 -> "Lead lined underwear not included!";
+            case 19 -> "1984 is here!";
+            case 20 -> "Diddy Edition!";
+            case 21 -> "CREATE HARAM";
+            case 22 -> "''playing HBM'' - means fondling my balls. © Bob";
             default -> "Nuclear winter is coming!";
         };
         return net.minecraft.network.chat.Component.literal(text);

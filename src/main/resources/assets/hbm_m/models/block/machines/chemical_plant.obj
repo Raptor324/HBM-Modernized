@@ -1,6 +1,7 @@
 # Blender v2.79 (sub 0) OBJ File: 'chemplant2.blend'
 # www.blender.org
 mtllib chemical_plant.mtl
+usemtl fluid
 o Fluid
 v 0.500000 1.375000 -0.375000
 v 0.165152 1.375000 -0.308394
@@ -124,6 +125,7 @@ f 21/43/6 22/45/7 12/44/7
 f 22/45/7 23/47/8 13/46/8
 f 23/47/8 24/50/9 14/48/9
 f 25/49/10 15/51/10 14/48/9
+usemtl chemical_plant
 o Spinner
 v 0.500000 0.875000 0.250000
 v 0.323223 0.875000 0.323223

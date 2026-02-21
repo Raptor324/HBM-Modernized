@@ -38,6 +38,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -54,6 +55,7 @@ import net.minecraftforge.network.NetworkHooks;
 public class MachineAssemblerBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    public static final BooleanProperty RENDER_ACTIVE = BooleanProperty.create("render_active");
 
     static final Lazy<Map<Direction, VoxelShape>> SHAPES_LAZY = Lazy.of(() ->
             ImmutableMap.<Direction, VoxelShape>builder()
@@ -116,7 +118,9 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
 
     public MachineAssemblerBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(FACING, Direction.NORTH)
+                .setValue(RENDER_ACTIVE, false));
     }
 
     @Override
@@ -198,34 +202,35 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
 
     //  ДОБАВЛЕНО: Удаление из энергосети
     @Override
-    public void onRemove(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos, @Nonnull BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            Direction facing = state.getValue(FACING);
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock())) {
+            if (!level.isClientSide()) {
+                MultiblockStructureHelper helper = getStructureHelper();
+                Direction facing = state.getValue(FACING);
 
-            //  Удаляем контроллер из сети
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-
-            //  Удаляем энергетические коннекторы
-            for (BlockPos localPos : getStructureHelper().getStructureMap().keySet()) {
-                if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                    BlockPos worldPos = getStructureHelper().getRotatedPos(pos, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-                }
-            }
-
-            // Дроп предметов
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (!BlockBreakDropContext.consumeSkipInventoryDrop(pos) &&
-                    blockEntity instanceof MachineAssemblerBlockEntity) {
-                blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-                    for (int i = 0; i < handler.getSlots(); i++) {
-                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), handler.getStackInSlot(i));
+                // Удаляем из энергосети (этот код у нас уже правильный)
+                for (BlockPos localPos : helper.getStructureMap().keySet()) {
+                    if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
+                        BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
+                        EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
                     }
-                });
-            }
+                }
 
-            // Разрушаем структуру
-            STRUCTURE_HELPER.destroyStructure(level, pos, facing);
+                // --- ИСПРАВЛЕННАЯ ЛОГИКА ДРОПА ---
+                BlockEntity blockEntity = level.getBlockEntity(pos);
+                if (!BlockBreakDropContext.consumeSkipInventoryDrop(pos) &&
+                        blockEntity instanceof MachineAssemblerBlockEntity) {
+                    // Получаем capability инвентаря
+                    blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
+                        // Проходимся по всем слотам и выбрасываем их содержимое
+                        for (int i = 0; i < handler.getSlots(); i++) {
+                            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), handler.getStackInSlot(i));
+                        }
+                    });
+                }
+
+                helper.destroyStructure(level, pos, facing);
+            }
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
@@ -283,6 +288,6 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
 
     @Override
     protected void createBlockStateDefinition(@Nonnull StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, RENDER_ACTIVE);
     }
 }

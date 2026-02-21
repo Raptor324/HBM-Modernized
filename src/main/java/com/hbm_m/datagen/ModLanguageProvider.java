@@ -385,6 +385,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.template_folder.desc", "Шаблоны машин: Бумага + Краситель$Идентификатор: Железная пластина + Краситель$Штамп для пресса: Плоский штамп$Трек сирены: Изолятор + Стальная пластина");
                 add("desc.gui.template", "Вставьте сборочный шаблон");
                 add("desc.gui.assembler.warning", "Некорректный шаблон!");
+                add("desc.gui.upgrade", "Улучшения");
+                add("desc.gui.upgrade.speed", "Скорость: -25% времени за уровень");
+                add("desc.gui.upgrade.effectiveness", "Эффективность: шанс бесплатного крафта");
+                add("desc.gui.upgrade.overdrive", "Овердрайв: x2 циклов за тик за уровень");
                 // === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
                 add("tooltip.hbm_m.gigadet.line1", "Был создан по приколу");
                 add("tooltip.hbm_m.nuclear_charge.line1", "Ядерное оружие высокой мощности!");
@@ -1181,6 +1185,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.crate_desh", "Деш ящик");
                 add("container.hbm_m.crate_tungsten", "Вольфрамовый ящик");
                 add("container.hbm_m.crate_template", "Шаблонный ящик");
+                add("container.hbm_m.crystallizer", "Кристаллизатор");
 
                 add("gui.hbm_m.battery.priority.0", "Приоритет: Низкий");
                 add("gui.hbm_m.battery.priority.0.desc", "Низший приоритет. Опустошается в первую очередь, заполняется в последнюю");
@@ -1231,6 +1236,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.battery.mode.locked.desc", "Все операции с энергией отключены.");
 
                 add("gui.recipe.setRecipe", "Выбрать рецепт");
+                add("gui.hbm_m.fluid.empty", "Пусто");
 
                 add("tooltip.hbm_m.battery.stored", "Хранится энергии:");
                 add("tooltip.hbm_m.battery.transfer_rate", "Скорость зарядки: %1$s HE/t");
@@ -1782,6 +1788,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.template_folder.desc", "Machine Templates: Paper + Dye$Fluid IDs: Iron Plate + Dye$Press Stamps: Flat Stamp$Siren Tracks: Insulator + Steel Plate");
                 add("desc.gui.template", "Insert Assembly Template");
                 add("desc.gui.assembler.warning", "No valid template!");
+                add("desc.gui.upgrade", "Upgrades");
+                add("desc.gui.upgrade.speed", "Speed: -25% time per level");
+                add("desc.gui.upgrade.effectiveness", "Effectiveness: free craft chance");
+                add("desc.gui.upgrade.overdrive", "Overdrive: x2 cycles per tick per level");
 
                 // === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
                 add("tooltip.hbm_m.crowbar.line1", "Tool for prying open containers.");
@@ -2508,6 +2518,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.crate_desh", "Desh Crate");
                 add("container.hbm_m.crate_tungsten", "Tungsten Crate");
                 add("container.hbm_m.crate_template", "Template Crate");
+                add("container.hbm_m.crystallizer", "Crystallizer");
                 add("gui.hbm_m.battery.priority.0", "Priority: Low");
                 add("gui.hbm_m.battery.priority.0.desc", "Lowest priority. Will be drained first and filled last.");
                 add("gui.hbm_m.battery.priority.1", "Priority: Normal");
@@ -2557,6 +2568,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.battery.mode.locked.desc", "All energy operations are disabled.");
 
                 add("gui.recipe.setRecipe", "Set Recipe");
+                add("gui.hbm_m.fluid.empty", "Empty");
 
                 add("tooltip.hbm_m.machine_battery.capacity", "Capacity: %1$s HE");
                 add("tooltip.hbm_m.machine_battery.charge_speed", "Charge Speed: %1$s HE/t");

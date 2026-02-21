@@ -15,8 +15,8 @@ public class ModMenuTypes {
 
     public static final DeferredRegister<MenuType<?>> MENUS =
             DeferredRegister.create(ForgeRegistries.MENU_TYPES, RefStrings.MODID);
-    public static final RegistryObject<MenuType<OreAcidizerMenu>> ORE_ACIDIZER_MENU =
-            MENUS.register("ore_acidizer_menu", () -> IForgeMenuType.create(OreAcidizerMenu::new));
+    public static final RegistryObject<MenuType<MachineCrystallizerMenu>> CRYSTALLIZER_MENU =
+            MENUS.register("CRYSTALLIZER_MENU", () -> IForgeMenuType.create(MachineCrystallizerMenu::new));
 
     public static final RegistryObject<MenuType<ArmorTableMenu>> ARMOR_TABLE_MENU =
             MENUS.register("armor_table_menu", () -> IForgeMenuType.create(ArmorTableMenu::new));
@@ -68,6 +68,9 @@ public class ModMenuTypes {
 
     public static final RegistryObject<MenuType<MachineFluidTankMenu>> FLUID_TANK_MENU =
             MENUS.register("fluid_tank_menu", () -> IForgeMenuType.create(MachineFluidTankMenu::new));
+
+    public static final RegistryObject<MenuType<MachineChemicalPlantMenu>> CHEMICAL_PLANT_MENU =
+            MENUS.register("chemical_plant_menu", () -> IForgeMenuType.create(MachineChemicalPlantMenu::new));
 
     public static void register(IEventBus eventBus) {
         MENUS.register(eventBus);

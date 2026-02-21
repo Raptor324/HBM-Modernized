@@ -430,14 +430,14 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.SEQUESTRUM.get()), has(ModItems.SEQUESTRUM.get()))
                 .save(writer, recipeId("crafting/ball_tnt"));
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BLUEPRINT_FOLDER.get())
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.TEMPLATE_FOLDER.get())
                 .pattern("@#@")
                 .pattern("@#@")
                 .pattern("@#@")
                 .define('@', Ingredient.of(Items.BLUE_DYE, Items.LAPIS_LAZULI))
                 .define('#', Items.PAPER)
                 .unlockedBy(getHasName(Items.PAPER), has(Items.PAPER))
-                .save(writer, recipeId("crafting/blueprint_folder"));
+                .save(writer, recipeId("crafting/template_folder"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.REINFORCED_STONE.get(), 4)
                 .pattern("#$#")

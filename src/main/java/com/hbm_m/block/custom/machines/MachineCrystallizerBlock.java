@@ -6,7 +6,8 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.custom.machines.MachineOreAcidizerBlockEntity;
+import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.entity.custom.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -26,6 +27,8 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
@@ -36,12 +39,12 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
 
-public class MachineOreAcidizerBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineCrystallizerBlock extends BaseEntityBlock implements IMultiblockController {
     
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     private final MultiblockStructureHelper structureHelper;
 
-    public MachineOreAcidizerBlock(BlockBehaviour.Properties properties) {
+    public MachineCrystallizerBlock(BlockBehaviour.Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
         this.structureHelper = defineStructureNew();
@@ -144,8 +147,22 @@ public class MachineOreAcidizerBlock extends BaseEntityBlock implements IMultibl
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
-    @Nullable @Override public BlockEntity newBlockEntity(BlockPos pos, BlockState state) { return new MachineOreAcidizerBlockEntity(pos, state); }
-    @Override public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new MachineCrystallizerBlockEntity(pos, state);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(type, ModBlockEntities.ORE_ACIDIZER.get(), MachineCrystallizerBlockEntity::tick);
+    }
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
+    }
     @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext context) { return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite()); }
     @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) { builder.add(FACING); }
 }
