@@ -7,25 +7,45 @@
     "particle": "hbm_m:block/doors/large_vehicle_door_old"
   },
   "display": {
+    "thirdperson_righthand": {
+        "rotation": [ 79, 91, 304 ],
+        "translation": [ 1.00, -1.00, 0.25 ],
+        "scale": [ 0.07, 0.07, 0.07 ]
+    },
+    "thirdperson_lefthand": {
+        "rotation": [ 75, 45, 0 ],
+        "translation": [ 0.00, 2.50, 0.00 ],
+        "scale": [ 0.20, 0.20, 0.20 ]
+    },
+    "firstperson_righthand": {
+        "rotation": [ 0, 51, 356 ],
+        "translation": [ 2.00, -1.40, 0.00 ],
+        "scale": [ 0.08, 0.08, 0.08 ]
+    },
+    "firstperson_lefthand": {
+        "rotation": [ 0, 45, 0 ],
+        "translation": [ 2.00, -1.40, 0.00 ],
+        "scale": [ 0.08, 0.08, 0.08 ]
+    },
     "gui": {
-      "rotation": [ 30, 225, 0 ],
-      "translation": [ -1.2, -4, 0 ],
-      "scale": [ 0.115, 0.115, 0.115 ]
+        "rotation": [ 30, 225, 0 ],
+        "translation": [ -1.20, -4.00, 0.00 ],
+        "scale": [ 0.12, 0.12, 0.12 ]
+    },
+    "head": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "fixed": {
+        "rotation": [ 0, 270, 0 ],
+        "translation": [ -1.75, -14.50, 0.00 ],
+        "scale": [ 0.20, 0.20, 0.20 ]
     },
     "ground": {
-      "rotation": [ 0, 0, 0 ],
-      "translation": [ 0, 3, 0 ],
-      "scale": [ 0.25, 0.25, 0.25 ]
-    },
-    "thirdperson_righthand": {
-            "rotation": [ 75, 45, 0 ],
-            "translation": [ 0, 2.5, 0 ],
-            "scale": [ 0.2, 0.2, 0.2 ]
-        },
-    "firstperson_righthand": {
-        "rotation": [ 0, 45, 0 ],
-        "translation": [ 2, -1.4, 0 ],
-        "scale": [ 0.08, 0.08, 0.08 ]
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 3.00, 0.00 ],
+        "scale": [ 0.16, 0.16, 0.16 ]
     }
-  }
+}
 }
