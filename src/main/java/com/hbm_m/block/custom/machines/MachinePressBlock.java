@@ -9,7 +9,6 @@ import com.hbm_m.block.entity.custom.machines.MachinePressBlockEntity;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import com.hbm_m.util.BlockBreakDropContext;
 import com.google.common.collect.ImmutableMap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -93,22 +92,13 @@ public class MachinePressBlock extends BaseEntityBlock implements IMultiblockCon
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moved) {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (!BlockBreakDropContext.consumeSkipInventoryDrop(pos) &&
-                    blockEntity instanceof MachinePressBlockEntity) {
+            if (blockEntity instanceof MachinePressBlockEntity) {
                 ((MachinePressBlockEntity) blockEntity).drops();
             }
             // Уничтожаем структуру при удалении контроллера
             this.getStructureHelper().destroyStructure(level, pos, state.getValue(FACING));
         }
         super.onRemove(state, level, pos, newState, moved);
-    }
-
-    @Override
-    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (!level.isClientSide() && player.getAbilities().instabuild) {
-            BlockBreakDropContext.markSkipInventoryDrop(pos);
-        }
-        super.playerWillDestroy(level, pos, state, player);
     }
 
     @Override

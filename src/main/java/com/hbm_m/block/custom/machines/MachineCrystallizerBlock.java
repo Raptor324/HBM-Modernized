@@ -156,7 +156,7 @@ public class MachineCrystallizerBlock extends BaseEntityBlock implements IMultib
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.ORE_ACIDIZER.get(), MachineCrystallizerBlockEntity::tick);
+        return createTickerHelper(type, ModBlockEntities.CRYSTALLIZER.get(), MachineCrystallizerBlockEntity::tick);
     }
 
     @Override

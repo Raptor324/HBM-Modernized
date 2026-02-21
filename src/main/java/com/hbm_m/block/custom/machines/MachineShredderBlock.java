@@ -2,8 +2,6 @@ package com.hbm_m.block.custom.machines;
 
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.custom.machines.MachineShredderBlockEntity;
-import com.hbm_m.util.BlockBreakDropContext;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -96,19 +94,11 @@ public class MachineShredderBlock extends BaseEntityBlock {
                          BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (!BlockBreakDropContext.consumeSkipInventoryDrop(pos) &&
-                    blockEntity instanceof MachineShredderBlockEntity shredderEntity) {
+            if (blockEntity instanceof MachineShredderBlockEntity shredderEntity) {
                 shredderEntity.drops();
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
-    @Override
-    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (!level.isClientSide() && player.getAbilities().instabuild) {
-            BlockBreakDropContext.markSkipInventoryDrop(pos);
-        }
-        super.playerWillDestroy(level, pos, state, player);
-    }
 }

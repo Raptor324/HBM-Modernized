@@ -4,7 +4,6 @@ package com.hbm_m.block.custom.machines;
 // Печь имеет два состояния: активное (горит) и неактивное.
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.custom.machines.BlastFurnaceBlockEntity;
-import com.hbm_m.util.BlockBreakDropContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -83,20 +82,11 @@ public class BlastFurnaceBlock extends BaseEntityBlock {
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moved) {
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (!BlockBreakDropContext.consumeSkipInventoryDrop(pos) &&
-                    blockEntity instanceof BlastFurnaceBlockEntity) {
+            if (blockEntity instanceof BlastFurnaceBlockEntity) {
                 ((BlastFurnaceBlockEntity) blockEntity).drops();
             }
         }
         super.onRemove(state, level, pos, newState, moved);
-    }
-
-    @Override
-    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (!level.isClientSide() && player.getAbilities().instabuild) {
-            BlockBreakDropContext.markSkipInventoryDrop(pos);
-        }
-        super.playerWillDestroy(level, pos, state, player);
     }
 
     @Override

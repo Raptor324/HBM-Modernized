@@ -1171,7 +1171,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.armor_table", "Стол модификации брони");
                 add("container.hbm_m.machine_assembler", "Сборочная машина (Старая)");
                 add("container.hbm_m.advanced_assembly_machine", "Сборочная машина");
-                add(ModBlocks.ORE_ACIDIZER.get(), "Рудный окислитель (WIP)");
+                add(ModBlocks.CRYSTALLIZER.get(), "Рудный окислитель (WIP)");
                 add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Башня гидроразрыва пласта (WIP)");
                 add(ModBlocks.CHEMICAL_PLANT.get(), "Химический завод (WIP)");
                 add(ModBlocks.CENTRIFUGE.get(), "Центрифуга (WIP)");
@@ -2404,7 +2404,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.armor_table", "Armor Modification Table");
                 add("block.hbm_m.machine_assembler", "Assembly Machine (Legacy)");
                 add("block.hbm_m.advanced_assembly_machine", "Assembly Machine");
-                add(ModBlocks.ORE_ACIDIZER.get(), "Ore Acidizer (WIP)");
+                add(ModBlocks.CRYSTALLIZER.get(), "Ore Acidizer (WIP)");
                 add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Hydraulic Fracking Tower (WIP)");
                 add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant (WIP)");
                 add(ModBlocks.CENTRIFUGE.get(), "Centrifuge (WIP)");

@@ -416,7 +416,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customDoorBlock(ModBlocks.VAULT_DOOR);
 
         // Machines
-        customMachineBlock(ModBlocks.ORE_ACIDIZER);
+        customMachineBlock(ModBlocks.CRYSTALLIZER);
         customMachineBlock(ModBlocks.CHEMICAL_PLANT);
         customMachineBlock(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
         customMachineBlock(ModBlocks.CENTRIFUGE);

@@ -1,7 +1,6 @@
 package com.hbm_m.block.custom.machines.anvils;
 
 import com.hbm_m.block.entity.custom.machines.AnvilBlockEntity;
-import com.hbm_m.util.BlockBreakDropContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -101,20 +100,11 @@ public class AnvilBlock extends FallingBlock implements EntityBlock {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
-            if (!BlockBreakDropContext.consumeSkipInventoryDrop(pos) &&
-                    level.getBlockEntity(pos) instanceof AnvilBlockEntity be) {
+            if (level.getBlockEntity(pos) instanceof AnvilBlockEntity be) {
                 be.drops();
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
-    }
-
-    @Override
-    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (!level.isClientSide() && player.getAbilities().instabuild) {
-            BlockBreakDropContext.markSkipInventoryDrop(pos);
-        }
-        super.playerWillDestroy(level, pos, state, player);
     }
 
     @Override

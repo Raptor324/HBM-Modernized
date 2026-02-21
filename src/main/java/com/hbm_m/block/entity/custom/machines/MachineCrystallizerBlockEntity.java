@@ -81,7 +81,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     };
 
     public MachineCrystallizerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.ORE_ACIDIZER.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_RECEIVE);
+        super(ModBlockEntities.CRYSTALLIZER.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_RECEIVE);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineCrystallizerBlockEntity entity) {

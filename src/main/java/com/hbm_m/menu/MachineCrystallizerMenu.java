@@ -223,6 +223,6 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.ORE_ACIDIZER.get());
+        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.CRYSTALLIZER.get());
     }
 }
