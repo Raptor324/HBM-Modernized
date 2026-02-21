@@ -4,7 +4,6 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.PartRole;
 
@@ -97,14 +96,6 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         // ENERGY_CONNECTOR и UNIVERSAL_CONNECTOR оба принимают/отдают энергию (PartRole.canReceiveEnergy/canSendEnergy)
         if (this.role.canReceiveEnergy() || this.role.canSendEnergy()) {
 
-            // HBM API (Provider, Receiver, Connector)
-            if (cap == ModCapabilities.HBM_ENERGY_PROVIDER ||
-                    cap == ModCapabilities.HBM_ENERGY_RECEIVER ||
-                    cap == ModCapabilities.HBM_ENERGY_CONNECTOR)
-            {
-                return controllerBE.getCapability(cap, side);
-            }
-
             // Forge Energy API (как и было)
             if (cap == ForgeCapabilities.ENERGY) {
                 return controllerBE.getCapability(cap, side);
@@ -115,12 +106,6 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         if (cap == ForgeCapabilities.ITEM_HANDLER &&
                 (this.role == PartRole.ITEM_INPUT || this.role == PartRole.ITEM_OUTPUT))
         {
-            // MachineAssemblerBlockEntity вернет специальный proxy-handler
-            if (controllerBE instanceof MachineAssemblerBlockEntity assembler) {
-                return assembler.getItemHandlerForPart(this.role).cast();
-            }
-
-            // Для других машин (если появятся) можно делегировать напрямую
             return controllerBE.getCapability(cap, side);
         }
 

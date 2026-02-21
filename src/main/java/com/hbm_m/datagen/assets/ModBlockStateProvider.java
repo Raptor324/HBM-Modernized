@@ -4,9 +4,6 @@ package com.hbm_m.datagen.assets;
 // Используется в классе DataGenerators для регистрации.
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.custom.decorations.DoorBlock;
-import com.hbm_m.block.custom.machines.BlastFurnaceBlock;
-import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
-import com.hbm_m.block.custom.machines.MachineWoodBurnerBlock;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
@@ -43,9 +40,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 blockTexture(ModBlocks.STRAWBERRY_BUSH.get())).renderType("cutout"));
         // Блоки слитков теперь генерируются автоматически в цикле ниже
 
-        blockWithItem(ModBlocks.GIGA_DET);
-        blockWithItem(ModBlocks.POLONIUM210_BLOCK);
-        blockWithItem(ModBlocks.EXPLOSIVE_CHARGE);
         blockWithItem(ModBlocks.CRATE_WEAPON);
         blockWithItem(ModBlocks.CRATE_METAL);
         blockWithItem(ModBlocks.CRATE);
@@ -53,8 +47,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.ASPHALT);
         blockWithItem(ModBlocks.BARRICADE);
         blockWithItem(ModBlocks.DEAD_DIRT);
-        blockWithItem(ModBlocks.GEYSIR_DIRT);
-        blockWithItem(ModBlocks.GEYSIR_STONE);
         blockWithItem(ModBlocks.BASALT_BRICK);
         blockWithItem(ModBlocks.BASALT_POLISHED);
         blockWithItem(ModBlocks.BRICK_BASE);
@@ -96,11 +88,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.CONCRETE_WHITE);
         blockWithItem(ModBlocks.CONCRETE_YELLOW);
         blockWithItem(ModBlocks.CONCRETE_FLAT);
-        blockWithItem(ModBlocks.DEPTH_BRICK);
-        blockWithItem(ModBlocks.DEPTH_NETHER_BRICK);
-        blockWithItem(ModBlocks.DEPTH_NETHER_TILES);
-        blockWithItem(ModBlocks.DEPTH_STONE_NETHER);
-        blockWithItem(ModBlocks.DEPTH_TILES);
         blockWithItem(ModBlocks.GNEISS_BRICK);
         blockWithItem(ModBlocks.GNEISS_STONE);
         blockWithItem(ModBlocks.GNEISS_TILE);
@@ -120,13 +107,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.RESOURCE_LIMESTONE);
         blockWithItem(ModBlocks.RESOURCE_MALACHITE);
         blockWithItem(ModBlocks.RESOURCE_SULFUR);
-        blockWithItem(ModBlocks.DEPTH_IRON);
-        blockWithItem(ModBlocks.DEPTH_TITANIUM);
-        blockWithItem(ModBlocks.DEPTH_TUNGSTEN);
-        blockWithItem(ModBlocks.DEPTH_CINNABAR);
-        blockWithItem(ModBlocks.DEPTH_ZIRCONIUM);
-        blockWithItem(ModBlocks.DEPTH_STONE);
-        blockWithItem(ModBlocks.DEPTH_BORAX);
         blockWithItem(ModBlocks.WASTE_LEAVES);
         blockWithItem(ModBlocks.BEDROCK_OIL);
         blockWithItem(ModBlocks.REINFORCED_STONE);
@@ -151,37 +131,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // и свяжет их с моделями, которые выглядят как снег, но с вашей текстурой.
         registerSnowLayerBlock(ModBlocks.NUCLEAR_FALLOUT, "nuclear_fallout");
 
-        // === РЕГИСТРАЦИЯ ПАДАЮЩИХ БЛОКОВ СЕЛЛАФИТА ===
-        // Используется simpleBlockWithItem с явным указанием текстуры
-        simpleBlockWithItem(ModBlocks.FALLING_SELLAFIT1.get(),
-                models().cubeAll(
-                        ModBlocks.FALLING_SELLAFIT1.getId().getPath(),
-                        modLoc("block/falling_sellafit1")
-                )
-        );
-
-        simpleBlockWithItem(ModBlocks.FALLING_SELLAFIT2.get(),
-                models().cubeAll(
-                        ModBlocks.FALLING_SELLAFIT2.getId().getPath(),
-                        modLoc("block/falling_sellafit2")
-                )
-        );
-
-        simpleBlockWithItem(ModBlocks.FALLING_SELLAFIT3.get(),
-                models().cubeAll(
-                        ModBlocks.FALLING_SELLAFIT3.getId().getPath(),
-                        modLoc("block/falling_sellafit3")
-                )
-        );
-
-        simpleBlockWithItem(ModBlocks.FALLING_SELLAFIT4.get(),
-                models().cubeAll(
-                        ModBlocks.FALLING_SELLAFIT4.getId().getPath(),
-                        modLoc("block/falling_sellafit4")
-                )
-        );
-        // === КОНЕЦ РЕГИСТРАЦИИ ПАДАЮЩИХ БЛОКОВ ===
-
         blockWithItem(ModBlocks.WASTE_PLANKS);
 
         simpleBlockWithItem(ModBlocks.WASTE_LOG.get(),
@@ -190,15 +139,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/waste_log_side"),
                         modLoc("block/waste_log_top"),
                         modLoc("block/waste_log_top")
-                )
-        );
-
-		simpleBlockWithItem(ModBlocks.NUCLEAR_CHARGE.get(),
-                models().cubeBottomTop(
-                        ModBlocks.NUCLEAR_CHARGE.getId().getPath(),
-                        modLoc("block/nuclear_charge"),
-                        modLoc("block/nuclear_charge_top"),
-                        modLoc("block/nuclear_charge")
                 )
         );
 
@@ -269,62 +209,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 )
         );
 
-		simpleBlockWithItem(ModBlocks.C4.get(),
-                models().cubeBottomTop(
-                        ModBlocks.C4.getId().getPath(),
-                        modLoc("block/c4block_side"),
-                        modLoc("block/c4block_top"),
-                        modLoc("block/c4block_bottom")
-                )
-        );
-
-        simpleBlock(ModBlocks.BLAST_FURNACE_EXTENSION.get(),
-                models().getExistingFile(modLoc("block/machines/difurnace_extension")));
-        simpleBlockItem(ModBlocks.BLAST_FURNACE_EXTENSION.get(),
-                models().getExistingFile(modLoc("block/machines/difurnace_extension")));
-
-        simpleBlockWithItem(ModBlocks.CRATE_IRON.get(),
-                models().cubeBottomTop(
-                        ModBlocks.CRATE_IRON.getId().getPath(),
-                        modLoc("block/crate_iron_side"),
-                        modLoc("block/crate_iron_top"),
-                        modLoc("block/crate_iron_top")
-                )
-        );
-
-        simpleBlockWithItem(ModBlocks.CRATE_STEEL.get(),
-                models().cubeBottomTop(
-                        ModBlocks.CRATE_STEEL.getId().getPath(),
-                        modLoc("block/crate_steel_side"),
-                        modLoc("block/crate_steel_top"),
-                        modLoc("block/crate_steel_top")
-                )
-        );
-
-        simpleBlockWithItem(ModBlocks.CRATE_DESH.get(),
-                models().cubeBottomTop(
-                        ModBlocks.CRATE_DESH.getId().getPath(),
-                        modLoc("block/crate_desh_side"),
-                        modLoc("block/crate_desh_top"),
-                        modLoc("block/crate_desh_top")
-                )
-        );
-
-        simpleBlockWithItem(ModBlocks.CRATE_TUNGSTEN.get(),
-                models().cubeBottomTop(
-                        ModBlocks.CRATE_TUNGSTEN.getId().getPath(),
-                        modLoc("block/crate_tungsten_side"),
-                        modLoc("block/crate_tungsten_top"),
-                        modLoc("block/crate_tungsten_top")
-                )
-        );
-
-        simpleBlockWithItem(ModBlocks.CRATE_TEMPLATE.get(),
-                models().cubeAll(
-                        ModBlocks.CRATE_TEMPLATE.getId().getPath(),
-                        modLoc("block/crate_template")
-                )
-        );
 
         simpleBlockWithItem(ModBlocks.REINFORCED_GLASS.get(),
                 models().cubeAll(ModBlocks.REINFORCED_GLASS.getId().getPath(),
@@ -369,35 +253,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 mcLoc("block/dirt")
         );
 
-        columnBlockWithItem(
-                ModBlocks.DET_MINER,
-                modLoc("block/det_miner_side"),
-                modLoc("block/det_miner_top"),
-                modLoc("block/det_miner_top")
-        );
-
-        columnBlockWithItem(
-                ModBlocks.ARMOR_TABLE,
-                modLoc("block/armor_table_side"),
-                modLoc("block/armor_table_top"),
-                modLoc("block/armor_table_bottom")
-        );
-
-		columnBlockWithItem(
-                ModBlocks.WASTE_CHARGE,
-                modLoc("block/waste_charge"),
-                modLoc("block/waste_charge_top"),
-                modLoc("block/waste_charge_bottom")
-        );
-
-        columnBlockWithItem(
-                ModBlocks.SMOKE_BOMB,
-                modLoc("block/smoke_bomb_side"),
-                modLoc("block/smoke_bomb_top"),
-                modLoc("block/smoke_bomb_bottom")
-        );
-
-        // Блоки с кастомной OBJ моделью
         // Doors
         
         customDoorBlock(ModBlocks.LARGE_VEHICLE_DOOR);
@@ -414,38 +269,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customDoorBlock(ModBlocks.SECURE_ACCESS_DOOR);
         customDoorBlock(ModBlocks.VAULT_DOOR);
 
-        // Machines
-        customMachineBlock(ModBlocks.ORE_ACIDIZER);
-        customMachineBlock(ModBlocks.CHEMICAL_PLANT);
-        customMachineBlock(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
-        customMachineBlock(ModBlocks.CENTRIFUGE);
-        customMachineBlock(ModBlocks.MACHINE_ASSEMBLER);
-        registerAdvancedAssemblyMachineBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
-        customMachineBlock(ModBlocks.PRESS);
-
-        // Машины со свойством LIT (включен/выключен)
-        registerLitMachineBlock(ModBlocks.BLAST_FURNACE, 
-            BlastFurnaceBlock.FACING, BlastFurnaceBlock.LIT, 
-            "blast_furnace", "blast_furnace_on");
-        registerLitMachineBlock(ModBlocks.WOOD_BURNER, 
-            MachineWoodBurnerBlock.FACING, MachineWoodBurnerBlock.LIT, 
-            "wood_burner", "wood_burner");
-
-        // FluidTank - только FACING
-        horizontalBlock(ModBlocks.FLUID_TANK.get(),
-            models().getExistingFile(modLoc("block/machines/fluid_tank")));
 
         // Decor
         customObjBlock(ModBlocks.CRT_BROKEN);
         customObjBlock(ModBlocks.CRT_BSOD);
         customObjBlock(ModBlocks.CRT_CLEAN);
-        customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
         customObjBlock(ModBlocks.TAPE_RECORDER);
         customObjBlock(ModBlocks.TOASTER);
 
-        // Other
-        customObjBlock(ModBlocks.AIRBOMB);
-        customObjBlock(ModBlocks.BALEBOMB_TEST);
         customObjBlock(ModBlocks.BARREL_CORRODED);
         customObjBlock(ModBlocks.BARREL_IRON);
         customObjBlock(ModBlocks.BARREL_LOX);
@@ -457,48 +288,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.BARREL_TCALLOY);
         customObjBlock(ModBlocks.BARREL_VITRIFIED);
         customObjBlock(ModBlocks.BARREL_YELLOW);
-        customObjBlock(ModBlocks.DUD_CONVENTIONAL);
-        customObjBlock(ModBlocks.DUD_NUKE);
-        customObjBlock(ModBlocks.DUD_SALTED);
-        simpleBlockWithItem(ModBlocks.MINE_AP.get(), models().getExistingFile(modLoc("block/mine_ap")));
-        simpleBlockWithItem(ModBlocks.MINE_FAT.get(), models().getExistingFile(modLoc("block/mine_fat")));
+
         customObjBlock(ModBlocks.CRATE_CONSERVE);
         customObjBlock(ModBlocks.FILE_CABINET);
 
         simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath()));
-        simpleBlock(ModBlocks.WIRE_COATED.get(), models().getExistingFile(modLoc("block/wire_coated")));
 
 
-        blockWithItem(ModBlocks.CONVERTER_BLOCK);
-
-
-        orientableBlockWithItem(
-                ModBlocks.MACHINE_BATTERY,
-                modLoc("block/battery_side_alt"),
-                modLoc("block/battery_front_alt"),
-                modLoc("block/battery_top")
-        );
-
-        orientableBlockWithItem(
-                ModBlocks.MACHINE_BATTERY_LITHIUM,
-                modLoc("block/machine_battery_lithium_side"),
-                modLoc("block/machine_battery_lithium_front"),
-                modLoc("block/machine_battery_lithium_top")
-        );
-
-        orientableBlockWithItem(
-                ModBlocks.MACHINE_BATTERY_SCHRABIDIUM,
-                modLoc("block/machine_battery_schrabidium_side"),
-                modLoc("block/machine_battery_schrabidium_front"),
-                modLoc("block/machine_battery_schrabidium_top")
-        );
-
-        orientableBlockWithItem(
-                ModBlocks.MACHINE_BATTERY_DINEUTRONIUM,
-                modLoc("block/machine_battery_dineutronium_side"),
-                modLoc("block/machine_battery_dineutronium_front"),
-                modLoc("block/machine_battery_dineutronium_top")
-        );
 
         // Генерация моделей для ступенек
         stairsBlock((StairBlock) ModBlocks.REINFORCED_STONE_STAIRS.get(),
@@ -642,18 +438,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         stairsBlock((StairBlock) ModBlocks.CONCRETE_TILE_STAIRS.get(), modLoc("block/concrete_tile"));
         simpleBlockItem(ModBlocks.CONCRETE_TILE_STAIRS.get(), models().getExistingFile(modLoc("block/concrete_tile_stairs")));
 
-        stairsBlock((StairBlock) ModBlocks.DEPTH_BRICK_STAIRS.get(), modLoc("block/depth_brick"));
-        simpleBlockItem(ModBlocks.DEPTH_BRICK_STAIRS.get(), models().getExistingFile(modLoc("block/depth_brick_stairs")));
-
-        stairsBlock((StairBlock) ModBlocks.DEPTH_TILES_STAIRS.get(), modLoc("block/depth_tiles"));
-        simpleBlockItem(ModBlocks.DEPTH_TILES_STAIRS.get(), models().getExistingFile(modLoc("block/depth_tiles_stairs")));
-
-        stairsBlock((StairBlock) ModBlocks.DEPTH_NETHER_BRICK_STAIRS.get(), modLoc("block/depth_nether_brick"));
-        simpleBlockItem(ModBlocks.DEPTH_NETHER_BRICK_STAIRS.get(), models().getExistingFile(modLoc("block/depth_nether_brick_stairs")));
-
-        stairsBlock((StairBlock) ModBlocks.DEPTH_NETHER_TILES_STAIRS.get(), modLoc("block/depth_nether_tiles"));
-        simpleBlockItem(ModBlocks.DEPTH_NETHER_TILES_STAIRS.get(), models().getExistingFile(modLoc("block/depth_nether_tiles_stairs")));
-
         stairsBlock((StairBlock) ModBlocks.GNEISS_TILE_STAIRS.get(), modLoc("block/gneiss_tile"));
         simpleBlockItem(ModBlocks.GNEISS_TILE_STAIRS.get(), models().getExistingFile(modLoc("block/gneiss_tile_stairs")));
 
@@ -690,8 +474,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         stairsBlock((StairBlock) ModBlocks.BASALT_BRICK_STAIRS.get(), modLoc("block/basalt_brick"));
         simpleBlockItem(ModBlocks.BASALT_BRICK_STAIRS.get(), models().getExistingFile(modLoc("block/basalt_brick_stairs")));
 
-        stairsBlock((StairBlock) ModBlocks.DEPTH_STONE_STAIRS.get(), modLoc("block/depth_stone"));
-        simpleBlockItem(ModBlocks.DEPTH_STONE_STAIRS.get(), models().getExistingFile(modLoc("block/basalt_brick_stairs")));
 
         stairsBlock((StairBlock) ModBlocks.METEOR_POLISHED_STAIRS.get(), modLoc("block/meteor_polished"));
         simpleBlockItem(ModBlocks.METEOR_POLISHED_STAIRS.get(), models().getExistingFile(modLoc("block/meteor_polished_stairs")));
@@ -1003,42 +785,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(ModBlocks.CONCRETE_FLAT_SLAB.get(),
                 models().getExistingFile(modLoc("block/concrete_flat_slab")));
 
-        slabBlock((SlabBlock) ModBlocks.DEPTH_BRICK_SLAB.get(),
-                blockTexture(ModBlocks.DEPTH_BRICK.get()),
-                modLoc("block/depth_brick"));
-        simpleBlockItem(ModBlocks.DEPTH_BRICK_SLAB.get(),
-                models().getExistingFile(modLoc("block/depth_brick_slab")));
-
-        slabBlock((SlabBlock) ModBlocks.DEPTH_NETHER_BRICK_SLAB.get(),
-                blockTexture(ModBlocks.DEPTH_NETHER_BRICK.get()),
-                modLoc("block/depth_nether_brick"));
-        simpleBlockItem(ModBlocks.DEPTH_NETHER_BRICK_SLAB.get(),
-                models().getExistingFile(modLoc("block/depth_nether_brick_slab")));
-
-        slabBlock((SlabBlock) ModBlocks.DEPTH_NETHER_TILES_SLAB.get(),
-                blockTexture(ModBlocks.DEPTH_NETHER_TILES.get()),
-                modLoc("block/depth_nether_tiles"));
-        simpleBlockItem(ModBlocks.DEPTH_NETHER_TILES_SLAB.get(),
-                models().getExistingFile(modLoc("block/depth_nether_tiles_slab")));
-
-        slabBlock((SlabBlock) ModBlocks.DEPTH_STONE_NETHER_SLAB.get(),
-                blockTexture(ModBlocks.DEPTH_STONE_NETHER.get()),
-                modLoc("block/depth_stone_nether"));
-        simpleBlockItem(ModBlocks.DEPTH_STONE_NETHER_SLAB.get(),
-                models().getExistingFile(modLoc("block/depth_stone_nether_slab")));
-
-        slabBlock((SlabBlock) ModBlocks.DEPTH_TILES_SLAB.get(),
-                blockTexture(ModBlocks.DEPTH_TILES.get()),
-                modLoc("block/depth_tiles"));
-        simpleBlockItem(ModBlocks.DEPTH_TILES_SLAB.get(),
-                models().getExistingFile(modLoc("block/depth_tiles_slab")));
-
-        slabBlock((SlabBlock) ModBlocks.DEPTH_STONE_SLAB.get(),
-                blockTexture(ModBlocks.DEPTH_STONE.get()),
-                modLoc("block/depth_stone"));
-        simpleBlockItem(ModBlocks.DEPTH_STONE_SLAB.get(),
-                models().getExistingFile(modLoc("block/depth_stone_slab")));
-
         slabBlock((SlabBlock) ModBlocks.GNEISS_BRICK_SLAB.get(),
                 blockTexture(ModBlocks.GNEISS_BRICK.get()),
                 modLoc("block/gneiss_brick"));
@@ -1094,14 +840,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 models().getExistingFile(modLoc("block/vinyl_tile_small_slab")));
 
 
-
-
-
-
-
-        simpleBlockWithItem(ModBlocks.SHREDDER.get(),
-                new ModelFile.UncheckedModelFile(modLoc("block/shredder")));
-
         // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
             if (ModBlocks.hasIngotBlock(ingot)) {
@@ -1111,8 +849,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 }
             }
         }
-
-        registerAnvils();
 
         // === ГЕНЕРАЦИЯ BLOCKSTATE ФАЙЛОВ ДЛЯ РУД ===
         // Используем oreWithItem() для всех руд
@@ -1266,28 +1002,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
      * Advanced Assembly Machine: FACING + FRAME (frame в BlockState для запекания в чанк).
      * Одна модель — getQuads возвращает Base+Frame при frame=true.
      */
-    private void registerAdvancedAssemblyMachineBlock(RegistryObject<? extends Block> blockObject) {
-        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
-        // Используем одну и ту же модель для всех состояний.
-        // Логика отображения (Baked vs BER) скрыта внутри самого MachineAdvancedAssemblerBakedModel.
-        ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
-        
-        for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
-            for (boolean frame : new boolean[]{false, true}) {
-                // Добавляем перебор состояния RENDER_ACTIVE
-                for (boolean renderActive : new boolean[]{false, true}) {
-                    builder.partialState()
-                        .with(MachineAdvancedAssemblerBlock.FACING, facing)
-                        .with(MachineAdvancedAssemblerBlock.FRAME, frame)
-                        .with(MachineAdvancedAssemblerBlock.RENDER_ACTIVE, renderActive)
-                        .modelForState()
-                        .modelFile(modelFile)
-                        .rotationY(getRotationY(facing))
-                        .addModel();
-                }
-            }
-        }
-    }
 
     /**
      * Генерирует модель и состояние для горизонтально-ориентированного блока.
@@ -1296,29 +1010,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
      * @param frontTexture Текстура для лицевой стороны (север)
      * @param topTexture Текстура для верха и низа
      */
-    private void orientableBlockWithItem(RegistryObject<Block> blockObject, ResourceLocation sideTexture, ResourceLocation frontTexture, ResourceLocation topTexture) {
-        // 1. Создаем модель блока с разными текстурами.
-        //    Метод orientable использует стандартные имена: side, front, top, bottom.
-        var model = models().orientable(
-            blockObject.getId().getPath(),
-            sideTexture,
-            frontTexture,
-            topTexture
-        ).texture("particle", frontTexture); // Частицы при ломании будут из лицевой текстуры
 
-        // 2. Создаем состояние блока (blockstate), которое будет вращать эту модель по горизонтали.
-        horizontalBlock(blockObject.get(), model);
-
-        // 3. Создаем модель для предмета-блока, которая выглядит так же, как и сам блок.
-        simpleBlockItem(blockObject.get(), model);
-    }
-
-    private void registerAnvils() {
-        ModBlocks.getAnvilBlocks().forEach(reg -> horizontalBlock(
-                reg.get(),
-                models().getExistingFile(modLoc("block/machines/" + reg.getId().getPath()))
-        ));
-    }
 
     private void registerSnowLayerBlock(RegistryObject<Block> block, String baseName) {
         // Получаем текстуру нашего блока (nuclear_fallout.png)
@@ -1372,55 +1064,5 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block.get(), models().withExistingParent(baseName + "_inventory", mcLoc("block/snow_height2")).texture("texture", texture).texture("particle", texture));
     }
 
-    /**
-     * Регистрирует blockstate для машин со свойством LIT (включен/выключен).
-     * Генерирует варианты для каждого направления FACING и состояния LIT.
-     */
-    private void registerLitMachineBlock(RegistryObject<? extends Block> blockObject, 
-                                          DirectionProperty facingProperty,
-                                          BooleanProperty litProperty,
-                                          String offModel, String onModel) {
-        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
-        
-        // Создаём модели для состояний lit=false и lit=true
-        ModelFile offModelFile = models().getExistingFile(modLoc("block/machines/" + offModel));
-        ModelFile onModelFile = models().getExistingFile(modLoc("block/machines/" + onModel));
-        
-        // Для каждого направления FACING создаём варианты для LIT=false и LIT=true
-        for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
-            // Состояние выключено (lit=false)
-            builder.partialState()
-                .with(facingProperty, facing)
-                .with(litProperty, false)
-                .modelForState()
-                .modelFile(offModelFile)
-                .rotationY(getRotationY(facing))
-                .addModel();
-            
-            // Состояние включено (lit=true)
-            builder.partialState()
-                .with(facingProperty, facing)
-                .with(litProperty, true)
-                .modelForState()
-                .modelFile(onModelFile)
-                .rotationY(getRotationY(facing))
-                .addModel();
-        }
-        
-        // Модель для предмета (используем выключенную модель)
-        // simpleBlockItem(blockObject.get(), offModelFile);
-    }
 
-    /**
-     * Возвращает угол поворота Y для направления в градусах.
-     */
-    private int getRotationY(Direction facing) {
-        return switch (facing) {
-            case SOUTH -> 180;
-            case WEST -> 270;
-            case NORTH -> 0;
-            case EAST -> 90;
-            default -> 0;
-        };
-    }
 }

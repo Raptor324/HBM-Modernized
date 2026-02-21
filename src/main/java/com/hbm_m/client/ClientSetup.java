@@ -14,39 +14,8 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.custom.doors.DoorDeclRegistry;
 import com.hbm_m.client.loader.DoorModelLoader;
-import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
-import com.hbm_m.client.loader.PressModelLoader;
-import com.hbm_m.client.loader.ProceduralWireLoader;
-import com.hbm_m.client.loader.TemplateModelLoader;
-import com.hbm_m.client.overlay.GUIAnvil;
-import com.hbm_m.client.overlay.GUIArmorTable;
-import com.hbm_m.client.overlay.GUIBlastFurnace;
-import com.hbm_m.client.overlay.GUIMachineAdvancedAssembler;
-import com.hbm_m.client.overlay.GUIMachineAssembler;
-import com.hbm_m.client.overlay.GUIMachineBattery;
-import com.hbm_m.client.overlay.GUIMachineCentrifuge;
-import com.hbm_m.client.overlay.GUIMachineFluidTank;
-import com.hbm_m.client.overlay.GUIMachinePress;
-import com.hbm_m.client.overlay.GUIMachineShredder;
-import com.hbm_m.client.overlay.GUIMachineWoodBurner;
-import com.hbm_m.client.overlay.OverlayGeiger;
-import com.hbm_m.client.overlay.OverlayInfoToast;
-import com.hbm_m.client.overlay.OverlayRadiationVisuals;
-import com.hbm_m.client.overlay.crates.GUIDeshCrate;
-import com.hbm_m.client.overlay.crates.GUIIronCrate;
-import com.hbm_m.client.overlay.crates.GUISteelCrate;
-import com.hbm_m.client.overlay.crates.GUITemplateCrate;
-import com.hbm_m.client.overlay.crates.GUITungstenCrate;
-import com.hbm_m.client.render.AirBombProjectileEntityRenderer;
-import com.hbm_m.client.render.AirNukeBombProjectileEntityRenderer;
-import com.hbm_m.client.render.AirstrikeEntityRenderer;
-import com.hbm_m.client.render.AirstrikeNukeEntityRenderer;
-import com.hbm_m.client.render.ChemicalPlantRenderer;
 import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
-import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
-import com.hbm_m.client.render.MachineAdvancedAssemblerVboRenderer;
-import com.hbm_m.client.render.MachinePressRenderer;
 import com.hbm_m.client.render.ModShaders;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.ShaderReloadListener;
@@ -56,23 +25,11 @@ import com.hbm_m.client.tooltip.ItemTooltipComponent;
 import com.hbm_m.client.tooltip.ItemTooltipComponentRenderer;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.ModConfigKeybindHandler;
-import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
-import com.hbm_m.item.custom.industrial.ItemBlueprintFolder;
 import com.hbm_m.item.tags_and_tiers.ModTags;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.menu.ModMenuTypes;
-import com.hbm_m.particle.ModParticleTypes;
-import com.hbm_m.particle.custom.DarkParticle;
-import com.hbm_m.particle.custom.RadFogParticle;
-import com.hbm_m.powerarmor.layer.AbstractObjArmorLayer;
-import com.hbm_m.powerarmor.layer.ModModelLayers;
-import com.hbm_m.powerarmor.layer.PowerArmorEmptyModel;
-import com.hbm_m.powerarmor.overlay.HbmThermalHandler;
-import com.hbm_m.powerarmor.overlay.OverlayPowerArmor;
-import com.hbm_m.recipe.AssemblerRecipe;
+
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
@@ -120,71 +77,14 @@ public class ClientSetup {
         // Обработчики, которые должны работать каждый тик/каждое событие в игре,
         // регистрируются на шине MinecraftForge.EVENT_BUS.
         MinecraftForge.EVENT_BUS.register(ModConfigKeybindHandler.class);
-        MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
-        MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
+
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
-
-        // MinecraftForge.EVENT_BUS.register(DoorDebugRenderer.class);
-        // MinecraftForge.EVENT_BUS.register(ClientSetup.class);
-
-        // Register Entity Renders
-        ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
-        ModEntities.GRENADE_IF_FIRE_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
-        ModEntities.GRENADE_IF_SLIME_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
-        ModEntities.GRENADE_IF_HE_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
-        ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
-        ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
-        ModEntities.GRENADEFIRE_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
-        ModEntities.GRENADESMART_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
-        ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
-        ModEntities.GRENADE_IF_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
 
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
         event.enqueueWork(() -> {
-            MenuScreens.register(ModMenuTypes.ORE_ACIDIZER_MENU.get(), com.hbm_m.client.screen.OreAcidizerScreen::new);
-            MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
-            MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
-            MenuScreens.register(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
-            MenuScreens.register(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
-            MenuScreens.register(ModMenuTypes.BLAST_FURNACE_MENU.get(), GUIBlastFurnace::new);
-            MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
-            MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), GUIMachineShredder::new);
-            MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
-            MenuScreens.register(ModMenuTypes.ANVIL_MENU.get(), GUIAnvil::new);
-            MenuScreens.register(ModMenuTypes.CENTRIFUGE_MENU.get(), GUIMachineCentrifuge::new);
-            MenuScreens.register(ModMenuTypes.IRON_CRATE_MENU.get(), GUIIronCrate::new);
-            MenuScreens.register(ModMenuTypes.STEEL_CRATE_MENU.get(), GUISteelCrate::new);
-            MenuScreens.register(ModMenuTypes.DESH_CRATE_MENU.get(), GUIDeshCrate::new);
-            MenuScreens.register(ModMenuTypes.TUNGSTEN_CRATE_MENU.get(), GUITungstenCrate::new);
-            MenuScreens.register(ModMenuTypes.TEMPLATE_CRATE_MENU.get(), GUITemplateCrate::new);
-            MenuScreens.register(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
-
             // Register BlockEntity renderers
-            BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
-            BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
-            BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), ChemicalPlantRenderer::new);
 
             OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
             try {
@@ -192,7 +92,6 @@ public class ClientSetup {
             } catch (Exception e) {
                 MainRegistry.LOGGER.error("Failed to initialize VBO render system", e);
             }
-            MinecraftForge.EVENT_BUS.register(HbmThermalHandler.INSTANCE);
             
             // Регистрация обработчика отключения от сервера
             MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
@@ -275,14 +174,9 @@ public class ClientSetup {
     public static void onModelRegister(ModelEvent.RegisterGeometryLoaders event) {
         // DoorDeclRegistry.init();
         MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
-
-        event.register("procedural_wire", new ProceduralWireLoader());
-        event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
         event.register("door", new DoorModelLoader());
-        event.register("template_loader", new TemplateModelLoader());
-        event.register("press_loader", new PressModelLoader());
 
-        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, template_loader, door, press_loader");
+        MainRegistry.LOGGER.info("Registered geometry loaders: door");
     }
 
     @SubscribeEvent
@@ -290,20 +184,10 @@ public class ClientSetup {
         ModConfigKeybindHandler.onRegisterKeyMappings(event);
         MainRegistry.LOGGER.info("Registered key mappings.");
     }
-    @SubscribeEvent
-    public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
-        event.registerEntityRenderer(ModEntities.AIRNUKEBOMB_PROJECTILE.get(),
-                AirNukeBombProjectileEntityRenderer::new);
-        event.registerEntityRenderer(ModEntities.AIRBOMB_PROJECTILE.get(),
-                AirBombProjectileEntityRenderer::new);
-        event.registerEntityRenderer(ModEntities.AIRSTRIKE_NUKE_ENTITY.get(), AirstrikeNukeEntityRenderer::new);
 
-        event.registerEntityRenderer(ModEntities.AIRSTRIKE_ENTITY.get(), AirstrikeEntityRenderer::new);
-    }
     @SubscribeEvent
     public static void onResourceReload(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(new ShaderReloadListener());
-        event.registerReloadListener(HbmThermalHandler.INSTANCE);
         event.registerReloadListener(com.hbm_m.client.model.variant.DoorModelRegistry.getInstance());
         event.registerReloadListener((preparationBarrier, resourceManager,
                 preparationsProfiler, reloadProfiler,
@@ -314,10 +198,7 @@ public class ClientSetup {
                 // включении шейдера — clearCaches вызывался во время render pass).
                 com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
                     try {
-                        MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
-                        MachineAdvancedAssemblerRenderer.clearCaches();
                         DoorRenderer.clearAllCaches();
-                        MachinePressRenderer.clearCaches();
                         GlobalMeshCache.clearAll();
                         MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");
                     } catch (Exception e) {
@@ -331,40 +212,9 @@ public class ClientSetup {
     public static void onClientDisconnect(net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
         MainRegistry.LOGGER.info("Client disconnecting, clearing VBO caches...");
         DoorRenderer.clearAllCaches();
-        MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
-        MachinePressRenderer.clearCaches();
         
-        // Очищаем кэши рендеринга брони
-        AbstractObjArmorLayer.clearAllCaches();
     }
 
-    @SubscribeEvent
-    public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
-        // Связываем наш ТИП частицы с ее ФАБРИКОЙ.
-        event.registerSpriteSet(ModParticleTypes.DARK_PARTICLE.get(), DarkParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.RAD_FOG_PARTICLE.get(), RadFogParticle.Provider::new);
-        MainRegistry.LOGGER.info("Registered custom particle providers.");
-    }
-
-    @SubscribeEvent
-    public static void onRegisterGuiOverlays(RegisterGuiOverlaysEvent event) {
-        MainRegistry.LOGGER.info("Registering GUI overlays...");
-        
-        // Регистрируем оверлей.
-        // Мы говорим: "Нарисуй оверлей с ID 'geiger_counter_hud' НАД хотбаром,
-        // используя логику из объекта GeigerOverlay.GEIGER_HUD_OVERLAY".
-        event.registerAbove(VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", OverlayGeiger.GEIGER_HUD_OVERLAY);
-
-        event.registerAbove(VanillaGuiOverlay.ARMOR_LEVEL.id(), "power_armor_hud", OverlayPowerArmor.POWER_ARMOR_OVERLAY);
-
-        event.registerAboveAll("thermal_overlay", com.hbm_m.powerarmor.ModEventHandlerClient.THERMAL_OVERLAY);
-
-        event.registerAbove(VanillaGuiOverlay.PORTAL.id(), "radiation_pixels", OverlayRadiationVisuals.RADIATION_PIXELS_OVERLAY);
-
-        event.registerAboveAll("info_toast", OverlayInfoToast.OVERLAY);
-        
-        MainRegistry.LOGGER.info("GUI overlays registered.");
-    }
     
     @SubscribeEvent
     public static void registerTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
@@ -452,52 +302,5 @@ public class ClientSetup {
             
             return ChunkRenderTypeSet.of(RenderType.solid());
         }
-    }
-    public static void addTemplatesClient(BuildCreativeModeTabContentsEvent event) {
-        if (Minecraft.getInstance().level != null) {
-            RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
-            List<AssemblerRecipe> recipes = recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
-            
-            // Собираем уникальные blueprintPool из всех рецептов
-            Set<String> blueprintPools = new HashSet<>();
-            for (AssemblerRecipe recipe : recipes) {
-                String pool = recipe.getBlueprintPool();
-                if (pool != null && !pool.isEmpty()) {
-                    blueprintPools.add(pool);
-                }
-            }
-            
-            // Создаём папку для каждого уникального пула
-            for (String pool : blueprintPools) {
-                ItemStack folderStack = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
-                ItemBlueprintFolder.writeBlueprintPool(folderStack, pool);
-                event.accept(folderStack);
-            }
-            
-            if (ModClothConfig.get().enableDebugLogging) {
-                MainRegistry.LOGGER.info("Added {} blueprint folders to NTM Templates tab", blueprintPools.size());
-            }
-            
-            // Добавляем шаблоны
-            for (AssemblerRecipe recipe : recipes) {
-                ItemStack templateStack = new ItemStack(ModItems.ASSEMBLY_TEMPLATE.get());
-                ItemAssemblyTemplate.writeRecipeOutput(templateStack, recipe.getResultItem(null));
-                event.accept(templateStack);
-            }
-            
-            if (ModClothConfig.get().enableDebugLogging) {
-                MainRegistry.LOGGER.info("Added {} templates to NTM Templates tab", recipes.size());
-            }
-        } else {
-            if (ModClothConfig.get().enableDebugLogging) {
-                MainRegistry.LOGGER.warn("Could not populate templates tab: Minecraft level is null.");
-            }
-        }
-    }
-
-    @SubscribeEvent
-    public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
-        // Generic dummy armor model for all power armor items.
-        event.registerLayerDefinition(ModModelLayers.POWER_ARMOR, PowerArmorEmptyModel::createBodyLayer);
     }
 }

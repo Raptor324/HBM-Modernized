@@ -4,7 +4,6 @@ package com.hbm_m.datagen.recipes;
 // Здесь мы определяем, как создаются наши предметы в игре.
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.datagen.recipes.custom.*;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
@@ -30,12 +29,6 @@ public class ModRecipeProvider extends RecipeProvider {
 
     @Override
     protected void buildRecipes(@Nonnull Consumer<FinishedRecipe> pWriter) {
-
-        BlastFurnaceRecipeGenerator.generate(pWriter);
-        PressRecipeGenerator.generate(pWriter);
-        AssemblerRecipeGenerator.generate(pWriter);
-        AnvilRecipeGenerator.generate(pWriter);
-        ShredderRecipeGenerator.generate(pWriter, ModRecipeProvider::unlockedByItem);
 
         // ==================== АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ РЕЦЕПТОВ ДЛЯ БЛОКОВ СЛИТКОВ ====================
         for (ModIngots ingot : ModIngots.values()) {

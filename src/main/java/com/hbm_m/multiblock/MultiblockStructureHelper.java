@@ -12,8 +12,6 @@ import java.util.function.Supplier;
 // Утилитарный класс для управления мультиблочными структурами.
 // Позволяет определять структуру, проверять возможность постройки, строить и разрушать структуру,
 // а также генерировать VoxelShape для всей структуры. Ядро всей мультиблочной логики.
-import com.hbm_m.api.energy.WireBlock;
-import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.custom.decorations.DoorBlock;
 import com.hbm_m.block.custom.machines.UniversalMachinePartBlock;
 import com.hbm_m.config.ModClothConfig;
@@ -621,16 +619,6 @@ public class MultiblockStructureHelper {
         
         updateFrameForController(level, controllerPos);
         
-        // ОДНО массовое обновление в конце вместо 156
-        for (BlockPos connectorPos : energyConnectorPositions) {
-            for (Direction dir : Direction.values()) {
-                BlockPos wirePos = connectorPos.relative(dir);
-                BlockState wireState = level.getBlockState(wirePos);
-                if (wireState.getBlock() instanceof WireBlock) {
-                    level.updateNeighborsAt(wirePos, wireState.getBlock());
-                }
-            }
-        }
     }
     
     // Вспомогательный метод для красивого форматирования координат
@@ -758,16 +746,6 @@ public class MultiblockStructureHelper {
 
         // Вычисляем видимость рамки
         boolean visible = helper.computeFrameVisible(level, controllerPos, facing);
-
-        // MachineAdvancedAssemblerBlock: храним FRAME в BlockState для запекания в чанк (Embeddium/Sodium)
-        if (block instanceof MachineAdvancedAssemblerBlock) {
-            BlockState currentState = level.getBlockState(controllerPos);
-            if (currentState.hasProperty(MachineAdvancedAssemblerBlock.FRAME)
-                    && currentState.getValue(MachineAdvancedAssemblerBlock.FRAME) != visible) {
-                level.setBlock(controllerPos, currentState.setValue(MachineAdvancedAssemblerBlock.FRAME, visible), 3);
-            }
-            return;
-        }
 
         // Остальные контроллеры (двери и т.д.): применяем через интерфейс BlockEntity
         if (be instanceof IFrameSupportable fs) {

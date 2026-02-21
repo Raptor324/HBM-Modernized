@@ -5,8 +5,6 @@ import com.hbm_m.client.overlay.DoorAnimationDelayHelper;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
-import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
-import com.hbm_m.client.render.MachinePressRenderer;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -43,9 +41,6 @@ public class ClientModEvents {
             return;
         }
         
-        // Логика для опасностей 
-        HazardTooltipHandler.appendHazardTooltips(event.getItemStack(), event.getToolTip());
-
         // Логика для OreDict тегов 
         boolean hasTags = event.getItemStack().getTags().findAny().isPresent();
         if (hasTags) {
@@ -75,9 +70,8 @@ public class ClientModEvents {
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             if (ModClothConfig.useInstancedBatching()) {
-                MachineAdvancedAssemblerRenderer.flushInstancedBatches(event);
                 DoorRenderer.flushInstancedBatches(event);
-                MachinePressRenderer.flushInstancedBatches(event);
+
             }
         }
     }
@@ -103,8 +97,7 @@ public class ClientModEvents {
                 
                 // Очищаем кеши рендереров (все instanced рендереры)
                 DoorRenderer.clearAllCaches();
-                MachinePressRenderer.clearCaches();
-                MachineAdvancedAssemblerRenderer.clearCaches();
+
                 
                 // Очищаем глобальные кеши
                 GlobalMeshCache.clearAll();

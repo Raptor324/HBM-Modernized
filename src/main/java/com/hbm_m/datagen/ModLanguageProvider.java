@@ -262,64 +262,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_chestplate", "Нагрудник из звёздного металла");
                 add("item.hbm_m.starmetal_leggings", "Поножи из звёздного металла");
                 add("item.hbm_m.starmetal_boots", "Ботинки из звёздного металла");
-
-                add(ModItems.T51_HELMET.get(), "Шлем силовой брони T-51b");
-                add(ModItems.T51_CHESTPLATE.get(), "Нагрудник силовой брони T-51b");
-                add(ModItems.T51_LEGGINGS.get(), "Поножи силовой брони T-51b");
-                add(ModItems.T51_BOOTS.get(), "Ботинки силовой брони T-51b");
-
-                add(ModItems.AJR_HELMET.get(), "Шлем Стальных Рейнджеров");
-                add(ModItems.AJR_CHESTPLATE.get(), "Нагрудник Стальных Рейнджеров");
-                add(ModItems.AJR_LEGGINGS.get(), "Поножи Стальных Рейнджеров");
-                add(ModItems.AJR_BOOTS.get(), "Ботинки Стальных Рейнджеров");
-
-                add(ModItems.BISMUTH_HELMET.get(), "Висмутовый шлем силовой брони");
-                add(ModItems.BISMUTH_CHESTPLATE.get(), "Висмутовый нагрудник силовой брони");
-                add(ModItems.BISMUTH_LEGGINGS.get(), "Висмутовые поножи силовой брони");
-                add(ModItems.BISMUTH_BOOTS.get(), "Висмутовые ботинки силовой брони");
-
-                add(ModItems.AJRO_HELMET.get(), "Шлем силовой брони AJR");
-                add(ModItems.AJRO_CHESTPLATE.get(), "Нагрудник силовой брони AJR");
-                add(ModItems.AJRO_LEGGINGS.get(), "Поножи силовой брони AJR");
-                add(ModItems.AJRO_BOOTS.get(), "Ботинки силовой брони AJR");
-
-                add(ModItems.DNT_HELMET.get(), "Шлем DNT-Нанокостюма");
-                add(ModItems.DNT_CHESTPLATE.get(), "Нагрудник DNT-Нанокостюма");
-                add(ModItems.DNT_LEGGINGS.get(), "Поножи DNT-Нанокостюма");
-                add(ModItems.DNT_BOOTS.get(), "Ботинки DNT-Нанокостюма");
-
-                add("item.hbm_m.geiger_counter", "Счетчик Гейгера");
-                add("item.hbm_m.dosimeter", "Дозиметр");
-                add("item.hbm_m.battery_creative", "Бесконечная батарейка");
-                add("tooltip.hbm_m.creative_battery_desc","Предоставляет бесконечное количество энергии");
-                add("tooltip.hbm_m.creative_battery_flavor","Бесконечность — не предел!!");
                 add(ModItems.COIL_TUNGSTEN.get(), "Нагревательный элемент");
                 // ПРЕДМЕТЫ
-                add(ModItems.BATTERY_POTATO.get(), "Картофельная батарейка");
-                add(ModItems.BATTERY.get(), "Батарейка");
-                add(ModItems.BATTERY_RED_CELL.get(), "Красная энергоячейка");
-                add(ModItems.BATTERY_RED_CELL_6.get(), "Красная энергоячейка x6");
-                add(ModItems.BATTERY_RED_CELL_24.get(), "Красная энергоячейка x24");
-                add(ModItems.BATTERY_ADVANCED.get(), "Продвинутая батарея");
-                add(ModItems.BATTERY_ADVANCED_CELL.get(), "Продвинутая энергоячейка");
-                add(ModItems.BATTERY_ADVANCED_CELL_4.get(), "Продвинутая энергоячейка x4");
-                add(ModItems.BATTERY_ADVANCED_CELL_12.get(), "Продвинутая энергоячейка x12");
-                add(ModItems.BATTERY_LITHIUM.get(), "Литиевая батарея");
-                add(ModItems.BATTERY_LITHIUM_CELL.get(), "Литиевая энергоячейка");
-                add(ModItems.BATTERY_LITHIUM_CELL_3.get(), "Литиевая энергоячейка x3");
-                add(ModItems.BATTERY_LITHIUM_CELL_6.get(), "Литиевая энергоячейка x6");
-                add(ModItems.BATTERY_SCHRABIDIUM_CELL.get(), "Шрабидиевая энергоячейка");
-                add(ModItems.BATTERY_SCHRABIDIUM_CELL_2.get(), "Шрабидиевая энергоячейка x2");
-                add(ModItems.BATTERY_SCHRABIDIUM_CELL_4.get(), "Шрабидиевая энергоячейка x4");
-                add(ModItems.BATTERY_SPARK.get(), "Спарк батарея");
-                add(ModItems.BATTERY_TRIXITE.get(), "Нефритовый стержень спарк батарей оригинал");
-                add(ModItems.BATTERY_SPARK_CELL_6.get(), "Спарк энергоячейка");
-                add(ModItems.BATTERY_SPARK_CELL_25.get(), "Спарк магический аккумулятор");
-                add(ModItems.BATTERY_SPARK_CELL_100.get(), "Спарк магический массив хранения энергии");
-                add(ModItems.BATTERY_SPARK_CELL_1000.get(), "Спарк магическая масс-энергитическая пустота");
-                add(ModItems.BATTERY_SPARK_CELL_2500.get(), "Спарк магическое море Дирака");
-                add(ModItems.BATTERY_SPARK_CELL_10000.get(), "Устойчивый пространственно-временной спарк кристалл");
-                add(ModItems.BATTERY_SPARK_CELL_POWER.get(), "Абсурдный физический спарк блок накопления энергии");
 
                 add(ModItems.WIRE_RED_COPPER.get(), "Провод из красной меди");
                 add(ModItems.WIRE_COPPER.get(), "Медный провод");
@@ -332,48 +276,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.WIRE_SCHRABIDIUM.get(), "Шрабидиевый провод");
                 add(ModItems.WIRE_ADVANCED_ALLOY.get(), "Провод из продвинутого сплава");
 
-                add(ModItems.BATTERY_SCHRABIDIUM.get(), "Шрабидиевая батарейка");
-
-                add(ModItems.STAMP_STONE_FLAT.get(), "Плоский каменный штамп");
-                add(ModItems.STAMP_STONE_PLATE.get(), "Каменный штамп пластины");
-                add(ModItems.STAMP_STONE_WIRE.get(), "Каменный штамп провода");
-                add(ModItems.STAMP_STONE_CIRCUIT.get(), "Каменный штамп чипа");
-                add(ModItems.STAMP_IRON_FLAT.get(), "Плоский железный штамп");
-                add(ModItems.STAMP_IRON_PLATE.get(), "Железный штамп пластины");
-                add(ModItems.STAMP_IRON_WIRE.get(), "Железный штамп провода");
-                add(ModItems.STAMP_IRON_CIRCUIT.get(), "Железный штамп чипа");
-                add(ModItems.STAMP_STEEL_FLAT.get(), "Плоский стальной штамп");
-                add(ModItems.STAMP_STEEL_PLATE.get(), "Стальной штамп пластины");
-                add(ModItems.STAMP_STEEL_WIRE.get(), "Стальной штамп провода");
-                add(ModItems.STAMP_STEEL_CIRCUIT.get(), "Стальной штамп чипа");
-                add(ModItems.STAMP_TITANIUM_FLAT.get(), "Плоский титановый штамп");
-                add(ModItems.STAMP_TITANIUM_PLATE.get(), "Титановый штамп пластины");
-                add(ModItems.STAMP_TITANIUM_WIRE.get(), "Титановый штамп провода");
-                add(ModItems.STAMP_TITANIUM_CIRCUIT.get(), "Титановый штамп чипа");
-                add(ModItems.STAMP_OBSIDIAN_FLAT.get(), "Плоский обсидиановый штамп");
-                add(ModItems.STAMP_OBSIDIAN_PLATE.get(), "Обсидиановый штамп пластины");
-                add(ModItems.STAMP_OBSIDIAN_WIRE.get(), "Обсидиановый штамп провода");
-                add(ModItems.STAMP_OBSIDIAN_CIRCUIT.get(), "Обсидиановый штамп чипа");
-                add(ModItems.STAMP_DESH_FLAT.get(), "Плоский деш штамп");
-                add(ModItems.STAMP_DESH_PLATE.get(), "Деш штамп пластины");
-                add(ModItems.STAMP_DESH_WIRE.get(), "Деш штамп провода");
-                add(ModItems.STAMP_DESH_CIRCUIT.get(), "Деш штамп чипа");
-                add(ModItems.STAMP_DESH_9.get(), "Деш штамп 9мм");
-                add(ModItems.STAMP_DESH_44.get(), "Деш штамп .44 Magnum");
-                add(ModItems.STAMP_DESH_50.get(), "Деш штамп .50 BMG");
-                add(ModItems.STAMP_DESH_357.get(), "Деш штамп .357 Magnum");
-                add(ModItems.STAMP_IRON_357.get(), "Железный штамп .357 Magnum");
-                add(ModItems.STAMP_IRON_44.get(), "Железный штамп .44 Magnum");
-                add(ModItems.STAMP_IRON_50.get(), "Железный штамп .50 BMG");
-                add(ModItems.STAMP_IRON_9.get(), "Железный штамп 9мм");
-                add(ModItems.HEART_PIECE.get(), "Частичка сердца");
-                add(ModItems.HEART_CONTAINER.get(), "Контейнер для сердца");
-                add(ModItems.HEART_BOOSTER.get(), "Усилитель сердца");
-                add(ModItems.HEART_FAB.get(), "Фаб-сердце");
-                add(ModItems.BLACK_DIAMOND.get(), "Черный алмаз");
-                add(ModBlocks.SMOKE_BOMB.get(), "Семтекс");
-                add(ModItems.TEMPLATE_FOLDER.get(), "Папка шаблонов машин");
-                add(ModItems.ASSEMBLY_TEMPLATE.get(), "Шаблон сборочной машины: %s");
+                
                 add("tooltip.hbm_m.template_broken", "Шаблон сломан!");
                 add("tooltip.hbm_m.created_with_template_folder", "Создано с помощью Папки шаблонов машин");
                 add("tooltip.hbm_m.output", "Выход: ");
@@ -511,7 +414,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.BARREL_TCALLOY.get(), "Бочка из технециевой стали");
                 add(ModItems.ZIRCONIUM_SHARP.get(), "Осколок циркония");
                 add(ModBlocks.CRATE_CONSERVE.get(), "Ящик с консервами");
-                add(ModBlocks.CAGE_LAMP.get(), "Лампа в клетке");
                 add(ModBlocks.FLOOD_LAMP.get(), "Прожектор");
                 add(ModBlocks.B29.get(), "B-29");
                 add(ModBlocks.DORNIER.get(), "Dornier");
@@ -542,57 +444,23 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.SILO_HATCH.get(), "Малый люк");
                 add(ModBlocks.SILO_HATCH_LARGE.get(), "Люк ракетной шахты");
 
-                add(ModBlocks.DUD_SALTED.get(), "Неразорвавшаяся солёная бомба");
-                add(ModBlocks.DUD_NUKE.get(), "Неразорвавшаяся ядерная бомба");
-                add(ModBlocks.DUD_CONVENTIONAL.get(), "Неразорвавшаяся фугасная бомба");
-                add(ModBlocks.MINE_FAT.get(), "Мина 'Толстяк'");
-                add(ModBlocks.MINE_AP.get(), "Противопехотная мина");
-                add(ModItems.GRENADE_NUC.get(), "Ядерная граната");
-                add(ModItems.GRENADE_IF_HE.get(), "IF-Граната: фугасная");
-                add(ModItems.GRENADE_IF_FIRE.get(), "IF-Граната: зажигательная");
-                add(ModItems.GRENADE_IF_SLIME.get(), "IF-Граната: прыгучая");
-                add(ModItems.MULTI_DETONATOR.get(), "Мульти-детонатор");
-                add(ModItems.RANGE_DETONATOR.get(), "Детонатор дальнего действия");
-                add(ModItems.DETONATOR.get(), "Детонатор");
+        
                 add(ModBlocks.BARBED_WIRE_POISON.get(), "Колючая проволока (яд)");
                 add(ModBlocks.BARBED_WIRE_FIRE.get(), "Колючая проволока (огонь)");
                 add(ModBlocks.BARBED_WIRE_RAD.get(), "Колючая проволока (радиация)");
                 add(ModBlocks.BARBED_WIRE.get(), "Колючая проволока");
                 add(ModBlocks.BARBED_WIRE_WITHER.get(), "Колючая проволока (иссушение)");
-                add(ModBlocks.WASTE_CHARGE.get(), "Отходный заряд");
-                add(ModBlocks.GIGA_DET.get(), "Чёртов заряд горняка");
-                add(ModBlocks.NUCLEAR_CHARGE.get(), "Ядерный заряд");
-                add(ModBlocks.C4.get(), "Заряд C4");
                 add(ModItems.DEFUSER.get(), "Устройство для разминирования");
                 add(ModItems.CROWBAR.get(), "Лом");
-                add(ModItems.DEPTH_ORES_SCANNER.get(), "Сканер глубинных кластеров");
-                add(ModItems.OIL_DETECTOR.get(), "Детектор нефти");
-
-                add(ModItems.GHIORSIUM_CLADDING.get(), "Прокладка из гиорсия");
-                add(ModItems.DESH_CLADDING.get(), "Обшивка из деш");
-                add(ModItems.RUBBER_CLADDING.get(), "Резиновая обшивка");
-                add(ModItems.LEAD_CLADDING.get(), "Свинцовая обшивка");
-                add(ModItems.PAINT_CLADDING.get(), "Свинцовая краска");
+               
                 add(ModItems.CRT_DISPLAY.get(), "Электро-лучевая трубка");
                 add(ModItems.MAN_CORE.get(), "Плутониевое ядро");
-                add(ModItems.GRENADESMART.get(), "УМная отскок граната");
-                add(ModItems.GRENADESLIME.get(), "Отскок-отскок граната");
-                add(ModItems.GRENADE.get(), "Отскок граната");
-                add(ModItems.GRENADEHE.get(), "Мощная отскок граната");
-                add(ModItems.GRENADEFIRE.get(), "Зажигательная отскок граната");
-
-                add(ModItems.GRENADE_IF.get(), "IF граната");
-
-                add("item.hbm_m.radaway", "Антирадин");
+    
                 add("item.hbm_m.wood_ash_powder", "Древесный пепел");
-                add("effect.hbm_m.radaway", "Очищение от радиации");
 
 
 // ru_ru case
-                add(ModBlocks.CONVERTER_BLOCK.get(), "Конвертер энергии");
-                add(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get(), "Динейтрониевое энергохранилище");
-                add(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get(), "Шрабидиевое энергохранилище");
-                add(ModBlocks.MACHINE_BATTERY_LITHIUM.get(), "Литиевое энергохранилище");
+
                 add(ModBlocks.SEQUESTRUM_ORE.get(), "Селитровая руда");
                 add(ModItems.SEQUESTRUM.get(), "Селитра");
                 // русский:
@@ -641,11 +509,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CONCRETE_WHITE.get(), "Белый бетон");
                 add(ModBlocks.CONCRETE_YELLOW.get(), "Жёлтый бетон");
                 add(ModBlocks.CONCRETE_FLAT.get(), "Плоский бетон");
-                add(ModBlocks.DEPTH_BRICK.get(), "Глубинные кирпичи");
-                add(ModBlocks.DEPTH_NETHER_BRICK.get(), "Адские глубинные кирпичи");
-                add(ModBlocks.DEPTH_NETHER_TILES.get(), "Адская глубинная плитка");
-                add(ModBlocks.DEPTH_STONE_NETHER.get(), "Адский глубинный камень");
-                add(ModBlocks.DEPTH_TILES.get(), "Глубинная плитка");
                 add(ModBlocks.GNEISS_BRICK.get(), "Кирпичи из графитового сланца");
                 add(ModBlocks.GNEISS_CHISELED.get(), "Резной графитовый сланец");
                 add(ModBlocks.GNEISS_STONE.get(), "Графитовый сланец");
@@ -681,10 +544,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CONCRETE_MAGENTA_SLAB.get(), "Пурпурная бетонная плита");
                 add(ModBlocks.CONCRETE_ORANGE_SLAB.get(), "Оранжевая бетонная плита");
                 add(ModBlocks.CONCRETE_PINK_SLAB.get(), "Розовая бетонная плита");
-                add(ModItems.AIRSTRIKE_TEST.get(), "Устройство для обозначения авиаудара");
-                add(ModItems.AIRSTRIKE_HEAVY.get(), "Устройство для обозначения авиаудара");
-                add(ModItems.AIRSTRIKE_AGENT.get(), "Устройство для обозначения авиаудара");
-                add(ModItems.AIRSTRIKE_NUKE.get(), "Устройство для обозначения авиаудара");
+            
                 add(ModBlocks.CONCRETE_PURPLE_SLAB.get(), "Фиолетовая бетонная плита");
                 add(ModBlocks.CONCRETE_RED_SLAB.get(), "Красная бетонная плита");
                 add(ModBlocks.CONCRETE_SILVER_SLAB.get(), "Серебристая бетонная плита");
@@ -753,10 +613,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CONCRETE_REBAR_STAIRS.get(), "Ступени из грубого бетона");
                 add(ModBlocks.CONCRETE_FLAT_STAIRS.get(), "Ступени из плоского бетона");
                 add(ModBlocks.CONCRETE_TILE_STAIRS.get(), "Ступени из бетонной плитки");
-                add(ModBlocks.DEPTH_BRICK_STAIRS.get(), "Ступени из глубинных кирпичей");
-                add(ModBlocks.DEPTH_TILES_STAIRS.get(), "Ступени из глубинной плитки");
-                add(ModBlocks.DEPTH_NETHER_BRICK_STAIRS.get(), "Ступени из адских глубинных кирпичей");
-                add(ModBlocks.DEPTH_NETHER_TILES_STAIRS.get(), "Ступени из адской глубинной плитки");
                 add(ModBlocks.GNEISS_TILE_STAIRS.get(), "Ступени из плитки графитового сланца");
                 add(ModBlocks.GNEISS_BRICK_STAIRS.get(), "Ступени из кирпичей графитового сланца");
                 add(ModBlocks.BRICK_BASE_STAIRS.get(), "Ступени из отполированных кирпичей");
@@ -775,14 +631,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.METEOR_BRICK_MOSSY_STAIRS.get(), "Ступени из замшелых метеоритных кирпичей");
                 add(ModBlocks.METEOR_CRUSHED_STAIRS.get(), "Ступени из дроблёного метеорита");
 
-
-                add(ModBlocks.DEPTH_STONE.get(), "Глубинный камень");
-                add(ModBlocks.DEPTH_CINNABAR.get(), "Глубинная киноварная руда");
-                add(ModBlocks.DEPTH_IRON.get(), "Глубинная железная руда");
-                add(ModBlocks.DEPTH_ZIRCONIUM.get(), "Глубинная циркониевая руда");
-                add(ModBlocks.DEPTH_BORAX.get(), "Глубинная бура");
-                add(ModBlocks.DEPTH_TUNGSTEN.get(), "Глубинная вольфрамовая руда");
-                add(ModBlocks.DEPTH_TITANIUM.get(), "Глубинная титановая руда");
                 add(ModBlocks.BEDROCK_OIL.get(), "Бедроковая нефть");
                 add(ModBlocks.BURNED_GRASS.get(), "Выжженная трава");
                 add(ModBlocks.WASTE_PLANKS.get(), "Выжженные доски");
@@ -813,10 +661,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.MOTOR_BISMUTH.get(), "Висмутовый мотор");
                 add(ModItems.MOTOR_DESH.get(), "Деш мотор");
                 add(ModItems.MOTOR.get(), "Мотор");
-                add(ModItems.BLADE_TEST.get(), "Деш лезвия");
-                add(ModItems.BLADE_STEEL.get(), "Стальные лезвия");
-                add(ModItems.BLADE_TITANIUM.get(), "Титановые лезвия");
-                add(ModItems.BLADE_ALLOY.get(), "Лезвия из продвинутого сплава");
+                
                 add(ModItems.BORAX.get(), "Бура");
                 add(ModItems.BALL_TNT.get(), "Взрывчатка");
                 add(ModItems.BOLT_STEEL.get(), "Болт");
@@ -1032,11 +877,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.uranium_block", "Урановый блок");
                 add("block.hbm_m.plutonium_block", "Плутониевый блок");
                 add("block.hbm_m.plutonium_fuel_block", "Блок плутониевого топлива");
-                add("block.hbm_m.polonium210_block", "Блок полония-210");
-                add("block.hbm_m.armor_table", "Стол модификации брони");
-                add("block.hbm_m.machine_assembler", "Сборочная машина (Старая)");
-                add("block.hbm_m.advanced_assembly_machine", "Сборочная машина");
-                add(ModBlocks.FLUID_TANK.get(), "Цистерна");
                 add("block.hbm_m.machine_battery", "Энергохранилище");
 
 
@@ -1167,10 +1007,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.armor_table", "Стол модификации брони");
                 add("container.hbm_m.machine_assembler", "Сборочная машина (Старая)");
                 add("container.hbm_m.advanced_assembly_machine", "Сборочная машина");
-                add(ModBlocks.ORE_ACIDIZER.get(), "Рудный окислитель (WIP)");
-                add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Башня гидроразрыва пласта (WIP)");
-                add(ModBlocks.CHEMICAL_PLANT.get(), "Химический завод (WIP)");
-                add(ModBlocks.CENTRIFUGE.get(), "Центрифуга (WIP)");
                 add("container.hbm_m.wood_burner", "Дровяной генератор");
                 add("container.hbm_m.machine_battery", "Энергохранилище");
                 add("container.hbm_m.press", "Пресс");
@@ -1563,31 +1399,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_leggings", "Starmetal Leggings");
                 add("item.hbm_m.starmetal_boots", "Starmetal Boots");
 
-                add(ModItems.T51_HELMET.get(), "T-51b Power Armor Helmet");
-                add(ModItems.T51_CHESTPLATE.get(), "T-51b Power Armor Chestplate");
-                add(ModItems.T51_LEGGINGS.get(), "T-51b Power Armor Leggings");
-                add(ModItems.T51_BOOTS.get(), "T-51b Power Armor Boots");
-
-                add(ModItems.AJR_HELMET.get(), "Steel Ranger Helmet");
-                add(ModItems.AJR_CHESTPLATE.get(), "Steel Ranger Chestplate");
-                add(ModItems.AJR_LEGGINGS.get(), "Steel Ranger Leggings");
-                add(ModItems.AJR_BOOTS.get(), "Steel Ranger Boots");
-
-                add(ModItems.AJRO_HELMET.get(), "AJR Power Armor Helmet");
-                add(ModItems.AJRO_CHESTPLATE.get(), "AJR Power Armor Chestplate");
-                add(ModItems.AJRO_LEGGINGS.get(), "AJR Power Armor Leggings");
-                add(ModItems.AJRO_BOOTS.get(), "AJR Power Armor Boots");
-
-                add(ModItems.BISMUTH_HELMET.get(), "Bismuth Power Armor Helmet");
-                add(ModItems.BISMUTH_CHESTPLATE.get(), "Bismuth Power Armor Chestplate");
-                add(ModItems.BISMUTH_LEGGINGS.get(), "Bismuth Power Armor Leggings");
-                add(ModItems.BISMUTH_BOOTS.get(), "Bismuth Power Armor Boots");
-
-                add(ModItems.DNT_HELMET.get(), "DNT Nano Suit Helmet");
-                add(ModItems.DNT_CHESTPLATE.get(), "DNT Nano Suit Chestplate");
-                add(ModItems.DNT_LEGGINGS.get(), "DNT Nano Suit Leggings");
-                add(ModItems.DNT_BOOTS.get(), "DNT Nano Suit Boots");
-
 
                 // ITEMS
                 add(ModItems.CANNED_ASBESTOS.get(), "Canned Asbestos");
@@ -1630,32 +1441,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.CAN_SMART.get(), "Can of Smart");
 
 
-                add(ModItems.BATTERY_POTATO.get(), "Potato Battery");
-                add(ModItems.BATTERY.get(), "Battery");
-                add(ModItems.BATTERY_RED_CELL.get(), "Red Energy Cell");
-                add(ModItems.BATTERY_RED_CELL_6.get(), "Red Energy Cell x6");
-                add(ModItems.BATTERY_RED_CELL_24.get(), "Red Energy Cell x24");
-                add(ModItems.BATTERY_ADVANCED.get(), "Advanced Battery");
-                add(ModItems.BATTERY_ADVANCED_CELL.get(), "Advanced Energy Cell");
-                add(ModItems.BATTERY_ADVANCED_CELL_4.get(), "Advanced Energy Cell x4");
-                add(ModItems.BATTERY_ADVANCED_CELL_12.get(), "Advanced Energy Cell x12");
-                add(ModItems.BATTERY_LITHIUM.get(), "Lithium Battery");
-                add(ModItems.BATTERY_LITHIUM_CELL.get(), "Lithium Energy Cell");
-                add(ModItems.BATTERY_LITHIUM_CELL_3.get(), "Lithium Energy Cell x3");
-                add(ModItems.BATTERY_LITHIUM_CELL_6.get(), "Lithium Energy Cell x6");
-                add(ModItems.BATTERY_SCHRABIDIUM.get(), "Schrabidium Battery");
-                add(ModItems.BATTERY_SCHRABIDIUM_CELL.get(), "Schrabidium Energy Cell");
-                add(ModItems.BATTERY_SCHRABIDIUM_CELL_2.get(), "Schrabidium Energy Cell x2");
-                add(ModItems.BATTERY_SCHRABIDIUM_CELL_4.get(), "Schrabidium Energy Cell x4");
-                add(ModItems.BATTERY_SPARK.get(), "Spark Battery");
-                add(ModItems.BATTERY_TRIXITE.get(), "Trixite Battery");
-                add(ModItems.BATTERY_SPARK_CELL_6.get(), "Spark Energy Cell x6");
-                add(ModItems.BATTERY_SPARK_CELL_25.get(), "Spark Energy Cell x25");
-                add(ModItems.BATTERY_SPARK_CELL_100.get(), "Spark Energy Cell x100");
-                add(ModItems.BATTERY_SPARK_CELL_1000.get(), "Spark Energy Cell x1000");
-                add(ModItems.BATTERY_SPARK_CELL_2500.get(), "Spark Energy Cell x2500");
-                add(ModItems.BATTERY_SPARK_CELL_10000.get(), "Spark Energy Cell x10000");
-                add(ModItems.BATTERY_SPARK_CELL_POWER.get(), "Spark Power Cell");
+            
 
                 add(ModItems.WIRE_RED_COPPER.get(), "Red Copper Wire");
                 add(ModItems.WIRE_COPPER.get(), "Copper Wire");
@@ -1668,38 +1454,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.WIRE_SCHRABIDIUM.get(), "Shrabidium Wire");
                 add(ModItems.WIRE_ADVANCED_ALLOY.get(), "Advanced Alloy Wire");
 
-                add(ModItems.STAMP_STONE_FLAT.get(), "Stone Flat Stamp");
-                add(ModItems.STAMP_STONE_PLATE.get(), "Stone Plate Stamp");
-                add(ModItems.STAMP_STONE_WIRE.get(), "Stone Wire Stamp");
-                add(ModItems.STAMP_STONE_CIRCUIT.get(), "Stone Circuit Stamp");
-                add(ModItems.STAMP_IRON_FLAT.get(), "Iron Flat Stamp");
-                add(ModItems.STAMP_IRON_PLATE.get(), "Iron Plate Stamp");
-                add(ModItems.STAMP_IRON_WIRE.get(), "Iron Wire Stamp");
-                add(ModItems.STAMP_IRON_CIRCUIT.get(), "Iron Circuit Stamp");
-                add(ModItems.STAMP_STEEL_FLAT.get(), "Steel Flat Stamp");
-                add(ModItems.STAMP_STEEL_PLATE.get(), "Steel Plate Stamp");
-                add(ModItems.STAMP_STEEL_WIRE.get(), "Steel Wire Stamp");
-                add(ModItems.STAMP_STEEL_CIRCUIT.get(), "Steel Circuit Stamp");
-                add(ModItems.STAMP_TITANIUM_FLAT.get(), "Titanium Flat Stamp");
-                add(ModItems.STAMP_TITANIUM_PLATE.get(), "Titanium Plate Stamp");
-                add(ModItems.STAMP_TITANIUM_WIRE.get(), "Titanium Wire Stamp");
-                add(ModItems.STAMP_TITANIUM_CIRCUIT.get(), "Titanium Circuit Stamp");
-                add(ModItems.STAMP_OBSIDIAN_FLAT.get(), "Obsidian Flat Stamp");
-                add(ModItems.STAMP_OBSIDIAN_PLATE.get(), "Obsidian Plate Stamp");
-                add(ModItems.STAMP_OBSIDIAN_WIRE.get(), "Obsidian Wire Stamp");
-                add(ModItems.STAMP_OBSIDIAN_CIRCUIT.get(), "Obsidian Circuit Stamp");
-                add(ModItems.STAMP_DESH_FLAT.get(), "Desh Flat Stamp");
-                add(ModItems.STAMP_DESH_PLATE.get(), "Desh Plate Stamp");
-                add(ModItems.STAMP_DESH_WIRE.get(), "Desh Wire Stamp");
-                add(ModItems.STAMP_DESH_CIRCUIT.get(), "Desh Circuit Stamp");
-                add(ModItems.STAMP_DESH_9.get(), "Desh 9mm Stamp");
-                add(ModItems.STAMP_DESH_44.get(), "Desh .44 Magnum Stamp");
-                add(ModItems.STAMP_DESH_50.get(), "Desh .50 BMG Stamp");
-                add(ModItems.STAMP_DESH_357.get(), "Desh .357 Magnum Stamp");
-                add(ModItems.STAMP_IRON_357.get(), "Iron .357 Magnum Stamp");
-                add(ModItems.STAMP_IRON_44.get(), "Iron .44 Magnum Stamp");
-                add(ModItems.STAMP_IRON_50.get(), "Iron .50 BMG Stamp");
-                add(ModItems.STAMP_IRON_9.get(), "Iron 9mm Stamp");
+                
 
 
                 add(ModItems.QUANTUM_CHIP.get(), "Quantum Chip");
@@ -1732,13 +1487,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.METAL_ROD.get(), "Metal Rod");
                 
 
-                add(ModItems.GRENADE.get(), "Bouncing Grenade");
-                add(ModItems.GRENADEHE.get(), "Powerful Bouncing Grenade");
-                add(ModItems.GRENADEFIRE.get(), "Fire Bouncing Grenade");
-                add(ModItems.GRENADESLIME.get(), "Bouncy Bouncing Grenade");
-                add(ModItems.GRENADESMART.get(), "Smart Bouncing Grenade");
-
-                add(ModItems.GRENADE_IF.get(), "IF Grenade");
+                
 
                 add("item.hbm_m.geiger_counter", "Geiger Counter");
                 add("item.hbm_m.dosimeter", "Dosimeter");
@@ -1754,23 +1503,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.recipe_from_group", "From Group:");
 
                 add("item.hbm_m.heart_piece", "Heart Piece");
-                add(ModItems.HEART_CONTAINER.get(), "Heart Container");
-                add(ModItems.HEART_BOOSTER.get(), "Heart Booster");
-                add(ModItems.HEART_FAB.get(), "Heart of Darkness");
-                add(ModItems.BLACK_DIAMOND.get(), "Black Diamond");
-
-                add(ModItems.GHIORSIUM_CLADDING.get(), "Ghiorsium Cladding");
-                add(ModItems.DESH_CLADDING.get(), "Desh Cladding");
-                add(ModItems.RUBBER_CLADDING.get(), "Rubber Cladding");
-                add(ModItems.LEAD_CLADDING.get(), "Lead Cladding");
-                add(ModItems.PAINT_CLADDING.get(), "Lead Paint");
+                
 
                 add("item.hbm_m.radaway", "Radaway");
                 add("effect.hbm_m.radaway", "Radiation cleansing");
                 add("sounds.hbm_m.radaway_use", "Use of radaway");
 
-                add(ModItems.TEMPLATE_FOLDER.get(), "Template Folder");
-                add(ModItems.ASSEMBLY_TEMPLATE.get(), "Assembly Template: %s");
+            
                 add("tooltip.hbm_m.template_broken", "Broken template");
                 add("tooltip.hbm_m.created_with_template_folder", "Created via Template Folder");
                 add("tooltip.hbm_m.output", "Output: ");
@@ -1909,13 +1648,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 // английский:
                 add(ModItems.MAN_CORE.get(), "Plutonium Core");
                 add(ModItems.CRT_DISPLAY.get(), "CRT");
-                add(ModBlocks.DEPTH_STONE.get(), "Depth Stone");
-                add(ModBlocks.DEPTH_CINNABAR.get(), "Deep Cinnabar Ore");
-                add(ModBlocks.DEPTH_IRON.get(), "Deep Iron Ore");
-                add(ModBlocks.DEPTH_ZIRCONIUM.get(), "Deep Zirconium Ore");
-                add(ModBlocks.DEPTH_BORAX.get(), "Deep Borax Ore");
-                add(ModBlocks.DEPTH_TUNGSTEN.get(), "Deep Tungsten Ore");
-                add(ModBlocks.DEPTH_TITANIUM.get(), "Deep Titanium Ore");
                 add(ModBlocks.BEDROCK_OIL.get(), "Bedrock Oil");
                 add(ModBlocks.BURNED_GRASS.get(), "Burned Grass");
                 add(ModBlocks.WASTE_PLANKS.get(), "Burned Planks");
@@ -1972,11 +1704,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CONCRETE_WHITE.get(), "White Concrete");
                 add(ModBlocks.CONCRETE_YELLOW.get(), "Yellow Concrete");
                 add(ModBlocks.CONCRETE_FLAT.get(), "Flat Concrete");
-                add(ModBlocks.DEPTH_BRICK.get(), "Depth Bricks");
-                add(ModBlocks.DEPTH_NETHER_BRICK.get(), "Depth Nether Bricks");
-                add(ModBlocks.DEPTH_NETHER_TILES.get(), "Depth Nether Tiles");
-                add(ModBlocks.DEPTH_STONE_NETHER.get(), "Depth Nether Stone");
-                add(ModBlocks.DEPTH_TILES.get(), "Depth Tiles");
                 add(ModBlocks.GNEISS_BRICK.get(), "Gneiss Brick");
                 add(ModBlocks.GNEISS_CHISELED.get(), "Chiseled Gneiss");
                 add(ModBlocks.GNEISS_STONE.get(), "Graphite Slate");
@@ -2081,10 +1808,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CONCRETE_REBAR_STAIRS.get(), "Rough Concrete Stairs");
                 add(ModBlocks.CONCRETE_FLAT_STAIRS.get(), "Flat Concrete Stairs");
                 add(ModBlocks.CONCRETE_TILE_STAIRS.get(), "Concrete Tile Stairs");
-                add(ModBlocks.DEPTH_BRICK_STAIRS.get(), "Depth Bricks Stairs");
-                add(ModBlocks.DEPTH_TILES_STAIRS.get(), "Depth Tiles Stairs");
-                add(ModBlocks.DEPTH_NETHER_BRICK_STAIRS.get(), "Depth Nether Bricks Stairs");
-                add(ModBlocks.DEPTH_NETHER_TILES_STAIRS.get(), "Depth Nether Tiles Stairs");
                 add(ModBlocks.GNEISS_TILE_STAIRS.get(), "Graphite Slate Tile Stairs");
                 add(ModBlocks.GNEISS_BRICK_STAIRS.get(), "Gneiss Brick Stairs");
                 add(ModBlocks.BRICK_BASE_STAIRS.get(), "Polished Bricks Stairs");
@@ -2104,10 +1827,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.METEOR_CRUSHED_STAIRS.get(), "Crushed Meteor Stairs");
 
                 add(ModItems.COIL_TUNGSTEN.get(), "Heating Element");
-                add(ModBlocks.CONVERTER_BLOCK.get(), "Energy Converter");
-                add(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get(), "Spark Battery");
-                add(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get(), "Shrabidium Battery");
-                add(ModBlocks.MACHINE_BATTERY_LITHIUM.get(), "Lithium Battery");
                 // en_us case
 
                 add(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS.get(), "Magnetized Tungsten Torus Coil");
@@ -2127,16 +1846,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.POWDER_COAL_SMALL.get(), "Tiny Coal Powder");
                 add(ModItems.BILLET_PLUTONIUM.get(), "Plutonium Billet");
 
-                add(ModItems.BLADE_TEST.get(), "Desh Blades");
-                add(ModItems.BLADE_STEEL.get(), "Steel Blades");
-                add(ModItems.BLADE_TITANIUM.get(), "Titanium Blades");
-                add(ModItems.BLADE_ALLOY.get(), "Advanced Alloy Blades");
                 add(ModItems.BORAX.get(), "Borax");
                 add(ModItems.BALL_TNT.get(), "TNT Ball");
                 add(ModItems.BOLT_STEEL.get(), "Steel Bolt");
                 add(ModItems.ZIRCONIUM_SHARP.get(), "Zirconium Sharp");
                 add(ModBlocks.CRATE_CONSERVE.get(), "Canned Goods Crate");
-                add(ModBlocks.CAGE_LAMP.get(), "Cage Lamp");
                 add(ModBlocks.FLOOD_LAMP.get(), "Flood Lamp");
                 add(ModBlocks.B29.get(), "B-29");
                 add(ModBlocks.DORNIER.get(), "Dornier");
@@ -2171,35 +1885,15 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.TRANSITION_SEAL.get(), "Transition Seal (WIP)");
                 add(ModBlocks.SLIDE_DOOR.get(), "Sliding Blast Door (WIP)");
 
-
-                add(ModBlocks.DUD_SALTED.get(), "Unexploded Salted Bomb");
-                add(ModBlocks.DUD_NUKE.get(), "Unexploded Nuclear Bomb");
-                add(ModBlocks.DUD_CONVENTIONAL.get(), "Unexploded High-Explosive Bomb");
-                add(ModBlocks.MINE_FAT.get(), "FatMan Mine");
-                add(ModBlocks.MINE_AP.get(), "Anti-Personnel Mine");
-                add(ModItems.GRENADE_NUC.get(), "Nuclear Grenade");
-                add(ModItems.GRENADE_IF_HE.get(), "IF Grenade: HE");
-                add(ModItems.GRENADE_IF_FIRE.get(), "IF Grenade: Incendiary");
-                add(ModItems.GRENADE_IF_SLIME.get(), "IF Grenade: Bouncy");
-                add(ModItems.MULTI_DETONATOR.get(), "Multi Detonator");
-                add(ModItems.RANGE_DETONATOR.get(), "Range Detonator");
-                add(ModItems.DETONATOR.get(), "Detonator");
                 add(ModBlocks.BARBED_WIRE_POISON.get(), "Poison Barbed Wire");
                 add(ModBlocks.BARBED_WIRE_FIRE.get(), "Fire Barbed Wire");
                 add(ModBlocks.BARBED_WIRE_RAD.get(), "Radiation Barbed Wire");
                 add(ModBlocks.BARBED_WIRE.get(), "Barbed Wire");
                 add(ModBlocks.BARBED_WIRE_WITHER.get(), "Wither Barbed Wire");
-                add(ModBlocks.WASTE_CHARGE.get(), "Waste Charge");
-                add(ModBlocks.GIGA_DET.get(), "Giga Det");
-                add(ModBlocks.NUCLEAR_CHARGE.get(), "Nuclear Charge");
-                add(ModBlocks.C4.get(), "C4 Charge");
+
                 add(ModItems.DEFUSER.get(), "Defuser");
                 add(ModItems.CROWBAR.get(), "Crowbar");
-                add(ModItems.DEPTH_ORES_SCANNER.get(), "Depth Ore Scanner");
-                add(ModItems.OIL_DETECTOR.get(), "Oil Detector");
 
-
-                add(ModBlocks.SMOKE_BOMB.get(), "Semtex");
                 add(ModItems.NUGGET_SILICON.get(), "Silicon Nugget");
                 add(ModItems.BILLET_SILICON.get(), "Silicon Billet");
                 add(ModItems.PLATE_GOLD.get(), "Golden Plate");
@@ -2394,11 +2088,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.armor_table", "Armor Modification Table");
                 add("block.hbm_m.machine_assembler", "Assembly Machine (Legacy)");
                 add("block.hbm_m.advanced_assembly_machine", "Assembly Machine");
-                add(ModBlocks.ORE_ACIDIZER.get(), "Ore Acidizer (WIP)");
-                add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Hydraulic Fracking Tower (WIP)");
-                add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant (WIP)");
-                add(ModBlocks.CENTRIFUGE.get(), "Centrifuge (WIP)");
-                add(ModBlocks.FLUID_TANK.get(), "Tank (WIP)");
                 add("block.hbm_m.machine_battery", "Machine Battery");
                 add("block.hbm_m.shredder", "Shredder");
                 add("block.hbm_m.wood_burner", "Wood Burner Generator");
@@ -2449,10 +2138,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 // ORES
                 add(ModBlocks.SEQUESTRUM_ORE.get(), "Salpeter Ore");
                 add(ModItems.SEQUESTRUM.get(), "Salpeter");
-                add(ModItems.AIRSTRIKE_TEST.get(), "Airstrike Designator");
-                add(ModItems.AIRSTRIKE_HEAVY.get(), "Airstrike Designator");
-                add(ModItems.AIRSTRIKE_AGENT.get(), "Airstrike Designator");
-                add(ModItems.AIRSTRIKE_NUKE.get(), "Airstrike Designator");
                 add(ModBlocks.RESOURCE_ASBESTOS.get(), "Asbestos Cluster");
                 add(ModBlocks.RESOURCE_BAUXITE.get(), "Bauxite");
                 add(ModBlocks.RESOURCE_HEMATITE.get(), "Hematite");

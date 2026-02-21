@@ -56,18 +56,6 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
             }
         }
 
-        // 1.1) Батареи должны сохранять заряд/режимы в BlockEntityTag при дропе.
-        dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY.get());
-        dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY_LITHIUM.get());
-        dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get());
-        dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get());
-
-        // 2)  ПЕРЕОПРЕДЕЛЯЕМ для ящиков - ПУСТЫЕ таблицы!
-        dropEmptyTable(ModBlocks.CRATE_IRON.get());
-        dropEmptyTable(ModBlocks.CRATE_STEEL.get());
-        dropEmptyTable(ModBlocks.CRATE_DESH.get());
-        dropEmptyTable(ModBlocks.CRATE_TUNGSTEN.get());
-        dropEmptyTable(ModBlocks.CRATE_TEMPLATE.get());
         // Фантомные части мультиблока не должны дропаться отдельно.
         dropEmptyTable(ModBlocks.UNIVERSAL_MACHINE_PART.get());
 
@@ -162,39 +150,6 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 1.0f, 3.0f
         );
 
-
-        dropOreType2(
-                ModBlocks.DEPTH_CINNABAR.get(),
-                ModBlocks.DEPTH_CINNABAR.get(),
-                ModItems.CINNABAR.get(),
-                3.0f, 5.0f
-        );
-
-        dropOreType2(
-                ModBlocks.DEPTH_BORAX.get(),
-                ModBlocks.DEPTH_BORAX.get(),
-                ModItems.BORAX.get(),
-                3.0f, 5.0f
-        );
-
-        dropOreType2(
-                ModBlocks.DEPTH_TITANIUM.get(),
-                ModBlocks.DEPTH_TITANIUM.get(),
-                ModItems.TITANIUM_RAW.get(),
-                3.0f, 5.0f
-        );
-        dropOreType2(
-                ModBlocks.DEPTH_TUNGSTEN.get(),
-                ModBlocks.DEPTH_TUNGSTEN.get(),
-                ModItems.TUNGSTEN_RAW.get(),
-                3.0f, 5.0f
-        );
-        dropOreType2(
-                ModBlocks.DEPTH_ZIRCONIUM.get(),
-                ModBlocks.DEPTH_ZIRCONIUM.get(),
-                ModItems.ZIRCONIUM_SHARP.get(),
-                3.0f, 5.0f
-        );
         dropOreType2(
                 ModBlocks.FLUORITE_ORE.get(),
                 ModBlocks.FLUORITE_ORE.get(),
@@ -207,12 +162,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModItems.SULFUR.get(),
                 1.0f, 3.0f
         );
-        dropOreType2(
-                ModBlocks.LIGNITE_ORE.get(),
-                ModBlocks.LIGNITE_ORE.get(),
-                ModItems.LIGNITE.get(),
-                1.0f, 3.0f
-        );
+
         dropOreType2(
                 ModBlocks.RAREGROUND_ORE.get(),
                 ModBlocks.RAREGROUND_ORE.get(),
@@ -241,12 +191,6 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModBlocks.CINNABAR_ORE_DEEPSLATE.get(),
                 ModBlocks.CINNABAR_ORE_DEEPSLATE.get(),
                 ModItems.CINNABAR.get(),
-                1.0f, 3.0f
-        );
-        dropOreType2(
-                ModBlocks.DEPTH_IRON.get(),
-                ModBlocks.DEPTH_IRON.get(),
-                Items.RAW_IRON,
                 1.0f, 3.0f
         );
         dropOreType2(
@@ -312,29 +256,6 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         this.add(block, tableBuilder);
     }
 
-    private void dropMachineBatteryWithNbt(Block block) {
-        LootTable.Builder tableBuilder = LootTable.lootTable()
-                .withPool(
-                        LootPool.lootPool()
-                                .setRolls(ConstantValue.exactly(1.0f))
-                                .setBonusRolls(ConstantValue.exactly(0.0f))
-                                .add(this.applyExplosionDecay(
-                                        block,
-                                        LootItem.lootTableItem(block.asItem())
-                                                .apply(
-                                                        CopyNbtFunction.copyData(ContextNbtProvider.BLOCK_ENTITY)
-                                                                .copy("Energy", "BlockEntityTag.Energy", CopyNbtFunction.MergeStrategy.REPLACE)
-                                                                .copy("lastEnergy", "BlockEntityTag.lastEnergy", CopyNbtFunction.MergeStrategy.REPLACE)
-                                                                .copy("energyDelta", "BlockEntityTag.energyDelta", CopyNbtFunction.MergeStrategy.REPLACE)
-                                                                .copy("modeOnNoSignal", "BlockEntityTag.modeOnNoSignal", CopyNbtFunction.MergeStrategy.REPLACE)
-                                                                .copy("modeOnSignal", "BlockEntityTag.modeOnSignal", CopyNbtFunction.MergeStrategy.REPLACE)
-                                                                .copy("priority", "BlockEntityTag.priority", CopyNbtFunction.MergeStrategy.REPLACE)
-                                                                .copy("Inventory", "BlockEntityTag.Inventory", CopyNbtFunction.MergeStrategy.REPLACE)
-                                                )
-                                ))
-                );
-        this.add(block, tableBuilder);
-    }
     /**
      * Руда тип 1:
      * - При Silk Touch дропает блок руды.

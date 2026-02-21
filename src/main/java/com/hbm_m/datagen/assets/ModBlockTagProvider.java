@@ -63,8 +63,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 ModBlocks.WASTE_PLANKS.get(),
                 ModBlocks.CRATE.get(),        // Деревянный ящик
                 ModBlocks.CRATE_WEAPON.get(), // Оружейный ящик (обычно дерево)
-                ModBlocks.DOOR_OFFICE.get(),  // Офисная дверь (обычно дерево)
-                ModBlocks.WOOD_BURNER.get()   // В названии Wood, возможно логично рубить топором? (если нет - уберите)
+                ModBlocks.DOOR_OFFICE.get()  // Офисная дверь (обычно дерево)
         );
 
         // В. Блоки для КИРКИ СЛАБОГО УРОВНЯ (Каменная кирка и выше)

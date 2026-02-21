@@ -132,41 +132,14 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.BILLET_PLUTONIUM);
         simpleItem(ModItems.BALL_TNT);
         simpleItem(ModItems.DEFUSER);
-        simpleItem(ModItems.AIRSTRIKE_AGENT);
         simpleItem(ModItems.SCREWDRIVER);
         simpleItem(ModItems.CROWBAR);
-        simpleItem(ModItems.OIL_DETECTOR);
-        simpleItem(ModItems.MULTI_DETONATOR);
-        simpleItem(ModItems.AIRSTRIKE_TEST);
-        simpleItem(ModItems.AIRSTRIKE_HEAVY);
-        simpleItem(ModItems.DETONATOR);
         simpleItem(ModItems.SCRAP);
         simpleItem(ModItems.CRT_DISPLAY);
         simpleItem(ModItems.SEQUESTRUM);
         simpleItem(ModItems.MAN_CORE);
-        simpleItem(ModItems.BLADE_STEEL);
-        simpleItem(ModItems.BLADE_TITANIUM);
-        simpleItem(ModItems.BLADE_ALLOY);
-        simpleItem(ModItems.BLADE_TEST);
-        simpleItem(ModItems.ALLOY_SWORD);
-        simpleItem(ModItems.GEIGER_COUNTER);
-        simpleItem(ModItems.DOSIMETER);
-        simpleItem(ModItems.HEART_PIECE);
-        simpleItem(ModItems.HEART_CONTAINER);
-        simpleItem(ModItems.HEART_BOOSTER);
-        simpleItem(ModItems.HEART_FAB);
-        simpleItem(ModItems.BLACK_DIAMOND);
-        simpleItem(ModItems.GHIORSIUM_CLADDING);
-        simpleItem(ModItems.DESH_CLADDING);
-        simpleItem(ModItems.LEAD_CLADDING);
-        simpleItem(ModItems.RUBBER_CLADDING);
-        simpleItem(ModItems.PAINT_CLADDING);
-        simpleItem(ModItems.RADAWAY);
-        simpleItem(ModItems.CREATIVE_BATTERY);
-        simpleItem(ModItems.TEMPLATE_FOLDER);
+
         simpleItem(ModItems.STRAWBERRY);
-        simpleItem(ModItems.INFINITE_WATER_500);
-        simpleItem(ModItems.INFINITE_WATER_5000);
 
         simpleItem(ModItems.LIMESTONE);
         simpleItem(ModItems.MALACHITE_CHUNK);
@@ -210,11 +183,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.CAN_REDBOMB);
         simpleItem(ModItems.CAN_SMART);
 
-        simpleItem(ModItems.GRENADE_NUC);
-        simpleItem(ModItems.GRENADE_IF_HE);
-        simpleItem(ModItems.GRENADE_IF_FIRE);
-        simpleItem(ModItems.GRENADE_IF_SLIME);
-        simpleItem(ModItems.GRENADE_IF);
         simpleItem(ModItems.BOLT_STEEL);
         simpleItem(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS);
         simpleItem(ModItems.COIL_MAGNETIZED_TUNGSTEN);
@@ -227,35 +195,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.MOTOR_BISMUTH);
         simpleItem(ModItems.MOTOR_DESH);
         simpleItem(ModItems.MOTOR);
-        simpleItem(ModItems.BATTERY_SCHRABIDIUM);
-        simpleItem(ModItems.BATTERY_POTATO);
-        simpleItem(ModItems.BATTERY);
-        simpleItem(ModItems.AIRSTRIKE_NUKE);
-        simpleItem(ModItems.BATTERY_RED_CELL);
-        simpleItem(ModItems.BATTERY_RED_CELL_6);
-        simpleItem(ModItems.BATTERY_RED_CELL_24);
-        simpleItem(ModItems.BATTERY_ADVANCED);
-        simpleItem(ModItems.BATTERY_ADVANCED_CELL);
-        simpleItem(ModItems.BATTERY_ADVANCED_CELL_4);
-        simpleItem(ModItems.BATTERY_ADVANCED_CELL_12);
-        simpleItem(ModItems.BATTERY_LITHIUM);
-        simpleItem(ModItems.BATTERY_LITHIUM_CELL);
-        simpleItem(ModItems.BATTERY_LITHIUM_CELL_3);
-        simpleItem(ModItems.BATTERY_LITHIUM_CELL_6);
-        simpleItem(ModItems.BATTERY_SCHRABIDIUM_CELL);
-        simpleItem(ModItems.BATTERY_SCHRABIDIUM_CELL_2);
-        simpleItem(ModItems.BATTERY_SCHRABIDIUM_CELL_4);
-        simpleItem(ModItems.BATTERY_SPARK);
-        simpleItem(ModItems.BATTERY_TRIXITE);
-        simpleItem(ModItems.BATTERY_SPARK_CELL_6);
-        simpleItem(ModItems.BATTERY_SPARK_CELL_25);
-        simpleItem(ModItems.BATTERY_SPARK_CELL_100);
-        simpleItem(ModItems.BATTERY_SPARK_CELL_1000);
-        simpleItem(ModItems.BATTERY_SPARK_CELL_2500);
-        simpleItem(ModItems.BATTERY_SPARK_CELL_10000);
-        simpleItem(ModItems.BATTERY_SPARK_CELL_POWER);
-
-        simpleItem(ModItems.DEPTH_ORES_SCANNER);
+        
         simpleItem(ModItems.ZIRCONIUM_SHARP);
         simpleItem(ModItems.BORAX);
         simpleItem(ModItems.CAPACITOR_BOARD);
@@ -327,41 +267,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PLATE_FUEL_U233);
         simpleItem(ModItems.PLATE_FUEL_U235);
 
-        simpleItem(ModItems.STAMP_STONE_FLAT);
-        simpleItem(ModItems.STAMP_STONE_PLATE);
-        simpleItem(ModItems.STAMP_STONE_WIRE);
-        simpleItem(ModItems.STAMP_STONE_CIRCUIT);
-        simpleItem(ModItems.STAMP_IRON_FLAT);
-        simpleItem(ModItems.STAMP_IRON_PLATE);
-        simpleItem(ModItems.STAMP_IRON_WIRE);
-        simpleItem(ModItems.STAMP_IRON_CIRCUIT);
-        simpleItem(ModItems.STAMP_IRON_9);
-        simpleItem(ModItems.STAMP_IRON_44);
-        simpleItem(ModItems.STAMP_IRON_50);
-        simpleItem(ModItems.STAMP_IRON_357);
-        simpleItem(ModItems.STAMP_STEEL_FLAT);
-        simpleItem(ModItems.STAMP_STEEL_PLATE);
-        simpleItem(ModItems.STAMP_STEEL_WIRE);
-        simpleItem(ModItems.STAMP_STEEL_CIRCUIT);
-        simpleItem(ModItems.STAMP_TITANIUM_FLAT);
-        simpleItem(ModItems.STAMP_TITANIUM_PLATE);
-        simpleItem(ModItems.STAMP_TITANIUM_WIRE);
-        simpleItem(ModItems.STAMP_TITANIUM_FLAT);
-        simpleItem(ModItems.STAMP_TITANIUM_PLATE);
-        simpleItem(ModItems.STAMP_TITANIUM_WIRE);
-        simpleItem(ModItems.STAMP_TITANIUM_CIRCUIT);
-        simpleItem(ModItems.STAMP_OBSIDIAN_FLAT);
-        simpleItem(ModItems.STAMP_OBSIDIAN_PLATE);
-        simpleItem(ModItems.STAMP_OBSIDIAN_WIRE);
-        simpleItem(ModItems.STAMP_OBSIDIAN_CIRCUIT);
-        simpleItem(ModItems.STAMP_DESH_FLAT);
-        simpleItem(ModItems.STAMP_DESH_PLATE);
-        simpleItem(ModItems.STAMP_DESH_WIRE);
-        simpleItem(ModItems.STAMP_DESH_CIRCUIT);
-        simpleItem(ModItems.STAMP_DESH_9);
-        simpleItem(ModItems.STAMP_DESH_44);
-        simpleItem(ModItems.STAMP_DESH_50);
-        simpleItem(ModItems.STAMP_DESH_357);
+        
 
         simpleItem(ModItems.POWDER_COAL);
         simpleItem(ModItems.POWDER_COAL_SMALL);
@@ -381,50 +287,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.ALUMINUM_RAW);
         simpleItem(ModItems.BERYLLIUM_RAW);
 
-        trimmedArmorItem(ModItems.ALLOY_HELMET);
-        trimmedArmorItem(ModItems.ALLOY_CHESTPLATE);
-        trimmedArmorItem(ModItems.ALLOY_LEGGINGS);
-        trimmedArmorItem(ModItems.ALLOY_BOOTS);
-        trimmedArmorItem(ModItems.TITANIUM_HELMET);
-        trimmedArmorItem(ModItems.TITANIUM_CHESTPLATE);
-        trimmedArmorItem(ModItems.TITANIUM_LEGGINGS);
-        trimmedArmorItem(ModItems.TITANIUM_BOOTS);
-        trimmedArmorItem(ModItems.SECURITY_HELMET);
-        trimmedArmorItem(ModItems.SECURITY_CHESTPLATE);
-        trimmedArmorItem(ModItems.SECURITY_LEGGINGS);
-        trimmedArmorItem(ModItems.SECURITY_BOOTS);
-        trimmedArmorItem(ModItems.ASBESTOS_HELMET);
-        trimmedArmorItem(ModItems.ASBESTOS_CHESTPLATE);
-        trimmedArmorItem(ModItems.ASBESTOS_LEGGINGS);
-        trimmedArmorItem(ModItems.ASBESTOS_BOOTS);
-        trimmedArmorItem(ModItems.AJR_HELMET);
-        trimmedArmorItem(ModItems.AJR_CHESTPLATE);
-        trimmedArmorItem(ModItems.AJR_LEGGINGS);
-        trimmedArmorItem(ModItems.AJR_BOOTS);
-        trimmedArmorItem(ModItems.STEEL_HELMET);
-        trimmedArmorItem(ModItems.STEEL_CHESTPLATE);
-        trimmedArmorItem(ModItems.STEEL_LEGGINGS);
-        trimmedArmorItem(ModItems.STEEL_BOOTS);
-        trimmedArmorItem(ModItems.PAA_HELMET);
-        trimmedArmorItem(ModItems.PAA_CHESTPLATE);
-        trimmedArmorItem(ModItems.PAA_LEGGINGS);
-        trimmedArmorItem(ModItems.PAA_BOOTS);
-        trimmedArmorItem(ModItems.LIQUIDATOR_HELMET);
-        trimmedArmorItem(ModItems.LIQUIDATOR_CHESTPLATE);
-        trimmedArmorItem(ModItems.LIQUIDATOR_LEGGINGS);
-        trimmedArmorItem(ModItems.LIQUIDATOR_BOOTS);
-        trimmedArmorItem(ModItems.HAZMAT_HELMET);
-        trimmedArmorItem(ModItems.HAZMAT_CHESTPLATE);
-        trimmedArmorItem(ModItems.HAZMAT_LEGGINGS);
-        trimmedArmorItem(ModItems.HAZMAT_BOOTS);
-        trimmedArmorItem(ModItems.STARMETAL_HELMET);
-        trimmedArmorItem(ModItems.STARMETAL_CHESTPLATE);
-        trimmedArmorItem(ModItems.STARMETAL_LEGGINGS);
-        trimmedArmorItem(ModItems.STARMETAL_BOOTS);
-        trimmedArmorItem(ModItems.COBALT_HELMET);
-        trimmedArmorItem(ModItems.COBALT_CHESTPLATE);
-        trimmedArmorItem(ModItems.COBALT_LEGGINGS);
-        trimmedArmorItem(ModItems.COBALT_BOOTS);
 
         evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_STAIRS);
         evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_SLAB);
@@ -434,25 +296,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleBlockItem(ModBlocks.DOOR_BUNKER);
         simpleBlockItem(ModBlocks.DOOR_OFFICE);
         simpleBlockItem(ModBlocks.METAL_DOOR);
-        simpleItem(ModItems.GRENADEHE);
-        simpleItem(ModItems.GRENADEFIRE);
-
-        ModBlocks.getAnvilBlocks().forEach(this::blockItemFromBlockModelMachine);
-        
-        // Регистрация моделей предметов для машин с кастомными 3D моделями
-        blockItemFromBlockModelMachine(ModBlocks.PRESS);
-        blockItemFromBlockModelMachine(ModBlocks.BLAST_FURNACE);
-        blockItemFromBlockModelMachine(ModBlocks.WOOD_BURNER);
-        blockItemFromBlockModelMachine(ModBlocks.CHEMICAL_PLANT);
-        blockItemFromBlockModelMachine(ModBlocks.CENTRIFUGE);
-        blockItemFromBlockModelMachine(ModBlocks.ORE_ACIDIZER);
-        blockItemFromBlockModelMachine(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
-        blockItemFromBlockModelMachine(ModBlocks.MACHINE_ASSEMBLER);
-        blockItemFromBlockModelMachine(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
-        blockItemFromBlockModelMachine(ModBlocks.FLUID_TANK);
-        blockItemFromBlockModel(ModBlocks.DUD_CONVENTIONAL);
-        blockItemFromBlockModel(ModBlocks.DUD_NUKE);
-        blockItemFromBlockModel(ModBlocks.DUD_SALTED);
     };
 
     /**
@@ -478,13 +321,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
     }
 
-    private ItemModelBuilder blockItemFromBlockModelMachine(RegistryObject<Block> block) {
-        return withExistingParent(block.getId().getPath(), modLoc("block/machines/" + block.getId().getPath()));
-    }
-
-    private ItemModelBuilder blockItemFromBlockModel(RegistryObject<Block> block) {
-        return withExistingParent(block.getId().getPath(), modLoc("block/" + block.getId().getPath()));
-    }
     
     private void ingotItem(RegistryObject<Item> itemObject) {
         // 1. Получаем регистрационное имя (например, "uranium_ingot")
