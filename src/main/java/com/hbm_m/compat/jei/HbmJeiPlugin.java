@@ -3,19 +3,20 @@ package com.hbm_m.compat.jei;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.client.overlay.GUIMachineCentrifuge;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.recipe.CentrifugeRecipe;
+import com.hbm_m.recipe.CentrifugeRecipes;
+import com.hbm_m.recipe.CentrifugeRecipes.RecipeInput;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 @JeiPlugin
 public class HbmJeiPlugin implements IModPlugin {
@@ -49,11 +50,21 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeClickArea(GUIMachineCentrifuge.class, 56, 0, 80, 38, CentrifugeJeiCategory.RECIPE_TYPE);
     }
 
-    private static List<CentrifugeRecipe> getCentrifugeRecipes() {
-        Minecraft mc = Minecraft.getInstance();
-        if (mc.level == null) {
-            return Collections.emptyList();
+    private static List<CentrifugeJeiRecipe> getCentrifugeRecipes() {
+        List<CentrifugeJeiRecipe> recipes = new ArrayList<>();
+        
+        Map<RecipeInput, ItemStack[]> allRecipes = CentrifugeRecipes.getAllRecipes();
+        
+        for (Map.Entry<RecipeInput, ItemStack[]> entry : allRecipes.entrySet()) {
+            RecipeInput input = entry.getKey();
+            ItemStack[] outputs = entry.getValue();
+            
+            List<ItemStack> inputStacks = input.getDisplayStacks();
+            if (!inputStacks.isEmpty()) {
+                recipes.add(new CentrifugeJeiRecipe(inputStacks, outputs));
+            }
         }
-        return mc.level.getRecipeManager().getAllRecipesFor(CentrifugeRecipe.Type.INSTANCE);
+        
+        return recipes;
     }
 }

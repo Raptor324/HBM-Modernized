@@ -24,32 +24,29 @@ public class OreAcidizerMenu extends AbstractContainerMenu {
         this.data = data;
         IItemHandler handler = this.blockEntity.getInventory();
 
-        // Slot layout visually matched to gui_crystallizer.png
-        // Input (top left)
-        this.addSlot(new SlotItemHandler(handler, 0, 27, 19));
-        // Input (bottom left)
-        this.addSlot(new SlotItemHandler(handler, 1, 27, 55));
-        // Battery (bottom left, canister)
-        this.addSlot(new SlotItemHandler(handler, 2, 27, 91));
-        // Output (center right)
-        this.addSlot(new SlotItemHandler(handler, 3, 98, 37));
-        // Upgrade 1 (top right gear)
-        this.addSlot(new SlotItemHandler(handler, 4, 116, 19));
-        // Upgrade 2 (bottom right gear)
-        this.addSlot(new SlotItemHandler(handler, 5, 134, 19));
-        // Fluid ID (small slot, right of progress bar)
-        this.addSlot(new SlotItemHandler(handler, 6, 80, 19));
-        // Extra slot (rightmost, output arrow)
-        this.addSlot(new SlotItemHandler(handler, 7, 134, 55));
+        // Slot layout matched to gui_crystallizer.png
+        // Input 0 (top left)
+        this.addSlot(new SlotItemHandler(handler, 0, 7, 16));
+        // Input 1 (second row left)
+        this.addSlot(new SlotItemHandler(handler, 1, 7, 34));
+        // Input 2 (third row left / battery)
+        this.addSlot(new SlotItemHandler(handler, 2, 7, 52));
+        // Upgrade 1 (first gear slot)
+        this.addSlot(new SlotItemHandler(handler, 3, 103, 16));
+        // Upgrade 2 (second gear slot)
+        this.addSlot(new SlotItemHandler(handler, 4, 121, 16));
+        // Output (far right)
+        this.addSlot(new SlotItemHandler(handler, 5, 143, 30));
 
-        // Player inventory
+        // Player inventory (standard 18px spacing, Y starts at 83)
         for (int i = 0; i < 3; i++) {
             for (int j = 0; j < 9; j++) {
-                this.addSlot(new Slot(inv, j + i * 9 + 9, 8 + j * 18, 122 + i * 18));
+                this.addSlot(new Slot(inv, j + i * 9 + 9, 7 + j * 18, 83 + i * 18));
             }
         }
+        // Hotbar (at y=141)
         for (int i = 0; i < 9; i++) {
-            this.addSlot(new Slot(inv, i, 8 + i * 18, 180));
+            this.addSlot(new Slot(inv, i, 7 + i * 18, 141));
         }
         addDataSlots(data);
     }

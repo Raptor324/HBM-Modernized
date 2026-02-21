@@ -45,12 +45,6 @@ public class ModRecipes {
     public static final RegistryObject<RecipeType<BlastFurnaceRecipe>> BLAST_FURNACE_TYPE =
             RECIPE_TYPES.register("blast_furnace", () -> BlastFurnaceRecipe.Type.INSTANCE);
 
-    public static final RegistryObject<RecipeSerializer<CentrifugeRecipe>> CENTRIFUGE_SERIALIZER =
-            SERIALIZERS.register("centrifuge", () -> CentrifugeRecipe.Serializer.INSTANCE);
-
-    public static final RegistryObject<RecipeType<CentrifugeRecipe>> CENTRIFUGE_TYPE =
-            RECIPE_TYPES.register("centrifuge", () -> CentrifugeRecipe.Type.INSTANCE);
-
     public static final RegistryObject<RecipeSerializer<ShredderRecipe>> SHREDDER_SERIALIZER =
             SERIALIZERS.register("shredding", () -> ShredderRecipe.Serializer.INSTANCE);
 

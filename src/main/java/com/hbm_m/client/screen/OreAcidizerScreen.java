@@ -15,7 +15,7 @@ public class OreAcidizerScreen extends AbstractContainerScreen<OreAcidizerMenu> 
     public OreAcidizerScreen(OreAcidizerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
-        this.imageHeight = 222;
+        this.imageHeight = 166;
     }
 
 

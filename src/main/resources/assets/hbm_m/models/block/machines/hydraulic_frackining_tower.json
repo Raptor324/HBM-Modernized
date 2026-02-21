@@ -8,7 +8,7 @@
       "loader": "forge:obj",
       "model": "hbm_m:models/block/machines/hydraulic_frackining_tower.obj",
       "flip_v": true,
-      "render_type": "minecraft:cutout",
+      "render_type": "minecraft:solid",
       "textures": {
         "default": "hbm_m:block/machine/fracking_tower"
       }

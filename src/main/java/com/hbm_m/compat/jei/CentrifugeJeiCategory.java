@@ -2,7 +2,6 @@ package com.hbm_m.compat.jei;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.recipe.CentrifugeRecipe;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
@@ -14,14 +13,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
-public class CentrifugeJeiCategory implements IRecipeCategory<CentrifugeRecipe> {
+public class CentrifugeJeiCategory implements IRecipeCategory<CentrifugeJeiRecipe> {
 
-    public static final RecipeType<CentrifugeRecipe> RECIPE_TYPE =
-            RecipeType.create(RefStrings.MODID, "centrifuge", CentrifugeRecipe.class);
+    public static final RecipeType<CentrifugeJeiRecipe> RECIPE_TYPE =
+            RecipeType.create(RefStrings.MODID, "centrifuge", CentrifugeJeiRecipe.class);
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
@@ -36,7 +33,7 @@ public class CentrifugeJeiCategory implements IRecipeCategory<CentrifugeRecipe> 
     }
 
     @Override
-    public RecipeType<CentrifugeRecipe> getRecipeType() {
+    public RecipeType<CentrifugeJeiRecipe> getRecipeType() {
         return RECIPE_TYPE;
     }
 
@@ -56,11 +53,9 @@ public class CentrifugeJeiCategory implements IRecipeCategory<CentrifugeRecipe> 
     }
 
     @Override
-    public void setRecipe(IRecipeLayoutBuilder builder, CentrifugeRecipe recipe, mezz.jei.api.recipe.IFocusGroup focuses) {
+    public void setRecipe(IRecipeLayoutBuilder builder, CentrifugeJeiRecipe recipe, mezz.jei.api.recipe.IFocusGroup focuses) {
         // Slot coordinates are aligned to the in-game GUI for consistency.
-        List<ItemStack> inputs = Arrays.stream(recipe.getInput().getItems())
-            .map(ItemStack::copy)
-            .collect(Collectors.toList());
+        List<ItemStack> inputs = recipe.getInputStacks();
         builder.addSlot(RecipeIngredientRole.INPUT, 44, 35)
             .addItemStacks(inputs);
 

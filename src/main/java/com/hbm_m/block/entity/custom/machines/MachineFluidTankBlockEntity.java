@@ -1,7 +1,11 @@
 package com.hbm_m.block.entity.custom.machines;
 
-import com.hbm_m.menu.MachineFluidTankMenu; 
+import org.jetbrains.annotations.NotNull; 
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.menu.MachineFluidTankMenu;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -24,9 +28,6 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
 public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -186,6 +187,11 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             // Пытаемся залить 1000 (стандарт ведра), или сколько есть
             int filled = handler.fill(fluidInTank, IFluidHandler.FluidAction.SIMULATE);
 
+            // Prüfen ob dies ein wiederverwendbarer Container ist (z.B. FluidBarrel)
+            ItemStack currentContainer = handler.getContainer();
+            boolean isReusableContainer = !currentContainer.isEmpty() &&
+                    ItemStack.isSameItem(inputStack, currentContainer);
+
             if (filled > 0) {
                 // Проверяем, есть ли столько жидкости в танке
                 FluidStack drainedFromTank = fluidTank.drain(filled, IFluidHandler.FluidAction.SIMULATE);
@@ -197,13 +203,25 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
                     ItemStack filledContainer = handler.getContainer(); // Полная тара
 
-                    inputStack.shrink(1); // Убрали пустую тару
+                    if (isReusableContainer) {
+                        // Wiederverwendbarer Container bleibt im Slot während er gefüllt wird
+                        // Die Flüssigkeit wurde bereits in den Container gefüllt via handler.fill()
+                    } else {
+                        // LOGIK FÜR NORMALE EIMER
+                        inputStack.shrink(1); // Убрали пустую тару
 
-                    if (outputStack.isEmpty()) {
-                        itemHandler.setStackInSlot(SLOT_OUTPUT_R, filledContainer);
-                    } else if (ItemStack.isSameItemSameTags(outputStack, filledContainer) && outputStack.getCount() < outputStack.getMaxStackSize()) {
-                        outputStack.grow(1);
+                        if (outputStack.isEmpty()) {
+                            itemHandler.setStackInSlot(SLOT_OUTPUT_R, filledContainer);
+                        } else if (ItemStack.isSameItemSameTags(outputStack, filledContainer) && outputStack.getCount() < outputStack.getMaxStackSize()) {
+                            outputStack.grow(1);
+                        }
                     }
+                }
+            } else if (isReusableContainer) {
+                // Container ist voll (filled == 0) - verschiebe in Output-Slot
+                if (outputStack.isEmpty()) {
+                    itemHandler.setStackInSlot(SLOT_OUTPUT_R, inputStack.copy());
+                    inputStack.shrink(1);
                 }
             }
         });

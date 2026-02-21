@@ -69,6 +69,9 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<MachineFluidTankMenu>> FLUID_TANK_MENU =
             MENUS.register("fluid_tank_menu", () -> IForgeMenuType.create(MachineFluidTankMenu::new));
 
+    public static final RegistryObject<MenuType<MachineChemicalPlantMenu>> CHEMICAL_PLANT_MENU =
+            MENUS.register("chemical_plant_menu", () -> IForgeMenuType.create(MachineChemicalPlantMenu::new));
+
     public static void register(IEventBus eventBus) {
         MENUS.register(eventBus);
     }

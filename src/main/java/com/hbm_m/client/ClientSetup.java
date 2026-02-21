@@ -25,6 +25,7 @@ import com.hbm_m.client.overlay.GUIMachineAdvancedAssembler;
 import com.hbm_m.client.overlay.GUIMachineAssembler;
 import com.hbm_m.client.overlay.GUIMachineBattery;
 import com.hbm_m.client.overlay.GUIMachineCentrifuge;
+import com.hbm_m.client.overlay.GUIMachineChemicalPlant;
 import com.hbm_m.client.overlay.GUIMachineFluidTank;
 import com.hbm_m.client.overlay.GUIMachinePress;
 import com.hbm_m.client.overlay.GUIMachineShredder;
@@ -179,6 +180,7 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.TUNGSTEN_CRATE_MENU.get(), GUITungstenCrate::new);
             MenuScreens.register(ModMenuTypes.TEMPLATE_CRATE_MENU.get(), GUITemplateCrate::new);
             MenuScreens.register(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
+            MenuScreens.register(ModMenuTypes.CHEMICAL_PLANT_MENU.get(), GUIMachineChemicalPlant::new);
 
             // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);

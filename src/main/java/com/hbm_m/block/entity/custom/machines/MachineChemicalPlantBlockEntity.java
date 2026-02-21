@@ -4,9 +4,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.menu.MachineChemicalPlantMenu;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
@@ -14,6 +16,7 @@ import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -31,9 +34,18 @@ public class MachineChemicalPlantBlockEntity extends BlockEntity implements Menu
 
     private float anim = 0.0F;
     private float prevAnim = 0.0F;
+    private int progress = 0;
+    private int maxProgress = 100;
 
-    // Инвентарь (например, 10 слотов для ресурсов и тары)
-    private final ItemStackHandler itemHandler = new ItemStackHandler(10) {
+    // Инвентарь:
+    // 0-3: Item Input (2x2 oben links)
+    // 4-7: Fluid Container Input (2x2 mit Kanister markierung)
+    // 8-11: Item Output (2x2 oben rechts)
+    // 12-15: Fluid Container Output (2x2)
+    // 16-19: Template/Recipe slots (4 unten)
+    // 20: Battery slot
+    // 21: Template slot
+    private final ItemStackHandler itemHandler = new ItemStackHandler(22) {
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
@@ -48,6 +60,34 @@ public class MachineChemicalPlantBlockEntity extends BlockEntity implements Menu
             if (level != null && !level.isClientSide) {
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
             }
+        }
+    };
+
+    // Container data for syncing to client
+    protected final ContainerData data = new ContainerData() {
+        @Override
+        public int get(int index) {
+            FluidStack stack = fluidTank.getFluid();
+            switch (index) {
+                case 0: return stack.getAmount();
+                case 1: return stack.isEmpty() ? -1 : BuiltInRegistries.FLUID.getId(stack.getFluid());
+                case 2: return progress;
+                case 3: return maxProgress;
+                default: return 0;
+            }
+        }
+
+        @Override
+        public void set(int index, int value) {
+            switch (index) {
+                case 2: progress = value; break;
+                case 3: maxProgress = value; break;
+            }
+        }
+
+        @Override
+        public int getCount() {
+            return 4;
         }
     };
 
@@ -93,9 +133,7 @@ public class MachineChemicalPlantBlockEntity extends BlockEntity implements Menu
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        // Здесь должен быть возврат вашего Menu класса
-        // return new MachineChemicalPlantMenu(containerId, playerInventory, this);
-        return null; 
+        return new MachineChemicalPlantMenu(containerId, playerInventory, this, this.data);
     }
 
     // --- Работа с данными ---
@@ -117,13 +155,28 @@ public class MachineChemicalPlantBlockEntity extends BlockEntity implements Menu
     public void load(CompoundTag tag) {
         super.load(tag);
         if (tag.contains("Inventory")) {
-            itemHandler.deserializeNBT(tag.getCompound("Inventory"));
+            CompoundTag invTag = tag.getCompound("Inventory");
+            // Migration: Check if old inventory has fewer slots
+            int savedSize = invTag.contains("Size") ? invTag.getInt("Size") : 0;
+            if (savedSize > 0 && savedSize < 22) {
+                // Old inventory format - load items into new handler manually
+                ItemStackHandler tempHandler = new ItemStackHandler(savedSize);
+                tempHandler.deserializeNBT(invTag);
+                // Copy items from old handler to new (up to the smaller size)
+                for (int i = 0; i < Math.min(savedSize, itemHandler.getSlots()); i++) {
+                    itemHandler.setStackInSlot(i, tempHandler.getStackInSlot(i));
+                }
+            } else {
+                itemHandler.deserializeNBT(invTag);
+            }
         }
         if (tag.contains("Fluid")) {
             fluidTank.readFromNBT(tag.getCompound("Fluid"));
         }
         anim = tag.getFloat("Anim");
         prevAnim = tag.getFloat("PrevAnim");
+        progress = tag.getInt("Progress");
+        maxProgress = tag.getInt("MaxProgress");
     }
 
     @Override
@@ -133,6 +186,8 @@ public class MachineChemicalPlantBlockEntity extends BlockEntity implements Menu
         tag.put("Fluid", fluidTank.writeToNBT(new CompoundTag()));
         tag.putFloat("Anim", anim);
         tag.putFloat("PrevAnim", prevAnim);
+        tag.putInt("Progress", progress);
+        tag.putInt("MaxProgress", maxProgress);
     }
 
     @Override

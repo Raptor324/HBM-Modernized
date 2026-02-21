@@ -1181,6 +1181,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.crate_desh", "Деш ящик");
                 add("container.hbm_m.crate_tungsten", "Вольфрамовый ящик");
                 add("container.hbm_m.crate_template", "Шаблонный ящик");
+                add("container.hbm_m.chemical_plant", "Химический завод");
 
                 add("gui.hbm_m.battery.priority.0", "Приоритет: Низкий");
                 add("gui.hbm_m.battery.priority.0.desc", "Низший приоритет. Опустошается в первую очередь, заполняется в последнюю");
@@ -2508,6 +2509,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.crate_desh", "Desh Crate");
                 add("container.hbm_m.crate_tungsten", "Tungsten Crate");
                 add("container.hbm_m.crate_template", "Template Crate");
+                add("container.hbm_m.chemical_plant", "Chemical Plant");
                 add("gui.hbm_m.battery.priority.0", "Priority: Low");
                 add("gui.hbm_m.battery.priority.0.desc", "Lowest priority. Will be drained first and filled last.");
                 add("gui.hbm_m.battery.priority.1", "Priority: Normal");
