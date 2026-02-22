@@ -6,6 +6,7 @@ import com.hbm_m.block.entity.custom.machines.MachineCentrifugeBlockEntity;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
+
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
@@ -40,12 +41,12 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
     private static final int MACHINE_SLOTS = OUTPUT_SLOT_START + OUTPUT_SLOTS;
 
     // Slot positions (relative to GUI left/top)
-    private static final int SLOT_BATTERY_X = 8;
-    private static final int SLOT_BATTERY_Y = 54;
-    private static final int SLOT_INPUT_X = 44;
-    private static final int SLOT_INPUT_Y = 35;
-    private static final int SLOT_OUTPUT_X0 = 65;
-    private static final int SLOT_OUTPUT_Y = 54;
+    private static final int SLOT_BATTERY_X = 9;
+    private static final int SLOT_BATTERY_Y = 50;
+    private static final int SLOT_INPUT_X = 36;
+    private static final int SLOT_INPUT_Y = 50;
+    private static final int SLOT_OUTPUT_X0 = 63;
+    private static final int SLOT_OUTPUT_Y = 50;
     private static final int SLOT_OUTPUT_X_STEP = 20;
 
     public MachineCentrifugeMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
@@ -101,8 +102,8 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
         }
 
         // Player inventory (standard)
-        int playerInvX = 8;
-        int playerInvY = 84;
+        int playerInvX = 7;
+        int playerInvY = 103;
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new Slot(playerInventory, col + row * 9 + 9,
@@ -110,7 +111,7 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
             }
         }
 
-        int hotbarY = 142;
+        int hotbarY = 161;
         for (int col = 0; col < 9; col++) {
             this.addSlot(new Slot(playerInventory, col,
                     playerInvX + col * 18, hotbarY));

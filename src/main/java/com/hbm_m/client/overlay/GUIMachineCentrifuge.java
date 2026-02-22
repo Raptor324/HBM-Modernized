@@ -3,6 +3,7 @@ package com.hbm_m.client.overlay;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.menu.MachineCentrifugeMenu;
 import com.mojang.blaze3d.systems.RenderSystem;
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
@@ -15,23 +16,19 @@ import net.minecraft.world.entity.player.Inventory;
  */
 public class GUIMachineCentrifuge extends GuiInfoScreen<MachineCentrifugeMenu> {
 
-    // Small manual adjustment to better match the legacy layout.
-    private static final int GUI_Y_OFFSET = -8;
-
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
 
     public GUIMachineCentrifuge(MachineCentrifugeMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
-        this.imageHeight = 166;
+        this.imageHeight = 185;
         this.inventoryLabelY = this.imageHeight - 94;
     }
 
     @Override
     protected void init() {
         super.init();
-        this.topPos += GUI_Y_OFFSET;
         this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
     }
 

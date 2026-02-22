@@ -3,7 +3,7 @@ package com.hbm_m.block.entity.custom.machines;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.menu.MachineCentrifugeMenu;
-import com.hbm_m.recipe.CentrifugeRecipe;
+import com.hbm_m.recipe.CentrifugeRecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
@@ -156,25 +156,14 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             return false;
         }
 
-        var recipeOpt = getCurrentRecipe();
-        if (recipeOpt.isEmpty()) {
-            // Fallback legacy behavior (current placeholder): move input into any output slot.
-            for (int i = 0; i < OUTPUT_SLOTS; i++) {
-                ItemStack output = inventory.getStackInSlot(OUTPUT_SLOT_START + i);
-                if (output.isEmpty()) {
-                    return true;
-                }
-                if (ItemStack.isSameItemSameTags(input, output) && output.getCount() < output.getMaxStackSize()) {
-                    return true;
-                }
-            }
+        ItemStack[] outputs = CentrifugeRecipes.getOutput(input);
+        if (outputs == null) {
+            // No recipe found - cannot process
             return false;
         }
 
-        var recipe = recipeOpt.get();
-        var outputs = recipe.getOutputs();
-        for (int i = 0; i < OUTPUT_SLOTS && i < outputs.size(); i++) {
-            ItemStack result = outputs.get(i);
+        for (int i = 0; i < OUTPUT_SLOTS && i < outputs.length; i++) {
+            ItemStack result = outputs[i];
             if (result.isEmpty()) {
                 continue;
             }
@@ -202,33 +191,14 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        var recipeOpt = getCurrentRecipe();
-        if (recipeOpt.isEmpty()) {
-            // Fallback legacy behavior (current placeholder): move input into any output slot.
-            for (int i = 0; i < OUTPUT_SLOTS; i++) {
-                int slot = OUTPUT_SLOT_START + i;
-                ItemStack output = inventory.getStackInSlot(slot);
-
-                if (output.isEmpty()) {
-                    ItemStack moved = input.copy();
-                    moved.setCount(1);
-                    inventory.setStackInSlot(slot, moved);
-                    input.shrink(1);
-                    return;
-                }
-
-                if (ItemStack.isSameItemSameTags(input, output) && output.getCount() < output.getMaxStackSize()) {
-                    output.grow(1);
-                    input.shrink(1);
-                    return;
-                }
-            }
+        ItemStack[] outputs = CentrifugeRecipes.getOutput(input);
+        if (outputs == null) {
+            // No recipe - should not happen if canProcess() was called first
             return;
         }
 
-        var outputs = recipeOpt.get().getOutputs();
-        for (int i = 0; i < OUTPUT_SLOTS && i < outputs.size(); i++) {
-            ItemStack result = outputs.get(i);
+        for (int i = 0; i < OUTPUT_SLOTS && i < outputs.length; i++) {
+            ItemStack result = outputs[i];
             if (result.isEmpty()) continue;
 
             int slot = OUTPUT_SLOT_START + i;
@@ -241,19 +211,6 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
         }
 
         input.shrink(1);
-    }
-
-    private java.util.Optional<CentrifugeRecipe> getCurrentRecipe() {
-        if (level == null) {
-            return java.util.Optional.empty();
-        }
-
-        SimpleContainer container = new SimpleContainer(inventory.getSlots());
-        for (int i = 0; i < inventory.getSlots(); i++) {
-            container.setItem(i, inventory.getStackInSlot(i));
-        }
-
-        return level.getRecipeManager().getRecipeFor(CentrifugeRecipe.Type.INSTANCE, container, level);
     }
 
     private void chargeFromBattery() {

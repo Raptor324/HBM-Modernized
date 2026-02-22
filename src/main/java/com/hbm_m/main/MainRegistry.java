@@ -38,6 +38,7 @@ import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.ModRecipes;
+import com.hbm_m.recipe.CentrifugeRecipes;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.world.biome.ModBiomes;
 import com.hbm_m.worldgen.ModWorldGen;
@@ -139,6 +140,10 @@ public class MainRegistry {
             // Initialize armor damage resistance stats after items are registered
             DamageResistanceHandler.initArmorStats();
             // MinecraftForge.EVENT_BUS.addListener(this::onRenderLevelStage);
+
+            // Initialize machine recipes
+            CentrifugeRecipes.registerRecipes();
+            LOGGER.info("CentrifugeRecipes initialized successfully");
 
             LOGGER.info("HazardSystem initialized successfully");
         });
@@ -438,6 +443,7 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.BILLET_SILICON.get()));
             event.accept(new ItemStack(ModItems.BILLET_PLUTONIUM.get()));
             event.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
+            event.accept(new ItemStack(ModItems.FLUID_BARREL.get()));
 
 
 
@@ -486,6 +492,31 @@ public class MainRegistry {
                 }
               
             }
+
+            // Standalone tiny powders
+            event.accept(new ItemStack(ModItems.LITHIUM_POWDER_TINY.get()));
+            event.accept(new ItemStack(ModItems.CS137_POWDER_TINY.get()));
+            event.accept(new ItemStack(ModItems.I131_POWDER_TINY.get()));
+            event.accept(new ItemStack(ModItems.XE135_POWDER_TINY.get()));
+            event.accept(new ItemStack(ModItems.COAL_POWDER_TINY.get()));
+            event.accept(new ItemStack(ModItems.PALEOGENITE_POWDER_TINY.get()));
+            event.accept(new ItemStack(ModItems.NUCLEAR_WASTE_TINY.get()));
+            event.accept(new ItemStack(ModItems.NUCLEAR_WASTE_LONG_TINY.get()));
+            event.accept(new ItemStack(ModItems.NUCLEAR_WASTE_LONG_DEPLETED_TINY.get()));
+            event.accept(new ItemStack(ModItems.NUCLEAR_WASTE_SHORT_TINY.get()));
+            event.accept(new ItemStack(ModItems.NUCLEAR_WASTE_SHORT_DEPLETED_TINY.get()));
+            event.accept(new ItemStack(ModItems.NUCLEAR_WASTE_VITRIFIED_TINY.get()));
+            event.accept(new ItemStack(ModItems.NUGGET_MERCURY_TINY.get()));
+
+            // Standalone powders
+            event.accept(new ItemStack(ModItems.COPPER_POWDER.get()));
+            event.accept(new ItemStack(ModItems.DIAMOND_POWDER.get()));
+            event.accept(new ItemStack(ModItems.EMERALD_POWDER.get()));
+            event.accept(new ItemStack(ModItems.LAPIS_POWDER.get()));
+            event.accept(new ItemStack(ModItems.QUARTZ_POWDER.get()));
+            event.accept(new ItemStack(ModItems.LIGNITE_POWDER.get()));
+            event.accept(new ItemStack(ModItems.FIRE_POWDER.get()));
+            event.accept(new ItemStack(ModItems.LITHIUM_POWDER.get()));
 
             // ModPowders
             for (ModPowders powder : ModPowders.values()) {

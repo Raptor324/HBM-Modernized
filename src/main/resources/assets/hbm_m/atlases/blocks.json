@@ -1,6 +1,8 @@
 {
   "sources": [
-    { "type": "directory", "source": "block/armor", "prefix": "block/armor/" },
+    { "type": "directory", "source": "block", "prefix": "block/" },
+    { "type": "directory", "source": "gui/fluids", "prefix": "gui/fluids/" },
+    { "type": "directory", "source": "fluid_barrel", "prefix": "fluid_barrel/" },
     { "type": "single", "resource": "hbm_m:armor/bismuth" }
   ]
 }

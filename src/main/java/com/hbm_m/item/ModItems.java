@@ -53,6 +53,7 @@ import com.hbm_m.item.custom.industrial.ItemBlades;
 import com.hbm_m.item.custom.industrial.ItemBlueprintFolder;
 import com.hbm_m.item.custom.industrial.ItemStamp;
 import com.hbm_m.item.custom.industrial.ItemTemplateFolder;
+import com.hbm_m.item.custom.liquids.FluidBarrelItem;
 import com.hbm_m.item.custom.liquids.InfiniteWaterItem;
 import com.hbm_m.item.custom.radiation_meter.ItemDosimeter;
 import com.hbm_m.item.custom.radiation_meter.ItemGeigerCounter;
@@ -149,7 +150,7 @@ public class ModItems {
 
         // 2. ModPowders (ТОЛЬКО ИЗ ENABLED_MODPOWDERS)  ИСПРАВЛЕНО!
         for (ModPowders powder : ModPowders.values()) {
-            String baseName = powder.name(); // или powder.getName() если есть
+            String baseName = powder.getName(); // use getName() to get lowercase name
             if (ENABLED_MODPOWDERS.contains(baseName)) {
                 String powderId = baseName + "_powder";
                 RegistryObject<Item> powderItem = ITEMS.register(powderId,
@@ -803,6 +804,45 @@ public class ModItems {
     public static final RegistryObject<Item> DUST_TINY = ITEMS.register("dust_tiny",
             () -> new Item(new Item.Properties()));
 
+    public static final RegistryObject<Item> LITHIUM_POWDER_TINY = ITEMS.register("lithium_powder_tiny",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CS137_POWDER_TINY = ITEMS.register("cs137_powder_tiny",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> I131_POWDER_TINY = ITEMS.register("i131_powder_tiny",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> XE135_POWDER_TINY = ITEMS.register("xe135_powder_tiny",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> COAL_POWDER_TINY = ITEMS.register("coal_powder_tiny",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> PALEOGENITE_POWDER_TINY = ITEMS.register("paleogenite_powder_tiny",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> NUCLEAR_WASTE_TINY = ITEMS.register("nuclear_waste_tiny",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> NUCLEAR_WASTE_LONG_TINY = ITEMS.register("nuclear_waste_long_tiny",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> NUCLEAR_WASTE_LONG_DEPLETED_TINY = ITEMS.register("nuclear_waste_long_depleted_tiny",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> NUCLEAR_WASTE_SHORT_TINY = ITEMS.register("nuclear_waste_short_tiny",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> NUCLEAR_WASTE_SHORT_DEPLETED_TINY = ITEMS.register("nuclear_waste_short_depleted_tiny",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> NUCLEAR_WASTE_VITRIFIED_TINY = ITEMS.register("nuclear_waste_vitrified_tiny",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> NUGGET_MERCURY_TINY = ITEMS.register("nugget_mercury_tiny",
+            () -> new Item(new Item.Properties()));
+
     public static final RegistryObject<Item> NUGGET_SILICON = ITEMS.register("nugget_silicon",
             () -> new Item(new Item.Properties()));
 
@@ -1058,6 +1098,31 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> WOOD_ASH_POWDER = ITEMS.register("wood_ash_powder",
+            () -> new Item(new Item.Properties()));
+
+    // Additional standalone powders (not from ModIngots)
+    public static final RegistryObject<Item> COPPER_POWDER = ITEMS.register("copper_powder",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> DIAMOND_POWDER = ITEMS.register("diamond_powder",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> EMERALD_POWDER = ITEMS.register("emerald_powder",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> LAPIS_POWDER = ITEMS.register("lapis_powder",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> QUARTZ_POWDER = ITEMS.register("quartz_powder",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> LIGNITE_POWDER = ITEMS.register("lignite_powder",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> FIRE_POWDER = ITEMS.register("fire_powder",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> LITHIUM_POWDER = ITEMS.register("lithium_powder",
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> FIREBRICK = ITEMS.register("firebrick",
@@ -1592,13 +1657,17 @@ public class ModItems {
 	public static final RegistryObject<Item> INFINITE_WATER_5000 = ITEMS.register("inf_water_mk2",
             () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 5000));
 
+    // Fluid Barrel - 16,000 mB capacity portable fluid container
+    public static final RegistryObject<Item> FLUID_BARREL = ITEMS.register("fluid_barrel",
+            () -> new FluidBarrelItem(new Item.Properties()));
+
 
 
     //=============================== ВЁДРА ДЛЯ ЖИДКОСТЕЙ ===============================//
 
     public static final RegistryObject<Item> CRUDE_OIL_BUCKET = ITEMS.register("bucket_crude_oil",
             () -> new BucketItem(
-                    () -> ModFluids.CRUDE_OIL_SOURCE.get(),
+                    () -> ModFluids.CRUDE_OIL.source.get(),
                     new Item.Properties()
                             .craftRemainder(Items.BUCKET)
                             .stacksTo(1)));
