@@ -10,6 +10,7 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.custom.machines.MachineFluidTankBlockEntity;
+import com.hbm_m.item.IItemFluidIdentifier;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -164,13 +165,28 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
 
     @Override
     public InteractionResult use(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos, @Nonnull Player player, @Nonnull InteractionHand hand, @Nonnull BlockHitResult hit) {
-        if (!level.isClientSide) {
-            BlockEntity entity = level.getBlockEntity(pos);
-            if (entity instanceof MachineFluidTankBlockEntity tank) {
-                NetworkHooks.openScreen((ServerPlayer) player, tank, pos);
+        if (level.isClientSide) {
+            return InteractionResult.sidedSuccess(true);
+        }
+
+        BlockEntity entity = level.getBlockEntity(pos);
+        if (!(entity instanceof MachineFluidTankBlockEntity tank)) {
+            return InteractionResult.PASS;
+        }
+
+        if (player.isShiftKeyDown()) {
+            var stack = player.getItemInHand(hand);
+            if (!stack.isEmpty() && stack.getItem() instanceof IItemFluidIdentifier) {
+                tank.setFilterFromIdentifier(stack);
+                var fluid = tank.getFilterFluid();
+                var name = fluid != null ? fluid.getFluidType().getDescriptionId() : "fluid.hbm_m.none";
+                player.displayClientMessage(net.minecraft.network.chat.Component.translatable("gui.hbm_m.fluid_tank.filter_set", net.minecraft.network.chat.Component.translatable(name)), true);
+                return InteractionResult.sidedSuccess(false);
             }
         }
-        return InteractionResult.sidedSuccess(level.isClientSide());
+
+        NetworkHooks.openScreen((ServerPlayer) player, tank, pos);
+        return InteractionResult.sidedSuccess(false);
     }
 
     @Override

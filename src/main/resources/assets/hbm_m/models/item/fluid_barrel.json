@@ -1,6 +1,7 @@
 {
   "parent": "minecraft:item/generated",
   "textures": {
-    "layer0": "hbm_m:item/fluid_barrel"
+    "layer0": "hbm_m:item/fluid_barrel",
+    "layer1": "hbm_m:item/fluid_barrel_overlay"
   }
 }

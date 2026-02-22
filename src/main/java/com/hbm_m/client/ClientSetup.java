@@ -102,6 +102,7 @@ import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
+import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.client.event.RegisterShadersEvent;
@@ -295,6 +296,18 @@ public class ClientSetup {
     public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
         ModConfigKeybindHandler.onRegisterKeyMappings(event);
         MainRegistry.LOGGER.info("Registered key mappings.");
+    }
+
+    @SubscribeEvent
+    public static void onRegisterItemColors(RegisterColorHandlersEvent.Item event) {
+        event.register((stack, tintIndex) -> {
+            if (tintIndex == 0) return 0xFFFFFF;
+            return com.hbm_m.item.custom.liquids.FluidIdentifierItem.getTintColor(stack);
+        }, ModItems.FLUID_IDENTIFIER.get());
+        event.register((stack, tintIndex) -> {
+            if (tintIndex == 0) return 0xFFFFFF;
+            return com.hbm_m.item.custom.liquids.FluidBarrelItem.getTintColor(stack);
+        }, ModItems.FLUID_BARREL.get());
     }
     @SubscribeEvent
     public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {

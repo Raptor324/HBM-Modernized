@@ -1,5 +1,6 @@
 package com.hbm_m.item.custom.liquids;
 
+import com.hbm_m.api.fluids.HbmFluidRegistry;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -32,6 +33,15 @@ public class FluidBarrelItem extends Item {
     }
 
     @Override
+    public Component getName(ItemStack stack) {
+        FluidStack fluid = getFluid(stack);
+        if (fluid.isEmpty()) {
+            return Component.translatable("item.hbm_m.fluid_barrel.empty");
+        }
+        return Component.translatable("item.hbm_m.fluid_barrel", fluid.getDisplayName().getString());
+    }
+
+    @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
         
@@ -47,7 +57,7 @@ public class FluidBarrelItem extends Item {
     @Override
     public boolean isBarVisible(ItemStack stack) {
         FluidStack fluid = getFluid(stack);
-        return !fluid.isEmpty();
+        return !fluid.isEmpty() && fluid.getAmount() < CAPACITY;
     }
 
     @Override
@@ -59,10 +69,7 @@ public class FluidBarrelItem extends Item {
 
     @Override
     public int getBarColor(ItemStack stack) {
-        FluidStack fluid = getFluid(stack);
-        if (fluid.isEmpty()) return 0x00AAFF;
-        // Return fluid tint color or cyan as default
-        return 0x00AAFF;
+        return 0xFFFF00;
     }
 
     @Override
@@ -86,6 +93,13 @@ public class FluidBarrelItem extends Item {
         } else {
             tag.put(NBT_FLUID, fluid.writeToNBT(new CompoundTag()));
         }
+    }
+
+    /** Returns tint color for overlay layer (for ItemColor). */
+    public static int getTintColor(ItemStack stack) {
+        FluidStack fluid = getFluid(stack);
+        if (fluid.isEmpty()) return 0xFFFFFF;
+        return HbmFluidRegistry.getTintColor(fluid.getFluid());
     }
 
     // --- Capability Provider ---

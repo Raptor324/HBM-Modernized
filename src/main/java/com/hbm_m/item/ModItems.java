@@ -54,6 +54,8 @@ import com.hbm_m.item.custom.industrial.ItemBlueprintFolder;
 import com.hbm_m.item.custom.industrial.ItemStamp;
 import com.hbm_m.item.custom.industrial.ItemTemplateFolder;
 import com.hbm_m.item.custom.liquids.FluidBarrelItem;
+import com.hbm_m.item.custom.liquids.FluidIdentifierItem;
+import com.hbm_m.item.custom.liquids.InfiniteFluidItem;
 import com.hbm_m.item.custom.liquids.InfiniteWaterItem;
 import com.hbm_m.item.custom.radiation_meter.ItemDosimeter;
 import com.hbm_m.item.custom.radiation_meter.ItemGeigerCounter;
@@ -1651,7 +1653,7 @@ public class ModItems {
 
 	// Медленный источник (500 mB/t)
 	public static final RegistryObject<Item> INFINITE_WATER_500 = ITEMS.register("inf_water",
-			() -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 500));
+					() -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 500));
 
 	// Быстрый источник (5000 mB/t)
 	public static final RegistryObject<Item> INFINITE_WATER_5000 = ITEMS.register("inf_water_mk2",
@@ -1660,6 +1662,14 @@ public class ModItems {
     // Fluid Barrel - 16,000 mB capacity portable fluid container
     public static final RegistryObject<Item> FLUID_BARREL = ITEMS.register("fluid_barrel",
             () -> new FluidBarrelItem(new Item.Properties()));
+
+    // Universal infinite fluid source (any fluid type, 1B mB/t - like 1.7.10 fluid_barrel_infinite)
+    public static final RegistryObject<Item> FLUID_BARREL_INFINITE = ITEMS.register("fluid_barrel_infinite",
+            () -> new InfiniteFluidItem(new Item.Properties().stacksTo(1), 1_000_000_000));
+
+    // Universal fluid identifier - two fluid slots, Shift+RMB opens selection GUI
+    public static final RegistryObject<Item> FLUID_IDENTIFIER = ITEMS.register("fluid_identifier",
+            () -> new FluidIdentifierItem(new Item.Properties().stacksTo(1)));
 
 
 

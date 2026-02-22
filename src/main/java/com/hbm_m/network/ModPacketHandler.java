@@ -46,6 +46,7 @@ public class ModPacketHandler {
 
         INSTANCE.registerMessage(id++, SetAssemblerRecipeC2SPacket.class, SetAssemblerRecipeC2SPacket::encode, SetAssemblerRecipeC2SPacket::decode, SetAssemblerRecipeC2SPacket::handle);
         INSTANCE.registerMessage(id++, ToggleWoodBurnerPacket.class, ToggleWoodBurnerPacket::encode, ToggleWoodBurnerPacket::decode, ToggleWoodBurnerPacket::handle);
+        INSTANCE.registerMessage(id++, FluidTankModePacket.class, FluidTankModePacket::encode, FluidTankModePacket::decode, FluidTankModePacket::handle);
 
         // Multi-Detonator (C2S)
         INSTANCE.registerMessage(id++, DetonateAllPacket.class, DetonateAllPacket::encode, DetonateAllPacket::decode, DetonateAllPacket::handle);
@@ -58,7 +59,7 @@ public class ModPacketHandler {
 
         INSTANCE.registerMessage(id++, PowerArmorDashPacket.class, PowerArmorDashPacket::toBytes, PowerArmorDashPacket::new, PowerArmorDashPacket::handle);
         INSTANCE.registerMessage(id++,
-                com.hbm_m.network.packet.PacketSyncEnergy.class, // Если пакет лежит в другом пакете, укажи путь или сделай импорт
+                com.hbm_m.network.packet.PacketSyncEnergy.class,
                 com.hbm_m.network.packet.PacketSyncEnergy::encode,
                 com.hbm_m.network.packet.PacketSyncEnergy::decode,
                 com.hbm_m.network.packet.PacketSyncEnergy::handle
@@ -68,6 +69,12 @@ public class ModPacketHandler {
             ServerboundDoorModelPacket::encode,
             ServerboundDoorModelPacket::decode,
             ServerboundDoorModelPacket::handle
+        );
+        INSTANCE.registerMessage(id++,
+            FluidIdentifierControlPacket.class,
+            FluidIdentifierControlPacket::encode,
+            FluidIdentifierControlPacket::decode,
+            FluidIdentifierControlPacket::handle
         );
     }
 }

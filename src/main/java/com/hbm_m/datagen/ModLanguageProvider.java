@@ -807,6 +807,20 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.POWDER_COAL.get(), "Угольный порошок");
                 add(ModItems.POWDER_COAL_SMALL.get(), "Маленькая кучка угольного порошока");
                 add(ModItems.BILLET_PLUTONIUM.get(), "Заготовка плутония");
+                add("item.hbm_m.fluid_barrel", "Жидкостная бочка: %s");
+                add("item.hbm_m.fluid_barrel.empty", "Пустая бочка для жидкости");
+                add("item.hbm_m.fluid_barrel_infinite", "Бесконечная жидкостная бочка");
+                add("item.hbm_m.fluid_identifier", "Мульти-жидкостный идентификатор");
+                add("item.hbm_m.fluid_identifier.info", "Жидкостный идентификатор для:");
+                add("item.hbm_m.fluid_identifier.info2", "Второй тип:");
+
+                add("gui.hbm_m.fluid_tank.empty", "Пусто");
+                add("gui.hbm_m.fluid_tank.empty_filter", "Пусто (фильтр: %s)");
+                add("gui.hbm_m.fluid_tank.filter_set", "Тип установлен: %s!");
+                add("gui.hbm_m.fluid_tank.mode.0", "Режим: Только ввод");
+                add("gui.hbm_m.fluid_tank.mode.1", "Режим: Буфер");
+                add("gui.hbm_m.fluid_tank.mode.2", "Режим: Только вывод");
+                add("gui.hbm_m.fluid_tank.mode.3", "Режим: Отключено");
 
 
 
@@ -2140,7 +2154,20 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.diamond_powder", "Diamond Powder");
                 add("item.hbm_m.emerald_powder", "Emerald Powder");
                 add("item.hbm_m.fire_powder", "Fire Powder");
-                add("item.hbm_m.fluid_barrel", "Fluid Barrel");
+                add("item.hbm_m.fluid_barrel", "Fluid Barrel: %s");
+                add("item.hbm_m.fluid_barrel.empty", "Empty Fluid Barrel");
+                add("item.hbm_m.fluid_barrel_infinite", "Infinite Fluid Barrel");
+                add("item.hbm_m.fluid_identifier", "Multi Fluid Identifier");
+                add("item.hbm_m.fluid_identifier.info", "Universal fluid identifier for:");
+                add("item.hbm_m.fluid_identifier.info2", "Secondary type:");
+
+                add("gui.hbm_m.fluid_tank.empty", "Empty");
+                add("gui.hbm_m.fluid_tank.empty_filter", "Empty (filter: %s)");
+                add("gui.hbm_m.fluid_tank.filter_set", "Type set to %s!");
+                add("gui.hbm_m.fluid_tank.mode.0", "Mode: Input only");
+                add("gui.hbm_m.fluid_tank.mode.1", "Mode: Buffer");
+                add("gui.hbm_m.fluid_tank.mode.2", "Mode: Output only");
+                add("gui.hbm_m.fluid_tank.mode.3", "Mode: Disabled");
                 add("item.hbm_m.i131_powder_tiny", "Tiny Iodine-131 Powder");
                 add("item.hbm_m.lapis_powder", "Lapis Powder");
                 add("item.hbm_m.lignite_powder", "Lignite Powder");

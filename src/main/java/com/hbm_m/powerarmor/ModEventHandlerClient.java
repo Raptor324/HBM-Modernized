@@ -34,7 +34,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 // Основные импорты Forge
@@ -540,7 +539,7 @@ public class ModEventHandlerClient {
         }
     
         // 29.8% normal mod splashes
-        int rand = (int) (Math.random() * 23);
+        int rand = (int) (Math.random() * 24);
         String text = switch (rand) {
             case 0 -> "Floppenheimer!";
             case 1 -> "i should dip my balls in sulfuric acid";
@@ -565,6 +564,7 @@ public class ModEventHandlerClient {
             case 20 -> "Diddy Edition!";
             case 21 -> "CREATE HARAM";
             case 22 -> "''playing HBM'' - means fondling my balls. © Bob";
+            case 23 -> "";
             default -> "Nuclear winter is coming!";
         };
         return net.minecraft.network.chat.Component.literal(text);

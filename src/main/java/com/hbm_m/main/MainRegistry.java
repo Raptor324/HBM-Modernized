@@ -10,6 +10,7 @@ import org.slf4j.Logger;
 // Также здесь настраиваются обработчики событий и системы радиации.
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
+import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.custom.machines.armormod.item.ItemArmorMod;
@@ -27,6 +28,8 @@ import com.hbm_m.handler.MobGearHandler;
 import com.hbm_m.hazard.ModHazards;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
+import com.hbm_m.item.custom.liquids.FluidBarrelItem;
+import com.hbm_m.item.custom.liquids.FluidIdentifierItem;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.lib.RefStrings;
@@ -45,6 +48,7 @@ import com.hbm_m.worldgen.ModWorldGen;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
@@ -442,8 +446,6 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.NUGGET_SILICON.get()));
             event.accept(new ItemStack(ModItems.BILLET_SILICON.get()));
             event.accept(new ItemStack(ModItems.BILLET_PLUTONIUM.get()));
-            event.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
-            event.accept(new ItemStack(ModItems.FLUID_BARREL.get()));
 
 
 
@@ -1201,6 +1203,16 @@ public class MainRegistry {
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added {} battery variants to NTM Fuel tab", batteriesToAdd.size() * 2);
             }
+            event.accept(new ItemStack(ModItems.FLUID_BARREL.get()));
+            for (ModFluids.FluidEntry entry : HbmFluidRegistry.getOrderedFluids()) {
+                ItemStack filledBarrel = new ItemStack(ModItems.FLUID_BARREL.get());
+                FluidBarrelItem.setFluid(filledBarrel, new FluidStack(entry.getSource(), FluidBarrelItem.CAPACITY));
+                event.accept(filledBarrel);
+            }
+            event.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
+            event.accept(new ItemStack(ModItems.INFINITE_WATER_500.get()));
+            event.accept(new ItemStack(ModItems.INFINITE_WATER_5000.get()));
+            event.accept(new ItemStack(ModItems.FLUID_BARREL_INFINITE.get()));
         }
 
         if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get()) {
@@ -1250,6 +1262,12 @@ public class MainRegistry {
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
                 ClientSetup.addTemplatesClient(event);
             });
+
+            for (ModFluids.FluidEntry entry : HbmFluidRegistry.getOrderedFluids()) {
+                ItemStack idStack = new ItemStack(ModItems.FLUID_IDENTIFIER.get());
+                FluidIdentifierItem.setType(idStack, HbmFluidRegistry.getFluidName(entry.getSource()), true);
+                event.accept(idStack);
+            }
         }
     }
 
