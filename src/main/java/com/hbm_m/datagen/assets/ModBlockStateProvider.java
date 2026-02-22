@@ -6,6 +6,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.custom.decorations.DoorBlock;
 import com.hbm_m.block.custom.machines.BlastFurnaceBlock;
 import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
+import com.hbm_m.block.custom.machines.MachineAssemblerBlock;
 import com.hbm_m.block.custom.machines.MachineWoodBurnerBlock;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
@@ -415,11 +416,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customDoorBlock(ModBlocks.VAULT_DOOR);
 
         // Machines
-        customMachineBlock(ModBlocks.ORE_ACIDIZER);
+        customMachineBlock(ModBlocks.CRYSTALLIZER);
         customMachineBlock(ModBlocks.CHEMICAL_PLANT);
         customMachineBlock(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
         customMachineBlock(ModBlocks.CENTRIFUGE);
-        customMachineBlock(ModBlocks.MACHINE_ASSEMBLER);
+        registerMachineAssemblerBlock(ModBlocks.MACHINE_ASSEMBLER);
         registerAdvancedAssemblyMachineBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
         customMachineBlock(ModBlocks.PRESS);
 
@@ -1285,6 +1286,23 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         .rotationY(getRotationY(facing))
                         .addModel();
                 }
+            }
+        }
+    }
+
+    private void registerMachineAssemblerBlock(RegistryObject<? extends Block> blockObject) {
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
+
+        for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
+            for (boolean renderActive : new boolean[]{false, true}) {
+                builder.partialState()
+                        .with(MachineAssemblerBlock.FACING, facing)
+                        .with(MachineAssemblerBlock.RENDER_ACTIVE, renderActive)
+                        .modelForState()
+                        .modelFile(modelFile)
+                        .rotationY(getRotationY(facing))
+                        .addModel();
             }
         }
     }

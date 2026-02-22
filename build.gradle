@@ -173,6 +173,8 @@ dependencies {
     minecraft "net.minecraftforge:forge:${minecraft_version}-${forge_version}"
 
     runtimeOnly fg.deobf("maven.modrinth:spark:1.10.53-forge")
+    // runtimeOnly fg.deobf("maven.modrinth:cwoL6CqY:3PEwIAxS") // Item Transforms Helper
+    // runtimeOnly fg.deobf("maven.modrinth:lhGA9TYQ:ON7CwM6M") // Architectury API (when those 2 dependencies are enabled, gradle can notify errors but thats ok. Launch game via ./gradlew runClient instead of F5. Disable when not needed)
     runtimeOnly fg.deobf("curse.maven:oculus-581495:6020952")
     // JEI is optional at runtime, but we compile against its API/classes for our integration.
     compileOnly fg.deobf("curse.maven:jei-238222:7270446")

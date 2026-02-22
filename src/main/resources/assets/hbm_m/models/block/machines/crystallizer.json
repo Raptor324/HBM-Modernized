@@ -6,7 +6,7 @@
   "children": {
     "acidizer_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/machines/ore_acidizer.obj",
+      "model": "hbm_m:models/block/machines/crystallizer.obj",
       "flip_v": true,
       "render_type": "minecraft:cutout",
       "textures": {

@@ -6,8 +6,6 @@ import com.hbm_m.block.entity.custom.machines.MachineCentrifugeBlockEntity;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import com.hbm_m.util.BlockBreakDropContext;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -89,8 +87,7 @@ public class MachineCentrifugeBlock extends BaseEntityBlock implements IMultiblo
         if (!state.is(newState.getBlock())) {
             if (!level.isClientSide()) {
                 BlockEntity blockEntity = level.getBlockEntity(pos);
-                if (!BlockBreakDropContext.consumeSkipInventoryDrop(pos) &&
-                        blockEntity instanceof MachineCentrifugeBlockEntity centrifuge) {
+                if (blockEntity instanceof MachineCentrifugeBlockEntity centrifuge) {
                     centrifuge.drops();
                 }
                 // Удаляем фантомные блоки
@@ -146,14 +143,6 @@ public class MachineCentrifugeBlock extends BaseEntityBlock implements IMultiblo
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
-    }
-
-    @Override
-    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (!level.isClientSide() && player.getAbilities().instabuild) {
-            BlockBreakDropContext.markSkipInventoryDrop(pos);
-        }
-        super.playerWillDestroy(level, pos, state, player);
     }
 
     @Nullable

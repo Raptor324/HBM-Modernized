@@ -1121,8 +1121,7 @@ public class MainRegistry {
             event.accept(ModBlocks.WOOD_BURNER);
             event.accept(ModBlocks.CHEMICAL_PLANT);
             event.accept(ModBlocks.CENTRIFUGE);
-            event.accept(ModBlocks.ORE_ACIDIZER);
-            event.accept(ModItems.HYDRAULIC_FRACKINING_TOWER);
+            event.accept(ModBlocks.CRYSTALLIZER);
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.HYDRAULIC_FRACKINING_TOWER);

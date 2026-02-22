@@ -186,7 +186,6 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
 
     private static int getRotationYForFacing(BlockState state) {
         if (!state.hasProperty(MachineAdvancedAssemblerBlock.FACING)) return 90;
-        // Базовая ориентация модели +90°, затем поворот по FACING
         return (switch (state.getValue(MachineAdvancedAssemblerBlock.FACING)) {
             case SOUTH -> 180;
             case WEST -> 270;

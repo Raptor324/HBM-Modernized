@@ -187,33 +187,35 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         boolean useBatching = useVboPath && ModClothConfig.useInstancedBatching();
         var blockState = be.getBlockState();
 
-        // 1. Рендер статики (Base + Frame)
-        poseStack.pushPose();
-        poseStack.translate(-0.5f, 0.0f, -0.5f); // Центровка модели
-
-        // Base
-        if (useBatching && instancedBase != null && instancedBase.isInitialized()) {
+        // 1. Рендер статики (Base + Frame) — только когда НЕТ шейдера (useVboPath).
+        // При активном шейдере Base и Frame рендерит BakedModel; BER рисует только подвижные части.
+        if (useVboPath) {
             poseStack.pushPose();
-            // Base не вращается, но нужна Identity матрица для корректного позиционирования инстанса
-            instancedBase.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
-            poseStack.popPose();
-        } else {
-            gpu.renderStaticBase(poseStack, dynamicLight, blockPos, be, bufferSource);
-        }
+            poseStack.translate(-0.5f, 0.0f, -0.5f); // Центровка модели
 
-        // Frame
-        if (blockState.hasProperty(MachineAdvancedAssemblerBlock.FRAME) && blockState.getValue(MachineAdvancedAssemblerBlock.FRAME)) {
-                if (useBatching && instancedFrame != null && instancedFrame.isInitialized()) {
+            // Base
+            if (useBatching && instancedBase != null && instancedBase.isInitialized()) {
                 poseStack.pushPose();
-                instancedFrame.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
+                instancedBase.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
                 poseStack.popPose();
             } else {
-                gpu.renderStaticFrame(poseStack, dynamicLight, blockPos, be, bufferSource);
+                gpu.renderStaticBase(poseStack, dynamicLight, blockPos, be, bufferSource);
             }
-        }
-        poseStack.popPose();
 
-        // 2. Рендер анимаций
+            // Frame
+            if (blockState.hasProperty(MachineAdvancedAssemblerBlock.FRAME) && blockState.getValue(MachineAdvancedAssemblerBlock.FRAME)) {
+                if (useBatching && instancedFrame != null && instancedFrame.isInitialized()) {
+                    poseStack.pushPose();
+                    instancedFrame.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
+                    poseStack.popPose();
+                } else {
+                    gpu.renderStaticFrame(poseStack, dynamicLight, blockPos, be, bufferSource);
+                }
+            }
+            poseStack.popPose();
+        }
+
+        // 2. Рендер анимаций (подвижные части — всегда через BER)
         // Если игрок далеко - пропускаем вычисления анимаций, но рисуем детали в дефолтной позе (или не рисуем, если так задумано для LOD)
         boolean skipAnimation = shouldSkipAnimationUpdate(blockPos);
         

@@ -3,44 +3,49 @@
 	"model": "hbm_m:models/item/meteorite_blade.obj",
 	"flip_v": true,
 	"textures": {
-		"particle": "hbm_m:item/meteorite_sword_seared",
-		"UV2": "hbm_m:item/meteorite_sword_seared"
+		"particle": "hbm_m:item/meteorite_sword",
+		"default": "hbm_m:item/meteorite_sword"
 	},
 	"display": {
-		"gui": {
-			"rotation": [30, 225, 0],
-			"translation": [0, 0, 0],
-			"scale": [0.55, 0.55, 0.55]
-		},
-		"ground": {
-			"rotation": [0, 0, 0],
-			"translation": [0, 2, 0],
-			"scale": [0.35, 0.35, 0.35]
-		},
-		"fixed": {
-			"rotation": [0, 180, 0],
-			"translation": [0, 0, 0],
-			"scale": [0.5, 0.5, 0.5]
-		},
-		"thirdperson_righthand": {
-			"rotation": [45, -90, 55],
-			"translation": [-1.0, 2.2, -0.5],
-			"scale": [0.5, 0.5, 0.5]
-		},
-		"thirdperson_lefthand": {
-			"rotation": [45, 90, -55],
-			"translation": [0.0, 2.5, 0.0],
-			"scale": [0.5, 0.5, 0.5]
-		},
-		"firstperson_righthand": {
-			"rotation": [45, -90, 45],
-			"translation": [1.0, 3.3, 1.0],
-			"scale": [0.5, 0.5, 0.5]
-		},
-		"firstperson_lefthand": {
-			"rotation": [45, 90, -45],
-			"translation": [1.0, 3.3, 1.0],
-			"scale": [0.5, 0.5, 0.5]
-		}
-	}
+    "thirdperson_righthand": {
+        "rotation": [ 319, 90, 49 ],
+        "translation": [ 6.75, 11.70, -4.00 ],
+        "scale": [ 0.85, 0.70, 0.85 ]
+    },
+    "thirdperson_lefthand": {
+        "rotation": [ 45, 90, -55 ],
+        "translation": [ 0.00, 2.50, 0.00 ],
+        "scale": [ 0.50, 0.50, 0.50 ]
+    },
+    "firstperson_righthand": {
+        "rotation": [ 263, 88, 89 ],
+        "translation": [ 18.25, 8.75, -20.50 ],
+        "scale": [ 1.00, 0.90, 0.90 ]
+    },
+    "firstperson_lefthand": {
+        "rotation": [ 45, 90, -45 ],
+        "translation": [ 1.00, 10.30, 1.00 ],
+        "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "gui": {
+        "rotation": [ 184, 176, 135 ],
+        "translation": [ 5.90, -0.75, 0.00 ],
+        "scale": [ 0.50, 0.50, 0.50 ]
+    },
+    "head": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "fixed": {
+        "rotation": [ 0, 180, 316 ],
+        "translation": [ -6.50, -0.50, -4.50 ],
+        "scale": [ 0.60, 0.60, 0.60 ]
+    },
+    "ground": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 4.00, 11.00, 4.00 ],
+        "scale": [ 0.50, 0.50, 0.50 ]
+    }
+}
 }

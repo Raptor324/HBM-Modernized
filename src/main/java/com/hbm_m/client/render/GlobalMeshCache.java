@@ -4,6 +4,7 @@ import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -29,14 +30,37 @@ import net.minecraftforge.client.model.data.ModelData;
 @OnlyIn(Dist.CLIENT)
 public class GlobalMeshCache {
 
-    // ИСПРАВЛЕНИЕ: Ограничиваем размер кэша
     private static final int MAX_CACHE_SIZE = 256;
-    
-    // Отдельные кэши для разных типов контента
-    private static final ConcurrentHashMap<String, WeakReference<AbstractGpuVboRenderer>> PART_RENDERERS = new ConcurrentHashMap<>();
-    private static final Map<String, List<BakedQuad>> COMPILED_QUADS = new ConcurrentHashMap<>();
-    private static final Map<String, VertexBuffer> GPU_BUFFERS = new ConcurrentHashMap<>();
     private static final RandomSource RANDOM_SOURCE = RandomSource.create(0);
+    private static final ConcurrentHashMap<String, WeakReference<AbstractGpuVboRenderer>> PART_RENDERERS = new ConcurrentHashMap<>();
+    private static final java.util.Set<String> FAILED_RENDERER_KEYS = ConcurrentHashMap.newKeySet();
+
+    // === ИСПРАВЛЕНИЕ: Потокобезопасные LRU-кэши ===
+
+    // Кэш для квадов (Автоматически удаляет самые старые при достижении лимита)
+    private static final Map<String, List<BakedQuad>> COMPILED_QUADS = Collections.synchronizedMap(
+        new LinkedHashMap<String, List<BakedQuad>>(MAX_CACHE_SIZE + 1, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, List<BakedQuad>> eldest) {
+                return size() > MAX_CACHE_SIZE;
+            }
+        }
+    );
+
+    // Кэш для GPU Буферов (При удалении автоматически очищает память видеокарты)
+    private static final Map<String, VertexBuffer> GPU_BUFFERS = Collections.synchronizedMap(
+        new LinkedHashMap<String, VertexBuffer>(MAX_CACHE_SIZE + 1, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, VertexBuffer> eldest) {
+                if (size() > MAX_CACHE_SIZE) {
+                    VertexBuffer vb = eldest.getValue();
+                    if (vb != null) vb.close();
+                    return true;
+                }
+                return false;
+            }
+        }
+    );
 
     // ==================== ОБРАТНАЯ СОВМЕСТИМОСТЬ: Старые методы ====================
     
@@ -201,11 +225,9 @@ public class GlobalMeshCache {
         });
     }
 
-    private static final java.util.Set<String> FAILED_RENDERER_KEYS = ConcurrentHashMap.newKeySet();
-
-    private static AbstractGpuVboRenderer createRendererForPart(BakedModel model) {
-        return createRendererForPart(model, "unknown");
-    }
+    // private static AbstractGpuVboRenderer createRendererForPart(BakedModel model) {
+    //     return createRendererForPart(model, "unknown");
+    // }
     
     private static AbstractGpuVboRenderer createRendererForPart(BakedModel model, String partName) {
         // ПРЕДВАРИТЕЛЬНАЯ проверка: есть ли квады в модели

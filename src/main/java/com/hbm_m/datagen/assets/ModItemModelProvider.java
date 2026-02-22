@@ -445,7 +445,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.WOOD_BURNER);
         blockItemFromBlockModelMachine(ModBlocks.CHEMICAL_PLANT);
         blockItemFromBlockModelMachine(ModBlocks.CENTRIFUGE);
-        blockItemFromBlockModelMachine(ModBlocks.ORE_ACIDIZER);
+        blockItemFromBlockModelMachine(ModBlocks.CRYSTALLIZER);
         blockItemFromBlockModelMachine(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_ASSEMBLER);
         blockItemFromBlockModelMachine(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);

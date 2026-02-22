@@ -39,9 +39,9 @@ import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.custom.machines.MachineAssemblerBlock;
 import com.hbm_m.block.custom.machines.MachineCentrifugeBlock;
 import com.hbm_m.block.custom.machines.MachineChemicalPlantBlock;
+import com.hbm_m.block.custom.machines.MachineCrystallizerBlock;
 import com.hbm_m.block.custom.machines.MachineFluidTankBlock;
 import com.hbm_m.block.custom.machines.MachineHydraulicFrackiningTowerBlock;
-import com.hbm_m.block.custom.machines.MachineOreAcidizerBlock;
 import com.hbm_m.block.custom.machines.MachinePressBlock;
 import com.hbm_m.block.custom.machines.MachineShredderBlock;
 import com.hbm_m.block.custom.machines.MachineWoodBurnerBlock;
@@ -303,10 +303,10 @@ public class ModBlocks {
     public static final RegistryObject<Block> HYDRAULIC_FRACKINING_TOWER = registerBlockWithoutItem("hydraulic_frackining_tower",
             () -> new MachineHydraulicFrackiningTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
-    public static final RegistryObject<Block> ORE_ACIDIZER = registerBlockWithoutItem("ore_acidizer",
-            () -> new MachineOreAcidizerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((state, world, pos) -> false)));
+    public static final RegistryObject<Block> CRYSTALLIZER = registerBlockWithoutItem("crystallizer",
+            () -> new MachineCrystallizerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
-	public static final RegistryObject<Block> CHEMICAL_PLANT = registerBlockWithoutItem("chemical_plant",
+    public static final RegistryObject<Block> CHEMICAL_PLANT = registerBlockWithoutItem("chemical_plant",
             () -> new MachineChemicalPlantBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistryObject<Block> CENTRIFUGE = registerBlockWithoutItem("centrifuge",

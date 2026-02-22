@@ -15,6 +15,7 @@ import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.custom.doors.DoorDeclRegistry;
 import com.hbm_m.client.loader.DoorModelLoader;
 import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
+import com.hbm_m.client.loader.MachineAssemblerModelLoader;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.ProceduralWireLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
@@ -47,6 +48,7 @@ import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.MachineAdvancedAssemblerVboRenderer;
+import com.hbm_m.client.render.MachineAssemblerRenderer;
 import com.hbm_m.client.render.MachinePressRenderer;
 import com.hbm_m.client.render.ModShaders;
 import com.hbm_m.client.render.OcclusionCullingHelper;
@@ -163,7 +165,7 @@ public class ClientSetup {
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
         event.enqueueWork(() -> {
-            MenuScreens.register(ModMenuTypes.ORE_ACIDIZER_MENU.get(), com.hbm_m.client.screen.OreAcidizerScreen::new);
+            MenuScreens.register(ModMenuTypes.CRYSTALLIZER_MENU.get(), com.hbm_m.client.overlay.GUIMachineCrystallizer::new);
             MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
             MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
             MenuScreens.register(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
@@ -184,6 +186,7 @@ public class ClientSetup {
 
             // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), ChemicalPlantRenderer::new);
@@ -280,11 +283,12 @@ public class ClientSetup {
 
         event.register("procedural_wire", new ProceduralWireLoader());
         event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
+        event.register("machine_assembler_loader", new MachineAssemblerModelLoader());
         event.register("door", new DoorModelLoader());
         event.register("template_loader", new TemplateModelLoader());
         event.register("press_loader", new PressModelLoader());
 
-        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, template_loader, door, press_loader");
+        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, machine_assembler_loader, template_loader, door, press_loader");
     }
 
     @SubscribeEvent

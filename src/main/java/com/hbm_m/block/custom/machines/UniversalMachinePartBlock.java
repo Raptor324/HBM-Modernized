@@ -18,8 +18,6 @@ import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import com.hbm_m.util.BlockBreakDropContext;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
@@ -113,7 +111,11 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
         VoxelShape masterShape;
 
         // 1. Определяем "Мастер-форму" (общий контур всего мультиблока)
-        if (controllerBlock instanceof DoorBlock doorBlock) {
+        // Сначала проверяем кастомную форму контроллера (Assembler, AdvancedAssembler и т.д.)
+        VoxelShape customShape = controller.getCustomMasterVoxelShape(controllerState);
+        if (customShape != null && !customShape.isEmpty()) {
+            masterShape = customShape;
+        } else if (controllerBlock instanceof DoorBlock doorBlock) {
             DoorDecl decl = DoorDeclRegistry.getById(doorBlock.getDoorDeclId());
 
             if (decl != null && decl.isDynamicShape()) {
@@ -125,7 +127,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
                 masterShape = controller.getStructureHelper().generateShapeFromParts(facing);
             }
         } else {
-            // Логика для остальных мультиблоков (Assembler и т.д.)
+            // Логика для остальных мультиблоков без кастомной формы
             Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
             masterShape = controller.getStructureHelper().generateShapeFromParts(facing);
         }
@@ -361,9 +363,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
                 BlockState controllerState = level.getBlockState(controllerPos);
                 if (controllerState.getBlock() instanceof IMultiblockController) {
                     boolean dropController = !player.getAbilities().instabuild;
-                    if (!dropController) {
-                        BlockBreakDropContext.markSkipInventoryDrop(controllerPos);
-                    }
                     level.destroyBlock(controllerPos, dropController);
                 }
             }

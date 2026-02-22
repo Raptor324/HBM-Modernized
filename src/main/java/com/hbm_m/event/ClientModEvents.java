@@ -6,6 +6,7 @@ import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
+import com.hbm_m.client.render.MachineAssemblerRenderer;
 import com.hbm_m.client.render.MachinePressRenderer;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
@@ -76,6 +77,7 @@ public class ClientModEvents {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             if (ModClothConfig.useInstancedBatching()) {
                 MachineAdvancedAssemblerRenderer.flushInstancedBatches(event);
+                MachineAssemblerRenderer.flushInstancedBatches(event);
                 DoorRenderer.flushInstancedBatches(event);
                 MachinePressRenderer.flushInstancedBatches(event);
             }
@@ -105,6 +107,7 @@ public class ClientModEvents {
                 DoorRenderer.clearAllCaches();
                 MachinePressRenderer.clearCaches();
                 MachineAdvancedAssemblerRenderer.clearCaches();
+                MachineAssemblerRenderer.clearCaches();
                 
                 // Очищаем глобальные кеши
                 GlobalMeshCache.clearAll();

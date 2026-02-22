@@ -256,7 +256,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
         long gameTime = level.getGameTime();
 
-            chargeFromEnergySlot();
+        chargeFromEnergySlot();
 
         if (gameTime % 10 == 0) {
             updateEnergyDelta(this.getEnergyStored());
@@ -284,7 +284,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                     sendUpdateToClient();
                 }
 
-                //  ИЗМЕНЕНО: Используем setEnergyStored для автоматического пробуждения
                 this.setEnergyStored(this.getEnergyStored() - energyPerTick);
                 progress++;
                 setChanged();
@@ -301,6 +300,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         } else {
             stopCrafting();
         }
+
+        syncRenderActive();
     }
 
     private void stopCrafting() {
@@ -309,6 +310,19 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             isCrafting = false;
             setChanged();
             sendUpdateToClient();
+        }
+    }
+
+    private void syncRenderActive() {
+        boolean shouldRenderActive = isCrafting;
+        BlockState currentState = getBlockState();
+        if (currentState.getBlock() instanceof MachineAssemblerBlock &&
+                currentState.hasProperty(MachineAssemblerBlock.RENDER_ACTIVE)) {
+            boolean currentActive = currentState.getValue(MachineAssemblerBlock.RENDER_ACTIVE);
+            if (currentActive != shouldRenderActive) {
+                level.setBlock(worldPosition,
+                        currentState.setValue(MachineAssemblerBlock.RENDER_ACTIVE, shouldRenderActive), 3);
+            }
         }
     }
 
@@ -610,6 +624,14 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
+    public <T> LazyOptional<T> getCapability(@NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
+        if (cap == ForgeCapabilities.ITEM_HANDLER) {
+            return itemHandler.cast();
+        }
+        return super.getCapability(cap, side);
+    }
+
+    @Override
     public void invalidateCaps() {
         super.invalidateCaps();
         lazyInputProxy.invalidate();
@@ -625,6 +647,13 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     public boolean isCrafting() {
         return isCrafting;
+    }
+
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(
+                worldPosition.offset(-2, -1, -2),
+                worldPosition.offset(3, 3, 3));
     }
 
     @Override

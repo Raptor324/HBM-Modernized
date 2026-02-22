@@ -6,7 +6,7 @@
   "children": {
     "fracking_tower_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/machines/hydraulic_frackining_tower.obj",
+      "model": "hbm_m:models/block/machines/hydraulic_frackining_tower2.obj",
       "flip_v": true,
       "render_type": "minecraft:solid",
       "textures": {

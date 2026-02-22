@@ -18,9 +18,9 @@ import com.hbm_m.block.entity.custom.machines.MachineAssemblerBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineBatteryBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineCentrifugeBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineChemicalPlantBlockEntity;
+import com.hbm_m.block.entity.custom.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineHydraulicFrackiningTowerBlockEntity;
-import com.hbm_m.block.entity.custom.machines.MachineOreAcidizerBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachinePressBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineShredderBlockEntity;
 import com.hbm_m.block.entity.custom.machines.MachineWoodBurnerBlockEntity;
@@ -40,9 +40,9 @@ public class ModBlockEntities {
         public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
                 DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, RefStrings.MODID);
 
-        public static final RegistryObject<BlockEntityType<MachineOreAcidizerBlockEntity>> ORE_ACIDIZER =
-                BLOCK_ENTITIES.register("ore_acidizer", () ->
-                        BlockEntityType.Builder.of(MachineOreAcidizerBlockEntity::new, ModBlocks.ORE_ACIDIZER.get())
+        public static final RegistryObject<BlockEntityType<MachineCrystallizerBlockEntity>> CRYSTALLIZER =
+                BLOCK_ENTITIES.register("crystallizer", () ->
+                        BlockEntityType.Builder.of(MachineCrystallizerBlockEntity::new, ModBlocks.CRYSTALLIZER.get())
                                 .build(null));
 
         public static final RegistryObject<BlockEntityType<MachineHydraulicFrackiningTowerBlockEntity>> HYDRAULIC_FRACKINING_TOWER_BE =
