@@ -1045,13 +1045,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.crate_lead", "Свинцовый ящик");
                 add("block.hbm_m.crate_metal", "Металлический ящик");
                 add("block.hbm_m.crate_weapon", "Ящик с оружием");
-                add("block.hbm_m.uranium_block", "Урановый блок");
                 add("block.hbm_m.plutonium_block", "Плутониевый блок");
                 add("block.hbm_m.plutonium_fuel_block", "Блок плутониевого топлива");
                 add("block.hbm_m.polonium210_block", "Блок полония-210");
                 add("block.hbm_m.armor_table", "Стол модификации брони");
                 add("block.hbm_m.machine_assembler", "Сборочная машина (Старая)");
                 add("block.hbm_m.advanced_assembly_machine", "Сборочная машина");
+                add("block.hbm_m.block_uranium", "Урановый блок");
                 add(ModBlocks.FLUID_TANK.get(), "Цистерна");
                 add("block.hbm_m.machine_battery", "Энергохранилище");
 
