@@ -4,9 +4,10 @@ import com.hbm_m.block.custom.machines.MachineHydraulicFrackiningTowerBlock;
 import com.hbm_m.block.entity.custom.machines.MachineHydraulicFrackiningTowerBlockEntity;
 import com.hbm_m.client.model.MachineHydraulicFrackiningTowerBakedModel;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
+import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.math.Axis;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -25,14 +26,47 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
     private MachineHydraulicFrackiningTowerVboRenderer gpu;
     private MachineHydraulicFrackiningTowerBakedModel cachedModel;
 
+    private static volatile InstancedStaticPartRenderer instancedMain;
+    private static volatile boolean instancersInitialized = false;
+
     public MachineHydraulicFrackiningTowerRenderer(BlockEntityRendererProvider.Context ctx) {}
 
     public static void clearCaches() {
-        // Очистка при необходимости (перенесено в GlobalMeshCache для VBO)
+        if (instancedMain != null) {
+            instancedMain.cleanup();
+            instancedMain = null;
+        }
+        instancersInitialized = false;
     }
 
-    // Для этой махины батчинг не нужен, она слишком большая.
-    public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {}
+    // Реализуем метод flush, чтобы отрисовывать накопленные инстансы в конце кадра
+    public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+        if (instancedMain != null) {
+            instancedMain.flush(event);
+        }
+    }
+
+    // Инициализация статического рендерера (один раз для всех вышек)
+    private static synchronized void initializeInstancedRenderersSync(MachineHydraulicFrackiningTowerBakedModel model) {
+        if (instancersInitialized) return;
+
+        try {
+            MainRegistry.LOGGER.info("MachineHydraulicFrackiningTowerRenderer: Initializing instanced renderers...");
+            // Имя части берем из MachineHydraulicFrackiningTowerVboRenderer ("Cube_Cube.001")
+            BakedModel part = model.getPart("Cube_Cube.001");
+            if (part != null) {
+                var data = ObjModelVboBuilder.buildSinglePart(part, "Cube_Cube.001");
+                var quads = GlobalMeshCache.getOrCompile("frackining_tower_Cube_Cube.001", part);
+                if (data != null) {
+                    instancedMain = new InstancedStaticPartRenderer(data, quads);
+                }
+            }
+            instancersInitialized = true;
+        } catch (Exception e) {
+            MainRegistry.LOGGER.error("Failed to initialize fracking tower instanced renderers", e);
+            clearCaches();
+        }
+    }
 
     @Override
     protected MachineHydraulicFrackiningTowerBakedModel getModelType(BakedModel rawModel) {
@@ -67,28 +101,33 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
             gpu = new MachineHydraulicFrackiningTowerVboRenderer(model);
         }
 
+        // Ленивая инициализация батчинга
+        if (!instancersInitialized) {
+            initializeInstancedRenderersSync(model);
+        }
+
         poseStack.pushPose();
-        Direction facing = getFacing(be);
-        poseStack.mulPose(Axis.YP.rotationDegrees(facing.toYRot()));
 
         boolean isShaderActive = ShaderCompatibilityDetector.isExternalShaderActive();
+        boolean useBatching = ModClothConfig.useInstancedBatching();
 
         if (isShaderActive) {
-            // --- МАГИЯ СОВМЕСТИМОСТИ VBO С ШЕЙДЕРАМИ ---
-            // Активируем стейт рендера блока. Iris перехватит этот вызов
-            // и включит свои G-буферы (для расчета теней, нормалей и освещения).
             RenderType renderType = RenderType.cutoutMipped();
             renderType.setupRenderState();
             RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getRendertypeCutoutMippedShader);
 
-            // Рендерим башню через сверхбыстрый VBO. Никаких лагов от BulkData!
             gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
 
-            // Обязательно сбрасываем стейт, чтобы не сломать рендер других объектов
             renderType.clearRenderState();
         } else {
-            // Обычный ванильный рендер VBO
-            gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
+            // Шейдеров нет: проверяем конфиг на батчинг
+            if (useBatching && instancedMain != null && instancedMain.isInitialized()) {
+                // Добавляем вышку в список инстансов (отрисовка произойдет в flushInstancedBatches)
+                instancedMain.addInstance(poseStack, packedLight, blockPos, be, bufferSource);
+            } else {
+                // Батчинг выключен или не инициализирован: обычный VBO рендер
+                gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
+            }
         }
 
         poseStack.popPose();
@@ -96,6 +135,6 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
 
     @Override 
     public boolean shouldRenderOffScreen(MachineHydraulicFrackiningTowerBlockEntity be) {
-        return true; // Контроль видимости полностью лежит на OcclusionCullingHelper + огромном AABB
+        return true; 
     }
 }

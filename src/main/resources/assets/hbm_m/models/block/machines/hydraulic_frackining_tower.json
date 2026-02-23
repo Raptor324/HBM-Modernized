@@ -7,6 +7,11 @@
     "default": "hbm_m:block/machine/fracking_tower",
     "particle": "hbm_m:block/machine/fracking_tower"
   },
+  "transform": {
+        "rotation": [0, -90, 0],
+        "translation": [ -3, 0, 0 ],
+        "scale": 1.0
+    },
   "display": {
     "gui": {
       "rotation": [ 30, 225, 0 ],

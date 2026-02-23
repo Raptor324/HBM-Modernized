@@ -40,28 +40,13 @@ public class MachineHydraulicFrackiningTowerBakedModel extends AbstractMultipart
         }
 
         List<BakedQuad> result = new ArrayList<>();
-        int rotationY = 0;
-        
-        if (state != null && state.hasProperty(MachineHydraulicFrackiningTowerBlock.FACING)) {
-            rotationY = getRotationYForFacing(state);
-        }
         
         BakedModel basePart = parts.get("Cube_Cube.001");
         if (basePart != null) {
-            result.addAll(ModelHelper.transformQuadsByFacing(
-                basePart.getQuads(state, side, rand, modelData, renderType), rotationY));
+            result.addAll(basePart.getQuads(state, side, rand, modelData, renderType));
         }
         
         return result;
-    }
-
-    private int getRotationYForFacing(BlockState state) {
-        return switch (state.getValue(MachineHydraulicFrackiningTowerBlock.FACING)) {
-            case SOUTH -> 180;
-            case WEST -> 270;
-            case EAST -> 90;
-            default -> 0;
-        };
     }
 
     @Override
