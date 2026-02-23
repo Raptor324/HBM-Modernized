@@ -16,6 +16,7 @@ import com.hbm_m.block.entity.custom.doors.DoorDeclRegistry;
 import com.hbm_m.client.loader.DoorModelLoader;
 import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
 import com.hbm_m.client.loader.MachineAssemblerModelLoader;
+import com.hbm_m.client.loader.MachineHydraulicFrackiningTowerModelLoader;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.ProceduralWireLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
@@ -49,6 +50,9 @@ import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.MachineAdvancedAssemblerVboRenderer;
 import com.hbm_m.client.render.MachineAssemblerRenderer;
+import com.hbm_m.client.render.MachineAssemblerVboRenderer;
+import com.hbm_m.client.render.MachineHydraulicFrackiningTowerRenderer;
+import com.hbm_m.client.render.MachineHydraulicFrackiningTowerVboRenderer;
 import com.hbm_m.client.render.MachinePressRenderer;
 import com.hbm_m.client.render.ModShaders;
 import com.hbm_m.client.render.OcclusionCullingHelper;
@@ -101,8 +105,8 @@ import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.ModelEvent;
 import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
+import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.client.event.RegisterShadersEvent;
@@ -191,6 +195,7 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), ChemicalPlantRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
 
             OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
             try {
@@ -285,11 +290,12 @@ public class ClientSetup {
         event.register("procedural_wire", new ProceduralWireLoader());
         event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
         event.register("machine_assembler_loader", new MachineAssemblerModelLoader());
+        event.register("hydraulic_frackining_tower_loader", new MachineHydraulicFrackiningTowerModelLoader());
         event.register("door", new DoorModelLoader());
         event.register("template_loader", new TemplateModelLoader());
         event.register("press_loader", new PressModelLoader());
 
-        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, machine_assembler_loader, template_loader, door, press_loader");
+        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader");
     }
 
     @SubscribeEvent
@@ -319,6 +325,7 @@ public class ClientSetup {
 
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_ENTITY.get(), AirstrikeEntityRenderer::new);
     }
+
     @SubscribeEvent
     public static void onResourceReload(RegisterClientReloadListenersEvent event) {
         event.registerReloadListener(new ShaderReloadListener());
@@ -333,11 +340,13 @@ public class ClientSetup {
                 // включении шейдера — clearCaches вызывался во время render pass).
                 com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
                     try {
-                        MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
                         MachineAdvancedAssemblerRenderer.clearCaches();
+                        MachineAssemblerRenderer.clearCaches();
+                        MachineHydraulicFrackiningTowerRenderer.clearCaches();
                         DoorRenderer.clearAllCaches();
                         MachinePressRenderer.clearCaches();
                         GlobalMeshCache.clearAll();
+                        AbstractObjArmorLayer.clearAllCaches();
                         MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");
                     } catch (Exception e) {
                         MainRegistry.LOGGER.error("Error during deferred VBO cache cleanup", e);
@@ -348,13 +357,17 @@ public class ClientSetup {
     }
 
     public static void onClientDisconnect(net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
-        MainRegistry.LOGGER.info("Client disconnecting, clearing VBO caches...");
-        DoorRenderer.clearAllCaches();
-        MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
-        MachinePressRenderer.clearCaches();
-        
-        // Очищаем кэши рендеринга брони
-        AbstractObjArmorLayer.clearAllCaches();
+        com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
+            MachineAdvancedAssemblerRenderer.clearCaches();
+            MachineAssemblerRenderer.clearCaches();
+            MachineHydraulicFrackiningTowerRenderer.clearCaches();
+            DoorRenderer.clearAllCaches();
+            MachinePressRenderer.clearCaches();
+            GlobalMeshCache.clearAll();
+            
+            // Очищаем кэши рендеринга брони
+            AbstractObjArmorLayer.clearAllCaches();
+        });
     }
 
     @SubscribeEvent

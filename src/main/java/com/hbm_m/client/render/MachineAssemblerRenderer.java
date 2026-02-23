@@ -409,7 +409,6 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         cleanupInstanced(instancedArm); instancedArm = null;
         cleanupInstanced(instancedCog); instancedCog = null;
         instancersInitialized = false;
-        MachineAssemblerVboRenderer.clearGlobalCache();
     }
 
     private static void cleanupInstanced(InstancedStaticPartRenderer r) {
@@ -424,10 +423,10 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
     @Override
     public int getViewDistance() { return 128; }
 
-    public void onResourceManagerReload() {
-        clearCaches();
-        gpu = null;
-        cachedModel = null;
-        MainRegistry.LOGGER.debug("Assembler legacy renderer resources reloaded");
-    }
+    // public void onResourceManagerReload() {
+    //     clearCaches();
+    //     gpu = null;
+    //     cachedModel = null;
+    //     MainRegistry.LOGGER.debug("Assembler legacy renderer resources reloaded");
+    // }
 }

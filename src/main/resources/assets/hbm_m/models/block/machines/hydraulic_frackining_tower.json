@@ -1,23 +1,11 @@
 {
-  "loader": "forge:composite",
+  "loader": "hbm_m:hydraulic_frackining_tower_loader",
+  "model": "hbm_m:models/block/machines/hydraulic_frackining_tower2.obj",
+  "flip_v": true,
+  "render_type": "minecraft:solid",
   "textures": {
+    "default": "hbm_m:block/machine/fracking_tower",
     "particle": "hbm_m:block/machine/fracking_tower"
-  },
-  "children": {
-    "fracking_tower_model": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/machines/hydraulic_frackining_tower2.obj",
-      "flip_v": true,
-      "render_type": "minecraft:solid",
-      "textures": {
-        "default": "hbm_m:block/machine/fracking_tower"
-      }
-    }
-  },
-  "transform": {
-        "translation": [0.5, 0, 0.5],
-        "rotation": [0, 0, 0],
-        "scale": 1.0
   },
   "display": {
     "gui": {

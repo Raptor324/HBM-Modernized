@@ -302,7 +302,6 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         cleanupInstanced(instancedHead2); instancedHead2 = null;
         cleanupInstanced(instancedSpike2);         instancedSpike2 = null;
         instancersInitialized = false;
-        MachineAdvancedAssemblerVboRenderer.clearGlobalCache();
     }
 
     private static void cleanupInstanced(InstancedStaticPartRenderer r) {
@@ -455,10 +454,10 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
     @Override public int getViewDistance() { return 128; }
     
-    public void onResourceManagerReload() {
-        clearCaches();
-        gpu = null;
-        cachedModel = null;
-        MainRegistry.LOGGER.debug("Assembler renderer resources reloaded");
-    }
+    // public void onResourceManagerReload() {
+    //     clearCaches();
+    //     gpu = null;
+    //     cachedModel = null;
+    //     MainRegistry.LOGGER.debug("Assembler renderer resources reloaded");
+    // }
 }

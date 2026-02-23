@@ -7,6 +7,7 @@ import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.MachineAssemblerRenderer;
+import com.hbm_m.client.render.MachineHydraulicFrackiningTowerRenderer;
 import com.hbm_m.client.render.MachinePressRenderer;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
@@ -15,6 +16,7 @@ import com.hbm_m.config.ModClothConfig;
 // Подсказки показываются при наведении на предмет в инвентаре.
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.powerarmor.layer.AbstractObjArmorLayer;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.screens.Screen;
@@ -32,9 +34,6 @@ import net.minecraftforge.fml.common.Mod;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ClientModEvents {
-
-    private static int memoryCleanupCounter = 0;
-    private static final int MEMORY_CLEANUP_INTERVAL = 1200;
 
     @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent event) {
@@ -77,6 +76,7 @@ public class ClientModEvents {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             if (ModClothConfig.useInstancedBatching()) {
                 MachineAdvancedAssemblerRenderer.flushInstancedBatches(event);
+                MachineHydraulicFrackiningTowerRenderer.flushInstancedBatches(event);
                 MachineAssemblerRenderer.flushInstancedBatches(event);
                 DoorRenderer.flushInstancedBatches(event);
                 MachinePressRenderer.flushInstancedBatches(event);
@@ -98,32 +98,6 @@ public class ClientModEvents {
             DoorChunkInvalidationHelper.processPendingInvalidations();
             // Инвалидация чанков при смене шейдера (вне render loop — избегаем краша Sodium)
             ShaderCompatibilityDetector.processPendingChunkInvalidation();
-            // Периодическая очистка памяти
-            memoryCleanupCounter++;
-            if (memoryCleanupCounter >= MEMORY_CLEANUP_INTERVAL) {
-                memoryCleanupCounter = 0;
-                
-                // Очищаем кеши рендереров (все instanced рендереры)
-                DoorRenderer.clearAllCaches();
-                MachinePressRenderer.clearCaches();
-                MachineAdvancedAssemblerRenderer.clearCaches();
-                MachineAssemblerRenderer.clearCaches();
-                
-                // Очищаем глобальные кеши
-                GlobalMeshCache.clearAll();
-                
-                // Вызываем сборку мусора если нужно
-                Runtime runtime = Runtime.getRuntime();
-                long usedMemory = runtime.totalMemory() - runtime.freeMemory();
-                long maxMemory = runtime.maxMemory();
-                
-                // Если используется больше 80% памяти - запускаем GC
-                if (usedMemory > maxMemory * 0.8) {
-                    MainRegistry.LOGGER.debug("Memory usage high ({}%), triggering GC",
-                            (usedMemory * 100) / maxMemory);
-                    System.gc();
-                }
-            }
         }
     }
 }

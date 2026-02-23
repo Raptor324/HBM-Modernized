@@ -18,10 +18,15 @@ import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.BlockParticleOption;
+import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
@@ -412,5 +417,60 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
     @Override
     public int getLightBlock(BlockState state, BlockGetter world, BlockPos pos) {
         return 0;
+    }
+    /**
+     * Исправляет частицы при приземлении на фантомный блок.
+     * Вместо текстуры фантома (которой нет), берет текстуру контроллера.
+     */
+    @Override
+    public boolean addLandingEffects(BlockState state1, ServerLevel level, BlockPos pos, BlockState state2, LivingEntity entity, int numberOfParticles) {
+        if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null) {
+                BlockState controllerState = level.getBlockState(controllerPos);
+                
+                // Если контроллер существует и не воздух
+                if (!controllerState.isAir()) {
+                    // Генерируем частицы, используя BlockState КОНТРОЛЛЕРА
+                    level.sendParticles(new BlockParticleOption(ParticleTypes.BLOCK, controllerState),
+                            entity.getX(), entity.getY(), entity.getZ(),
+                            numberOfParticles, 0.0D, 0.0D, 0.0D, 0.15D);
+                    
+                    // Возвращаем true, чтобы отменить стандартные частицы (missing texture)
+                    return true; 
+                }
+            }
+        }
+        return false;
+    }
+
+    /**
+     * Исправляет частицы при беге по фантомному блоку.
+     */
+    @Override
+    public boolean addRunningEffects(BlockState state, Level level, BlockPos pos, Entity entity) {
+        // Это выполняется на клиенте
+        if (level.isClientSide && level.getBlockEntity(pos) instanceof IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null) {
+                BlockState controllerState = level.getBlockState(controllerPos);
+                
+                if (!controllerState.isAir()) {
+                    // Обычная логика спавна частиц бега, но с текстурой контроллера
+                    if (level.random.nextFloat() < 0.1F) { // Ограничиваем количество, как в ванилле
+                        double x = entity.getX() + (level.random.nextDouble() - 0.5D) * (double)entity.getBbWidth();
+                        double y = entity.getY() + 0.1D;
+                        double z = entity.getZ() + (level.random.nextDouble() - 0.5D) * (double)entity.getBbWidth();
+                        
+                        level.addParticle(new BlockParticleOption(ParticleTypes.BLOCK, controllerState), 
+                            x, y, z, 
+                            -entity.getDeltaMovement().x * 4.0D, 1.5D, -entity.getDeltaMovement().z * 4.0D);
+                    }
+                    // Возвращаем true, чтобы отменить стандартные
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

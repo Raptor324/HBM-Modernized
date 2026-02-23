@@ -85,8 +85,4 @@ public class MachineAdvancedAssemblerVboRenderer {
                           Matrix4f transform, BlockPos blockPos) {
         renderAnimatedPart(poseStack, packedLight, partName, transform, blockPos, null);
     }
-
-    public static void clearGlobalCache() {
-        GlobalMeshCache.clearAll();
-    }
 }

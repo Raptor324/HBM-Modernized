@@ -636,9 +636,6 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         // Очищаем VBO кэш
         DoorVboRenderer.clearCache();
 
-        // Очищаем глобальный кэш мешей
-        GlobalMeshCache.clearAll();
-
         // Очищаем кэш Collada-анимаций
         ColladaAnimationData.clearCache();
 

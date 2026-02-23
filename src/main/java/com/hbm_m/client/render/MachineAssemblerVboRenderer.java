@@ -47,8 +47,4 @@ public class MachineAssemblerVboRenderer {
             poseStack.popPose();
         }
     }
-
-    public static void clearGlobalCache() {
-        GlobalMeshCache.clearAll();
-    }
 }

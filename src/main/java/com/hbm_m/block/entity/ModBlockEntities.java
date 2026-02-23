@@ -37,16 +37,16 @@ import net.minecraftforge.registries.RegistryObject;
 
 public class ModBlockEntities {
 
-        public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
-                DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, RefStrings.MODID);
+	public static final DeferredRegister<BlockEntityType<?>> BLOCK_ENTITIES =
+			DeferredRegister.create(ForgeRegistries.BLOCK_ENTITY_TYPES, RefStrings.MODID);
 
-        public static final RegistryObject<BlockEntityType<MachineCrystallizerBlockEntity>> CRYSTALLIZER =
-                BLOCK_ENTITIES.register("crystallizer", () ->
-                        BlockEntityType.Builder.of(MachineCrystallizerBlockEntity::new, ModBlocks.CRYSTALLIZER.get())
-                                .build(null));
+	public static final RegistryObject<BlockEntityType<MachineCrystallizerBlockEntity>> CRYSTALLIZER =
+		BLOCK_ENTITIES.register("crystallizer", () ->
+					BlockEntityType.Builder.of(MachineCrystallizerBlockEntity::new, ModBlocks.CRYSTALLIZER.get())
+							.build(null));
 
-        public static final RegistryObject<BlockEntityType<MachineHydraulicFrackiningTowerBlockEntity>> HYDRAULIC_FRACKINING_TOWER_BE =
-                BLOCK_ENTITIES.register("hydraulic_frackining_tower_be", () ->
+	public static final RegistryObject<BlockEntityType<MachineHydraulicFrackiningTowerBlockEntity>> HYDRAULIC_FRACKINING_TOWER_BE =
+		BLOCK_ENTITIES.register("hydraulic_frackining_tower_be", () ->
                         BlockEntityType.Builder.of(MachineHydraulicFrackiningTowerBlockEntity::new, ModBlocks.HYDRAULIC_FRACKINING_TOWER.get())
                                 .build(null));
 
