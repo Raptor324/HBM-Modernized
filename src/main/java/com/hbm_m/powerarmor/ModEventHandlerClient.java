@@ -7,9 +7,7 @@ import java.util.Set;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
-// import com.hbm_m.powerarmor.overlay.ThermalVisionRenderer;
 import com.mojang.blaze3d.platform.GlStateManager;
-// Импорты для рендеринга
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -18,7 +16,6 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
-// Импорты Minecraft
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -34,6 +31,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 // Основные импорты Forge
@@ -42,7 +40,6 @@ import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RenderItemInFrameEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.event.ScreenEvent;
-// Импорты Forge GUI
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.event.TickEvent;
@@ -539,14 +536,14 @@ public class ModEventHandlerClient {
         }
     
         // 29.8% normal mod splashes
-        int rand = (int) (Math.random() * 24);
+        int rand = (int) (Math.random() * 26);
         String text = switch (rand) {
             case 0 -> "Floppenheimer!";
             case 1 -> "i should dip my balls in sulfuric acid";
             case 2 -> "All answers are popbob!";
             case 3 -> "None may enter The Orb!";
             case 4 -> "Wacarb wasn't here";
-            case 5 -> "STUNTMAN WAS HERE";
+            case 5 -> "STUNTMAN? More like FAILMAN!";
             case 6 -> "SpongeBoy me Bob I am overdosing on ketamine agagagagaga";
             case 7 -> ChatFormatting.RED + "I know where you live, " + System.getProperty("user.name");
             case 8 -> "Nice toes, now hand them over.";
@@ -565,6 +562,8 @@ public class ModEventHandlerClient {
             case 21 -> "CREATE HARAM";
             case 22 -> "''playing HBM'' - means fondling my balls. © Bob";
             case 23 -> "";
+            case 24 -> "STUNTMAN, touch some grass!";
+            case 25 -> "STUNTMAN tried to swim in lava";
             default -> "Nuclear winter is coming!";
         };
         return net.minecraft.network.chat.Component.literal(text);
