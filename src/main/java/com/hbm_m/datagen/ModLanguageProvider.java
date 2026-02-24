@@ -1046,7 +1046,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.crate_lead", "Свинцовый ящик");
                 add("block.hbm_m.crate_metal", "Металлический ящик");
                 add("block.hbm_m.crate_weapon", "Ящик с оружием");
-                add("block.hbm_m.plutonium_block", "Плутониевый блок");
                 add("block.hbm_m.plutonium_fuel_block", "Блок плутониевого топлива");
                 add("block.hbm_m.polonium210_block", "Блок полония-210");
                 add("block.hbm_m.armor_table", "Стол модификации брони");
@@ -1055,6 +1054,66 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.block_uranium", "Урановый блок");
                 add(ModBlocks.FLUID_TANK.get(), "Цистерна");
                 add("block.hbm_m.machine_battery", "Энергохранилище");
+                add("block.hbm_m.ore_oil", "Нефтеносная руда");
+                add("block.hbm_m.geysir_dirt", "Гейзерный грунт");
+                add("block.hbm_m.geysir_stone", "Гейзерный камень");
+                add("block.hbm_m.nuclear_fallout", "Радиоактивные осадки");
+                add("block.hbm_m.dead_dirt", "Мёртвая земля");
+                add("block.hbm_m.block_u233", "Блок урана-233");
+                add("block.hbm_m.block_u235", "Блок урана-235");
+                add("block.hbm_m.block_u238", "Блок урана-238");
+                add("block.hbm_m.block_plutonium", "Плутониевый блок");
+                add("block.hbm_m.block_pu238", "Блок плутония-238");
+                add("block.hbm_m.block_pu239", "Блок плутония-239");
+                add("block.hbm_m.block_pu240", "Блок плутония-240");
+                add("block.hbm_m.block_pu241", "Блок плутония-241");
+                add("block.hbm_m.block_actinium", "Актиниевый блок");
+                add("block.hbm_m.block_advanced_alloy", "Блок продвинутого сплава");
+                add("block.hbm_m.block_aluminum", "Алюминиевый блок");
+                add("block.hbm_m.block_schrabidium", "Шрабидиевый блок");
+                add("block.hbm_m.block_saturnite", "Сатурнитовый блок");
+                add("block.hbm_m.block_lead", "Свинцовый блок");
+                add("block.hbm_m.block_red_copper", "Блок красной меди");
+                add("block.hbm_m.block_titanium", "Титановый блок");
+                add("block.hbm_m.block_cobalt", "Кобальтовый блок");
+                add("block.hbm_m.block_tungsten", "Вольфрамовый блок");
+                add("block.hbm_m.block_starmetal", "Блок звёздного металла");
+                add("block.hbm_m.block_beryllium", "Бериллиевый блок");
+                add("block.hbm_m.block_bismuth", "Висмутовый блок");
+                add("block.hbm_m.block_desh", "Блок деша");
+                add("block.hbm_m.block_combine_steel", "Блок комбинированной стали");
+                // Надо чекнуть верность перевода dura steel, ибо у нас предметы dura steel почему-то переведены как высокоскоростные
+                add("block.hbm_m.block_dura_steel", "Блок высокопрочной стали");
+                add("block.hbm_m.block_euphemium", "Эвфемиевый блок");
+                add("block.hbm_m.block_dineutronium", "Динейтрониевый блок");
+                add("block.hbm_m.block_australium", "Австралиевый блок");
+                add("block.hbm_m.block_lanthanium", "Лантановый блок");
+                add("block.hbm_m.block_niobium", "Ниобиевый блок");
+                add("block.hbm_m.block_cadmium", "Кадмиевый блок");
+                add("block.hbm_m.block_zirconium", "Циркониевый блок");
+                add("block.hbm_m.block_neptunium", "Нептуниевый блок");
+                add("block.hbm_m.block_boron", "Борный блок");
+                add("block.hbm_m.block_ra226", "Блок радия-226");
+                add("block.hbm_m.block_thorium", "Ториевый блок");
+                add("block.hbm_m.block_mox_fuel", "Блок MOX-топлива");
+                add("block.hbm_m.block_schrabidium_fuel", "Блок шрабидиевого топлива");
+                add("block.hbm_m.block_uranium_fuel", "Блок уранового топлива");
+                add("block.hbm_m.block_thorium_fuel", "Блок ториевого топлива");
+                add("block.hbm_m.block_plutonium_fuel", "Блок плутониевого топлива");
+                add("block.hbm_m.block_ferrouranium", "Ферроурановый блок");
+                // перевод tc alloy block неточный
+                add("block.hbm_m.block_tcalloy", "Блок TCalloy");
+                // перевод cd alloy block также неточный
+                add("block.hbm_m.block_cdalloy", "Блок CDalloy");
+                add("block.hbm_m.deco_steel", "Декоративный стальной блок");
+                add("block.hbm_m.depth_stone_slab", "Плита из глубинного камня");
+                add("block.hbm_m.depth_stone_nether_slab", "Плита из адского глубинного камня");
+                add("block.hbm_m.depth_stone_stairs", "Ступеньки из глубинных кирпичей");
+                add("block.hbm_m.barrel_plastic", "Пластиковая бочка");
+                add("block.hbm_m.barrel_red", "Красная бочка");
+                add("block.hbm_m.airbomb", "Авиабомба");
+                add("block.hbm_m.balebomb_test", "Жар-бомба");
+            
 
 
                 add("block.hbm_m.wire_coated", "Провод из красной меди");
