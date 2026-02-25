@@ -840,6 +840,8 @@
   "item.hbm_m.meteorite_ingot": "Метеоритный слиток",
   "item.hbm_m.meteorite_powder": "Метеоритный порошок",
   "item.hbm_m.meteorite_powder_tiny": "Малая кучка Метеоритный порошок",
+  "item.hbm_m.meteorite_sword": "Метеоритовый меч",
+  "item.hbm_m.meteorite_sword_seared": "Закалённый метеоритовый меч",
   "item.hbm_m.meter.chunk_rads": "§eТекущий уровень радиации в чанке: %s\n",
   "item.hbm_m.meter.dosimeter.name": "ДОЗИМЕТР",
   "item.hbm_m.meter.env_rads": "§eОбщее радиационное заражение среды: %s",

@@ -189,6 +189,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.alloy_hoe", "Мотыга из продвинутого сплава");
                 add("item.hbm_m.alloy_shovel", "Лопата из продвинутого сплава");
 
+                add("item.hbm_m.meteorite_sword", "Метеоритовый меч");
+                add("item.hbm_m.meteorite_sword_seared", "Закалённый метеоритовый меч");
+
                 add("item.hbm_m.steel_sword", "Стальной меч");
                 add("item.hbm_m.steel_pickaxe", "Стальная кирка");
                 add("item.hbm_m.steel_axe", "Стальной топор");
