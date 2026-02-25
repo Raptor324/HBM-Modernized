@@ -141,8 +141,6 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
         return InteractionResult.sidedSuccess(pLevel.isClientSide());
     }
 
-    
-    
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
         MultiblockStructureHelper helper = getStructureHelper();

@@ -29,6 +29,7 @@ import com.hbm_m.client.overlay.GUIMachineBattery;
 import com.hbm_m.client.overlay.GUIMachineCentrifuge;
 import com.hbm_m.client.overlay.GUIMachineChemicalPlant;
 import com.hbm_m.client.overlay.GUIMachineFluidTank;
+import com.hbm_m.client.overlay.GUIMachineFrackingTower;
 import com.hbm_m.client.overlay.GUIMachinePress;
 import com.hbm_m.client.overlay.GUIMachineShredder;
 import com.hbm_m.client.overlay.GUIMachineWoodBurner;
@@ -48,11 +49,8 @@ import com.hbm_m.client.render.ChemicalPlantRenderer;
 import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
-import com.hbm_m.client.render.MachineAdvancedAssemblerVboRenderer;
 import com.hbm_m.client.render.MachineAssemblerRenderer;
-import com.hbm_m.client.render.MachineAssemblerVboRenderer;
 import com.hbm_m.client.render.MachineHydraulicFrackiningTowerRenderer;
-import com.hbm_m.client.render.MachineHydraulicFrackiningTowerVboRenderer;
 import com.hbm_m.client.render.MachinePressRenderer;
 import com.hbm_m.client.render.ModShaders;
 import com.hbm_m.client.render.OcclusionCullingHelper;
@@ -188,6 +186,7 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.TEMPLATE_CRATE_MENU.get(), GUITemplateCrate::new);
             MenuScreens.register(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
             MenuScreens.register(ModMenuTypes.CHEMICAL_PLANT_MENU.get(), GUIMachineChemicalPlant::new);
+            MenuScreens.register(ModMenuTypes.FRACTURING_TOWER_MENU.get(), GUIMachineFrackingTower::new);
 
             // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);

@@ -152,7 +152,6 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
     @NotNull
     @Override
     public ItemStack quickMoveStack(@NotNull Player playerIn, int pIndex) {
-        // ... (твой код)
         return ItemStack.EMPTY;
     }
 

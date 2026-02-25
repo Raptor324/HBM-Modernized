@@ -821,6 +821,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.fluid_tank.mode.1", "Режим: Буфер");
                 add("gui.hbm_m.fluid_tank.mode.2", "Режим: Только вывод");
                 add("gui.hbm_m.fluid_tank.mode.3", "Режим: Отключено");
+                
 
 
 

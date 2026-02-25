@@ -6,6 +6,7 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.custom.machines.MachineHydraulicFrackiningTowerBlockEntity;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -13,8 +14,10 @@ import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
+import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -33,6 +36,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.network.NetworkHooks;
 
 /**
  * Hydraulic Frackining Tower (Multiblock).
@@ -225,7 +229,9 @@ public class MachineHydraulicFrackiningTowerBlock extends BaseEntityBlock implem
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return null;
+        // ИСПРАВЛЕНО: Добавляем тикер для работы машины
+        return createTickerHelper(type, ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), 
+                MachineHydraulicFrackiningTowerBlockEntity::tick);
     }
 
     @Override
@@ -247,9 +253,13 @@ public class MachineHydraulicFrackiningTowerBlock extends BaseEntityBlock implem
     }
 
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        // No GUI yet; placeholder.
-        return InteractionResult.sidedSuccess(level.isClientSide());
+    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+        if (!pLevel.isClientSide()) {
+            if (pLevel.getBlockEntity(pPos) instanceof MenuProvider provider) {
+                NetworkHooks.openScreen((ServerPlayer) pPlayer, provider, pPos);
+            }
+        }
+        return InteractionResult.sidedSuccess(pLevel.isClientSide());
     }
 
     // 1. РАМКА ВЫДЕЛЕНИЯ: Показывает всю структуру целиком

@@ -19,6 +19,7 @@ import com.hbm_m.block.entity.custom.doors.DoorDeclRegistry;
 import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.client.ClientSetup;
+import com.hbm_m.config.MachineConfig;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
@@ -121,6 +122,8 @@ public class MainRegistry {
         modEventBus.addListener(this::commonSetup);
         modEventBus.addListener(this::addCreative);
         ModFluids.register(modEventBus);
+
+        modEventBus.register(MachineConfig.class);
 
         MinecraftForge.EVENT_BUS.register(this);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
