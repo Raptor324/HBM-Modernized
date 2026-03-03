@@ -158,10 +158,10 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.RUBBER_CLADDING.get())
                 .add(ModItems.PAINT_CLADDING.get())
                 // Новые модификаторы брони
-                .add(ModItems.ARMOR_MOD_SERVOS.get())
-                .add(ModItems.ARMOR_MOD_CLADDING.get())
-                .add(ModItems.ARMOR_MOD_KEVLAR.get())
-                .add(ModItems.ARMOR_MOD_EXTRA.get())
+                // .add(ModItems.ARMOR_MOD_SERVOS.get())
+                // .add(ModItems.ARMOR_MOD_CLADDING.get())
+                // .add(ModItems.ARMOR_MOD_KEVLAR.get())
+                // .add(ModItems.ARMOR_MOD_EXTRA.get())
                 .add(ModItems.ARMOR_BATTERY.get())
                 .add(ModItems.ARMOR_BATTERY_MK2.get())
                 .add(ModItems.ARMOR_BATTERY_MK3.get());
@@ -178,10 +178,10 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.RUBBER_CLADDING.get())
                 .add(ModItems.PAINT_CLADDING.get())
                 // Новые модификаторы брони
-                .add(ModItems.ARMOR_MOD_SERVOS.get())
-                .add(ModItems.ARMOR_MOD_CLADDING.get())
-                .add(ModItems.ARMOR_MOD_KEVLAR.get())
-                .add(ModItems.ARMOR_MOD_EXTRA.get())
+                // .add(ModItems.ARMOR_MOD_SERVOS.get())
+                // .add(ModItems.ARMOR_MOD_CLADDING.get())
+                // .add(ModItems.ARMOR_MOD_KEVLAR.get())
+                // .add(ModItems.ARMOR_MOD_EXTRA.get())
                 .add(ModItems.ARMOR_BATTERY.get())
                 .add(ModItems.ARMOR_BATTERY_MK2.get())
                 .add(ModItems.ARMOR_BATTERY_MK3.get());
@@ -193,10 +193,10 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.RUBBER_CLADDING.get())
                 .add(ModItems.PAINT_CLADDING.get())
                 // Новые модификаторы брони
-                .add(ModItems.ARMOR_MOD_SERVOS.get())
-                .add(ModItems.ARMOR_MOD_CLADDING.get())
-                .add(ModItems.ARMOR_MOD_KEVLAR.get())
-                .add(ModItems.ARMOR_MOD_EXTRA.get())
+                // .add(ModItems.ARMOR_MOD_SERVOS.get())
+                // .add(ModItems.ARMOR_MOD_CLADDING.get())
+                // .add(ModItems.ARMOR_MOD_KEVLAR.get())
+                // .add(ModItems.ARMOR_MOD_EXTRA.get())
                 .add(ModItems.ARMOR_BATTERY.get())
                 .add(ModItems.ARMOR_BATTERY_MK2.get())
                 .add(ModItems.ARMOR_BATTERY_MK3.get());
@@ -208,10 +208,10 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.RUBBER_CLADDING.get())
                 .add(ModItems.PAINT_CLADDING.get())
                 // Новые модификаторы брони
-                .add(ModItems.ARMOR_MOD_SERVOS.get())
-                .add(ModItems.ARMOR_MOD_CLADDING.get())
-                .add(ModItems.ARMOR_MOD_KEVLAR.get())
-                .add(ModItems.ARMOR_MOD_EXTRA.get())
+                // .add(ModItems.ARMOR_MOD_SERVOS.get())
+                // .add(ModItems.ARMOR_MOD_CLADDING.get())
+                // .add(ModItems.ARMOR_MOD_KEVLAR.get())
+                // .add(ModItems.ARMOR_MOD_EXTRA.get())
                 .add(ModItems.ARMOR_BATTERY.get())
                 .add(ModItems.ARMOR_BATTERY_MK2.get())
                 .add(ModItems.ARMOR_BATTERY_MK3.get());

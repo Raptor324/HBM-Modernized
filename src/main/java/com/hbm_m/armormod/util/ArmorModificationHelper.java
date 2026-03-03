@@ -1,10 +1,10 @@
-package com.hbm_m.block.machines.armormod.util;
+package com.hbm_m.armormod.util;
 
 // Хелпер для управления модификациями брони: сохранение/загрузка из NBT,
 // применение атрибутов, вычисление защиты от радиации и т.п.
 import com.google.common.collect.Multimap;
-import com.hbm_m.block.machines.armormod.item.ItemArmorMod;
-import com.hbm_m.block.machines.armormod.item.ItemModRadProtection;
+import com.hbm_m.armormod.item.ItemArmorMod;
+import com.hbm_m.armormod.item.ItemModRadProtection;
 import com.hbm_m.datagen.assets.ModItemTagProvider;
 import com.hbm_m.hazard.HazardSystem;
 

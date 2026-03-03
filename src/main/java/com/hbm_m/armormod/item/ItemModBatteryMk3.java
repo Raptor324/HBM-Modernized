@@ -1,10 +1,11 @@
-package com.hbm_m.block.machines.armormod.item;
+package com.hbm_m.armormod.item;
 
-import com.hbm_m.block.machines.armormod.util.ArmorModificationHelper;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 
 import java.util.List;
+
+import com.hbm_m.armormod.util.ArmorModificationHelper;
 
 /**
  * Модификация батареи MK3 - увеличивает емкость силовой брони вдвое

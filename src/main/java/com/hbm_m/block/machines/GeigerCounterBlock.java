@@ -1,10 +1,7 @@
 package com.hbm_m.block.machines;
 
-// Этот класс реализует блок счетчика Гейгера, который измеряет радиацию в окружающей среде.
-// При взаимодействии с блоком игрок получает информацию о радиации в виде сообщения в чат.
-// Блок также может выдавать сигнал компаратору на основе уровня радиации.
-import com.hbm_m.block.machines.armormod.util.ArmorModificationHelper;
 import com.hbm_m.block.entity.machines.GeigerCounterBlockEntity;
+import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.sounds.GeigerSoundPacket;

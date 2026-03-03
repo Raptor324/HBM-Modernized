@@ -4,9 +4,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.UUID;
 
-// Обработчик радиации для игроков
-
-import com.hbm_m.block.machines.armormod.util.ArmorModificationHelper;
+import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.hazard.HazardSystem;

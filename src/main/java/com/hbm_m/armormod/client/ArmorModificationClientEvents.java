@@ -1,4 +1,4 @@
-package com.hbm_m.block.machines.armormod.client;
+package com.hbm_m.armormod.client;
 
 import com.hbm_m.inventory.gui.GUIArmorTable;
 import com.hbm_m.main.MainRegistry;

@@ -1,4 +1,4 @@
-package com.hbm_m.block.machines.armormod.item;
+package com.hbm_m.armormod.item;
 
 // Это мод, который обеспечивает защиту от радиации при установке на броню.
 import net.minecraft.ChatFormatting;

@@ -5,6 +5,7 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.FT_Corrosive;
@@ -20,6 +21,7 @@ import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.Mth;
 import net.minecraft.world.MenuProvider;
@@ -43,10 +45,10 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.registries.ForgeRegistries;
 
 public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider {
 
-    // Слоты
     public static final int SLOT_ID_IN = 0;
     public static final int SLOT_ID_OUT = 1;
     public static final int SLOT_LOAD_IN = 2;
@@ -57,8 +59,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     public static final int MODES = 4;
     private static final int TANK_CAPACITY = 256000;
 
-    
-    private short mode = 0; // 0 = In, 1 = Buffer, 2 = Out, 3 = None
+    private short mode = 0; 
     public boolean hasExploded = false;
     public boolean onFire = false;
     private byte lastRedstone = 0;
@@ -67,7 +68,6 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     @Nullable
     private Fluid filterFluid = null;
 
-    // Используем НАШ кастомный танк, а не форджевский
     private final FluidTank fluidTank;
     private final ItemStackHandler itemHandler;
     protected final ContainerData data;
@@ -107,7 +107,6 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             @Override
             public void set(int index, int value) {
                 switch (index) {
-                    // Клиентская синхронизация опускается для краткости, она делается автоматически через меню
                     case 2: mode = (short) value; break;
                     case 3: hasExploded = value == 1; break;
                     case 4: onFire = value == 1; break;
@@ -118,13 +117,8 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         };
 
         this.lazyItemHandler = LazyOptional.of(() -> itemHandler);
-        // Обёртка с учетом модов трубы
         this.lazyFluidHandler = LazyOptional.of(() -> new NetworkFluidHandlerWrapper(this));
     }
-
-    // ================================================================================= //
-    // ОСНОВНОЙ ЦИКЛ (TICK)
-    // ================================================================================= //
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineFluidTankBlockEntity entity) {
         if (level.isClientSide) return;
@@ -133,55 +127,59 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             entity.age++;
             if (entity.age >= 20) {
                 entity.age = 0;
-                entity.setChanged(); // Синхронизация раз в секунду
+                entity.setChanged();
             }
 
-            // --- ПРОВЕРКА ОПАСНЫХ ЖИДКОСТЕЙ ---
             if (entity.fluidTank.getFill() > 0) {
                 Fluid type = entity.fluidTank.getTankType();
-                
-                // Антиматерия мгновенно взрывается
                 if (FluidTraitManager.hasTrait(type, FT_Amat.class)) {
                     entity.explode();
                     entity.fluidTank.fill(0);
-                    // Заглушка под кастомный взрыв HBM
                     level.explode(null, pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5, 5F, Level.ExplosionInteraction.BLOCK);
                 }
-                
-                // Сильно коррозийная кислота разъедает бак
                 FT_Corrosive corrosive = FluidTraitManager.getTrait(type, FT_Corrosive.class);
                 if (corrosive != null && corrosive.isHighlyCorrosive()) {
                     entity.explode();
                 }
             }
 
-            // Если взорвалось в этом тике - прерываем обычную обработку
             if (entity.hasExploded) {
                 entity.updateLeak(entity.calculateLeakAmount());
                 return;
             }
 
-            // --- ОБРАБОТКА ПРЕДМЕТОВ (использует логику NTM 1.7.10) ---
-            ItemStack[] slotsArray = entity.getSlotsArray();
-            
+            // --- ОБРАБОТКА ИНВЕНТАРЯ ---
             boolean changed = false;
-            changed |= entity.fluidTank.setType(SLOT_ID_IN, SLOT_ID_OUT, slotsArray);
-            changed |= entity.fluidTank.loadTank(SLOT_LOAD_IN, SLOT_LOAD_OUT, slotsArray);
-            changed |= entity.fluidTank.unloadTank(SLOT_UNLOAD_IN, SLOT_UNLOAD_OUT, slotsArray);
-            
+            ItemStack[] slotsArray = entity.getSlotsArray();
+
+            // 1. Идентификация жидкости (Фильтр)
+            if (entity.fluidTank.setType(SLOT_ID_IN, SLOT_ID_OUT, slotsArray)) {
+                changed = true;
+            }
+
+            // 2. TANK -> ITEM (Filling Item)
+            if (entity.fluidTank.unloadTank(SLOT_UNLOAD_IN, SLOT_UNLOAD_OUT, slotsArray)) {
+                changed = true;
+            }
+
+            // 3. ITEM -> TANK (Emptying Item)
+            if (entity.fluidTank.loadTank(SLOT_LOAD_IN, SLOT_LOAD_OUT, slotsArray)) {
+                changed = true;
+            }
+
             if (changed) {
+                // Применяем изменения слотов обратно в Handler, так как FluidTank работает с массивом
                 entity.applySlotsArray(slotsArray);
                 entity.setChanged();
+                level.sendBlockUpdated(pos, state, state, 3);
             }
 
         } else {
-            // --- ЛОГИКА УТЕЧКИ ИЗ ВЗОРВАННОГО БАКА ---
             if (entity.fluidTank.getFill() > 0) {
                 entity.updateLeak(entity.calculateLeakAmount());
             }
         }
 
-        // --- ЛОГИКА КОМПАРАТОРА ---
         byte comp = entity.getComparatorPower();
         if (comp != entity.lastRedstone) {
             entity.lastRedstone = comp;
@@ -189,10 +187,6 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             entity.setChanged();
         }
     }
-
-    // ================================================================================= //
-    // ВЗРЫВЫ, УТЕЧКИ И ПОЖАРЫ
-    // ================================================================================= //
 
     public void explode() {
         if (this.hasExploded) return;
@@ -213,11 +207,11 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         int current = fluidTank.getFill();
         
         if (FluidTraitManager.hasTrait(type, FT_Amat.class)) {
-            return current; // Антиматерия вытекает мгновенно
+            return current; 
         } else if (FluidTraitManager.hasTrait(type, FT_Gaseous.class)) {
-            return Math.min(current, max / 100); // Газ уходит быстро
+            return Math.min(current, max / 100); 
         } else {
-            return Math.min(current, max / 10000); // Жидкость вытекает медленно
+            return Math.min(current, max / 10000); 
         }
     }
 
@@ -227,36 +221,23 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         fluidTank.fill(Math.max(0, fluidTank.getFill() - amount));
         Fluid type = fluidTank.getTankType();
 
-        // 1. Антиматерия
         if (FluidTraitManager.hasTrait(type, FT_Amat.class)) {
             level.explode(null, worldPosition.getX() + 0.5, worldPosition.getY() + 1.5, worldPosition.getZ() + 0.5, 5F, ExplosionInteraction.BLOCK);
-        } 
-        // 2. Горючие материалы (Пожар)
-        else if (FluidTraitManager.hasTrait(type, FT_Flammable.class) && onFire) {
+        } else if (FluidTraitManager.hasTrait(type, FT_Flammable.class) && onFire) {
             AABB fireBox = new AABB(worldPosition).inflate(2.5, 5.0, 2.5);
             List<LivingEntity> affected = level.getEntitiesOfClass(LivingEntity.class, fireBox);
             for (LivingEntity e : affected) {
                 e.setSecondsOnFire(5);
             }
-            
             if (level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.FLAME, worldPosition.getX() + level.random.nextDouble(), worldPosition.getY() + 0.5 + level.random.nextDouble(), worldPosition.getZ() + level.random.nextDouble(), 3, 0.1, 0.1, 0.1, 0.05);
             }
-            
-            // TODO: Подключить PollutionHandler (FluidReleaseType.BURN) когда он будет готов
-        } 
-        // 3. Газы
-        else if (FluidTraitManager.hasTrait(type, FT_Gaseous.class)) {
+        } else if (FluidTraitManager.hasTrait(type, FT_Gaseous.class)) {
             if (level.getGameTime() % 5 == 0 && level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, worldPosition.getX() + 0.5, worldPosition.getY() + 1, worldPosition.getZ() + 0.5, 5, 0.2, 0.5, 0.2, 0.05);
             }
-            // TODO: Подключить PollutionHandler (FluidReleaseType.SPILL)
         }
     }
-
-    // ================================================================================= //
-    // ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ
-    // ================================================================================= //
 
     public byte getComparatorPower() {
         if (fluidTank.getFill() == 0) return 0;
@@ -272,7 +253,6 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     public short getMode() { return mode; }
     public FluidTank getFluidTank() { return fluidTank; }
     
-    // Преобразование ItemStackHandler в массив для совместимости с NTM кастомной цистерной
     private ItemStack[] getSlotsArray() {
         ItemStack[] arr = new ItemStack[6];
         for (int i = 0; i < 6; i++) arr[i] = itemHandler.getStackInSlot(i);
@@ -280,12 +260,13 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     }
 
     private void applySlotsArray(ItemStack[] arr) {
-        for (int i = 0; i < 6; i++) itemHandler.setStackInSlot(i, arr[i] == null ? ItemStack.EMPTY : arr[i]);
+        for (int i = 0; i < 6; i++) itemHandler.setStackInSlot(i, arr[i]);
     }
 
-    // ================================================================================= //
-    // NBT, CAPABILITIES И СЕТЬ
-    // ================================================================================= //
+    @Override
+    public AABB getRenderBoundingBox() {
+        return new AABB(worldPosition).inflate(3.0D);
+    }
 
     @Override
     public void load(CompoundTag tag) {
@@ -295,6 +276,12 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         mode = tag.getShort("mode");
         hasExploded = tag.getBoolean("exploded");
         onFire = tag.getBoolean("onFire");
+
+        if (tag.contains("filterFluid")) {
+            filterFluid = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(tag.getString("filterFluid")));
+        } else {
+            filterFluid = null;
+        }
     }
 
     @Override
@@ -305,6 +292,13 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         tag.putShort("mode", mode);
         tag.putBoolean("exploded", hasExploded);
         tag.putBoolean("onFire", onFire);
+
+        if (filterFluid != null && filterFluid != Fluids.EMPTY) {
+            ResourceLocation key = ForgeRegistries.FLUIDS.getKey(filterFluid);
+            if (key != null) {
+                tag.putString("filterFluid", key.toString());
+            }
+        }
     }
 
     @Override
@@ -327,7 +321,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("block.hbm_m.machine_fluidtank");
+        return Component.translatable(ModBlocks.FLUID_TANK.get().getDescriptionId().toString());
     }
 
     @Nullable
@@ -348,9 +342,11 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         
         if (!isSameType) {
             filterFluid = newType;
-            // Очищаем бак при смене типа (как в оригинале)
             fluidTank.fill(0);
             setChanged();
+            if (level != null && !level.isClientSide) {
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            }
         }
     }
 
@@ -359,9 +355,18 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         return filterFluid;
     }
 
-    // ================================================================================= //
-    // Обертка для работы с трубами (Учитывает режимы и поломки)
-    // ================================================================================= //
+    @Override
+    public CompoundTag getUpdateTag() {
+        CompoundTag tag = new CompoundTag();
+        saveAdditional(tag);
+        return tag;
+    }
+
+    @Nullable
+    @Override
+    public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket() {
+        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
+    }
 
     private class NetworkFluidHandlerWrapper implements IFluidHandler {
         private final MachineFluidTankBlockEntity entity;
@@ -388,7 +393,6 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
         @Override
         public int fill(FluidStack resource, FluidAction action) {
-            // mode 2 (Provide) и 3 (None) блокируют прием жидкости. Взорванный бак не принимает жидкость.
             if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return 0;
             return internal.fill(resource, action);
         }
@@ -396,7 +400,6 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         @NotNull
         @Override
         public FluidStack drain(FluidStack resource, FluidAction action) {
-            // mode 0 (Receive) и 3 (None) блокируют выдачу. Взорванный бак ничего не отдает.
             if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return FluidStack.EMPTY;
             return internal.drain(resource, action);
         }

@@ -36,6 +36,16 @@ public class InfiniteFluidItem extends Item {
         this.transferRate = transferRate;
     }
 
+    /** 
+     * Helper to get fluid type from stack NBT for logic outside of capabilities (e.g. Tank Logic) 
+     */
+    public Fluid getFluidType(ItemStack stack) {
+        if (stack.hasTag() && stack.getTag().contains("FluidType")) {
+            return ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(stack.getTag().getString("FluidType")));
+        }
+        return Fluids.EMPTY;
+    }
+
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
@@ -74,7 +84,7 @@ public class InfiniteFluidItem extends Item {
         // В 1.7.10 бесконечная бочка имела тип. Узнаем его из NBT предмета
         private Fluid getFluidType() {
             if (container.hasTag() && container.getTag().contains("FluidType")) {
-                return ForgeRegistries.FLUIDS.getValue(new ResourceLocation(container.getTag().getString("FluidType")));
+                return ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(container.getTag().getString("FluidType")));
             }
             return Fluids.EMPTY;
         }

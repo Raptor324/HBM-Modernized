@@ -2845,6 +2845,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.recipe.setRecipe", "Set Recipe");
                 add("gui.hbm_m.fluid.empty", "Empty");
 
+                add("tooltip.hbm_m.battery.stored", "Stored energy:");
+                add("tooltip.hbm_m.battery.transfer_rate", "Charge Speed: %1$s HE/t");
+                add("tooltip.hbm_m.battery.discharge_rate", "Discharge rate: %1$s HE/t");
+
                 add("tooltip.hbm_m.machine_battery.capacity", "Capacity: %1$s HE");
                 add("tooltip.hbm_m.machine_battery.charge_speed", "Charge Speed: %1$s HE/t");
                 add("tooltip.hbm_m.machine_battery.discharge_speed", "Discharge Speed: %1$s HE/t");

@@ -1,9 +1,7 @@
-package com.hbm_m.block.machines.armormod.menu;
+package com.hbm_m.armormod.menu;
 
-// Этот класс отвечает за логику контейнера (меню) стола модификации брони
-// Он управляет слотами, перемещением предметов и взаимодействием с инвентарем игрока
-import com.hbm_m.block.machines.armormod.item.ItemArmorMod;
-import com.hbm_m.block.machines.armormod.util.ArmorModificationHelper;
+import com.hbm_m.armormod.item.ItemArmorMod;
+import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.block.ModBlocks;
 
 import net.minecraft.ChatFormatting;

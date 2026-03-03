@@ -16,6 +16,7 @@ import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.client.loader.DoorModelLoader;
 import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
 import com.hbm_m.client.loader.MachineAssemblerModelLoader;
+import com.hbm_m.client.loader.MachineFluidTankModelLoader;
 import com.hbm_m.client.loader.MachineHydraulicFrackiningTowerModelLoader;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.ProceduralWireLoader;
@@ -32,6 +33,7 @@ import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.MachineAssemblerRenderer;
+import com.hbm_m.client.render.MachineFluidTankRenderer;
 import com.hbm_m.client.render.MachineHydraulicFrackiningTowerRenderer;
 import com.hbm_m.client.render.MachinePressRenderer;
 import com.hbm_m.client.render.ModShaders;
@@ -195,6 +197,7 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), ChemicalPlantRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankRenderer::new);
 
             OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
             try {
@@ -290,6 +293,7 @@ public class ClientSetup {
         event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
         event.register("machine_assembler_loader", new MachineAssemblerModelLoader());
         event.register("hydraulic_frackining_tower_loader", new MachineHydraulicFrackiningTowerModelLoader());
+        event.register("fluid_tank_loader", new MachineFluidTankModelLoader());
         event.register("door", new DoorModelLoader());
         event.register("template_loader", new TemplateModelLoader());
         event.register("press_loader", new PressModelLoader());

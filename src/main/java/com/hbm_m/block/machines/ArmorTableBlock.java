@@ -21,7 +21,7 @@ import net.minecraftforge.network.NetworkHooks;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
-import com.hbm_m.block.machines.armormod.menu.ArmorTableMenu;
+import com.hbm_m.armormod.menu.ArmorTableMenu;
 
 public class ArmorTableBlock extends BaseEntityBlock {
 

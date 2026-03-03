@@ -16,16 +16,18 @@ import java.util.Set;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.ModFluids;
+import com.hbm_m.armormod.item.ItemModBattery;
+import com.hbm_m.armormod.item.ItemModBatteryMk2;
+import com.hbm_m.armormod.item.ItemModBatteryMk3;
+import com.hbm_m.armormod.item.ItemModHealth;
+import com.hbm_m.armormod.item.ItemModRadProtection;
+// import com.hbm_m.armormod.item.ItemModCladding;
+// import com.hbm_m.armormod.item.ItemModExtra;
+// import com.hbm_m.armormod.item.ItemModHealth;
+// import com.hbm_m.armormod.item.ItemModKevlar;
+// import com.hbm_m.armormod.item.ItemModRadProtection;
+// import com.hbm_m.armormod.item.ItemModServos;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.machines.armormod.item.ItemModBattery;
-import com.hbm_m.block.machines.armormod.item.ItemModBatteryMk2;
-import com.hbm_m.block.machines.armormod.item.ItemModBatteryMk3;
-import com.hbm_m.block.machines.armormod.item.ItemModCladding;
-import com.hbm_m.block.machines.armormod.item.ItemModExtra;
-import com.hbm_m.block.machines.armormod.item.ItemModHealth;
-import com.hbm_m.block.machines.armormod.item.ItemModKevlar;
-import com.hbm_m.block.machines.armormod.item.ItemModRadProtection;
-import com.hbm_m.block.machines.armormod.item.ItemModServos;
 import com.hbm_m.block.machines.crates.CrateType;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
@@ -643,21 +645,21 @@ public class ModItems {
     );
 
     // Новые модификации брони
-    public static final RegistryObject<Item> ARMOR_MOD_SERVOS = ITEMS.register("armor_mod_servos",
-            () -> new ItemModServos(new Item.Properties())
-    );
+//     public static final RegistryObject<Item> ARMOR_MOD_SERVOS = ITEMS.register("armor_mod_servos",
+//             () -> new ItemModServos(new Item.Properties())
+//     );
 
-    public static final RegistryObject<Item> ARMOR_MOD_CLADDING = ITEMS.register("armor_mod_cladding",
-            () -> new ItemModCladding(new Item.Properties())
-    );
+//     public static final RegistryObject<Item> ARMOR_MOD_CLADDING = ITEMS.register("armor_mod_cladding",
+//             () -> new ItemModCladding(new Item.Properties())
+//     );
 
-    public static final RegistryObject<Item> ARMOR_MOD_KEVLAR = ITEMS.register("armor_mod_kevlar",
-            () -> new ItemModKevlar(new Item.Properties())
-    );
+//     public static final RegistryObject<Item> ARMOR_MOD_KEVLAR = ITEMS.register("armor_mod_kevlar",
+//             () -> new ItemModKevlar(new Item.Properties())
+//     );
 
-    public static final RegistryObject<Item> ARMOR_MOD_EXTRA = ITEMS.register("armor_mod_extra",
-            () -> new ItemModExtra(new Item.Properties())
-    );
+//     public static final RegistryObject<Item> ARMOR_MOD_EXTRA = ITEMS.register("armor_mod_extra",
+//             () -> new ItemModExtra(new Item.Properties())
+//     );
 
     // Модификаторы батареи (увеличивают заряд брони)
     public static final RegistryObject<Item> ARMOR_BATTERY = ITEMS.register("armor_battery",

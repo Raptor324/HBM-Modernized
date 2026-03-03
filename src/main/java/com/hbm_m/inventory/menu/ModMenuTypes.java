@@ -1,7 +1,7 @@
 // ...existing code...
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.block.machines.armormod.menu.ArmorTableMenu;
+import com.hbm_m.armormod.menu.ArmorTableMenu;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.world.inventory.MenuType;

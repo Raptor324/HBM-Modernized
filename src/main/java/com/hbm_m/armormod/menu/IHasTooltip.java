@@ -1,4 +1,4 @@
-package com.hbm_m.block.machines.armormod.menu;
+package com.hbm_m.armormod.menu;
 
 // Интерфейс для слотов, которые могут показывать подсказки, когда они пусты
 import net.minecraft.network.chat.Component;

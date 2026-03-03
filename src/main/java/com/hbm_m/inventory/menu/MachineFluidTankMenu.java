@@ -30,7 +30,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
     private static final int HOTBAR_END = HOTBAR_START + 9;
 
     public MachineFluidTankMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(4));
+        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(6));
     }
 
     public MachineFluidTankMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {

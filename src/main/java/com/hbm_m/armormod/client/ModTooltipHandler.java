@@ -1,6 +1,6 @@
-package com.hbm_m.block.machines.armormod.client;
+package com.hbm_m.armormod.client;
 
-import com.hbm_m.block.machines.armormod.item.ItemArmorMod;
+import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.datagen.assets.ModItemTagProvider;
 import com.hbm_m.lib.RefStrings;
 

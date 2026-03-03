@@ -4,9 +4,10 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm_m.item.liquids.InfiniteFluidItem;
+import com.hbm_m.item.liquids.InfiniteWaterItem; // Added import
+
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.network.protocol.Packet;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.ItemStack;
@@ -16,14 +17,12 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 import net.minecraftforge.registries.ForgeRegistries;
 
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 
 public class FluidTank {
 
-    // --- Интерфейс обработчиков (как в 1.7.10) ---
     public interface LoadingHandler {
         boolean emptyItem(ItemStack[] slots, int in, int out, FluidTank tank);
         boolean fillItem(ItemStack[] slots, int in, int out, FluidTank tank);
@@ -32,19 +31,16 @@ public class FluidTank {
     private static final List<LoadingHandler> loadingHandlers = new ArrayList<>();
     
     static {
-        loadingHandlers.add(new FluidLoaderStandard());
-        // В 1.20.1 стандартный загрузчик (через Capabilities) уже поддерживает кастомные канистры.
-        // Добавляем специфичный лоадер для креативных/бесконечных предметов.
+        // Infinite must be first to prevent Standard loader from consuming infinite items
         loadingHandlers.add(new FluidLoaderInfinite());
+        loadingHandlers.add(new FluidLoaderStandard());
     }
 
-    // --- Состояние бака ---
-    protected Fluid type = Fluids.EMPTY; // Аналог FluidType из 1.7.10
-    protected int fluid;                 // Текущий объем (mB)
-    protected int maxFluid;              // Максимальная вместимость
-    protected int pressure = 0;          // Давление (PU)
+    protected Fluid type = Fluids.EMPTY;
+    protected int fluid;
+    protected int maxFluid;
+    protected int pressure = 0;
     
-    // Обёртка для труб и других модов (Capabilities)
     private final LazyOptional<IFluidHandler> lazyFluidHandler;
 
     public FluidTank(Fluid type, int maxFluid) {
@@ -57,8 +53,6 @@ public class FluidTank {
         this(Fluids.EMPTY, maxFluid);
     }
 
-    // --- Основные методы (идентичны 1.7.10) ---
-
     public FluidTank withPressure(int pressure) {
         if (this.pressure != pressure) this.fill(0);
         this.pressure = pressure;
@@ -67,7 +61,7 @@ public class FluidTank {
 
     public void fill(int amount) {
         this.fluid = Mth.clamp(amount, 0, maxFluid);
-        if (this.fluid == 0) this.type = Fluids.EMPTY; // Очистка типа, если бак пуст и не зафильтрован
+        if (this.fluid == 0) this.type = Fluids.EMPTY;
     }
 
     public void setTankType(Fluid type) {
@@ -86,8 +80,6 @@ public class FluidTank {
 
     public FluidTank conformWithStack(FluidStack stack) {
         this.setTankType(stack.getFluid());
-        // В HBM 1.20.1 для передачи давления через FluidStack можно использовать NBT стэка,
-        // но пока оставим базовую конформацию:
         this.withPressure(0); 
         return this;
     }
@@ -111,13 +103,11 @@ public class FluidTank {
         return lazyFluidHandler;
     }
 
-    // --- Загрузка/Выгрузка предметов (аналоги loadTank/unloadTank) ---
-
     public boolean loadTank(int in, int out, ItemStack[] slots) {
         if (slots[in] == null || slots[in].isEmpty()) return false;
 
-        boolean isInfinite = slots[in].getItem() instanceof InfiniteFluidItem;
-        if (!isInfinite && pressure != 0) return false; // Запрет заливки под давлением (как в 1.7.10)
+        boolean isInfinite = slots[in].getItem() instanceof InfiniteFluidItem || slots[in].getItem() instanceof InfiniteWaterItem;
+        if (!isInfinite && pressure != 0) return false;
         
         int prev = this.getFill();
         for (LoadingHandler handler : loadingHandlers) {
@@ -136,11 +126,9 @@ public class FluidTank {
         return this.getFill() < prev;
     }
 
-    // --- Установка типа (Фильтры) ---
-
     public boolean setType(int in, int out, ItemStack[] slots) {
         if (slots[in] != null && !slots[in].isEmpty() && slots[in].getItem() instanceof FluidIdentifierItem) {
-            Fluid newType = FluidIdentifierItem.getType(slots[in], true); // Берем primary жидкость
+            Fluid newType = FluidIdentifierItem.getType(slots[in], true);
             
             if (newType == null || newType == Fluids.EMPTY) return false;
 
@@ -167,8 +155,6 @@ public class FluidTank {
         return setType(in, in, slots);
     }
 
-    // --- Сохранение и Сеть ---
-
     public void writeToNBT(CompoundTag nbt, String prefix) {
         nbt.putInt(prefix + "_amount", fluid);
         nbt.putInt(prefix + "_max", maxFluid);
@@ -184,7 +170,7 @@ public class FluidTank {
         fluid = Mth.clamp(fluid, 0, maxFluid);
         
         String typeIdStr = nbt.getString(prefix + "_type");
-        Fluid f = ForgeRegistries.FLUIDS.getValue(new ResourceLocation(typeIdStr));
+        Fluid f = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(typeIdStr));
         type = (f != null) ? f : Fluids.EMPTY;
         
         pressure = nbt.getShort(prefix + "_p");
@@ -194,7 +180,7 @@ public class FluidTank {
         buf.writeInt(fluid);
         buf.writeInt(maxFluid);
         ResourceLocation loc = ForgeRegistries.FLUIDS.getKey(type);
-        buf.writeResourceLocation(loc != null ? loc : new ResourceLocation("minecraft:empty"));
+        buf.writeResourceLocation(loc != null ? loc : ResourceLocation.parse("minecraft:empty"));
         buf.writeShort((short) pressure);
     }
 
@@ -207,15 +193,16 @@ public class FluidTank {
     }
 
     // ===================================================================================== //
-    // ОБРАБОТЧИКИ (LOADERS)
+    // LOADERS
     // ===================================================================================== //
 
-    // Вспомогательный метод для работы со слотами предметов
     private static boolean canPlaceItemInSlot(ItemStack[] slots, int slotOut, ItemStack resultStack) {
         if (resultStack.isEmpty()) return true;
-        if (slots[slotOut] == null || slots[slotOut].isEmpty()) return true;
-        return ItemStack.isSameItemSameTags(slots[slotOut], resultStack) && 
-               slots[slotOut].getCount() + resultStack.getCount() <= slots[slotOut].getMaxStackSize();
+        ItemStack stackInSlot = slots[slotOut];
+        if (stackInSlot == null || stackInSlot.isEmpty()) return true;
+        
+        return ItemStack.isSameItemSameTags(stackInSlot, resultStack) && 
+               stackInSlot.getCount() + resultStack.getCount() <= stackInSlot.getMaxStackSize();
     }
 
     private static void placeItemInSlot(ItemStack[] slots, int slotOut, ItemStack resultStack) {
@@ -227,52 +214,45 @@ public class FluidTank {
         }
     }
 
-    /** 
-     * Стандартный обработчик: заменяет и FluidLoaderStandard, и FluidLoaderFillableItem из 1.7.10 
-     * благодаря системе Forge Capabilities.
-     */
     public static class FluidLoaderStandard implements LoadingHandler {
         @Override
         public boolean emptyItem(ItemStack[] slots, int in, int out, FluidTank tank) {
             ItemStack inputStack = slots[in];
-            if (inputStack == null || inputStack.isEmpty()) return true;
+            if (inputStack == null || inputStack.isEmpty()) return false;
 
-            // Обрабатываем по одному предмету за раз
-            ItemStack singleItem = inputStack.copy();
-            singleItem.setCount(1);
+            ItemStack stackToDrain = inputStack.copy();
+            stackToDrain.setCount(1);
 
-            LazyOptional<IFluidHandlerItem> cap = singleItem.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM);
-            if (cap.isPresent()) {
-                IFluidHandlerItem handler = cap.orElse(null);
-                
-                // Пробуем слить максимум
-                FluidStack simulatedDrain = handler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
-                if (simulatedDrain.isEmpty()) return false;
+            return stackToDrain.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
+                FluidStack drainedSim = handler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
+                if (drainedSim.isEmpty()) return false;
 
-                // Устанавливаем тип бака, если он пустой
-                if (tank.getTankType() == Fluids.EMPTY && tank.getFill() == 0) {
-                    tank.setTankType(simulatedDrain.getFluid());
+                if (tank.getTankType() != Fluids.EMPTY && tank.getTankType() != drainedSim.getFluid()) {
+                    return false;
                 }
 
-                // Проверка типа
-                if (tank.getTankType() == simulatedDrain.getFluid()) {
-                    int space = tank.getMaxFill() - tank.getFill();
-                    if (space > 0) {
-                        // Сливаем реально только то, что поместится
-                        FluidStack realDrain = handler.drain(space, IFluidHandler.FluidAction.EXECUTE);
-                        ItemStack containerResult = handler.getContainer();
+                int space = tank.getMaxFill() - tank.getFill();
+                int amountToDrain = Math.min(drainedSim.getAmount(), space);
+                if (amountToDrain <= 0) return false;
 
-                        if (realDrain.getAmount() > 0 && canPlaceItemInSlot(slots, out, containerResult)) {
-                            tank.fill(tank.getFill() + realDrain.getAmount());
-                            placeItemInSlot(slots, out, containerResult);
-                            slots[in].shrink(1);
-                            if (slots[in].getCount() <= 0) slots[in] = ItemStack.EMPTY;
-                            return true;
-                        }
+                FluidStack drainedReal = handler.drain(amountToDrain, IFluidHandler.FluidAction.EXECUTE);
+                if (drainedReal.isEmpty()) return false;
+
+                ItemStack containerResult = handler.getContainer();
+
+                if (canPlaceItemInSlot(slots, out, containerResult)) {
+                    if (tank.getTankType() == Fluids.EMPTY) {
+                        tank.setTankType(drainedReal.getFluid());
                     }
+                    tank.fill(tank.getFill() + drainedReal.getAmount());
+                    
+                    placeItemInSlot(slots, out, containerResult);
+                    slots[in].shrink(1);
+                    if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
+                    return true;
                 }
-            }
-            return false;
+                return false;
+            }).orElse(false);
         }
 
         @Override
@@ -280,61 +260,79 @@ public class FluidTank {
             ItemStack inputStack = slots[in];
             if (inputStack == null || inputStack.isEmpty() || tank.getFill() <= 0) return false;
 
-            ItemStack singleItem = inputStack.copy();
-            singleItem.setCount(1);
+            ItemStack stackToFill = inputStack.copy();
+            stackToFill.setCount(1);
 
-            LazyOptional<IFluidHandlerItem> cap = singleItem.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM);
-            if (cap.isPresent()) {
-                IFluidHandlerItem handler = cap.orElse(null);
-                FluidStack toFill = new FluidStack(tank.getTankType(), tank.getFill());
+            return stackToFill.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
+                FluidStack resource = new FluidStack(tank.getTankType(), tank.getFill());
+                int filledAmount = handler.fill(resource, IFluidHandler.FluidAction.EXECUTE);
                 
-                int simulatedFill = handler.fill(toFill, IFluidHandler.FluidAction.SIMULATE);
-                if (simulatedFill > 0) {
-                    int realFill = handler.fill(new FluidStack(tank.getTankType(), simulatedFill), IFluidHandler.FluidAction.EXECUTE);
-                    ItemStack containerResult = handler.getContainer();
+                if (filledAmount <= 0) return false;
 
-                    if (realFill > 0 && canPlaceItemInSlot(slots, out, containerResult)) {
-                        tank.fill(tank.getFill() - realFill);
-                        placeItemInSlot(slots, out, containerResult);
-                        slots[in].shrink(1);
-                        if (slots[in].getCount() <= 0) slots[in] = ItemStack.EMPTY;
-                        return true;
-                    }
+                ItemStack containerResult = handler.getContainer();
+
+                if (canPlaceItemInSlot(slots, out, containerResult)) {
+                    tank.fill(tank.getFill() - filledAmount);
+                    
+                    placeItemInSlot(slots, out, containerResult);
+                    slots[in].shrink(1);
+                    if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
+                    return true;
+                }
+                return false;
+            }).orElse(false);
+        }
+    }
+
+    public static class FluidLoaderInfinite implements LoadingHandler {
+        @Override
+        public boolean emptyItem(ItemStack[] slots, int in, int out, FluidTank tank) {
+            ItemStack stack = slots[in];
+            if (stack == null || stack.isEmpty()) return false;
+            
+            Fluid fluidType = Fluids.EMPTY;
+            
+            // Check for Generic Infinite Fluid Item
+            if (stack.getItem() instanceof InfiniteFluidItem) {
+                fluidType = ((InfiniteFluidItem) stack.getItem()).getFluidType(stack);
+            } 
+            // Check for Specific Infinite Water Item
+            else if (stack.getItem() instanceof InfiniteWaterItem) {
+                fluidType = Fluids.WATER;
+            }
+
+            if (fluidType != Fluids.EMPTY) {
+                // If tank is full, do nothing
+                if (tank.getFill() >= tank.getMaxFill()) return false;
+                
+                // If tank is empty or compatible
+                if (tank.getTankType() == Fluids.EMPTY || tank.getTankType() == fluidType) {
+                    tank.setTankType(fluidType);
+                    tank.fill(tank.getMaxFill());
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean fillItem(ItemStack[] slots, int in, int out, FluidTank tank) {
+            ItemStack stack = slots[in];
+            if (stack == null || stack.isEmpty()) return false;
+            
+            // Infinite Fluid Item acts as void
+            if (stack.getItem() instanceof InfiniteFluidItem) {
+                if (tank.getFill() > 0) {
+                    tank.fill(0);
+                    return true;
                 }
             }
             return false;
         }
     }
 
-    /** 
-     * Обработчик для креативных/бесконечных источников.
-     * Полностью копирует логику из 1.7.10: ItemInfiniteFluid может как добавлять, так и удалять жидкость.
-     */
-    public static class FluidLoaderInfinite implements LoadingHandler {
-        @Override
-        public boolean emptyItem(ItemStack[] slots, int in, int out, FluidTank tank) {
-            ItemStack stack = slots[in];
-            if (stack == null || !(stack.getItem() instanceof InfiniteFluidItem) || tank.getTankType() == Fluids.EMPTY) return false;
-            
-            // Заполняем бак на 100% при контакте с бесконечным источником нужного типа
-            // Примечание: в 1.20.1 предмете нет getChance(), поэтому заполняем гарантированно
-            tank.fill(tank.getMaxFill());
-            return true;
-        }
-
-        @Override
-        public boolean fillItem(ItemStack[] slots, int in, int out, FluidTank tank) {
-            ItemStack stack = slots[in];
-            if (stack == null || !(stack.getItem() instanceof InfiniteFluidItem)) return false;
-            
-            // Если пытаемся "наполнить" бесконечную бочку, она работает как Void (уничтожитель жидкости)
-            tank.fill(0);
-            return true;
-        }
-    }
-
     // ===================================================================================== //
-    // ОБЁРТКА ДЛЯ FORGE CAPABILITIES (Трубы, другие моды)
+    // WRAPPER
     // ===================================================================================== //
 
     public static class ForgeFluidHandlerWrapper implements IFluidHandler {
@@ -358,7 +356,7 @@ public class FluidTank {
 
         @Override
         public boolean isFluidValid(int tankIndex, FluidStack stack) {
-            if (tank.getPressure() != 0) return false; // Внешние трубы не могут заливать в бак под давлением
+            if (tank.getPressure() != 0) return false;
             return tank.getTankType() == Fluids.EMPTY || tank.getTankType() == stack.getFluid();
         }
 

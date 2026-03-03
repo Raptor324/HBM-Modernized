@@ -7,8 +7,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
-import com.hbm_m.block.machines.armormod.item.ItemArmorMod;
-import com.hbm_m.block.machines.armormod.util.ArmorModificationHelper;
+import com.hbm_m.armormod.item.ItemArmorMod;
+import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 
 import net.minecraft.ChatFormatting;

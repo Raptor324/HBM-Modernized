@@ -1,6 +1,6 @@
 package com.hbm_m.item.radiation_meter;
 
-import com.hbm_m.block.machines.armormod.util.ArmorModificationHelper;
+import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.sounds.GeigerSoundPacket;

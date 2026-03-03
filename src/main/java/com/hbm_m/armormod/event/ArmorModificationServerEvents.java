@@ -1,4 +1,4 @@
-package com.hbm_m.block.machines.armormod.event;
+package com.hbm_m.armormod.event;
 
 import java.util.HashSet;
 import java.util.Set;
