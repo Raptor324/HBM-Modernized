@@ -3,11 +3,11 @@ package com.hbm_m.datagen.assets;
 // Провайдер генерации состояний блоков и моделей для блоков мода.
 // Используется в классе DataGenerators для регистрации.
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.custom.decorations.DoorBlock;
-import com.hbm_m.block.custom.machines.BlastFurnaceBlock;
-import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
-import com.hbm_m.block.custom.machines.MachineAssemblerBlock;
-import com.hbm_m.block.custom.machines.MachineWoodBurnerBlock;
+import com.hbm_m.block.decorations.DoorBlock;
+import com.hbm_m.block.machines.BlastFurnaceBlock;
+import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
+import com.hbm_m.block.machines.MachineAssemblerBlock;
+import com.hbm_m.block.machines.MachineWoodBurnerBlock;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;

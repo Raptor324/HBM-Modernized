@@ -3,8 +3,8 @@ package com.hbm_m.client.render;
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import com.hbm_m.block.custom.machines.MachinePressBlock;
-import com.hbm_m.block.entity.custom.machines.MachinePressBlockEntity;
+import com.hbm_m.block.machines.MachinePressBlock;
+import com.hbm_m.block.entity.machines.MachinePressBlockEntity;
 import com.hbm_m.client.model.PressBakedModel;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;

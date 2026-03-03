@@ -2,9 +2,9 @@ package com.hbm_m.network;
 
 import java.util.function.Supplier;
 
-import com.hbm_m.block.custom.explosives.IDetonatable;
-import com.hbm_m.item.custom.grenades_and_activators.MultiDetonatorItem;
-import com.hbm_m.item.custom.grenades_and_activators.MultiDetonatorItem.PointData;
+import com.hbm_m.block.explosives.IDetonatable;
+import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
+import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem.PointData;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.ChatFormatting;

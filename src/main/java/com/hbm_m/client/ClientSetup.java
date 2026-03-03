@@ -12,7 +12,7 @@ import javax.annotation.Nonnull;
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.custom.doors.DoorDeclRegistry;
+import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.client.loader.DoorModelLoader;
 import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
 import com.hbm_m.client.loader.MachineAssemblerModelLoader;
@@ -20,27 +20,9 @@ import com.hbm_m.client.loader.MachineHydraulicFrackiningTowerModelLoader;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.ProceduralWireLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
-import com.hbm_m.client.overlay.GUIAnvil;
-import com.hbm_m.client.overlay.GUIArmorTable;
-import com.hbm_m.client.overlay.GUIBlastFurnace;
-import com.hbm_m.client.overlay.GUIMachineAdvancedAssembler;
-import com.hbm_m.client.overlay.GUIMachineAssembler;
-import com.hbm_m.client.overlay.GUIMachineBattery;
-import com.hbm_m.client.overlay.GUIMachineCentrifuge;
-import com.hbm_m.client.overlay.GUIMachineChemicalPlant;
-import com.hbm_m.client.overlay.GUIMachineFluidTank;
-import com.hbm_m.client.overlay.GUIMachineFrackingTower;
-import com.hbm_m.client.overlay.GUIMachinePress;
-import com.hbm_m.client.overlay.GUIMachineShredder;
-import com.hbm_m.client.overlay.GUIMachineWoodBurner;
 import com.hbm_m.client.overlay.OverlayGeiger;
 import com.hbm_m.client.overlay.OverlayInfoToast;
 import com.hbm_m.client.overlay.OverlayRadiationVisuals;
-import com.hbm_m.client.overlay.crates.GUIDeshCrate;
-import com.hbm_m.client.overlay.crates.GUIIronCrate;
-import com.hbm_m.client.overlay.crates.GUISteelCrate;
-import com.hbm_m.client.overlay.crates.GUITemplateCrate;
-import com.hbm_m.client.overlay.crates.GUITungstenCrate;
 import com.hbm_m.client.render.AirBombProjectileEntityRenderer;
 import com.hbm_m.client.render.AirNukeBombProjectileEntityRenderer;
 import com.hbm_m.client.render.AirstrikeEntityRenderer;
@@ -62,13 +44,31 @@ import com.hbm_m.client.tooltip.ItemTooltipComponentRenderer;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.ModConfigKeybindHandler;
 import com.hbm_m.entity.ModEntities;
+import com.hbm_m.inventory.gui.GUIAnvil;
+import com.hbm_m.inventory.gui.GUIArmorTable;
+import com.hbm_m.inventory.gui.GUIBlastFurnace;
+import com.hbm_m.inventory.gui.GUIDeshCrate;
+import com.hbm_m.inventory.gui.GUIIronCrate;
+import com.hbm_m.inventory.gui.GUIMachineAdvancedAssembler;
+import com.hbm_m.inventory.gui.GUIMachineAssembler;
+import com.hbm_m.inventory.gui.GUIMachineBattery;
+import com.hbm_m.inventory.gui.GUIMachineCentrifuge;
+import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
+import com.hbm_m.inventory.gui.GUIMachineFluidTank;
+import com.hbm_m.inventory.gui.GUIMachineFrackingTower;
+import com.hbm_m.inventory.gui.GUIMachinePress;
+import com.hbm_m.inventory.gui.GUIMachineShredder;
+import com.hbm_m.inventory.gui.GUIMachineWoodBurner;
+import com.hbm_m.inventory.gui.GUISteelCrate;
+import com.hbm_m.inventory.gui.GUITemplateCrate;
+import com.hbm_m.inventory.gui.GUITungstenCrate;
+import com.hbm_m.inventory.menu.ModMenuTypes;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
-import com.hbm_m.item.custom.industrial.ItemBlueprintFolder;
+import com.hbm_m.item.industrial.ItemAssemblyTemplate;
+import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.item.tags_and_tiers.ModTags;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.DarkParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
@@ -168,7 +168,7 @@ public class ClientSetup {
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
         event.enqueueWork(() -> {
-            MenuScreens.register(ModMenuTypes.CRYSTALLIZER_MENU.get(), com.hbm_m.client.overlay.GUIMachineCrystallizer::new);
+            MenuScreens.register(ModMenuTypes.CRYSTALLIZER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCrystallizer::new);
             MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
             MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
             MenuScreens.register(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
@@ -307,11 +307,11 @@ public class ClientSetup {
     public static void onRegisterItemColors(RegisterColorHandlersEvent.Item event) {
         event.register((stack, tintIndex) -> {
             if (tintIndex == 0) return 0xFFFFFF;
-            return com.hbm_m.item.custom.liquids.FluidIdentifierItem.getTintColor(stack);
+            return com.hbm_m.item.liquids.FluidIdentifierItem.getTintColor(stack);
         }, ModItems.FLUID_IDENTIFIER.get());
         event.register((stack, tintIndex) -> {
             if (tintIndex == 0) return 0xFFFFFF;
-            return com.hbm_m.item.custom.liquids.FluidBarrelItem.getTintColor(stack);
+            return com.hbm_m.item.liquids.FluidBarrelItem.getTintColor(stack);
         }, ModItems.FLUID_BARREL.get());
     }
     @SubscribeEvent

@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
+import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 
 /**

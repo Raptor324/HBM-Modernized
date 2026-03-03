@@ -2,7 +2,7 @@ package com.hbm_m.network;
 
 import java.util.function.Supplier;
 
-import com.hbm_m.item.custom.grenades_and_activators.MultiDetonatorItem;
+import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;

@@ -3,7 +3,6 @@ package com.hbm_m.network;
 import java.util.function.Supplier;
 
 import com.hbm_m.item.IItemControlReceiver;
-import com.hbm_m.item.custom.liquids.FluidIdentifierItem;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;

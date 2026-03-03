@@ -1,11 +1,13 @@
 package com.hbm_m.util;
 
-// Утилитарный класс для построения тултипов предметов-шаблонов.
-// Извлекает информацию о рецепте из шаблона и форматирует её для отображения в тултипе.
-// Используется в ItemAssemblyTemplate для добавления информации в тултип.
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
-import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
+import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.recipe.AssemblerRecipe;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.NonNullList;
 import net.minecraft.network.chat.Component;
@@ -14,11 +16,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
-
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 public class TemplateTooltipUtil {
 

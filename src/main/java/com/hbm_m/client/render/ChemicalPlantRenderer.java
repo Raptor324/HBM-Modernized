@@ -3,7 +3,7 @@ package com.hbm_m.client.render;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.entity.custom.machines.MachineChemicalPlantBlockEntity;
+import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;

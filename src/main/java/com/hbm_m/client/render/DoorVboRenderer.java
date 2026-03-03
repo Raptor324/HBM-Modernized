@@ -5,13 +5,13 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.custom.doors.DoorDecl;
+import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.client.model.DoorBakedModel;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.mojang.blaze3d.vertex.PoseStack;
 
-import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;

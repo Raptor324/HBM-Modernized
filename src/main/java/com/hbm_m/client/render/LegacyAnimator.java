@@ -1,8 +1,14 @@
 package com.hbm_m.client.render;
 
-import com.hbm_m.block.entity.custom.doors.DoorAnimator;
-import com.mojang.blaze3d.vertex.*;
+import java.util.List;
+
+import org.joml.Matrix4f;
+
+import com.hbm_m.block.entity.doors.DoorAnimator;
+import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
+
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -10,10 +16,6 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
-import org.joml.Matrix4f;
-
-import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 public class LegacyAnimator implements DoorAnimator {

@@ -2,8 +2,8 @@
 
 // import java.util.Map;
 
-// import com.hbm_m.block.custom.decorations.DoorBlock;
-// import com.hbm_m.block.custom.machines.UniversalMachinePartBlock;
+// import com.hbm_m.block.decorations.DoorBlock;
+// import com.hbm_m.block.machines.UniversalMachinePartBlock;
 // import com.hbm_m.multiblock.IMultiblockPart;
 // import com.hbm_m.multiblock.MultiblockStructureHelper;
 // import com.mojang.blaze3d.vertex.PoseStack;

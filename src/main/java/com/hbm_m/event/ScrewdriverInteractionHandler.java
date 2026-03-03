@@ -1,8 +1,9 @@
 package com.hbm_m.event;
 
-import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
+import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.multiblock.IMultiblockPart;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;

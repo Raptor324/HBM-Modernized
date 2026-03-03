@@ -5,7 +5,7 @@ import java.util.List;
 import javax.annotation.Nullable;
 
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.custom.machines.MachineBatteryBlockEntity;
+import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
 import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.ChatFormatting;

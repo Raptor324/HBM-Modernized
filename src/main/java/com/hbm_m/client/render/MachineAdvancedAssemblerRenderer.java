@@ -2,9 +2,9 @@ package com.hbm_m.client.render;
 
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
-import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity;
-import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity.ClientTicker;
+import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
+import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity.ClientTicker;
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;

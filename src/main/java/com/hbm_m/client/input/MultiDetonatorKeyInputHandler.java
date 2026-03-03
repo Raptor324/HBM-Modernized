@@ -7,8 +7,10 @@ import net.minecraftforge.client.event.InputEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import com.hbm_m.item.custom.grenades_and_activators.MultiDetonatorItem;
-import com.hbm_m.client.overlay.GUIMultiDetonator;
+
+import com.hbm_m.inventory.gui.GUIMultiDetonator;
+import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
+
 import org.lwjgl.glfw.GLFW;
 
 /**

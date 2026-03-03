@@ -1,5 +1,17 @@
 package com.hbm_m.radiation;
 
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.atomic.AtomicReference;
+
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.nature.RadioactiveBlock;
+
 // Этот класс реализует простую и эффективную систему симуляции радиации в чанках. Ядро всей радиационной механики мода.
 
 import com.hbm_m.capability.ChunkRadiationProvider;
@@ -7,42 +19,29 @@ import com.hbm_m.capability.IChunkRadiation;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;
-import com.hbm_m.block.custom.nature.RadioactiveBlock;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.block.ModBlocks;
-
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
-import java.util.Map;
-import java.util.Optional;
+import com.hbm_m.network.ChunkRadiationDebugBatchPacket;
+import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.particle.ModParticleTypes;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.registries.Registries;
+import net.minecraft.resources.ResourceKey;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.Mth;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
-import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraftforge.event.level.ChunkEvent;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.server.ServerLifecycleHooks;
-import net.minecraft.resources.ResourceKey;
-import net.minecraft.core.registries.Registries;
-
-
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.tags.BlockTags;
 import net.minecraftforge.network.PacketDistributor;
-import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.particle.ModParticleTypes;
-import com.hbm_m.network.ChunkRadiationDebugBatchPacket;
+import net.minecraftforge.server.ServerLifecycleHooks;
 
 // Моя конфетка, сколько же сил и нервов я на тебя потратил!
 public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {

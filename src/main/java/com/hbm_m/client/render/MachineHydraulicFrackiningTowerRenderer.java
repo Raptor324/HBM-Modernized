@@ -1,7 +1,7 @@
 package com.hbm_m.client.render;
 
-import com.hbm_m.block.custom.machines.MachineHydraulicFrackiningTowerBlock;
-import com.hbm_m.block.entity.custom.machines.MachineHydraulicFrackiningTowerBlockEntity;
+import com.hbm_m.block.machines.MachineHydraulicFrackiningTowerBlock;
+import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
 import com.hbm_m.client.model.MachineHydraulicFrackiningTowerBakedModel;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;

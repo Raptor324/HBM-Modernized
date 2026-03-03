@@ -6,7 +6,7 @@ import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.custom.machines.MachineHydraulicFrackiningTowerBlock;
+import com.hbm_m.block.machines.MachineHydraulicFrackiningTowerBlock;
 
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemTransforms;

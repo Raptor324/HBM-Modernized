@@ -1,11 +1,14 @@
 package com.hbm_m.datagen.recipes.custom;
 
-import com.hbm_m.block.custom.machines.anvils.AnvilTier;
+import java.util.function.Consumer;
+
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.AnvilRecipe;
+
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -13,8 +16,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.registries.RegistryObject;
-
-import java.util.function.Consumer;
 
 public final class AnvilRecipeGenerator {
     private AnvilRecipeGenerator() { }

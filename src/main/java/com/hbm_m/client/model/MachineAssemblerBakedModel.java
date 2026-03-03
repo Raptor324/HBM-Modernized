@@ -6,7 +6,7 @@ import java.util.Map;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.custom.machines.MachineAssemblerBlock;
+import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 
 import net.minecraft.client.renderer.RenderType;

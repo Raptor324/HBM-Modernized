@@ -2,12 +2,12 @@ package com.hbm_m.client.render;
 
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.custom.machines.MachineAssemblerBlock;
-import com.hbm_m.block.entity.custom.machines.MachineAssemblerBlockEntity;
+import com.hbm_m.block.machines.MachineAssemblerBlock;
+import com.hbm_m.block.entity.machines.MachineAssemblerBlockEntity;
 import com.hbm_m.client.model.MachineAssemblerBakedModel;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
+import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;

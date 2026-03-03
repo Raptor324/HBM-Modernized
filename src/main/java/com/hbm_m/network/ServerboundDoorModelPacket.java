@@ -2,9 +2,12 @@ package com.hbm_m.network;
 
 import java.util.function.Supplier;
 
-import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
-import com.hbm_m.client.model.variant.*;
+import com.hbm_m.block.entity.doors.DoorBlockEntity;
+import com.hbm_m.client.model.variant.DoorModelSelection;
+import com.hbm_m.client.model.variant.DoorModelType;
+import com.hbm_m.client.model.variant.DoorSkin;
 import com.hbm_m.main.MainRegistry;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerLevel;

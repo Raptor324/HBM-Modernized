@@ -6,12 +6,12 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.entity.custom.doors.DoorBlockEntity;
-import com.hbm_m.block.entity.custom.doors.DoorDecl;
-import com.hbm_m.client.model.variant.DoorModelRegistry;
+import com.hbm_m.block.entity.doors.DoorBlockEntity;
+import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.client.loader.ColladaAnimationData;
 import com.hbm_m.client.loader.ColladaAnimationParser;
 import com.hbm_m.client.model.DoorBakedModel;
+import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -25,8 +25,8 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelManager;
 import net.minecraft.core.BlockPos;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;

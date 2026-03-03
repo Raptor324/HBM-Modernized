@@ -1,17 +1,17 @@
 package com.hbm_m.network;
 
+import java.util.function.Supplier;
+
+import javax.annotation.Nullable;
+
+import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
-
-import javax.annotation.Nullable;
-
-import com.hbm_m.block.entity.custom.machines.MachineAdvancedAssemblerBlockEntity;
 
 /**
  * Пакет от клиента к серверу для установки рецепта в продвинутой сборочной машине.

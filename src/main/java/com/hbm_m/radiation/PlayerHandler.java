@@ -1,45 +1,41 @@
 package com.hbm_m.radiation;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.UUID;
+
 // Обработчик радиации для игроков
 
-import com.hbm_m.block.custom.machines.armormod.util.ArmorModificationHelper;
+import com.hbm_m.block.machines.armormod.util.ArmorModificationHelper;
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.main.MainRegistry;
-import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.network.RadiationDataPacket;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.main.MainRegistry;
+import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.network.RadiationDataPacket;
+import com.mojang.brigadier.arguments.FloatArgumentType;
 
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementProgress;
+import net.minecraft.commands.Commands;
+import net.minecraft.commands.arguments.EntityArgument;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.ServerAdvancementManager;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.entity.Entity;
+import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.loading.FMLEnvironment;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraft.commands.Commands;
-import net.minecraft.commands.arguments.EntityArgument;
-import net.minecraft.network.chat.Component;
 import net.minecraftforge.network.PacketDistributor;
-
-import com.mojang.brigadier.arguments.FloatArgumentType;
-
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.UUID;
 
 public class PlayerHandler {
     

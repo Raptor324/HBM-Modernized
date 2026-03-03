@@ -1,12 +1,13 @@
 package com.hbm_m.network;
 
-import com.hbm_m.menu.AnvilMenu;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.network.NetworkEvent;
 
 import java.util.function.Supplier;
+
+import com.hbm_m.inventory.menu.AnvilMenu;
 
 public class AnvilCraftC2SPacket {
     private final BlockPos pos;

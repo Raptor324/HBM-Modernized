@@ -1,7 +1,11 @@
 package com.hbm_m.network;
 
-import com.hbm_m.item.custom.industrial.ItemAssemblyTemplate;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Supplier;
+
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.util.TemplateCraftingCosts;
 
 import net.minecraft.core.NonNullList;
@@ -10,10 +14,6 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraftforge.network.NetworkEvent;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Supplier;
 
 public class GiveTemplateC2SPacket {
 

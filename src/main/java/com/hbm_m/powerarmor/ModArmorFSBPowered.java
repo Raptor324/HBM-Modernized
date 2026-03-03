@@ -1,13 +1,17 @@
 package com.hbm_m.powerarmor;
 
+import java.util.List;
+
+import javax.annotation.Nullable;
+
 import com.hbm_m.api.energy.EnergyCapabilityProvider;
-import com.hbm_m.block.custom.machines.armormod.item.ItemModBattery;
-import com.hbm_m.block.custom.machines.armormod.item.ItemModBatteryMk2;
-import com.hbm_m.block.custom.machines.armormod.item.ItemModBatteryMk3;
-import com.hbm_m.block.custom.machines.armormod.util.ArmorModificationHelper;
-import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.block.machines.armormod.item.ItemModBattery;
+import com.hbm_m.block.machines.armormod.item.ItemModBatteryMk2;
+import com.hbm_m.block.machines.armormod.item.ItemModBatteryMk3;
+import com.hbm_m.block.machines.armormod.util.ArmorModificationHelper;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.util.EnergyFormatter;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -20,9 +24,6 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.network.PacketDistributor;
-
-import javax.annotation.Nullable;
-import java.util.List;
 
 // Full Set Bonus Powered armor - combines FSB functionality with battery system
 public class ModArmorFSBPowered extends ModArmorFSB {

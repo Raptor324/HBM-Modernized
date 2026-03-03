@@ -1,9 +1,18 @@
 package com.hbm_m.datagen.recipes.custom;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+import java.util.function.Consumer;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
-import com.hbm_m.block.custom.machines.anvils.AnvilTier;
+import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.recipe.AnvilRecipe;
+
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -14,13 +23,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraftforge.registries.ForgeRegistries;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.function.Consumer;
 
 public class AnvilRecipeBuilder implements RecipeBuilder {
     private final ItemStack inputA;

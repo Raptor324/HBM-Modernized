@@ -4,7 +4,12 @@ package com.hbm_m.datagen.recipes;
 // Здесь мы определяем, как создаются наши предметы в игре.
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.datagen.recipes.custom.*;
+import com.hbm_m.datagen.recipes.*;
+import com.hbm_m.datagen.recipes.custom.AnvilRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.AssemblerRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.BlastFurnaceRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.PressRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.ShredderRecipeGenerator;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;

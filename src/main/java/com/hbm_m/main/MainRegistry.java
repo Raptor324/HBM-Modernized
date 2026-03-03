@@ -13,9 +13,9 @@ import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.custom.machines.armormod.item.ItemArmorMod;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.custom.doors.DoorDeclRegistry;
+import com.hbm_m.block.entity.doors.DoorDeclRegistry;
+import com.hbm_m.block.machines.armormod.item.ItemArmorMod;
 import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.client.ClientSetup;
@@ -27,29 +27,28 @@ import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
 import com.hbm_m.hazard.ModHazards;
+import com.hbm_m.inventory.menu.ModMenuTypes;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.custom.fekal_electric.ModBatteryItem;
-import com.hbm_m.item.custom.liquids.FluidBarrelItem;
-import com.hbm_m.item.custom.liquids.FluidIdentifierItem;
+import com.hbm_m.item.fekal_electric.ModBatteryItem;
+import com.hbm_m.item.liquids.FluidBarrelItem;
+import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.menu.ModMenuTypes;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
-import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.recipe.CentrifugeRecipes;
+import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.world.biome.ModBiomes;
 import com.hbm_m.worldgen.ModWorldGen;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.resources.ResourceLocation;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
@@ -64,6 +63,7 @@ import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.level.LevelEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent;
@@ -194,7 +194,7 @@ public class MainRegistry {
         // Логгирование для отладки
         LOGGER.info("Building creative tab contents for: " + event.getTabKey());
 
-        if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get()) {
+        if (event.getTab() == ModCreativeTabs.NTM_WEAPONS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
             event.accept(ModBlocks.BARREL_RED);
             event.accept(ModBlocks.BARREL_PINK);
             event.accept(ModBlocks.BARREL_TAINT);
@@ -426,7 +426,7 @@ public class MainRegistry {
         }
 
         // СЛИТКИ И РЕСУРСЫ
-        if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get()) {
+        if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
 
             // БАЗОВЫЕ ПРЕДМЕТЫ (все с ItemStack!)
             event.accept(new ItemStack(ModItems.BALL_TNT.get()));
@@ -549,7 +549,7 @@ public class MainRegistry {
         }
 
         // РАСХОДНИКИ И МОДИФИКАТОРЫ
-        if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get()) {
+        if (event.getTab() == ModCreativeTabs.NTM_CONSUMABLES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
             event.accept(ModBlocks.ARMOR_TABLE);
             // АВТОМАТИЧЕСКОЕ ДОБАВЛЕНИЕ ВСЕХ МОДИФИКАТОРОВ
             // 1. Получаем все зарегистрированные предметы
@@ -626,7 +626,7 @@ public class MainRegistry {
         }
 
         // ЗАПЧАСТИ
-        if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get()) {
+        if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
             event.accept(ModItems.BOLT_STEEL);
             event.accept(ModItems.COIL_TUNGSTEN);
 
@@ -730,7 +730,7 @@ public class MainRegistry {
             event.accept(ModItems.MAN_CORE);
         }
         // РУДЫ
-        if (event.getTab() == ModCreativeTabs.NTM_ORES_TAB.get()) {
+        if (event.getTab() == ModCreativeTabs.NTM_ORES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
 
             event.accept(ModBlocks.DEPTH_STONE);
             event.accept(ModBlocks.DEPTH_STONE_NETHER);
@@ -833,7 +833,7 @@ public class MainRegistry {
 
 
         // СТРОИТЕЛЬНЫЕ БЛОКИ
-        if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get()) {
+        if (event.getTab() == ModCreativeTabs.NTM_BUILDING_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
 
             event.accept(ModBlocks.DECO_STEEL);
             event.accept(ModBlocks.CONCRETE);
@@ -1096,7 +1096,7 @@ public class MainRegistry {
         }
 
         // СТАНКИ
-        if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get()) {
+        if (event.getTab() == ModCreativeTabs.NTM_MACHINES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
             event.accept(ModBlocks.CRATE_IRON);
             event.accept(ModBlocks.CRATE_STEEL);
             event.accept(ModBlocks.CRATE_TUNGSTEN);
@@ -1141,7 +1141,7 @@ public class MainRegistry {
         }
 
         // ТОПЛИВО И ЭЛЕМЕНТЫ МЕХАНИЗМОВ
-        if (event.getTab() == ModCreativeTabs.NTM_FUEL_TAB.get()) {
+        if (event.getTab() == ModCreativeTabs.NTM_FUEL_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
             event.accept(ModItems.CREATIVE_BATTERY);
 
 
@@ -1206,11 +1206,12 @@ public class MainRegistry {
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added {} battery variants to NTM Fuel tab", batteriesToAdd.size() * 2);
             }
+
             event.accept(new ItemStack(ModItems.FLUID_BARREL.get()));
             for (ModFluids.FluidEntry entry : HbmFluidRegistry.getOrderedFluids()) {
                 ItemStack filledBarrel = new ItemStack(ModItems.FLUID_BARREL.get());
                 FluidBarrelItem.setFluid(filledBarrel, new FluidStack(entry.getSource(), FluidBarrelItem.CAPACITY));
-                event.accept(filledBarrel);
+                event.accept(filledBarrel, net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             }
             event.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
             event.accept(new ItemStack(ModItems.INFINITE_WATER_500.get()));
@@ -1218,7 +1219,7 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.FLUID_BARREL_INFINITE.get()));
         }
 
-        if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get()) {
+        if (event.getTab() == ModCreativeTabs.NTM_TEMPLATES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
 
             event.accept(ModItems.BLADE_STEEL);
             event.accept(ModItems.BLADE_TITANIUM);

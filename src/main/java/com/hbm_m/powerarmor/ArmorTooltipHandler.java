@@ -1,7 +1,14 @@
 package com.hbm_m.powerarmor;
 
-import com.hbm_m.block.custom.machines.armormod.item.ItemArmorMod;
-import com.hbm_m.block.custom.machines.armormod.util.ArmorModificationHelper;
+import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+
+import com.hbm_m.block.machines.armormod.item.ItemArmorMod;
+import com.hbm_m.block.machines.armormod.util.ArmorModificationHelper;
 import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 
 import net.minecraft.ChatFormatting;
@@ -12,13 +19,6 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-
-import java.text.DecimalFormat;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
 
 public class ArmorTooltipHandler {
 

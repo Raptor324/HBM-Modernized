@@ -15,7 +15,7 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 
-import com.hbm_m.block.entity.custom.machines.MachineBatteryBlockEntity;
+import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
 import com.hbm_m.capability.ModCapabilities;
 import com.mojang.logging.LogUtils;
 

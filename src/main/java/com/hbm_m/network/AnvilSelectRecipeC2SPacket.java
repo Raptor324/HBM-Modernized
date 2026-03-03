@@ -1,6 +1,6 @@
 package com.hbm_m.network;
 
-import com.hbm_m.menu.AnvilMenu;
+import com.hbm_m.inventory.menu.AnvilMenu;
 import com.hbm_m.recipe.AnvilRecipeManager;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;

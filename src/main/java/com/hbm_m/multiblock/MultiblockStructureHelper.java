@@ -13,9 +13,8 @@ import java.util.function.Supplier;
 // Позволяет определять структуру, проверять возможность постройки, строить и разрушать структуру,
 // а также генерировать VoxelShape для всей структуры. Ядро всей мультиблочной логики.
 import com.hbm_m.api.energy.WireBlock;
-import com.hbm_m.block.custom.machines.MachineAdvancedAssemblerBlock;
-import com.hbm_m.block.custom.decorations.DoorBlock;
-import com.hbm_m.block.custom.machines.UniversalMachinePartBlock;
+import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
+import com.hbm_m.block.machines.UniversalMachinePartBlock;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.HighlightBlocksPacket;
@@ -560,12 +559,12 @@ public class MultiblockStructureHelper {
             if (be instanceof IMultiblockPart partBe) {
                 partBe.setControllerPos(controllerPos);
                 PartRole role = resolvePartRole(gridPos, controller);
-                if (controller instanceof com.hbm_m.block.custom.decorations.DoorBlock doorBlock) {
+                if (controller instanceof com.hbm_m.block.decorations.DoorBlock doorBlock) {
                     // Получаем ID декларации
                     String declId = doorBlock.getDoorDeclId();
                     // Получаем саму декларацию из реестра
-                    com.hbm_m.block.entity.custom.doors.DoorDecl decl = 
-                        com.hbm_m.block.entity.custom.doors.DoorDeclRegistry.getById(declId);
+                    com.hbm_m.block.entity.doors.DoorDecl decl = 
+                        com.hbm_m.block.entity.doors.DoorDeclRegistry.getById(declId);
                     
                     if (decl != null && decl.getStructureDefinition() != null) {
                         // Берем роль прямо из карты схемы

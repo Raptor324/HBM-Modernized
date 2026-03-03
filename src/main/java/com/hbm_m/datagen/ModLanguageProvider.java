@@ -810,7 +810,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.fluid_barrel", "Жидкостная бочка: %s");
                 add("item.hbm_m.fluid_barrel.empty", "Пустая бочка для жидкости");
                 add("item.hbm_m.fluid_barrel_infinite", "Бесконечная жидкостная бочка");
-                add("item.hbm_m.fluid_identifier", "Мульти-жидкостный идентификатор");
+                add("item.hbm_m.fluid_identifier", "Мульти-жидкостный идентификатор: %s");
+                add("item.hbm_m.fluid_identifier.none", "Мульти-жидкостный идентификатор");
                 add("item.hbm_m.fluid_identifier.info", "Жидкостный идентификатор для:");
                 add("item.hbm_m.fluid_identifier.info2", "Второй тип:");
 
@@ -2218,7 +2219,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.fluid_barrel", "Fluid Barrel: %s");
                 add("item.hbm_m.fluid_barrel.empty", "Empty Fluid Barrel");
                 add("item.hbm_m.fluid_barrel_infinite", "Infinite Fluid Barrel");
-                add("item.hbm_m.fluid_identifier", "Multi Fluid Identifier");
+                add("item.hbm_m.fluid_identifier", "Multi Fluid Identifier: %s");
+                add("item.hbm_m.fluid_identifier.none", "Multi Fluid Identifier");
                 add("item.hbm_m.fluid_identifier.info", "Universal fluid identifier for:");
                 add("item.hbm_m.fluid_identifier.info2", "Secondary type:");
 
