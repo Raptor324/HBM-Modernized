@@ -390,6 +390,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("desc.gui.upgrade.speed", "Скорость: -25% времени за уровень");
                 add("desc.gui.upgrade.effectiveness", "Эффективность: шанс бесплатного крафта");
                 add("desc.gui.upgrade.overdrive", "Овердрайв: x2 циклов за тик за уровень");
+
                 // === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
                 add("tooltip.hbm_m.gigadet.line1", "Был создан по приколу");
                 add("tooltip.hbm_m.nuclear_charge.line1", "Ядерное оружие высокой мощности!");
@@ -806,6 +807,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.COIL_GOLD.get(), "Медная катушка");
                 add(ModItems.DUST.get(), "Кучка пыли");
                 add(ModItems.DUST_TINY.get(), "Маленькая кучка пыли");
+                add("item.hbm_m.coal_powder_tiny", "Маленькая кучка угольной пыли");
                 add(ModItems.SCRAP.get(), "Мусор");
                 add(ModItems.POWDER_COAL.get(), "Угольный порошок");
                 add(ModItems.POWDER_COAL_SMALL.get(), "Маленькая кучка угольного порошока");
@@ -816,6 +818,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.fluid_identifier", "Мульти-жидкостный идентификатор");
                 add("item.hbm_m.fluid_identifier.info", "Жидкостный идентификатор для:");
                 add("item.hbm_m.fluid_identifier.info2", "Второй тип:");
+                add("item.hbm_m.bucket_crude_oil", "Ведро сырой нефти");
+                add("item.hbm_m.inf_water", "Бочка с бесконечной водой");
+                add("item.hbm_m.inf_water_mk2", "Бочка с бесконечной водой mk2");
 
                 add("gui.hbm_m.fluid_tank.empty", "Пусто");
                 add("gui.hbm_m.fluid_tank.empty_filter", "Пусто (фильтр: %s)");
@@ -967,6 +972,42 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.fluorite", "Флюорит");
                 add("item.hbm_m.fireclay_ball", "Комок огнеупорной глины");
             
+                // КРИСТАЛЛЫ
+                add("item.hbm_m.crystal_aluminium", "Алюминиевый кристалл");
+                add("item.hbm_m.crystal_beryllium", "Бериллиевый кристалл");
+                add("item.hbm_m.crystal_charred", "Обожжённый кристалл");
+                add("item.hbm_m.crystal_cinnebar", "Киноварный кристалл");
+                add("item.hbm_m.crystal_coal", "Углеродный кристалл");
+                add("item.hbm_m.crystal_cobalt", "Кобальтовый кристалл");
+                add("item.hbm_m.crystal_copper", "Медный кристалл");
+                add("item.hbm_m.crystal_diamond", "Алмазный кристалл");
+                add("item.hbm_m.crystal_fluorite", "Кристалл флюорита");
+                add("item.hbm_m.crystal_gold", "Кристалл золота");
+                add("item.hbm_m.crystal_hardened", "Упрочнённый кристалл");
+                add("item.hbm_m.crystal_horn", "Кристаллический рог");
+                add("item.hbm_m.crystal_iron", "Кристалл железа");
+                add("item.hbm_m.crystal_lapis", "Кристалл лазурита");
+                add("item.hbm_m.crystal_lead", "Кристалл свинца");
+                add("item.hbm_m.crystal_lithium", "Кристалл лития");
+                add("item.hbm_m.crystal_niter", "Кристалл селитры");
+                add("item.hbm_m.crystal_osmiridium", "Кристалл осмиридия");
+                add("item.hbm_m.crystal_phosphorus", "Кристалл фосфора");
+                add("item.hbm_m.crystal_plutonium", "Кристалл плутония");
+                add("item.hbm_m.crystal_pulsar", "Импульсный кристалл");
+                add("item.hbm_m.crystal_rare", "Кристалл редкоземельного металла");
+                add("item.hbm_m.crystal_redstone", "Редстоуновый кристалл");
+                add("item.hbm_m.crystal_schrabidium", "Шрабидиевый кристалл");
+                add("item.hbm_m.crystal_schraranium", "Кристалл шрарания");
+                add("item.hbm_m.crystal_starmetal", "Кристалл звёздного металла");
+                add("item.hbm_m.crystal_sulfur", "Кристалл серы");
+                add("item.hbm_m.crystal_thorium", "Кристалл тория");
+                add("item.hbm_m.crystal_titanium", "Кристалл титана");
+                add("item.hbm_m.crystal_trixite", "Кристалл триксита");
+                add("item.hbm_m.crystal_tungsten", "Кристалл вольфрама");
+                add("item.hbm_m.crystal_uranium", "Кристалл урана");
+                add("item.hbm_m.crystal_virus", "Кристалл вируса");
+                add("item.hbm_m.crystal_xen", "Ксеноновый кристалл");
+
                 add("item.hbm_m.blueprint_folder", "Папка шаблонов");
                 add("item.hbm_m.blueprint_folder.named", "Папка шаблонов машин");
                 add("item.hbm_m.blueprint_folder.empty", "Пустая папка");
@@ -1116,7 +1157,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.barrel_red", "Красная бочка");
                 add("block.hbm_m.airbomb", "Авиабомба");
                 add("block.hbm_m.balebomb_test", "Жар-бомба");
-            
+                add("item.hbm_m.airbomb_a", "Авиабомба [снаряд]");
+                add("item.hbm_m.airnukebomb_a", "Ядерная бомба [снаряд]");
 
 
                 add("block.hbm_m.wire_coated", "Провод из красной меди");
