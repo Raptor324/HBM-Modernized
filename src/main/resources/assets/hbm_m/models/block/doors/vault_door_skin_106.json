@@ -4,11 +4,12 @@
   "parts": ["Label", "Frame", "Door"],
   "textures": {
     "default": "hbm_m:block/doors/vault_door_3",
+    "label": "hbm_m:block/doors/label_106",
     "particle": "hbm_m:block/doors/vault_door_3"
   },
   "transform": {
-    "rotation": [0, 90, 0],
-    "translation": [0, 0, -2],
+    "rotation": [0, 0, 0],
+    "translation": [0, 0, 0],
     "scale": 1
   },
   "display": {

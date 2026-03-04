@@ -2,6 +2,7 @@
 # www.blender.org
 mtllib vault_door.mtl
 o Label
+usemtl label
 v 0.312500 2.759306 -0.309029
 v 0.312500 2.849362 -0.201704
 v 0.312500 2.240694 -0.309029

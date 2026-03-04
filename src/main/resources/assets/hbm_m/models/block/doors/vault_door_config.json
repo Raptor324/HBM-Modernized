@@ -1,14 +1,40 @@
 {
   "door_id": "vault_door",
-  "legacy_model": "hbm_m:block/doors/vault_door_legacy",
+  "legacy_model": "hbm_m:block/doors/vault_door",
   "modern_model": {
-    "model": "hbm_m:block/doors/vault_door_modern",
+    "model": "hbm_m:block/doors/vault_door_skin_101",
     "skins": [
-      {"id": "default", "name": "Default", "texture": "hbm_m:block/doors/vault_door_3"},
-      {"id": "skin_3", "name": "Vault 3", "texture": "hbm_m:block/doors/vault_door_3"},
-      {"id": "skin_4", "name": "Vault 4", "texture": "hbm_m:block/doors/vault_door_4"},
-      {"id": "skin_s", "name": "Vault S", "texture": "hbm_m:block/doors/vault_door_s"}
+      {
+        "id": "default", 
+        "name": "Vault 87", 
+        "model": "hbm_m:block/doors/vault_door_skin_87"
+      },
+      {
+        "id": "skin_106", 
+        "name": "Vault 106", 
+        "model": "hbm_m:block/doors/vault_door_skin_106"
+      },
+      {
+        "id": "skin_2", 
+        "name": "Vault 2", 
+        "model": "hbm_m:block/doors/vault_door_skin_2"
+      },
+      {
+        "id": "skin_99", 
+        "name": "Vault 99", 
+        "model": "hbm_m:block/doors/vault_door_skin_99"
+      },
+      {
+        "id": "skin_81", 
+        "name": "Vault 81", 
+        "model": "hbm_m:block/doors/vault_door_skin_81"
+      },
+      {
+        "id": "skin_111", 
+        "name": "Vault 111", 
+        "model": "hbm_m:block/doors/vault_door_skin_111"
+      }
     ]
   },
-  "default": {"type": "modern", "skin": "skin_3"}
+  "default": {"type": "modern", "skin": "skin_101"}
 }

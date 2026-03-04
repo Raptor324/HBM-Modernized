@@ -1,5 +1,10 @@
 package com.hbm_m.client.model.variant;
 
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.network.chat.Component;
@@ -14,65 +19,53 @@ import net.minecraft.resources.ResourceLocation;
  */
 public class DoorSkin {
     
-    /**
-     * Скин по умолчанию (для LEGACY и для MODERN без кастомного скина)
-     */
-    public static final DoorSkin DEFAULT = new DoorSkin("default", null, null);
+    public static final DoorSkin DEFAULT = new DoorSkin("default", null, null, Collections.emptyMap());
     
     private final String id;
-    private final ResourceLocation texturePath;
+    private final ResourceLocation texturePath; // Базовая текстура (оставлена для обратной совместимости)
     private final ResourceLocation modelPath;
+    private final Map<String, ResourceLocation> textureMap; // Словарь текстур для составных моделей
     
-    public DoorSkin(String id, ResourceLocation texturePath) {
-        this(id, texturePath, null);
-    }
-    
-    public DoorSkin(String id, ResourceLocation texturePath, ResourceLocation modelPath) {
+    public DoorSkin(String id, ResourceLocation texturePath, ResourceLocation modelPath, Map<String, ResourceLocation> textureMap) {
         this.id = id;
         this.texturePath = texturePath;
         this.modelPath = modelPath;
+        this.textureMap = textureMap != null ? textureMap : Collections.emptyMap();
     }
     
-    /**
-     * ID скина для сохранения
-     */
     public String getId() {
         return id;
     }
     
-    /**
-     * Отображаемое имя в UI — через локализацию door.skin.{modid}.{doorId}.{skinId}
-     */
     public Component getDisplayName(String doorId) {
         String key = "door.skin." + RefStrings.MODID + "." + doorId + "." + id;
         return Component.translatable(key);
     }
     
-    /**
-     * Путь к текстуре (может быть null - используется текстура модели по умолчанию)
-     */
     public ResourceLocation getTexturePath() {
         return texturePath;
     }
     
     /**
-     * Является ли это скином по умолчанию
+     * Получить текстуру для конкретной части модели (материала из .mtl)
+     * @param materialName имя материала (например "label" или "default")
      */
+    public ResourceLocation getTextureForPart(String materialName) {
+        if (textureMap.containsKey(materialName)) {
+            return textureMap.get(materialName);
+        }
+        // Если специфичная текстура не найдена, возвращаем базовую
+        return texturePath;
+    }
+    
     public boolean isDefault() {
         return "default".equals(id);
     }
     
-    /**
-     * Путь к модели (если есть — для скинов с отдельной текстурой).
-     * null = использовать базовую модель modern.
-     */
     public ResourceLocation getModelPath() {
         return modelPath;
     }
 
-    /**
-     * Создаёт скин из JSON. Поле "name" игнорируется — отображение через локализацию.
-     */
     public static DoorSkin fromJson(JsonObject json) {
         String id = json.get("id").getAsString();
         
@@ -85,22 +78,25 @@ public class DoorSkin {
         if (json.has("model")) {
             modelPath = ResourceLocation.parse(json.get("model").getAsString());
         }
+
+        // Парсинг словаря текстур
+        Map<String, ResourceLocation> textureMap = new HashMap<>();
+        if (json.has("textures")) {
+            JsonObject texturesObj = json.getAsJsonObject("textures");
+            for (Map.Entry<String, JsonElement> entry : texturesObj.entrySet()) {
+                textureMap.put(entry.getKey(), ResourceLocation.parse(entry.getValue().getAsString()));
+            }
+        }
         
-        return new DoorSkin(id, texturePath, modelPath);
+        return new DoorSkin(id, texturePath, modelPath, textureMap);
     }
     
-    /**
-     * Создаёт простой скин по ID (имя — через локализацию)
-     */
     public static DoorSkin of(String id) {
-        return new DoorSkin(id, null, null);
+        return new DoorSkin(id, null, null, Collections.emptyMap());
     }
     
-    /**
-     * Создаёт скин с текстурой
-     */
     public static DoorSkin of(String id, String texturePath) {
-        return new DoorSkin(id, texturePath != null ? ResourceLocation.parse(texturePath) : null, null);
+        return new DoorSkin(id, texturePath != null ? ResourceLocation.parse(texturePath) : null, null, Collections.emptyMap());
     }
     
     @Override

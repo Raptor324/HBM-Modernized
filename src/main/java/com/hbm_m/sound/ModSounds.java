@@ -1,13 +1,14 @@
 package com.hbm_m.sound;
 
+import com.hbm_m.lib.RefStrings;
+import com.hbm_m.main.MainRegistry;
+
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvent;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-import net.minecraft.sounds.SoundEvent;
-import net.minecraft.resources.ResourceLocation;
-import com.hbm_m.lib.RefStrings;
-import com.hbm_m.main.MainRegistry;
 
 public class ModSounds {
     // Создаем регистр для звуков
@@ -106,8 +107,8 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> TRANSITION_SEAL_CLOSE = registerSoundEvents("block.transition_seal_close");
     public static final RegistryObject<SoundEvent> WGH_START = registerSoundEvents("block.wgh_start");
     public static final RegistryObject<SoundEvent> WGH_STOP = registerSoundEvents("block.wgh_stop");
-    public static final RegistryObject<SoundEvent> VAULT_SCRAPE = registerSoundEvents("block.vault_scrape_new");
-    public static final RegistryObject<SoundEvent> VAULT_THUD = registerSoundEvents("block.vault_thud_new");
+    public static final RegistryObject<SoundEvent> VAULT_SCRAPE = registerSoundEvents("block.vault_scrape");
+    public static final RegistryObject<SoundEvent> VAULT_THUD = registerSoundEvents("block.vault_thud");
 
     public static final RegistryObject<SoundEvent> SWITCH_ON = registerSoundEvents("block.switch.on");
 

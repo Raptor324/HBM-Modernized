@@ -3,8 +3,14 @@
   "model": "hbm_m:models/block/doors/vault_door.obj",
   "parts": ["Label", "Frame", "Door"],
   "textures": {
-    "default": "hbm_m:block/doors/vault_door_3",
-    "particle": "hbm_m:block/doors/vault_door_3"
+    "default": "hbm_m:block/doors/vault_door_s",
+    "label": "hbm_m:block/doors/label_99",
+    "particle": "hbm_m:block/doors/vault_door_s"
+  },
+  "transform": {
+    "rotation": [0, 0, 0],
+    "translation": [0, 0, 0],
+    "scale": 1
   },
   "display": {
     "gui": {"rotation": [30, 225, 0], "translation": [-1.2, -4, 0], "scale": [0.115, 0.115, 0.115]},

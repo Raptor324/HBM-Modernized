@@ -444,6 +444,13 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
                 be.notifyNeighborsOfStateChange(level, pos);
             }
         }
+
+        if (be.state == 2 || be.state == 3) {
+            DoorDecl decl = be.getDoorDecl();
+            if (decl != null) {
+                decl.onTick(be);
+            }
+        }
     
         if (shouldSync) {
             be.syncToClient();
@@ -774,6 +781,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    public int getOpenTicks() {
+        return this.openTicks;
     }
 
     @Override

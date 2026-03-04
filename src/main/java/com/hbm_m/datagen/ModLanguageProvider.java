@@ -1503,10 +1503,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.water_door.default", "Новая");
                 add("door.skin.hbm_m.qe_sliding_door.default", "Новая");
                 add("door.skin.hbm_m.qe_containment_door.default", "Новая");
-                add("door.skin.hbm_m.vault_door.default", "По умолчанию");
-                add("door.skin.hbm_m.vault_door.skin_3", "Vault 3");
-                add("door.skin.hbm_m.vault_door.skin_4", "Vault 4");
-                add("door.skin.hbm_m.vault_door.skin_s", "Vault S");
+                add("door.skin.hbm_m.vault_door.default", "Vault 101");
+                add("door.skin.hbm_m.vault_door.skin_106", "Vault 106");
+                add("door.skin.hbm_m.vault_door.skin_2", "Vault 2");
+                add("door.skin.hbm_m.vault_door.skin_99", "Vault 99");
+                add("door.skin.hbm_m.vault_door.skin_81", "Vault 81");
+                add("door.skin.hbm_m.vault_door.skin_111", "Vault 111");
 
                 add(ModItems.SCREWDRIVER.get(), "Отвёртка");
                 add("tooltip.hbm_m.screwdriver", "Клик ПКМ - настройка конвертера энергии или смена скина двери");
@@ -3035,10 +3037,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.water_door.default", "Standard");
                 add("door.skin.hbm_m.qe_sliding_door.default", "Standard");
                 add("door.skin.hbm_m.qe_containment_door.default", "Standard");
-                add("door.skin.hbm_m.vault_door.default", "Default");
-                add("door.skin.hbm_m.vault_door.skin_3", "Vault 3");
-                add("door.skin.hbm_m.vault_door.skin_4", "Vault 4");
-                add("door.skin.hbm_m.vault_door.skin_s", "Vault S");
+                add("door.skin.hbm_m.vault_door.default", "Vault 101");
+                add("door.skin.hbm_m.vault_door.skin_106", "Vault 106");
+                add("door.skin.hbm_m.vault_door.skin_2", "Vault 2");
+                add("door.skin.hbm_m.vault_door.skin_99", "Vault 99");
+                add("door.skin.hbm_m.vault_door.skin_81", "Vault 81");
+                add("door.skin.hbm_m.vault_door.skin_111", "Vault 111");
 
                 add(ModItems.SCREWDRIVER.get(), "Screwdriver");
                 add("tooltip.hbm_m.screwdriver", "RMB click - Configure energy converter or change door skin");

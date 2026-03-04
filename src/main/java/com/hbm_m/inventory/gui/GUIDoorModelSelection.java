@@ -77,7 +77,7 @@ public class GUIDoorModelSelection extends Screen {
     private static final int SKIN_GRID_COLS = 4;
     private static final int SKIN_GRID_ROWS = 2;
     private static final int SKIN_GRID_GAP = 20;
-    private static final int SKIN_GRID_ROW_HEIGHT = 32;
+    private static final int SKIN_GRID_ROW_HEIGHT = 38;
     private static final int ITEMS_PER_PAGE = SKIN_GRID_COLS * SKIN_GRID_ROWS;
 
     private static final ResourceLocation TEXTURE =

@@ -184,9 +184,26 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         @Override public boolean useBlockLight() { return parent.useBlockLight(); }
         @Override public boolean useAmbientOcclusion() { return parent.useAmbientOcclusion(); }
         @Override public ItemTransforms getTransforms() { return parent.getTransforms(); }
+
         @Override
         public Material getMaterial(String name) {
             Material mat = parent.getMaterial(name);
+
+            if (this.visiblePart.equalsIgnoreCase("Label")) {
+                if (parent.hasMaterial("label")) {
+                    mat = parent.getMaterial("label"); // Берет текстуру "label" из JSON
+                }
+            } else if (this.visiblePart.equalsIgnoreCase("Frame") || this.visiblePart.equalsIgnoreCase("Door")) {
+                if (parent.hasMaterial("default")) {
+                    mat = parent.getMaterial("default"); // Берет текстуру "default" из JSON
+                }
+            } else {
+                // Автоматический подхват для других дверей (если имя детали совпадает с ключом текстуры в JSON)
+                String lowerPart = this.visiblePart.toLowerCase(java.util.Locale.ROOT);
+                if (parent.hasMaterial(lowerPart)) {
+                    mat = parent.getMaterial(lowerPart);
+                }
+            }
 
             if (mat == null) return null;
             ResourceLocation overrideAtlas = loader.mapAtlasForTexture(mat.texture());
@@ -197,6 +214,7 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
             }
             return mat;
         }
+
         @Override public Transformation getRootTransform() { return parent.getRootTransform(); }
         @Override public boolean hasMaterial(String name) { return parent.hasMaterial(name); }
         @Override public ResourceLocation getRenderTypeHint() { return parent.getRenderTypeHint(); }

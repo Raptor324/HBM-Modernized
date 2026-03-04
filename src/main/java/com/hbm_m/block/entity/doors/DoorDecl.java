@@ -17,7 +17,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
@@ -64,6 +66,8 @@ public abstract class DoorDecl {
     public DoorStructureDefinition getStructureDefinition() {
         return structureDefinition;
     }
+
+    public void onTick(DoorBlockEntity door) {}
 
     @Nullable
     public VoxelShape getDynamicOutline(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context, float progress) {
@@ -1594,10 +1598,10 @@ public abstract class DoorDecl {
         {
             DoorStructureDefinition.Builder builder = DoorStructureDefinition.create();
             
-            VoxelShape thinDoorShape = Block.box(0, 0, 4, 16, 16, 12);
+            VoxelShape DoorShape = Block.box(0, 0, 0, 16, 16, 16);
             
-            builder.addSymbol('#', thinDoorShape, PartRole.DEFAULT);
-            builder.addSymbol('C', thinDoorShape, PartRole.CONTROLLER);
+            builder.addSymbol('#', DoorShape, PartRole.DEFAULT);
+            builder.addSymbol('C', DoorShape, PartRole.CONTROLLER);
 
             String[] closed = {
                 "#####",
@@ -1625,122 +1629,162 @@ public abstract class DoorDecl {
 
         @Override
         public DoorModelSelection getDefaultModelSelection() {
-            return DoorModelSelection.modern(DoorSkin.of("skin_3"));
+            return DoorModelSelection.modern(DoorSkin.of("vault_door_skin_101"));
         }
 
         @Override
         public String[] getPartNames() {
             return new String[] { "Label", "Frame", "Door" };
         }
-    
+
         @Override 
         public int getOpenTime() { 
             return 120; 
         }
-    
+
         @Override
         public boolean hasSkins() {
             return true;
         }
-    
+
         @Override
         public int getSkinCount() {
             return 3;
         }
-    
+
         @Override
         public AABB getBlockBound(int x, int y, int z, boolean open, boolean forCollision) {
             if (!open || y == 0) return new AABB(0, 0, 0, 1, 1, 1);
             return super.getBlockBound(x, y, z, open, forCollision);
         }
-    
+
         @Override
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
+            // Рама стоит на месте
             if ("Frame".equals(partName)) {
                 super.getTranslation(partName, openTicks, child, trans);
                 return;
             }
+
             float pull = getVaultPull(openTicks);
-            float slide = getVaultSlide(openTicks);
-            set(trans, -pull, 0, slide);
+            float slideDist = getVaultSlide(openTicks) * 5.0f; // Дистанция 5 блоков
+
+            // Дверь и табличка вращаются
+            if ("Door".equals(partName) || "Label".equals(partName)) {
+                // 1. Вычисляем текущий угол поворота (так же, как в getRotation)
+                double diameter = 4.25;
+                double circumference = diameter * Math.PI;
+                float rollDeg = (float) (360.0 * slideDist / circumference);
+                double rollRad = Math.toRadians(rollDeg);
+
+                // 2. Математическая компенсация:
+                // Так как рендерер сначала поворачивает оси, вектор смещения (0,0,slide) тоже поворачивается и уходит в пол.
+                // Мы "предвидим" это и поворачиваем вектор смещения в ОБРАТНУЮ сторону.
+                // Когда рендерер применит поворот двери, наш вектор выровняется в идеальную прямую линию.
+                
+                // Формула обратного поворота вектора (0, 0, slideDist) вокруг оси X:
+                float yComp = (float) (slideDist * Math.sin(rollRad));
+                float zComp = (float) (slideDist * Math.cos(rollRad));
+                
+                set(trans, -pull, yComp, zComp);
+            } else {
+                // Если появятся другие части, которые двигаются, но не крутятся
+                set(trans, -pull, 0, slideDist);
+            }
         }
-    
+
         @Override
         public void getOrigin(String partName, float[] orig) {
             if ("Door".equals(partName) || "Label".equals(partName)) {
-                set(orig, 0, 2.5f, 0);
+                // Устанавливаем центр вращения на высоту 2.5 блока.
+                // Это заставит дверь вращаться вокруг своего центра, а не вокруг ног.
+                set(orig, 0, 2.5f, 0); 
             } else {
                 super.getOrigin(partName, orig);
             }
         }
-    
+
+        @Override
+        public void getOrigin(String partName, float[] orig, @Nullable DoorModelSelection selection) {
+            // Явно вызываем наш метод с логикой пивота, игнорируя selection
+            getOrigin(partName, orig);
+        }
+
         @Override
         public void getRotation(String partName, float openTicks, float[] rot) {
             if ("Door".equals(partName) || "Label".equals(partName)) {
                 float slide = getVaultSlide(openTicks);
                 double diameter = 4.25;
                 double circumference = diameter * Math.PI;
+                // Скейлим слайд для расчета угла (так же, как и дистанцию)
                 float slideScaled = slide * 5f;
                 float rollDeg = (float) (360.0 * slideScaled / circumference);
+                
                 set(rot, rollDeg, 0, 0);
             } else {
                 super.getRotation(partName, openTicks, rot);
             }
         }
-    
+
         private float getVaultPull(float openTicks) {
-            if (openTicks <= 40) return getNormTime(openTicks, 0, 40);
+            if (openTicks <= 40) {
+                float t = getNormTime(openTicks, 0, 40);
+                // Аналог HBM IType.SIN_FULL (Плавное ускорение/замедление)
+                return (float) ((1.0 - Math.cos(t * Math.PI)) / 2.0);
+            }
             return 1f;
         }
-    
+
         private float getVaultSlide(float openTicks) {
             if (openTicks <= 40) return 0f;
+            // Линейное движение в диапазоне от 40 до 120 тика (возвращает от 0.0 до 1.0)
             return getNormTime(openTicks, 40, 120);
         }
-    
+
         @Override 
         public double[][] getClippingPlanes() {
             return new double[][] { { 0, -1, 0, 3.0001 } };
         }
-    
+
         @Override 
         public int[][] getDoorOpenRanges() {
             return new int[][] { { -1, 1, 0, 3, 3, 2 } };
         }
-    
-        @Override 
-        public SoundEvent getOpenSoundStart() { 
-            return ModSounds.VAULT_SCRAPE.get(); 
-        }
         
+        // Отключаем стандартный спам звуков
+        @Override public SoundEvent getOpenSoundStart() { return null; }
+        @Override public SoundEvent getOpenSoundEnd() { return null; }
+        @Override public SoundEvent getOpenSoundLoop() { return null; }
+        @Override public SoundEvent getCloseSoundStart() { return null; }
+        @Override public SoundEvent getCloseSoundEnd() { return null; }
+        @Override public SoundEvent getCloseSoundLoop() { return null; }
+        @Override public float getSoundVolume() { return 1.0f; }
+
         @Override 
-        public SoundEvent getOpenSoundEnd() { 
-            return ModSounds.VAULT_THUD.get(); 
+        public void onTick(DoorBlockEntity door) { 
+            Level level = door.getLevel();
+            if (level == null || level.isClientSide()) return;
+            
+            BlockPos pos = door.getBlockPos();
+            int openTicks = door.getOpenTicks();
+
+            if (door.state == 3) { // STATE_OPENING (Тики растут с 0 до 120)
+                // Используем 1 вместо 0, т.к. в serverTick счетчик инкрементируется до проверки
+                if (openTicks == 1) { 
+                    level.playSound(null, pos, ModSounds.VAULT_SCRAPE.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+                if (openTicks >= 45 && openTicks <= 115 && (openTicks - 45) % 10 == 0) {
+                    level.playSound(null, pos, ModSounds.VAULT_THUD.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+            } else if (door.state == 2) { // STATE_CLOSING (Тики убывают со 120 до 0)
+                // ИСПРАВЛЕНИЕ: Так как в 1.20.1 тики тоже убывают, возвращаем оригинальные значения из 1.7.10
+                if (openTicks == 30) {
+                    level.playSound(null, pos, ModSounds.VAULT_SCRAPE.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+                if (openTicks >= 45 && openTicks <= 115 && (openTicks - 45) % 10 == 0) {
+                    level.playSound(null, pos, ModSounds.VAULT_THUD.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+            }
         }
-        
-        @Override 
-        public SoundEvent getOpenSoundLoop() { 
-            return ModSounds.VAULT_SCRAPE.get(); 
-        }
-        
-        @Override 
-        public SoundEvent getCloseSoundStart() { 
-            return ModSounds.VAULT_SCRAPE.get(); 
-        }
-        
-        @Override 
-        public SoundEvent getCloseSoundEnd() { 
-            return ModSounds.VAULT_THUD.get(); 
-        }
-        
-        @Override 
-        public SoundEvent getCloseSoundLoop() { 
-            return ModSounds.VAULT_SCRAPE.get(); 
-        }
-        
-        @Override 
-        public float getSoundVolume() { 
-            return 2.0f; 
-        }
-    }; 
+    };
 }
