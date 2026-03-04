@@ -8,9 +8,45 @@
     "particle": "hbm_m:block/doors/vault_door_3"
   },
   "display": {
-    "gui": {"rotation": [30, 225, 0], "translation": [-1.2, -4, 0], "scale": [0.115, 0.115, 0.115]},
-    "ground": {"rotation": [0, 0, 0], "translation": [0, 3, 0], "scale": [0.25, 0.25, 0.25]},
-    "thirdperson_righthand": {"rotation": [75, 45, 0], "translation": [0, 2.5, 0], "scale": [0.2, 0.2, 0.2]},
-    "firstperson_righthand": {"rotation": [0, 45, 0], "translation": [2, -1.4, 0], "scale": [0.08, 0.08, 0.08]}
+    "thirdperson_righthand": {
+        "rotation": [ 3, 273, 352 ],
+        "translation": [ -1.00, -0.75, 1.25 ],
+        "scale": [ 0.10, 0.10, 0.10 ]
+    },
+    "thirdperson_lefthand": {
+        "rotation": [ 75, 45, 0 ],
+        "translation": [ 0.00, 2.50, 0.00 ],
+        "scale": [ 0.20, 0.20, 0.20 ]
+    },
+    "firstperson_righthand": {
+        "rotation": [ 0, 229, 0 ],
+        "translation": [ 0.00, 0.85, 0.00 ],
+        "scale": [ 0.07, 0.07, 0.07 ]
+    },
+    "firstperson_lefthand": {
+        "rotation": [ 0, 45, 0 ],
+        "translation": [ 2.00, -1.40, 0.00 ],
+        "scale": [ 0.08, 0.08, 0.08 ]
+    },
+    "gui": {
+        "rotation": [ 30, 225, 0 ],
+        "translation": [ 0.05, -4.00, 0.00 ],
+        "scale": [ 0.13, 0.13, 0.13 ]
+    },
+    "head": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "fixed": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "ground": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 3.00, 0.00 ],
+        "scale": [ 0.25, 0.25, 0.25 ]
+    }
   }
 }

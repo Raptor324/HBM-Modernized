@@ -2,9 +2,12 @@
 	"loader": "hbm_m:fluid_tank_loader",
 	"model": "hbm_m:models/block/machines/fluid_tank.obj",
 	"flip_v": true,
+	"textures": {
+        "particle": "hbm_m:block/tank/tank_none"
+    },
 	"transform": {
-		"translation": [ -1, 0, -3 ],
-		"rotation": [ 0, 90, 0 ],
+		"translation": [ -2.5, 0, -1.5 ],
+		"rotation": [ 0, 180, 0 ],
 		"scale": 1.0
 	},
 	"display": {
@@ -19,7 +22,7 @@
 			"scale": [ 0.10, 0.10, 0.10 ]
 		},
 		"firstperson_righthand": {
-			"rotation": [ 0, 234, 0 ],
+			"rotation": [ 0, 136, 0 ],
 			"translation": [ -2.50, 2.25, 1.00 ],
 			"scale": [ 0.10, 0.10, 0.10 ]
 		},
@@ -29,8 +32,8 @@
 			"scale": [ 0.10, 0.10, 0.10 ]
 		},
 		"gui": {
-			"rotation": [ 30, 135, 0 ],
-			"translation": [ -1.65, -0.90, 0.00 ],
+			"rotation": [ 30, 45, 0 ],
+			"translation": [ -2.15, -1.15, 0.00 ],
 			"scale": [ 0.16, 0.16, 0.16 ]
 		},
 		"head": {
@@ -45,7 +48,7 @@
 		},
 		"ground": {
 			"rotation": [ 0, 0, 0 ],
-			"translation": [ 0.00, 3.00, 0.00 ],
+			"translation": [ -3.00, 3.25, -3.00 ],
 			"scale": [ 0.25, 0.25, 0.25 ]
 		}
 	}

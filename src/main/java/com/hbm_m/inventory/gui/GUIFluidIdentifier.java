@@ -2,7 +2,6 @@ package com.hbm_m.inventory.gui;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.ModFluids;

@@ -133,7 +133,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.BALL_TNT);
         simpleItem(ModItems.DEFUSER);
         simpleItem(ModItems.AIRSTRIKE_AGENT);
-        simpleItem(ModItems.SCREWDRIVER);
         simpleItem(ModItems.CROWBAR);
         simpleItem(ModItems.OIL_DETECTOR);
         simpleItem(ModItems.MULTI_DETONATOR);
@@ -363,8 +362,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.STAMP_DESH_50);
         simpleItem(ModItems.STAMP_DESH_357);
 
-        simpleItem(ModItems.POWDER_COAL);
-        simpleItem(ModItems.POWDER_COAL_SMALL);
         simpleItem(ModItems.COIL_TUNGSTEN);
         simpleItem(ModItems.NUGGET_SILICON);
         simpleItem(ModItems.BILLET_SILICON);

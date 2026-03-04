@@ -1,12 +1,21 @@
 package com.hbm_m.block.entity.machines;
 
-// Блок-энтити для Плавильной Печи, которая переплавляет два входных предмета в один выходной с использованием топлива.
-import com.hbm_m.block.machines.BlastFurnaceBlock;
+import java.util.EnumMap;
+import java.util.Map;
+import java.util.Optional;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
+// Блок-энтити для Плавильной Печи, которая переплавляет два входных предмета в один выходной с использованием топлива.
+import com.hbm_m.block.machines.BlastFurnaceBlock;
 import com.hbm_m.inventory.menu.BlastFurnaceMenu;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -33,12 +42,6 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
 import net.minecraftforge.items.ItemStackHandler;
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.EnumMap;
-import java.util.Map;
-import java.util.Optional;
 
 public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider {
 
@@ -351,7 +354,7 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
             return 150;
         }
         // Coal powder (original: powder_coal 200)
-        if (item == ModItems.POWDER_COAL.get()) {
+        if (item == ModItems.getPowders(ModPowders.COAL).get()) {
             return 200;
         }
         return 0;

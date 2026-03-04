@@ -434,8 +434,6 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.BORAX.get()));
             event.accept(new ItemStack(ModItems.DUST.get()));
             event.accept(new ItemStack(ModItems.DUST_TINY.get()));
-            event.accept(new ItemStack(ModItems.POWDER_COAL.get()));
-            event.accept(new ItemStack(ModItems.POWDER_COAL_SMALL.get()));
             event.accept(new ItemStack(ModItems.CINNABAR.get()));
             event.accept(new ItemStack(ModItems.FIRECLAY_BALL.get()));
             event.accept(new ItemStack(ModItems.SULFUR.get()));
@@ -503,7 +501,6 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.CS137_POWDER_TINY.get()));
             event.accept(new ItemStack(ModItems.I131_POWDER_TINY.get()));
             event.accept(new ItemStack(ModItems.XE135_POWDER_TINY.get()));
-            event.accept(new ItemStack(ModItems.COAL_POWDER_TINY.get()));
             event.accept(new ItemStack(ModItems.PALEOGENITE_POWDER_TINY.get()));
             event.accept(new ItemStack(ModItems.NUCLEAR_WASTE_TINY.get()));
             event.accept(new ItemStack(ModItems.NUCLEAR_WASTE_LONG_TINY.get()));
@@ -512,6 +509,7 @@ public class MainRegistry {
             event.accept(new ItemStack(ModItems.NUCLEAR_WASTE_SHORT_DEPLETED_TINY.get()));
             event.accept(new ItemStack(ModItems.NUCLEAR_WASTE_VITRIFIED_TINY.get()));
             event.accept(new ItemStack(ModItems.NUGGET_MERCURY_TINY.get()));
+            event.accept(new ItemStack(ModItems.COAL_POWDER_TINY.get()));
 
             // Standalone powders
             event.accept(new ItemStack(ModItems.COPPER_POWDER.get()));

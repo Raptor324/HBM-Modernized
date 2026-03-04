@@ -767,10 +767,7 @@ public class ModItems {
                             .withStyle(ChatFormatting.GRAY));
                 }
             });
-    public static final RegistryObject<Item> POWDER_COAL = ITEMS.register("powder_coal",
-            () -> new Item(new Item.Properties()));
-    public static final RegistryObject<Item> POWDER_COAL_SMALL = ITEMS.register("powder_coal_small",
-            () -> new Item(new Item.Properties()));
+
     public static final RegistryObject<Item> BOLT_STEEL = ITEMS.register("bolt_steel",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> ZIRCONIUM_SHARP = ITEMS.register("zirconium_sharp",

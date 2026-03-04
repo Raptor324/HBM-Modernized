@@ -58,7 +58,7 @@ public final class ShredderRecipeGenerator {
                         new ItemStack(Items.GRAVEL, 1))
                 .save(writer, "stone_to_gravel");
         ShredderRecipeBuilder.shredderRecipe(Items.COAL,
-                        new ItemStack(ModItems.POWDER_COAL.get(), 1))
+                        new ItemStack(ModItems.getPowders(ModPowders.COAL).get(), 1))
                 .save(writer, "coal_to_powder");
         ShredderRecipeBuilder.shredderRecipe(Items.COBBLESTONE,
                         new ItemStack(Items.GRAVEL, 1))
@@ -98,9 +98,9 @@ public final class ShredderRecipeGenerator {
 
         //  Остальные с проверками
         if (ModItems.getPowders(ModPowders.COAL) != null) {
-            if (ModItems.POWDER_COAL_SMALL != null) {
+            if (ModItems.COAL_POWDER_TINY != null) {
                 ShredderRecipeBuilder.shredderRecipe(ModItems.getPowders(ModPowders.COAL).get(),
-                                new ItemStack(ModItems.POWDER_COAL_SMALL.get(), 9))
+                                new ItemStack(ModItems.COAL_POWDER_TINY.get(), 9))
                         .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/coal_to_small_powder"));
             }
             ShredderRecipeBuilder.shredderRecipe(Items.COAL,

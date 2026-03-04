@@ -75,7 +75,7 @@ public class ModLanguageProvider extends LanguageProvider {
             }
             result = replaced.trim();
             if (tiny) {
-                result = "Tiny " + result;
+                result = "Tiny Pile of " + result;
             }
         }
 
@@ -807,10 +807,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.COIL_GOLD.get(), "Медная катушка");
                 add(ModItems.DUST.get(), "Кучка пыли");
                 add(ModItems.DUST_TINY.get(), "Маленькая кучка пыли");
-                add("item.hbm_m.coal_powder_tiny", "Маленькая кучка угольной пыли");
+                add(ModItems.COAL_POWDER_TINY.get(), "Маленькая кучка угольной пыли");
                 add(ModItems.SCRAP.get(), "Мусор");
-                add(ModItems.POWDER_COAL.get(), "Угольный порошок");
-                add(ModItems.POWDER_COAL_SMALL.get(), "Маленькая кучка угольного порошока");
                 add(ModItems.BILLET_PLUTONIUM.get(), "Заготовка плутония");
                 add("item.hbm_m.fluid_barrel", "Жидкостная бочка: %s");
                 add("item.hbm_m.fluid_barrel.empty", "Пустая бочка для жидкости");
@@ -1472,6 +1470,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.crate_template", "Шаблонный ящик");
                 add("container.hbm_m.crystallizer", "Кристаллизатор");
                 add("container.hbm_m.chemical_plant", "Химический завод");
+                add("container.hbm_m.centrifuge", "Центрифуга");
 
                 add("gui.hbm_m.battery.priority.0", "Приоритет: Низкий");
                 add("gui.hbm_m.battery.priority.0.desc", "Низший приоритет. Опустошается в первую очередь, заполняется в последнюю");
@@ -1783,6 +1782,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.alloy_axe", "Alloy Axe");
                 add("item.hbm_m.alloy_hoe", "Alloy Hoe");
                 add("item.hbm_m.alloy_shovel", "Alloy Shovel");
+
+                add("item.hbm_m.meteorite_sword", "Meteorite Sword");
+                add("item.hbm_m.meteorite_sword_seared", "Seared Meteorite Sword");
 
                 add("item.hbm_m.steel_sword", "Steel Sword");
                 add("item.hbm_m.steel_pickaxe", "Steel Pickaxe");
@@ -2420,10 +2422,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.COIL_GOLD.get(), "Golden Coil");
 
                 add(ModItems.DUST.get(), "Dust");
-                add(ModItems.DUST_TINY.get(), "Tiny Dust");
+                add(ModItems.DUST_TINY.get(), "Tiny Pile of Dust");
+                add(ModItems.COAL_POWDER_TINY.get(), "Tiny Pile of Coal Powder");
                 add(ModItems.SCRAP.get(), "Scrap");
-                add(ModItems.POWDER_COAL.get(), "Coal Powder");
-                add(ModItems.POWDER_COAL_SMALL.get(), "Tiny Coal Powder");
                 add("item.hbm_m.copper_powder", "Copper Powder");
                 add("item.hbm_m.cs137_powder_tiny", "Tiny Cesium-137 Powder");
                 add("item.hbm_m.diamond_powder", "Diamond Powder");
@@ -2759,6 +2760,42 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.fireclay_ball", "Fireclay Ball");
                 add("item.hbm_m.wood_ash_powder", "Wood Ash Powder");
 
+                // КРИСТАЛЛЫ
+                add("item.hbm_m.crystal_aluminium", "Aluminium Crystal");
+                add("item.hbm_m.crystal_beryllium", "Beryllium Crystal");
+                add("item.hbm_m.crystal_charred", "Charred Crystal");
+                add("item.hbm_m.crystal_cinnebar", "Cinnabar Crystal");
+                add("item.hbm_m.crystal_coal", "Carbon Crystal");
+                add("item.hbm_m.crystal_cobalt", "Cobalt Crystal");
+                add("item.hbm_m.crystal_copper", "Copper Crystal");
+                add("item.hbm_m.crystal_diamond", "Diamond Crystal");
+                add("item.hbm_m.crystal_fluorite", "Fluorite Crystal");
+                add("item.hbm_m.crystal_gold", "Gold Crystal");
+                add("item.hbm_m.crystal_hardened", "Hardened Crystal");
+                add("item.hbm_m.crystal_horn", "Horn Crystal");
+                add("item.hbm_m.crystal_iron", "Iron Crystal");
+                add("item.hbm_m.crystal_lapis", "Lapis Lazuli Crystal");
+                add("item.hbm_m.crystal_lead", "Lead Crystal");
+                add("item.hbm_m.crystal_lithium", "Lithium Crystal");
+                add("item.hbm_m.crystal_niter", "Niter Crystal");
+                add("item.hbm_m.crystal_osmiridium", "Osmiridium Crystal");
+                add("item.hbm_m.crystal_phosphorus", "Phosphorus Crystal");
+                add("item.hbm_m.crystal_plutonium", "Plutonium Crystal");
+                add("item.hbm_m.crystal_pulsar", "Pulsar Crystal");
+                add("item.hbm_m.crystal_rare", "Rare Metal Crystal");
+                add("item.hbm_m.crystal_redstone", "Redstone Crystal");
+                add("item.hbm_m.crystal_schrabidium", "Schrabidium Crystal");
+                add("item.hbm_m.crystal_schraranium", "Schraranium Crystal");
+                add("item.hbm_m.crystal_starmetal", "Star Metal Crystal");
+                add("item.hbm_m.crystal_sulfur", "Sulfur Crystal");
+                add("item.hbm_m.crystal_thorium", "Thorium Crystal");
+                add("item.hbm_m.crystal_titanium", "Titanium Crystal");
+                add("item.hbm_m.crystal_trixite", "Trixite Crystal");
+                add("item.hbm_m.crystal_tungsten", "Tungsten Crystal");
+                add("item.hbm_m.crystal_uranium", "Uranium Crystal");
+                add("item.hbm_m.crystal_virus", "Virus Crystal");
+                add("item.hbm_m.crystal_xen", "Xenon Crystal");
+
                 
                 add("tooltip.hbm_m.mods", "Modifications:");
                 add("tooltip.hbm_m.heart_piece.effect", "+5 Max Health");
@@ -2795,7 +2832,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.res.proj", "Lasers");
                 add("tooltip.hbm_m.res.other", "Other");
                 add("armor.fsb.geigerCounter", "Auditory Geiger Counter");
-                add("armor.geigerHUD", "Geiger HUD");
+                add("armor.fsb.geigerHUD", "Geiger HUD");
                 add("armor.fsb.vats", "Enemy HUD");
                 add("armor.fsb.thermalVision", "Thermal Sight");
                 add("armor.fsb.hardLanding", "Hard Landing");
@@ -2884,7 +2921,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.crate_lead", "Lead Crate");
                 add("block.hbm_m.crate_metal", "Metal Crate");
                 add("block.hbm_m.crate_weapon", "Weapon Crate");
-                add("block.hbm_m.uranium_block", "Uranium Block");
+                add("block.hbm_m.block_uranium", "Uranium Block");
                 add("block.hbm_m.plutonium_block", "Plutonium Block");
                 add("block.hbm_m.plutonium_fuel_block", "Plutonium Fuel Block");
                 add("block.hbm_m.polonium210_block", "Polonium-210 Block");
@@ -2939,6 +2976,66 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.concrete_stairs", "Concrete Stairs");
                 add("block.hbm_m.concrete_slab", "Concrete Slab");
                 add("block.hbm_m.strawberry_bush", "Strawberry Bush");
+
+                add("block.hbm_m.ore_oil", "Oil Ore");
+                add("block.hbm_m.geysir_dirt", "Geysir Dirt");
+                add("block.hbm_m.geysir_stone", "Geysir Stone");
+                add("block.hbm_m.nuclear_fallout", "Radioactive Fallout");
+                add("block.hbm_m.dead_dirt", "Dead Dirt");
+                add("block.hbm_m.block_u233", "Uranium-233 Block");
+                add("block.hbm_m.block_u235", "Uranium-235 Block");
+                add("block.hbm_m.block_u238", "Uranium-238 Block");
+                add("block.hbm_m.block_plutonium", "Plutonium Block");
+                add("block.hbm_m.block_pu238", "Plutonium-238 Block");
+                add("block.hbm_m.block_pu239", "Plutonium-239 Block");
+                add("block.hbm_m.block_pu240", "Plutonium-240 Block");
+                add("block.hbm_m.block_pu241", "Plutonium-241 Block");
+                add("block.hbm_m.block_actinium", "Actinium Block");
+                add("block.hbm_m.block_advanced_alloy", "Advanced Alloy Block");
+                add("block.hbm_m.block_aluminum", "Aluminum Block");
+                add("block.hbm_m.block_schrabidium", "Schrabidium Block");
+                add("block.hbm_m.block_saturnite", "Saturnite Block");
+                add("block.hbm_m.block_lead", "Lead Block");
+                add("block.hbm_m.block_steel", "Steel Block");
+                add("block.hbm_m.block_red_copper", "Red Copper Block");
+                add("block.hbm_m.block_titanium", "Titanium Block");
+                add("block.hbm_m.block_cobalt", "Cobalt Block");
+                add("block.hbm_m.block_tungsten", "Tungsten Block");
+                add("block.hbm_m.block_starmetal", "Star Metal Block");
+                add("block.hbm_m.block_beryllium", "Beryllium Block");
+                add("block.hbm_m.block_bismuth", "Bismuth Block");
+                add("block.hbm_m.block_desh", "Desh Block");
+                add("block.hbm_m.block_combine_steel", "Combine Steel Block");
+                add("block.hbm_m.block_dura_steel", "Dura Steel Block");
+                add("block.hbm_m.block_euphemium", "Euphemium Block");
+                add("block.hbm_m.block_dineutronium", "Dineutronium Block");
+                add("block.hbm_m.block_australium", "Australium Block");
+                add("block.hbm_m.block_lanthanium", "Lanthanium Block");
+                add("block.hbm_m.block_niobium", "Niobium Block");
+                add("block.hbm_m.block_cadmium", "Cadmium Block");
+                add("block.hbm_m.block_zirconium", "Zirconium Block");
+                add("block.hbm_m.block_neptunium", "Neptunium Block");
+                add("block.hbm_m.block_boron", "Boron Block");
+                add("block.hbm_m.block_ra226", "Radium-226 Block");
+                add("block.hbm_m.block_thorium", "Thorium Block");
+                add("block.hbm_m.block_mox_fuel", "MOX Fuel Block");
+                add("block.hbm_m.block_schrabidium_fuel", "Schrabidium Fuel Block");
+                add("block.hbm_m.block_uranium_fuel", "Uranium Fuel Block");
+                add("block.hbm_m.block_thorium_fuel", "Thorium Fuel Block");
+                add("block.hbm_m.block_plutonium_fuel", "Plutonium Fuel Block");
+                add("block.hbm_m.block_ferrouranium", "Ferrouranium Block");
+                add("block.hbm_m.block_tcalloy", "TCalloy Block");
+                add("block.hbm_m.block_cdalloy", "CDalloy Block");
+                add("block.hbm_m.deco_steel", "Decorative Steel Block");
+                add("block.hbm_m.depth_stone_slab", "Depth Stone Slab");
+                add("block.hbm_m.depth_stone_nether_slab", "Nether Depth Stone Slab");
+                add("block.hbm_m.depth_stone_stairs", "Depth Stone Stairs");
+                add("block.hbm_m.barrel_plastic", "Plastic Barrel");
+                add("block.hbm_m.barrel_red", "Red Barrel");
+                add("block.hbm_m.airbomb", "Airbomb");
+                add("block.hbm_m.balebomb_test", "Balebomb");
+                add("item.hbm_m.airbomb_a", "Airbomb [Projectile]");
+                add("item.hbm_m.airnukebomb_a", "Nuclear Bomb [Projectile]");
 
                 add("block.hbm_m.geiger_counter_block", "Geiger Counter Block");
                 add("block.hbm_m.wire_coated", "Red Copper Wire");
@@ -3007,6 +3104,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.crate_template", "Template Crate");
                 add("container.hbm_m.crystallizer", "Crystallizer");
                 add("container.hbm_m.chemical_plant", "Chemical Plant");
+                add("container.hbm_m.centrifuge", "Centrifuge");
+
                 add("gui.hbm_m.battery.priority.0", "Priority: Low");
                 add("gui.hbm_m.battery.priority.0.desc", "Lowest priority. Will be drained first and filled last.");
                 add("gui.hbm_m.battery.priority.1", "Priority: Normal");

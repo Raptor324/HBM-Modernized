@@ -23,9 +23,9 @@ public class C4Block extends Block implements IDetonatable {
     private static final int CRATER_DEPTH = 25; // Глубина воронки в блоках
 
     // Блоки для поверхности воронки (замени на свои)
-    private static final Block BLOCK1 = Blocks.BLACK_CONCRETE_POWDER; // Замени на свой
-    private static final Block BLOCK2 = Blocks.GRAY_CONCRETE_POWDER; // Замени на свой
-    private static final Block BLOCK3 = Blocks.BLACK_CONCRETE; // Замени на свой
+    private static final Block BLOCK1 = Blocks.BLACK_CONCRETE_POWDER;
+    private static final Block BLOCK2 = Blocks.GRAY_CONCRETE_POWDER;
+    private static final Block BLOCK3 = Blocks.BLACK_CONCRETE;
 
     public C4Block(Properties properties) {
         super(properties);

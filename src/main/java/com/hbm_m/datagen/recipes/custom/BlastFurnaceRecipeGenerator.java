@@ -2,6 +2,7 @@ package com.hbm_m.datagen.recipes.custom;
 
 import com.hbm_m.datagen.recipes.ModRecipeProvider;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -48,7 +49,7 @@ public final class BlastFurnaceRecipeGenerator {
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
                 new ItemStack(ModItems.getIngot(ModIngots.STEEL).get(), 3),
                 Ingredient.of(Tags.Items.ORES_IRON),
-                Ingredient.of(ModItems.POWDER_COAL.get())
+                Ingredient.of(ModItems.getPowders(ModPowders.COAL).get())
         ).save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blast_furnace/steel_from_ore_powder"));
 
         // CU + REDSTONE -> red_copper x2

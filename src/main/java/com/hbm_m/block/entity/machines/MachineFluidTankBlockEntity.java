@@ -38,6 +38,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
+import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelProperty;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -74,6 +76,8 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
     private final LazyOptional<IItemHandler> lazyItemHandler;
     private final LazyOptional<IFluidHandler> lazyFluidHandler;
+
+    public static final ModelProperty<ResourceLocation> FLUID_TEXTURE_PROPERTY = new ModelProperty<>();
 
     public MachineFluidTankBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FLUID_TANK_BE.get(), pos, state);
@@ -186,6 +190,61 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             level.updateNeighborsAt(pos, state.getBlock());
             entity.setChanged();
         }
+    }
+
+    @Override
+    public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket pkt) {
+        // Сохраняем старую жидкость для проверки
+        Fluid oldFluid = getFilterFluid();
+        Fluid oldTankFluid = fluidTank.getTankType();
+
+        // Этот супер-вызов применит новые данные из пакета (вызовет метод load)
+        super.onDataPacket(net, pkt);
+
+        if (level != null && level.isClientSide) {
+            Fluid newFluid = getFilterFluid();
+            Fluid newTankFluid = fluidTank.getTankType();
+
+            // Проверяем, изменилась ли жидкость, чтобы не перерисовывать чанк лишний раз
+            if (oldFluid != newFluid || oldTankFluid != newTankFluid) {
+                // Говорим клиенту обновить ModelData
+                requestModelDataUpdate();
+                // Флаг 8 (Block.UPDATE_CLIENTS) заставляет клиентскую сторону перестроить меш чанка
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
+            }
+        }
+    }
+
+    @Override
+    public void handleUpdateTag(CompoundTag tag) {
+        super.handleUpdateTag(tag);
+        if (level != null && level.isClientSide) {
+            requestModelDataUpdate();
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
+        }
+    }
+
+    public ResourceLocation getTankTextureLocation() {
+        Fluid fluid = fluidTank.getTankType();
+        if (fluid == null || fluid == Fluids.EMPTY) {
+            fluid = getFilterFluid();
+        }
+    
+        if (fluid == null || fluid == Fluids.EMPTY) {
+            return ResourceLocation.fromNamespaceAndPath("hbm_m", "block/tank/tank_none"); 
+        }
+    
+        ResourceLocation typeId = net.minecraftforge.registries.ForgeRegistries.FLUID_TYPES.get().getKey(fluid.getFluidType());
+        String fluidName = typeId != null ? typeId.getPath() : "none";
+        
+        return ResourceLocation.fromNamespaceAndPath("hbm_m", "block/tank/tank_" + fluidName);
+    }
+
+    @Override
+    public @NotNull ModelData getModelData() {
+        return ModelData.builder()
+                .with(FLUID_TEXTURE_PROPERTY, getTankTextureLocation())
+                .build();
     }
 
     public void explode() {
