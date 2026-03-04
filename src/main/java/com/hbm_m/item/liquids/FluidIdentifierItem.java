@@ -6,14 +6,11 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.ModFluids;
-import com.hbm_m.inventory.gui.GUIFluidIdentifier;
 import com.hbm_m.item.IItemControlReceiver;
 import com.hbm_m.item.IItemFluidIdentifier;
 
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
-import net.minecraft.locale.Language;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
@@ -45,9 +42,9 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
         if (stack.isEmpty()) return InteractionResultHolder.pass(stack);
 
         if (player.isShiftKeyDown()) {
-            // Open GUI on client
+            // Изолируем вызов GUI, чтобы сервер не видел клиентских классов
             if (level.isClientSide) {
-                Minecraft.getInstance().setScreen(new GUIFluidIdentifier(player));
+                ClientProxy.openGUI(player);
             }
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
         } else {
@@ -71,12 +68,8 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
             return Component.translatable("item.hbm_m.fluid_identifier.none");
         }
         
-        String fluidTranslationKey = primary.getFluidType().getDescriptionId();
-        String translatedFluidName = Language.getInstance().getOrDefault(fluidTranslationKey);
-        
-        String identifierFormat = Language.getInstance().getOrDefault("item.hbm_m.fluid_identifier");
-        
-        return Component.literal(String.format(identifierFormat, translatedFluidName));
+        // Позволяем клиенту самому переводить и склеивать текст (работает в мультиплеере для разных языков)
+        return Component.translatable("item.hbm_m.fluid_identifier", Component.translatable(primary.getFluidType().getDescriptionId()));
     }
 
     @Override
@@ -141,5 +134,12 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
         Fluid f = getType(stack, true);
         if (f == null || f == net.minecraft.world.level.material.Fluids.EMPTY) return 0xFFFFFF;
         return HbmFluidRegistry.getTintColor(f);
+    }
+
+    // ВНУТРЕННИЙ КЛАСС ДЛЯ ИЗОЛЯЦИИ КЛИЕНТСКОГО КОДА ОТ СЕРВЕРА
+    private static class ClientProxy {
+        public static void openGUI(Player player) {
+            net.minecraft.client.Minecraft.getInstance().setScreen(new com.hbm_m.inventory.gui.GUIFluidIdentifier(player));
+        }
     }
 }

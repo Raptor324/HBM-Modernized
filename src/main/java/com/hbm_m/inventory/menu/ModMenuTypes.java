@@ -17,7 +17,7 @@ public class ModMenuTypes {
             DeferredRegister.create(ForgeRegistries.MENU_TYPES, RefStrings.MODID);
 			
     public static final RegistryObject<MenuType<MachineCrystallizerMenu>> CRYSTALLIZER_MENU =
-            MENUS.register("CRYSTALLIZER_MENU", () -> IForgeMenuType.create(MachineCrystallizerMenu::new));
+            MENUS.register("crystallizer_menu", () -> IForgeMenuType.create(MachineCrystallizerMenu::new));
 
     public static final RegistryObject<MenuType<ArmorTableMenu>> ARMOR_TABLE_MENU =
             MENUS.register("armor_table_menu", () -> IForgeMenuType.create(ArmorTableMenu::new));
