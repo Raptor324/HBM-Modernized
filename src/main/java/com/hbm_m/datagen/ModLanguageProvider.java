@@ -817,7 +817,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.fluid_identifier.none", "Мульти-жидкостный идентификатор");
                 add("item.hbm_m.fluid_identifier.info", "Жидкостный идентификатор для:");
                 add("item.hbm_m.fluid_identifier.info2", "Второй тип:");
-                add("item.hbm_m.bucket_crude_oil", "Ведро сырой нефти");
+                add("item.hbm_m.bucket_crude_oil", "Ведро сырой нефти (WIP)");
                 add("item.hbm_m.inf_water", "Бочка с бесконечной водой");
                 add("item.hbm_m.inf_water_mk2", "Бочка с бесконечной водой mk2");
 
@@ -2437,6 +2437,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.fluid_identifier.none", "Multi Fluid Identifier");
                 add("item.hbm_m.fluid_identifier.info", "Universal fluid identifier for:");
                 add("item.hbm_m.fluid_identifier.info2", "Secondary type:");
+                add("item.hbm_m.bucket_crude_oil", "Crude Oil Bucket (WIP)");
+                add("item.hbm_m.inf_water", "Infinite Water Barrel");
+                add("item.hbm_m.inf_water_mk2", "Infinite Water Barrel mk2");
 
                 add("gui.hbm_m.fluid_tank.empty", "Empty");
                 add("gui.hbm_m.fluid_tank.empty_filter", "Empty (filter: %s)");
