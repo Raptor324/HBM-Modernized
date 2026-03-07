@@ -124,91 +124,91 @@ public class MultiblockStructureHelper {
      *     () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
      * );
      */
-    public static MultiblockStructureHelper createFromLayers(
-            String[][] layers,
-            Map<Character, Supplier<BlockState>> symbolMap,
-            Supplier<BlockState> phantomBlockState,
-            BlockPos controllerOffset) {
+    // public static MultiblockStructureHelper createFromLayers(
+    //         String[][] layers,
+    //         Map<Character, Supplier<BlockState>> symbolMap,
+    //         Supplier<BlockState> phantomBlockState,
+    //         BlockPos controllerOffset) {
         
-        Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
+    //     Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
         
-        if (layers == null || layers.length == 0) {
-            return new MultiblockStructureHelper(Collections.emptyMap(), phantomBlockState);
-        }
+    //     if (layers == null || layers.length == 0) {
+    //         return new MultiblockStructureHelper(Collections.emptyMap(), phantomBlockState);
+    //     }
         
-        // Находим максимальную ширину и глубину для центрирования
-        int maxWidth = 0;
-        int maxDepth = layers[0].length;
+    //     // Находим максимальную ширину и глубину для центрирования
+    //     int maxWidth = 0;
+    //     int maxDepth = layers[0].length;
         
-        for (String[] layer : layers) {
-            if (layer != null) {
-                maxDepth = Math.max(maxDepth, layer.length);
-                for (String row : layer) {
-                    if (row != null) {
-                        maxWidth = Math.max(maxWidth, row.length());
-                    }
-                }
-            }
-        }
+    //     for (String[] layer : layers) {
+    //         if (layer != null) {
+    //             maxDepth = Math.max(maxDepth, layer.length);
+    //             for (String row : layer) {
+    //                 if (row != null) {
+    //                     maxWidth = Math.max(maxWidth, row.length());
+    //                 }
+    //             }
+    //         }
+    //     }
         
-        // Вычисляем смещения для центрирования (контроллер должен быть в центре)
-        // Для нечётных размеров центр находится точно посередине
-        // Для чётных размеров центр смещён влево/вверх
-        int centerX = (maxWidth - 1) / 2;
-        int centerZ = (maxDepth - 1) / 2;
+    //     // Вычисляем смещения для центрирования (контроллер должен быть в центре)
+    //     // Для нечётных размеров центр находится точно посередине
+    //     // Для чётных размеров центр смещён влево/вверх
+    //     int centerX = (maxWidth - 1) / 2;
+    //     int centerZ = (maxDepth - 1) / 2;
         
-        // Обрабатываем каждый слой
-        for (int y = 0; y < layers.length; y++) {
-            String[] layer = layers[y];
-            if (layer == null) continue;
+    //     // Обрабатываем каждый слой
+    //     for (int y = 0; y < layers.length; y++) {
+    //         String[] layer = layers[y];
+    //         if (layer == null) continue;
             
-            // Обрабатываем каждую строку слоя (Z координата)
-            for (int z = 0; z < layer.length; z++) {
-                String row = layer[z];
-                if (row == null) continue;
+    //         // Обрабатываем каждую строку слоя (Z координата)
+    //         for (int z = 0; z < layer.length; z++) {
+    //             String row = layer[z];
+    //             if (row == null) continue;
                 
-                // Обрабатываем каждый символ в строке (X координата)
-                for (int x = 0; x < row.length(); x++) {
-                    char symbol = row.charAt(x);
+    //             // Обрабатываем каждый символ в строке (X координата)
+    //             for (int x = 0; x < row.length(); x++) {
+    //                 char symbol = row.charAt(x);
                     
-                    // Вычисляем относительные координаты (центрированные)
-                    int relX = x - centerX + controllerOffset.getX();
-                    int relY = y + controllerOffset.getY();
-                    int relZ = z - centerZ + controllerOffset.getZ();
+    //                 // Вычисляем относительные координаты (центрированные)
+    //                 int relX = x - centerX + controllerOffset.getX();
+    //                 int relY = y + controllerOffset.getY();
+    //                 int relZ = z - centerZ + controllerOffset.getZ();
                     
-                    BlockPos pos = new BlockPos(relX, relY, relZ);
+    //                 BlockPos pos = new BlockPos(relX, relY, relZ);
                     
-                    // Пропускаем позицию контроллера
-                    BlockPos controllerPos = new BlockPos(
-                        controllerOffset.getX(), 
-                        controllerOffset.getY(), 
-                        controllerOffset.getZ()
-                    );
-                    if (pos.equals(controllerPos)) {
-                        continue;
-                    }
+    //                 // Пропускаем позицию контроллера
+    //                 BlockPos controllerPos = new BlockPos(
+    //                     controllerOffset.getX(), 
+    //                     controllerOffset.getY(), 
+    //                     controllerOffset.getZ()
+    //                 );
+    //                 if (pos.equals(controllerPos)) {
+    //                     continue;
+    //                 }
                     
-                    // Если символ есть в карте, добавляем блок
-                    Supplier<BlockState> blockStateSupplier = symbolMap.get(symbol);
-                    if (blockStateSupplier != null) {
-                        structureMap.put(pos, blockStateSupplier);
-                    }
-                }
-            }
-        }
+    //                 // Если символ есть в карте, добавляем блок
+    //                 Supplier<BlockState> blockStateSupplier = symbolMap.get(symbol);
+    //                 if (blockStateSupplier != null) {
+    //                     structureMap.put(pos, blockStateSupplier);
+    //                 }
+    //             }
+    //         }
+    //     }
         
-        return new MultiblockStructureHelper(structureMap, phantomBlockState);
-    }
+    //     return new MultiblockStructureHelper(structureMap, phantomBlockState);
+    // }
     
-    /**
-     * Перегрузка метода createFromLayers с контроллером в позиции (0, 0, 0).
-     */
-    public static MultiblockStructureHelper createFromLayers(
-            String[][] layers,
-            Map<Character, Supplier<BlockState>> symbolMap,
-            Supplier<BlockState> phantomBlockState) {
-        return createFromLayers(layers, symbolMap, phantomBlockState, BlockPos.ZERO);
-    }
+    // /**
+    //  * Перегрузка метода createFromLayers с контроллером в позиции (0, 0, 0).
+    //  */
+    // public static MultiblockStructureHelper createFromLayers(
+    //         String[][] layers,
+    //         Map<Character, Supplier<BlockState>> symbolMap,
+    //         Supplier<BlockState> phantomBlockState) {
+    //     return createFromLayers(layers, symbolMap, phantomBlockState, BlockPos.ZERO);
+    // }
     
     // === НОВЫЕ МЕТОДЫ С ПОДДЕРЖКОЙ РОЛЕЙ ===
     
@@ -431,27 +431,27 @@ public class MultiblockStructureHelper {
      * @param symbol Символ, который был использован для этой позиции в структуре
      * @return PartRole для данной позиции
      */
-    public PartRole getRoleForPosition(BlockPos localOffset, char symbol) {
-        PartRole role = symbolRoleMap.get(symbol);
-        return role != null ? role : PartRole.DEFAULT;
-    }
+    // public PartRole getRoleForPosition(BlockPos localOffset, char symbol) {
+    //     PartRole role = symbolRoleMap.get(symbol);
+    //     return role != null ? role : PartRole.DEFAULT;
+    // }
     
-    /**
-     * Получает символ структуры для данной локальной позиции.
-     * 
-     * @param localOffset Локальная позиция части относительно контроллера
-     * @return Символ структуры или null если позиция не найдена
-     */
-    public Character getSymbolForPosition(BlockPos localOffset) {
-        return positionSymbolMap.get(localOffset);
-    }
+    // /**
+    //  * Получает символ структуры для данной локальной позиции.
+    //  * 
+    //  * @param localOffset Локальная позиция части относительно контроллера
+    //  * @return Символ структуры или null если позиция не найдена
+    //  */
+    // public Character getSymbolForPosition(BlockPos localOffset) {
+    //     return positionSymbolMap.get(localOffset);
+    // }
     
-    /**
-     * Проверяет, использует ли эта структура рецептоподобный способ определения ролей.
-     */
-    public boolean hasSymbolRoleMap() {
-        return !symbolRoleMap.isEmpty();
-    }
+    // /**
+    //  * Проверяет, использует ли эта структура рецептоподобный способ определения ролей.
+    //  */
+    // public boolean hasSymbolRoleMap() {
+    //     return !symbolRoleMap.isEmpty();
+    // }
 
     /**
      * Проверяет, является ли коллизия блока в этой позиции полным кубом.
