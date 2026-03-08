@@ -1,4 +1,4 @@
-package com.hbm_m.block.entity.machines;
+package com.hbm_m.block.entity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;

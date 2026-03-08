@@ -1,0 +1,58 @@
+{
+    "loader": "forge:obj",
+    "model": "hbm_m:models/block/machines/launch_pad.obj",
+    "flip_v": true,
+    "render_type": "minecraft:cutout",
+    "textures": {
+        "particle": "hbm_m:block/launchpad/silo_rusted",
+        "default": "hbm_m:block/launchpad/silo_rusted"
+    },
+    "transform": {
+        "rotation": [0, 0, 0],
+        "translation": [ 0.5, 0, 0.5 ],
+        "scale": 1.0
+    },
+    "display": {
+        "thirdperson_righthand": {
+            "rotation": [ 75, 45, 0 ],
+            "translation": [ 0.00, 2.50, 0.00 ],
+            "scale": [ 0.15, 0.15, 0.15 ]
+        },
+        "thirdperson_lefthand": {
+            "rotation": [ 75, 45, 0 ],
+            "translation": [ 0.00, 2.50, 0.00 ],
+            "scale": [ 0.20, 0.20, 0.20 ]
+        },
+        "firstperson_righthand": {
+            "rotation": [ 0, 45, 0 ],
+            "translation": [ 0.75, 1.00, 0.00 ],
+            "scale": [ 0.21, 0.21, 0.21 ]
+        },
+        "firstperson_lefthand": {
+            "rotation": [ 0, 45, 0 ],
+            "translation": [ 2.00, -1.00, 0.00 ],
+            "scale": [ 0.22, 0.22, 0.22 ]
+        },
+        "gui": {
+            "rotation": [ 30, 225, 0 ],
+            "translation": [ 0.00, -2.80, 0.50 ],
+            "scale": [ 0.21, 0.21, 0.21 ]
+        },
+        "head": {
+            "rotation": [ 0, 180, 0 ],
+            "translation": [ 0.00, 0.00, 0.00 ],
+            "scale": [ 1.00, 1.00, 1.00 ]
+        },
+        "fixed": {
+            "rotation": [ 0, 90, 0 ],
+            "translation": [ 0.00, -12.75, -5.50 ],
+            "scale": [ 0.30, 0.30, 0.30 ]
+        },
+        "ground": {
+            "rotation": [ 0, 0, 0 ],
+            "translation": [ 0.00, 3.00, 0.00 ],
+            "scale": [ 0.25, 0.25, 0.25 ]
+        }
+    }
+}
+

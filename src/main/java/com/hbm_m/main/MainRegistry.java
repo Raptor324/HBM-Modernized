@@ -235,6 +235,11 @@ public class MainRegistry {
             event.accept(ModBlocks.DUD_CONVENTIONAL);
             event.accept(ModBlocks.DUD_NUKE);
             event.accept(ModBlocks.DUD_SALTED);
+            event.accept(ModBlocks.LAUNCH_PAD);
+            event.accept(ModBlocks.LAUNCH_PAD_RUSTED);
+            event.accept(ModItems.DESIGNATOR);
+            event.accept(ModItems.DESIGNATOR_RANGE);
+            event.accept(ModItems.DESIGNATOR_MANUAL);
 
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");

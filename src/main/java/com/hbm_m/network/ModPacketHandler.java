@@ -76,5 +76,11 @@ public class ModPacketHandler {
             FluidIdentifierControlPacket::decode,
             FluidIdentifierControlPacket::handle
         );
+        INSTANCE.registerMessage(id++,
+            ItemDesignatorPacket.class,
+            ItemDesignatorPacket::encode,
+            ItemDesignatorPacket::decode,
+            ItemDesignatorPacket::handle
+        );
     }
 }

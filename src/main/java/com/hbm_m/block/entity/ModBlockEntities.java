@@ -6,6 +6,8 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.crates.*;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.explosives.MineBlockEntity;
+import com.hbm_m.block.entity.explosives.LaunchPadBlockEntity;
+import com.hbm_m.block.entity.explosives.LaunchPadRustedBlockEntity;
 import com.hbm_m.block.entity.machines.*;
 import com.hbm_m.lib.RefStrings;
 
@@ -24,13 +26,13 @@ public class ModBlockEntities {
 
 	public static final RegistryObject<BlockEntityType<MachineCrystallizerBlockEntity>> CRYSTALLIZER =
 		BLOCK_ENTITIES.register("crystallizer", () ->
-					BlockEntityType.Builder.of(MachineCrystallizerBlockEntity::new, ModBlocks.CRYSTALLIZER.get())
-							.build(null));
+			BlockEntityType.Builder.of(MachineCrystallizerBlockEntity::new, ModBlocks.CRYSTALLIZER.get())
+				.build(null));
 
 	public static final RegistryObject<BlockEntityType<MachineHydraulicFrackiningTowerBlockEntity>> HYDRAULIC_FRACKINING_TOWER_BE =
 		BLOCK_ENTITIES.register("hydraulic_frackining_tower_be", () ->
-                        BlockEntityType.Builder.of(MachineHydraulicFrackiningTowerBlockEntity::new, ModBlocks.HYDRAULIC_FRACKINING_TOWER.get())
-                                .build(null));
+            BlockEntityType.Builder.of(MachineHydraulicFrackiningTowerBlockEntity::new, ModBlocks.HYDRAULIC_FRACKINING_TOWER.get())
+                .build(null));
 
     public static final RegistryObject<BlockEntityType<GeigerCounterBlockEntity>> GEIGER_COUNTER_BE =
 		BLOCK_ENTITIES.register("geiger_counter_be", () ->
@@ -104,6 +106,16 @@ public class ModBlockEntities {
 	public static final RegistryObject<BlockEntityType<WireBlockEntity>> WIRE_BE =
 		BLOCK_ENTITIES.register("wire_be", () ->
 			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get())
+				.build(null));
+
+	public static final RegistryObject<BlockEntityType<LaunchPadBlockEntity>> LAUNCH_PAD_BE =
+		BLOCK_ENTITIES.register("launch_pad_be", () ->
+			BlockEntityType.Builder.<LaunchPadBlockEntity>of(LaunchPadBlockEntity::new, ModBlocks.LAUNCH_PAD.get())
+				.build(null));
+
+	public static final RegistryObject<BlockEntityType<LaunchPadRustedBlockEntity>> LAUNCH_PAD_RUSTED_BE =
+		BLOCK_ENTITIES.register("launch_pad_rusted_be", () ->
+			BlockEntityType.Builder.<LaunchPadRustedBlockEntity>of(LaunchPadRustedBlockEntity::new, ModBlocks.LAUNCH_PAD_RUSTED.get())
 				.build(null));
 
 

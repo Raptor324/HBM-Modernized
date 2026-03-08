@@ -26,6 +26,8 @@ import com.hbm_m.block.explosives.DudFugasBlock;
 import com.hbm_m.block.explosives.DudNukeBlock;
 import com.hbm_m.block.explosives.ExplosiveChargeBlock;
 import com.hbm_m.block.explosives.GigaDetBlock;
+import com.hbm_m.block.explosives.LaunchPadBlock;
+import com.hbm_m.block.explosives.LaunchPadRustedBlock;
 import com.hbm_m.block.explosives.MineBlock;
 import com.hbm_m.block.explosives.MineNukeBlock;
 import com.hbm_m.block.explosives.NuclearChargeBlock;
@@ -278,7 +280,9 @@ public class ModBlocks {
                     .strength(3.0f, 4.0f)
                     .sound(SoundType.METAL)
                     .noOcclusion()));
-
+					
+	// МУЛЬТИБЛОКИ ----------------------------------------------------------------------------------------------------
+	
     public static final RegistryObject<Block> PRESS = registerBlockWithoutItem("press",
             () -> new MachinePressBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
@@ -317,6 +321,12 @@ public class ModBlocks {
 
 	public static final RegistryObject<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
             () -> new MachineFluidTankBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+	public static final RegistryObject<Block> LAUNCH_PAD = registerBlockWithoutItem("launch_pad",
+            () -> new LaunchPadBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
+
+    public static final RegistryObject<Block> LAUNCH_PAD_RUSTED = registerBlockWithoutItem("launch_pad_rusted",
+            () -> new LaunchPadRustedBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
     //---------------------------<ДВЕРИ>-------------------------------------
 

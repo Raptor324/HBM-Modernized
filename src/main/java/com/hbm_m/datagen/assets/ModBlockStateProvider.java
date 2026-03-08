@@ -420,6 +420,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.CHEMICAL_PLANT);
         customMachineBlock(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
         customMachineBlock(ModBlocks.CENTRIFUGE);
+        customMachineBlock(ModBlocks.LAUNCH_PAD);
+        customMachineBlock(ModBlocks.LAUNCH_PAD_RUSTED);
         registerMachineAssemblerBlock(ModBlocks.MACHINE_ASSEMBLER);
         registerAdvancedAssemblyMachineBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
         customMachineBlock(ModBlocks.PRESS);
@@ -471,7 +473,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
 
         blockWithItem(ModBlocks.CONVERTER_BLOCK);
-
 
         orientableBlockWithItem(
                 ModBlocks.MACHINE_BATTERY,

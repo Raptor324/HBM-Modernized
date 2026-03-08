@@ -139,6 +139,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.AIRSTRIKE_TEST);
         simpleItem(ModItems.AIRSTRIKE_HEAVY);
         simpleItem(ModItems.DETONATOR);
+        simpleItem(ModItems.DESIGNATOR);
+        simpleItem(ModItems.DESIGNATOR_RANGE);
+        simpleItem(ModItems.DESIGNATOR_MANUAL);
         simpleItem(ModItems.SCRAP);
         simpleItem(ModItems.CRT_DISPLAY);
         simpleItem(ModItems.SEQUESTRUM);
@@ -447,6 +450,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_ASSEMBLER);
         blockItemFromBlockModelMachine(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
         blockItemFromBlockModelMachine(ModBlocks.FLUID_TANK);
+        blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD);
+        blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD_RUSTED);
         blockItemFromBlockModel(ModBlocks.DUD_CONVENTIONAL);
         blockItemFromBlockModel(ModBlocks.DUD_NUKE);
         blockItemFromBlockModel(ModBlocks.DUD_SALTED);

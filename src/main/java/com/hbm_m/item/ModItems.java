@@ -34,6 +34,9 @@ import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeIfType;
 import com.hbm_m.entity.grenades.GrenadeType;
 import com.hbm_m.item.crates.CrateItem;
+import com.hbm_m.item.designator.ItemDesignator;
+import com.hbm_m.item.designator.ItemDesignatorManual;
+import com.hbm_m.item.designator.ItemDesignatorRange;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.fekal_electric.ModBatteryItem;
 import com.hbm_m.item.food.ItemConserve;
@@ -1272,6 +1275,21 @@ public class ModItems {
     public static final RegistryObject<Item> WOOD_BURNER = ITEMS.register("wood_burner",
         () -> new MultiblockBlockItem(ModBlocks.WOOD_BURNER.get(), new Item.Properties()));
 
+	public static final RegistryObject<Item> LAUNCH_PAD = ITEMS.register("launch_pad",
+        () -> new MultiblockBlockItem(ModBlocks.LAUNCH_PAD.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> LAUNCH_PAD_RUSTED = ITEMS.register("launch_pad_rusted",
+        () -> new MultiblockBlockItem(ModBlocks.LAUNCH_PAD_RUSTED.get(), new Item.Properties()));
+
+    public static final RegistryObject<Item> DESIGNATOR = ITEMS.register("designator",
+        () -> new ItemDesignator(new Item.Properties()));
+    public static final RegistryObject<Item> DESIGNATOR_RANGE = ITEMS.register("designator_range",
+        () -> new ItemDesignatorRange(new Item.Properties()));
+    public static final RegistryObject<Item> DESIGNATOR_MANUAL = ITEMS.register("designator_manual",
+        () -> new ItemDesignatorManual(new Item.Properties()));
+
+	// MULTIBLOCK DOORS
+
     public static final RegistryObject<Item> LARGE_VEHICLE_DOOR = ITEMS.register("large_vehicle_door",
         () -> new DoorBlockItem(ModBlocks.LARGE_VEHICLE_DOOR.get(), new Item.Properties()));
 
@@ -1310,6 +1328,8 @@ public class ModItems {
 
     public static final RegistryObject<Item> VAULT_DOOR = ITEMS.register("vault_door",
         () -> new DoorBlockItem(ModBlocks.VAULT_DOOR.get(), new Item.Properties()));
+
+
 
     public static final RegistryObject<Item> STAMP_STONE_FLAT = ITEMS.register("stamp_stone_flat",
             () -> new ItemStamp(new Item.Properties(), 32));
