@@ -1,4 +1,4 @@
-package com.hbm_m.block.entity.explosives;
+package com.hbm_m.block.entity.machines;
 
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.inventory.menu.LaunchPadRustedMenu;
@@ -41,6 +41,12 @@ public class LaunchPadRustedBlockEntity extends LaunchPadBaseBlockEntity {
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory inv, Player player) {
         return new LaunchPadRustedMenu(containerId, inv, this);
+    }
+
+    @Override
+    protected boolean isReadyForLaunch() {
+        // Ржавая площадка может требовать отдельных условий; пока считаем, что готова
+        return true;
     }
 }
 

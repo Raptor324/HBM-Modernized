@@ -202,7 +202,7 @@ public final class AnvilRecipeGenerator {
                 stack(ModBlocks.TOASTER),
                 stack(ModItems.PLATE_STEEL, 2),
                 builder -> builder
-                        .addOutput(stack(ModItems.MAN_CORE), 0.001F));
+                        .addOutput(stack(ModItems.FAT_MAN_CORE), 0.001F));
 
         registerDisassemblyRecipe(writer, "steel", "freaky_breakdown",
                 AnvilTier.STEEL,

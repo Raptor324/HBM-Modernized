@@ -1,4 +1,4 @@
-package com.hbm_m.block.entity.explosives;
+package com.hbm_m.block.entity.machines;
 
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.inventory.menu.LaunchPadLargeMenu;
@@ -46,5 +46,11 @@ public class LaunchPadBlockEntity extends LaunchPadBaseBlockEntity {
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory inv, Player player) {
         return new LaunchPadLargeMenu(containerId, inv, this);
+    }
+
+    @Override
+    protected boolean isReadyForLaunch() {
+        // Простая версия: всегда готово, можно добавить задержку/состояния позже
+        return true;
     }
 }

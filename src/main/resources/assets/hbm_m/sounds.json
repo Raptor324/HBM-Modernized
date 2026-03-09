@@ -167,6 +167,13 @@
       "hbm_m:mukeexplosion"
     ]
   },
+  "nuclear_explosion": {
+    "category": "ambient",
+    "subtitle": "sounds.hbm_m.nuclear_explosion",
+    "sounds": [
+      "hbm_m:explosion/nuclear_explosion"
+    ]
+  },
 
   "techboop": {
     "category": "player",

@@ -1,18 +1,28 @@
-package com.hbm_m.block.entity.explosives;
+package com.hbm_m.block.entity.machines;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 import org.jetbrains.annotations.NotNull;
 
+import com.hbm_m.api.item.IDesignatorItem;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
+import com.hbm_m.entity.missile.MissileTestEntity;
+import com.hbm_m.item.ModItems;
+import com.hbm_m.item.missile.MissileItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
@@ -55,10 +65,16 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity {
     protected static final long MAX_POWER = 100_000L;
     protected static final long MAX_RECEIVE = 1_000L;
 
+    /** Регистрация ракет: Item -> тип сущности. Пока только прототип. */
+    protected static final Map<Item, EntityTypeRef> MISSILES = new HashMap<>();
+
+    static {
+        // Прототип: missile_test -> MissileTestEntity
+        MISSILES.put(ModItems.MISSILE_TEST.get(), new EntityTypeRef());
+    }
+
     /**
      * Текущее логическое состояние площадки (для GUI).
-     * Пока вычисляется очень грубо: площадка всегда "не готова".
-     * Реальная логика будет добавлена вместе с ракетами.
      */
     protected int state = STATE_MISSING;
 
@@ -98,21 +114,21 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity {
         return state;
     }
 
-    /**
-     * Старый GUI показывал 3 индикатора:
-     * - топливо
-     * - окислитель
-     * - готовность ракеты
-     *
-     * Пока всегда возвращаем 0 (не определено), чтобы GUI мог
-     * отличить «реализовано» от «не реализовано».
-     */
     public int getFuelState() {
-        return 0;
+        ItemStack missileStack = inventory.getStackInSlot(SLOT_MISSILE);
+        if (!isMissileValid(missileStack)) {
+            return 0;
+        }
+        MissileItem missile = (MissileItem) missileStack.getItem();
+        if (missile.fuel == MissileItem.MissileFuel.SOLID) {
+            return 0;
+        }
+        // Пока считаем, что бак либо пуст, либо полон
+        return this.energy >= 75_000L ? 1 : -1;
     }
 
     public int getOxidizerState() {
-        return 0;
+        return getFuelState();
     }
 
     /**
@@ -120,18 +136,113 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity {
      * Когда логика ракет будет портирована, сюда вернётся настоящая проверка.
      */
     public boolean isMissileValid() {
-        return false;
+        ItemStack stack = inventory.getStackInSlot(SLOT_MISSILE);
+        return isMissileValid(stack);
     }
 
     public boolean isMissileValid(@NotNull net.minecraft.world.item.ItemStack stack) {
+        if (stack.isEmpty()) {
+            return false;
+        }
+        if (!(stack.getItem() instanceof MissileItem missile)) {
+            return false;
+        }
+        return missile.launchable && MISSILES.containsKey(stack.getItem());
+    }
+
+    public boolean canLaunch() {
+        return isMissileValid() && getFuelState() == 1 && isReadyForLaunch();
+    }
+
+    /** Дополнительные условия в конкретной площадке (задержка, анимации и т.п.). */
+    protected abstract boolean isReadyForLaunch();
+
+    /**
+     * Запуск по координатам (X/Z). Возвращает true, если ракета реально запущена.
+     */
+    public boolean launchToCoordinate(int targetX, int targetZ) {
+        if (!canLaunch() || level == null || level.isClientSide) {
+            return false;
+        }
+
+        Entity missile = instantiateMissile(targetX, targetZ);
+        if (missile != null) {
+            finalizeLaunch(missile);
+            return true;
+        }
         return false;
     }
 
     /**
-     * Полная готовность к пуску. Сейчас всегда false.
+     * Запуск по дизайнатору (слот 1).
      */
-    public boolean canLaunch() {
-        return false;
+    public boolean launchFromDesignator() {
+        if (!canLaunch() || level == null || level.isClientSide) {
+            return false;
+        }
+
+        ItemStack designatorStack = inventory.getStackInSlot(SLOT_DESIGNATOR);
+        int targetX = worldPosition.getX();
+        int targetZ = worldPosition.getZ();
+
+        if (!designatorStack.isEmpty() && designatorStack.getItem() instanceof IDesignatorItem designator) {
+            if (!designator.isReady(level, designatorStack, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ())) {
+                return false;
+            }
+            net.minecraft.world.phys.Vec3 coords = designator.getCoords(level, designatorStack,
+                    worldPosition.getX(), worldPosition.getY(), worldPosition.getZ());
+            targetX = (int) Math.floor(coords.x);
+            targetZ = (int) Math.floor(coords.z);
+        }
+
+        return launchToCoordinate(targetX, targetZ);
+    }
+
+    /**
+     * Создание сущности ракеты из текущего слота.
+     */
+    protected Entity instantiateMissile(int targetX, int targetZ) {
+        if (level == null) {
+            return null;
+        }
+        ItemStack stack = inventory.getStackInSlot(SLOT_MISSILE);
+        if (!isMissileValid(stack)) {
+            return null;
+        }
+
+        // Сейчас у нас только один тип ракеты – MissileTestEntity
+        MissileTestEntity missile = new MissileTestEntity(level);
+        missile.initLaunch(
+                worldPosition.getX() + 0.5D,
+                worldPosition.getY() + getLaunchOffset(),
+                worldPosition.getZ() + 0.5D,
+                targetX, targetZ
+        );
+        return missile;
+    }
+
+    /**
+     * Финализация пуска: спавн entity, звук, расход ресурсов.
+     */
+    protected void finalizeLaunch(Entity missile) {
+        if (level == null || level.isClientSide) {
+            return;
+        }
+
+        level.addFreshEntity(missile);
+        level.playSound(null,
+                worldPosition.getX() + 0.5D,
+                worldPosition.getY(),
+                worldPosition.getZ() + 0.5D,
+                net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE,
+                SoundSource.BLOCKS,
+                2.0F, 1.0F);
+
+        this.energy = Math.max(0, this.energy - 75_000L);
+
+        ItemStack stack = inventory.getStackInSlot(SLOT_MISSILE);
+        stack.shrink(1);
+        setChanged();
     }
 
     // -----------------------
@@ -154,6 +265,17 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity {
             }
         }
     }
+
+    /** Смещение точки старта ракеты относительно верха блока. */
+    protected double getLaunchOffset() {
+        return 1.0D;
+    }
+
+    /**
+     * Внутренняя заглушка для потенциального реестра типов сущностей ракет.
+     * Сейчас не содержит ничего, но оставлена для будущего расширения.
+     */
+    protected static class EntityTypeRef { }
 
     // -----------------------
     // NBT

@@ -210,6 +210,22 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_hoe", "Мотыга из звёздного металла");
                 add("item.hbm_m.starmetal_shovel", "Лопата из звёздного металла");
 
+                // ПРОТОТИП РАКЕТЫ
+                add("item.hbm_m.missile_test", "Тестовая баллистическая ракета");
+                add("item.hbm_m.missile.tier.tier0", "Ракета: уровень 0");
+                add("item.hbm_m.missile.tier.tier1", "Ракета: уровень 1");
+                add("item.hbm_m.missile.tier.tier2", "Ракета: уровень 2");
+                add("item.hbm_m.missile.tier.tier3", "Ракета: уровень 3");
+                add("item.hbm_m.missile.tier.tier4", "Ракета: уровень 4");
+                add("item.hbm_m.missile.desc.notLaunchable", "Нельзя запустить с пусковой площадки");
+                add("item.hbm_m.missile.desc.fuel", "Топливо");
+                add("item.hbm_m.missile.desc.fuelCapacity", "Запас топлива");
+                add("item.hbm_m.missile.fuel.solid.prefueled", "Твёрдое топливо (заправлена)");
+                add("item.hbm_m.missile.fuel.ethanol_peroxide", "Этанол + пероксид");
+                add("item.hbm_m.missile.fuel.kerosene_peroxide", "Керосин + пероксид");
+                add("item.hbm_m.missile.fuel.kerosene_loxy", "Керосин + жидкий кислород");
+                add("item.hbm_m.missile.fuel.jetfuel_loxy", "Реактивное топливо + жидкий кислород");
+                
                 add("gui.hbm_m.energy", "Энергия: %s/%s HE");
                 add("gui.hbm_m.shredder.blade_warning.title", "Нет лезвий!");
                 add("gui.hbm_m.shredder.blade_warning.desc", "Установите или отремонтируйте лезвия шреддера.");
@@ -552,6 +568,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.DUD_NUKE.get(), "Неразорвавшаяся ядерная бомба");
                 add(ModBlocks.DUD_CONVENTIONAL.get(), "Неразорвавшаяся фугасная бомба");
                 add(ModBlocks.MINE_FAT.get(), "Мина 'Толстяк'");
+                add(ModBlocks.NUKE_FAT_MAN.get(), "Ядерная бомба 'Толстяк'");
+                add(ModItems.FAT_MAN_EXPLOSIVE.get(), "Ранние взрывные линзы");
+                add(ModItems.FAT_MAN_IGNITER.get(), "Воспламенитель 'Толстяк'");
+                add(ModItems.FAT_MAN_CORE.get(), "Плутониевое ядро");
+                add("container.hbm_m.nuke_fat_man", "Ядерная бомба 'Толстяк'");
+                add("gui.hbm_m.nuke_fat_man.desc", "Установите 4 ранние взрывные линзы, воспламенитель и плутониевое ядро.");
                 add(ModBlocks.MINE_AP.get(), "Противопехотная мина");
                 add(ModItems.GRENADE_NUC.get(), "Ядерная граната");
                 add(ModItems.GRENADE_IF_HE.get(), "IF-Граната: фугасная");
@@ -580,7 +602,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.LEAD_CLADDING.get(), "Свинцовая обшивка");
                 add(ModItems.PAINT_CLADDING.get(), "Свинцовая краска");
                 add(ModItems.CRT_DISPLAY.get(), "Электро-лучевая трубка");
-                add(ModItems.MAN_CORE.get(), "Плутониевое ядро");
                 add(ModItems.GRENADESMART.get(), "УМная отскок граната");
                 add(ModItems.GRENADESLIME.get(), "Отскок-отскок граната");
                 add(ModItems.GRENADE.get(), "Отскок граната");
@@ -1773,6 +1794,22 @@ public class ModLanguageProvider extends LanguageProvider {
             
             case "en_us":
 
+                // Missile prototype + shared missile strings
+                add("item.hbm_m.missile_test", "Test Ballistic Missile");
+                add("item.hbm_m.missile.tier.tier0", "Missile: Tier 0");
+                add("item.hbm_m.missile.tier.tier1", "Missile: Tier 1");
+                add("item.hbm_m.missile.tier.tier2", "Missile: Tier 2");
+                add("item.hbm_m.missile.tier.tier3", "Missile: Tier 3");
+                add("item.hbm_m.missile.tier.tier4", "Missile: Tier 4");
+                add("item.hbm_m.missile.desc.notLaunchable", "Cannot be launched from pad");
+                add("item.hbm_m.missile.desc.fuel", "Fuel");
+                add("item.hbm_m.missile.desc.fuelCapacity", "Fuel capacity");
+                add("item.hbm_m.missile.fuel.solid.prefueled", "Solid fuel (pre-fueled)");
+                add("item.hbm_m.missile.fuel.ethanol_peroxide", "Ethanol + peroxide");
+                add("item.hbm_m.missile.fuel.kerosene_peroxide", "Kerosene + peroxide");
+                add("item.hbm_m.missile.fuel.kerosene_loxy", "Kerosene + liquid oxygen");
+                add("item.hbm_m.missile.fuel.jetfuel_loxy", "Jet fuel + liquid oxygen");
+
                 // TABS
                 add("itemGroup.hbm_m.ntm_resources_tab", "NTM Ingots and Resources");
                 add("itemGroup.hbm_m.ntm_fuel_tab", "NTM Fuel and Machine Components");
@@ -1787,7 +1824,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("itemGroup.hbm_m.ntm_instruments_tab", "NTM Instruments");
                 add("itemGroup.hbm_m.ntm_building_tab", "NTM Building Blocks");
 
-
+                add(ModBlocks.NUKE_FAT_MAN.get(), "Fat Man");
+                add(ModItems.FAT_MAN_EXPLOSIVE.get(), "Early Explosive Lenses");
+                add(ModItems.FAT_MAN_IGNITER.get(), "Fat Man Igniter");
+                add(ModItems.FAT_MAN_CORE.get(), "Plutonium Core");
+                add("container.hbm_m.nuke_fat_man", "Fat Man");
+                add("gui.hbm_m.nuke_fat_man.desc", "Place 4 Early Explosive Lenses, Fat Man Igniter and Fat Man Core. Activated by redstone.");
                 // EQUIPMENT
                 add("item.hbm_m.alloy_sword", "Alloy Sword");
                 add("item.hbm_m.alloy_pickaxe", "Alloy Pickaxe");
@@ -2218,9 +2260,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.depthstone.line1", "Can be mined or destroyed only by explosion!");
                 add("tooltip.hbm_m.depthstone.line4", "Use Det Miner to safe-mine depth ores");
 
-// en_us case
-                // английский:
-                add(ModItems.MAN_CORE.get(), "Plutonium Core");
                 add(ModItems.CRT_DISPLAY.get(), "CRT");
                 add(ModBlocks.DEPTH_STONE.get(), "Depth Stone");
                 add(ModBlocks.DEPTH_CINNABAR.get(), "Deep Cinnabar Ore");

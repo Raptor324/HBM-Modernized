@@ -1,4 +1,4 @@
-package com.hbm_m.block.explosives;
+package com.hbm_m.block.machines;
 
 import java.util.Map;
 import java.util.function.Supplier;
@@ -8,11 +8,12 @@ import javax.annotation.Nullable;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.explosives.LaunchPadBaseBlockEntity;
-import com.hbm_m.block.entity.explosives.LaunchPadBlockEntity;
+import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
+import com.hbm_m.block.entity.machines.LaunchPadRustedBlockEntity;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -42,38 +43,40 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
 
-public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockController {
+/**
+ * Ржавая пусковая площадка.
+ *
+ * Поведение мультиблока и энергетики повторяет обычную LaunchPadBlock,
+ * но использует LaunchPadRustedBlockEntity и отдельный GUI.
+ */
+public class LaunchPadRustedBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
     private final MultiblockStructureHelper structureHelper;
 
-    public LaunchPadBlock(Properties pProperties) {
-        super(pProperties);
-        this.registerDefaultState(this.stateDefinition.any()
-        .setValue(FACING, Direction.NORTH));
+    public LaunchPadRustedBlock(Properties properties) {
+        super(properties);
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
         this.structureHelper = defineStructureNew();
     }
 
-
-
     @Override
-    public void onPlace(BlockState pState, Level pLevel, BlockPos pPos, BlockState pOldState, boolean pIsMoving) {
-        super.onPlace(pState, pLevel, pPos, pOldState, pIsMoving);
-        if (!pLevel.isClientSide() && !pState.is(pOldState.getBlock())) {
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        if (!level.isClientSide() && !state.is(oldState.getBlock())) {
             MultiblockStructureHelper helper = getStructureHelper();
-            Direction facing = pState.getValue(FACING);
+            Direction facing = state.getValue(FACING);
 
-            helper.placeStructure(pLevel, pPos, facing, this);
+            helper.placeStructure(level, pos, facing, this);
             for (BlockPos localPos : helper.getStructureMap().keySet()) {
                 if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                    BlockPos worldPos = helper.getRotatedPos(pPos, localPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) pLevel).addNode(worldPos);
+                    BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
+                    EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
                 }
             }
         }
     }
-
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
@@ -105,45 +108,58 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
-    @Override public RenderShape getRenderShape(BlockState pState) { return RenderShape.MODEL; }
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) { pBuilder.add(FACING); }
-    @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext pContext) { return this.defaultBlockState().setValue(FACING, pContext.getHorizontalDirection().getOpposite()); }
-    @Nullable @Override public BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) { return new LaunchPadBlockEntity(pPos, pState); }
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.MODEL;
+    }
+
+    @Override
+    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(FACING);
+    }
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level pLevel, BlockState pState, BlockEntityType<T> pType) {
-        return createTickerHelper(pType, ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadBlockEntity::serverTick);
+    public BlockState getStateForPlacement(BlockPlaceContext context) {
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    }
+
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new LaunchPadRustedBlockEntity(pos, state);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(type, ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadRustedBlockEntity::serverTick);
     }
 
     @Override
-    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        if (!pLevel.isClientSide()) {
-            if (pLevel.getBlockEntity(pPos) instanceof MenuProvider provider) {
-                NetworkHooks.openScreen((ServerPlayer) pPlayer, provider, pPos);
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide()) {
+            if (level.getBlockEntity(pos) instanceof MenuProvider provider) {
+                NetworkHooks.openScreen((ServerPlayer) player, provider, pos);
             }
         }
-        return InteractionResult.sidedSuccess(pLevel.isClientSide());
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     @Override
-    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         MultiblockStructureHelper helper = getStructureHelper();
         if (helper != null) {
-            // Теперь это вернет идеально подогнанную форму 3х3х3
-            return helper.generateShapeFromParts(pState.getValue(FACING));
+            return helper.generateShapeFromParts(state.getValue(FACING));
         }
         return Shapes.block();
     }
-    
-    @Override public MultiblockStructureHelper getStructureHelper() { return this.structureHelper; }
-    
-    /**
-     * Определяет структуру мультиблока используя рецептоподобный способ с ролями.
-     * ВАЖНО: Структура ОБЯЗАТЕЛЬНО должна содержать ровно ОДИН контроллер (символ с ролью CONTROLLER).
-     * 
-     * @return MultiblockStructureHelper с определённой структурой и ролями
-     */
+
+    @Override
+    public MultiblockStructureHelper getStructureHelper() {
+        return this.structureHelper;
+    }
+
     private static MultiblockStructureHelper defineStructureNew() {
         // - 'A' = DEFAULT (обычная часть структуры)
         // - 'B' = UNIVERSAL_CONNECTOR (универсальный коннектор)
@@ -196,25 +212,13 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
             collisionMap
         );
     }
-    
-    /**
-     * Старый способ определения структуры
-     */
-    // private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
-    //     ImmutableMap.Builder<BlockPos, Supplier<BlockState>> builder = ImmutableMap.builder();
-    //     for (int y = 0; y <= 2; y++) for (int x = -1; x <= 1; x++) for (int z = -1; z <= 1; z++) {
-    //         if (x == 0 && y == 0 && z == 0) continue;
-    //         builder.put(new BlockPos(x, y, z), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
-    //     }
-    //     return builder.build();
-    // }
-    
-    @Override 
-    public PartRole getPartRole(BlockPos localOffset) { 
-        // Используем универсальный метод разрешения ролей из хелпера
+
+    @Override
+    public PartRole getPartRole(BlockPos localOffset) {
         if (structureHelper != null) {
             return structureHelper.resolvePartRole(localOffset, this);
         }
         return PartRole.DEFAULT;
     }
 }
+

@@ -5,9 +5,8 @@ import com.hbm_m.api.energy.WireBlockEntity;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.crates.*;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
+import com.hbm_m.block.entity.bomb.NukeFatManBlockEntity;
 import com.hbm_m.block.entity.explosives.MineBlockEntity;
-import com.hbm_m.block.entity.explosives.LaunchPadBlockEntity;
-import com.hbm_m.block.entity.explosives.LaunchPadRustedBlockEntity;
 import com.hbm_m.block.entity.machines.*;
 import com.hbm_m.lib.RefStrings;
 
@@ -88,6 +87,12 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(MineBlockEntity::new, ModBlocks.MINE_FAT.get())
                             .build(null)
             );
+
+    public static final RegistryObject<BlockEntityType<NukeFatManBlockEntity>> NUKE_FAT_MAN_BE =
+            BLOCK_ENTITIES.register("nuke_fat_man_be", () ->
+                    BlockEntityType.Builder.of(NukeFatManBlockEntity::new, ModBlocks.NUKE_FAT_MAN.get())
+                            .build(null));
+
     public static final RegistryObject<BlockEntityType<MachineShredderBlockEntity>> SHREDDER =
             BLOCK_ENTITIES.register("shredder", () ->
                     BlockEntityType.Builder.of(MachineShredderBlockEntity::new,

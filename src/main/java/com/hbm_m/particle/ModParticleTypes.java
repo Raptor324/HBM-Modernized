@@ -25,6 +25,10 @@ public class ModParticleTypes {
     public static final RegistryObject<SimpleParticleType> RAD_FOG_PARTICLE = PARTICLES.register("rad_fog",
             () -> new SimpleParticleType(true));
 
+    // Контрейл баллистической ракеты
+    public static final RegistryObject<SimpleParticleType> MISSILE_CONTRAIL = PARTICLES.register("missile_contrail",
+            () -> new SimpleParticleType(true));
+
     // Этот метод должен вызываться в главном классе вашего мода
     public static void register(IEventBus eventBus) {
         PARTICLES.register(eventBus);

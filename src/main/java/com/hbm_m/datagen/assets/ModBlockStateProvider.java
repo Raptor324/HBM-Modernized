@@ -422,6 +422,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.CENTRIFUGE);
         customMachineBlock(ModBlocks.LAUNCH_PAD);
         customMachineBlock(ModBlocks.LAUNCH_PAD_RUSTED);
+        customBombBlock(ModBlocks.NUKE_FAT_MAN);
         registerMachineAssemblerBlock(ModBlocks.MACHINE_ASSEMBLER);
         registerAdvancedAssemblyMachineBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
         customMachineBlock(ModBlocks.PRESS);
@@ -1262,6 +1263,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // JSON модель должна лежать в resources/assets/hbm_m/models/block/<название>.json
         horizontalBlock(blockObject.get(),
             models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath())));
+    }
+
+    private <T extends Block> void customBombBlock(RegistryObject<T> blockObject) {
+        // Создаём только blockstate, который ссылается на JSON модель
+        // JSON модель должна лежать в resources/assets/hbm_m/models/block/bomb/<название>.json
+        horizontalBlock(blockObject.get(),
+            models().getExistingFile(modLoc("block/bomb/" + blockObject.getId().getPath())));
     }
 
     /**

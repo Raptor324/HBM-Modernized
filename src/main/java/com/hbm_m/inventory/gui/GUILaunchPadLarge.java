@@ -1,6 +1,6 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.block.entity.explosives.LaunchPadBaseBlockEntity;
+import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.inventory.menu.LaunchPadLargeMenu;
 import com.hbm_m.lib.RefStrings;
 

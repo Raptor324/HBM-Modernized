@@ -26,9 +26,12 @@ import com.hbm_m.client.overlay.OverlayInfoToast;
 import com.hbm_m.client.overlay.OverlayRadiationVisuals;
 import com.hbm_m.client.render.AirBombProjectileEntityRenderer;
 import com.hbm_m.client.render.AirNukeBombProjectileEntityRenderer;
+import com.hbm_m.client.render.MissileTestEntityRenderer;
 import com.hbm_m.client.render.AirstrikeEntityRenderer;
 import com.hbm_m.client.render.AirstrikeNukeEntityRenderer;
+import com.hbm_m.client.render.EmptyEntityRenderer;
 import com.hbm_m.client.render.ChemicalPlantRenderer;
+import com.hbm_m.client.render.effect.RenderFallout;
 import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
@@ -92,6 +95,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.entity.EntityRenderers;
+import net.minecraft.client.renderer.entity.FallingBlockRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
@@ -168,6 +172,10 @@ public class ClientSetup {
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
         );
 
+        ModEntities.MISSILE_TEST.ifPresent(entityType ->
+                EntityRenderers.register(entityType, MissileTestEntityRenderer::new)
+        );
+
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
         event.enqueueWork(() -> {
@@ -192,6 +200,7 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.FRACTURING_TOWER_MENU.get(), GUIMachineFrackingTower::new);
             MenuScreens.register(ModMenuTypes.LAUNCH_PAD_LARGE_MENU.get(), GUILaunchPadLarge::new);
             MenuScreens.register(ModMenuTypes.LAUNCH_PAD_RUSTED_MENU.get(), GUILaunchPadRusted::new);
+            MenuScreens.register(ModMenuTypes.NUKE_FAT_MAN_MENU.get(), com.hbm_m.inventory.gui.GUINukeFatMan::new);
 
             // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
@@ -332,8 +341,11 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.AIRBOMB_PROJECTILE.get(),
                 AirBombProjectileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_NUKE_ENTITY.get(), AirstrikeNukeEntityRenderer::new);
-
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_ENTITY.get(), AirstrikeEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.AIRSTRIKE_AGENT_ENTITY.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.NUKE_FALLOUT_RAIN.get(), RenderFallout::new);
+        event.registerEntityRenderer(ModEntities.NUKE_MK5.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.FALLING_SELLAFIT_ENTITY_TYPE.get(), FallingBlockRenderer::new);
     }
 
     @SubscribeEvent

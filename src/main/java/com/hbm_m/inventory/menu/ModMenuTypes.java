@@ -82,6 +82,9 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<LaunchPadRustedMenu>> LAUNCH_PAD_RUSTED_MENU =
             MENUS.register("launch_pad_rusted_menu", () -> IForgeMenuType.create(LaunchPadRustedMenu::new));
 
+    public static final RegistryObject<MenuType<NukeFatManMenu>> NUKE_FAT_MAN_MENU =
+            MENUS.register("nuke_fat_man_menu", () -> IForgeMenuType.create(NukeFatManMenu::new));
+
     public static void register(IEventBus eventBus) {
         MENUS.register(eventBus);
     }

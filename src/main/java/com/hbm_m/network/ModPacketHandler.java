@@ -82,5 +82,6 @@ public class ModPacketHandler {
             ItemDesignatorPacket::decode,
             ItemDesignatorPacket::handle
         );
+        INSTANCE.registerMessage(id++, AuxParticlePacket.class, AuxParticlePacket::encode, AuxParticlePacket::decode, AuxParticlePacket::handle);
     }
 }

@@ -139,13 +139,15 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.AIRSTRIKE_TEST);
         simpleItem(ModItems.AIRSTRIKE_HEAVY);
         simpleItem(ModItems.DETONATOR);
+        simpleItem(ModItems.FAT_MAN_EXPLOSIVE);
+        simpleItem(ModItems.FAT_MAN_IGNITER);
+        simpleItem(ModItems.FAT_MAN_CORE);
         simpleItem(ModItems.DESIGNATOR);
         simpleItem(ModItems.DESIGNATOR_RANGE);
         simpleItem(ModItems.DESIGNATOR_MANUAL);
         simpleItem(ModItems.SCRAP);
         simpleItem(ModItems.CRT_DISPLAY);
         simpleItem(ModItems.SEQUESTRUM);
-        simpleItem(ModItems.MAN_CORE);
         simpleItem(ModItems.BLADE_STEEL);
         simpleItem(ModItems.BLADE_TITANIUM);
         simpleItem(ModItems.BLADE_ALLOY);
@@ -437,6 +439,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.GRENADEHE);
         simpleItem(ModItems.GRENADEFIRE);
 
+        // Missile prototype item: 3D OBJ модель, используем готовый missile_micro.json
+        withExistingParent(ModItems.MISSILE_TEST.getId().getPath(),
+                modLoc("missile/missile_micro"));
+
         ModBlocks.getAnvilBlocks().forEach(this::blockItemFromBlockModelMachine);
         
         // Регистрация моделей предметов для машин с кастомными 3D моделями
@@ -452,6 +458,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.FLUID_TANK);
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD);
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD_RUSTED);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_FAT_MAN);
         blockItemFromBlockModel(ModBlocks.DUD_CONVENTIONAL);
         blockItemFromBlockModel(ModBlocks.DUD_NUKE);
         blockItemFromBlockModel(ModBlocks.DUD_SALTED);
@@ -482,6 +489,10 @@ public class ModItemModelProvider extends ItemModelProvider {
 
     private ItemModelBuilder blockItemFromBlockModelMachine(RegistryObject<Block> block) {
         return withExistingParent(block.getId().getPath(), modLoc("block/machines/" + block.getId().getPath()));
+    }
+
+    private ItemModelBuilder blockItemFromBlockModelBomb(RegistryObject<Block> block) {
+        return withExistingParent(block.getId().getPath(), modLoc("block/bomb/" + block.getId().getPath()));
     }
 
     private ItemModelBuilder blockItemFromBlockModel(RegistryObject<Block> block) {

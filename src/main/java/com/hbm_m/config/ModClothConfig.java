@@ -216,6 +216,27 @@ public class ModClothConfig implements ConfigData {
     @BoundedDiscrete(min = 1, max = 32)
     public int vatsRenderDistanceChunks = 7;
 
+    // ЯДЕРНЫЕ ВЗРЫВЫ (MK5)
+
+    @Category("explosions")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 1, max = 50)
+    public int mk5TickTimeMs = 10;
+
+    @Category("explosions")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 400)
+    public int falloutRangePercent = 100;
+
+    @Category("explosions")
+    @Gui.Tooltip
+    public boolean enableCraterBiomes = true;
+
+    @Category("explosions")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 200)
+    public int fatManRadius = 50;
+
     // Тепловизор
     @Category("rendering")
     @Gui.Tooltip

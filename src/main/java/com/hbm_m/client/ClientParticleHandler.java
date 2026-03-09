@@ -1,7 +1,9 @@
 package com.hbm_m.client;
 
 import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.AgentOrangeParticle;
+import com.hbm_m.particle.custom.MissileContrailParticle;
 import com.hbm_m.particle.explosions.basic.*;
 import com.hbm_m.particle.explosions.nuclear.small.DarkSmokeParticle;
 import com.hbm_m.particle.explosions.nuclear.small.DarkWaveSmokeParticle;
@@ -78,6 +80,11 @@ public class ClientParticleHandler {
         event.registerSpriteSet(
                 (SimpleParticleType) ModExplosionParticles.DARK_WAVE_SMOKE.get(),
                 DarkWaveSmokeParticle.Provider::new);
+
+        // 🚀 Контрейл баллистической ракеты
+        event.registerSpriteSet(
+                ModParticleTypes.MISSILE_CONTRAIL.get(),
+                MissileContrailParticle.Provider::new);
 
     }
 }

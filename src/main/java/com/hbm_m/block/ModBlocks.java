@@ -26,8 +26,7 @@ import com.hbm_m.block.explosives.DudFugasBlock;
 import com.hbm_m.block.explosives.DudNukeBlock;
 import com.hbm_m.block.explosives.ExplosiveChargeBlock;
 import com.hbm_m.block.explosives.GigaDetBlock;
-import com.hbm_m.block.explosives.LaunchPadBlock;
-import com.hbm_m.block.explosives.LaunchPadRustedBlock;
+import com.hbm_m.block.bomb.NukeFatManBlock;
 import com.hbm_m.block.explosives.MineBlock;
 import com.hbm_m.block.explosives.MineNukeBlock;
 import com.hbm_m.block.explosives.NuclearChargeBlock;
@@ -37,6 +36,8 @@ import com.hbm_m.block.machines.ArmorTableBlock;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
 import com.hbm_m.block.machines.BlastFurnaceExtensionBlock;
 import com.hbm_m.block.machines.GeigerCounterBlock;
+import com.hbm_m.block.machines.LaunchPadBlock;
+import com.hbm_m.block.machines.LaunchPadRustedBlock;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.machines.MachineCentrifugeBlock;
@@ -683,6 +684,9 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> MINE_FAT = registerBlock("mine_fat",
             () -> new MineNukeBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistryObject<Block> NUKE_FAT_MAN = registerBlockWithoutItem("nuke_fat_man",
+            () -> new NukeFatManBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
     public static final RegistryObject<Block> MINE_AP = registerBlock("mine_ap",
             () -> new MineBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));

@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
+import com.hbm_m.block.explosives.IDetonatable;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.block.entity.machines.UniversalMachinePartBlockEntity;
@@ -45,7 +46,22 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 
-public class UniversalMachinePartBlock extends BaseEntityBlock {
+public class UniversalMachinePartBlock extends BaseEntityBlock implements IDetonatable {
+
+    @Override
+    public boolean onDetonate(Level level, BlockPos partPos, BlockState partState, Player player) {
+        if (level.isClientSide) return false;
+        BlockEntity be = level.getBlockEntity(partPos);
+        if (!(be instanceof IMultiblockPart part)) return false;
+        BlockPos controllerPos = part.getControllerPos();
+        if (controllerPos == null) return false;
+        BlockState controllerState = level.getBlockState(controllerPos);
+        Block controllerBlock = controllerState.getBlock();
+        if (controllerBlock instanceof IDetonatable detonatable) {
+            return detonatable.onDetonate(level, controllerPos, controllerState, player);
+        }
+        return false;
+    }
 
     // FACING is the only property we need to sync with the controller
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
