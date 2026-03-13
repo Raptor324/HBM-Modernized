@@ -46,18 +46,13 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     @Override
     public void render(T blockEntity, float partialTick, PoseStack poseStack,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        currentModelViewMatrix = poseStack.last().pose();
+        // Фикс: храним снимок матрицы, а не ссылку на мутабельный объект PoseStack.
+        currentModelViewMatrix = new Matrix4f(poseStack.last().pose());
         
         if (!isInViewFrustum(blockEntity)) {
             return;
         }
 
-        if (!gpuStateSetup) {
-            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
-            RT_SOLID.setupRenderState();
-            gpuStateSetup = true;
-        }
-        
         BakedModel rawModel = getModel(blockEntity);
         M model = getModelType(rawModel);
         
@@ -67,16 +62,16 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
                 packedLight, packedOverlay);
 
         poseStack.pushPose();
-        animator.setupBlockTransform(getFacing(blockEntity));
-
-        renderParts(blockEntity, model, animator, partialTick, packedLight, packedOverlay, poseStack, bufferSource);
-
-        poseStack.popPose();
-
-        if (gpuStateSetup) {
-            RT_SOLID.clearRenderState();
-            net.minecraft.client.Minecraft.getInstance().gameRenderer.lightTexture().turnOffLightLayer();
-            gpuStateSetup = false;
+        try {
+            animator.setupBlockTransform(getFacing(blockEntity));
+            renderParts(blockEntity, model, animator, partialTick, packedLight, packedOverlay, poseStack, bufferSource);
+        } finally {
+            poseStack.popPose();
+            if (gpuStateSetup) {
+                RT_SOLID.clearRenderState();
+                Minecraft.getInstance().gameRenderer.lightTexture().turnOffLightLayer();
+                gpuStateSetup = false;
+            }
         }
     }
 

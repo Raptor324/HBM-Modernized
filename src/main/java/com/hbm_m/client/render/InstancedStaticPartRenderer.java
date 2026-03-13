@@ -2,13 +2,13 @@ package com.hbm_m.client.render;
 
 import java.nio.FloatBuffer;
 import java.util.List;
+import java.lang.ref.Cleaner;
 
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
@@ -33,6 +33,7 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
@@ -42,7 +43,7 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
  * Рендерит все машины одного типа одним draw call через glDrawElementsInstanced.
  */
 @OnlyIn(Dist.CLIENT)
-public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
+public class InstancedStaticPartRenderer extends AbstractGpuMesh {
 
     private static final int MAX_INSTANCES = 1024;
     // float per instance: 3 (Pos) + 4 (Rot) + 1 (Light) = 8 floats
@@ -50,6 +51,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
 
     private int instanceCount = 0;
     private float batchSkyDarken = -1f; // кэш getSkyDarken на батч
+    private boolean overflowLogged = false;
 
     // Временные объекты для извлечения данных из матрицы (вместо float[16])
     private final Vector3f posTmp = new Vector3f();
@@ -57,6 +59,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
     
     private int instanceVboId = -1; // VBO для instance attributes
     private FloatBuffer instanceBuffer;
+
+    // Cleaner для страхующего освобождения instanceBuffer на случай,
+    // если cleanup() не был вызван перед сборкой GC.
+    private static final Cleaner CLEANER = Cleaner.create();
+    private Cleaner.Cleanable instanceBufferCleanable;
 
     // --- Cache fields for optimization ---
     private ShaderInstance cachedShader = null;
@@ -72,10 +79,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
     /** Квады для Iris-пути. */
     private final List<BakedQuad> quadsForIris;
 
-    public InstancedStaticPartRenderer(VboData data) {
+    public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data) {
         this(data, null);
     }
-    public InstancedStaticPartRenderer(VboData data, List<BakedQuad> quadsForIris) {
+    public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data, List<BakedQuad> quadsForIris) {
         this.quadsForIris = quadsForIris;
         if (data == null) {
             MainRegistry.LOGGER.error("InstancedStaticPartRenderer: Received NULL VboData! Cannot create renderer.");
@@ -146,9 +153,19 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
             GL30.glBindVertexArray(0);
 
             instanceBuffer = MemoryUtil.memAllocFloat(MAX_INSTANCES * INSTANCE_DATA_SIZE);
+            final long bufferAddress = MemoryUtil.memAddress(instanceBuffer);
+            instanceBufferCleanable = CLEANER.register(this, () -> {
+                try {
+                    if (bufferAddress != 0L) {
+                        MemoryUtil.nmemFree(bufferAddress);
+                    }
+                } catch (Throwable t) {
+                    MainRegistry.LOGGER.error("Failed to free instanceBuffer via Cleaner", t);
+                }
+            });
 
-            MemoryUtil.memFree(data.byteBuffer);
-            if (data.indices != null) MemoryUtil.memFree(data.indices);
+            // Освобождаем VboData через единый ownership-метод
+            data.close();
 
             initialized = true;
 
@@ -163,9 +180,21 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
         }
     }
 
-    @Override
+    /** Квады для пути совместимого с Iris. */
     protected List<BakedQuad> getQuadsForIrisPath() {
         return quadsForIris;
+    }
+
+    /**
+     * Проверка видимости перед добавлением инстанса в батч.
+     * При отсутствии BlockEntity или мира считаем, что объект нужно рендерить.
+     */
+    private boolean shouldRenderWithCulling(BlockPos blockPos, @Nullable BlockEntity blockEntity) {
+        if (blockEntity == null || blockEntity.getLevel() == null) {
+            return true;
+        }
+        AABB renderBounds = blockEntity.getRenderBoundingBox();
+        return OcclusionCullingHelper.shouldRender(blockPos, blockEntity.getLevel(), renderBounds);
     }
 
     /**
@@ -229,11 +258,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
             var sampler0 = shader.getUniform("Sampler0");
             if (sampler0 != null) sampler0.set(0);
 
+            SingleMeshVboRenderer.TextureBinder.bindForModelIfNeeded(shader);
             shader.apply();
-            TextureBinder.bindForModelIfNeeded(shader);
-            GL13.glActiveTexture(GL13.GL_TEXTURE0);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-            GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
 
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
@@ -245,9 +271,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("InstancedStaticPartRenderer.renderSingle failed", e);
         } finally {
-            GL30.glBindVertexArray(0);
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+            // Восстанавливаем VAO, затем глобальный ARRAY_BUFFER, без промежуточного VAO=0
             GL30.glBindVertexArray(previousVao);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
         }
     }
@@ -264,6 +290,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
     public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos,
                             @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         if (!initialized) return;
+        if (!shouldRenderWithCulling(blockPos, blockEntity)) return;
 
         // Optimizations for Iris/Shaders (immediate flush)
         if (ShaderCompatibilityDetector.isExternalShaderActive() && quadsForIris != null && !quadsForIris.isEmpty()) {
@@ -279,9 +306,16 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
         }
 
         if (instanceCount >= MAX_INSTANCES) {
-            flush(RenderSystem.getProjectionMatrix());
+            // Не флашим посреди addInstance(): это может произойти в неподходящей фазе рендера.
+            // Вместо этого логируем один раз за батч и пропускаем лишние инстансы.
+            if (!overflowLogged) {
+                overflowLogged = true;
+                MainRegistry.LOGGER.warn("InstancedStaticPartRenderer overflow: MAX_INSTANCES={} reached, skipping extra instances until next flush", MAX_INSTANCES);
+            }
+            return;
         }
         if (instanceCount == 0) {
+            overflowLogged = false;
             var level = Minecraft.getInstance().level;
             batchSkyDarken = (level != null) ? level.getSkyDarken(1.0f) : -1f;
         }
@@ -329,6 +363,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
         flushBatch(projectionMatrix);
         instanceCount = 0;
         instanceBuffer.clear();
+        overflowLogged = false;
     }
 
     private void updateUniformCache(ShaderInstance shader) {
@@ -395,10 +430,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
             if (uSampler0 != null) uSampler0.set(0);
             if (uSampler2 != null) uSampler2.set(2);
             
-            // Привязываем текстуру
-            TextureBinder.bindForModelIfNeeded(shader);
-            GL13.glActiveTexture(GL13.GL_TEXTURE0);
-            
+            // Привязываем текстуру и применяем шейдер после установки uniform-ов
+            SingleMeshVboRenderer.TextureBinder.bindForModelIfNeeded(shader);
             shader.apply();
             // GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
             // GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
@@ -416,9 +449,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced flush", e);
         } finally {
-
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+            // Восстанавливаем VAO, затем глобальный ARRAY_BUFFER, без промежуточного VAO=0
             GL30.glBindVertexArray(previousVao);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             RenderSystem.depthMask(depthMaskWasEnabled);
             RenderSystem.depthFunc(previousDepthFunc);
             if (depthTestWasEnabled) {
@@ -463,11 +496,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
         return 0.05f + (maxLight / 15.0f) * 0.95f;
     }    
 
-    @Override
-    protected VboData buildVboData() {
-        return null; // Не используется
-    }
-
     /**
      * Проверяет, инициализирован ли рендерер
      */
@@ -483,13 +511,28 @@ public class InstancedStaticPartRenderer extends AbstractGpuVboRenderer {
     @Override
     public void cleanup() {
         super.cleanup();
-        if (instanceVboId != -1) {
-            GL15.glDeleteBuffers(instanceVboId);
-            instanceVboId = -1;
-        }
-        if (instanceBuffer != null) {
-            MemoryUtil.memFree(instanceBuffer);
-            instanceBuffer = null;
-        }
+
+        final int instanceVboToDelete = this.instanceVboId;
+        final Cleaner.Cleanable bufferCleanable = this.instanceBufferCleanable;
+
+        // Сбрасываем ссылки/идентификаторы сразу, чтобы исключить повторное удаление/освобождение.
+        this.instanceVboId = -1;
+        this.instanceBuffer = null;
+        this.instanceBufferCleanable = null;
+
+        // Важно: GL-вызовы и освобождение нативной памяти планируем на render thread,
+        // т.к. cleanup может быть вызван из другого потока (resource reload / server thread).
+        RenderSystem.recordRenderCall(() -> {
+            try {
+                if (instanceVboToDelete != -1) {
+                    GL15.glDeleteBuffers(instanceVboToDelete);
+                }
+                if (bufferCleanable != null) {
+                    bufferCleanable.clean();
+                }
+            } catch (Exception e) {
+                MainRegistry.LOGGER.error("InstancedStaticPartRenderer.cleanup failed", e);
+            }
+        });
     }
 }

@@ -1,7 +1,5 @@
 package com.hbm_m.util;
 
-import net.minecraft.util.Mth;
-
 /**
  * Math helpers used by particle and explosion code
  */

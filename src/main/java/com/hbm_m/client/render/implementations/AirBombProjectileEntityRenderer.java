@@ -1,7 +1,7 @@
-package com.hbm_m.client.render;
+package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.block.ModBlocks; // <-- замени на свой путь к блокам
-import com.hbm_m.entity.grenades.AirstrikeEntity;
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.entity.grenades.AirBombProjectileEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
@@ -13,37 +13,39 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class AirstrikeEntityRenderer extends EntityRenderer<AirstrikeEntity> {
+public class AirBombProjectileEntityRenderer extends EntityRenderer<AirBombProjectileEntity> {
 
     private final BlockRenderDispatcher blockRenderer;
 
-    public AirstrikeEntityRenderer(EntityRendererProvider.Context context) {
+    public AirBombProjectileEntityRenderer(EntityRendererProvider.Context context) {
         super(context);
         this.blockRenderer = context.getBlockRenderDispatcher();
     }
 
     @Override
-    public void render(AirstrikeEntity entity,
+    public void render(AirBombProjectileEntity entity,
                        float entityYaw,
                        float partialTicks,
                        PoseStack poseStack,
                        MultiBufferSource buffer,
                        int packedLight) {
 
-        poseStack.pushPose(); // ← Добавьте pushPose()
+        poseStack.pushPose();
 
-        //  ОДИН поворот: 180° + направление движения
-        poseStack.mulPose(Axis.YP.rotationDegrees(-entity.getYRot() + 180.0F));
+        //  СИНХРОНИЗАЦИЯ С САМОЛЁТОМ: поворот по Yaw
+        poseStack.mulPose(Axis.YP.rotationDegrees(-entity.getSynchedYaw()));
+
+        // 🆕 ПОСТОЯННЫЙ НАКЛОН К ЗЕМЛЕ: +1° каждые 10 тиков (НАКОПИТЕЛЬНО)
+        float tiltAngle = (entity.tickCount / 10.0F) * 7.0F;  // 0° → 1° → 2° → 3°...
+        poseStack.mulPose(Axis.XP.rotationDegrees(tiltAngle));  // Наклон носом вниз
 
         //  Смещение центра модели
         poseStack.translate(-0.5, 0.0, -0.5);
 
-        //  Масштаб x3
-        poseStack.scale(5.0F, 5.0F, 5.0F);
+        // Используем блок AIRBOMB для рендера
+        BlockState state = ModBlocks.AIRBOMB.get().defaultBlockState();
 
-        BlockState state = ModBlocks.DORNIER.get().defaultBlockState();
-
-        // Рисуем модель самолета
+        // Рисуем модель авиабомбы
         blockRenderer.renderSingleBlock(
                 state,
                 poseStack,
@@ -52,13 +54,11 @@ public class AirstrikeEntityRenderer extends EntityRenderer<AirstrikeEntity> {
                 OverlayTexture.NO_OVERLAY
         );
 
-        poseStack.popPose(); // ← Соответствующий popPose()
+        poseStack.popPose();
     }
 
-
     @Override
-    public ResourceLocation getTextureLocation(AirstrikeEntity entity) {
-        // Не используется при рендере через blockRenderer, можно вернуть что‑нибудь дефолтное
+    public ResourceLocation getTextureLocation(AirBombProjectileEntity entity) {
         return new ResourceLocation("minecraft", "textures/block/iron_block.png");
     }
 }

@@ -3,13 +3,13 @@ package com.hbm_m.event;
 // import com.hbm_m.client.render.DoorDebugRenderer;
 import com.hbm_m.client.overlay.DoorAnimationDelayHelper;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
-import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
-import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
-import com.hbm_m.client.render.MachineAssemblerRenderer;
-import com.hbm_m.client.render.MachineHydraulicFrackiningTowerRenderer;
-import com.hbm_m.client.render.MachinePressRenderer;
 import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.implementations.DoorRenderer;
+import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
+import com.hbm_m.client.render.implementations.MachineAssemblerRenderer;
+import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRenderer;
+import com.hbm_m.client.render.implementations.MachinePressRenderer;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 // Обработчик событий клиента, добавляющий подсказки к предметам (опасности, OreDict теги).

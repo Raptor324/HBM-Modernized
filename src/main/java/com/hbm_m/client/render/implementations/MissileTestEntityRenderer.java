@@ -1,4 +1,4 @@
-package com.hbm_m.client.render;
+package com.hbm_m.client.render.implementations;
 
 import com.hbm_m.entity.missile.MissileTestEntity;
 import com.mojang.blaze3d.vertex.PoseStack;

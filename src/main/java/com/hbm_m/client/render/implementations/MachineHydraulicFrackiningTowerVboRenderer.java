@@ -1,8 +1,10 @@
-package com.hbm_m.client.render;
+package com.hbm_m.client.render.implementations;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.client.model.MachineHydraulicFrackiningTowerBakedModel;
+import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.renderer.MultiBufferSource;

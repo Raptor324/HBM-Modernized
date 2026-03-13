@@ -6,12 +6,13 @@ import javax.annotation.Nullable;
 
 import com.hbm_m.api.bomb.IBomb;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.explosives.IDetonatable;
 import com.hbm_m.block.entity.bomb.NukeFatManBlockEntity;
+import com.hbm_m.block.explosives.IDetonatable;
 import com.hbm_m.explosion.NuclearExplosionAPI;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;

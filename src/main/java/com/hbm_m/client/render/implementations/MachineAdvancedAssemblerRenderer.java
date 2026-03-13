@@ -1,4 +1,4 @@
-package com.hbm_m.client.render;
+package com.hbm_m.client.render.implementations;
 
 import org.joml.Matrix4f;
 
@@ -6,6 +6,12 @@ import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity.ClientTicker;
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
+import com.hbm_m.client.render.AbstractPartBasedRenderer;
+import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.InstancedStaticPartRenderer;
+import com.hbm_m.client.render.LegacyAnimator;
+import com.hbm_m.client.render.ObjModelVboBuilder;
+import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
@@ -51,7 +57,6 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
     // --- GC Optimization: Reusable Matrices ---
     // Используем поля класса вместо создания новых объектов в каждом кадре
-    private final Matrix4f matBase = new Matrix4f();
     private final Matrix4f matRing = new Matrix4f();
     private final Matrix4f matLower = new Matrix4f();
     private final Matrix4f matUpper = new Matrix4f();
@@ -132,27 +137,23 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                 && state.getValue(MachineAdvancedAssemblerBlock.RENDER_ACTIVE);
         boolean shaderActive = ShaderCompatibilityDetector.isExternalShaderActive();
 
+        BlockPos blockPos = be.getBlockPos();
+        var minecraft = Minecraft.getInstance();
+        AABB renderBounds = be.getRenderBoundingBox();
+        if (minecraft.level == null || !OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
+            return;
+        }
+
         // Шейдер активен + машина спит → всё в BakedModel, BER не рендерит.
         if (shaderActive && !renderActive) {
             return;
         }
-                                
-        BlockPos blockPos = be.getBlockPos();
+
         int blockLight = LightTexture.block(packedLight);
         int skyLight = LightTexture.sky(packedLight);
         int dynamicLight = LightTexture.pack(blockLight, skyLight);
-        
-        var minecraft = Minecraft.getInstance();
-        AABB renderBounds = be.getRenderBoundingBox();
-        if (!OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
-            return;
-        }
-        
+
         renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource);
-        
-        if (bufferSource instanceof MultiBufferSource.BufferSource bufferSrc) {
-            bufferSrc.endBatch();
-        }
     }
 
     @Override
@@ -273,17 +274,17 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
      * При useInstancedBatching использует матрицы из события.
      */
     public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
-        if (instancedBase != null) instancedBase.flush(event);
-        if (instancedFrame != null) instancedFrame.flush(event);
-        if (instancedRing != null) instancedRing.flush(event);
-        if (instancedArmLower1 != null) instancedArmLower1.flush(event);
-        if (instancedArmUpper1 != null) instancedArmUpper1.flush(event);
-        if (instancedHead1 != null) instancedHead1.flush(event);
-        if (instancedSpike1 != null) instancedSpike1.flush(event);
-        if (instancedArmLower2 != null) instancedArmLower2.flush(event);
-        if (instancedArmUpper2 != null) instancedArmUpper2.flush(event);
-        if (instancedHead2 != null) instancedHead2.flush(event);
-        if (instancedSpike2 != null) instancedSpike2.flush(event);
+        flushInstanced(event, instancedBase);
+        flushInstanced(event, instancedFrame);
+        flushInstanced(event, instancedRing);
+        flushInstanced(event, instancedArmLower1);
+        flushInstanced(event, instancedArmUpper1);
+        flushInstanced(event, instancedHead1);
+        flushInstanced(event, instancedSpike1);
+        flushInstanced(event, instancedArmLower2);
+        flushInstanced(event, instancedArmUpper2);
+        flushInstanced(event, instancedHead2);
+        flushInstanced(event, instancedSpike2);
     }
 
     /**
@@ -306,6 +307,11 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
     private static void cleanupInstanced(InstancedStaticPartRenderer r) {
         if (r != null) r.cleanup();
+    }
+
+    private static void flushInstanced(net.minecraftforge.client.event.RenderLevelStageEvent event,
+                                       InstancedStaticPartRenderer r) {
+        if (r != null) r.flush(event);
     }
 
     private void renderAnimated(MachineAdvancedAssemblerBlockEntity be, float pt,

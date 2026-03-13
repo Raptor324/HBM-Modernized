@@ -1,10 +1,18 @@
-package com.hbm_m.client.render;
+package com.hbm_m.client.render.implementations;
 
 import org.joml.Matrix4f;
 
 import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.entity.machines.MachineAssemblerBlockEntity;
 import com.hbm_m.client.model.MachineAssemblerBakedModel;
+import com.hbm_m.client.render.AbstractPartBasedRenderer;
+import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.InstancedStaticPartRenderer;
+import com.hbm_m.client.render.LegacyAnimator;
+import com.hbm_m.client.render.ObjModelVboBuilder;
+import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.SingleMeshVboRenderer.VboData;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;

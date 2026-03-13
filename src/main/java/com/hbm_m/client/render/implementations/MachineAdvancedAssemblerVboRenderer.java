@@ -1,9 +1,10 @@
-package com.hbm_m.client.render;
+package com.hbm_m.client.render.implementations;
 
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
+import com.hbm_m.client.render.GlobalMeshCache;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -31,7 +32,7 @@ public class MachineAdvancedAssemblerVboRenderer {
         renderStaticBase(poseStack, packedLight, blockPos, blockEntity, null);
     }
 
-    public void renderStaticBase(PoseStack poseStack, int packedLight, BlockPos blockPos, 
+    public void renderStaticBase(PoseStack poseStack, int packedLight, BlockPos blockPos,
                                 @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         BakedModel part = model.getPart(BASE);
         if (part != null) {

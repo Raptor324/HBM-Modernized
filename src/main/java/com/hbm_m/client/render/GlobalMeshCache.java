@@ -11,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import com.hbm_m.client.render.shader.IrisBufferHelper;
 import com.hbm_m.main.MainRegistry;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -32,7 +33,7 @@ public class GlobalMeshCache {
 
     private static final int MAX_CACHE_SIZE = 256;
     private static final RandomSource RANDOM_SOURCE = RandomSource.create(0);
-    private static final ConcurrentHashMap<String, WeakReference<AbstractGpuVboRenderer>> PART_RENDERERS = new ConcurrentHashMap<>();
+    private static final ConcurrentHashMap<String, WeakReference<SingleMeshVboRenderer>> PART_RENDERERS = new ConcurrentHashMap<>();
     private static final java.util.Set<String> FAILED_RENDERER_KEYS = ConcurrentHashMap.newKeySet();
 
     // === ИСПРАВЛЕНИЕ: Потокобезопасные LRU-кэши ===
@@ -70,11 +71,6 @@ public class GlobalMeshCache {
      */
     
     public static List<BakedQuad> getOrCompile(String cacheKey, BakedModel modelPart) {
-        // ИСПРАВЛЕНИЕ: Проверяем размер кэша
-        if (COMPILED_QUADS.size() > MAX_CACHE_SIZE) {
-            clearOldestQuads();
-        }
-        
         return COMPILED_QUADS.computeIfAbsent(cacheKey, k -> compileMesh(modelPart));
     }
 
@@ -84,25 +80,23 @@ public class GlobalMeshCache {
     }
 
     public static VertexBuffer getOrCreateGPUBuffer(String cacheKey, BakedModel modelPart) {
-        // ИСПРАВЛЕНИЕ: Проверяем размер кэша
-        if (GPU_BUFFERS.size() > MAX_CACHE_SIZE) {
-            clearOldestBuffers();
-        }
-        
+        // Все GL-вызовы внутри uploadToGPU должны выполняться с render-треда.
+        RenderSystem.assertOnRenderThread();
+
         return GPU_BUFFERS.computeIfAbsent(cacheKey, k -> {
             List<BakedQuad> quads = getOrCompile(cacheKey, modelPart);
             return uploadToGPU(quads);
         });
     }
 
-    public static AbstractGpuVboRenderer getOrCreateRenderer(String partKey, BakedModel model) {
+    public static SingleMeshVboRenderer getOrCreateRenderer(String partKey, BakedModel model) {
         if (FAILED_RENDERER_KEYS.contains(partKey)) return null;
         if (PART_RENDERERS.size() > MAX_CACHE_SIZE) {
             cleanupDeadRenderers();
         }
         
-        WeakReference<AbstractGpuVboRenderer> ref = PART_RENDERERS.compute(partKey, (key, existingRef) -> {
-            AbstractGpuVboRenderer renderer = (existingRef != null) ? existingRef.get() : null;
+        WeakReference<SingleMeshVboRenderer> ref = PART_RENDERERS.compute(partKey, (key, existingRef) -> {
+            SingleMeshVboRenderer renderer = (existingRef != null) ? existingRef.get() : null;
             if (renderer == null) {
                 String partName = key.contains(":") ? key.substring(key.lastIndexOf(":") + 1) : key;
                 renderer = createRendererForPart(model, partName);
@@ -134,7 +128,7 @@ public class GlobalMeshCache {
         return getOrCreateGPUBuffer(cacheKey, modelPart);
     }
 
-    public static AbstractGpuVboRenderer getOrCreateRenderer(String entityType, String partName, BakedModel model) {
+    public static SingleMeshVboRenderer getOrCreateRenderer(String entityType, String partName, BakedModel model) {
         String partKey = entityType + ":" + partName;
         return getOrCreateRenderer(partKey, model);
     }
@@ -152,43 +146,6 @@ public class GlobalMeshCache {
         }
         
         return Collections.unmodifiableList(quads);
-    }
-
-    // ИСПРАВЛЕНИЕ: Добавлена очистка старых квадов
-    private static void clearOldestQuads() {
-        if (COMPILED_QUADS.isEmpty()) return;
-        
-        // Удаляем первые 25% кэша
-        int toRemove = Math.max(1, COMPILED_QUADS.size() / 4);
-        Iterator<String> it = COMPILED_QUADS.keySet().iterator();
-        
-        for (int i = 0; i < toRemove && it.hasNext(); i++) {
-            String key = it.next();
-            it.remove();
-            
-            // Также удаляем связанный GPU буфер если есть
-            VertexBuffer vb = GPU_BUFFERS.remove(key);
-            if (vb != null) {
-                vb.close();
-            }
-        }
-    }
-
-    // ИСПРАВЛЕНИЕ: Добавлена очистка старых буферов
-    private static void clearOldestBuffers() {
-        if (GPU_BUFFERS.isEmpty()) return;
-        
-        int toRemove = Math.max(1, GPU_BUFFERS.size() / 4);
-        Iterator<Map.Entry<String, VertexBuffer>> it = GPU_BUFFERS.entrySet().iterator();
-        
-        for (int i = 0; i < toRemove && it.hasNext(); i++) {
-            Map.Entry<String, VertexBuffer> entry = it.next();
-            VertexBuffer vb = entry.getValue();
-            if (vb != null) {
-                vb.close();
-            }
-            it.remove();
-        }
     }
 
     private static VertexBuffer uploadToGPU(List<BakedQuad> quads) {
@@ -216,20 +173,14 @@ public class GlobalMeshCache {
 
     // ИСПРАВЛЕНИЕ: Добавлена очистка мёртвых WeakReference
     private static void cleanupDeadRenderers() {
-        PART_RENDERERS.entrySet().removeIf(entry -> {
-            AbstractGpuVboRenderer renderer = entry.getValue().get();
-            if (renderer == null) {
-                return true; // Удаляем мёртвые ссылки
-            }
-            return false;
-        });
+        PART_RENDERERS.entrySet().removeIf(entry -> entry.getValue().get() == null);
     }
 
-    // private static AbstractGpuVboRenderer createRendererForPart(BakedModel model) {
+    // private static SingleMeshVboRenderer createRendererForPart(BakedModel model) {
     //     return createRendererForPart(model, "unknown");
     // }
     
-    private static AbstractGpuVboRenderer createRendererForPart(BakedModel model, String partName) {
+    private static SingleMeshVboRenderer createRendererForPart(BakedModel model, String partName) {
         // ПРЕДВАРИТЕЛЬНАЯ проверка: есть ли квады в модели
         List<BakedQuad> quads = compileMesh(model);
         if (quads.isEmpty()) {
@@ -237,7 +188,7 @@ public class GlobalMeshCache {
         }
         
         // Создаем рендерер с ПРЕДВАРИТЕЛЬНО построенными данными
-        final AbstractGpuVboRenderer.VboData prebuiltData = ObjModelVboBuilder.buildSinglePart(model, partName);
+        final SingleMeshVboRenderer.VboData prebuiltData = ObjModelVboBuilder.buildSinglePart(model, partName);
         if (prebuiltData == null) {
             return null;
         }
@@ -246,11 +197,11 @@ public class GlobalMeshCache {
             partName, prebuiltData.byteBuffer.remaining() / 32);
         
         final List<BakedQuad> quadsForIris = quads;
-        return new AbstractGpuVboRenderer() {
+        return new SingleMeshVboRenderer() {
             private boolean dataInitialized = false;
 
             @Override
-            protected AbstractGpuVboRenderer.VboData buildVboData() {
+            protected SingleMeshVboRenderer.VboData buildVboData() {
                 if (!dataInitialized) {
                     dataInitialized = true;
                 }
@@ -276,8 +227,8 @@ public class GlobalMeshCache {
      * Очистить весь кэш (вызывать при reload ресурсов)
      */
     public static void clearAll() {
-        for (WeakReference<AbstractGpuVboRenderer> ref : PART_RENDERERS.values()) {
-            AbstractGpuVboRenderer renderer = ref.get();
+        for (WeakReference<SingleMeshVboRenderer> ref : PART_RENDERERS.values()) {
+            SingleMeshVboRenderer renderer = ref.get();
             if (renderer != null) {
                 renderer.cleanup();
             }

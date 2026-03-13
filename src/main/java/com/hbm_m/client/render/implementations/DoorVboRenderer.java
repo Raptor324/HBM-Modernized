@@ -1,4 +1,4 @@
-package com.hbm_m.client.render;
+package com.hbm_m.client.render.implementations;
 
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -8,6 +8,10 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.client.model.DoorBakedModel;
 import com.hbm_m.client.model.variant.DoorModelSelection;
+import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.ObjModelVboBuilder;
+import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.SingleMeshVboRenderer.VboData;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -19,7 +23,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class DoorVboRenderer extends AbstractGpuVboRenderer {
+public class DoorVboRenderer extends SingleMeshVboRenderer {
 
     private final DoorBakedModel model;
     private final String partName;

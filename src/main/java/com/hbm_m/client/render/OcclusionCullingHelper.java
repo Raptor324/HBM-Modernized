@@ -19,20 +19,10 @@ import com.hbm_m.config.ModClothConfig;
 @OnlyIn(Dist.CLIENT)
 public final class OcclusionCullingHelper {
     
-    // Мапа для кэширования результатов
+    // Кэш результатов только в пределах ОДНОГО кадра.
+    // Это защищает от повторных raycast'ов в одном кадре, но не "залипает" видимость между кадрами.
     private static final Long2ObjectOpenHashMap<CachedResult> occlusionCache = new Long2ObjectOpenHashMap<>();
     private static long currentFrame = 0;
-    
-    // Счетчик обновлений в текущем кадре
-    private static int updatesThisFrame = 0;
-    
-    // БАЛАНСИРОВКА:
-    // Обрабатываем не более 50 машин за кадр.
-    // Если машин 150, обновление видимости займет 3 кадра (50мс). Это незаметно для глаза, но спасает CPU.
-    private static final int MAX_UPDATES_PER_FRAME = 50; 
-    
-    // Reusable mutable pos
-    private static final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
     
     @Nullable
     private static TagKey<Block> transparentBlocksTag = null;
@@ -64,19 +54,10 @@ public final class OcclusionCullingHelper {
         long posLong = pos.asLong();
         CachedResult cached = occlusionCache.get(posLong);
         
-        // 1. Если результат свежий (обновлен в этом кадре или пару кадров назад) - берем его
-        // Для дальних объектов можно увеличить TTL, но пока оставим жесткую проверку для точности
-        if (cached != null && (currentFrame - cached.frame < 5)) { 
+        // 1. Если результат уже считали в этом кадре — используем его.
+        if (cached != null && cached.frame == currentFrame) { 
             return cached.visible;
         }
-        
-        // 2. БАЛАНСИРОВКА: Если лимит исчерпан, возвращаем ПОСЛЕДНИЙ известный результат.
-        // Если кэша нет совсем - возвращаем true (безопасно, чтобы не мерцало при появлении).
-        if (updatesThisFrame >= MAX_UPDATES_PER_FRAME) {
-            return cached != null ? cached.visible : true;
-        }
-
-        updatesThisFrame++;
         
         var mc = Minecraft.getInstance();
         Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
@@ -129,6 +110,9 @@ public final class OcclusionCullingHelper {
         double startX = start.x;
         double startY = start.y;
         double startZ = start.z;
+
+        // Локальный mutable pos: безопаснее для потенциального многопоточного рендера/рекурсивных вызовов
+        final BlockPos.MutableBlockPos mutablePos = new BlockPos.MutableBlockPos();
 
         // Позиция "курсора" в сетке блоков
         int currentX = Mth.floor(startX);
@@ -224,7 +208,6 @@ public final class OcclusionCullingHelper {
     
     public static void onFrameStart() {
         currentFrame++;
-        updatesThisFrame = 0;
         
         // Очистка старого кеша раз в ~10 секунд
         if (currentFrame % 600 == 0) {

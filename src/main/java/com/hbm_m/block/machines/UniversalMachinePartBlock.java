@@ -6,10 +6,10 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
-import com.hbm_m.block.explosives.IDetonatable;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.block.entity.machines.UniversalMachinePartBlockEntity;
+import com.hbm_m.block.explosives.IDetonatable;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.IMultiblockPart;
