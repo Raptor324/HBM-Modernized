@@ -2,6 +2,7 @@ package com.hbm_m.client.particle;
 
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.particle.nt.ParticleEngineNT;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraftforge.api.distmarker.Dist;
@@ -21,14 +22,17 @@ public class EngineHandler {
 
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_WEATHER) return;
+
         MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
-        if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_WEATHER) {
-            ParticleEngineNT.INSTANCE.render(buffer, event.getCamera(), event.getPartialTick(), event.getPoseStack());
-            buffer.endBatch();
-        } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
-            ParticleEngineNT.INSTANCE.renderFlashOnly(buffer, event.getCamera(), event.getPartialTick(), event.getPoseStack());
-            buffer.endBatch();
-        }
+
+        // ── Фаза 1: все облака/cloudlets ──
+        ParticleEngineNT.INSTANCE.render(buffer, event.getCamera(), event.getPartialTick(), event.getPoseStack());
+        buffer.endBatch();   // ← GPU draw: облака уже на экране
+
+        // ── Фаза 2: flash поверх (NO_DEPTH_TEST + ADDITIVE) ──
+        ParticleEngineNT.INSTANCE.renderFlashOnly(buffer, event.getCamera(), event.getPartialTick(), event.getPoseStack());
+        buffer.endBatch();   // ← GPU draw: flash гарантированно поверх
     }
 
     @SubscribeEvent

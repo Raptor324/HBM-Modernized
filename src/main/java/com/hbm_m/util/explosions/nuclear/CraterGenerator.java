@@ -1,34 +1,38 @@
 package com.hbm_m.util.explosions.nuclear;
 
-import com.hbm_m.util.explosions.nuclear.CraterBiomeHelper;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.server.ServerLifecycleHooks;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.TickTask;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.tags.BlockTags;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Crater Generator v21.0 - BIOME SYNC FIX
- * ✅ FIXED: Y-coordinate calculation synchronized with biomes
- * ✅ FIXED: Distance calculation uses only XZ (2D radius) for zone boundaries
- * ✅ ENHANCED: Biome layer detection for seamless vertical coverage
- * ✅ OPTIMIZED: Proper wavy border consistency
+ *  FIXED: Y-coordinate calculation synchronized with biomes
+ *  FIXED: Distance calculation uses only XZ (2D radius) for zone boundaries
+ *  ENHANCED: Biome layer detection for seamless vertical coverage
+ *  OPTIMIZED: Proper wavy border consistency
  */
 public class CraterGenerator {
 

@@ -22,6 +22,7 @@ import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.GraphicsStatus;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -46,6 +47,10 @@ public class NukeTorex extends ParticleNT {
 
     public boolean didPlaySound = false;
     public boolean didShake = false;
+
+    /** Жёсткий лимит на общее число cloudlets (зависит от качества). */
+    private static final int MAX_CLOUDLETS_FANCY = 12_000;
+    private static final int MAX_CLOUDLETS_FAST = 6_000;
 
     private static final ResourceLocation CLOUDLET = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/particle_base.png");
     private static final ResourceLocation FLASH = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/flare.png");
@@ -81,10 +86,14 @@ public class NukeTorex extends ParticleNT {
 
         double range = (torusWidth - rollerSize) * 0.25;
         double simSpeed = getSimulationSpeed();
-        int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed);
+
+        // LOD по дистанции до камеры: вдали спавним меньше cloudlets.
+        double lodFactor = getLodFactor();
+        int toSpawn = (int) Math.ceil(10 * simSpeed * simSpeed * lodFactor);
         int lifetime = Math.min((age * age) + 200, maxAge - age + 200);
 
-        for (int i = 0; i < toSpawn; i++) {
+        int maxCloudlets = getMaxCloudletsForQuality();
+        for (int i = 0; i < toSpawn && cloudlets.size() < maxCloudlets; i++) {
             double lx = this.x + random.nextGaussian() * range;
             double lz = this.z + random.nextGaussian() * range;
             Cloudlet cloud = new Cloudlet(lx, lastSpawnY, lz, (float) (random.nextDouble() * 2 * Math.PI), 0, lifetime);
@@ -92,11 +101,11 @@ public class NukeTorex extends ParticleNT {
             cloudlets.add(cloud);
         }
 
-        if (age < 200) {
+        if (age < 200 && cloudlets.size() < maxCloudlets) {
             int cloudCount = age * 5;
             int shockLife = Math.max(300 - age * 20, 50);
 
-            for (int i = 0; i < cloudCount; i++) {
+            for (int i = 0; i < cloudCount && cloudlets.size() < maxCloudlets; i++) {
                 float rot = (float) (Math.PI * 2 * random.nextDouble());
                 Vec3 vec = new Vec3((age * 1.5 + random.nextDouble()) * 1.5, 0, 0).yRot(rot);
                 this.cloudlets.add(new Cloudlet(vec.x + this.x, level.getHeight(Heightmap.Types.WORLD_SURFACE, (int) (vec.x + this.x), (int) (vec.z + this.z)), vec.z + this.z, rot, 0, shockLife, TorexType.SHOCK)
@@ -117,18 +126,18 @@ public class NukeTorex extends ParticleNT {
             }
         }
 
-        if (age < 130 * s) {
+        if (age < 130 * s && cloudlets.size() < maxCloudlets) {
             int ringLifetime = (int) (lifetime * s);
-            for (int i = 0; i < 2; i++) {
+            for (int i = 0; i < 2 && cloudlets.size() < maxCloudlets; i++) {
                 Cloudlet cloud = new Cloudlet(x, y + coreHeight, z, (float) (random.nextDouble() * 2 * Math.PI), 0, ringLifetime, TorexType.RING);
                 cloud.setScale(1F + this.age * 0.0025F * (float) (cs * cs), 3F * (float) (cs * cs));
                 cloudlets.add(cloud);
             }
         }
 
-        if (age > 130 * s && age < 600 * s) {
-            for (int i = 0; i < 20; i++) {
-                for (int j = 0; j < 4; j++) {
+        if (age > 130 * s && age < 600 * s && cloudlets.size() < maxCloudlets) {
+            for (int i = 0; i < 20 && cloudlets.size() < maxCloudlets; i++) {
+                for (int j = 0; j < 4 && cloudlets.size() < maxCloudlets; j++) {
                     float angle = (float) (Math.PI * 2 * random.nextDouble());
                     Vec3 vec = new Vec3(torusWidth + rollerSize * (5 + random.nextDouble()), 0, 0);
                     vec = vec.zRot((float) (Math.PI / 45 * j)).yRot(angle);
@@ -138,9 +147,9 @@ public class NukeTorex extends ParticleNT {
                 }
             }
         }
-        if (age > 200 * s && age < 600 * s) {
-            for (int i = 0; i < 20; i++) {
-                for (int j = 0; j < 4; j++) {
+        if (age > 200 * s && age < 600 * s && cloudlets.size() < maxCloudlets) {
+            for (int i = 0; i < 20 && cloudlets.size() < maxCloudlets; i++) {
+                for (int j = 0; j < 4 && cloudlets.size() < maxCloudlets; j++) {
                     float angle = (float) (Math.PI * 2 * random.nextDouble());
                     Vec3 vec = new Vec3(torusWidth + rollerSize * (3 + random.nextDouble() * 0.5), 0, 0);
                     vec = vec.zRot((float) (Math.PI / 45 * j)).yRot(angle);
@@ -190,6 +199,33 @@ public class NukeTorex extends ParticleNT {
         if (life > simStop) return 0;
         if (life > simSlow) return 1.0 - ((double) (life - simSlow) / (double) (simStop - simSlow));
         return 1.0;
+    }
+
+    /** Простой LOD-фактор в зависимости от расстояния до камеры и настроек графики. */
+    private double getLodFactor() {
+        Minecraft mc = Minecraft.getInstance();
+        Camera cam = mc.gameRenderer.getMainCamera();
+        Vec3 camPos = cam.getPosition();
+        double distSq = camPos.distanceToSqr(this.x, this.y, this.z);
+
+        double dist = Math.sqrt(distSq);
+        // Чем дальше взрыв, тем меньше деталей.
+        if (dist < 128) {
+            return 1.0;
+        } else if (dist < 256) {
+            return 0.75;
+        } else if (dist < 384) {
+            return 0.5;
+        } else {
+            return 0.35;
+        }
+    }
+
+    private int getMaxCloudletsForQuality() {
+        Minecraft mc = Minecraft.getInstance();
+        GraphicsStatus graphics = mc.options.graphicsMode().get();
+        boolean fancy = graphics == GraphicsStatus.FANCY || graphics == GraphicsStatus.FABULOUS;
+        return fancy ? MAX_CLOUDLETS_FANCY : MAX_CLOUDLETS_FAST;
     }
 
     public double getScale() { return this.scale; }
@@ -410,12 +446,16 @@ public class NukeTorex extends ParticleNT {
     @Override
     public void render(VertexConsumer ignored, Camera camera, float partialTicks, PoseStack levelPoseStack) {
         Vec3 camPos = camera.getPosition();
+
+        //  Свой PoseStack с ТОЛЬКО трансляцией. Поворот камеры уже в ModelViewMat (шейдер).
         PoseStack localPose = new PoseStack();
         localPose.translate(this.x - camPos.x, this.y - camPos.y, this.z - camPos.z);
+
         FogRenderer.setupNoFog();
         MultiBufferSource.BufferSource buffer = Minecraft.getInstance().renderBuffers().bufferSource();
         cloudletWrapper(partialTicks, localPose, buffer);
-        buffer.endBatch();
+        //  Сбрасываем только свой тип
+        // buffer.endBatch(ClientRenderHandler.CustomRenderTypes.NUKE_CLOUDS.apply(CLOUDLET));
 
         long now = System.currentTimeMillis();
         if (this.age < 10 && now - ModEventHandlerClient.flashTimestamp > 1_000) {
@@ -436,8 +476,11 @@ public class NukeTorex extends ParticleNT {
     public void renderFlashOnly(MultiBufferSource buffer, Camera camera, float partialTicks, PoseStack levelPoseStack) {
         if (this.age >= 101) return;
         Vec3 camPos = camera.getPosition();
+
+        //  Тоже свой PoseStack — только трансляция
         PoseStack localPose = new PoseStack();
         localPose.translate(this.x - camPos.x, this.y - camPos.y, this.z - camPos.z);
+
         FogRenderer.setupNoFog();
         flashWrapper(partialTicks, localPose, buffer);
     }
@@ -489,26 +532,29 @@ public class NukeTorex extends ParticleNT {
         consumer.vertex(matrix, posX + l.x - u.x, posY + l.y - u.y, posZ + l.z - u.z).color(r, g, b, alpha).uv(0, 1).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
     }
 
-    private void renderFlash(Matrix4f matrix, VertexConsumer consumer, float posX, float posY, float posZ, float scale, float alpha) {
-        Vec3 worldCenter = new Vec3(this.x + posX, this.y + posY, this.z + posZ);
-        Vec3 camPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-        Vec3 toCamera = camPos.subtract(worldCenter).normalize();
-        Vec3 upWorld = new Vec3(0, 1, 0);
-        Vec3 right = toCamera.cross(upWorld);
-        if (right.lengthSqr() < 1.0E-6) right = toCamera.cross(new Vec3(1, 0, 0));
-        right = right.normalize();
-        Vec3 up = right.cross(toCamera).normalize();
-        Vector3f r = new Vector3f((float) right.x, (float) right.y, (float) right.z).mul(scale);
-        Vector3f u = new Vector3f((float) up.x, (float) up.y, (float) up.z).mul(scale);
+    private void renderFlash(Matrix4f matrix, VertexConsumer consumer,
+            float posX, float posY, float posZ,
+            float scale, float alpha) {
+        //  Те же camera-векторы, что и у cloudlet — гарантированно корректный billboard
+        Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
+        Vector3f r = new Vector3f(camera.getLeftVector()).mul(scale);
+        Vector3f u = new Vector3f(camera.getUpVector()).mul(scale);
+
         int overlay = OverlayTexture.NO_OVERLAY;
-        consumer.vertex(matrix, posX - r.x - u.x, posY - r.y - u.y, posZ - r.z - u.z).color(1, 1, 1, alpha).uv(1, 1).overlayCoords(overlay).uv2(240).normal(0, 1, 0).endVertex();
-        consumer.vertex(matrix, posX - r.x + u.x, posY - r.y + u.y, posZ - r.z + u.z).color(1, 1, 1, alpha).uv(1, 0).overlayCoords(overlay).uv2(240).normal(0, 1, 0).endVertex();
-        consumer.vertex(matrix, posX + r.x + u.x, posY + r.y + u.y, posZ + r.z + u.z).color(1, 1, 1, alpha).uv(0, 0).overlayCoords(overlay).uv2(240).normal(0, 1, 0).endVertex();
-        consumer.vertex(matrix, posX + r.x - u.x, posY + r.y - u.y, posZ + r.z - u.z).color(1, 1, 1, alpha).uv(0, 1).overlayCoords(overlay).uv2(240).normal(0, 1, 0).endVertex();
+
+        consumer.vertex(matrix, posX - r.x - u.x, posY - r.y - u.y, posZ - r.z - u.z)
+        .color(1, 1, 1, alpha).uv(1, 1).overlayCoords(overlay).uv2(240).normal(0, 1, 0).endVertex();
+        consumer.vertex(matrix, posX - r.x + u.x, posY - r.y + u.y, posZ - r.z + u.z)
+        .color(1, 1, 1, alpha).uv(1, 0).overlayCoords(overlay).uv2(240).normal(0, 1, 0).endVertex();
+        consumer.vertex(matrix, posX + r.x + u.x, posY + r.y + u.y, posZ + r.z + u.z)
+        .color(1, 1, 1, alpha).uv(0, 0).overlayCoords(overlay).uv2(240).normal(0, 1, 0).endVertex();
+        consumer.vertex(matrix, posX + r.x - u.x, posY + r.y - u.y, posZ + r.z - u.z)
+        .color(1, 1, 1, alpha).uv(0, 1).overlayCoords(overlay).uv2(240).normal(0, 1, 0).endVertex();
     }
 
     @Override
     public RenderType getRenderType() {
-        return RenderType.cutout();
+        // Основной рендер идёт через NUKE_CLOUDS, но возвращаем тип для совместимости.
+        return ClientRenderHandler.CustomRenderTypes.NUKE_CLOUDS.apply(CLOUDLET);
     }
 }

@@ -1,10 +1,18 @@
 package com.hbm_m.util;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.util.explosions.nuclear.BlockExplosionDefense;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -12,13 +20,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.tags.BlockTags;
-
 import net.minecraftforge.server.ServerLifecycleHooks;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.TickTask;
-
-import java.util.*;
 
 public class CraterGenerator {
 
@@ -451,7 +453,7 @@ public class CraterGenerator {
             item.discard();
         }
         applyKillZoneToEntitiesOptimized(level, centerPos, random);
-        MainRegistry.LOGGER.debug("[CRATER] ✅ Применение зон повреждения завершено!");
+        MainRegistry.LOGGER.debug("[CRATER]  Применение зон повреждения завершено!");
     }
 
 

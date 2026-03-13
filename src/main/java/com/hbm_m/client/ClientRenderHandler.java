@@ -290,7 +290,8 @@ public class ClientRenderHandler {
         }
 
         Minecraft mc = Minecraft.getInstance();
-        Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
+        var camera = mc.gameRenderer.getMainCamera();
+        Vec3 cameraPos = camera.getPosition();
         long currentTime = System.currentTimeMillis();
         VertexConsumer fillConsumer = mc.renderBuffers().bufferSource().getBuffer(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
         float alpha = ModClothConfig.get().obstructionHighlight.obstructionHighlightAlpha / 100.0f;
