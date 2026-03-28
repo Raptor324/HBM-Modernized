@@ -1,5 +1,7 @@
 package com.hbm_m.block.entity.machines;
 
+import java.util.List;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -8,10 +10,12 @@ import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineChemicalPlantMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.industrial.ItemBlueprintFolder;
+import com.hbm_m.recipe.ChemicalPlantRecipes;
+import com.hbm_m.recipe.ChemicalPlantRecipes.ChemicalRecipe;
+import com.hbm_m.recipe.ChemicalPlantRecipes.RecipeInput;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
@@ -68,6 +72,9 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
     private boolean didProcess = false;
     @Nullable private String recipe = null;
 
+    private int progress = 0;
+    private int maxProgress = 100;
+
     private float anim = 0.0F;
     private float prevAnim = 0.0F;
 
@@ -75,8 +82,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         @Override
         public int get(int index) {
             return switch (index) {
-                case 0 -> getProgress();
-                case 1 -> getMaxProgress();
+                case 0 -> progress;
+                case 1 -> maxProgress;
                 default -> 0;
             };
         }
@@ -128,14 +135,143 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             if (entity.anim > (float) (Math.PI * 2.0)) {
                 entity.anim -= (float) (Math.PI * 2.0);
             }
+            entity.clientTick();
             return;
         }
 
+        entity.ensureNetworkInitialized();
         entity.chargeFromBattery();
         entity.transferFluidsFromItems();
         entity.transferFluidsToItems();
 
-        entity.didProcess = false;
+        if (level.getGameTime() % 10L == 0L) {
+            entity.updateEnergyDelta(entity.getEnergyStored());
+        }
+
+        boolean dirty = false;
+
+        ChemicalRecipe currentRecipe = entity.recipe != null ? ChemicalPlantRecipes.getRecipe(entity.recipe) : null;
+
+        if (currentRecipe != null) {
+            entity.maxProgress = currentRecipe.getDuration();
+            long powerPerTick = currentRecipe.getPowerConsumption();
+
+            if (entity.canProcess(currentRecipe) && entity.getEnergyStored() >= powerPerTick) {
+                entity.setEnergyStored(entity.getEnergyStored() - powerPerTick);
+                entity.progress++;
+                entity.didProcess = true;
+                dirty = true;
+
+                if (entity.progress >= entity.maxProgress) {
+                    entity.progress = 0;
+                    entity.finishRecipe(currentRecipe);
+                }
+            } else {
+                if (entity.progress != 0 || entity.didProcess) {
+                    entity.progress = 0;
+                    entity.didProcess = false;
+                    dirty = true;
+                }
+            }
+        } else {
+            if (entity.progress != 0 || entity.didProcess) {
+                entity.progress = 0;
+                entity.didProcess = false;
+                dirty = true;
+            }
+        }
+
+        if (dirty) {
+            entity.setChanged();
+            entity.sendUpdateToClient();
+        }
+    }
+
+    private boolean canProcess(ChemicalRecipe recipe) {
+        // Check item inputs (positional: recipe input i → slot SLOT_SOLID_INPUT_START + i)
+        List<RecipeInput> itemInputs = recipe.getItemInputs();
+        for (int i = 0; i < itemInputs.size(); i++) {
+            int slot = SLOT_SOLID_INPUT_START + i;
+            ItemStack slotStack = inventory.getStackInSlot(slot);
+            if (!itemInputs.get(i).matches(slotStack)) return false;
+        }
+
+        // Check fluid inputs (positional: recipe fluid i → inputTanks[i])
+        List<FluidStack> fluidInputs = recipe.getFluidInputs();
+        for (int i = 0; i < fluidInputs.size(); i++) {
+            FluidStack required = fluidInputs.get(i);
+            FluidTank tank = inputTanks[i];
+            if (tank.getFluid().isEmpty()
+                || tank.getFluid().getFluid() != required.getFluid()
+                || tank.getFluidAmount() < required.getAmount()) {
+                return false;
+            }
+        }
+
+        // Check item output space (positional: recipe output i → slot SLOT_SOLID_OUTPUT_START + i)
+        List<ItemStack> itemOutputs = recipe.getItemOutputs();
+        for (int i = 0; i < itemOutputs.size(); i++) {
+            ItemStack output = itemOutputs.get(i);
+            if (output.isEmpty()) continue;
+            int slot = SLOT_SOLID_OUTPUT_START + i;
+            ItemStack slotStack = inventory.getStackInSlot(slot);
+            if (!slotStack.isEmpty()) {
+                if (!ItemStack.isSameItemSameTags(slotStack, output)) return false;
+                if (slotStack.getCount() + output.getCount() > slotStack.getMaxStackSize()) return false;
+            }
+        }
+
+        // Check fluid output space (positional: recipe fluid output i → outputTanks[i])
+        List<FluidStack> fluidOutputs = recipe.getFluidOutputs();
+        for (int i = 0; i < fluidOutputs.size(); i++) {
+            FluidStack outputFluid = fluidOutputs.get(i);
+            FluidTank tank = outputTanks[i];
+            if (!tank.getFluid().isEmpty() && tank.getFluid().getFluid() != outputFluid.getFluid()) return false;
+            if (tank.getFluidAmount() + outputFluid.getAmount() > tank.getCapacity()) return false;
+        }
+
+        return true;
+    }
+
+    private void finishRecipe(ChemicalRecipe recipe) {
+        // Consume item inputs
+        List<RecipeInput> itemInputs = recipe.getItemInputs();
+        for (int i = 0; i < itemInputs.size(); i++) {
+            int slot = SLOT_SOLID_INPUT_START + i;
+            inventory.getStackInSlot(slot).shrink(itemInputs.get(i).getCount());
+        }
+
+        // Consume fluid inputs
+        List<FluidStack> fluidInputs = recipe.getFluidInputs();
+        for (int i = 0; i < fluidInputs.size(); i++) {
+            inputTanks[i].drain(fluidInputs.get(i).getAmount(), IFluidHandler.FluidAction.EXECUTE);
+        }
+
+        // Produce item outputs
+        List<ItemStack> itemOutputs = recipe.getItemOutputs();
+        for (int i = 0; i < itemOutputs.size(); i++) {
+            ItemStack output = itemOutputs.get(i);
+            if (output.isEmpty()) continue;
+            int slot = SLOT_SOLID_OUTPUT_START + i;
+            ItemStack slotStack = inventory.getStackInSlot(slot);
+            if (slotStack.isEmpty()) {
+                inventory.setStackInSlot(slot, output.copy());
+            } else {
+                slotStack.grow(output.getCount());
+            }
+        }
+
+        // Produce fluid outputs
+        List<FluidStack> fluidOutputs = recipe.getFluidOutputs();
+        for (int i = 0; i < fluidOutputs.size(); i++) {
+            outputTanks[i].fill(fluidOutputs.get(i).copy(), IFluidHandler.FluidAction.EXECUTE);
+        }
+    }
+
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    private void clientTick() {
+        com.hbm_m.sound.ClientSoundManager.updateSound(this, this.didProcess,
+                () -> new com.hbm_m.sound.ChemicalPlantSoundInstance(this.getBlockPos()));
     }
 
     private void chargeFromBattery() {
@@ -172,17 +308,16 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
 
     private void transferFluidsFromItems() {
         for (int i = 0; i < 3; i++) {
-            final int tankIdx = i;
-            int fillSlot = SLOT_FLUID_INPUT_START + i;
-            int emptySlot = SLOT_FLUID_INPUT_EMPTY_START + i;
-            ItemStack fillStack = inventory.getStackInSlot(fillSlot);
-            if (fillStack.isEmpty()) continue;
-            if (!inventory.getStackInSlot(emptySlot).isEmpty()) continue;
+            int fullContainerSlot = SLOT_FLUID_INPUT_START + i;
+            int emptyContainerSlot = SLOT_FLUID_INPUT_EMPTY_START + i;
+            ItemStack fullContainer = inventory.getStackInSlot(fullContainerSlot);
+            if (fullContainer.isEmpty()) continue;
+            if (!inventory.getStackInSlot(emptyContainerSlot).isEmpty()) continue;
 
-            var result = FluidUtil.tryEmptyContainer(fillStack, inputTanks[tankIdx], TANK_CAPACITY, null, false);
+            var result = FluidUtil.tryEmptyContainer(fullContainer, inputTanks[i], TANK_CAPACITY, null, true);
             if (result.isSuccess()) {
-                inventory.setStackInSlot(fillSlot, ItemStack.EMPTY);
-                inventory.setStackInSlot(emptySlot, result.getResult());
+                fullContainer.shrink(1);
+                inventory.setStackInSlot(emptyContainerSlot, result.getResult());
                 setChanged();
             }
         }
@@ -190,17 +325,16 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
 
     private void transferFluidsToItems() {
         for (int i = 0; i < 3; i++) {
-            final int tankIdx = i;
-            int emptySlot = SLOT_FLUID_OUTPUT_EMPTY_START + i;
-            int fullSlot = SLOT_FLUID_OUTPUT_START + i;
-            ItemStack emptyStack = inventory.getStackInSlot(emptySlot);
-            if (emptyStack.isEmpty()) continue;
-            if (!inventory.getStackInSlot(fullSlot).isEmpty()) continue;
+            int emptyContainerSlot = SLOT_FLUID_OUTPUT_START + i;
+            int filledContainerSlot = SLOT_FLUID_OUTPUT_EMPTY_START + i;
+            ItemStack emptyContainer = inventory.getStackInSlot(emptyContainerSlot);
+            if (emptyContainer.isEmpty()) continue;
+            if (!inventory.getStackInSlot(filledContainerSlot).isEmpty()) continue;
 
-            var result = FluidUtil.tryFillContainer(emptyStack, outputTanks[tankIdx], TANK_CAPACITY, null, false);
+            var result = FluidUtil.tryFillContainer(emptyContainer, outputTanks[i], TANK_CAPACITY, null, true);
             if (result.isSuccess()) {
-                inventory.setStackInSlot(emptySlot, ItemStack.EMPTY);
-                inventory.setStackInSlot(fullSlot, result.getResult());
+                emptyContainer.shrink(1);
+                inventory.setStackInSlot(filledContainerSlot, result.getResult());
                 setChanged();
             }
         }
@@ -290,11 +424,11 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
     }
 
     public int getProgress() {
-        return 0;
+        return progress;
     }
 
     public int getMaxProgress() {
-        return 70;
+        return maxProgress;
     }
 
     public float getAnim(float partialTicks) {
@@ -321,6 +455,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         if (recipe != null) {
             tag.putString("recipe", recipe);
         }
+        tag.putInt("progress", progress);
+        tag.putInt("maxProgress", maxProgress);
         tag.putFloat("anim", anim);
         tag.putFloat("prevAnim", prevAnim);
     }
@@ -338,6 +474,9 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         }
         didProcess = tag.getBoolean("didProcess");
         recipe = tag.contains("recipe") ? tag.getString("recipe") : null;
+        progress = tag.getInt("progress");
+        maxProgress = tag.getInt("maxProgress");
+        if (maxProgress <= 0) maxProgress = 100;
         anim = tag.getFloat("anim");
         prevAnim = tag.getFloat("prevAnim");
     }

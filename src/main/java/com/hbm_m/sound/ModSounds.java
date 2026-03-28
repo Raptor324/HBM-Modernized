@@ -87,6 +87,7 @@ public class ModSounds {
     public static final RegistryObject<SoundEvent> METAL_BOX_CLOSE = registerSoundEvents("block.metal_box_close");
     public static final RegistryObject<SoundEvent> PRESS_OPERATE = registerSoundEvents("block.press_operate");
     public static final RegistryObject<SoundEvent> SHREDDER = registerSoundEvents("block.shredder");
+    public static final RegistryObject<SoundEvent> CHEMICAL_PLANT = registerSoundEvents("block.chemical_plant");
 
     // Doors
     public static final RegistryObject<SoundEvent> GARAGE_MOVE = registerSoundEvents("block.garage_move");

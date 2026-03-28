@@ -353,6 +353,12 @@
       "hbm_m:block/motor"
     ]
   },
+  "block.chemical_plant": {
+    "subtitle": "sounds.hbm_m.subtitle.chemical_plant",
+    "sounds": [
+      "hbm_m:block/chemicalPlant"
+    ]
+  },
   "block.metal_box_open": {
     "subtitle": "sounds.hbm_m.subtitle.metal_box_open",
     "sounds": [

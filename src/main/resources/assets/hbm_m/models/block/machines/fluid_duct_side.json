@@ -1,0 +1,14 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/pipe_arm.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "hbm_m:item/ductuv",
+    "cap": "hbm_m:item/ducttop",
+    "body": "hbm_m:item/ductuv"
+  },
+  "transform": {
+    "translation": [0.5, 0.5, 0.5]
+  }
+}

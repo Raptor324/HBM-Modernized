@@ -76,6 +76,9 @@ public class ModMenuTypes {
 	public static final RegistryObject<MenuType<MachineFrackingTowerMenu>> FRACTURING_TOWER_MENU =
             MENUS.register("fracking_tower_menu", () -> IForgeMenuType.create(MachineFrackingTowerMenu::new));
 
+    public static final RegistryObject<MenuType<HeatingOvenMenu>> HEATING_OVEN_MENU =
+            MENUS.register("heating_oven_menu", () -> IForgeMenuType.create(HeatingOvenMenu::new));
+
     public static void register(IEventBus eventBus) {
         MENUS.register(eventBus);
     }

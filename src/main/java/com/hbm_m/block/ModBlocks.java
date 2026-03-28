@@ -40,9 +40,14 @@ import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.machines.MachineCentrifugeBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineCrystallizerBlock;
+import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
+import com.hbm_m.block.machines.HeatingOvenBlock;
+import com.hbm_m.block.machines.MachineIndustrialBoilerBlock;
+import com.hbm_m.block.machines.MachineIndustrialTurbineBlock;
 import com.hbm_m.block.machines.MachineHydraulicFrackiningTowerBlock;
 import com.hbm_m.block.machines.MachinePressBlock;
+import com.hbm_m.block.machines.MachineRefineryBlock;
 import com.hbm_m.block.machines.MachineShredderBlock;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
 import com.hbm_m.block.machines.UniversalMachinePartBlock;
@@ -317,6 +322,21 @@ public class ModBlocks {
 
 	public static final RegistryObject<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
             () -> new MachineFluidTankBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistryObject<Block> INDUSTRIAL_BOILER = registerBlockWithoutItem("industrial_boiler",
+            () -> new MachineIndustrialBoilerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistryObject<Block> REFINERY = registerBlockWithoutItem("refinery",
+            () -> new MachineRefineryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistryObject<Block> INDUSTRIAL_TURBINE = registerBlockWithoutItem("industrial_turbine",
+            () -> new MachineIndustrialTurbineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistryObject<Block> FLUID_DUCT = registerBlockWithoutItem("fluid_duct",
+            () -> new FluidDuctBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion()));
+
+    public static final RegistryObject<Block> HEATING_OVEN = registerBlock("heating_oven",
+            () -> new HeatingOvenBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     //---------------------------<ДВЕРИ>-------------------------------------
 

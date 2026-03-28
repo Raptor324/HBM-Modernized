@@ -54,10 +54,13 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
      */
     
     private MultiblockStructureHelper defineStructure() {
-        String[] layer0 = { "AAA",
+        // E = Energy connector (can receive power from cables)
+        // A = Default structural part
+        // C = Controller (the main block)
+        String[] layer0 = { "EAE",
                             "ACA",
-                            "AAA" 
-                        }; // Нижний
+                            "EAE" 
+                        }; // Нижний - corners are energy connectors
 
         String[] layer1 = { "AAA",
                             "AAA",
@@ -71,11 +74,13 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
 
         Map<Character, PartRole> roleMap = Map.of(
             'A', PartRole.DEFAULT,
-            'C', PartRole.CONTROLLER
+            'C', PartRole.CONTROLLER,
+            'E', PartRole.ENERGY_CONNECTOR
         );
 
         Map<Character, Supplier<BlockState>> symbolMap = Map.of(
-            'A', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
+            'A', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
+            'E', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
         );
 
         return MultiblockStructureHelper.createFromLayersWithRoles(
@@ -95,7 +100,10 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
             Direction facing = state.getValue(FACING);
             structureHelper.placeStructure(level, pos, facing, this);
 
-            // Регистрация энергоузлов (весь нижний слой может принимать энергию)
+            // Register the controller itself as energy node (required for receiving energy)
+            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
+
+            // Register energy connector parts as additional energy nodes
             for (BlockPos localPos : structureHelper.getStructureMap().keySet()) {
                 if (getPartRole(localPos).canReceiveEnergy()) {
                     BlockPos worldPos = structureHelper.getRotatedPos(pos, localPos, facing);
@@ -111,7 +119,10 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
             if (!level.isClientSide()) {
                 Direction facing = state.getValue(FACING);
                 
-                // Удаление из энергосети
+                // Remove controller from energy network
+                EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
+                
+                // Remove energy connector parts from energy network
                 for (BlockPos localPos : structureHelper.getStructureMap().keySet()) {
                     if (getPartRole(localPos).canReceiveEnergy()) {
                         BlockPos worldPos = structureHelper.getRotatedPos(pos, localPos, facing);
@@ -121,7 +132,7 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
 
                 BlockEntity be = level.getBlockEntity(pos);
                 if (be instanceof MachineChemicalPlantBlockEntity plant) {
-                    plant.drops(); // Метод для выпадения содержимого инвентаря
+                    plant.drops();
                 }
                 
                 structureHelper.destroyStructure(level, pos, facing);

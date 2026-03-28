@@ -6,6 +6,7 @@ import java.util.Map;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.gui.GUIMachineCentrifuge;
+import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.liquids.FluidBarrelItem;
@@ -13,6 +14,8 @@ import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.CentrifugeRecipes;
 import com.hbm_m.recipe.CentrifugeRecipes.RecipeInput;
+import com.hbm_m.recipe.ChemicalPlantRecipes;
+import com.hbm_m.recipe.ChemicalPlantRecipes.ChemicalRecipe;
 
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
@@ -40,22 +43,27 @@ public class HbmJeiPlugin implements IModPlugin {
     @Override
     public void registerCategories(IRecipeCategoryRegistration registration) {
         registration.addRecipeCategories(new CentrifugeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new ChemicalPlantJeiCategory(registration.getJeiHelpers().getGuiHelper()));
     }
 
     @Override
     public void registerRecipes(IRecipeRegistration registration) {
         registration.addRecipes(CentrifugeJeiCategory.RECIPE_TYPE, getCentrifugeRecipes());
+        registration.addRecipes(ChemicalPlantJeiCategory.RECIPE_TYPE, getChemicalPlantRecipes());
     }
 
     @Override
     public void registerRecipeCatalysts(IRecipeCatalystRegistration registration) {
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CENTRIFUGE.get()), CentrifugeJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.CHEMICAL_PLANT.get()), ChemicalPlantJeiCategory.RECIPE_TYPE);
     }
 
     @Override
     public void registerGuiHandlers(IGuiHandlerRegistration registration) {
         // Matches the old NEI transfer rect: new Rectangle(56, 0, 80, 38)
         registration.addRecipeClickArea(GUIMachineCentrifuge.class, 56, 0, 80, 38, CentrifugeJeiCategory.RECIPE_TYPE);
+        // Chemical Plant click area around the progress bar
+        registration.addRecipeClickArea(GUIMachineChemicalPlant.class, 62, 126, 70, 16, ChemicalPlantJeiCategory.RECIPE_TYPE);
     }
 
     @Override
@@ -104,6 +112,16 @@ public class HbmJeiPlugin implements IModPlugin {
             if (!inputStacks.isEmpty()) {
                 recipes.add(new CentrifugeJeiRecipe(inputStacks, outputs));
             }
+        }
+        
+        return recipes;
+    }
+
+    private static List<ChemicalPlantJeiRecipe> getChemicalPlantRecipes() {
+        List<ChemicalPlantJeiRecipe> recipes = new ArrayList<>();
+        
+        for (ChemicalRecipe recipe : ChemicalPlantRecipes.getRecipeList()) {
+            recipes.add(new ChemicalPlantJeiRecipe(recipe));
         }
         
         return recipes;

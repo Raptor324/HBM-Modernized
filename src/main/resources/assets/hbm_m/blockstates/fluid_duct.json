@@ -1,0 +1,31 @@
+{
+  "multipart": [
+    {
+      "apply": { "model": "hbm_m:block/machines/fluid_duct_core" }
+    },
+    {
+      "when": { "north": "true" },
+      "apply": { "model": "hbm_m:block/machines/fluid_duct_side", "uvlock": true }
+    },
+    {
+      "when": { "east": "true" },
+      "apply": { "model": "hbm_m:block/machines/fluid_duct_side", "y": 90, "uvlock": true }
+    },
+    {
+      "when": { "south": "true" },
+      "apply": { "model": "hbm_m:block/machines/fluid_duct_side", "y": 180, "uvlock": true }
+    },
+    {
+      "when": { "west": "true" },
+      "apply": { "model": "hbm_m:block/machines/fluid_duct_side", "y": 270, "uvlock": true }
+    },
+    {
+      "when": { "up": "true" },
+      "apply": { "model": "hbm_m:block/machines/fluid_duct_side", "x": 270, "uvlock": true }
+    },
+    {
+      "when": { "down": "true" },
+      "apply": { "model": "hbm_m:block/machines/fluid_duct_side", "x": 90, "uvlock": true }
+    }
+  ]
+}

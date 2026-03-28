@@ -45,6 +45,7 @@ public class ModPacketHandler {
         INSTANCE.registerMessage(id++, HighlightBlocksPacket.class, HighlightBlocksPacket::toBytes, HighlightBlocksPacket::fromBytes, HighlightBlocksPacket::handle);
 
         INSTANCE.registerMessage(id++, SetAssemblerRecipeC2SPacket.class, SetAssemblerRecipeC2SPacket::encode, SetAssemblerRecipeC2SPacket::decode, SetAssemblerRecipeC2SPacket::handle);
+        INSTANCE.registerMessage(id++, SetChemPlantRecipeC2SPacket.class, SetChemPlantRecipeC2SPacket::encode, SetChemPlantRecipeC2SPacket::decode, SetChemPlantRecipeC2SPacket::handle);
         INSTANCE.registerMessage(id++, ToggleWoodBurnerPacket.class, ToggleWoodBurnerPacket::encode, ToggleWoodBurnerPacket::decode, ToggleWoodBurnerPacket::handle);
         INSTANCE.registerMessage(id++, FluidTankModePacket.class, FluidTankModePacket::encode, FluidTankModePacket::decode, FluidTankModePacket::handle);
 

@@ -138,6 +138,21 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(MachineFluidTankBlockEntity::new,
                             ModBlocks.FLUID_TANK.get()).build(null));
 
+    public static final RegistryObject<BlockEntityType<MachineIndustrialBoilerBlockEntity>> INDUSTRIAL_BOILER_BE =
+            BLOCK_ENTITIES.register("industrial_boiler_be", () ->
+                    BlockEntityType.Builder.of(MachineIndustrialBoilerBlockEntity::new,
+                            ModBlocks.INDUSTRIAL_BOILER.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<MachineRefineryBlockEntity>> REFINERY_BE =
+            BLOCK_ENTITIES.register("refinery_be", () ->
+                    BlockEntityType.Builder.of(MachineRefineryBlockEntity::new,
+                            ModBlocks.REFINERY.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<MachineIndustrialTurbineBlockEntity>> INDUSTRIAL_TURBINE_BE =
+            BLOCK_ENTITIES.register("industrial_turbine_be", () ->
+                    BlockEntityType.Builder.of(MachineIndustrialTurbineBlockEntity::new,
+                            ModBlocks.INDUSTRIAL_TURBINE.get()).build(null));
+
     // ДВЕРИ
 
     public static final RegistryObject<BlockEntityType<DoorBlockEntity>> DOOR_ENTITY =
@@ -196,7 +211,16 @@ public class ModBlockEntities {
     public static final RegistryObject<BlockEntityType<ConverterBlockEntity>> CONVERTER_BE =
             BLOCK_ENTITIES.register("converter_be",
                     () -> BlockEntityType.Builder.of(ConverterBlockEntity::new, ModBlocks.CONVERTER_BLOCK.get()).build(null));
-        
+
+    public static final RegistryObject<BlockEntityType<HeatingOvenBlockEntity>> HEATING_OVEN_BE =
+            BLOCK_ENTITIES.register("heating_oven_be", () ->
+                    BlockEntityType.Builder.of(HeatingOvenBlockEntity::new,
+                            ModBlocks.HEATING_OVEN.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<FluidDuctBlockEntity>> FLUID_DUCT_BE =
+            BLOCK_ENTITIES.register("fluid_duct_be", () ->
+                    BlockEntityType.Builder.of(FluidDuctBlockEntity::new,
+                            ModBlocks.FLUID_DUCT.get()).build(null));
 
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITIES.register(eventBus);

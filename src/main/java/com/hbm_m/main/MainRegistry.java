@@ -42,6 +42,7 @@ import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.CentrifugeRecipes;
+import com.hbm_m.recipe.ChemicalPlantRecipes;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.world.biome.ModBiomes;
@@ -151,6 +152,9 @@ public class MainRegistry {
             // Initialize machine recipes
             CentrifugeRecipes.registerRecipes();
             LOGGER.info("CentrifugeRecipes initialized successfully");
+            
+            ChemicalPlantRecipes.registerRecipes();
+            LOGGER.info("ChemicalPlantRecipes initialized successfully");
 
             LOGGER.info("HazardSystem initialized successfully");
         });
@@ -672,6 +676,16 @@ public class MainRegistry {
             event.accept(ModItems.COIL_GOLD_TORUS);
             event.accept(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS);
 
+            // Mineral Pipes
+            event.accept(ModItems.PIPE_IRON);
+            event.accept(ModItems.PIPE_COPPER);
+            event.accept(ModItems.PIPE_GOLD);
+            event.accept(ModItems.PIPE_LEAD);
+            event.accept(ModItems.PIPE_STEEL);
+            event.accept(ModItems.PIPE_TUNGSTEN);
+            event.accept(ModItems.PIPE_TITANIUM);
+            event.accept(ModItems.PIPE_ALUMINUM);
+
             event.accept(ModItems.PLATE_ARMOR_TITANIUM);
             event.accept(ModItems.PLATE_ARMOR_AJR);
             event.accept(ModItems.PLATE_ARMOR_LUNAR);
@@ -1120,6 +1134,7 @@ public class MainRegistry {
             event.accept(ModBlocks.PRESS);
             event.accept(ModBlocks.BLAST_FURNACE);
             event.accept(ModBlocks.BLAST_FURNACE_EXTENSION);
+            event.accept(ModBlocks.HEATING_OVEN);
             event.accept(ModBlocks.SHREDDER);
             event.accept(ModBlocks.WOOD_BURNER);
             event.accept(ModBlocks.CHEMICAL_PLANT);
@@ -1129,6 +1144,9 @@ public class MainRegistry {
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
             event.accept(ModBlocks.FLUID_TANK);
+            event.accept(ModBlocks.INDUSTRIAL_BOILER);
+            event.accept(ModBlocks.INDUSTRIAL_TURBINE);
+            event.accept(ModBlocks.REFINERY);
             event.accept(ModBlocks.MACHINE_BATTERY);
             event.accept(ModBlocks.MACHINE_BATTERY_LITHIUM);
             event.accept(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM);
@@ -1210,6 +1228,11 @@ public class MainRegistry {
                 ItemStack filledBarrel = new ItemStack(ModItems.FLUID_BARREL.get());
                 FluidBarrelItem.setFluid(filledBarrel, new FluidStack(entry.getSource(), FluidBarrelItem.CAPACITY));
                 event.accept(filledBarrel, net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            }
+            // Fluid Ducts - one per fluid type
+            for (ModFluids.FluidEntry entry : HbmFluidRegistry.getOrderedFluids()) {
+                event.accept(com.hbm_m.item.liquids.FluidDuctItem.createStack(ModItems.FLUID_DUCT.get(), entry),
+                        net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             }
             event.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
             event.accept(new ItemStack(ModItems.INFINITE_WATER_500.get()));

@@ -47,6 +47,16 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PLATE_STEEL.get(), 3)
                 .addIngredient(ModItems.PLATE_TITANIUM.get(), 3)
                 .save(writer, "grenade_nuc");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.CHEMICAL_PLANT.get(), 1), 200, 300)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 8)
+                .addIngredient(ModItems.COIL_TUNGSTEN.get(), 2)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
+                .addIngredient(ModItems.PIPE_COPPER.get(), 2)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.INSULATOR.get(), 16)
+                .save(writer, "chemical_plant");
     }
 
     private static void registerElectronics(Consumer<FinishedRecipe> writer) {
