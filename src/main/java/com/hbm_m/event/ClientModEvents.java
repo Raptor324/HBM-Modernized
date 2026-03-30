@@ -6,6 +6,7 @@ import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.implementations.DoorRenderer;
+import com.hbm_m.client.render.implementations.ChemicalPlantRenderer;
 import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRenderer;
@@ -80,6 +81,7 @@ public class ClientModEvents {
                 MachineAssemblerRenderer.flushInstancedBatches(event);
                 DoorRenderer.flushInstancedBatches(event);
                 MachinePressRenderer.flushInstancedBatches(event);
+                ChemicalPlantRenderer.flushInstancedBatches(event);
             }
         }
     }

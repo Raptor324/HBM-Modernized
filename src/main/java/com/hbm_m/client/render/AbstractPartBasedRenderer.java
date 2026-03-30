@@ -32,6 +32,11 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     protected abstract void renderParts(T blockEntity, M model, LegacyAnimator animator, float partialTick,
                                         int packedLight, int packedOverlay, PoseStack poseStack, MultiBufferSource bufferSource);
 
+    /** Поворот/сдвиг блока в локальных координатах перед {@link #renderParts}. */
+    protected void setupBlockTransform(LegacyAnimator animator, T blockEntity) {
+        animator.setupBlockTransform(getFacing(blockEntity));
+    }
+
     private Matrix4f currentModelViewMatrix = new Matrix4f();
     private boolean gpuStateSetup = false;
     
@@ -63,7 +68,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
 
         poseStack.pushPose();
         try {
-            animator.setupBlockTransform(getFacing(blockEntity));
+            setupBlockTransform(animator, blockEntity);
             renderParts(blockEntity, model, animator, partialTick, packedLight, packedOverlay, poseStack, bufferSource);
         } finally {
             poseStack.popPose();

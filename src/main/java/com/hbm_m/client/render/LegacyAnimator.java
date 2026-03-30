@@ -5,6 +5,7 @@ import java.util.List;
 import org.joml.Matrix4f;
 
 import com.hbm_m.block.entity.doors.DoorAnimator;
+import com.hbm_m.util.MultipartFacingTransforms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -54,13 +55,16 @@ public class LegacyAnimator implements DoorAnimator {
     public void setupBlockTransform(Direction facing) {
         translate(0.5, 0.0, 0.5);
         rotate(90, 0, 1, 0);
-        float facingRotation = switch (facing) {
-            case SOUTH -> 180.0F;
-            case WEST  -> 90.0F;
-            case EAST  -> 270.0F;
-            default    -> 0.0F;
-        };
-        rotate(facingRotation, 0, 1, 0);
+        rotate(MultipartFacingTransforms.legacyFacingRotationYDegrees(facing), 0, 1, 0);
+    }
+
+    /**
+     * Химзавод: один источник истины — canonical chunk-угол из
+     * {@link MultipartFacingTransforms#chemicalPlantCanonicalRotationY}, переведённый в PoseStack-конвенцию.
+     */
+    public void setupChemicalPlantBlockTransform(Direction facing) {
+        translate(0.5, 0.0, 0.5);
+        rotate(MultipartFacingTransforms.chemicalPlantPoseRotationY(facing), 0, 1, 0);
     }
 
     // ===== CPU рендер =====

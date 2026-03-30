@@ -32,6 +32,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
@@ -41,11 +42,21 @@ import net.minecraftforge.network.NetworkHooks;
 public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    /** Рама: блок на y+3 от контроллера (1.7.10). В BlockState для Iris/chunk mesh. */
+    public static final BooleanProperty FRAME = BooleanProperty.create("frame");
+    /**
+     * true — идёт «работа» (крафт); animated части только в BER, в baked только Base+Frame.
+     * false — простой: Slider+Spinner запекаются в baked (idle). Пока крафта нет — всегда false.
+     */
+    public static final BooleanProperty RENDER_ACTIVE = BooleanProperty.create("render_active");
     private final MultiblockStructureHelper structureHelper;
 
     public MachineChemicalPlantBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any()
+            .setValue(FACING, Direction.NORTH)
+            .setValue(FRAME, false)
+            .setValue(RENDER_ACTIVE, false));
         this.structureHelper = defineStructure();
     }
 
@@ -175,7 +186,7 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, FRAME, RENDER_ACTIVE);
     }
 
     @Nullable

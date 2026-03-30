@@ -14,6 +14,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.client.loader.DoorModelLoader;
+import com.hbm_m.client.loader.ChemicalPlantModelLoader;
 import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
 import com.hbm_m.client.loader.MachineAssemblerModelLoader;
 import com.hbm_m.client.loader.MachineFluidTankModelLoader;
@@ -307,6 +308,7 @@ public class ClientSetup {
 
         event.register("procedural_wire", new ProceduralWireLoader());
         event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
+        event.register("chemical_plant_loader", new ChemicalPlantModelLoader());
         event.register("machine_assembler_loader", new MachineAssemblerModelLoader());
         event.register("hydraulic_frackining_tower_loader", new MachineHydraulicFrackiningTowerModelLoader());
         event.register("fluid_tank_loader", new MachineFluidTankModelLoader());
@@ -314,7 +316,7 @@ public class ClientSetup {
         event.register("template_loader", new TemplateModelLoader());
         event.register("press_loader", new PressModelLoader());
 
-        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader");
+        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, chemical_plant_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader");
     }
 
     @SubscribeEvent
@@ -367,6 +369,7 @@ public class ClientSetup {
                         MachineHydraulicFrackiningTowerRenderer.clearCaches();
                         DoorRenderer.clearAllCaches();
                         MachinePressRenderer.clearCaches();
+                        ChemicalPlantRenderer.clearCaches();
                         GlobalMeshCache.clearAll();
                         AbstractObjArmorLayer.clearAllCaches();
                         MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");
@@ -385,6 +388,7 @@ public class ClientSetup {
             MachineHydraulicFrackiningTowerRenderer.clearCaches();
             DoorRenderer.clearAllCaches();
             MachinePressRenderer.clearCaches();
+            ChemicalPlantRenderer.clearCaches();
             GlobalMeshCache.clearAll();
             
             // Очищаем кэши рендеринга брони

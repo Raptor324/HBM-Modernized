@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
+import com.hbm_m.util.MultipartFacingTransforms;
 
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -185,12 +186,9 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
     }
 
     private static int getRotationYForFacing(BlockState state) {
-        if (!state.hasProperty(MachineAdvancedAssemblerBlock.FACING)) return 90;
-        return (switch (state.getValue(MachineAdvancedAssemblerBlock.FACING)) {
-            case SOUTH -> 180;
-            case WEST -> 270;
-            case EAST -> 90;
-            default -> 0;
-        } + 270) % 360;
+        if (!state.hasProperty(MachineAdvancedAssemblerBlock.FACING)) {
+            return 90;
+        }
+        return MultipartFacingTransforms.advancedAssemblerBakedRotationY(state.getValue(MachineAdvancedAssemblerBlock.FACING));
     }
 }

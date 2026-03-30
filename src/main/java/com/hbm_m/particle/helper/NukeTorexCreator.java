@@ -1,5 +1,6 @@
 package com.hbm_m.particle.helper;
 
+import com.hbm_m.particle.nt.NukeExplosionRings;
 import com.hbm_m.particle.nt.NukeTorex;
 import com.hbm_m.particle.nt.ParticleEngineNT;
 import com.hbm_m.util.BobMathUtil;
@@ -38,5 +39,8 @@ public class NukeTorexCreator implements IParticleCreator {
         NukeTorex torex = new NukeTorex(level, x, y, z).setScale(clampedScale, true);
         torex.setType(type);
         ParticleEngineNT.INSTANCE.add(torex);
+
+        NukeExplosionRings rings = new NukeExplosionRings(level, x, y, z).setScale(clampedScale);
+        ParticleEngineNT.INSTANCE.add(rings);
     }
 }

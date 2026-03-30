@@ -17,6 +17,7 @@ import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.util.MultipartFacingTransforms;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -246,21 +247,16 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     }
 
     /**
-     * Угол Y для выравнивания baked-модели с BER (VBO).
-     * BER: translate(0.5,0,0.5) + rotate(90°) + facing + doOffsetTransform.
-     * Должен совпадать с setupBlockTransform + doorDecl.doOffsetTransform.
+     * Угол Y для chunk/Iris квадов двери (отдельная таблица углов + offset из {@link DoorDecl}).
      */
     private int getRotationYForFacing(BlockState state) {
-        if (!state.hasProperty(DoorBlock.FACING)) return 90;
-        int facingDeg = switch (state.getValue(DoorBlock.FACING)) {
-            case SOUTH -> 0;
-            case WEST -> 90;
-            case EAST -> 270;
-            default -> 180;
-        };
+        if (!state.hasProperty(DoorBlock.FACING)) {
+            return 90;
+        }
         DoorDecl doorDecl = DoorDeclRegistry.getById(extractDoorTypeFromPath(doorId.getPath()));
         int offset = doorDecl != null ? doorDecl.getBakedModelRotationOffsetY() : 0;
-        return (90 + facingDeg + offset + 360) % 360;
+        return MultipartFacingTransforms.doorChunkMeshRotationY(
+            state.getValue(DoorBlock.FACING), offset);
     }
 
     /**

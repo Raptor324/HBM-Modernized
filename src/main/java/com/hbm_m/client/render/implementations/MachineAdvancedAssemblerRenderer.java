@@ -10,8 +10,8 @@ import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
-import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.PartGeometry;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
@@ -100,10 +100,12 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     private static InstancedStaticPartRenderer createInstancedForPart(MachineAdvancedAssemblerBakedModel model, String partName) {
         BakedModel part = model.getPart(partName);
         if (part == null) return null;
-        var data = ObjModelVboBuilder.buildSinglePart(part, partName);
+        String cacheKey = "assembler_" + partName;
+        PartGeometry geo = GlobalMeshCache.getOrCompilePartGeometry(cacheKey, part);
+        if (geo.isEmpty()) return null;
+        var data = geo.toVboData(partName);
         if (data == null) return null;
-        var quads = GlobalMeshCache.getOrCompile("assembler_" + partName, part);
-        return new InstancedStaticPartRenderer(data, quads);
+        return new InstancedStaticPartRenderer(data, geo.solidQuads());
     }
 
     //  Wrapper с double-check locking
