@@ -1,12 +1,12 @@
 {
   "variants": {
-    "facing=north,lit=false": { "model": "hbm_m:block/industrial_boiler", "y": 0 },
-    "facing=south,lit=false": { "model": "hbm_m:block/industrial_boiler", "y": 180 },
-    "facing=west,lit=false":  { "model": "hbm_m:block/industrial_boiler", "y": 270 },
-    "facing=east,lit=false":  { "model": "hbm_m:block/industrial_boiler", "y": 90 },
-    "facing=north,lit=true": { "model": "hbm_m:block/industrial_boiler", "y": 0 },
-    "facing=south,lit=true": { "model": "hbm_m:block/industrial_boiler", "y": 180 },
-    "facing=west,lit=true":  { "model": "hbm_m:block/industrial_boiler", "y": 270 },
-    "facing=east,lit=true":  { "model": "hbm_m:block/industrial_boiler", "y": 90 }
+    "facing=north,lit=false": { "model": "hbm_m:block/machines/industrial_boiler", "y": 0 },
+    "facing=south,lit=false": { "model": "hbm_m:block/machines/industrial_boiler", "y": 180 },
+    "facing=west,lit=false":  { "model": "hbm_m:block/machines/industrial_boiler", "y": 270 },
+    "facing=east,lit=false":  { "model": "hbm_m:block/machines/industrial_boiler", "y": 90 },
+    "facing=north,lit=true": { "model": "hbm_m:block/machines/industrial_boiler", "y": 0 },
+    "facing=south,lit=true": { "model": "hbm_m:block/machines/industrial_boiler", "y": 180 },
+    "facing=west,lit=true":  { "model": "hbm_m:block/machines/industrial_boiler", "y": 270 },
+    "facing=east,lit=true":  { "model": "hbm_m:block/machines/industrial_boiler", "y": 90 }
   }
 }

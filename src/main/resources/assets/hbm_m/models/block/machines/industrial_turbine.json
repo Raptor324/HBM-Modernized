@@ -1,6 +1,6 @@
 {
   "loader": "forge:obj",
-  "model": "hbm_m:models/block/industrial_turbine.obj",
+  "model": "hbm_m:models/block/machines/industrial_turbine.obj",
   "flip_v": true,
   "render_type": "minecraft:cutout",
   "textures": {
@@ -8,8 +8,8 @@
     "default": "hbm_m:block/machine/industrial_turbine"
   },
   "transform": {
-    "translation": [0.5, 0, 0.5],
-    "rotation": [0, 0, 0],
+    "translation": [0.5, 0, -3.5],
+    "rotation": [0, 90, 0],
     "scale": 1.0
   },
   "display": {

@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 
 import javax.annotation.Nullable;
 
-import com.google.common.collect.ImmutableMap;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
@@ -18,12 +17,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
@@ -32,24 +31,68 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
+import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
 
 /**
  * Industrial Turbine - converts steam to energy (HE).
- * Multiblock structure: 3x3x7
+ * Multiblock structure: 3x3x7 (в плане 3x7, высота 3 блока).
  * Model parts: Turbine (body), Flywheel (animated), Gauge
  */
 public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
-    public MachineIndustrialTurbineBlock(Properties properties) {
+    private final MultiblockStructureHelper structureHelper;
+
+    public MachineIndustrialTurbineBlock(BlockBehaviour.Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.structureHelper = defineStructure();
+    }
+
+    private static MultiblockStructureHelper defineStructure() {
+        // 7 рядов по Z (от фронта к заду), 3 по X; контроллер — центр переднего ряда нижнего слоя.
+        String[] base = {
+            "UOOOUOO",
+            "OOOOOOO",
+            "UOOCUOO"
+        };
+        String[] medium = {
+            "OOOOOOO",
+            "OOOOOOE",
+            "OOOOOOO"
+        };
+        String[] upper = {
+            "OOOOOOO",
+            "OOOOOOO",
+            "OOOOOOO"
+        };
+
+        Map<Character, PartRole> roleMap = Map.of(
+                'C', PartRole.CONTROLLER,
+                'O', PartRole.DEFAULT,
+                'E', PartRole.ENERGY_CONNECTOR,
+                'U', PartRole.UNIVERSAL_CONNECTOR
+        );
+
+        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
+
+        return MultiblockStructureHelper.createFromLayersWithRoles(
+                new String[][] { base, medium, upper },
+                symbolMap,
+                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
+                roleMap,
+                null,
+                null
+        );
     }
 
     @Override
@@ -73,16 +116,15 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
         super.onPlace(state, level, pos, oldState, isMoving);
 
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            MultiblockStructureHelper helper = getStructureHelper();
             Direction facing = state.getValue(FACING);
-
-            helper.placeStructure(level, pos, facing, this);
+            structureHelper.placeStructure(level, pos, facing, this);
 
             EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
 
-            for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                    BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
+            for (BlockPos gridPos : structureHelper.getStructureMap().keySet()) {
+                PartRole role = structureHelper.resolvePartRole(gridPos, this);
+                if (role.canReceiveEnergy()) {
+                    BlockPos worldPos = structureHelper.getRotatedPos(pos, gridPos, facing);
                     EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
                 }
             }
@@ -92,14 +134,14 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock() && !level.isClientSide()) {
-            MultiblockStructureHelper helper = getStructureHelper();
             Direction facing = state.getValue(FACING);
 
             EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
 
-            for (BlockPos localPos : helper.getStructureMap().keySet()) {
-                if (getPartRole(localPos) == PartRole.ENERGY_CONNECTOR) {
-                    BlockPos worldPos = helper.getRotatedPos(pos, localPos, facing);
+            for (BlockPos gridPos : structureHelper.getStructureMap().keySet()) {
+                PartRole role = structureHelper.resolvePartRole(gridPos, this);
+                if (role.canReceiveEnergy()) {
+                    BlockPos worldPos = structureHelper.getRotatedPos(pos, gridPos, facing);
                     EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
                 }
             }
@@ -109,7 +151,7 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
                 turbine.drops();
             }
 
-            helper.destroyStructure(level, pos, facing);
+            structureHelper.destroyStructure(level, pos, facing);
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
@@ -136,47 +178,33 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
         return createTickerHelper(type, ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), MachineIndustrialTurbineBlockEntity::tick);
     }
 
-    // --- IMultiblockController ---
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+    }
 
-    private static MultiblockStructureHelper STRUCTURE_HELPER;
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return structureHelper.getSpecificCollisionShape(structureHelper.getControllerOffset(), state.getValue(FACING));
+    }
+
+    @Override
+    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        if (structureHelper.isFullBlock(structureHelper.getControllerOffset(), state.getValue(FACING))) {
+            return Shapes.block();
+        }
+        return Shapes.empty();
+    }
+
+    // --- IMultiblockController ---
 
     @Override
     public MultiblockStructureHelper getStructureHelper() {
-        if (STRUCTURE_HELPER == null) {
-            STRUCTURE_HELPER = new MultiblockStructureHelper(defineStructure(), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
-        }
-        return STRUCTURE_HELPER;
-    }
-
-    /**
-     * 3x3x7 multiblock. Controller at front center bottom (0,0,0).
-     * Structure extends x=-1..1, y=0..2, z=0..6 behind the controller.
-     */
-    private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
-        ImmutableMap.Builder<BlockPos, Supplier<BlockState>> builder = ImmutableMap.builder();
-        for (int y = 0; y <= 2; y++) {
-            for (int x = -1; x <= 1; x++) {
-                for (int z = 0; z <= 6; z++) {
-                    if (x == 0 && y == 0 && z == 0) continue; // Skip controller
-                    builder.put(new BlockPos(x, y, z), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
-                }
-            }
-        }
-        return builder.build();
+        return structureHelper;
     }
 
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
-        // Energy connectors: back corners at bottom (y=0, z=6, x=-1 or x=1)
-        if (localOffset.getY() == 0 && localOffset.getZ() == 6
-                && (localOffset.getX() == -1 || localOffset.getX() == 1)) {
-            return PartRole.ENERGY_CONNECTOR;
-        }
-        // Fluid connectors: sides at front (y=0, z=0, x=-1 or x=1)
-        if (localOffset.getY() == 0 && localOffset.getZ() == 0
-                && (localOffset.getX() == -1 || localOffset.getX() == 1)) {
-            return PartRole.FLUID_CONNECTOR;
-        }
-        return PartRole.DEFAULT;
+        return structureHelper.resolvePartRole(localOffset, this);
     }
 }

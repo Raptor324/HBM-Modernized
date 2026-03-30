@@ -6,7 +6,7 @@
   "children": {
     "industrial_boiler_model": {
       "loader": "forge:obj",
-      "model": "hbm_m:models/block/industrial_boiler.obj",
+      "model": "hbm_m:models/block/machines/industrial_boiler.obj",
       "flip_v": true,
       "textures": {
         "default": "hbm_m:block/machine/industrial_boiler"
