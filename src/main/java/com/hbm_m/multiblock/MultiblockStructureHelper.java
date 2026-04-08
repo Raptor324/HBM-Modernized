@@ -51,6 +51,8 @@ public class MultiblockStructureHelper {
     private final Map<BlockPos, Character> positionSymbolMap;
     private final Map<Direction, VoxelShape> shapeCache = new HashMap<>();
     private final Map<BlockPos, Set<Direction>> ladderLocalDirections = new HashMap<>();
+    /** Локальные стороны энергоприёма/отдачи относительно схемы (до поворота FACING). Ключ — позиция в сетке. */
+    private final Map<BlockPos, Set<Direction>> energyLocalDirections = new HashMap<>();
     private final Map<BlockPos, VoxelShape> partShapes;
     private final Map<BlockPos, VoxelShape> collisionShapes;
     // Позиция контроллера в структуре (относительно центра)
@@ -223,23 +225,16 @@ public class MultiblockStructureHelper {
      * @param symbolMap Карта символов на Supplier<BlockState>
      * @param phantomBlockState Состояние фантомного блока
      * @param roleMap Карта символов на PartRole. ОБЯЗАТЕЛЬНО должен содержать символ с ролью CONTROLLER.
+     * @param shapeMap необязательно: кастомные VoxelShape по символу
+     * @param collisionMap необязательно: коллизии по символу
+     * @param ladderSideMap необязательно: для символов с ролью LADDER — boolean[4] в порядке north, south, west, east.
+     *                      Если символа нет в карте — лестница со всех четырёх горизонтальных сторон.
+     * @param energySideMap необязательно: для ENERGY_CONNECTOR / UNIVERSAL_CONNECTOR — boolean[6] в порядке north, south, west, east, up, down.
+     *                      Если символа нет в карте — энергия со всех шести сторон.
      * @return Новый экземпляр MultiblockStructureHelper
-     * 
+     *
      * @example
-     * // Определяем структуру с контроллером в центре
-     * Map<Character, PartRole> roleMap = Map.of(
-     *     'A', PartRole.DEFAULT,           // 'A' - обычная часть
-     *     'B', PartRole.ENERGY_CONNECTOR,  // 'B' - энергетический коннектор
-     *     'C', PartRole.CONTROLLER         // 'C' - контроллер (ОБЯЗАТЕЛЬНО!)
-     * );
-     * 
-     * Map<Character, Supplier<BlockState>> symbolMap = Map.of(
-     *     'A', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-     *     'B', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-     *     'C', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
-     * );
-     * 
-     * String[] layer0 = {"BAB", "BAC", "BAB"};  // 'C' - контроллер структуры
+     * {@code createFromLayersWithRolesAndSides(layers, symbolMap, phantom, roleMap, Map.of('L', MultiblockSideTuples.ladder(true, false, false, false)), null)}
      */
     public static MultiblockStructureHelper createFromLayersWithRoles(
             String[][] layers,
@@ -247,11 +242,14 @@ public class MultiblockStructureHelper {
             Supplier<BlockState> phantomBlockState,
             Map<Character, PartRole> roleMap,
             Map<Character, VoxelShape> shapeMap,
-            Map<Character, VoxelShape> collisionMap ) {
+            Map<Character, VoxelShape> collisionMap,
+            Map<Character, boolean[]> ladderSideMap,
+            Map<Character, boolean[]> energySideMap) {
         
         Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
         Map<BlockPos, Character> positionSymbolMap = new HashMap<>();
         Map<BlockPos, Set<Direction>> ladderDirs = new HashMap<>();
+        Map<BlockPos, Set<Direction>> energyDirs = new HashMap<>();
         Map<BlockPos, VoxelShape> specificPartShapes = new HashMap<>();
         Map<BlockPos, VoxelShape> specificCollisionShapes = new HashMap<>();
         
@@ -280,11 +278,9 @@ public class MultiblockStructureHelper {
             if (layer == null) continue;
             maxDepth = Math.max(maxDepth, layer.length);
             for (String row : layer) {
-                int actualWidth = 0;
-                for (char c : row.toCharArray()) {
-                    if (!isClimbPrefix(c)) actualWidth++;
+                if (row != null) {
+                    maxWidth = Math.max(maxWidth, row.length());
                 }
-                maxWidth = Math.max(maxWidth, actualWidth);
             }
         }
         
@@ -300,19 +296,9 @@ public class MultiblockStructureHelper {
                 String row = layer[z];
                 if (row == null) continue;
 
-                int gridX = 0;
-                EnumSet<Direction> currentPrefixes = EnumSet.noneOf(Direction.class);
+                for (int gridX = 0; gridX < row.length(); gridX++) {
+                    char symbol = row.charAt(gridX);
 
-                for (int strIdx = 0; strIdx < row.length(); strIdx++) {
-                    char symbol = row.charAt(strIdx);
-
-                    // 1. Обработка префиксов
-                    if (symbol == '<') { currentPrefixes.add(Direction.WEST); continue; }
-                    if (symbol == '>') { currentPrefixes.add(Direction.EAST); continue; }
-                    if (symbol == '!') { currentPrefixes.add(Direction.NORTH); continue; }
-                    if (symbol == '?') { currentPrefixes.add(Direction.SOUTH); continue; }
-
-                    // 2. Обработка основного символа роли
                     PartRole role = roleMap.get(symbol);
                     int relX = gridX - centerX;
                     int relZ = z - centerZ;
@@ -323,8 +309,12 @@ public class MultiblockStructureHelper {
                             foundControllerPositions.add(pos);
                         } else {
                             structureMap.put(pos, symbolMap.get(symbol));
-                            if (role == PartRole.LADDER && !currentPrefixes.isEmpty()) {
-                                ladderDirs.put(pos, EnumSet.copyOf(currentPrefixes));
+                            if (role == PartRole.LADDER && ladderSideMap != null && ladderSideMap.containsKey(symbol)) {
+                                ladderDirs.put(pos, ladderTupleToLocalSet(symbol, ladderSideMap.get(symbol)));
+                            }
+                            if ((role == PartRole.ENERGY_CONNECTOR || role == PartRole.UNIVERSAL_CONNECTOR)
+                                    && energySideMap != null && energySideMap.containsKey(symbol)) {
+                                energyDirs.put(pos, energyTupleToLocalSet(symbol, energySideMap.get(symbol)));
                             }
                         }
                         positionSymbolMap.put(pos, symbol);
@@ -341,9 +331,6 @@ public class MultiblockStructureHelper {
                             }
                         }
                     }
-                    
-                    gridX++;
-                    currentPrefixes = EnumSet.noneOf(Direction.class);
                 }
             }
         }
@@ -382,7 +369,74 @@ public class MultiblockStructureHelper {
             specificPartShapes, specificCollisionShapes, finalControllerPos
         );
         helper.ladderLocalDirections.putAll(ladderDirs);
+        helper.energyLocalDirections.putAll(energyDirs);
         return helper;
+    }
+
+    private static final Direction[] LADDER_TUPLE_ORDER = {
+        Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST
+    };
+
+    private static final Direction[] ENERGY_TUPLE_ORDER = {
+        Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.UP, Direction.DOWN
+    };
+
+    private static EnumSet<Direction> ladderTupleToLocalSet(char symbol, boolean[] tuple) {
+        if (tuple == null || tuple.length != LADDER_TUPLE_ORDER.length) {
+            throw new IllegalArgumentException("ladderSideMap['" + symbol + "'] must be boolean[4] (north,south,west,east)");
+        }
+        EnumSet<Direction> set = EnumSet.noneOf(Direction.class);
+        for (int i = 0; i < LADDER_TUPLE_ORDER.length; i++) {
+            if (tuple[i]) {
+                set.add(LADDER_TUPLE_ORDER[i]);
+            }
+        }
+        return set;
+    }
+
+    private static EnumSet<Direction> energyTupleToLocalSet(char symbol, boolean[] tuple) {
+        if (tuple == null || tuple.length != ENERGY_TUPLE_ORDER.length) {
+            throw new IllegalArgumentException("energySideMap['" + symbol + "'] must be boolean[6] (north,south,west,east,up,down)");
+        }
+        EnumSet<Direction> set = EnumSet.noneOf(Direction.class);
+        for (int i = 0; i < ENERGY_TUPLE_ORDER.length; i++) {
+            if (tuple[i]) {
+                set.add(ENERGY_TUPLE_ORDER[i]);
+            }
+        }
+        return set;
+    }
+
+    /** Поворот локального направления схемы в мировое при ориентации структуры {@code facing}. */
+    private static Direction rotateLocalDirectionToWorld(Direction localDir, Direction facing) {
+        BlockPos rotatedVec = rotate(new BlockPos(localDir.getNormal()), facing);
+        return Direction.getNearest(rotatedVec.getX(), rotatedVec.getY(), rotatedVec.getZ());
+    }
+
+    public static MultiblockStructureHelper createFromLayersWithRoles(
+            String[][] layers,
+            Map<Character, Supplier<BlockState>> symbolMap,
+            Supplier<BlockState> phantomBlockState,
+            Map<Character, PartRole> roleMap,
+            Map<Character, VoxelShape> shapeMap,
+            Map<Character, VoxelShape> collisionMap) {
+        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, shapeMap, collisionMap, null, null);
+    }
+
+    /**
+     * Как полный {@link #createFromLayersWithRoles(String[][], Map, Supplier, Map, Map, Map, Map, Map)},
+     * но без {@code shapeMap}/{@code collisionMap} (они {@code null}).
+     * Отдельное имя — из‑за стирания типов нельзя перегрузить по {@code Map<Character, VoxelShape>} vs {@code Map<Character, boolean[]>}.
+     * Для tuple сторон см. {@link MultiblockSideTuples}.
+     */
+    public static MultiblockStructureHelper createFromLayersWithRolesAndSides(
+            String[][] layers,
+            Map<Character, Supplier<BlockState>> symbolMap,
+            Supplier<BlockState> phantomBlockState,
+            Map<Character, PartRole> roleMap,
+            Map<Character, boolean[]> ladderSideMap,
+            Map<Character, boolean[]> energySideMap) {
+        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, null, null, ladderSideMap, energySideMap);
     }
 
     public static MultiblockStructureHelper createFromLayersWithRoles(
@@ -390,7 +444,7 @@ public class MultiblockStructureHelper {
             Map<Character, Supplier<BlockState>> symbolMap,
             Supplier<BlockState> phantomBlockState,
             Map<Character, PartRole> roleMap) {
-        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, null, null);
+        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, null, null, null, null);
     }
     
     /**
@@ -526,10 +580,6 @@ public class MultiblockStructureHelper {
         return true;
     }
 
-    private static boolean isClimbPrefix(char c) {
-        return c == '<' || c == '>' || c == '!' || c == '?';
-    }
-
     /**
      * @return A Set of all local offsets for the multiblock parts, relative to the controller.
      */
@@ -582,11 +632,10 @@ public class MultiblockStructureHelper {
                     
                     if (localSides != null && !localSides.isEmpty()) {
                         for (Direction localDir : localSides) {
-                            BlockPos rotatedVec = rotate(new BlockPos(localDir.getNormal()), facing);
-                            worldSides.add(Direction.getNearest(rotatedVec.getX(), rotatedVec.getY(), rotatedVec.getZ()));
+                            worldSides.add(rotateLocalDirectionToWorld(localDir, facing));
                         }
                     } else {
-                        // Если префиксов нет — разрешаем все горизонтальные стороны
+                        // Нет записи в ladderSideMap — все горизонтальные стороны
                         worldSides.add(Direction.NORTH);
                         worldSides.add(Direction.SOUTH);
                         worldSides.add(Direction.EAST);
@@ -595,8 +644,18 @@ public class MultiblockStructureHelper {
                     partBe.setAllowedClimbSides(worldSides);
                 }
                 
-                // ENERGY_CONNECTOR и UNIVERSAL_CONNECTOR могут принимать энергию
+                // ENERGY_CONNECTOR и UNIVERSAL_CONNECTOR — стороны из energySideMap или все шесть
                 if (role == PartRole.ENERGY_CONNECTOR || role == PartRole.UNIVERSAL_CONNECTOR) {
+                    Set<Direction> localEnergy = energyLocalDirections.get(gridPos);
+                    EnumSet<Direction> worldEnergy = EnumSet.noneOf(Direction.class);
+                    if (localEnergy != null && !localEnergy.isEmpty()) {
+                        for (Direction localDir : localEnergy) {
+                            worldEnergy.add(rotateLocalDirectionToWorld(localDir, facing));
+                        }
+                    } else {
+                        Collections.addAll(worldEnergy, Direction.values());
+                    }
+                    partBe.setAllowedEnergySides(worldEnergy);
                     energyConnectorPositions.add(worldPos);
                 }
                 

@@ -37,4 +37,19 @@ public interface IMultiblockPart {
     void setAllowedClimbSides(java.util.Set<net.minecraft.core.Direction> sides);
     
     java.util.Set<net.minecraft.core.Direction> getAllowedClimbSides();
+
+    /**
+     * Стороны, с которых часть-коннектор принимает/отдаёт энергию (мировые направления после постройки).
+     * Для частей без роли энергоконнектора можно не вызывать; по умолчанию — см. default-реализацию.
+     */
+    default void setAllowedEnergySides(java.util.Set<net.minecraft.core.Direction> sides) {
+        // no-op для частей без хранения (например двери)
+    }
+
+    /**
+     * @return разрешённые стороны энергии; пустой набор на коннекторе трактуется как «все стороны» (совместимость).
+     */
+    default java.util.Set<net.minecraft.core.Direction> getAllowedEnergySides() {
+        return java.util.EnumSet.allOf(net.minecraft.core.Direction.class);
+    }
 }

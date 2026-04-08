@@ -28,6 +28,8 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     private BlockPos controllerPos;
     private PartRole role = PartRole.DEFAULT;
     private java.util.Set<Direction> allowedClimbSides = java.util.EnumSet.noneOf(Direction.class);
+    /** Мировые стороны энергоподключения; пусто = не задано (для коннектора — все стороны). */
+    private java.util.Set<Direction> allowedEnergySides = java.util.EnumSet.noneOf(Direction.class);
 
     public UniversalMachinePartBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.UNIVERSAL_MACHINE_PART_BE.get(), pPos, pBlockState);
@@ -80,6 +82,21 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         return this.allowedClimbSides;
     }
 
+    @Override
+    public void setAllowedEnergySides(java.util.Set<Direction> sides) {
+        this.allowedEnergySides = java.util.EnumSet.copyOf(sides);
+        this.setChanged();
+        if (level != null && !level.isClientSide()) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
+        }
+    }
+
+    @Override
+    public java.util.Set<Direction> getAllowedEnergySides() {
+        return this.allowedEnergySides;
+    }
+
     @NotNull
     @Override
     public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
@@ -96,6 +113,12 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         // === ДЕЛЕГИРОВАНИЕ ЭНЕРГИИ ===
         // ENERGY_CONNECTOR и UNIVERSAL_CONNECTOR оба принимают/отдают энергию (PartRole.canReceiveEnergy/canSendEnergy)
         if (this.role.canReceiveEnergy() || this.role.canSendEnergy()) {
+            boolean energySideOk = side == null
+                    || allowedEnergySides.isEmpty()
+                    || allowedEnergySides.contains(side);
+            if (!energySideOk) {
+                return super.getCapability(cap, side);
+            }
 
             // HBM API (Provider, Receiver, Connector)
             if (cap == ModCapabilities.HBM_ENERGY_PROVIDER ||
@@ -145,6 +168,11 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             for (Direction dir : allowedClimbSides) mask |= (1 << dir.get3DDataValue());
             pTag.putInt("ClimbSides", mask);
         }
+        if (!allowedEnergySides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedEnergySides) mask |= (1 << dir.get3DDataValue());
+            pTag.putInt("EnergySides", mask);
+        }
     }
 
     @Override
@@ -165,6 +193,13 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             allowedClimbSides.clear();
             for (Direction dir : Direction.values()) {
                 if ((mask & (1 << dir.get3DDataValue())) != 0) allowedClimbSides.add(dir);
+            }
+        }
+        if (pTag.contains("EnergySides")) {
+            int mask = pTag.getInt("EnergySides");
+            allowedEnergySides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) allowedEnergySides.add(dir);
             }
         }
     }
