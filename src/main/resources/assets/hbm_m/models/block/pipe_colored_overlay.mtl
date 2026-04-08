@@ -1,0 +1,3 @@
+newmtl pipe_skin
+map_Kd #overlay
+forge_TintIndex 1

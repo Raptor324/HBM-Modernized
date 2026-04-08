@@ -20,7 +20,6 @@ import com.hbm_m.client.loader.MachineFluidTankModelLoader;
 import com.hbm_m.client.loader.MachineHydraulicFrackiningTowerModelLoader;
 import com.hbm_m.client.loader.HeatingOvenModelLoader;
 import com.hbm_m.client.loader.PressModelLoader;
-import com.hbm_m.client.loader.ProceduralWireLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
 import com.hbm_m.client.overlay.OverlayGeiger;
 import com.hbm_m.client.overlay.OverlayInfoToast;
@@ -299,7 +298,6 @@ public class ClientSetup {
         // DoorDeclRegistry.init();
         MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
 
-        event.register("procedural_wire", new ProceduralWireLoader());
         event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
         event.register("machine_assembler_loader", new MachineAssemblerModelLoader());
         event.register("hydraulic_frackining_tower_loader", new MachineHydraulicFrackiningTowerModelLoader());
@@ -309,7 +307,7 @@ public class ClientSetup {
         event.register("press_loader", new PressModelLoader());
         event.register("heating_oven_loader", new HeatingOvenModelLoader());
 
-        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader, heating_oven_loader");
+        MainRegistry.LOGGER.info("Registered geometry loaders: advanced_assembly_machine_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader, heating_oven_loader");
     }
 
     @SubscribeEvent
@@ -332,7 +330,7 @@ public class ClientSetup {
         event.register((stack, tintIndex) -> {
             if (tintIndex == 0) return 0xFFFFFF;
             return com.hbm_m.item.liquids.FluidDuctItem.getTintColor(stack);
-        }, ModItems.FLUID_DUCT.get());
+        }, ModItems.FLUID_DUCT.get(), ModItems.FLUID_DUCT_COLORED.get(), ModItems.FLUID_DUCT_SILVER.get());
         // Mineral Pipes - tint layer0 with the pipe's mineral color
         event.register((stack, tintIndex) -> {
             if (stack.getItem() instanceof com.hbm_m.item.MineralPipeItem pipe) {
@@ -348,7 +346,8 @@ public class ClientSetup {
     public static void onRegisterBlockColors(RegisterColorHandlersEvent.Block event) {
         // Fluid Duct block - tint with the fluid's color from the BlockEntity
         event.register((state, level, pos, tintIndex) -> {
-            if (tintIndex != 0 || level == null || pos == null) return 0xFFFFFF;
+            if (tintIndex == 0) return 0xFFFFFF;
+            if (tintIndex != 1 || level == null || pos == null) return 0xFFFFFF;
             var be = level.getBlockEntity(pos);
             if (be instanceof com.hbm_m.block.entity.machines.FluidDuctBlockEntity ductBe) {
                 var fluid = ductBe.getFluidType();
@@ -357,7 +356,9 @@ public class ClientSetup {
                 }
             }
             return 0xFFFFFF;
-        }, com.hbm_m.block.ModBlocks.FLUID_DUCT.get());
+        }, com.hbm_m.block.ModBlocks.FLUID_DUCT.get(),
+                com.hbm_m.block.ModBlocks.FLUID_DUCT_COLORED.get(),
+                com.hbm_m.block.ModBlocks.FLUID_DUCT_SILVER.get());
     }
 
     @SubscribeEvent

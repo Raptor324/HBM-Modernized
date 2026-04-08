@@ -220,7 +220,9 @@ public class ModBlockEntities {
     public static final RegistryObject<BlockEntityType<FluidDuctBlockEntity>> FLUID_DUCT_BE =
             BLOCK_ENTITIES.register("fluid_duct_be", () ->
                     BlockEntityType.Builder.of(FluidDuctBlockEntity::new,
-                            ModBlocks.FLUID_DUCT.get()).build(null));
+                            ModBlocks.FLUID_DUCT.get(),
+                            ModBlocks.FLUID_DUCT_COLORED.get(),
+                            ModBlocks.FLUID_DUCT_SILVER.get()).build(null));
 
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITIES.register(eventBus);

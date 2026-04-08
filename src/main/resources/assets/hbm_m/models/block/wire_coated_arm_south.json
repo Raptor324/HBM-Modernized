@@ -1,0 +1,25 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/wire_coated.obj",
+  "flip_v": true,
+  "render_type": "minecraft:solid",
+  "textures": {
+    "particle": "hbm_m:block/wire_coated",
+    "surface": "hbm_m:block/wire_coated"
+  },
+  "transform": {
+    "translation": [0.5, 0.5, 0.5]
+  },
+  "visibility": {
+    "negY": false,
+    "negX": false,
+    "negZ": true,
+    "posX": false,
+    "posY": false,
+    "posZ": false,
+    "Core": false,
+    "CZ": false,
+    "CX": false,
+    "CY": false
+  }
+}

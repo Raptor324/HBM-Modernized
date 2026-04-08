@@ -1700,7 +1700,14 @@ public class ModItems {
 
     // Fluid Duct - pipe per fluid type, overlay tinted with fluid color (like fluid barrel)
     public static final RegistryObject<Item> FLUID_DUCT = ITEMS.register("fluid_duct",
-            () -> new FluidDuctItem(new Item.Properties()));
+            () -> new FluidDuctItem(new Item.Properties(), ModBlocks.FLUID_DUCT,
+                    "item.hbm_m.fluid_duct", "item.hbm_m.fluid_duct.empty"));
+    public static final RegistryObject<Item> FLUID_DUCT_COLORED = ITEMS.register("fluid_duct_colored",
+            () -> new FluidDuctItem(new Item.Properties(), ModBlocks.FLUID_DUCT_COLORED,
+                    "item.hbm_m.fluid_duct_colored", "item.hbm_m.fluid_duct_colored.empty"));
+    public static final RegistryObject<Item> FLUID_DUCT_SILVER = ITEMS.register("fluid_duct_silver",
+            () -> new FluidDuctItem(new Item.Properties(), ModBlocks.FLUID_DUCT_SILVER,
+                    "item.hbm_m.fluid_duct_silver", "item.hbm_m.fluid_duct_silver.empty"));
 
     //=============================== ВЁДРА ДЛЯ ЖИДКОСТЕЙ ===============================//
 

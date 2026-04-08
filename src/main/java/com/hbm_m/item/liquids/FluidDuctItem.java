@@ -1,12 +1,12 @@
 package com.hbm_m.item.liquids;
 
 import java.util.List;
+import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.ModFluids;
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.FluidDuctBlockEntity;
 import com.hbm_m.block.machines.FluidDuctBlock;
 
@@ -30,25 +30,31 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.registries.ForgeRegistries;
 
 /**
- * Fluid Duct - A pipe item for each fluid type. Each fluid has its own duct variant,
- * stored via NBT. The overlay layer is tinted with the fluid's color.
- * Right-click to place as a FluidDuctBlock.
+ * Fluid Duct — places the matching {@link FluidDuctBlock} style; fluid type in NBT for tint/transport.
  */
 public class FluidDuctItem extends Item {
 
     public static final String NBT_FLUID_TYPE = "FluidType";
 
-    public FluidDuctItem(Properties properties) {
+    private final Supplier<Block> placedBlock;
+    private final String translationWithFluid;
+    private final String translationEmpty;
+
+    public FluidDuctItem(Properties properties, Supplier<Block> placedBlock,
+            String translationWithFluid, String translationEmpty) {
         super(properties);
+        this.placedBlock = placedBlock;
+        this.translationWithFluid = translationWithFluid;
+        this.translationEmpty = translationEmpty;
     }
 
     @Override
     public Component getName(ItemStack stack) {
         FluidStack fluid = getFluidType(stack);
         if (fluid.isEmpty()) {
-            return Component.translatable("item.hbm_m.fluid_duct.empty");
+            return Component.translatable(translationEmpty);
         }
-        return Component.translatable("item.hbm_m.fluid_duct", fluid.getDisplayName());
+        return Component.translatable(translationWithFluid, fluid.getDisplayName());
     }
 
     @Override
@@ -63,24 +69,20 @@ public class FluidDuctItem extends Item {
         Direction face = context.getClickedFace();
         BlockPos placePos = clickedPos.relative(face);
 
-        // Check if target space is replaceable
         BlockState existingState = level.getBlockState(placePos);
         if (!existingState.canBeReplaced()) {
             return InteractionResult.FAIL;
         }
 
-        // Check if player can edit
         if (context.getPlayer() != null && !context.getPlayer().mayUseItemAt(placePos, face, context.getItemInHand())) {
             return InteractionResult.FAIL;
         }
 
         if (!level.isClientSide()) {
-            Block ductBlock = ModBlocks.FLUID_DUCT.get();
+            Block ductBlock = placedBlock.get();
             BlockState ductState = ductBlock.defaultBlockState();
-            // Place with UPDATE_CLIENTS only — defer neighbor notifications until fluid type is set
-            level.setBlock(placePos, ductState, 2);
+            level.setBlock(placePos, ductState, Block.UPDATE_CLIENTS);
 
-            // Set the fluid type on the block entity
             BlockEntity be = level.getBlockEntity(placePos);
             if (be instanceof FluidDuctBlockEntity ductBe) {
                 FluidStack fluid = getFluidType(context.getItemInHand());
@@ -89,18 +91,16 @@ public class FluidDuctItem extends Item {
                 }
             }
 
-            // Now recalculate connections (fluid type is known) and notify neighbors
-            if (ductBlock instanceof FluidDuctBlock ductBlockInstance) {
-                BlockState connected = ductBlockInstance.getConnectionState(level, placePos);
-                level.setBlock(placePos, connected, 3);
+            if (ductBlock instanceof FluidDuctBlock fd) {
+                BlockState connected = fd.getConnectionState(level, placePos);
+                level.setBlock(placePos, connected, Block.UPDATE_ALL);
+                FluidDuctBlock.refreshAdjacentDucts(level, placePos);
             }
 
-            // Play placement sound
             SoundType sound = ductState.getSoundType();
             level.playSound(null, placePos, sound.getPlaceSound(), SoundSource.BLOCKS,
                     (sound.getVolume() + 1.0F) / 2.0F, sound.getPitch() * 0.8F);
 
-            // Consume item
             if (context.getPlayer() != null && !context.getPlayer().getAbilities().instabuild) {
                 context.getItemInHand().shrink(1);
             }
@@ -109,7 +109,6 @@ public class FluidDuctItem extends Item {
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
-    /** Gets the fluid type stored in the duct. */
     public static FluidStack getFluidType(ItemStack stack) {
         if (stack.hasTag() && stack.getTag().contains(NBT_FLUID_TYPE)) {
             String fluidName = stack.getTag().getString(NBT_FLUID_TYPE);
@@ -121,7 +120,6 @@ public class FluidDuctItem extends Item {
         return FluidStack.EMPTY;
     }
 
-    /** Sets the fluid type stored in the duct. */
     public static void setFluidType(ItemStack stack, Fluid fluid) {
         ResourceLocation loc = ForgeRegistries.FLUIDS.getKey(fluid);
         if (loc != null) {
@@ -129,14 +127,12 @@ public class FluidDuctItem extends Item {
         }
     }
 
-    /** Creates an ItemStack of this duct for a specific fluid entry. */
     public static ItemStack createStack(Item ductItem, ModFluids.FluidEntry entry) {
         ItemStack stack = new ItemStack(ductItem);
         setFluidType(stack, entry.getSource());
         return stack;
     }
 
-    /** Returns tint color for overlay layer (for ItemColor handler). */
     public static int getTintColor(ItemStack stack) {
         FluidStack fluid = getFluidType(stack);
         if (fluid.isEmpty()) return 0xFFFFFF;

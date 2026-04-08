@@ -1229,9 +1229,13 @@ public class MainRegistry {
                 FluidBarrelItem.setFluid(filledBarrel, new FluidStack(entry.getSource(), FluidBarrelItem.CAPACITY));
                 event.accept(filledBarrel, net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             }
-            // Fluid Ducts - one per fluid type
+            // Fluid Ducts - one per fluid type (neo / colored / silver styles)
             for (ModFluids.FluidEntry entry : HbmFluidRegistry.getOrderedFluids()) {
                 event.accept(com.hbm_m.item.liquids.FluidDuctItem.createStack(ModItems.FLUID_DUCT.get(), entry),
+                        net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+                event.accept(com.hbm_m.item.liquids.FluidDuctItem.createStack(ModItems.FLUID_DUCT_COLORED.get(), entry),
+                        net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+                event.accept(com.hbm_m.item.liquids.FluidDuctItem.createStack(ModItems.FLUID_DUCT_SILVER.get(), entry),
                         net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             }
             event.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));

@@ -27,6 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -41,6 +42,9 @@ public class WireBlock extends BaseEntityBlock {
     public static final BooleanProperty WEST = BlockStateProperties.WEST;
     public static final BooleanProperty UP = BlockStateProperties.UP;
     public static final BooleanProperty DOWN = BlockStateProperties.DOWN;
+
+    public static final EnumProperty<WireCenterVisual> CENTER =
+            EnumProperty.create("center", WireCenterVisual.class);
 
     public static final Map<Direction, BooleanProperty> PROPERTIES_MAP =
             ImmutableMap.of(
@@ -64,12 +68,13 @@ public class WireBlock extends BaseEntityBlock {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
                 .setValue(NORTH, false).setValue(EAST, false).setValue(SOUTH, false)
-                .setValue(WEST, false).setValue(UP, false).setValue(DOWN, false));
+                .setValue(WEST, false).setValue(UP, false).setValue(DOWN, false)
+                .setValue(CENTER, WireCenterVisual.JUNCTION));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(NORTH, EAST, SOUTH, WEST, UP, DOWN);
+        builder.add(NORTH, EAST, SOUTH, WEST, UP, DOWN, CENTER);
     }
 
     @Override
@@ -93,9 +98,8 @@ public class WireBlock extends BaseEntityBlock {
     @Override
     public BlockState updateShape(BlockState state, Direction facing, BlockState facingState,
                                   LevelAccessor level, BlockPos currentPos, BlockPos facingPos) {
-        BooleanProperty property = getProperty(facing);
-        boolean canConnect = canVisuallyConnectTo(level, facingPos, facing.getOpposite(), facingState);
-        return state.setValue(property, canConnect);
+        // Пересчитываем все грани и center (прямой сегмент vs контакт), иначе center устаревает.
+        return getConnectionState(level, currentPos);
     }
 
     @Override
@@ -110,13 +114,34 @@ public class WireBlock extends BaseEntityBlock {
     }
 
     private BlockState getConnectionState(LevelAccessor level, BlockPos pos) {
+        boolean down = canVisuallyConnectTo(level, pos.relative(Direction.DOWN), Direction.UP, level.getBlockState(pos.relative(Direction.DOWN)));
+        boolean up = canVisuallyConnectTo(level, pos.relative(Direction.UP), Direction.DOWN, level.getBlockState(pos.relative(Direction.UP)));
+        boolean north = canVisuallyConnectTo(level, pos.relative(Direction.NORTH), Direction.SOUTH, level.getBlockState(pos.relative(Direction.NORTH)));
+        boolean south = canVisuallyConnectTo(level, pos.relative(Direction.SOUTH), Direction.NORTH, level.getBlockState(pos.relative(Direction.SOUTH)));
+        boolean west = canVisuallyConnectTo(level, pos.relative(Direction.WEST), Direction.EAST, level.getBlockState(pos.relative(Direction.WEST)));
+        boolean east = canVisuallyConnectTo(level, pos.relative(Direction.EAST), Direction.WEST, level.getBlockState(pos.relative(Direction.EAST)));
+        WireCenterVisual center = computeCenterVisual(north, south, east, west, up, down);
         return this.defaultBlockState()
-                .setValue(DOWN,  canVisuallyConnectTo(level, pos.relative(Direction.DOWN),  Direction.UP,    level.getBlockState(pos.relative(Direction.DOWN))))
-                .setValue(UP,    canVisuallyConnectTo(level, pos.relative(Direction.UP),    Direction.DOWN,  level.getBlockState(pos.relative(Direction.UP))))
-                .setValue(NORTH, canVisuallyConnectTo(level, pos.relative(Direction.NORTH), Direction.SOUTH, level.getBlockState(pos.relative(Direction.NORTH))))
-                .setValue(SOUTH, canVisuallyConnectTo(level, pos.relative(Direction.SOUTH), Direction.NORTH, level.getBlockState(pos.relative(Direction.SOUTH))))
-                .setValue(WEST,  canVisuallyConnectTo(level, pos.relative(Direction.WEST),  Direction.EAST,  level.getBlockState(pos.relative(Direction.WEST))))
-                .setValue(EAST,  canVisuallyConnectTo(level, pos.relative(Direction.EAST),  Direction.WEST,  level.getBlockState(pos.relative(Direction.EAST))));
+                .setValue(DOWN, down)
+                .setValue(UP, up)
+                .setValue(NORTH, north)
+                .setValue(SOUTH, south)
+                .setValue(WEST, west)
+                .setValue(EAST, east)
+                .setValue(CENTER, center);
+    }
+
+    private static WireCenterVisual computeCenterVisual(boolean north, boolean south, boolean east, boolean west, boolean up, boolean down) {
+        if (north && south && !east && !west && !up && !down) {
+            return WireCenterVisual.STRAIGHT_Z;
+        }
+        if (east && west && !north && !south && !up && !down) {
+            return WireCenterVisual.STRAIGHT_X;
+        }
+        if (up && down && !north && !south && !east && !west) {
+            return WireCenterVisual.STRAIGHT_Y;
+        }
+        return WireCenterVisual.JUNCTION;
     }
 
     private boolean canVisuallyConnectTo(LevelAccessor world, BlockPos neighborPos, Direction sideFromNeighbor, BlockState neighborState) {

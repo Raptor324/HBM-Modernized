@@ -17,6 +17,7 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
@@ -64,9 +65,21 @@ public class FluidDuctBlockEntity extends BlockEntity {
     }
 
     public void setFluidType(Fluid fluid) {
+        setFluidTypeSilent(fluid);
+        syncFluidToClients();
+    }
+
+    /** Sets type without notifying clients (batch identifier / network pass). */
+    public void setFluidTypeSilent(Fluid fluid) {
         this.fluidType = fluid != null ? fluid : Fluids.EMPTY;
         tank.drain(tank.getFluidAmount(), FluidAction.EXECUTE);
         setChanged();
+    }
+
+    public void syncFluidToClients() {
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
+        }
     }
 
     public FluidTank getTank() {

@@ -447,7 +447,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_ASSEMBLER);
         blockItemFromBlockModelMachine(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
         blockItemFromBlockModelMachine(ModBlocks.FLUID_TANK);
-        blockItemFromBlockModel(ModBlocks.INDUSTRIAL_BOILER);
+        blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_BOILER);
         blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_TURBINE);
         blockItemFromBlockModel(ModBlocks.DUD_CONVENTIONAL);
         blockItemFromBlockModel(ModBlocks.DUD_NUKE);

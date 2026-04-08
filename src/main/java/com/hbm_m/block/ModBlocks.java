@@ -333,7 +333,14 @@ public class ModBlocks {
             () -> new MachineIndustrialTurbineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistryObject<Block> FLUID_DUCT = registerBlockWithoutItem("fluid_duct",
-            () -> new FluidDuctBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion()));
+            () -> new FluidDuctBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion(),
+                    com.hbm_m.block.machines.PipeStyle.NEO));
+    public static final RegistryObject<Block> FLUID_DUCT_COLORED = registerBlockWithoutItem("fluid_duct_colored",
+            () -> new FluidDuctBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion(),
+                    com.hbm_m.block.machines.PipeStyle.COLORED));
+    public static final RegistryObject<Block> FLUID_DUCT_SILVER = registerBlockWithoutItem("fluid_duct_silver",
+            () -> new FluidDuctBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion(),
+                    com.hbm_m.block.machines.PipeStyle.SILVER));
 
     public static final RegistryObject<Block> HEATING_OVEN = registerBlock("heating_oven",
             () -> new HeatingOvenBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));

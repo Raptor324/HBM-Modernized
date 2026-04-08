@@ -1,0 +1,268 @@
+{
+  "multipart": [
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/iso_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/iso_overlay"
+        }
+      ],
+      "when": {
+        "shape": "isolated"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/through_x_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/through_x_overlay"
+        }
+      ],
+      "when": {
+        "shape": "through_x"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/through_y_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/through_y_overlay"
+        }
+      ],
+      "when": {
+        "shape": "through_y"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/through_z_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/through_z_overlay"
+        }
+      ],
+      "when": {
+        "shape": "through_z"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/arm_east_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/arm_east_overlay"
+        }
+      ],
+      "when": {
+        "shape": "complex",
+        "east": "true"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/arm_west_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/arm_west_overlay"
+        }
+      ],
+      "when": {
+        "shape": "complex",
+        "west": "true"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/arm_up_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/arm_up_overlay"
+        }
+      ],
+      "when": {
+        "shape": "complex",
+        "up": "true"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/arm_down_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/arm_down_overlay"
+        }
+      ],
+      "when": {
+        "shape": "complex",
+        "down": "true"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/arm_south_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/arm_south_overlay"
+        }
+      ],
+      "when": {
+        "shape": "complex",
+        "south": "true"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/arm_north_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/arm_north_overlay"
+        }
+      ],
+      "when": {
+        "shape": "complex",
+        "north": "true"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/oct_ppn_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/oct_ppn_overlay"
+        }
+      ],
+      "when": {
+        "shape": "complex",
+        "east": "false",
+        "up": "false",
+        "south": "false"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/oct_ppp_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/oct_ppp_overlay"
+        }
+      ],
+      "when": {
+        "shape": "complex",
+        "east": "false",
+        "up": "false",
+        "north": "false"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/oct_npn_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/oct_npn_overlay"
+        }
+      ],
+      "when": {
+        "shape": "complex",
+        "west": "false",
+        "up": "false",
+        "south": "false"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/oct_npp_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/oct_npp_overlay"
+        }
+      ],
+      "when": {
+        "shape": "complex",
+        "west": "false",
+        "up": "false",
+        "north": "false"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/oct_pnn_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/oct_pnn_overlay"
+        }
+      ],
+      "when": {
+        "shape": "complex",
+        "east": "false",
+        "down": "false",
+        "south": "false"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/oct_pnp_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/oct_pnp_overlay"
+        }
+      ],
+      "when": {
+        "shape": "complex",
+        "east": "false",
+        "down": "false",
+        "north": "false"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/oct_nnn_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/oct_nnn_overlay"
+        }
+      ],
+      "when": {
+        "shape": "complex",
+        "west": "false",
+        "down": "false",
+        "south": "false"
+      }
+    },
+    {
+      "apply": [
+        {
+          "model": "hbm_m:block/pipe_silver/oct_nnp_base"
+        },
+        {
+          "model": "hbm_m:block/pipe_silver/oct_nnp_overlay"
+        }
+      ],
+      "when": {
+        "shape": "complex",
+        "west": "false",
+        "down": "false",
+        "north": "false"
+      }
+    }
+  ]
+}

@@ -468,8 +468,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.FILE_CABINET);
 
         simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath()));
-        simpleBlock(ModBlocks.WIRE_COATED.get(), models().getExistingFile(modLoc("block/wire_coated")));
-
+        // wire_coated: manual multipart blockstate + OBJ visibility (see assets/hbm_m/blockstates/wire_coated.json)
 
         blockWithItem(ModBlocks.CONVERTER_BLOCK);
 

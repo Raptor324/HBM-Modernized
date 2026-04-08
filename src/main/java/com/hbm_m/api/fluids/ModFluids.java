@@ -69,8 +69,8 @@ public class ModFluids {
             @Override
             public void initializeClient(Consumer<IClientFluidTypeExtensions> consumer) {
                 consumer.accept(new IClientFluidTypeExtensions() {
-                    private final ResourceLocation STILL = new ResourceLocation(MainRegistry.MOD_ID, "gui/fluids/" + name);
-                    private final ResourceLocation FLOW = new ResourceLocation(MainRegistry.MOD_ID, "gui/fluids/" + name);
+                    private final ResourceLocation STILL = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "gui/fluids/" + name);
+                    private final ResourceLocation FLOW = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "gui/fluids/" + name);
 
                     @Override
                     public ResourceLocation getStillTexture() {
