@@ -19,6 +19,15 @@ public class ShockwaveGenerator {
      */
     public static void generateCrater(ServerLevel level, BlockPos centerPos, int craterRadius, int craterDepth,
                                       Block wasteLogBlock, Block wastePlanksBlock, Block burnedGrass) {
+        generateCrater(level, centerPos, craterRadius, craterDepth, wasteLogBlock, wastePlanksBlock, burnedGrass, true);
+    }
+
+    /**
+     * @param applyDamageZones зоны повреждения деревьев/листвы вокруг кратера (отключается командами без урона)
+     */
+    public static void generateCrater(ServerLevel level, BlockPos centerPos, int craterRadius, int craterDepth,
+                                      Block wasteLogBlock, Block wastePlanksBlock, Block burnedGrass,
+                                      boolean applyDamageZones) {
 
         int centerX = centerPos.getX();
         int centerY = centerPos.getY();
@@ -55,7 +64,9 @@ public class ShockwaveGenerator {
         }
 
         // Зона повреждения деревьев и окружающих блоков
-        applyDamageZones(level, centerPos, wasteLogBlock, wastePlanksBlock, burnedGrass);
+        if (applyDamageZones) {
+            applyDamageZones(level, centerPos, wasteLogBlock, wastePlanksBlock, burnedGrass);
+        }
     }
 
     private static void applyDamageZones(ServerLevel level, BlockPos centerPos,

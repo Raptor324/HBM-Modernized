@@ -27,7 +27,7 @@ public class FalloutRain extends ChunkloadingEntity {
     /** После этого времени сущность удаляется (примерно 20 минут). */
     private static final int MAX_AGE_TICKS = 20 * 60 * 20;
     /** Каждые N тиков размещаем порцию fallout. */
-    private static final int FALLOUT_TICK_INTERVAL = 4;
+    private static final int FALLOUT_TICK_INTERVAL = 5;
     /** За один проход — сколько случайных позиций пробуем. */
     private static final int FALLOUT_PER_TICK = 12;
 
@@ -96,9 +96,12 @@ public class FalloutRain extends ChunkloadingEntity {
         tag.putInt("Scale", getScale());
     }
 
+    /** Квадрат 3D-дистанции до камеры; чуть больше горизонтали рендера (~88 бл.), с запасом по Y. */
+    private static final double RENDER_DISTANCE_SQ = 100.0 * 100.0;
+
     @Override
-    public boolean shouldRenderAtSqrDistance(double distance) {
-        return true;
+    public boolean shouldRenderAtSqrDistance(double distanceSq) {
+        return distanceSq < RENDER_DISTANCE_SQ;
     }
 
     public void setScale(int scale) {

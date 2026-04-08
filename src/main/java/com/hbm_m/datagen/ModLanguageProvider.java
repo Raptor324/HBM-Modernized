@@ -1622,6 +1622,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("commands.hbm_m.rad.added.self", "Вам добавлено %s радиации.");
                 add("commands.hbm_m.rad.removed", "Убрано %s радиации у %s игроков.");
                 add("commands.hbm_m.rad.removed.self", "У вас убрано %s радиации.");
+                add("commands.hbm_m.explosion.success", "Вызван ядерный взрыв: %s");
+                add("commands.hbm_m.explosion.unknown_type", "Неизвестный тип взрыва");
+                add("commands.hbm_m.explosion.not_server_level", "Эта команда должна выполняться на серверном уровне");
+                add("commands.hbm_m.explosion.greedy_too_short", "Ожидаются опции key:value и три координаты (x y z)");
+                add("commands.hbm_m.explosion.bad_coord_suffix", "Нужны все три координаты (x y z) или ни одной - тогда позиция источника");
+                add("commands.hbm_m.explosion.bad_key_value", "Неверный токен key:value или координаты");
+                add("commands.hbm_m.explosion.unsupported_key", "Этот тип взрыва не поддерживает опцию: %s");
 
                 // СООБЩЕНИЯ О СМЕРТИ
                 add("death.attack.radiation", "Игрок %s умер от лучевой болезни");
@@ -3291,6 +3298,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("commands.hbm_m.rad.added.self", "You have been given %s radiation.");
                 add("commands.hbm_m.rad.removed", "Removed %s radiation from %s players.");
                 add("commands.hbm_m.rad.removed.self", "%s radiation has been removed from you.");
+                add("commands.hbm_m.explosion.success", "Triggered nuclear explosion: %s");
+                add("commands.hbm_m.explosion.unknown_type", "Unknown explosion type");
+                add("commands.hbm_m.explosion.not_server_level", "This command must run on a server level");
+                add("commands.hbm_m.explosion.greedy_too_short", "Expected key:value options and three coordinates (x y z)");
+                add("commands.hbm_m.explosion.bad_coord_suffix", "Provide all three coordinates (x y z) or none to use the command source position");
+                add("commands.hbm_m.explosion.bad_key_value", "Invalid key:value token or coordinate");
+                add("commands.hbm_m.explosion.unsupported_key", "This explosion type does not support option: %s");
                 
                 // DEATH ATTACK MESSAGES
                 add("death.attack.radiation", "Player %s died from radiation sickness");

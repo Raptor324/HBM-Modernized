@@ -48,7 +48,14 @@ public class ExplosionNukeGeneric {
         dealDamage(level, x, y, z, radius, 250F);
     }
 
-    private static void dealDamage(Level level, double x, double y, double z, double radius, float maxDamage) {
+    /**
+     * @param maxDamage максимальный урон в эпицентре (масштабируется по расстоянию)
+     */
+    public static void dealDamage(Level level, double x, double y, double z, double radius, float maxDamage) {
+        dealDamageInternal(level, x, y, z, radius, maxDamage);
+    }
+
+    private static void dealDamageInternal(Level level, double x, double y, double z, double radius, float maxDamage) {
         List<Entity> entities = level.getEntities(null, new AABB(x, y, z, x, y, z).inflate(radius));
 
         for (Entity entity : entities) {

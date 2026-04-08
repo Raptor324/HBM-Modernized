@@ -137,7 +137,7 @@ public class ModEntities {
             ENTITY_TYPES.register("nuke_fallout_rain",
                     () -> EntityType.Builder.<FalloutRain>of(FalloutRain::new, MobCategory.MISC)
                             .sized(1.0F, 1.0F)
-                            .clientTrackingRange(256)
+                            .clientTrackingRange(3)
                             .updateInterval(2)
                             .build("nuke_fallout_rain"));
 

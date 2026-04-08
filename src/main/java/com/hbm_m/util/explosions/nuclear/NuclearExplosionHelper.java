@@ -6,6 +6,7 @@ import java.util.Random;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.explosives.IDetonatable;
+import com.hbm_m.explosion.command.ExplosionCommandOptions;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
@@ -36,6 +37,10 @@ public class NuclearExplosionHelper {
     private static final Random RANDOM = new Random();
 
     public static void explodeStandardNuke(Level level, BlockPos pos) {
+        explodeStandardNuke(level, pos, ExplosionCommandOptions.DEFAULT);
+    }
+
+    public static void explodeStandardNuke(Level level, BlockPos pos, ExplosionCommandOptions opt) {
         if (!(level instanceof ServerLevel serverLevel) || ((ServerLevel) level).isClientSide()) {
             return;
         }
@@ -44,14 +49,29 @@ public class NuclearExplosionHelper {
         double y = pos.getY() + 0.5;
         double z = pos.getZ() + 0.5;
 
-        triggerNearbyDetonations(serverLevel, pos);
-        dealExplosionDamage(serverLevel, x, y, z);
-        scheduleExplosionEffects(serverLevel, x, y, z);
-        playDetonationSound(serverLevel, pos);
+        float power = EXPLOSION_POWER * opt.amplifier();
+        float damageRadius = DAMAGE_RADIUS * opt.amplifier();
+        float entityDamage = 50.0F * opt.amplifier();
 
-        serverLevel.explode(null, x, y, z, EXPLOSION_POWER, Level.ExplosionInteraction.NONE);
+        if (opt.damage()) {
+            triggerNearbyDetonations(serverLevel, pos);
+            dealExplosionDamage(serverLevel, x, y, z, damageRadius, entityDamage);
+        }
 
-        if (serverLevel.getServer() != null) {
+        if (opt.particles()) {
+            scheduleExplosionEffects(serverLevel, x, y, z);
+        }
+
+        if (opt.sound()) {
+            playDetonationSound(serverLevel, pos);
+        }
+
+        if (opt.damage()) {
+            serverLevel.explode(null, x, y, z, power, Level.ExplosionInteraction.NONE);
+        }
+
+        if (opt.crater() && serverLevel.getServer() != null) {
+            CraterGenerationFlags flags = new CraterGenerationFlags(opt.biomes(), opt.damage());
             serverLevel.getServer().tell(new TickTask(CRATER_GENERATION_DELAY, () ->
                     CraterGenerator.generateCrater(
                             serverLevel,
@@ -63,22 +83,24 @@ public class NuclearExplosionHelper {
                             ModBlocks.WASTE_LOG.get(),
                             ModBlocks.WASTE_PLANKS.get(),
                             ModBlocks.BURNED_GRASS.get(),
-                            ModBlocks.DEAD_DIRT.get()
+                            ModBlocks.DEAD_DIRT.get(),
+                            flags
                     )));
         }
     }
 
-    private static void dealExplosionDamage(ServerLevel serverLevel, double x, double y, double z) {
+    private static void dealExplosionDamage(ServerLevel serverLevel, double x, double y, double z,
+                                            float damageRadius, float damageAmount) {
         List<LivingEntity> entitiesNearby = serverLevel.getEntitiesOfClass(
                 LivingEntity.class,
                 new AABB(
-                        x - DAMAGE_RADIUS, y - DAMAGE_RADIUS, z - DAMAGE_RADIUS,
-                        x + DAMAGE_RADIUS, y + DAMAGE_RADIUS, z + DAMAGE_RADIUS
+                        x - damageRadius, y - damageRadius, z - damageRadius,
+                        x + damageRadius, y + damageRadius, z + damageRadius
                 )
         );
 
         for (LivingEntity entity : entitiesNearby) {
-            entity.hurt(serverLevel.damageSources().generic(), 50.0F);
+            entity.hurt(serverLevel.damageSources().generic(), damageAmount);
         }
     }
 
@@ -95,6 +117,11 @@ public class NuclearExplosionHelper {
 
         level.getServer().tell(new TickTask(8, () ->
                 ExplosionParticleUtils.spawnAirBombMushroomCloud(level, x, y, z)));
+    }
+
+    /** Звук детонации как у air_standard; для MK5 и командных сценариев без дублирования логики. */
+    public static void playStandardDetonationSound(ServerLevel level, double x, double y, double z) {
+        playDetonationSound(level, BlockPos.containing(x, y, z));
     }
 
     private static void playDetonationSound(ServerLevel level, BlockPos pos) {

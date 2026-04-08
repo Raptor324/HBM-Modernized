@@ -28,6 +28,19 @@ public class RenderFallout extends EntityRenderer<FalloutRain> {
 
     /** Максимальный радиус рендера fallout-колонн (в блоках). */
     private static final int MAX_RENDER_RADIUS = 40;
+    /**
+     * Высота «шторы» осадков над поверхностью (блоки). Не привязываем к {@code scale} взрыва — иначе
+     * при большом радиусе рисуются километровые столбы, видимые с огромного расстояния.
+     */
+    private static final int MAX_VISUAL_HEIGHT_ABOVE_SURFACE = 40;
+    /**
+     * Горизонтальная дистанция камеры до сущности (эпицентра осадков). Согласовано с {@code clientTrackingRange(6)} чанков (~96 бл.).
+     */
+    private static final double MAX_EPICENTER_CAMERA_HORIZONTAL_DIST_SQ = 88.0 * 88.0;
+    /**
+     * Колонны только рядом с игроком (как у ванильного дождя вокруг камеры).
+     */
+    private static final double MAX_COLUMN_CAMERA_HORIZONTAL_DIST_SQ = 64.0 * 64.0;
     /** Радиус кэш-сетки для колонн (всегда >= MAX_RENDER_RADIUS). */
     private static final int CACHE_RADIUS = MAX_RENDER_RADIUS;
     /** Ширина кэш-сетки: (2 * CACHE_RADIUS + 1)^2 ячеек. */
@@ -66,6 +79,12 @@ public class RenderFallout extends EntityRenderer<FalloutRain> {
         double ey = Mth.lerp(partialTick, entity.yOld, entity.getY());
         double ez = Mth.lerp(partialTick, entity.zOld, entity.getZ());
 
+        double hdx = camera.getX() - ex;
+        double hdz = camera.getZ() - ez;
+        if (hdx * hdx + hdz * hdz > MAX_EPICENTER_CAMERA_HORIZONTAL_DIST_SQ) {
+            return;
+        }
+
         poseStack.pushPose();
         // Отменяем entity offset, оставляем только camera-relative матрицу уровня.
         poseStack.translate(-ex, -ey, -ez);
@@ -80,10 +99,9 @@ public class RenderFallout extends EntityRenderer<FalloutRain> {
 
     @Override
     public boolean shouldRender(FalloutRain entity, Frustum frustum, double camX, double camY, double camZ) {
-        int scale = entity.getScale();
         double dx = camX - entity.getX();
         double dz = camZ - entity.getZ();
-        return dx * dx + dz * dz <= (double) (scale * scale) + 256;
+        return dx * dx + dz * dz <= MAX_EPICENTER_CAMERA_HORIZONTAL_DIST_SQ;
     }
 
     private void renderRainSnow(FalloutRain entity, float interp, PoseStack pose, MultiBufferSource buffers, ClientLevel level, LivingEntity camera) {
@@ -92,7 +110,6 @@ public class RenderFallout extends EntityRenderer<FalloutRain> {
 
         int centerX = Mth.floor(entity.getX());
         int centerZ = Mth.floor(entity.getZ());
-        int centerY = Mth.floor(entity.getY());
         int scale = entity.getScale();
         if (scale < 1) return;
         if (rainXCoords == null) {
@@ -166,7 +183,7 @@ public class RenderFallout extends EntityRenderer<FalloutRain> {
                 if (needsUpdate) {
                     int rainHeight = level.getHeight(Heightmap.Types.MOTION_BLOCKING, layerX, layerZ);
                     int minHeightForCache = rainHeight;
-                    int maxHeightForCache = Math.min(level.getMaxBuildHeight(), centerY + scale + verticalLayers);
+                    int maxHeightForCache = Math.min(level.getMaxBuildHeight(), minHeightForCache + MAX_VISUAL_HEIGHT_ABOVE_SURFACE + verticalLayers);
                     if (maxHeightForCache <= minHeightForCache) {
                         maxHeightForCache = minHeightForCache + verticalLayers;
                     }
@@ -184,18 +201,23 @@ public class RenderFallout extends EntityRenderer<FalloutRain> {
 
                 int rainHeight = entry.height;
                 int minHeight = rainHeight;
-                int maxHeight = Math.min(level.getMaxBuildHeight(), centerY + scale + verticalLayers);
+                int maxHeight = Math.min(level.getMaxBuildHeight(), minHeight + MAX_VISUAL_HEIGHT_ABOVE_SURFACE + verticalLayers);
                 if (maxHeight <= minHeight) maxHeight = minHeight + verticalLayers;
                 if (minHeight == maxHeight) continue;
+
+                double distX = layerX + 0.5 - camera.getX();
+                double distZ = layerZ + 0.5 - camera.getZ();
+                double horizCamSq = distX * distX + distZ * distZ;
+                if (horizCamSq > MAX_COLUMN_CAMERA_HORIZONTAL_DIST_SQ) {
+                    continue;
+                }
 
                 float swayLoop = ((timer & 511) + interp) / 512.0F;
                 int hash = columnHash(layerX, layerZ);
                 float fallVariation = 0.4F + ((hash & 0xFF) / 255.0F) * 0.2F;
                 float swayVariation = ((hash >>> 8) & 0xFF) / 255.0F;
 
-                double distX = layerX + 0.5 - camera.getX();
-                double distZ = layerZ + 0.5 - camera.getZ();
-                float distToCam = Mth.sqrt((float) (distX * distX + distZ * distZ));
+                float distToCam = Mth.sqrt((float) horizCamSq);
                 float intensityMod = Math.min(1.0F, distToCam / (float) (renderRadius + 1));
                 float alpha = ((1.0F - intensityMod * 0.5F) * 0.4F + 0.4F) * intensity;
                 alpha = Mth.clamp(alpha, 0.05F, 0.9F);

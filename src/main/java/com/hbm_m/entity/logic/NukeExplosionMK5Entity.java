@@ -7,6 +7,7 @@ import com.hbm_m.entity.ModEntities;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.explosion.ExplosionNukeGeneric;
 import com.hbm_m.explosion.IExplosionRay;
+import com.hbm_m.explosion.NoOpExplosionRay;
 import com.hbm_m.explosion.NukeMk5ChunkEater;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.util.explosions.nuclear.CraterBiomeHelper;
@@ -41,6 +42,15 @@ public class NukeExplosionMK5Entity extends ChunkloadingEntity {
 
     private IExplosionRay explosion;
 
+    /** Разрушение блоков лучами MK5 (кратер). */
+    public boolean destroyTerrain = true;
+    /** Урон сущностям через {@link ExplosionNukeGeneric}. */
+    public boolean applyEntityDamage = true;
+    /** Импульсная доза игрокам в первые тики (радиация). */
+    public boolean applyInstantPlayerRads = true;
+    /** Смена биомов после fallout (если включено в конфиге мода). */
+    public boolean applyCraterBiomes = true;
+
     /** Для API: задать дополнительный радиус fallout. */
     public void setFalloutAdd(int add) {
         this.falloutAdd = add;
@@ -73,26 +83,32 @@ public class NukeExplosionMK5Entity extends ChunkloadingEntity {
         }
 
         // радиация в первые тики после начала взрыва
-        if (!level().isClientSide && fallout && explosion != null && this.tickCount < 10 && strength >= 75) {
+        if (!level().isClientSide && applyInstantPlayerRads && explosion != null && this.tickCount < 10 && strength >= 75) {
             float baseRads = 2_500_000F / (this.tickCount * 5 + 1);
             radiate(baseRads, this.length * 2);
         }
 
         // урон и поджог живых сущностей
-        ExplosionNukeGeneric.dealDamage(level(), getX(), getY(), getZ(), this.length * 2);
+        if (applyEntityDamage) {
+            ExplosionNukeGeneric.dealDamage(level(), getX(), getY(), getZ(), this.length * 2);
+        }
 
         // лениво инициализируем лучевой движок
         if (explosion == null) {
             explosionStart = System.currentTimeMillis();
-            explosion = new NukeMk5ChunkEater(
-                    level(),
-                    (int) getX(),
-                    (int) getY(),
-                    (int) getZ(),
-                    strength,
-                    speed,
-                    length
-            );
+            if (destroyTerrain) {
+                explosion = new NukeMk5ChunkEater(
+                        level(),
+                        (int) getX(),
+                        (int) getY(),
+                        (int) getZ(),
+                        strength,
+                        speed,
+                        length
+                );
+            } else {
+                explosion = NoOpExplosionRay.INSTANCE;
+            }
         }
 
         int timeBudgetMs = ModClothConfig.get().mk5TickTimeMs;
@@ -169,7 +185,7 @@ public class NukeExplosionMK5Entity extends ChunkloadingEntity {
         fallout.setScale(scale);
         level().addFreshEntity(fallout);
 
-        if (ModClothConfig.get().enableCraterBiomes && level() instanceof ServerLevel serverLevel) {
+        if (applyCraterBiomes && ModClothConfig.get().enableCraterBiomes && level() instanceof ServerLevel serverLevel) {
             BlockPos center = BlockPos.containing(getX(), getY(), getZ());
             double innerRadius = Math.min(15, scale * 0.1);
             CraterBiomeHelper.applyBiomesAsync(serverLevel, center, innerRadius, (double) scale);
