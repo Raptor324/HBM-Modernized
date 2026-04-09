@@ -13,6 +13,7 @@ import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.PartGeometry;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
+import com.hbm_m.compat.flywheel.FlywheelClientHooks;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -134,6 +135,9 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                             int packedOverlay,
                             PoseStack poseStack,
                             MultiBufferSource bufferSource) {
+        if (FlywheelClientHooks.useFlywheelPathForAdvancedAssembler()) {
+            return;
+        }
         var state = be.getBlockState();
         boolean renderActive = state.hasProperty(MachineAdvancedAssemblerBlock.RENDER_ACTIVE) 
                 && state.getValue(MachineAdvancedAssemblerBlock.RENDER_ACTIVE);

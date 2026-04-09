@@ -152,6 +152,10 @@ repositories {
             includeGroup "curse.maven"
         }
     }
+    maven {
+        name = "createmod maven"
+        url = "https://maven.createmod.net/"
+    }
     
     // maven {
     //     name = 'SpongePowered'
@@ -185,6 +189,10 @@ dependencies {
 
     
     api(fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.136"))
+
+    // Flywheel (Engine Room) — API на compile, полный Forge-артефакт в dev runtime; optional в mods.toml
+    compileOnly fg.deobf("dev.engine-room.flywheel:flywheel-forge-api-${minecraft_version}:${flywheel_version}")
+    runtimeOnly fg.deobf("dev.engine-room.flywheel:flywheel-forge-${minecraft_version}:${flywheel_version}")
     
     // HBM DevTools - раскомментируйте для использования dev-инструментов
     // Сначала соберите DevTools: cd ../HBM-DevTools && ./gradlew build

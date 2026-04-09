@@ -209,9 +209,16 @@ public final class OcclusionCullingHelper {
     public static void onFrameStart() {
         currentFrame++;
         
-        // Очистка старого кеша раз в ~10 секунд
+        // Очистка старого кеша раз в ~10 секунд.
+        // Нельзя использовать Collection.removeIf на long2ObjectEntrySet(): итератор fastutil падает с NPE (wrapped == null).
         if (currentFrame % 600 == 0) {
-            occlusionCache.long2ObjectEntrySet().removeIf(e -> currentFrame - e.getValue().frame > 600);
+            long[] keys = occlusionCache.keySet().toLongArray();
+            for (long key : keys) {
+                CachedResult v = occlusionCache.get(key);
+                if (v != null && currentFrame - v.frame > 600) {
+                    occlusionCache.remove(key);
+                }
+            }
         }
     }
     

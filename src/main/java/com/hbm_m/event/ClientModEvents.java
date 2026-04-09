@@ -12,6 +12,7 @@ import com.hbm_m.client.render.implementations.MachineAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRenderer;
 import com.hbm_m.client.render.implementations.MachinePressRenderer;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
+import com.hbm_m.compat.flywheel.FlywheelClientHooks;
 import com.hbm_m.config.ModClothConfig;
 // Обработчик событий клиента, добавляющий подсказки к предметам (опасности, OreDict теги).
 // Подсказки показываются при наведении на предмет в инвентаре.
@@ -76,7 +77,9 @@ public class ClientModEvents {
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             if (ModClothConfig.useInstancedBatching()) {
-                MachineAdvancedAssemblerRenderer.flushInstancedBatches(event);
+                if (!FlywheelClientHooks.useFlywheelPathForAdvancedAssembler()) {
+                    MachineAdvancedAssemblerRenderer.flushInstancedBatches(event);
+                }
                 MachineHydraulicFrackiningTowerRenderer.flushInstancedBatches(event);
                 MachineAssemblerRenderer.flushInstancedBatches(event);
                 DoorRenderer.flushInstancedBatches(event);

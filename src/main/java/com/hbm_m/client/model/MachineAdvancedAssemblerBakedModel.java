@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
+import com.hbm_m.compat.flywheel.FlywheelClientHooks;
 import com.hbm_m.util.MultipartFacingTransforms;
 
 import net.minecraft.client.renderer.block.model.BakedQuad;
@@ -76,6 +77,10 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
         // ITEM RENDER (Инвентарь/Рука)
         if (state == null) {
             return getItemQuads(side, rand, modelData, renderType);
+        }
+
+        if (FlywheelClientHooks.useFlywheelPathForAdvancedAssembler()) {
+            return List.of();
         }
 
         // WORLD RENDER: переключение по стороннему шейдеру (Iris/Oculus)

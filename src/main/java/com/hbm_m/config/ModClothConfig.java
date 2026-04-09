@@ -197,6 +197,14 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public boolean useInstancedStaticRendering = true;
 
+    /**
+     * Рендер Advanced Assembler через Flywheel (отдельный путь). При включении для этой машины
+     * не действуют {@link #useInstancedStaticRendering} и legacy VBO/baked world path.
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean useFlywheelAdvancedAssembler = false;
+
     @Category("rendering")
     @Gui.Tooltip
     public boolean useColladaDoorAnimations = true;
@@ -317,5 +325,10 @@ public class ModClothConfig implements ConfigData {
     /** Использовать батчинг для статических частей (frame, Base). При проблемах отключите. */
     public static boolean useInstancedBatching() {
         return get().useInstancedStaticRendering;
+    }
+
+    /** Flywheel-путь для Advanced Assembler (см. {@link #useFlywheelAdvancedAssembler}). */
+    public static boolean useFlywheelAdvancedAssemblerPath() {
+        return get().useFlywheelAdvancedAssembler;
     }
 }

@@ -42,6 +42,7 @@ import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRe
 import com.hbm_m.client.render.implementations.MachinePressRenderer;
 import com.hbm_m.client.render.implementations.MissileTestEntityRenderer;
 import com.hbm_m.client.render.shader.ShaderReloadListener;
+import com.hbm_m.compat.flywheel.FlywheelClientHooks;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponent;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponentRenderer;
 import com.hbm_m.client.tooltip.ItemTooltipComponent;
@@ -221,6 +222,7 @@ public class ClientSetup {
             
             // Регистрация обработчика отключения от сервера
             MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
+            FlywheelClientHooks.registerAdvancedAssemblerVisualizer();
             MainRegistry.LOGGER.info("VBO render system initialized successfully");
         });
     }
@@ -372,6 +374,7 @@ public class ClientSetup {
                         ChemicalPlantRenderer.clearCaches();
                         GlobalMeshCache.clearAll();
                         AbstractObjArmorLayer.clearAllCaches();
+                        FlywheelClientHooks.refreshAdvancedAssemblerVisualizer();
                         MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");
                     } catch (Exception e) {
                         MainRegistry.LOGGER.error("Error during deferred VBO cache cleanup", e);
@@ -393,6 +396,7 @@ public class ClientSetup {
             
             // Очищаем кэши рендеринга брони
             AbstractObjArmorLayer.clearAllCaches();
+            FlywheelClientHooks.refreshAdvancedAssemblerVisualizer();
         });
     }
 

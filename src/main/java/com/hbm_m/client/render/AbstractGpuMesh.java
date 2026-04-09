@@ -1,13 +1,13 @@
 package com.hbm_m.client.render;
 
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL30;
+
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL30;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class AbstractGpuMesh {
