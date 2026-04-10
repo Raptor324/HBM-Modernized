@@ -464,18 +464,21 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         Direction facing = blockState.getValue(DoorBlock.FACING);
         MultiblockStructureHelper structureHelper = doorBlock.getStructureHelper();
         
-        // Контроллер не входит в getAllPartPositions (BlockPos.ZERO исключён из structureMap)
+        // Контроллер: флаг 2 (NOTIFY_CLIENTS) — оповещаем клиентов о смене блокстейта.
+        // updateNeighborsAt только для контроллера (редстоун и т.д.), не для каждого блока двери.
         BlockState controllerState = level.getBlockState(controllerPos);
-        level.sendBlockUpdated(controllerPos, controllerState, controllerState, 3);
-        
+        level.sendBlockUpdated(controllerPos, controllerState, controllerState, 2);
+        level.updateNeighborsAt(controllerPos, controllerState.getBlock());
+        level.getLightEngine().checkBlock(controllerPos);
+
         for (BlockPos partPos : structureHelper.getAllPartPositions(controllerPos, facing)) {
             BlockState partState = level.getBlockState(partPos);
-            // Флаг 3 (UPDATE_ALL) заставляет клиент перерисовать блок и обновить коллизию
-            level.sendBlockUpdated(partPos, partState, partState, 3);
+            // Флаг 2 (NOTIFY_CLIENTS only): заставляет клиента перерисовать блок.
+            // Флаг 1 (UPDATE_NEIGHBORS) убран — вызывал каскад соседних обновлений для каждой части,
+            // из-за чего Sodium пересобирал чанки десятки раз при открытии/закрытии.
+            level.sendBlockUpdated(partPos, partState, partState, 2);
             level.getLightEngine().checkBlock(partPos);
-            level.updateNeighborsAt(partPos, blockState.getBlock());
         }
-        level.getLightEngine().checkBlock(controllerPos);
     }
 
     public DoorDecl getServerDoorDecl() {
@@ -791,21 +794,42 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
+            // Сохраняем предыдущее видимое состояние ДО загрузки — чтобы определить, нужна ли инвалидация
+            byte prevState = this.state;
+            DoorModelSelection prevSelection = this.modelSelection;
+
             load(tag);
-            // Инвалидируем чанк — baked model должен пересобраться с новым ModelData (OPEN, DOOR_MOVING)
+
             if (level != null && level.isClientSide) {
                 requestModelDataUpdate();
-                DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
+                // Инвалидируем чанк только при реальном изменении видимого состояния:
+                // DOOR_MOVING/OPEN перехода или смены скина/модели.
+                // Иначе каждый BE-пакет (даже с теми же данными) вызывал пересборку.
+                boolean visibleChange = isVisibleStateChange(prevState, this.state)
+                                     || !prevSelection.equals(this.modelSelection);
+                if (visibleChange) {
+                    DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
+                }
             }
         }
     }
 
+    /** Возвращает true только при переходах DOOR_MOVING или OPEN — то, что видит игрок. */
+    private static boolean isVisibleStateChange(byte oldS, byte newS) {
+        boolean wasMoving = oldS == 2 || oldS == 3;
+        boolean isMoving  = newS == 2 || newS == 3;
+        boolean wasOpen   = oldS == 1;
+        boolean isOpen    = newS == 1;
+        return wasMoving != isMoving || wasOpen != isOpen;
+    }
+
     private void syncToClient() {
         if (level != null && !level.isClientSide && level instanceof ServerLevel serverLevel) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            // sendBlockUpdated() убрано: вызывало 3 события на клиенте за один sync —
+            // ClientboundBlockUpdatePacket + broadcastBlockEntityData + явный пакет ниже.
+            // Изменения BlockState (OPEN, DOOR_MOVING) отправляются через level.setBlock() в setState().
+            // Изменения остальных данных (ModelData, скины) — через явный BE-пакет.
             setChanged();
-            // Явно отправляем BlockEntity пакет — клиент должен получить state/OPEN/DOOR_MOVING
-            // для baked model (ModelData) и BER. Без этого клиентский BlockEntity остаётся со старым state.
             var packet = ClientboundBlockEntityDataPacket.create(this);
             for (ServerPlayer player : serverLevel.players()) {
                 if (player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) < 64 * 64) {

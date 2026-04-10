@@ -45,6 +45,8 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
         if (modelPart == null) {
             return EMPTY;
         }
+        // Разворачиваем FRAPI-обёртки (Continuity, Emissive и т.д.) если они есть на данной части
+        modelPart = AbstractPartBasedRenderer.unwrapFabricForwardingModels(modelPart);
         List<BakedQuad> quads = collectSolidQuads(modelPart, partName);
         if (quads.isEmpty()) {
             MainRegistry.LOGGER.debug("PartGeometry: Part '{}' has NO QUADS, skipping", partName);

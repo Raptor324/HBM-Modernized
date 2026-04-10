@@ -1,5 +1,6 @@
 package com.hbm_m.client.render;
 
+import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
@@ -13,6 +14,8 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 import org.joml.Matrix4f;
+
+import java.lang.reflect.Field;
 
 @OnlyIn(Dist.CLIENT)
 public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends BakedModel>
@@ -59,6 +62,10 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         }
 
         BakedModel rawModel = getModel(blockEntity);
+        // Continuity (через Connector/FFAPI) оборачивает все blockstate-модели в CtmBakedModel/
+        // EmissiveBakedModel, которые расширяют ForwardingBakedModel (Fabric FRAPI).
+        // Разворачиваем, чтобы instanceof-проверка в getModelType() корректно работала.
+        rawModel = unwrapFabricForwardingModels(rawModel);
         M model = getModelType(rawModel);
         
         if (model == null) return;
@@ -86,5 +93,71 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
 
     protected boolean isInViewFrustum(T blockEntity) {
         return true;
+    }
+
+    // -----------------------------------------------------------------------
+    // Совместимость с Fabric FRAPI (Continuity, Emissive и т.д.)
+    // -----------------------------------------------------------------------
+
+    /**
+     * Поле 'wrapped' в ForwardingBakedModel (Fabric FRAPI).
+     * Кешируется при первом успешном поиске, null — если FRAPI недоступен.
+     */
+    private static Field fabricWrappedField;
+    private static boolean fabricWrappedFieldChecked = false;
+
+    /**
+     * Разворачивает цепочку {@code ForwardingBakedModel} обёрток (Continuity CtmBakedModel,
+     * EmissiveBakedModel и т.п.) до исходной модели.
+     *
+     * <p>Continuity через Connector оборачивает все blockstate-модели в {@code CtmBakedModel}
+     * (extends {@code ForwardingBakedModel}), из-за чего instanceof-проверки в {@link #getModelType}
+     * возвращают null и блок становится невидимым.
+     */
+    public static BakedModel unwrapFabricForwardingModels(BakedModel model) {
+        if (model == null) return null;
+
+        if (!fabricWrappedFieldChecked) {
+            fabricWrappedFieldChecked = true;
+            try {
+                Class<?> cls = Class.forName("net.fabricmc.fabric.api.renderer.v1.model.ForwardingBakedModel");
+                Field f = cls.getDeclaredField("wrapped");
+                f.setAccessible(true);
+                fabricWrappedField = f;
+            } catch (ClassNotFoundException ignored) {
+                // FRAPI недоступен в окружении
+            } catch (Exception e) {
+                MainRegistry.LOGGER.warn("[HBM] Не удалось получить поле ForwardingBakedModel.wrapped: {}", e.toString());
+            }
+        }
+
+        if (fabricWrappedField == null) return model;
+
+        int depth = 0;
+        while (depth++ < 8) {
+            Class<?> cls = model.getClass();
+            boolean isFrapi = false;
+            while (cls != null && cls != Object.class) {
+                if (cls.getName().equals("net.fabricmc.fabric.api.renderer.v1.model.ForwardingBakedModel")) {
+                    isFrapi = true;
+                    break;
+                }
+                cls = cls.getSuperclass();
+            }
+            if (!isFrapi) break;
+
+            try {
+                BakedModel inner = (BakedModel) fabricWrappedField.get(model);
+                if (inner == null || inner == model) break;
+                if (depth == 1) {
+                    MainRegistry.LOGGER.debug("[HBM] Разворачиваем {} → {}",
+                            model.getClass().getSimpleName(), inner.getClass().getSimpleName());
+                }
+                model = inner;
+            } catch (Exception e) {
+                break;
+            }
+        }
+        return model;
     }
 }

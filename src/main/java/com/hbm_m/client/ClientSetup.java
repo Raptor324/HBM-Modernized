@@ -123,6 +123,7 @@ import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
@@ -248,6 +249,49 @@ public class ClientSetup {
             if (ModClothConfig.get().enableDebugLogging) {
                 MainRegistry.LOGGER.warn("Could not find model for waste_leaves to wrap.");
             }
+        }
+    }
+
+    /**
+     * Continuity (через Connector/FFAPI) оборачивает все blockstate-модели в CtmBakedModel
+     * (extends ForwardingBakedModel). Это ломает два поведения при активном шейдере:
+     *
+     * 1. Skin switching — FRAPI emitBlockQuads() не передаёт Forge ModelData, поэтому
+     *    DoorBakedModel.getPartsForModelData() не видит выбранного скина.
+     * 2. JSON transforms — FRAPI-путь на некоторых версиях Connector не применяет
+     *    blockstate-ротации корректно.
+     *
+     * Решение: в LOWEST-приоритете (после Continuity) разворачиваем обёртки обратно
+     * для всех моделей нашего мода, чтобы terrain-рендер использовал vanilla/Forge-путь.
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onModelBakeUnwrapContinuity(ModelEvent.ModifyBakingResult event) {
+        Map<ResourceLocation, BakedModel> models = event.getModels();
+
+        // Собираем замены отдельно — не модифицируем map во время итерации
+        Map<ResourceLocation, BakedModel> replacements = new java.util.HashMap<>();
+
+        for (Map.Entry<ResourceLocation, BakedModel> entry : models.entrySet()) {
+            if (!RefStrings.MODID.equals(entry.getKey().getNamespace())) continue;
+            BakedModel original = entry.getValue();
+            BakedModel unwrapped = com.hbm_m.client.render.AbstractPartBasedRenderer
+                    .unwrapFabricForwardingModels(original);
+            if (unwrapped != original) {
+                replacements.put(entry.getKey(), unwrapped);
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.debug(
+                            "[HBM] Unwrapped Continuity model: {} ({} → {})",
+                            entry.getKey(),
+                            original.getClass().getSimpleName(),
+                            unwrapped.getClass().getSimpleName());
+                }
+            }
+        }
+
+        if (!replacements.isEmpty()) {
+            models.putAll(replacements);
+            MainRegistry.LOGGER.info("[HBM] Unwrapped {} Continuity model wrappers from HBM models.",
+                    replacements.size());
         }
     }
 

@@ -226,7 +226,17 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         // --- VANILLA VBO PATH  ---
 
         ShaderInstance shader = ModShaders.getBlockLitShader();
-        if (shader == null) return;
+        if (shader == null) {
+            // Шейдер недоступен — фолбэк на ванильный путь
+            if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
+                VertexConsumer consumer = bufferSource.getBuffer(RenderType.solid());
+                PoseStack.Pose pose = poseStack.last();
+                for (BakedQuad quad : quadsForIris) {
+                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+                }
+            }
+            return;
+        }
 
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
@@ -385,7 +395,13 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     
     private void flushBatch(Matrix4f projectionMatrix) {
         ShaderInstance shader = ModShaders.getBlockLitShader();
-        if (shader == null) return;
+        if (shader == null) {
+            // Шейдер недоступен при flush — инстансы уже были сброшены через addInstance,
+            // просто сбрасываем буфер без GL-вызова
+            instanceCount = 0;
+            instanceBuffer.clear();
+            return;
+        }
 
         updateUniformCache(shader);
         instanceBuffer.flip();

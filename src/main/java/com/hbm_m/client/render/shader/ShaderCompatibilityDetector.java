@@ -3,6 +3,7 @@ package com.hbm_m.client.render.shader;
 import java.lang.reflect.Method;
 
 import com.hbm_m.main.MainRegistry;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
@@ -17,8 +18,13 @@ public class ShaderCompatibilityDetector {
     private static Method irisIsRenderingShadowPass = null;
     private static Object irisApiInstance = null;
     
-    // Кэш результата для оптимизации внутри одного кадра
+    // Кэш для оптимизации и для обращений с background-потоков (Sodium chunk builder)
     private static boolean lastState = false;
+    /**
+     * Thread-safe кэш: обновляется только с render-потока, читается с любых потоков.
+     * Sodium строит чанки на фоновых потоках — они не могут вызывать Iris API напрямую.
+     */
+    private static volatile boolean cachedShaderActive = false;
     /** Отложенная инвалидация — обрабатывается в ClientTickEvent.END */
     private static volatile boolean pendingChunkInvalidation = false;
 
@@ -41,6 +47,12 @@ public class ShaderCompatibilityDetector {
     }
 
     public static boolean isExternalShaderActive() {
+        // Sodium строит чанки на фоновых потоках. Вызов Iris API с фонового потока небезопасен
+        // (Iris хранит состояние в thread-locals render-потока). Возвращаем кэш.
+        if (!RenderSystem.isOnRenderThread()) {
+            return cachedShaderActive;
+        }
+
         if (!initialized) {
             init();
         }
@@ -50,12 +62,13 @@ public class ShaderCompatibilityDetector {
             return false;
         }
 
-        // Оптимизация: проверяем только один раз за кадр (Java-side frame counter можно эмулировать временем)
-        // Но даже без этого reflection call быстрый.
         try {
             Boolean inUse = (Boolean) irisIsShaderPackInUse.invoke(irisApiInstance);
             boolean isActive = inUse != null && inUse;
-            
+
+            // Обновляем кэш для фоновых потоков
+            cachedShaderActive = isActive;
+
             if (isActive != lastState) {
                 MainRegistry.LOGGER.info("Shader state changed: {}", isActive ? "Active" : "Inactive");
                 lastState = isActive;

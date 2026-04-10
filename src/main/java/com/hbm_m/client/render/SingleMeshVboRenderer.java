@@ -222,6 +222,12 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
         ShaderInstance shader = ModShaders.getBlockLitShader();
         if (shader == null) {
+            // Шейдер недоступен (не загрузился или был сброшен при ресурс-релоаде) —
+            // фолбэк на ванильный putBulkData-путь, чтобы модель не исчезала молча.
+            List<BakedQuad> fallbackQuads = getQuadsForIrisPath();
+            if (fallbackQuads != null && bufferSource != null) {
+                renderToBufferSource(poseStack, packedLight, fallbackQuads, bufferSource);
+            }
             return;
         }
 
