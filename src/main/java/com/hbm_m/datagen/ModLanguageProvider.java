@@ -1524,8 +1524,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.fire_door.default", "Новая");
                 add("door.skin.hbm_m.fire_door.black", "Чёрная");
                 add("door.skin.hbm_m.fire_door.orange", "Оранжевая");
+                add("door.skin.hbm_m.fire_door.trefoil", "Радиация");
+                add("door.skin.hbm_m.fire_door.yellow", "Жёлтая");
                 add("door.skin.hbm_m.secure_access_door.default", "Новая");
                 add("door.skin.hbm_m.secure_access_door.gray", "Серая");
+                add("door.skin.hbm_m.secure_access_door.yellow", "Жёлтая");
                 add("door.skin.hbm_m.sliding_blast_door.default", "Новая");
                 add("door.skin.hbm_m.sliding_blast_door.variant1", "Вариант 1");
                 add("door.skin.hbm_m.sliding_blast_door.variant2", "Вариант 2");
@@ -1533,8 +1536,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.large_vehicle_door.default", "Новая");
                 add("door.skin.hbm_m.large_vehicle_door.rad", "Радиация");
                 add("door.skin.hbm_m.water_door.default", "Новая");
+                add("door.skin.hbm_m.water_door.clean", "Чистая");
                 add("door.skin.hbm_m.qe_sliding_door.default", "Новая");
                 add("door.skin.hbm_m.qe_containment_door.default", "Новая");
+                add("door.skin.hbm_m.qe_containment_door.trefoil", "Радиация");
+                add("door.skin.hbm_m.qe_containment_door.trefoil_yellow", "Радиация 2");
                 add("door.skin.hbm_m.vault_door.default", "Vault 101");
                 add("door.skin.hbm_m.vault_door.skin_106", "Vault 106");
                 add("door.skin.hbm_m.vault_door.skin_2", "Vault 2");
@@ -3198,8 +3204,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.fire_door.default", "Standard");
                 add("door.skin.hbm_m.fire_door.black", "Black");
                 add("door.skin.hbm_m.fire_door.orange", "Orange");
+                add("door.skin.hbm_m.fire_door.trefoil", "Radiation");
+                add("door.skin.hbm_m.fire_door.yellow", "Yellow");
                 add("door.skin.hbm_m.secure_access_door.default", "Standard");
                 add("door.skin.hbm_m.secure_access_door.gray", "Gray");
+                add("door.skin.hbm_m.secure_access_door.yellow", "Yellow");
                 add("door.skin.hbm_m.sliding_blast_door.default", "Standard");
                 add("door.skin.hbm_m.sliding_blast_door.variant1", "Variant 1");
                 add("door.skin.hbm_m.sliding_blast_door.variant2", "Variant 2");
@@ -3207,8 +3216,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.large_vehicle_door.default", "Standard");
                 add("door.skin.hbm_m.large_vehicle_door.rad", "Radiation");
                 add("door.skin.hbm_m.water_door.default", "Standard");
+                add("door.skin.hbm_m.water_door.clean", "Clean");
                 add("door.skin.hbm_m.qe_sliding_door.default", "Standard");
                 add("door.skin.hbm_m.qe_containment_door.default", "Standard");
+                add("door.skin.hbm_m.qe_containment_door.trefoil", "Radiation");
+                add("door.skin.hbm_m.qe_containment_door.trefoil_yellow", "Radiation 2");
                 add("door.skin.hbm_m.vault_door.default", "Vault 101");
                 add("door.skin.hbm_m.vault_door.skin_106", "Vault 106");
                 add("door.skin.hbm_m.vault_door.skin_2", "Vault 2");
