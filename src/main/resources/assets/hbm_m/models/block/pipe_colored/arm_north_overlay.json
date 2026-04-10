@@ -17,9 +17,9 @@
     ]
   },
   "visibility": {
-    "pZ": false,
+    "pZ": true,
     "pX": false,
-    "nZ": true,
+    "nZ": false,
     "nX": false,
     "pY": false,
     "nY": false,
