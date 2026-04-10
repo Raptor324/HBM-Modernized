@@ -7,6 +7,7 @@ import java.util.Map;
 import java.util.function.Consumer;
 
 import org.jetbrains.annotations.Nullable;
+import org.joml.FrustumIntersection;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 import org.joml.Vector4fc;
@@ -27,11 +28,13 @@ import dev.engine_room.flywheel.lib.instance.TransformedInstance;
 import dev.engine_room.flywheel.lib.model.baked.BakedModelBuilder;
 import dev.engine_room.flywheel.lib.visual.AbstractBlockEntityVisual;
 import dev.engine_room.flywheel.lib.visual.SimpleDynamicVisual;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -167,6 +170,29 @@ public final class AdvancedAssemblerFlywheelVisual extends AbstractBlockEntityVi
         double thresholdBlocks = thresholdChunks * 16.0;
         double thresholdSquared = thresholdBlocks * thresholdBlocks;
         return distanceSquared > thresholdSquared;
+    }
+
+    @Override
+    public boolean isVisible(FrustumIntersection frustum) {
+        AABB bounds = blockEntity.getRenderBoundingBox();
+        var origin = visualizationContext.renderOrigin();
+
+        float minX = (float) (bounds.minX - origin.getX());
+        float minY = (float) (bounds.minY - origin.getY());
+        float minZ = (float) (bounds.minZ - origin.getZ());
+        float maxX = (float) (bounds.maxX - origin.getX());
+        float maxY = (float) (bounds.maxY - origin.getY());
+        float maxZ = (float) (bounds.maxZ - origin.getZ());
+
+        float centerX = (minX + maxX) * 0.5f;
+        float centerY = (minY + maxY) * 0.5f;
+        float centerZ = (minZ + maxZ) * 0.5f;
+        float dx = maxX - centerX;
+        float dy = maxY - centerY;
+        float dz = maxZ - centerZ;
+        float radius = (float) Math.sqrt(dx * dx + dy * dy + dz * dz);
+
+        return frustum.testSphere(centerX, centerY, centerZ, radius);
     }
 
     @Override
