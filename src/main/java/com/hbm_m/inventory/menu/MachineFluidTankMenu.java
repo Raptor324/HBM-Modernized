@@ -2,7 +2,8 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
-import com.hbm_m.item.IItemFluidIdentifier;
+import com.hbm_m.interfaces.IItemFluidIdentifier;
+
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;

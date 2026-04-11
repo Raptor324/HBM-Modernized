@@ -2,6 +2,8 @@ package com.hbm_m.item.grenades_and_activators;
 
 import net.minecraft.world.item.TooltipFlag;
 import java.util.List;
+
+import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -20,7 +22,6 @@ import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import com.hbm_m.block.explosives.IDetonatable;
 
 import javax.annotation.Nullable;
 

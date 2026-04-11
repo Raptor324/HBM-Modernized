@@ -1,10 +1,10 @@
-package com.hbm_m.block.entity.doors;
+package com.hbm_m.interfaces;
 
 /**
  * Server-safe abstraction for door transform animation.
  * Implemented on the client by renderer-specific animators.
  */
-public interface DoorAnimator {
+public interface IDoorAnimator {
 
     void translate(double x, double y, double z);
 

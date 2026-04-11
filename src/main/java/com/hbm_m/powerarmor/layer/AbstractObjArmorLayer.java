@@ -9,6 +9,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.client.model.AbstractMultipartBakedModel;
+import com.hbm_m.interfaces.IArmorLayerConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

@@ -6,8 +6,9 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.ModFluids;
-import com.hbm_m.item.IItemControlReceiver;
-import com.hbm_m.item.IItemFluidIdentifier;
+import com.hbm_m.block.machines.FluidDuctBlock;
+import com.hbm_m.interfaces.IItemControlReceiver;
+import com.hbm_m.interfaces.IItemFluidIdentifier;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -15,17 +16,21 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 
 /**
  * Universal fluid identifier. Has two slots (primary/secondary) for fluid types.
- * RMB: swap primary and secondary. Shift+RMB: open GUI to select fluids.
+ * RMB: swap primary and secondary. Shift+RMB in air: open GUI to select fluids.
+ * Shift+RMB on a fluid duct: paint that fluid onto the entire connected duct network (same block type).
  */
 public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, IItemControlReceiver {
 
@@ -34,6 +39,29 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
 
     public FluidIdentifierItem(Properties properties) {
         super(properties.stacksTo(1));
+    }
+
+    @Override
+    public InteractionResult useOn(UseOnContext context) {
+        Player player = context.getPlayer();
+        if (player == null || !player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        if (!(level.getBlockState(pos).getBlock() instanceof FluidDuctBlock)) {
+            return InteractionResult.PASS;
+        }
+        ItemStack stack = context.getItemInHand();
+        Fluid fluid = getType(level, pos, stack);
+        if (fluid == null) {
+            return InteractionResult.PASS;
+        }
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+        FluidDuctBlock.paintConnectedDuctNetwork(level, pos, fluid);
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     @Override

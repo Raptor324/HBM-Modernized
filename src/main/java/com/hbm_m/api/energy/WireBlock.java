@@ -8,6 +8,7 @@ import org.slf4j.Logger;
 
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.interfaces.IEnergyConnector;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;

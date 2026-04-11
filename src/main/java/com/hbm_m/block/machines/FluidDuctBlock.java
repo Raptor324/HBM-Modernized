@@ -1,6 +1,7 @@
 package com.hbm_m.block.machines;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -10,13 +11,19 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.google.common.collect.ImmutableMap;
+import com.hbm_m.api.fluids.HbmFluidRegistry;
+import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.entity.machines.FluidDuctBlockEntity;
-import com.hbm_m.item.IItemFluidIdentifier;
+import com.hbm_m.interfaces.IItemFluidIdentifier;
+import com.hbm_m.interfaces.ILookOverlay;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidDuctItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.Style;
+import net.minecraft.network.chat.TextColor;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -43,7 +50,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.fluids.FluidStack;
 
 /**
  * Fluid duct: multipart blockstate + Forge OBJ visibility on {@code pipe_neo.obj}. Fluid type lives in the block entity.
@@ -54,7 +65,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
  * Fluid identifier: normal click sets fluid on one duct; <b>sneak (Shift)</b> + click paints the connected network of the
  * same block type (depth-capped). Vanilla does not expose Ctrl on the server; use sneak for recursive mode.
  */
-public class FluidDuctBlock extends BaseEntityBlock {
+public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
 
     public static final BooleanProperty NORTH = BlockStateProperties.NORTH;
     public static final BooleanProperty EAST = BlockStateProperties.EAST;
@@ -81,6 +92,15 @@ public class FluidDuctBlock extends BaseEntityBlock {
             Direction.DOWN, Block.box(4, 0, 4, 12, 4, 12));
 
     private static final int IDENTIFIER_NETWORK_LIMIT = 512;
+
+    /** Identifier "none" mod fluid → cleared duct ({@link Fluids#EMPTY}). */
+    @Nullable
+    private static Fluid normalizeDuctPaintFluid(@Nullable Fluid fluid) {
+        if (fluid == null) {
+            return null;
+        }
+        return fluid == ModFluids.NONE.getSource() ? Fluids.EMPTY : fluid;
+    }
 
     private final PipeStyle pipeStyle;
 
@@ -207,8 +227,8 @@ public class FluidDuctBlock extends BaseEntityBlock {
         if (stack.isEmpty() || !(stack.getItem() instanceof IItemFluidIdentifier idItem)) {
             return InteractionResult.PASS;
         }
-        Fluid fluid = idItem.getType(level, pos, stack);
-        if (fluid == null || fluid == Fluids.EMPTY) {
+        Fluid fluid = normalizeDuctPaintFluid(idItem.getType(level, pos, stack));
+        if (fluid == null) {
             return InteractionResult.PASS;
         }
         if (level.isClientSide) {
@@ -299,6 +319,24 @@ public class FluidDuctBlock extends BaseEntityBlock {
         }
     }
 
+    /**
+     * Shift + fluid identifier on a duct: paints the whole connected network of the same duct block type.
+     * Used from {@link com.hbm_m.item.liquids.FluidIdentifierItem#useOn} because item {@code useOn} runs before block use
+     * and must consume the interaction so it is not confused with other UI.
+     */
+    public static void paintConnectedDuctNetwork(Level level, BlockPos start, Fluid fluid) {
+        fluid = normalizeDuctPaintFluid(fluid);
+        if (level.isClientSide || fluid == null) {
+            return;
+        }
+        BlockState st = level.getBlockState(start);
+        Block b = st.getBlock();
+        if (!(b instanceof FluidDuctBlock)) {
+            return;
+        }
+        applyIdentifierRecursive(level, start, fluid, b);
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(@Nonnull BlockPos pos, @Nonnull BlockState state) {
@@ -350,5 +388,24 @@ public class FluidDuctBlock extends BaseEntityBlock {
             FluidDuctItem.setFluidType(drop, ductBe.getFluidType());
         }
         return List.of(drop);
+    }
+
+    @Override
+    @OnlyIn(Dist.CLIENT)
+    public void printHook(RenderGuiEvent.Pre event, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof FluidDuctBlockEntity ductBe)) {
+            return;
+        }
+        List<Component> text = new ArrayList<>();
+        Fluid fluid = ductBe.getFluidType();
+        if (fluid == null || fluid == Fluids.EMPTY) {
+            text.add(Component.translatable("gui.hbm_m.fluid_duct.overlay.fluid_empty"));
+        } else {
+            FluidStack stack = new FluidStack(fluid, 1);
+            int rgb = HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
+            text.add(stack.getDisplayName().copy().withStyle(Style.EMPTY.withColor(TextColor.fromRgb(rgb))));
+        }
+        ILookOverlay.printGeneric(event, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 }

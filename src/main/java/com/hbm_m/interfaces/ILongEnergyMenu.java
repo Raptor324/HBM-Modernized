@@ -1,4 +1,4 @@
-package com.hbm_m.api.energy;
+package com.hbm_m.interfaces;
 
 public interface ILongEnergyMenu {
     // [ИСПРАВЛЕНИЕ] Добавляем третий аргумент long delta

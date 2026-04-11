@@ -10,8 +10,8 @@ import org.joml.Matrix4f;
 import com.hbm_m.block.ModBlocks;
 // Этот класс отвечает за подсветку блоков, если те мешают установке многоблочной структуры
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.multiblock.IMultiblockController;
-import com.hbm_m.multiblock.IMultiblockPart;
+import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.interfaces.IMultiblockPart;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;

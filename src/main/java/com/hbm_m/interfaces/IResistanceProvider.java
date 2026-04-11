@@ -1,4 +1,4 @@
-package com.hbm_m.powerarmor.resist;
+package com.hbm_m.interfaces;
 
 import net.minecraft.world.damagesource.DamageSource;
 

@@ -20,6 +20,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import com.hbm_m.datagen.assets.ModItemTagProvider;
+import com.hbm_m.interfaces.IHasTooltip;
 import com.hbm_m.inventory.menu.ModMenuTypes;
 import com.hbm_m.sound.ModSounds;
 

@@ -17,6 +17,8 @@ import org.slf4j.Logger;
 
 import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.interfaces.IEnergyProvider;
+import com.hbm_m.interfaces.IEnergyReceiver;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;

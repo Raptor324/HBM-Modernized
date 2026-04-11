@@ -9,9 +9,9 @@ import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.block.entity.machines.UniversalMachinePartBlockEntity;
+import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.multiblock.IMultiblockController;
-import com.hbm_m.multiblock.IMultiblockPart;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 

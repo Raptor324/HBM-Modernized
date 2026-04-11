@@ -10,10 +10,11 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
-import com.hbm_m.item.IItemFluidIdentifier;
-import com.hbm_m.multiblock.IMultiblockController;
+import com.hbm_m.interfaces.IItemFluidIdentifier;
+import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -63,9 +64,9 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         // < - слева, > - справа, ! - сверху, ? - снизу (префиксы для обозначения направления лестниц. Можно комбинировать. L без префиксов - значит лестница работает со всех сторон)
         
         String[] layer0 = {
-            "<LACAA",
+            "<LFCFA",
             "<LEEEA", 
-            "AAAAA"
+            "AFAFA"
         };
         
         String[] layer1 = {
@@ -83,12 +84,11 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         Map<Character, PartRole> roleMap = Map.of(
             'A', PartRole.DEFAULT,
             'C', PartRole.CONTROLLER,
-            'L', PartRole.LADDER
+            'L', PartRole.LADDER,
+            'F', PartRole.FLUID_CONNECTOR
         );
 
         Map<Character, Supplier<BlockState>> symbolMap = Map.of(
-            'A', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            'L', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
         );
 
         return MultiblockStructureHelper.createFromLayersWithRoles(

@@ -1,4 +1,4 @@
-package com.hbm_m.multiblock;
+package com.hbm_m.interfaces;
 
 /**
  * Этот интерфейс должны реализовывать BlockEntity тех мультиблочных контроллеров,

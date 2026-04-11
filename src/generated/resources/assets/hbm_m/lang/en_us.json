@@ -701,6 +701,7 @@
   "gui.hbm_m.door_model_selection.title": "Door Model Selection",
   "gui.hbm_m.energy": "Energy: %s/%s HE",
   "gui.hbm_m.fluid.empty": "Empty",
+  "gui.hbm_m.fluid_duct.overlay.fluid_empty": "No fluid assigned",
   "gui.hbm_m.fluid_tank.empty": "Empty",
   "gui.hbm_m.fluid_tank.empty_filter": "Empty (filter: %s)",
   "gui.hbm_m.fluid_tank.filter_set": "Type set to %s!",

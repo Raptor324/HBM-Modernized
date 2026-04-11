@@ -4,6 +4,7 @@ import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.world.level.Level;
 
+import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.util.explosions.general.BlastExplosionGenerator;
 import net.minecraft.core.BlockPos;

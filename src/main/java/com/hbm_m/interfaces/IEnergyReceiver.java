@@ -1,4 +1,4 @@
-package com.hbm_m.api.energy;
+package com.hbm_m.interfaces;
 
 public interface IEnergyReceiver extends IEnergyConnector {
 

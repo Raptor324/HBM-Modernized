@@ -1,10 +1,12 @@
-package com.hbm_m.multiblock;
+package com.hbm_m.interfaces;
 
 // Интерфейс для главного блока-контроллера мультиблочной структуры.
 // Он нужен, чтобы обработчик событий мог найти контроллер, наведясь на любую часть.
 
 import javax.annotation.Nullable;
 
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.state.BlockState;

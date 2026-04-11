@@ -6,6 +6,8 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
 import javax.annotation.Nullable;
 
+import com.hbm_m.interfaces.IEnergyConnector;
+
 /**
  * Провайдер Forge Energy для BlockEntity с упаковкой long в два int.
  *

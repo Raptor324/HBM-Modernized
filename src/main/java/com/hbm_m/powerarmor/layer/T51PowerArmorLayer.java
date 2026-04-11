@@ -4,6 +4,7 @@ import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
 
+import com.hbm_m.interfaces.IArmorLayerConfig;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.powerarmor.T51Armor;
 import com.hbm_m.powerarmor.render.ClientPowerArmorRender;

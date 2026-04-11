@@ -2,6 +2,7 @@ package com.hbm_m.powerarmor.resist;
 
 import java.util.HashMap;
 
+import com.hbm_m.interfaces.IResistanceProvider;
 import com.hbm_m.item.ModItems;
 
 import net.minecraft.world.damagesource.DamageSource;

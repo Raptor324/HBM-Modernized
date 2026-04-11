@@ -1114,6 +1114,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.fluid_duct_colored.empty", "Пустая цветная жидкостная труба");
                 add("item.hbm_m.fluid_duct_silver", "Серебристая жидкостная труба: %s");
                 add("item.hbm_m.fluid_duct_silver.empty", "Пустая серебристая жидкостная труба");
+                add("gui.hbm_m.fluid_duct.overlay.fluid_empty", "Жидкость не задана");
                 add(ModBlocks.INDUSTRIAL_BOILER.get(), "Промышленный котел");
                 add("block.hbm_m.machine_battery", "Энергохранилище");
                 add("block.hbm_m.ore_oil", "Нефтеносная руда");
@@ -2976,6 +2977,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.fluid_duct_colored.empty", "Empty Colored Fluid Duct");
                 add("item.hbm_m.fluid_duct_silver", "Silver Fluid Duct: %s");
                 add("item.hbm_m.fluid_duct_silver.empty", "Empty Silver Fluid Duct");
+                add("gui.hbm_m.fluid_duct.overlay.fluid_empty", "No fluid assigned");
                 add(ModBlocks.INDUSTRIAL_BOILER.get(), "Industrial Boiler");
                 add(ModBlocks.INDUSTRIAL_TURBINE.get(), "Industrial Turbine");
                 add("block.hbm_m.machine_battery", "Machine Battery");

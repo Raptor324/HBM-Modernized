@@ -1,4 +1,4 @@
-package com.hbm_m.block.explosives;
+package com.hbm_m.interfaces;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.player.Player;

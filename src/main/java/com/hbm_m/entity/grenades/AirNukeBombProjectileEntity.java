@@ -5,8 +5,8 @@ import java.util.List;
 import java.util.Random;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.explosives.IDetonatable;
 import com.hbm_m.entity.ModEntities;
+import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;

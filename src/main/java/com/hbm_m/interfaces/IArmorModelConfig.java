@@ -1,4 +1,4 @@
-package com.hbm_m.powerarmor.render;
+package com.hbm_m.interfaces;
 
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 

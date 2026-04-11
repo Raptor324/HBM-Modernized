@@ -5,8 +5,8 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
+import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.multiblock.IMultiblockPart;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;

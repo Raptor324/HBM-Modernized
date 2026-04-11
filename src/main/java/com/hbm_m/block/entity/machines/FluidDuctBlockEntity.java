@@ -8,6 +8,7 @@ import javax.annotation.Nullable;
 
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.FluidDuctBlock;
+import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -162,12 +163,16 @@ public class FluidDuctBlockEntity extends BlockEntity {
 
     @Override
     public void load(@Nonnull CompoundTag tag) {
+        Fluid before = this.fluidType;
         super.load(tag);
         if (tag.contains(NBT_FLUID_TYPE)) {
             Fluid f = ForgeRegistries.FLUIDS.getValue(new ResourceLocation(tag.getString(NBT_FLUID_TYPE)));
             this.fluidType = f != null ? f : Fluids.EMPTY;
         }
         tank.readFromNBT(tag);
+        if (level != null && level.isClientSide && before != this.fluidType) {
+            refreshClientTintMesh();
+        }
     }
 
     // --- Client sync ---
@@ -182,6 +187,25 @@ public class FluidDuctBlockEntity extends BlockEntity {
     @Override
     public Packet<ClientGamePacketListener> getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
+    }
+
+    /**
+     * Fluid tint comes from {@link net.minecraftforge.client.event.RegisterColorHandlersEvent.Block}; chunk quads
+     * bake tint into the mesh. A lone duct often gets no {@link BlockState} change after placement (isolated shape
+     * equals default), so without this the client keeps the first mesh (empty BE / white overlay) until a neighbor
+     * update forces a rebuild.
+     * <p>
+     * Embeddium/Sodium cache chunk meshes like doors — vanilla {@code sendBlockUpdated} is not enough; we defer
+     * {@link net.minecraft.client.renderer.LevelRenderer#blockChanged} to the next client tick (see
+     * {@link DoorChunkInvalidationHelper}).
+     */
+    private void refreshClientTintMesh() {
+        if (level == null || !level.isClientSide) {
+            return;
+        }
+        requestModelDataUpdate();
+        level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
+        DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
     }
 
     // --- Capabilities ---

@@ -7,9 +7,9 @@ import javax.annotation.Nonnull;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.IEnergyProvider;
 import com.hbm_m.api.energy.LongEnergyWrapper;
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.interfaces.IEnergyProvider;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;

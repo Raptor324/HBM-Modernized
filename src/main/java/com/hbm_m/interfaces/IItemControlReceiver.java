@@ -1,4 +1,4 @@
-package com.hbm_m.item;
+package com.hbm_m.interfaces;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;

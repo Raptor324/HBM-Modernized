@@ -390,7 +390,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     }
 
     public void setFilterFromIdentifier(ItemStack stack) {
-        if (stack.isEmpty() || !(stack.getItem() instanceof com.hbm_m.item.IItemFluidIdentifier idItem)) return;
+        if (stack.isEmpty() || !(stack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier idItem)) return;
 
         Fluid newType = idItem.getType(level, worldPosition, stack);
         if (newType == null || newType == Fluids.EMPTY) return;

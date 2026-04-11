@@ -682,6 +682,7 @@
   "gui.hbm_m.door_model_selection.title": "Выбор модели двери",
   "gui.hbm_m.energy": "Энергия: %s/%s HE",
   "gui.hbm_m.fluid.empty": "Пусто",
+  "gui.hbm_m.fluid_duct.overlay.fluid_empty": "Жидкость не задана",
   "gui.hbm_m.fluid_tank.empty": "Пусто",
   "gui.hbm_m.fluid_tank.empty_filter": "Пусто (фильтр: %s)",
   "gui.hbm_m.fluid_tank.filter_set": "Тип установлен: %s!",

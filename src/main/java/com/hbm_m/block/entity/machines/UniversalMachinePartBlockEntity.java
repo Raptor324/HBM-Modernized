@@ -5,7 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.multiblock.IMultiblockPart;
+import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;

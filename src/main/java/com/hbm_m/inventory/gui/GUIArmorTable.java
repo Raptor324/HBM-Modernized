@@ -1,9 +1,9 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.armormod.menu.ArmorTableMenu;
-import com.hbm_m.armormod.menu.IHasTooltip;
+import com.hbm_m.interfaces.IHasTooltip;
+import com.hbm_m.interfaces.IMixinSlot;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.util.IMixinSlot;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;

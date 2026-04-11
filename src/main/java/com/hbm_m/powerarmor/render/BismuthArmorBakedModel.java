@@ -1,5 +1,6 @@
 package com.hbm_m.powerarmor.render;
 
+import com.hbm_m.interfaces.IArmorModelConfig;
 import com.hbm_m.powerarmor.BismuthArmor;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
