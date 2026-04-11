@@ -830,6 +830,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.inf_water_mk2", "Бочка с бесконечной водой mk2");
 
                 add("gui.hbm_m.fluid_tank.empty", "Пусто");
+                add("gui.hbm_m.fluid_tank.empty_locked", "Пусто (тип цистерны: %s)");
                 add("gui.hbm_m.fluid_tank.empty_filter", "Пусто (фильтр: %s)");
                 add("gui.hbm_m.fluid_tank.filter_set", "Тип установлен: %s!");
                 add("gui.hbm_m.fluid_tank.mode.0", "Режим: Только ввод");
@@ -2474,6 +2475,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.inf_water_mk2", "Infinite Water Barrel mk2");
 
                 add("gui.hbm_m.fluid_tank.empty", "Empty");
+                add("gui.hbm_m.fluid_tank.empty_locked", "Empty (tank type: %s)");
                 add("gui.hbm_m.fluid_tank.empty_filter", "Empty (filter: %s)");
                 add("gui.hbm_m.fluid_tank.filter_set", "Type set to %s!");
                 add("gui.hbm_m.fluid_tank.mode.0", "Mode: Input only");

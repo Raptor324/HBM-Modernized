@@ -54,22 +54,28 @@ public class FluidTank {
     }
 
     public FluidTank withPressure(int pressure) {
-        if (this.pressure != pressure) this.fill(0);
+        if (this.pressure != pressure) {
+            this.type = Fluids.EMPTY;
+            this.fluid = 0;
+        }
         this.pressure = pressure;
         return this;
     }
 
+    /**
+     * Задаёт уровень заполнения бака. Тип жидкости НЕ сбрасывается при 0 —
+     * это позволяет баку «помнить» свой тип, даже когда он пуст (как в 1.7.10).
+     * Для полного сброса используй {@link #resetTank()}.
+     */
     public void fill(int amount) {
         this.fluid = Mth.clamp(amount, 0, maxFluid);
-        if (this.fluid == 0) this.type = Fluids.EMPTY;
     }
 
     public void setTankType(Fluid type) {
         if (type == null) type = Fluids.EMPTY;
         if (this.type == type) return;
-        
         this.type = type;
-        this.fill(0);
+        this.fluid = 0;
     }
 
     public void resetTank() {
@@ -87,6 +93,12 @@ public class FluidTank {
     public Fluid getTankType() { return type; }
     public int getFill() { return fluid; }
     public int getMaxFill() { return maxFluid; }
+
+    /** Задаёт тип и обнуляет объём (слот идентификатора); не вызывает {@link #fill(int)}, чтобы сохранить тип NONE. */
+    public void assignTypeAndZeroFluid(Fluid newType) {
+        this.type = newType == null ? Fluids.EMPTY : newType;
+        this.fluid = 0;
+    }
     public int getPressure() { return pressure; }
 
     public int changeTankSize(int size) {
@@ -127,28 +139,26 @@ public class FluidTank {
     }
 
     public boolean setType(int in, int out, ItemStack[] slots) {
-        if (slots[in] != null && !slots[in].isEmpty() && slots[in].getItem() instanceof FluidIdentifierItem) {
-            Fluid newType = FluidIdentifierItem.getType(slots[in], true);
-            
-            if (newType == null || newType == Fluids.EMPTY) return false;
-
-            if (in == out) {
-                if (type != newType) {
-                    type = newType;
-                    fluid = 0;
-                    return true;
-                }
-            } else if (slots[out] == null || slots[out].isEmpty()) {
-                if (type != newType) {
-                    type = newType;
-                    slots[out] = slots[in].copy();
-                    slots[in] = ItemStack.EMPTY;
-                    fluid = 0;
-                    return true;
-                }
+        if (slots[in] == null || slots[in].isEmpty() || !(slots[in].getItem() instanceof FluidIdentifierItem)) {
+            return false;
+        }
+        Fluid newType = FluidIdentifierItem.resolvePrimaryForTank(slots[in]);
+        if (newType == null) {
+            return false;
+        }
+        // Тот же тип — ничего не делаем, идентификатор остаётся в слоте
+        if (type == newType) {
+            return false;
+        }
+        type = newType;
+        fluid = 0;
+        if (in != out) {
+            if (slots[out] == null || slots[out].isEmpty()) {
+                slots[out] = slots[in].copy();
+                slots[in] = ItemStack.EMPTY;
             }
         }
-        return false;
+        return true;
     }
 
     public boolean setType(int in, ItemStack[] slots) {
@@ -220,38 +230,45 @@ public class FluidTank {
             ItemStack inputStack = slots[in];
             if (inputStack == null || inputStack.isEmpty()) return false;
 
-            ItemStack stackToDrain = inputStack.copy();
-            stackToDrain.setCount(1);
-
-            return stackToDrain.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
-                FluidStack drainedSim = handler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
+            // Phase 1: SIMULATE on a copy to check feasibility and output slot compatibility
+            ItemStack simCopy = inputStack.copy();
+            simCopy.setCount(1);
+            Boolean feasible = simCopy.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(simHandler -> {
+                FluidStack drainedSim = simHandler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
                 if (drainedSim.isEmpty()) return false;
-
-                if (tank.getTankType() != Fluids.EMPTY && tank.getTankType() != drainedSim.getFluid()) {
-                    return false;
-                }
-
+                if (tank.getTankType() != Fluids.EMPTY && tank.getTankType() != drainedSim.getFluid()) return false;
                 int space = tank.getMaxFill() - tank.getFill();
                 int amountToDrain = Math.min(drainedSim.getAmount(), space);
                 if (amountToDrain <= 0) return false;
+
+                // Simulate the drain to get the resulting container
+                simHandler.drain(amountToDrain, IFluidHandler.FluidAction.EXECUTE);
+                ItemStack containerResult = simHandler.getContainer();
+                return canPlaceItemInSlot(slots, out, containerResult);
+            }).orElse(false);
+
+            if (!feasible) return false;
+
+            // Phase 2: EXECUTE on a fresh copy (sim copy's state is dirty)
+            ItemStack execCopy = inputStack.copy();
+            execCopy.setCount(1);
+            return execCopy.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
+                FluidStack drainedSim = handler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
+                int space = tank.getMaxFill() - tank.getFill();
+                int amountToDrain = Math.min(drainedSim.getAmount(), space);
 
                 FluidStack drainedReal = handler.drain(amountToDrain, IFluidHandler.FluidAction.EXECUTE);
                 if (drainedReal.isEmpty()) return false;
 
                 ItemStack containerResult = handler.getContainer();
-
-                if (canPlaceItemInSlot(slots, out, containerResult)) {
-                    if (tank.getTankType() == Fluids.EMPTY) {
-                        tank.setTankType(drainedReal.getFluid());
-                    }
-                    tank.fill(tank.getFill() + drainedReal.getAmount());
-                    
-                    placeItemInSlot(slots, out, containerResult);
-                    slots[in].shrink(1);
-                    if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
-                    return true;
+                if (tank.getTankType() == Fluids.EMPTY) {
+                    tank.setTankType(drainedReal.getFluid());
                 }
-                return false;
+                tank.fill(tank.getFill() + drainedReal.getAmount());
+                placeItemInSlot(slots, out, containerResult);
+                slots[in].shrink(1);
+                if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
+                return true;
             }).orElse(false);
         }
 
@@ -260,26 +277,36 @@ public class FluidTank {
             ItemStack inputStack = slots[in];
             if (inputStack == null || inputStack.isEmpty() || tank.getFill() <= 0) return false;
 
-            ItemStack stackToFill = inputStack.copy();
-            stackToFill.setCount(1);
+            // Phase 1: SIMULATE on a copy to check feasibility and output slot compatibility
+            ItemStack simCopy = inputStack.copy();
+            simCopy.setCount(1);
+            Boolean feasible = simCopy.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(simHandler -> {
+                FluidStack resource = new FluidStack(tank.getTankType(), tank.getFill());
+                int filledAmount = simHandler.fill(resource, IFluidHandler.FluidAction.SIMULATE);
+                if (filledAmount <= 0) return false;
 
-            return stackToFill.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
+                // Execute on sim copy to get the container result
+                simHandler.fill(resource, IFluidHandler.FluidAction.EXECUTE);
+                ItemStack containerResult = simHandler.getContainer();
+                return canPlaceItemInSlot(slots, out, containerResult);
+            }).orElse(false);
+
+            if (!feasible) return false;
+
+            // Phase 2: EXECUTE on a fresh copy
+            ItemStack execCopy = inputStack.copy();
+            execCopy.setCount(1);
+            return execCopy.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
                 FluidStack resource = new FluidStack(tank.getTankType(), tank.getFill());
                 int filledAmount = handler.fill(resource, IFluidHandler.FluidAction.EXECUTE);
-                
                 if (filledAmount <= 0) return false;
 
                 ItemStack containerResult = handler.getContainer();
-
-                if (canPlaceItemInSlot(slots, out, containerResult)) {
-                    tank.fill(tank.getFill() - filledAmount);
-                    
-                    placeItemInSlot(slots, out, containerResult);
-                    slots[in].shrink(1);
-                    if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
-                    return true;
-                }
-                return false;
+                tank.fill(tank.getFill() - filledAmount);
+                placeItemInSlot(slots, out, containerResult);
+                slots[in].shrink(1);
+                if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
+                return true;
             }).orElse(false);
         }
     }

@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Optional;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
+import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.inventory.menu.MachineFluidTankMenu;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.FluidTankModePacket;
@@ -24,6 +25,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
 
@@ -184,12 +186,30 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
             lines.add(fluid.getDisplayName());
             lines.add(Component.literal(fluid.getAmount() + " / " + tankCapacity + " mB"));
         } else {
-            int filterId = this.menu.getFilterFluidId();
-            if (filterId >= 0) {
-                Fluid filterFluid = BuiltInRegistries.FLUID.byId(filterId);
-                lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty_filter", Component.translatable(filterFluid.getFluidType().getDescriptionId())));
+            // При 0 mB getFluid() пустой, но тип цистерны (как текстура в мире) — data[1], не filterFluid[6]
+            Fluid tankType = this.menu.getTankTypeFluid();
+            Component lockedTypeName = null;
+            if (tankType == ModFluids.NONE.getSource()) {
+                lockedTypeName = Component.translatable("fluid.hbm_m.none");
+            } else if (tankType != null && tankType != Fluids.EMPTY) {
+                lockedTypeName = Component.translatable(tankType.getFluidType().getDescriptionId());
+            }
+            if (lockedTypeName != null) {
+                lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty_locked", lockedTypeName));
+                lines.add(Component.literal("0 / " + tankCapacity + " mB"));
             } else {
-                lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty"));
+                int filterId = this.menu.getFilterFluidId();
+                if (filterId >= 0) {
+                    Fluid filterFluid = BuiltInRegistries.FLUID.byId(filterId);
+                    if (filterFluid != null && filterFluid != Fluids.EMPTY) {
+                        lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty_filter",
+                                Component.translatable(filterFluid.getFluidType().getDescriptionId())));
+                    } else {
+                        lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty"));
+                    }
+                } else {
+                    lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty"));
+                }
             }
         }
 

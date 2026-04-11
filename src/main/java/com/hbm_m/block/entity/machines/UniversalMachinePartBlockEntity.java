@@ -44,16 +44,22 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         if (this.role != role) {
             boolean wasEnergy = this.role.canReceiveEnergy() || this.role.canSendEnergy();
             boolean isEnergy = role.canReceiveEnergy() || role.canSendEnergy();
+            boolean wasFluid = isFluidConnector(this.role);
+            boolean isFluid  = isFluidConnector(role);
             this.role = role;
             this.setChanged();
             if (level != null && !level.isClientSide()) {
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
-                // Уведомляем соседей (провода и др.), чтобы обновили визуальное соединение
-                if (wasEnergy || isEnergy) {
+                // Уведомляем соседей при смене роли, влияющей на соединения (провода, трубы, etc.)
+                if (wasEnergy || isEnergy || wasFluid || isFluid) {
                     level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
                 }
             }
         }
+    }
+
+    private static boolean isFluidConnector(PartRole r) {
+        return r == PartRole.FLUID_CONNECTOR || r == PartRole.UNIVERSAL_CONNECTOR;
     }
 
     @Override
@@ -78,6 +84,17 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     @Override
     public java.util.Set<Direction> getAllowedClimbSides() {
         return this.allowedClimbSides;
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        // При загрузке мира роль восстанавливается из NBT, минуя setPartRole.
+        // Уведомляем соседей, чтобы трубы/провода обновили визуальные соединения.
+        if (level != null && !level.isClientSide() &&
+                (isFluidConnector(role) || role.canReceiveEnergy() || role.canSendEnergy())) {
+            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
+        }
     }
 
     @NotNull
@@ -125,8 +142,10 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         }
 
         // === ДЕЛЕГИРОВАНИЕ ЖИДКОСТЕЙ ===
+        // Передаём null как side, чтобы контроллер мог отличить внутреннее делегирование
+        // от прямого внешнего подключения трубы к лицу блока контроллера.
         if (cap == ForgeCapabilities.FLUID_HANDLER && this.role == PartRole.FLUID_CONNECTOR) {
-            return controllerBE.getCapability(cap, side);
+            return controllerBE.getCapability(cap, null);
         }
 
         return super.getCapability(cap, side);

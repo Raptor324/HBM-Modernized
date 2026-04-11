@@ -685,6 +685,7 @@
   "gui.hbm_m.fluid_duct.overlay.fluid_empty": "Жидкость не задана",
   "gui.hbm_m.fluid_tank.empty": "Пусто",
   "gui.hbm_m.fluid_tank.empty_filter": "Пусто (фильтр: %s)",
+  "gui.hbm_m.fluid_tank.empty_locked": "Пусто (тип цистерны: %s)",
   "gui.hbm_m.fluid_tank.filter_set": "Тип установлен: %s!",
   "gui.hbm_m.fluid_tank.mode.0": "Режим: Только ввод",
   "gui.hbm_m.fluid_tank.mode.1": "Режим: Буфер",

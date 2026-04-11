@@ -224,6 +224,21 @@ public class ModBlockEntities {
                             ModBlocks.FLUID_DUCT_COLORED.get(),
                             ModBlocks.FLUID_DUCT_SILVER.get()).build(null));
 
+    public static final RegistryObject<BlockEntityType<FluidValveBlockEntity>> FLUID_VALVE_BE =
+            BLOCK_ENTITIES.register("fluid_valve_be", () ->
+                    BlockEntityType.Builder.of(FluidValveBlockEntity::new,
+                            ModBlocks.FLUID_VALVE.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<FluidPumpBlockEntity>> FLUID_PUMP_BE =
+            BLOCK_ENTITIES.register("fluid_pump_be", () ->
+                    BlockEntityType.Builder.of(FluidPumpBlockEntity::new,
+                            ModBlocks.FLUID_PUMP.get()).build(null));
+
+    public static final RegistryObject<BlockEntityType<FluidExhaustBlockEntity>> FLUID_EXHAUST_BE =
+            BLOCK_ENTITIES.register("fluid_exhaust_be", () ->
+                    BlockEntityType.Builder.of(FluidExhaustBlockEntity::new,
+                            ModBlocks.FLUID_EXHAUST.get()).build(null));
+
     public static void register(IEventBus eventBus) {
         BLOCK_ENTITIES.register(eventBus);
     }

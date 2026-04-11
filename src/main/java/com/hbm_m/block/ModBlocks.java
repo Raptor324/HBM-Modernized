@@ -342,6 +342,18 @@ public class ModBlocks {
             () -> new FluidDuctBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion(),
                     com.hbm_m.block.machines.PipeStyle.SILVER));
 
+    public static final RegistryObject<Block> FLUID_VALVE = registerBlockWithoutItem("fluid_valve",
+            () -> new com.hbm_m.block.machines.FluidValveBlock(
+                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion()));
+
+    public static final RegistryObject<Block> FLUID_PUMP = registerBlockWithoutItem("fluid_pump",
+            () -> new com.hbm_m.block.machines.FluidPumpBlock(
+                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(3.0f).sound(SoundType.METAL).noOcclusion()));
+
+    public static final RegistryObject<Block> FLUID_EXHAUST = registerBlockWithoutItem("fluid_exhaust",
+            () -> new com.hbm_m.block.machines.FluidExhaustBlock(
+                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion()));
+
     public static final RegistryObject<Block> HEATING_OVEN = registerBlock("heating_oven",
             () -> new HeatingOvenBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 

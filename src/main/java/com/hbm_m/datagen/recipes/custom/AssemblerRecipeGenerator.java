@@ -1,14 +1,15 @@
 package com.hbm_m.datagen.recipes.custom;
 
+import java.util.function.Consumer;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.datagen.recipes.ModRecipeProvider;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
+
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-
-import java.util.function.Consumer;
 
 /**
  * Groups all assembler recipes so they can be maintained separately from {@link ModRecipeProvider}.
@@ -22,6 +23,7 @@ public final class AssemblerRecipeGenerator {
         registerMainRecipes(writer);
         registerElectronics(writer);
         registerPlateRecipes(writer);
+        registerDoorRecipes(writer);
     }
 
 
@@ -57,6 +59,17 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.MOTOR.get(), 2)
                 .addIngredient(ModItems.INSULATOR.get(), 16)
                 .save(writer, "chemical_plant");
+    }
+
+    private static void registerDoorRecipes(Consumer<FinishedRecipe> writer) {
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.LARGE_VEHICLE_DOOR.get(), 1), 80, 150)
+                .addIngredient(ModItems.PLATE_CAST_DARK.get(), 16)
+                .addIngredient(ModItems.INSULATOR.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 4)
+                .addIngredient(ModItems.METAL_ROD.get(), 16)
+                .addIngredient(Items.GREEN_DYE, 4)
+                .save(writer, "large_vehicle_door");
     }
 
     private static void registerElectronics(Consumer<FinishedRecipe> writer) {

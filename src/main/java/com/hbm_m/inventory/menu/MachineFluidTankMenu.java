@@ -5,6 +5,7 @@ import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -31,7 +32,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
     private static final int HOTBAR_END = HOTBAR_START + 9;
 
     public MachineFluidTankMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(6));
+        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(7));
     }
 
     public MachineFluidTankMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -39,7 +40,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
         this.blockEntity = (MachineFluidTankBlockEntity) entity;
         this.data = data;
 
-        checkContainerDataCount(data, 4);
+        checkContainerDataCount(data, 7);
 
         this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
             // Fluid identifier input: (8, 17) - только IItemFluidIdentifier
@@ -116,13 +117,27 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
         return new FluidStack(fluid, amount);
     }
 
+    /** Синхронизированный тип цистерны (как в мире), даже при 0 mB. */
+    public int getTankTypeFluidId() {
+        return this.data.get(1);
+    }
+
+    public Fluid getTankTypeFluid() {
+        int id = getTankTypeFluidId();
+        if (id < 0) {
+            return Fluids.EMPTY;
+        }
+        Fluid f = BuiltInRegistries.FLUID.byId(id);
+        return f != null ? f : Fluids.EMPTY;
+    }
+
     public int getMode() {
         return this.data.get(2);
     }
 
     /** Filter fluid ID for tooltip when tank is empty (-1 if no filter) */
     public int getFilterFluidId() {
-        return this.data.get(3);
+        return this.data.get(6);
     }
 
     @Override

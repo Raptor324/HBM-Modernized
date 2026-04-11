@@ -405,6 +405,10 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
             FluidStack stack = new FluidStack(fluid, 1);
             int rgb = HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
             text.add(stack.getDisplayName().copy().withStyle(Style.EMPTY.withColor(TextColor.fromRgb(rgb))));
+            text.add(Component.literal("Net nodes: " + ductBe.getNetworkSize())
+                    .withStyle(net.minecraft.ChatFormatting.GRAY));
+            text.add(Component.literal("Transfer/t: " + ductBe.getFluidTracker() + " mB")
+                    .withStyle(net.minecraft.ChatFormatting.GRAY));
         }
         ILookOverlay.printGeneric(event, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }

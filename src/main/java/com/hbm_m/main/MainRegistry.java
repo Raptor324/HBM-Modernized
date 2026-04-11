@@ -80,7 +80,6 @@ public class MainRegistry {
     public static final String MOD_ID = "hbm_m";
 
 
-
     private void registerCapabilities(IEventBus modEventBus) {
         modEventBus.addListener(ModCapabilities::register);
     }
@@ -127,6 +126,9 @@ public class MainRegistry {
         modEventBus.register(MachineConfig.class);
 
         MinecraftForge.EVENT_BUS.register(this);
+        // Регистрируем класс отдельно, чтобы static @SubscribeEvent-обработчики
+        // (server tick / world load-unload / server stop) гарантированно работали.
+        MinecraftForge.EVENT_BUS.register(MainRegistry.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new PlayerHandler());
 
@@ -182,8 +184,12 @@ public class MainRegistry {
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
-            ServerLevel level = event.getServer().overworld(); // или через все миры
+            // Энергосеть — только для overworld (текущее поведение)
+            ServerLevel level = event.getServer().overworld();
             EnergyNetworkManager.get(level).tick();
+
+            // Жидкостная сеть MK2 — все измерения
+            com.hbm_m.api.network.UniNodespace.updateNodespace(event.getServer());
         }
     }
 
@@ -192,6 +198,19 @@ public class MainRegistry {
         if (event.getLevel() instanceof ServerLevel serverLevel) {
             EnergyNetworkManager.get(serverLevel).rebuildAllNetworks();
         }
+    }
+
+    @SubscribeEvent
+    public static void onServerWorldUnload(LevelEvent.Unload event) {
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+            com.hbm_m.api.network.UniNodespace.onLevelUnload(serverLevel);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onServerStopped(net.minecraftforge.event.server.ServerStoppedEvent event) {
+        com.hbm_m.api.network.UniNodespace.onServerStop();
+        com.hbm_m.api.fluids.FluidNetProvider.clearAll();
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
