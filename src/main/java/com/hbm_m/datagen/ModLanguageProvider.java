@@ -1528,6 +1528,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.fire_door.yellow", "Жёлтая");
                 add("door.skin.hbm_m.secure_access_door.default", "Новая");
                 add("door.skin.hbm_m.secure_access_door.gray", "Серая");
+                add("door.skin.hbm_m.secure_access_door.black", "Черная");
                 add("door.skin.hbm_m.secure_access_door.yellow", "Жёлтая");
                 add("door.skin.hbm_m.sliding_blast_door.default", "Новая");
                 add("door.skin.hbm_m.sliding_blast_door.variant1", "Вариант 1");
@@ -3208,6 +3209,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.fire_door.yellow", "Yellow");
                 add("door.skin.hbm_m.secure_access_door.default", "Standard");
                 add("door.skin.hbm_m.secure_access_door.gray", "Gray");
+                add("door.skin.hbm_m.secure_access_door.black", "Black");
                 add("door.skin.hbm_m.secure_access_door.yellow", "Yellow");
                 add("door.skin.hbm_m.sliding_blast_door.default", "Standard");
                 add("door.skin.hbm_m.sliding_blast_door.variant1", "Variant 1");
