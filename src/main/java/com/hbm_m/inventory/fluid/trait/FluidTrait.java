@@ -19,14 +19,19 @@ public abstract class FluidTrait {
     public static HashBiMap<String, Class<? extends FluidTrait>> traitNameMap = HashBiMap.create();
     
     static {
-        // complex traits with values
+        // complex traits with values — order matches 1.7.10 FluidTrait.traitList for tooltip parity
         registerTrait("corrosive", FT_Corrosive.class);
         registerTrait("flammable", FT_Flammable.class);
         registerTrait("combustible", FT_Combustible.class);
+        registerTrait("polluting", FT_Polluting.class);
+        registerTrait("heatable", FT_Heatable.class);
         registerTrait("coolable", FT_Coolable.class);
+        registerTrait("pwrmoderator", FT_PWRModerator.class);
+        registerTrait("poison", FT_Poison.class);
+        registerTrait("toxin", FT_Toxin.class);
         registerTrait("ventradiation", FT_VentRadiation.class);
-        // TODO: Добавить FT_Polluting, FT_Heatable, FT_Poison/Toxin по мере портирования
-        
+        registerTrait("pheromone", FT_Pheromone.class);
+
         // simple traits, "tags"
         registerTrait("gaseous", FluidTraitSimple.FT_Gaseous.class);
         registerTrait("gaseous_art", FluidTraitSimple.FT_Gaseous_ART.class);

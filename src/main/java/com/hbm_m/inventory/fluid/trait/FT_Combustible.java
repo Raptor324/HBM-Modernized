@@ -6,6 +6,8 @@ import java.util.List;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 
+import com.hbm_m.util.EnergyFormatter;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 
@@ -27,12 +29,12 @@ public class FT_Combustible extends FluidTrait {
 
         info.add(Component.literal("[Combustible]").withStyle(ChatFormatting.GOLD));
         
-        if(combustionEnergy > 0) {
-            String formattedEnergy = String.format("%,d", combustionEnergy);
-            
+        if (combustionEnergy > 0) {
+            String formattedEnergy = EnergyFormatter.formatTooltipNumber(combustionEnergy);
+
             info.add(Component.literal("Provides ")
                     .withStyle(ChatFormatting.GOLD)
-                    .append(Component.literal(formattedEnergy + "HE ").withStyle(ChatFormatting.RED))
+                    .append(Component.literal(formattedEnergy + " HE ").withStyle(ChatFormatting.RED))
                     .append(Component.literal("per bucket").withStyle(ChatFormatting.GOLD)));
                     
             info.add(Component.literal("Fuel grade: ")

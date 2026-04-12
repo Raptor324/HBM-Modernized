@@ -825,6 +825,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.fluid_identifier.none", "Мульти-жидкостный идентификатор");
                 add("item.hbm_m.fluid_identifier.info", "Жидкостный идентификатор для:");
                 add("item.hbm_m.fluid_identifier.info2", "Второй тип:");
+                add("toast.hbm_m.fluid_identifier_active", "Текущий тип: %s");
                 add("item.hbm_m.bucket_crude_oil", "Ведро сырой нефти (WIP)");
                 add("item.hbm_m.inf_water", "Бочка с бесконечной водой");
                 add("item.hbm_m.inf_water_mk2", "Бочка с бесконечной водой mk2");
@@ -837,8 +838,31 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.fluid_tank.mode.1", "Режим: Буфер");
                 add("gui.hbm_m.fluid_tank.mode.2", "Режим: Только вывод");
                 add("gui.hbm_m.fluid_tank.mode.3", "Режим: Отключено");
-                
-
+                add("gui.hbm_m.fluid_tank.pressure", "Давление: %s PU");
+                add("gui.hbm_m.fluid_tank.pressurized", "Под давлением — используйте компрессор!");
+                add("gui.hbm_m.fluid_tank.hold_shift_more", "Удерживайте LSHIFT для подробностей");
+                add("fluid.hbm_m.trait.polluting", "[Загрязняющая]");
+                add("fluid.hbm_m.trait.polluting.when_spilled", "При разливе:");
+                add("fluid.hbm_m.trait.polluting.when_burned", "При сжигании:");
+                add("fluid.hbm_m.trait.polluting.line", "%s — %s");
+                add("fluid.hbm_m.trait.heatable.thermal_capacity", "Теплоёмкость: %s TU на %s mB");
+                add("fluid.hbm_m.trait.efficiency_pct", "КПД: %s%%");
+                add("fluid.hbm_m.trait.pwr_flux_multiplier", "[Модератор потока PWR]");
+                add("fluid.hbm_m.trait.core_flux_pct", "Поток в активной зоне: %s%%");
+                add("fluid.hbm_m.trait.pheromone_glyphid", "[Феромоны — глифид]");
+                add("fluid.hbm_m.trait.pheromone_modified", "[Феромоны — модифицированные]");
+                add("fluid.hbm_m.trait.toxin_header", "[Токсин]");
+                add("fluid.hbm_m.trait.toxic_fumes", "Токсичные испарения");
+                add("fluid.hbm_m.toxin.chlorine.line1", "Повреждение лёгких (облако)");
+                add("fluid.hbm_m.toxin.chlorine.line2", "Сильный раздражитель дыхательных путей");
+                add("fluid.hbm_m.toxin.phosgene.line1", "Тяжёлое поражение лёгких (облако)");
+                add("fluid.hbm_m.toxin.phosgene.line2", "Очень опасен при вдыхании");
+                add("fluid.hbm_m.toxin.mustard.line1", "Кожные и лёгочные поражения");
+                add("fluid.hbm_m.toxin.mustard.line2", "Возможны химические ожоги и отравление");
+                add("fluid.hbm_m.toxin.estradiol.line1", "Опасные мелкодисперсные частицы");
+                add("fluid.hbm_m.toxin.estradiol.line2", "Системное воздействие при контакте");
+                add("fluid.hbm_m.toxin.redmud.line1", "Щёлочные и тяжёлые металлы");
+                add("fluid.hbm_m.toxin.redmud.line2", "Кожные ожоги и системная интоксикация");
 
 
                 add("tooltip.hbm_m.depthstone.line1", "Может быть уничтожен только взрывом!");
@@ -2470,6 +2494,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.fluid_identifier.none", "Multi Fluid Identifier");
                 add("item.hbm_m.fluid_identifier.info", "Universal fluid identifier for:");
                 add("item.hbm_m.fluid_identifier.info2", "Secondary type:");
+                add("toast.hbm_m.fluid_identifier_active", "Current type: %s");
                 add("item.hbm_m.bucket_crude_oil", "Crude Oil Bucket (WIP)");
                 add("item.hbm_m.inf_water", "Infinite Water Barrel");
                 add("item.hbm_m.inf_water_mk2", "Infinite Water Barrel mk2");
@@ -2482,6 +2507,31 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.fluid_tank.mode.1", "Mode: Buffer");
                 add("gui.hbm_m.fluid_tank.mode.2", "Mode: Output only");
                 add("gui.hbm_m.fluid_tank.mode.3", "Mode: Disabled");
+                add("gui.hbm_m.fluid_tank.pressure", "Pressure: %s PU");
+                add("gui.hbm_m.fluid_tank.pressurized", "Pressurized — use a compressor!");
+                add("gui.hbm_m.fluid_tank.hold_shift_more", "Hold LSHIFT for more info");
+                add("fluid.hbm_m.trait.polluting", "[Polluting]");
+                add("fluid.hbm_m.trait.polluting.when_spilled", "When spilled:");
+                add("fluid.hbm_m.trait.polluting.when_burned", "When burned:");
+                add("fluid.hbm_m.trait.polluting.line", "%s — %s");
+                add("fluid.hbm_m.trait.heatable.thermal_capacity", "Thermal capacity: %s TU per %s mB");
+                add("fluid.hbm_m.trait.efficiency_pct", "Efficiency: %s%%");
+                add("fluid.hbm_m.trait.pwr_flux_multiplier", "[PWR flux moderator]");
+                add("fluid.hbm_m.trait.core_flux_pct", "Core flux: %s%%");
+                add("fluid.hbm_m.trait.pheromone_glyphid", "[Pheromones — glyphid]");
+                add("fluid.hbm_m.trait.pheromone_modified", "[Pheromones — modified]");
+                add("fluid.hbm_m.trait.toxin_header", "[Toxin]");
+                add("fluid.hbm_m.trait.toxic_fumes", "Toxic fumes");
+                add("fluid.hbm_m.toxin.chlorine.line1", "Lung damage (cloud)");
+                add("fluid.hbm_m.toxin.chlorine.line2", "Strong respiratory irritant");
+                add("fluid.hbm_m.toxin.phosgene.line1", "Severe lung injury (cloud)");
+                add("fluid.hbm_m.toxin.phosgene.line2", "Extremely hazardous if inhaled");
+                add("fluid.hbm_m.toxin.mustard.line1", "Skin and lung injury");
+                add("fluid.hbm_m.toxin.mustard.line2", "Chemical burns and systemic poisoning possible");
+                add("fluid.hbm_m.toxin.estradiol.line1", "Hazardous fine particulates");
+                add("fluid.hbm_m.toxin.estradiol.line2", "Systemic effects on exposure");
+                add("fluid.hbm_m.toxin.redmud.line1", "Caustic and heavy-metal exposure");
+                add("fluid.hbm_m.toxin.redmud.line2", "Skin burns and systemic intoxication");
                 add("item.hbm_m.i131_powder_tiny", "Tiny Iodine-131 Powder");
                 add("item.hbm_m.lapis_powder", "Lapis Powder");
                 add("item.hbm_m.lignite_powder", "Lignite Powder");

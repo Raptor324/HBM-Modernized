@@ -1,8 +1,13 @@
 package com.hbm_m.client.overlay;
 
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.network.chat.Component;
@@ -12,10 +17,6 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
 
 @OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
@@ -27,6 +28,7 @@ public class OverlayInfoToast {
     public static final int ID_DASH    = 2001;
     public static final int ID_VATS    = 2002;
     public static final int ID_THERMAL = 2003;
+    public static final int ID_FLUID_IDENTIFIER_SWAP = 2004;
 
     // Стиль оригинала: один общий фон 0.25/0.5.
     private static final int BG_COLOR = 0x7F3F3F3F;

@@ -6,6 +6,8 @@ import java.util.List;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 
+import com.hbm_m.util.EnergyFormatter;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 
@@ -29,12 +31,11 @@ public class FT_Flammable extends FluidTrait {
         
         info.add(Component.literal("[Flammable]").withStyle(ChatFormatting.YELLOW));
         
-        if(energy > 0) {
-            // Форматируем число с разделителями (как в BobMathUtil.getShortNumber)
-            String formattedEnergy = String.format("%,d", energy);
+        if (energy > 0) {
+            String formattedEnergy = EnergyFormatter.formatTooltipNumber(energy);
             info.add(Component.literal("Provides ")
                     .withStyle(ChatFormatting.YELLOW)
-                    .append(Component.literal(formattedEnergy + "TU ").withStyle(ChatFormatting.RED))
+                    .append(Component.literal(formattedEnergy + " TU ").withStyle(ChatFormatting.RED))
                     .append(Component.literal("per bucket").withStyle(ChatFormatting.YELLOW)));
         }
     }

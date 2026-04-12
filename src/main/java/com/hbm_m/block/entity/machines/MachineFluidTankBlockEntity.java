@@ -84,7 +84,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     public MachineFluidTankBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FLUID_TANK_BE.get(), pos, state);
 
-        this.fluidTank = new FluidTank(Fluids.EMPTY, TANK_CAPACITY);
+        this.fluidTank = new FluidTank(ModFluids.NONE.getSource(), TANK_CAPACITY);
 
         this.itemHandler = new ItemStackHandler(6) {
             @Override
@@ -231,11 +231,11 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
     public ResourceLocation getTankTextureLocation() {
         Fluid fluid = fluidTank.getTankType();
-        if (fluid == null || fluid == Fluids.EMPTY) {
+        if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
             fluid = getFilterFluid();
         }
     
-        if (fluid == null || fluid == Fluids.EMPTY) {
+        if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
             return ResourceLocation.fromNamespaceAndPath("hbm_m", "block/tank/tank_none"); 
         }
     

@@ -1,5 +1,5 @@
 package com.hbm_m.util;
-// Добавь эти импорты в начало файла EnergyFormatter.java
+
 import java.text.DecimalFormat;
 import java.text.DecimalFormatSymbols;
 import java.util.Locale;
@@ -8,13 +8,13 @@ public class EnergyFormatter {
 
     private static final String[] SUFFIXES = {"", "k", "M", "G", "T", "P", "E"};
     private static final long[] THRESHOLDS = {
-            1L,
-            1_000L,
-            1_000_000L,
-            1_000_000_000L,
-            1_000_000_000_000L,
-            1_000_000_000_000_000L,
-            1_000_000_000_000_000_000L
+        1L,
+        1_000L,
+        1_000_000L,
+        1_000_000_000L,
+        1_000_000_000_000L,
+        1_000_000_000_000_000L,
+        1_000_000_000_000_000_000L
     };
 
     // Создаем форматировщики один раз для производительности.
@@ -55,7 +55,32 @@ public class EnergyFormatter {
         return formatted + SUFFIXES[suffixIndex];
     }
 
-    // Остальные методы (formatWithUnit, formatFE, formatRate) остаются без изменений
+    /**
+     * То же смысловое сжатие, что {@link #format(long)}, для чисел в тултипах жидкостей (TU, HE, загрязнение и т.д.).
+     * Целые значения форматируются как энергия; дробные — компактно до двух знаков, если не «целое».
+     */
+    public static String formatTooltipNumber(long value) {
+        return format(value);
+    }
+
+    public static String formatTooltipNumber(double value) {
+        if (!Double.isFinite(value)) {
+            return String.valueOf(value);
+        }
+        long rounded = Math.round(value);
+        if (Math.abs(value - rounded) < 1e-5) {
+            return format(rounded);
+        }
+        double a = Math.abs(value);
+        if (a < 1000.0) {
+            return df2.format(value);
+        }
+        return format(rounded);
+    }
+
+    public static String formatTooltipNumber(float value) {
+        return formatTooltipNumber((double) value);
+    }
 
     public static String formatWithUnit(long energy, String unit) {
         return format(energy) + " " + unit;

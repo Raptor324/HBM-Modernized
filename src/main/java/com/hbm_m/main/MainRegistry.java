@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.ModFluids;
+import com.hbm_m.api.fluids.bootstrap.ModFluidTraitsBootstrap;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
@@ -157,6 +158,9 @@ public class MainRegistry {
             
             ChemicalPlantRecipes.registerRecipes();
             LOGGER.info("ChemicalPlantRecipes initialized successfully");
+
+            ModFluidTraitsBootstrap.registerAll();
+            LOGGER.info("ModFluidTraitsBootstrap: fluid tooltip traits registered");
 
             LOGGER.info("HazardSystem initialized successfully");
         });

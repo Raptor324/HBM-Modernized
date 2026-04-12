@@ -151,13 +151,23 @@ public final class HbmFluidRegistry {
         return -1;
     }
 
-    /** Filter fluids by search substring (case-insensitive). Matches fluid internal name. */
+    /**
+     * Filter fluids by search substring (case-insensitive). Matches fluid internal name.
+     * {@link ModFluids#NONE} is prepended when the query is empty or when the internal name {@code none} matches.
+     */
     public static List<ModFluids.FluidEntry> search(String query) {
         if (query == null || query.isEmpty()) {
-            return new ArrayList<>(ORDERED_FLUIDS);
+            List<ModFluids.FluidEntry> result = new ArrayList<>(ORDERED_FLUIDS.size() + 1);
+            result.add(ModFluids.NONE);
+            result.addAll(ORDERED_FLUIDS);
+            return result;
         }
         String lower = query.toLowerCase(Locale.US);
         List<ModFluids.FluidEntry> result = new ArrayList<>();
+        String noneName = getFluidName(ModFluids.NONE.getSource());
+        if (noneName.toLowerCase(Locale.US).contains(lower)) {
+            result.add(ModFluids.NONE);
+        }
         for (ModFluids.FluidEntry e : ORDERED_FLUIDS) {
             String name = getFluidName(e.getSource());
             if (name.toLowerCase(Locale.US).contains(lower)) {

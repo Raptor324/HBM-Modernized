@@ -135,6 +135,11 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
         return this.data.get(2);
     }
 
+    /** Synced tank pressure (PU), same index as {@link com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity} ContainerData. */
+    public int getPressure() {
+        return this.data.get(5);
+    }
+
     /** Filter fluid ID for tooltip when tank is empty (-1 if no filter) */
     public int getFilterFluidId() {
         return this.data.get(6);

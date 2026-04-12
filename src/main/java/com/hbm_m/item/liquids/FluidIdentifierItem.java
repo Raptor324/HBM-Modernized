@@ -122,6 +122,9 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
             }
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
         } else {
+            if (level.isClientSide) {
+                ClientProxy.showSwapActiveTypeToast(stack);
+            }
             // Swap primary and secondary on server
             if (!level.isClientSide) {
                 Fluid primary = getType(stack, true);
@@ -157,7 +160,9 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     }
 
     private static Component getFluidDisplayName(Fluid fluid) {
-        if (fluid == null || fluid == net.minecraft.world.level.material.Fluids.EMPTY) {
+        if (fluid == null
+                || fluid == net.minecraft.world.level.material.Fluids.EMPTY
+                || fluid == ModFluids.NONE.getSource()) {
             return Component.translatable("fluid.hbm_m.none");
         }
         return Component.translatable(fluid.getFluidType().getDescriptionId());
@@ -181,7 +186,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     public static Fluid getType(ItemStack stack, boolean primary) {
         String name = getTypeName(stack, primary);
         if (name == null || name.isEmpty() || "none".equals(name)) {
-            return net.minecraft.world.level.material.Fluids.EMPTY;
+            return ModFluids.NONE.getSource();
         }
         ModFluids.FluidEntry entry = ModFluids.getEntry(name);
         return entry != null ? entry.getSource() : net.minecraft.world.level.material.Fluids.EMPTY;
@@ -231,6 +236,16 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     private static class ClientProxy {
         public static void openGUI(Player player) {
             net.minecraft.client.Minecraft.getInstance().setScreen(new com.hbm_m.inventory.gui.GUIFluidIdentifier(player));
+        }
+
+        /** После свопа активным становится бывший вторичный тип — показываем его в тосте. */
+        public static void showSwapActiveTypeToast(ItemStack stack) {
+            Fluid newActive = getType(stack, false);
+            Component fluidLine = getFluidDisplayName(newActive);
+            com.hbm_m.client.overlay.OverlayInfoToast.show(
+                    Component.translatable("toast.hbm_m.fluid_identifier_active", fluidLine),
+                    60,
+                    com.hbm_m.client.overlay.OverlayInfoToast.ID_FLUID_IDENTIFIER_SWAP);
         }
     }
 }
