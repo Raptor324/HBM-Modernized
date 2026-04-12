@@ -7,7 +7,6 @@ import java.util.Map.Entry;
 
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
-
 import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.ChatFormatting;

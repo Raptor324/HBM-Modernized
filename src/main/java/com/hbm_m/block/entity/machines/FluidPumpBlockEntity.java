@@ -5,6 +5,7 @@ import javax.annotation.Nonnull;
 import com.hbm_m.api.fluids.ConnectionPriority;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.machines.FluidPumpBlock;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 
 import net.minecraft.core.BlockPos;
@@ -94,6 +95,11 @@ public class FluidPumpBlockEntity extends BlockEntity implements IFluidStandardT
 
     public static void tick(Level level, BlockPos pos, BlockState state, FluidPumpBlockEntity entity) {
         if (level.isClientSide || !(level instanceof ServerLevel)) return;
+
+        Direction fromState = state.getValue(FluidPumpBlock.FACING);
+        if (entity.facing != fromState) {
+            entity.facing = fromState;
+        }
 
         // Синхронизируем размер бака с bufferSize (не уничтожаем буферизованный флюид)
         if (entity.bufferSize != entity.tank.getMaxFill()) {

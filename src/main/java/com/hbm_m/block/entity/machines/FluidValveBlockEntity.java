@@ -136,7 +136,16 @@ public class FluidValveBlockEntity extends BlockEntity implements IFluidPipeMK2 
     @Override
     public void onLoad() {
         super.onLoad();
-        if (level instanceof ServerLevel sl && open) ensureNode(sl);
+        if (level != null && !level.isClientSide) {
+            boolean powered = level.hasNeighborSignal(worldPosition);
+            boolean newOpen = !powered;
+            if (newOpen != open) {
+                updateRedstone(level, worldPosition);
+            }
+        }
+        if (level instanceof ServerLevel sl && open) {
+            ensureNode(sl);
+        }
     }
 
     @Override

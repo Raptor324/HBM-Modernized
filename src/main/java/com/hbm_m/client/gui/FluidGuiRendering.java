@@ -2,6 +2,8 @@ package com.hbm_m.client.gui;
 
 import java.util.Locale;
 
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -9,8 +11,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
-
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Утилиты для отрисовки жидкости в GUI так же, как в 1.7.10 {@code FluidType} /

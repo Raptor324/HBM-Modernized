@@ -452,6 +452,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.DUD_CONVENTIONAL);
         blockItemFromBlockModel(ModBlocks.DUD_NUKE);
         blockItemFromBlockModel(ModBlocks.DUD_SALTED);
+
+        blockItemFromBlockModel(ModBlocks.FLUID_VALVE);
+        blockItemFromBlockModel(ModBlocks.FLUID_PUMP);
+        blockItemFromBlockModel(ModBlocks.FLUID_EXHAUST);
     };
 
     /**

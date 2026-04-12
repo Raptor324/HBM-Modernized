@@ -437,6 +437,22 @@ public class ModBlockStateProvider extends BlockStateProvider {
         horizontalBlock(ModBlocks.FLUID_TANK.get(),
             models().getExistingFile(modLoc("block/machines/fluid_tank")));
 
+        // Жидкостный насос / клапан / выхлоп — временно ванильный iron cube (отдельные модели позже)
+        ModelFile fluidPumpModel = models().withExistingParent(ModBlocks.FLUID_PUMP.getId().getPath(), mcLoc("block/cube_all"))
+                .texture("all", mcLoc("block/iron_block"))
+                .texture("particle", mcLoc("block/iron_block"));
+        horizontalBlock(ModBlocks.FLUID_PUMP.get(), fluidPumpModel);
+
+        ModelFile fluidValveModel = models().withExistingParent(ModBlocks.FLUID_VALVE.getId().getPath(), mcLoc("block/cube_all"))
+                .texture("all", mcLoc("block/iron_block"))
+                .texture("particle", mcLoc("block/iron_block"));
+        simpleBlock(ModBlocks.FLUID_VALVE.get(), fluidValveModel);
+
+        ModelFile fluidExhaustModel = models().withExistingParent(ModBlocks.FLUID_EXHAUST.getId().getPath(), mcLoc("block/cube_all"))
+                .texture("all", mcLoc("block/iron_block"))
+                .texture("particle", mcLoc("block/iron_block"));
+        simpleBlock(ModBlocks.FLUID_EXHAUST.get(), fluidExhaustModel);
+
         // Decor
         customObjBlock(ModBlocks.CRT_BROKEN);
         customObjBlock(ModBlocks.CRT_BSOD);

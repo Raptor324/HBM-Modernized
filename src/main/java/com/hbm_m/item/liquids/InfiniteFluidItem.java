@@ -36,8 +36,9 @@ public class InfiniteFluidItem extends Item {
         this.transferRate = transferRate;
     }
 
-    /** 
-     * Helper to get fluid type from stack NBT for logic outside of capabilities (e.g. Tank Logic) 
+    /**
+     * Тип из NBT (для возможностей предмета / внешних потребителей). Цистерна с {@link InfiniteFluidItem}
+     * наполняется типом, заданным идентификатором на баке, без опоры на этот тег.
      */
     public Fluid getFluidType(ItemStack stack) {
         if (stack.hasTag() && stack.getTag().contains("FluidType")) {

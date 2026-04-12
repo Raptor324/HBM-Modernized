@@ -157,21 +157,20 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
                 return;
             }
 
-            // --- ОБРАБОТКА ИНВЕНТАРЯ (порядок как в оригинале 1.7.10) ---
+            // --- ОБРАБОТКА ИНВЕНТАРЯ ---
+            // Сначала идентификатор: тип бака должен быть известен до loadTank (ведра, InfiniteFluidItem в том же тике).
             boolean changed = false;
             ItemStack[] slotsArray = entity.getSlotsArray();
 
-            // 1. ITEM -> TANK (Emptying Item into tank) — loadTank first, like 1.7.10
-            if (entity.fluidTank.loadTank(SLOT_LOAD_IN, SLOT_LOAD_OUT, slotsArray)) {
-                changed = true;
-            }
-
-            // 2. Идентификация жидкости (Фильтр)
             if (entity.fluidTank.setType(SLOT_ID_IN, SLOT_ID_OUT, slotsArray)) {
                 changed = true;
             }
 
-            // 3. TANK -> ITEM (Filling Item from tank) — unloadTank last, like 1.7.10
+            if (entity.fluidTank.loadTank(SLOT_LOAD_IN, SLOT_LOAD_OUT, slotsArray)) {
+                changed = true;
+            }
+
+            // TANK -> ITEM
             if (entity.fluidTank.unloadTank(SLOT_UNLOAD_IN, SLOT_UNLOAD_OUT, slotsArray)) {
                 changed = true;
             }

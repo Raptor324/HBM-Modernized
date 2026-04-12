@@ -90,6 +90,7 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.HoeItem;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -1708,6 +1709,13 @@ public class ModItems {
     public static final RegistryObject<Item> FLUID_DUCT_SILVER = ITEMS.register("fluid_duct_silver",
             () -> new FluidDuctItem(new Item.Properties(), ModBlocks.FLUID_DUCT_SILVER,
                     "item.hbm_m.fluid_duct_silver", "item.hbm_m.fluid_duct_silver.empty"));
+
+    public static final RegistryObject<Item> FLUID_VALVE = ITEMS.register("fluid_valve",
+            () -> new BlockItem(ModBlocks.FLUID_VALVE.get(), new Item.Properties()));
+    public static final RegistryObject<Item> FLUID_PUMP = ITEMS.register("fluid_pump",
+            () -> new BlockItem(ModBlocks.FLUID_PUMP.get(), new Item.Properties()));
+    public static final RegistryObject<Item> FLUID_EXHAUST = ITEMS.register("fluid_exhaust",
+            () -> new BlockItem(ModBlocks.FLUID_EXHAUST.get(), new Item.Properties()));
 
     //=============================== ВЁДРА ДЛЯ ЖИДКОСТЕЙ ===============================//
 

@@ -46,8 +46,7 @@ public final class HbmFluidRegistry {
             ModFluids.PLASMA_XM, ModFluids.PLASMA_BF,
             ModFluids.STEAM, ModFluids.HOTSTEAM, ModFluids.SUPERHOTSTEAM, ModFluids.ULTRAHOTSTEAM,
             ModFluids.SPENTSTEAM,
-            ModFluids.HEAVYWATER, ModFluids.HEAVYWATER_HOT, ModFluids.WATER_BASE,
-            ModFluids.WATER_OPAQUE_BASE,
+            ModFluids.HEAVYWATER, ModFluids.HEAVYWATER_HOT,
             ModFluids.COOLANT, ModFluids.COOLANT_HOT, ModFluids.CRYOGEL,
             ModFluids.PERFLUOROMETHYL, ModFluids.PERFLUOROMETHYL_COLD, ModFluids.PERFLUOROMETHYL_HOT,
             ModFluids.SULFURIC_ACID, ModFluids.NITRIC_ACID, ModFluids.NITROGLYCERIN, ModFluids.PEROXIDE,
@@ -69,8 +68,6 @@ public final class HbmFluidRegistry {
             ModFluids.EGG, ModFluids.CHOLESTEROL, ModFluids.ESTRADIOL, ModFluids.PHEROMONE,
             ModFluids.PHEROMONE_M, ModFluids.SEEDSLURRY,
             ModFluids.ENDERJUICE, ModFluids.XPJUICE, ModFluids.MUG, ModFluids.MUG_HOT,
-            ModFluids.CUSTOM_WATER, ModFluids.CUSTOM_OIL, ModFluids.CUSTOM_LAVA,
-            ModFluids.CUSTOM_TOXIN, ModFluids.TOXIN_BASE,
             ModFluids.DEATH, ModFluids.PAIN, ModFluids.STELLAR_FLUX, ModFluids.BROMIDE
         );
     }

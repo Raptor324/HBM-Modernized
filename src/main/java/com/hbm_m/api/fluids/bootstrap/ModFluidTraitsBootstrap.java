@@ -1,12 +1,12 @@
 package com.hbm_m.api.fluids.bootstrap;
 
+import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.POISON_EXTREME;
+import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.POISON_MINOR;
 import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.P_FUEL;
 import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.P_FUEL_LEADED;
 import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.P_GAS;
 import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.P_LIQUID_GAS;
 import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.P_OIL;
-import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.POISON_EXTREME;
-import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.POISON_MINOR;
 
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.api.fluids.ModFluids.FluidEntry;
@@ -18,10 +18,10 @@ import com.hbm_m.inventory.fluid.trait.FT_Corrosive;
 import com.hbm_m.inventory.fluid.trait.FT_Flammable;
 import com.hbm_m.inventory.fluid.trait.FT_Heatable;
 import com.hbm_m.inventory.fluid.trait.FT_Heatable.HeatingType;
+import com.hbm_m.inventory.fluid.trait.FT_PWRModerator;
 import com.hbm_m.inventory.fluid.trait.FT_Pheromone;
 import com.hbm_m.inventory.fluid.trait.FT_Poison;
 import com.hbm_m.inventory.fluid.trait.FT_Polluting;
-import com.hbm_m.inventory.fluid.trait.FT_PWRModerator;
 import com.hbm_m.inventory.fluid.trait.FT_Toxin;
 import com.hbm_m.inventory.fluid.trait.FT_VentRadiation;
 import com.hbm_m.inventory.fluid.trait.FluidTrait;

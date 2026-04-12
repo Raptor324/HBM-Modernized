@@ -1261,6 +1261,9 @@ public class MainRegistry {
                 event.accept(com.hbm_m.item.liquids.FluidDuctItem.createStack(ModItems.FLUID_DUCT_SILVER.get(), entry),
                         net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             }
+            event.accept(new ItemStack(ModItems.FLUID_VALVE.get()));
+            event.accept(new ItemStack(ModItems.FLUID_PUMP.get()));
+            event.accept(new ItemStack(ModItems.FLUID_EXHAUST.get()));
             event.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
             event.accept(new ItemStack(ModItems.INFINITE_WATER_500.get()));
             event.accept(new ItemStack(ModItems.INFINITE_WATER_5000.get()));

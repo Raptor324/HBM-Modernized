@@ -2,8 +2,8 @@ package com.hbm_m.block.machines;
 
 import javax.annotation.Nullable;
 
-import com.hbm_m.block.entity.machines.FluidExhaustBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.entity.machines.FluidExhaustBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
@@ -37,10 +37,7 @@ public class FluidExhaustBlock extends BaseEntityBlock {
     @Override
     public @Nullable <T extends BlockEntity> BlockEntityTicker<T> getTicker(
             Level level, BlockState state, BlockEntityType<T> type) {
-        return level.isClientSide ? null : (lvl, pos, st, be) -> {
-            if (be instanceof FluidExhaustBlockEntity exhaust) {
-                FluidExhaustBlockEntity.tick(lvl, pos, st, exhaust);
-            }
-        };
+        return level.isClientSide ? null
+                : createTickerHelper(type, ModBlockEntities.FLUID_EXHAUST_BE.get(), FluidExhaustBlockEntity::tick);
     }
 }

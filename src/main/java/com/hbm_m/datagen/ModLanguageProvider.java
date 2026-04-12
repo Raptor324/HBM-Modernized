@@ -1139,6 +1139,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.fluid_duct_colored.empty", "Пустая цветная жидкостная труба");
                 add("item.hbm_m.fluid_duct_silver", "Серебристая жидкостная труба: %s");
                 add("item.hbm_m.fluid_duct_silver.empty", "Пустая серебристая жидкостная труба");
+                add(ModBlocks.FLUID_VALVE.get(), "Жидкостный клапан");
+                add(ModBlocks.FLUID_PUMP.get(), "Жидкостный насос");
+                add(ModBlocks.FLUID_EXHAUST.get(), "Выхлопная труба");
                 add("gui.hbm_m.fluid_duct.overlay.fluid_empty", "Жидкость не задана");
                 add(ModBlocks.INDUSTRIAL_BOILER.get(), "Промышленный котел");
                 add("block.hbm_m.machine_battery", "Энергохранилище");
@@ -1333,8 +1336,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("fluid.hbm_m.spentsteam", "Spent Steam");
                 add("fluid.hbm_m.heavywater", "Heavy Water");
                 add("fluid.hbm_m.heavywater_hot", "Hot Heavy Water");
-                add("fluid.hbm_m.water_base", "Base Water");
-                add("fluid.hbm_m.water_opaque_base", "Opaque Base Water");
                 add("fluid.hbm_m.coolant", "Coolant");
                 add("fluid.hbm_m.coolant_hot", "Hot Coolant");
                 add("fluid.hbm_m.cryogel", "Cryogel");
@@ -1398,11 +1399,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("fluid.hbm_m.xpjuice", "XP Juice");
                 add("fluid.hbm_m.mug", "Mug Root Beer");
                 add("fluid.hbm_m.mug_hot", "Hot Mug Root Beer");
-                add("fluid.hbm_m.custom_water", "Custom Water");
-                add("fluid.hbm_m.custom_oil", "Custom Oil");
-                add("fluid.hbm_m.custom_lava", "Custom Lava");
-                add("fluid.hbm_m.custom_toxin", "Custom Toxin");
-                add("fluid.hbm_m.toxin_base", "Toxin Base");
                 add("fluid.hbm_m.none", "None");
                 add("fluid.hbm_m.death", "Death");
                 add("fluid.hbm_m.pain", "Pain");
@@ -2635,8 +2631,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("fluid.hbm_m.spentsteam", "Spent Steam");
                 add("fluid.hbm_m.heavywater", "Heavy Water");
                 add("fluid.hbm_m.heavywater_hot", "Hot Heavy Water");
-                add("fluid.hbm_m.water_base", "Base Water");
-                add("fluid.hbm_m.water_opaque_base", "Opaque Base Water");
                 add("fluid.hbm_m.coolant", "Coolant");
                 add("fluid.hbm_m.coolant_hot", "Hot Coolant");
                 add("fluid.hbm_m.cryogel", "Cryogel");
@@ -2700,11 +2694,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("fluid.hbm_m.xpjuice", "XP Juice");
                 add("fluid.hbm_m.mug", "Mug Root Beer");
                 add("fluid.hbm_m.mug_hot", "Hot Mug Root Beer");
-                add("fluid.hbm_m.custom_water", "Custom Water");
-                add("fluid.hbm_m.custom_oil", "Custom Oil");
-                add("fluid.hbm_m.custom_lava", "Custom Lava");
-                add("fluid.hbm_m.custom_toxin", "Custom Toxin");
-                add("fluid.hbm_m.toxin_base", "Toxin Base");
                 add("fluid.hbm_m.none", "None");
                 add("fluid.hbm_m.death", "Death");
                 add("fluid.hbm_m.pain", "Pain");
@@ -3029,6 +3018,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.fluid_duct_colored.empty", "Empty Colored Fluid Duct");
                 add("item.hbm_m.fluid_duct_silver", "Silver Fluid Duct: %s");
                 add("item.hbm_m.fluid_duct_silver.empty", "Empty Silver Fluid Duct");
+                add(ModBlocks.FLUID_VALVE.get(), "Fluid Valve");
+                add(ModBlocks.FLUID_PUMP.get(), "Fluid Pump");
+                add(ModBlocks.FLUID_EXHAUST.get(), "Fluid Exhaust");
                 add("gui.hbm_m.fluid_duct.overlay.fluid_empty", "No fluid assigned");
                 add(ModBlocks.INDUSTRIAL_BOILER.get(), "Industrial Boiler");
                 add(ModBlocks.INDUSTRIAL_TURBINE.get(), "Industrial Turbine");
