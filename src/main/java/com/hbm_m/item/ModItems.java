@@ -1268,6 +1268,9 @@ public class ModItems {
 	public static final RegistryObject<Item> FLUID_TANK = ITEMS.register("fluid_tank",
         () -> new MultiblockBlockItem(ModBlocks.FLUID_TANK.get(), new Item.Properties()));
 
+    public static final RegistryObject<Item> MACHINE_BATTERY_SOCKET = ITEMS.register("machine_battery_socket",
+        () -> new MultiblockBlockItem(ModBlocks.MACHINE_BATTERY_SOCKET.get(), new Item.Properties()));
+
     public static final RegistryObject<Item> PRESS = ITEMS.register("press",
         () -> new MultiblockBlockItem(ModBlocks.PRESS.get(), new Item.Properties()));
 

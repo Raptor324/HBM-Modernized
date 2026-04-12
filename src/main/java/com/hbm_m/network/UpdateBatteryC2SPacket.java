@@ -2,6 +2,7 @@ package com.hbm_m.network;
 
 import java.util.function.Supplier;
 
+import com.hbm_m.block.entity.machines.BatterySocketBlockEntity;
 import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
 
 import net.minecraft.core.BlockPos;
@@ -32,8 +33,11 @@ public class UpdateBatteryC2SPacket {
         NetworkEvent.Context context = supplier.get();
         context.enqueueWork(() -> {
             ServerPlayer player = context.getSender();
-            if (player.level().getBlockEntity(pos) instanceof MachineBatteryBlockEntity battery) {
+            var be = player.level().getBlockEntity(pos);
+            if (be instanceof MachineBatteryBlockEntity battery) {
                 battery.handleButtonPress(buttonId);
+            } else if (be instanceof BatterySocketBlockEntity socket) {
+                socket.handleButtonPress(buttonId);
             }
         });
         return true;

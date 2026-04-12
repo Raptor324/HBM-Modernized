@@ -16,6 +16,7 @@ import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.client.loader.DoorModelLoader;
 import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
 import com.hbm_m.client.loader.MachineAssemblerModelLoader;
+import com.hbm_m.client.loader.MachineBatterySocketModelLoader;
 import com.hbm_m.client.loader.MachineFluidTankModelLoader;
 import com.hbm_m.client.loader.MachineHydraulicFrackiningTowerModelLoader;
 import com.hbm_m.client.loader.HeatingOvenModelLoader;
@@ -28,6 +29,7 @@ import com.hbm_m.client.render.AirBombProjectileEntityRenderer;
 import com.hbm_m.client.render.AirNukeBombProjectileEntityRenderer;
 import com.hbm_m.client.render.AirstrikeEntityRenderer;
 import com.hbm_m.client.render.AirstrikeNukeEntityRenderer;
+import com.hbm_m.client.render.BatterySocketCreativeRenderer;
 import com.hbm_m.client.render.ChemicalPlantRenderer;
 import com.hbm_m.client.render.DoorRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
@@ -55,6 +57,7 @@ import com.hbm_m.inventory.gui.GUIHeatingOven;
 import com.hbm_m.inventory.gui.GUIIronCrate;
 import com.hbm_m.inventory.gui.GUIMachineAdvancedAssembler;
 import com.hbm_m.inventory.gui.GUIMachineAssembler;
+import com.hbm_m.inventory.gui.GUIBatterySocket;
 import com.hbm_m.inventory.gui.GUIMachineBattery;
 import com.hbm_m.inventory.gui.GUIMachineCentrifuge;
 import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
@@ -177,6 +180,7 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
             MenuScreens.register(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
             MenuScreens.register(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
+            MenuScreens.register(ModMenuTypes.BATTERY_SOCKET_MENU.get(), GUIBatterySocket::new);
             MenuScreens.register(ModMenuTypes.BLAST_FURNACE_MENU.get(), GUIBlastFurnace::new);
             MenuScreens.register(ModMenuTypes.HEATING_OVEN_MENU.get(), GUIHeatingOven::new);
             MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
@@ -202,6 +206,7 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
 
             OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
             try {
@@ -303,6 +308,7 @@ public class ClientSetup {
         event.register("machine_assembler_loader", new MachineAssemblerModelLoader());
         event.register("hydraulic_frackining_tower_loader", new MachineHydraulicFrackiningTowerModelLoader());
         event.register("fluid_tank_loader", new MachineFluidTankModelLoader());
+        event.register("battery_socket_loader", new MachineBatterySocketModelLoader());
         event.register("door", new DoorModelLoader());
         event.register("template_loader", new TemplateModelLoader());
         event.register("press_loader", new PressModelLoader());

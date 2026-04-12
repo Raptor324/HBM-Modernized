@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import com.hbm_m.api.energy.ConverterBlock;
-import com.hbm_m.api.energy.MachineBatteryBlock;
 import com.hbm_m.api.energy.SwitchBlock;
 import com.hbm_m.api.energy.WireBlock;
 import com.hbm_m.block.decorations.CageLampBlock;
@@ -37,6 +36,8 @@ import com.hbm_m.block.machines.BlastFurnaceExtensionBlock;
 import com.hbm_m.block.machines.GeigerCounterBlock;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
+import com.hbm_m.block.machines.MachineBatteryBlock;
+import com.hbm_m.block.machines.MachineBatterySocketBlock;
 import com.hbm_m.block.machines.MachineCentrifugeBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineCrystallizerBlock;
@@ -322,6 +323,9 @@ public class ModBlocks {
 
 	public static final RegistryObject<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
             () -> new MachineFluidTankBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistryObject<Block> MACHINE_BATTERY_SOCKET = registerBlockWithoutItem("machine_battery_socket",
+            () -> new MachineBatterySocketBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistryObject<Block> INDUSTRIAL_BOILER = registerBlockWithoutItem("industrial_boiler",
             () -> new MachineIndustrialBoilerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));

@@ -1130,6 +1130,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.advanced_assembly_machine", "Сборочная машина");
                 add("block.hbm_m.block_uranium", "Урановый блок");
                 add(ModBlocks.FLUID_TANK.get(), "Цистерна");
+                add(ModBlocks.MACHINE_BATTERY_SOCKET.get(), "Аккумуляторный разъём");
                 add(ModBlocks.FLUID_DUCT.get(), "Жидкостная труба (NEO)");
                 add(ModBlocks.FLUID_DUCT_COLORED.get(), "Жидкостная труба (цветная)");
                 add(ModBlocks.FLUID_DUCT_SILVER.get(), "Жидкостная труба (серебристая)");
@@ -1505,6 +1506,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.industrial_turbine", "Промышленная турбина");
                 add("container.hbm_m.heating_oven", "Нагревательная печь");
                 add("container.hbm_m.machine_battery", "Энергохранилище");
+                add("container.hbm_m.battery_socket", "Аккумуляторный разъём");
                 add("container.hbm_m.press", "Пресс");
                 add("container.hbm_m.anvil_block", "Индустриальная наковальня");
                 add("container.hbm_m.anvil", "Наковальня %s");
@@ -3009,6 +3011,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant (WIP)");
                 add(ModBlocks.CENTRIFUGE.get(), "Centrifuge (WIP)");
                 add(ModBlocks.FLUID_TANK.get(), "Tank (WIP)");
+                add(ModBlocks.MACHINE_BATTERY_SOCKET.get(), "Battery Socket");
                 add(ModBlocks.FLUID_DUCT.get(), "Fluid Duct (NEO)");
                 add(ModBlocks.FLUID_DUCT_COLORED.get(), "Fluid Duct (Colored)");
                 add(ModBlocks.FLUID_DUCT_SILVER.get(), "Fluid Duct (Silver)");
@@ -3189,6 +3192,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.heating_oven", "Heating Oven");
                 add("container.hbm_m.advanced_assembly_machine", "Assembly Machine");
                 add("container.hbm_m.machine_battery", "Machine Battery");
+                add("container.hbm_m.battery_socket", "Battery Socket");
                 add("container.hbm_m.press", "Press");
                 add("container.hbm_m.anvil_block", "Industrial Anvil");
                 add("container.hbm_m.anvil", "%s Anvil");

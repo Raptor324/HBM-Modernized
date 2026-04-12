@@ -1,9 +1,10 @@
-package com.hbm_m.api.energy;
+package com.hbm_m.block.machines;
 
 import java.util.List;
 
 import javax.annotation.Nullable;
 
+import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
 import com.hbm_m.util.EnergyFormatter;

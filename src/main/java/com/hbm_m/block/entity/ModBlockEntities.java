@@ -138,6 +138,11 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(MachineFluidTankBlockEntity::new,
                             ModBlocks.FLUID_TANK.get()).build(null));
 
+    public static final RegistryObject<BlockEntityType<BatterySocketBlockEntity>> BATTERY_SOCKET_BE =
+            BLOCK_ENTITIES.register("battery_socket_be", () ->
+                    BlockEntityType.Builder.of(BatterySocketBlockEntity::new,
+                            ModBlocks.MACHINE_BATTERY_SOCKET.get()).build(null));
+
     public static final RegistryObject<BlockEntityType<MachineIndustrialBoilerBlockEntity>> INDUSTRIAL_BOILER_BE =
             BLOCK_ENTITIES.register("industrial_boiler_be", () ->
                     BlockEntityType.Builder.of(MachineIndustrialBoilerBlockEntity::new,

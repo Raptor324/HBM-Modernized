@@ -2,9 +2,10 @@ package com.hbm_m.block.entity.machines;
 
 import com.hbm_m.api.energy.*;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.api.energy.MachineBatteryBlock;
+import com.hbm_m.block.machines.MachineBatteryBlock;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IEnergyConnector;
+import com.hbm_m.interfaces.IEnergyModeHolder;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.inventory.menu.MachineBatteryMenu;
@@ -34,7 +35,7 @@ import javax.annotation.Nullable;
  * Энергохранилище с настраиваемыми режимами работы.
  * Режимы: 0 = BOTH, 1 = INPUT, 2 = OUTPUT, 3 = DISABLED
  */
-public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvider, IEnergyProvider, IEnergyReceiver {
+public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvider, IEnergyProvider, IEnergyReceiver, IEnergyModeHolder {
 
     private final long capacity;
     private final long transferRate;
@@ -249,6 +250,7 @@ public class MachineBatteryBlockEntity extends BlockEntity implements MenuProvid
         });
     }
 
+    @Override
     public int getCurrentMode() {
         if (level == null) return modeOnNoSignal;
         return level.hasNeighborSignal(this.worldPosition) ? modeOnSignal : modeOnNoSignal;

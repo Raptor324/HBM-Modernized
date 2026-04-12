@@ -7,6 +7,8 @@ import javax.annotation.Nullable;
 import org.slf4j.Logger;
 
 import com.google.common.collect.ImmutableMap;
+import com.hbm_m.block.machines.MachineBatteryBlock;
+import com.hbm_m.block.machines.MachineBatterySocketBlock;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IEnergyConnector;
 import com.mojang.logging.LogUtils;
@@ -152,7 +154,7 @@ public class WireBlock extends BaseEntityBlock {
         }
 
         Block block = neighborState.getBlock();
-        if (block instanceof SwitchBlock || block instanceof MachineBatteryBlock) {
+        if (block instanceof SwitchBlock || block instanceof MachineBatteryBlock || block instanceof MachineBatterySocketBlock) {
             return true;
         }
 

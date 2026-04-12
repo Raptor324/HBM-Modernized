@@ -1,8 +1,8 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
+import com.hbm_m.block.machines.MachineBatteryBlock;
 import com.hbm_m.interfaces.ILongEnergyMenu;
-import com.hbm_m.api.energy.MachineBatteryBlock;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
 import com.hbm_m.util.LongDataPacker;

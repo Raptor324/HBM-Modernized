@@ -1,4 +1,3 @@
-// ...existing code...
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.armormod.menu.ArmorTableMenu;
@@ -30,6 +29,9 @@ public class ModMenuTypes {
 
     public static final RegistryObject<MenuType<MachineBatteryMenu>> MACHINE_BATTERY_MENU =
             MENUS.register("machine_battery_menu", () -> IForgeMenuType.create(MachineBatteryMenu::new));
+
+    public static final RegistryObject<MenuType<BatterySocketMenu>> BATTERY_SOCKET_MENU =
+            MENUS.register("battery_socket_menu", () -> IForgeMenuType.create(BatterySocketMenu::new));
 
     public static final RegistryObject<MenuType<BlastFurnaceMenu>> BLAST_FURNACE_MENU =
             MENUS.register("blast_furnace_menu", () -> IForgeMenuType.create(BlastFurnaceMenu::new));
