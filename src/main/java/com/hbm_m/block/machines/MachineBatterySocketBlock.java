@@ -1,11 +1,7 @@
 package com.hbm_m.block.machines;
 
-import java.util.Map;
-import java.util.function.Supplier;
-
 import javax.annotation.Nullable;
 
-import com.google.common.collect.ImmutableMap;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
@@ -39,26 +35,33 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.shapes.CollisionContext;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.network.NetworkHooks;
 
+import java.util.Map;
+import java.util.function.Supplier;
+
 /**
- * 2×1×2 footprint (controller + 3 phantom energy ports), same layout as 1.7.10 battery socket.
+ * 2×2×2 multiblock cube.
  */
 public class MachineBatterySocketBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
     private static MultiblockStructureHelper STRUCTURE_HELPER;
+    private final MultiblockStructureHelper structureHelper;
 
     public MachineBatterySocketBlock(Properties properties) {
         super(properties);
         registerDefaultState(stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.structureHelper = getStructureHelperStatic();
     }
 
     public static MultiblockStructureHelper getStructureHelperStatic() {
         if (STRUCTURE_HELPER == null) {
-            STRUCTURE_HELPER = new MultiblockStructureHelper(defineStructure(), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+            STRUCTURE_HELPER = defineStructure();
         }
         return STRUCTURE_HELPER;
     }
@@ -67,18 +70,40 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
         return PartRole.ENERGY_CONNECTOR;
     }
 
-    private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
-        ImmutableMap.Builder<BlockPos, Supplier<BlockState>> b = ImmutableMap.builder();
-        // 1.7 fillSpace: behind facing, to the right, and diagonal — relative to NORTH-facing controller at origin
-        b.put(new BlockPos(0, 0, 1), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
-        b.put(new BlockPos(1, 0, 0), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
-        b.put(new BlockPos(1, 0, 1), () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
-        return b.build();
+    private static MultiblockStructureHelper defineStructure() {
+        // 2x2x2: контроллер в нижнем слое, остальные — части.
+        String[][] layers = {
+            { // Y = 0
+                "CE",
+                "EE"
+            },
+            { // Y = 1
+                "AA",
+                "AA"
+            }
+        };
+
+        Map<Character, PartRole> roleMap = Map.of(
+            'C', PartRole.CONTROLLER,
+            'E', PartRole.ENERGY_CONNECTOR,
+            'A', PartRole.DEFAULT
+        );
+
+        Map<Character, Supplier<BlockState>> symbolMap = Map.of(
+            'A', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
+        );
+
+        return MultiblockStructureHelper.createFromLayersWithRoles(
+            layers,
+            symbolMap,
+            () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
+            roleMap
+        );
     }
 
     @Override
     public MultiblockStructureHelper getStructureHelper() {
-        return getStructureHelperStatic();
+        return structureHelper;
     }
 
     @Override
@@ -110,6 +135,11 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
     @Override
     public RenderShape getRenderShape(BlockState state) {
         return RenderShape.MODEL;
+    }
+
+    @Override
+    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return structureHelper.generateShapeFromParts(state.getValue(FACING));
     }
 
     @Override

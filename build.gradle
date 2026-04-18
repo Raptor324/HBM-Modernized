@@ -182,7 +182,7 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:embeddium-908741:5681725")
     runtimeOnly fg.deobf("curse.maven:modernfix-790626:7515215")
     runtimeOnly fg.deobf("curse.maven:smooth-boot-reloaded-633412:5016280")
-    runtimeOnly fg.deobf("curse.maven:distant-horizons-508933:7375280")
+    // runtimeOnly fg.deobf("curse.maven:distant-horizons-508933:7375280")
 
     
     api(fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.136"))

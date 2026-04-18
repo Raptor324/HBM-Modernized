@@ -77,11 +77,26 @@ public class GUIBatterySocket extends AbstractContainerScreen<BatterySocketMenu>
         graphics.blit(TEXTURE, x + 62, y + 69 - barHeight, 176, 52 - barHeight, 34, barHeight);
     }
 
+    /**
+     * В png-атласе кадры режимов для 0/1 идут в другом порядке:
+     * 0 (both) и 1 (input) визуально были перепутаны местами.
+     * Ремапаем только UV, не меняя смысл режимов.
+     */
+    private int getVForMode(int mode) {
+        return switch (mode) {
+            case 0 -> 70;  // both
+            case 1 -> 52;  // input
+            case 2 -> 88;  // output
+            case 3 -> 106; // locked
+            default -> 70;
+        };
+    }
+
     private void renderButtons(GuiGraphics graphics, int x, int y) {
         int low = menu.getModeOnNoSignal();
-        graphics.blit(TEXTURE, x + 106, y + 16, 176, 52 + low * 18, 18, 18);
+        graphics.blit(TEXTURE, x + 106, y + 16, 176, getVForMode(low), 18, 18);
         int high = menu.getModeOnSignal();
-        graphics.blit(TEXTURE, x + 106, y + 52, 176, 52 + high * 18, 18, 18);
+        graphics.blit(TEXTURE, x + 106, y + 52, 176, getVForMode(high), 18, 18);
         int p = menu.getPriorityOrdinal();
         graphics.blit(TEXTURE, x + 125, y + 35, 194, 52 + p * 16 - 16, 16, 16);
     }

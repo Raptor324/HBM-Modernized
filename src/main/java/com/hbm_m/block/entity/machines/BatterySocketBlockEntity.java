@@ -52,7 +52,7 @@ public class BatterySocketBlockEntity extends BlockEntity implements MenuProvide
 
     public int modeOnNoSignal = 0;
     public int modeOnSignal = 0;
-    private IEnergyReceiver.Priority priority = IEnergyReceiver.Priority.LOW;
+    private IEnergyReceiver.Priority priority = IEnergyReceiver.Priority.NORMAL;
 
     public long energyDelta = 0;
     private long lastEnergySample = 0;
