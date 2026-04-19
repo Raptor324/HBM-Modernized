@@ -21,7 +21,7 @@ public class DoorDeclRegistry {
     
     public static DoorDecl getById(String id) {
         DoorDecl decl = REGISTRY.get(id);
-        // round_airlock_door.json ссылается на round_airlock_door_old.obj — нормализуем суффикс _old
+        // round_airlock_door.json ссылается на round_airlock_door_old.obj - нормализуем суффикс _old
         if (decl == null && id.endsWith("_old")) {
             decl = REGISTRY.get(id.substring(0, id.length() - 4));
         }

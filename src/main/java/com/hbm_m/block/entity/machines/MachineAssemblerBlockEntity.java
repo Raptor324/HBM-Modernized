@@ -650,11 +650,22 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         return isCrafting;
     }
 
+    // Куда больший AABB чем 1×1×1 cell контроллера: ассемблер - мультиблок
+    // 3×2×3 (см. MachineAssemblerBlock.defineStructureNew) с подвижными
+    // частями (slider, arm, 4 cogs), которые торчат за пределы статической
+    // footprint. Делегируем структурному helper'у - он кэширует AABB по
+    // facing один раз на ВЕСЬ helper и переиспользует для всех BE этого типа.
+    // Inflate 1.0 покрывает sway руки и slider'а.
     @Override
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
-        return new net.minecraft.world.phys.AABB(
-                worldPosition.offset(-2, -1, -2),
-                worldPosition.offset(3, 3, 3));
+        BlockState state = getBlockState();
+        if (!(state.getBlock() instanceof MachineAssemblerBlock block)) {
+            return new net.minecraft.world.phys.AABB(
+                    worldPosition.offset(-2, -1, -2),
+                    worldPosition.offset(3, 3, 3));
+        }
+        Direction facing = state.getValue(MachineAssemblerBlock.FACING);
+        return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 1.0);
     }
 
     @Override

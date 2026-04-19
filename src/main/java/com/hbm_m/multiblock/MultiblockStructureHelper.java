@@ -2,6 +2,7 @@ package com.hbm_m.multiblock;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -50,8 +51,16 @@ public class MultiblockStructureHelper {
     // Карта позиций на символы для определения роли при постройке
     private final Map<BlockPos, Character> positionSymbolMap;
     private final Map<Direction, VoxelShape> shapeCache = new HashMap<>();
+    /**
+     * Cache for {@link #getLocalRenderBoundingBox(Direction)} - the AABB enclosing
+     * every part of the structure in controller-local coords with the given
+     * rotation pre-applied. Independent of any single BlockEntity's world
+     * position; one entry per facing direction is enough for ALL BlockEntities
+     * sharing this helper. Lazily populated on first request.
+     */
+    private final EnumMap<Direction, AABB> localRenderBoundsCache = new EnumMap<>(Direction.class);
     private final Map<BlockPos, Set<Direction>> ladderLocalDirections = new HashMap<>();
-    /** Локальные стороны энергоприёма/отдачи относительно схемы (до поворота FACING). Ключ — позиция в сетке. */
+    /** Локальные стороны энергоприёма/отдачи относительно схемы (до поворота FACING). Ключ - позиция в сетке. */
     private final Map<BlockPos, Set<Direction>> energyLocalDirections = new HashMap<>();
     private final Map<BlockPos, VoxelShape> partShapes;
     private final Map<BlockPos, VoxelShape> collisionShapes;
@@ -227,10 +236,10 @@ public class MultiblockStructureHelper {
      * @param roleMap Карта символов на PartRole. ОБЯЗАТЕЛЬНО должен содержать символ с ролью CONTROLLER.
      * @param shapeMap необязательно: кастомные VoxelShape по символу
      * @param collisionMap необязательно: коллизии по символу
-     * @param ladderSideMap необязательно: для символов с ролью LADDER — boolean[4] в порядке north, south, west, east.
-     *                      Если символа нет в карте — лестница со всех четырёх горизонтальных сторон.
-     * @param energySideMap необязательно: для ENERGY_CONNECTOR / UNIVERSAL_CONNECTOR — boolean[6] в порядке north, south, west, east, up, down.
-     *                      Если символа нет в карте — энергия со всех шести сторон.
+     * @param ladderSideMap необязательно: для символов с ролью LADDER - boolean[4] в порядке north, south, west, east.
+     *                      Если символа нет в карте - лестница со всех четырёх горизонтальных сторон.
+     * @param energySideMap необязательно: для ENERGY_CONNECTOR / UNIVERSAL_CONNECTOR - boolean[6] в порядке north, south, west, east, up, down.
+     *                      Если символа нет в карте - энергия со всех шести сторон.
      * @return Новый экземпляр MultiblockStructureHelper
      *
      * @example
@@ -323,7 +332,7 @@ public class MultiblockStructureHelper {
                         if (shapeMap != null && shapeMap.containsKey(symbol)) {
                             specificPartShapes.put(pos, shapeMap.get(symbol));
                             
-                            // Если есть в shapeMap, но нет в collisionMap — делаем прозрачным
+                            // Если есть в shapeMap, но нет в collisionMap - делаем прозрачным
                             if (collisionMap != null && collisionMap.containsKey(symbol)) {
                                 specificCollisionShapes.put(pos, collisionMap.get(symbol));
                             } else {
@@ -426,7 +435,7 @@ public class MultiblockStructureHelper {
     /**
      * Как полный {@link #createFromLayersWithRoles(String[][], Map, Supplier, Map, Map, Map, Map, Map)},
      * но без {@code shapeMap}/{@code collisionMap} (они {@code null}).
-     * Отдельное имя — из‑за стирания типов нельзя перегрузить по {@code Map<Character, VoxelShape>} vs {@code Map<Character, boolean[]>}.
+     * Отдельное имя - из‑за стирания типов нельзя перегрузить по {@code Map<Character, VoxelShape>} vs {@code Map<Character, boolean[]>}.
      * Для tuple сторон см. {@link MultiblockSideTuples}.
      */
     public static MultiblockStructureHelper createFromLayersWithRolesAndSides(
@@ -466,7 +475,7 @@ public class MultiblockStructureHelper {
         if (partShapes.containsKey(gridPos)) {
             return rotateShape(partShapes.get(gridPos), facing);
         }
-        // По умолчанию — полный блок
+        // По умолчанию - полный блок
         return Shapes.block();
     }
 
@@ -635,7 +644,7 @@ public class MultiblockStructureHelper {
                             worldSides.add(rotateLocalDirectionToWorld(localDir, facing));
                         }
                     } else {
-                        // Нет записи в ladderSideMap — все горизонтальные стороны
+                        // Нет записи в ladderSideMap - все горизонтальные стороны
                         worldSides.add(Direction.NORTH);
                         worldSides.add(Direction.SOUTH);
                         worldSides.add(Direction.EAST);
@@ -644,7 +653,7 @@ public class MultiblockStructureHelper {
                     partBe.setAllowedClimbSides(worldSides);
                 }
                 
-                // ENERGY_CONNECTOR и UNIVERSAL_CONNECTOR — стороны из energySideMap или все шесть
+                // ENERGY_CONNECTOR и UNIVERSAL_CONNECTOR - стороны из energySideMap или все шесть
                 if (role == PartRole.ENERGY_CONNECTOR || role == PartRole.UNIVERSAL_CONNECTOR) {
                     Set<Direction> localEnergy = energyLocalDirections.get(gridPos);
                     EnumSet<Direction> worldEnergy = EnumSet.noneOf(Direction.class);
@@ -896,6 +905,70 @@ public class MultiblockStructureHelper {
      * @param facing The direction of the structure.
      * @return The generated VoxelShape.
      */
+    /**
+     * Returns the bounding AABB enclosing the entire multiblock structure in
+     * controller-local coordinates (i.e. with the controller treated as origin),
+     * with the given facing rotation pre-applied. Each entry is computed once
+     * per direction and reused for every BlockEntity that shares this helper -
+     * the result depends only on {@link #structureMap} + {@link #controllerOffset}
+     * + facing, none of which vary per-BE.
+     * <p>
+     * Coords are inclusive on the lower edge and exclusive on the upper edge,
+     * matching {@link AABB} convention - a single 1×1×1 block at the controller
+     * with no other parts produces {@code AABB(0, 0, 0, 1, 1, 1)}.
+     * <p>
+     * Used by {@link BlockEntity#getRenderBoundingBox()} overrides so the
+     * vanilla / Forge frustum + occlusion culler only skips a multiblock when
+     * its FULL footprint is offscreen, instead of skipping based on the
+     * controller's 1×1×1 cell while the rest of the structure is still in
+     * view (which produced the "machine pops out when controller goes
+     * offscreen" symptom).
+     */
+    public AABB getLocalRenderBoundingBox(Direction facing) {
+        AABB cached = localRenderBoundsCache.get(facing);
+        if (cached != null) {
+            return cached;
+        }
+        // Always include the controller cell itself (offset 0,0,0 after the
+        // controllerOffset normalisation). Seed bounds at that cell so an
+        // empty structureMap still yields a valid 1×1×1 box.
+        int minX = 0, minY = 0, minZ = 0;
+        int maxX = 0, maxY = 0, maxZ = 0;
+        for (BlockPos gridPos : structureMap.keySet()) {
+            BlockPos relative = gridPos.subtract(this.controllerOffset);
+            BlockPos rotated = rotate(relative, facing);
+            int x = rotated.getX();
+            int y = rotated.getY();
+            int z = rotated.getZ();
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+            if (z < minZ) minZ = z;
+            if (z > maxZ) maxZ = z;
+        }
+        AABB result = new AABB(minX, minY, minZ, maxX + 1, maxY + 1, maxZ + 1);
+        localRenderBoundsCache.put(facing, result);
+        return result;
+    }
+
+    /**
+     * World-space convenience wrapper around {@link #getLocalRenderBoundingBox}:
+     * translates the cached local AABB onto the controller's actual world
+     * position and inflates it by {@code inflate} blocks on every axis - useful
+     * for renderers whose animated parts (rotating arms, sliding heads,
+     * particle plumes) reach beyond the static structure's footprint.
+     *
+     * @param controllerWorldPos the world position of the multiblock controller
+     * @param facing             the controller's FACING property
+     * @param inflate            extra padding in blocks on every face (0 to disable)
+     */
+    public AABB getRenderBoundingBox(BlockPos controllerWorldPos, Direction facing, double inflate) {
+        AABB local = getLocalRenderBoundingBox(facing);
+        AABB moved = local.move(controllerWorldPos.getX(), controllerWorldPos.getY(), controllerWorldPos.getZ());
+        return inflate > 0 ? moved.inflate(inflate) : moved;
+    }
+
     public VoxelShape generateShapeFromParts(Direction facing) {
         return shapeCache.computeIfAbsent(facing, f -> {
             VoxelShape finalShape = Shapes.empty();

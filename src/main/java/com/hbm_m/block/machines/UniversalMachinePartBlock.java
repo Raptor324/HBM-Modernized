@@ -317,7 +317,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
             BlockPos controllerPos = part.getControllerPos();
-            // Если контроллера нет (пусто) — удаляем фантомный блок на сервере
+            // Если контроллера нет (пусто) - удаляем фантомный блок на сервере
             if (controllerPos == null) {
                 if (!pLevel.isClientSide()) {
                     pLevel.setBlock(pPos, Blocks.AIR.defaultBlockState(), 3);
@@ -334,7 +334,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
                 // Redirect the interaction to the main controller block
                 return controllerState.use(pLevel, pPlayer, pHand, pHit.withPosition(controllerPos));
             } else {
-                // Контроллер сохранён, но в мире он невалиден — удаляем фантом как резервный механизм
+                // Контроллер сохранён, но в мире он невалиден - удаляем фантом как резервный механизм
                 if (!pLevel.isClientSide()) {
                     pLevel.setBlock(pPos, Blocks.AIR.defaultBlockState(), 3);
                 }

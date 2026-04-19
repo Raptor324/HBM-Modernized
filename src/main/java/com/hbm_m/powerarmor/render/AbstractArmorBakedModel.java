@@ -72,7 +72,7 @@ public abstract class AbstractArmorBakedModel extends AbstractMultipartBakedMode
 
     @Override
     protected boolean shouldSkipWorldRendering(@Nullable BlockState state) {
-        // Это НЕ блок — world render нам не нужен.
+        // Это НЕ блок - world render нам не нужен.
         // Но для GUI-рендеринга (state == null) нужно рендерить модель
         return state != null;
     }

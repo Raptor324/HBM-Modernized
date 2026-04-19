@@ -1,12 +1,10 @@
 package com.hbm_m.client.render;
 
 import com.hbm_m.main.MainRegistry;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
-import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -22,7 +20,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         implements BlockEntityRenderer<T> {
 
     /**
-     * Получает модель для рендеринга. По умолчанию — из blockstate.
+     * Получает модель для рендеринга. По умолчанию - из blockstate.
      * Можно переопределить для выбора модели по данным BlockEntity (например, двери с разными скинами).
      */
     protected BakedModel getModel(T blockEntity) {
@@ -40,13 +38,20 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         animator.setupBlockTransform(getFacing(blockEntity));
     }
 
-    private Matrix4f currentModelViewMatrix = new Matrix4f();
+    /**
+     * Snapshot of the most-recent {@code poseStack.last().pose()} captured at the
+     * start of {@link #render}. Reused (mutated in place) rather than reallocated
+     * to keep this hot per-BE method allocation-free; downstream callers that
+     * need a stable copy go through {@link #getCurrentModelViewMatrix()} which
+     * does the defensive copy on demand.
+     */
+    private final Matrix4f currentModelViewMatrix = new Matrix4f();
     private boolean gpuStateSetup = false;
     
     private static final net.minecraft.client.renderer.RenderType RT_SOLID = 
         net.minecraft.client.renderer.RenderType.solid();
     
-    //  Убрать статический getter
+    /** Defensive copy - callers may not mutate the renderer's snapshot field. */
     public Matrix4f getCurrentModelViewMatrix() {
         return new Matrix4f(currentModelViewMatrix);
     }
@@ -54,12 +59,20 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     @Override
     public void render(T blockEntity, float partialTick, PoseStack poseStack,
                        MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        // Фикс: храним снимок матрицы, а не ссылку на мутабельный объект PoseStack.
-        currentModelViewMatrix = new Matrix4f(poseStack.last().pose());
-        
+        // Frustum cull FIRST - every cycle spent on the matrix snapshot,
+        // model lookup, FRAPI unwrap and LegacyAnimator construction below is
+        // wasted on a BE that the camera cannot see. With dense Iris shadow
+        // dispatch this method is invoked on every visible AND every shadow-
+        // frustum-visible BE per frame, so this short-circuit is the single
+        // cheapest cull we have.
         if (!isInViewFrustum(blockEntity)) {
             return;
         }
+
+        // Mutate the persistent snapshot in place - no Matrix4f allocation per
+        // BE per pass. The field is private and only read by getCurrentModelViewMatrix
+        // (which makes its own defensive copy), so the in-place update is safe.
+        currentModelViewMatrix.set(poseStack.last().pose());
 
         BakedModel rawModel = getModel(blockEntity);
         // Continuity (через Connector/FFAPI) оборачивает все blockstate-модели в CtmBakedModel/
@@ -101,7 +114,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
 
     /**
      * Поле 'wrapped' в ForwardingBakedModel (Fabric FRAPI).
-     * Кешируется при первом успешном поиске, null — если FRAPI недоступен.
+     * Кешируется при первом успешном поиске, null - если FRAPI недоступен.
      */
     private static Field fabricWrappedField;
     private static boolean fabricWrappedFieldChecked = false;

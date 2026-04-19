@@ -40,10 +40,6 @@ import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.client.event.RenderItemInFrameEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
-import com.hbm_m.client.ClientRenderHandler;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
-import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
@@ -150,7 +146,7 @@ public class ModEventHandlerClient {
 
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
-        // Вычисляем яркость: первые 400 мс — полная белая вспышка, затем плавное затухание
+        // Вычисляем яркость: первые 400 мс - полная белая вспышка, затем плавное затухание
         float brightness;
         long elapsed = currentTime - flashTimestamp;
         if (elapsed < 400) {
@@ -349,7 +345,7 @@ public class ModEventHandlerClient {
                     spectralHighlighted.add(id);
                     spectralHighlightedThisTick.add(id);
                 } else if (spectralHighlighted.contains(id)) {
-                    // Если сущность больше не видна (закрыта блоками) — снимаем локальный glow.
+                    // Если сущность больше не видна (закрыта блоками) - снимаем локальный glow.
                     living.setGlowingTag(false);
                     MobEffectInstance glow = living.getEffect(MobEffects.GLOWING);
                     if (glow != null && !glow.isVisible()) {
@@ -472,7 +468,7 @@ public class ModEventHandlerClient {
     public static void onTitleRenderPre(ScreenEvent.Render.Pre event) {
         if (!(event.getScreen() instanceof TitleScreen ts)) return;
     
-        // если по шансам выбрали ваниллу — не вмешиваемся
+        // если по шансам выбрали ваниллу - не вмешиваемся
         if (modSplashText == null) {
             // опционально: если вдруг остался наш сплеш (редко), можно восстановить baseline
             // restoreBaselineIfOurs(ts);

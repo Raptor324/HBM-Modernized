@@ -62,7 +62,7 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     private MultiblockStructureHelper defineStructure() {
         // Строка 0 - передняя (ближняя к игроку), Строка 2 - задняя.
 
-        // Направления лестницы: MultiblockSideTuples.ladder(north, south, west, east) — локально к схеме до поворота FACING.
+        // Направления лестницы: MultiblockSideTuples.ladder(north, south, west, east) - локально к схеме до поворота FACING.
         String[] layer0 = {
             "LACAA",
             "LEEEA",

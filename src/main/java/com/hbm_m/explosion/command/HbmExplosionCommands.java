@@ -27,7 +27,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Brigadier-дерево для {@code /hbm_m explosion ...}.
  * Один аргумент {@code advanced} (greedy) после {@code type}: опциональные {@code key:value},
- * затем опционально ровно три координаты. Без координат — позиция источника команды.
+ * затем опционально ровно три координаты. Без координат - позиция источника команды.
  */
 public final class HbmExplosionCommands {
 
@@ -76,7 +76,7 @@ public final class HbmExplosionCommands {
     };
 
     /**
-     * Текст после {@code type} в полной строке чата (без учёта курсора — для подсказок достаточно префикса).
+     * Текст после {@code type} в полной строке чата (без учёта курсора - для подсказок достаточно префикса).
      */
     private static String extractAdvancedPortion(String fullInput, String typeStr) {
         int exp = fullInput.toLowerCase(Locale.ROOT).indexOf("explosion ");
@@ -115,7 +115,7 @@ public final class HbmExplosionCommands {
         int coordSuffix = countTrailingCoordLikeTokens(parts);
         List<String> kvParts = parts.subList(0, parts.size() - coordSuffix);
 
-        // Режим ввода координат (1–3 токена в конце) — подсказки = вся строка advanced целиком
+        // Режим ввода координат (1–3 токена в конце) - подсказки = вся строка advanced целиком
         if (coordSuffix > 0) {
             String coordTok = parts.get(parts.size() - 1);
             String lineBeforeLast = joinTokens(parts.subList(0, parts.size() - 1));
@@ -336,7 +336,7 @@ public final class HbmExplosionCommands {
     }
 
     /**
-     * Разбор: с конца до трёх подряд токенов-координат; всё слева — key:value. Координаты можно опустить → позиция источника.
+     * Разбор: с конца до трёх подряд токенов-координат; всё слева - key:value. Координаты можно опустить → позиция источника.
      */
     private static ParsedAdvanced parseAdvanced(String greedy, ExplosionType type) throws CommandSyntaxException {
         List<String> parts = splitArgs(greedy);

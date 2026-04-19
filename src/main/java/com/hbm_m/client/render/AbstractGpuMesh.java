@@ -18,7 +18,7 @@ public abstract class AbstractGpuMesh {
     protected int indexCount = 0;
     protected boolean initialized = false;
     /**
-     * При true — init уже провалился, не пытаемся снова и не логируем
+     * При true - init уже провалился, не пытаемся снова и не логируем
      */
     protected boolean initFailed = false;
 

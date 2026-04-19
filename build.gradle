@@ -183,6 +183,8 @@ dependencies {
     runtimeOnly fg.deobf("curse.maven:modernfix-790626:7515215")
     runtimeOnly fg.deobf("curse.maven:smooth-boot-reloaded-633412:5016280")
 
+    runtimeOnly fg.deobf("curse.maven:screenshot-to-clipboard-326950:3643026")
+
     
     api(fg.deobf("me.shedaniel.cloth:cloth-config-forge:11.1.136"))
     

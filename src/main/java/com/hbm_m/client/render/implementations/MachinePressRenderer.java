@@ -166,7 +166,7 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
         var mc = Minecraft.getInstance();
 
         poseStack.pushPose();
-        // Локальное (0, 0) здесь — центр блока после setupBlockTransform
+        // Локальное (0, 0) здесь - центр блока после setupBlockTransform
         poseStack.translate(0.32F, WORKPIECE_HEIGHT, 0.32F);
         poseStack.mulPose(Axis.XP.rotationDegrees(90.0F));
 

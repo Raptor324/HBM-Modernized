@@ -23,7 +23,7 @@ public class MissileTestEntityRenderer extends EntityRenderer<MissileTestEntity>
     @Override
     public void render(MissileTestEntity entity, float entityYaw, float partialTicks,
                        PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        // Пока никакого сложного рендера — только ориентируем по yaw/pitch,
+        // Пока никакого сложного рендера - только ориентируем по yaw/pitch,
         // чтобы не было крашей и entity корректно отслеживалась.
         poseStack.pushPose();
         poseStack.mulPose(Axis.YP.rotationDegrees(-entity.getYRot()));

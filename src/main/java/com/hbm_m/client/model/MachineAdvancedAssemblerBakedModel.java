@@ -78,10 +78,11 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
             return getItemQuads(side, rand, modelData, renderType);
         }
 
-        // WORLD RENDER: переключение по стороннему шейдеру (Iris/Oculus)
-        // Нет шейдера → модель пустая, всё рендерит BER (VBO).
-        // Шейдер активен: Base+Frame всегда; анимированные — только когда машина спит (особый рендер при работе).
-        if (!ShaderCompatibilityDetector.isExternalShaderActive()) {
+        // WORLD RENDER: переключение по источнику геометрии.
+        // useVboGeometry() == true → модель пустая, всё рендерит BER (VBO/Iris путь).
+        // useVboGeometry() == false → baked путь (классика под шейдерами):
+        //   Base+Frame всегда; анимированные - только когда машина спит (особый рендер при работе).
+        if (ShaderCompatibilityDetector.useVboGeometry()) {
             return List.of();
         }
 
@@ -105,7 +106,7 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
             }
         }
         
-        // 3. Анимированные части — только когда машина спит. При работе их рендерит BER (putBulkData).
+        // 3. Анимированные части - только когда машина спит. При работе их рендерит BER (putBulkData).
         boolean renderActive = state.hasProperty(MachineAdvancedAssemblerBlock.RENDER_ACTIVE) 
                              && state.getValue(MachineAdvancedAssemblerBlock.RENDER_ACTIVE);
         if (!renderActive) {

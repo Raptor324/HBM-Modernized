@@ -6,8 +6,8 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
-import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
+import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
@@ -1275,10 +1275,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
     /**
      * Advanced Assembly Machine: FACING + FRAME (frame в BlockState для запекания в чанк).
-     * Одна модель — getQuads возвращает Base+Frame при frame=true.
+     * Одна модель - getQuads возвращает Base+Frame при frame=true.
      */
     /**
-     * Chemical plant: без {@code rotationY} в blockstate — поворот задаётся только в
+     * Chemical plant: без {@code rotationY} в blockstate - поворот задаётся только в
      * {@link com.hbm_m.client.model.ChemicalPlantBakedModel} через
      * {@link com.hbm_m.util.MultipartFacingTransforms#legacyBlockEntityBakedRotationY}, в точности как
      * {@code LegacyAnimator.setupBlockTransform} у VBO (иначе vanilla y + getQuads дают двойной поворот).

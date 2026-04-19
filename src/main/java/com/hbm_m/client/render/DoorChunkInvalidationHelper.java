@@ -15,7 +15,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Отложенная инвалидация чанков для дверей.
- * Baked models (Iris/Oculus) не обновляются после первого открытия без явной инвалидации —
+ * Baked models (Iris/Oculus) не обновляются после первого открытия без явной инвалидации -
  * Sodium/Embeddium кэширует чанки. Вызывать processPendingInvalidations из ClientTickEvent.END.
  * Дедупликация: одна и та же позиция не добавляется повторно, пока не обработана.
  */

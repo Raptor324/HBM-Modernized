@@ -32,14 +32,14 @@ public class OilClasterSurroundedFeature extends Feature<NoneFeatureConfiguratio
                     if (x == -1 || x == sizeX || y == -1 || y == sizeY || z == -1 || z == sizeZ) {
                         BlockPos checkPos = origin.offset(x, y, z);
                         if (!level.getBlockState(checkPos).is(Blocks.STONE)) {
-                            return false; // Не окружено камнем — не спавним
+                            return false; // Не окружено камнем - не спавним
                         }
                     }
                 }
             }
         }
 
-        // Если всё ок — разместить структуру (через StructureTemplate или как у тебя реализовано)
+        // Если всё ок - разместить структуру (через StructureTemplate или как у тебя реализовано)
         // Например:
         // StructureTemplate template = ...;
         // template.placeInWorld(...);

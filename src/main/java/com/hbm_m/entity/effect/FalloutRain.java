@@ -28,7 +28,7 @@ public class FalloutRain extends ChunkloadingEntity {
     private static final int MAX_AGE_TICKS = 20 * 60 * 20;
     /** Каждые N тиков размещаем порцию fallout. */
     private static final int FALLOUT_TICK_INTERVAL = 5;
-    /** За один проход — сколько случайных позиций пробуем. */
+    /** За один проход - сколько случайных позиций пробуем. */
     private static final int FALLOUT_PER_TICK = 12;
 
     public FalloutRain(EntityType<?> type, Level level) {

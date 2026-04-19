@@ -7,9 +7,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
-import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
@@ -181,37 +181,23 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         return slot == STAMPING_SLOT;
     }
 
-    // Крупный AABB под анимации и структуру
+    // Крупный AABB под анимации и структуру.
+    //
+    // Делегирует MultiblockStructureHelper, который кэширует AABB по facing на
+    // ВЕСЬ helper (а не на каждый BE) - один computeIfAbsent на 4 направления и
+    // дальше O(1) lookup. Раньше мы каждый раз перебирали structureMap.keySet()
+    // вручную и не учитывали facing rotation, что давало неправильный bbox при
+    // несимметричных структурах и постоянно слегка путало occlusion culler.
+    // 1.5-блочный inflate сохранён - дальние Spike-части анимации руки
+    // вылезают за статическую footprint structure'ы.
     @Override
     public AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (!(state.getBlock() instanceof MachineAdvancedAssemblerBlock block)) {
             return new AABB(worldPosition.offset(-2, -1, -2), worldPosition.offset(3, 4, 3));
         }
-        var structureHelper = block.getStructureHelper();
-        var structureMap = structureHelper.getStructureMap();
-        if (structureMap == null || structureMap.isEmpty()) {
-            return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 3, 2));
-        }
-        int minX = 0, minY = 0, minZ = 0;
-        int maxX = 0, maxY = 0, maxZ = 0;
-        for (BlockPos offset : structureMap.keySet()) {
-            minX = Math.min(minX, offset.getX());
-            minY = Math.min(minY, offset.getY());
-            minZ = Math.min(minZ, offset.getZ());
-            maxX = Math.max(maxX, offset.getX());
-            maxY = Math.max(maxY, offset.getY());
-            maxZ = Math.max(maxZ, offset.getZ());
-        }
-        double margin = 1.5;
-        return new AABB(
-                worldPosition.getX() + minX - margin,
-                worldPosition.getY() + minY - margin,
-                worldPosition.getZ() + minZ - margin,
-                worldPosition.getX() + maxX + 1 + margin,
-                worldPosition.getY() + maxY + 1 + margin,
-                worldPosition.getZ() + maxZ + 1 + margin
-        );
+        Direction facing = state.getValue(MachineAdvancedAssemblerBlock.FACING);
+        return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 1.5);
     }
 
     // GUI
@@ -566,7 +552,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         inputTank.readFromNBT(tag.getCompound("input_tank"));
         outputTank.readFromNBT(tag.getCompound("output_tank"));
         lastUseTick = tag.getLong("last_use_tick");
-        // Миграция: старые сохранения имели FrameVisible в NBT — синхронизируем в BlockState
+        // Миграция: старые сохранения имели FrameVisible в NBT - синхронизируем в BlockState
         if (tag.contains("FrameVisible") && level != null && !level.isClientSide) {
             boolean frameVal = tag.getBoolean("FrameVisible");
             BlockState state = getBlockState();

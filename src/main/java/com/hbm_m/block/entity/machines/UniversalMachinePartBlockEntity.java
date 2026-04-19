@@ -28,7 +28,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     private BlockPos controllerPos;
     private PartRole role = PartRole.DEFAULT;
     private java.util.Set<Direction> allowedClimbSides = java.util.EnumSet.noneOf(Direction.class);
-    /** Мировые стороны энергоподключения; пусто = не задано (для коннектора — все стороны). */
+    /** Мировые стороны энергоподключения; пусто = не задано (для коннектора - все стороны). */
     private java.util.Set<Direction> allowedEnergySides = java.util.EnumSet.noneOf(Direction.class);
 
     public UniversalMachinePartBlockEntity(BlockPos pPos, BlockState pBlockState) {

@@ -87,8 +87,8 @@ public class MachineAssemblerBakedModel extends AbstractMultipartBakedModel impl
         if (state == null) {
             return getItemQuads(side, rand, modelData, renderType);
         }
-        if (!ShaderCompatibilityDetector.isExternalShaderActive()) {
-            // No shaders: full model is rendered by BER/VBO path.
+        if (ShaderCompatibilityDetector.useVboGeometry()) {
+            // Геометрия предоставляется BER/VBO путём (шейдеров нет ИЛИ включён useIrisExtendedShaderPath).
             return List.of();
         }
 

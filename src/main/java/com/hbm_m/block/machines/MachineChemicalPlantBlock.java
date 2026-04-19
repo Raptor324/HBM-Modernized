@@ -45,8 +45,8 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
     /** Рама: блок на y+3 от контроллера (1.7.10). В BlockState для Iris/chunk mesh. */
     public static final BooleanProperty FRAME = BooleanProperty.create("frame");
     /**
-     * true — идёт «работа» (крафт); animated части только в BER, в baked только Base+Frame.
-     * false — простой: Slider+Spinner запекаются в baked (idle). Пока крафта нет — всегда false.
+     * true - идёт «работа» (крафт); animated части только в BER, в baked только Base+Frame.
+     * false - простой: Slider+Spinner запекаются в baked (idle). Пока крафта нет - всегда false.
      */
     public static final BooleanProperty RENDER_ACTIVE = BooleanProperty.create("render_active");
     private final MultiblockStructureHelper structureHelper;

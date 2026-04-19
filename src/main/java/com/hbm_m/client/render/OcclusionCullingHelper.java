@@ -54,7 +54,7 @@ public final class OcclusionCullingHelper {
         long posLong = pos.asLong();
         CachedResult cached = occlusionCache.get(posLong);
         
-        // 1. Если результат уже считали в этом кадре — используем его.
+        // 1. Если результат уже считали в этом кадре - используем его.
         if (cached != null && cached.frame == currentFrame) { 
             return cached.visible;
         }
@@ -62,32 +62,55 @@ public final class OcclusionCullingHelper {
         var mc = Minecraft.getInstance();
         Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
         
-        // Центр машины
-        double centerX = pos.getX() + 0.5;
-        double centerY = pos.getY() + 0.5;
-        double centerZ = pos.getZ() + 0.5;
+        // Центр СТРУКТУРЫ (по AABB), а не центр блока контроллера. Для
+        // мультиблоков контроллер часто стоит на краю/в углу всей структуры,
+        // и raycast только до его центра отвергал ВСЮ машину когда контроллер
+        // оказывался за тонкой стеной - даже если 90% структуры (например
+        // вышка фрекинга 7×7×24 или сборочная 3×3×3) торчало в открытом виде.
+        // Используем центроид renderBounds, чтобы базовая точка лежала в массе
+        // структуры.
+        double centerX = (renderBounds.minX + renderBounds.maxX) * 0.5;
+        double centerY = (renderBounds.minY + renderBounds.maxY) * 0.5;
+        double centerZ = (renderBounds.minZ + renderBounds.maxZ) * 0.5;
 
-        // Квадрат дистанции
+        // Квадрат дистанции от камеры до центра структуры
         double dx = centerX - cameraPos.x;
         double dy = centerY - cameraPos.y;
         double dz = centerZ - cameraPos.z;
         double distSq = dx*dx + dy*dy + dz*dz;
         
-        // Всегда рисуем то, что совсем рядом (меньше 4 блоков)
+        // Всегда рисуем то, что совсем рядом (меньше 4 блоков от центра структуры).
+        // Особенно важно для крупных мультиблоков - игрок может стоять буквально
+        // ВНУТРИ structure'ы (вышка фрекинга), и raycast от глаз "наружу" даст
+        // ложное окклюжен.
         if (distSq < 16.0) {
             updateCache(posLong, cached, true);
             return true;
         }
 
-        // Проверяем видимость центра
-        boolean visible = !isRayOccluded(cameraPos, centerX, centerY, centerZ, level);
-        
-        // Если центр закрыт, но машина близко (< 32 блоков), проверим еще и углы,
-        // чтобы большая машина не исчезала, когда её центр за столбом.
-        if (!visible && distSq < 1024.0) {
-             if (!isRayOccluded(cameraPos, renderBounds.minX, renderBounds.minY, renderBounds.minZ, level)) visible = true;
-             else if (!isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.maxY, renderBounds.maxZ, level)) visible = true;
+        // Этап 1: дешёвая проверка центра.
+        if (!isRayOccluded(cameraPos, centerX, centerY, centerZ, level)) {
+            updateCache(posLong, cached, true);
+            return true;
         }
+
+        // Этап 2: если центр закрыт, обходим 8 углов AABB. Любой видимый
+        // угол означает, что часть структуры на экране, и культить нельзя.
+        // Раньше fallback срабатывал ТОЛЬКО при distSq < 1024 (32 блока),
+        // из-за чего дальние мультиблоки полностью исчезали как только их
+        // контроллер заслонялся - даже когда вся башня/сборочная была в
+        // прямой видимости. Лимит снят: 8 raycast'ов на BE при промахе
+        // центра кэшируются на кадр (см. occlusionCache), для 400 машин
+        // это ~50µs суммарно даже в worst case.
+        boolean visible =
+                !isRayOccluded(cameraPos, renderBounds.minX, renderBounds.minY, renderBounds.minZ, level) ||
+                !isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.minY, renderBounds.minZ, level) ||
+                !isRayOccluded(cameraPos, renderBounds.minX, renderBounds.maxY, renderBounds.minZ, level) ||
+                !isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.maxY, renderBounds.minZ, level) ||
+                !isRayOccluded(cameraPos, renderBounds.minX, renderBounds.minY, renderBounds.maxZ, level) ||
+                !isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.minY, renderBounds.maxZ, level) ||
+                !isRayOccluded(cameraPos, renderBounds.minX, renderBounds.maxY, renderBounds.maxZ, level) ||
+                !isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.maxY, renderBounds.maxZ, level);
 
         updateCache(posLong, cached, visible);
         return visible;

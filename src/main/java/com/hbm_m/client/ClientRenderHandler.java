@@ -97,7 +97,7 @@ public class ClientRenderHandler {
                                 .setOutputState(TRANSLUCENT_TARGET)
                                 .createCompositeState(false)));
 
-        /** Nuke flash (NukeTorex) — без depth test, чтобы рендерился поверх всего. */
+        /** Nuke flash (NukeTorex) - без depth test, чтобы рендерился поверх всего. */
         public static final Function<ResourceLocation, RenderType> NUKE_FLASH = Util.memoize(
                 texture -> create("nuke_flash", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 545234, true, true,
                         RenderType.CompositeState.builder()

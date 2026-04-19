@@ -20,10 +20,10 @@ import net.minecraftforge.items.SlotItemHandler;
  * Меню для ржавой пусковой площадки.
  *
  * Порт старого LaunchPadRustedMenu:
- * - слот 0 — выход (ракета)
- * - слот 1 — launch codes
- * - слот 2 — launch key
- * - слот 3 — дизайнатор
+ * - слот 0 - выход (ракета)
+ * - слот 1 - launch codes
+ * - слот 2 - launch key
+ * - слот 3 - дизайнатор
  * - инвентарь игрока (3*9 + хотбар).
  */
 public class LaunchPadRustedMenu extends AbstractContainerMenu {

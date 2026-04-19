@@ -309,7 +309,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.dosimeter", "Дозиметр");
                 add("item.hbm_m.battery_creative", "Бесконечная батарейка");
                 add("tooltip.hbm_m.creative_battery_desc","Предоставляет бесконечное количество энергии");
-                add("tooltip.hbm_m.creative_battery_flavor","Бесконечность — не предел!!");
+                add("tooltip.hbm_m.creative_battery_flavor","Бесконечность - не предел!!");
                 add(ModItems.COIL_TUNGSTEN.get(), "Нагревательный элемент");
                 // ПРЕДМЕТЫ
                 add(ModItems.BATTERY_POTATO.get(), "Картофельная батарейка");
@@ -1777,10 +1777,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Дистанция для рендеринга динамических частей .obj моделей (в чанках)");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Включить куллинг моделей (выключите, если ваши модели рендерятся некорректно)");
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Использовать батчинговый рендер для частей obj. Сильно повышает производительность рендеринга в бесшейдерном режиме, при проблемах отключите.");
-                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Использовать анимации из DAE для transition_seal и sliding_blast_door. Отключите при проблемах — будет procedural fallback.");
+                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Использовать анимации из DAE для transition_seal и sliding_blast_door. Отключите при проблемах - будет procedural fallback.");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Конвертировать систему координат Blender (Z-up) в Minecraft (Y-up). Отключите для тестирования.");
 
-                add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip", "Дальность отрисовки полосок здоровья мобов (чанки). Больше значение — дальше видно, но выше нагрузка.");
+                add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip", "Дальность отрисовки полосок здоровья мобов (чанки). Больше значение - дальше видно, но выше нагрузка.");
 
                 add("text.autoconfig.hbm_m.option.enableDebugRender.@Tooltip", "Показывать отладочный оверлей радиации в чанках (F3)");
                 add("text.autoconfig.hbm_m.option.debugRenderTextSize.@Tooltip", "Размер текста для отладочного оверлея");
@@ -3465,7 +3465,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Distance for .obj model dynamic parts rendering (in chunks)");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Enable model occlusion culling (disable if your models are not rendering correctly)");
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Use batch rendering for obj parts. This greatly improves rendering performance in shaderless mode. If you experience issues, disable it");
-                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Use DAE animations for transition_seal and sliding_blast_door. Disable if broken — falls back to procedural.");
+                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Use DAE animations for transition_seal and sliding_blast_door. Disable if broken - falls back to procedural.");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Convert Blender (Z-up) to Minecraft (Y-up) coordinate system. Disable for testing.");
 
                 add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip","Max distance for mob health highlighting. Higher values increase range but reduce performance.");

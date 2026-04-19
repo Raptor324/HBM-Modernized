@@ -51,11 +51,11 @@ def main():
     # 1. Находим начало блока switch и кейсов
     try:
         # Разбиваем файл по меткам кейсов
-        # Все что после 'case "ru_ru":' и до 'case "en_us":' — это русский блок
+        # Все что после 'case "ru_ru":' и до 'case "en_us":' - это русский блок
         part_after_ru = content.split('case "ru_ru":')[1]
         ru_block = part_after_ru.split('case "en_us":')[0]
         
-        # Все что после 'case "en_us":' — это английский блок
+        # Все что после 'case "en_us":' - это английский блок
         # Берем до конца файла (или до последнего break/скобки, но для парсинга add это не критично)
         en_block = part_after_ru.split('case "en_us":')[1]
         

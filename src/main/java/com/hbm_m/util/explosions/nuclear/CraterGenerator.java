@@ -534,7 +534,7 @@ public class CraterGenerator {
         BlockPos pos = new BlockPos(x, y, z);
         BlockState state = level.getBlockState(pos);
 
-        // Если воздух — пропускаем (сопротивление 0)
+        // Если воздух - пропускаем (сопротивление 0)
         if (state.isAir()) {
             return 0;
         }
@@ -924,7 +924,7 @@ public class CraterGenerator {
                                                  Block wasteLog, Block wastePlanks) { // <-- Новые аргументы
         if (state.is(Blocks.BEDROCK)) return true;
 
-        // 1. ЗАМЕНА ДЕРЕВА: Если это бревна или доски — меняем на выжженные
+        // 1. ЗАМЕНА ДЕРЕВА: Если это бревна или доски - меняем на выжженные
         // Важно: возвращаем false, чтобы спуститься ниже и заменить весь ствол/стену дома
         if (state.is(BlockTags.LOGS)) {
             level.setBlock(pos, wasteLog.defaultBlockState(), 3);
@@ -1133,7 +1133,7 @@ public class CraterGenerator {
 
             BlockHitResult result = level.clip(context);
 
-            // Если ничего не задели — путь чист
+            // Если ничего не задели - путь чист
             if (result.getType() == HitResult.Type.MISS) {
                 return true;
             }

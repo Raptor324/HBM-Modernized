@@ -12,9 +12,11 @@ import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.PartGeometry;
+import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.Minecraft;
@@ -47,6 +49,9 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
 
     private final Matrix4f matSlider = new Matrix4f();
     private final Matrix4f matSpinner = new Matrix4f();
+
+    /** Degrees → radians multiplier; see {@code MachineAdvancedAssemblerRenderer.DEG_TO_RAD}. */
+    private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
 
     public ChemicalPlantRenderer(BlockEntityRendererProvider.Context ctx) {}
 
@@ -107,7 +112,7 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
         var state = be.getBlockState();
         boolean renderActive = state.hasProperty(MachineChemicalPlantBlock.RENDER_ACTIVE)
             && state.getValue(MachineChemicalPlantBlock.RENDER_ACTIVE);
-        boolean shaderActive = ShaderCompatibilityDetector.isExternalShaderActive();
+        boolean useVboGeometry = ShaderCompatibilityDetector.useVboGeometry();
 
         var minecraft = Minecraft.getInstance();
         BlockPos blockPos = be.getBlockPos();
@@ -116,8 +121,9 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
             return;
         }
 
-        // Шейдер + простой: статика и idle-подвижные части в baked; BER только жидкость.
-        if (shaderActive && !renderActive) {
+        // Старый baked-путь под шейдерами + простой: статика и idle-подвижные в baked; BER только жидкость.
+        // Под новым VBO путём (useVboGeometry==true) baked пуст и нам нужно рендерить всё самим.
+        if (!useVboGeometry && !renderActive) {
             FluidStack fluid = be.getFluid();
             if (!fluid.isEmpty()) {
                 renderFluid(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay, fluid);
@@ -145,7 +151,7 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
     private void renderWithVBO(MachineChemicalPlantBlockEntity be, ChemicalPlantBakedModel model, float partialTick,
                               PoseStack poseStack, int dynamicLight, BlockPos blockPos, MultiBufferSource bufferSource,
                               boolean renderActive) {
-        boolean useVboPath = !ShaderCompatibilityDetector.isExternalShaderActive();
+        boolean useVboPath = ShaderCompatibilityDetector.useVboGeometry();
 
         if (useVboPath && !instancersInitialized) {
             initializeInstancedRenderers(model);
@@ -157,13 +163,45 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
         }
 
         boolean useBatching = useVboPath && ModClothConfig.useInstancedBatching();
+
+        // Iris batching: amortise apply()/clear() across Base + Frame + Slider + Spinner
+        // (4 parts) when:
+        //   1) per-type instancing is OFF - straight apply/clear amortisation.
+        //   2) per-type instancing is ON but we are in a shadow pass - the
+        //      end-of-stage flush in RenderLevelStageEvent fires only on the
+        //      main pass, so InstancedStaticPartRenderer.addInstance() routes
+        //      shadow-pass instances through drawSingleWithIrisExtended which
+        //      then shares this batch's apply/clear pair. Without this, the
+        //      machine either fails to cast shadows or appears as a "ghost"
+        //      copy in the sky during the main pass flush.
+        boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
+        boolean useIrisBatch = useVboPath && ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
+        if (useIrisBatch) {
+            try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
+                renderChemicalPlantPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useVboPath, useBatching, renderActive);
+            }
+        } else {
+            renderChemicalPlantPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useVboPath, useBatching, renderActive);
+        }
+    }
+
+    private void renderChemicalPlantPartsInternal(MachineChemicalPlantBlockEntity be,
+                                                  ChemicalPlantBakedModel model,
+                                                  float partialTick,
+                                                  PoseStack poseStack,
+                                                  int dynamicLight,
+                                                  BlockPos blockPos,
+                                                  MultiBufferSource bufferSource,
+                                                  boolean useVboPath,
+                                                  boolean useBatching,
+                                                  boolean renderActive) {
         var blockState = be.getBlockState();
 
         /*
          * Статика (Base/Frame) и подвижные части должны быть в одном фрейме: после setupBlockTransform
          * нужен translate(-0.5,0,-0.5), чтобы совпасть с ModelHelper.transformQuadsByFacing / Iris chunk
          * (T(+0.5)*R*T(-0.5) относительно геометрии части). Раньше Slider/Spinner вызывались после popPose()
-         * и обходили этот сдвиг — «поворот как будто верный», но меш визуально расходился с baked.
+         * и обходили этот сдвиг - «поворот как будто верный», но меш визуально расходился с baked.
          */
         if (useVboPath || renderActive) {
             poseStack.pushPose();
@@ -201,7 +239,7 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
             float deg = (anim * 15f) % 360f;
             matSpinner.identity()
                 .translate(0.5f, 0f, 0.5f)
-                .rotateY((float) Math.toRadians(deg))
+                .rotateY(deg * DEG_TO_RAD)
                 .translate(-0.5f, 0f, -0.5f);
 
             gpu.renderAnimatedPart(poseStack, dynamicLight, "Spinner", matSpinner, blockPos, be, bufferSource);

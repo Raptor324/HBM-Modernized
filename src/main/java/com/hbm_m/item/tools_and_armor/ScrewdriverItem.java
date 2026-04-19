@@ -24,7 +24,7 @@ import net.minecraftforge.fml.DistExecutor;
 
 /**
  * Отвертка для настройки дверей и конвертера энергии.
- * ПКМ по двери (контроллеру или любой части) — открывает GUI, дверь не открывается.
+ * ПКМ по двери (контроллеру или любой части) - открывает GUI, дверь не открывается.
  */
 public class ScrewdriverItem extends Item {
 
@@ -51,7 +51,7 @@ public class ScrewdriverItem extends Item {
             DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
                     com.hbm_m.client.overlay.DoorSelectionClientHooks.openSelectionMenu(doorEntity));
         }
-        // CONSUME явно помечает взаимодействие как обработанное — блок use() не вызывается
+        // CONSUME явно помечает взаимодействие как обработанное - блок use() не вызывается
         return InteractionResult.CONSUME;
     }
 

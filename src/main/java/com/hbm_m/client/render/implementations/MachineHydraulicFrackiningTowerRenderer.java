@@ -117,9 +117,11 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
         poseStack.pushPose();
 
         boolean isShaderActive = ShaderCompatibilityDetector.isExternalShaderActive();
+        boolean useNewIrisVboPath = ShaderCompatibilityDetector.useNewIrisVboPath();
         boolean useBatching = ModClothConfig.useInstancedBatching();
 
-        if (isShaderActive) {
+        if (isShaderActive && !useNewIrisVboPath) {
+            // Старый путь под шейдерами: один draw через cutoutMipped, без инстансинга и без Iris ExtendedShader.
             RenderType renderType = RenderType.cutoutMipped();
             renderType.setupRenderState();
             RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getRendertypeCutoutMippedShader);
@@ -128,12 +130,12 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
 
             renderType.clearRenderState();
         } else {
-            // Шейдеров нет: проверяем конфиг на батчинг
+            // Шейдеров нет ИЛИ включён useIrisExtendedShaderPath: используем нашу VBO/инстанс-систему.
+            // SingleMeshVboRenderer и InstancedStaticPartRenderer сами выберут Iris ExtendedShader,
+            // если шейдер-пак активен (см. ShaderCompatibilityDetector.canUseIrisExtendedShader).
             if (useBatching && instancedMain != null && instancedMain.isInitialized()) {
-                // Добавляем вышку в список инстансов (отрисовка произойдет в flushInstancedBatches)
                 instancedMain.addInstance(poseStack, packedLight, blockPos, be, bufferSource);
             } else {
-                // Батчинг выключен или не инициализирован: обычный VBO рендер
                 gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
             }
         }

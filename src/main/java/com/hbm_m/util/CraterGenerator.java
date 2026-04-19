@@ -36,7 +36,7 @@ public class CraterGenerator {
     private static final int RING_COUNT = 8;
     /** Максимальное число слоев селлафита под поверхностью кратера */
     private static final int SELLAFIT_REPLACEMENT_LAYERS = 4;
-    /** Глубина кратера — глубина генерации по вертикали */
+    /** Глубина кратера - глубина генерации по вертикали */
     private static final int CRATER_DEPTH = 30;
     /** Радиус внутренней зоны высокой опасности и замещения (3 зона) */
     private static final int ZONE_3_RADIUS = 170;
@@ -58,14 +58,14 @@ public class CraterGenerator {
     /** Коэффициенты растяжения кратера в процессе генерации, дающие вариации */
     private static final float HORIZONTAL_STRETCH_FACTOR = 0F;
     private static final float VERTICAL_STRETCH_FACTOR = 0F;
-    /** Процент перекрытия колец — плавность переходов зон */
+    /** Процент перекрытия колец - плавность переходов зон */
     private static final float RING_OVERLAP_PERCENTAGE = 20.0F;
 
     /** Размер пакетов для батчевой обработки блоков (для производительности) */
     private static final int BLOCK_BATCH_SIZE = 256;
     private static final int SELLAFIT_OVERHANG_CHECK_DEPTH = 5; // Глубина проверки твердого блока снизу для затвердевания селлафита
     /**
-     * Генерация кратера — главный метод с основным циклом и планировкой задач.
+     * Генерация кратера - главный метод с основным циклом и планировкой задач.
      *
      * @param level игровой мир
      * @param centerPos позиция центра кратера

@@ -7,7 +7,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class ModShaders {
     private static ShaderInstance dynamicCutoutShader;
-    private static ShaderInstance blockLitShader;
+    private static ShaderInstance blockLitSimpleShader;
+    private static ShaderInstance blockLitInstancedShader;
     private static ShaderInstance thermalVisionShader;
 
     public static ShaderInstance getDynamicCutoutShader() {
@@ -18,13 +19,29 @@ public class ModShaders {
         dynamicCutoutShader = shader;
     }
 
-
+    /**
+     * @deprecated Use {@link #getBlockLitInstancedShader()} or {@link #getBlockLitSimpleShader()}
+     *             explicitly. This alias returns the instanced variant for backward compatibility.
+     */
+    @Deprecated
     public static ShaderInstance getBlockLitShader() {
-        return blockLitShader;
+        return blockLitInstancedShader;
     }
 
-    public static void setBlockLitShader(ShaderInstance shader) {
-        blockLitShader = shader;
+    public static ShaderInstance getBlockLitSimpleShader() {
+        return blockLitSimpleShader;
+    }
+
+    public static void setBlockLitSimpleShader(ShaderInstance shader) {
+        blockLitSimpleShader = shader;
+    }
+
+    public static ShaderInstance getBlockLitInstancedShader() {
+        return blockLitInstancedShader;
+    }
+
+    public static void setBlockLitInstancedShader(ShaderInstance shader) {
+        blockLitInstancedShader = shader;
     }
 
     public static ShaderInstance getThermalVisionShader() {

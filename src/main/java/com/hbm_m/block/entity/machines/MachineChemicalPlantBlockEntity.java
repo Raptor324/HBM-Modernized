@@ -36,9 +36,9 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 
 /**
- * Chemical Plant BlockEntity — порт с 1.7.10.
+ * Chemical Plant BlockEntity - порт с 1.7.10.
  * 22 слота, 6 FluidTank (3 input, 3 output), энергия.
- * Логика крафтов — заглушка.
+ * Логика крафтов - заглушка.
  */
 public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
 
@@ -105,7 +105,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
     }
 
     /**
-     * Заглушка под логику крафта: когда появится обработка рецептов — выставлять
+     * Заглушка под логику крафта: когда появится обработка рецептов - выставлять
      * {@link MachineChemicalPlantBlock#RENDER_ACTIVE} (и сбрасывать по таймеру как у advanced assembler).
      */
     private void syncRenderActiveStub() {

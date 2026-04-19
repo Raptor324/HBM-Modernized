@@ -52,7 +52,7 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
             MainRegistry.LOGGER.debug("PartGeometry: Part '{}' has NO QUADS, skipping", partName);
             return EMPTY;
         }
-        MainRegistry.LOGGER.debug("PartGeometry: Part '{}' — {} quads", partName, quads.size());
+        MainRegistry.LOGGER.debug("PartGeometry: Part '{}' - {} quads", partName, quads.size());
         return new PartGeometry(quads);
     }
 

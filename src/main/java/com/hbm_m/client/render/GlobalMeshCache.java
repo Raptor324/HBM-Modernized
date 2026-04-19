@@ -52,6 +52,21 @@ public class GlobalMeshCache {
         }
     );
 
+    /** Iris-format companion meshes, lazily built per part on first Iris render. */
+    private static final Map<String, IrisCompanionMesh> IRIS_COMPANION_MESHES = Collections.synchronizedMap(
+        new LinkedHashMap<String, IrisCompanionMesh>(MAX_CACHE_SIZE + 1, 0.75f, true) {
+            @Override
+            protected boolean removeEldestEntry(Map.Entry<String, IrisCompanionMesh> eldest) {
+                if (size() > MAX_CACHE_SIZE) {
+                    IrisCompanionMesh m = eldest.getValue();
+                    if (m != null) m.destroy();
+                    return true;
+                }
+                return false;
+            }
+        }
+    );
+
     public static List<BakedQuad> getOrCompile(String cacheKey, BakedModel modelPart) {
         return getOrCompilePartGeometry(cacheKey, modelPart).solidQuads();
     }
@@ -186,10 +201,35 @@ public class GlobalMeshCache {
         };
     }
 
+    /**
+     * Lazily build (or fetch) a companion mesh holding the given part's geometry in
+     * Iris-extended {@code NEW_ENTITY}/{@code IrisVertexFormats.ENTITY} format.
+     * Returns {@code null} when there is no geometry to upload.
+     */
+    public static IrisCompanionMesh getOrCreateIrisCompanion(String cacheKey, BakedModel modelPart) {
+        if (modelPart == null) return null;
+        return IRIS_COMPANION_MESHES.computeIfAbsent(cacheKey, k -> {
+            List<BakedQuad> quads = getOrCompile(k, modelPart);
+            if (quads == null || quads.isEmpty()) return null;
+            return new IrisCompanionMesh(quads);
+        });
+    }
+
+    /**
+     * Variant that builds the companion mesh from an explicit quad list (used when the
+     * caller has already collected/cached the quads via {@link PartGeometry}).
+     */
+    public static IrisCompanionMesh getOrCreateIrisCompanion(String cacheKey, List<BakedQuad> quads) {
+        if (quads == null || quads.isEmpty()) return null;
+        return IRIS_COMPANION_MESHES.computeIfAbsent(cacheKey, k -> new IrisCompanionMesh(quads));
+    }
+
     public static void clear() {
         COMPILED_GEOMETRY.clear();
         GPU_BUFFERS.values().forEach(vb -> { if (vb != null) vb.close(); });
         GPU_BUFFERS.clear();
+        IRIS_COMPANION_MESHES.values().forEach(m -> { if (m != null) m.destroy(); });
+        IRIS_COMPANION_MESHES.clear();
     }
 
     public static void clearAll() {

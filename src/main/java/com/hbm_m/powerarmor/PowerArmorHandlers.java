@@ -32,7 +32,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingAttackEvent;
-import net.minecraftforge.event.entity.living.LivingFallEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -247,9 +246,9 @@ public final class PowerArmorHandlers {
         // === РЕЖИМ "ПРОВАЛИВАНИЯ": каждый тик ломаем мягкие блоки под собой, пока не упрёмся в твёрдый ===
         if (smashingSoft) {
             boolean broke = breakSoftBlocksUnderPlayer(level, player);
-            if (broke) return; // пока ломаем — ни звука, ни AOE
+            if (broke) return; // пока ломаем - ни звука, ни AOE
             
-            // Если уже нечего ломать, но игрок ещё не стоит на земле — ждём следующего тика
+            // Если уже нечего ломать, но игрок ещё не стоит на земле - ждём следующего тика
             if (!player.onGround()) return;
             
             // Уперлись в твёрдый блок: финализируем звук/частицы/AOE один раз

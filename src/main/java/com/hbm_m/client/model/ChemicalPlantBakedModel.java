@@ -22,14 +22,14 @@ import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
 
 /**
- * Iris/chunk mesh: при {@code render_active=false} — Base, Frame, Slider и Spinner (idle).
- * При {@code render_active=true} — только Base и Frame; подвижные части в BER.
+ * Iris/chunk mesh: при {@code render_active=false} - Base, Frame, Slider и Spinner (idle).
+ * При {@code render_active=true} - только Base и Frame; подвижные части в BER.
  * <p>
- * Поворот: {@link MultipartFacingTransforms#chemicalPlantBakedRotationY} — blockstate для этого блока
+ * Поворот: {@link MultipartFacingTransforms#chemicalPlantBakedRotationY} - blockstate для этого блока
  * <b>без</b> {@code rotationY}, чтобы совпадать с {@code LegacyAnimator.setupBlockTransform} (VBO).
  * <p>
  * <b>Прозрачность:</b> запечённый чанк-меш не поддерживает корректный {@link RenderType#translucent()} (порядок,
- * смешивание). Часть {@code Fluid} с альфой в baked не попадает — только в
+ * смешивание). Часть {@code Fluid} с альфой в baked не попадает - только в
  * {@link com.hbm_m.client.render.implementations.ChemicalPlantRenderer} через translucent pass.
  */
 public class ChemicalPlantBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
@@ -97,7 +97,7 @@ public class ChemicalPlantBakedModel extends AbstractMultipartBakedModel impleme
             return getItemQuads(side, rand, modelData, renderType);
         }
 
-        if (!ShaderCompatibilityDetector.isExternalShaderActive()) {
+        if (ShaderCompatibilityDetector.useVboGeometry()) {
             return List.of();
         }
 
@@ -138,10 +138,10 @@ public class ChemicalPlantBakedModel extends AbstractMultipartBakedModel impleme
         double sdx = chemicalSps(0) * 0.375;
 
         /*
-         * Legacy GL (RenderChemicalPlant): после R_facing слайдер — только glTranslated(sdx, 0, 0) вдоль локальной X,
-         * т.е. R * (v + (sdx,0,0)) = R*v + R*(sdx,0,0). Нельзя делать translate до R с (-0.5,0,-0.5) — иначе
+         * Legacy GL (RenderChemicalPlant): после R_facing слайдер - только glTranslated(sdx, 0, 0) вдоль локальной X,
+         * т.е. R * (v + (sdx,0,0)) = R*v + R*(sdx,0,0). Нельзя делать translate до R с (-0.5,0,-0.5) - иначе
          * «диагональный» оффсет на N/S и визуально «лишние» 90°.
-         * Спиннер при static: T(0.5) R_spin T(-0.5) при R_spin=0 — единичный; лишний translate до R на квадах
+         * Спиннер при static: T(0.5) R_spin T(-0.5) при R_spin=0 - единичный; лишний translate до R на квадах
          * давал сдвиг на полблока.
          */
         float slideRad = (float) Math.toRadians(rotationY);

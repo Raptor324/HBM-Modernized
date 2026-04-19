@@ -11,8 +11,7 @@ import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.OcclusionCullingHelper;
-import com.hbm_m.client.render.SingleMeshVboRenderer;
-import com.hbm_m.client.render.SingleMeshVboRenderer.VboData;
+import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
@@ -53,6 +52,21 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
     private final Matrix4f matSlider = new Matrix4f();
     private final Matrix4f matArm = new Matrix4f();
     private final Matrix4f matCog = new Matrix4f();
+
+    /** Degrees → radians multiplier; see {@code MachineAdvancedAssemblerRenderer.DEG_TO_RAD}. */
+    private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
+
+    /**
+     * Per-BE flag set inside {@link #renderParts} after the occlusion-culling
+     * check passes; consumed by {@link #render} before drawing the recipe icon.
+     * Renderer instances are singletons shared across every BE of this type, so
+     * the field is read-modify-written by the render thread only - safe.
+     * Without this gate, {@code renderRecipeIconDirect} fired on every visible
+     * controller chunk regardless of culling, paying a full
+     * {@code ItemRenderer.renderStatic} for invisible machines (one of the
+     * biggest QoL CPU pigs at 400-machine farm scale).
+     */
+    private boolean visibleThisFrame = false;
 
     public MachineAssemblerRenderer(BlockEntityRendererProvider.Context ctx) {}
 
@@ -109,7 +123,6 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         var state = be.getBlockState();
         boolean renderActive = state.hasProperty(MachineAssemblerBlock.RENDER_ACTIVE)
                 && state.getValue(MachineAssemblerBlock.RENDER_ACTIVE);
-        boolean shaderActive = ShaderCompatibilityDetector.isExternalShaderActive();
 
         BlockPos blockPos = be.getBlockPos();
         int blockLight = LightTexture.block(packedLight);
@@ -121,15 +134,22 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         if (!OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
             return;
         }
+        // Mark visible so render() knows it's safe to draw the recipe icon.
+        // visibleThisFrame is reset to false at the top of render() before
+        // super.render() runs, so this only stays true when culling passes.
+        visibleThisFrame = true;
 
-        if (!shaderActive) {
-            // No shaders: render everything via VBO/instancing.
+        // Источник статической геометрии: VBO/Iris путь vs baked-model путь.
+        boolean useVboGeometry = ShaderCompatibilityDetector.useVboGeometry();
+        if (useVboGeometry) {
+            // Шейдеров нет ИЛИ включён useIrisExtendedShaderPath:
+            // полный VBO/инстансинг рендер, baked-model вернул пустые quad'ы.
             renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource);
         } else if (renderActive && be.isCrafting()) {
-            // Shader + active: baked draws Base, BER draws only moving parts via putBulkData.
+            // Шейдеры + работает: baked рисует Base, BER дорисовывает подвижные части через putBulkData.
             renderAnimatedWithBulkData(model, animator, be, partialTick);
         } else {
-            // Shader + idle: fully baked model, BER does nothing.
+            // Шейдеры + idle: всё в baked-model, BER ничего не делает.
             return;
         }
 
@@ -142,8 +162,15 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
     public void render(MachineAssemblerBlockEntity be, float partialTick,
                        PoseStack poseStack, MultiBufferSource bufferSource,
                        int packedLight, int packedOverlay) {
+        // Pessimistic default - super.render() may early-out (frustum) without
+        // ever invoking renderParts(), in which case the flag stays false and
+        // we skip the icon. renderParts() flips it to true ONLY after its
+        // OcclusionCullingHelper.shouldRender check passes.
+        visibleThisFrame = false;
         super.render(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-        renderRecipeIconDirect(be, poseStack, bufferSource, packedLight, packedOverlay);
+        if (visibleThisFrame) {
+            renderRecipeIconDirect(be, poseStack, bufferSource, packedLight, packedOverlay);
+        }
     }
 
     private void renderWithVBO(MachineAssemblerBlockEntity be,
@@ -163,6 +190,39 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         }
 
         boolean useBatching = ModClothConfig.useInstancedBatching();
+
+        // Iris batching: open ONE shader.apply()/clear() pair for the whole
+        // machine when:
+        //   1) per-type instancing is OFF - amortise across Body + Slider +
+        //      Arm + 4 Cogs (= 7 parts × 2 passes).
+        //   2) per-type instancing is ON but we are in a shadow pass - the
+        //      end-of-stage flush in RenderLevelStageEvent fires only on the
+        //      main pass, so InstancedStaticPartRenderer.addInstance() routes
+        //      shadow-pass instances directly through drawSingleWithIrisExtended;
+        //      opening a batch here lets those 7 redirected single draws share
+        //      one apply()/clear() pair. Without this, the assembler either
+        //      fails to cast shadows or duplicates itself in the sky.
+        // See MachineAdvancedAssemblerRenderer.renderWithVBO and IrisRenderBatch
+        // for the full rationale.
+        boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
+        boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
+        if (useIrisBatch) {
+            try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
+                renderAssemblerPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useBatching);
+            }
+        } else {
+            renderAssemblerPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useBatching);
+        }
+    }
+
+    private void renderAssemblerPartsInternal(MachineAssemblerBlockEntity be,
+                                              MachineAssemblerBakedModel model,
+                                              float partialTick,
+                                              PoseStack poseStack,
+                                              int dynamicLight,
+                                              BlockPos blockPos,
+                                              MultiBufferSource bufferSource,
+                                              boolean useBatching) {
         // Match legacy orientation: rotate full assembler 90 degrees clockwise.
         poseStack.pushPose();
         poseStack.translate(0.5f, 0.0f, 0.5f);
@@ -251,7 +311,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         // Compensate root transform so pivot = cog center: T(pos+offset)*R*T(-root)
         matCog.identity()
                 .translate(cx - 0.5f + VBO_COG_OFFSET_X, cy, cz - 0.5f + VBO_COG_OFFSET_Z)
-                .rotateZ((float) Math.toRadians(rotationDeg))
+                .rotateZ(rotationDeg * DEG_TO_RAD)
                 .translate(-ROOT_TX, 0f, -ROOT_TZ);
 
         addInstanceOrRender(useBatching, instancedCog,

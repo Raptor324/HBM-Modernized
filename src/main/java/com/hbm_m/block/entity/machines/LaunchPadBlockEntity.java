@@ -15,7 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Обычная пусковая площадка.
  *
- * Логика пуска ракет пока отсутствует — см. LaunchPadBaseBlockEntity.
+ * Логика пуска ракет пока отсутствует - см. LaunchPadBaseBlockEntity.
  * Этот класс отвечает только за привязку к BlockEntityType и GUI/меню.
  */
 public class LaunchPadBlockEntity extends LaunchPadBaseBlockEntity {

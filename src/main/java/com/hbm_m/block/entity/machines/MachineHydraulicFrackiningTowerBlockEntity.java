@@ -514,7 +514,7 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         // Контроллер находится на полу (y=0) в центре структуры 7х7.
         // Вышка имеет ширину 7 блоков (от -3 до +3 относительно контроллера).
-        // Высота башни — 24 блока (от 0 до +24).
+        // Высота башни - 24 блока (от 0 до +24).
         return new net.minecraft.world.phys.AABB(this.worldPosition)
                 .inflate(3.0, 0.0, 3.0)
                 .expandTowards(0.0, 24.0, 0.0);

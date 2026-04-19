@@ -23,7 +23,7 @@ public final class NuclearExplosionAPI {
     private static final int DEFAULT_FAT_MAN_RADIUS = 50;
 
     /**
-     * Запускает ядерный взрыв по конфигу. Вызывать на сервере; визуал гриба на клиенте — отдельно через NukeTorexCreator.
+     * Запускает ядерный взрыв по конфигу. Вызывать на сервере; визуал гриба на клиенте - отдельно через NukeTorexCreator.
      */
     public static NukeExplosionMK5Entity start(Level level, Vec3 pos, NuclearExplosionConfig cfg) {
         return start(level, pos.x, pos.y, pos.z, cfg, ExplosionCommandOptions.DEFAULT);
@@ -37,7 +37,7 @@ public final class NuclearExplosionAPI {
     }
 
     /**
-     * Запускает ядерный взрыв по конфигу. Только серверная логика; клиентский гриб — через пакет/NukeTorexCreator.
+     * Запускает ядерный взрыв по конфигу. Только серверная логика; клиентский гриб - через пакет/NukeTorexCreator.
      */
     public static NukeExplosionMK5Entity start(Level level, double x, double y, double z, NuclearExplosionConfig cfg) {
         return start(level, x, y, z, cfg, ExplosionCommandOptions.DEFAULT);

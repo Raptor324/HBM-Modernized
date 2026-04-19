@@ -4,21 +4,22 @@ layout(location = 0) in vec3 Position;
 layout(location = 1) in vec3 Normal;
 layout(location = 2) in vec2 UV0;
 
+#ifdef USE_INSTANCING
 layout(location = 3) in vec3 InstPos;        // Position
 layout(location = 4) in vec4 InstRot;        // Quaternion (x, y, z, w)
 layout(location = 5) in float InstBrightness; // Light
+#endif
 
 uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;
 uniform float Brightness;
-uniform int UseInstancing;
 
 out vec2 texCoord;
 out float brightness;
 out float vertexDistance;
 out vec3 fragNormal;
 
-// Функция для конвертации кватерниона в матрицу вращения 4x4
+#ifdef USE_INSTANCING
 mat4 quatToMat4(vec4 q) {
     float xx = q.x * q.x;
     float yy = q.y * q.y;
@@ -37,38 +38,31 @@ mat4 quatToMat4(vec4 q) {
         0.0,                   0.0,                   0.0,                   1.0
     );
 }
+#endif
 
 void main() {
     mat4 modelView;
     float bright;
-    
-    // Переменная для матрицы вращения (нужна и для позиции, и для нормали)
-    mat4 rotMatrix; 
 
-    if (UseInstancing == 1) {
-        // Вычисляем вращение ОДИН раз
-        rotMatrix = quatToMat4(InstRot);
-        
-        mat4 translation = mat4(1.0);
-        translation[3] = vec4(InstPos, 1.0);
-        
-        // Итоговая матрица: Сначала вращение, потом перенос
-        modelView = translation * rotMatrix;
-        bright = InstBrightness;
-        
-        // Нормаль вращаем готовой матрицей (cast to mat3 отбрасывает лишнее)
-        fragNormal = mat3(rotMatrix) * Normal;
-    } else {
-        modelView = ModelViewMat;
-        bright = Brightness;
-        
-        // Fallback для обычного рендера
-        fragNormal = mat3(modelView) * Normal; 
-    }
-    
+#ifdef USE_INSTANCING
+    mat4 rotMatrix = quatToMat4(InstRot);
+    mat4 translation = mat4(1.0);
+    translation[3] = vec4(InstPos, 1.0);
+
+    modelView = translation * rotMatrix;
+    bright = InstBrightness;
+
+    fragNormal = mat3(rotMatrix) * Normal;
+#else
+    modelView = ModelViewMat;
+    bright = Brightness;
+
+    fragNormal = mat3(modelView) * Normal;
+#endif
+
     vec4 viewPos = modelView * vec4(Position, 1.0);
     gl_Position = ProjMat * viewPos;
-    
+
     texCoord = UV0;
     brightness = bright;
     vertexDistance = length(viewPos.xyz);

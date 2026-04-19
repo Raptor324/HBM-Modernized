@@ -1,9 +1,16 @@
 package com.hbm_m.particle.nt;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.joml.Matrix4f;
+import org.joml.Vector3f;
+
 import com.hbm_m.client.ClientRenderHandler;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+
 import net.minecraft.client.Camera;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -13,11 +20,6 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
-import org.joml.Matrix4f;
-import org.joml.Vector3f;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Расширяющиеся огненные/дымовые кольца и мягкое свечение ядерного взрыва.
@@ -198,7 +200,7 @@ public class NukeExplosionRings extends ParticleNT {
         return start + (end - start) * x;
     }
 
-    /** Альфа в зависимости от типа: FLARE — 0 -> 0.5 -> 0 (CIRC_OUT), FIRE/SMOKE — SINE_OUT к 0 */
+    /** Альфа в зависимости от типа: FLARE - 0 -> 0.5 -> 0 (CIRC_OUT), FIRE/SMOKE - SINE_OUT к 0 */
     private static float getAlphaForType(Ring r, float t) {
         if (r.type == RingType.FLARE) {
             return 2f * t * (1f - t);

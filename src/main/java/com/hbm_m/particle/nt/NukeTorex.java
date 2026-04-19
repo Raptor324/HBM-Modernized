@@ -16,13 +16,13 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
 import net.minecraft.client.Camera;
+import net.minecraft.client.GraphicsStatus;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.GraphicsStatus;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
@@ -477,7 +477,7 @@ public class NukeTorex extends ParticleNT {
         if (this.age >= 101) return;
         Vec3 camPos = camera.getPosition();
 
-        //  Тоже свой PoseStack — только трансляция
+        //  Тоже свой PoseStack - только трансляция
         PoseStack localPose = new PoseStack();
         localPose.translate(this.x - camPos.x, this.y - camPos.y, this.z - camPos.z);
 
@@ -535,7 +535,7 @@ public class NukeTorex extends ParticleNT {
     private void renderFlash(Matrix4f matrix, VertexConsumer consumer,
             float posX, float posY, float posZ,
             float scale, float alpha) {
-        //  Те же camera-векторы, что и у cloudlet — гарантированно корректный billboard
+        //  Те же camera-векторы, что и у cloudlet - гарантированно корректный billboard
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
         Vector3f r = new Vector3f(camera.getLeftVector()).mul(scale);
         Vector3f u = new Vector3f(camera.getUpVector()).mul(scale);

@@ -21,7 +21,7 @@ public final class MultiblockSideTuples {
     }
 
     /**
-     * @param north south west east up down — локально к схеме (как у {@link MultiblockStructureHelper}).
+     * @param north south west east up down - локально к схеме (как у {@link MultiblockStructureHelper}).
      */
     public static boolean[] energy(boolean north, boolean south, boolean west, boolean east, boolean up, boolean down) {
         return new boolean[] { north, south, west, east, up, down };

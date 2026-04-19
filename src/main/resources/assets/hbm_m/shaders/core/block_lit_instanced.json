@@ -1,5 +1,5 @@
 {
-    "vertex": "hbm_m:block_lit",
+    "vertex": "hbm_m:block_lit_instanced",
     "fragment": "hbm_m:block_lit",
     "samplers": [
         { "name": "Sampler0" }
@@ -10,7 +10,6 @@
         { "name": "FogStart", "type": "float", "count": 1, "values": [ 0.0 ] },
         { "name": "FogEnd", "type": "float", "count": 1, "values": [ 1.0 ] },
         { "name": "FogColor", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
-        { "name": "Brightness", "type": "float", "count": 1, "values": [ 1.0 ] },
-        { "name": "UseInstancing", "type": "int", "count": 1, "values": [ 0 ] }
+        { "name": "Brightness", "type": "float", "count": 1, "values": [ 1.0 ] }
     ]
 }

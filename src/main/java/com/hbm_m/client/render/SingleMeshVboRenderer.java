@@ -1,5 +1,8 @@
 package com.hbm_m.client.render;
 
+import com.hbm_m.client.render.shader.IrisExtendedShaderAccess;
+import com.hbm_m.client.render.shader.IrisPhaseGuard;
+import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -31,9 +34,13 @@ import org.lwjgl.system.MemoryUtil;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
-
 @OnlyIn(Dist.CLIENT)
 public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
+
+    /** Optional companion mesh in Iris-extended {@code NEW_ENTITY} format, lazy-built. */
+    @Nullable
+    private IrisCompanionMesh irisCompanion;
+    private boolean irisCompanionAttempted;
 
     protected abstract VboData buildVboData();
 
@@ -50,33 +57,42 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             var minecraft = Minecraft.getInstance();
             var textureManager = minecraft.getTextureManager();
 
-            //  Только текстура атласа, без lightmap
             RenderSystem.activeTexture(GL13.GL_TEXTURE0);
             var blockAtlas = textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS);
             RenderSystem.bindTexture(blockAtlas.getId());
         }
     }
 
-    /**
-     * Проверка видимости перед рендерингом с использованием occlusion culling.
-     * Если BlockEntity недоступен, считаем, что объект нужно рендерить
-     * (нельзя корректно проверить видимость без информации о мире и границах).
-     */
     private boolean shouldRenderWithCulling(BlockPos blockPos, @Nullable BlockEntity blockEntity) {
         if (blockEntity == null || blockEntity.getLevel() == null) {
-            // Нет данных для продвинутого occlusion culling → не отбрасываем меш
             return true;
         }
 
-        // Используем продвинутый occlusion culling
         AABB renderBounds = blockEntity.getRenderBoundingBox();
         return OcclusionCullingHelper.shouldRender(blockPos, blockEntity.getLevel(), renderBounds);
+    }
+
+    @Nullable
+    private IrisCompanionMesh getOrBuildIrisCompanion() {
+        if (irisCompanion != null && irisCompanion.isBuilt()) return irisCompanion;
+        if (irisCompanion != null && irisCompanion.isFailed()) return null;
+        if (irisCompanionAttempted && irisCompanion == null) return null;
+
+        List<BakedQuad> quads = getQuadsForIrisPath();
+        if (quads == null || quads.isEmpty()) {
+            irisCompanionAttempted = true;
+            return null;
+        }
+        if (irisCompanion == null) {
+            irisCompanion = new IrisCompanionMesh(quads);
+            irisCompanionAttempted = true;
+        }
+        return irisCompanion.ensureBuilt() ? irisCompanion : null;
     }
 
     protected void initVbo() {
         if (initialized) return;
 
-        // Сохраняем текущее состояние OpenGL перед инициализацией
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         int previousElementArrayBuffer = GL11.glGetInteger(GL15.GL_ELEMENT_ARRAY_BUFFER_BINDING);
@@ -84,11 +100,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         VboData data = null;
 
         try {
-            // Генерируем идентификаторы для VAO и VBO
             vaoId = GL30.glGenVertexArrays();
             vboId = GL15.glGenBuffers();
 
-            // Билдим данные для VBO
             data = buildVboData();
             if (data == null) {
                 MainRegistry.LOGGER.warn("VboData is null, cannot initialize VBO");
@@ -96,46 +110,36 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             }
             indexCount = data.indices != null ? data.indices.remaining() : 0;
 
-            // Конфигурируем VAO
             GL30.glBindVertexArray(vaoId);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, data.byteBuffer, GL15.GL_STATIC_DRAW);
 
-            // Атрибут 0: Position (3 float, offset 0)
             GL20.glEnableVertexAttribArray(0);
             GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 32, 0);
 
-            // Атрибут 1: Normal (3 float, offset 12)
             GL20.glEnableVertexAttribArray(1);
             GL20.glVertexAttribPointer(1, 3, GL11.GL_FLOAT, false, 32, 12);
 
-            // Атрибут 2: TexCoord (2 float, offset 24)
             GL20.glEnableVertexAttribArray(2);
             GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, 32, 24);
 
-            // Если есть индексы, создаем EBO
             if (data.indices != null && data.indices.remaining() > 0) {
                 eboId = GL15.glGenBuffers();
                 GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, eboId);
                 GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, data.indices, GL15.GL_STATIC_DRAW);
-                //  НЕ отвязываем EBO здесь - он должен остаться частью VAO!
             }
 
-            //  КРИТИЧНО: Отвязываем VAO ПЕРЕД восстановлением EBO
             GL30.glBindVertexArray(0);
 
-            // Освобождаем нативную память VboData через единый ownership-метод
             data.close();
 
             initialized = true;
 
         } catch (Exception e) {
-            // В случае ошибки освобождаем нативную память VboData
             if (data != null) {
                 data.close();
             }
 
-            // Удаляем созданные GL объекты при ошибке
             if (vaoId != -1) {
                 GL30.glDeleteVertexArrays(vaoId);
                 vaoId = -1;
@@ -152,13 +156,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             throw e;
 
         } finally {
-            //  КРИТИЧНО: Сначала восстанавливаем VBO, потом VAO, потом EBO
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             GL30.glBindVertexArray(previousVao);
 
-            //  EBO восстанавливаем ПОСЛЕ отвязки VAO
-            // Если previousVao != 0, то его EBO восстановится автоматически
-            // Если previousVao == 0, восстанавливаем явно
             if (previousVao == 0) {
                 GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, previousElementArrayBuffer);
             }
@@ -169,9 +169,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         if (quads == null || quads.isEmpty() || bufferSource == null) return;
         var consumer = bufferSource.getBuffer(RenderType.solid());
         var pose = poseStack.last();
-        // При использовании bufferSource мы НЕ вызываем endBatch(), движок сам отрисует когда надо
         for (BakedQuad quad : quads) {
-            // Используем стандартный putBulkData, он корректно работает с Iris
             consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
         }
     }
@@ -190,12 +188,18 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         if (!shouldRenderWithCulling(blockPos, blockEntity)) return;
 
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
+            // 1) Try the Iris ExtendedShader path with our companion mesh - gives correct G-buffer
+            //    output, shadow casting and pack uniforms.
+            if (renderWithIrisExtended(poseStack, packedLight)) {
+                return;
+            }
+            // 2) Fallback: classic putBulkData delegation lets Iris's pipeline render us as
+            //    plain terrain quads. Used when companion mesh build failed or Iris reflection
+            //    is unavailable (e.g. very old / very new Iris release we don't support yet).
             List<BakedQuad> irisQuads = getQuadsForIrisPath();
-            // Если у нас есть квады и буфер - рисуем через ванильный пайплайн
             if (irisQuads != null && bufferSource != null) {
                 renderToBufferSource(poseStack, packedLight, irisQuads, bufferSource);
             }
-            // И ВЫХОДИМ, чтобы не трогать GL напрямую
             return;
         }
 
@@ -220,10 +224,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             return;
         }
 
-        ShaderInstance shader = ModShaders.getBlockLitShader();
+        ShaderInstance shader = ModShaders.getBlockLitSimpleShader();
         if (shader == null) {
-            // Шейдер недоступен (не загрузился или был сброшен при ресурс-релоаде) —
-            // фолбэк на ванильный putBulkData-путь, чтобы модель не исчезала молча.
+            // Shader not loaded yet (resource reload race) - fall back to putBulkData.
             List<BakedQuad> fallbackQuads = getQuadsForIrisPath();
             if (fallbackQuads != null && bufferSource != null) {
                 renderToBufferSource(poseStack, packedLight, fallbackQuads, bufferSource);
@@ -248,11 +251,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 brightnessUniform.set(brightness);
             }
 
-            var useInstancingUniform = shader.getUniform("UseInstancing");
-            if (useInstancingUniform != null) {
-                useInstancingUniform.set(0);
-            }
-
             var fogStartUniform = shader.getUniform("FogStart");
             if (fogStartUniform != null) fogStartUniform.set(RenderSystem.getShaderFogStart());
             var fogEndUniform = shader.getUniform("FogEnd");
@@ -266,7 +264,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             var sampler0 = shader.getUniform("Sampler0");
             if (sampler0 != null) sampler0.set(0);
 
-            // Биндим текстуры и только потом применяем шейдер (apply загружает uniform-ы)
             TextureBinder.bindForModelIfNeeded(shader);
             shader.apply();
 
@@ -281,13 +278,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during VBO render", e);
         } finally {
-            // Восстанавливаем состояние безопасным порядком:
-            // 1) возвращаем предыдущий VAO
-            // 2) возвращаем глобальный GL_ARRAY_BUFFER без промежуточного VAO=0
             GL30.glBindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
 
-            // Восстанавливаем culling
             if (previousCullFaceEnabled) {
                 RenderSystem.enableCull();
             } else {
@@ -296,6 +289,121 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+        }
+    }
+
+    /**
+     * Render through the Iris {@code ExtendedShader} with the lazy companion mesh.
+     * Returns {@code true} if rendering happened; the caller should fall through to a
+     * different path on {@code false}.
+     * <p>
+     * <b>Fast path:</b> when an {@link IrisRenderBatch} session is currently open
+     * (typically opened by the BlockEntityRenderer that wraps multiple part draws
+     * for one machine), we skip the entire shader setup and only emit the per-part
+     * VAO bind, ModelViewMat upload and {@code glDrawElements}. The session pays
+     * the heavy {@code apply}/{@code clear} cost once for all parts in the batch
+     * - see {@link IrisRenderBatch} for the full rationale.
+     */
+    private boolean renderWithIrisExtended(PoseStack poseStack, int packedLight) {
+        IrisCompanionMesh companion = getOrBuildIrisCompanion();
+        if (companion == null) {
+            return false;
+        }
+
+        // Fast path: a batch session is open - every other part of the same
+        // BlockEntity is draining apply()/clear() through it as well, so we
+        // just submit our draw and exit. The session takes care of state
+        // restoration on its own close().
+        IrisRenderBatch batch = IrisRenderBatch.active();
+        if (batch != null) {
+            batch.drawCompanion(companion, poseStack.last().pose(), packedLight);
+            return true;
+        }
+
+        boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
+        ShaderInstance shader = IrisExtendedShaderAccess.getBlockShader(shadowPass);
+        if (shader == null) {
+            return false;
+        }
+
+        int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
+        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
+        boolean previousCullFaceEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
+
+        // Neutral blockEntityId so BSL & co. don't take EMISSIVE_RECOLOR /
+        // DrawEndPortal branches based on whatever BE Iris rendered last.
+        int previousBlockEntityId = IrisExtendedShaderAccess.setCurrentRenderedBlockEntity(0);
+
+        try (IrisPhaseGuard ignored = IrisPhaseGuard.pushBlockEntities()) {
+            RenderSystem.setShader(() -> shader);
+
+            if (shader.MODEL_VIEW_MATRIX != null) shader.MODEL_VIEW_MATRIX.set(poseStack.last().pose());
+            if (shader.PROJECTION_MATRIX != null) shader.PROJECTION_MATRIX.set(RenderSystem.getProjectionMatrix());
+
+            var brightnessUniform = shader.getUniform("Brightness");
+            if (brightnessUniform != null) brightnessUniform.set(calculateBrightness(packedLight));
+
+            var sampler0 = shader.getUniform("Sampler0");
+            if (sampler0 != null) sampler0.set(0);
+
+            // ExtendedShader.apply() reads RenderSystem.getShaderTexture(0..2)
+            // and binds those IDs to the IrisSamplers ALBEDO/OVERLAY/LIGHTMAP
+            // units. Other rendering paths (Embeddium chunk uploads, particle
+            // batches) can leave wrong IDs in those slots, which would cause
+            // the pack shader to sample the lightmap as the albedo and render
+            // the model as a solid orange. Explicitly re-point the slots to
+            // the correct atlas/overlay/lightmap textures before apply().
+            RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+            Minecraft.getInstance().gameRenderer.overlayTexture().setupOverlayColor();
+            Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
+            TextureBinder.bindForModelIfNeeded(shader);
+            shader.apply();
+
+            RenderSystem.enableDepthTest();
+            RenderSystem.depthFunc(GL11.GL_LEQUAL);
+            RenderSystem.depthMask(true);
+            RenderSystem.disableCull();
+
+            GL30.glBindVertexArray(companion.getVaoId());
+
+            // Bind the Iris-extended attributes (iris_Entity, mc_midTexCoord,
+            // at_tangent) to their linker-resolved locations on this VAO with
+            // pointers into our VBO at the correct byte offsets. Iris's
+            // MixinBufferBuilder.iris$beforeNext already populated the VBO with
+            // valid per-vertex data for these attributes, so once bound at the
+            // location the GLSL linker actually picked, the shader reads stable
+            // real data and is no longer susceptible to "current value bank"
+            // pollution from Embeddium chunk uploads, redstone particle batches
+            // or any other immediate-mode draw - the root cause of the
+            // intermittent broken-geometry symptom near torches and powered
+            // redstone components. Cached per program ID; F3+T re-link
+            // automatically invalidates by minting a new ID.
+            companion.prepareForShader(shader.getId());
+
+            // Per-draw lightmap: feed the pack shader's `vaUV2` via the disabled
+            // attribute's generic constant - see InstancedStaticPartRenderer for
+            // the full rationale.
+            int uv2Loc = companion.getUv2Location();
+            if (uv2Loc != -1) {
+                // Pack-shader vaUV2 is ivec2 → must use the integer attribute bank.
+                int blockU = Math.max(0, Math.min(240, packedLight & 0xFFFF));
+                int skyV   = Math.max(0, Math.min(240, (packedLight >>> 16) & 0xFFFF));
+                GL30.glVertexAttribI2i(uv2Loc, blockU, skyV);
+            }
+
+            GL11.glDrawElements(GL11.GL_TRIANGLES, companion.getIndexCount(), GL11.GL_UNSIGNED_INT, 0);
+            shader.clear();
+            return true;
+        } catch (Exception e) {
+            MainRegistry.LOGGER.error("SingleMeshVboRenderer.renderWithIrisExtended failed", e);
+            return false;
+        } finally {
+            GL30.glBindVertexArray(previousVao);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+            if (previousCullFaceEnabled) RenderSystem.enableCull();
+            else RenderSystem.disableCull();
+            RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
+            IrisExtendedShaderAccess.restoreCurrentRenderedBlockEntity(previousBlockEntityId);
         }
     }
 
@@ -311,16 +419,20 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         float skyDarken = level.getSkyDarken(1.0f);
         float skyBrightness = 0.05f + (skyDarken * 0.95f);
 
-        //  Применяем к sky light
         float effectiveSkyLight = skyLight * skyBrightness;
-
-        //  Берём максимум из block и modified sky
         float maxLight = Math.max(blockLight, effectiveSkyLight);
 
-        //  Нормализуем [0.05, 1.0]
-        float brightness = 0.05f + (maxLight / 15.0f) * 0.95f;
+        return 0.05f + (maxLight / 15.0f) * 0.95f;
+    }
 
-        return brightness;
+    @Override
+    public void cleanup() {
+        super.cleanup();
+        IrisCompanionMesh toDestroy = this.irisCompanion;
+        this.irisCompanion = null;
+        if (toDestroy != null) {
+            toDestroy.destroy();
+        }
     }
 
     public static class VboData implements AutoCloseable {
@@ -333,10 +445,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             this.indices = indices;
         }
 
-        /**
-         * Освобождает связанную с VboData off-heap память.
-         * Метод идемпотентен: повторные вызовы безопасны.
-         */
         @Override
         public void close() {
             if (consumed) {
@@ -352,4 +460,3 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         }
     }
 }
-

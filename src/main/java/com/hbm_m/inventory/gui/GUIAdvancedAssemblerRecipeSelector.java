@@ -1,10 +1,18 @@
 package com.hbm_m.inventory.gui;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
+
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.SetAssemblerRecipeC2SPacket;
 import com.hbm_m.recipe.AssemblerRecipe;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
@@ -14,13 +22,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
 
 public class GUIAdvancedAssemblerRecipeSelector extends Screen {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
@@ -369,7 +370,7 @@ public class GUIAdvancedAssemblerRecipeSelector extends Screen {
             if (be instanceof MachineAdvancedAssemblerBlockEntity assembler) {
                 ItemStack currentFolder = assembler.getBlueprintFolder();
                 
-                // Если папка изменилась — перезагружаем рецепты
+                // Если папка изменилась - перезагружаем рецепты
                 if (!ItemStack.matches(lastFolderStack, currentFolder)) {
                     this.lastFolderStack = currentFolder.copy();
                     reloadRecipes();
@@ -395,7 +396,7 @@ public class GUIAdvancedAssemblerRecipeSelector extends Screen {
                     ItemStack icon = recipe.getResultItem(null);
                     RecipeEntry entry = new RecipeEntry(recipe.getId(), icon, recipe);
                     
-                    // Если рецепт имеет pool — добавляем в приоритетную группу
+                    // Если рецепт имеет pool - добавляем в приоритетную группу
                     if (recipe.getBlueprintPool() != null && !recipe.getBlueprintPool().isEmpty()) {
                         poolRecipes.add(entry);
                     } else {

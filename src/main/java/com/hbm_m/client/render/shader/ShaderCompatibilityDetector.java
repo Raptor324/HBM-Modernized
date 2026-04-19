@@ -1,7 +1,11 @@
 package com.hbm_m.client.render.shader;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.reflect.Method;
 
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -17,15 +21,26 @@ public class ShaderCompatibilityDetector {
     private static Method irisIsShaderPackInUse = null;
     private static Method irisIsRenderingShadowPass = null;
     private static Object irisApiInstance = null;
+
+    /**
+     * Hot-path MethodHandles for the two Iris API queries called every frame
+     * (often per-BE per-pass). {@link Method#invoke} boxes args into an
+     * {@code Object[]} and goes through reflection access checks on every call;
+     * {@link MethodHandle#invokeExact} is JIT-friendly and avoids both. Bound
+     * with {@code asType()} to {@code (Object)boolean} so call sites can
+     * invokeExact without knowing the concrete IrisApi class.
+     */
+    private static MethodHandle irisIsShaderPackInUseMH = null;
+    private static MethodHandle irisIsRenderingShadowPassMH = null;
     
     // Кэш для оптимизации и для обращений с background-потоков (Sodium chunk builder)
     private static boolean lastState = false;
     /**
      * Thread-safe кэш: обновляется только с render-потока, читается с любых потоков.
-     * Sodium строит чанки на фоновых потоках — они не могут вызывать Iris API напрямую.
+     * Sodium строит чанки на фоновых потоках - они не могут вызывать Iris API напрямую.
      */
     private static volatile boolean cachedShaderActive = false;
-    /** Отложенная инвалидация — обрабатывается в ClientTickEvent.END */
+    /** Отложенная инвалидация - обрабатывается в ClientTickEvent.END */
     private static volatile boolean pendingChunkInvalidation = false;
 
     private static void init() {
@@ -38,7 +53,26 @@ public class ShaderCompatibilityDetector {
                 irisApiInstance = getInstanceMethod.invoke(null);
                 irisIsShaderPackInUse = irisApiClass.getMethod("isShaderPackInUse");
                 irisIsRenderingShadowPass = irisApiClass.getMethod("isRenderingShadowPass");
-                MainRegistry.LOGGER.info("ShaderCompatibilityDetector: API found and cached.");
+
+                // MethodHandle bind. Both methods return primitive `boolean`,
+                // so adapt to (Object)boolean so the call sites can invokeExact
+                // without an extra unboxing hop.
+                try {
+                    MethodHandles.Lookup lookup = MethodHandles.lookup();
+                    irisIsShaderPackInUse.setAccessible(true);
+                    irisIsRenderingShadowPass.setAccessible(true);
+                    irisIsShaderPackInUseMH = lookup.unreflect(irisIsShaderPackInUse)
+                            .asType(MethodType.methodType(boolean.class, Object.class));
+                    irisIsRenderingShadowPassMH = lookup.unreflect(irisIsRenderingShadowPass)
+                            .asType(MethodType.methodType(boolean.class, Object.class));
+                } catch (Throwable mhFail) {
+                    MainRegistry.LOGGER.warn("ShaderCompatibilityDetector: MethodHandle binding failed ({}), using Method.invoke", mhFail.toString());
+                    irisIsShaderPackInUseMH = null;
+                    irisIsRenderingShadowPassMH = null;
+                }
+
+                MainRegistry.LOGGER.info("ShaderCompatibilityDetector: API found and cached (MH={}).",
+                        irisIsShaderPackInUseMH != null);
             } catch (Exception e) {
                 MainRegistry.LOGGER.error("ShaderCompatibilityDetector: Failed to cache API", e);
             }
@@ -58,13 +92,18 @@ public class ShaderCompatibilityDetector {
         }
 
         // Если API не найдено, значит шейдеров точно нет
-        if (irisIsShaderPackInUse == null || irisApiInstance == null) {
+        if (irisApiInstance == null || (irisIsShaderPackInUseMH == null && irisIsShaderPackInUse == null)) {
             return false;
         }
 
         try {
-            Boolean inUse = (Boolean) irisIsShaderPackInUse.invoke(irisApiInstance);
-            boolean isActive = inUse != null && inUse;
+            boolean isActive;
+            if (irisIsShaderPackInUseMH != null) {
+                isActive = (boolean) irisIsShaderPackInUseMH.invokeExact((Object) irisApiInstance);
+            } else {
+                Boolean inUse = (Boolean) irisIsShaderPackInUse.invoke(irisApiInstance);
+                isActive = inUse != null && inUse;
+            }
 
             // Обновляем кэш для фоновых потоков
             cachedShaderActive = isActive;
@@ -72,18 +111,18 @@ public class ShaderCompatibilityDetector {
             if (isActive != lastState) {
                 MainRegistry.LOGGER.info("Shader state changed: {}", isActive ? "Active" : "Inactive");
                 lastState = isActive;
-                // Откладываем инвалидацию — вызов из render loop ломает итерацию Sodium (wrapped is null)
+                // Откладываем инвалидацию - вызов из render loop ломает итерацию Sodium (wrapped is null)
                 pendingChunkInvalidation = true;
             }
             return isActive;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return false;
         }
     }
 
     /**
-     * Вызывать из ClientTickEvent.END — инвалидирует чанки при смене шейдера.
-     * НЕ вызывать из render loop — ломает итерацию Sodium (ReferenceOpenHashSet.wrapped is null).
+     * Вызывать из ClientTickEvent.END - инвалидирует чанки при смене шейдера.
+     * НЕ вызывать из render loop - ломает итерацию Sodium (ReferenceOpenHashSet.wrapped is null).
      */
     public static void processPendingChunkInvalidation() {
         if (!pendingChunkInvalidation) return;
@@ -100,16 +139,54 @@ public class ShaderCompatibilityDetector {
 
     /**
      * Проверяет, рендерится ли сейчас shadow pass Iris (для realtime shadows).
-     * Используется для пропуска рендера HBM-моделей в shadow pass — даёт ~2x FPS при включённых тенях.
+     * Используется для пропуска рендера HBM-моделей в shadow pass - даёт ~2x FPS при включённых тенях.
      */
     public static boolean isRenderingShadowPass() {
         if (!initialized) init();
-        if (irisIsRenderingShadowPass == null || irisApiInstance == null) return false;
+        if (irisApiInstance == null) return false;
         try {
+            if (irisIsRenderingShadowPassMH != null) {
+                return (boolean) irisIsRenderingShadowPassMH.invokeExact((Object) irisApiInstance);
+            }
+            if (irisIsRenderingShadowPass == null) return false;
             Boolean result = (Boolean) irisIsRenderingShadowPass.invoke(irisApiInstance);
             return result != null && result;
-        } catch (Exception e) {
+        } catch (Throwable e) {
             return false;
         }
+    }
+
+    /**
+     * True when an active Iris pipeline can hand out an {@code ExtendedShader} for our raw-GL
+     * draws. When false, callers should fall back to the vanilla shader path or to
+     * {@code bufferSource.putBulkData} delegation.
+     */
+    public static boolean canUseIrisExtendedShader() {
+        return isExternalShaderActive() && IrisExtendedShaderAccess.isReflectionAvailable();
+    }
+
+    /**
+     * True если статическая геометрия машин должна предоставляться нашей VBO/инстанс-системой
+     * (а не baked-моделью). Иначе baked-model заполняет статику в чанк-меш, а BER рисует
+     * только подвижные части через putBulkData.
+     *
+     * Логика:
+     *  - шейдеры выключены → всегда true (классический VBO путь);
+     *  - шейдеры включены + конфиг {@code useIrisExtendedShaderPath} включён → true (новый Iris ExtendedShader путь);
+     *  - шейдеры включены + конфиг выключен → false (старый baked + putBulkData путь, дефолт).
+     *
+     * Этот метод - единственная точка истины для разветвления и в рендерерах, и в baked-моделях.
+     * Если они расходятся, статика рисуется дважды или не рисуется вовсе.
+     */
+    public static boolean useVboGeometry() {
+        return !isExternalShaderActive() || ModClothConfig.useIrisExtendedShaderPath();
+    }
+
+    /**
+     * True если сейчас активен шейдер-пак И при этом по конфигу мы должны идти через нашу VBO/Iris-систему
+     * вместо старого baked + putBulkData. Удобный сахар для условий «под шейдерами, но через новый путь».
+     */
+    public static boolean useNewIrisVboPath() {
+        return isExternalShaderActive() && ModClothConfig.useIrisExtendedShaderPath();
     }
 }

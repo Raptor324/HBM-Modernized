@@ -12,6 +12,7 @@ import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.PartGeometry;
+import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
@@ -63,6 +64,26 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     private final Matrix4f matHead = new Matrix4f();
     private final Matrix4f matSpike = new Matrix4f();
 
+    /**
+     * Multiplier turning degrees into radians as a single float multiply. Replaces
+     * {@code (float) Math.toRadians(deg)} in the per-instance arm transform loop -
+     * Math.toRadians is a {@code double} operation and forces a double→float cast
+     * on every call site (4 calls per BE per frame for this assembler), so a
+     * direct float multiply by a precomputed constant is both faster and avoids
+     * that lossy conversion.
+     */
+    private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
+
+    /**
+     * Per-BE flag set inside {@link #renderParts} after the occlusion-culling
+     * check passes; consumed by {@link #render} before drawing the recipe icon.
+     * Renderer instances are singletons shared across every BE of this type, so
+     * the field is read-modify-written by the render thread only - safe.
+     * Without this gate, {@code renderRecipeIconDirect} fired on every visible
+     * controller chunk regardless of culling, paying a full
+     * {@code ItemRenderer.renderStatic} for invisible machines.
+     */
+    private boolean visibleThisFrame = false;
 
     public MachineAdvancedAssemblerRenderer(BlockEntityRendererProvider.Context ctx) {}
 
@@ -75,7 +96,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
             instancedBase = createInstancedForPart(model, "Base");
             instancedFrame = createInstancedForPart(model, "Frame");
             
-            // Анимированные части (Frame — в BlockState/BakedModel)
+            // Анимированные части (Frame - в BlockState/BakedModel)
             instancedRing = createInstancedForPart(model, "Ring");
             instancedArmLower1 = createInstancedForPart(model, "ArmLower1");
             instancedArmUpper1 = createInstancedForPart(model, "ArmUpper1");
@@ -137,7 +158,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         var state = be.getBlockState();
         boolean renderActive = state.hasProperty(MachineAdvancedAssemblerBlock.RENDER_ACTIVE) 
                 && state.getValue(MachineAdvancedAssemblerBlock.RENDER_ACTIVE);
-        boolean shaderActive = ShaderCompatibilityDetector.isExternalShaderActive();
+        boolean useVboGeometry = ShaderCompatibilityDetector.useVboGeometry();
 
         BlockPos blockPos = be.getBlockPos();
         var minecraft = Minecraft.getInstance();
@@ -145,9 +166,14 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         if (minecraft.level == null || !OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
             return;
         }
+        // Mark visible so render() knows it's safe to draw the recipe icon.
+        // visibleThisFrame is reset to false at the top of render() before
+        // super.render() runs, so this only stays true when culling passes.
+        visibleThisFrame = true;
 
-        // Шейдер активен + машина спит → всё в BakedModel, BER не рендерит.
-        if (shaderActive && !renderActive) {
+        // Старый baked-путь под шейдерами + машина спит → всё в BakedModel, BER не рендерит.
+        // Под новым VBO путём (useVboGeometry==true) baked пуст и нам нужно рендерить статику самим.
+        if (!useVboGeometry && !renderActive) {
             return;
         }
 
@@ -162,11 +188,16 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     public void render(MachineAdvancedAssemblerBlockEntity be, float partialTick,
                     PoseStack poseStack, MultiBufferSource bufferSource,
                     int packedLight, int packedOverlay) {
-        // Рендерим машину (VBO)
+        // Pessimistic default - super.render() may early-out (frustum) without
+        // ever invoking renderParts(), and renderParts() may early-out via the
+        // OcclusionCullingHelper check before flipping the flag. In either case
+        // the icon stays unrendered, saving a full ItemRenderer.renderStatic
+        // per offscreen / occluded machine.
+        visibleThisFrame = false;
         super.render(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-        
-        //  Рендерим иконку ОТДЕЛЬНО с immediate buffer
-        renderRecipeIconDirect(be, poseStack, bufferSource, packedLight, packedOverlay);
+        if (visibleThisFrame) {
+            renderRecipeIconDirect(be, poseStack, bufferSource, packedLight, packedOverlay);
+        }
     }
 
     private void renderWithVBO(MachineAdvancedAssemblerBlockEntity be,
@@ -176,7 +207,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                             int dynamicLight,
                             BlockPos blockPos,
                             MultiBufferSource bufferSource) {
-        boolean useVboPath = !ShaderCompatibilityDetector.isExternalShaderActive();
+        boolean useVboPath = ShaderCompatibilityDetector.useVboGeometry();
 
         if (useVboPath && !instancersInitialized) {
             initializeInstancedRenderers(model);
@@ -188,9 +219,49 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         }
 
         boolean useBatching = useVboPath && ModClothConfig.useInstancedBatching();
+
+        // Open an IrisRenderBatch session for the duration of this BlockEntity's
+        // part draws when:
+        //   1) shader pack is active AND we are routing through the new Iris
+        //      VBO path AND per-part-type instancing is OFF - all parts share
+        //      a single apply()/clear() pair (3–6× FPS improvement under BSL).
+        //   2) shader pack is active AND we are routing through the new Iris
+        //      VBO path AND we are in a shadow pass - even with per-part-type
+        //      instancing ON, instances added during the shadow pass cannot be
+        //      flushed by RenderLevelStageEvent.AFTER_BLOCK_ENTITIES (that
+        //      stage fires only for the main pass). InstancedStaticPartRenderer
+        //      .addInstance() detects the shadow pass and immediately delegates
+        //      to drawSingleWithIrisExtended; opening a batch here lets all 9
+        //      redirected single draws share one apply()/clear() pair, restoring
+        //      the same amortisation we get on the main pass via instancing.
+        //      Without this, machines either fail to cast shadows OR duplicate
+        //      themselves "in the sky" at shadow-camera coordinates.
+        boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
+        boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
+        if (useIrisBatch) {
+            try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
+                // batch == null means Iris couldn't hand out a usable shader; fall
+                // through to the standalone per-call path which will pick up the
+                // correct fallback (vanilla shader / putBulkData delegation).
+                renderPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useVboPath, useBatching);
+            }
+        } else {
+            renderPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useVboPath, useBatching);
+        }
+    }
+
+    private void renderPartsInternal(MachineAdvancedAssemblerBlockEntity be,
+                                     MachineAdvancedAssemblerBakedModel model,
+                                     float partialTick,
+                                     PoseStack poseStack,
+                                     int dynamicLight,
+                                     BlockPos blockPos,
+                                     MultiBufferSource bufferSource,
+                                     boolean useVboPath,
+                                     boolean useBatching) {
         var blockState = be.getBlockState();
 
-        // 1. Рендер статики (Base + Frame) — только когда НЕТ шейдера (useVboPath).
+        // 1. Рендер статики (Base + Frame) - только когда НЕТ шейдера (useVboPath).
         // При активном шейдере Base и Frame рендерит BakedModel; BER рисует только подвижные части.
         if (useVboPath) {
             poseStack.pushPose();
@@ -218,7 +289,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
             poseStack.popPose();
         }
 
-        // 2. Рендер анимаций (подвижные части — всегда через BER)
+        // 2. Рендер анимаций (подвижные части - всегда через BER)
         // Если игрок далеко - пропускаем вычисления анимаций, но рисуем детали в дефолтной позе (или не рисуем, если так задумано для LOD)
         boolean skipAnimation = shouldSkipAnimationUpdate(blockPos);
         
@@ -321,7 +392,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                                 MultiBufferSource bufferSource, boolean useVboPath) {
         float ring = Mth.lerp(pt, be.getPrevRingAngle(), be.getRingAngle());
         matRing.identity()
-               .rotateY((float) Math.toRadians(ring))
+               .rotateY(ring * DEG_TO_RAD)
                .translate(-0.5f, 0.0f, -0.5f);
 
         // Инстансинг только когда нет стороннего шейдера (VBO путь)
@@ -357,7 +428,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
         matLower.set(baseTransform)
                 .translate(0.5f, 1.625f, 0.5f + zBase)
-                .rotateX((float) Math.toRadians(angleSign * a0))
+                .rotateX(angleSign * a0 * DEG_TO_RAD)
                 .translate(-0.5f, -1.625f, -(0.5f + zBase));
 
         addInstanceOrRender(useInstanced, inverted ? instancedArmLower2 : instancedArmLower1,
@@ -365,7 +436,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
         matUpper.set(matLower)
                 .translate(0.5f, 2.375f, 0.5f + zBase)
-                .rotateX((float) Math.toRadians(angleSign * a1))
+                .rotateX(angleSign * a1 * DEG_TO_RAD)
                 .translate(-0.5f, -2.375f, -(0.5f + zBase));
 
         addInstanceOrRender(useInstanced, inverted ? instancedArmUpper2 : instancedArmUpper1,
@@ -373,7 +444,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
         matHead.set(matUpper)
                 .translate(0.5f, 2.375f, 0.5f + (zBase * 0.4667f))
-                .rotateX((float) Math.toRadians(angleSign * a2))
+                .rotateX(angleSign * a2 * DEG_TO_RAD)
                 .translate(-0.5f, -2.375f, -(0.5f + (zBase * 0.4667f)));
 
         addInstanceOrRender(useInstanced, inverted ? instancedHead2 : instancedHead1,

@@ -411,7 +411,7 @@ public class PlayerHandler {
                             )
                         )
                     )
-                    // Без targets — по умолчанию @s
+                    // Без targets - по умолчанию @s
                     .then(Commands.literal("clear")
                         .executes(ctx -> {
                             Entity self = ctx.getSource().getEntity();

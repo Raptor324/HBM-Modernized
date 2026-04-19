@@ -3,8 +3,8 @@ package com.hbm_m.inventory.gui;
 import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.inventory.menu.LaunchPadLargeMenu;
 import com.hbm_m.lib.RefStrings;
-
 import com.mojang.blaze3d.systems.RenderSystem;
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
@@ -15,7 +15,7 @@ import net.minecraft.world.entity.player.Inventory;
  * Новый GUI для обычной/большой пусковой площадки.
  *
  * Основан на GuiInfoScreen, как и остальные портированные машины.
- * Ракетная логика и отрисовка моделей пока отсутствуют — только базовый
+ * Ракетная логика и отрисовка моделей пока отсутствуют - только базовый
  * фон, энергия и текстовый индикатор состояния.
  */
 public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
@@ -41,7 +41,7 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
             return;
         }
 
-        // Энергия — простая вертикальная шкала, 52 пикселя как в старом GUI
+        // Энергия - простая вертикальная шкала, 52 пикселя как в старом GUI
         long energy = be.getEnergyStored();
         long maxEnergy = be.getMaxEnergyStored();
         if (maxEnergy > 0 && energy > 0) {

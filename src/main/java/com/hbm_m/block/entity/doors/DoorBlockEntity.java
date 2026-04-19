@@ -197,7 +197,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         this.openTicks = 0;
         this.animStartTime = System.currentTimeMillis();
         if (level != null && level.isClientSide) {
-            initModelSelection(true); // Новая дверь — применить default из конфига
+            initModelSelection(true); // Новая дверь - применить default из конфига
         }
         syncToClient();
     }
@@ -261,7 +261,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         this.lastRedstoneState = powered;
     
         if (powered) {
-            // Если дверь закрыта или в процессе закрытия — открываем
+            // Если дверь закрыта или в процессе закрытия - открываем
             if (state == 0 || state == 2) {
                 open();
             }
@@ -353,7 +353,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
 
     /**
      * Проверяет, находится ли дверь в процессе движения.
-     * На клиенте: включает задержку + grace period после полного открытия/закрытия —
+     * На клиенте: включает задержку + grace period после полного открытия/закрытия -
      * анимированная часть остаётся видимой, пока baked model не пересоберётся.
      */
     public boolean isMoving() {
@@ -464,7 +464,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         Direction facing = blockState.getValue(DoorBlock.FACING);
         MultiblockStructureHelper structureHelper = doorBlock.getStructureHelper();
         
-        // Контроллер: флаг 2 (NOTIFY_CLIENTS) — оповещаем клиентов о смене блокстейта.
+        // Контроллер: флаг 2 (NOTIFY_CLIENTS) - оповещаем клиентов о смене блокстейта.
         // updateNeighborsAt только для контроллера (редстоун и т.д.), не для каждого блока двери.
         BlockState controllerState = level.getBlockState(controllerPos);
         level.sendBlockUpdated(controllerPos, controllerState, controllerState, 2);
@@ -474,7 +474,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         for (BlockPos partPos : structureHelper.getAllPartPositions(controllerPos, facing)) {
             BlockState partState = level.getBlockState(partPos);
             // Флаг 2 (NOTIFY_CLIENTS only): заставляет клиента перерисовать блок.
-            // Флаг 1 (UPDATE_NEIGHBORS) убран — вызывал каскад соседних обновлений для каждой части,
+            // Флаг 1 (UPDATE_NEIGHBORS) убран - вызывал каскад соседних обновлений для каждой части,
             // из-за чего Sodium пересобирал чанки десятки раз при открытии/закрытии.
             level.sendBlockUpdated(partPos, partState, partState, 2);
             level.getLightEngine().checkBlock(partPos);
@@ -717,7 +717,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             if (this.state == 2 || this.state == 3) {
                 this.animStartTime = System.currentTimeMillis();
             }
-            // Задержка: при переходе из moving (2/3) в static (0/1) — анимированная часть остаётся ещё 500ms
+            // Задержка: при переходе из moving (2/3) в static (0/1) - анимированная часть остаётся ещё 500ms
             if ((oldState == 2 || oldState == 3) && (this.state == 0 || this.state == 1)) {
                 DoorAnimationDelayHelper.addToQueue(this, 500);
             }
@@ -746,14 +746,14 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     /**
      * Инициализирует выбор модели на основе конфигурации.
      * Вызывается только для старых сохранений (без modelType в NBT).
-     * Если hadModelSelectionInNbt=false — применить default из JSON (MODERN и т.д.).
-     * Если hadModelSelectionInNbt=true — не перезаписывать: значение уже загружено из NBT
+     * Если hadModelSelectionInNbt=false - применить default из JSON (MODERN и т.д.).
+     * Если hadModelSelectionInNbt=true - не перезаписывать: значение уже загружено из NBT
      * (в т.ч. явный выбор LEGACY, который равен DoorModelSelection.DEFAULT).
      */
     @OnlyIn(Dist.CLIENT)
     public void initModelSelection(boolean applyConfigDefault) {
         if (!applyConfigDefault) {
-            return; // Значение из NBT — не перезаписывать
+            return; // Значение из NBT - не перезаписывать
         }
         
         DoorModelRegistry registry = DoorModelRegistry.getInstance();
@@ -794,7 +794,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
-            // Сохраняем предыдущее видимое состояние ДО загрузки — чтобы определить, нужна ли инвалидация
+            // Сохраняем предыдущее видимое состояние ДО загрузки - чтобы определить, нужна ли инвалидация
             byte prevState = this.state;
             DoorModelSelection prevSelection = this.modelSelection;
 
@@ -814,7 +814,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         }
     }
 
-    /** Возвращает true только при переходах DOOR_MOVING или OPEN — то, что видит игрок. */
+    /** Возвращает true только при переходах DOOR_MOVING или OPEN - то, что видит игрок. */
     private static boolean isVisibleStateChange(byte oldS, byte newS) {
         boolean wasMoving = oldS == 2 || oldS == 3;
         boolean isMoving  = newS == 2 || newS == 3;
@@ -825,10 +825,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
 
     private void syncToClient() {
         if (level != null && !level.isClientSide && level instanceof ServerLevel serverLevel) {
-            // sendBlockUpdated() убрано: вызывало 3 события на клиенте за один sync —
+            // sendBlockUpdated() убрано: вызывало 3 события на клиенте за один sync -
             // ClientboundBlockUpdatePacket + broadcastBlockEntityData + явный пакет ниже.
             // Изменения BlockState (OPEN, DOOR_MOVING) отправляются через level.setBlock() в setState().
-            // Изменения остальных данных (ModelData, скины) — через явный BE-пакет.
+            // Изменения остальных данных (ModelData, скины) - через явный BE-пакет.
             setChanged();
             var packet = ClientboundBlockEntityDataPacket.create(this);
             for (ServerPlayer player : serverLevel.players()) {

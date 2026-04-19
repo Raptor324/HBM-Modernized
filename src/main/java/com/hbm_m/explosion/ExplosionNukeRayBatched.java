@@ -264,7 +264,7 @@ public class ExplosionNukeRayBatched implements IExplosionRay {
         orderedChunks.remove(0);
     }
 
-    /** Обработка «кончика» луча — при желании можно переопределить для спец-блоков. */
+    /** Обработка «кончика» луча - при желании можно переопределить для спец-блоков. */
     protected void handleTip(int x, int y, int z) {
         level.setBlock(new BlockPos(x, y, z), Blocks.AIR.defaultBlockState(), 3);
     }

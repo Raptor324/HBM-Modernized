@@ -6,11 +6,11 @@ import net.minecraft.core.Direction;
  * Ориентация multipart-моделей по {@link Direction}.
  * <p>
  * BER ({@code LegacyAnimator.setupBlockTransform}): {@code translate(0.5,0,0.5)} → {@code rotateY(90°)}
- * → {@code rotateY(legacyFacingRotationYDegrees)} — только для PoseStack, не подставлять эту таблицу
+ * → {@code rotateY(legacyFacingRotationYDegrees)} - только для PoseStack, не подставлять эту таблицу
  * напрямую в {@code ModelHelper.transformQuadsByFacing}.</p>
  * <p>
  * Baked/chunk квады используют ту же конвенцию угла, что и blockstate rotationY / javadoc
- * {@code ModelHelper}: 0° North, 90° East, 180° South, 270° West — см.
+ * {@code ModelHelper}: 0° North, 90° East, 180° South, 270° West - см.
  * {@link #vanillaChunkMeshRotationY(Direction)}.</p>
  */
 public final class MultipartFacingTransforms {
@@ -52,7 +52,7 @@ public final class MultipartFacingTransforms {
     /**
      * Единственный поворот Y для chunk mesh multipart-моделей, которые <b>не</b> задают {@code rotationY}
      * в blockstate: тот же суммарный угол, что {@code LegacyAnimator.setupBlockTransform}
-     * (90° + {@link #legacyFacingRotationYDegrees}) — синхрон с VBO/BER.
+     * (90° + {@link #legacyFacingRotationYDegrees}) - синхрон с VBO/BER.
      * <p>
      * Если в blockstate уже есть vanilla {@code rotationY}, не суммировать: либо убрать y из JSON,
      * либо не вызывать этот метод для квадов (двойной поворот).
@@ -114,7 +114,7 @@ public final class MultipartFacingTransforms {
 
     /**
      * Двери: историческая таблица «facingDeg» + 90° + offset из {@code DoorDecl}.
-     * Не совпадает с {@link #vanillaChunkMeshRotationY} / BER — отдельная таблица для сохранения вида.
+     * Не совпадает с {@link #vanillaChunkMeshRotationY} / BER - отдельная таблица для сохранения вида.
      */
     public static int doorChunkMeshRotationY(Direction facing, int declOffsetDeg) {
         int facingDeg = switch (facing) {

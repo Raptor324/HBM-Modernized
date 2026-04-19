@@ -34,7 +34,13 @@ public class ShaderReloadListener extends SimplePreparableReloadListener<Void> {
         profiler.push("hbm_shader_detection_apply");
         
         try {
-            MainRegistry.LOGGER.debug("ShaderReloadListener: Resource reload complete");
+            // Drop the per-pass shader cache and the IrisRenderBatch's cached
+            // uniform handles - F3+T rebuilds the Iris pipeline and gives every
+            // ExtendedShader a fresh program ID, so the cached references
+            // would be pointing at GL programs that are about to be deleted.
+            IrisExtendedShaderAccess.invalidateShaderCache();
+            IrisRenderBatch.invalidateCaches();
+            MainRegistry.LOGGER.debug("ShaderReloadListener: Resource reload complete, Iris caches invalidated");
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during shader reload", e);
         } finally {

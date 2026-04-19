@@ -59,7 +59,7 @@ public class LegacyAnimator implements DoorAnimator {
     }
 
     /**
-     * Химзавод: один источник истины — canonical chunk-угол из
+     * Химзавод: один источник истины - canonical chunk-угол из
      * {@link MultipartFacingTransforms#chemicalPlantCanonicalRotationY}, переведённый в PoseStack-конвенцию.
      */
     public void setupChemicalPlantBlockTransform(Direction facing) {

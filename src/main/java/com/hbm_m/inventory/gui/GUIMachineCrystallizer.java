@@ -18,7 +18,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 
 /**
- * GUI для Crystallizer — порт с 1.7.10 GUICrystallizer.
+ * GUI для Crystallizer - порт с 1.7.10 GUICrystallizer.
  * UV-координаты и layout соответствуют оригиналу.
  */
 public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMenu> {

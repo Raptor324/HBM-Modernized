@@ -11,13 +11,13 @@ import java.lang.reflect.Method;
  * <p>
  * <b>Когда НЕ использовать:</b> При level render (RenderLevelStageEvent, block entities) с
  * включёнными шейдерами ({@link ShaderCompatibilityDetector#isExternalShaderActive()}).
- * В этом случае вызывайте {@code buffer.begin(mode, DefaultVertexFormat.BLOCK)} напрямую —
+ * В этом случае вызывайте {@code buffer.begin(mode, DefaultVertexFormat.BLOCK)} напрямую -
  * MixinBufferBuilder расширит формат до TERRAIN, и putBulkData будет дополняться extended data.
  * IrisBufferHelper отключает расширение и приведёт к stride mismatch.
  * <p>
- * <b>Когда использовать:</b> GUI, overlay, не-level рендер — когда нужен именно BLOCK без
- * расширения. Iris предоставляет iris$beginWithoutExtending() — отключает расширение формата.
- * Вызываем через reflection, т.к. Oculus — опциональная зависимость.
+ * <b>Когда использовать:</b> GUI, overlay, не-level рендер - когда нужен именно BLOCK без
+ * расширения. Iris предоставляет iris$beginWithoutExtending() - отключает расширение формата.
+ * Вызываем через reflection, т.к. Oculus - опциональная зависимость.
  */
 public final class IrisBufferHelper {
 
@@ -37,7 +37,7 @@ public final class IrisBufferHelper {
      * Начинает BufferBuilder с DefaultVertexFormat.BLOCK без расширения Iris.
      * При активном Iris/Oculus предотвращает переключение на IrisVertexFormats.TERRAIN.
      * <p>
-     * Не использовать для level render с шейдерами — там нужен расширенный TERRAIN формат.
+     * Не использовать для level render с шейдерами - там нужен расширенный TERRAIN формат.
      */
     public static void beginBlockQuads(BufferBuilder buffer) {
         begin(buffer, VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
@@ -73,7 +73,7 @@ public final class IrisBufferHelper {
     }
 
     private static boolean tryIrisBeginWithoutExtending(BufferBuilder buffer, int drawMode, VertexFormat vertexFormat) {
-        // --- Oculus/Iris (Forge) ---
+        // --- Oculus ---
         if (!irisChecked) {
             irisChecked = true;
             try {
@@ -106,7 +106,7 @@ public final class IrisBufferHelper {
                     connectorBeginWithoutExtending = iface.getMethod("iris$beginWithoutExtending", int.class, VertexFormat.class);
                 }
             } catch (ClassNotFoundException | NoSuchMethodException ignored) {
-                // FFAPI-специфичный класс не найден — пробуем общий Fabric Renderer v1
+                // FFAPI-специфичный класс не найден - пробуем общий Fabric Renderer v1
             }
             if (connectorBeginWithoutExtending == null) {
                 try {

@@ -319,7 +319,7 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        // MODEL — BakedModel запекается в чанк (нужно для Iris/Oculus).
+        // MODEL - BakedModel запекается в чанк (нужно для Iris/Oculus).
         // ENTITYBLOCK_ANIMATED не использует BakedModel для world render.
         return RenderShape.MODEL;
     }

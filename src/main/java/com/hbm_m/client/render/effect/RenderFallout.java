@@ -29,7 +29,7 @@ public class RenderFallout extends EntityRenderer<FalloutRain> {
     /** Максимальный радиус рендера fallout-колонн (в блоках). */
     private static final int MAX_RENDER_RADIUS = 40;
     /**
-     * Высота «шторы» осадков над поверхностью (блоки). Не привязываем к {@code scale} взрыва — иначе
+     * Высота «шторы» осадков над поверхностью (блоки). Не привязываем к {@code scale} взрыва - иначе
      * при большом радиусе рисуются километровые столбы, видимые с огромного расстояния.
      */
     private static final int MAX_VISUAL_HEIGHT_ABOVE_SURFACE = 40;

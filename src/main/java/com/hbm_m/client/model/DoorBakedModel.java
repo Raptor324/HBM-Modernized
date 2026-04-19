@@ -66,9 +66,9 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     
     @Override
     protected boolean shouldSkipWorldRendering(@Nullable BlockState state) {
-        // Пропускаем world рендер ТОЛЬКО когда нет шейдера (VBO путь)
-        // При активном шейдере - рендерим через baked geometry
-        return state != null && !ShaderCompatibilityDetector.isExternalShaderActive();
+        // Пропускаем world рендер когда геометрия предоставляется BER/VBO путём
+        // (нет шейдера ИЛИ включён useIrisExtendedShaderPath под шейдерами).
+        return state != null && ShaderCompatibilityDetector.useVboGeometry();
     }
     
     @Override
@@ -85,29 +85,30 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
             return getItemQuads(side, rand, modelData, renderType);
         }
         
-        // WORLD RENDER - переключение по стороннему шейдеру (Iris/Oculus)
-        // Нет шейдера → модель пустая, всё рендерит BER (VBO).
-        // Шейдер активен → рендерим через baked geometry, кроме анимированных частей (движущаяся дверь)
-        if (!ShaderCompatibilityDetector.isExternalShaderActive()) {
+        // WORLD RENDER - переключение по источнику геометрии.
+        // useVboGeometry() == true → модель пустая, всё рендерит BER (VBO/Iris путь).
+        // useVboGeometry() == false → baked путь под шейдерами: рендерим всё кроме анимированных частей
+        // (движущаяся дверь дорисовывается BER через putBulkData).
+        if (ShaderCompatibilityDetector.useVboGeometry()) {
             return Collections.emptyList();
         }
         
-        // Движется ли дверь: BlockState обновляется первым (при block update), ModelData — при packet BlockEntity
+        // Движется ли дверь: BlockState обновляется первым (при block update), ModelData - при packet BlockEntity
         boolean isMoving = state.hasProperty(DoorBlock.DOOR_MOVING) && state.getValue(DoorBlock.DOOR_MOVING);
         Boolean movingFromData = modelData.get(DoorModelProperties.DOOR_MOVING_PROPERTY);
         if (movingFromData != null) isMoving = movingFromData;
         Boolean isOverlap = modelData.get(DoorModelProperties.OVERLAP_PROPERTY);
-        // Период overlap: дверь в open/closed, baked model и BER наслаиваются — устраняет моргание
+        // Период overlap: дверь в open/closed, baked model и BER наслаиваются - устраняет моргание
         if (Boolean.TRUE.equals(isOverlap) || !isMoving) {
             return getAllPartQuads(state, side, rand, modelData, renderType);
         }
-        // Дверь реально анимируется (state 2/3) — только frame, створки рисует BER
+        // Дверь реально анимируется (state 2/3) - только frame, створки рисует BER
         return getStaticPartQuads(state, side, rand, modelData, renderType);
     }
     
     /**
      * Получает части модели с учётом выбора (legacy/modern/skin).
-     * Если в ModelData есть выбор и реестр имеет конфиг — используем модель из реестра.
+     * Если в ModelData есть выбор и реестр имеет конфиг - используем модель из реестра.
      */
     private Map<String, BakedModel> getPartsForModelData(ModelData modelData) {
         var selection = modelData.get(DoorModelProperties.MODEL_SELECTION_PROPERTY);
@@ -132,7 +133,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
 
     /**
      * Возвращает квады только статичных частей (frame) для Iris-пути при движущейся двери.
-     * Подвижные части скрыты — их рендерит BER через putBulkData.
+     * Подвижные части скрыты - их рендерит BER через putBulkData.
      */
     private List<BakedQuad> getStaticPartQuads(@Nullable BlockState state, @Nullable Direction side,
                                                 RandomSource rand, ModelData modelData,
@@ -178,7 +179,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         DoorDecl doorDecl = DoorDeclRegistry.getById(extractDoorTypeFromPath(doorId.getPath()));
         if (doorDecl == null) return Collections.emptyList();
 
-        // OPEN: BlockState обновляется первым, ModelData — при packet BlockEntity
+        // OPEN: BlockState обновляется первым, ModelData - при packet BlockEntity
         boolean isOpen = state.hasProperty(DoorBlock.OPEN) && state.getValue(DoorBlock.OPEN);
         Boolean openFromData = modelData.get(DoorModelProperties.OPEN_PROPERTY);
         if (openFromData != null) isOpen = openFromData;
@@ -241,7 +242,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         } else {
             base = path.substring(Math.max(0, path.lastIndexOf('/') + 1));
         }
-        // Убираем расширение .obj — модель загружается как models/block/doors/fire_door.obj
+        // Убираем расширение .obj - модель загружается как models/block/doors/fire_door.obj
         int dot = base.lastIndexOf('.');
         return dot > 0 ? base.substring(0, dot) : base;
     }
@@ -260,7 +261,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     }
 
     /**
-     * Строит матрицу трансформации с учётом иерархии (water_door: spinny_upper/lower — дети door).
+     * Строит матрицу трансформации с учётом иерархии (water_door: spinny_upper/lower - дети door).
      * Дочерние части умножаются на трансформацию родителя, чтобы двигаться вместе со створкой.
      */
     @Nullable
@@ -380,8 +381,8 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
 
     /**
      * ItemOverrides для превью в GUI выбора модели двери.
-     * Если в NBT стека есть "hbm_m:door_preview" с modelType и skin — возвращаем модель из реестра.
-     * Иначе — исходная модель. Используется renderFakeItem для корректного порядка рендера частей.
+     * Если в NBT стека есть "hbm_m:door_preview" с modelType и skin - возвращаем модель из реестра.
+     * Иначе - исходная модель. Используется renderFakeItem для корректного порядка рендера частей.
      */
     private static final class DoorItemOverrides extends ItemOverrides {
         static final DoorItemOverrides INSTANCE = new DoorItemOverrides();

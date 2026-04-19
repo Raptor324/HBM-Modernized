@@ -1,5 +1,11 @@
 package com.hbm_m.block.machines;
 
+import java.util.Map;
+import java.util.function.Supplier;
+
+import org.jetbrains.annotations.Nullable;
+
+import com.google.common.collect.ImmutableMap;
 import com.hbm_m.block.ModBlocks;
 // Этот класс реализует блок пресса, который является контроллером мультиблочной структуры.
 // Пресс занимает 1x1x3 блока и использует вспомогательный класс MultiblockStructureHelper для управления своей структурой.
@@ -9,7 +15,7 @@ import com.hbm_m.block.entity.machines.MachinePressBlockEntity;
 import com.hbm_m.multiblock.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import com.google.common.collect.ImmutableMap;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -20,9 +26,9 @@ import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -31,13 +37,9 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
+import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Map;
-import java.util.function.Supplier;
 
 public class MachinePressBlock extends BaseEntityBlock implements IMultiblockController {
     // 3 блока в высоту, 1 блок в ширину и глубину
@@ -149,7 +151,7 @@ public class MachinePressBlock extends BaseEntityBlock implements IMultiblockCon
 
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
-        // Для пресса все части — чистая структура
+        // Для пресса все части - чистая структура
         return PartRole.DEFAULT;
     }
 }

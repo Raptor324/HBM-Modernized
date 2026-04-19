@@ -256,9 +256,9 @@ public class ClientSetup {
      * Continuity (через Connector/FFAPI) оборачивает все blockstate-модели в CtmBakedModel
      * (extends ForwardingBakedModel). Это ломает два поведения при активном шейдере:
      *
-     * 1. Skin switching — FRAPI emitBlockQuads() не передаёт Forge ModelData, поэтому
+     * 1. Skin switching - FRAPI emitBlockQuads() не передаёт Forge ModelData, поэтому
      *    DoorBakedModel.getPartsForModelData() не видит выбранного скина.
-     * 2. JSON transforms — FRAPI-путь на некоторых версиях Connector не применяет
+     * 2. JSON transforms - FRAPI-путь на некоторых версиях Connector не применяет
      *    blockstate-ротации корректно.
      *
      * Решение: в LOWEST-приоритете (после Continuity) разворачиваем обёртки обратно
@@ -268,7 +268,7 @@ public class ClientSetup {
     public static void onModelBakeUnwrapContinuity(ModelEvent.ModifyBakingResult event) {
         Map<ResourceLocation, BakedModel> models = event.getModels();
 
-        // Собираем замены отдельно — не модифицируем map во время итерации
+        // Собираем замены отдельно - не модифицируем map во время итерации
         Map<ResourceLocation, BakedModel> replacements = new java.util.HashMap<>();
 
         for (Map.Entry<ResourceLocation, BakedModel> entry : models.entrySet()) {
@@ -412,7 +412,7 @@ public class ClientSetup {
             return preparationBarrier.wait(null).thenRunAsync(() -> {
                 // КРИТИЧНО: Откладываем очистку кэшей на render thread, чтобы избежать
                 // race condition с активным рендером (EXCEPTION_ACCESS_VIOLATION при
-                // включении шейдера — clearCaches вызывался во время render pass).
+                // включении шейдера - clearCaches вызывался во время render pass).
                 com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
                     try {
                         MachineAdvancedAssemblerRenderer.clearCaches();
@@ -484,30 +484,66 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
         MainRegistry.LOGGER.info("Registering optimized shaders...");
-        
-        VertexFormat blockLitFormat = new VertexFormat(
+
+        // Simple variant: no per-instance attributes, no USE_INSTANCING define.
+        VertexFormat blockLitSimpleFormat = new VertexFormat(
             ImmutableMap.<String, VertexFormatElement>builder()
-                .put("Position", DefaultVertexFormat.ELEMENT_POSITION) // Loc 0
-                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)   // Loc 1
-                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)      // Loc 2
-                
-                // Новые атрибуты:
-                .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3)) // Loc 3
-                .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4)) // Loc 4
-                .put("InstBrightness", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1)) // Loc 5
-                
+                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
+                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
+                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
                 .build()
         );
-        
+
+        // Instanced variant: extended with InstPos/InstRot/InstBrightness attributes.
+        VertexFormat blockLitInstancedFormat = new VertexFormat(
+            ImmutableMap.<String, VertexFormatElement>builder()
+                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
+                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
+                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
+                .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstBrightness", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1))
+                .build()
+        );
+
+        // Both variants share the same .vsh source on disk, but vanilla Program.getOrCreate
+        // caches the compiled GL program by NAME ("vertex"/"fragment" string from JSON). If both
+        // JSONs reference "hbm_m:block_lit", the first compiled (un-patched) Program would win
+        // and the instanced shader would silently be missing #define USE_INSTANCING. To avoid
+        // this we expose a separate VIRTUAL vsh name for the instanced variant and let our
+        // ResourceProvider wrapper synthesize it from the real source + the define injection.
+        ResourceLocation realVsh =
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit.vsh");
+        ResourceLocation virtualInstancedVsh =
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced.vsh");
+
+        com.hbm_m.client.render.shader.modification.ShaderModification instancingDefine =
+            com.hbm_m.client.render.shader.modification.ShaderModification.builder()
+                .define("USE_INSTANCING");
+
+        net.minecraft.server.packs.resources.ResourceProvider instancedProvider =
+            com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
+                event.getResourceProvider(), virtualInstancedVsh, realVsh, instancingDefine);
+
         event.registerShader(
             new ShaderInstance(
                 event.getResourceProvider(),
-                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit"),
-                blockLitFormat
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple"),
+                blockLitSimpleFormat
             ),
-            ModShaders::setBlockLitShader
+            ModShaders::setBlockLitSimpleShader
         );
-        MainRegistry.LOGGER.info("Successfully registered block_lit shader");
+        MainRegistry.LOGGER.info("Successfully registered block_lit_simple shader");
+
+        event.registerShader(
+            new ShaderInstance(
+                instancedProvider,
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced"),
+                blockLitInstancedFormat
+            ),
+            ModShaders::setBlockLitInstancedShader
+        );
+        MainRegistry.LOGGER.info("Successfully registered block_lit_instanced shader");
         
         // Register thermal vision shader for post-processing
         // VertexFormat thermalVisionFormat = new VertexFormat(

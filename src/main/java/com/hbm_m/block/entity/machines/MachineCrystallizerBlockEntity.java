@@ -28,9 +28,9 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 
 /**
- * Crystallizer BlockEntity — порт с 1.7.10.
+ * Crystallizer BlockEntity - порт с 1.7.10.
  * 8 слотов: input, battery, output, fluid input, fluid output, 2 upgrades, fluid ID.
- * Tank 8000 mB, энергия 1M. Логика крафтов — заглушка.
+ * Tank 8000 mB, энергия 1M. Логика крафтов - заглушка.
  */
 public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
 
@@ -94,8 +94,8 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         entity.chargeFromBattery();
         entity.transferFluidsFromItems();
 
-        // tank.setType(7) — заглушка: IItemFluidIdentifier в 1.20.1 может отсутствовать
-        // UpgradeManager — заглушка: слоты 5, 6 принимают любой предмет
+        // tank.setType(7) - заглушка: IItemFluidIdentifier в 1.20.1 может отсутствовать
+        // UpgradeManager - заглушка: слоты 5, 6 принимают любой предмет
 
         entity.isOn = false;
         if (entity.canProcess()) {
@@ -165,7 +165,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     private boolean canProcess() {
         if (inventory.getStackInSlot(SLOT_INPUT).isEmpty()) return false;
         if (getEnergyStored() < getPowerRequired()) return false;
-        // Заглушка: CrystallizerRecipes.getOutput — всегда null
+        // Заглушка: CrystallizerRecipes.getOutput - всегда null
         return false;
     }
 
