@@ -205,7 +205,7 @@ public class ModClothConfig implements ConfigData {
      */
     @Category("rendering")
     @Gui.Tooltip
-    public boolean useIrisExtendedShaderPath = false;
+    public boolean useIrisExtendedShaderPath = true;
 
     @Category("rendering")
     @Gui.Tooltip
