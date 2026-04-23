@@ -13,6 +13,7 @@ import java.util.function.Supplier;
 import com.hbm_m.api.energy.ConverterBlock;
 import com.hbm_m.api.energy.SwitchBlock;
 import com.hbm_m.api.energy.WireBlock;
+import com.hbm_m.block.bomb.NukeFatManBlock;
 import com.hbm_m.block.decorations.CageLampBlock;
 import com.hbm_m.block.decorations.CrtBlock;
 import com.hbm_m.block.decorations.DecoSteelBlock;
@@ -33,7 +34,11 @@ import com.hbm_m.block.explosives.WasteChargeBlock;
 import com.hbm_m.block.machines.ArmorTableBlock;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
 import com.hbm_m.block.machines.BlastFurnaceExtensionBlock;
+import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.block.machines.GeigerCounterBlock;
+import com.hbm_m.block.machines.HeatingOvenBlock;
+import com.hbm_m.block.machines.LaunchPadBlock;
+import com.hbm_m.block.machines.LaunchPadRustedBlock;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.machines.MachineBatteryBlock;
@@ -41,12 +46,10 @@ import com.hbm_m.block.machines.MachineBatterySocketBlock;
 import com.hbm_m.block.machines.MachineCentrifugeBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineCrystallizerBlock;
-import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
-import com.hbm_m.block.machines.HeatingOvenBlock;
+import com.hbm_m.block.machines.MachineHydraulicFrackiningTowerBlock;
 import com.hbm_m.block.machines.MachineIndustrialBoilerBlock;
 import com.hbm_m.block.machines.MachineIndustrialTurbineBlock;
-import com.hbm_m.block.machines.MachineHydraulicFrackiningTowerBlock;
 import com.hbm_m.block.machines.MachinePressBlock;
 import com.hbm_m.block.machines.MachineRefineryBlock;
 import com.hbm_m.block.machines.MachineShredderBlock;
@@ -284,7 +287,9 @@ public class ModBlocks {
                     .strength(3.0f, 4.0f)
                     .sound(SoundType.METAL)
                     .noOcclusion()));
-
+					
+	// МУЛЬТИБЛОКИ ----------------------------------------------------------------------------------------------------
+	
     public static final RegistryObject<Block> PRESS = registerBlockWithoutItem("press",
             () -> new MachinePressBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
@@ -301,7 +306,7 @@ public class ModBlocks {
             () -> new SwitchBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK)));
 
     public static final RegistryObject<Block> MACHINE_ASSEMBLER = registerBlockWithoutItem("machine_assembler",
-            () -> new MachineAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f)));
+            () -> new MachineAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
 
     public static final RegistryObject<Block> ADVANCED_ASSEMBLY_MACHINE = registerBlockWithoutItem("advanced_assembly_machine",
             () -> new MachineAdvancedAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
@@ -323,6 +328,12 @@ public class ModBlocks {
 
 	public static final RegistryObject<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
             () -> new MachineFluidTankBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+	public static final RegistryObject<Block> LAUNCH_PAD = registerBlockWithoutItem("launch_pad",
+            () -> new LaunchPadBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
+
+    public static final RegistryObject<Block> LAUNCH_PAD_RUSTED = registerBlockWithoutItem("launch_pad_rusted",
+            () -> new LaunchPadRustedBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
     public static final RegistryObject<Block> MACHINE_BATTERY_SOCKET = registerBlockWithoutItem("machine_battery_socket",
             () -> new MachineBatterySocketBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));
@@ -682,7 +693,7 @@ public class ModBlocks {
             () -> new net.minecraft.world.level.block.DoorBlock(BlockBehaviour.Properties.copy(Blocks.CHAIN).sound(SoundType.CHAIN).noOcclusion(), BlockSetType.BIRCH));
 
 
-    // ============ ТЕХНИЧЕСКИЕ И ДЕКОРАТИВНЫЕ БЛОКИ (Обновлено) ============
+    // ============ ТЕХНИЧЕСКИЕ И ДЕКОРАТИВНЫЕ БЛОКИ ============
 
     public static final RegistryObject<Block> DORNIER = registerBlock("dornier",
             () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
@@ -716,6 +727,9 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> MINE_FAT = registerBlock("mine_fat",
             () -> new MineNukeBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+
+    public static final RegistryObject<Block> NUKE_FAT_MAN = registerBlockWithoutItem("nuke_fat_man",
+            () -> new NukeFatManBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
     public static final RegistryObject<Block> MINE_AP = registerBlock("mine_ap",
             () -> new MineBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));

@@ -46,7 +46,7 @@ public class BarbedWireRadBlock extends Block {
                     return;
                 }
 
-                // Если броня < 8 — применяем полный урон и эффекты
+                // Если броня < 8 - применяем полный урон и эффекты
                 if (getTotalArmorPoints(living) < 8) {
                     // Урон 1 HP (0.5 сердца) каждые 0.5 сек
                     living.hurt(level.damageSources().cactus(), 5.0F);

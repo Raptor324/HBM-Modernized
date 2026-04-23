@@ -1,8 +1,11 @@
 package com.hbm_m.datagen;
 
+import java.util.Set;
+
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
+
 import net.minecraft.advancements.critereon.EnchantmentPredicate;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
@@ -19,15 +22,13 @@ import net.minecraft.world.level.storage.loot.entries.LootItem;
 import net.minecraft.world.level.storage.loot.functions.ApplyBonusCount;
 import net.minecraft.world.level.storage.loot.functions.CopyNbtFunction;
 import net.minecraft.world.level.storage.loot.functions.SetItemCountFunction;
-import net.minecraft.world.level.storage.loot.providers.nbt.ContextNbtProvider;
 import net.minecraft.world.level.storage.loot.predicates.LootItemRandomChanceCondition;
 import net.minecraft.world.level.storage.loot.predicates.MatchTool;
+import net.minecraft.world.level.storage.loot.providers.nbt.ContextNbtProvider;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
 import net.minecraftforge.registries.ForgeRegistries;
 import net.minecraftforge.registries.RegistryObject;
-
-import java.util.Set;
 
 public class ModBlockLootTableProvider extends BlockLootSubProvider {
 
@@ -50,7 +51,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
             if (mappedItem != null && mappedItem != Items.AIR) {
                 dropMappedItem(block, mappedItem);
             } else {
-                // Блок без Item (или без соответствующего id в ITEMS) — явно пустая таблица,
+                // Блок без Item (или без соответствующего id в ITEMS) - явно пустая таблица,
                 // чтобы пройти строгую валидацию datagen.
                 dropEmptyTable(block);
             }
@@ -288,8 +289,8 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
 
 
         // Если DEPTH_STONE должен вести себя как обычный блок,
-        // отдельный вызов dropSelfType не нужен — его уже обработал цикл выше.
-        // Если нужна особая логика — добавь здесь нужный метод.
+        // отдельный вызов dropSelfType не нужен - его уже обработал цикл выше.
+        // Если нужна особая логика - добавь здесь нужный метод.
     }
 
     private void dropEmptyTable(Block block) {

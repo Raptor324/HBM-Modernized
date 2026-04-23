@@ -43,7 +43,7 @@ public class BarbedWireFireBlock extends Block {
                     return;
                 }
 
-                // Проверяем броню — если меньше 8, то жжём и режем
+                // Проверяем броню - если меньше 8, то жжём и режем
                 if (getTotalArmorPoints(living) < 8) {
                     // Урон увеличен до 2 хп (1 сердце) за тик
                     living.hurt(level.damageSources().cactus(), 2.0F);

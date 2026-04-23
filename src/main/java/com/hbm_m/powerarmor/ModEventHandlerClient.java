@@ -150,12 +150,16 @@ public class ModEventHandlerClient {
 
         buffer.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_COLOR);
 
-        // Вычисляем яркость вспышки (от 1.0 до 0.0)
-        // Оптимизировано - используем уже рассчитанное время
-        float brightness = (flashTimestamp + FLASH_DURATION - currentTime) / (float) FLASH_DURATION;
+        // Вычисляем яркость: первые 400 мс - полная белая вспышка, затем плавное затухание
+        float brightness;
+        long elapsed = currentTime - flashTimestamp;
+        if (elapsed < 400) {
+            brightness = 1.0F;
+        } else {
+            brightness = (flashTimestamp + FLASH_DURATION - currentTime) / (float) FLASH_DURATION;
+        }
         brightness = Mth.clamp(brightness, 0.0F, 1.0F);
 
-        // Если яркость слишком низкая, не рендерим
         if (brightness <= 0.01F) {
             return;
         }
@@ -189,6 +193,21 @@ public class ModEventHandlerClient {
 
         MainRegistry.LOGGER.info("Registered HBM nuclear flash overlay.");
         // Примечание: Thermal overlay регистрируется в ClientSetup.java
+    }
+
+    /**
+     * HUD-shake при ядерном взрыве (NukeTorex устанавливает shakeTimestamp).
+     * В течение SHAKE_DURATION применяет смещение GUI по синусу.
+     */
+    @SubscribeEvent
+    public static void onRenderGuiPre(RenderGuiEvent.Pre event) {
+        long now = System.currentTimeMillis();
+        long remaining = shakeTimestamp + SHAKE_DURATION - now;
+        if (remaining <= 0) return;
+        double mult = (double) remaining / (double) SHAKE_DURATION * 2.0;
+        double horizontal = Mth.clamp(Math.sin(now * 0.02), -0.7, 0.7) * 15.0;
+        double vertical = Mth.clamp(Math.sin(now * 0.01 + 2.0), -0.7, 0.7) * 3.0;
+        event.getGuiGraphics().pose().translate(horizontal * mult, vertical * mult, 0);
     }
 
     /**
@@ -330,7 +349,7 @@ public class ModEventHandlerClient {
                     spectralHighlighted.add(id);
                     spectralHighlightedThisTick.add(id);
                 } else if (spectralHighlighted.contains(id)) {
-                    // Если сущность больше не видна (закрыта блоками) — снимаем локальный glow.
+                    // Если сущность больше не видна (закрыта блоками) - снимаем локальный glow.
                     living.setGlowingTag(false);
                     MobEffectInstance glow = living.getEffect(MobEffects.GLOWING);
                     if (glow != null && !glow.isVisible()) {
@@ -453,7 +472,7 @@ public class ModEventHandlerClient {
     public static void onTitleRenderPre(ScreenEvent.Render.Pre event) {
         if (!(event.getScreen() instanceof TitleScreen ts)) return;
     
-        // если по шансам выбрали ваниллу — не вмешиваемся
+        // если по шансам выбрали ваниллу - не вмешиваемся
         if (modSplashText == null) {
             // опционально: если вдруг остался наш сплеш (редко), можно восстановить baseline
             // restoreBaselineIfOurs(ts);
@@ -759,6 +778,30 @@ public class ModEventHandlerClient {
      */
     public static void triggerNuclearFlash() {
         flashTimestamp = System.currentTimeMillis();
+    }
+
+    /** Запас по краям экрана, чтобы при тряске камеры за вспышкой ничего не проступало. */
+    private static final int FLASH_PADDING = 200;
+
+    /**
+     * Рисует белую вспышку на весь экран через GUI.
+     */
+    @SubscribeEvent
+    public static void onRenderGuiNuclearFlash(RenderGuiEvent.Post event) {
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - flashTimestamp >= FLASH_DURATION) return;
+
+        long elapsed = currentTime - flashTimestamp;
+        float brightness = elapsed < 400 ? 1.0F : (flashTimestamp + FLASH_DURATION - currentTime) / (float) FLASH_DURATION;
+        brightness = Mth.clamp(brightness, 0.0F, 1.0F);
+        if (brightness <= 0.01F) return;
+
+        GuiGraphics guiGraphics = event.getGuiGraphics();
+        int w = event.getWindow().getGuiScaledWidth();
+        int h = event.getWindow().getGuiScaledHeight();
+        int alpha = (int) (brightness * 255) << 24;
+        int color = 0x00FFFFFF | alpha;
+        guiGraphics.fill(-FLASH_PADDING, -FLASH_PADDING, w + FLASH_PADDING, h + FLASH_PADDING, color);
     }
 
 

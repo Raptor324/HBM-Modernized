@@ -3,10 +3,40 @@ import com.hbm_m.api.energy.ConverterBlockEntity;
 import com.hbm_m.api.energy.SwitchBlockEntity;
 import com.hbm_m.api.energy.WireBlockEntity;
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.entity.crates.*;
+import com.hbm_m.block.entity.bomb.NukeFatManBlockEntity;
+import com.hbm_m.block.entity.crates.DeshCrateBlockEntity;
+import com.hbm_m.block.entity.crates.IronCrateBlockEntity;
+import com.hbm_m.block.entity.crates.SteelCrateBlockEntity;
+import com.hbm_m.block.entity.crates.TemplateCrateBlockEntity;
+import com.hbm_m.block.entity.crates.TungstenCrateBlockEntity;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.explosives.MineBlockEntity;
-import com.hbm_m.block.entity.machines.*;
+import com.hbm_m.block.entity.machines.AnvilBlockEntity;
+import com.hbm_m.block.entity.machines.BatterySocketBlockEntity;
+import com.hbm_m.block.entity.machines.BlastFurnaceBlockEntity;
+import com.hbm_m.block.entity.machines.FluidDuctBlockEntity;
+import com.hbm_m.block.entity.machines.FluidExhaustBlockEntity;
+import com.hbm_m.block.entity.machines.FluidPumpBlockEntity;
+import com.hbm_m.block.entity.machines.FluidValveBlockEntity;
+import com.hbm_m.block.entity.machines.GeigerCounterBlockEntity;
+import com.hbm_m.block.entity.machines.HeatingOvenBlockEntity;
+import com.hbm_m.block.entity.machines.LaunchPadBlockEntity;
+import com.hbm_m.block.entity.machines.LaunchPadRustedBlockEntity;
+import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.block.entity.machines.MachineAssemblerBlockEntity;
+import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
+import com.hbm_m.block.entity.machines.MachineCentrifugeBlockEntity;
+import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
+import com.hbm_m.block.entity.machines.MachineCrystallizerBlockEntity;
+import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
+import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
+import com.hbm_m.block.entity.machines.MachineIndustrialBoilerBlockEntity;
+import com.hbm_m.block.entity.machines.MachineIndustrialTurbineBlockEntity;
+import com.hbm_m.block.entity.machines.MachinePressBlockEntity;
+import com.hbm_m.block.entity.machines.MachineRefineryBlockEntity;
+import com.hbm_m.block.entity.machines.MachineShredderBlockEntity;
+import com.hbm_m.block.entity.machines.MachineWoodBurnerBlockEntity;
+import com.hbm_m.block.entity.machines.UniversalMachinePartBlockEntity;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.world.level.block.Block;
@@ -24,13 +54,13 @@ public class ModBlockEntities {
 
 	public static final RegistryObject<BlockEntityType<MachineCrystallizerBlockEntity>> CRYSTALLIZER =
 		BLOCK_ENTITIES.register("crystallizer", () ->
-					BlockEntityType.Builder.of(MachineCrystallizerBlockEntity::new, ModBlocks.CRYSTALLIZER.get())
-							.build(null));
+			BlockEntityType.Builder.of(MachineCrystallizerBlockEntity::new, ModBlocks.CRYSTALLIZER.get())
+				.build(null));
 
 	public static final RegistryObject<BlockEntityType<MachineHydraulicFrackiningTowerBlockEntity>> HYDRAULIC_FRACKINING_TOWER_BE =
 		BLOCK_ENTITIES.register("hydraulic_frackining_tower_be", () ->
-                        BlockEntityType.Builder.of(MachineHydraulicFrackiningTowerBlockEntity::new, ModBlocks.HYDRAULIC_FRACKINING_TOWER.get())
-                                .build(null));
+            BlockEntityType.Builder.of(MachineHydraulicFrackiningTowerBlockEntity::new, ModBlocks.HYDRAULIC_FRACKINING_TOWER.get())
+                .build(null));
 
     public static final RegistryObject<BlockEntityType<GeigerCounterBlockEntity>> GEIGER_COUNTER_BE =
 		BLOCK_ENTITIES.register("geiger_counter_be", () ->
@@ -86,6 +116,12 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(MineBlockEntity::new, ModBlocks.MINE_FAT.get())
                             .build(null)
             );
+
+    public static final RegistryObject<BlockEntityType<NukeFatManBlockEntity>> NUKE_FAT_MAN_BE =
+            BLOCK_ENTITIES.register("nuke_fat_man_be", () ->
+                    BlockEntityType.Builder.of(NukeFatManBlockEntity::new, ModBlocks.NUKE_FAT_MAN.get())
+                            .build(null));
+
     public static final RegistryObject<BlockEntityType<MachineShredderBlockEntity>> SHREDDER =
             BLOCK_ENTITIES.register("shredder", () ->
                     BlockEntityType.Builder.of(MachineShredderBlockEntity::new,
@@ -104,6 +140,16 @@ public class ModBlockEntities {
 	public static final RegistryObject<BlockEntityType<WireBlockEntity>> WIRE_BE =
 		BLOCK_ENTITIES.register("wire_be", () ->
 			BlockEntityType.Builder.<WireBlockEntity>of(WireBlockEntity::new, ModBlocks.WIRE_COATED.get())
+				.build(null));
+
+	public static final RegistryObject<BlockEntityType<LaunchPadBlockEntity>> LAUNCH_PAD_BE =
+		BLOCK_ENTITIES.register("launch_pad_be", () ->
+			BlockEntityType.Builder.<LaunchPadBlockEntity>of(LaunchPadBlockEntity::new, ModBlocks.LAUNCH_PAD.get())
+				.build(null));
+
+	public static final RegistryObject<BlockEntityType<LaunchPadRustedBlockEntity>> LAUNCH_PAD_RUSTED_BE =
+		BLOCK_ENTITIES.register("launch_pad_rusted_be", () ->
+			BlockEntityType.Builder.<LaunchPadRustedBlockEntity>of(LaunchPadRustedBlockEntity::new, ModBlocks.LAUNCH_PAD_RUSTED.get())
 				.build(null));
 
 

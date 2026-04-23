@@ -78,6 +78,15 @@ public class ModMenuTypes {
 	public static final RegistryObject<MenuType<MachineFrackingTowerMenu>> FRACTURING_TOWER_MENU =
             MENUS.register("fracking_tower_menu", () -> IForgeMenuType.create(MachineFrackingTowerMenu::new));
 
+    public static final RegistryObject<MenuType<LaunchPadLargeMenu>> LAUNCH_PAD_LARGE_MENU =
+            MENUS.register("launch_pad_large_menu", () -> IForgeMenuType.create(LaunchPadLargeMenu::new));
+
+    public static final RegistryObject<MenuType<LaunchPadRustedMenu>> LAUNCH_PAD_RUSTED_MENU =
+            MENUS.register("launch_pad_rusted_menu", () -> IForgeMenuType.create(LaunchPadRustedMenu::new));
+
+    public static final RegistryObject<MenuType<NukeFatManMenu>> NUKE_FAT_MAN_MENU =
+            MENUS.register("nuke_fat_man_menu", () -> IForgeMenuType.create(NukeFatManMenu::new));
+
     public static final RegistryObject<MenuType<HeatingOvenMenu>> HEATING_OVEN_MENU =
             MENUS.register("heating_oven_menu", () -> IForgeMenuType.create(HeatingOvenMenu::new));
 

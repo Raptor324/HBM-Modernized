@@ -37,7 +37,7 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "shredder");
 
         AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.MAN_CORE.get(), 1), 160, 250)
+                        new ItemStack(ModItems.FAT_MAN_CORE.get(), 1), 160, 250)
                 .addIngredient(ModItems.BILLET_PLUTONIUM.get(), 16)
                 .addIngredient(ModItems.getIngot(ModIngots.BERYLLIUM).get(), 4)
                 .save(writer, "man_core");

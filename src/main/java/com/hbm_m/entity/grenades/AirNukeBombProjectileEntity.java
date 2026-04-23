@@ -4,14 +4,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.sound.ModSounds;
-import com.hbm_m.util.explosions.nuclear.CraterGenerator;
+import com.hbm_m.util.explosions.nuclear.NuclearExplosionHelper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.SimpleParticleType;
@@ -47,6 +46,7 @@ public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
     private static final EntityDataAccessor<Float> SYNCHED_YAW =
             SynchedEntityData.defineId(AirNukeBombProjectileEntity.class, EntityDataSerializers.FLOAT);
 
+    // Значения оставлены для совместимости, фактическая логика вынесена в NuclearExplosionHelper
     private static final float EXPLOSION_POWER = 25.0f;
     private static final float DAMAGE_RADIUS = 60.0f;
     private static final int DETONATION_RADIUS = 20;
@@ -135,38 +135,8 @@ public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
     private void explode(BlockPos pos) {
         if (!this.level().isClientSide && !this.isRemoved()) {
             ServerLevel serverLevel = (ServerLevel) this.level();
-            double x = pos.getX() + 0.5;
-            double y = pos.getY() + 0.5;
-            double z = pos.getZ() + 0.5;
-
             this.discard();
-
-            //  ЯДЕРНЫЙ ВЗРЫВ: сначала эффекты, потом кратер
-            triggerNearbyDetonations(serverLevel, pos, null);
-            dealExplosionDamage(serverLevel, x, y, z);
-            scheduleExplosionEffects(serverLevel, x, y, z);
-            playDetonationSound(serverLevel, pos);
-
-            //  ОСНОВНОЙ ЯДЕРНЫЙ ВЗРЫВ (без разрушения блоков)
-            serverLevel.explode(null, x, y, z, EXPLOSION_POWER, Level.ExplosionInteraction.NONE);
-
-            //  ГЕНЕРАТОР КРАТЕРА (радиус определяется лучами!)
-            if (serverLevel.getServer() != null) {
-                serverLevel.getServer().tell(new TickTask(CRATER_GENERATION_DELAY, () -> {
-                    CraterGenerator.generateCrater(
-                            serverLevel,
-                            pos,
-                            ModBlocks.SELLAFIELD_SLAKED.get(),
-                            ModBlocks.SELLAFIELD_SLAKED1.get(),
-                            ModBlocks.SELLAFIELD_SLAKED2.get(),
-                            ModBlocks.SELLAFIELD_SLAKED3.get(),
-                            ModBlocks.WASTE_LOG.get(),
-                            ModBlocks.WASTE_PLANKS.get(),
-                            ModBlocks.BURNED_GRASS.get(),
-                            ModBlocks.DEAD_DIRT.get()
-                    );
-                }));
-            }
+            NuclearExplosionHelper.explodeStandardNuke(serverLevel, pos);
         }
     }
 

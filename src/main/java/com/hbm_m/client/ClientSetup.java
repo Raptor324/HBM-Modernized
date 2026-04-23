@@ -13,34 +13,38 @@ import com.google.common.collect.ImmutableMap;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
+import com.hbm_m.client.loader.ChemicalPlantModelLoader;
 import com.hbm_m.client.loader.DoorModelLoader;
+import com.hbm_m.client.loader.HeatingOvenModelLoader;
 import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
 import com.hbm_m.client.loader.MachineAssemblerModelLoader;
 import com.hbm_m.client.loader.MachineBatterySocketModelLoader;
 import com.hbm_m.client.loader.MachineFluidTankModelLoader;
 import com.hbm_m.client.loader.MachineHydraulicFrackiningTowerModelLoader;
-import com.hbm_m.client.loader.HeatingOvenModelLoader;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
 import com.hbm_m.client.overlay.OverlayGeiger;
 import com.hbm_m.client.overlay.OverlayInfoToast;
 import com.hbm_m.client.overlay.OverlayRadiationVisuals;
-import com.hbm_m.client.render.AirBombProjectileEntityRenderer;
-import com.hbm_m.client.render.AirNukeBombProjectileEntityRenderer;
-import com.hbm_m.client.render.AirstrikeEntityRenderer;
-import com.hbm_m.client.render.AirstrikeNukeEntityRenderer;
 import com.hbm_m.client.render.BatterySocketCreativeRenderer;
-import com.hbm_m.client.render.ChemicalPlantRenderer;
-import com.hbm_m.client.render.DoorRenderer;
+import com.hbm_m.client.render.EmptyEntityRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.HeatingOvenRenderer;
 import com.hbm_m.client.render.IndustrialTurbineRenderer;
-import com.hbm_m.client.render.MachineAdvancedAssemblerRenderer;
-import com.hbm_m.client.render.MachineAssemblerRenderer;
-import com.hbm_m.client.render.MachineHydraulicFrackiningTowerRenderer;
-import com.hbm_m.client.render.MachinePressRenderer;
 import com.hbm_m.client.render.ModShaders;
 import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.effect.RenderFallout;
+import com.hbm_m.client.render.implementations.AirBombProjectileEntityRenderer;
+import com.hbm_m.client.render.implementations.AirNukeBombProjectileEntityRenderer;
+import com.hbm_m.client.render.implementations.AirstrikeEntityRenderer;
+import com.hbm_m.client.render.implementations.AirstrikeNukeEntityRenderer;
+import com.hbm_m.client.render.implementations.ChemicalPlantRenderer;
+import com.hbm_m.client.render.implementations.DoorRenderer;
+import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
+import com.hbm_m.client.render.implementations.MachineAssemblerRenderer;
+import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRenderer;
+import com.hbm_m.client.render.implementations.MachinePressRenderer;
+import com.hbm_m.client.render.implementations.MissileTestEntityRenderer;
 import com.hbm_m.client.render.shader.ShaderReloadListener;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponent;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponentRenderer;
@@ -51,13 +55,15 @@ import com.hbm_m.config.ModConfigKeybindHandler;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.inventory.gui.GUIAnvil;
 import com.hbm_m.inventory.gui.GUIArmorTable;
+import com.hbm_m.inventory.gui.GUIBatterySocket;
 import com.hbm_m.inventory.gui.GUIBlastFurnace;
 import com.hbm_m.inventory.gui.GUIDeshCrate;
 import com.hbm_m.inventory.gui.GUIHeatingOven;
 import com.hbm_m.inventory.gui.GUIIronCrate;
+import com.hbm_m.inventory.gui.GUILaunchPadLarge;
+import com.hbm_m.inventory.gui.GUILaunchPadRusted;
 import com.hbm_m.inventory.gui.GUIMachineAdvancedAssembler;
 import com.hbm_m.inventory.gui.GUIMachineAssembler;
-import com.hbm_m.inventory.gui.GUIBatterySocket;
 import com.hbm_m.inventory.gui.GUIMachineBattery;
 import com.hbm_m.inventory.gui.GUIMachineCentrifuge;
 import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
@@ -96,6 +102,7 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderers;
 import net.minecraft.client.renderer.entity.EntityRenderers;
+import net.minecraft.client.renderer.entity.FallingBlockRenderer;
 import net.minecraft.client.renderer.entity.ThrownItemRenderer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
@@ -120,6 +127,7 @@ import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.common.MinecraftForge;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
@@ -172,6 +180,10 @@ public class ClientSetup {
                 EntityRenderers.register(entityType, ThrownItemRenderer::new)
         );
 
+        ModEntities.MISSILE_TEST.ifPresent(entityType ->
+                EntityRenderers.register(entityType, MissileTestEntityRenderer::new)
+        );
+
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
         event.enqueueWork(() -> {
@@ -196,6 +208,9 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
             MenuScreens.register(ModMenuTypes.CHEMICAL_PLANT_MENU.get(), GUIMachineChemicalPlant::new);
             MenuScreens.register(ModMenuTypes.FRACTURING_TOWER_MENU.get(), GUIMachineFrackingTower::new);
+            MenuScreens.register(ModMenuTypes.LAUNCH_PAD_LARGE_MENU.get(), GUILaunchPadLarge::new);
+            MenuScreens.register(ModMenuTypes.LAUNCH_PAD_RUSTED_MENU.get(), GUILaunchPadRusted::new);
+            MenuScreens.register(ModMenuTypes.NUKE_FAT_MAN_MENU.get(), com.hbm_m.inventory.gui.GUINukeFatMan::new);
 
             // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
@@ -248,6 +263,49 @@ public class ClientSetup {
         }
     }
 
+    /**
+     * Continuity (через Connector/FFAPI) оборачивает все blockstate-модели в CtmBakedModel
+     * (extends ForwardingBakedModel). Это ломает два поведения при активном шейдере:
+     *
+     * 1. Skin switching - FRAPI emitBlockQuads() не передаёт Forge ModelData, поэтому
+     *    DoorBakedModel.getPartsForModelData() не видит выбранного скина.
+     * 2. JSON transforms - FRAPI-путь на некоторых версиях Connector не применяет
+     *    blockstate-ротации корректно.
+     *
+     * Решение: в LOWEST-приоритете (после Continuity) разворачиваем обёртки обратно
+     * для всех моделей нашего мода, чтобы terrain-рендер использовал vanilla/Forge-путь.
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onModelBakeUnwrapContinuity(ModelEvent.ModifyBakingResult event) {
+        Map<ResourceLocation, BakedModel> models = event.getModels();
+
+        // Собираем замены отдельно - не модифицируем map во время итерации
+        Map<ResourceLocation, BakedModel> replacements = new java.util.HashMap<>();
+
+        for (Map.Entry<ResourceLocation, BakedModel> entry : models.entrySet()) {
+            if (!RefStrings.MODID.equals(entry.getKey().getNamespace())) continue;
+            BakedModel original = entry.getValue();
+            BakedModel unwrapped = com.hbm_m.client.render.AbstractPartBasedRenderer
+                    .unwrapFabricForwardingModels(original);
+            if (unwrapped != original) {
+                replacements.put(entry.getKey(), unwrapped);
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.debug(
+                            "[HBM] Unwrapped Continuity model: {} ({} → {})",
+                            entry.getKey(),
+                            original.getClass().getSimpleName(),
+                            unwrapped.getClass().getSimpleName());
+                }
+            }
+        }
+
+        if (!replacements.isEmpty()) {
+            models.putAll(replacements);
+            MainRegistry.LOGGER.info("[HBM] Unwrapped {} Continuity model wrappers from HBM models.",
+                    replacements.size());
+        }
+    }
+
     @SubscribeEvent
     public static void onModelRegisterAdditional(ModelEvent.RegisterAdditional event) {
         // Регистрируем модели вариантов дверей, чтобы они загружались в ModelManager
@@ -265,16 +323,23 @@ public class ClientSetup {
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern"));
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_black"));
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_orange"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_trefoil"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_yellow"));
         // secure_access_door
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_legacy"));
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern"));
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_gray"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_yellow"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_black"));
         // water_door
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_legacy"));
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_modern"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_clean"));
         // qe_containment_door
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_legacy"));
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil_yellow"));
         // qe_sliding_door
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_legacy"));
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern"));
@@ -305,6 +370,7 @@ public class ClientSetup {
         MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
 
         event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
+        event.register("chemical_plant_loader", new ChemicalPlantModelLoader());
         event.register("machine_assembler_loader", new MachineAssemblerModelLoader());
         event.register("hydraulic_frackining_tower_loader", new MachineHydraulicFrackiningTowerModelLoader());
         event.register("fluid_tank_loader", new MachineFluidTankModelLoader());
@@ -314,7 +380,7 @@ public class ClientSetup {
         event.register("press_loader", new PressModelLoader());
         event.register("heating_oven_loader", new HeatingOvenModelLoader());
 
-        MainRegistry.LOGGER.info("Registered geometry loaders: advanced_assembly_machine_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader, heating_oven_loader");
+        MainRegistry.LOGGER.info("Registered geometry loaders: advanced_assembly_machine_loader, chemical_plant_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader, heating_oven_loader");
     }
 
     @SubscribeEvent
@@ -375,8 +441,11 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.AIRBOMB_PROJECTILE.get(),
                 AirBombProjectileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_NUKE_ENTITY.get(), AirstrikeNukeEntityRenderer::new);
-
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_ENTITY.get(), AirstrikeEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.AIRSTRIKE_AGENT_ENTITY.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.NUKE_FALLOUT_RAIN.get(), RenderFallout::new);
+        event.registerEntityRenderer(ModEntities.NUKE_MK5.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.FALLING_SELLAFIT_ENTITY_TYPE.get(), FallingBlockRenderer::new);
     }
 
     @SubscribeEvent
@@ -390,7 +459,7 @@ public class ClientSetup {
             return preparationBarrier.wait(null).thenRunAsync(() -> {
                 // КРИТИЧНО: Откладываем очистку кэшей на render thread, чтобы избежать
                 // race condition с активным рендером (EXCEPTION_ACCESS_VIOLATION при
-                // включении шейдера — clearCaches вызывался во время render pass).
+                // включении шейдера - clearCaches вызывался во время render pass).
                 com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
                     try {
                         MachineAdvancedAssemblerRenderer.clearCaches();
@@ -398,6 +467,7 @@ public class ClientSetup {
                         MachineHydraulicFrackiningTowerRenderer.clearCaches();
                         DoorRenderer.clearAllCaches();
                         MachinePressRenderer.clearCaches();
+                        ChemicalPlantRenderer.clearCaches();
                         GlobalMeshCache.clearAll();
                         AbstractObjArmorLayer.clearAllCaches();
                         MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");
@@ -416,6 +486,7 @@ public class ClientSetup {
             MachineHydraulicFrackiningTowerRenderer.clearCaches();
             DoorRenderer.clearAllCaches();
             MachinePressRenderer.clearCaches();
+            ChemicalPlantRenderer.clearCaches();
             GlobalMeshCache.clearAll();
             
             // Очищаем кэши рендеринга брони
@@ -460,30 +531,107 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onRegisterShaders(RegisterShadersEvent event) throws IOException {
         MainRegistry.LOGGER.info("Registering optimized shaders...");
-        
-        VertexFormat blockLitFormat = new VertexFormat(
+
+        // Simple variant: no per-instance attributes, no USE_INSTANCING define.
+        VertexFormat blockLitSimpleFormat = new VertexFormat(
             ImmutableMap.<String, VertexFormatElement>builder()
-                .put("Position", DefaultVertexFormat.ELEMENT_POSITION) // Loc 0
-                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)   // Loc 1
-                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)      // Loc 2
-                
-                // Новые атрибуты:
-                .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3)) // Loc 3
-                .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4)) // Loc 4
-                .put("InstBrightness", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1)) // Loc 5
-                
+                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
+                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
+                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
                 .build()
         );
-        
+
+        // Instanced variant: extended with InstPos/InstRot/InstBrightness attributes.
+        VertexFormat blockLitInstancedFormat = new VertexFormat(
+            ImmutableMap.<String, VertexFormatElement>builder()
+                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
+                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
+                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
+                .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstBrightness", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1))
+                .build()
+        );
+
+        // Both variants share the same .vsh source on disk, but vanilla Program.getOrCreate
+        // caches the compiled GL program by NAME ("vertex"/"fragment" string from JSON). If both
+        // JSONs reference "hbm_m:block_lit", the first compiled (un-patched) Program would win
+        // and the instanced shader would silently be missing #define USE_INSTANCING. To avoid
+        // this we expose a separate VIRTUAL vsh name for the instanced variant and let our
+        // ResourceProvider wrapper synthesize it from the real source + the define injection.
+        ResourceLocation realVsh =
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit.vsh");
+        ResourceLocation virtualInstancedVsh =
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced.vsh");
+        ResourceLocation virtualSlicedVsh =
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_sliced.vsh");
+        ResourceLocation virtualInstancedSlicedVsh =
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced_sliced.vsh");
+
+        com.hbm_m.client.render.shader.modification.ShaderModification instancingDefine =
+            com.hbm_m.client.render.shader.modification.ShaderModification.builder()
+                .define("USE_INSTANCING");
+
+        com.hbm_m.client.render.shader.modification.ShaderModification slicedDefine =
+            com.hbm_m.client.render.shader.modification.ShaderModification.builder()
+                .define("USE_SLICED_LIGHT");
+
+        com.hbm_m.client.render.shader.modification.ShaderModification instancedSlicedDefine =
+            com.hbm_m.client.render.shader.modification.ShaderModification.builder()
+                .define("USE_INSTANCING")
+                .define("USE_SLICED_LIGHT");
+
+        net.minecraft.server.packs.resources.ResourceProvider instancedProvider =
+            com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
+                event.getResourceProvider(), virtualInstancedVsh, realVsh, instancingDefine);
+
+        net.minecraft.server.packs.resources.ResourceProvider slicedProvider =
+            com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
+                event.getResourceProvider(), virtualSlicedVsh, realVsh, slicedDefine);
+
+        net.minecraft.server.packs.resources.ResourceProvider instancedSlicedProvider =
+            com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
+                event.getResourceProvider(), virtualInstancedSlicedVsh, realVsh, instancedSlicedDefine);
+
         event.registerShader(
             new ShaderInstance(
                 event.getResourceProvider(),
-                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit"),
-                blockLitFormat
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple"),
+                blockLitSimpleFormat
             ),
-            ModShaders::setBlockLitShader
+            ModShaders::setBlockLitSimpleShader
         );
-        MainRegistry.LOGGER.info("Successfully registered block_lit shader");
+        MainRegistry.LOGGER.info("Successfully registered block_lit_simple shader");
+
+        event.registerShader(
+            new ShaderInstance(
+                instancedProvider,
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced"),
+                blockLitInstancedFormat
+            ),
+            ModShaders::setBlockLitInstancedShader
+        );
+        MainRegistry.LOGGER.info("Successfully registered block_lit_instanced shader");
+
+        event.registerShader(
+            new ShaderInstance(
+                slicedProvider,
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple_sliced"),
+                blockLitSimpleFormat
+            ),
+            ModShaders::setBlockLitSimpleSlicedShader
+        );
+        MainRegistry.LOGGER.info("Successfully registered block_lit_simple_sliced shader");
+
+        event.registerShader(
+            new ShaderInstance(
+                instancedSlicedProvider,
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced_sliced"),
+                blockLitInstancedFormat
+            ),
+            ModShaders::setBlockLitInstancedSlicedShader
+        );
+        MainRegistry.LOGGER.info("Successfully registered block_lit_instanced_sliced shader");
         
         // Register thermal vision shader for post-processing
         // VertexFormat thermalVisionFormat = new VertexFormat(

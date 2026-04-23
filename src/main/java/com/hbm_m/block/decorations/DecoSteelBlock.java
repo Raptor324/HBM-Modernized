@@ -66,7 +66,7 @@ public class DecoSteelBlock extends Block {
 
     private Direction determineSideFacing(BlockState state) {
         // Логика выбора направления для поворота боковой текстуры в зависимости от соединений
-        // Пример по приоритету: если нет соединений, NORTH; если более 1 соединения — определяем по логике
+        // Пример по приоритету: если нет соединений, NORTH; если более 1 соединения - определяем по логике
         int connections = 0;
         if(state.getValue(CONNECTED_NORTH)) connections++;
         if(state.getValue(CONNECTED_EAST)) connections++;
@@ -82,7 +82,7 @@ public class DecoSteelBlock extends Block {
         }
 
         // Когда соединений >= 2, можно задать логику как поворот к главному направлению
-        // Например, при 2 соединениях выбрать вертикальную ось, при 3 — определённое направление
+        // Например, при 2 соединениях выбрать вертикальную ось, при 3 - определённое направление
 
         // Заглушка для упрощения
         if(state.getValue(CONNECTED_NORTH)) return Direction.NORTH;

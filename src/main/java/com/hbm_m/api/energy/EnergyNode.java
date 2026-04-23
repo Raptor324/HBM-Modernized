@@ -1,6 +1,7 @@
 package com.hbm_m.api.energy;
 
 import com.hbm_m.capability.ModCapabilities;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -40,7 +41,7 @@ public class EnergyNode {
         if (!level.isLoaded(pos)) return true;
 
         BlockEntity be = level.getBlockEntity(pos);
-        // Если чанк загружен, но TileEntity нет — значит блок сломали, удаляем узел.
+        // Если чанк загружен, но TileEntity нет - значит блок сломали, удаляем узел.
         if (be == null) return false;
 
         return be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent() ||

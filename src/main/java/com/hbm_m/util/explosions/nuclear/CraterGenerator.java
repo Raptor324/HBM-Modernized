@@ -1,34 +1,38 @@
 package com.hbm_m.util.explosions.nuclear;
 
-import com.hbm_m.util.explosions.nuclear.CraterBiomeHelper;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.server.ServerLifecycleHooks;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.TickTask;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.item.ItemEntity;
-import net.minecraft.world.phys.AABB;
-import net.minecraft.tags.BlockTags;
-
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Crater Generator v21.0 - BIOME SYNC FIX
- * ✅ FIXED: Y-coordinate calculation synchronized with biomes
- * ✅ FIXED: Distance calculation uses only XZ (2D radius) for zone boundaries
- * ✅ ENHANCED: Biome layer detection for seamless vertical coverage
- * ✅ OPTIMIZED: Proper wavy border consistency
+ *  FIXED: Y-coordinate calculation synchronized with biomes
+ *  FIXED: Distance calculation uses only XZ (2D radius) for zone boundaries
+ *  ENHANCED: Biome layer detection for seamless vertical coverage
+ *  OPTIMIZED: Proper wavy border consistency
  */
 public class CraterGenerator {
 
@@ -128,6 +132,22 @@ public class CraterGenerator {
             Block wastePlanksBlock,
             Block burnedGrassBlock,
             Block deadDirtBlocks) {
+        generateCrater(level, centerPos, sellafit1, sellafit2, sellafit3, sellafit4,
+                wasteLogBlock, wastePlanksBlock, burnedGrassBlock, deadDirtBlocks, CraterGenerationFlags.DEFAULT);
+    }
+
+    public static void generateCrater(
+            ServerLevel level,
+            BlockPos centerPos,
+            Block sellafit1,
+            Block sellafit2,
+            Block sellafit3,
+            Block sellafit4,
+            Block wasteLogBlock,
+            Block wastePlanksBlock,
+            Block burnedGrassBlock,
+            Block deadDirtBlocks,
+            CraterGenerationFlags generationFlags) {
 
         BlockPos groundCenterPos = centerPos;
         RandomSource random = level.random;
@@ -185,7 +205,7 @@ public class CraterGenerator {
 
                         // Запускаем цепочку с Зоны 3. Когда она закончится, она сама запустит Зону 4 и так далее.
                         processZone3(level, groundCenterPos, zone3Radius, zone4Radius,
-                                wasteLogBlock, wastePlanksBlock, burnedGrassBlock, deadDirtBlocks, selafitBlocks, random);
+                                wasteLogBlock, wastePlanksBlock, burnedGrassBlock, deadDirtBlocks, selafitBlocks, random, generationFlags);
                     }));
                 }));
             }
@@ -514,7 +534,7 @@ public class CraterGenerator {
         BlockPos pos = new BlockPos(x, y, z);
         BlockState state = level.getBlockState(pos);
 
-        // Если воздух — пропускаем (сопротивление 0)
+        // Если воздух - пропускаем (сопротивление 0)
         if (state.isAir()) {
             return 0;
         }
@@ -695,7 +715,7 @@ public class CraterGenerator {
     // ЭТАП 1: ЗОНА 3 (Эпицентр)
     private static void processZone3(ServerLevel level, BlockPos centerPos, double r3, double r4,
                                      Block wasteLog, Block wastePlanks, Block burnedGrass, Block deadDirt,
-                                     Block[] selafit, RandomSource random) {
+                                     Block[] selafit, RandomSource random, CraterGenerationFlags genFlags) {
         // Сканируем от 0 до r3 + запас, чтобы поймать "выплески" зоны наружу
         int startScan = 0;
         int endScan = (int) Math.ceil(r3) + ZONE_OVERLAP;
@@ -705,7 +725,7 @@ public class CraterGenerator {
                     MinecraftServer server = level.getServer();
                     if (server != null) {
                         server.tell(new TickTask(server.getTickCount() + 2, () ->
-                                processZone4(level, centerPos, r3, r4, wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random)
+                                processZone4(level, centerPos, r3, r4, wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random, genFlags)
                         ));
                     }
                 });
@@ -714,7 +734,7 @@ public class CraterGenerator {
     // ЭТАП 2: ЗОНА 4 (Выжигание)
     private static void processZone4(ServerLevel level, BlockPos centerPos, double r3, double r4,
                                      Block wasteLog, Block wastePlanks, Block burnedGrass, Block deadDirt,
-                                     Block[] selafit, RandomSource random) {
+                                     Block[] selafit, RandomSource random, CraterGenerationFlags genFlags) {
         // Начинаем РАНЬШЕ (r3 - запас), чтобы заполнить впадины, куда не достала Зона 3
         // Заканчиваем ПОЗЖЕ (r4 + запас), чтобы сделать волнистый край
         int startScan = Math.max(0, (int) Math.floor(r3) - ZONE_OVERLAP);
@@ -725,7 +745,7 @@ public class CraterGenerator {
                     MinecraftServer server = level.getServer();
                     if (server != null) {
                         server.tell(new TickTask(server.getTickCount() + 2, () ->
-                                processZone5(level, centerPos, r3, r4, wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random)
+                                processZone5(level, centerPos, r3, r4, wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random, genFlags)
                         ));
                     }
                 });
@@ -734,7 +754,7 @@ public class CraterGenerator {
     // ЭТАП 3: ЗОНА 5 (Обугливание)
     private static void processZone5(ServerLevel level, BlockPos centerPos, double r3, double r4,
                                      Block wasteLog, Block wastePlanks, Block burnedGrass, Block deadDirt,
-                                     Block[] selafit, RandomSource random) {
+                                     Block[] selafit, RandomSource random, CraterGenerationFlags genFlags) {
         double r5 = r4 + 12.0;
         int startScan = Math.max(0, (int) Math.floor(r4) - ZONE_OVERLAP);
         int endScan = (int) Math.ceil(r5) + ZONE_OVERLAP;
@@ -744,7 +764,7 @@ public class CraterGenerator {
                     MinecraftServer server = level.getServer();
                     if (server != null) {
                         server.tell(new TickTask(server.getTickCount() + 2, () ->
-                                processZone6(level, centerPos, r3, r4, wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random)
+                                processZone6(level, centerPos, r3, r4, wasteLog, wastePlanks, burnedGrass, deadDirt, selafit, random, genFlags)
                         ));
                     }
                 });
@@ -753,7 +773,7 @@ public class CraterGenerator {
     // ЭТАП 4: ЗОНА 6 (Снос листвы)
     private static void processZone6(ServerLevel level, BlockPos centerPos, double r3, double r4,
                                      Block wasteLog, Block wastePlanks, Block burnedGrass, Block deadDirt,
-                                     Block[] selafit, RandomSource random) {
+                                     Block[] selafit, RandomSource random, CraterGenerationFlags genFlags) {
         double r5 = r4 + 12.0;
         double r6 = r4 + 24.0;
         int startScan = Math.max(0, (int) Math.floor(r5) - ZONE_OVERLAP);
@@ -766,8 +786,12 @@ public class CraterGenerator {
                     if (server != null) {
                         server.tell(new TickTask(server.getTickCount() + 1, () -> {
                             System.out.println("\n[CRATER_GENERATOR] Step 3: Finalizing...");
-                            CraterBiomeHelper.applyBiomesAsync(level, centerPos, r3, r4);
-                            applyDamageToEntities(level, centerPos, r3, r4, random);
+                            if (genFlags.applyBiomes()) {
+                                CraterBiomeHelper.applyBiomesAsync(level, centerPos, r3, r4);
+                            }
+                            if (genFlags.applyEntityDamage()) {
+                                applyDamageToEntities(level, centerPos, r3, r4, random);
+                            }
                             cleanupItems(level, centerPos, r3 + 10);
                             System.out.println("\n[CRATER_GENERATOR] All steps complete!");
                         }));
@@ -900,7 +924,7 @@ public class CraterGenerator {
                                                  Block wasteLog, Block wastePlanks) { // <-- Новые аргументы
         if (state.is(Blocks.BEDROCK)) return true;
 
-        // 1. ЗАМЕНА ДЕРЕВА: Если это бревна или доски — меняем на выжженные
+        // 1. ЗАМЕНА ДЕРЕВА: Если это бревна или доски - меняем на выжженные
         // Важно: возвращаем false, чтобы спуститься ниже и заменить весь ствол/стену дома
         if (state.is(BlockTags.LOGS)) {
             level.setBlock(pos, wasteLog.defaultBlockState(), 3);
@@ -1109,7 +1133,7 @@ public class CraterGenerator {
 
             BlockHitResult result = level.clip(context);
 
-            // Если ничего не задели — путь чист
+            // Если ничего не задели - путь чист
             if (result.getType() == HitResult.Type.MISS) {
                 return true;
             }

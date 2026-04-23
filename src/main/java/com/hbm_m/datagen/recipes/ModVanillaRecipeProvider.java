@@ -527,10 +527,10 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("%@%")
                 .pattern("%#%")
                 .define('%', ModItems.PLATE_STEEL.get())
-                .define('@', ModItems.MAN_CORE.get())
+                .define('@', ModItems.FAT_MAN_CORE.get())
                 .define('#', ModItems.CONTROLLER.get())
                 .define('$', ModItems.INSULATOR.get())
-                .unlockedBy(getHasName(ModItems.MAN_CORE.get()), has(ModItems.MAN_CORE.get()))
+                .unlockedBy(getHasName(ModItems.FAT_MAN_CORE.get()), has(ModItems.FAT_MAN_CORE.get()))
                 .save(writer, recipeId("crafting/nuclear_charge"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.CONTROLLER_CHASSIS.get())

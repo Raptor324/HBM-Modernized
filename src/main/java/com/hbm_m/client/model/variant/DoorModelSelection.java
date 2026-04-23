@@ -149,7 +149,7 @@ public class DoorModelSelection {
     }
     
     /**
-     * Краткое описание для отображения — через локализацию.
+     * Краткое описание для отображения - через локализацию.
      * LEGACY: door.model_type.{modid}.legacy
      * MODERN: door.skin.{modid}.{doorId}.{skinId}
      */

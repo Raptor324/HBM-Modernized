@@ -22,7 +22,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
 
 /**
- * Menu для Chemical Plant — порт с 1.7.10.
+ * Menu для Chemical Plant - порт с 1.7.10.
  * Layout слотов соответствует оригинальному ContainerMachineChemicalPlant.
  */
 public class MachineChemicalPlantMenu extends AbstractContainerMenu {

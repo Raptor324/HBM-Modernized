@@ -6,7 +6,9 @@
         "skins":[
             {"id":"default","name":"Standard","texture":"hbm_m:block/doors/fire_door"},
             {"id":"black","name":"Black","texture":"hbm_m:block/doors/fire_door_black","model":"hbm_m:block/doors/fire_door_modern_black"},
-            {"id":"orange","name":"Orange","texture":"hbm_m:block/doors/fire_door_orange","model":"hbm_m:block/doors/fire_door_modern_orange"}
+            {"id":"orange","name":"Orange","texture":"hbm_m:block/doors/fire_door_orange","model":"hbm_m:block/doors/fire_door_modern_orange"},
+            {"id":"trefoil","name":"Trefoil","texture":"hbm_m:block/doors/fire_door_trefoil","model":"hbm_m:block/doors/fire_door_modern_trefoil"},
+            {"id":"yellow","name":"Yellow","texture":"hbm_m:block/doors/fire_door_yellow","model":"hbm_m:block/doors/fire_door_modern_yellow"}
         ]
     },
     "default":{"type":"modern","skin":"default"}

@@ -2,6 +2,7 @@ package com.hbm_m.multiblock;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
@@ -53,7 +54,17 @@ public class MultiblockStructureHelper {
     // Карта позиций на символы для определения роли при постройке
     private final Map<BlockPos, Character> positionSymbolMap;
     private final Map<Direction, VoxelShape> shapeCache = new HashMap<>();
+    /**
+     * Cache for {@link #getLocalRenderBoundingBox(Direction)} - the AABB enclosing
+     * every part of the structure in controller-local coords with the given
+     * rotation pre-applied. Independent of any single BlockEntity's world
+     * position; one entry per facing direction is enough for ALL BlockEntities
+     * sharing this helper. Lazily populated on first request.
+     */
+    private final EnumMap<Direction, AABB> localRenderBoundsCache = new EnumMap<>(Direction.class);
     private final Map<BlockPos, Set<Direction>> ladderLocalDirections = new HashMap<>();
+    /** Локальные стороны энергоприёма/отдачи относительно схемы (до поворота FACING). Ключ - позиция в сетке. */
+    private final Map<BlockPos, Set<Direction>> energyLocalDirections = new HashMap<>();
     private final Map<BlockPos, VoxelShape> partShapes;
     private final Map<BlockPos, VoxelShape> collisionShapes;
     // Позиция контроллера в структуре (относительно центра)
@@ -127,91 +138,91 @@ public class MultiblockStructureHelper {
      *     () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
      * );
      */
-    public static MultiblockStructureHelper createFromLayers(
-            String[][] layers,
-            Map<Character, Supplier<BlockState>> symbolMap,
-            Supplier<BlockState> phantomBlockState,
-            BlockPos controllerOffset) {
+    // public static MultiblockStructureHelper createFromLayers(
+    //         String[][] layers,
+    //         Map<Character, Supplier<BlockState>> symbolMap,
+    //         Supplier<BlockState> phantomBlockState,
+    //         BlockPos controllerOffset) {
         
-        Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
+    //     Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
         
-        if (layers == null || layers.length == 0) {
-            return new MultiblockStructureHelper(Collections.emptyMap(), phantomBlockState);
-        }
+    //     if (layers == null || layers.length == 0) {
+    //         return new MultiblockStructureHelper(Collections.emptyMap(), phantomBlockState);
+    //     }
         
-        // Находим максимальную ширину и глубину для центрирования
-        int maxWidth = 0;
-        int maxDepth = layers[0].length;
+    //     // Находим максимальную ширину и глубину для центрирования
+    //     int maxWidth = 0;
+    //     int maxDepth = layers[0].length;
         
-        for (String[] layer : layers) {
-            if (layer != null) {
-                maxDepth = Math.max(maxDepth, layer.length);
-                for (String row : layer) {
-                    if (row != null) {
-                        maxWidth = Math.max(maxWidth, row.length());
-                    }
-                }
-            }
-        }
+    //     for (String[] layer : layers) {
+    //         if (layer != null) {
+    //             maxDepth = Math.max(maxDepth, layer.length);
+    //             for (String row : layer) {
+    //                 if (row != null) {
+    //                     maxWidth = Math.max(maxWidth, row.length());
+    //                 }
+    //             }
+    //         }
+    //     }
         
-        // Вычисляем смещения для центрирования (контроллер должен быть в центре)
-        // Для нечётных размеров центр находится точно посередине
-        // Для чётных размеров центр смещён влево/вверх
-        int centerX = (maxWidth - 1) / 2;
-        int centerZ = (maxDepth - 1) / 2;
+    //     // Вычисляем смещения для центрирования (контроллер должен быть в центре)
+    //     // Для нечётных размеров центр находится точно посередине
+    //     // Для чётных размеров центр смещён влево/вверх
+    //     int centerX = (maxWidth - 1) / 2;
+    //     int centerZ = (maxDepth - 1) / 2;
         
-        // Обрабатываем каждый слой
-        for (int y = 0; y < layers.length; y++) {
-            String[] layer = layers[y];
-            if (layer == null) continue;
+    //     // Обрабатываем каждый слой
+    //     for (int y = 0; y < layers.length; y++) {
+    //         String[] layer = layers[y];
+    //         if (layer == null) continue;
             
-            // Обрабатываем каждую строку слоя (Z координата)
-            for (int z = 0; z < layer.length; z++) {
-                String row = layer[z];
-                if (row == null) continue;
+    //         // Обрабатываем каждую строку слоя (Z координата)
+    //         for (int z = 0; z < layer.length; z++) {
+    //             String row = layer[z];
+    //             if (row == null) continue;
                 
-                // Обрабатываем каждый символ в строке (X координата)
-                for (int x = 0; x < row.length(); x++) {
-                    char symbol = row.charAt(x);
+    //             // Обрабатываем каждый символ в строке (X координата)
+    //             for (int x = 0; x < row.length(); x++) {
+    //                 char symbol = row.charAt(x);
                     
-                    // Вычисляем относительные координаты (центрированные)
-                    int relX = x - centerX + controllerOffset.getX();
-                    int relY = y + controllerOffset.getY();
-                    int relZ = z - centerZ + controllerOffset.getZ();
+    //                 // Вычисляем относительные координаты (центрированные)
+    //                 int relX = x - centerX + controllerOffset.getX();
+    //                 int relY = y + controllerOffset.getY();
+    //                 int relZ = z - centerZ + controllerOffset.getZ();
                     
-                    BlockPos pos = new BlockPos(relX, relY, relZ);
+    //                 BlockPos pos = new BlockPos(relX, relY, relZ);
                     
-                    // Пропускаем позицию контроллера
-                    BlockPos controllerPos = new BlockPos(
-                        controllerOffset.getX(), 
-                        controllerOffset.getY(), 
-                        controllerOffset.getZ()
-                    );
-                    if (pos.equals(controllerPos)) {
-                        continue;
-                    }
+    //                 // Пропускаем позицию контроллера
+    //                 BlockPos controllerPos = new BlockPos(
+    //                     controllerOffset.getX(), 
+    //                     controllerOffset.getY(), 
+    //                     controllerOffset.getZ()
+    //                 );
+    //                 if (pos.equals(controllerPos)) {
+    //                     continue;
+    //                 }
                     
-                    // Если символ есть в карте, добавляем блок
-                    Supplier<BlockState> blockStateSupplier = symbolMap.get(symbol);
-                    if (blockStateSupplier != null) {
-                        structureMap.put(pos, blockStateSupplier);
-                    }
-                }
-            }
-        }
+    //                 // Если символ есть в карте, добавляем блок
+    //                 Supplier<BlockState> blockStateSupplier = symbolMap.get(symbol);
+    //                 if (blockStateSupplier != null) {
+    //                     structureMap.put(pos, blockStateSupplier);
+    //                 }
+    //             }
+    //         }
+    //     }
         
-        return new MultiblockStructureHelper(structureMap, phantomBlockState);
-    }
+    //     return new MultiblockStructureHelper(structureMap, phantomBlockState);
+    // }
     
-    /**
-     * Перегрузка метода createFromLayers с контроллером в позиции (0, 0, 0).
-     */
-    public static MultiblockStructureHelper createFromLayers(
-            String[][] layers,
-            Map<Character, Supplier<BlockState>> symbolMap,
-            Supplier<BlockState> phantomBlockState) {
-        return createFromLayers(layers, symbolMap, phantomBlockState, BlockPos.ZERO);
-    }
+    // /**
+    //  * Перегрузка метода createFromLayers с контроллером в позиции (0, 0, 0).
+    //  */
+    // public static MultiblockStructureHelper createFromLayers(
+    //         String[][] layers,
+    //         Map<Character, Supplier<BlockState>> symbolMap,
+    //         Supplier<BlockState> phantomBlockState) {
+    //     return createFromLayers(layers, symbolMap, phantomBlockState, BlockPos.ZERO);
+    // }
     
     // === НОВЫЕ МЕТОДЫ С ПОДДЕРЖКОЙ РОЛЕЙ ===
     
@@ -226,23 +237,16 @@ public class MultiblockStructureHelper {
      * @param symbolMap Карта символов на Supplier<BlockState>
      * @param phantomBlockState Состояние фантомного блока
      * @param roleMap Карта символов на PartRole. ОБЯЗАТЕЛЬНО должен содержать символ с ролью CONTROLLER.
+     * @param shapeMap необязательно: кастомные VoxelShape по символу
+     * @param collisionMap необязательно: коллизии по символу
+     * @param ladderSideMap необязательно: для символов с ролью LADDER - boolean[4] в порядке north, south, west, east.
+     *                      Если символа нет в карте - лестница со всех четырёх горизонтальных сторон.
+     * @param energySideMap необязательно: для ENERGY_CONNECTOR / UNIVERSAL_CONNECTOR - boolean[6] в порядке north, south, west, east, up, down.
+     *                      Если символа нет в карте - энергия со всех шести сторон.
      * @return Новый экземпляр MultiblockStructureHelper
-     * 
+     *
      * @example
-     * // Определяем структуру с контроллером в центре
-     * Map<Character, PartRole> roleMap = Map.of(
-     *     'A', PartRole.DEFAULT,           // 'A' - обычная часть
-     *     'B', PartRole.ENERGY_CONNECTOR,  // 'B' - энергетический коннектор
-     *     'C', PartRole.CONTROLLER         // 'C' - контроллер (ОБЯЗАТЕЛЬНО!)
-     * );
-     * 
-     * Map<Character, Supplier<BlockState>> symbolMap = Map.of(
-     *     'A', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-     *     'B', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-     *     'C', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
-     * );
-     * 
-     * String[] layer0 = {"BAB", "BAC", "BAB"};  // 'C' - контроллер структуры
+     * {@code createFromLayersWithRolesAndSides(layers, symbolMap, phantom, roleMap, Map.of('L', MultiblockSideTuples.ladder(true, false, false, false)), null)}
      */
     public static MultiblockStructureHelper createFromLayersWithRoles(
             String[][] layers,
@@ -250,11 +254,14 @@ public class MultiblockStructureHelper {
             Supplier<BlockState> phantomBlockState,
             Map<Character, PartRole> roleMap,
             Map<Character, VoxelShape> shapeMap,
-            Map<Character, VoxelShape> collisionMap ) {
+            Map<Character, VoxelShape> collisionMap,
+            Map<Character, boolean[]> ladderSideMap,
+            Map<Character, boolean[]> energySideMap) {
         
         Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
         Map<BlockPos, Character> positionSymbolMap = new HashMap<>();
         Map<BlockPos, Set<Direction>> ladderDirs = new HashMap<>();
+        Map<BlockPos, Set<Direction>> energyDirs = new HashMap<>();
         Map<BlockPos, VoxelShape> specificPartShapes = new HashMap<>();
         Map<BlockPos, VoxelShape> specificCollisionShapes = new HashMap<>();
         
@@ -283,11 +290,9 @@ public class MultiblockStructureHelper {
             if (layer == null) continue;
             maxDepth = Math.max(maxDepth, layer.length);
             for (String row : layer) {
-                int actualWidth = 0;
-                for (char c : row.toCharArray()) {
-                    if (!isClimbPrefix(c)) actualWidth++;
+                if (row != null) {
+                    maxWidth = Math.max(maxWidth, row.length());
                 }
-                maxWidth = Math.max(maxWidth, actualWidth);
             }
         }
         
@@ -303,19 +308,9 @@ public class MultiblockStructureHelper {
                 String row = layer[z];
                 if (row == null) continue;
 
-                int gridX = 0;
-                EnumSet<Direction> currentPrefixes = EnumSet.noneOf(Direction.class);
+                for (int gridX = 0; gridX < row.length(); gridX++) {
+                    char symbol = row.charAt(gridX);
 
-                for (int strIdx = 0; strIdx < row.length(); strIdx++) {
-                    char symbol = row.charAt(strIdx);
-
-                    // 1. Обработка префиксов
-                    if (symbol == '<') { currentPrefixes.add(Direction.WEST); continue; }
-                    if (symbol == '>') { currentPrefixes.add(Direction.EAST); continue; }
-                    if (symbol == '!') { currentPrefixes.add(Direction.NORTH); continue; }
-                    if (symbol == '?') { currentPrefixes.add(Direction.SOUTH); continue; }
-
-                    // 2. Обработка основного символа роли
                     PartRole role = roleMap.get(symbol);
                     int relX = gridX - centerX;
                     int relZ = z - centerZ;
@@ -326,8 +321,12 @@ public class MultiblockStructureHelper {
                             foundControllerPositions.add(pos);
                         } else {
                             structureMap.put(pos, symbolMap.get(symbol));
-                            if (role == PartRole.LADDER && !currentPrefixes.isEmpty()) {
-                                ladderDirs.put(pos, EnumSet.copyOf(currentPrefixes));
+                            if (role == PartRole.LADDER && ladderSideMap != null && ladderSideMap.containsKey(symbol)) {
+                                ladderDirs.put(pos, ladderTupleToLocalSet(symbol, ladderSideMap.get(symbol)));
+                            }
+                            if ((role == PartRole.ENERGY_CONNECTOR || role == PartRole.UNIVERSAL_CONNECTOR)
+                                    && energySideMap != null && energySideMap.containsKey(symbol)) {
+                                energyDirs.put(pos, energyTupleToLocalSet(symbol, energySideMap.get(symbol)));
                             }
                         }
                         positionSymbolMap.put(pos, symbol);
@@ -336,7 +335,7 @@ public class MultiblockStructureHelper {
                         if (shapeMap != null && shapeMap.containsKey(symbol)) {
                             specificPartShapes.put(pos, shapeMap.get(symbol));
                             
-                            // Если есть в shapeMap, но нет в collisionMap — делаем прозрачным
+                            // Если есть в shapeMap, но нет в collisionMap - делаем прозрачным
                             if (collisionMap != null && collisionMap.containsKey(symbol)) {
                                 specificCollisionShapes.put(pos, collisionMap.get(symbol));
                             } else {
@@ -344,9 +343,6 @@ public class MultiblockStructureHelper {
                             }
                         }
                     }
-                    
-                    gridX++;
-                    currentPrefixes = EnumSet.noneOf(Direction.class);
                 }
             }
         }
@@ -385,7 +381,74 @@ public class MultiblockStructureHelper {
             specificPartShapes, specificCollisionShapes, finalControllerPos
         );
         helper.ladderLocalDirections.putAll(ladderDirs);
+        helper.energyLocalDirections.putAll(energyDirs);
         return helper;
+    }
+
+    private static final Direction[] LADDER_TUPLE_ORDER = {
+        Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST
+    };
+
+    private static final Direction[] ENERGY_TUPLE_ORDER = {
+        Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.UP, Direction.DOWN
+    };
+
+    private static EnumSet<Direction> ladderTupleToLocalSet(char symbol, boolean[] tuple) {
+        if (tuple == null || tuple.length != LADDER_TUPLE_ORDER.length) {
+            throw new IllegalArgumentException("ladderSideMap['" + symbol + "'] must be boolean[4] (north,south,west,east)");
+        }
+        EnumSet<Direction> set = EnumSet.noneOf(Direction.class);
+        for (int i = 0; i < LADDER_TUPLE_ORDER.length; i++) {
+            if (tuple[i]) {
+                set.add(LADDER_TUPLE_ORDER[i]);
+            }
+        }
+        return set;
+    }
+
+    private static EnumSet<Direction> energyTupleToLocalSet(char symbol, boolean[] tuple) {
+        if (tuple == null || tuple.length != ENERGY_TUPLE_ORDER.length) {
+            throw new IllegalArgumentException("energySideMap['" + symbol + "'] must be boolean[6] (north,south,west,east,up,down)");
+        }
+        EnumSet<Direction> set = EnumSet.noneOf(Direction.class);
+        for (int i = 0; i < ENERGY_TUPLE_ORDER.length; i++) {
+            if (tuple[i]) {
+                set.add(ENERGY_TUPLE_ORDER[i]);
+            }
+        }
+        return set;
+    }
+
+    /** Поворот локального направления схемы в мировое при ориентации структуры {@code facing}. */
+    private static Direction rotateLocalDirectionToWorld(Direction localDir, Direction facing) {
+        BlockPos rotatedVec = rotate(new BlockPos(localDir.getNormal()), facing);
+        return Direction.getNearest(rotatedVec.getX(), rotatedVec.getY(), rotatedVec.getZ());
+    }
+
+    public static MultiblockStructureHelper createFromLayersWithRoles(
+            String[][] layers,
+            Map<Character, Supplier<BlockState>> symbolMap,
+            Supplier<BlockState> phantomBlockState,
+            Map<Character, PartRole> roleMap,
+            Map<Character, VoxelShape> shapeMap,
+            Map<Character, VoxelShape> collisionMap) {
+        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, shapeMap, collisionMap, null, null);
+    }
+
+    /**
+     * Как полный {@link #createFromLayersWithRoles(String[][], Map, Supplier, Map, Map, Map, Map, Map)},
+     * но без {@code shapeMap}/{@code collisionMap} (они {@code null}).
+     * Отдельное имя - из‑за стирания типов нельзя перегрузить по {@code Map<Character, VoxelShape>} vs {@code Map<Character, boolean[]>}.
+     * Для tuple сторон см. {@link MultiblockSideTuples}.
+     */
+    public static MultiblockStructureHelper createFromLayersWithRolesAndSides(
+            String[][] layers,
+            Map<Character, Supplier<BlockState>> symbolMap,
+            Supplier<BlockState> phantomBlockState,
+            Map<Character, PartRole> roleMap,
+            Map<Character, boolean[]> ladderSideMap,
+            Map<Character, boolean[]> energySideMap) {
+        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, null, null, ladderSideMap, energySideMap);
     }
 
     public static MultiblockStructureHelper createFromLayersWithRoles(
@@ -393,7 +456,7 @@ public class MultiblockStructureHelper {
             Map<Character, Supplier<BlockState>> symbolMap,
             Supplier<BlockState> phantomBlockState,
             Map<Character, PartRole> roleMap) {
-        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, null, null);
+        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, null, null, null, null);
     }
     
     /**
@@ -415,7 +478,7 @@ public class MultiblockStructureHelper {
         if (partShapes.containsKey(gridPos)) {
             return rotateShape(partShapes.get(gridPos), facing);
         }
-        // По умолчанию — полный блок
+        // По умолчанию - полный блок
         return Shapes.block();
     }
 
@@ -434,27 +497,27 @@ public class MultiblockStructureHelper {
      * @param symbol Символ, который был использован для этой позиции в структуре
      * @return PartRole для данной позиции
      */
-    public PartRole getRoleForPosition(BlockPos localOffset, char symbol) {
-        PartRole role = symbolRoleMap.get(symbol);
-        return role != null ? role : PartRole.DEFAULT;
-    }
+    // public PartRole getRoleForPosition(BlockPos localOffset, char symbol) {
+    //     PartRole role = symbolRoleMap.get(symbol);
+    //     return role != null ? role : PartRole.DEFAULT;
+    // }
     
-    /**
-     * Получает символ структуры для данной локальной позиции.
-     * 
-     * @param localOffset Локальная позиция части относительно контроллера
-     * @return Символ структуры или null если позиция не найдена
-     */
-    public Character getSymbolForPosition(BlockPos localOffset) {
-        return positionSymbolMap.get(localOffset);
-    }
+    // /**
+    //  * Получает символ структуры для данной локальной позиции.
+    //  * 
+    //  * @param localOffset Локальная позиция части относительно контроллера
+    //  * @return Символ структуры или null если позиция не найдена
+    //  */
+    // public Character getSymbolForPosition(BlockPos localOffset) {
+    //     return positionSymbolMap.get(localOffset);
+    // }
     
-    /**
-     * Проверяет, использует ли эта структура рецептоподобный способ определения ролей.
-     */
-    public boolean hasSymbolRoleMap() {
-        return !symbolRoleMap.isEmpty();
-    }
+    // /**
+    //  * Проверяет, использует ли эта структура рецептоподобный способ определения ролей.
+    //  */
+    // public boolean hasSymbolRoleMap() {
+    //     return !symbolRoleMap.isEmpty();
+    // }
 
     /**
      * Проверяет, является ли коллизия блока в этой позиции полным кубом.
@@ -529,10 +592,6 @@ public class MultiblockStructureHelper {
         return true;
     }
 
-    private static boolean isClimbPrefix(char c) {
-        return c == '<' || c == '>' || c == '!' || c == '?';
-    }
-
     /**
      * @return A Set of all local offsets for the multiblock parts, relative to the controller.
      */
@@ -585,11 +644,10 @@ public class MultiblockStructureHelper {
                     
                     if (localSides != null && !localSides.isEmpty()) {
                         for (Direction localDir : localSides) {
-                            BlockPos rotatedVec = rotate(new BlockPos(localDir.getNormal()), facing);
-                            worldSides.add(Direction.getNearest(rotatedVec.getX(), rotatedVec.getY(), rotatedVec.getZ()));
+                            worldSides.add(rotateLocalDirectionToWorld(localDir, facing));
                         }
                     } else {
-                        // Если префиксов нет — разрешаем все горизонтальные стороны
+                        // Нет записи в ladderSideMap - все горизонтальные стороны
                         worldSides.add(Direction.NORTH);
                         worldSides.add(Direction.SOUTH);
                         worldSides.add(Direction.EAST);
@@ -598,8 +656,18 @@ public class MultiblockStructureHelper {
                     partBe.setAllowedClimbSides(worldSides);
                 }
                 
-                // ENERGY_CONNECTOR и UNIVERSAL_CONNECTOR могут принимать энергию
+                // ENERGY_CONNECTOR и UNIVERSAL_CONNECTOR - стороны из energySideMap или все шесть
                 if (role == PartRole.ENERGY_CONNECTOR || role == PartRole.UNIVERSAL_CONNECTOR) {
+                    Set<Direction> localEnergy = energyLocalDirections.get(gridPos);
+                    EnumSet<Direction> worldEnergy = EnumSet.noneOf(Direction.class);
+                    if (localEnergy != null && !localEnergy.isEmpty()) {
+                        for (Direction localDir : localEnergy) {
+                            worldEnergy.add(rotateLocalDirectionToWorld(localDir, facing));
+                        }
+                    } else {
+                        Collections.addAll(worldEnergy, Direction.values());
+                    }
+                    partBe.setAllowedEnergySides(worldEnergy);
                     energyConnectorPositions.add(worldPos);
                 }
                 
@@ -840,6 +908,70 @@ public class MultiblockStructureHelper {
      * @param facing The direction of the structure.
      * @return The generated VoxelShape.
      */
+    /**
+     * Returns the bounding AABB enclosing the entire multiblock structure in
+     * controller-local coordinates (i.e. with the controller treated as origin),
+     * with the given facing rotation pre-applied. Each entry is computed once
+     * per direction and reused for every BlockEntity that shares this helper -
+     * the result depends only on {@link #structureMap} + {@link #controllerOffset}
+     * + facing, none of which vary per-BE.
+     * <p>
+     * Coords are inclusive on the lower edge and exclusive on the upper edge,
+     * matching {@link AABB} convention - a single 1×1×1 block at the controller
+     * with no other parts produces {@code AABB(0, 0, 0, 1, 1, 1)}.
+     * <p>
+     * Used by {@link BlockEntity#getRenderBoundingBox()} overrides so the
+     * vanilla / Forge frustum + occlusion culler only skips a multiblock when
+     * its FULL footprint is offscreen, instead of skipping based on the
+     * controller's 1×1×1 cell while the rest of the structure is still in
+     * view (which produced the "machine pops out when controller goes
+     * offscreen" symptom).
+     */
+    public AABB getLocalRenderBoundingBox(Direction facing) {
+        AABB cached = localRenderBoundsCache.get(facing);
+        if (cached != null) {
+            return cached;
+        }
+        // Always include the controller cell itself (offset 0,0,0 after the
+        // controllerOffset normalisation). Seed bounds at that cell so an
+        // empty structureMap still yields a valid 1×1×1 box.
+        int minX = 0, minY = 0, minZ = 0;
+        int maxX = 0, maxY = 0, maxZ = 0;
+        for (BlockPos gridPos : structureMap.keySet()) {
+            BlockPos relative = gridPos.subtract(this.controllerOffset);
+            BlockPos rotated = rotate(relative, facing);
+            int x = rotated.getX();
+            int y = rotated.getY();
+            int z = rotated.getZ();
+            if (x < minX) minX = x;
+            if (x > maxX) maxX = x;
+            if (y < minY) minY = y;
+            if (y > maxY) maxY = y;
+            if (z < minZ) minZ = z;
+            if (z > maxZ) maxZ = z;
+        }
+        AABB result = new AABB(minX, minY, minZ, maxX + 1, maxY + 1, maxZ + 1);
+        localRenderBoundsCache.put(facing, result);
+        return result;
+    }
+
+    /**
+     * World-space convenience wrapper around {@link #getLocalRenderBoundingBox}:
+     * translates the cached local AABB onto the controller's actual world
+     * position and inflates it by {@code inflate} blocks on every axis - useful
+     * for renderers whose animated parts (rotating arms, sliding heads,
+     * particle plumes) reach beyond the static structure's footprint.
+     *
+     * @param controllerWorldPos the world position of the multiblock controller
+     * @param facing             the controller's FACING property
+     * @param inflate            extra padding in blocks on every face (0 to disable)
+     */
+    public AABB getRenderBoundingBox(BlockPos controllerWorldPos, Direction facing, double inflate) {
+        AABB local = getLocalRenderBoundingBox(facing);
+        AABB moved = local.move(controllerWorldPos.getX(), controllerWorldPos.getY(), controllerWorldPos.getZ());
+        return inflate > 0 ? moved.inflate(inflate) : moved;
+    }
+
     public VoxelShape generateShapeFromParts(Direction facing) {
         return shapeCache.computeIfAbsent(facing, f -> {
             VoxelShape finalShape = Shapes.empty();

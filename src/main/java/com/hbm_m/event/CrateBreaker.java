@@ -325,7 +325,7 @@ public class CrateBreaker {
                         if (itemToDrop == null || itemToDrop == Items.AIR) return;
 
                         // Определяем стабильное количество:
-                        // если у DropChance есть компонент count() — используем его,
+                        // если у DropChance есть компонент count() - используем его,
                         // иначе дефолт 1.
                         int count = 1;
 
@@ -337,7 +337,7 @@ public class CrateBreaker {
                                 count = c;
                             }
                         } catch (ReflectiveOperationException ignored) {
-                            // компонента count нет — оставляем 1
+                            // компонента count нет - оставляем 1
                         }
 
                         ItemStack stack = new ItemStack(itemToDrop, count);

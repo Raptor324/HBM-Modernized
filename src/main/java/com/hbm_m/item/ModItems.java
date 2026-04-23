@@ -34,6 +34,9 @@ import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.GrenadeIfType;
 import com.hbm_m.entity.grenades.GrenadeType;
 import com.hbm_m.item.crates.CrateItem;
+import com.hbm_m.item.designator.ItemDesignator;
+import com.hbm_m.item.designator.ItemDesignatorManual;
+import com.hbm_m.item.designator.ItemDesignatorRange;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.fekal_electric.ModBatteryItem;
 import com.hbm_m.item.food.ItemConserve;
@@ -60,6 +63,7 @@ import com.hbm_m.item.liquids.FluidDuctItem;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
 import com.hbm_m.item.liquids.InfiniteWaterItem;
+import com.hbm_m.item.missile.MissileItem;
 import com.hbm_m.item.radiation_meter.ItemDosimeter;
 import com.hbm_m.item.radiation_meter.ItemGeigerCounter;
 import com.hbm_m.item.scanners.DepthOresScannerItem;
@@ -737,6 +741,18 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> BALL_TNT = ITEMS.register("ball_tnt",
             () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> FAT_MAN_EXPLOSIVE = ITEMS.register("fat_man_explosive",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> FAT_MAN_IGNITER = ITEMS.register("fat_man_igniter",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> FAT_MAN_CORE = ITEMS.register("fat_man_core",
+            () -> new Item(new Item.Properties()));
+
+	public static final RegistryObject<Item> TEST_ITEM = ITEMS.register("test_item",
+            () -> new Item(new Item.Properties()));
+
+
     public static final RegistryObject<Item> CROWBAR = ITEMS.register("crowbar",
             () -> new Item(new Item.Properties()) {
                 @Override
@@ -924,9 +940,6 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> BATTLE_COUNTER = ITEMS.register("battle_counter",
-            () -> new Item(new Item.Properties()));
-
-    public static final RegistryObject<Item> MAN_CORE = ITEMS.register("man_core",
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> CRT_DISPLAY = ITEMS.register("crt_display",
@@ -1285,6 +1298,28 @@ public class ModItems {
 
     public static final RegistryObject<Item> REFINERY = ITEMS.register("refinery",
         () -> new MultiblockBlockItem(ModBlocks.REFINERY.get(), new Item.Properties()));
+	public static final RegistryObject<Item> LAUNCH_PAD = ITEMS.register("launch_pad",
+        () -> new MultiblockBlockItem(ModBlocks.LAUNCH_PAD.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> LAUNCH_PAD_RUSTED = ITEMS.register("launch_pad_rusted",
+        () -> new MultiblockBlockItem(ModBlocks.LAUNCH_PAD_RUSTED.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> NUKE_FAT_MAN = ITEMS.register("nuke_fat_man",
+        () -> new MultiblockBlockItem(ModBlocks.NUKE_FAT_MAN.get(), new Item.Properties()));
+
+    // ПРОТОТИП РАКЕТЫ (TIER 0, MICRO)
+    public static final RegistryObject<Item> MISSILE_TEST = ITEMS.register("missile_test",
+        () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0,
+                MissileItem.MissileFuel.SOLID));
+
+    public static final RegistryObject<Item> DESIGNATOR = ITEMS.register("designator",
+        () -> new ItemDesignator(new Item.Properties()));
+    public static final RegistryObject<Item> DESIGNATOR_RANGE = ITEMS.register("designator_range",
+        () -> new ItemDesignatorRange(new Item.Properties()));
+    public static final RegistryObject<Item> DESIGNATOR_MANUAL = ITEMS.register("designator_manual",
+        () -> new ItemDesignatorManual(new Item.Properties()));
+
+	// MULTIBLOCK DOORS
 
     public static final RegistryObject<Item> LARGE_VEHICLE_DOOR = ITEMS.register("large_vehicle_door",
         () -> new DoorBlockItem(ModBlocks.LARGE_VEHICLE_DOOR.get(), new Item.Properties()));
@@ -1324,6 +1359,8 @@ public class ModItems {
 
     public static final RegistryObject<Item> VAULT_DOOR = ITEMS.register("vault_door",
         () -> new DoorBlockItem(ModBlocks.VAULT_DOOR.get(), new Item.Properties()));
+
+
 
     public static final RegistryObject<Item> STAMP_STONE_FLAT = ITEMS.register("stamp_stone_flat",
             () -> new ItemStamp(new Item.Properties(), 32));

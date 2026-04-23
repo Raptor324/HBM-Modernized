@@ -1,21 +1,25 @@
 package com.hbm_m.util.explosions.trash_that_i_forgot_to_delete;
 
-import net.minecraft.core.BlockPos;
-import net.minecraft.server.level.ServerLevel;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.hbm_m.main.MainRegistry;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.server.level.ServerLevel;
 
 /**
  * ОПТИМИЗИРОВАННЫЙ ТРЕКЕР ЗАТВЕРДЕВАНИЯ СЕЛЛАФИТА v2
  *
  * Основные улучшения:
- * ✅ ConcurrentHashMap для потокобезопасности
- * ✅ Использование long вместо составного ключа
- * ✅ Сокращение создания объектов
- * ✅ Оптимизированное управление памятью
+ *  ConcurrentHashMap для потокобезопасности
+ *  Использование long вместо составного ключа
+ *  Сокращение создания объектов
+ *  Оптимизированное управление памятью
  */
 public class SellafitSolidificationTracker {
 

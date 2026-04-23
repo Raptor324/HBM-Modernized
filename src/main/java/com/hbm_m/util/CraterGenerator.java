@@ -1,10 +1,18 @@
 package com.hbm_m.util;
 
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.util.explosions.nuclear.BlockExplosionDefense;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.TickTask;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.tags.BlockTags;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -12,13 +20,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.tags.BlockTags;
-
 import net.minecraftforge.server.ServerLifecycleHooks;
-import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.TickTask;
-
-import java.util.*;
 
 public class CraterGenerator {
 
@@ -34,7 +36,7 @@ public class CraterGenerator {
     private static final int RING_COUNT = 8;
     /** Максимальное число слоев селлафита под поверхностью кратера */
     private static final int SELLAFIT_REPLACEMENT_LAYERS = 4;
-    /** Глубина кратера — глубина генерации по вертикали */
+    /** Глубина кратера - глубина генерации по вертикали */
     private static final int CRATER_DEPTH = 30;
     /** Радиус внутренней зоны высокой опасности и замещения (3 зона) */
     private static final int ZONE_3_RADIUS = 170;
@@ -56,14 +58,14 @@ public class CraterGenerator {
     /** Коэффициенты растяжения кратера в процессе генерации, дающие вариации */
     private static final float HORIZONTAL_STRETCH_FACTOR = 0F;
     private static final float VERTICAL_STRETCH_FACTOR = 0F;
-    /** Процент перекрытия колец — плавность переходов зон */
+    /** Процент перекрытия колец - плавность переходов зон */
     private static final float RING_OVERLAP_PERCENTAGE = 20.0F;
 
     /** Размер пакетов для батчевой обработки блоков (для производительности) */
     private static final int BLOCK_BATCH_SIZE = 256;
     private static final int SELLAFIT_OVERHANG_CHECK_DEPTH = 5; // Глубина проверки твердого блока снизу для затвердевания селлафита
     /**
-     * Генерация кратера — главный метод с основным циклом и планировкой задач.
+     * Генерация кратера - главный метод с основным циклом и планировкой задач.
      *
      * @param level игровой мир
      * @param centerPos позиция центра кратера
@@ -451,7 +453,7 @@ public class CraterGenerator {
             item.discard();
         }
         applyKillZoneToEntitiesOptimized(level, centerPos, random);
-        MainRegistry.LOGGER.debug("[CRATER] ✅ Применение зон повреждения завершено!");
+        MainRegistry.LOGGER.debug("[CRATER]  Применение зон повреждения завершено!");
     }
 
 

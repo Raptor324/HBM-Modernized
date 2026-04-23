@@ -9,6 +9,7 @@ import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.block.entity.machines.UniversalMachinePartBlockEntity;
+import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.item.ModItems;
@@ -45,7 +46,22 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 
-public class UniversalMachinePartBlock extends BaseEntityBlock {
+public class UniversalMachinePartBlock extends BaseEntityBlock implements IDetonatable {
+
+    @Override
+    public boolean onDetonate(Level level, BlockPos partPos, BlockState partState, Player player) {
+        if (level.isClientSide) return false;
+        BlockEntity be = level.getBlockEntity(partPos);
+        if (!(be instanceof IMultiblockPart part)) return false;
+        BlockPos controllerPos = part.getControllerPos();
+        if (controllerPos == null) return false;
+        BlockState controllerState = level.getBlockState(controllerPos);
+        Block controllerBlock = controllerState.getBlock();
+        if (controllerBlock instanceof IDetonatable detonatable) {
+            return detonatable.onDetonate(level, controllerPos, controllerState, player);
+        }
+        return false;
+    }
 
     // FACING is the only property we need to sync with the controller
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
@@ -301,7 +317,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
             BlockPos controllerPos = part.getControllerPos();
-            // Если контроллера нет (пусто) — удаляем фантомный блок на сервере
+            // Если контроллера нет (пусто) - удаляем фантомный блок на сервере
             if (controllerPos == null) {
                 if (!pLevel.isClientSide()) {
                     pLevel.setBlock(pPos, Blocks.AIR.defaultBlockState(), 3);
@@ -318,7 +334,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock {
                 // Redirect the interaction to the main controller block
                 return controllerState.use(pLevel, pPlayer, pHand, pHit.withPosition(controllerPos));
             } else {
-                // Контроллер сохранён, но в мире он невалиден — удаляем фантом как резервный механизм
+                // Контроллер сохранён, но в мире он невалиден - удаляем фантом как резервный механизм
                 if (!pLevel.isClientSide()) {
                     pLevel.setBlock(pPos, Blocks.AIR.defaultBlockState(), 3);
                 }

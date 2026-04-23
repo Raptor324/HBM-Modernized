@@ -184,7 +184,7 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
             candidates.add(ModSounds.BOMBDET3.get());
         }
 
-        // Если ни один из трёх звуков не зарегистрирован — fallback на старый
+        // Если ни один из трёх звуков не зарегистрирован - fallback на старый
         if (candidates.isEmpty()) {
             if (ModSounds.EXPLOSION_LARGE_NEAR.isPresent()) {
                 level.playSound(

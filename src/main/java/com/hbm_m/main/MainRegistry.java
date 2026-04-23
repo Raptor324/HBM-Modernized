@@ -248,6 +248,10 @@ public class MainRegistry {
             event.accept(ModItems.GRENADE_NUC);
             event.accept(ModBlocks.MINE_AP);
             event.accept(ModBlocks.MINE_FAT);
+            event.accept(ModBlocks.NUKE_FAT_MAN);
+            event.accept(ModItems.FAT_MAN_EXPLOSIVE);
+            event.accept(ModItems.FAT_MAN_IGNITER);
+            event.accept(ModItems.FAT_MAN_CORE);
             event.accept(ModBlocks.AIRBOMB);
             event.accept(ModItems.AIRBOMB_A);
             event.accept(ModBlocks.BALEBOMB_TEST);
@@ -262,6 +266,12 @@ public class MainRegistry {
             event.accept(ModBlocks.DUD_CONVENTIONAL);
             event.accept(ModBlocks.DUD_NUKE);
             event.accept(ModBlocks.DUD_SALTED);
+            event.accept(ModBlocks.LAUNCH_PAD);
+            event.accept(ModBlocks.LAUNCH_PAD_RUSTED);
+            event.accept(ModItems.DESIGNATOR);
+            event.accept(ModItems.DESIGNATOR_RANGE);
+            event.accept(ModItems.DESIGNATOR_MANUAL);
+            event.accept(ModItems.MISSILE_TEST);
 
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");
@@ -762,7 +772,6 @@ public class MainRegistry {
             event.accept(ModItems.BATTLE_COUNTER);
             event.accept(ModItems.BATTLE_MODULE);
             event.accept(ModItems.METAL_ROD);
-            event.accept(ModItems.MAN_CORE);
         }
         // РУДЫ
         if (event.getTab() == ModCreativeTabs.NTM_ORES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {

@@ -23,7 +23,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 
 /**
- * GUI для Chemical Plant — порт с 1.7.10.
+ * GUI для Chemical Plant - порт с 1.7.10.
  * UV-координаты и layout соответствуют оригинальному GUIMachineChemicalPlant.
  */
 public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChemicalPlantMenu> {

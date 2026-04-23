@@ -1,0 +1,10 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/missile/missile_micro.obj",
+  "flip_v": true,
+  "textures": {
+    "particle": "hbm_m:missile/missile_test",
+    "default": "hbm_m:missile/missile_test"
+  }
+}
+

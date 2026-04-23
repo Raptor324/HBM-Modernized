@@ -292,7 +292,7 @@ public class ModHazards {
                  new HazardEntry(HazardType.RADIATION, 0.5f)
          ));
 
-         HazardSystem.register(ModItems.MAN_CORE.get(), new HazardData(
+         HazardSystem.register(ModItems.FAT_MAN_CORE.get(), new HazardData(
                  new HazardEntry(HazardType.RADIATION, 5f)
          ));
 

@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity.machines;
 
+import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;

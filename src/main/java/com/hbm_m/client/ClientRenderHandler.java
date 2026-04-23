@@ -4,6 +4,7 @@ import java.awt.Color;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.joml.Matrix4f;
 
@@ -12,14 +13,19 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IMultiblockPart;
+import com.mojang.blaze3d.platform.GlStateManager;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
+import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
@@ -40,7 +46,29 @@ public class ClientRenderHandler {
     // Кэш известных фантомных блоков для оптимизации (чтобы не проверять их каждый раз)
     private static final Map<BlockPos, Long> knownPhantomBlocks = new HashMap<>();
 
-    private static class CustomRenderTypes extends RenderType {
+    /** Shared with NukeTorex; must extend RenderType to access protected RenderStateShard members. */
+    public static final class CustomRenderTypes extends RenderType {
+        private static final RenderStateShard.TransparencyStateShard SEVEN_SEVEN10 = new RenderStateShard.TransparencyStateShard(
+                "7710",
+                () -> {
+                    RenderSystem.enableBlend();
+                    RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
+                },
+                () -> {
+                    RenderSystem.defaultBlendFunc();
+                    RenderSystem.disableBlend();
+                });
+        private static final RenderStateShard.TransparencyStateShard ADDITIVE_BLEND = new RenderStateShard.TransparencyStateShard(
+                "additive",
+                () -> {
+                    RenderSystem.enableBlend();
+                    RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+                },
+                () -> {
+                    RenderSystem.defaultBlendFunc();
+                    RenderSystem.disableBlend();
+                });
+
         private CustomRenderTypes(String s, VertexFormat v, VertexFormat.Mode m, int i, boolean b, boolean b2, Runnable r, Runnable r2) { super(s, v, m, i, b, b2, r, r2); }
 
         public static final RenderType HIGHLIGHT_BOX_FILL = create("highlight_box_fill",
@@ -53,6 +81,49 @@ public class ClientRenderHandler {
                         .setLightmapState(NO_LIGHTMAP)
                         .setWriteMaskState(COLOR_WRITE)
                         .createCompositeState(false));
+
+        /** Nuke cloud particles (NukeTorex). */
+        public static final Function<ResourceLocation, RenderType> NUKE_CLOUDS = Util.memoize(
+                texture -> create("nuke_clouds", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 239120, true, true,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(SEVEN_SEVEN10)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(LIGHTMAP)
+                                .setOverlayState(NO_OVERLAY)
+                                .setWriteMaskState(COLOR_WRITE)
+                                .setOutputState(TRANSLUCENT_TARGET)
+                                .createCompositeState(false)));
+
+        /** Nuke flash (NukeTorex) - без depth test, чтобы рендерился поверх всего. */
+        public static final Function<ResourceLocation, RenderType> NUKE_FLASH = Util.memoize(
+                texture -> create("nuke_flash", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 545234, true, true,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(ADDITIVE_BLEND)
+                                .setDepthTestState(NO_DEPTH_TEST)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(LIGHTMAP)
+                                .setOverlayState(NO_OVERLAY)
+                                .setWriteMaskState(COLOR_WRITE)
+                                .setOutputState(TRANSLUCENT_TARGET)
+                                .createCompositeState(false)));
+
+        /** Fallout rain (RenderFallout): entity translucent, NO_CULL, CLOUDS_TARGET, 7/7/1/0 blend. */
+        public static final Function<ResourceLocation, RenderType> ENTITY_SMOOTH = Util.memoize(
+                texture -> create("entity_smooth", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.QUADS, 256, true, true,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, true))
+                                .setTransparencyState(SEVEN_SEVEN10)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(LIGHTMAP)
+                                .setOverlayState(OVERLAY)
+                                .setWriteMaskState(COLOR_DEPTH_WRITE)
+                                .setOutputState(CLOUDS_TARGET)
+                                .createCompositeState(false)));
     }
 
     public static void highlightBlocks(List<BlockPos> positions) {
@@ -217,16 +288,16 @@ public class ClientRenderHandler {
             return;
         }
 
-        PoseStack poseStack = event.getPoseStack();
         Minecraft mc = Minecraft.getInstance();
-        Vec3 cameraPos = mc.gameRenderer.getMainCamera().getPosition();
+        var camera = mc.gameRenderer.getMainCamera();
+        Vec3 cameraPos = camera.getPosition();
         long currentTime = System.currentTimeMillis();
         VertexConsumer fillConsumer = mc.renderBuffers().bufferSource().getBuffer(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
         float alpha = ModClothConfig.get().obstructionHighlight.obstructionHighlightAlpha / 100.0f;
 
-        poseStack.pushPose();
-        // Переводим в camera-relative координаты один раз
-        poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+        // Собственный PoseStack: только translate(-camera), без event.getPoseStack(), чтобы ничего не влияло на трансформации.
+        PoseStack ourPose = new PoseStack();
+        ourPose.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
 
         // 1. Рендерим временные красные подсветки (препятствия при установке)
         if (!highlightedBlocks.isEmpty() && alpha > 0) {
@@ -248,7 +319,7 @@ public class ClientRenderHandler {
                 // Раздуваем в camera-relative пространстве
                 AABB boundingBox = new AABB(pos).inflate(0.002D);
                 
-                renderFilledBox(poseStack, fillConsumer, boundingBox, redColor, alpha, 
+                renderFilledBox(ourPose, fillConsumer, boundingBox, redColor, alpha,
                             drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast);
                 return false;
             });
@@ -280,14 +351,13 @@ public class ClientRenderHandler {
                     // Раздуваем в camera-relative пространстве
                     AABB boundingBox = new AABB(pos).inflate(0.002D);
                     
-                    renderFilledBox(poseStack, fillConsumer, boundingBox, purpleColor, purpleAlpha, 
+                    renderFilledBox(ourPose, fillConsumer, boundingBox, purpleColor, purpleAlpha,
                                 drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast);
                     return false;
                 });
             }
         }
 
-        poseStack.popPose();
         mc.renderBuffers().bufferSource().endBatch(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
     }
 

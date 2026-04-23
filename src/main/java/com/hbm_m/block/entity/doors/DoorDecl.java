@@ -118,14 +118,14 @@ public abstract class DoorDecl {
 
     /**
      * Выбор модели по умолчанию при первой установке двери.
-     * По умолчанию LEGACY. Для round_airlock_door — MODERN + default.
+     * По умолчанию LEGACY. Для round_airlock_door - MODERN + default.
      */
     public DoorModelSelection getDefaultModelSelection() {
         return DoorModelSelection.DEFAULT;
     }
 
     /**
-     * Путь к DAE-файлу с анимациями. Если null — используются procedural-анимации (getTranslation/getRotation).
+     * Путь к DAE-файлу с анимациями. Если null - используются procedural-анимации (getTranslation/getRotation).
      */
     @Nullable
     public ResourceLocation getColladaAnimationSource() {
@@ -212,7 +212,7 @@ public abstract class DoorDecl {
     public void doOffsetTransform(IDoorAnimator animator) {}
 
     /**
-     * Доп. поворот Y (градусы) для baked model — должен совпадать с doOffsetTransform,
+     * Доп. поворот Y (градусы) для baked model - должен совпадать с doOffsetTransform,
      * чтобы BakedModel и BER были выровнены. По умолчанию 0.
      */
     public int getBakedModelRotationOffsetY() { return 0; }
@@ -850,7 +850,7 @@ public abstract class DoorDecl {
             return true;
         }
 
-        /** Fallback: DAE анимирует по X (влево-вправо). Если DAE недоступен — процедурно по X */
+        /** Fallback: DAE анимирует по X (влево-вправо). Если DAE недоступен - процедурно по X */
         @Override
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
             float progress = getNormTime(openTicks);
@@ -1122,7 +1122,7 @@ public abstract class DoorDecl {
             DoorStructureDefinition.Builder builder = DoorStructureDefinition.create();
             
             // Создаем форму: толщина 2 пикселя в центре блока (от 7 до 9 по оси Z)
-            // Если блок 16x16x16, то центр — это 8. 7-9 дает нам ровно 2 пикселя толщины.
+            // Если блок 16x16x16, то центр - это 8. 7-9 дает нам ровно 2 пикселя толщины.
             VoxelShape thinDoorShape = Block.box(0, 0, 7, 16, 16, 9);
             
             // Регистрируем символы с нашей тонкой формой
@@ -1188,7 +1188,7 @@ public abstract class DoorDecl {
             DoorStructureDefinition.Builder builder = DoorStructureDefinition.create();
             
             // Создаем форму: толщина 2 пикселя в центре блока (от 7 до 9 по оси Z)
-            // Если блок 16x16x16, то центр — это 8. 7-9 дает нам ровно 2 пикселя толщины.
+            // Если блок 16x16x16, то центр - это 8. 7-9 дает нам ровно 2 пикселя толщины.
             VoxelShape thinDoorShape = Block.box(0, 0, 4, 16, 16, 12);
             
             // Регистрируем символы с нашей тонкой формой
@@ -1281,7 +1281,7 @@ public abstract class DoorDecl {
             DoorStructureDefinition.Builder builder = DoorStructureDefinition.create();
             
             // Создаем форму: толщина 2 пикселя в центре блока (от 7 до 9 по оси Z)
-            // Если блок 16x16x16, то центр — это 8. 7-9 дает нам ровно 2 пикселя толщины.
+            // Если блок 16x16x16, то центр - это 8. 7-9 дает нам ровно 2 пикселя толщины.
             VoxelShape thinDoorShape = Block.box(0, 0, 6, 16, 16, 10);
             
             // Регистрируем символы с нашей тонкой формой
@@ -1360,7 +1360,7 @@ public abstract class DoorDecl {
         @Override
         public void getOrigin(String partName, float[] orig, @Nullable DoorModelSelection selection) {
             // RenderWaterDoor 1.7.10: пивоты (0.40625, 2.28125, 0) и (0.40625, 0.71875, 0).
-            // Modern модель имеет transform rotation[0,90,0] — пивот в преобразованной СК: (z,y,-x)
+            // Modern модель имеет transform rotation[0,90,0] - пивот в преобразованной СК: (z,y,-x)
             if (selection != null && selection.isModern()) {
                 if ("spinny_upper".equals(partName)) {
                     set(orig, 0F, 2.28125F, -0.40625F);

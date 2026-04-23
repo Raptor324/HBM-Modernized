@@ -10,7 +10,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Рендерит 3D модель двери с выбранным скином в GUI через стандартный renderFakeItem.
- * Модель подменяется через ItemOverrides в DoorBakedModel — NBT "hbm_m:door_preview"
+ * Модель подменяется через ItemOverrides в DoorBakedModel - NBT "hbm_m:door_preview"
  * с выбором (modelType, skin, doorId) заставляет ItemRenderer использовать нужную модель.
  * Это даёт корректный порядок рендера частей и трансформации из display.gui.
  */
@@ -25,7 +25,7 @@ public final class DoorModelFakeItemRenderer {
 
     /**
      * Рендерит 3D модель двери с указанным выбором (legacy/modern+skin) в слот GUI.
-     * Использует renderFakeItem с ItemStack, в NBT которого записан выбор — DoorItemOverrides
+     * Использует renderFakeItem с ItemStack, в NBT которого записан выбор - DoorItemOverrides
      * подставляет нужную модель, и ItemRenderer рендерит её стандартным образом.
      *
      * @param guiGraphics контекст рендеринга
@@ -34,7 +34,7 @@ public final class DoorModelFakeItemRenderer {
      * @param doorStack   ItemStack двери (базовый стек для fallback)
      * @param x           X координата слота
      * @param y           Y координата слота
-     * @param size        размер слота (не используется — renderFakeItem сам масштабирует)
+     * @param size        размер слота (не используется - renderFakeItem сам масштабирует)
      */
     public static void renderDoorModel(net.minecraft.client.gui.GuiGraphics guiGraphics, DoorModelSelection selection,
                                        String doorId, ItemStack doorStack, int x, int y, int size) {

@@ -7,6 +7,7 @@ import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
+import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
@@ -417,9 +418,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // Machines
         customMachineBlock(ModBlocks.CRYSTALLIZER);
-        customMachineBlock(ModBlocks.CHEMICAL_PLANT);
+        registerChemicalPlantBlock(ModBlocks.CHEMICAL_PLANT);
         customMachineBlock(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
         customMachineBlock(ModBlocks.CENTRIFUGE);
+        customMachineBlock(ModBlocks.LAUNCH_PAD);
+        customMachineBlock(ModBlocks.LAUNCH_PAD_RUSTED);
+        customBombBlock(ModBlocks.NUKE_FAT_MAN);
         customMachineBlock(ModBlocks.INDUSTRIAL_TURBINE);
         registerMachineAssemblerBlock(ModBlocks.MACHINE_ASSEMBLER);
         registerAdvancedAssemblyMachineBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
@@ -490,7 +494,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // wire_coated: manual multipart blockstate + OBJ visibility (see assets/hbm_m/blockstates/wire_coated.json)
 
         blockWithItem(ModBlocks.CONVERTER_BLOCK);
-
 
         orientableBlockWithItem(
                 ModBlocks.MACHINE_BATTERY,
@@ -1282,10 +1285,41 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath())));
     }
 
+    private <T extends Block> void customBombBlock(RegistryObject<T> blockObject) {
+        // Создаём только blockstate, который ссылается на JSON модель
+        // JSON модель должна лежать в resources/assets/hbm_m/models/block/bomb/<название>.json
+        horizontalBlock(blockObject.get(),
+            models().getExistingFile(modLoc("block/bomb/" + blockObject.getId().getPath())));
+    }
+
     /**
      * Advanced Assembly Machine: FACING + FRAME (frame в BlockState для запекания в чанк).
-     * Одна модель — getQuads возвращает Base+Frame при frame=true.
+     * Одна модель - getQuads возвращает Base+Frame при frame=true.
      */
+    /**
+     * Chemical plant: без {@code rotationY} в blockstate - поворот задаётся только в
+     * {@link com.hbm_m.client.model.ChemicalPlantBakedModel} через
+     * {@link com.hbm_m.util.MultipartFacingTransforms#legacyBlockEntityBakedRotationY}, в точности как
+     * {@code LegacyAnimator.setupBlockTransform} у VBO (иначе vanilla y + getQuads дают двойной поворот).
+     */
+    private void registerChemicalPlantBlock(RegistryObject<? extends Block> blockObject) {
+        VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
+        ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
+        for (Direction facing : Direction.Plane.HORIZONTAL.stream().toArray(Direction[]::new)) {
+            for (boolean frame : new boolean[] { false, true }) {
+                for (boolean renderActive : new boolean[] { false, true }) {
+                    builder.partialState()
+                        .with(MachineChemicalPlantBlock.FACING, facing)
+                        .with(MachineChemicalPlantBlock.FRAME, frame)
+                        .with(MachineChemicalPlantBlock.RENDER_ACTIVE, renderActive)
+                        .modelForState()
+                        .modelFile(modelFile)
+                        .addModel();
+                }
+            }
+        }
+    }
+
     private void registerAdvancedAssemblyMachineBlock(RegistryObject<? extends Block> blockObject) {
         VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
         // Используем одну и ту же модель для всех состояний.

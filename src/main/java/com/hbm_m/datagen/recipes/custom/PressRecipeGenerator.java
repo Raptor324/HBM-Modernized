@@ -1,15 +1,16 @@
 package com.hbm_m.datagen.recipes.custom;
 
+import java.util.function.Consumer;
+
 import com.hbm_m.datagen.assets.ModItemTagProvider;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.lib.RefStrings;
+
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-
-import java.util.function.Consumer;
 
 /**
  * Generates all press recipes (plates, wires, circuits).
@@ -30,22 +31,27 @@ public final class PressRecipeGenerator {
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(Items.IRON_INGOT)
                 .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_iron"));
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_COPPER.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(Items.COPPER_INGOT)
                 .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_copper"));
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_GOLD.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(Items.GOLD_INGOT)
                 .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_gold"));
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_STEEL.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(ModItems.getIngot(ModIngots.STEEL).get())
                 .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_steel"));
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_LEAD.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(ModItems.getIngot(ModIngots.LEAD).get())
                 .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_lead"));
+                
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_ADVANCED_ALLOY.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get())
