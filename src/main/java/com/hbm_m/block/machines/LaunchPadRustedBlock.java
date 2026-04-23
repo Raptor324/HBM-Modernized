@@ -10,7 +10,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.block.entity.machines.LaunchPadRustedBlockEntity;
-import com.hbm_m.multiblock.IMultiblockController;
+import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 

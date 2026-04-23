@@ -10,7 +10,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.block.entity.machines.LaunchPadBlockEntity;
-import com.hbm_m.multiblock.IMultiblockController;
+import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import net.minecraft.core.BlockPos;
