@@ -51,6 +51,21 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<MachineCentrifugeMenu>> CENTRIFUGE_MENU =
             MENUS.register("centrifuge_menu", () -> IForgeMenuType.create(MachineCentrifugeMenu::new));
 
+    public static final RegistryObject<MenuType<MachineCrucibleMenu>> CRUCIBLE_MENU =
+            MENUS.register("crucible_menu", () -> IForgeMenuType.create(MachineCrucibleMenu::new));
+
+    public static final RegistryObject<MenuType<MachineGasCentrifugeMenu>> GAS_CENTRIFUGE_MENU =
+            MENUS.register("gas_centrifuge_menu", () -> IForgeMenuType.create(MachineGasCentrifugeMenu::new));
+
+    public static final RegistryObject<MenuType<LaunchPadLargeMenu>> LAUNCH_PAD_LARGE_MENU =
+            MENUS.register("launch_pad_large_menu", () -> IForgeMenuType.create(LaunchPadLargeMenu::new));
+
+    public static final RegistryObject<MenuType<LaunchPadRustedMenu>> LAUNCH_PAD_RUSTED_MENU =
+            MENUS.register("launch_pad_rusted_menu", () -> IForgeMenuType.create(LaunchPadRustedMenu::new));
+
+    public static final RegistryObject<MenuType<NukeFatManMenu>> NUKE_FAT_MAN_MENU =
+            MENUS.register("nuke_fat_man_menu", () -> IForgeMenuType.create(NukeFatManMenu::new));
+
     public static final RegistryObject<MenuType<IronCrateMenu>> IRON_CRATE_MENU =
             MENUS.register("iron_crate_menu", () -> IForgeMenuType.create(IronCrateMenu::new));
 

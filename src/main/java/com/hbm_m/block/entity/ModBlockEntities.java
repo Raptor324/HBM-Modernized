@@ -29,6 +29,7 @@ import com.hbm_m.block.entity.machines.MachineCentrifugeBlockEntity;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.block.entity.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
+import com.hbm_m.block.entity.machines.MachineGasCentrifugeBlockEntity;
 import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineIndustrialBoilerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineIndustrialTurbineBlockEntity;
