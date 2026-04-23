@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.ModFluids;
+import com.hbm_m.inventory.fluid.trait.FluidTraitManager;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.lib.RefStrings;
@@ -20,6 +21,7 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
@@ -137,7 +139,12 @@ public class GUIFluidIdentifier extends Screen {
                 ModFluids.FluidEntry entry = searchResults.get(k);
                 Fluid fluid = entry.getSource();
                 List<Component> tooltip = new ArrayList<>();
-                tooltip.add(Component.translatable(fluid.getFluidType().getDescriptionId()));
+                if (fluid == ModFluids.NONE.getSource() || fluid == Fluids.EMPTY) {
+                    tooltip.add(Component.translatable("fluid.hbm_m.none"));
+                } else {
+                    tooltip.add(Component.translatable(fluid.getFluidType().getDescriptionId()));
+                }
+                FluidTraitManager.appendFluidTypeTooltip(fluid, Screen.hasShiftDown(), tooltip);
                 guiGraphics.renderComponentTooltip(font, tooltip, mouseX, mouseY);
                 break;
             }

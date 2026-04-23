@@ -15,8 +15,10 @@ import java.util.UUID;
 
 import org.slf4j.Logger;
 
-import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.interfaces.IEnergyModeHolder;
+import com.hbm_m.interfaces.IEnergyProvider;
+import com.hbm_m.interfaces.IEnergyReceiver;
 import com.mojang.logging.LogUtils;
 
 import net.minecraft.core.BlockPos;
@@ -80,7 +82,7 @@ public class EnergyNetwork {
 
             if (isProvider && isReceiver) {
                 // БАТАРЕЯ
-                int mode = (be instanceof MachineBatteryBlockEntity batteryBE) ? batteryBE.getCurrentMode() : 0;
+                int mode = (be instanceof IEnergyModeHolder modeHolder) ? modeHolder.getCurrentMode() : 0;
                 IEnergyReceiver rec = receiverCap.get();
                 IEnergyProvider prov = providerCap.get();
 

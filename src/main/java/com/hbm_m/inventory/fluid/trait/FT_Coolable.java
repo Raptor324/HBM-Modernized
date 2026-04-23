@@ -7,6 +7,7 @@ import java.util.Map.Entry;
 
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
+import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -45,7 +46,10 @@ public class FT_Coolable extends FluidTrait {
     
     @Override
     public void addInfoHidden(List<Component> info) {
-        info.add(Component.literal("Thermal capacity: " + heatEnergy + " TU per " + amountReq + "mB").withStyle(ChatFormatting.RED));
+        info.add(Component.literal("Thermal capacity: "
+                        + EnergyFormatter.formatTooltipNumber(heatEnergy) + " TU per "
+                        + amountReq + " mB")
+                .withStyle(ChatFormatting.RED));
         for(CoolingType type : CoolingType.values()) {
             double eff = getEfficiency(type);
             if(eff > 0) {

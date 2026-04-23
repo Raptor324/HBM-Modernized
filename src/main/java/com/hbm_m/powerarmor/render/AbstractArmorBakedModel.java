@@ -20,6 +20,7 @@ import net.minecraftforge.client.model.data.ModelProperty;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.client.model.AbstractMultipartBakedModel;
+import com.hbm_m.interfaces.IArmorModelConfig;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 
 import java.util.ArrayList;

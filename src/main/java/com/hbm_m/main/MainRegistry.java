@@ -12,6 +12,7 @@ import org.slf4j.Logger;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.ModFluids;
+import com.hbm_m.api.fluids.bootstrap.ModFluidTraitsBootstrap;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
@@ -42,6 +43,7 @@ import com.hbm_m.powerarmor.resist.DamageResistanceHandler;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.recipe.CentrifugeRecipes;
+import com.hbm_m.recipe.ChemicalPlantRecipes;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.world.biome.ModBiomes;
@@ -77,7 +79,6 @@ public class MainRegistry {
     // Добавляем логгер для отладки
     public static final Logger LOGGER = LogUtils.getLogger();
     public static final String MOD_ID = "hbm_m";
-
 
 
     private void registerCapabilities(IEventBus modEventBus) {
@@ -126,6 +127,9 @@ public class MainRegistry {
         modEventBus.register(MachineConfig.class);
 
         MinecraftForge.EVENT_BUS.register(this);
+        // Регистрируем класс отдельно, чтобы static @SubscribeEvent-обработчики
+        // (server tick / world load-unload / server stop) гарантированно работали.
+        MinecraftForge.EVENT_BUS.register(MainRegistry.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new PlayerHandler());
 
@@ -151,6 +155,12 @@ public class MainRegistry {
             // Initialize machine recipes
             CentrifugeRecipes.registerRecipes();
             LOGGER.info("CentrifugeRecipes initialized successfully");
+            
+            ChemicalPlantRecipes.registerRecipes();
+            LOGGER.info("ChemicalPlantRecipes initialized successfully");
+
+            ModFluidTraitsBootstrap.registerAll();
+            LOGGER.info("ModFluidTraitsBootstrap: fluid tooltip traits registered");
 
             LOGGER.info("HazardSystem initialized successfully");
         });
@@ -178,8 +188,12 @@ public class MainRegistry {
     @SubscribeEvent
     public static void onServerTick(TickEvent.ServerTickEvent event) {
         if (event.phase == TickEvent.Phase.END) {
-            ServerLevel level = event.getServer().overworld(); // или через все миры
+            // Энергосеть — только для overworld (текущее поведение)
+            ServerLevel level = event.getServer().overworld();
             EnergyNetworkManager.get(level).tick();
+
+            // Жидкостная сеть MK2 — все измерения
+            com.hbm_m.api.network.UniNodespace.updateNodespace(event.getServer());
         }
     }
 
@@ -188,6 +202,19 @@ public class MainRegistry {
         if (event.getLevel() instanceof ServerLevel serverLevel) {
             EnergyNetworkManager.get(serverLevel).rebuildAllNetworks();
         }
+    }
+
+    @SubscribeEvent
+    public static void onServerWorldUnload(LevelEvent.Unload event) {
+        if (event.getLevel() instanceof ServerLevel serverLevel) {
+            com.hbm_m.api.network.UniNodespace.onLevelUnload(serverLevel);
+        }
+    }
+
+    @SubscribeEvent
+    public static void onServerStopped(net.minecraftforge.event.server.ServerStoppedEvent event) {
+        com.hbm_m.api.network.UniNodespace.onServerStop();
+        com.hbm_m.api.fluids.FluidNetProvider.clearAll();
     }
 
     private void addCreative(BuildCreativeModeTabContentsEvent event) {
@@ -682,6 +709,16 @@ public class MainRegistry {
             event.accept(ModItems.COIL_GOLD_TORUS);
             event.accept(ModItems.COIL_MAGNETIZED_TUNGSTEN_TORUS);
 
+            // Mineral Pipes
+            event.accept(ModItems.PIPE_IRON);
+            event.accept(ModItems.PIPE_COPPER);
+            event.accept(ModItems.PIPE_GOLD);
+            event.accept(ModItems.PIPE_LEAD);
+            event.accept(ModItems.PIPE_STEEL);
+            event.accept(ModItems.PIPE_TUNGSTEN);
+            event.accept(ModItems.PIPE_TITANIUM);
+            event.accept(ModItems.PIPE_ALUMINUM);
+
             event.accept(ModItems.PLATE_ARMOR_TITANIUM);
             event.accept(ModItems.PLATE_ARMOR_AJR);
             event.accept(ModItems.PLATE_ARMOR_LUNAR);
@@ -1129,6 +1166,7 @@ public class MainRegistry {
             event.accept(ModBlocks.PRESS);
             event.accept(ModBlocks.BLAST_FURNACE);
             event.accept(ModBlocks.BLAST_FURNACE_EXTENSION);
+            event.accept(ModBlocks.HEATING_OVEN);
             event.accept(ModBlocks.SHREDDER);
             event.accept(ModBlocks.WOOD_BURNER);
             event.accept(ModBlocks.CHEMICAL_PLANT);
@@ -1138,6 +1176,10 @@ public class MainRegistry {
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
             event.accept(ModBlocks.FLUID_TANK);
+            event.accept(ModBlocks.MACHINE_BATTERY_SOCKET);
+            event.accept(ModBlocks.INDUSTRIAL_BOILER);
+            event.accept(ModBlocks.INDUSTRIAL_TURBINE);
+            event.accept(ModBlocks.REFINERY);
             event.accept(ModBlocks.MACHINE_BATTERY);
             event.accept(ModBlocks.MACHINE_BATTERY_LITHIUM);
             event.accept(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM);
@@ -1220,6 +1262,18 @@ public class MainRegistry {
                 FluidBarrelItem.setFluid(filledBarrel, new FluidStack(entry.getSource(), FluidBarrelItem.CAPACITY));
                 event.accept(filledBarrel, net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             }
+            // Fluid Ducts - one per fluid type (neo / colored / silver styles)
+            for (ModFluids.FluidEntry entry : HbmFluidRegistry.getOrderedFluids()) {
+                event.accept(com.hbm_m.item.liquids.FluidDuctItem.createStack(ModItems.FLUID_DUCT.get(), entry),
+                        net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+                event.accept(com.hbm_m.item.liquids.FluidDuctItem.createStack(ModItems.FLUID_DUCT_COLORED.get(), entry),
+                        net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+                event.accept(com.hbm_m.item.liquids.FluidDuctItem.createStack(ModItems.FLUID_DUCT_SILVER.get(), entry),
+                        net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+            }
+            event.accept(new ItemStack(ModItems.FLUID_VALVE.get()));
+            event.accept(new ItemStack(ModItems.FLUID_PUMP.get()));
+            event.accept(new ItemStack(ModItems.FLUID_EXHAUST.get()));
             event.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
             event.accept(new ItemStack(ModItems.INFINITE_WATER_500.get()));
             event.accept(new ItemStack(ModItems.INFINITE_WATER_5000.get()));

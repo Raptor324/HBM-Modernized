@@ -15,6 +15,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.interfaces.IChunkRadiation;
 import com.hbm_m.main.MainRegistry;
 
 public class ChunkRadiationProvider implements ICapabilitySerializable<CompoundTag> {

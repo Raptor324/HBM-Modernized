@@ -15,10 +15,10 @@ import com.hbm_m.block.nature.RadioactiveBlock;
 // Этот класс реализует простую и эффективную систему симуляции радиации в чанках. Ядро всей радиационной механики мода.
 
 import com.hbm_m.capability.ChunkRadiationProvider;
-import com.hbm_m.capability.IChunkRadiation;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;
+import com.hbm_m.interfaces.IChunkRadiation;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ChunkRadiationDebugBatchPacket;
 import com.hbm_m.network.ModPacketHandler;

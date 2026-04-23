@@ -2,6 +2,7 @@ package com.hbm_m.block.explosives;
 
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.grenades.AirNukeBombProjectileEntity;
+import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.item.ModItems;
 
 import net.minecraft.core.BlockPos;

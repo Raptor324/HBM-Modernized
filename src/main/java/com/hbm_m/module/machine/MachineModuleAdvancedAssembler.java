@@ -1,6 +1,6 @@
 package com.hbm_m.module.machine;
 
-import com.hbm_m.api.energy.IEnergyReceiver;
+import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.recipe.AssemblerRecipe;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;

@@ -6,11 +6,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
-import com.hbm_m.api.energy.IEnergyConnector;
-import com.hbm_m.api.energy.IEnergyProvider;
-import com.hbm_m.api.energy.IEnergyReceiver;
 import com.hbm_m.api.energy.PackedEnergyCapabilityProvider;
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.interfaces.IEnergyConnector;
+import com.hbm_m.interfaces.IEnergyProvider;
+import com.hbm_m.interfaces.IEnergyReceiver;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

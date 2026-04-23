@@ -11,7 +11,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import com.hbm_m.api.energy.ConverterBlock;
-import com.hbm_m.api.energy.MachineBatteryBlock;
 import com.hbm_m.api.energy.SwitchBlock;
 import com.hbm_m.api.energy.WireBlock;
 import com.hbm_m.block.bomb.NukeFatManBlock;
@@ -35,17 +34,24 @@ import com.hbm_m.block.explosives.WasteChargeBlock;
 import com.hbm_m.block.machines.ArmorTableBlock;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
 import com.hbm_m.block.machines.BlastFurnaceExtensionBlock;
+import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.block.machines.GeigerCounterBlock;
+import com.hbm_m.block.machines.HeatingOvenBlock;
 import com.hbm_m.block.machines.LaunchPadBlock;
 import com.hbm_m.block.machines.LaunchPadRustedBlock;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
+import com.hbm_m.block.machines.MachineBatteryBlock;
+import com.hbm_m.block.machines.MachineBatterySocketBlock;
 import com.hbm_m.block.machines.MachineCentrifugeBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineCrystallizerBlock;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
 import com.hbm_m.block.machines.MachineHydraulicFrackiningTowerBlock;
+import com.hbm_m.block.machines.MachineIndustrialBoilerBlock;
+import com.hbm_m.block.machines.MachineIndustrialTurbineBlock;
 import com.hbm_m.block.machines.MachinePressBlock;
+import com.hbm_m.block.machines.MachineRefineryBlock;
 import com.hbm_m.block.machines.MachineShredderBlock;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
 import com.hbm_m.block.machines.UniversalMachinePartBlock;
@@ -328,6 +334,43 @@ public class ModBlocks {
 
     public static final RegistryObject<Block> LAUNCH_PAD_RUSTED = registerBlockWithoutItem("launch_pad_rusted",
             () -> new LaunchPadRustedBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion()));
+
+    public static final RegistryObject<Block> MACHINE_BATTERY_SOCKET = registerBlockWithoutItem("machine_battery_socket",
+            () -> new MachineBatterySocketBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(5.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistryObject<Block> INDUSTRIAL_BOILER = registerBlockWithoutItem("industrial_boiler",
+            () -> new MachineIndustrialBoilerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistryObject<Block> REFINERY = registerBlockWithoutItem("refinery",
+            () -> new MachineRefineryBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistryObject<Block> INDUSTRIAL_TURBINE = registerBlockWithoutItem("industrial_turbine",
+            () -> new MachineIndustrialTurbineBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    public static final RegistryObject<Block> FLUID_DUCT = registerBlockWithoutItem("fluid_duct",
+            () -> new FluidDuctBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion(),
+                    com.hbm_m.block.machines.PipeStyle.NEO));
+    public static final RegistryObject<Block> FLUID_DUCT_COLORED = registerBlockWithoutItem("fluid_duct_colored",
+            () -> new FluidDuctBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion(),
+                    com.hbm_m.block.machines.PipeStyle.COLORED));
+    public static final RegistryObject<Block> FLUID_DUCT_SILVER = registerBlockWithoutItem("fluid_duct_silver",
+            () -> new FluidDuctBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion(),
+                    com.hbm_m.block.machines.PipeStyle.SILVER));
+
+    public static final RegistryObject<Block> FLUID_VALVE = registerBlockWithoutItem("fluid_valve",
+            () -> new com.hbm_m.block.machines.FluidValveBlock(
+                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion()));
+
+    public static final RegistryObject<Block> FLUID_PUMP = registerBlockWithoutItem("fluid_pump",
+            () -> new com.hbm_m.block.machines.FluidPumpBlock(
+                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(3.0f).sound(SoundType.METAL).noOcclusion()));
+
+    public static final RegistryObject<Block> FLUID_EXHAUST = registerBlockWithoutItem("fluid_exhaust",
+            () -> new com.hbm_m.block.machines.FluidExhaustBlock(
+                    BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).sound(SoundType.METAL).noOcclusion()));
+
+    public static final RegistryObject<Block> HEATING_OVEN = registerBlock("heating_oven",
+            () -> new HeatingOvenBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
     //---------------------------<ДВЕРИ>-------------------------------------
 
@@ -650,7 +693,7 @@ public class ModBlocks {
             () -> new net.minecraft.world.level.block.DoorBlock(BlockBehaviour.Properties.copy(Blocks.CHAIN).sound(SoundType.CHAIN).noOcclusion(), BlockSetType.BIRCH));
 
 
-    // ============ ТЕХНИЧЕСКИЕ И ДЕКОРАТИВНЫЕ БЛОКИ (Обновлено) ============
+    // ============ ТЕХНИЧЕСКИЕ И ДЕКОРАТИВНЫЕ БЛОКИ ============
 
     public static final RegistryObject<Block> DORNIER = registerBlock("dornier",
             () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));

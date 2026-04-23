@@ -5,6 +5,7 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -14,6 +15,7 @@ import com.hbm_m.inventory.fluid.trait.FluidTraitManager;
 import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Amat;
 import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous;
 import com.hbm_m.inventory.menu.MachineFluidTankMenu;
+import com.hbm_m.item.liquids.FluidIdentifierItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -82,7 +84,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     public MachineFluidTankBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FLUID_TANK_BE.get(), pos, state);
 
-        this.fluidTank = new FluidTank(Fluids.EMPTY, TANK_CAPACITY);
+        this.fluidTank = new FluidTank(ModFluids.NONE.getSource(), TANK_CAPACITY);
 
         this.itemHandler = new ItemStackHandler(6) {
             @Override
@@ -105,6 +107,9 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
                     case 3: return hasExploded ? 1 : 0;
                     case 4: return onFire ? 1 : 0;
                     case 5: return fluidTank.getPressure();
+                    case 6:
+                        if (filterFluid == null || filterFluid == Fluids.EMPTY) return -1;
+                        return BuiltInRegistries.FLUID.getId(filterFluid);
                     default: return 0;
                 }
             }
@@ -117,7 +122,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
                 }
             }
             @Override
-            public int getCount() { return 6; }
+            public int getCount() { return 7; }
         };
 
         this.lazyItemHandler = LazyOptional.of(() -> itemHandler);
@@ -153,21 +158,20 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             }
 
             // --- ОБРАБОТКА ИНВЕНТАРЯ ---
+            // Сначала идентификатор: тип бака должен быть известен до loadTank (ведра, InfiniteFluidItem в том же тике).
             boolean changed = false;
             ItemStack[] slotsArray = entity.getSlotsArray();
 
-            // 1. Идентификация жидкости (Фильтр)
             if (entity.fluidTank.setType(SLOT_ID_IN, SLOT_ID_OUT, slotsArray)) {
                 changed = true;
             }
 
-            // 2. TANK -> ITEM (Filling Item)
-            if (entity.fluidTank.unloadTank(SLOT_UNLOAD_IN, SLOT_UNLOAD_OUT, slotsArray)) {
+            if (entity.fluidTank.loadTank(SLOT_LOAD_IN, SLOT_LOAD_OUT, slotsArray)) {
                 changed = true;
             }
 
-            // 3. ITEM -> TANK (Emptying Item)
-            if (entity.fluidTank.loadTank(SLOT_LOAD_IN, SLOT_LOAD_OUT, slotsArray)) {
+            // TANK -> ITEM
+            if (entity.fluidTank.unloadTank(SLOT_UNLOAD_IN, SLOT_UNLOAD_OUT, slotsArray)) {
                 changed = true;
             }
 
@@ -226,11 +230,11 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
     public ResourceLocation getTankTextureLocation() {
         Fluid fluid = fluidTank.getTankType();
-        if (fluid == null || fluid == Fluids.EMPTY) {
+        if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
             fluid = getFilterFluid();
         }
     
-        if (fluid == null || fluid == Fluids.EMPTY) {
+        if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
             return ResourceLocation.fromNamespaceAndPath("hbm_m", "block/tank/tank_none"); 
         }
     
@@ -366,6 +370,10 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             return lazyItemHandler.cast();
         }
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
+            // side == null: внутреннее делегирование от FLUID_CONNECTOR-частей или использование предметами (вёдра и т.п.)
+            // side != null: прямое подключение трубы/машины к лицу контроллера — запрещено.
+            // Жидкостное соединение с цистерной должно быть ТОЛЬКО через блоки-коннекторы (PartRole.FLUID_CONNECTOR).
+            if (side != null) return LazyOptional.empty();
             return lazyFluidHandler.cast();
         }
         return super.getCapability(cap, side);
@@ -389,23 +397,34 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         return new MachineFluidTankMenu(id, inventory, this, this.data);
     }
 
+    /**
+     * Shift+ПКМ идентификатором по цистерне: задаёт тип бака (включая NONE), сливает содержимое, обновляет фильтр для GUI.
+     */
     public void setFilterFromIdentifier(ItemStack stack) {
-        if (stack.isEmpty() || !(stack.getItem() instanceof com.hbm_m.item.IItemFluidIdentifier idItem)) return;
-
-        Fluid newType = idItem.getType(level, worldPosition, stack);
-        if (newType == null || newType == Fluids.EMPTY) return;
-
-        boolean isSameType = filterFluid != null && 
-                filterFluid != Fluids.EMPTY && 
-                filterFluid.getFluidType().equals(newType.getFluidType());
-        
-        if (!isSameType) {
-            filterFluid = newType;
-            fluidTank.fill(0);
-            setChanged();
-            if (level != null && !level.isClientSide) {
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        if (stack.isEmpty()) {
+            return;
+        }
+        Fluid resolved;
+        if (stack.getItem() instanceof FluidIdentifierItem) {
+            resolved = FluidIdentifierItem.resolvePrimaryForTank(stack);
+            if (resolved == null) {
+                return;
             }
+        } else if (stack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier idItem) {
+            Fluid t = idItem.getType(level, worldPosition, stack);
+            if (t == null || t == Fluids.EMPTY) {
+                return;
+            }
+            resolved = t;
+        } else {
+            return;
+        }
+
+        fluidTank.assignTypeAndZeroFluid(resolved);
+        filterFluid = resolved == ModFluids.NONE.getSource() ? null : resolved;
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
     }
 

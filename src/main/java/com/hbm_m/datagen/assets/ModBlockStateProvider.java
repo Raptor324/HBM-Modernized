@@ -424,6 +424,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.LAUNCH_PAD);
         customMachineBlock(ModBlocks.LAUNCH_PAD_RUSTED);
         customBombBlock(ModBlocks.NUKE_FAT_MAN);
+        customMachineBlock(ModBlocks.INDUSTRIAL_TURBINE);
         registerMachineAssemblerBlock(ModBlocks.MACHINE_ASSEMBLER);
         registerAdvancedAssemblyMachineBlock(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
         customMachineBlock(ModBlocks.PRESS);
@@ -439,6 +440,25 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // FluidTank - только FACING
         horizontalBlock(ModBlocks.FLUID_TANK.get(),
             models().getExistingFile(modLoc("block/machines/fluid_tank")));
+
+        horizontalBlock(ModBlocks.MACHINE_BATTERY_SOCKET.get(),
+            models().getExistingFile(modLoc("block/machines/machine_battery_socket")));
+
+        // Жидкостный насос / клапан / выхлоп — временно ванильный iron cube (отдельные модели позже)
+        ModelFile fluidPumpModel = models().withExistingParent(ModBlocks.FLUID_PUMP.getId().getPath(), mcLoc("block/cube_all"))
+                .texture("all", mcLoc("block/iron_block"))
+                .texture("particle", mcLoc("block/iron_block"));
+        horizontalBlock(ModBlocks.FLUID_PUMP.get(), fluidPumpModel);
+
+        ModelFile fluidValveModel = models().withExistingParent(ModBlocks.FLUID_VALVE.getId().getPath(), mcLoc("block/cube_all"))
+                .texture("all", mcLoc("block/iron_block"))
+                .texture("particle", mcLoc("block/iron_block"));
+        simpleBlock(ModBlocks.FLUID_VALVE.get(), fluidValveModel);
+
+        ModelFile fluidExhaustModel = models().withExistingParent(ModBlocks.FLUID_EXHAUST.getId().getPath(), mcLoc("block/cube_all"))
+                .texture("all", mcLoc("block/iron_block"))
+                .texture("particle", mcLoc("block/iron_block"));
+        simpleBlock(ModBlocks.FLUID_EXHAUST.get(), fluidExhaustModel);
 
         // Decor
         customObjBlock(ModBlocks.CRT_BROKEN);
@@ -471,8 +491,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.FILE_CABINET);
 
         simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath()));
-        simpleBlock(ModBlocks.WIRE_COATED.get(), models().getExistingFile(modLoc("block/wire_coated")));
-
+        // wire_coated: manual multipart blockstate + OBJ visibility (see assets/hbm_m/blockstates/wire_coated.json)
 
         blockWithItem(ModBlocks.CONVERTER_BLOCK);
 

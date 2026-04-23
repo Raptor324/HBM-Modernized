@@ -4,14 +4,15 @@ import java.awt.Color;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 
 import org.joml.Matrix4f;
 
 import com.hbm_m.block.ModBlocks;
 // Этот класс отвечает за подсветку блоков, если те мешают установке многоблочной структуры
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.multiblock.IMultiblockController;
-import com.hbm_m.multiblock.IMultiblockPart;
+import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.interfaces.IMultiblockPart;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -32,8 +33,6 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-
-import java.util.function.Function;
 
 public class ClientRenderHandler {
 

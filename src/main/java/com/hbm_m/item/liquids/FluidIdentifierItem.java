@@ -6,8 +6,11 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.ModFluids;
-import com.hbm_m.item.IItemControlReceiver;
-import com.hbm_m.item.IItemFluidIdentifier;
+import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
+import com.hbm_m.block.machines.FluidDuctBlock;
+import com.hbm_m.interfaces.IItemControlReceiver;
+import com.hbm_m.interfaces.IItemFluidIdentifier;
+import com.hbm_m.interfaces.IMultiblockPart;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -16,17 +19,22 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 
 /**
  * Universal fluid identifier. Has two slots (primary/secondary) for fluid types.
- * RMB: swap primary and secondary. Shift+RMB: open GUI to select fluids.
+ * RMB: swap primary and secondary. Shift+RMB in air: open GUI to select fluids.
+ * Shift+RMB on a fluid duct: paint that fluid onto the entire connected duct network (same block type).
  */
 public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, IItemControlReceiver {
 
@@ -35,6 +43,71 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
 
     public FluidIdentifierItem(Properties properties) {
         super(properties.stacksTo(1));
+    }
+
+    @Override
+    public InteractionResult useOn(UseOnContext context) {
+        Player player = context.getPlayer();
+        if (player == null || !player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
+        Level level = context.getLevel();
+        BlockPos pos = context.getClickedPos();
+        ItemStack stack = context.getItemInHand();
+
+        if (level.getBlockState(pos).getBlock() instanceof FluidDuctBlock) {
+            Fluid fluid = getType(level, pos, stack);
+            if (fluid == null) {
+                return InteractionResult.PASS;
+            }
+            if (level.isClientSide) {
+                return InteractionResult.SUCCESS;
+            }
+            FluidDuctBlock.paintConnectedDuctNetwork(level, pos, fluid);
+            return InteractionResult.sidedSuccess(level.isClientSide());
+        }
+
+        MachineFluidTankBlockEntity tankBE = findTankEntity(level, pos);
+        if (tankBE != null) {
+            if (level.isClientSide) {
+                return InteractionResult.SUCCESS;
+            }
+            tankBE.setFilterFromIdentifier(stack);
+            Fluid tankType = tankBE.getFluidTank().getTankType();
+            String nameKey;
+            if (tankType == ModFluids.NONE.getSource() || tankType == Fluids.EMPTY) {
+                nameKey = "fluid.hbm_m.none";
+            } else {
+                nameKey = tankType.getFluidType().getDescriptionId();
+            }
+            Component fluidName = Component.translatable(nameKey).withStyle(ChatFormatting.YELLOW);
+            Component line = Component.translatable("gui.hbm_m.fluid_tank.filter_set", fluidName)
+                    .withStyle(ChatFormatting.YELLOW);
+            player.displayClientMessage(line, true);
+            level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.3F, 1.25F);
+            return InteractionResult.sidedSuccess(level.isClientSide());
+        }
+
+        return InteractionResult.PASS;
+    }
+
+    @Nullable
+    private static MachineFluidTankBlockEntity findTankEntity(Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof MachineFluidTankBlockEntity tank) {
+            return tank;
+        }
+        if (be instanceof IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null) {
+                BlockEntity ctrlBE = level.getBlockEntity(controllerPos);
+                if (ctrlBE instanceof MachineFluidTankBlockEntity tank) {
+                    return tank;
+                }
+            }
+        }
+        return null;
     }
 
     @Override
@@ -49,6 +122,9 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
             }
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
         } else {
+            if (level.isClientSide) {
+                ClientProxy.showSwapActiveTypeToast(stack);
+            }
             // Swap primary and secondary on server
             if (!level.isClientSide) {
                 Fluid primary = getType(stack, true);
@@ -85,7 +161,9 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     }
 
     private static Component getFluidDisplayName(Fluid fluid) {
-        if (fluid == null || fluid == net.minecraft.world.level.material.Fluids.EMPTY) {
+        if (fluid == null
+                || fluid == net.minecraft.world.level.material.Fluids.EMPTY
+                || fluid == ModFluids.NONE.getSource()) {
             return Component.translatable("fluid.hbm_m.none");
         }
         return Component.translatable(fluid.getFluidType().getDescriptionId());
@@ -109,10 +187,27 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     public static Fluid getType(ItemStack stack, boolean primary) {
         String name = getTypeName(stack, primary);
         if (name == null || name.isEmpty() || "none".equals(name)) {
-            return net.minecraft.world.level.material.Fluids.EMPTY;
+            return ModFluids.NONE.getSource();
         }
         ModFluids.FluidEntry entry = ModFluids.getEntry(name);
         return entry != null ? entry.getSource() : net.minecraft.world.level.material.Fluids.EMPTY;
+    }
+
+    /**
+     * Резолвит первичный тип идентификатора для задания типа цистерны.
+     * Жидкость найдена → возвращает её; первичный не задан / "none" / "empty" → {@link ModFluids#NONE};
+     * не FluidIdentifierItem → null.
+     */
+    @Nullable
+    public static Fluid resolvePrimaryForTank(ItemStack stack) {
+        if (stack.isEmpty() || !(stack.getItem() instanceof FluidIdentifierItem)) {
+            return null;
+        }
+        Fluid t = getType(stack, true);
+        if (t != null && t != Fluids.EMPTY) {
+            return t;
+        }
+        return ModFluids.NONE.getSource();
     }
 
     public static String getTypeName(ItemStack stack, boolean primary) {
@@ -142,6 +237,16 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
     private static class ClientProxy {
         public static void openGUI(Player player) {
             net.minecraft.client.Minecraft.getInstance().setScreen(new com.hbm_m.inventory.gui.GUIFluidIdentifier(player));
+        }
+
+        /** После свопа активным становится бывший вторичный тип — показываем его в тосте. */
+        public static void showSwapActiveTypeToast(ItemStack stack) {
+            Fluid newActive = getType(stack, false);
+            Component fluidLine = getFluidDisplayName(newActive);
+            com.hbm_m.client.overlay.OverlayInfoToast.show(
+                    Component.translatable("toast.hbm_m.fluid_identifier_active", fluidLine),
+                    60,
+                    com.hbm_m.client.overlay.OverlayInfoToast.ID_FLUID_IDENTIFIER_SWAP);
         }
     }
 }

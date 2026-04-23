@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.entity.doors.DoorAnimator;
+import com.hbm_m.interfaces.IDoorAnimator;
 import com.hbm_m.util.MultipartFacingTransforms;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -19,7 +19,7 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class LegacyAnimator implements DoorAnimator {
+public class LegacyAnimator implements IDoorAnimator {
 
     protected final PoseStack poseStack;
     final VertexConsumer buffer;

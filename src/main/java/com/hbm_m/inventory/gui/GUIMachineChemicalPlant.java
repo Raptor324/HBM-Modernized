@@ -184,9 +184,19 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (isMouseOver((int) mouseX, (int) mouseY, 7, 125, 18, 18)) {
+            openRecipeSelector();
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    private void openRecipeSelector() {
+        if (this.minecraft == null) return;
+        String currentRecipe = menu.getBlockEntity().getRecipe();
+        this.minecraft.setScreen(new GUIChemicalPlantRecipeSelector(
+                menu.getBlockEntity().getBlockPos(),
+                currentRecipe,
+                this));
     }
 
     private boolean isMouseOver(int mouseX, int mouseY, int x, int y, int w, int h) {

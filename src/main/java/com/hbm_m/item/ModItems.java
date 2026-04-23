@@ -59,6 +59,7 @@ import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.item.industrial.ItemStamp;
 import com.hbm_m.item.industrial.ItemTemplateFolder;
 import com.hbm_m.item.liquids.FluidBarrelItem;
+import com.hbm_m.item.liquids.FluidDuctItem;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
 import com.hbm_m.item.liquids.InfiniteWaterItem;
@@ -93,6 +94,7 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.HoeItem;
+import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -1279,12 +1281,23 @@ public class ModItems {
 	public static final RegistryObject<Item> FLUID_TANK = ITEMS.register("fluid_tank",
         () -> new MultiblockBlockItem(ModBlocks.FLUID_TANK.get(), new Item.Properties()));
 
+    public static final RegistryObject<Item> MACHINE_BATTERY_SOCKET = ITEMS.register("machine_battery_socket",
+        () -> new MultiblockBlockItem(ModBlocks.MACHINE_BATTERY_SOCKET.get(), new Item.Properties()));
+
     public static final RegistryObject<Item> PRESS = ITEMS.register("press",
         () -> new MultiblockBlockItem(ModBlocks.PRESS.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> WOOD_BURNER = ITEMS.register("wood_burner",
         () -> new MultiblockBlockItem(ModBlocks.WOOD_BURNER.get(), new Item.Properties()));
 
+    public static final RegistryObject<Item> INDUSTRIAL_BOILER = ITEMS.register("industrial_boiler",
+        () -> new MultiblockBlockItem(ModBlocks.INDUSTRIAL_BOILER.get(), new Item.Properties()));
+
+    public static final RegistryObject<Item> INDUSTRIAL_TURBINE = ITEMS.register("industrial_turbine",
+        () -> new MultiblockBlockItem(ModBlocks.INDUSTRIAL_TURBINE.get(), new Item.Properties()));
+
+    public static final RegistryObject<Item> REFINERY = ITEMS.register("refinery",
+        () -> new MultiblockBlockItem(ModBlocks.REFINERY.get(), new Item.Properties()));
 	public static final RegistryObject<Item> LAUNCH_PAD = ITEMS.register("launch_pad",
         () -> new MultiblockBlockItem(ModBlocks.LAUNCH_PAD.get(), new Item.Properties()));
 
@@ -1708,7 +1721,41 @@ public class ModItems {
     public static final RegistryObject<Item> FLUID_IDENTIFIER = ITEMS.register("fluid_identifier",
             () -> new FluidIdentifierItem(new Item.Properties().stacksTo(1)));
 
+    // Mineral Pipes - individual pipe items per mineral, all using pipe.png with color tinting
+    public static final RegistryObject<Item> PIPE_IRON = ITEMS.register("pipe_iron",
+            () -> new MineralPipeItem(new Item.Properties(), 0xD8D8D8));
+    public static final RegistryObject<Item> PIPE_COPPER = ITEMS.register("pipe_copper",
+            () -> new MineralPipeItem(new Item.Properties(), 0xE77C56));
+    public static final RegistryObject<Item> PIPE_GOLD = ITEMS.register("pipe_gold",
+            () -> new MineralPipeItem(new Item.Properties(), 0xFCEE4B));
+    public static final RegistryObject<Item> PIPE_LEAD = ITEMS.register("pipe_lead",
+            () -> new MineralPipeItem(new Item.Properties(), 0x414166));
+    public static final RegistryObject<Item> PIPE_STEEL = ITEMS.register("pipe_steel",
+            () -> new MineralPipeItem(new Item.Properties(), 0x767676));
+    public static final RegistryObject<Item> PIPE_TUNGSTEN = ITEMS.register("pipe_tungsten",
+            () -> new MineralPipeItem(new Item.Properties(), 0x3D3D3D));
+    public static final RegistryObject<Item> PIPE_TITANIUM = ITEMS.register("pipe_titanium",
+            () -> new MineralPipeItem(new Item.Properties(), 0x8DC5E2));
+    public static final RegistryObject<Item> PIPE_ALUMINUM = ITEMS.register("pipe_aluminum",
+            () -> new MineralPipeItem(new Item.Properties(), 0xC5C5DE));
 
+    // Fluid Duct - pipe per fluid type, overlay tinted with fluid color (like fluid barrel)
+    public static final RegistryObject<Item> FLUID_DUCT = ITEMS.register("fluid_duct",
+            () -> new FluidDuctItem(new Item.Properties(), ModBlocks.FLUID_DUCT,
+                    "item.hbm_m.fluid_duct", "item.hbm_m.fluid_duct.empty"));
+    public static final RegistryObject<Item> FLUID_DUCT_COLORED = ITEMS.register("fluid_duct_colored",
+            () -> new FluidDuctItem(new Item.Properties(), ModBlocks.FLUID_DUCT_COLORED,
+                    "item.hbm_m.fluid_duct_colored", "item.hbm_m.fluid_duct_colored.empty"));
+    public static final RegistryObject<Item> FLUID_DUCT_SILVER = ITEMS.register("fluid_duct_silver",
+            () -> new FluidDuctItem(new Item.Properties(), ModBlocks.FLUID_DUCT_SILVER,
+                    "item.hbm_m.fluid_duct_silver", "item.hbm_m.fluid_duct_silver.empty"));
+
+    public static final RegistryObject<Item> FLUID_VALVE = ITEMS.register("fluid_valve",
+            () -> new BlockItem(ModBlocks.FLUID_VALVE.get(), new Item.Properties()));
+    public static final RegistryObject<Item> FLUID_PUMP = ITEMS.register("fluid_pump",
+            () -> new BlockItem(ModBlocks.FLUID_PUMP.get(), new Item.Properties()));
+    public static final RegistryObject<Item> FLUID_EXHAUST = ITEMS.register("fluid_exhaust",
+            () -> new BlockItem(ModBlocks.FLUID_EXHAUST.get(), new Item.Properties()));
 
     //=============================== ВЁДРА ДЛЯ ЖИДКОСТЕЙ ===============================//
 

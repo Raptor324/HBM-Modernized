@@ -2,6 +2,7 @@ package com.hbm_m.multiblock;
 
 import java.util.Set;
 
+import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.core.BlockPos;

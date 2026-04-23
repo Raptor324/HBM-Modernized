@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 import com.hbm_m.util.explosions.freaky.MessGenerator;

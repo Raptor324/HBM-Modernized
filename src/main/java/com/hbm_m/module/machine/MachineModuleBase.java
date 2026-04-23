@@ -8,10 +8,10 @@ import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.items.IItemHandler;
-import com.hbm_m.api.energy.IEnergyReceiver;
-// ИЗМЕНЕНИЕ: Импортируем нашу long-систему вместо Forge Energy
 
 import javax.annotation.Nullable;
+
+import com.hbm_m.interfaces.IEnergyReceiver;
 
 /**
  * Базовый модуль машины, инкапсулирующий логику крафта.

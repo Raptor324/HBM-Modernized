@@ -1,6 +1,6 @@
 package com.hbm_m.client;
 
-import com.hbm_m.api.energy.ILongEnergyMenu;
+import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.powerarmor.ModArmorFSBPowered;
 
 import net.minecraft.client.Minecraft;

@@ -3,8 +3,8 @@ package com.hbm_m.powerarmor;
 import java.util.HashSet;
 import java.util.Set;
 
-// Импорты HBM Modernized
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.interfaces.ILookOverlay;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.platform.GlStateManager;
@@ -34,6 +34,9 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
 // Основные импорты Forge
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
@@ -45,6 +48,7 @@ import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -909,6 +913,29 @@ public class ModEventHandlerClient {
         guiGraphics.drawString(mc.font, "THERMAL VISION", 10, 10, 0x00FF00);
     }
 
+    /**
+     * Прицельный HUD для блоков {@link ILookOverlay}
+     */
+    @SubscribeEvent(priority = EventPriority.NORMAL)
+    public static void onRenderGuiPreBlockLookOverlays(RenderGuiEvent.Pre event) {
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer player = mc.player;
+        if (player == null) {
+            return;
+        }
+        HitResult hr = mc.hitResult;
+        Level level = mc.level;
+        if (hr == null || level == null) {
+            return;
+        }
+        if (hr.getType() == HitResult.Type.BLOCK) {
+            BlockHitResult bhr = (BlockHitResult) hr;
+            if (level.getBlockState(bhr.getBlockPos()).getBlock() instanceof ILookOverlay ilo) {
+                ilo.printHook(event, level, bhr.getBlockPos());
+            }
+        }
+    }
+
     // TODO: Добавить методы для HUD оверлеев
     // TODO: Добавить методы для визуальных эффектов
     // TODO: Добавить методы для обработки ввода
@@ -923,7 +950,7 @@ public class ModEventHandlerClient {
     /**
      * TODO: Dodd RBMK диагностика
      * Оригинальный код: onOverlayRender - DODD RBMK DIAGNOSTIC HOOK
-     * Требует: ILookOverlay интерфейс, RBMK система
+     * Требует: расширение {@link ILookOverlay}, RBMK система
      * Сложность: Высокая - требует полной RBMK системы
      */
 

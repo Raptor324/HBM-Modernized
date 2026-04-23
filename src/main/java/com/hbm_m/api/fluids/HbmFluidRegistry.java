@@ -46,8 +46,7 @@ public final class HbmFluidRegistry {
             ModFluids.PLASMA_XM, ModFluids.PLASMA_BF,
             ModFluids.STEAM, ModFluids.HOTSTEAM, ModFluids.SUPERHOTSTEAM, ModFluids.ULTRAHOTSTEAM,
             ModFluids.SPENTSTEAM,
-            ModFluids.HEAVYWATER, ModFluids.HEAVYWATER_HOT, ModFluids.WATER_BASE,
-            ModFluids.WATER_OPAQUE_BASE,
+            ModFluids.HEAVYWATER, ModFluids.HEAVYWATER_HOT,
             ModFluids.COOLANT, ModFluids.COOLANT_HOT, ModFluids.CRYOGEL,
             ModFluids.PERFLUOROMETHYL, ModFluids.PERFLUOROMETHYL_COLD, ModFluids.PERFLUOROMETHYL_HOT,
             ModFluids.SULFURIC_ACID, ModFluids.NITRIC_ACID, ModFluids.NITROGLYCERIN, ModFluids.PEROXIDE,
@@ -69,8 +68,6 @@ public final class HbmFluidRegistry {
             ModFluids.EGG, ModFluids.CHOLESTEROL, ModFluids.ESTRADIOL, ModFluids.PHEROMONE,
             ModFluids.PHEROMONE_M, ModFluids.SEEDSLURRY,
             ModFluids.ENDERJUICE, ModFluids.XPJUICE, ModFluids.MUG, ModFluids.MUG_HOT,
-            ModFluids.CUSTOM_WATER, ModFluids.CUSTOM_OIL, ModFluids.CUSTOM_LAVA,
-            ModFluids.CUSTOM_TOXIN, ModFluids.TOXIN_BASE,
             ModFluids.DEATH, ModFluids.PAIN, ModFluids.STELLAR_FLUX, ModFluids.BROMIDE
         );
     }
@@ -151,13 +148,23 @@ public final class HbmFluidRegistry {
         return -1;
     }
 
-    /** Filter fluids by search substring (case-insensitive). Matches fluid internal name. */
+    /**
+     * Filter fluids by search substring (case-insensitive). Matches fluid internal name.
+     * {@link ModFluids#NONE} is prepended when the query is empty or when the internal name {@code none} matches.
+     */
     public static List<ModFluids.FluidEntry> search(String query) {
         if (query == null || query.isEmpty()) {
-            return new ArrayList<>(ORDERED_FLUIDS);
+            List<ModFluids.FluidEntry> result = new ArrayList<>(ORDERED_FLUIDS.size() + 1);
+            result.add(ModFluids.NONE);
+            result.addAll(ORDERED_FLUIDS);
+            return result;
         }
         String lower = query.toLowerCase(Locale.US);
         List<ModFluids.FluidEntry> result = new ArrayList<>();
+        String noneName = getFluidName(ModFluids.NONE.getSource());
+        if (noneName.toLowerCase(Locale.US).contains(lower)) {
+            result.add(ModFluids.NONE);
+        }
         for (ModFluids.FluidEntry e : ORDERED_FLUIDS) {
             String name = getFluidName(e.getSource());
             if (name.toLowerCase(Locale.US).contains(lower)) {

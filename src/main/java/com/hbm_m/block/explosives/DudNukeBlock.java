@@ -6,6 +6,7 @@ import javax.annotation.Nullable;
 
 import com.hbm_m.explosion.command.ExplosionCommandOptions;
 import com.hbm_m.explosion.command.NuclearScenarioLaunchers;
+import com.hbm_m.interfaces.IDetonatable;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;

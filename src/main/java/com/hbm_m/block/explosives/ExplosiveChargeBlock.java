@@ -1,5 +1,6 @@
 package com.hbm_m.block.explosives;
 
+import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
 

@@ -1,0 +1,51 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/machines/industrial_turbine.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "hbm_m:block/machine/industrial_turbine",
+    "default": "hbm_m:block/machine/industrial_turbine"
+  },
+  "transform": {
+    "translation": [0.5, 0, -3.5],
+    "rotation": [0, 90, 0],
+    "scale": 1.0
+  },
+  "display": {
+    "gui": {
+      "rotation": [30, 225, 0],
+      "translation": [0.00, -2.00, 0.00],
+      "scale": [0.10, 0.10, 0.10]
+    },
+    "fixed": {
+      "rotation": [0, 180, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.12, 0.12, 0.12]
+    },
+    "ground": {
+      "translation": [0, 3, 0],
+      "scale": [0.10, 0.10, 0.10]
+    },
+    "thirdperson_righthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0.00, 2.50, 0.00],
+      "scale": [0.10, 0.10, 0.10]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0.00, 2.50, 0.00],
+      "scale": [0.10, 0.10, 0.10]
+    },
+    "firstperson_righthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0.75, 1.25, 0.00],
+      "scale": [0.10, 0.10, 0.10]
+    },
+    "firstperson_lefthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0.00, 0.00, 0.00],
+      "scale": [0.10, 0.10, 0.10]
+    }
+  }
+}

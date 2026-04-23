@@ -1,11 +1,8 @@
 package com.hbm_m.inventory.menu;
 
-// меню для сборочной машины. Имеет слоты для батареи, улучшений, схемы, ввода и вывода.
-// Содержит логику для обработки Shift-клика и отображения прогресса сборки и уровня энергии.
-
-import com.hbm_m.api.energy.ILongEnergyMenu;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineAssemblerBlockEntity;
+import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.main.MainRegistry;
 

@@ -1,5 +1,9 @@
 package com.hbm_m.api.energy;
 
+import com.hbm_m.interfaces.IEnergyConnector;
+import com.hbm_m.interfaces.IEnergyProvider;
+import com.hbm_m.interfaces.IEnergyReceiver;
+
 import net.minecraftforge.energy.IEnergyStorage;
 
 /**

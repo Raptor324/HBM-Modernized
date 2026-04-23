@@ -5,31 +5,31 @@ import java.util.List;
 import java.util.Optional;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
+import com.hbm_m.api.fluids.ModFluids;
+import com.hbm_m.client.gui.FluidGuiRendering;
+import com.hbm_m.inventory.fluid.trait.FluidTraitManager;
 import com.hbm_m.inventory.menu.MachineFluidTankMenu;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.FluidTankModePacket;
 import com.hbm_m.network.ModPacketHandler;
 import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.Tesselator;
-import com.mojang.blaze3d.vertex.VertexFormat;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
-import net.minecraft.client.renderer.GameRenderer;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
 
 public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTankMenu> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_fluid_tank.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
 
     private final int tankX = 71;
     private final int tankY = 17;
@@ -86,23 +86,17 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
         float a = ((fluidColor >> 24) & 255) / 255.0F;
         if (a == 0) a = 1.0F; // Если alpha не задана, используем 1.0
 
-        // Получаем текстуру жидкости
-        IClientFluidTypeExtensions fluidProps = IClientFluidTypeExtensions.of(fluid);
-        ResourceLocation fluidTextureId = fluidProps.getStillTexture(fluidStack);
-        if (fluidTextureId == null) return;
-        
-        TextureAtlasSprite fluidSprite = this.minecraft.getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(fluidTextureId);
+        ResourceLocation fluidPng = FluidGuiRendering.guiTexturePngForFluid(fluid, fluidStack);
+        if (fluidPng == null) return;
 
         RenderSystem.enableBlend();
+        RenderSystem.defaultBlendFunc();
         RenderSystem.setShaderColor(r, g, b, a);
-        RenderSystem.setShaderTexture(0, InventoryMenu.BLOCK_ATLAS);
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
 
         int x = this.leftPos + tankX;
         int y = this.topPos + tankY + tankHeight - pixelHeight;
 
-        // Рендер с тайлингом текстуры (как в оригинале 1.7.10)
-        renderTiledFluid(guiGraphics, x, y, tankWidth, pixelHeight, fluidSprite);
+        FluidGuiRendering.renderTiledFluid(guiGraphics, fluidPng, x, y, tankWidth, pixelHeight);
 
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         RenderSystem.disableBlend();
@@ -128,72 +122,64 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
         return fluidProps.getTintColor();
     }
 
-    private void renderTiledFluid(GuiGraphics guiGraphics, int x, int y, int width, int height, TextureAtlasSprite sprite) {
-        if (height <= 0 || width <= 0) return;
-
-        PoseStack poseStack = guiGraphics.pose();
-        var bufferBuilder = Tesselator.getInstance().getBuilder();
-        bufferBuilder.begin(VertexFormat.Mode.QUADS, com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_TEX);
-
-        int texW = 16;
-        int texH = 16;
-
-        // Проходим по ширине
-        for (int drawX = 0; drawX < width; drawX += texW) {
-            int currentWidth = Math.min(texW, width - drawX);
-
-            // Проходим по высоте
-            for (int drawY = 0; drawY < height; drawY += texH) {
-                int currentHeight = Math.min(texH, height - drawY);
-                
-                // Рассчитываем смещение по Y. Мы рисуем тайлы снизу вверх, 
-                // чтобы частичный верхний слой обрезался сверху, как в 1.7.10
-                int yOffset = height - drawY - currentHeight;
-
-                // Вычисляем UV-координаты для текущего куска
-                float u0 = sprite.getU0();
-                // Срезаем U1, если кусок уже, чем 16 пикселей
-                float u1 = sprite.getU0() + (sprite.getU1() - sprite.getU0()) * ((float) currentWidth / texW);
-                
-                // Срезаем V0, если кусок ниже 16 пикселей (оставляем нижнюю часть текстуры)
-                float v0 = sprite.getV0() + (sprite.getV1() - sprite.getV0()) * ((float) (texH - currentHeight) / texH);
-                float v1 = sprite.getV1();
-
-                int quadX = x + drawX;
-                int quadY = y + yOffset;
-                var matrix = poseStack.last().pose();
-
-                // Отрисовка вершин (по часовой стрелке)
-                bufferBuilder.vertex(matrix, quadX, quadY + currentHeight, 0).uv(u0, v1).endVertex();
-                bufferBuilder.vertex(matrix, quadX + currentWidth, quadY + currentHeight, 0).uv(u1, v1).endVertex();
-                bufferBuilder.vertex(matrix, quadX + currentWidth, quadY, 0).uv(u1, v0).endVertex();
-                bufferBuilder.vertex(matrix, quadX, quadY, 0).uv(u0, v0).endVertex();
-            }
-        }
-
-        Tesselator.getInstance().end();
-    }
-
     private void renderFluidTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         if (!isHovering(tankX, tankY, tankWidth, tankHeight, mouseX, mouseY)) return;
 
         FluidStack fluid = this.menu.getFluid();
         List<Component> lines = new ArrayList<>();
+        boolean shift = Screen.hasShiftDown();
+        int pressure = this.menu.getPressure();
 
         if (!fluid.isEmpty()) {
             lines.add(fluid.getDisplayName());
             lines.add(Component.literal(fluid.getAmount() + " / " + tankCapacity + " mB"));
+            appendPressureLines(lines, pressure);
+            FluidTraitManager.appendFluidTypeTooltip(fluid.getFluid(), shift, lines);
         } else {
-            int filterId = this.menu.getFilterFluidId();
-            if (filterId >= 0) {
-                Fluid filterFluid = BuiltInRegistries.FLUID.byId(filterId);
-                lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty_filter", Component.translatable(filterFluid.getFluidType().getDescriptionId())));
+            // При 0 mB getFluid() пустой, но тип цистерны (как текстура в мире) — data[1], не filterFluid[6]
+            Fluid tankType = this.menu.getTankTypeFluid();
+            Component lockedTypeName = null;
+            if (tankType == ModFluids.NONE.getSource()) {
+                lockedTypeName = Component.translatable("fluid.hbm_m.none");
+            } else if (tankType != null && tankType != Fluids.EMPTY) {
+                lockedTypeName = Component.translatable(tankType.getFluidType().getDescriptionId());
+            }
+            if (lockedTypeName != null) {
+                lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty_locked", lockedTypeName));
+                lines.add(Component.literal("0 / " + tankCapacity + " mB"));
+                appendPressureLines(lines, pressure);
+                if (tankType != null && tankType != Fluids.EMPTY && tankType != ModFluids.NONE.getSource()) {
+                    FluidTraitManager.appendFluidTypeTooltip(tankType, shift, lines);
+                }
             } else {
-                lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty"));
+                int filterId = this.menu.getFilterFluidId();
+                if (filterId >= 0) {
+                    Fluid filterFluid = BuiltInRegistries.FLUID.byId(filterId);
+                    if (filterFluid != null && filterFluid != Fluids.EMPTY) {
+                        lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty_filter",
+                                Component.translatable(filterFluid.getFluidType().getDescriptionId())));
+                        appendPressureLines(lines, pressure);
+                        FluidTraitManager.appendFluidTypeTooltip(filterFluid, shift, lines);
+                    } else {
+                        lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty"));
+                        appendPressureLines(lines, pressure);
+                    }
+                } else {
+                    lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty"));
+                    appendPressureLines(lines, pressure);
+                }
             }
         }
 
         guiGraphics.renderTooltip(this.font, lines, Optional.empty(), mouseX, mouseY);
+    }
+
+    private static void appendPressureLines(List<Component> lines, int pressure) {
+        if (pressure == 0) return;
+        lines.add(Component.translatable("gui.hbm_m.fluid_tank.pressure", pressure).withStyle(ChatFormatting.RED));
+        boolean blink = (System.currentTimeMillis() / 500) % 2 == 0;
+        lines.add(Component.translatable("gui.hbm_m.fluid_tank.pressurized")
+                .withStyle(blink ? ChatFormatting.RED : ChatFormatting.DARK_RED));
     }
 
     private void renderModeButtonTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {

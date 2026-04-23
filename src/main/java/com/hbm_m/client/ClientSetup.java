@@ -15,18 +15,22 @@ import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.client.loader.ChemicalPlantModelLoader;
 import com.hbm_m.client.loader.DoorModelLoader;
+import com.hbm_m.client.loader.HeatingOvenModelLoader;
 import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
 import com.hbm_m.client.loader.MachineAssemblerModelLoader;
+import com.hbm_m.client.loader.MachineBatterySocketModelLoader;
 import com.hbm_m.client.loader.MachineFluidTankModelLoader;
 import com.hbm_m.client.loader.MachineHydraulicFrackiningTowerModelLoader;
 import com.hbm_m.client.loader.PressModelLoader;
-import com.hbm_m.client.loader.ProceduralWireLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
 import com.hbm_m.client.overlay.OverlayGeiger;
 import com.hbm_m.client.overlay.OverlayInfoToast;
 import com.hbm_m.client.overlay.OverlayRadiationVisuals;
+import com.hbm_m.client.render.BatterySocketCreativeRenderer;
 import com.hbm_m.client.render.EmptyEntityRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
+import com.hbm_m.client.render.HeatingOvenRenderer;
+import com.hbm_m.client.render.IndustrialTurbineRenderer;
 import com.hbm_m.client.render.ModShaders;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.effect.RenderFallout;
@@ -51,8 +55,10 @@ import com.hbm_m.config.ModConfigKeybindHandler;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.inventory.gui.GUIAnvil;
 import com.hbm_m.inventory.gui.GUIArmorTable;
+import com.hbm_m.inventory.gui.GUIBatterySocket;
 import com.hbm_m.inventory.gui.GUIBlastFurnace;
 import com.hbm_m.inventory.gui.GUIDeshCrate;
+import com.hbm_m.inventory.gui.GUIHeatingOven;
 import com.hbm_m.inventory.gui.GUIIronCrate;
 import com.hbm_m.inventory.gui.GUILaunchPadLarge;
 import com.hbm_m.inventory.gui.GUILaunchPadRusted;
@@ -186,7 +192,9 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
             MenuScreens.register(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
             MenuScreens.register(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
+            MenuScreens.register(ModMenuTypes.BATTERY_SOCKET_MENU.get(), GUIBatterySocket::new);
             MenuScreens.register(ModMenuTypes.BLAST_FURNACE_MENU.get(), GUIBlastFurnace::new);
+            MenuScreens.register(ModMenuTypes.HEATING_OVEN_MENU.get(), GUIHeatingOven::new);
             MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
             MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), GUIMachineShredder::new);
             MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
@@ -211,6 +219,9 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), ChemicalPlantRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
 
             OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
             try {
@@ -349,6 +360,7 @@ public class ClientSetup {
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_101"));
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_106"));
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_111"));
+        
         MainRegistry.LOGGER.debug("Registered door variant models for loading");
     }
 
@@ -357,17 +369,18 @@ public class ClientSetup {
         // DoorDeclRegistry.init();
         MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
 
-        event.register("procedural_wire", new ProceduralWireLoader());
         event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
         event.register("chemical_plant_loader", new ChemicalPlantModelLoader());
         event.register("machine_assembler_loader", new MachineAssemblerModelLoader());
         event.register("hydraulic_frackining_tower_loader", new MachineHydraulicFrackiningTowerModelLoader());
         event.register("fluid_tank_loader", new MachineFluidTankModelLoader());
+        event.register("battery_socket_loader", new MachineBatterySocketModelLoader());
         event.register("door", new DoorModelLoader());
         event.register("template_loader", new TemplateModelLoader());
         event.register("press_loader", new PressModelLoader());
+        event.register("heating_oven_loader", new HeatingOvenModelLoader());
 
-        MainRegistry.LOGGER.info("Registered geometry loaders: procedural_wire, advanced_assembly_machine_loader, chemical_plant_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader");
+        MainRegistry.LOGGER.info("Registered geometry loaders: advanced_assembly_machine_loader, chemical_plant_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader, heating_oven_loader");
     }
 
     @SubscribeEvent
@@ -386,7 +399,41 @@ public class ClientSetup {
             if (tintIndex == 0) return 0xFFFFFF;
             return com.hbm_m.item.liquids.FluidBarrelItem.getTintColor(stack);
         }, ModItems.FLUID_BARREL.get());
+        // Fluid Duct - tint overlay layer with fluid color
+        event.register((stack, tintIndex) -> {
+            if (tintIndex == 0) return 0xFFFFFF;
+            return com.hbm_m.item.liquids.FluidDuctItem.getTintColor(stack);
+        }, ModItems.FLUID_DUCT.get(), ModItems.FLUID_DUCT_COLORED.get(), ModItems.FLUID_DUCT_SILVER.get());
+        // Mineral Pipes - tint layer0 with the pipe's mineral color
+        event.register((stack, tintIndex) -> {
+            if (stack.getItem() instanceof com.hbm_m.item.MineralPipeItem pipe) {
+                return pipe.getTintColor();
+            }
+            return 0xFFFFFF;
+        }, ModItems.PIPE_IRON.get(), ModItems.PIPE_COPPER.get(), ModItems.PIPE_GOLD.get(),
+           ModItems.PIPE_LEAD.get(), ModItems.PIPE_STEEL.get(), ModItems.PIPE_TUNGSTEN.get(),
+           ModItems.PIPE_TITANIUM.get(), ModItems.PIPE_ALUMINUM.get());
     }
+
+    @SubscribeEvent
+    public static void onRegisterBlockColors(RegisterColorHandlersEvent.Block event) {
+        // Fluid Duct block - tint with the fluid's color from the BlockEntity
+        event.register((state, level, pos, tintIndex) -> {
+            if (tintIndex == 0) return 0xFFFFFF;
+            if (tintIndex != 1 || level == null || pos == null) return 0xFFFFFF;
+            var be = level.getBlockEntity(pos);
+            if (be instanceof com.hbm_m.block.entity.machines.FluidDuctBlockEntity ductBe) {
+                var fluid = ductBe.getFluidType();
+                if (fluid != net.minecraft.world.level.material.Fluids.EMPTY) {
+                    return com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(fluid);
+                }
+            }
+            return 0xFFFFFF;
+        }, com.hbm_m.block.ModBlocks.FLUID_DUCT.get(),
+                com.hbm_m.block.ModBlocks.FLUID_DUCT_COLORED.get(),
+                com.hbm_m.block.ModBlocks.FLUID_DUCT_SILVER.get());
+    }
+
     @SubscribeEvent
     public static void registerEntityRenderers(EntityRenderersEvent.RegisterRenderers event) {
         event.registerEntityRenderer(ModEntities.AIRNUKEBOMB_PROJECTILE.get(),

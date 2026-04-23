@@ -219,11 +219,11 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
 
         // === 1. ПРОВЕРКА HBM API (Твои батарейки) ===
         // Сначала пытаемся зарядить через нашу "родную" HBM-систему (которая использует long)
-        LazyOptional<com.hbm_m.api.energy.IEnergyReceiver> hbmEnergy =
+        LazyOptional<com.hbm_m.interfaces.IEnergyReceiver> hbmEnergy =
                 itemToCharge.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER);
 
         if (hbmEnergy.isPresent()) {
-            com.hbm_m.api.energy.IEnergyReceiver itemReceiver = hbmEnergy.resolve().get();
+            com.hbm_m.interfaces.IEnergyReceiver itemReceiver = hbmEnergy.resolve().get();
 
             if (itemReceiver.canReceive()) {
                 long maxTransfer = Math.min(this.energy, getProvideSpeed());

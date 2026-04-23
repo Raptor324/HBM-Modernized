@@ -1,6 +1,10 @@
 package com.hbm_m.capability;
 
 import com.hbm_m.api.energy.*;
+import com.hbm_m.interfaces.IEnergyConnector;
+import com.hbm_m.interfaces.IEnergyProvider;
+import com.hbm_m.interfaces.IEnergyReceiver;
+
 import net.minecraftforge.common.capabilities.*;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 

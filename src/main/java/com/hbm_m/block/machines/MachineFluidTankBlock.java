@@ -10,11 +10,11 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
-import com.hbm_m.item.IItemFluidIdentifier;
-import com.hbm_m.multiblock.IMultiblockController;
+import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -64,9 +64,9 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
 
         // Направления лестницы: MultiblockSideTuples.ladder(north, south, west, east) - локально к схеме до поворота FACING.
         String[] layer0 = {
-            "LACAA",
+            "LFCFA",
             "LEEEA",
-            "AAAAA"
+            "AFAFA"
         };
 
         String[] layer1 = {
@@ -84,12 +84,11 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         Map<Character, PartRole> roleMap = Map.of(
             'A', PartRole.DEFAULT,
             'C', PartRole.CONTROLLER,
-            'L', PartRole.LADDER
+            'L', PartRole.LADDER,
+            'F', PartRole.FLUID_CONNECTOR
         );
 
         Map<Character, Supplier<BlockState>> symbolMap = Map.of(
-            'A', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            'L', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
         );
 
         Map<Character, boolean[]> ladderSideMap = Map.of(
@@ -175,23 +174,8 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         }
 
         BlockEntity entity = level.getBlockEntity(pos);
-        if (!(entity instanceof com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity tank)) {
+        if (!(entity instanceof MachineFluidTankBlockEntity tank)) {
             return InteractionResult.PASS;
-        }
-
-        if (player.isShiftKeyDown()) {
-            var stack = player.getItemInHand(hand);
-            if (!stack.isEmpty() && stack.getItem() instanceof IItemFluidIdentifier) {
-                tank.setFilterFromIdentifier(stack);
-                var fluid = tank.getFilterFluid();
-                
-                String name = (fluid != null && fluid != net.minecraft.world.level.material.Fluids.EMPTY) 
-                        ? fluid.getFluidType().getDescriptionId() 
-                        : "fluid.hbm_m.none";
-                
-                player.displayClientMessage(net.minecraft.network.chat.Component.translatable("gui.hbm_m.fluid_tank.filter_set", net.minecraft.network.chat.Component.translatable(name)), true);
-                return InteractionResult.sidedSuccess(false);
-            }
         }
 
         NetworkHooks.openScreen((ServerPlayer) player, tank, pos);

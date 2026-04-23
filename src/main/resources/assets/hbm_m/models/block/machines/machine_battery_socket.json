@@ -1,0 +1,56 @@
+{
+	"loader": "hbm_m:battery_socket_loader",
+	"model": "hbm_m:models/block/machines/machine_battery_socket.obj",
+	"flip_v": true,
+	"textures": {
+		"particle": "hbm_m:block/machine/battery_socket",
+		"texture": "hbm_m:block/machine/battery_socket"
+	},
+	"transform": {
+		"translation": [ -2, 0, -2 ],
+		"rotation": [ 0, 180, 0 ],
+		"scale": 1.0
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [ 75, 45, 0 ],
+			"translation": [ -1.25, 2.50, 0.00 ],
+			"scale": [ 0.15, 0.15, 0.15 ]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [ 75, 45, 0 ],
+			"translation": [ 0.00, 2.50, 0.00 ],
+			"scale": [ 0.12, 0.12, 0.12 ]
+		},
+		"firstperson_righthand": {
+			"rotation": [ 0, 0, 0 ],
+			"translation": [ 2.50, -2.75, -13.50 ],
+			"scale": [ 0.40, 0.40, 0.40 ]
+		},
+		"firstperson_lefthand": {
+			"rotation": [ 0, 0, 0 ],
+			"translation": [ 0.00, 0.00, 0.00 ],
+			"scale": [ 1.00, 1.00, 1.00 ]
+		},
+		"gui": {
+			"rotation": [ 30, 225, 0 ],
+			"translation": [ 3.50, -2.00, 0.00 ],
+			"scale": [ 0.30, 0.30, 0.30 ]
+		},
+		"head": {
+			"rotation": [ 0, 0, 0 ],
+			"translation": [ 0.00, 0.00, 0.00 ],
+			"scale": [ 1.00, 1.00, 1.00 ]
+		},
+		"fixed": {
+			"rotation": [ 0, 0, 0 ],
+			"translation": [ 0.00, 0.00, 0.00 ],
+			"scale": [ 1.00, 1.00, 1.00 ]
+		},
+		"ground": {
+			"rotation": [ 0, 0, 0 ],
+			"translation": [ 0.00, 3.00, 0.00 ],
+			"scale": [ 0.20, 0.20, 0.20 ]
+		}
+	}
+}

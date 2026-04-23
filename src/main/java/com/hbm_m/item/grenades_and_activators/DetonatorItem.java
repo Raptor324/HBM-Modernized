@@ -4,7 +4,7 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
-import com.hbm_m.block.explosives.IDetonatable;
+import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.ChatFormatting;

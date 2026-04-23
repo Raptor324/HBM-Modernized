@@ -33,7 +33,7 @@ public class FluidBarrelItem extends Item {
     public static final String NBT_FLUID = "Fluid";
 
     public FluidBarrelItem(Properties properties) {
-        super(properties.stacksTo(1));
+        super(properties.stacksTo(64));
     }
 
     @Override
@@ -95,10 +95,16 @@ public class FluidBarrelItem extends Item {
     }
 
     public static void setFluid(ItemStack stack, FluidStack fluid) {
-        CompoundTag tag = stack.getOrCreateTag();
         if (fluid.isEmpty()) {
-            tag.remove(NBT_FLUID);
+            CompoundTag tag = stack.getTag();
+            if (tag != null) {
+                tag.remove(NBT_FLUID);
+                if (tag.isEmpty()) {
+                    stack.setTag(null);
+                }
+            }
         } else {
+            CompoundTag tag = stack.getOrCreateTag();
             tag.put(NBT_FLUID, fluid.writeToNBT(new CompoundTag()));
         }
     }

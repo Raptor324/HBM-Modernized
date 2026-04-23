@@ -2,6 +2,7 @@ package com.hbm_m.powerarmor.render;
 
 import java.util.Map;
 
+import com.hbm_m.interfaces.IArmorModelConfig;
 import com.hbm_m.powerarmor.DNTArmor;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 

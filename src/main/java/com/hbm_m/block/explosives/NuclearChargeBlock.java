@@ -1,7 +1,13 @@
 package com.hbm_m.block.explosives;
 
+import java.util.List;
+
+import javax.annotation.Nullable;
+
 import com.hbm_m.explosion.command.ExplosionCommandOptions;
 import com.hbm_m.explosion.command.NuclearScenarioLaunchers;
+import com.hbm_m.interfaces.IDetonatable;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -12,8 +18,6 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import javax.annotation.Nullable;
-import java.util.List;
 
 /**
  *  ЯДЕРНЫЙ БЛОК v6 - АНИМИРОВАННЫЙ РОСТ

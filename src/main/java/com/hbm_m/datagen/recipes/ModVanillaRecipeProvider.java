@@ -281,6 +281,22 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.getIngot(ModIngots.STEEL).get()), has(ModItems.getIngot(ModIngots.STEEL).get()))
                 .save(writer, recipeId("crafting/converter_block"));
 
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.MACHINE_BATTERY_SOCKET.get())
+                .pattern("$@$")
+                .define('$', ModItems.PLATE_STEEL.get())
+                .define('@', ModItems.getIngot(ModIngots.RED_COPPER).get())
+                .unlockedBy(getHasName(ModItems.PLATE_STEEL.get()), has(ModItems.PLATE_STEEL.get()))
+                .save(writer, recipeId("crafting/machine_battery_socket"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.MACHINE_BATTERY_SOCKET.get())
+                .pattern("I I")
+                .pattern("I I")
+                .pattern("IRI")
+                .define('I', ModItems.PLATE_ALUMINUM.get())
+                .define('R', ModItems.COIL_COPPER.get())
+                .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
+                .save(writer, recipeId("crafting/machine_battery_socket_frame"));
+
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BOLT_STEEL.get(), 16)
                 .pattern("$  ")
                 .pattern("$  ")

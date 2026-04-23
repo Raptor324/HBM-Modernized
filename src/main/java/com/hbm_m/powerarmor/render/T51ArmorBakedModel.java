@@ -9,6 +9,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 
 import java.util.Map;
 
+import com.hbm_m.interfaces.IArmorModelConfig;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.hbm_m.powerarmor.T51Armor;
 

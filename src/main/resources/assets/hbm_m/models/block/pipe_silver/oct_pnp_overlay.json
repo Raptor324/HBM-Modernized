@@ -1,0 +1,35 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/pipe_neo.obj",
+  "flip_v": true,
+  "mtl_override": "hbm_m:models/block/pipe_silver_overlay.mtl",
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "particle": "hbm_m:block/pipe_silver",
+    "base": "hbm_m:block/pipe_silver",
+    "overlay": "hbm_m:block/pipe_silver_overlay"
+  },
+  "transform": {
+    "translation": [
+      0.5,
+      0.5,
+      0.5
+    ]
+  },
+  "visibility": {
+    "pZ": false,
+    "pX": false,
+    "nZ": false,
+    "nX": false,
+    "pY": false,
+    "nY": false,
+    "nnn": false,
+    "nnp": false,
+    "pnp": true,
+    "pnn": false,
+    "ppn": false,
+    "npn": false,
+    "npp": false,
+    "ppp": false
+  }
+}

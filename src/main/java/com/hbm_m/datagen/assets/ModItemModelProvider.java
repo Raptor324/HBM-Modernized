@@ -461,9 +461,16 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD);
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD_RUSTED);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FAT_MAN);
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_BATTERY_SOCKET);
+        blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_BOILER);
+        blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_TURBINE);
         blockItemFromBlockModel(ModBlocks.DUD_CONVENTIONAL);
         blockItemFromBlockModel(ModBlocks.DUD_NUKE);
         blockItemFromBlockModel(ModBlocks.DUD_SALTED);
+
+        blockItemFromBlockModel(ModBlocks.FLUID_VALVE);
+        blockItemFromBlockModel(ModBlocks.FLUID_PUMP);
+        blockItemFromBlockModel(ModBlocks.FLUID_EXHAUST);
     };
 
     /**

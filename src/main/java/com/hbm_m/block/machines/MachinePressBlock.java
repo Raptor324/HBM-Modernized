@@ -12,7 +12,7 @@ import com.hbm_m.block.ModBlocks;
 // Контроллер отвечает за построение и разрушение структуры, а также за взаимодействие с игроком.
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.MachinePressBlockEntity;
-import com.hbm_m.multiblock.IMultiblockController;
+import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
