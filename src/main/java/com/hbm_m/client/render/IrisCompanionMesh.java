@@ -1,14 +1,22 @@
 package com.hbm_m.client.render;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.ShortBuffer;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL31;
+import org.lwjgl.opengl.GL32;
+import org.lwjgl.opengl.GL42;
+import org.lwjgl.opengl.GL44;
+import org.lwjgl.system.MemoryUtil;
 
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -51,16 +59,142 @@ public final class IrisCompanionMesh {
     /**
      * GL attribute location of the per-vertex lightmap (UV2) within this VAO.
      * Set during {@link #ensureBuilt()}; -1 when the format does not contain a
-     * UV2 element. The array for this attribute is intentionally <b>disabled</b>
-     * inside the VAO so that callers can supply a per-draw constant via
-     * {@code glVertexAttrib2f(uv2Location, ...)}, which the bound pack shader
-     * sees as a single uniform-style lightmap value for the whole draw - that
-     * is how we get true per-machine lighting without rebuilding the VBO or
-     * patching the shader pack's GLSL.
+     * UV2 element.
+     * <p>
+     * By default the array for this attribute is <b>disabled</b> in the VAO so
+     * callers can supply a per-draw constant via {@code glVertexAttribI2i(uv2Location, ...)}.
+     * Callers that need a smooth per-vertex lighting gradient across the mesh
+     * can instead flip to <i>per-vertex</i> mode via
+     * {@link #activatePerVertexLightmap()} — that path binds an auxiliary VBO
+     * ({@link #lightmapVboId}) to this attribute, whose contents are populated
+     * per-instance by {@link #writeInstanceLightmap(int, float[])} using
+     * precomputed trilinear weights ({@link #perVertexCornerWeights}).
      */
     private int uv2Location = -1;
     private boolean built = false;
     private boolean failed = false;
+
+    // ------------------------------------------------------------------------
+    // Per-vertex trilinear lightmap path (used under Iris / Oculus).
+    // ------------------------------------------------------------------------
+
+    /**
+     * Object-space AABB of the mesh, computed at build time from the raw quad
+     * vertex positions. Used as the trilinear interpolation domain for
+     * {@link #perVertexCornerWeights}.
+     * <p>
+     * Laid out as {@code [minX, minY, minZ, maxX, maxY, maxZ]}.
+     */
+    private final float[] objBbox = new float[6];
+
+    // Переиспользуемый массив для записи. Размер будем подгонять при необходимости.
+    private short[] lightmapTempArray = new short[0];
+
+    /**
+     * Per-vertex trilinear weights relative to the 8 corners of {@link #objBbox}.
+     * Laid out as {@code [vertexCount * 8]}; for vertex {@code v}, indices
+     * {@code v*8..v*8+7} are the weight contributions of corners 0..7, where
+     * corner index encodes {@code bit 0 = x, bit 1 = y, bit 2 = z} with the
+     * bit set meaning "take the max side". This matches
+     * {@code LightSampleCache.sample8} and the non-instanced shader path.
+     * <p>
+     * Each vertex's 8 weights sum to 1, so the per-vertex UV2 computed as
+     * {@code sum(weight[c] * cornerUV[c], c=0..7)} is a proper trilinear
+     * interpolation at the vertex position. Precomputed once at build time;
+     * per frame we only pay the 16 fused mul-adds per vertex per instance to
+     * combine them with the instance's 8 corner UV2 samples.
+     * <p>
+     * {@code null} when the mesh has fewer than 4 vertices (nothing to weight)
+     * or if {@link #ensureBuilt} has not run yet.
+     */
+    private float[] perVertexCornerWeights;
+    /**
+     * Optional per-vertex weights for a 2x4x2 light-probe lattice (16 probes).
+     * Laid out as {@code [vertexCount * 16]} and used when the caller provides
+     * a 32-float probe array (see {@link #writeInstanceLightmap(int, float[])}).
+     */
+    private float[] perVertexSlicedWeights;
+
+    /**
+     * GL buffer holding per-instance per-vertex UV2 values. Laid out as
+     * {@code instanceSlots[maxInstanceSlots] × vertexCount × 2 × sizeof(USHORT)}
+     * = {@code 4 bytes} per vertex per instance.
+     * <p>
+     * Bound to {@link #uv2Location} in the VAO after the first
+     * {@link #activatePerVertexLightmap()} call. Per-draw the caller rebinds
+     * the UV2 attribute pointer with a new byte offset ({@code slotIndex *
+     * vertexCount * 4}) to select which instance's UV2 data is read.
+     * <p>
+     * Sized dynamically by {@link #ensureLightmapCapacity(int)}; {@code -1}
+     * when not yet allocated.
+     */
+    private int lightmapVboId = -1;
+
+    /**
+     * Native-order CPU scratch for {@link #lightmapVboId}; we write USHORT
+     * pairs into it via {@link #writeInstanceLightmap} and flush to the GPU
+     * with a single {@code glBufferSubData} call per frame to minimize driver
+     * overhead. Sized to match {@link #lightmapVboId}.
+     */
+    private ByteBuffer lightmapCpuScratch;
+    /** Persistent-mapped view of {@link #lightmapVboId} when available (GL 4.4+). */
+    private ByteBuffer lightmapMapped;
+    /** Short view of either {@link #lightmapMapped} or {@link #lightmapCpuScratch}. */
+    private ShortBuffer lightmapShortView;
+    /** True when {@link #lightmapMapped} is active and coherent. */
+    private boolean lightmapPersistentMapped = false;
+    /** True when we wrote into the persistent mapped buffer this frame and need a barrier. */
+    private boolean lightmapPersistentDirty = false;
+
+    // Optional staging upload path (Embeddium-style): write into a persistently-mapped staging buffer,
+    // then glCopyBufferSubData into lightmapVboId. Guarded by a fence so we never overwrite the
+    // staging source region before the driver has consumed it. If the fence hasn't signaled,
+    // we transparently fall back to the classic CPU scratch + glBufferSubData path.
+    private int lightmapStagingVboId = -1;
+    private ByteBuffer lightmapStagingMapped;
+    private ShortBuffer lightmapStagingShortView;
+    private long lightmapStagingFence = 0L; // GLsync handle stored as long by LWJGL
+    private boolean lightmapStagingAvailable = false;
+
+    /**
+     * Number of instance slots the current {@link #lightmapVboId} /
+     * {@link #lightmapCpuScratch} can hold. Grown (never shrunk) by
+     * {@link #ensureLightmapCapacity(int)} as the peak instance count per
+     * frame rises.
+     */
+    private int lightmapInstanceCapacity = 0;
+
+    /**
+     * Whether the VAO's UV2 attribute is currently bound to
+     * {@link #lightmapVboId} (per-vertex mode) or disabled (per-draw constant
+     * mode — the legacy {@code glVertexAttribI2i} path). Toggled by
+     * {@link #activatePerVertexLightmap()} and {@link #restoreConstantLightmap()}.
+     */
+    private boolean perVertexLightmapActive = false;
+
+    /**
+     * Current byte offset into {@link #lightmapVboId} used by the VAO's UV2
+     * attribute pointer. Cached so {@link #bindLightmapForInstance(int)} can
+     * elide redundant {@code glVertexAttribIPointer} calls when adjacent
+     * draws use the same instance slot (shouldn't happen in practice, but the
+     * check is free and insures against bugs).
+     */
+    private int lightmapCurrentSlot = -1;
+
+    // ------------------------------------------------------------------------
+    // Slot allocator for per-vertex lightmaps (caches identical cornerUV16).
+    // ------------------------------------------------------------------------
+
+    /** Hash -> slot index mapping for recently used per-vertex lightmaps. */
+    private final it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap lightmapKeyToSlot
+            = new it.unimi.dsi.fastutil.longs.Long2IntOpenHashMap();
+    /** Reverse mapping slot -> hash key (0 when slot unused). */
+    private long[] lightmapSlotKey = new long[0];
+    /** Next slot to evict when capacity is full. */
+    private int lightmapEvictCursor = 0;
+    /** Tracks dirty slot range for fallback upload path. */
+    private int lightmapDirtyMinSlot = Integer.MAX_VALUE;
+    private int lightmapDirtyMaxSlot = -1;
 
     /**
      * Cached actual {@link VertexFormat} the buffer was built with - usually
@@ -135,6 +269,13 @@ public final class IrisCompanionMesh {
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
 
         try {
+            // First pass: compute the mesh's object-space AABB so we can bake
+            // per-vertex trilinear weights relative to it. Done before feeding
+            // quads into the BufferBuilder because BufferBuilder.putBulkData
+            // hides the raw vertex positions behind format conversion; the
+            // bbox must be derived from the unmodified BakedQuad data.
+            computeObjBboxAndWeights();
+
             BufferBuilder builder = new BufferBuilder(quads.size() * 256);
             // Begin with NEW_ENTITY; Iris mixin extends to IrisVertexFormats.ENTITY when loaded.
             builder.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.NEW_ENTITY);
@@ -292,6 +433,665 @@ public final class IrisCompanionMesh {
             GL30.glBindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
         }
+    }
+
+    /**
+     * First pass over the raw {@link BakedQuad} vertex arrays: computes the
+     * object-space AABB ({@link #objBbox}) and the per-vertex trilinear
+     * weight table ({@link #perVertexCornerWeights}).
+     * <p>
+     * Vertex iteration order MUST match what {@link BufferBuilder#putBulkData}
+     * later writes into the companion VBO — otherwise the GPU draws vertex
+     * {@code v} with weight[v'] for some {@code v' != v} and the per-vertex
+     * lightmap UV2 bleeds diagonally across the mesh. {@code putBulkData}
+     * walks each quad's 4 vertices in index order 0..3, which matches our
+     * {@code for (int i = 0; i < 4; i++)} loop below.
+     * <p>
+     * The BakedQuad vertex layout is Mojang's {@code DefaultVertexFormat.BLOCK}
+     * (which is what the bakery produces regardless of the render type used
+     * later) — stride 8 ints per vertex, positions at {@code raw[base+0..2]}
+     * as {@link Float#intBitsToFloat} of the ints. Same layout as
+     * {@code PartGeometry.buildVboDataFromQuads}.
+     * <p>
+     * Degenerate (zero-extent) axes are clamped to a tiny positive size so
+     * the later {@code (pos - min) / size} divide returns a stable value
+     * (0.5) instead of NaN — this happens for flat decorative panels that
+     * have, say, zero thickness on the Y axis.
+     */
+    private void computeObjBboxAndWeights() {
+        float minX = Float.POSITIVE_INFINITY, minY = Float.POSITIVE_INFINITY, minZ = Float.POSITIVE_INFINITY;
+        float maxX = Float.NEGATIVE_INFINITY, maxY = Float.NEGATIVE_INFINITY, maxZ = Float.NEGATIVE_INFINITY;
+
+        int provisionalVertexCount = 0;
+        for (BakedQuad quad : quads) {
+            int[] raw = quad.getVertices();
+            if (raw == null || raw.length < 32) continue;
+            for (int i = 0; i < 4; i++) {
+                int base = i * 8;
+                float x = Float.intBitsToFloat(raw[base + 0]);
+                float y = Float.intBitsToFloat(raw[base + 1]);
+                float z = Float.intBitsToFloat(raw[base + 2]);
+                if (x < minX) minX = x; if (x > maxX) maxX = x;
+                if (y < minY) minY = y; if (y > maxY) maxY = y;
+                if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
+                provisionalVertexCount++;
+            }
+        }
+
+        if (!Float.isFinite(minX) || provisionalVertexCount == 0) {
+            objBbox[0] = objBbox[1] = objBbox[2] = 0f;
+            objBbox[3] = objBbox[4] = objBbox[5] = 1f;
+            perVertexCornerWeights = null;
+            perVertexSlicedWeights = null;
+            return;
+        }
+
+        objBbox[0] = minX; objBbox[1] = minY; objBbox[2] = minZ;
+        objBbox[3] = maxX; objBbox[4] = maxY; objBbox[5] = maxZ;
+
+        // Precompute size with a tiny floor so thin/flat parts don't produce
+        // NaN weights. 1e-4 (100 microns) is far below the lightmap's 1-block
+        // granularity and invisible in the interpolated result.
+        float sx = Math.max(maxX - minX, 1e-4f);
+        float sy = Math.max(maxY - minY, 1e-4f);
+        float sz = Math.max(maxZ - minZ, 1e-4f);
+        float invSx = 1f / sx, invSy = 1f / sy, invSz = 1f / sz;
+
+        perVertexCornerWeights = new float[provisionalVertexCount * 8];
+        perVertexSlicedWeights = new float[provisionalVertexCount * 16];
+        int wBase = 0;
+        int wsBase = 0;
+        for (BakedQuad quad : quads) {
+            int[] raw = quad.getVertices();
+            if (raw == null || raw.length < 32) continue;
+            for (int i = 0; i < 4; i++) {
+                int base = i * 8;
+                float x = Float.intBitsToFloat(raw[base + 0]);
+                float y = Float.intBitsToFloat(raw[base + 1]);
+                float z = Float.intBitsToFloat(raw[base + 2]);
+                float wx = Math.max(0f, Math.min(1f, (x - minX) * invSx));
+                float wy = Math.max(0f, Math.min(1f, (y - minY) * invSy));
+                float wz = Math.max(0f, Math.min(1f, (z - minZ) * invSz));
+                float oneMinusWx = 1f - wx, oneMinusWy = 1f - wy, oneMinusWz = 1f - wz;
+
+                // Corner index encoding: bit 0=x, bit 1=y, bit 2=z; set → max side.
+                // Unrolled + factored to minimise multiplies (8 muls instead of 24).
+                float axy0 = oneMinusWx * oneMinusWy;
+                float axy1 = wx * oneMinusWy;
+                float axy2 = oneMinusWx * wy;
+                float axy3 = wx * wy;
+                perVertexCornerWeights[wBase + 0] = axy0 * oneMinusWz;
+                perVertexCornerWeights[wBase + 1] = axy1 * oneMinusWz;
+                perVertexCornerWeights[wBase + 2] = axy2 * oneMinusWz;
+                perVertexCornerWeights[wBase + 3] = axy3 * oneMinusWz;
+                perVertexCornerWeights[wBase + 4] = axy0 * wz;
+                perVertexCornerWeights[wBase + 5] = axy1 * wz;
+                perVertexCornerWeights[wBase + 6] = axy2 * wz;
+                perVertexCornerWeights[wBase + 7] = axy3 * wz;
+                wBase += 8;
+
+                // 2x4x2 sliced weights: 4 Y slices => interpolate between adjacent slices.
+                // Each slice has 4 XZ corners laid out as:
+                //   0: x0z0, 1: x1z0, 2: x0z1, 3: x1z1
+                float ty = wy * 3.0f;
+                int s0 = (int) Math.floor(ty);
+                if (s0 < 0) s0 = 0;
+                if (s0 > 3) s0 = 3;
+                int s1 = Math.min(s0 + 1, 3);
+                float fy = ty - (float) s0;
+                if (fy < 0f) fy = 0f;
+                if (fy > 1f) fy = 1f;
+                float w0 = 1f - fy;
+                float w1 = fy;
+
+                float b00 = oneMinusWx * oneMinusWz;
+                float b10 = wx * oneMinusWz;
+                float b01 = oneMinusWx * wz;
+                float b11 = wx * wz;
+
+                // Zero 16 weights (array is fresh but we write sequentially; keep explicit for clarity).
+                for (int p = 0; p < 16; p++) perVertexSlicedWeights[wsBase + p] = 0f;
+                int o0 = wsBase + s0 * 4;
+                int o1 = wsBase + s1 * 4;
+                perVertexSlicedWeights[o0 + 0] = b00 * w0;
+                perVertexSlicedWeights[o0 + 1] = b10 * w0;
+                perVertexSlicedWeights[o0 + 2] = b01 * w0;
+                perVertexSlicedWeights[o0 + 3] = b11 * w0;
+                perVertexSlicedWeights[o1 + 0] += b00 * w1;
+                perVertexSlicedWeights[o1 + 1] += b10 * w1;
+                perVertexSlicedWeights[o1 + 2] += b01 * w1;
+                perVertexSlicedWeights[o1 + 3] += b11 * w1;
+                wsBase += 16;
+            }
+        }
+    }
+
+    /**
+     * @return {@code true} if per-vertex trilinear lighting is available for
+     *         this mesh (weights precomputed + UV2 attribute location known).
+     */
+    public boolean supportsPerVertexLightmap() {
+        return built && uv2Location != -1 && perVertexCornerWeights != null && vertexCount > 0;
+    }
+
+    /**
+     * @return {@code true} if {@link #writeInstanceLightmap} can combine a
+     *         {@code float[32]} 2×4×2 light probe set with {@link #perVertexSlicedWeights}
+     *         (Iris / extended path matches tall VBOs that use
+     *         {@code LightSampleCache#getOrSample16}).
+     */
+    public boolean supportsSlicedPerVertexLightmap() {
+        return built && uv2Location != -1 && perVertexSlicedWeights != null && vertexCount > 0;
+    }
+
+    /**
+     * Ensures the auxiliary lightmap VBO + CPU scratch can hold at least
+     * {@code requiredInstances} concurrent instance slots. Grows (never
+     * shrinks) to the next power-of-two. No-op if already large enough.
+     * <p>
+     * Each slot holds {@code vertexCount} pairs of 16-bit lightmap values
+     * (blockU, skyV) → {@code vertexCount * 4 bytes}. For a 2000-vertex part
+     * with 64 slots that is {@code 512 KB} — comfortably small even summed
+     * across every distinct multiblock part in the game.
+     * <p>
+     * Must be called on the render thread; allocates GL resources on first
+     * use.
+     */
+    public void ensureLightmapCapacity(int requiredInstances) {
+        if (!supportsPerVertexLightmap()) return;
+        if (requiredInstances <= lightmapInstanceCapacity) return;
+
+        // Grow geometrically so repeated small increments don't thrash the
+        // driver's buffer allocator. The VRAM cost of over-allocating is tiny
+        // relative to the allocation churn; the max realistic peak per
+        // machine part is under a few hundred instances anyway.
+        int newCapacity = Math.max(8, lightmapInstanceCapacity);
+        while (newCapacity < requiredInstances) newCapacity <<= 1;
+
+        int perSlotBytes = vertexCount * 4;
+        int totalBytes = newCapacity * perSlotBytes;
+
+        // 1. Полностью удаляем старый буфер (это автоматически снимет mapping)
+        if (lightmapVboId != -1) {
+            GL15.glDeleteBuffers(lightmapVboId);
+            lightmapVboId = -1;
+        }
+        if (lightmapStagingVboId != -1) {
+            GL15.glDeleteBuffers(lightmapStagingVboId);
+            lightmapStagingVboId = -1;
+        }
+        if (lightmapStagingFence != 0L) {
+            try {
+                GL32.glDeleteSync(lightmapStagingFence);
+            } catch (Throwable ignored) {}
+            lightmapStagingFence = 0L;
+        }
+
+        // 2. Очищаем все ссылки на старую память
+        lightmapMapped = null;
+        lightmapPersistentMapped = false;
+        lightmapPersistentDirty = false;
+        lightmapShortView = null;
+
+        lightmapStagingMapped = null;
+        lightmapStagingShortView = null;
+        lightmapStagingAvailable = false;
+
+        if (lightmapCpuScratch != null) {
+            MemoryUtil.memFree(lightmapCpuScratch);
+            lightmapCpuScratch = null;
+        }
+
+        // 3. Генерируем абсолютно новый VBO
+        lightmapVboId = GL15.glGenBuffers();
+        if (lightmapVboId == 0) {
+            lightmapVboId = -1;
+            MainRegistry.LOGGER.warn("IrisCompanionMesh: failed to allocate lightmap VBO; falling back to constant UV2");
+            return;
+        }
+
+        boolean canPersistentMap = false;
+        try {
+            var caps = GL.getCapabilities();
+            canPersistentMap = caps != null && (caps.OpenGL44 || caps.GL_ARB_buffer_storage);
+        } catch (Throwable ignored) {
+            canPersistentMap = false;
+        }
+
+        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
+        try {
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboId);
+
+            if (canPersistentMap) {
+                try {
+                    int storageFlags = GL44.GL_MAP_WRITE_BIT | GL44.GL_MAP_PERSISTENT_BIT
+                            | GL44.GL_MAP_COHERENT_BIT | GL44.GL_DYNAMIC_STORAGE_BIT;
+                    if (GL.getCapabilities().OpenGL44) {
+                        GL44.glBufferStorage(GL15.GL_ARRAY_BUFFER, (long) totalBytes, storageFlags);
+                    } else {
+                        // ARB_buffer_storage path (same entrypoint in LWJGL)
+                        GL44.glBufferStorage(GL15.GL_ARRAY_BUFFER, (long) totalBytes, storageFlags);
+                    }
+                    int mapFlags = GL44.GL_MAP_WRITE_BIT | GL44.GL_MAP_PERSISTENT_BIT | GL44.GL_MAP_COHERENT_BIT;
+                    lightmapMapped = GL30.glMapBufferRange(GL15.GL_ARRAY_BUFFER, 0L, (long) totalBytes, mapFlags, lightmapMapped);
+                    if (lightmapMapped != null) {
+                        lightmapMapped.order(ByteOrder.nativeOrder());
+                        lightmapShortView = lightmapMapped.asShortBuffer();
+                        lightmapPersistentMapped = true;
+                    }
+                } catch (Throwable t) {
+                    // Fall back below.
+                    lightmapMapped = null;
+                    lightmapShortView = null;
+                    lightmapPersistentMapped = false;
+                    MainRegistry.LOGGER.debug("IrisCompanionMesh: persistent mapping unavailable, falling back ({})", t.toString());
+                }
+            }
+
+            if (!lightmapPersistentMapped) {
+                // Fallback: allocate CPU scratch and a classic DYNAMIC buffer.
+                lightmapCpuScratch = MemoryUtil.memAlloc(totalBytes).order(ByteOrder.nativeOrder());
+                lightmapShortView = lightmapCpuScratch.asShortBuffer();
+                GL15.glBufferData(GL15.GL_ARRAY_BUFFER, (long) totalBytes, GL15.GL_DYNAMIC_DRAW);
+            }
+        } finally {
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+        }
+
+        // Optional staging path: if buffer storage is available, try to allocate a persistently mapped
+        // staging buffer with EXPLICIT_FLUSH. This can be used even when coherent mapping of the target
+        // buffer failed (some drivers are picky about coherent).
+        if (!lightmapPersistentMapped && canPersistentMap) {
+            try {
+                lightmapStagingVboId = GL15.glGenBuffers();
+                if (lightmapStagingVboId != 0) {
+                    GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapStagingVboId);
+                    int storageFlags = GL44.GL_MAP_WRITE_BIT | GL44.GL_MAP_PERSISTENT_BIT
+                            | GL44.GL_DYNAMIC_STORAGE_BIT;
+                    // No COHERENT here: we use explicit flush + fence.
+                    GL44.glBufferStorage(GL15.GL_ARRAY_BUFFER, (long) totalBytes, storageFlags);
+                    int mapFlags = GL44.GL_MAP_WRITE_BIT | GL44.GL_MAP_PERSISTENT_BIT | GL44.GL_MAP_FLUSH_EXPLICIT_BIT;
+                    lightmapStagingMapped = GL30.glMapBufferRange(GL15.GL_ARRAY_BUFFER, 0L, (long) totalBytes, mapFlags, lightmapStagingMapped);
+                    if (lightmapStagingMapped != null) {
+                        lightmapStagingMapped.order(ByteOrder.nativeOrder());
+                        lightmapStagingShortView = lightmapStagingMapped.asShortBuffer();
+                        lightmapStagingAvailable = true;
+                    }
+                }
+            } catch (Throwable t) {
+                // If staging allocation fails, just keep the normal fallback path.
+                lightmapStagingMapped = null;
+                lightmapStagingShortView = null;
+                lightmapStagingAvailable = false;
+                if (lightmapStagingVboId != -1) {
+                    try { GL15.glDeleteBuffers(lightmapStagingVboId); } catch (Throwable ignored) {}
+                }
+                lightmapStagingVboId = -1;
+            } finally {
+                // Restore bindings.
+                try {
+                    GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+                    // Avoid querying GL_COPY_*_BUFFER_BINDING constants across LWJGL variants;
+                    // unbind copy targets instead (safe and fast).
+                    GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, 0);
+                    GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, 0);
+                } catch (Throwable ignored) {}
+            }
+        }
+
+        lightmapInstanceCapacity = newCapacity;
+        // Re-binding the UV2 pointer against the freshly re-sized VBO is the
+        // caller's responsibility on the next activatePerVertexLightmap().
+        // Invalidate our cached "active" state so the next activate call
+        // actually issues the bind.
+        perVertexLightmapActive = false;
+        lightmapCurrentSlot = -1;
+
+        // Reset slot allocator + dirty tracking to match the new capacity.
+        lightmapKeyToSlot.clear();
+        lightmapSlotKey = new long[newCapacity];
+        lightmapEvictCursor = 0;
+        lightmapDirtyMinSlot = Integer.MAX_VALUE;
+        lightmapDirtyMaxSlot = -1;
+    }
+
+    /**
+     * Allocates or reuses a slot for the given lightmap key.
+     *
+     * @return packed long: low 32 bits = slot, bit 32 = reused flag (1 means slot already contained key).
+     */
+    public long allocLightmapSlot(long key) {
+        if (!supportsPerVertexLightmap()) return 0L;
+        if (key == 0L) key = 1L;
+        int slot = lightmapKeyToSlot.getOrDefault(key, -1);
+        if (slot >= 0 && slot < lightmapInstanceCapacity) {
+            return (((long) 1) << 32) | (slot & 0xFFFF_FFFFL);
+        }
+        // Allocate/evict.
+        if (lightmapInstanceCapacity <= 0) return 0L;
+        slot = lightmapEvictCursor++;
+        if (lightmapEvictCursor >= lightmapInstanceCapacity) lightmapEvictCursor = 0;
+        long oldKey = (slot < lightmapSlotKey.length) ? lightmapSlotKey[slot] : 0L;
+        if (oldKey != 0L) {
+            lightmapKeyToSlot.remove(oldKey);
+        }
+        if (slot >= lightmapSlotKey.length) {
+            long[] grown = new long[Math.max(lightmapInstanceCapacity, slot + 1)];
+            System.arraycopy(lightmapSlotKey, 0, grown, 0, lightmapSlotKey.length);
+            lightmapSlotKey = grown;
+        }
+        lightmapSlotKey[slot] = key;
+        lightmapKeyToSlot.put(key, slot);
+        return (slot & 0xFFFF_FFFFL);
+    }
+
+    /**
+     * Allocates or reuses a slot for the given lightmap key. The key must be a stable hash
+     * of the instance's quantized 8-corner UV2 (typically derived after round+clamp to 0..240).
+     * <p>
+     * Slot reuse is LRU-ish via simple eviction cursor; bounded by {@link #lightmapInstanceCapacity}.
+     */
+    public int getOrAllocateLightmapSlot(long key) {
+        return (int) (allocLightmapSlot(key) & 0xFFFF_FFFFL);
+    }
+
+    /** Marks a slot as dirty for the fallback upload path. */
+    private void markSlotDirty(int slot) {
+        if (lightmapPersistentMapped) {
+            lightmapPersistentDirty = true;
+            return;
+        }
+        if (slot < lightmapDirtyMinSlot) lightmapDirtyMinSlot = slot;
+        if (slot > lightmapDirtyMaxSlot) lightmapDirtyMaxSlot = slot;
+    }
+
+    /**
+     * Uploads all dirty slots to the GPU in one contiguous range, for the fallback (non-persistent) path.
+     * No-op when persistent mapping is active.
+     */
+    public void uploadDirtySlotsIfNeeded() {
+        if (!supportsPerVertexLightmap()) return;
+        if (lightmapPersistentMapped) {
+            // Make client writes visible to subsequent vertex fetches.
+            if (lightmapPersistentDirty) {
+                try {
+                    var caps = GL.getCapabilities();
+                    if (caps != null && caps.OpenGL42) {
+                        GL42.glMemoryBarrier(GL44.GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT);
+                    }
+                } catch (Throwable ignored) {}
+                lightmapPersistentDirty = false;
+            }
+            return;
+        }
+        if (lightmapVboId == -1 || lightmapCpuScratch == null) return;
+        if (lightmapDirtyMaxSlot < lightmapDirtyMinSlot) return;
+
+        int firstSlot = lightmapDirtyMinSlot;
+        int lastSlot = lightmapDirtyMaxSlot;
+        int slotCount = (lastSlot - firstSlot) + 1;
+        uploadLightmapRange(firstSlot, slotCount);
+        lightmapDirtyMinSlot = Integer.MAX_VALUE;
+        lightmapDirtyMaxSlot = -1;
+    }
+
+    /**
+     * Convenience for callers that wrote into a set of slots and need the GPU-visible contents before drawing.
+     * (Persistent mapped path: barrier; fallback: upload dirty slots.)
+     */
+    public void finishLightmapWrites() {
+        uploadDirtySlotsIfNeeded();
+    }
+
+    /**
+     * Computes per-vertex UV2 (blockU, skyV) for the given instance slot by
+     * trilinearly combining the 8 corner lightmap samples with the baked
+     * {@link #perVertexCornerWeights}, and writes the result as USHORT pairs
+     * into {@link #lightmapCpuScratch} at offset {@code slotIndex * vertexCount * 4}.
+     * <p>
+     * Does NOT upload to the GPU; batch the uploads via
+     * {@link #uploadLightmapRange(int, int)} after all instances for a draw
+     * pass have been written (one {@code glBufferSubData} per pass is far
+     * cheaper than one per instance).
+     *
+     * @param slotIndex  0-based slot, must be {@code < lightmapInstanceCapacity}
+     * @param corner16   16 floats laid out as
+     *                   {@code [c0.blockU, c0.skyV, c1.blockU, c1.skyV, ..., c7.blockU, c7.skyV]};
+     *                   exactly the format {@link LightSampleCache#getOrSample8}
+     *                   produces, typically already on the 0..240 scale
+     */
+    public void writeInstanceLightmap(int slotIndex, float[] corner16) {
+        if (!supportsPerVertexLightmap()) return;
+        if (slotIndex < 0 || slotIndex >= lightmapInstanceCapacity) return;
+        if (corner16 == null || corner16.length < 16) return;
+        if (lightmapShortView == null) return;
+    
+        final boolean sliced = corner16.length >= 32 && perVertexSlicedWeights != null;
+        final float[] w = sliced ? perVertexSlicedWeights : perVertexCornerWeights;
+        final ShortBuffer dst = lightmapShortView;
+    
+        int requiredLength = vertexCount * 2;
+        if (lightmapTempArray.length < requiredLength) {
+            lightmapTempArray = new short[requiredLength];
+        }
+    
+        int shortOffset = slotIndex * vertexCount * 2;
+        if (shortOffset < 0 || shortOffset + requiredLength > dst.capacity()) return;
+    
+        if (!sliced) {
+            for (int v = 0; v < vertexCount; v++) {
+                int wBase = v * 8;
+                // Unroll цикла (процессор скажет вам спасибо)
+                float blockU = w[wBase] * corner16[0] +
+                               w[wBase + 1] * corner16[2] +
+                               w[wBase + 2] * corner16[4] +
+                               w[wBase + 3] * corner16[6] +
+                               w[wBase + 4] * corner16[8] +
+                               w[wBase + 5] * corner16[10] +
+                               w[wBase + 6] * corner16[12] +
+                               w[wBase + 7] * corner16[14];
+    
+                float skyV =   w[wBase] * corner16[1] +
+                               w[wBase + 1] * corner16[3] +
+                               w[wBase + 2] * corner16[5] +
+                               w[wBase + 3] * corner16[7] +
+                               w[wBase + 4] * corner16[9] +
+                               w[wBase + 5] * corner16[11] +
+                               w[wBase + 6] * corner16[13] +
+                               w[wBase + 7] * corner16[15];
+    
+                // Быстрое округление вместо Math.round()
+                int bu = (int) (blockU + 0.5f);
+                int sv = (int) (skyV + 0.5f);
+    
+                // Быстрый clamp
+                bu = bu < 0 ? 0 : (bu > 240 ? 240 : bu);
+                sv = sv < 0 ? 0 : (sv > 240 ? 240 : sv);
+    
+                lightmapTempArray[v * 2] = (short) bu;
+                lightmapTempArray[v * 2 + 1] = (short) sv;
+            }
+        } else {
+            // Сделайте то же самое (unroll на 16) для sliced ветки
+            for (int v = 0; v < vertexCount; v++) {
+                float blockU = 0f;
+                float skyV = 0f;
+                int wBase = v * 16;
+                for (int p = 0; p < 16; p++) { // Можно оставить цикл, если unroll на 16 выглядит громоздко, но unroll быстрее
+                    float wp = w[wBase + p];
+                    blockU += wp * corner16[p * 2];
+                    skyV   += wp * corner16[p * 2 + 1];
+                }
+                int bu = (int) (blockU + 0.5f);
+                int sv = (int) (skyV + 0.5f);
+                lightmapTempArray[v * 2] = (short) (bu < 0 ? 0 : (bu > 240 ? 240 : bu));
+                lightmapTempArray[v * 2 + 1] = (short) (sv < 0 ? 0 : (sv > 240 ? 240 : sv));
+            }
+        }
+    
+        // Массовая запись в DirectBuffer — это ОГРОМНЫЙ буст производительности
+        int prevPos = dst.position();
+        dst.position(shortOffset);
+        dst.put(lightmapTempArray, 0, requiredLength);
+        dst.position(prevPos);
+    
+        markSlotDirty(slotIndex);
+    }
+
+    /**
+     * Uploads the populated CPU-side lightmap data for instance slots
+     * {@code [firstSlot, firstSlot + slotCount)} to the GPU.
+     * <p>
+     * Typically called once per batch flush after all {@link #writeInstanceLightmap}
+     * calls for that batch are done — this collapses what would otherwise be
+     * one {@code glBufferSubData} per instance into a single driver roundtrip.
+     */
+    public void uploadLightmapRange(int firstSlot, int slotCount) {
+        if (!supportsPerVertexLightmap()) return;
+        if (lightmapPersistentMapped) return;
+        if (lightmapVboId == -1 || lightmapCpuScratch == null) return;
+        if (slotCount <= 0) return;
+
+        int perSlotBytes = vertexCount * 4;
+        int byteOffset = firstSlot * perSlotBytes;
+        int byteLen = slotCount * perSlotBytes;
+        if (byteOffset < 0 || byteOffset + byteLen > lightmapCpuScratch.capacity()) return;
+
+        // Carve a slice out of the CPU scratch so we only upload the dirty range.
+        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
+        try {
+            lightmapCpuScratch.position(byteOffset);
+            lightmapCpuScratch.limit(byteOffset + byteLen);
+            if (lightmapStagingAvailable && lightmapStagingVboId != -1 && lightmapStagingMapped != null) {
+                // Non-blocking fence check: if the previous copy hasn't completed, fall back
+                // to glBufferSubData so we never overwrite staging data that the driver may
+                // still be reading from.
+                boolean stagingSafe = true;
+                if (lightmapStagingFence != 0L) {
+                    int wait = GL32.glClientWaitSync(lightmapStagingFence, 0, 0L);
+                    if (wait == GL32.GL_TIMEOUT_EXPIRED) {
+                        stagingSafe = false;
+                    } else {
+                        try { GL32.glDeleteSync(lightmapStagingFence); } catch (Throwable ignored) {}
+                        lightmapStagingFence = 0L;
+                    }
+                }
+                if (stagingSafe) {
+                    // Copy CPU scratch -> staging mapped, flush explicit range, then copy into target VBO.
+                    long dstOffset = (long) byteOffset;
+                    // Bulk copy via ByteBuffer slice to avoid per-byte overhead.
+                    ByteBuffer src = lightmapCpuScratch.duplicate();
+                    src.position(byteOffset).limit(byteOffset + byteLen);
+                    ByteBuffer dst = lightmapStagingMapped.duplicate();
+                    dst.position(byteOffset).limit(byteOffset + byteLen);
+                    dst.put(src);
+                    try {
+                        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapStagingVboId);
+                        GL30.glFlushMappedBufferRange(GL15.GL_ARRAY_BUFFER, dstOffset, (long) byteLen);
+                        GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, lightmapStagingVboId);
+                        GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, lightmapVboId);
+                        GL31.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER, dstOffset, dstOffset, (long) byteLen);
+                        lightmapStagingFence = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+                    } finally {
+                        GL15.glBindBuffer(GL31.GL_COPY_READ_BUFFER, 0);
+                        GL15.glBindBuffer(GL31.GL_COPY_WRITE_BUFFER, 0);
+                    }
+                } else {
+                    GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboId);
+                    GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, byteOffset, lightmapCpuScratch);
+                }
+            } else {
+                GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboId);
+                GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, byteOffset, lightmapCpuScratch);
+            }
+        } finally {
+            lightmapCpuScratch.clear();
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+        }
+    }
+
+    /**
+     * Switches this VAO's UV2 attribute to read from {@link #lightmapVboId}
+     * (per-vertex mode) instead of returning the per-draw constant set via
+     * {@code glVertexAttribI2i}. Idempotent — repeated calls after a no-op
+     * return immediately.
+     * <p>
+     * The VAO state is persistent across frames, so we only need to do the
+     * heavy {@code glEnableVertexAttribArray + glVertexAttribIPointer} dance
+     * on the first call (or after an {@link #ensureLightmapCapacity} growth
+     * invalidated the binding).
+     * <p>
+     * The caller MUST have this VAO bound (via {@link #getVaoId()}) before
+     * invoking this method. On return, the UV2 attribute points at slot 0;
+     * use {@link #bindLightmapForInstance(int)} to switch slots per draw.
+     */
+    public void activatePerVertexLightmap() {
+        if (!supportsPerVertexLightmap()) return;
+        if (lightmapVboId == -1) return;
+        if (perVertexLightmapActive) return;
+
+        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
+        try {
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboId);
+            // Stride 4 bytes = 2 × USHORT. Pack shaders declare vaUV2 as
+            // ivec2, so we go through the INTEGER pipeline (see the long
+            // comment on isIntegerAttribute). Offset 0 for now —
+            // bindLightmapForInstance repoints it per draw.
+            GL30.glVertexAttribIPointer(uv2Location, 2, GL11.GL_UNSIGNED_SHORT, 4, 0L);
+            GL20.glEnableVertexAttribArray(uv2Location);
+        } finally {
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+        }
+        perVertexLightmapActive = true;
+        lightmapCurrentSlot = 0;
+    }
+
+    /**
+     * Repoints the VAO's UV2 attribute at the given instance slot within
+     * {@link #lightmapVboId}. Must be called between
+     * {@link #activatePerVertexLightmap()} and the per-instance
+     * {@code glDrawElements}.
+     * <p>
+     * Skips the GL call when the slot matches the previous one (rare — only
+     * happens if one part of the batch draws the same instance twice, e.g.
+     * for shadow + main in the same batch, which our pipeline currently
+     * splits into distinct passes).
+     */
+    public void bindLightmapForInstance(int slotIndex) {
+        if (!perVertexLightmapActive) return;
+        if (slotIndex == lightmapCurrentSlot) return;
+        if (slotIndex < 0 || slotIndex >= lightmapInstanceCapacity) return;
+
+        long byteOffset = (long) slotIndex * vertexCount * 4L;
+
+        int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
+        try {
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboId);
+            GL30.glVertexAttribIPointer(uv2Location, 2, GL11.GL_UNSIGNED_SHORT, 4, byteOffset);
+        } finally {
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
+        }
+        lightmapCurrentSlot = slotIndex;
+    }
+
+    /**
+     * Reverts the VAO back to the per-draw constant UV2 mode (disabled
+     * attribute array — callers supply the value via {@code glVertexAttribI2i}).
+     * Paired with {@link #activatePerVertexLightmap()}. No-op if we were
+     * never in per-vertex mode.
+     * <p>
+     * Rarely needed in practice — any code path that does per-vertex lighting
+     * on one frame wants the same on every frame — but useful for debug
+     * toggles and shader-pack hot-reload scenarios where we might need to
+     * start clean.
+     */
+    public void restoreConstantLightmap() {
+        if (!perVertexLightmapActive) return;
+        if (uv2Location != -1) {
+            GL20.glDisableVertexAttribArray(uv2Location);
+        }
+        perVertexLightmapActive = false;
+        lightmapCurrentSlot = -1;
     }
 
     private static boolean shouldNormalize(VertexFormatElement element) {
@@ -478,9 +1278,23 @@ public final class IrisCompanionMesh {
         final int vboToDelete = this.vboId;
         final int eboToDelete = this.eboId;
         final int vaoToDelete = this.vaoId;
+        final int lightmapVboToDelete = this.lightmapVboId;
+        final ByteBuffer scratchToFree = this.lightmapCpuScratch;
+        final ByteBuffer mappedToUnmap = this.lightmapMapped;
         this.vboId = -1;
         this.eboId = -1;
         this.vaoId = -1;
+        this.lightmapVboId = -1;
+        this.lightmapCpuScratch = null;
+        this.lightmapMapped = null;
+        this.lightmapShortView = null;
+        this.lightmapPersistentMapped = false;
+        this.lightmapPersistentDirty = false;
+        this.lightmapInstanceCapacity = 0;
+        this.perVertexLightmapActive = false;
+        this.lightmapCurrentSlot = -1;
+        this.perVertexCornerWeights = null;
+        this.perVertexSlicedWeights = null;
         this.indexCount = 0;
         this.vertexCount = 0;
         this.built = false;
@@ -489,6 +1303,13 @@ public final class IrisCompanionMesh {
             try {
                 if (vboToDelete != -1) GL15.glDeleteBuffers(vboToDelete);
                 if (eboToDelete != -1) GL15.glDeleteBuffers(eboToDelete);
+                if (mappedToUnmap != null && lightmapVboToDelete != -1) {
+                    try {
+                        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboToDelete);
+                        GL15.glUnmapBuffer(GL15.GL_ARRAY_BUFFER);
+                    } catch (Throwable ignored) {}
+                }
+                if (lightmapVboToDelete != -1) GL15.glDeleteBuffers(lightmapVboToDelete);
                 if (vaoToDelete != -1) GL30.glDeleteVertexArrays(vaoToDelete);
             } catch (Throwable t) {
                 MainRegistry.LOGGER.error("IrisCompanionMesh: cleanup failed", t);
@@ -498,6 +1319,11 @@ public final class IrisCompanionMesh {
             deleter.run();
         } else {
             RenderSystem.recordRenderCall(deleter::run);
+        }
+        // CPU-side native memory must be freed regardless of thread; MemoryUtil
+        // uses the off-heap malloc allocator which is thread-safe.
+        if (scratchToFree != null) {
+            MemoryUtil.memFree(scratchToFree);
         }
     }
 }

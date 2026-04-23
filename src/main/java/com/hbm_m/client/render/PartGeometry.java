@@ -98,6 +98,9 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
         IntBuffer ib = null;
         int indexOffset = 0;
 
+        float minX = Float.POSITIVE_INFINITY, minY = Float.POSITIVE_INFINITY, minZ = Float.POSITIVE_INFINITY;
+        float maxX = Float.NEGATIVE_INFINITY, maxY = Float.NEGATIVE_INFINITY, maxZ = Float.NEGATIVE_INFINITY;
+
         try {
             vb = MemoryUtil.memAlloc(vertexCount * vertexStrideBytes);
             ib = MemoryUtil.memAllocInt(indexCapacity);
@@ -116,6 +119,10 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
                     float x = Float.intBitsToFloat(raw[base + 0]);
                     float y = Float.intBitsToFloat(raw[base + 1]);
                     float z = Float.intBitsToFloat(raw[base + 2]);
+
+                    if (x < minX) minX = x; if (x > maxX) maxX = x;
+                    if (y < minY) minY = y; if (y > maxY) maxY = y;
+                    if (z < minZ) minZ = z; if (z > maxZ) maxZ = z;
 
                     float u = Float.intBitsToFloat(raw[base + 4]);
                     float v = Float.intBitsToFloat(raw[base + 5]);
@@ -159,8 +166,14 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
             vb.flip();
             ib.flip();
 
-            MainRegistry.LOGGER.debug("PartGeometry VBO: {} vertices, {} indices", indexOffset, ib.remaining());
-            return new SingleMeshVboRenderer.VboData(vb, ib);
+            if (!Float.isFinite(minX)) {
+                minX = minY = minZ = 0f;
+                maxX = maxY = maxZ = 0f;
+            }
+
+            MainRegistry.LOGGER.debug("PartGeometry VBO: {} vertices, {} indices, bbox min({},{},{}) max({},{},{})",
+                    indexOffset, ib.remaining(), minX, minY, minZ, maxX, maxY, maxZ);
+            return new SingleMeshVboRenderer.VboData(vb, ib, minX, minY, minZ, maxX, maxY, maxZ);
 
         } catch (Exception e) {
             if (vb != null) {

@@ -743,8 +743,13 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> FAT_MAN_IGNITER = ITEMS.register("fat_man_igniter",
             () -> new Item(new Item.Properties()));
-	public static final RegistryObject<Item> FAT_MAN_CORE = ITEMS.register("fat_man_core",
+
+    public static final RegistryObject<Item> FAT_MAN_CORE = ITEMS.register("fat_man_core",
             () -> new Item(new Item.Properties()));
+
+	public static final RegistryObject<Item> TEST_ITEM = ITEMS.register("test_item",
+            () -> new Item(new Item.Properties()));
+
 
     public static final RegistryObject<Item> CROWBAR = ITEMS.register("crowbar",
             () -> new Item(new Item.Properties()) {

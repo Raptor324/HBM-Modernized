@@ -1,5 +1,5 @@
 {
-    "vertex": "hbm_m:block_lit",
+    "vertex": "hbm_m:block_lit_sliced",
     "fragment": "hbm_m:block_lit",
     "samplers": [
         { "name": "Sampler0" },
@@ -13,9 +13,14 @@
         { "name": "FogColor", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
         { "name": "BboxMin",  "type": "float", "count": 3, "values": [ 0.0, 0.0, 0.0 ] },
         { "name": "BboxSize", "type": "float", "count": 3, "values": [ 1.0, 1.0, 1.0 ] },
-        { "name": "LightC01", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
-        { "name": "LightC23", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
-        { "name": "LightC45", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
-        { "name": "LightC67", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] }
+        { "name": "LightS0C01", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+        { "name": "LightS0C23", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+        { "name": "LightS1C01", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+        { "name": "LightS1C23", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+        { "name": "LightS2C01", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+        { "name": "LightS2C23", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+        { "name": "LightS3C01", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
+        { "name": "LightS3C23", "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] }
     ]
 }
+

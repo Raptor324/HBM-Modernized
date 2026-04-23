@@ -164,18 +164,18 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
 
         boolean useBatching = useVboPath && ModClothConfig.useInstancedBatching();
 
-        // Iris batching: amortise apply()/clear() across Base + Frame + Slider + Spinner
-        // (4 parts) when:
-        //   1) per-type instancing is OFF - straight apply/clear amortisation.
-        //   2) per-type instancing is ON but we are in a shadow pass - the
-        //      end-of-stage flush in RenderLevelStageEvent fires only on the
-        //      main pass, so InstancedStaticPartRenderer.addInstance() routes
-        //      shadow-pass instances through drawSingleWithIrisExtended which
-        //      then shares this batch's apply/clear pair. Without this, the
-        //      machine either fails to cast shadows or appears as a "ghost"
-        //      copy in the sky during the main pass flush.
+        // Iris batching: amortise apply()/clear() across Base + Frame + Slider + Spinner.
+        // Slider/Spinner always use SingleMeshVboRenderer (never instanced); they need
+        // IrisRenderBatch.active() so drawCompanion reuses the shared program + direct
+        // matrix uploads. If we only open the batch when (!batching || shadow) — like
+        // machines whose animated parts are fully instanced — animated parts hit the
+        // standalone apply/clear path per frame and GL spams INVALID_OPERATION / No
+        // active program; geometry can vanish or project wrong.
+        // Instanced Base/Frame flush later calls flushBatchIris (own apply/clear);
+        // ClientModEvents closes any persistent batch before those flushes so ACTIVE
+        // is not left stale after shader.clear().
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-        boolean useIrisBatch = useVboPath && ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
+        boolean useIrisBatch = useVboPath && ShaderCompatibilityDetector.useNewIrisVboPath();
         if (useIrisBatch) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                 renderChemicalPlantPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useVboPath, useBatching, renderActive);

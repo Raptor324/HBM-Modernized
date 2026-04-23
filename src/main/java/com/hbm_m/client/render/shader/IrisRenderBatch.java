@@ -124,6 +124,12 @@ public final class IrisRenderBatch implements AutoCloseable {
     private final float[] mvFloats = new float[16];
     private final float[] mvInverseFloats = new float[16];
     private final float[] normalMatFloats = new float[9];
+    /** Scratch for quantizing the 8-corner UV2 into a stable slot key. */
+    private final short[] cornerShort16 = new short[16];
+    /** Scratch float view of the quantized corner UV2 (0..240). */
+    private final float[] cornerFloat16 = new float[16];
+    /** Quantized 16-probe (32 floats) samples for 2×4×2 sliced + Iris per-vertex path. */
+    private final float[] quantProbe32 = new float[32];
 
     /**
      * Per-instance state caches - let us elide redundant GL calls when consecutive
@@ -132,6 +138,8 @@ public final class IrisRenderBatch implements AutoCloseable {
     private int lastBoundVao = -1;
     private int lastBlockU = Integer.MIN_VALUE;
     private int lastSkyV = Integer.MIN_VALUE;
+
+    /** Rolling cursor for lightmap slots in per-vertex mode (per batch). */
 
     private IrisRenderBatch() {}
 
@@ -243,6 +251,20 @@ public final class IrisRenderBatch implements AutoCloseable {
         }
     }
 
+    /**
+     * Whether this batch is rendering into Iris's shadow pass. Lets callers
+     * skip the expensive 8-corner {@link com.hbm_m.client.render.LightSampleCache}
+     * sampling and the {@code writeInstanceLightmap}/{@code uploadLightmapRange}
+     * pair that produces no visible output in shadow (depth-only) but dominates
+     * the frame's CPU profile and poisons the light cache with shadow-camera
+     * state. Use together with
+     * {@link com.hbm_m.client.render.compat.ShaderCompatibilityDetector#isRenderingShadowPass()}
+     * when no batch is active.
+     */
+    public boolean isShadowPass() {
+        return isShadowPass;
+    }
+
     private void setupOuter(ShaderInstance shader, Matrix4f projectionMatrix) {
         this.isOuter = true;
         this.shader = shader;
@@ -315,7 +337,7 @@ public final class IrisRenderBatch implements AutoCloseable {
             // dense per-part path. Falls back to glGetUniformLocation if the
             // uniform isn't tracked by the ShaderInstance abstraction.
             locModelView = (uModelView != null) ? uModelView.getLocation()
-                    : GL20.glGetUniformLocation(programId, "ModelViewMat");
+                    : GL20.glGetUniformLocation(programId, "iris_ModelViewMat");
             locModelViewInverse = GL20.glGetUniformLocation(programId, "iris_ModelViewMatInverse");
             locNormalMat = GL20.glGetUniformLocation(programId, "iris_NormalMat");
         }
@@ -438,6 +460,237 @@ public final class IrisRenderBatch implements AutoCloseable {
                 lastSkyV = skyV;
             }
         }
+
+        GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
+    }
+
+    /**
+     * Variant of {@link #drawCompanion(IrisCompanionMesh, Matrix4f, int)} that
+     * uses <b>per-vertex</b> lightmap UV2 derived by trilinear interpolation
+     * from the 8 world-space corner samples in {@code cornerUV16}.
+     * <p>
+     * The companion mesh must support the per-vertex lightmap path
+     * ({@link IrisCompanionMesh#supportsPerVertexLightmap()}) — it bakes
+     * trilinear weights per vertex at build time so this call only pays the
+     * per-instance combine + single {@code glBufferSubData}. When the mesh
+     * doesn't support it (build failed, unusual vertex format) we fall back
+     * transparently to the legacy constant-UV2 path using
+     * {@code packedLightFallback}.
+     * <p>
+     * Why this is the right default under Iris: pack shaders read {@code vaUV2}
+     * per vertex anyway, so supplying per-vertex values gives a smooth
+     * in-mesh gradient at zero GPU cost over the constant-UV2 path — we only
+     * trade a few dozen kilobytes of per-frame CPU arithmetic for proper
+     * block-light response across multi-block machines. A torch on one side
+     * of an Advanced Assembler now visibly brightens just that side.
+     *
+     * @param companion            the companion mesh to draw (must be built)
+     * @param modelView            per-instance ModelView (same as the constant
+     *                             path); {@code iris_ModelViewMatInverse} /
+     *                             {@code iris_NormalMat} are derived from it
+     * @param cornerUV16           {@code [c0.blockU, c0.skyV, c1.blockU, ...
+     *                             c7.skyV]} — 16 floats, typically produced
+     *                             by {@code LightSampleCache.getOrSample8}
+     * @param packedLightFallback  packed light to use when the per-vertex
+     *                             path can't run (companion mesh doesn't
+     *                             support it); ignored on the happy path
+     */
+    public void drawCompanionWithPerVertexLight(IrisCompanionMesh companion,
+                                                Matrix4f modelView,
+                                                float[] cornerUV16,
+                                                int packedLightFallback) {
+        if (!isOuter || shader == null) return;
+        if (companion == null || !companion.isBuilt()) return;
+        int targetVao = companion.getVaoId();
+        int targetIndexCount = companion.getIndexCount();
+        if (targetVao <= 0 || targetIndexCount <= 0) return;
+
+        // Fall back to the constant-UV2 path if the companion can't do per-
+        // vertex (e.g. degenerate geometry, no weights). Never silently no-op
+        // on a path users are expecting to see output from.
+        if (!companion.supportsPerVertexLightmap() || cornerUV16 == null || cornerUV16.length < 16) {
+            drawCompanion(companion, modelView, packedLightFallback);
+            return;
+        }
+
+        // Shadow pass short-circuit. Shadow maps only care about depth — pack
+        // shadow vertex programs typically ignore vaUV2 entirely. Running the
+        // per-vertex trilinear path here burns the top profiler hotspot
+        // (writeInstanceLightmap 13.79% + uploadLightmapRange 8.83% in the
+        // reported trace) for zero visible output. Worse, the 8-corner
+        // sampling triggered by the caller also poisons LightSampleCache with
+        // values computed under Iris's shadow-camera RenderSystem state — the
+        // main pass then picks those cached values up (same frame, same key),
+        // which manifests as the "blocklight stripe moves sideways when I
+        // pitch the camera up/down" lighting drift the user reported. The
+        // constant-UV2 path is functionally equivalent for shadow and
+        // untouched by the cache.
+        if (isShadowPass) {
+            drawCompanion(companion, modelView, packedLightFallback);
+            return;
+        }
+
+        if (isPersistent) {
+            IrisExtendedShaderAccess.setCurrentRenderedBlockEntity(0);
+        }
+
+        modelView.get(mvFloats);
+
+        if (lastBoundVao != targetVao) {
+            GL30.glBindVertexArray(targetVao);
+            companion.prepareForShader(shader.getId());
+            lastBoundVao = targetVao;
+        }
+
+        float[] mvSrc = mvFloats;
+
+        if (locModelView >= 0) {
+            GL20.glUniformMatrix4fv(locModelView, false, mvSrc);
+        }
+
+        boolean haveInverse = false;
+        if (locModelViewInverse >= 0) {
+            mvInverseTmp.set(mvSrc).invert();
+            mvInverseTmp.get(mvInverseFloats);
+            GL20.glUniformMatrix4fv(locModelViewInverse, false, mvInverseFloats);
+            haveInverse = true;
+        }
+        if (locNormalMat >= 0) {
+            if (haveInverse) {
+                normalTmp.set(mvInverseTmp).transpose();
+            } else {
+                normalTmp.set(mvSrc[0], mvSrc[1], mvSrc[2],
+                              mvSrc[4], mvSrc[5], mvSrc[6],
+                              mvSrc[8], mvSrc[9], mvSrc[10])
+                         .invert().transpose();
+            }
+            normalTmp.get(normalMatFloats);
+            GL20.glUniformMatrix3fv(locNormalMat, false, normalMatFloats);
+        }
+
+        // Hash the quantized corner UV2 into a stable key and request a slot that can
+        // be reused across draws when the light field repeats (dense farms).
+        long key = 1469598103934665603L;
+        for (int k = 0; k < 16; k++) {
+            int q = Math.round(cornerUV16[k]);
+            if (q < 0) q = 0; else if (q > 240) q = 240;
+            cornerShort16[k] = (short) q;
+            cornerFloat16[k] = (float) q;
+            key ^= (q & 0xFFFF);
+            key *= 1099511628211L;
+        }
+        // Ensure we have a modest slot budget for the per-part path. Unlike the instanced
+        // renderer, this path can't cheaply know the total instance count up front, so we
+        // keep a fixed minimum and rely on eviction beyond it.
+        companion.ensureLightmapCapacity(32);
+        long alloc = companion.allocLightmapSlot(key);
+        int cachedSlot = (int) (alloc & 0xFFFF_FFFFL);
+        boolean reused = (alloc >>> 32) != 0L;
+        if (!reused) {
+            companion.writeInstanceLightmap(cachedSlot, cornerFloat16);
+        }
+        companion.finishLightmapWrites();
+        companion.activatePerVertexLightmap();
+        companion.bindLightmapForInstance(cachedSlot);
+        // The constant-UV2 cache is now stale; bust it so a subsequent plain
+        // drawCompanion() re-issues glVertexAttribI2i instead of trusting an
+        // outdated "last" pair that no longer matches the VAO's state.
+        lastBlockU = Integer.MIN_VALUE;
+        lastSkyV = Integer.MIN_VALUE;
+
+        GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
+    }
+
+    /**
+     * Per-vertex path for tall meshes that use a 2×4×2 world probe lattice
+     * ({@link com.hbm_m.client.render.LightSampleCache#getOrSample16} → {@code float[32]}),
+     * matching the vanilla VBO / instanced-sliced path under {@code USE_SLICED_LIGHT}.
+     * <p>
+     * When the mesh has no {@link IrisCompanionMesh#supportsSlicedPerVertexLightmap() sliced
+     * weights}, fall back to {@link #drawCompanionWithPerVertexLight} (8 corners) or
+     * {@link #drawCompanion}.
+     */
+    public void drawCompanionWithSlicedPerVertexLight(IrisCompanionMesh companion,
+                                                      Matrix4f modelView,
+                                                      float[] probeUV32,
+                                                      int packedLightFallback) {
+        if (!isOuter || shader == null) return;
+        if (companion == null || !companion.isBuilt()) return;
+        int targetVao = companion.getVaoId();
+        int targetIndexCount = companion.getIndexCount();
+        if (targetVao <= 0 || targetIndexCount <= 0) return;
+
+        if (!companion.supportsSlicedPerVertexLightmap() || probeUV32 == null || probeUV32.length < 32) {
+            // Do not map the first 16 floats of a 2×4×2 lattice onto 8-corner weights — layouts differ.
+            drawCompanion(companion, modelView, packedLightFallback);
+            return;
+        }
+
+        if (isShadowPass) {
+            drawCompanion(companion, modelView, packedLightFallback);
+            return;
+        }
+
+        if (isPersistent) {
+            IrisExtendedShaderAccess.setCurrentRenderedBlockEntity(0);
+        }
+
+        modelView.get(mvFloats);
+
+        if (lastBoundVao != targetVao) {
+            GL30.glBindVertexArray(targetVao);
+            companion.prepareForShader(shader.getId());
+            lastBoundVao = targetVao;
+        }
+
+        float[] mvSrc = mvFloats;
+
+        if (locModelView >= 0) {
+            GL20.glUniformMatrix4fv(locModelView, false, mvSrc);
+        }
+
+        boolean haveInverse = false;
+        if (locModelViewInverse >= 0) {
+            mvInverseTmp.set(mvSrc).invert();
+            mvInverseTmp.get(mvInverseFloats);
+            GL20.glUniformMatrix4fv(locModelViewInverse, false, mvInverseFloats);
+            haveInverse = true;
+        }
+        if (locNormalMat >= 0) {
+            if (haveInverse) {
+                normalTmp.set(mvInverseTmp).transpose();
+            } else {
+                normalTmp.set(mvSrc[0], mvSrc[1], mvSrc[2],
+                              mvSrc[4], mvSrc[5], mvSrc[6],
+                              mvSrc[8], mvSrc[9], mvSrc[10])
+                         .invert().transpose();
+            }
+            normalTmp.get(normalMatFloats);
+            GL20.glUniformMatrix3fv(locNormalMat, false, normalMatFloats);
+        }
+
+        long key = 1469598103934665603L;
+        for (int k = 0; k < 32; k++) {
+            int q = Math.round(probeUV32[k]);
+            if (q < 0) q = 0;
+            else if (q > 240) q = 240;
+            quantProbe32[k] = (float) q;
+            key ^= (q & 0xFFFF);
+            key *= 1099511628211L;
+        }
+
+        companion.ensureLightmapCapacity(32);
+        long alloc = companion.allocLightmapSlot(key);
+        int cachedSlot = (int) (alloc & 0xFFFF_FFFFL);
+        boolean reused = (alloc >>> 32) != 0L;
+        if (!reused) {
+            companion.writeInstanceLightmap(cachedSlot, quantProbe32);
+        }
+        companion.finishLightmapWrites();
+        companion.activatePerVertexLightmap();
+        companion.bindLightmapForInstance(cachedSlot);
+        lastBlockU = Integer.MIN_VALUE;
+        lastSkyV = Integer.MIN_VALUE;
 
         GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
     }

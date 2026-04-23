@@ -193,10 +193,20 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         // OcclusionCullingHelper check before flipping the flag. In either case
         // the icon stays unrendered, saving a full ItemRenderer.renderStatic
         // per offscreen / occluded machine.
-        visibleThisFrame = false;
-        super.render(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
-        if (visibleThisFrame) {
-            renderRecipeIconDirect(be, poseStack, bufferSource, packedLight, packedOverlay);
+        
+        com.hbm_m.client.render.LightSampleCache.BASE_POSE.get().set(poseStack.last().pose());
+        com.hbm_m.client.render.LightSampleCache.BASE_POSE_SET.set(true);
+
+        try {
+            // Pessimistic default - super.render() may early-out
+            visibleThisFrame = false;
+            super.render(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay);
+            if (visibleThisFrame) {
+                renderRecipeIconDirect(be, poseStack, bufferSource, packedLight, packedOverlay);
+            }
+        } finally {
+            // Обязательно очищаем после рендера машины
+            com.hbm_m.client.render.LightSampleCache.BASE_POSE_SET.set(false);
         }
     }
 
@@ -532,11 +542,4 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     }
 
     @Override public int getViewDistance() { return 128; }
-    
-    // public void onResourceManagerReload() {
-    //     clearCaches();
-    //     gpu = null;
-    //     cachedModel = null;
-    //     MainRegistry.LOGGER.debug("Assembler renderer resources reloaded");
-    // }
 }

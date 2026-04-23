@@ -86,6 +86,9 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         LegacyAnimator animator = LegacyAnimator.create(poseStack, bufferSource,
                 packedLight, packedOverlay);
 
+        com.hbm_m.client.render.LightSampleCache.BASE_POSE.get().set(poseStack.last().pose());
+        com.hbm_m.client.render.LightSampleCache.BASE_POSE_SET.set(true);
+
         poseStack.pushPose();
         try {
             setupBlockTransform(animator, blockEntity);
@@ -97,6 +100,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
                 Minecraft.getInstance().gameRenderer.lightTexture().turnOffLightLayer();
                 gpuStateSetup = false;
             }
+            com.hbm_m.client.render.LightSampleCache.BASE_POSE_SET.set(false);
         }
     }
 

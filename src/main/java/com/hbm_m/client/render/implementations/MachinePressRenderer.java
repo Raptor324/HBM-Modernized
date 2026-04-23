@@ -12,11 +12,11 @@ import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.OcclusionCullingHelper;
-import com.hbm_m.client.render.SingleMeshVboRenderer;
-import com.hbm_m.client.render.SingleMeshVboRenderer.VboData;
+import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
+import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
@@ -82,10 +82,6 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
 
         renderStampItem(blockEntity, poseStack, bufferSource, dynamicLight, packedOverlay, headTransform);
         renderWorkpiece(blockEntity, model, poseStack, bufferSource, dynamicLight, packedOverlay);
-
-        if (bufferSource instanceof MultiBufferSource.BufferSource bufferSrc) {
-            bufferSrc.endBatch();
-        }
     }
 
     private Matrix4f renderWithVbo(MachinePressBlockEntity blockEntity, PressBakedModel model,
@@ -116,7 +112,17 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
             if (instancedHead != null && !instancedHead.isInitialized()) {
                 MainRegistry.LOGGER.warn("MachinePressRenderer: instancedHead exists but NOT initialized, using fallback");
             }
-            gpuRenderer.renderAnimatedHead(poseStack, packedLight, headTransform, blockPos, blockEntity, bufferSource);
+            // Under Iris/Oculus, the per-part extended-shader path is extremely sensitive to
+            // apply()/clear() frequency. When instancing is disabled, we open an IrisRenderBatch
+            // session so the head draw shares one apply()/clear() with other parts in this pass.
+            boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || inShadowPass);
+            if (useIrisBatch) {
+                try (IrisRenderBatch batch = IrisRenderBatch.begin(inShadowPass, RenderSystem.getProjectionMatrix())) {
+                    gpuRenderer.renderAnimatedHead(poseStack, packedLight, headTransform, blockPos, blockEntity, bufferSource);
+                }
+            } else {
+                gpuRenderer.renderAnimatedHead(poseStack, packedLight, headTransform, blockPos, blockEntity, bufferSource);
+            }
         }
         return headTransform;
     }

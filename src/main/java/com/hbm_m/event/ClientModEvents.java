@@ -76,6 +76,11 @@ public class ClientModEvents {
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             if (ModClothConfig.useInstancedBatching()) {
+                // Tear down any IrisRenderBatch opened during BER (e.g. Chemical Plant
+                // Slider/Spinner + instanced Base/Frame). flushBatchIris does its own
+                // shader.apply/clear; leaving ACTIVE set after clear() poisons the next
+                // frame with "No active program" / matrix uniform errors.
+                IrisRenderBatch.closePersistentIfActive();
                 MachineAdvancedAssemblerRenderer.flushInstancedBatches(event);
                 MachineHydraulicFrackiningTowerRenderer.flushInstancedBatches(event);
                 MachineAssemblerRenderer.flushInstancedBatches(event);

@@ -9,6 +9,7 @@ import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
@@ -64,7 +65,8 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
                 var data = ObjModelVboBuilder.buildSinglePart(part, "Cube_Cube.001");
                 var quads = GlobalMeshCache.getOrCompile("frackining_tower_Cube_Cube.001", part);
                 if (data != null) {
-                    instancedMain = new InstancedStaticPartRenderer(data, quads);
+                    // Tall tower: use sliced light probes (2x4x2) so mid-height side lights affect the mesh.
+                    instancedMain = new InstancedStaticPartRenderer(data, quads, true);
                 }
             }
             instancersInitialized = true;
@@ -134,15 +136,25 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
             if (useBatching && instancedMain != null && instancedMain.isInitialized()) {
                 instancedMain.addInstance(poseStack, packedLight, blockPos, be, bufferSource);
             } else {
-                gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
+                // Ветка всегда без instancing (один part → SingleMeshVboRenderer). Под Iris
+                // открываем тот же persistent IrisRenderBatch, что Assembler/Chemical Plant:
+                // один shader.apply/пакет за проход вместо apply+clear на каждой вышке — иначе
+                // GL_INVALID_OPERATION / No active program и пропадание по углу камеры.
+                if (ShaderCompatibilityDetector.useNewIrisVboPath()) {
+                    boolean inShadow = ShaderCompatibilityDetector.isRenderingShadowPass();
+                    try (IrisRenderBatch batch = IrisRenderBatch.begin(inShadow, RenderSystem.getProjectionMatrix())) {
+                        gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
+                    }
+                } else {
+                    gpu.render(poseStack, packedLight, blockPos, be, bufferSource);
+                }
             }
         }
 
         poseStack.popPose();
     }
 
-    @Override 
-    public boolean shouldRenderOffScreen(MachineHydraulicFrackiningTowerBlockEntity be) {
-        return true; 
-    }
+    @Override public boolean shouldRenderOffScreen(MachineHydraulicFrackiningTowerBlockEntity be) { return false; }
+
+    @Override public int getViewDistance() { return 128; }
 }

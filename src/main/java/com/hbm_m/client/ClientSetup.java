@@ -516,14 +516,35 @@ public class ClientSetup {
             ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit.vsh");
         ResourceLocation virtualInstancedVsh =
             ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced.vsh");
+        ResourceLocation virtualSlicedVsh =
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_sliced.vsh");
+        ResourceLocation virtualInstancedSlicedVsh =
+            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced_sliced.vsh");
 
         com.hbm_m.client.render.shader.modification.ShaderModification instancingDefine =
             com.hbm_m.client.render.shader.modification.ShaderModification.builder()
                 .define("USE_INSTANCING");
 
+        com.hbm_m.client.render.shader.modification.ShaderModification slicedDefine =
+            com.hbm_m.client.render.shader.modification.ShaderModification.builder()
+                .define("USE_SLICED_LIGHT");
+
+        com.hbm_m.client.render.shader.modification.ShaderModification instancedSlicedDefine =
+            com.hbm_m.client.render.shader.modification.ShaderModification.builder()
+                .define("USE_INSTANCING")
+                .define("USE_SLICED_LIGHT");
+
         net.minecraft.server.packs.resources.ResourceProvider instancedProvider =
             com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
                 event.getResourceProvider(), virtualInstancedVsh, realVsh, instancingDefine);
+
+        net.minecraft.server.packs.resources.ResourceProvider slicedProvider =
+            com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
+                event.getResourceProvider(), virtualSlicedVsh, realVsh, slicedDefine);
+
+        net.minecraft.server.packs.resources.ResourceProvider instancedSlicedProvider =
+            com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
+                event.getResourceProvider(), virtualInstancedSlicedVsh, realVsh, instancedSlicedDefine);
 
         event.registerShader(
             new ShaderInstance(
@@ -544,6 +565,26 @@ public class ClientSetup {
             ModShaders::setBlockLitInstancedShader
         );
         MainRegistry.LOGGER.info("Successfully registered block_lit_instanced shader");
+
+        event.registerShader(
+            new ShaderInstance(
+                slicedProvider,
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple_sliced"),
+                blockLitSimpleFormat
+            ),
+            ModShaders::setBlockLitSimpleSlicedShader
+        );
+        MainRegistry.LOGGER.info("Successfully registered block_lit_simple_sliced shader");
+
+        event.registerShader(
+            new ShaderInstance(
+                instancedSlicedProvider,
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced_sliced"),
+                blockLitInstancedFormat
+            ),
+            ModShaders::setBlockLitInstancedSlicedShader
+        );
+        MainRegistry.LOGGER.info("Successfully registered block_lit_instanced_sliced shader");
         
         // Register thermal vision shader for post-processing
         // VertexFormat thermalVisionFormat = new VertexFormat(

@@ -51,8 +51,24 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 public class InstancedStaticPartRenderer extends AbstractGpuMesh {
 
     private static final int MAX_INSTANCES = 1024;
-    // float per instance: 3 (Pos) + 4 (Rot) + 1 (Light) = 8 floats
-    private static final int INSTANCE_DATA_SIZE = 8;
+    // Per-instance layout (floats):
+    //   InstPos       vec3 (loc 3) @ 0
+    //   InstRot       vec4 (loc 4) @ 3
+    //   InstBboxMin   vec3 (loc 5) @ 7
+    //   InstBboxSize  vec3 (loc 6) @ 10
+    //   InstLightC01  vec4 (loc 7) @ 13   -- c0.uv, c1.uv
+    //   InstLightC23  vec4 (loc 8) @ 17   -- c2.uv, c3.uv
+    //   InstLightC45  vec4 (loc 9) @ 21   -- c4.uv, c5.uv
+    //   InstLightC67  vec4 (loc 10) @ 25  -- c6.uv, c7.uv
+    private static final int INSTANCE_ATTRIB_FIRST = 3;
+    private static final int LIGHT_FLOAT_OFFSET = 13; // first float of light data in instance record
+    private static final int BASE_INSTANCE_DATA_SIZE = 29; // legacy: 8 corners = 16 floats
+    private static final int SLICED_INSTANCE_DATA_SIZE = 45; // 4 slices * 4 probes * 2 floats = 32 floats
+
+    private final boolean useSlicedLight;
+    private final int instanceDataSize;
+    private final int instanceAttribLast;
+    private final int lightFloatCount;
 
     private int instanceCount = 0;
     private float batchSkyDarken = -1f; // кэш getSkyDarken на батч
@@ -71,9 +87,34 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
      * per-draw constant via {@code glVertexAttrib2f}.
      */
     private final float[] instanceLightUV = new float[MAX_INSTANCES * 2];
+    /** Per-instance slot index into {@link IrisCompanionMesh}'s per-vertex lightmap VBO. */
+    private final int[] instanceLightmapSlot = new int[MAX_INSTANCES];
+    /** Scratch quantized probe UV2 for slot hashing (reused). */
+    private final short[] tmpCornerShort;
 
     private final Vector3f posTmp = new Vector3f();
     private final Quaternionf rotTmp = new Quaternionf();
+    /**
+     * Scratch pose that represents the per-BE local transform (rotation, scale,
+     * any small sub-block translation applied inside the BER) <b>without</b>
+     * the camera's view rotation and <b>without</b> the {@code blockPos - cameraPos}
+     * offset baked in by LevelRenderer. Combined with an explicit
+     * integer {@link BlockPos}, this lets {@link LightSampleCache#getOrSample8}
+     * derive world block sample positions as
+     * {@code blockPos + floor(localPose * objCorner)} and keep the sampled
+     * blocks stable as the camera moves. See the long comment in
+     * {@link #addInstance}.
+     */
+    private final Matrix4f tmpLocalPose = new Matrix4f();
+    /**
+     * Scratch 4x4 holding the inverse of the camera's view rotation, used to
+     * strip the view rotation baked into the BER pose stack before computing
+     * the per-BE local pose for light sampling. See the long comment in
+     * {@link #addInstance}.
+     */
+    private final Matrix4f tmpInvViewRot = new Matrix4f();
+    /** Scratch probe buffers for {@link LightSampleCache} (reused). */
+    private final float[] tmpCornerUV;
     /** Reusable quaternion for the Iris per-instance loop (avoid GC pressure). */
     private final Quaternionf irisQuatTmp = new Quaternionf();
     /** Reusable identity matrix for batch-level static uniform uploads. */
@@ -86,6 +127,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     private Cleaner.Cleanable instanceBufferCleanable;
 
     private ShaderInstance cachedShader = null;
+    private int cachedShaderProgramId = -1;
     private Uniform uProjMat;
     private Uniform uModelView;
     private Uniform uFogStart;
@@ -136,10 +178,19 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     private final float[] irisSingleUV = new float[2];
 
     public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data) {
-        this(data, null);
+        this(data, null, false);
     }
     public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data, List<BakedQuad> quadsForIris) {
+        this(data, quadsForIris, false);
+    }
+    public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data, List<BakedQuad> quadsForIris, boolean useSlicedLight) {
         this.quadsForIris = quadsForIris;
+        this.useSlicedLight = useSlicedLight;
+        this.instanceDataSize = useSlicedLight ? SLICED_INSTANCE_DATA_SIZE : BASE_INSTANCE_DATA_SIZE;
+        this.instanceAttribLast = useSlicedLight ? 14 : 10;
+        this.lightFloatCount = useSlicedLight ? 32 : 16;
+        this.tmpCornerUV = new float[lightFloatCount];
+        this.tmpCornerShort = new short[lightFloatCount];
         if (data == null) {
             MainRegistry.LOGGER.error("InstancedStaticPartRenderer: Received NULL VboData! Cannot create renderer.");
             initialized = false;
@@ -158,6 +209,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             }
 
             indexCount = data.indices != null ? data.indices.remaining() : 0;
+            setObjBboxFrom(data);
 
             GL30.glBindVertexArray(vaoId);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
@@ -185,25 +237,68 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             }
 
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVboId);
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, (long) MAX_INSTANCES * INSTANCE_DATA_SIZE * 4, GL15.GL_STREAM_DRAW);
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, (long) MAX_INSTANCES * instanceDataSize * 4, GL15.GL_STREAM_DRAW);
 
-            int stride = INSTANCE_DATA_SIZE * 4; // 32 bytes
+            int stride = instanceDataSize * 4;
 
+            // InstPos (vec3) @ 0
             GL20.glEnableVertexAttribArray(3);
             GL20.glVertexAttribPointer(3, 3, GL11.GL_FLOAT, false, stride, 0);
             GL33.glVertexAttribDivisor(3, 1);
 
+            // InstRot (vec4) @ 3 floats = 12 bytes
             GL20.glEnableVertexAttribArray(4);
             GL20.glVertexAttribPointer(4, 4, GL11.GL_FLOAT, false, stride, 3 * 4);
             GL33.glVertexAttribDivisor(4, 1);
 
+            // InstBboxMin (vec3) @ 7 floats = 28 bytes
             GL20.glEnableVertexAttribArray(5);
-            GL20.glVertexAttribPointer(5, 1, GL11.GL_FLOAT, false, stride, 7 * 4);
+            GL20.glVertexAttribPointer(5, 3, GL11.GL_FLOAT, false, stride, 7 * 4);
             GL33.glVertexAttribDivisor(5, 1);
+
+            // InstBboxSize (vec3) @ 10 floats = 40 bytes
+            GL20.glEnableVertexAttribArray(6);
+            GL20.glVertexAttribPointer(6, 3, GL11.GL_FLOAT, false, stride, 10 * 4);
+            GL33.glVertexAttribDivisor(6, 1);
+
+            if (!useSlicedLight) {
+                // InstLightC01 (vec4) @ 13 floats
+                GL20.glEnableVertexAttribArray(7);
+                GL20.glVertexAttribPointer(7, 4, GL11.GL_FLOAT, false, stride, 13 * 4);
+                GL33.glVertexAttribDivisor(7, 1);
+                // InstLightC23 (vec4) @ 17 floats
+                GL20.glEnableVertexAttribArray(8);
+                GL20.glVertexAttribPointer(8, 4, GL11.GL_FLOAT, false, stride, 17 * 4);
+                GL33.glVertexAttribDivisor(8, 1);
+                // InstLightC45 (vec4) @ 21 floats
+                GL20.glEnableVertexAttribArray(9);
+                GL20.glVertexAttribPointer(9, 4, GL11.GL_FLOAT, false, stride, 21 * 4);
+                GL33.glVertexAttribDivisor(9, 1);
+                // InstLightC67 (vec4) @ 25 floats
+                GL20.glEnableVertexAttribArray(10);
+                GL20.glVertexAttribPointer(10, 4, GL11.GL_FLOAT, false, stride, 25 * 4);
+                GL33.glVertexAttribDivisor(10, 1);
+            } else {
+                // 4 slices * 2 vec4 per slice = 8 vec4 attributes, starting at float offset 13.
+                // loc 7  -> +0 floats
+                // loc 8  -> +4
+                // loc 9  -> +8
+                // loc 10 -> +12
+                // loc 11 -> +16
+                // loc 12 -> +20
+                // loc 13 -> +24
+                // loc 14 -> +28
+                for (int a = 0; a < 8; a++) {
+                    int loc = 7 + a;
+                    GL20.glEnableVertexAttribArray(loc);
+                    GL20.glVertexAttribPointer(loc, 4, GL11.GL_FLOAT, false, stride, (LIGHT_FLOAT_OFFSET + a * 4) * 4L);
+                    GL33.glVertexAttribDivisor(loc, 1);
+                }
+            }
 
             GL30.glBindVertexArray(0);
 
-            instanceBuffer = MemoryUtil.memAllocFloat(MAX_INSTANCES * INSTANCE_DATA_SIZE);
+            instanceBuffer = MemoryUtil.memAllocFloat(MAX_INSTANCES * instanceDataSize);
             final long bufferAddress = MemoryUtil.memAddress(instanceBuffer);
             instanceBufferCleanable = CLEANER.register(this, () -> {
                 try {
@@ -267,8 +362,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
 
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             // Try the Iris ExtendedShader path through our companion mesh.
-            if (drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
-                return;
+            if (ShaderCompatibilityDetector.useNewIrisVboPath()) {
+                if (drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
+                    return;
+                }
             }
             // Fallback to the classic putBulkData path that defers to Iris's pipeline.
             if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
@@ -283,7 +380,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
 
         // --- VANILLA VBO PATH ---
 
-        ShaderInstance shader = ModShaders.getBlockLitInstancedShader();
+        ShaderInstance shader = useSlicedLight ? ModShaders.getBlockLitInstancedSlicedShader()
+                                               : ModShaders.getBlockLitInstancedShader();
         if (shader == null) {
             if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
                 VertexConsumer consumer = bufferSource.getBuffer(RenderType.solid());
@@ -302,10 +400,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             RenderSystem.setShader(() -> shader);
             // Prime a single instance slot with the current pose so the instanced shader path
             // can emit a non-instanced draw via the same VAO layout.
-            uploadSingleInstance(poseStack, packedLight);
+            uploadSingleInstance(poseStack, packedLight, blockEntity);
 
             applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), new Matrix4f());
-            SingleMeshVboRenderer.TextureBinder.bindForModelIfNeeded(shader);
+            // Must come BEFORE apply() — see prepareBlockLitSamplers javadoc.
+            SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
             shader.apply();
 
             RenderSystem.enableDepthTest();
@@ -316,7 +415,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             GL30.glBindVertexArray(vaoId);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVboId);
             GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, 0, instanceBuffer);
-            for (int i = 3; i <= 5; i++) GL20.glEnableVertexAttribArray(i);
+            for (int i = INSTANCE_ATTRIB_FIRST; i <= instanceAttribLast; i++) GL20.glEnableVertexAttribArray(i);
 
             GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0, 1);
         } catch (Exception e) {
@@ -405,21 +504,96 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         mat.getTranslation(posTmp);
         mat.getNormalizedRotation(rotTmp);
 
-        // Multi-point lightmap sample around the multiblock's bounding box.
-        // Routed through the per-frame cache (LightSampleCache) so all 11 part
-        // renderers belonging to one machine share a single sample - without
-        // the cache the profiler attributed ~17% of frame time to redundant
-        // resampling on the dense Advanced Assembler / Chemical Plant case.
+        // Keep the legacy 6-face averaged sample populated for the Iris flush path
+        // (which still uses a single vaUV2 per draw). Cached per-BE so the 11 parts
+        // of one machine share a single lookup.
         int sampleBase = instanceCount * 2;
         LightSampleCache.getOrSample(blockEntity, packedLight, instanceLightUV, sampleBase);
-        float blockU = instanceLightUV[sampleBase];
-        float skyV   = instanceLightUV[sampleBase + 1];
+
+        // Spatial light sampling:
+        //  - legacy: 8-corner trilinear (2x2x2)
+        //  - sliced: 2x4x2 probe lattice (better mid-height side lighting on tall meshes)
+        //
+        // Reconstructing the per-BE local pose from `mat` is subtle. Mojang
+        // bakes the camera VIEW ROTATION into the pose stack before dispatching
+        // block entities: see {@code GameRenderer.renderLevel}, which calls
+        //   pPoseStack.mulPose(Z_roll); mulPose(X_pitch); mulPose(Y_yaw+180)
+        // BEFORE invoking {@code levelRenderer.renderLevel(pPoseStack, ...)}.
+        // {@code LevelRenderer} then only adds {@code translate(blockPos - cameraPos)}
+        // (cast to float inside PoseStack) inside its block-entities loop, so
+        // by the time we see `mat` here:
+        //
+        //   mat = viewRot * T( (float)(blockPos - cameraPos) ) * perBELocal
+        //
+        // For on-screen rendering this cancels out (the composed transform is
+        // what the shader rebuilds from InstPos + InstRot). For light sampling
+        // it absolutely does NOT cancel in two ways:
+        //
+        //  (a) If we leave viewRot in the composed pose, the 8 sampled corners
+        //      rotate with the camera and drift into opaque blocks /
+        //      underground / sky - the "models darken from the bottom up as
+        //      the camera pitches up" symptom.
+        //
+        //  (b) If we compose a full absolute world pose in a Matrix4f
+        //      (i.e. T(cameraPos) * invViewRot * mat), the translation column
+        //      is computed as (float)cameraPos + (float)(blockPos - cameraPos)
+        //      in float32. At cameraPos magnitudes > ~10^4 this sum no longer
+        //      exactly equals (float)blockPos: the two casts round to grid
+        //      points that are not separated by an integer, so the combined
+        //      value jitters by fractions of a block as the player moves sub-
+        //      block distances. Mth.floor then flips between adjacent blocks
+        //      and we sample a different lightmap cell every few frames - the
+        //      "models shimmer between light and dark near a torch while the
+        //      player strafes" symptom.
+        //
+        // Fix: keep the light sample math in BLOCK-RELATIVE space.
+        //  1. Strip viewRot via RenderSystem.getInverseViewRotationMatrix(),
+        //     which Mojang stores right before dispatching the level (see
+        //     GameRenderer.renderLevel: RenderSystem.setInverseViewRotationMatrix).
+        //     This gives   invViewRot * mat = T(offset) * perBELocal
+        //     where offset = (float)(blockPos - cameraPos).
+        //  2. Subtract offset from the translation column to leave pure
+        //     perBELocal. We recompute offset using the EXACT same cast that
+        //     LevelRenderer used ({@code (float)(blockPos.getX() - cam.x)}),
+        //     so the two rounding errors cancel bit-for-bit and the
+        //     reconstructed perBELocal is stable even at cameraPos > 10^6.
+        //  3. Pass blockPos (int) alongside perBELocal (small floats) to
+        //     LightSampleCache, which derives world sample positions as
+        //     {@code blockPos.getX() + Mth.floor(perBELocal * objCorner.x)}
+        //     - no absolute-world float arithmetic anywhere in the flooring
+        //     step.
+        if (LightSampleCache.BASE_POSE_SET.get()) {
+            tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(mat);
+        } else {
+            var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+            tmpLocalPose.set(tmpInvViewRot).mul(mat);
+            tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPos.getX() - cam.x));
+            tmpLocalPose.m31(tmpLocalPose.m31() - (float) (blockPos.getY() - cam.y));
+            tmpLocalPose.m32(tmpLocalPose.m32() - (float) (blockPos.getZ() - cam.z));
+        }
+        
+        long partHash = System.identityHashCode(this);
+        if (useSlicedLight) {
+            LightSampleCache.getOrSample16(blockEntity, partHash, objBbox, blockPos, tmpLocalPose,
+                                           packedLight, tmpCornerUV);
+        } else {
+            LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, blockPos, tmpLocalPose,
+                                          packedLight, tmpCornerUV);
+        }
 
         instanceBuffer.put(posTmp.x).put(posTmp.y).put(posTmp.z);
         instanceBuffer.put(rotTmp.x).put(rotTmp.y).put(rotTmp.z).put(rotTmp.w);
-        // Vanilla "Brightness" path uses the same smoothed values so the no-shader
-        // and Iris paths agree on per-machine brightness.
-        instanceBuffer.put(brightnessFromUV(blockU, skyV, batchSkyDarken));
+        // InstBboxMin (vec3)
+        instanceBuffer.put(objBbox[0]).put(objBbox[1]).put(objBbox[2]);
+        // InstBboxSize (vec3). Guard against 0-size axes: the shader divides by
+        // this and needs a safe non-zero value when a part is flat on an axis.
+        float sx = objBbox[3] - objBbox[0];
+        float sy = objBbox[4] - objBbox[1];
+        float sz = objBbox[5] - objBbox[2];
+        instanceBuffer.put(sx).put(sy).put(sz);
+        // Light probes payload: either 16 floats (legacy) or 32 floats (sliced)
+        instanceBuffer.put(tmpCornerUV);
 
         instanceCount++;
     }
@@ -455,13 +629,51 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
      * Helper that primes a single instance slot at index 0 of {@code instanceBuffer}.
      */
     private void uploadSingleInstance(PoseStack poseStack, int packedLight) {
+        uploadSingleInstance(poseStack, packedLight, null);
+    }
+
+    private void uploadSingleInstance(PoseStack poseStack, int packedLight,
+                                      @Nullable BlockEntity blockEntity) {
         instanceBuffer.clear();
         Matrix4f mat = poseStack.last().pose();
         mat.getTranslation(posTmp);
         mat.getNormalizedRotation(rotTmp);
+
+        // See the long comment in addInstance for the full derivation. Short
+        // version: strip viewRot from `mat` (it's baked in by
+        // GameRenderer.renderLevel) and then strip the (blockPos - cameraPos)
+        // offset from the translation column so the resulting pose is purely
+        // BE-local. LightSampleCache floors block sample positions using this
+        // local pose plus the integer blockPos, keeping samples stable across
+        // camera motion and at large world offsets.
+        //
+        // If blockEntity is null (Iris single-draw prime path without a known
+        // BE), LightSampleCache early-exits to the fallback packedLight - we
+        // still need a non-null localPose/blockPos to satisfy the null check,
+        // but their values don't matter in that branch.
+        BlockPos blockPosForSample = (blockEntity != null) ? blockEntity.getBlockPos() : BlockPos.ZERO;
+        if (LightSampleCache.BASE_POSE_SET.get()) {
+            tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(mat);
+        } else {
+            var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+            tmpLocalPose.set(tmpInvViewRot).mul(mat);
+            tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPosForSample.getX() - cam.x));
+            tmpLocalPose.m31(tmpLocalPose.m31() - (float) (blockPosForSample.getY() - cam.y));
+            tmpLocalPose.m32(tmpLocalPose.m32() - (float) (blockPosForSample.getZ() - cam.z));
+        }
+        long partHash = System.identityHashCode(this);
+
+        LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, blockPosForSample,
+                                      tmpLocalPose, packedLight, tmpCornerUV);
+
         instanceBuffer.put(posTmp.x).put(posTmp.y).put(posTmp.z);
         instanceBuffer.put(rotTmp.x).put(rotTmp.y).put(rotTmp.z).put(rotTmp.w);
-        instanceBuffer.put(calculateBrightness(packedLight));
+        instanceBuffer.put(objBbox[0]).put(objBbox[1]).put(objBbox[2]);
+        instanceBuffer.put(objBbox[3] - objBbox[0])
+                      .put(objBbox[4] - objBbox[1])
+                      .put(objBbox[5] - objBbox[2]);
+        instanceBuffer.put(tmpCornerUV);
         instanceBuffer.flip();
     }
 
@@ -495,9 +707,14 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     }
 
     private void updateUniformCache(ShaderInstance shader) {
-        if (this.cachedShader == shader) return;
+        // Iris/Oculus may hand out distinct ShaderInstance wrappers for the same
+        // underlying GL program across frames; comparing by object identity would
+        // thrash the cache and spam logs. Program ID is the stable identity.
+        int programId = (shader != null) ? shader.getId() : -1;
+        if (this.cachedShaderProgramId == programId && this.cachedShader != null) return;
 
         this.cachedShader = shader;
+        this.cachedShaderProgramId = programId;
         this.uProjMat = shader.getUniform("ProjMat");
         this.uModelView = shader.getUniform("ModelViewMat");
         this.uFogStart = shader.getUniform("FogStart");
@@ -512,8 +729,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         this.cachedLocModelViewInverse = -1;
         this.cachedLocNormalMat = -1;
         this.irisLocationsResolved = false;
-
-        MainRegistry.LOGGER.debug("InstancedStaticPartRenderer: Uniform cache updated for shader {}", shader.getName());
     }
 
     private void applyCommonUniforms(ShaderInstance shader, Matrix4f projectionMatrix, Matrix4f modelView) {
@@ -535,7 +750,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     }
 
     private void flushBatchVanilla(Matrix4f projectionMatrix) {
-        ShaderInstance shader = ModShaders.getBlockLitInstancedShader();
+        ShaderInstance shader = useSlicedLight ? ModShaders.getBlockLitInstancedSlicedShader()
+                                               : ModShaders.getBlockLitInstancedShader();
         if (shader == null) {
             return;
         }
@@ -554,7 +770,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVboId);
             GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, 0, instanceBuffer);
 
-            for (int i = 3; i <= 5; i++) {
+            for (int i = INSTANCE_ATTRIB_FIRST; i <= instanceAttribLast; i++) {
                 GL20.glEnableVertexAttribArray(i);
             }
 
@@ -563,7 +779,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             // from the per-instance attributes.
             applyCommonUniforms(shader, projectionMatrix, new Matrix4f());
 
-            SingleMeshVboRenderer.TextureBinder.bindForModelIfNeeded(shader);
+            // Must come BEFORE apply() — see prepareBlockLitSamplers javadoc.
+            SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
             shader.apply();
 
             RenderSystem.enableDepthTest();
@@ -613,7 +830,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         }
 
         instanceBuffer.flip();
-        int floats = instanceCount * INSTANCE_DATA_SIZE;
+        int floats = instanceCount * instanceDataSize;
         if (floats > instanceBuffer.remaining()) {
             // Sanity check: bail rather than read garbage if the buffer state was disturbed.
             return;
@@ -688,20 +905,61 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 companion.prepareForShader(shader.getId());
             }
 
-            // Per-instance: mutate ONLY ModelViewMat (and the lightmap UV2 generic
-            // attribute constant) then redraw. No apply()/clear() means no
-            // framebuffer rebind and no custom-uniform repush per draw.
+            // Per-instance: mutate ONLY ModelViewMat (and the lightmap UV2 per-
+            // instance pointer into the companion's lightmap VBO) then redraw.
+            // No apply()/clear() means no framebuffer rebind and no custom-
+            // uniform repush per draw.
             //
-            // For per-machine lighting we exploit the fact that the companion VAO
-            // has its UV2 attribute array DISABLED - when an attribute array is
-            // disabled, GL hands every vertex the value supplied by the most recent
-            // glVertexAttrib*() call for that location. So one glVertexAttrib2f
-            // per draw effectively becomes a "uniform" lightmap UV for the whole
-            // mesh, which the bound pack shader reads through `vaUV2` exactly as
-            // it would for any normal block. No GLSL patching, no per-vertex
-            // re-upload, no companion mesh duplication needed.
+            // <b>Per-vertex lightmap path (trilinear gradient).</b> The companion
+            // mesh carries baked trilinear weights per vertex (see
+            // {@code IrisCompanionMesh.perVertexCornerWeights}). Before entering
+            // the draw loop we compute the per-vertex UV2 values for every
+            // instance on the CPU by trilinearly combining the 8 corner samples
+            // stored in the instance buffer at offsets base+13..28, pack them
+            // into the companion's lightmap VBO, and point the VAO's UV2
+            // attribute at that VBO. Per-draw we only update the attribute's
+            // byte OFFSET to select which instance's UV2 slice to read —
+            // one cheap {@code glVertexAttribIPointer} per draw. The pack
+            // shader still reads vaUV2 exactly as before, but now it gets a
+            // different value at every vertex, giving a smooth in-mesh
+            // lighting gradient that actually responds to nearby block lights.
+            //
+            // When per-vertex is unavailable (companion failed, older GL
+            // driver) we fall back to the legacy constant-UV2 path via
+            // {@code glVertexAttribI2i} — exactly the previous behaviour.
             final Uniform modelViewUniform = uModelView;
             final int uv2Loc = (companion != null) ? companion.getUv2Location() : -1;
+            final boolean perVertexLight = companion != null && companion.supportsPerVertexLightmap();
+
+            // Pre-loop: stage per-vertex UV2 for every instance. Doing this
+            // outside the draw loop lets us upload in ONE glBufferSubData
+            // (minimizing driver roundtrips) rather than one per instance.
+            if (perVertexLight) {
+                companion.ensureLightmapCapacity(Math.max(8, instanceCount));
+                for (int i = 0; i < instanceCount; i++) {
+                    int cornerBase = i * instanceDataSize + LIGHT_FLOAT_OFFSET;
+                    long key = 1469598103934665603L; // FNV-1a 64-bit
+                    for (int k = 0; k < lightFloatCount; k++) {
+                        float f = instanceBuffer.get(cornerBase + k);
+                        int q = Math.round(f);
+                        if (q < 0) q = 0; else if (q > 240) q = 240;
+                        tmpCornerShort[k] = (short) q;
+                        key ^= (q & 0xFFFF);
+                        key *= 1099511628211L;
+                    }
+                    long alloc = companion.allocLightmapSlot(key);
+                    int slot = (int) (alloc & 0xFFFF_FFFFL);
+                    boolean reused = (alloc >>> 32) != 0L;
+                    instanceLightmapSlot[i] = slot;
+                    if (!reused) {
+                        // Convert quantized shorts back to floats for the existing write path.
+                        for (int k = 0; k < lightFloatCount; k++) tmpCornerUV[k] = (float) (tmpCornerShort[k] & 0xFFFF);
+                        companion.writeInstanceLightmap(slot, tmpCornerUV);
+                    }
+                }
+                companion.finishLightmapWrites();
+                companion.activatePerVertexLightmap();
+            }
 
             // ExtendedShader.apply() derives iris_ModelViewMatInverse and
             // iris_NormalMat from the MODEL_VIEW_MATRIX uniform at the moment
@@ -769,7 +1027,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             int lastSkyV = Integer.MIN_VALUE;
 
             for (int i = 0; i < instanceCount; i++) {
-                int base = i * INSTANCE_DATA_SIZE;
+                int base = i * instanceDataSize;
                 float px = instanceBuffer.get(base);
                 float py = instanceBuffer.get(base + 1);
                 float pz = instanceBuffer.get(base + 2);
@@ -810,16 +1068,20 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                     GL20.glUniformMatrix3fv(locNormalMat, false, normalMatFloats);
                 }
 
-                if (uv2Loc != -1) {
-                    // Pack shaders declare `vaUV2` as ivec2, so we MUST update the
-                    // integer "current value" bank - glVertexAttrib2f writes to a
-                    // separate float bank that an ivec2 attribute never reads,
-                    // which makes every machine fall back to whatever the int bank
-                    // last contained (typically 0 → uniform pitch black or whatever
-                    // Iris last bound). The lightmap texture's bilinear filter
-                    // still gives smooth interpolation between adjacent machines
-                    // because neighbouring (blockU, skyV) integer values index
-                    // adjacent texels.
+                if (perVertexLight) {
+                    // Per-vertex mode: repoint the VAO's UV2 attribute at this
+                    // instance's slice of the lightmap VBO. One glVertexAttrib
+                    // IPointer call; the pack shader then reads a different
+                    // (blockU, skyV) pair per vertex giving the trilinear
+                    // gradient baked by writeInstanceLightmap above.
+                    companion.bindLightmapForInstance(instanceLightmapSlot[i]);
+                } else if (uv2Loc != -1) {
+                    // Legacy constant-UV2 fallback (companion doesn't support
+                    // per-vertex lightmap, e.g. build failed or no UV2
+                    // attribute in the vertex format). Pack shaders declare
+                    // vaUV2 as ivec2, so we MUST update the integer "current
+                    // value" bank - glVertexAttrib2f writes to a separate
+                    // float bank that an ivec2 attribute never reads.
                     int uvBase = i * 2;
                     int blockUInt = Math.max(0, Math.min(240, Math.round(instanceLightUV[uvBase])));
                     int skyVInt   = Math.max(0, Math.min(240, Math.round(instanceLightUV[uvBase + 1])));
@@ -868,21 +1130,49 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         IrisCompanionMesh companion = getOrBuildIrisCompanion();
         if (companion == null) return false;
 
+        // Shadow pass skip: see the matching comment in
+        // SingleMeshVboRenderer.renderWithIrisExtended. Sample8 here would
+        // otherwise fire under Iris's shadow-camera view-rotation state and
+        // poison LightSampleCache's per-frame entries, which the main pass
+        // then reuses and renders with a camera-pitch-dependent drift.
+        IrisRenderBatch activeBatch = IrisRenderBatch.active();
+        boolean shadowPassEarly = (activeBatch != null)
+                ? activeBatch.isShadowPass()
+                : ShaderCompatibilityDetector.isRenderingShadowPass();
+
+        // Sample the 8 corner lightmap UV2s in world space once; the same set
+        // drives both the batched fast path and the standalone fallback
+        // below. See flushBatchIris / addInstance for the full worldPose
+        // reconstruction rationale (strip viewRot + subtract block-relative
+        // offset so the floored block samples stay stable across camera
+        // motion and large world offsets). Skipped during shadow — see above.
+        boolean haveCorners = false;
+        if (!shadowPassEarly) {
+            sampleCornersForSingleDraw(poseStack, blockPos, blockEntity, packedLight);
+            haveCorners = true;
+        }
+
         // Fast path: a parent BlockEntityRenderer has opened an IrisRenderBatch
         // session. Skip the heavy apply()/clear() and reuse the shared shader,
-        // saving most of the per-call cost. Lightmap is sampled the same way as
-        // the full path so brightness stays consistent across the batch - and
-        // routed through the per-frame cache so 11 part renderers for the same
-        // machine share one sample.
+        // saving most of the per-call cost. Per-vertex lightmap is staged into
+        // slot 0 of the companion's lightmap VBO inside the batch helper so
+        // the pack shader reads the true trilinear gradient per vertex —
+        // matching the batched flushBatchIris path exactly.
         IrisRenderBatch batch = IrisRenderBatch.active();
         if (batch != null) {
-            // Reuse the per-renderer scratch UV instead of allocating a new
-            // float[2] on every call (was per-part × per-BE × per-pass GC).
+            // Keep the legacy 6-face averaged sample as the fallback in case
+            // the companion can't do per-vertex (degenerate mesh) - the
+            // batch helper transparently falls back to constant UV2 then.
             LightSampleCache.getOrSample(blockEntity, packedLight, irisSingleUV, 0);
             int blockUInt = Math.max(0, Math.min(240, Math.round(irisSingleUV[0])));
             int skyVInt   = Math.max(0, Math.min(240, Math.round(irisSingleUV[1])));
             int packedSmoothLight = (skyVInt << 16) | blockUInt;
-            batch.drawCompanion(companion, poseStack.last().pose(), packedSmoothLight);
+            if (haveCorners) {
+                batch.drawCompanionWithPerVertexLight(companion, poseStack.last().pose(),
+                                                      tmpCornerUV, packedSmoothLight);
+            } else {
+                batch.drawCompanion(companion, poseStack.last().pose(), packedSmoothLight);
+            }
             return true;
         }
 
@@ -903,10 +1193,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             RenderSystem.setShader(() -> shader);
             updateUniformCache(shader);
 
-            // Smooth the lightmap across the multiblock bounding box, identical
-            // to the batched path in flushBatchIris - and routed through the
-            // per-frame cache so 11 part renderers for the same machine share
-            // a single sample. Scratch reused (see field doc).
+            // Legacy averaged sample only used for the Brightness uniform (the
+            // main lighting signal is now per-vertex via tmpCornerUV).
             LightSampleCache.getOrSample(blockEntity, packedLight, irisSingleUV, 0);
 
             applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), poseStack.last().pose());
@@ -928,8 +1216,24 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             companion.prepareForShader(shader.getId());
 
             int uv2Loc = companion.getUv2Location();
-            if (uv2Loc != -1) {
-                // Integer pipeline: pack shaders read vaUV2 as ivec2; see flushBatchIris.
+            if (haveCorners && companion.supportsPerVertexLightmap()) {
+                // Per-vertex trilinear path: stage 8-corner samples into slot
+                // 0 of the companion's lightmap VBO, upload, and repoint the
+                // VAO's UV2 attribute at that slot. Pack shader then reads
+                // a different (blockU, skyV) per vertex → true gradient.
+                // Gated on haveCorners so the shadow-pass skip above actually
+                // reaches the constant-UV2 fallback below instead of reading
+                // whatever stale tmpCornerUV is left from the previous frame.
+                companion.ensureLightmapCapacity(1);
+                companion.writeInstanceLightmap(0, tmpCornerUV);
+                companion.finishLightmapWrites();
+                companion.activatePerVertexLightmap();
+                companion.bindLightmapForInstance(0);
+            } else if (uv2Loc != -1) {
+                // Constant-UV2 fallback (per-vertex unsupported for this
+                // companion). Integer pipeline: pack shaders read vaUV2 as
+                // ivec2; see flushBatchIris.
+                companion.restoreConstantLightmap();
                 int blockUInt = Math.max(0, Math.min(240, Math.round(irisSingleUV[0])));
                 int skyVInt   = Math.max(0, Math.min(240, Math.round(irisSingleUV[1])));
                 GL30.glVertexAttribI2i(uv2Loc, blockUInt, skyVInt);
@@ -949,6 +1253,32 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             RenderSystem.setShader(GameRenderer::getRendertypeSolidShader);
             IrisExtendedShaderAccess.restoreCurrentRenderedBlockEntity(previousBlockEntityId);
         }
+    }
+
+    /**
+     * Populates {@link #tmpCornerUV} with the 8 world-space corner lightmap
+     * UV2 samples for a single-instance draw. Mirrors the localPose
+     * reconstruction done in {@link #addInstance} / {@link #uploadSingleInstance}
+     * so the samples land on stable block indices regardless of camera
+     * motion or distance from world origin.
+     */
+    private void sampleCornersForSingleDraw(PoseStack poseStack, BlockPos blockPos,
+                                            @Nullable BlockEntity blockEntity, int packedLight) {
+        BlockPos anchor = (blockEntity != null) ? blockEntity.getBlockPos() : blockPos;
+        if (anchor == null) anchor = BlockPos.ZERO;
+        if (LightSampleCache.BASE_POSE_SET.get()) {
+            tmpLocalPose.set(LightSampleCache.BASE_POSE.get()).invert().mul(poseStack.last().pose());
+        } else {
+            var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
+            tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+            tmpLocalPose.set(tmpInvViewRot).mul(poseStack.last().pose());
+            tmpLocalPose.m30(tmpLocalPose.m30() - (float) (anchor.getX() - cam.x));
+            tmpLocalPose.m31(tmpLocalPose.m31() - (float) (anchor.getY() - cam.y));
+            tmpLocalPose.m32(tmpLocalPose.m32() - (float) (anchor.getZ() - cam.z));
+        }
+        long partHash = System.identityHashCode(this);
+        LightSampleCache.getOrSample8(blockEntity, partHash, objBbox, anchor,
+                                      tmpLocalPose, packedLight, tmpCornerUV);
     }
 
     private float calculateBrightness(int packedLight) {

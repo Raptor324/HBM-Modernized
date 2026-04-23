@@ -17,6 +17,24 @@ public abstract class AbstractGpuMesh {
     protected int eboId = -1;
     protected int indexCount = 0;
     protected boolean initialized = false;
+
+    /**
+     * Object-space AABB of this mesh: {minX, minY, minZ, maxX, maxY, maxZ}.
+     * Populated from {@link SingleMeshVboRenderer.VboData} when the mesh is built.
+     * Used for the 8-corner trilinear lightmap sampling so the shader can interpolate
+     * per-vertex brightness from corner samples taken at the bbox' world-space corners.
+     */
+    protected final float[] objBbox = new float[] { 0f, 0f, 0f, 1f, 1f, 1f };
+
+    public float[] getObjBbox() {
+        return objBbox;
+    }
+
+    protected void setObjBboxFrom(SingleMeshVboRenderer.VboData data) {
+        if (data == null) return;
+        objBbox[0] = data.minX; objBbox[1] = data.minY; objBbox[2] = data.minZ;
+        objBbox[3] = data.maxX; objBbox[4] = data.maxY; objBbox[5] = data.maxZ;
+    }
     /**
      * При true - init уже провалился, не пытаемся снова и не логируем
      */

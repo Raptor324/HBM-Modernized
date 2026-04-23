@@ -9,6 +9,8 @@ public class ModShaders {
     private static ShaderInstance dynamicCutoutShader;
     private static ShaderInstance blockLitSimpleShader;
     private static ShaderInstance blockLitInstancedShader;
+    private static ShaderInstance blockLitSimpleSlicedShader;
+    private static ShaderInstance blockLitInstancedSlicedShader;
     private static ShaderInstance thermalVisionShader;
 
     public static ShaderInstance getDynamicCutoutShader() {
@@ -42,6 +44,22 @@ public class ModShaders {
 
     public static void setBlockLitInstancedShader(ShaderInstance shader) {
         blockLitInstancedShader = shader;
+    }
+
+    public static ShaderInstance getBlockLitSimpleSlicedShader() {
+        return blockLitSimpleSlicedShader;
+    }
+
+    public static void setBlockLitSimpleSlicedShader(ShaderInstance shader) {
+        blockLitSimpleSlicedShader = shader;
+    }
+
+    public static ShaderInstance getBlockLitInstancedSlicedShader() {
+        return blockLitInstancedSlicedShader;
+    }
+
+    public static void setBlockLitInstancedSlicedShader(ShaderInstance shader) {
+        blockLitInstancedSlicedShader = shader;
     }
 
     public static ShaderInstance getThermalVisionShader() {

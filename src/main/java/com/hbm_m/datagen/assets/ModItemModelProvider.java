@@ -172,6 +172,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.INFINITE_WATER_500);
         simpleItem(ModItems.INFINITE_WATER_5000);
 
+        simpleItem(ModItems.TEST_ITEM);
+
         simpleItem(ModItems.LIMESTONE);
         simpleItem(ModItems.MALACHITE_CHUNK);
         simpleItem(ModItems.CANNED_ASBESTOS);

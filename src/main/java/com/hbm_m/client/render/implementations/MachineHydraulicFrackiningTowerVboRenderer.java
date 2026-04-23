@@ -4,7 +4,6 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.client.model.MachineHydraulicFrackiningTowerBakedModel;
 import com.hbm_m.client.render.GlobalMeshCache;
-import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -29,7 +28,10 @@ public class MachineHydraulicFrackiningTowerVboRenderer {
         BakedModel part = model.getPart(MAIN_PART);
         if (part != null) {
             var r = GlobalMeshCache.getOrCreateRenderer("frackining_tower_" + MAIN_PART, part);
-            if (r != null) r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
+            if (r != null) {
+                r.setUseSlicedLight(true);
+                r.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
+            }
         }
     }
 }

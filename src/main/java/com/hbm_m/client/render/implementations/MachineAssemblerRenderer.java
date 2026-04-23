@@ -152,10 +152,6 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
             // Шейдеры + idle: всё в baked-model, BER ничего не делает.
             return;
         }
-
-        if (bufferSource instanceof MultiBufferSource.BufferSource bufferSrc) {
-            bufferSrc.endBatch();
-        }
     }
 
     @Override
