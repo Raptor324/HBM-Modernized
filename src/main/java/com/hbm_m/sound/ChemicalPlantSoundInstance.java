@@ -14,6 +14,8 @@ public class ChemicalPlantSoundInstance extends AbstractTickableSoundInstance {
         super(ModSounds.CHEMICAL_PLANT.get(), SoundSource.BLOCKS, SoundInstance.createUnseededRandom());
         this.looping = true;
         this.delay = 0;
+        this.relative = false;
+        this.attenuation = Attenuation.LINEAR;
         this.x = pos.getX() + 0.5;
         this.y = pos.getY() + 0.5;
         this.z = pos.getZ() + 0.5;

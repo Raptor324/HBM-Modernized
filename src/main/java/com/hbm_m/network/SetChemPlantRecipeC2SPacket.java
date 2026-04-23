@@ -8,6 +8,7 @@ import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.network.NetworkEvent;
@@ -15,9 +16,9 @@ import net.minecraftforge.network.NetworkEvent;
 public class SetChemPlantRecipeC2SPacket {
     private final BlockPos blockPos;
     @Nullable
-    private final String recipeId;
+    private final ResourceLocation recipeId;
 
-    public SetChemPlantRecipeC2SPacket(BlockPos blockPos, @Nullable String recipeId) {
+    public SetChemPlantRecipeC2SPacket(BlockPos blockPos, @Nullable ResourceLocation recipeId) {
         this.blockPos = blockPos;
         this.recipeId = recipeId;
     }
@@ -25,14 +26,14 @@ public class SetChemPlantRecipeC2SPacket {
     public SetChemPlantRecipeC2SPacket(FriendlyByteBuf buf) {
         this.blockPos = buf.readBlockPos();
         boolean hasRecipe = buf.readBoolean();
-        this.recipeId = hasRecipe ? buf.readUtf(256) : null;
+        this.recipeId = hasRecipe ? buf.readResourceLocation() : null;
     }
 
     public static void encode(SetChemPlantRecipeC2SPacket packet, FriendlyByteBuf buf) {
         buf.writeBlockPos(packet.blockPos);
         buf.writeBoolean(packet.recipeId != null);
         if (packet.recipeId != null) {
-            buf.writeUtf(packet.recipeId, 256);
+            buf.writeResourceLocation(packet.recipeId);
         }
     }
 
@@ -52,7 +53,7 @@ public class SetChemPlantRecipeC2SPacket {
 
             BlockEntity blockEntity = player.level().getBlockEntity(blockPos);
             if (blockEntity instanceof MachineChemicalPlantBlockEntity chemPlant) {
-                chemPlant.setRecipe(recipeId);
+                chemPlant.setSelectedRecipe(recipeId);
             }
         });
         return true;

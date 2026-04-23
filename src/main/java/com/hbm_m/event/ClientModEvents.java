@@ -5,7 +5,7 @@ import com.hbm_m.client.overlay.DoorAnimationDelayHelper;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.client.render.LightSampleCache;
 import com.hbm_m.client.render.OcclusionCullingHelper;
-import com.hbm_m.client.render.implementations.ChemicalPlantRenderer;
+import com.hbm_m.client.render.implementations.MachineChemicalPlantRenderer;
 import com.hbm_m.client.render.implementations.DoorRenderer;
 import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineAssemblerRenderer;
@@ -86,7 +86,7 @@ public class ClientModEvents {
                 MachineAssemblerRenderer.flushInstancedBatches(event);
                 DoorRenderer.flushInstancedBatches(event);
                 MachinePressRenderer.flushInstancedBatches(event);
-                ChemicalPlantRenderer.flushInstancedBatches(event);
+                MachineChemicalPlantRenderer.flushInstancedBatches(event);
             }
             // Bump the per-pass shader-lookup cache in IrisExtendedShaderAccess so
             // the next frame re-resolves the shader from the (possibly rebuilt)

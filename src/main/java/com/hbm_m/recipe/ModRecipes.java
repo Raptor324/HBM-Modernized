@@ -2,13 +2,11 @@ package com.hbm_m.recipe;
 
 import com.hbm_m.lib.RefStrings;
 
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegisterEvent;
 import net.minecraftforge.registries.RegistryObject;
 
 
@@ -32,6 +30,12 @@ public class ModRecipes {
 
     public static final RegistryObject<RecipeType<AssemblerRecipe>> ASSEMBLER_TYPE =
             RECIPE_TYPES.register("assembler", () -> AssemblerRecipe.Type.INSTANCE);
+
+    public static final RegistryObject<RecipeSerializer<ChemicalPlantRecipe>> CHEMICAL_PLANT_SERIALIZER =
+            SERIALIZERS.register("chemical_plant", () -> ChemicalPlantRecipe.Serializer.INSTANCE);
+
+    public static final RegistryObject<RecipeType<ChemicalPlantRecipe>> CHEMICAL_PLANT_TYPE =
+            RECIPE_TYPES.register("chemical_plant", () -> ChemicalPlantRecipe.Type.INSTANCE);
 
     public static final RegistryObject<RecipeSerializer<PressRecipe>> PRESS_SERIALIZER =
             SERIALIZERS.register("press", () -> PressRecipe.Serializer.INSTANCE);

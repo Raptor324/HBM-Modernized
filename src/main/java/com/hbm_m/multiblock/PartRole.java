@@ -18,7 +18,7 @@ public enum PartRole implements StringRepresentable {
     UNIVERSAL_CONNECTOR("universal_connector"),
     /**
      * Блок-часть, по которому можно взобраться как по лестнице.
-     * Работает с любых боковых сторон.
+     * Работает с любых боковых сторонsd.
      */
     LADDER("ladder"),
     /**

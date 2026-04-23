@@ -1,6 +1,3 @@
-// ...existing code...
-// ...existing code...
-
 package com.hbm_m.block;
 
 import java.util.ArrayList;
@@ -1363,13 +1360,13 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.COAL_BLOCK).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
 
-        // -----------------------<РАСТЕНИЯ>-----------------------------
+    // -----------------------<РАСТЕНИЯ>-----------------------------
     public static final RegistryObject<Block> STRAWBERRY_BUSH = registerBlock("strawberry_bush",
             () -> new FlowerBlock(() -> MobEffects.LUCK, 5,
                     BlockBehaviour.Properties.copy(Blocks.ALLIUM).noOcclusion().noCollission()));
 
 
-        // -----------------------<РУДЫ>-----------------------------
+    // -----------------------<РУДЫ>-----------------------------
 
 
     public static final RegistryObject<Block> RESOURCE_ASBESTOS = registerBlock("resource_asbestos",

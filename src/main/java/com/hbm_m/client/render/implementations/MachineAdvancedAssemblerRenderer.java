@@ -1,10 +1,11 @@
 package com.hbm_m.client.render.implementations;
 
 import org.joml.Matrix4f;
+import org.joml.Vector3f;
 
-import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity.ClientTicker;
+import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
@@ -16,6 +17,8 @@ import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+import com.hbm_m.util.MultipartFacingTransforms;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -58,6 +61,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
     // --- GC Optimization: Reusable Matrices ---
     // Используем поля класса вместо создания новых объектов в каждом кадре
+    private final Vector3f ringPivotWork = new Vector3f();
     private final Matrix4f matRing = new Matrix4f();
     private final Matrix4f matLower = new Matrix4f();
     private final Matrix4f matUpper = new Matrix4f();
@@ -73,6 +77,15 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
      * that lossy conversion.
      */
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
+
+    /**
+     * Смещение от клетки контроллера к центру 3×3 (нижний слой) в локальной сетке
+     * мультиблока. Далее в {@link #setRingBaseMatrix} вектор переводится из мир. осей
+     * (как в {@link MultiblockStructureHelper#getRotatedPos}) в ось PoseStack после
+     * {@link LegacyAnimator#setupBlockTransform} через обратный к
+     * {@link MultipartFacingTransforms#legacyBlockEntityBakedRotationY} поворот.
+     */
+    private static final BlockPos RING_PIVOT_LOCAL = new BlockPos(0, 0, 1);
 
     /**
      * Per-BE flag set inside {@link #renderParts} after the occlusion-culling
@@ -144,6 +157,22 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     @Override
     protected Direction getFacing(MachineAdvancedAssemblerBlockEntity be) {
         return be.getBlockState().getValue(MachineAdvancedAssemblerBlock.FACING);
+    }
+
+    /** Матрица кольца и базы рук: вращение вокруг геом. центра 3×3, не вокруг клетки контроллера. */
+    private void setRingBaseMatrix(float ringAngleDeg, Direction facing) {
+        BlockPos w = MultiblockStructureHelper.rotate(RING_PIVOT_LOCAL, facing);
+        ringPivotWork.set(w.getX(), 0, w.getZ());
+        // Мир. смещение (к multiblock) → лок. после 90°+facing в setupBlockTransform
+        int berYDeg = MultipartFacingTransforms.legacyBlockEntityBakedRotationY(facing);
+        ringPivotWork.rotateY(-berYDeg * DEG_TO_RAD);
+        float px = ringPivotWork.x;
+        float pz = ringPivotWork.z;
+        matRing.identity()
+            .translate(px, 0, pz)
+            .rotateY(ringAngleDeg * DEG_TO_RAD)
+            .translate(-px, 0, -pz)
+            .translate(-0.5f, 0, -0.5f);
     }
 
     @Override
@@ -318,7 +347,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
     // Упрощенный рендер для дальних дистанций
     private void renderStaticLOD(PoseStack pose, int blockLight, BlockPos blockPos, 
                                 MachineAdvancedAssemblerBlockEntity be, MultiBufferSource bufferSource, boolean useBatching) {
-        matRing.identity().translate(-0.5f, 0.0f, -0.5f);
+        setRingBaseMatrix(0f, getFacing(be));
         if (useBatching && instancedRing != null) {
             pose.pushPose();
             pose.last().pose().mul(matRing);
@@ -401,9 +430,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                                 PoseStack pose, int blockLight, BlockPos blockPos,
                                 MultiBufferSource bufferSource, boolean useVboPath) {
         float ring = Mth.lerp(pt, be.getPrevRingAngle(), be.getRingAngle());
-        matRing.identity()
-               .rotateY(ring * DEG_TO_RAD)
-               .translate(-0.5f, 0.0f, -0.5f);
+        setRingBaseMatrix(ring, getFacing(be));
 
         // Инстансинг только когда нет стороннего шейдера (VBO путь)
         boolean useBatching = useVboPath && ModClothConfig.useInstancedBatching();
@@ -503,7 +530,10 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         ItemStack icon = recipe.getResultItem(null);
         if (icon.isEmpty()) return;
 
+        BlockPos toCenter = MultiblockStructureHelper.rotate(RING_PIVOT_LOCAL, getFacing(be));
+
         poseStack.pushPose();
+        poseStack.translate(toCenter.getX(), 0, toCenter.getZ());
         poseStack.mulPose(Axis.YP.rotationDegrees(90));
         poseStack.translate(0, 1.0625, 0);
 

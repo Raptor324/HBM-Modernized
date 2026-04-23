@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.FT_Corrosive;
 import com.hbm_m.inventory.fluid.trait.FT_Flammable;
@@ -51,7 +52,7 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.registries.ForgeRegistries;
 
-public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider {
+public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider, IMultiblockSidedIO {
 
     public static final int SLOT_ID_IN = 0;
     public static final int SLOT_ID_OUT = 1;
@@ -78,6 +79,9 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
     private final LazyOptional<IItemHandler> lazyItemHandler;
     private final LazyOptional<IFluidHandler> lazyFluidHandler;
+
+    /** Разрешённые стороны прямого подключения к контроллеру (пусто = все). */
+    private java.util.Set<Direction> allowedFluidSides = java.util.EnumSet.noneOf(Direction.class);
 
     public static final ModelProperty<ResourceLocation> FLUID_TEXTURE_PROPERTY = new ModelProperty<>();
 
@@ -345,6 +349,16 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         } else {
             filterFluid = null;
         }
+
+        if (tag.contains("AllowedFluidSides")) {
+            int mask = tag.getInt("AllowedFluidSides");
+            allowedFluidSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) {
+                    allowedFluidSides.add(dir);
+                }
+            }
+        }
     }
 
     @Override
@@ -362,6 +376,12 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
                 tag.putString("filterFluid", key.toString());
             }
         }
+
+        if (!allowedFluidSides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedFluidSides) mask |= (1 << dir.get3DDataValue());
+            tag.putInt("AllowedFluidSides", mask);
+        }
     }
 
     @Override
@@ -370,13 +390,28 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             return lazyItemHandler.cast();
         }
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            // side == null: внутреннее делегирование от FLUID_CONNECTOR-частей или использование предметами (вёдра и т.п.)
-            // side != null: прямое подключение трубы/машины к лицу контроллера — запрещено.
-            // Жидкостное соединение с цистерной должно быть ТОЛЬКО через блоки-коннекторы (PartRole.FLUID_CONNECTOR).
-            if (side != null) return LazyOptional.empty();
+            // side == null: внутреннее делегирование от коннекторов или использование предметами (вёдра и т.п.)
+            // side != null: прямое подключение к лицу контроллера — разрешено/запрещено настройкой сторон.
+            if (side != null && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
+                return LazyOptional.empty();
+            }
             return lazyFluidHandler.cast();
         }
         return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void setAllowedFluidSides(java.util.Set<Direction> sides) {
+        this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    @Override
+    public java.util.Set<Direction> getAllowedFluidSides() {
+        return this.allowedFluidSides;
     }
 
     @Override

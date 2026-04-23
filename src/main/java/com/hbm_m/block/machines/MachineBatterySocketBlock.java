@@ -1,5 +1,8 @@
 package com.hbm_m.block.machines;
 
+import java.util.Map;
+import java.util.function.Supplier;
+
 import javax.annotation.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
@@ -39,9 +42,6 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.network.NetworkHooks;
-
-import java.util.Map;
-import java.util.function.Supplier;
 
 /**
  * 2×2×2 multiblock cube.

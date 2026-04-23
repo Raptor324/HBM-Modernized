@@ -12,15 +12,15 @@ import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineChemicalPlantMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.industrial.ItemBlueprintFolder;
-import com.hbm_m.recipe.ChemicalPlantRecipes;
-import com.hbm_m.recipe.ChemicalPlantRecipes.ChemicalRecipe;
-import com.hbm_m.recipe.ChemicalPlantRecipes.RecipeInput;
+import com.hbm_m.recipe.ChemicalPlantRecipe;
+import com.hbm_m.recipe.ChemicalPlantRecipe.CountedIngredient;
+import com.hbm_m.recipe.ChemicalPlantRecipe.FluidIngredient;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
 import net.minecraft.world.entity.player.Inventory;
@@ -37,8 +37,7 @@ import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
+import net.minecraftforge.registries.ForgeRegistries;
 
 /**
  * Chemical Plant BlockEntity - порт с 1.7.10.
@@ -74,13 +73,17 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
     private final LazyOptional<IFluidHandler>[] outputTankHandlers = new LazyOptional[3];
 
     private boolean didProcess = false;
-    @Nullable private String recipe = null;
+    @Nullable private ResourceLocation selectedRecipeId = null;
+    @Nullable private ChemicalPlantRecipe cachedRecipe = null;
+    private boolean recipeCacheDirty = false;
 
     private int progress = 0;
     private int maxProgress = 100;
 
     private float anim = 0.0F;
     private float prevAnim = 0.0F;
+
+    private int renderCooldownTimer = 0;
 
     protected final ContainerData data = new ContainerData() {
         @Override
@@ -214,7 +217,19 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
 
         boolean dirty = false;
 
-        ChemicalRecipe currentRecipe = entity.recipe != null ? ChemicalPlantRecipes.getRecipe(entity.recipe) : null;
+        ChemicalPlantRecipe currentRecipe = entity.getCachedRecipe();
+
+        // Blueprint pool guard: если рецепт требует пул и установленная папка не совпадает - сбрасываем.
+        ItemStack blueprint = entity.inventory.getStackInSlot(SLOT_SCHEMATIC);
+        if (currentRecipe != null && !entity.isRecipeValidForBlueprint(currentRecipe, blueprint)) {
+            entity.selectedRecipeId = null;
+            entity.cachedRecipe = null;
+            entity.recipeCacheDirty = false;
+            currentRecipe = null;
+            entity.progress = 0;
+            entity.didProcess = false;
+            dirty = true;
+        }
 
         if (currentRecipe != null) {
             entity.maxProgress = currentRecipe.getDuration();
@@ -229,6 +244,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
                 if (entity.progress >= entity.maxProgress) {
                     entity.progress = 0;
                     entity.finishRecipe(currentRecipe);
+                    dirty = true;
                 }
             } else {
                 if (entity.progress != 0 || entity.didProcess) {
@@ -245,34 +261,51 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             }
         }
 
+        // RENDER_ACTIVE cooldown как у ассемблера: когда крафт идёт - держим 5 секунд после.
+        if (entity.didProcess) {
+            entity.renderCooldownTimer = 100;
+        } else if (entity.renderCooldownTimer > 0) {
+            entity.renderCooldownTimer--;
+        }
+        boolean shouldRenderActive = entity.renderCooldownTimer > 0;
+        if (state.hasProperty(MachineChemicalPlantBlock.RENDER_ACTIVE)) {
+            boolean active = state.getValue(MachineChemicalPlantBlock.RENDER_ACTIVE);
+            if (active != shouldRenderActive) {
+                level.setBlock(pos, state.setValue(MachineChemicalPlantBlock.RENDER_ACTIVE, shouldRenderActive), 3);
+            }
+        }
+
         if (dirty) {
             entity.setChanged();
             entity.sendUpdateToClient();
         }
     }
 
-    private boolean canProcess(ChemicalRecipe recipe) {
-        // Check item inputs (positional: recipe input i → slot SLOT_SOLID_INPUT_START + i)
-        List<RecipeInput> itemInputs = recipe.getItemInputs();
+    private boolean canProcess(ChemicalPlantRecipe recipe) {
+        // Item inputs: positional (0..2) → slots 4..6
+        List<CountedIngredient> itemInputs = recipe.getItemInputs();
         for (int i = 0; i < itemInputs.size(); i++) {
             int slot = SLOT_SOLID_INPUT_START + i;
             ItemStack slotStack = inventory.getStackInSlot(slot);
-            if (!itemInputs.get(i).matches(slotStack)) return false;
+            CountedIngredient req = itemInputs.get(i);
+            if (!req.ingredient().test(slotStack) || slotStack.getCount() < req.count()) return false;
         }
 
-        // Check fluid inputs (positional: recipe fluid i → inputTanks[i])
-        List<FluidStack> fluidInputs = recipe.getFluidInputs();
+        // Fluid inputs: positional (0..2) → inputTanks[0..2]
+        List<FluidIngredient> fluidInputs = recipe.getFluidInputs();
         for (int i = 0; i < fluidInputs.size(); i++) {
-            FluidStack required = fluidInputs.get(i);
+            FluidIngredient req = fluidInputs.get(i);
+            var fluid = ForgeRegistries.FLUIDS.getValue(req.fluidId());
+            if (fluid == null) return false;
             FluidTank tank = inputTanks[i];
             if (tank.getFluid().isEmpty()
-                || tank.getFluid().getFluid() != required.getFluid()
-                || tank.getFluidAmount() < required.getAmount()) {
+                || tank.getFluid().getFluid() != fluid
+                || tank.getFluidAmount() < req.amount()) {
                 return false;
             }
         }
 
-        // Check item output space (positional: recipe output i → slot SLOT_SOLID_OUTPUT_START + i)
+        // Item outputs: positional (0..2) → slots 7..9
         List<ItemStack> itemOutputs = recipe.getItemOutputs();
         for (int i = 0; i < itemOutputs.size(); i++) {
             ItemStack output = itemOutputs.get(i);
@@ -285,30 +318,31 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             }
         }
 
-        // Check fluid output space (positional: recipe fluid output i → outputTanks[i])
+        // Fluid outputs: positional (0..2) → outputTanks[0..2]
         List<FluidStack> fluidOutputs = recipe.getFluidOutputs();
         for (int i = 0; i < fluidOutputs.size(); i++) {
-            FluidStack outputFluid = fluidOutputs.get(i);
+            FluidStack output = fluidOutputs.get(i);
+            if (output.isEmpty()) continue;
             FluidTank tank = outputTanks[i];
-            if (!tank.getFluid().isEmpty() && tank.getFluid().getFluid() != outputFluid.getFluid()) return false;
-            if (tank.getFluidAmount() + outputFluid.getAmount() > tank.getCapacity()) return false;
+            if (!tank.getFluid().isEmpty() && tank.getFluid().getFluid() != output.getFluid()) return false;
+            if (tank.getFluidAmount() + output.getAmount() > tank.getCapacity()) return false;
         }
 
         return true;
     }
 
-    private void finishRecipe(ChemicalRecipe recipe) {
+    private void finishRecipe(ChemicalPlantRecipe recipe) {
         // Consume item inputs
-        List<RecipeInput> itemInputs = recipe.getItemInputs();
+        List<CountedIngredient> itemInputs = recipe.getItemInputs();
         for (int i = 0; i < itemInputs.size(); i++) {
             int slot = SLOT_SOLID_INPUT_START + i;
-            inventory.getStackInSlot(slot).shrink(itemInputs.get(i).getCount());
+            inventory.getStackInSlot(slot).shrink(itemInputs.get(i).count());
         }
 
         // Consume fluid inputs
-        List<FluidStack> fluidInputs = recipe.getFluidInputs();
+        List<FluidIngredient> fluidInputs = recipe.getFluidInputs();
         for (int i = 0; i < fluidInputs.size(); i++) {
-            inputTanks[i].drain(fluidInputs.get(i).getAmount(), IFluidHandler.FluidAction.EXECUTE);
+            inputTanks[i].drain(fluidInputs.get(i).amount(), IFluidHandler.FluidAction.EXECUTE);
         }
 
         // Produce item outputs
@@ -328,8 +362,17 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         // Produce fluid outputs
         List<FluidStack> fluidOutputs = recipe.getFluidOutputs();
         for (int i = 0; i < fluidOutputs.size(); i++) {
-            outputTanks[i].fill(fluidOutputs.get(i).copy(), IFluidHandler.FluidAction.EXECUTE);
+            FluidStack output = fluidOutputs.get(i);
+            if (output.isEmpty()) continue;
+            outputTanks[i].fill(output.copy(), IFluidHandler.FluidAction.EXECUTE);
         }
+    }
+
+    private boolean isRecipeValidForBlueprint(ChemicalPlantRecipe recipe, ItemStack blueprintFolder) {
+        String pool = recipe.getBlueprintPool();
+        if (pool == null || pool.isEmpty()) return true;
+        String installed = ItemBlueprintFolder.getBlueprintPool(blueprintFolder);
+        return installed != null && !installed.isEmpty() && installed.equals(pool);
     }
 
     @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
@@ -473,18 +516,41 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         return outputTanks;
     }
 
+    public List<ChemicalPlantRecipe> getAvailableRecipes() {
+        if (level == null) return List.of();
+        ItemStack folder = inventory.getStackInSlot(SLOT_SCHEMATIC);
+        String installedPool = ItemBlueprintFolder.getBlueprintPool(folder);
+        List<ChemicalPlantRecipe> all = level.getRecipeManager().getAllRecipesFor(ChemicalPlantRecipe.Type.INSTANCE);
+        return all.stream().filter(r -> {
+            String pool = r.getBlueprintPool();
+            if (pool == null || pool.isEmpty()) return true;
+            return installedPool != null && !installedPool.isEmpty() && installedPool.equals(pool);
+        }).toList();
+    }
+
+    public ItemStack getBlueprintFolder() {
+        return inventory.getStackInSlot(SLOT_SCHEMATIC);
+    }
+
     public boolean getDidProcess() {
         return didProcess;
     }
 
     @Nullable
-    public String getRecipe() {
-        return recipe;
+    public ResourceLocation getSelectedRecipeId() {
+        return selectedRecipeId;
     }
 
-    public void setRecipe(@Nullable String recipe) {
-        this.recipe = recipe;
+    public void setSelectedRecipe(@Nullable ResourceLocation recipeId) {
+        this.selectedRecipeId = recipeId;
+        this.cachedRecipe = null;
+        this.recipeCacheDirty = true;
+        this.progress = 0;
+        this.didProcess = false;
         setChanged();
+        if (level != null && !level.isClientSide) {
+            sendUpdateToClient();
+        }
     }
 
     public int getProgress() {
@@ -516,8 +582,9 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             tag.put("outputTank" + i, outputTanks[i].writeToNBT(new CompoundTag()));
         }
         tag.putBoolean("didProcess", didProcess);
-        if (recipe != null) {
-            tag.putString("recipe", recipe);
+        tag.putBoolean("HasRecipe", selectedRecipeId != null);
+        if (selectedRecipeId != null) {
+            tag.putString("SelectedRecipe", selectedRecipeId.toString());
         }
         tag.putInt("progress", progress);
         tag.putInt("maxProgress", maxProgress);
@@ -537,12 +604,36 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             }
         }
         didProcess = tag.getBoolean("didProcess");
-        recipe = tag.contains("recipe") ? tag.getString("recipe") : null;
+        if (tag.contains("HasRecipe") && tag.getBoolean("HasRecipe")) {
+            selectedRecipeId = ResourceLocation.tryParse(tag.getString("SelectedRecipe"));
+            recipeCacheDirty = true;
+        } else {
+            selectedRecipeId = null;
+            cachedRecipe = null;
+            recipeCacheDirty = false;
+        }
         progress = tag.getInt("progress");
         maxProgress = tag.getInt("maxProgress");
         if (maxProgress <= 0) maxProgress = 100;
         anim = tag.getFloat("anim");
         prevAnim = tag.getFloat("prevAnim");
+    }
+
+    @Nullable
+    private ChemicalPlantRecipe getCachedRecipe() {
+        if (selectedRecipeId == null || level == null) {
+            cachedRecipe = null;
+            return null;
+        }
+        if (cachedRecipe == null || recipeCacheDirty) {
+            cachedRecipe = level.getRecipeManager()
+                .byKey(selectedRecipeId)
+                .filter(r -> r instanceof ChemicalPlantRecipe)
+                .map(r -> (ChemicalPlantRecipe) r)
+                .orElse(null);
+            recipeCacheDirty = false;
+        }
+        return cachedRecipe;
     }
 
     @Override

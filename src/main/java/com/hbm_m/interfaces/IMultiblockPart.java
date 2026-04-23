@@ -55,4 +55,19 @@ public interface IMultiblockPart {
     default java.util.Set<net.minecraft.core.Direction> getAllowedEnergySides() {
         return java.util.EnumSet.allOf(net.minecraft.core.Direction.class);
     }
+
+    /**
+     * Стороны, с которых часть-коннектор принимает/отдаёт жидкости (мировые направления после постройки).
+     * Для частей без роли жидкостного коннектора можно не вызывать; по умолчанию - см. default-реализацию.
+     */
+    default void setAllowedFluidSides(java.util.Set<net.minecraft.core.Direction> sides) {
+        // no-op по умолчанию
+    }
+
+    /**
+     * @return разрешённые стороны для жидкостей; пустой набор трактуется как «все стороны» (совместимость).
+     */
+    default java.util.Set<net.minecraft.core.Direction> getAllowedFluidSides() {
+        return java.util.EnumSet.allOf(net.minecraft.core.Direction.class);
+    }
 }

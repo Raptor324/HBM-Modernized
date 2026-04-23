@@ -4,9 +4,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.hbm_m.client.gui.FluidGuiRendering;
 import com.hbm_m.inventory.menu.MachineChemicalPlantMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.ChatFormatting;
@@ -15,8 +17,8 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
@@ -65,7 +67,7 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
             }
         }
 
-        boolean hasRecipe = menu.getBlockEntity().getRecipe() != null;
+        boolean hasRecipe = menu.getBlockEntity().getSelectedRecipeId() != null;
         boolean didProcess = menu.getBlockEntity().getDidProcess();
         boolean canProcess = hasRecipe && energyStored >= 100;
 
@@ -86,6 +88,8 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
                     this.leftPos + 80 + i * 18, this.topPos + 52);
         }
         com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, TEXTURE);
+
+        renderGhostInputs(guiGraphics);
     }
 
     private void renderFluidTank(GuiGraphics guiGraphics, FluidTank tank, int x, int y) {
@@ -96,23 +100,25 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         if (pixelHeight == 0 && fluid.getAmount() > 0) pixelHeight = 1;
         if (pixelHeight > TANK_HEIGHT) pixelHeight = TANK_HEIGHT;
 
-        IClientFluidTypeExtensions fluidProps = IClientFluidTypeExtensions.of(fluid.getFluid());
-        ResourceLocation fluidTextureId = fluidProps.getStillTexture(fluid);
-        var fluidSprite = this.minecraft.getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(fluidTextureId);
-        int fluidColor = fluidProps.getTintColor(fluid);
-
-        float r = (fluidColor >> 16 & 255) / 255.0F;
-        float g = (fluidColor >> 8 & 255) / 255.0F;
-        float b = (fluidColor & 255) / 255.0F;
-        float a = ((fluidColor >> 24) & 255) / 255.0F;
+        IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid.getFluid());
+        int color = ext.getTintColor(fluid);
+        float r = (color >> 16 & 255) / 255.0F;
+        float g = (color >> 8 & 255) / 255.0F;
+        float b = (color & 255) / 255.0F;
+        float a = ((color >> 24) & 255) / 255.0F;
         if (a == 0) a = 1.0F;
 
-        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(r, g, b, a);
-        com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, InventoryMenu.BLOCK_ATLAS);
+        ResourceLocation png = FluidGuiRendering.guiTexturePngForStack(fluid);
+        if (png == null) return;
 
-        guiGraphics.blit(x, y + TANK_HEIGHT - pixelHeight, 0, TANK_WIDTH, pixelHeight, fluidSprite);
+        com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+        com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
+        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(r, g, b, a);
+
+        FluidGuiRendering.renderTiledFluid(guiGraphics, png, x, y + TANK_HEIGHT - pixelHeight, TANK_WIDTH, pixelHeight);
 
         com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        com.mojang.blaze3d.systems.RenderSystem.disableBlend();
     }
 
     @Override
@@ -122,7 +128,7 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
 
         if (this.minecraft != null && this.minecraft.screen == this) {
-            if (menu.getBlockEntity().getRecipe() != null) {
+            if (menu.getBlockEntity().getSelectedRecipeId() != null) {
             } else {
                 guiGraphics.renderItem(new ItemStack(ModItems.TEMPLATE_FOLDER.get()), 8, 126);
             }
@@ -163,9 +169,14 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         }
 
         if (isMouseOver(mouseX, mouseY, 7, 125, 18, 18)) {
-            guiGraphics.renderTooltip(this.font,
-                    Component.translatable("gui.recipe.setRecipe").withStyle(ChatFormatting.YELLOW),
-                    mouseX, mouseY);
+            ChemicalPlantRecipe recipe = getSelectedRecipe();
+            if (recipe != null) {
+                guiGraphics.renderTooltip(this.font, buildRecipeTooltip(recipe), Optional.empty(), mouseX, mouseY);
+            } else {
+                guiGraphics.renderTooltip(this.font,
+                        Component.translatable("gui.recipe.setRecipe").withStyle(ChatFormatting.YELLOW),
+                        mouseX, mouseY);
+            }
         }
     }
 
@@ -192,11 +203,120 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
 
     private void openRecipeSelector() {
         if (this.minecraft == null) return;
-        String currentRecipe = menu.getBlockEntity().getRecipe();
-        this.minecraft.setScreen(new GUIChemicalPlantRecipeSelector(
+        ResourceLocation currentRecipe = menu.getBlockEntity().getSelectedRecipeId();
+        this.minecraft.setScreen(new GUIScreenRecipeSelector(
                 menu.getBlockEntity().getBlockPos(),
                 currentRecipe,
-                this));
+                (net.minecraft.client.gui.screens.Screen) this));
+    }
+
+    private @javax.annotation.Nullable ChemicalPlantRecipe getSelectedRecipe() {
+        if (this.minecraft == null || this.minecraft.level == null) return null;
+        ResourceLocation id = menu.getBlockEntity().getSelectedRecipeId();
+        if (id == null) return null;
+        return this.minecraft.level.getRecipeManager()
+                .byKey(id)
+                .filter(r -> r instanceof ChemicalPlantRecipe)
+                .map(r -> (ChemicalPlantRecipe) r)
+                .orElse(null);
+    }
+
+    private List<Component> buildRecipeTooltip(ChemicalPlantRecipe recipe) {
+        List<Component> lines = new ArrayList<>();
+
+        ItemStack icon = recipe.getResultItem(this.minecraft != null && this.minecraft.level != null
+                ? this.minecraft.level.registryAccess()
+                : null);
+        if (!icon.isEmpty()) {
+            lines.add(icon.getHoverName().copy().withStyle(ChatFormatting.YELLOW));
+        } else {
+            lines.add(Component.literal(recipe.getId().toString()).withStyle(ChatFormatting.YELLOW));
+        }
+
+        String pool = recipe.getBlueprintPool();
+        if (pool != null && !pool.isEmpty()) {
+            lines.add(Component.empty());
+            lines.add(Component.translatable("gui.hbm_m.recipe_from_group").withStyle(ChatFormatting.AQUA));
+            lines.add(Component.literal("  " + pool).withStyle(ChatFormatting.GOLD));
+        }
+
+        lines.add(Component.empty());
+        lines.add(
+                Component.translatable("gui.recipe.duration")
+                        .append(": ")
+                        .append(Component.literal(String.format(java.util.Locale.ROOT, "%.1fs", recipe.getDuration() / 20.0)))
+                        .withStyle(ChatFormatting.RED)
+        );
+        lines.add(
+                Component.translatable("gui.recipe.consumption")
+                        .append(": ")
+                        .append(Component.literal(recipe.getPowerConsumption() + " HE/t"))
+                        .withStyle(ChatFormatting.RED)
+        );
+
+        lines.add(Component.empty());
+        lines.add(Component.translatable("gui.recipe.input").withStyle(ChatFormatting.BOLD));
+        for (var in : recipe.getItemInputs()) {
+            ItemStack[] variants = in.ingredient().getItems();
+            String name = variants.length == 0 ? "?" : variants[0].getHoverName().getString();
+            lines.add(Component.literal("  " + in.count() + "x " + name).withStyle(ChatFormatting.GRAY));
+        }
+        for (var fin : recipe.getFluidInputs()) {
+            lines.add(Component.literal("  " + fin.amount() + "mB ").withStyle(ChatFormatting.BLUE)
+                    .append(Component.literal(fin.fluidId().toString()).withStyle(ChatFormatting.GRAY)));
+        }
+
+        lines.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));
+        for (ItemStack out : recipe.getItemOutputs()) {
+            if (out.isEmpty()) continue;
+            lines.add(Component.literal("  " + out.getCount() + "x ").withStyle(ChatFormatting.GRAY)
+                    .append(out.getHoverName()));
+        }
+        for (FluidStack out : recipe.getFluidOutputs()) {
+            if (out.isEmpty()) continue;
+            lines.add(Component.literal("  " + out.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
+                    .append(out.getDisplayName()));
+        }
+
+        return lines;
+    }
+
+    private void renderGhostInputs(GuiGraphics guiGraphics) {
+        ChemicalPlantRecipe recipe = getSelectedRecipe();
+        if (recipe == null) return;
+
+        // Входные слоты 4..6 в menu соответствуют solid inputs
+        for (int i = 0; i < recipe.getItemInputs().size() && i < 3; i++) {
+            int slotIndex = 4 + i;
+            if (slotIndex >= this.menu.slots.size()) break;
+            Slot slot = this.menu.slots.get(slotIndex);
+            if (slot.hasItem()) continue;
+
+            var in = recipe.getItemInputs().get(i);
+            ItemStack[] variants = in.ingredient().getItems();
+            if (variants.length == 0) continue;
+
+            ItemStack ghost = variants[0].copy();
+            ghost.setCount(in.count());
+
+            int x = this.leftPos + slot.x;
+            int y = this.topPos + slot.y;
+
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(0, 0, 100);
+            com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+            com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 0.5f);
+
+            guiGraphics.renderItem(ghost, x, y);
+            if (ghost.getCount() > 1) {
+                com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+                guiGraphics.renderItemDecorations(this.font, ghost, x, y);
+            }
+
+            com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
+            com.mojang.blaze3d.systems.RenderSystem.disableBlend();
+            guiGraphics.pose().popPose();
+        }
     }
 
     private boolean isMouseOver(int mouseX, int mouseY, int x, int y, int w, int h) {

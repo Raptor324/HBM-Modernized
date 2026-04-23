@@ -26,4 +26,11 @@ public final class MultiblockSideTuples {
     public static boolean[] energy(boolean north, boolean south, boolean west, boolean east, boolean up, boolean down) {
         return new boolean[] { north, south, west, east, up, down };
     }
+
+    /**
+     * @param north south west east up down - локально к схеме (как у {@link MultiblockStructureHelper}).
+     */
+    public static boolean[] fluid(boolean north, boolean south, boolean west, boolean east, boolean up, boolean down) {
+        return new boolean[] { north, south, west, east, up, down };
+    }
 }

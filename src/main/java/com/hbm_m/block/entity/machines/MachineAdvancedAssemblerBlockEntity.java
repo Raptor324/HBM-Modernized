@@ -12,6 +12,7 @@ import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IFrameSupportable;
+import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.inventory.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.industrial.ItemBlueprintFolder;
@@ -55,7 +56,7 @@ import net.minecraftforge.fml.DistExecutor;
  * - Полная логика мультиблока, GUI, анимации и рецептов перенесена из старой системы
  * - Энергосистема остается long-ориентированной с совместимостью Forge Energy
  */
-public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity implements IFrameSupportable {
+public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity implements IFrameSupportable, IMultiblockSidedIO {
 
     private static final int SLOT_COUNT = 17;
     private static final int ENERGY_SLOT = 0;
@@ -72,6 +73,11 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     private final FluidTank outputTank = new FluidTank(4000);
     protected LazyOptional<IFluidHandler> fluidInputHandler = LazyOptional.empty();
     protected LazyOptional<IFluidHandler> fluidOutputHandler = LazyOptional.empty();
+
+    /** Разрешённые стороны прямого подключения к контроллеру (пусто = все). */
+    private java.util.Set<Direction> allowedEnergySides = java.util.EnumSet.noneOf(Direction.class);
+    /** Разрешённые стороны прямого подключения к контроллеру (пусто = все). */
+    private java.util.Set<Direction> allowedFluidSides = java.util.EnumSet.noneOf(Direction.class);
 
     // Выбор рецепта и кеш
     @Nullable private ResourceLocation selectedRecipeId = null;
@@ -543,6 +549,17 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             tag.put("AssemblerModule", moduleTag);
         }
         tag.putBoolean("is_crafting", isCrafting());
+
+        if (!allowedEnergySides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedEnergySides) mask |= (1 << dir.get3DDataValue());
+            tag.putInt("AllowedEnergySides", mask);
+        }
+        if (!allowedFluidSides.isEmpty()) {
+            int mask = 0;
+            for (Direction dir : allowedFluidSides) mask |= (1 << dir.get3DDataValue());
+            tag.putInt("AllowedFluidSides", mask);
+        }
     }
 
     @Override
@@ -578,6 +595,24 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             assemblerModule.readFromNBT(tag.getCompound("AssemblerModule"));
         }
 
+        if (tag.contains("AllowedEnergySides")) {
+            int mask = tag.getInt("AllowedEnergySides");
+            allowedEnergySides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) {
+                    allowedEnergySides.add(dir);
+                }
+            }
+        }
+        if (tag.contains("AllowedFluidSides")) {
+            int mask = tag.getInt("AllowedFluidSides");
+            allowedFluidSides.clear();
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.get3DDataValue())) != 0) {
+                    allowedFluidSides.add(dir);
+                }
+            }
+        }
     }
 
     // Пакеты синхронизации
@@ -607,11 +642,50 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             return itemHandler.cast();
         }
 
+        // === Sided IO для контроллера ===
+        if (side != null) {
+            boolean wantsEnergy =
+                    cap == ModCapabilities.HBM_ENERGY_PROVIDER ||
+                    cap == ModCapabilities.HBM_ENERGY_RECEIVER ||
+                    cap == ModCapabilities.HBM_ENERGY_CONNECTOR ||
+                    cap == ForgeCapabilities.ENERGY;
+            if (wantsEnergy && !allowedEnergySides.isEmpty() && !allowedEnergySides.contains(side)) {
+                return LazyOptional.empty();
+            }
+            if (cap == ForgeCapabilities.FLUID_HANDLER && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
+                return LazyOptional.empty();
+            }
+        }
+
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
             // По умолчанию экспонируем входной бак; при необходимости добавьте роутинг по side
             return fluidInputHandler.cast();
         }
         return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void setAllowedEnergySides(java.util.Set<Direction> sides) {
+        this.allowedEnergySides = java.util.EnumSet.copyOf(sides);
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    @Override
+    public java.util.Set<Direction> getAllowedEnergySides() {
+        return this.allowedEnergySides;
+    }
+
+    @Override
+    public void setAllowedFluidSides(java.util.Set<Direction> sides) {
+        this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    @Override
+    public java.util.Set<Direction> getAllowedFluidSides() {
+        return this.allowedFluidSides;
     }
 
     @Override

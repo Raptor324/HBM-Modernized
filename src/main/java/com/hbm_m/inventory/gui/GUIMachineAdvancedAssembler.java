@@ -306,7 +306,7 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
         ResourceLocation currentRecipe = this.menu.getBlockEntity().getSelectedRecipeId();
         
         // Убираем передачу списка рецептов
-        this.minecraft.setScreen(new GUIAdvancedAssemblerRecipeSelector(
+        this.minecraft.setScreen(new GUIScreenRecipeSelector(
             this.menu.getBlockEntity().getBlockPos(),
             currentRecipe,
             this

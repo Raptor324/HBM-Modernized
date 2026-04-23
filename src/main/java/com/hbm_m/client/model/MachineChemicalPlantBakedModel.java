@@ -30,9 +30,9 @@ import net.minecraftforge.client.model.data.ModelData;
  * <p>
  * <b>Прозрачность:</b> запечённый чанк-меш не поддерживает корректный {@link RenderType#translucent()} (порядок,
  * смешивание). Часть {@code Fluid} с альфой в baked не попадает - только в
- * {@link com.hbm_m.client.render.implementations.ChemicalPlantRenderer} через translucent pass.
+ * {@link com.hbm_m.client.render.implementations.MachineChemicalPlantRenderer} через translucent pass.
  */
-public class ChemicalPlantBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
+public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
     private static final String[] PRIORITY = { "Base", "Frame", "Slider", "Spinner", "Fluid" };
 
@@ -40,7 +40,7 @@ public class ChemicalPlantBakedModel extends AbstractMultipartBakedModel impleme
     private List<BakedQuad> cachedItemQuads;
     private boolean itemQuadsCached = false;
 
-    public ChemicalPlantBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
+    public MachineChemicalPlantBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
         super(parts, transforms);
 
         this.cachedPartNames = parts.keySet().stream()
@@ -179,7 +179,7 @@ public class ChemicalPlantBakedModel extends AbstractMultipartBakedModel impleme
 
     private void buildItemQuads(RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
         List<BakedQuad> allQuads = new ArrayList<>();
-        for (String partName : new String[] { "Base", "Frame", "Slider", "Spinner" }) {
+        for (String partName : new String[] { "Base", "Slider", "Spinner" }) {
             BakedModel part = parts.get(partName);
             if (part != null) {
                 for (Direction dir : Direction.values()) {
@@ -193,7 +193,7 @@ public class ChemicalPlantBakedModel extends AbstractMultipartBakedModel impleme
 
     @Override
     protected List<String> getItemRenderPartNames() {
-        return List.of("Base", "Frame", "Slider", "Spinner");
+        return List.of("Base", "Slider", "Spinner");
     }
 
     @Override

@@ -1298,7 +1298,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
      */
     /**
      * Chemical plant: без {@code rotationY} в blockstate - поворот задаётся только в
-     * {@link com.hbm_m.client.model.ChemicalPlantBakedModel} через
+     * {@link com.hbm_m.client.model.MachineChemicalPlantBakedModel} через
      * {@link com.hbm_m.util.MultipartFacingTransforms#legacyBlockEntityBakedRotationY}, в точности как
      * {@code LegacyAnimator.setupBlockTransform} у VBO (иначе vanilla y + getQuads дают двойной поворот).
      */

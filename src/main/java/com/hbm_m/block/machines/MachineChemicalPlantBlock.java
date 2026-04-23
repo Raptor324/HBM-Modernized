@@ -10,8 +10,11 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.interfaces.IMultiblockSidedIO;
+import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -39,7 +42,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
 
-public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMultiblockController, IMultiblockSidedIO {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     /** Рама: блок на y+3 от контроллера (1.7.10). В BlockState для Iris/chunk mesh. */
@@ -68,10 +71,10 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
         // E = Energy connector (can receive power from cables)
         // A = Default structural part
         // C = Controller (the main block)
-        String[] layer0 = { "EAE",
-                            "ACA",
-                            "EAE" 
-                        }; // Нижний - corners are energy connectors
+        String[] layer0 = { "FCF",
+                            "FAF",
+                            "FFF" 
+                        };
 
         String[] layer1 = { "AAA",
                             "AAA",
@@ -86,19 +89,32 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
         Map<Character, PartRole> roleMap = Map.of(
             'A', PartRole.DEFAULT,
             'C', PartRole.CONTROLLER,
-            'E', PartRole.ENERGY_CONNECTOR
+            'F', PartRole.UNIVERSAL_CONNECTOR
         );
 
         Map<Character, Supplier<BlockState>> symbolMap = Map.of(
             'A', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            'E', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
+            'F', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
         );
 
-        return MultiblockStructureHelper.createFromLayersWithRoles(
+        Map<Character, boolean[]> fluidSideMap = Map.of(
+            'C', MultiblockSideTuples.fluid(true, true, true, true, true, false),
+            'F', MultiblockSideTuples.fluid(true, true, true, true, true, false)
+        );
+
+        Map<Character, boolean[]> energySideMap = Map.of(
+            'C', MultiblockSideTuples.energy(true, true, true, true, true, false),
+            'F', MultiblockSideTuples.energy(true, true, true, true, true, false)
+        );
+
+        return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
             new String[][]{layer0, layer1, layer2},
             symbolMap,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            roleMap
+            roleMap,
+            null,
+            energySideMap,
+            fluidSideMap
         );
     }
 

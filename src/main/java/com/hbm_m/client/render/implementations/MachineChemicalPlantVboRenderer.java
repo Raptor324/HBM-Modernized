@@ -3,7 +3,7 @@ package com.hbm_m.client.render.implementations;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
-import com.hbm_m.client.model.ChemicalPlantBakedModel;
+import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -15,14 +15,14 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 
 @OnlyIn(Dist.CLIENT)
-public class ChemicalPlantVboRenderer {
+public class MachineChemicalPlantVboRenderer {
 
     private static final String BASE = "Base";
     private static final String FRAME = "Frame";
 
-    private final ChemicalPlantBakedModel model;
+    private final MachineChemicalPlantBakedModel model;
 
-    public ChemicalPlantVboRenderer(ChemicalPlantBakedModel model) {
+    public MachineChemicalPlantVboRenderer(MachineChemicalPlantBakedModel model) {
         this.model = model;
     }
 

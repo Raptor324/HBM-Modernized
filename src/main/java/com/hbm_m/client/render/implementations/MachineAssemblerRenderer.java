@@ -16,6 +16,7 @@ import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.util.MultipartFacingTransforms;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -384,6 +385,18 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
 
     // ==================== RECIPE ICON ====================
 
+    /**
+     * Смещения translate(-1, y, 1) ниже настроены для {@link Direction#NORTH} в мир. осях
+     * (pose после BER без FACING). Для остальных направлений вращаем вокруг центра блока
+     * на тот же угол, что и vanilla blockstate Y (0=N, 90=E, 180=S, 270=W).
+     */
+    private static float recipeIconYawFromNorth(Direction facing) {
+        // ВАЖНО: конвенции вращения chunk (квады) и PoseStack противоположны.
+        // См. MultipartFacingTransforms.poseYawFromChunkYaw.
+        return (float) MultipartFacingTransforms.poseYawFromChunkYaw(
+                MultipartFacingTransforms.vanillaChunkMeshRotationY(facing));
+    }
+
     private void renderRecipeIconDirect(MachineAssemblerBlockEntity be,
                                         PoseStack poseStack,
                                         MultiBufferSource bufferSource,
@@ -397,6 +410,10 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         if (mc.player == null) return;
 
         poseStack.pushPose();
+        // Пивот: центр основания контроллера; 4×4 в лок. сетке, эталон — NORTH
+        poseStack.translate(0.5, 0, 0.5);
+        poseStack.mulPose(Axis.YP.rotationDegrees(recipeIconYawFromNorth(getFacing(be))));
+        poseStack.translate(-0.5, 0, -0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(90));
         poseStack.translate(0, 1.0625, 0);
 
@@ -486,11 +503,4 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
 
     @Override
     public int getViewDistance() { return 128; }
-
-    // public void onResourceManagerReload() {
-    //     clearCaches();
-    //     gpu = null;
-    //     cachedModel = null;
-    //     MainRegistry.LOGGER.debug("Assembler legacy renderer resources reloaded");
-    // }
 }

@@ -8,6 +8,7 @@ import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
+import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.UniversalMachinePartBlockEntity;
 import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.interfaces.IMultiblockController;
@@ -36,6 +37,8 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityTicker;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
@@ -80,6 +83,15 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     @Override
     public BlockEntity newBlockEntity(BlockPos pPos, BlockState pState) {
         return new UniversalMachinePartBlockEntity(pPos, pState);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return level.isClientSide
+                ? null
+                : createTickerHelper(type, ModBlockEntities.UNIVERSAL_MACHINE_PART_BE.get(),
+                        (lvl, pos, st, be) -> UniversalMachinePartBlockEntity.tick(lvl, pos, st, be));
     }
 
     @Override

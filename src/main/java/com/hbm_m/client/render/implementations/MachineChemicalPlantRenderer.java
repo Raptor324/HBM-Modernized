@@ -5,7 +5,7 @@ import org.joml.Matrix4f;
 
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
-import com.hbm_m.client.model.ChemicalPlantBakedModel;
+import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.InstancedStaticPartRenderer;
@@ -26,6 +26,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.phys.AABB;
@@ -33,15 +34,21 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.registries.ForgeRegistries;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.renderer.RenderType;
+import com.hbm_m.recipe.ChemicalPlantRecipe;
+
+import javax.annotation.Nullable;
+import java.util.List;
+import java.util.Optional;
 
 @OnlyIn(Dist.CLIENT)
-public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChemicalPlantBlockEntity, ChemicalPlantBakedModel> {
+public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChemicalPlantBlockEntity, MachineChemicalPlantBakedModel> {
 
-    private ChemicalPlantVboRenderer gpu;
-    private ChemicalPlantBakedModel cachedModel;
+    private MachineChemicalPlantVboRenderer gpu;
+    private MachineChemicalPlantBakedModel cachedModel;
 
     private static volatile InstancedStaticPartRenderer instancedBase;
     private static volatile InstancedStaticPartRenderer instancedFrame;
@@ -53,9 +60,9 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
     /** Degrees → radians multiplier; see {@code MachineAdvancedAssemblerRenderer.DEG_TO_RAD}. */
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
 
-    public ChemicalPlantRenderer(BlockEntityRendererProvider.Context ctx) {}
+    public MachineChemicalPlantRenderer(BlockEntityRendererProvider.Context ctx) {}
 
-    private static synchronized void initializeInstancedRenderersSync(ChemicalPlantBakedModel model) {
+    private static synchronized void initializeInstancedRenderersSync(MachineChemicalPlantBakedModel model) {
         if (instancersInitialized) return;
         try {
             MainRegistry.LOGGER.info("ChemicalPlantRenderer: initializing instanced renderers...");
@@ -68,7 +75,7 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
         }
     }
 
-    private static InstancedStaticPartRenderer createInstancedForPart(ChemicalPlantBakedModel model, String partName) {
+    private static InstancedStaticPartRenderer createInstancedForPart(MachineChemicalPlantBakedModel model, String partName) {
         BakedModel part = model.getPart(partName);
         if (part == null) return null;
         String cacheKey = "chemplant_" + partName;
@@ -79,15 +86,15 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
         return new InstancedStaticPartRenderer(data, geo.solidQuads());
     }
 
-    private void initializeInstancedRenderers(ChemicalPlantBakedModel model) {
+    private void initializeInstancedRenderers(MachineChemicalPlantBakedModel model) {
         if (!instancersInitialized) {
             initializeInstancedRenderersSync(model);
         }
     }
 
     @Override
-    protected ChemicalPlantBakedModel getModelType(BakedModel rawModel) {
-        return rawModel instanceof ChemicalPlantBakedModel m ? m : null;
+    protected MachineChemicalPlantBakedModel getModelType(BakedModel rawModel) {
+        return rawModel instanceof MachineChemicalPlantBakedModel m ? m : null;
     }
 
     @Override
@@ -106,7 +113,7 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
     }
 
     @Override
-    protected void renderParts(MachineChemicalPlantBlockEntity be, ChemicalPlantBakedModel model, LegacyAnimator animator,
+    protected void renderParts(MachineChemicalPlantBlockEntity be, MachineChemicalPlantBakedModel model, LegacyAnimator animator,
                               float partialTick, int packedLight, int packedOverlay, PoseStack poseStack,
                               MultiBufferSource bufferSource) {
         var state = be.getBlockState();
@@ -121,12 +128,13 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
             return;
         }
 
-        // Старый baked-путь под шейдерами + простой: статика и idle-подвижные в baked; BER только жидкость.
+        ChemicalPlantRecipeVisual visual = getRecipeVisual(be);
+
+        // Старый baked-путь под шейдерами + простой: статика и idle-подвижные в baked; BER только жидкость/эффекты.
         // Под новым VBO путём (useVboGeometry==true) baked пуст и нам нужно рендерить всё самим.
         if (!useVboGeometry && !renderActive) {
-            FluidStack fluid = be.getFluid();
-            if (!fluid.isEmpty()) {
-                renderFluid(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay, fluid);
+            if (visual != null) {
+                renderSwirl(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
             }
             return;
         }
@@ -137,9 +145,8 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
 
         renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, renderActive);
 
-        FluidStack fluid = be.getFluid();
-        if (!fluid.isEmpty()) {
-            renderFluid(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay, fluid);
+        if (visual != null) {
+            renderSwirl(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
         }
     }
 
@@ -148,7 +155,7 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
         return Math.sin(Math.PI / 2.0 * Math.cos(x));
     }
 
-    private void renderWithVBO(MachineChemicalPlantBlockEntity be, ChemicalPlantBakedModel model, float partialTick,
+    private void renderWithVBO(MachineChemicalPlantBlockEntity be, MachineChemicalPlantBakedModel model, float partialTick,
                               PoseStack poseStack, int dynamicLight, BlockPos blockPos, MultiBufferSource bufferSource,
                               boolean renderActive) {
         boolean useVboPath = ShaderCompatibilityDetector.useVboGeometry();
@@ -159,7 +166,7 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
 
         if (cachedModel != model || gpu == null) {
             cachedModel = model;
-            gpu = new ChemicalPlantVboRenderer(model);
+            gpu = new MachineChemicalPlantVboRenderer(model);
         }
 
         boolean useBatching = useVboPath && ModClothConfig.useInstancedBatching();
@@ -186,7 +193,7 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
     }
 
     private void renderChemicalPlantPartsInternal(MachineChemicalPlantBlockEntity be,
-                                                  ChemicalPlantBakedModel model,
+                                                  MachineChemicalPlantBakedModel model,
                                                   float partialTick,
                                                   PoseStack poseStack,
                                                   int dynamicLight,
@@ -283,9 +290,74 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
         if (r != null) r.flush(event);
     }
 
-    /** Жидкость с альфой: только BER {@link RenderType#translucent}; baked/chunk такое не поддерживает. */
-    private static void renderFluid(MachineChemicalPlantBlockEntity blockEntity, float partialTick, PoseStack poseStack,
-                                    MultiBufferSource buffer, int packedLight, int packedOverlay, FluidStack fluid) {
+    private record ChemicalPlantRecipeVisual(FluidStack textureFluid, float r, float g, float b) {}
+
+    @Nullable
+    private static ChemicalPlantRecipeVisual getRecipeVisual(MachineChemicalPlantBlockEntity be) {
+        if (!be.getDidProcess()) return null;
+        if (Minecraft.getInstance().level == null) return null;
+        ResourceLocation id = be.getSelectedRecipeId();
+        if (id == null) return null;
+
+        Optional<ChemicalPlantRecipe> recipeOpt = Minecraft.getInstance().level.getRecipeManager()
+                .byKey(id)
+                .filter(r -> r instanceof ChemicalPlantRecipe)
+                .map(r -> (ChemicalPlantRecipe) r);
+        if (recipeOpt.isEmpty()) return null;
+
+        ChemicalPlantRecipe recipe = recipeOpt.get();
+
+        // Как 1.7.10: цвет = средний по output fluids, иначе по input fluids.
+        List<FluidStack> colorFluids = !recipe.getFluidOutputs().isEmpty()
+                ? recipe.getFluidOutputs()
+                : List.of();
+        if (colorFluids.isEmpty() && !recipe.getFluidInputs().isEmpty()) {
+            List<FluidStack> tmp = new java.util.ArrayList<>();
+            for (var fin : recipe.getFluidInputs()) {
+                var fluid = ForgeRegistries.FLUIDS.getValue(fin.fluidId());
+                if (fluid == null) continue;
+                tmp.add(new FluidStack(fluid, fin.amount()));
+            }
+            colorFluids = tmp;
+        }
+        if (colorFluids.isEmpty()) return null;
+
+        int colors = 0;
+        float rr = 0, gg = 0, bb = 0;
+        for (FluidStack fs : colorFluids) {
+            if (fs.isEmpty()) continue;
+            int tint = IClientFluidTypeExtensions.of(fs.getFluid()).getTintColor(fs);
+            rr += ((tint >> 16) & 0xFF) / 255.0F;
+            gg += ((tint >> 8) & 0xFF) / 255.0F;
+            bb += (tint & 0xFF) / 255.0F;
+            colors++;
+        }
+        if (colors <= 0) return null;
+        rr /= colors;
+        gg /= colors;
+        bb /= colors;
+
+        // Текстура: первая output fluid, иначе первая input fluid.
+        FluidStack texFluid = null;
+        for (FluidStack out : recipe.getFluidOutputs()) {
+            if (!out.isEmpty()) { texFluid = out; break; }
+        }
+        if (texFluid == null) {
+            for (var fin : recipe.getFluidInputs()) {
+                var fluid = ForgeRegistries.FLUIDS.getValue(fin.fluidId());
+                if (fluid == null) continue;
+                texFluid = new FluidStack(fluid, fin.amount());
+                break;
+            }
+        }
+        if (texFluid == null || texFluid.isEmpty()) return null;
+        return new ChemicalPlantRecipeVisual(texFluid, rr, gg, bb);
+    }
+
+    /** Полупрозрачный «swirl» как 1.7.10: только BER {@link RenderType#translucent}. */
+    private static void renderSwirl(MachineChemicalPlantBlockEntity blockEntity, float partialTick, PoseStack poseStack,
+                                    MultiBufferSource buffer, int packedLight, int packedOverlay, ChemicalPlantRecipeVisual visual) {
+        FluidStack fluid = visual.textureFluid();
         IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid.getFluid());
         var stillTexture = ext.getStillTexture(fluid);
         if (stillTexture == null) {
@@ -293,17 +365,11 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
         }
 
         var sprite = Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
-        int tintColor = ext.getTintColor(fluid);
-
-        float red = ((tintColor >> 16) & 0xFF) / 255.0F;
-        float green = ((tintColor >> 8) & 0xFF) / 255.0F;
-        float blue = (tintColor & 0xFF) / 255.0F;
+        float red = visual.r();
+        float green = visual.g();
+        float blue = visual.b();
         float alpha = 0.85F;
-
-        float fill = blockEntity.getFluidFillFraction();
-        if (fill <= 0.001F) {
-            return;
-        }
+        float fill = 1.0F;
 
         boolean scrollActive = blockEntity.getDidProcess();
         long time = blockEntity.getLevel() != null ? blockEntity.getLevel().getGameTime() : 0L;
@@ -374,4 +440,6 @@ public class ChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChem
             .normal(normalMat, nx, ny, nz)
             .endVertex();
     }
+
+    @Override public int getViewDistance() { return 128; }
 }

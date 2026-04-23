@@ -8,10 +8,13 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.SetAssemblerRecipeC2SPacket;
+import com.hbm_m.network.SetChemPlantRecipeC2SPacket;
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.recipe.ChemicalPlantRecipe;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -23,7 +26,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-public class GUIAdvancedAssemblerRecipeSelector extends Screen {
+public class GUIScreenRecipeSelector extends Screen {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/processing/gui_recipe_selector.png");
     
@@ -46,10 +49,16 @@ public class GUIAdvancedAssemblerRecipeSelector extends Screen {
     private ItemStack lastFolderStack = ItemStack.EMPTY;
     
     private ResourceLocation selectedRecipe = null;
+
+    @Nullable
+    private MachineAdvancedAssemblerBlockEntity assembler;
+
+    @Nullable
+    private MachineChemicalPlantBlockEntity chemicalPlant;
+
+    private record RecipeEntry(ResourceLocation id, ItemStack icon, @Nullable net.minecraft.world.item.crafting.Recipe<?> recipe) {}
     
-    private record RecipeEntry(ResourceLocation id, ItemStack icon, @Nullable AssemblerRecipe recipe) {}
-    
-    public GUIAdvancedAssemblerRecipeSelector(BlockPos machinePos, ResourceLocation currentRecipe, Screen parentScreen) {
+    public GUIScreenRecipeSelector(BlockPos machinePos, ResourceLocation currentRecipe, Screen parentScreen) {
         super(Component.translatable("gui.hbm_m.assembler_recipe_selector"));
         this.machinePos = machinePos;
         this.parentScreen = parentScreen;
@@ -62,9 +71,8 @@ public class GUIAdvancedAssemblerRecipeSelector extends Screen {
         this.guiLeft = (this.width - this.xSize) / 2;
         this.guiTop = (this.height - this.ySize) / 2;
 
-        // Удалите весь блок с availableRecipes
-        // Вместо этого вызовите reloadRecipes() напрямую
         if (this.allRecipes.isEmpty()) {
+            bindMachineContext();
             reloadRecipes();
         }
 
@@ -176,21 +184,8 @@ public class GUIAdvancedAssemblerRecipeSelector extends Screen {
                 RecipeEntry entry = filteredRecipes.get(i);
                 List<Component> tooltip = new ArrayList<>();
                 tooltip.add(entry.icon.getHoverName());
-                
-                // НОВОЕ: Добавляем информацию о группе
-                if (entry.recipe != null) {
-                    String pool = entry.recipe.getBlueprintPool();
-                    if (pool != null && !pool.isEmpty()) {
-                        tooltip.add(Component.empty());
-                        tooltip.add(Component.translatable("gui.hbm_m.recipe_from_group")
-                            .withStyle(ChatFormatting.AQUA));
-                        tooltip.add(Component.literal("  " + pool)
-                            .withStyle(ChatFormatting.GOLD));
-                    }
-                    
-                    tooltip.add(Component.empty());
-                    com.hbm_m.util.TemplateTooltipUtil.buildRecipeTooltip(entry.recipe, tooltip);
-                }
+
+                appendRecipeTooltipLines(entry.recipe, tooltip);
                 
                 guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(),
                     mouseX, mouseY);
@@ -200,29 +195,12 @@ public class GUIAdvancedAssemblerRecipeSelector extends Screen {
         
         // Тултип для выбранного рецепта
         if (isHovering(mouseX, mouseY, 151, 71, 18, 18) && this.selectedRecipe != null) {
-            if (this.minecraft != null && this.minecraft.level != null) {
-                this.minecraft.level.getRecipeManager().byKey(this.selectedRecipe).ifPresent(recipe -> {
-                    if (recipe instanceof AssemblerRecipe assemblerRecipe) {
-                        List<Component> tooltip = new ArrayList<>();
-                        ItemStack output = assemblerRecipe.getResultItem(null);
-                        tooltip.add(output.getHoverName());
-                        
-                        // НОВОЕ: Добавляем информацию о группе
-                        String pool = assemblerRecipe.getBlueprintPool();
-                        if (pool != null && !pool.isEmpty()) {
-                            tooltip.add(Component.empty());
-                            tooltip.add(Component.translatable("gui.hbm_m.recipe_from_group")
-                                .withStyle(ChatFormatting.AQUA));
-                            tooltip.add(Component.literal("  " + pool)
-                                .withStyle(ChatFormatting.GOLD));
-                        }
-                        
-                        tooltip.add(Component.empty());
-                        com.hbm_m.util.TemplateTooltipUtil.buildRecipeTooltip(assemblerRecipe, tooltip);
-                        guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(),
-                            mouseX, mouseY);
-                    }
-                });
+            RecipeEntry entry = filteredRecipes.stream().filter(e -> e.id.equals(this.selectedRecipe)).findFirst().orElse(null);
+            if (entry != null) {
+                List<Component> tooltip = new ArrayList<>();
+                tooltip.add(entry.icon.getHoverName());
+                appendRecipeTooltipLines(entry.recipe, tooltip);
+                guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
             }
             return;
         }
@@ -329,8 +307,13 @@ public class GUIAdvancedAssemblerRecipeSelector extends Screen {
     }
     
     private void applySelection() {
-        ModPacketHandler.INSTANCE.sendToServer(
-                new SetAssemblerRecipeC2SPacket(machinePos, selectedRecipe));
+        if (assembler != null) {
+            ModPacketHandler.INSTANCE.sendToServer(
+                    new SetAssemblerRecipeC2SPacket(machinePos, selectedRecipe));
+        } else if (chemicalPlant != null) {
+            ModPacketHandler.INSTANCE.sendToServer(
+                    new SetChemPlantRecipeC2SPacket(machinePos, selectedRecipe));
+        }
         if (this.minecraft != null) {
             this.minecraft.setScreen(this.parentScreen);
         }
@@ -363,18 +346,19 @@ public class GUIAdvancedAssemblerRecipeSelector extends Screen {
     public void tick() {
         super.tick();
         
-        // Проверяем изменение папки через клиента
+        // Проверяем изменение папки blueprint на клиенте (и у ассемблера, и у химзавода)
         if (this.minecraft != null && this.minecraft.level != null) {
-            // Получаем BlockEntity напрямую на клиенте
-            BlockEntity be = this.minecraft.level.getBlockEntity(this.machinePos);
-            if (be instanceof MachineAdvancedAssemblerBlockEntity assembler) {
-                ItemStack currentFolder = assembler.getBlueprintFolder();
-                
-                // Если папка изменилась - перезагружаем рецепты
-                if (!ItemStack.matches(lastFolderStack, currentFolder)) {
-                    this.lastFolderStack = currentFolder.copy();
-                    reloadRecipes();
-                }
+            bindMachineContext();
+            ItemStack currentFolder = ItemStack.EMPTY;
+            if (assembler != null) {
+                currentFolder = assembler.getBlueprintFolder();
+            } else if (chemicalPlant != null) {
+                currentFolder = chemicalPlant.getBlueprintFolder();
+            }
+
+            if (!ItemStack.matches(lastFolderStack, currentFolder)) {
+                this.lastFolderStack = currentFolder.copy();
+                reloadRecipes();
             }
         }
     }
@@ -384,37 +368,117 @@ public class GUIAdvancedAssemblerRecipeSelector extends Screen {
         this.filteredRecipes.clear();
         
         if (this.minecraft != null && this.minecraft.level != null) {
-            BlockEntity be = this.minecraft.level.getBlockEntity(this.machinePos);
-            if (be instanceof MachineAdvancedAssemblerBlockEntity assembler) {
+            bindMachineContext();
+
+            if (assembler != null) {
                 List<AssemblerRecipe> available = assembler.getAvailableRecipes();
-                
-                // Разделяем рецепты на две группы
                 List<RecipeEntry> poolRecipes = new ArrayList<>();
                 List<RecipeEntry> baseRecipes = new ArrayList<>();
-                
+
                 for (AssemblerRecipe recipe : available) {
-                    ItemStack icon = recipe.getResultItem(null);
+                    ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
                     RecipeEntry entry = new RecipeEntry(recipe.getId(), icon, recipe);
-                    
-                    // Если рецепт имеет pool - добавляем в приоритетную группу
                     if (recipe.getBlueprintPool() != null && !recipe.getBlueprintPool().isEmpty()) {
                         poolRecipes.add(entry);
                     } else {
                         baseRecipes.add(entry);
                     }
                 }
-                
-                // Сначала добавляем рецепты с пулом, затем базовые
+
                 allRecipes.addAll(poolRecipes);
                 allRecipes.addAll(baseRecipes);
-                
-                if (this.searchBox != null && !this.searchBox.getValue().isEmpty()) {
-                    onSearch(this.searchBox.getValue());
-                } else {
-                    this.filteredRecipes.addAll(this.allRecipes);
+            } else if (chemicalPlant != null) {
+                List<ChemicalPlantRecipe> available = chemicalPlant.getAvailableRecipes();
+                for (ChemicalPlantRecipe recipe : available) {
+                    ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
+                    if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
+                    allRecipes.add(new RecipeEntry(recipe.getId(), icon, recipe));
                 }
-                
-                resetPaging();
+            }
+
+            if (this.searchBox != null && !this.searchBox.getValue().isEmpty()) {
+                onSearch(this.searchBox.getValue());
+            } else {
+                this.filteredRecipes.addAll(this.allRecipes);
+            }
+
+            resetPaging();
+        }
+    }
+
+    private void bindMachineContext() {
+        if (this.minecraft == null || this.minecraft.level == null) return;
+        BlockEntity be = this.minecraft.level.getBlockEntity(this.machinePos);
+        if (be instanceof MachineAdvancedAssemblerBlockEntity a) {
+            this.assembler = a;
+            this.chemicalPlant = null;
+        } else if (be instanceof MachineChemicalPlantBlockEntity c) {
+            this.assembler = null;
+            this.chemicalPlant = c;
+        } else {
+            this.assembler = null;
+            this.chemicalPlant = null;
+        }
+    }
+
+    private static void appendRecipeTooltipLines(@Nullable net.minecraft.world.item.crafting.Recipe<?> recipe, List<Component> tooltip) {
+        if (recipe == null) return;
+
+        if (recipe instanceof AssemblerRecipe assemblerRecipe) {
+            String pool = assemblerRecipe.getBlueprintPool();
+            if (pool != null && !pool.isEmpty()) {
+                tooltip.add(Component.empty());
+                tooltip.add(Component.translatable("gui.hbm_m.recipe_from_group")
+                        .withStyle(ChatFormatting.AQUA));
+                tooltip.add(Component.literal("  " + pool)
+                        .withStyle(ChatFormatting.GOLD));
+            }
+
+            tooltip.add(Component.empty());
+            com.hbm_m.util.TemplateTooltipUtil.buildRecipeTooltip(assemblerRecipe, tooltip);
+            return;
+        }
+
+        if (recipe instanceof ChemicalPlantRecipe chemicalRecipe) {
+            String pool = chemicalRecipe.getBlueprintPool();
+            if (pool != null && !pool.isEmpty()) {
+                tooltip.add(Component.empty());
+                tooltip.add(Component.translatable("gui.hbm_m.recipe_from_group")
+                        .withStyle(ChatFormatting.AQUA));
+                tooltip.add(Component.literal("  " + pool)
+                        .withStyle(ChatFormatting.GOLD));
+            }
+
+            tooltip.add(Component.empty());
+            tooltip.add(Component.translatable("gui.recipe.duration").append(": ")
+                    .append(Component.literal(String.format(java.util.Locale.ROOT, "%.1fs", chemicalRecipe.getDuration() / 20.0)))
+                    .withStyle(ChatFormatting.RED));
+            tooltip.add(Component.translatable("gui.recipe.consumption").append(": ")
+                    .append(Component.literal(chemicalRecipe.getPowerConsumption() + "HE/t"))
+                    .withStyle(ChatFormatting.RED));
+
+            tooltip.add(Component.empty());
+            tooltip.add(Component.translatable("gui.recipe.input").withStyle(ChatFormatting.BOLD));
+            for (var in : chemicalRecipe.getItemInputs()) {
+                ItemStack[] variants = in.ingredient().getItems();
+                String name = variants.length == 0 ? "?" : variants[0].getHoverName().getString();
+                tooltip.add(Component.literal("  " + in.count() + "x " + name).withStyle(ChatFormatting.GRAY));
+            }
+            for (var fin : chemicalRecipe.getFluidInputs()) {
+                tooltip.add(Component.literal("  " + fin.amount() + "mB ").withStyle(ChatFormatting.BLUE)
+                        .append(Component.literal(fin.fluidId().toString()).withStyle(ChatFormatting.GRAY)));
+            }
+
+            tooltip.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));
+            for (ItemStack out : chemicalRecipe.getItemOutputs()) {
+                if (out.isEmpty()) continue;
+                tooltip.add(Component.literal("  " + out.getCount() + "x ").withStyle(ChatFormatting.GRAY)
+                        .append(out.getHoverName()));
+            }
+            for (var out : chemicalRecipe.getFluidOutputs()) {
+                if (out.isEmpty()) continue;
+                tooltip.add(Component.literal("  " + out.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
+                        .append(out.getDisplayName()));
             }
         }
     }

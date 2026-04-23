@@ -11,8 +11,10 @@ import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.interfaces.IFrameSupportable;
 import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -168,20 +170,20 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
         
         // Слои структуры 3x3x3
         String[] layer0 = {
-            "BBB",  // 'B' в углах - универсальные коннекторы
-            "BCB",
+            "BCB", 
+            "BAB",
             "BBB"
         };
         
         String[] layer1 = {
-            "AAA",  // Средний слой - обычные блоки
-            "AAA",  // 'C' в центре - контроллер структуры
+            "AAA",
+            "AAA",
             "AAA"
         };
         
         String[] layer2 = {
             "AAA",
-            "AAA",  // 'L' - лестница для подъёма
+            "AAA",
             "AAA"
         };
         
@@ -202,13 +204,28 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
             'L', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
             // 'C' НЕ здесь - контроллер это отдельный блок
         );
-        
+
+        Map<Character, boolean[]> fluidSideMap = Map.of(
+            'C', MultiblockSideTuples.fluid(true, true, true, true, true, false),
+            'B', MultiblockSideTuples.fluid(true, true, true, true, true, false)
+        );
+
+        Map<Character, boolean[]> energySideMap = Map.of(
+            'C', MultiblockSideTuples.energy(true, true, true, true, true, false),
+            'B', MultiblockSideTuples.energy(true, true, true, true, true, false)
+        );
+
+
+
         // Используем createFromLayersWithRoles - автоматически найдёт позицию контроллера
-        return MultiblockStructureHelper.createFromLayersWithRoles(
+        return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
             new String[][]{layer0, layer1, layer2},
             symbolMap,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            roleMap
+            roleMap,
+            null,
+            energySideMap,
+            fluidSideMap
         );
     }
     

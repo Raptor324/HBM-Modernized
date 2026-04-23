@@ -16,7 +16,6 @@ import com.hbm_m.interfaces.IMultiblockPart;
 import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
@@ -284,7 +283,7 @@ public class ClientRenderHandler {
 
     @SubscribeEvent
     public static void onRenderWorldLast(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) {
+        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
             return;
         }
 
@@ -294,10 +293,11 @@ public class ClientRenderHandler {
         long currentTime = System.currentTimeMillis();
         VertexConsumer fillConsumer = mc.renderBuffers().bufferSource().getBuffer(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
         float alpha = ModClothConfig.get().obstructionHighlight.obstructionHighlightAlpha / 100.0f;
+        var poseStack = event.getPoseStack();
 
-        // Собственный PoseStack: только translate(-camera), без event.getPoseStack(), чтобы ничего не влияло на трансформации.
-        PoseStack ourPose = new PoseStack();
-        ourPose.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+        poseStack.pushPose();
+        poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);
+        Matrix4f effectiveMatrix = poseStack.last().pose();
 
         // 1. Рендерим временные красные подсветки (препятствия при установке)
         if (!highlightedBlocks.isEmpty() && alpha > 0) {
@@ -308,7 +308,6 @@ public class ClientRenderHandler {
                     return true;
                 }
 
-                // Проверяем соседей
                 boolean drawDown = !highlightedBlocks.containsKey(pos.below());
                 boolean drawUp = !highlightedBlocks.containsKey(pos.above());
                 boolean drawNorth = !highlightedBlocks.containsKey(pos.north());
@@ -316,11 +315,9 @@ public class ClientRenderHandler {
                 boolean drawWest = !highlightedBlocks.containsKey(pos.west());
                 boolean drawEast = !highlightedBlocks.containsKey(pos.east());
 
-                // Раздуваем в camera-relative пространстве
                 AABB boundingBox = new AABB(pos).inflate(0.002D);
-                
-                renderFilledBox(ourPose, fillConsumer, boundingBox, redColor, alpha,
-                            drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast);
+                renderFilledBox(effectiveMatrix, fillConsumer, boundingBox, cameraPos, redColor, alpha,
+                        drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast, false);
                 return false;
             });
         }
@@ -329,18 +326,14 @@ public class ClientRenderHandler {
         if (!orphanedPhantomBlocks.isEmpty()) {
             Color purpleColor = new Color(128, 0, 128); // Фиолетовый цвет
             float purpleAlpha = 0.6f; // Полупрозрачность для постоянной подсветки
-            
-            // Проверяем, что блоки всё ещё существуют в мире
             var level = mc.level;
             if (level != null) {
                 orphanedPhantomBlocks.entrySet().removeIf(entry -> {
                     BlockPos pos = entry.getKey();
-                    // Если блока больше нет в мире - удаляем из списка
                     if (!level.getBlockState(pos).is(com.hbm_m.block.ModBlocks.UNIVERSAL_MACHINE_PART.get())) {
                         return true;
                     }
 
-                    // Проверяем соседей (только среди осиротевших блоков)
                     boolean drawDown = !orphanedPhantomBlocks.containsKey(pos.below());
                     boolean drawUp = !orphanedPhantomBlocks.containsKey(pos.above());
                     boolean drawNorth = !orphanedPhantomBlocks.containsKey(pos.north());
@@ -348,29 +341,35 @@ public class ClientRenderHandler {
                     boolean drawWest = !orphanedPhantomBlocks.containsKey(pos.west());
                     boolean drawEast = !orphanedPhantomBlocks.containsKey(pos.east());
 
-                    // Раздуваем в camera-relative пространстве
                     AABB boundingBox = new AABB(pos).inflate(0.002D);
-                    
-                    renderFilledBox(ourPose, fillConsumer, boundingBox, purpleColor, purpleAlpha,
-                                drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast);
+                    renderFilledBox(effectiveMatrix, fillConsumer, boundingBox, cameraPos, purpleColor, purpleAlpha,
+                            drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast, false);
                     return false;
                 });
             }
         }
 
         mc.renderBuffers().bufferSource().endBatch(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
+        poseStack.popPose();
     }
 
     // Рендерим только те грани куба, которые не примыкают к другим подсвеченным блокам.
-    private static void renderFilledBox(PoseStack poseStack, VertexConsumer consumer, AABB box, Color color, float alpha,
-                                        boolean drawDown, boolean drawUp, boolean drawNorth, boolean drawSouth, boolean drawWest, boolean drawEast) {
-        Matrix4f matrix = poseStack.last().pose();
+    private static void renderFilledBox(Matrix4f matrix, VertexConsumer consumer, AABB box, Vec3 cameraPos, Color color, float alpha,
+                                        boolean drawDown, boolean drawUp, boolean drawNorth, boolean drawSouth, boolean drawWest, boolean drawEast, boolean cameraRelative) {
         float r = color.getRed() / 255f;
         float g = color.getGreen() / 255f;
         float b = color.getBlue() / 255f;
-        
-        float minX = (float)box.minX; float minY = (float)box.minY; float minZ = (float)box.minZ;
-        float maxX = (float)box.maxX; float maxY = (float)box.maxY; float maxZ = (float)box.maxZ;
+
+        float minX = (float) box.minX;
+        float minY = (float) box.minY;
+        float minZ = (float) box.minZ;
+        float maxX = (float) box.maxX;
+        float maxY = (float) box.maxY;
+        float maxZ = (float) box.maxZ;
+        if (cameraRelative) {
+            minX -= (float) cameraPos.x; minY -= (float) cameraPos.y; minZ -= (float) cameraPos.z;
+            maxX -= (float) cameraPos.x; maxY -= (float) cameraPos.y; maxZ -= (float) cameraPos.z;
+        }
         
         // Низ (Y-)
         if (drawDown) {
@@ -415,4 +414,6 @@ public class ClientRenderHandler {
             consumer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, alpha).endVertex();
         }
     }
+
+
 }

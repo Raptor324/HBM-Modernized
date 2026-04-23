@@ -13,7 +13,7 @@ import com.google.common.collect.ImmutableMap;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
-import com.hbm_m.client.loader.ChemicalPlantModelLoader;
+import com.hbm_m.client.loader.MachineChemicalPlantModelLoader;
 import com.hbm_m.client.loader.DoorModelLoader;
 import com.hbm_m.client.loader.HeatingOvenModelLoader;
 import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
@@ -38,7 +38,7 @@ import com.hbm_m.client.render.implementations.AirBombProjectileEntityRenderer;
 import com.hbm_m.client.render.implementations.AirNukeBombProjectileEntityRenderer;
 import com.hbm_m.client.render.implementations.AirstrikeEntityRenderer;
 import com.hbm_m.client.render.implementations.AirstrikeNukeEntityRenderer;
-import com.hbm_m.client.render.implementations.ChemicalPlantRenderer;
+import com.hbm_m.client.render.implementations.MachineChemicalPlantRenderer;
 import com.hbm_m.client.render.implementations.DoorRenderer;
 import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineAssemblerRenderer;
@@ -217,7 +217,7 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
-            BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), ChemicalPlantRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), MachineChemicalPlantRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
@@ -370,7 +370,7 @@ public class ClientSetup {
         MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
 
         event.register("advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
-        event.register("chemical_plant_loader", new ChemicalPlantModelLoader());
+        event.register("chemical_plant_loader", new MachineChemicalPlantModelLoader());
         event.register("machine_assembler_loader", new MachineAssemblerModelLoader());
         event.register("hydraulic_frackining_tower_loader", new MachineHydraulicFrackiningTowerModelLoader());
         event.register("fluid_tank_loader", new MachineFluidTankModelLoader());
@@ -467,7 +467,7 @@ public class ClientSetup {
                         MachineHydraulicFrackiningTowerRenderer.clearCaches();
                         DoorRenderer.clearAllCaches();
                         MachinePressRenderer.clearCaches();
-                        ChemicalPlantRenderer.clearCaches();
+                        MachineChemicalPlantRenderer.clearCaches();
                         GlobalMeshCache.clearAll();
                         AbstractObjArmorLayer.clearAllCaches();
                         MainRegistry.LOGGER.info("VBO cache cleanup completed (deferred to render thread)");
@@ -486,7 +486,7 @@ public class ClientSetup {
             MachineHydraulicFrackiningTowerRenderer.clearCaches();
             DoorRenderer.clearAllCaches();
             MachinePressRenderer.clearCaches();
-            ChemicalPlantRenderer.clearCaches();
+            MachineChemicalPlantRenderer.clearCaches();
             GlobalMeshCache.clearAll();
             
             // Очищаем кэши рендеринга брони

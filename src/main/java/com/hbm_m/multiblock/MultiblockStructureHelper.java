@@ -20,6 +20,7 @@ import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.interfaces.IFrameSupportable;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IMultiblockPart;
+import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.HighlightBlocksPacket;
 import com.hbm_m.network.ModPacketHandler;
@@ -65,6 +66,12 @@ public class MultiblockStructureHelper {
     private final Map<BlockPos, Set<Direction>> ladderLocalDirections = new HashMap<>();
     /** Локальные стороны энергоприёма/отдачи относительно схемы (до поворота FACING). Ключ - позиция в сетке. */
     private final Map<BlockPos, Set<Direction>> energyLocalDirections = new HashMap<>();
+    /** Локальные стороны жидкостного подключения относительно схемы (до поворота FACING). Ключ - позиция в сетке. */
+    private final Map<BlockPos, Set<Direction>> fluidLocalDirections = new HashMap<>();
+    /** Локальные стороны подключения энергии на самом контроллере (если заданы). Пусто = все стороны. */
+    private Set<Direction> controllerEnergyLocalDirections = Collections.emptySet();
+    /** Локальные стороны подключения жидкостей на самом контроллере (если заданы). Пусто = все стороны. */
+    private Set<Direction> controllerFluidLocalDirections = Collections.emptySet();
     private final Map<BlockPos, VoxelShape> partShapes;
     private final Map<BlockPos, VoxelShape> collisionShapes;
     // Позиция контроллера в структуре (относительно центра)
@@ -256,12 +263,14 @@ public class MultiblockStructureHelper {
             Map<Character, VoxelShape> shapeMap,
             Map<Character, VoxelShape> collisionMap,
             Map<Character, boolean[]> ladderSideMap,
-            Map<Character, boolean[]> energySideMap) {
+            Map<Character, boolean[]> energySideMap,
+            Map<Character, boolean[]> fluidSideMap) {
         
         Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
         Map<BlockPos, Character> positionSymbolMap = new HashMap<>();
         Map<BlockPos, Set<Direction>> ladderDirs = new HashMap<>();
         Map<BlockPos, Set<Direction>> energyDirs = new HashMap<>();
+        Map<BlockPos, Set<Direction>> fluidDirs = new HashMap<>();
         Map<BlockPos, VoxelShape> specificPartShapes = new HashMap<>();
         Map<BlockPos, VoxelShape> specificCollisionShapes = new HashMap<>();
         
@@ -328,6 +337,10 @@ public class MultiblockStructureHelper {
                                     && energySideMap != null && energySideMap.containsKey(symbol)) {
                                 energyDirs.put(pos, energyTupleToLocalSet(symbol, energySideMap.get(symbol)));
                             }
+                            if ((role == PartRole.FLUID_CONNECTOR || role == PartRole.UNIVERSAL_CONNECTOR)
+                                    && fluidSideMap != null && fluidSideMap.containsKey(symbol)) {
+                                fluidDirs.put(pos, fluidTupleToLocalSet(symbol, fluidSideMap.get(symbol)));
+                            }
                         }
                         positionSymbolMap.put(pos, symbol);
 
@@ -382,6 +395,18 @@ public class MultiblockStructureHelper {
         );
         helper.ladderLocalDirections.putAll(ladderDirs);
         helper.energyLocalDirections.putAll(energyDirs);
+        helper.fluidLocalDirections.putAll(fluidDirs);
+
+        // Стороны контроллера (опционально): берём из sideMap по символу контроллера.
+        Character controllerSymbol = positionSymbolMap.get(finalControllerPos);
+        if (controllerSymbol != null) {
+            if (energySideMap != null && energySideMap.containsKey(controllerSymbol)) {
+                helper.controllerEnergyLocalDirections = energyTupleToLocalSet(controllerSymbol, energySideMap.get(controllerSymbol));
+            }
+            if (fluidSideMap != null && fluidSideMap.containsKey(controllerSymbol)) {
+                helper.controllerFluidLocalDirections = fluidTupleToLocalSet(controllerSymbol, fluidSideMap.get(controllerSymbol));
+            }
+        }
         return helper;
     }
 
@@ -390,6 +415,10 @@ public class MultiblockStructureHelper {
     };
 
     private static final Direction[] ENERGY_TUPLE_ORDER = {
+        Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.UP, Direction.DOWN
+    };
+
+    private static final Direction[] FLUID_TUPLE_ORDER = {
         Direction.NORTH, Direction.SOUTH, Direction.WEST, Direction.EAST, Direction.UP, Direction.DOWN
     };
 
@@ -419,6 +448,19 @@ public class MultiblockStructureHelper {
         return set;
     }
 
+    private static EnumSet<Direction> fluidTupleToLocalSet(char symbol, boolean[] tuple) {
+        if (tuple == null || tuple.length != FLUID_TUPLE_ORDER.length) {
+            throw new IllegalArgumentException("fluidSideMap['" + symbol + "'] must be boolean[6] (north,south,west,east,up,down)");
+        }
+        EnumSet<Direction> set = EnumSet.noneOf(Direction.class);
+        for (int i = 0; i < FLUID_TUPLE_ORDER.length; i++) {
+            if (tuple[i]) {
+                set.add(FLUID_TUPLE_ORDER[i]);
+            }
+        }
+        return set;
+    }
+
     /** Поворот локального направления схемы в мировое при ориентации структуры {@code facing}. */
     private static Direction rotateLocalDirectionToWorld(Direction localDir, Direction facing) {
         BlockPos rotatedVec = rotate(new BlockPos(localDir.getNormal()), facing);
@@ -432,7 +474,7 @@ public class MultiblockStructureHelper {
             Map<Character, PartRole> roleMap,
             Map<Character, VoxelShape> shapeMap,
             Map<Character, VoxelShape> collisionMap) {
-        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, shapeMap, collisionMap, null, null);
+        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, shapeMap, collisionMap, null, null, null);
     }
 
     /**
@@ -448,7 +490,23 @@ public class MultiblockStructureHelper {
             Map<Character, PartRole> roleMap,
             Map<Character, boolean[]> ladderSideMap,
             Map<Character, boolean[]> energySideMap) {
-        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, null, null, ladderSideMap, energySideMap);
+        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, null, null, ladderSideMap, energySideMap, null);
+    }
+
+    /**
+     * Как {@link #createFromLayersWithRolesAndSides(String[][], Map, Supplier, Map, Map, Map)},
+     * но дополнительно задаёт стороны жидкостного подключения для FLUID_CONNECTOR / UNIVERSAL_CONNECTOR
+     * и (опционально) для самого контроллера (если добавить символ контроллера в карту).
+     */
+    public static MultiblockStructureHelper createFromLayersWithRolesAndSides(
+            String[][] layers,
+            Map<Character, Supplier<BlockState>> symbolMap,
+            Supplier<BlockState> phantomBlockState,
+            Map<Character, PartRole> roleMap,
+            Map<Character, boolean[]> ladderSideMap,
+            Map<Character, boolean[]> energySideMap,
+            Map<Character, boolean[]> fluidSideMap) {
+        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, null, null, ladderSideMap, energySideMap, fluidSideMap);
     }
 
     public static MultiblockStructureHelper createFromLayersWithRoles(
@@ -456,7 +514,7 @@ public class MultiblockStructureHelper {
             Map<Character, Supplier<BlockState>> symbolMap,
             Supplier<BlockState> phantomBlockState,
             Map<Character, PartRole> roleMap) {
-        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, null, null, null, null);
+        return createFromLayersWithRoles(layers, symbolMap, phantomBlockState, roleMap, null, null, null, null, null);
     }
     
     /**
@@ -568,8 +626,11 @@ public class MultiblockStructureHelper {
     public boolean checkPlacement(Level level, BlockPos controllerPos, Direction facing, Player player) {
         List<BlockPos> obstructions = new ArrayList<>();
         for (BlockPos relativePos : structureMap.keySet()) {
-            if (relativePos.equals(BlockPos.ZERO)) continue;
             BlockPos worldPos = getRotatedPos(controllerPos, relativePos, facing);
+            // Structure definitions may legitimately include a part at local (0,0,0)
+            // when the controller itself is offset within the pattern. Only skip the
+            // controller's own world position, mirroring placeStructure().
+            if (worldPos.equals(controllerPos)) continue;
             BlockState existingState = level.getBlockState(worldPos);
 
             // Используем наш новый метод для проверки
@@ -670,6 +731,20 @@ public class MultiblockStructureHelper {
                     partBe.setAllowedEnergySides(worldEnergy);
                     energyConnectorPositions.add(worldPos);
                 }
+
+                // FLUID_CONNECTOR и UNIVERSAL_CONNECTOR - стороны из fluidSideMap или все шесть
+                if (role == PartRole.FLUID_CONNECTOR || role == PartRole.UNIVERSAL_CONNECTOR) {
+                    Set<Direction> localFluid = fluidLocalDirections.get(gridPos);
+                    EnumSet<Direction> worldFluid = EnumSet.noneOf(Direction.class);
+                    if (localFluid != null && !localFluid.isEmpty()) {
+                        for (Direction localDir : localFluid) {
+                            worldFluid.add(rotateLocalDirectionToWorld(localDir, facing));
+                        }
+                    } else {
+                        Collections.addAll(worldFluid, Direction.values());
+                    }
+                    partBe.setAllowedFluidSides(worldFluid);
+                }
                 
                 // === ЗАГЛУШКА ДЛЯ CONVEYOR СИСТЕМЫ ===
                 // UNIVERSAL_CONNECTOR является точкой подключения conveyor системы,
@@ -688,6 +763,9 @@ public class MultiblockStructureHelper {
         // ОДНО сообщение со всеми координатами
         MainRegistry.LOGGER.info("Player {} placed multiblock at {} with {} parts: {}", 
             controller, controllerPos, allPlacedPositions.size(), formatPositions(allPlacedPositions));
+
+        // Настраиваем стороны подключения на самом контроллере, если он поддерживает sided IO.
+        applyControllerSideConfig(level, controllerPos, facing);
         
         updateFrameForController(level, controllerPos);
         
@@ -700,6 +778,30 @@ public class MultiblockStructureHelper {
                     level.updateNeighborsAt(wirePos, wireState.getBlock());
                 }
             }
+        }
+    }
+
+    private void applyControllerSideConfig(Level level, BlockPos controllerPos, Direction facing) {
+        BlockEntity be = level.getBlockEntity(controllerPos);
+        if (!(be instanceof IMultiblockSidedIO sided)) {
+            return;
+        }
+
+        // По умолчанию (пусто) - все стороны.
+        EnumSet<Direction> worldEnergy = EnumSet.noneOf(Direction.class);
+        if (controllerEnergyLocalDirections != null && !controllerEnergyLocalDirections.isEmpty()) {
+            for (Direction localDir : controllerEnergyLocalDirections) {
+                worldEnergy.add(rotateLocalDirectionToWorld(localDir, facing));
+            }
+            sided.setAllowedEnergySides(worldEnergy);
+        }
+
+        EnumSet<Direction> worldFluid = EnumSet.noneOf(Direction.class);
+        if (controllerFluidLocalDirections != null && !controllerFluidLocalDirections.isEmpty()) {
+            for (Direction localDir : controllerFluidLocalDirections) {
+                worldFluid.add(rotateLocalDirectionToWorld(localDir, facing));
+            }
+            sided.setAllowedFluidSides(worldFluid);
         }
     }
     

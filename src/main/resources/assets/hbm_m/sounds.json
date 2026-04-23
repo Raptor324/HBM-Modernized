@@ -363,7 +363,7 @@
   "block.chemical_plant": {
     "subtitle": "sounds.hbm_m.subtitle.chemical_plant",
     "sounds": [
-      "hbm_m:block/chemicalPlant"
+      "hbm_m:block/chemical_plant"
     ]
   },
   "block.metal_box_open": {

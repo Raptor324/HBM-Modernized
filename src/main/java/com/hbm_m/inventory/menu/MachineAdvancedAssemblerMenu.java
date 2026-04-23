@@ -1,23 +1,26 @@
 package com.hbm_m.inventory.menu;
 
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.network.packet.PacketSyncEnergy;
 import com.hbm_m.util.LongDataPacker; // <-- Убедись, что этот импорт есть
+
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.*;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.SimpleContainerData;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.network.PacketDistributor;
-import org.jetbrains.annotations.NotNull;
 
 public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -42,7 +45,7 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
         // Добавляем слоты машины
         this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
             this.addSlot(new SlotItemHandler(handler, 0, 152, 81)); // Energy
-            this.addSlot(new SlotItemHandler(handler, 1, 34, 126)); // Blueprint
+            this.addSlot(new SlotItemHandler(handler, 1, 35, 126)); // Blueprint
             this.addSlot(new SlotItemHandler(handler, 2, 152, 108)); // Upgrade
             this.addSlot(new SlotItemHandler(handler, 3, 152, 126)); // Upgrade
             for (int i = 0; i < 4; ++i) for (int j = 0; j < 3; ++j) { // Input
