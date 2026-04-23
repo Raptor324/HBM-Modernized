@@ -229,7 +229,6 @@ public class MachineHydraulicFrackiningTowerBlock extends BaseEntityBlock implem
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        // ИСПРАВЛЕНО: Добавляем тикер для работы машины
         return createTickerHelper(type, ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), 
                 MachineHydraulicFrackiningTowerBlockEntity::tick);
     }

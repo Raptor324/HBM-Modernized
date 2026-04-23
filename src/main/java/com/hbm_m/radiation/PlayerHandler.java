@@ -9,6 +9,7 @@ import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;
+import com.hbm_m.explosion.command.HbmExplosionCommands;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
@@ -358,6 +359,7 @@ public class PlayerHandler {
         // ═══════════════════════════════════════════════════════
         event.getDispatcher().register(
             Commands.literal(RefStrings.MODID)
+                .then(HbmExplosionCommands.buildExplosionBranch())
                 .then(Commands.literal("rad")
                     .then(Commands.argument("targets", EntityArgument.entities())
                         .then(Commands.literal("clear")
@@ -409,7 +411,7 @@ public class PlayerHandler {
                             )
                         )
                     )
-                    // Без targets — по умолчанию @s
+                    // Без targets - по умолчанию @s
                     .then(Commands.literal("clear")
                         .executes(ctx -> {
                             Entity self = ctx.getSource().getEntity();

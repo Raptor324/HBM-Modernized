@@ -1,7 +1,12 @@
 package com.hbm_m.item.grenades_and_activators; // Замените на ваш пакет
 
+import java.util.List;
+
+import javax.annotation.Nullable;
+
 import com.hbm_m.entity.grenades.GrenadeIfProjectileEntity;
 import com.hbm_m.entity.grenades.GrenadeIfType;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.sounds.SoundEvents;
@@ -17,9 +22,6 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.registries.RegistryObject;
 
-import javax.annotation.Nullable;
-import java.util.List;
-
 
 public class GrenadeIfItem extends Item {
 
@@ -34,11 +36,11 @@ public class GrenadeIfItem extends Item {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
 
-        // 1-я строка — общая для всех IF‑гранат
+        // 1-я строка - общая для всех IF‑гранат
         tooltip.add(Component.translatable("tooltip.hbm_m.grenade_if.common.line1")
                 .withStyle(ChatFormatting.YELLOW));
 
-        // 2-я строка — зависит от типа
+        // 2-я строка - зависит от типа
         String key;
         switch (grenadeType) {
             case GRENADE_IF_HE ->

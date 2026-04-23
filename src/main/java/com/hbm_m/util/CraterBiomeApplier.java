@@ -58,7 +58,7 @@ public class CraterBiomeApplier {
             MainRegistry.LOGGER.debug("[CRATER_BIOME] SUCCESS: Both biomes found!");
 
             // Calculate area of biome application
-            // ✅ Используем именно переданный centerPos
+            //  Используем именно переданный centerPos
             int appliedRadius = Math.max(OUTER_CRATER_RADIUS, radius) + 32;
             int minChunkX = (centerPos.getX() - appliedRadius) >> 4;
             int maxChunkX = (centerPos.getX() + appliedRadius) >> 4;
@@ -214,7 +214,7 @@ public class CraterBiomeApplier {
                 var field = LevelChunkSection.class.getDeclaredField("biomes");
                 field.setAccessible(true);
                 field.set(section, biomes);
-                MainRegistry.LOGGER.debug("[CRATER_BIOME] ✅ Biomes saved via 'biomes' field");
+                MainRegistry.LOGGER.debug("[CRATER_BIOME]  Biomes saved via 'biomes' field");
                 return;
             } catch (NoSuchFieldException ex1) {
                 // Попробуем другие имена
@@ -230,7 +230,7 @@ public class CraterBiomeApplier {
                         fullTypeName.contains("Biome")) {
                     f.setAccessible(true);
                     f.set(section, biomes);
-                    MainRegistry.LOGGER.debug("[CRATER_BIOME] ✅ Biomes saved via field: " + f.getName());
+                    MainRegistry.LOGGER.debug("[CRATER_BIOME]  Biomes saved via field: " + f.getName());
                     return;
                 }
             }

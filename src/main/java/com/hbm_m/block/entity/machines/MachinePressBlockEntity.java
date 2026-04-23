@@ -2,6 +2,7 @@ package com.hbm_m.block.entity.machines;
 
 import com.hbm_m.recipe.PressRecipe;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachinePressMenu;
 

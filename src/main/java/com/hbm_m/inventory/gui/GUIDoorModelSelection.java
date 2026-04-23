@@ -35,7 +35,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 public class GUIDoorModelSelection extends Screen {
 
-    // Масштаб GUI. Масштабирование через PoseStack — без дублирования текстуры.
+    // Масштаб GUI. Масштабирование через PoseStack - без дублирования текстуры.
     private static final float GUI_SCALE = 1.7f;
 
     // Размеры текстуры: 256x256
@@ -257,7 +257,7 @@ public class GUIDoorModelSelection extends Screen {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        // ПКМ — выход из GUI
+        // ПКМ - выход из GUI
         if (button == 1) {
             onClose();
             return true;
@@ -267,7 +267,7 @@ public class GUIDoorModelSelection extends Screen {
         int lx = toLocalX(mouseX);
         int ly = toLocalY(mouseY);
 
-        // Кнопки перелистывания — всегда кликабельны, но при скинах < 8 ничего не делают
+        // Кнопки перелистывания - всегда кликабельны, но при скинах < 8 ничего не делают
         int leftX = PAGE_LEFT_X;
         int rightX = PAGE_RIGHT_X;
         int btnY = PAGE_Y;

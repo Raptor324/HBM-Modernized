@@ -1,37 +1,39 @@
 package com.hbm_m.block.machines;
 
+import java.util.Map;
+import java.util.function.Supplier;
+
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.MachineCentrifugeBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
+import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.network.NetworkHooks;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.Map;
-import java.util.function.Supplier;
 
 public class MachineCentrifugeBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -110,7 +112,7 @@ public class MachineCentrifugeBlock extends BaseEntityBlock implements IMultiblo
 
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
-        // Самый нижний блок (0,0,0) — контроллер и коннектор энергии
+        // Самый нижний блок (0,0,0) - контроллер и коннектор энергии
         if (localOffset.getY() == 0) return PartRole.ENERGY_CONNECTOR;
         return PartRole.DEFAULT;
     }

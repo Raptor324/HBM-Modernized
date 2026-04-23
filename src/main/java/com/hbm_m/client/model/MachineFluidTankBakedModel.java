@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.block.machines.MachineFluidTankBlock; // Добавлен импорт вашего блока
+import com.hbm_m.util.MultipartFacingTransforms;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
@@ -95,13 +96,10 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
      * Возвращает градус поворота по оси Y на основе свойства FACING.
      */
     private static int getRotationYForFacing(@Nullable BlockState state) {
-        if (state == null || !state.hasProperty(MachineFluidTankBlock.FACING)) return 0;
-        return (switch (state.getValue(MachineFluidTankBlock.FACING)) {
-            case SOUTH -> 180;
-            case WEST -> 270;
-            case EAST -> 90;
-            default -> 0; // NORTH
-        }) % 360;
+        if (state == null || !state.hasProperty(MachineFluidTankBlock.FACING)) {
+            return 0;
+        }
+        return MultipartFacingTransforms.vanillaChunkMeshRotationY(state.getValue(MachineFluidTankBlock.FACING));
     }
 
     /**

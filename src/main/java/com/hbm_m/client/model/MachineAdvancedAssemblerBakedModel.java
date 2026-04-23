@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
+import com.hbm_m.util.MultipartFacingTransforms;
 
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -77,10 +78,11 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
             return getItemQuads(side, rand, modelData, renderType);
         }
 
-        // WORLD RENDER: переключение по стороннему шейдеру (Iris/Oculus)
-        // Нет шейдера → модель пустая, всё рендерит BER (VBO).
-        // Шейдер активен: Base+Frame всегда; анимированные — только когда машина спит (особый рендер при работе).
-        if (!ShaderCompatibilityDetector.isExternalShaderActive()) {
+        // WORLD RENDER: переключение по источнику геометрии.
+        // useVboGeometry() == true → модель пустая, всё рендерит BER (VBO/Iris путь).
+        // useVboGeometry() == false → baked путь (классика под шейдерами):
+        //   Base+Frame всегда; анимированные - только когда машина спит (особый рендер при работе).
+        if (ShaderCompatibilityDetector.useVboGeometry()) {
             return List.of();
         }
 
@@ -104,7 +106,7 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
             }
         }
         
-        // 3. Анимированные части — только когда машина спит. При работе их рендерит BER (putBulkData).
+        // 3. Анимированные части - только когда машина спит. При работе их рендерит BER (putBulkData).
         boolean renderActive = state.hasProperty(MachineAdvancedAssemblerBlock.RENDER_ACTIVE) 
                              && state.getValue(MachineAdvancedAssemblerBlock.RENDER_ACTIVE);
         if (!renderActive) {
@@ -185,12 +187,9 @@ public class MachineAdvancedAssemblerBakedModel extends AbstractMultipartBakedMo
     }
 
     private static int getRotationYForFacing(BlockState state) {
-        if (!state.hasProperty(MachineAdvancedAssemblerBlock.FACING)) return 90;
-        return (switch (state.getValue(MachineAdvancedAssemblerBlock.FACING)) {
-            case SOUTH -> 180;
-            case WEST -> 270;
-            case EAST -> 90;
-            default -> 0;
-        } + 270) % 360;
+        if (!state.hasProperty(MachineAdvancedAssemblerBlock.FACING)) {
+            return 90;
+        }
+        return MultipartFacingTransforms.advancedAssemblerBakedRotationY(state.getValue(MachineAdvancedAssemblerBlock.FACING));
     }
 }

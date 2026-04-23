@@ -218,6 +218,22 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.starmetal_hoe", "Мотыга из звёздного металла");
                 add("item.hbm_m.starmetal_shovel", "Лопата из звёздного металла");
 
+                // ПРОТОТИП РАКЕТЫ
+                add("item.hbm_m.missile_test", "Тестовая баллистическая ракета");
+                add("item.hbm_m.missile.tier.tier0", "Ракета: уровень 0");
+                add("item.hbm_m.missile.tier.tier1", "Ракета: уровень 1");
+                add("item.hbm_m.missile.tier.tier2", "Ракета: уровень 2");
+                add("item.hbm_m.missile.tier.tier3", "Ракета: уровень 3");
+                add("item.hbm_m.missile.tier.tier4", "Ракета: уровень 4");
+                add("item.hbm_m.missile.desc.notLaunchable", "Нельзя запустить с пусковой площадки");
+                add("item.hbm_m.missile.desc.fuel", "Топливо");
+                add("item.hbm_m.missile.desc.fuelCapacity", "Запас топлива");
+                add("item.hbm_m.missile.fuel.solid.prefueled", "Твёрдое топливо (заправлена)");
+                add("item.hbm_m.missile.fuel.ethanol_peroxide", "Этанол + пероксид");
+                add("item.hbm_m.missile.fuel.kerosene_peroxide", "Керосин + пероксид");
+                add("item.hbm_m.missile.fuel.kerosene_loxy", "Керосин + жидкий кислород");
+                add("item.hbm_m.missile.fuel.jetfuel_loxy", "Реактивное топливо + жидкий кислород");
+                
                 add("gui.hbm_m.energy", "Энергия: %s/%s HE");
                 add("gui.hbm_m.shredder.blade_warning.title", "Нет лезвий!");
                 add("gui.hbm_m.shredder.blade_warning.desc", "Установите или отремонтируйте лезвия шреддера.");
@@ -301,7 +317,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.dosimeter", "Дозиметр");
                 add("item.hbm_m.battery_creative", "Бесконечная батарейка");
                 add("tooltip.hbm_m.creative_battery_desc","Предоставляет бесконечное количество энергии");
-                add("tooltip.hbm_m.creative_battery_flavor","Бесконечность — не предел!!");
+                add("tooltip.hbm_m.creative_battery_flavor","Бесконечность - не предел!!");
                 add(ModItems.COIL_TUNGSTEN.get(), "Нагревательный элемент");
                 // ПРЕДМЕТЫ
                 add(ModItems.BATTERY_POTATO.get(), "Картофельная батарейка");
@@ -560,6 +576,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.DUD_NUKE.get(), "Неразорвавшаяся ядерная бомба");
                 add(ModBlocks.DUD_CONVENTIONAL.get(), "Неразорвавшаяся фугасная бомба");
                 add(ModBlocks.MINE_FAT.get(), "Мина 'Толстяк'");
+                add(ModBlocks.NUKE_FAT_MAN.get(), "Ядерная бомба 'Толстяк'");
+                add(ModItems.FAT_MAN_EXPLOSIVE.get(), "Ранние взрывные линзы");
+                add(ModItems.FAT_MAN_IGNITER.get(), "Воспламенитель 'Толстяк'");
+                add(ModItems.FAT_MAN_CORE.get(), "Плутониевое ядро");
+                add("container.hbm_m.nuke_fat_man", "Ядерная бомба 'Толстяк'");
+                add("gui.hbm_m.nuke_fat_man.desc", "Установите 4 ранние взрывные линзы, воспламенитель и плутониевое ядро.");
                 add(ModBlocks.MINE_AP.get(), "Противопехотная мина");
                 add(ModItems.GRENADE_NUC.get(), "Ядерная граната");
                 add(ModItems.GRENADE_IF_HE.get(), "IF-Граната: фугасная");
@@ -588,7 +610,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.LEAD_CLADDING.get(), "Свинцовая обшивка");
                 add(ModItems.PAINT_CLADDING.get(), "Свинцовая краска");
                 add(ModItems.CRT_DISPLAY.get(), "Электро-лучевая трубка");
-                add(ModItems.MAN_CORE.get(), "Плутониевое ядро");
                 add(ModItems.GRENADESMART.get(), "УМная отскок граната");
                 add(ModItems.GRENADESLIME.get(), "Отскок-отскок граната");
                 add(ModItems.GRENADE.get(), "Отскок граната");
@@ -1504,6 +1525,18 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("container.hbm_m.armor_table", "Стол модификации брони");
                 add("container.hbm_m.machine_assembler", "Сборочная машина (Старая)");
                 add("container.hbm_m.advanced_assembly_machine", "Сборочная машина");
+                add(ModBlocks.LAUNCH_PAD.get(), "Пусковая площадка");
+                add(ModBlocks.LAUNCH_PAD_RUSTED.get(), "Ржавая пусковая площадка");
+                add(ModItems.DESIGNATOR.get(), "Целеуказатель");
+                add(ModItems.DESIGNATOR_RANGE.get(), "Целеуказатель с дальномером");
+                add(ModItems.DESIGNATOR_MANUAL.get(), "Ручной целеуказатель");
+                add("tooltip.hbm_m.designator.target", "Координаты цели:");
+                add("tooltip.hbm_m.designator.no_target", "Выберите цель.");
+                add("message.hbm_m.designator.position_set", "Позиция установлена!");
+                add("message.hbm_m.designator.position_set_xy", "Позиция установлена: X: %s, Z: %s");
+                add("gui.hbm_m.designator", "Ручной целеуказатель");
+                add("gui.hbm_m.designator.set_x", "Установить текущую позицию X...");
+                add("gui.hbm_m.designator.set_z", "Установить текущую позицию Z...");
                 add(ModBlocks.CRYSTALLIZER.get(), "Рудный окислитель (WIP)");
                 add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Башня гидроразрыва пласта (WIP)");
                 add(ModBlocks.CHEMICAL_PLANT.get(), "Химический завод (WIP)");
@@ -1546,8 +1579,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.fire_door.default", "Новая");
                 add("door.skin.hbm_m.fire_door.black", "Чёрная");
                 add("door.skin.hbm_m.fire_door.orange", "Оранжевая");
+                add("door.skin.hbm_m.fire_door.trefoil", "Радиация");
+                add("door.skin.hbm_m.fire_door.yellow", "Жёлтая");
                 add("door.skin.hbm_m.secure_access_door.default", "Новая");
                 add("door.skin.hbm_m.secure_access_door.gray", "Серая");
+                add("door.skin.hbm_m.secure_access_door.black", "Черная");
+                add("door.skin.hbm_m.secure_access_door.yellow", "Жёлтая");
                 add("door.skin.hbm_m.sliding_blast_door.default", "Новая");
                 add("door.skin.hbm_m.sliding_blast_door.variant1", "Вариант 1");
                 add("door.skin.hbm_m.sliding_blast_door.variant2", "Вариант 2");
@@ -1555,8 +1592,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.large_vehicle_door.default", "Новая");
                 add("door.skin.hbm_m.large_vehicle_door.rad", "Радиация");
                 add("door.skin.hbm_m.water_door.default", "Новая");
+                add("door.skin.hbm_m.water_door.clean", "Чистая");
                 add("door.skin.hbm_m.qe_sliding_door.default", "Новая");
                 add("door.skin.hbm_m.qe_containment_door.default", "Новая");
+                add("door.skin.hbm_m.qe_containment_door.trefoil", "Радиация");
+                add("door.skin.hbm_m.qe_containment_door.trefoil_yellow", "Радиация 2");
                 add("door.skin.hbm_m.vault_door.default", "Vault 101");
                 add("door.skin.hbm_m.vault_door.skin_106", "Vault 106");
                 add("door.skin.hbm_m.vault_door.skin_2", "Vault 2");
@@ -1644,6 +1684,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("commands.hbm_m.rad.added.self", "Вам добавлено %s радиации.");
                 add("commands.hbm_m.rad.removed", "Убрано %s радиации у %s игроков.");
                 add("commands.hbm_m.rad.removed.self", "У вас убрано %s радиации.");
+                add("commands.hbm_m.explosion.success", "Вызван ядерный взрыв: %s");
+                add("commands.hbm_m.explosion.unknown_type", "Неизвестный тип взрыва");
+                add("commands.hbm_m.explosion.not_server_level", "Эта команда должна выполняться на серверном уровне");
+                add("commands.hbm_m.explosion.greedy_too_short", "Ожидаются опции key:value и три координаты (x y z)");
+                add("commands.hbm_m.explosion.bad_coord_suffix", "Нужны все три координаты (x y z) или ни одной - тогда позиция источника");
+                add("commands.hbm_m.explosion.bad_key_value", "Неверный токен key:value или координаты");
+                add("commands.hbm_m.explosion.unsupported_key", "Этот тип взрыва не поддерживает опцию: %s");
 
                 // СООБЩЕНИЯ О СМЕРТИ
                 add("death.attack.radiation", "Игрок %s умер от лучевой болезни");
@@ -1785,10 +1832,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Дистанция для рендеринга динамических частей .obj моделей (в чанках)");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Включить куллинг моделей (выключите, если ваши модели рендерятся некорректно)");
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Использовать батчинговый рендер для частей obj. Сильно повышает производительность рендеринга в бесшейдерном режиме, при проблемах отключите.");
-                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Использовать анимации из DAE для transition_seal и sliding_blast_door. Отключите при проблемах — будет procedural fallback.");
+                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Использовать анимации из DAE для transition_seal и sliding_blast_door. Отключите при проблемах - будет procedural fallback.");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Конвертировать систему координат Blender (Z-up) в Minecraft (Y-up). Отключите для тестирования.");
 
-                add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip", "Дальность отрисовки полосок здоровья мобов (чанки). Больше значение — дальше видно, но выше нагрузка.");
+                add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip", "Дальность отрисовки полосок здоровья мобов (чанки). Больше значение - дальше видно, но выше нагрузка.");
 
                 add("text.autoconfig.hbm_m.option.enableDebugRender.@Tooltip", "Показывать отладочный оверлей радиации в чанках (F3)");
                 add("text.autoconfig.hbm_m.option.debugRenderTextSize.@Tooltip", "Размер текста для отладочного оверлея");
@@ -1816,6 +1863,22 @@ public class ModLanguageProvider extends LanguageProvider {
             
             case "en_us":
 
+                // Missile prototype + shared missile strings
+                add("item.hbm_m.missile_test", "Test Ballistic Missile");
+                add("item.hbm_m.missile.tier.tier0", "Missile: Tier 0");
+                add("item.hbm_m.missile.tier.tier1", "Missile: Tier 1");
+                add("item.hbm_m.missile.tier.tier2", "Missile: Tier 2");
+                add("item.hbm_m.missile.tier.tier3", "Missile: Tier 3");
+                add("item.hbm_m.missile.tier.tier4", "Missile: Tier 4");
+                add("item.hbm_m.missile.desc.notLaunchable", "Cannot be launched from pad");
+                add("item.hbm_m.missile.desc.fuel", "Fuel");
+                add("item.hbm_m.missile.desc.fuelCapacity", "Fuel capacity");
+                add("item.hbm_m.missile.fuel.solid.prefueled", "Solid fuel (pre-fueled)");
+                add("item.hbm_m.missile.fuel.ethanol_peroxide", "Ethanol + peroxide");
+                add("item.hbm_m.missile.fuel.kerosene_peroxide", "Kerosene + peroxide");
+                add("item.hbm_m.missile.fuel.kerosene_loxy", "Kerosene + liquid oxygen");
+                add("item.hbm_m.missile.fuel.jetfuel_loxy", "Jet fuel + liquid oxygen");
+
                 // TABS
                 add("itemGroup.hbm_m.ntm_resources_tab", "NTM Ingots and Resources");
                 add("itemGroup.hbm_m.ntm_fuel_tab", "NTM Fuel and Machine Components");
@@ -1830,7 +1893,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("itemGroup.hbm_m.ntm_instruments_tab", "NTM Instruments");
                 add("itemGroup.hbm_m.ntm_building_tab", "NTM Building Blocks");
 
-
+                add(ModBlocks.NUKE_FAT_MAN.get(), "Fat Man");
+                add(ModItems.FAT_MAN_EXPLOSIVE.get(), "Early Explosive Lenses");
+                add(ModItems.FAT_MAN_IGNITER.get(), "Fat Man Igniter");
+                add(ModItems.FAT_MAN_CORE.get(), "Plutonium Core");
+                add("container.hbm_m.nuke_fat_man", "Fat Man");
+                add("gui.hbm_m.nuke_fat_man.desc", "Place 4 Early Explosive Lenses, Fat Man Igniter and Fat Man Core. Activated by redstone.");
                 // EQUIPMENT
                 add("item.hbm_m.alloy_sword", "Alloy Sword");
                 add("item.hbm_m.alloy_pickaxe", "Alloy Pickaxe");
@@ -2261,9 +2329,6 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("tooltip.hbm_m.depthstone.line1", "Can be mined or destroyed only by explosion!");
                 add("tooltip.hbm_m.depthstone.line4", "Use Det Miner to safe-mine depth ores");
 
-// en_us case
-                // английский:
-                add(ModItems.MAN_CORE.get(), "Plutonium Core");
                 add(ModItems.CRT_DISPLAY.get(), "CRT");
                 add(ModBlocks.DEPTH_STONE.get(), "Depth Stone");
                 add(ModBlocks.DEPTH_CINNABAR.get(), "Deep Cinnabar Ore");
@@ -3014,6 +3079,18 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("block.hbm_m.armor_table", "Armor Modification Table");
                 add("block.hbm_m.machine_assembler", "Assembly Machine (Legacy)");
                 add("block.hbm_m.advanced_assembly_machine", "Assembly Machine");
+                add(ModBlocks.LAUNCH_PAD.get(), "Launch Pad");
+                add(ModBlocks.LAUNCH_PAD_RUSTED.get(), "Launch Pad Rusted");
+                add(ModItems.DESIGNATOR.get(), "Designator");
+                add(ModItems.DESIGNATOR_RANGE.get(), "Range Designator");
+                add(ModItems.DESIGNATOR_MANUAL.get(), "Manual Designator");
+                add("tooltip.hbm_m.designator.target", "Target Coordinates:");
+                add("tooltip.hbm_m.designator.no_target", "Please select a target.");
+                add("message.hbm_m.designator.position_set", "Position set!");
+                add("message.hbm_m.designator.position_set_xy", "Position set to X: %s, Z: %s");
+                add("gui.hbm_m.designator", "Manual Designator");
+                add("gui.hbm_m.designator.set_x", "Set coord to current X position...");
+                add("gui.hbm_m.designator.set_z", "Set coord to current Z position...");
                 add(ModBlocks.CRYSTALLIZER.get(), "Ore Acidizer (WIP)");
                 add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Hydraulic Fracking Tower (WIP)");
                 add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant (WIP)");
@@ -3232,8 +3309,12 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.fire_door.default", "Standard");
                 add("door.skin.hbm_m.fire_door.black", "Black");
                 add("door.skin.hbm_m.fire_door.orange", "Orange");
+                add("door.skin.hbm_m.fire_door.trefoil", "Radiation");
+                add("door.skin.hbm_m.fire_door.yellow", "Yellow");
                 add("door.skin.hbm_m.secure_access_door.default", "Standard");
                 add("door.skin.hbm_m.secure_access_door.gray", "Gray");
+                add("door.skin.hbm_m.secure_access_door.black", "Black");
+                add("door.skin.hbm_m.secure_access_door.yellow", "Yellow");
                 add("door.skin.hbm_m.sliding_blast_door.default", "Standard");
                 add("door.skin.hbm_m.sliding_blast_door.variant1", "Variant 1");
                 add("door.skin.hbm_m.sliding_blast_door.variant2", "Variant 2");
@@ -3241,8 +3322,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("door.skin.hbm_m.large_vehicle_door.default", "Standard");
                 add("door.skin.hbm_m.large_vehicle_door.rad", "Radiation");
                 add("door.skin.hbm_m.water_door.default", "Standard");
+                add("door.skin.hbm_m.water_door.clean", "Clean");
                 add("door.skin.hbm_m.qe_sliding_door.default", "Standard");
                 add("door.skin.hbm_m.qe_containment_door.default", "Standard");
+                add("door.skin.hbm_m.qe_containment_door.trefoil", "Radiation");
+                add("door.skin.hbm_m.qe_containment_door.trefoil_yellow", "Radiation 2");
                 add("door.skin.hbm_m.vault_door.default", "Vault 101");
                 add("door.skin.hbm_m.vault_door.skin_106", "Vault 106");
                 add("door.skin.hbm_m.vault_door.skin_2", "Vault 2");
@@ -3332,6 +3416,13 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("commands.hbm_m.rad.added.self", "You have been given %s radiation.");
                 add("commands.hbm_m.rad.removed", "Removed %s radiation from %s players.");
                 add("commands.hbm_m.rad.removed.self", "%s radiation has been removed from you.");
+                add("commands.hbm_m.explosion.success", "Triggered nuclear explosion: %s");
+                add("commands.hbm_m.explosion.unknown_type", "Unknown explosion type");
+                add("commands.hbm_m.explosion.not_server_level", "This command must run on a server level");
+                add("commands.hbm_m.explosion.greedy_too_short", "Expected key:value options and three coordinates (x y z)");
+                add("commands.hbm_m.explosion.bad_coord_suffix", "Provide all three coordinates (x y z) or none to use the command source position");
+                add("commands.hbm_m.explosion.bad_key_value", "Invalid key:value token or coordinate");
+                add("commands.hbm_m.explosion.unsupported_key", "This explosion type does not support option: %s");
                 
                 // DEATH ATTACK MESSAGES
                 add("death.attack.radiation", "Player %s died from radiation sickness");
@@ -3478,7 +3569,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Distance for .obj model dynamic parts rendering (in chunks)");
                 add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Enable model occlusion culling (disable if your models are not rendering correctly)");
                 add("text.autoconfig.hbm_m.option.useInstancedStaticRendering.@Tooltip", "Use batch rendering for obj parts. This greatly improves rendering performance in shaderless mode. If you experience issues, disable it");
-                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Use DAE animations for transition_seal and sliding_blast_door. Disable if broken — falls back to procedural.");
+                add("text.autoconfig.hbm_m.option.useColladaDoorAnimations.@Tooltip", "Use DAE animations for transition_seal and sliding_blast_door. Disable if broken - falls back to procedural.");
                 add("text.autoconfig.hbm_m.option.useColladaZUpConversion.@Tooltip", "Convert Blender (Z-up) to Minecraft (Y-up) coordinate system. Disable for testing.");
 
                 add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip","Max distance for mob health highlighting. Higher values increase range but reduce performance.");

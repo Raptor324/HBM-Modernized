@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity.machines;
 
+import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
 import com.hbm_m.capability.ModCapabilities;

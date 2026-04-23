@@ -5,7 +5,9 @@
         "model":"hbm_m:block/doors/secure_access_door_modern",
         "skins":[
             {"id":"default","name":"Standard","texture":"hbm_m:block/doors/secure_access_door"},
-            {"id":"gray","name":"Gray","texture":"hbm_m:block/doors/secure_access_door_gray","model":"hbm_m:block/doors/secure_access_door_modern_gray"}
+            {"id":"gray","name":"Gray","texture":"hbm_m:block/doors/secure_access_door_gray","model":"hbm_m:block/doors/secure_access_door_modern_gray"},
+            {"id":"black","name":"Black","texture":"hbm_m:block/doors/secure_access_door_black","model":"hbm_m:block/doors/secure_access_door_modern_black"},
+            {"id":"yellow","name":"Yellow","texture":"hbm_m:block/doors/secure_access_door_yellow","model":"hbm_m:block/doors/secure_access_door_modern_yellow"}
         ]
     },
     "default":{"type":"modern","skin":"default"}

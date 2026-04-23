@@ -197,6 +197,16 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public boolean useInstancedStaticRendering = true;
 
+    /**
+     * Под активным шейдер-паком (Iris/Oculus) рендерить машины через нашу VBO/Iris ExtendedShader-систему
+     * вместо классического пути baked-model + putBulkData. Экспериментально: даёт правильный G-buffer,
+     * SSAO, тени и униформы шейдер-пака на наших машинах, но per-machine draw call увеличивает CPU-затраты.
+     * Если оставлено выключенным - поведение точно такое же, как было до миграции.
+     */
+    @Category("rendering")
+    @Gui.Tooltip
+    public boolean useIrisExtendedShaderPath = true;
+
     @Category("rendering")
     @Gui.Tooltip
     public boolean useColladaDoorAnimations = true;
@@ -215,6 +225,27 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     @BoundedDiscrete(min = 1, max = 32)
     public int vatsRenderDistanceChunks = 7;
+
+    // ЯДЕРНЫЕ ВЗРЫВЫ (MK5)
+
+    @Category("explosions")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 1, max = 50)
+    public int mk5TickTimeMs = 10;
+
+    @Category("explosions")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 400)
+    public int falloutRangePercent = 100;
+
+    @Category("explosions")
+    @Gui.Tooltip
+    public boolean enableCraterBiomes = true;
+
+    @Category("explosions")
+    @Gui.Tooltip
+    @BoundedDiscrete(min = 10, max = 200)
+    public int fatManRadius = 50;
 
     // Тепловизор
     @Category("rendering")
@@ -296,5 +327,13 @@ public class ModClothConfig implements ConfigData {
     /** Использовать батчинг для статических частей (frame, Base). При проблемах отключите. */
     public static boolean useInstancedBatching() {
         return get().useInstancedStaticRendering;
+    }
+
+    /**
+     * Под шейдерами рендерить через нашу VBO/Iris ExtendedShader-систему (вместо baked + putBulkData).
+     * Сам по себе этот флаг ничего не делает без активного шейдер-пака.
+     */
+    public static boolean useIrisExtendedShaderPath() {
+        return get().useIrisExtendedShaderPath;
     }
 }

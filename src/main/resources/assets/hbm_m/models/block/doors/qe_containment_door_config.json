@@ -4,7 +4,9 @@
     "modern_model":{
         "model":"hbm_m:block/doors/qe_containment_door_modern",
         "skins":[
-            {"id":"default","name":"Standard","texture":"hbm_m:block/doors/qe_containment_door"}
+            {"id":"default","name":"Standard","texture":"hbm_m:block/doors/qe_containment_door"},
+            {"id":"trefoil","name":"Trefoil","texture":"hbm_m:block/doors/qe_containment_door_trefoil","model":"hbm_m:block/doors/qe_containment_door_modern_trefoil"},
+            {"id":"trefoil_yellow","name":"Trefoil Yellow","texture":"hbm_m:block/doors/qe_containment_door_trefoil_yellow","model":"hbm_m:block/doors/qe_containment_door_modern_trefoil_yellow"}
         ]
     },
     "default":{"type":"modern","skin":"default"}

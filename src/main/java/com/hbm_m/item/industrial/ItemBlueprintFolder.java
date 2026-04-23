@@ -55,7 +55,7 @@ public class ItemBlueprintFolder extends Item {
                             @Nonnull List<Component> tooltip, @Nonnull TooltipFlag flag) {
         String pool = getBlueprintPool(stack);
         
-        // Если NBT пустой — показываем "пустой шаблон"
+        // Если NBT пустой - показываем "пустой шаблон"
         if (pool.isEmpty()) {
             tooltip.add(Component.translatable("item.hbm_m.blueprint_folder.empty")
                 .withStyle(ChatFormatting.GRAY));
@@ -73,7 +73,7 @@ public class ItemBlueprintFolder extends Item {
                 .filter(r -> pool.equals(r.getBlueprintPool()))
                 .toList();
             
-            // ИСПРАВЛЕНО: Если рецептов нет — показываем "пустой шаблон"
+            // ИСПРАВЛЕНО: Если рецептов нет - показываем "пустой шаблон"
             if (recipes.isEmpty()) {
                 tooltip.add(Component.empty());
                 tooltip.add(Component.translatable("item.hbm_m.blueprint_folder.obsolete")
@@ -81,7 +81,7 @@ public class ItemBlueprintFolder extends Item {
                 return;
             }
             
-            // Рецепты есть — показываем их список
+            // Рецепты есть - показываем их список
             tooltip.add(Component.empty());
             tooltip.add(Component.translatable("item.hbm_m.blueprint_folder.recipes")
                 .withStyle(ChatFormatting.GOLD));

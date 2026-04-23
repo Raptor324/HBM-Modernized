@@ -1,10 +1,11 @@
 package com.hbm_m.entity;
 
+import com.hbm_m.entity.effect.FalloutRain;
 import com.hbm_m.entity.grenades.*;
-import com.hbm_m.lib.RefStrings;
+import com.hbm_m.entity.logic.NukeExplosionMK5Entity;
+import com.hbm_m.entity.missile.MissileTestEntity;
 import com.hbm_m.main.MainRegistry;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.entity.Entity;
+
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.MobCategory;
 import net.minecraft.world.entity.item.FallingBlockEntity;
@@ -113,6 +114,33 @@ public class ModEntities {
                             .clientTrackingRange(4)
                             .updateInterval(10)
                             .build("grenade_nuc_projectile"));
+
+    // ПРОТОТИП БАЛЛИСТИЧЕСКОЙ РАКЕТЫ (TIER 0)
+    public static final RegistryObject<EntityType<MissileTestEntity>> MISSILE_TEST =
+            ENTITY_TYPES.register("missile_test",
+                    () -> EntityType.Builder.<MissileTestEntity>of(MissileTestEntity::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F)
+                            .clientTrackingRange(256)
+                            .updateInterval(3)
+                            .build("missile_test"));
+
+    // Длительная сущность ядерного взрыва MK5 (Fat Man и другие мощные боеприпасы)
+    public static final RegistryObject<EntityType<NukeExplosionMK5Entity>> NUKE_MK5 =
+            ENTITY_TYPES.register("nuke_mk5",
+                    () -> EntityType.Builder.<NukeExplosionMK5Entity>of(NukeExplosionMK5Entity::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(256)
+                            .updateInterval(1)
+                            .build("nuke_mk5"));
+
+    public static final RegistryObject<EntityType<FalloutRain>> NUKE_FALLOUT_RAIN =
+            ENTITY_TYPES.register("nuke_fallout_rain",
+                    () -> EntityType.Builder.<FalloutRain>of(FalloutRain::new, MobCategory.MISC)
+                            .sized(1.0F, 1.0F)
+                            .clientTrackingRange(3)
+                            .updateInterval(2)
+                            .build("nuke_fallout_rain"));
+
     public static final RegistryObject<EntityType<FallingBlockEntity>> FALLING_SELLAFIT_ENTITY_TYPE = ENTITY_TYPES.register("falling_sellafit",
             () -> EntityType.Builder.<FallingBlockEntity>of(FallingBlockEntity::new, MobCategory.MISC)
                     .sized(0.98F, 0.98F) // Размеры сущности, обычно для блока 1x1

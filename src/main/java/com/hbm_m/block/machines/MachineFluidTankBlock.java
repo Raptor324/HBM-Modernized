@@ -11,8 +11,10 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -60,23 +62,22 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     private MultiblockStructureHelper defineStructure() {
         // Строка 0 - передняя (ближняя к игроку), Строка 2 - задняя.
 
-        // < - слева, > - справа, ! - сверху, ? - снизу (префиксы для обозначения направления лестниц. Можно комбинировать. L без префиксов - значит лестница работает со всех сторон)
-        
+        // Направления лестницы: MultiblockSideTuples.ladder(north, south, west, east) - локально к схеме до поворота FACING.
         String[] layer0 = {
-            "<LFCFA",
-            "<LEEEA", 
+            "LFCFA",
+            "LEEEA",
             "AFAFA"
         };
-        
+
         String[] layer1 = {
-            "<LAAAA",
-            "<LEEEA",
+            "LAAAA",
+            "LEEEA",
             "AAAAA"
         };
-        
+
         String[] layer2 = {
-            "<LAAAA",
-            "<LAAAA",
+            "LAAAA",
+            "LAAAA",
             "AAAAA"
         };
 
@@ -90,11 +91,17 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         Map<Character, Supplier<BlockState>> symbolMap = Map.of(
         );
 
-        return MultiblockStructureHelper.createFromLayersWithRoles(
+        Map<Character, boolean[]> ladderSideMap = Map.of(
+            'L', MultiblockSideTuples.ladder(false, false, true, false)
+        );
+
+        return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
             new String[][]{layer0, layer1, layer2},
             symbolMap,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            roleMap
+            roleMap,
+            ladderSideMap,
+            null
         );
     }
 

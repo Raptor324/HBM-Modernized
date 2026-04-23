@@ -4,7 +4,8 @@
     "modern_model":{
         "model":"hbm_m:block/doors/water_door_modern",
         "skins":[
-            {"id":"default","name":"Standard","texture":"hbm_m:block/doors/water_door"}
+            {"id":"default","name":"Standard","texture":"hbm_m:block/doors/water_door"},
+            {"id":"clean","name":"Clean","texture":"hbm_m:block/doors/water_door_clean","model":"hbm_m:block/doors/water_door_clean"}
         ]
     },
     "default":{"type":"modern","skin":"default"}

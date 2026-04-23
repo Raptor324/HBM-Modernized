@@ -51,7 +51,7 @@ void main() {
     // Размер экрана берём из основного буфера
     vec2 texSize = vec2(textureSize(DiffuseSampler, 0));
 
-    // Пикселизация в экранном пространстве — ретро‑эффект тепловизора
+    // Пикселизация в экранном пространстве - ретро‑эффект тепловизора
     float pixelSize = 2.0;
     vec2 fragCoord = gl_FragCoord.xy;
     vec2 pixelated = floor(fragCoord / pixelSize) * pixelSize + (pixelSize * 0.5);
@@ -83,7 +83,7 @@ void main() {
 
     luminance = clamp(luminance * brightnessBoost, 0.0, 1.0);
 
-    // Квантизация яркости — "ступенчатый" серый как у тепловизора
+    // Квантизация яркости - "ступенчатый" серый как у тепловизора
     float quantized = floor(luminance * 12.0) / 12.0;
 
     // Повышенный контраст вокруг середины
@@ -131,7 +131,7 @@ void main() {
     float gamma = 0.75;
     thermal = pow(thermal, vec3(gamma));
     
-    // Жёсткий нижний порог яркости — гарантируем, что экран никогда не становится слишком тёмным.
+    // Жёсткий нижний порог яркости - гарантируем, что экран никогда не становится слишком тёмным.
     // Это имитирует поведение ПНВ: даже в полной темноте мир виден в тускло‑серых тонах.
     float minBrightness = 0.25;
     thermal = max(thermal, vec3(minBrightness));
@@ -146,7 +146,7 @@ void main() {
     float vignette = 1.0 - vignetteStrength * edgeFactor;
     thermal *= vignette;
 
-    // Силуэты сущностей из нашего буфера — всегда чисто белые
+    // Силуэты сущностей из нашего буфера - всегда чисто белые
     if (isEntityHot) {
         thermal = vec3(1.0);
     }

@@ -5,7 +5,9 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineChemicalPlantMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
@@ -16,6 +18,8 @@ import com.hbm_m.recipe.ChemicalPlantRecipes.RecipeInput;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.phys.AABB;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
@@ -37,9 +41,9 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
 
 /**
- * Chemical Plant BlockEntity — порт с 1.7.10.
+ * Chemical Plant BlockEntity - порт с 1.7.10.
  * 22 слота, 6 FluidTank (3 input, 3 output), энергия.
- * Логика крафтов — заглушка.
+ * Логика крафтов - заглушка.
  */
 public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
 
@@ -97,6 +101,57 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         }
     };
 
+    /** Как 1.7.10: не воздух на три блока выше контроллера → видимая «рама». */
+    private void updateFrameBlockState() {
+        if (level == null) return;
+        BlockState st = getBlockState();
+        if (!st.hasProperty(MachineChemicalPlantBlock.FRAME)) return;
+        boolean frame = !level.getBlockState(worldPosition.above(3)).isAir();
+        if (st.getValue(MachineChemicalPlantBlock.FRAME) != frame) {
+            level.setBlock(worldPosition, st.setValue(MachineChemicalPlantBlock.FRAME, frame), 3);
+        }
+    }
+
+    /**
+     * Заглушка под логику крафта: когда появится обработка рецептов - выставлять
+     * {@link MachineChemicalPlantBlock#RENDER_ACTIVE} (и сбрасывать по таймеру как у advanced assembler).
+     */
+    private void syncRenderActiveStub() {
+        // TODO: crafting progress → RENDER_ACTIVE + chunk rebuild
+    }
+
+    @Override
+    public AABB getRenderBoundingBox() {
+        BlockState state = getBlockState();
+        if (!(state.getBlock() instanceof MachineChemicalPlantBlock block)) {
+            return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 3, 2));
+        }
+        var structureHelper = block.getStructureHelper();
+        var structureMap = structureHelper.getStructureMap();
+        if (structureMap == null || structureMap.isEmpty()) {
+            return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 3, 2));
+        }
+        int minX = 0, minY = 0, minZ = 0;
+        int maxX = 0, maxY = 0, maxZ = 0;
+        for (BlockPos offset : structureMap.keySet()) {
+            minX = Math.min(minX, offset.getX());
+            minY = Math.min(minY, offset.getY());
+            minZ = Math.min(minZ, offset.getZ());
+            maxX = Math.max(maxX, offset.getX());
+            maxY = Math.max(maxY, offset.getY());
+            maxZ = Math.max(maxZ, offset.getZ());
+        }
+        double margin = 1.5;
+        return new AABB(
+            worldPosition.getX() + minX - margin,
+            worldPosition.getY() + minY - margin,
+            worldPosition.getZ() + minZ - margin,
+            worldPosition.getX() + maxX + 1 + margin,
+            worldPosition.getY() + maxY + 1 + margin,
+            worldPosition.getZ() + maxZ + 1 + margin
+        );
+    }
+
     public MachineChemicalPlantBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CHEMICAL_PLANT_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER);
 
@@ -138,6 +193,15 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             entity.clientTick();
             return;
         }
+
+        entity.updateFrameBlockState();
+        entity.syncRenderActiveStub();
+
+        entity.updateFrameBlockState();
+        entity.syncRenderActiveStub();
+
+        entity.updateFrameBlockState();
+        entity.syncRenderActiveStub();
 
         entity.ensureNetworkInitialized();
         entity.chargeFromBattery();

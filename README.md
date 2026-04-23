@@ -37,15 +37,15 @@ A modern reimagining of the legendary HBM's Nuclear Tech Mod for Minecraft 1.20.
 
 ## ⚡ Key Features
 
-**Radiation System** — realistic irradiation mechanics with chunk-based spread, player accumulation, and dangerous effects
+**Radiation System** - realistic irradiation mechanics with chunk-based spread, player accumulation, and dangerous effects
 
-**Industrial Automation** — multiblock machines for resource processing and energy production
+**Industrial Automation** - multiblock machines for resource processing and energy production
 
-**Advanced Equipment** — armor and tools with unique perks and modifiers
+**Advanced Equipment** - armor and tools with unique perks and modifiers
 
-**Energy System** — generation, storage, and transmission of electricity between machines
+**Energy System** - generation, storage, and transmission of electricity between machines
 
-**Hazard System** — includes radioactivity, pyrophoricity, explosiveness, and more
+**Hazard System** - includes radioactivity, pyrophoricity, explosiveness, and more
 
 ***
 
@@ -83,15 +83,15 @@ make -C util lint-console
 
 Craft complex industrial machines consisting of multiple blocks for efficient resource processing.
 
-**Assembly Machines** — two varieties for crafting automation and component production, with an advanced recipe and template system
+**Assembly Machines** - two varieties for crafting automation and component production, with an advanced recipe and template system
 
 ![Workshop](docs/images/2025-10-14_17.09.12-min.png)
 
-**Press** — creating materials under pressure
+**Press** - creating materials under pressure
 
 ![Press](docs/images/2025-10-14_17.18.23-min.png)
 
-**Wood-Burning Generator** — primary energy source in the early game
+**Wood-Burning Generator** - primary energy source in the early game
 
 ![Wood-Burning Generator](docs/images/2025-10-14_17.38.08-min.png)
 
@@ -99,11 +99,11 @@ Craft complex industrial machines consisting of multiple blocks for efficient re
 
 A complete system for generating, storing, and transmitting electricity to power industrial machines.
 
-**Generators** — various methods of obtaining energy from wood to radioactive fuel
+**Generators** - various methods of obtaining energy from wood to radioactive fuel
 
-**Energy Storage** — accumulators for electricity backup
+**Energy Storage** - accumulators for electricity backup
 
-**Cables** — energy transmission between devices
+**Cables** - energy transmission between devices
 
 ![Energy System](https://cdn.modrinth.com/data/cached_images/e4928ba19a50edf84fb1e4a78db955827048108a.png)
 
@@ -115,11 +115,11 @@ A complete system for generating, storing, and transmitting electricity to power
 
 Dozens of new ingots and metal blocks for crafting advanced equipment.
 
-**Radioactive Materials** — uranium, plutonium, polonium, and many others for nuclear technologies
+**Radioactive Materials** - uranium, plutonium, polonium, and many others for nuclear technologies
 
-**Advanced Alloys** — special materials for powerful equipment
+**Advanced Alloys** - special materials for powerful equipment
 
-**Ores** — new ore types with world generation
+**Ores** - new ore types with world generation
 
 ![Resources](docs/images/2025-07-21_04.46.43.png)
 
@@ -141,9 +141,9 @@ Dozens of new ingots and metal blocks for crafting advanced equipment.
 
 Advanced armor sets with unique modifiers and abilities.
 
-**Perk System** — upgrade armor through the modification table to gain special effects
+**Perk System** - upgrade armor through the modification table to gain special effects
 
-**Radiation Protection** — special sets for working with hazardous materials
+**Radiation Protection** - special sets for working with hazardous materials
 
 ![Armor Modification Table](docs/images/2025-10-14_08.31.49.png)
 
@@ -153,11 +153,11 @@ Advanced armor sets with unique modifiers and abilities.
 
 Powerful tools with unique resource mining mechanics.
 
-**Vein Miner** — mines entire ore veins at once
+**Vein Miner** - mines entire ore veins at once
 
-**Advanced Tools** — increased efficiency and durability
+**Advanced Tools** - increased efficiency and durability
 
-**Weapons** — swords and axes from various materials, as well as several types of grenades
+**Weapons** - swords and axes from various materials, as well as several types of grenades
 
 ![Instruments](docs/images/2025-10-14_08.34.19.png)
 
@@ -169,36 +169,36 @@ Realistic irradiation mechanics affecting gameplay and the surrounding world.
 
 ### Irradiation Mechanics
 
-**Radiation Accumulation** — from the environment and radioactive items in inventory
+**Radiation Accumulation** - from the environment and radioactive items in inventory
 
-**Chunk-based Spread** — radiation spreads and slowly dissipates over time
+**Chunk-based Spread** - radiation spreads and slowly dissipates over time
 
-**Irradiation Effects** — blindness, confusion, weakness, hunger, poisoning, and death at critical doses
+**Irradiation Effects** - blindness, confusion, weakness, hunger, poisoning, and death at critical doses
 
 ![Radiation System](docs/images/2025-10-14_18.01.44-min.png)
 
 ### World Impact
 
-**Block Mutations** — grass and foliage transform into dead variants at high radiation levels
+**Block Mutations** - grass and foliage transform into dead variants at high radiation levels
 
-**Radioactive Blocks** — emit radiation into surrounding chunks
+**Radioactive Blocks** - emit radiation into surrounding chunks
 
 ![Block Mutations](docs/images/GIF_20250721_062913_819.gif)
 
 ### Measuring Devices
 
-**Geiger Counter** — precise radiation measurement with sound accompaniment and HUD indication
+**Geiger Counter** - precise radiation measurement with sound accompaniment and HUD indication
 
-**Dosimeter** — simple device for quick radiation level assessment
+**Dosimeter** - simple device for quick radiation level assessment
 
 ### Hazard System
 
-**Explosiveness** — don't throw gunpowder and dynamite into fire, or there might be a boom
+**Explosiveness** - don't throw gunpowder and dynamite into fire, or there might be a boom
 ![Explosiveness](docs/images/2025-10-14_18.51.27-min.png)
 
-**Radioactivity** — corresponding items and blocks emit radiation
+**Radioactivity** - corresponding items and blocks emit radiation
 
-**Pyrophoricity** — don't handle this without fire protection
+**Pyrophoricity** - don't handle this without fire protection
 
 ***
 
@@ -206,7 +206,7 @@ Realistic irradiation mechanics affecting gameplay and the surrounding world.
 
 ### Commands
 
-`/hbm_m rad` — manage player radiation level (add/remove/clear)
+`/hbm_m rad` - manage player radiation level (add/remove/clear)
 
 
 ### Settings
@@ -235,11 +235,11 @@ Deep integration with Cloth Config API for fine-tuning mod parameters.
 
 ## ⚠️ Known Issues
 
-**Pre-alpha version** — expect bugs, incomplete features, and possible world corruption
+**Pre-alpha version** - expect bugs, incomplete features, and possible world corruption
 
-**Compatibility** — not tested with most mods, conflicts are possible
+**Compatibility** - not tested with most mods, conflicts are possible
 
-**Crafting** — some recipes are missing, survival is temporarily unavailable
+**Crafting** - some recipes are missing, survival is temporarily unavailable
 
 Report issues at [Issues](../../issues) with detailed descriptions.
 
@@ -255,9 +255,9 @@ Fork the repository and propose improvements.
 
 ## 💝 Acknowledgments
 
-**The Bobcat** — author of the original HBM's Nuclear Tech Mod
+**The Bobcat** - author of the original HBM's Nuclear Tech Mod
 
-**Raptor324** — modernization and rework
+**Raptor324** - modernization and rework
 
 The Forge team and Mojang for development tools
 
