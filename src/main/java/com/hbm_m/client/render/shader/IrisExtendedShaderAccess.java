@@ -92,12 +92,85 @@ public final class IrisExtendedShaderAccess {
     private static volatile ShaderInstance cachedShadowShader = null;
 
     /**
+     * Monotonically-increasing generation counter that bumps every time the
+     * underlying {@code WorldRenderingPipeline} identity changes (shader-pack
+     * swap, settings-apply, dimension change, F3+T). Consumers that cache
+     * program-ID-dependent state (uniform locations, resolved {@code Uniform}
+     * handles, per-VAO attribute bindings) should store the generation they
+     * were built against and re-resolve whenever the current value differs.
+     * <p>
+     * <b>Why a generation counter and not just program-ID compare.</b> Iris
+     * rebuilds the pipeline by calling {@code shader.close()} on every loaded
+     * shader (which hits {@code glDeleteProgram}) and then links fresh
+     * programs. GL drivers - notably nvidia - freely <i>recycle</i> deleted
+     * program IDs, so the post-rebuild program can land on the same integer
+     * ID as one of the programs we had cached. Our cached
+     * {@code cachedShaderProgram == shader.getId()} comparison then false-
+     * matches and we hand stale uniform locations (from the DEAD program) to
+     * {@code glUniformMatrix4fv}, triggering
+     * {@code GL_INVALID_OPERATION: Uniform must be a matrix type in call to
+     * UniformMatrix*} because the new program may have a non-matrix uniform
+     * at that integer location. Identity-comparison via this generation
+     * counter is bullet-proof against ID recycling.
+     */
+    private static volatile long pipelineGeneration = 0L;
+
+    /**
+     * Identity of the last-seen {@code WorldRenderingPipeline} object. Stored
+     * as {@code Object} because we only care about {@code ==} comparison -
+     * never call methods on it (avoids bringing Iris types onto our
+     * classpath). Volatile read is cheap and happens once per frame.
+     */
+    private static volatile Object lastSeenPipelineIdentity = null;
+
+    /** @return current pipeline generation; consumers compare against a stored value. */
+    public static long getPipelineGeneration() {
+        return pipelineGeneration;
+    }
+
+    /**
      * Bump the pass counter so the next {@link #getBlockShader} call re-resolves
      * shader instances. Call from a render-level stage event handler that fires
      * once per frame (e.g. {@code AFTER_BLOCK_ENTITIES}).
+     * <p>
+     * Also samples the current Iris {@code WorldRenderingPipeline} identity and
+     * bumps {@link #pipelineGeneration} whenever it changes, then immediately
+     * invalidates all shader/uniform caches via {@link #invalidateShaderCache}
+     * and {@link IrisRenderBatch#invalidateCaches}. This is the central
+     * dispatch point for pipeline-rebuild detection; called once per frame
+     * from {@code RenderLevelStageEvent.AFTER_BLOCK_ENTITIES}.
      */
     public static void tickPass() {
         currentPassId++;
+
+        // Cheap pipeline-identity check. Skips allocation when reflection is
+        // unavailable (Iris not loaded) - no-op in that case. The reflective
+        // hops are the same ones lookupExtendedShader() uses; they run once
+        // per frame here, vs. once per BE draw there, so the cost is trivial.
+        if (!reflectionInitialized) {
+            initReflection();
+        }
+        if (!reflectionAvailable) return;
+        try {
+            Object pipelineManager = getPipelineManager.invoke(null);
+            if (pipelineManager == null) return;
+            Object pipeline = getPipelineNullable.invoke(pipelineManager);
+            // Identity comparison: a different object means the pipeline was
+            // rebuilt. Null→non-null and non-null→null both trigger a bump
+            // because both indicate a state transition that invalidates
+            // cached program IDs from the previous state.
+            if (pipeline != lastSeenPipelineIdentity) {
+                lastSeenPipelineIdentity = pipeline;
+                pipelineGeneration++;
+                invalidateShaderCache();
+                IrisRenderBatch.invalidateCaches();
+                MainRegistry.LOGGER.debug("IrisExtendedShaderAccess: pipeline identity changed, generation bumped to {}",
+                        pipelineGeneration);
+            }
+        } catch (Throwable ignored) {
+            // Silent: reflection failure here just means we miss a rebuild
+            // event; ShaderReloadListener is still a safety net for F3+T.
+        }
     }
 
     /**

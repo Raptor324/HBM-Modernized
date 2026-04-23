@@ -109,8 +109,19 @@ public final class IrisRenderBatch implements AutoCloseable {
     /**
      * Cached per-shader uniform handles. Re-resolved when a different shader is bound
      * (e.g. main vs shadow pass, or after a pipeline rebuild).
+     * <p>
+     * We key the cache by <b>both</b> the {@code ShaderInstance} identity and
+     * the {@link IrisExtendedShaderAccess#getPipelineGeneration() pipeline
+     * generation} rather than just the program ID, because GL drivers recycle
+     * deleted program IDs: after a pipeline rebuild a fresh program can land
+     * on the same integer as the dead one we had cached, and a plain
+     * {@code programId == cached} check wrongly short-circuits, handing
+     * stale uniform locations to {@code glUniformMatrix4fv}
+     * ({@code GL_INVALID_OPERATION: Uniform must be a matrix type}).
      */
     private int cachedShaderProgram = -1;
+    private ShaderInstance cachedShaderInstance;
+    private long cachedPipelineGeneration = -1L;
     private Uniform uModelView;
     /** Direct uniform location for {@code ModelViewMat} - bypasses Mojang's
      *  Uniform proxy (saves several layers of indirection per draw). */
@@ -329,8 +340,19 @@ public final class IrisRenderBatch implements AutoCloseable {
         RenderSystem.disableCull();
 
         int programId = shader.getId();
-        if (cachedShaderProgram != programId) {
+        long currentGen = IrisExtendedShaderAccess.getPipelineGeneration();
+        // Re-resolve if ANY of: (1) pipeline rebuilt (generation bumped),
+        // (2) a different ShaderInstance was handed to us (main vs shadow,
+        // or fresh instance after rebuild), (3) program ID differs. The
+        // generation check is the authoritative signal against GL ID
+        // recycling; the other two are defense in depth for edge cases
+        // where the generation bump hasn't fired yet (e.g. mid-frame).
+        if (cachedShaderProgram != programId
+                || cachedShaderInstance != shader
+                || cachedPipelineGeneration != currentGen) {
             cachedShaderProgram = programId;
+            cachedShaderInstance = shader;
+            cachedPipelineGeneration = currentGen;
             uModelView = shader.getUniform("ModelViewMat");
             // Direct uniform location for ModelViewMat - bypassing Mojang's
             // Uniform.upload() proxy stack saves ~5% per profiler trace on the
@@ -757,6 +779,8 @@ public final class IrisRenderBatch implements AutoCloseable {
             ACTIVE.actuallyClose();
         }
         INSTANCE.cachedShaderProgram = -1;
+        INSTANCE.cachedShaderInstance = null;
+        INSTANCE.cachedPipelineGeneration = -1L;
         INSTANCE.uModelView = null;
         INSTANCE.locModelView = -1;
         INSTANCE.locModelViewInverse = -1;

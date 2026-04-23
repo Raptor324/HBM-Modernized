@@ -240,6 +240,18 @@ public final class IrisCompanionMesh {
     private static final int CACHED_PROGRAM_SLOTS = 4;
     private final int[] cachedProgramIds = new int[CACHED_PROGRAM_SLOTS];
     private int nextCacheSlot = 0;
+    /**
+     * Pipeline generation that {@link #cachedProgramIds} was populated under.
+     * GL drivers recycle deleted program IDs on pipeline rebuild, so a cached
+     * integer ID by itself is not a safe key - after an Iris pack swap or
+     * settings-apply the new program can reuse an ID we previously linked,
+     * and our ring-buffer hit wrongly skips {@link #bindIrisAttribute}
+     * re-resolving against the new program's linker layout. We pair each ID
+     * with the {@link com.hbm_m.client.render.shader.IrisExtendedShaderAccess#getPipelineGeneration()
+     * pipeline generation}; when the generation moves the entire ring buffer
+     * is considered stale and gets wiped.
+     */
+    private long cachedProgramPipelineGeneration = -1L;
 
     {
         for (int i = 0; i < CACHED_PROGRAM_SLOTS; i++) cachedProgramIds[i] = -1;
@@ -1156,6 +1168,20 @@ public final class IrisCompanionMesh {
     public void prepareForShader(int programId) {
         if (programId <= 0) return;
         if (actualFormat == null) return;
+
+        // Generation gate: if Iris rebuilt the pipeline since we last filled
+        // this cache, every entry is potentially stale (GL recycles program
+        // IDs across glDeleteProgram→glLinkProgram cycles, so a raw-int match
+        // below would let us skip attribute rebinding against a structurally
+        // different program). Wipe the ring buffer so every distinct program
+        // in the new generation pays the resolve cost once, then caches.
+        long currentGen = com.hbm_m.client.render.shader.IrisExtendedShaderAccess.getPipelineGeneration();
+        if (cachedProgramPipelineGeneration != currentGen) {
+            for (int i = 0; i < CACHED_PROGRAM_SLOTS; i++) cachedProgramIds[i] = -1;
+            nextCacheSlot = 0;
+            cachedProgramPipelineGeneration = currentGen;
+        }
+
         // Fast path: scan the small cache for a hit. A linear scan over 4 ints is
         // dramatically faster than the alternative - re-running the
         // glGetAttribLocation + glVertexAttrib*Pointer + glEnableVertexAttribArray

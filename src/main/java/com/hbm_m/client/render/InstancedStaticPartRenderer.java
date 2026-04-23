@@ -128,6 +128,18 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
 
     private ShaderInstance cachedShader = null;
     private int cachedShaderProgramId = -1;
+    /**
+     * Pipeline generation this uniform cache was built against - see
+     * {@link com.hbm_m.client.render.shader.IrisExtendedShaderAccess#getPipelineGeneration()}.
+     * Program IDs alone are unsafe as a cache key because GL drivers recycle
+     * deleted IDs on pipeline rebuild; pairing with the generation counter
+     * guarantees we re-resolve {@link Uniform} handles whenever the underlying
+     * GL program was torn down and re-linked (shader-pack swap, settings-apply,
+     * F3+T), preventing {@code GL_INVALID_OPERATION: Uniform must be a matrix
+     * type} crashes when a recycled program has a non-matrix uniform at the
+     * cached integer location.
+     */
+    private long cachedPipelineGeneration = -1L;
     private Uniform uProjMat;
     private Uniform uModelView;
     private Uniform uFogStart;
@@ -709,12 +721,24 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     private void updateUniformCache(ShaderInstance shader) {
         // Iris/Oculus may hand out distinct ShaderInstance wrappers for the same
         // underlying GL program across frames; comparing by object identity would
-        // thrash the cache and spam logs. Program ID is the stable identity.
+        // thrash the cache and spam logs. But program ID ALONE is unsafe -
+        // GL recycles IDs after glDeleteProgram, so post-rebuild a fresh
+        // program can land on the same integer we had cached. We additionally
+        // gate on the pipeline generation counter, which bumps whenever Iris
+        // rebuilds the pipeline (destroyShaders → fresh link); if EITHER the
+        // program ID or the generation disagree with the cached values, we
+        // re-resolve. Also check ShaderInstance identity as a belt-and-braces
+        // guard for mid-frame instance swaps.
         int programId = (shader != null) ? shader.getId() : -1;
-        if (this.cachedShaderProgramId == programId && this.cachedShader != null) return;
+        long currentGen = com.hbm_m.client.render.shader.IrisExtendedShaderAccess.getPipelineGeneration();
+        if (this.cachedShaderProgramId == programId
+                && this.cachedShader == shader
+                && this.cachedPipelineGeneration == currentGen
+                && this.cachedShader != null) return;
 
         this.cachedShader = shader;
         this.cachedShaderProgramId = programId;
+        this.cachedPipelineGeneration = currentGen;
         this.uProjMat = shader.getUniform("ProjMat");
         this.uModelView = shader.getUniform("ModelViewMat");
         this.uFogStart = shader.getUniform("FogStart");
