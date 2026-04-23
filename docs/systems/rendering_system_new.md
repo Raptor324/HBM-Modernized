@@ -2,7 +2,7 @@
 
 > Полный технический анализ всех путей рендеринга, шейдерной инфраструктуры и совместимости с Iris/Oculus/Sodium/Embeddium.
 >
-> *Версия документа: 2026-04-19 (актуально для последнего commit'а)*
+> *Версия документа: 2026-04-23 (актуально для последнего commit'а)*
 
 ---
 
@@ -53,8 +53,10 @@
 ```
 RegisterShadersEvent → ClientSetup.onRegisterShaders
    ↓
-   ├─ ModShaders.setBlockLitSimpleShader (Position/Normal/UV0)
-   └─ ModShaders.setBlockLitInstancedShader (с InstPos/InstRot/InstBrightness, USE_INSTANCING define)
+   ├─ ModShaders.setBlockLitSimpleShader          (Position/Normal/UV0; без инстансинга)
+   ├─ ModShaders.setBlockLitInstancedShader       (+ InstPos/InstRot/BboxMin/BboxSize/LightC01-C67, USE_INSTANCING)
+   ├─ ModShaders.setBlockLitSimpleSlicedShader    (как simple, но с USE_SLICED_LIGHT; для высоких мешей)
+   └─ ModShaders.setBlockLitInstancedSlicedShader (instanced + USE_INSTANCING + USE_SLICED_LIGHT)
 
 FMLClientSetupEvent → BlockEntityRenderers.register(...)
    ↓
@@ -327,13 +329,36 @@ public static final class VboData implements AutoCloseable {
 ### 6.1 Layout
 
 ```
-Static (location 0..2):       Position(3) + Normal(3) + UV0(2)        = 32 байт/вершина
-Per-instance (location 3..5): InstPos(3) + InstRot(4 quaternion) + InstBrightness(1) = 32 байт/инстанс
+Статические (location 0..2):       Position(3f) + Normal(3f) + UV0(2f) = 32 байт/вершина
 ```
 
-`glVertexAttribDivisor(loc, 1)` для атрибутов 3..5 — обновлять раз в инстанс.
+Per-instance данные (location 3..N, divisor=1) — **два варианта** в зависимости от флага `useSlicedLight`:
 
-`MAX_INSTANCES = 1024`. При переполнении логируется warning и оставшиеся инстансы пропускаются до следующего flush'а.
+**BASE (без `useSlicedLight`, `BASE_INSTANCE_DATA_SIZE = 29` float, location 3..10):**
+```
+loc 3:  InstPos       vec3   @ float  0   — world position (translation column из PoseStack)
+loc 4:  InstRot       vec4   @ float  3   — unit quaternion (rotation из PoseStack)
+loc 5:  InstBboxMin   vec3   @ float  7   — object-space bbox min
+loc 6:  InstBboxSize  vec3   @ float 10   — object-space bbox size (div-guard: max 1e-4)
+loc 7:  InstLightC01  vec4   @ float 13   — UV2 for corners 0,1  (c0.blockU, c0.skyV, c1.blockU, c1.skyV)
+loc 8:  InstLightC23  vec4   @ float 17   — corners 2,3
+loc 9:  InstLightC45  vec4   @ float 21   — corners 4,5
+loc 10: InstLightC67  vec4   @ float 25   — corners 6,7
+```
+Corner index encoding: `bit 0 = x, bit 1 = y, bit 2 = z; set = max side`. Итого 8 угловых проб = 16 float lightmap UV.
+
+**SLICED (`useSlicedLight = true`, `SLICED_INSTANCE_DATA_SIZE = 45` float, location 3..14):**
+```
+loc 3..6:  InstPos/InstRot/InstBboxMin/InstBboxSize  — те же что выше
+loc 7..14: 8 × vec4 — 4 Y-среза × 2 vec4 на срез:
+           loc 7 (InstLightS0C01), loc 8 (InstLightS0C23)  — срез Y=0: 4 XZ-угла
+           loc 9 (InstLightS1C01), loc 10 (InstLightS1C23) — срез Y=1
+           loc 11 (InstLightS2C01), loc 12 (InstLightS2C23)
+           loc 13 (InstLightS3C01), loc 14 (InstLightS3C23)
+```
+Sliced режим предназначен для **высоких мешей** (Hydraulic Fracking Tower), где один 2×2×2 набор не захватывает освещение на разных высотах (например, факел на середине вышки).
+
+Дополнительно instance VBO (`instanceVboId`): `GL_STREAM_DRAW`, `MAX_INSTANCES * instanceDataSize * 4` байт. `MAX_INSTANCES = 1024`. CPU-scratch `instanceBuffer` (off-heap `FloatBuffer` через `MemoryUtil.memAllocFloat`, управляется `java.lang.ref.Cleaner`). При переполнении логируется warning.
 
 ### 6.2 Накопление инстансов: addInstance
 
@@ -344,11 +369,27 @@ public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos,
 
 Логика:
 
-1. **Shadow pass detection**: если `isRenderingShadowPass()` — НЕ накапливать в общий буфер, а сразу рисовать через `drawSingleWithIrisExtended`. Причина — flush event срабатывает только в main pass; накопленные shadow-pass инстансы потом нарисовались бы main-pass-проекцией = «призраки в небе».
-2. **Извлечение transform'а**: `poseStack.last().pose()` → `getTranslation(posTmp)` + `getNormalizedRotation(rotTmp)` (кватернион).
-3. **Сэмплирование освещения** через `LightSampleCache.getOrSample(blockEntity, packedLight, instanceLightUV, sampleBase)`. Это **критично**: без кэша 11 деталей одного assembler'а делали бы 11 одинаковых сэмплов по 6 face-центрам — прямой 17% frame time по профайлеру.
-4. **Кэш `batchSkyDarken`**: значение `level.getSkyDarken(1.0f)` сэмплируется один раз на батч (на первом `instanceCount == 0`).
-5. **Конвертация UV → brightness** через `brightnessFromUV(blockU, skyV, batchSkyDarken)` — даёт sub-integer smoothing для vanilla path'а тоже.
+1. **Shadow pass detection**: если `isRenderingShadowPass()` — НЕ накапливать в общий буфер, а сразу рисовать через `drawSingleWithIrisExtended`. Причина — `RenderLevelStageEvent.AFTER_BLOCK_ENTITIES` срабатывает только в main pass; накопленные shadow-pass инстансы потом нарисовались бы main-pass-проекцией = «призраки в небе».
+
+2. **Извлечение transform'а**: `poseStack.last().pose()` → `getTranslation(posTmp)` + `getNormalizedRotation(rotTmp)` (кватернион). Эти значения попадают в `InstPos`/`InstRot`.
+
+3. **Реконструкция `tmpLocalPose`** — сложный шаг, необходимый для стабильного сэмплирования освещения. Mojang запекает camera view rotation в PoseStack ещё до рендера block entities:
+   ```
+   mat = viewRot * T(blockPos - cameraPos) * perBELocal
+   ```
+   Если оставить viewRot, 8 угловых проб будут вращаться с камерой → «модель темнеет снизу при взгляде вверх». Если строить полную absolute world pose через `Matrix4f`, float32-precision при `cameraPos > ~10^4` нестабилен → «модель мерцает у факела при движении». Решение:
+   - Снять viewRot через `RenderSystem.getInverseViewRotationMatrix()` (Mojang сохраняет его перед рендером уровня).
+   - Вычесть `(float)(blockPos - cameraPos)` из translation — ТОЧНО теми же float-cast'ами, что использовал LevelRenderer (ошибки округления отменяются).
+   - Получаем `tmpLocalPose` = чистый BE-local transform без camera-relative данных.
+
+4. **Сэмплирование освещения** через `LightSampleCache`:
+   - `getOrSample(be, packedLight, instanceLightUV, base)` — старый 6-face averaged sample, используется для Iris legacy путя (константный `vaUV2`).
+   - `getOrSample8(be, partHash, objBbox, blockPos, tmpLocalPose, packedLight, tmpCornerUV)` — **8-corner trilinear** (2×2×2 lattice), результат в `tmpCornerUV[16]`. Используется для vanilla VBO пути и Iris per-vertex.
+   - `getOrSample16(...)` — **2×4×2 sliced probe lattice** (32 float), для `useSlicedLight = true`.
+   
+   Ключ кэша: `be.getBlockPos().asLong() ^ partIdentityHash` — каждая из 11 деталей assembler'а получает отдельную запись, но все они share ONE запись между shadow+main pass одного кадра. Кэш инвалидируется в `onFrameStart()`.
+
+5. **Запись в `instanceBuffer`**: `pos(3) + rot(4) + bboxMin(3) + bboxSize(3) + cornerUV(16 или 32)`.
 
 ### 6.3 Flush — vanilla path (`flushBatchVanilla`)
 
@@ -497,76 +538,92 @@ public static SingleMeshVboRenderer.VboData buildSinglePart(BakedModel part, Str
 
 ## 8. Кастомные GLSL-шейдеры (block_lit)
 
+Система имеет **четыре компилируемых варианта** одного вершинного исходника `block_lit.vsh`, управляемых препроцессорными defines:
+
+| Шейдер                      | Defines                          | Для чего                                  |
+| --------------------------- | -------------------------------- | ----------------------------------------- |
+| `block_lit_simple`          | —                                | `SingleMeshVboRenderer` (одна деталь)     |
+| `block_lit_instanced`       | `USE_INSTANCING`                 | `InstancedStaticPartRenderer` (батч)      |
+| `block_lit_simple_sliced`   | `USE_SLICED_LIGHT`               | Одна высокая деталь (напр. вышка)         |
+| `block_lit_instanced_sliced`| `USE_INSTANCING + USE_SLICED_LIGHT` | Батч высоких деталей                   |
+
+Фрагментный шейдер `block_lit.fsh` **общий** для всех четырёх вариантов.
+
 ### 8.1 block_lit.vsh (вершинный)
 
 Файл: `src/main/resources/assets/hbm_m/shaders/core/block_lit.vsh`
 
+**Фиксированные атрибуты (все варианты):**
 ```glsl
-#version 330 core
-
 layout(location = 0) in vec3 Position;
 layout(location = 1) in vec3 Normal;
 layout(location = 2) in vec2 UV0;
+```
 
-#ifdef USE_INSTANCING
-layout(location = 3) in vec3 InstPos;        // Position
-layout(location = 4) in vec4 InstRot;        // Quaternion (x, y, z, w)
-layout(location = 5) in float InstBrightness; // Light
-#endif
+**Per-instance атрибуты (`#ifdef USE_INSTANCING`, locations 3..10 или 3..14):**
+```glsl
+layout(location = 3)  in vec3 InstPos;
+layout(location = 4)  in vec4 InstRot;
+layout(location = 5)  in vec3 InstBboxMin;
+layout(location = 6)  in vec3 InstBboxSize;
+// Стандартные 8 углов (без USE_SLICED_LIGHT):
+layout(location = 7)  in vec4 InstLightC01;
+layout(location = 8)  in vec4 InstLightC23;
+layout(location = 9)  in vec4 InstLightC45;
+layout(location = 10) in vec4 InstLightC67;
+// Для USE_SLICED_LIGHT — 4 среза × 2 vec4 (locations 7..14):
+layout(location = 7)  in vec4 InstLightS0C01;  layout(location = 8)  in vec4 InstLightS0C23;
+layout(location = 9)  in vec4 InstLightS1C01;  layout(location = 10) in vec4 InstLightS1C23;
+layout(location = 11) in vec4 InstLightS2C01;  layout(location = 12) in vec4 InstLightS2C23;
+layout(location = 13) in vec4 InstLightS3C01;  layout(location = 14) in vec4 InstLightS3C23;
+```
 
+**Uniform-переменные:**
+```glsl
 uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;
-uniform float Brightness;
-
-out vec2 texCoord;
-out float brightness;
-out float vertexDistance;
-out vec3 fragNormal;
+uniform vec3 BboxMin;       // object-space AABB (non-instanced path)
+uniform vec3 BboxSize;
+// 8-corner lightmap (без USE_SLICED_LIGHT, non-instanced path):
+uniform vec4 LightC01;  uniform vec4 LightC23;
+uniform vec4 LightC45;  uniform vec4 LightC67;
+// 2x4x2 sliced lightmap (USE_SLICED_LIGHT, non-instanced path):
+uniform vec4 LightS0C01; uniform vec4 LightS0C23; ... uniform vec4 LightS3C23;
 ```
 
-Ключевая особенность — **один и тот же исходник** компилируется в два разных шейдера через `#define USE_INSTANCING`:
-
-- Без define → используются `ModelViewMat` + `Brightness` (классический per-draw путь).
-- С define → собирает MV-матрицу из `InstPos` + кватерниона `InstRot` через `quatToMat4` и берёт `bright = InstBrightness`.
-
+**Выходные переменные:**
 ```glsl
-void main() {
-    mat4 modelView;
-    float bright;
-
-#ifdef USE_INSTANCING
-    mat4 rotMatrix = quatToMat4(InstRot);
-    mat4 translation = mat4(1.0);
-    translation[3] = vec4(InstPos, 1.0);
-    modelView = translation * rotMatrix;
-    bright = InstBrightness;
-    fragNormal = mat3(rotMatrix) * Normal;
-#else
-    modelView = ModelViewMat;
-    bright = Brightness;
-    fragNormal = mat3(modelView) * Normal;
-#endif
-
-    vec4 viewPos = modelView * vec4(Position, 1.0);
-    gl_Position = ProjMat * viewPos;
-    texCoord = UV0;
-    brightness = bright;
-    vertexDistance = length(viewPos.xyz);
-}
+out vec2  texCoord;
+out vec2  lightmapUV;     // UV для Sampler2 (динамическая lightmap-текстура ванилы)
+out float vertexDistance;
+out vec3  fragNormal;
 ```
 
-`quatToMat4` — стандартная конверсия кватерниона в 4×4 rotation matrix (без translate, чисто rotation).
+**Ключевая логика `main()`:**
+
+1. Если `USE_INSTANCING` — собирает ModelView из `quatToMat4(InstRot) * T(InstPos)`, иначе использует uniform `ModelViewMat`.
+2. Если `USE_INSTANCING` — берёт `BboxMin`/`BboxSize` из per-instance атрибутов `InstBboxMin`/`InstBboxSize`, иначе из uniform.
+3. Вычисляет `w = clamp((Position - bboxMin) / max(bboxSize, 1e-4), 0, 1)` — нормализованное положение вершины внутри bbox.
+4. Вычисляет `uvLm`:
+   - Без `USE_SLICED_LIGHT`: `trilinearLightUv(w, c01, c23, c45, c67)` — трилинейная интерполяция по 8 угловым пробам.
+   - С `USE_SLICED_LIGHT`: `bilinearLightUv` на двух соседних Y-срезах, lerp по `w.y * 3.0 - floor(...)`.
+5. `lightmapUV = (uvLm + vec2(8.0)) / 256.0` — конвертирует raw UV2 (0..240) в UV текстурного пространства lightmap (0..1), аналогично vanilla.
+
+Вспомогательная функция `trilinearLightUv` — трилинейное смешение 8 corner-значений (каждый corner = `vec2(blockU, skyV)`). Функция `bilinearLightUv` — билинейное смешение 4 XZ-углов одного Y-среза.
 
 ### 8.2 block_lit.fsh (фрагментный, общий)
+
+Файл: `src/main/resources/assets/hbm_m/shaders/core/block_lit.fsh`
 
 ```glsl
 #version 330 core
 
 in vec2 texCoord;
-in float brightness;
+in vec2 lightmapUV;
 in float vertexDistance;
 
-uniform sampler2D Sampler0;
+uniform sampler2D Sampler0;   // block atlas
+uniform sampler2D Sampler2;   // dynamic lightmap texture (vanilla)
 uniform vec4 FogColor;
 uniform float FogStart;
 uniform float FogEnd;
@@ -575,38 +632,51 @@ out vec4 fragColor;
 
 void main() {
     vec4 baseColor = texture(Sampler0, texCoord);
-    vec3 lit = baseColor.rgb * brightness;
-    lit *= 0.6;                              // глобальное затемнение машин
-    if (baseColor.a < 0.1) discard;          // alpha-cutout
+    vec3 lm  = texture(Sampler2, lightmapUV).rgb;  // lightmap: кодирует sky darken,
+                                                    // client brightness (gamma),
+                                                    // night vision, darkness, dim tint
+    vec3 lit = baseColor.rgb * lm;
+    lit *= 0.6;                                     // глобальное затемнение машин
+    if (baseColor.a < 0.1) discard;
     float fogFactor = clamp((FogEnd - vertexDistance) / (FogEnd - FogStart), 0.0, 1.0);
-    vec3 colorWithFog = mix(FogColor.rgb, lit, fogFactor);
-    fragColor = vec4(colorWithFog, baseColor.a);
+    fragColor = vec4(mix(FogColor.rgb, lit, fogFactor), baseColor.a);
 }
 ```
 
-Простой shader: alpha-cutout 0.1, multiplicative brightness, экспоненциальный туман.
+**Принципиальное отличие от старой версии**: раньше `fsh` принимал `in float brightness` и `uniform float Brightness`, умножая цвет на скалярное число. Теперь используется **`Sampler2`** — настоящая динамическая lightmap-текстура ванилы. Это означает, что автоматически учитываются: дневной цикл (sky darken), gamma-коррекция client brightness, ночное видение, кромешная тьма, dimension tint. Машины теперь выглядят идентично стандартным блокам по освещению.
 
 ### 8.3 JSON-конфиги шейдеров
 
-`block_lit_simple.json`:
-
+**`block_lit_simple.json`** (`vertex: hbm_m:block_lit`, `fragment: hbm_m:block_lit`):
 ```json
-{
-    "vertex": "hbm_m:block_lit",
-    "fragment": "hbm_m:block_lit",
-    "samplers": [{ "name": "Sampler0" }],
-    "uniforms": [
-        { "name": "ModelViewMat", "type": "matrix4x4", "count": 16, "values": [...identity...] },
-        { "name": "ProjMat",      "type": "matrix4x4", "count": 16, "values": [...identity...] },
-        { "name": "FogStart",     "type": "float", "count": 1, "values": [ 0.0 ] },
-        { "name": "FogEnd",       "type": "float", "count": 1, "values": [ 1.0 ] },
-        { "name": "FogColor",     "type": "float", "count": 4, "values": [ 0.0, 0.0, 0.0, 0.0 ] },
-        { "name": "Brightness",   "type": "float", "count": 1, "values": [ 1.0 ] }
-    ]
-}
+"samplers": [{ "name": "Sampler0" }, { "name": "Sampler2" }],
+"uniforms": [
+    ModelViewMat, ProjMat, FogStart, FogEnd, FogColor,
+    BboxMin(3f), BboxSize(3f),
+    LightC01(4f), LightC23(4f), LightC45(4f), LightC67(4f)
+]
 ```
 
-`block_lit_instanced.json`: то же самое, но `"vertex": "hbm_m:block_lit_instanced"` (виртуальный путь, см. §9).
+**`block_lit_instanced.json`** (`vertex: hbm_m:block_lit_instanced` — виртуальный файл, см. §9):
+```json
+"samplers": [{ "name": "Sampler0" }, { "name": "Sampler2" }],
+"uniforms": [ ModelViewMat, ProjMat, FogStart, FogEnd, FogColor ]
+// BboxMin/BboxSize/LightC01..C67 не нужны — всё через per-instance атрибуты
+```
+
+**`block_lit_simple_sliced.json`** (виртуальный, `USE_SLICED_LIGHT`):
+```json
+"samplers": [{ "name": "Sampler0" }, { "name": "Sampler2" }],
+"uniforms": [ ModelViewMat, ProjMat, FogStart, FogEnd, FogColor,
+              BboxMin, BboxSize,
+              LightS0C01..LightS3C23  — 8 × vec4 ]
+```
+
+**`block_lit_instanced_sliced.json`** (виртуальный, `USE_INSTANCING + USE_SLICED_LIGHT`):
+```json
+"samplers": [{ "name": "Sampler0" }, { "name": "Sampler2" }],
+"uniforms": [ ModelViewMat, ProjMat, FogStart, FogEnd, FogColor ]
+```
 
 ---
 
@@ -661,44 +731,55 @@ event.registerShader(
 
 ### 9.4 Vertex format'ы
 
-В `ClientSetup.onRegisterShaders`:
+В `ClientSetup.onRegisterShaders` регистрируются форматы. Для `ShaderInstance` формат определяет только имена/типы атрибутов на стороне CPU-описания — реальные GL-биндинги устанавливаются вручную в конструкторе `InstancedStaticPartRenderer` через `glVertexAttribPointer + glVertexAttribDivisor`.
 
 ```java
-// Simple variant
+// Simple variant (и simple_sliced): Position + Normal + UV0
 VertexFormat blockLitSimpleFormat = new VertexFormat(ImmutableMap.<String, VertexFormatElement>builder()
     .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
     .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
     .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
     .build());
 
-// Instanced variant — расширен InstPos/InstRot/InstBrightness как GENERIC
+// Instanced variant (и instanced_sliced): те же 3 + per-instance атрибуты
+// Слот для BboxMin/BboxSize/LightProbes объявляется через GENERIC float (Mojang не знает о них)
 VertexFormat blockLitInstancedFormat = new VertexFormat(ImmutableMap.<String, VertexFormatElement>builder()
-    .put("Position",       DefaultVertexFormat.ELEMENT_POSITION)
-    .put("Normal",         DefaultVertexFormat.ELEMENT_NORMAL)
-    .put("UV0",            DefaultVertexFormat.ELEMENT_UV0)
-    .put("InstPos",        new VertexFormatElement(0, FLOAT, GENERIC, 3))
-    .put("InstRot",        new VertexFormatElement(0, FLOAT, GENERIC, 4))
-    .put("InstBrightness", new VertexFormatElement(0, FLOAT, GENERIC, 1))
+    .put("Position",      DefaultVertexFormat.ELEMENT_POSITION)
+    .put("Normal",        DefaultVertexFormat.ELEMENT_NORMAL)
+    .put("UV0",           DefaultVertexFormat.ELEMENT_UV0)
+    .put("InstPos",       new VertexFormatElement(0, FLOAT, GENERIC, 3))
+    .put("InstRot",       new VertexFormatElement(0, FLOAT, GENERIC, 4))
+    .put("InstBboxMin",   new VertexFormatElement(0, FLOAT, GENERIC, 3))
+    .put("InstBboxSize",  new VertexFormatElement(0, FLOAT, GENERIC, 3))
+    .put("InstLightC01",  new VertexFormatElement(0, FLOAT, GENERIC, 4))
+    .put("InstLightC23",  new VertexFormatElement(0, FLOAT, GENERIC, 4))
+    .put("InstLightC45",  new VertexFormatElement(0, FLOAT, GENERIC, 4))
+    .put("InstLightC67",  new VertexFormatElement(0, FLOAT, GENERIC, 4))
     .build());
 ```
+
+Sliced-варианты используют тот же `blockLitInstancedFormat` (Mojang `VertexFormat` не влияет на реальные GL-атрибуты instance VBO).
 
 ### 9.5 ModShaders
 
 Файл: `com.hbm_m.client.render.ModShaders`
 
-Простое хранилище ссылок:
+Хранилище ссылок на все четыре шейдера:
 
 ```java
 private static ShaderInstance dynamicCutoutShader;
-private static ShaderInstance blockLitSimpleShader;
-private static ShaderInstance blockLitInstancedShader;
+private static ShaderInstance blockLitSimpleShader;          // no-define path
+private static ShaderInstance blockLitInstancedShader;       // USE_INSTANCING
+private static ShaderInstance blockLitSimpleSlicedShader;    // USE_SLICED_LIGHT
+private static ShaderInstance blockLitInstancedSlicedShader; // USE_INSTANCING + USE_SLICED_LIGHT
 private static ShaderInstance thermalVisionShader;
-
-// + сеттеры для регистрации
-public static void setBlockLitSimpleShader(ShaderInstance s) { blockLitSimpleShader = s; }
-// + геттеры
-public static ShaderInstance getBlockLitInstancedShader() { return blockLitInstancedShader; }
 ```
+
+Выбор шейдера в рендерере:
+- `SingleMeshVboRenderer.render()` → `useSlicedLight ? getBlockLitSimpleSlicedShader() : getBlockLitSimpleShader()`
+- `InstancedStaticPartRenderer.flushBatchVanilla()` → `useSlicedLight ? getBlockLitInstancedSlicedShader() : getBlockLitInstancedShader()`
+
+`getBlockLitShader()` помечен `@Deprecated` и возвращает instanced-вариант для обратной совместимости.
 
 ---
 
@@ -732,23 +813,45 @@ Companion-меш в формате `IrisVertexFormats.ENTITY` (15-attribute layo
 
 Главная фишка — **динамический биндинг location'ов**. Vanilla `BufferBuilder` подменяется Iris'ом и пишет данные в нужный layout, но GLSL-линкер может присвоить attribute'ам произвольные locations. `IrisCompanionMesh.prepareForShader(programId)`:
 
-1. Запрашивает через `glGetAttribLocation(programId, "iris_Entity")`, `"mc_midTexCoord"`, `"at_tangent"`, `"vaUV2"`.
-2. Кэширует locations per-program.
+1. Запрашивает через `glGetAttribLocation(programId, "iris_Entity")`, `"mc_midTexCoord"`, `"at_tangent"`.
+2. Кэширует locations per-program в **4-slot ring buffer** (shadow pass + main pass без инвалидации на каждый draw).
 3. Привязывает каждый атрибут на своё место в companion VBO через `glVertexAttribPointer(loc, size, type, normalized, stride, offset)`.
 
-Это обходит баг Mojang'а, где attribute names биндятся через хардкод layout(location=...) при компиляции.
+Это обходит баг Mojang'а, где attribute names биндятся через хардкод layout(location=...) при компиляции. Стандартные 6 атрибутов Mojang (Position/Color/UV0/UV1/UV2/Normal → locations 0..5) биндятся через `glBindAttribLocation` и вынуждают линкер, а три расширенных Iris (iris_Entity, mc_midTexCoord, at_tangent) — нет. Поэтому location'ы для них всегда определяются рефлексивно.
 
 #### 10.2.2 vaUV2 (lightmap UV)
 
-`vaUV2` намеренно НЕ enabled в VAO — это позволяет передавать per-draw lightmap через `glVertexAttribI2i(uv2Loc, blockU, skyV)` как «current value» disabled-attribute'а. Pack-шейдер читает `ivec2` и применяет к каждой вершине.
+`vaUV2` (location 4) намеренно **disabled** в VAO — это позволяет передавать per-draw lightmap через `glVertexAttribI2i(uv2Loc, blockU, skyV)` как «current value» disabled-attribute'а. Pack-шейдер читает `ivec2` и применяет к каждой вершине.
 
 Целочисленный pipeline (`I2i`, не `2f`) — обязателен, потому что pack-шейдеры объявляют `vaUV2 ivec2`, а float-bank они не читают.
 
-#### 10.2.3 Жизненный цикл
+#### 10.2.3 Per-vertex lightmap (новое)
 
-- `ensureBuilt()` — лениво строит VBO из `quadsForIris`, преобразуя их в IrisVertexFormats.ENTITY layout. Использует `BufferBuilder` с обработкой через `IrisBufferHelper.beginWithoutExtending(...)` (см. ниже) и затем читает финальный buffer.
+Для сглаженного освещения поперёк меша реализован **per-vertex lightmap path**:
+
+- **`perVertexCornerWeights`** — массив `[vertexCount × 8]`, где для каждой вершины хранятся 8 трилинейных весов относительно `objBbox` (AABB объект-пространства). Предвычислен при `ensureBuilt()` обходом `BakedQuad.getVertices()` в том же порядке, что `putBulkData`.
+- **`perVertexSlicedWeights`** — массив `[vertexCount × 16]` для 2×4×2 решётки (4 Y-среза по 4 XZ-угла). Активируется когда входной массив probe содержит 32 float.
+- **`lightmapVboId`** — отдельный GL-буфер под per-instance per-vertex UV2. Размер: `instanceSlots × vertexCount × 4 bytes` (2× USHORT на вершину).
+- **Persistent mapping** (GL 4.4+ / ARB_buffer_storage): если доступно, буфер маппится как `WRITE | PERSISTENT | COHERENT`, CPU пишет напрямую, после записи вызывается `glMemoryBarrier(GL_CLIENT_MAPPED_BUFFER_BARRIER_BIT)`.
+- **Staging path** (fallback): дополнительный staging VBO маппится с `MAP_FLUSH_EXPLICIT`, данные копируются через `glCopyBufferSubData` с fence, и при занятости fence происходит откат на `glBufferSubData`.
+- **Slot allocator**: `Long2IntOpenHashMap lightmapKeyToSlot` + кольцевой eviction cursor. Ключ — hash квантизованных 8/16 corner UV2, переиспользование slot'а позволяет пропускать `writeInstanceLightmap` для повторяющихся световых условий (dense farms).
+
+Основное API:
+- `supportsPerVertexLightmap()` — есть ли веса и `uv2Location != -1`.
+- `supportsSlicedPerVertexLightmap()` — есть ли `perVertexSlicedWeights`.
+- `ensureLightmapCapacity(n)` — растит буфер до следующей степени двойки ≥ n.
+- `allocLightmapSlot(key)` → packed long (low32=slot, bit32=reused flag).
+- `writeInstanceLightmap(slotIndex, corner16or32)` — комбинирует веса с probe-данными (16 float для 8-corner, 32 float для sliced), пишет USHORT пары в `lightmapShortView`.
+- `finishLightmapWrites()` — барьер (persistent) или `glBufferSubData` range (fallback).
+- `activatePerVertexLightmap()` — включает array для `uv2Location` и привязывает `lightmapVboId`.
+- `bindLightmapForInstance(slot)` — `glVertexAttribIPointer` смещает указатель на нужный slot.
+- `restoreConstantLightmap()` — отключает array, возвращает к `glVertexAttribI2i`-режиму.
+
+#### 10.2.4 Жизненный цикл
+
+- `ensureBuilt()` — лениво строит VBO из `quads` в `DefaultVertexFormat.NEW_ENTITY` (Iris mixin авторасширяет до `IrisVertexFormats.ENTITY`). Вычисляет `objBbox` и `perVertexCornerWeights`/`perVertexSlicedWeights` до `putBulkData`. Строит EBO (индексы 0,1,2,2,3,0 на каждый quad). Записывает `elementOffsets`/`elementByName` для динамического биндинга.
 - `getVaoId()`, `getIndexCount()`, `getUv2Location()`, `prepareForShader(programId)` — runtime API.
-- `destroy()` — удаление через `glDeleteBuffers/glDeleteVertexArrays` (на render thread).
+- `destroy()` — unmap + удаление через `glDeleteBuffers/glDeleteVertexArrays`. При вызове не на render thread — через `RenderSystem.recordRenderCall`. CPU-native scratch (`lightmapCpuScratch`) освобождается через `MemoryUtil.memFree` в любом потоке.
 
 ### 10.3 IrisBufferHelper
 
@@ -786,49 +889,58 @@ try (IrisPhaseGuard ignored = IrisPhaseGuard.pushBlockEntities()) {
 
 Файл: `com.hbm_m.client.render.shader.IrisRenderBatch`
 
-Per-BlockEntity batching session. Существует чтобы амортизировать `**shader.apply()**` и `**shader.clear()**` — самые дорогие вызовы под Iris (60%+ frame time на больших фермах).
+Per-BlockEntity batching session. Существует чтобы амортизировать `shader.apply()` и `shader.clear()` — самые дорогие вызовы под Iris (60%+ frame time на больших фермах).
 
-#### 10.6.1 begin / close
+#### 10.6.1 Persistent batch — оба прохода
+
+**И shadow, и main pass** открывают по одному persistent batch’у на кадр. `begin()` возвращает `NOOP_NESTED` — декоративная обёртка, вызов её `close()` ничего не делает. Батч живёт до:
+
+- Pass-change: `begin(shadowPass != activeBatch.isShadowPass)` → `actuallyClose()` старого + открытие нового.
+- `closePersistentIfActive()` из `RenderLevelStageEvent.AFTER_LEVEL` — safety net для последнего батча кадра.
+
+Итог: ровно **2 вызова** `apply()/clear()` в кадр независимо от числа машин.
+
+Паттерн в каждом BER:
 
 ```java
-try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
-    // ... все детали машины через batch.drawCompanion(...) или просто render(...)
-    // shader.apply() и clear() вызывается АВТОМАТИЧЕСКИ один раз на батч.
-}
-```
-
-Паттерн открытия в каждом BER:
-
-```java
-boolean useIrisBatch = useNewIrisVboPath() && (!useBatching || shadowPass);
-if (useIrisBatch) {
-    try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, projection)) {
-        renderInternal(...);
+try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, projection)) {
+    if (batch != null) {
+        IrisRenderBatch.active().drawCompanion(...);
+    } else {
+        // fallback to per-call path
     }
-} else {
-    renderInternal(...);
 }
 ```
 
-#### 10.6.2 Persistent shadow batch
+#### 10.6.2 drawCompanion — три варианта
 
-Iris не выдаёт нам callback'ов на конец shadow pass'а, поэтому batch для shadow становится **persistent** — может пережить несколько BE-рендеров, закрываясь:
-
-- Когда `begin(true)` вызван следующим BE с pass change → закрытие старого, открытие нового.
-- В `RenderLevelStageEvent.AFTER_LEVEL` через `closePersistentIfActive()` — safety net на случай, если main pass пустой (все BE отбракованы frustum culling'ом, а shadow pass их видел).
-
-#### 10.6.3 drawCompanion
-
+**1. Базовый (constant UV2):**
 ```java
-public void drawCompanion(IrisCompanionMesh companion, Matrix4f mvMat, int packedSmoothLight);
+void drawCompanion(IrisCompanionMesh companion, Matrix4f modelView, int packedLight)
 ```
+Внутри: загружает `ModelViewMat` напрямую через `glUniformMatrix4fv` (bypasses Mojang proxy, −8.67% frame time), пересчитывает `iris_ModelViewMatInverse` + `iris_NormalMat` (MV^-1 один раз, NormalMat из него), `glVertexAttribI2i(uv2Loc, blockU, skyV)` с кэшированием, `glDrawElements`.
 
-Внутри:
+**2. Per-vertex trilinear (8-corner):**
+```java
+void drawCompanionWithPerVertexLight(IrisCompanionMesh companion, Matrix4f modelView,
+                                     float[] cornerUV16, int packedLightFallback)
+```
+На `isShadowPass` → fallback на базовый. Hash квантизованных 16 float → `allocLightmapSlot`. При новом slot → `writeInstanceLightmap`. Затем `finishLightmapWrites + activatePerVertexLightmap + bindLightmapForInstance`.
 
-- Загружает `ModelViewMat` через `glUniformMatrix4fv` напрямую (минуя Mojang Uniform proxy).
-- Пересчитывает `iris_ModelViewMatInverse`, `iris_NormalMat` если изменились.
-- `glVertexAttribI2i(uv2Loc, blockU, skyV)`.
-- `glDrawElements`.
+**3. Per-vertex sliced (2×4×2):**
+```java
+void drawCompanionWithSlicedPerVertexLight(IrisCompanionMesh companion, Matrix4f modelView,
+                                            float[] probeUV32, int packedLightFallback)
+```
+Аналогично, но hash по 32 float. Если меш не поддерживает sliced weights → fallback на базовый (не на 8-corner: layout несовместим).
+
+#### 10.6.3 Кэши и оптимизации
+
+- **VAO cache** (`lastBoundVao`): пропускает `glBindVertexArray + prepareForShader` для повторного VAO.
+- **Uniform handle cache** (`cachedShaderProgram`): re-resolve `locModelView`, `locModelViewInverse`, `locNormalMat` только при смене program ID.
+- **`blockEntityId` guard**: в persistent batch `setCurrentRenderedBlockEntity(0)` вызывается на каждый draw (Iris mixin перезаписывает его перед каждым BE).
+- **Scratch buffers** без heap-аллокации: `mvFloats[16]`, `mvInverseFloats[16]`, `normalMatFloats[9]`, `cornerShort16[16]`, `cornerFloat16[16]`, `quantProbe32[32]`.
+- **`invalidateCaches()`** из `ShaderReloadListener`: force-закрывает persistent batch, сбрасывает все cached handles.
 
 ### 10.7 ShaderReloadListener
 
@@ -1275,20 +1387,60 @@ public static void setTransparentBlocksTag(TagKey<Block> tag);
 
 Файл: `com.hbm_m.client.render.LightSampleCache`
 
-Per-frame кэш smoothed lightmap UVs. API:
+Per-frame кэш lightmap UV, объединяющий три стратегии сэмплинга:
+
+#### Стратегии сэмплинга
+
+**`getOrSample`** — усреднённое 6-фацетное сэмплирование.
+- Сэмплирует `LevelRenderer.getLightColor` в 6 точках face centers вокруг render bounding box, усредняет.
+- Выход: `float[2]` — (blockU, skyV).
+- Кэш: `Long2ObjectOpenHashMap<Entry>` по `be.getBlockPos().asLong()` + single-slot fast path (сравнение по reference BE, пропускает `getBlockPos().asLong()` и hashmap lookup).
+
+**`getOrSample8`** — трилинейное 8-угольное сэмплирование.
+```java
+public static void getOrSample8(BlockEntity be, long partIdentityHash,
+    float[] objBbox, BlockPos blockPos, Matrix4f localPose,
+    int packedLightFallback, float[] out16)
+```
+- Сэмплирует в 8 углах object-space bbox, преобразуя через `localPose` (передаётся без camera view rotation).
+- Выход: 16 float — `[c0.blockU, c0.skyV, c1.blockU, c1.skyV, ..., c7.skyV]`.
+- Кыч кэша: `be.getBlockPos().asLong() ^ partIdentityHash` (разные части одного BE не коллидируют).
+- `Long2ObjectOpenHashMap<Entry8>` (хранит `float[16]` + `lastFrame`).
+
+**`getOrSample16`** — сэмплирование 2×4×2 решётки (16 зондов).
+```java
+public static void getOrSample16(BlockEntity be, long partIdentityHash,
+    float[] objBbox, BlockPos blockPos, Matrix4f localPose,
+    int packedLightFallback, float[] out32)
+```
+- 4 Y-среза, на каждом срезе 4 XZ-угла = 16 зондов. Выход: 32 float.
+- Для высоких машин, где 8-corner сет пропускает локальный блочный свет на средней высоте.
+- `Long2ObjectOpenHashMap<Entry16>` (хранит `float[32]` + `lastFrame`).
+
+#### SAMPLE_INSET (новое)
 
 ```java
-public static void getOrSample(BlockEntity be, int packedLight, float[] outUV, int outOffset);
-public static void onFrameStart();
+private static final float SAMPLE_INSET = 1.0f / 64.0f;
 ```
 
-Логика:
+Каждый угол bbox перед флором втягивается на 1/64 блока к центру. Цель: избежать мерцания float32 при больших камерных оффсетах, которые отправляют флорнутый индекс блока между двумя соседями от кадра к кадру (симптом «модели мерцают рядом с факелом»). Зажаты до half-span на ось, чтобы плоские декоративные элементы (нулевая толщина по Y) не перевернули порядок углов.
 
-1. Fast-path single-slot cache (последний BE, ключ — `pos.asLong()`).
-2. На miss — сэмплирует `Level.getBlockState` + `LevelRenderer.getLightColor` в 6 точках face centers вокруг рендер-bounding box, усредняет.
-3. Кладёт в `Long2ObjectOpenHashMap<float[2]>` для возможных повторных вызовов в этом кадре.
+#### BASE_POSE (новое)
 
-Это **критическая оптимизация**: на 11-парт ассемблере без кэша — 11 одинаковых сэмплов = ~17% frame time.
+```java
+public static final ThreadLocal<Matrix4f> BASE_POSE = ThreadLocal.withInitial(Matrix4f::new);
+public static final ThreadLocal<Boolean>  BASE_POSE_SET = ThreadLocal.withInitial(() -> false);
+```
+
+Thread-local промежуточный поз для `localPose` — трансформ без camera view rotation. Заполняется в `InstancedStaticPartRenderer.addInstance()` перед вызовами `getOrSample8`/`getOrSample16`.
+
+#### Логика инвалидации
+
+- `onFrameStart()` — бампит `currentFrame`, сбрасывает single-slot fast path. Периодическая очистка (каждые 600 кадров) удаляет записи старше 60 кадров.
+- `invalidateAll()` — полная очистка всех трёх кэшей (при смене dimension/world unload).
+- Shadow pass использует те же кэши, что и main pass (frame counter один на оба), но per-vertex path пропускает `getOrSample8`/`getOrSample16` на сень через `isShadowPass` guard в `IrisRenderBatch`.
+
+Критическая оптимизация: на 11-парт ассемблере без кэша — 11 одинаковых сэмплов = ~17% frame time. С кэшом — ~1 сэмпл на машину на кадр.
 
 ### 14.3 DoorChunkInvalidationHelper
 
