@@ -163,6 +163,14 @@ public class ModLanguageProvider extends LanguageProvider {
             });
         }
 
+        if ("ru_ru".equals(this.locale)) {
+            add(ModBlocks.CRUCIBLE.get(), "Тигель (WIP)");
+            add("container.hbm_m.crucible", "Тигель");
+        } else {
+            add(ModBlocks.CRUCIBLE.get(), "Crucible (WIP)");
+            add("container.hbm_m.crucible", "Crucible");
+        }
+
 
 
     // ЯВНАЯ ЛОКАЛИЗАЦИЯ ДЛЯ ОСТАЛЬНЫХ КЛЮЧЕЙ

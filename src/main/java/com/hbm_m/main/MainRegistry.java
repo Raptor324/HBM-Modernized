@@ -1161,6 +1161,8 @@ public class MainRegistry {
             event.accept(ModBlocks.SHREDDER);
             event.accept(ModBlocks.WOOD_BURNER);
             event.accept(ModBlocks.CHEMICAL_PLANT);
+            event.accept(ModBlocks.CRUCIBLE);
+            event.accept(ModBlocks.GAS_CENTRIFUGE);
             event.accept(ModBlocks.CENTRIFUGE);
             event.accept(ModBlocks.CRYSTALLIZER);
             event.accept(ModBlocks.MACHINE_ASSEMBLER);

@@ -133,6 +133,11 @@ public class ModBlockEntities {
                             BlockEntityType.Builder.of(MachineChemicalPlantBlockEntity::new,
                                     ModBlocks.CHEMICAL_PLANT.get()).build(null));
 
+    public static final RegistryObject<BlockEntityType<MachineGasCentrifugeBlockEntity>> GAS_CENTRIFUGE_BE =
+            BLOCK_ENTITIES.register("gas_centrifuge_be", () ->
+                    BlockEntityType.Builder.of(MachineGasCentrifugeBlockEntity::new,
+                            ModBlocks.GAS_CENTRIFUGE.get()).build(null));
+
     public static final RegistryObject<BlockEntityType<MachineFluidTankBlockEntity>> FLUID_TANK_BE =
             BLOCK_ENTITIES.register("fluid_tank_be", () ->
                     BlockEntityType.Builder.of(MachineFluidTankBlockEntity::new,

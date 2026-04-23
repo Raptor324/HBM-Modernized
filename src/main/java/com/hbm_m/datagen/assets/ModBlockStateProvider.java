@@ -418,6 +418,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Machines
         customMachineBlock(ModBlocks.CRYSTALLIZER);
         customMachineBlock(ModBlocks.CHEMICAL_PLANT);
+        customMachineBlock(ModBlocks.CRUCIBLE);
         customMachineBlock(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
         customMachineBlock(ModBlocks.CENTRIFUGE);
         customMachineBlock(ModBlocks.INDUSTRIAL_TURBINE);

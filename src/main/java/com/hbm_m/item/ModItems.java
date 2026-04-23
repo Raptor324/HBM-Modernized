@@ -1259,6 +1259,9 @@ public class ModItems {
 	public static final RegistryObject<Item> CHEMICAL_PLANT = ITEMS.register("chemical_plant",
         () -> new MultiblockBlockItem(ModBlocks.CHEMICAL_PLANT.get(), new Item.Properties()));
 
+	public static final RegistryObject<Item> GAS_CENTRIFUGE = ITEMS.register("gas_centrifuge",
+        () -> new MultiblockBlockItem(ModBlocks.GAS_CENTRIFUGE.get(), new Item.Properties()));
+
 	public static final RegistryObject<Item> CRYSTALLIZER = ITEMS.register("crystallizer",
         () -> new MultiblockBlockItem(ModBlocks.CRYSTALLIZER.get(), new Item.Properties()));
 

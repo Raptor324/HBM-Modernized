@@ -15,10 +15,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraftforge.registries.ForgeRegistries;
-
 /**
  * Centrifuge recipe registry - adapted from 1.7.10 HBM.
- * Uses direct HashMap lookup for reliable recipe matching.
+ * Uses direct HashMap lookup for reliable recipe matching. Code made by TRFFuchs
  */
 public class CentrifugeRecipes {
 

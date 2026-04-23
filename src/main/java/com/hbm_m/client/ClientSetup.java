@@ -32,6 +32,7 @@ import com.hbm_m.client.render.AirstrikeNukeEntityRenderer;
 import com.hbm_m.client.render.BatterySocketCreativeRenderer;
 import com.hbm_m.client.render.ChemicalPlantRenderer;
 import com.hbm_m.client.render.DoorRenderer;
+import com.hbm_m.client.render.GasCentrifugeRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.HeatingOvenRenderer;
 import com.hbm_m.client.render.IndustrialTurbineRenderer;
@@ -61,8 +62,10 @@ import com.hbm_m.inventory.gui.GUIBatterySocket;
 import com.hbm_m.inventory.gui.GUIMachineBattery;
 import com.hbm_m.inventory.gui.GUIMachineCentrifuge;
 import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
+import com.hbm_m.inventory.gui.GUIMachineCrucible;
 import com.hbm_m.inventory.gui.GUIMachineFluidTank;
 import com.hbm_m.inventory.gui.GUIMachineFrackingTower;
+import com.hbm_m.inventory.gui.GUIMachineGasCentrifuge;
 import com.hbm_m.inventory.gui.GUIMachinePress;
 import com.hbm_m.inventory.gui.GUIMachineShredder;
 import com.hbm_m.inventory.gui.GUIMachineWoodBurner;
@@ -196,6 +199,8 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
             MenuScreens.register(ModMenuTypes.CHEMICAL_PLANT_MENU.get(), GUIMachineChemicalPlant::new);
             MenuScreens.register(ModMenuTypes.FRACTURING_TOWER_MENU.get(), GUIMachineFrackingTower::new);
+            MenuScreens.register(ModMenuTypes.GAS_CENTRIFUGE_MENU.get(), GUIMachineGasCentrifuge::new);
+            MenuScreens.register(ModMenuTypes.CRUCIBLE_MENU.get(), GUIMachineCrucible::new);
 
             // Register BlockEntity renderers
             BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
@@ -203,6 +208,7 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), ChemicalPlantRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.GAS_CENTRIFUGE_BE.get(), GasCentrifugeRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);

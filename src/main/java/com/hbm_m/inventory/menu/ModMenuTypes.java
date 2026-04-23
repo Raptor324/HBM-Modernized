@@ -78,6 +78,12 @@ public class ModMenuTypes {
 	public static final RegistryObject<MenuType<MachineFrackingTowerMenu>> FRACTURING_TOWER_MENU =
             MENUS.register("fracking_tower_menu", () -> IForgeMenuType.create(MachineFrackingTowerMenu::new));
 
+    public static final RegistryObject<MenuType<MachineGasCentrifugeMenu>> GAS_CENTRIFUGE_MENU =
+            MENUS.register("gas_centrifuge_menu", () -> IForgeMenuType.create(MachineGasCentrifugeMenu::new));
+
+    public static final RegistryObject<MenuType<MachineCrucibleMenu>> CRUCIBLE_MENU =
+            MENUS.register("crucible_menu", () -> IForgeMenuType.create(MachineCrucibleMenu::new));
+
     public static final RegistryObject<MenuType<HeatingOvenMenu>> HEATING_OVEN_MENU =
             MENUS.register("heating_oven_menu", () -> IForgeMenuType.create(HeatingOvenMenu::new));
 
