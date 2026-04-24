@@ -132,7 +132,7 @@ public final class ShredderRecipeGenerator {
             String ingotName = ingot.getName();
 
             // Безопасно получаем блок. Если его нет - будет null, но без краша.
-            net.minecraftforge.registries.RegistryObject<net.minecraft.world.level.block.Block> blockRegistry = null;
+            dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.level.block.Block> blockRegistry = null;
 
             if (ModBlocks.hasIngotBlock(ingot)) {
                 blockRegistry = ModBlocks.getIngotBlock(ingot);

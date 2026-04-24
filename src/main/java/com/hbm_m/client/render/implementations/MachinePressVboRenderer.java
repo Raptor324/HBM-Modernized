@@ -4,7 +4,6 @@ import org.joml.Matrix4f;
 
 import com.hbm_m.client.model.PressBakedModel;
 import com.hbm_m.client.render.GlobalMeshCache;
-import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.renderer.MultiBufferSource;

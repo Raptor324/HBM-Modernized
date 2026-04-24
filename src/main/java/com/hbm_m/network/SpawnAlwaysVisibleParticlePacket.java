@@ -1,6 +1,5 @@
 package com.hbm_m.network;
 
-import com.hbm_m.particle.ModExplosionParticles;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;

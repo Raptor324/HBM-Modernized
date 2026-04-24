@@ -6,9 +6,7 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

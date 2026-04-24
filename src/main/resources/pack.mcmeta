@@ -1,8 +1,6 @@
 {
   "pack": {
-    "description": {
-      "text": "${mod_id} resources"
-    },
+    "description": "HBM Modernized resources",
     "pack_format": 15
   }
 }

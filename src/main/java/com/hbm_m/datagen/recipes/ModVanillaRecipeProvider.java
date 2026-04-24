@@ -22,7 +22,8 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraftforge.registries.RegistryObject;
+
+import dev.architectury.registry.registries.RegistrySupplier;
 
 public class ModVanillaRecipeProvider extends RecipeProvider {
 
@@ -53,17 +54,17 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
     }
 
     //  БЕЗОПАСНАЯ ПРОВЕРКА NULL
-    private boolean isItemSafe(RegistryObject<?> itemObj) {
-        return itemObj != null && itemObj.get() != null;
+    private boolean isItemSafe(RegistrySupplier<?> itemObj) {
+        return itemObj != null && itemObj.isPresent() && itemObj.get() != null;
     }
 
     private ItemLike safeIngot(ModIngots ingot) {
-        RegistryObject<?> obj = ModItems.getIngot(ingot);
+        RegistrySupplier<?> obj = ModItems.getIngot(ingot);
         return isItemSafe(obj) ? (ItemLike) obj.get() : Items.AIR;
     }
 
     private Item safePowder(ModPowders powder) {
-        RegistryObject<?> obj = ModItems.getPowders(powder);
+        RegistrySupplier<?> obj = ModItems.getPowders(powder);
         return isItemSafe(obj) ? (Item) obj.get() : null;
     }
 

@@ -1,6 +1,5 @@
 package com.hbm_m.api.energy;
 
-import com.hbm_m.api.energy.ConverterBlockEntity;
 import net.minecraftforge.energy.IEnergyStorage;
 
 public class HbmForgeWrapper implements IEnergyStorage {

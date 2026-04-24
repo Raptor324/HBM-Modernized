@@ -4,7 +4,6 @@ import com.hbm_m.main.MainRegistry;
 import com.hbm_m.world.biome.CraterBiomes;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
-import net.minecraft.client.renderer.FogRenderer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
 import net.minecraftforge.api.distmarker.Dist;

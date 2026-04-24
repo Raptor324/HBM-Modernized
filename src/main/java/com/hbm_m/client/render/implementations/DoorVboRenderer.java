@@ -11,7 +11,6 @@ import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
-import com.hbm_m.client.render.SingleMeshVboRenderer.VboData;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import net.minecraft.client.renderer.MultiBufferSource;

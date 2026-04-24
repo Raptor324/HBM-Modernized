@@ -1,6 +1,5 @@
 package com.hbm_m.api.energy;
 
-import com.hbm_m.api.energy.*;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IEnergyProvider;

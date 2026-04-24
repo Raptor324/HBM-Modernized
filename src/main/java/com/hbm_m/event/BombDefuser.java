@@ -22,14 +22,15 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.RegistryObject;
+
+import dev.architectury.registry.registries.RegistrySupplier;
 
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class BombDefuser {
 
     private static final Random RANDOM = new Random();
 
-    private static final List<RegistryObject<Block>> BOMBS = List.of(
+    private static final List<RegistrySupplier<Block>> BOMBS = List.of(
             ModBlocks.MINE_AP,
             ModBlocks.MINE_FAT,
             ModBlocks.DUD_CONVENTIONAL,
@@ -37,15 +38,15 @@ public class BombDefuser {
             ModBlocks.DUD_NUKE
     );
 
-    private static final List<RegistryObject<?>> DEFUSE_SOUNDS = List.of(
+    private static final List<RegistrySupplier<net.minecraft.sounds.SoundEvent>> DEFUSE_SOUNDS = List.of(
             ModSounds.CLICK
     );
 
     // Новый класс для фиксированного количества дропа
-    private record DropAmount(RegistryObject<?> item, int amount) {}
+    private record DropAmount(RegistrySupplier<?> item, int amount) {}
 
     // Убираем "шансы", теперь фиксированное количество дропа для каждого типа
-    private static final Map<RegistryObject<Block>, List<DropAmount>> BOMB_DROPS = Map.of(
+    private static final Map<RegistrySupplier<Block>, List<DropAmount>> BOMB_DROPS = Map.of(
             ModBlocks.MINE_FAT, List.of(
                     new DropAmount(ModItems.BILLET_PLUTONIUM, 1),
                     new DropAmount(ModItems.PLATE_STEEL, 3),
@@ -84,9 +85,9 @@ public class BombDefuser {
         BlockPos pos = event.getPos();
         Block block = level.getBlockState(pos).getBlock();
 
-        RegistryObject<Block> matchedCrate = null;
-        for (RegistryObject<Block> crate : BOMBS) {
-            Block b = crate.orElse(null);
+        RegistrySupplier<Block> matchedCrate = null;
+        for (RegistrySupplier<Block> crate : BOMBS) {
+            Block b = crate.getOrNull();
             if (b != null && b == block) {
                 matchedCrate = crate;
                 break;
@@ -102,10 +103,10 @@ public class BombDefuser {
 
         level.destroyBlock(pos, false);
 
-        RegistryObject<?> soundObj = DEFUSE_SOUNDS.get(RANDOM.nextInt(DEFUSE_SOUNDS.size()));
+        RegistrySupplier<net.minecraft.sounds.SoundEvent> soundObj = DEFUSE_SOUNDS.get(RANDOM.nextInt(DEFUSE_SOUNDS.size()));
         if (soundObj != null) {
-            var soundEvent = soundObj.get();
-            if (soundEvent instanceof net.minecraft.sounds.SoundEvent se) {
+            net.minecraft.sounds.SoundEvent se = soundObj.get();
+            if (se != null) {
                 level.playSound(null, pos, se, net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
             }
         }

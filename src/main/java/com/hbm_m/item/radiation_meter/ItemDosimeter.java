@@ -23,7 +23,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.RegistryObject;
 
 
 public class ItemDosimeter extends AbstractRadiationMeterItem {
@@ -125,20 +124,17 @@ public class ItemDosimeter extends AbstractRadiationMeterItem {
         }
 
         // Этот блок остается таким же, т.к. он универсален
-        Optional<RegistryObject<SoundEvent>> soundRegistryObject = switch (soundIndex) {
-            case 1 -> Optional.of(ModSounds.GEIGER_1);
-            case 2 -> Optional.of(ModSounds.GEIGER_2);
-            case 3 -> Optional.of(ModSounds.GEIGER_3);
+        Optional<SoundEvent> sound = switch (soundIndex) {
+            case 1 -> Optional.of(ModSounds.GEIGER_1.get());
+            case 2 -> Optional.of(ModSounds.GEIGER_2.get());
+            case 3 -> Optional.of(ModSounds.GEIGER_3.get());
             // Остальные кейсы просто никогда не будут вызваны
             default -> Optional.empty();
         };
 
-        soundRegistryObject.ifPresent(regObject -> {
-            SoundEvent soundEvent = regObject.get();
-            if (soundEvent != null) {
-                ResourceLocation soundLocation = soundEvent.getLocation();
-                ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
-            }
+        sound.ifPresent(soundEvent -> {
+            ResourceLocation soundLocation = soundEvent.getLocation();
+            ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
         });
     }
 }

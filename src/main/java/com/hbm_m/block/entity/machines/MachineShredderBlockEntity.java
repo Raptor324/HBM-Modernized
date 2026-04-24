@@ -26,7 +26,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.registries.RegistryObject;
+import dev.architectury.registry.registries.RegistrySupplier;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraftforge.api.distmarker.Dist;
@@ -575,17 +575,17 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         if (item == ModItems.DUST.get() || item == ModItems.DUST_TINY.get()) {
             return true;
         }
-        for (RegistryObject<Item> powder : ModItems.POWDERS.values()) {
+        for (RegistrySupplier<Item> powder : ModItems.POWDERS.values()) {
             if (powder != null && powder.isPresent() && powder.get() == item) {
                 return true;
             }
         }
-        for (RegistryObject<Item> powder : ModItems.INGOT_POWDERS.values()) {
+        for (RegistrySupplier<Item> powder : ModItems.INGOT_POWDERS.values()) {
             if (powder != null && powder.isPresent() && powder.get() == item) {
                 return true;
             }
         }
-        for (RegistryObject<Item> powder : ModItems.INGOT_POWDERS_TINY.values()) {
+        for (RegistrySupplier<Item> powder : ModItems.INGOT_POWDERS_TINY.values()) {
             if (powder != null && powder.isPresent() && powder.get() == item) {
                 return true;
             }

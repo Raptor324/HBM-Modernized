@@ -1,5 +1,7 @@
 package com.hbm_m.datagen;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Set;
 
 import com.hbm_m.block.ModBlocks;
@@ -27,8 +29,8 @@ import net.minecraft.world.level.storage.loot.predicates.MatchTool;
 import net.minecraft.world.level.storage.loot.providers.nbt.ContextNbtProvider;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 
 public class ModBlockLootTableProvider extends BlockLootSubProvider {
 
@@ -40,7 +42,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         // 1) Базовые лут-таблицы для всех блоков:
         // - если есть обычный BlockItem -> dropSelf
         // - если BlockItem нет (registerBlockWithoutItem) -> пробуем дропнуть item с тем же id
-        for (RegistryObject<Block> entry : ModBlocks.BLOCKS.getEntries()) {
+        for (RegistrySupplier<Block> entry : ModBlocks.BLOCKS) {
             Block block = entry.get();
             if (block.asItem() != Items.AIR) {
                 this.dropSelf(block);
@@ -415,10 +417,11 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
     @Override
     protected Iterable<Block> getKnownBlocks() {
         // Генерируем для всех зарегистрированных блоков мода
-        return ModBlocks.BLOCKS.getEntries()
-                .stream()
-                .flatMap(RegistryObject::stream)
-                .toList();
+        List<Block> list = new ArrayList<>();
+        for (RegistrySupplier<Block> entry : ModBlocks.BLOCKS) {
+            list.add(entry.get());
+        }
+        return list;
     }
 
 

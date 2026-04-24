@@ -5,7 +5,6 @@ package com.hbm_m.item.radiation_meter;
 // Используется на сервере, отправляет данные на клиент для звуков и HUD.
 
 import net.minecraft.sounds.SoundEvent;
-import net.minecraftforge.registries.RegistryObject;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.RadiationDataPacket;
@@ -104,22 +103,19 @@ public class ItemGeigerCounter extends AbstractRadiationMeterItem {
             soundIndex = 1; // Редкий фоновый щелчок
         }
 
-        Optional<RegistryObject<SoundEvent>> soundRegistryObject = switch (soundIndex) {
-            case 1 -> Optional.of(ModSounds.GEIGER_1);
-            case 2 -> Optional.of(ModSounds.GEIGER_2);
-            case 3 -> Optional.of(ModSounds.GEIGER_3);
-            case 4 -> Optional.of(ModSounds.GEIGER_4);
-            case 5 -> Optional.of(ModSounds.GEIGER_5);
-            case 6 -> Optional.of(ModSounds.GEIGER_6);
+        Optional<SoundEvent> sound = switch (soundIndex) {
+            case 1 -> Optional.of(ModSounds.GEIGER_1.get());
+            case 2 -> Optional.of(ModSounds.GEIGER_2.get());
+            case 3 -> Optional.of(ModSounds.GEIGER_3.get());
+            case 4 -> Optional.of(ModSounds.GEIGER_4.get());
+            case 5 -> Optional.of(ModSounds.GEIGER_5.get());
+            case 6 -> Optional.of(ModSounds.GEIGER_6.get());
             default -> Optional.empty();
         };
 
-        soundRegistryObject.ifPresent(regObject -> {
-            SoundEvent soundEvent = regObject.get();
-            if (soundEvent != null) {
-                ResourceLocation soundLocation = soundEvent.getLocation();
-                ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
-            }
+        sound.ifPresent(soundEvent -> {
+            ResourceLocation soundLocation = soundEvent.getLocation();
+            ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
         });
     }
 }

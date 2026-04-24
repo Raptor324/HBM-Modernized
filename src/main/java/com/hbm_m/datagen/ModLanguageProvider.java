@@ -19,7 +19,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.data.LanguageProvider;
-import net.minecraftforge.registries.RegistryObject;
+
+import dev.architectury.registry.registries.RegistrySupplier;
 
 public class ModLanguageProvider extends LanguageProvider {
     // 1. Создаем НАШЕ СОБСТВЕННОЕ поле для хранения языка
@@ -91,7 +92,7 @@ public class ModLanguageProvider extends LanguageProvider {
     private void addIngotBlockTranslations(Set<ResourceLocation> translatedBlocks) {
         for (ModIngots ingot : ModIngots.values()) {
             if (ENABLED_INGOT_BLOCKS.contains(ingot.getName())) {
-                RegistryObject<Block> block = getIngotBlock(ingot);
+                RegistrySupplier<Block> block = getIngotBlock(ingot);
                 if (block != null && !translatedBlocks.contains(block.getId())) {
                     add(block.get(), buildBlockName(ingot));
                 }
@@ -127,7 +128,7 @@ public class ModLanguageProvider extends LanguageProvider {
     protected void addTranslations() {
         // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            RegistryObject<Item> ingotItem = ModItems.getIngot(ingot);
+            RegistrySupplier<Item> ingotItem = ModItems.getIngot(ingot);
             if (ingotItem != null && ingotItem.isPresent()) {
                 String translation = ingot.getTranslation(this.locale);
                 if (translation != null) {
@@ -140,7 +141,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
         // АВТОМАТИЧЕСКАЯ ЛОКАЛИЗАЦИЯ ПОРОШКОВ
         for (ModPowders powders : ModPowders.values()) {
-            RegistryObject<Item> powderItem = ModItems.getPowders(powders);
+            RegistrySupplier<Item> powderItem = ModItems.getPowders(powders);
             if (powderItem != null && powderItem.isPresent()) {
                 String translation = powders.getTranslation(this.locale);
                 if (translation != null) {
@@ -152,7 +153,7 @@ public class ModLanguageProvider extends LanguageProvider {
 
         // ДОБАВЛЕНИЕ ЛОКАЛИЗАЦИИ ДЛЯ ПОРОШКОВ ИЗ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            RegistryObject<Item> powder = ModItems.getPowder(ingot);
+            RegistrySupplier<Item> powder = ModItems.getPowder(ingot);
             if (powder != null && powder.isPresent() && !translatedPowders.contains(powder.getId())) {
                 add(powder.get(), buildPowderName(ingot, false));
             }

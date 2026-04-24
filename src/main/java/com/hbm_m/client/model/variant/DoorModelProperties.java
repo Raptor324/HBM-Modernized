@@ -1,6 +1,5 @@
 package com.hbm_m.client.model.variant;
 
-import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
 
 /**

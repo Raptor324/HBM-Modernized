@@ -19,14 +19,15 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.RegistryObject;
+
+import dev.architectury.registry.registries.RegistrySupplier;
 
 public class GrenadeItem extends Item {
     
     private final GrenadeType grenadeType;
-    private final RegistryObject<EntityType<GrenadeProjectileEntity>> entityType;
+    private final RegistrySupplier<EntityType<GrenadeProjectileEntity>> entityType;
 
-    public GrenadeItem(Properties properties, GrenadeType grenadeType, RegistryObject<EntityType<GrenadeProjectileEntity>> entityType) {
+    public GrenadeItem(Properties properties, GrenadeType grenadeType, RegistrySupplier<EntityType<GrenadeProjectileEntity>> entityType) {
         super(properties);
         this.grenadeType = grenadeType;
         this.entityType = entityType;

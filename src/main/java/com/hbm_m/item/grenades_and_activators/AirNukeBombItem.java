@@ -12,11 +12,13 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.RegistryObject;
+
+import dev.architectury.registry.registries.RegistrySupplier;
 
 public class AirNukeBombItem extends Item {
 
-    public AirNukeBombItem(Properties properties, RegistryObject<? extends EntityType<?>> airNukeBombProjectile) {
+    @SuppressWarnings("unused")
+    public AirNukeBombItem(Properties properties, RegistrySupplier<? extends EntityType<?>> airNukeBombProjectile) {
         super(properties);
     }
 

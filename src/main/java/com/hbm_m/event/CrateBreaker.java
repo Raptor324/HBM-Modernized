@@ -22,14 +22,15 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.registries.RegistryObject;
+
+import dev.architectury.registry.registries.RegistrySupplier;
 
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class CrateBreaker {
 
     private static final Random RANDOM = new Random();
 
-    private static final List<RegistryObject<Block>> BREAKABLE_CRATES = List.of(
+    private static final List<RegistrySupplier<Block>> BREAKABLE_CRATES = List.of(
             ModBlocks.CRATE,
             ModBlocks.CRATE_CONSERVE,
             ModBlocks.CRATE_LEAD,
@@ -37,7 +38,7 @@ public class CrateBreaker {
             ModBlocks.CRATE_METAL
     );
 
-    private static final List<RegistryObject<?>> CRACK_SOUNDS = List.of(
+    private static final List<RegistrySupplier<net.minecraft.sounds.SoundEvent>> CRACK_SOUNDS = List.of(
             ModSounds.CRATEBREAK1,
             ModSounds.CRATEBREAK2,
             ModSounds.CRATEBREAK3,
@@ -46,7 +47,7 @@ public class CrateBreaker {
     );
 
     // Дроп с шансом для каждого ящика: список (предмет, шанс выпадения)
-    private static final Map<RegistryObject<Block>, List<DropChance>> CRATE_DROPS = Map.of(
+    private static final Map<RegistrySupplier<Block>, List<DropChance>> CRATE_DROPS = Map.of(
             ModBlocks.CRATE, List.of(
                     new DropChance(ModBlocks.CRT_BROKEN, 0.1),
                     new DropChance(ModBlocks.BARREL_CORRODED, 0.1),
@@ -254,7 +255,7 @@ public class CrateBreaker {
 
     );
 
-    private record DropChance(RegistryObject<?> item, double chance, int count) { public DropChance(RegistryObject<?> item, double chance) {
+    private record DropChance(RegistrySupplier<?> item, double chance, int count) { public DropChance(RegistrySupplier<?> item, double chance) {
         this(item, chance, 1); // если количество не указано, будет 1
     }
     }
@@ -273,9 +274,9 @@ public class CrateBreaker {
         BlockPos pos = event.getPos();
         Block block = level.getBlockState(pos).getBlock();
 
-        RegistryObject<Block> matchedCrate = null;
-        for (RegistryObject<Block> crate : BREAKABLE_CRATES) {
-            Block b = crate.orElse(null);
+        RegistrySupplier<Block> matchedCrate = null;
+        for (RegistrySupplier<Block> crate : BREAKABLE_CRATES) {
+            Block b = crate.getOrNull();
             if (b != null && b == block) {
                 matchedCrate = crate;
                 break;
@@ -294,10 +295,10 @@ public class CrateBreaker {
         level.destroyBlock(pos, false);
 
         // Случайный звук треска
-        RegistryObject<?> soundObj = CRACK_SOUNDS.get(RANDOM.nextInt(CRACK_SOUNDS.size()));
+        RegistrySupplier<net.minecraft.sounds.SoundEvent> soundObj = CRACK_SOUNDS.get(RANDOM.nextInt(CRACK_SOUNDS.size()));
         if (soundObj != null) {
-            var soundEvent = soundObj.get();
-            if (soundEvent instanceof net.minecraft.sounds.SoundEvent se) {
+            net.minecraft.sounds.SoundEvent se = soundObj.get();
+            if (se != null) {
                 level.playSound(null, pos, se, net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
             }
         }

@@ -16,7 +16,7 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.registries.RegistryObject;
+import dev.architectury.registry.registries.RegistrySupplier;
 
 import javax.annotation.Nonnull;
 import java.util.concurrent.CompletableFuture;
@@ -60,7 +60,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
         TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots")));
 
         for (ModIngots ingot : ModIngots.values()) {
-            RegistryObject<Item> ingotObject = ModItems.getIngot(ingot);
+            RegistrySupplier<Item> ingotObject = ModItems.getIngot(ingot);
             //  ПРОВЕРКА НА NULL И НА РЕГИСТРАЦИЮ
             if (ingotObject != null && ingotObject.isPresent()) {
                 String ingotName = ingot.getName();
@@ -74,7 +74,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
         TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders")));
 
         for (ModPowders powder : ModPowders.values()) {
-            RegistryObject<Item> powderObject = ModItems.getPowders(powder);
+            RegistrySupplier<Item> powderObject = ModItems.getPowders(powder);
             //  ПОЛНАЯ ПРОВЕРКА - ИСПРАВЛЕНА ОСНОВНАЯ ОШИБКА!
             if (powderObject != null && powderObject.isPresent()) {
                 String powderName = powder.getName();
@@ -86,7 +86,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
         //  ПОРОШКИ ИЗ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            RegistryObject<Item> powderObject = ModItems.getPowder(ingot);
+            RegistrySupplier<Item> powderObject = ModItems.getPowder(ingot);
             if (powderObject != null && powderObject.isPresent()) {  //  ДОБАВЛЕНА ПРОВЕРКА isPresent()
                 this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName())))
                         .add(powderObject.get());

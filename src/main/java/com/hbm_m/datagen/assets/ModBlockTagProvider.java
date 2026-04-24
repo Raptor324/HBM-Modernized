@@ -26,7 +26,8 @@ import net.minecraft.world.level.block.WebBlock;
 import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.data.BlockTagsProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
-import net.minecraftforge.registries.RegistryObject;
+
+import dev.architectury.registry.registries.RegistrySupplier;
 
 public class ModBlockTagProvider extends BlockTagsProvider {
 
@@ -85,7 +86,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
         );
 
         // --- 3. Автоматический цикл ---
-        for (RegistryObject<Block> regObject : ModBlocks.BLOCKS.getEntries()) {
+        for (RegistrySupplier<Block> regObject : ModBlocks.BLOCKS) {
             Block block = regObject.get();
 
             // Фильтр: пропускаем растения, листья, паутину

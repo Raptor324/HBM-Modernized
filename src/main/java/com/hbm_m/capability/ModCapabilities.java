@@ -1,12 +1,16 @@
 package com.hbm_m.capability;
 
-import com.hbm_m.api.energy.*;
 import com.hbm_m.interfaces.IEnergyConnector;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
 
+//? if neoforge {
+/*import net.neoforged.neoforge.capabilities.*;
+import net.neoforged.bus.api.SubscribeEvent;
+*///?} else {
 import net.minecraftforge.common.capabilities.*;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
+//?}
 
 public class ModCapabilities {
     public static final Capability<IEnergyProvider> HBM_ENERGY_PROVIDER = CapabilityManager.get(new CapabilityToken<>() {});

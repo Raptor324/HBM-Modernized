@@ -20,14 +20,16 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.registries.RegistryObject;
+
+import dev.architectury.registry.registries.RegistrySupplier;
 
 
 public class GrenadeIfItem extends Item {
 
     private final GrenadeIfType grenadeType;
 
-    public GrenadeIfItem(Properties properties, GrenadeIfType grenadeIf, RegistryObject<EntityType<GrenadeIfProjectileEntity>> grenadeType) {
+    @SuppressWarnings("unused")
+    public GrenadeIfItem(Properties properties, GrenadeIfType grenadeIf, RegistrySupplier<EntityType<GrenadeIfProjectileEntity>> grenadeType) {
         super(properties);
         this.grenadeType = grenadeIf;
 

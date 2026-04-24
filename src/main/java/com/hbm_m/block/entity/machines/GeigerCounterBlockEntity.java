@@ -14,7 +14,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.registries.RegistryObject;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -73,19 +72,19 @@ public class GeigerCounterBlockEntity extends BlockEntity {
             soundIndex = 1; // Редкий фоновый щелчок
         }
 
-        Optional<RegistryObject<SoundEvent>> soundRegistryObject = switch (soundIndex) {
-            case 1 -> Optional.of(ModSounds.GEIGER_1);
-            case 2 -> Optional.of(ModSounds.GEIGER_2);
-            case 3 -> Optional.of(ModSounds.GEIGER_3);
-            case 4 -> Optional.of(ModSounds.GEIGER_4);
-            case 5 -> Optional.of(ModSounds.GEIGER_5);
-            case 6 -> Optional.of(ModSounds.GEIGER_6);
+        Optional<SoundEvent> sound = switch (soundIndex) {
+            case 1 -> Optional.of(ModSounds.GEIGER_1.get());
+            case 2 -> Optional.of(ModSounds.GEIGER_2.get());
+            case 3 -> Optional.of(ModSounds.GEIGER_3.get());
+            case 4 -> Optional.of(ModSounds.GEIGER_4.get());
+            case 5 -> Optional.of(ModSounds.GEIGER_5.get());
+            case 6 -> Optional.of(ModSounds.GEIGER_6.get());
             default -> Optional.empty();
         };
 
         // Проигрываем звук в мире
-        soundRegistryObject.ifPresent(regObject -> {
-            level.playSound(null, pos, regObject.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+        sound.ifPresent(event -> {
+            level.playSound(null, pos, event, SoundSource.BLOCKS, 1.0F, 1.0F);
         });
     }
 

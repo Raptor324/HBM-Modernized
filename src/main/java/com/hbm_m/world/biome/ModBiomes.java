@@ -6,8 +6,8 @@ import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraftforge.registries.DeferredRegister;
-import net.minecraftforge.registries.RegistryObject;
+import dev.architectury.registry.registries.DeferredRegister;
+import dev.architectury.registry.registries.RegistrySupplier;
 
 /**
  * MOD BIOMES v3.0 - FIXED
@@ -29,16 +29,16 @@ public class ModBiomes {
 
     // ГЛАВНЫЙ DeferredRegister - используем правильный реестр
     public static final DeferredRegister<Biome> BIOMES =
-            DeferredRegister.create(Registries.BIOME, MainRegistry.MOD_ID);
+            DeferredRegister.create(MainRegistry.MOD_ID, Registries.BIOME);
 
     // РЕГИСТРАЦИЯ Inner Crater - самая тёмная зона
-    public static final RegistryObject<Biome> INNER_CRATER = BIOMES.register(
+    public static final RegistrySupplier<Biome> INNER_CRATER = BIOMES.register(
             "inner_crater",
             CraterBiomes::createInnerCraterBiome
     );
 
     //РЕГИСТРАЦИЯ Outer Crater - менее тёмная зона
-    public static final RegistryObject<Biome> OUTER_CRATER = BIOMES.register(
+    public static final RegistrySupplier<Biome> OUTER_CRATER = BIOMES.register(
             "outer_crater",
             CraterBiomes::createOuterCraterBiome
     );
@@ -51,4 +51,8 @@ public class ModBiomes {
     public static final ResourceKey<Biome> OUTER_CRATER_KEY =
             ResourceKey.create(Registries.BIOME,
                 ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "outer_crater"));
+
+    public static void init() {
+        BIOMES.register();
+    }
 }

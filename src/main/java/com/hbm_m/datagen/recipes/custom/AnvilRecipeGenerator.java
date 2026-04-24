@@ -15,6 +15,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraftforge.registries.RegistryObject;
 
 public final class AnvilRecipeGenerator {
@@ -273,7 +274,14 @@ public final class AnvilRecipeGenerator {
     }
 
     private static ItemStack stack(Object obj, int count) {
-        if (obj instanceof RegistryObject<?>) {
+        if (obj instanceof RegistrySupplier<?>) {
+            Object val = ((RegistrySupplier<?>) obj).get();
+            if (val instanceof Item) {
+                return new ItemStack((Item) val, count);
+            } else if (val instanceof Block) {
+                return new ItemStack(((Block) val).asItem(), count);
+            }
+        } else if (obj instanceof RegistryObject<?>) {
             Object val = ((RegistryObject<?>) obj).get();
             if (val instanceof Item) {
                 return new ItemStack((Item) val, count);

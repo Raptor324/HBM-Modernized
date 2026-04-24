@@ -22,8 +22,8 @@ import net.minecraftforge.client.model.generators.ItemModelBuilder;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.common.data.ExistingFileHelper;
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.registries.RegistryObject;
 
 public class ModItemModelProvider extends ItemModelProvider {
 
@@ -49,7 +49,7 @@ public class ModItemModelProvider extends ItemModelProvider {
     protected void registerModels() {
         // ЦИКЛ ДЛЯ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            RegistryObject<Item> ingotObject = ModItems.getIngot(ingot);
+            RegistrySupplier<Item> ingotObject = ModItems.getIngot(ingot);
             if (ingotObject != null && ingotObject.isPresent()) {
                 ingotItem(ingotObject);
             }
@@ -57,7 +57,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 
         // ЦИКЛ ДЛЯ ModPowders
         for (ModPowders powder : ModPowders.values()) {
-            RegistryObject<Item> powderObject = ModItems.getPowders(powder);
+            RegistrySupplier<Item> powderObject = ModItems.getPowders(powder);
             if (powderObject != null && powderObject.isPresent()) {
                 powdersItem(powderObject);
             }
@@ -65,7 +65,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 
         // ЦИКЛ ДЛЯ ПОРОШКОВ ИЗ СЛИТКОВ
         for (ModIngots ingot : ModIngots.values()) {
-            RegistryObject<Item> powder = ModItems.getPowder(ingot);
+            RegistrySupplier<Item> powder = ModItems.getPowder(ingot);
             if (powder != null && powder.isPresent() && powderTextureExists(ingot.getName())) {
                 powdersItem(powder);
             }
@@ -475,10 +475,10 @@ public class ModItemModelProvider extends ItemModelProvider {
      * Вспомогательный метод для генерации простой модели предмета.
      * Он предполагает, что модель имеет родителя "item/generated" и одну текстуру "layer0".
      * Это стандарт для большинства 2D предметов в Minecraft.
-     * @param itemObject RegistryObject предмета, для которого генерируется модель.
+     * @param itemObject RegistrySupplier предмета, для которого генерируется модель.
      */
 
-    private void simpleItem(RegistryObject<Item> itemObject) {
+    private void simpleItem(RegistrySupplier<Item> itemObject) {
         // Получаем имя предмета из его ID (например, "uranium_ingot")
         String name = itemObject.getId().getPath();
         
@@ -488,25 +488,25 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("layer0", modLoc("item/" + name));
 
     }
-    private ItemModelBuilder simpleBlockItem(RegistryObject<Block> item) {
+    private ItemModelBuilder simpleBlockItem(RegistrySupplier<Block> item) {
         return withExistingParent(item.getId().getPath(),
                 ResourceLocation.parse("item/generated")).texture("layer0",
                 ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
     }
 
-    private ItemModelBuilder blockItemFromBlockModelMachine(RegistryObject<Block> block) {
+    private ItemModelBuilder blockItemFromBlockModelMachine(RegistrySupplier<Block> block) {
         return withExistingParent(block.getId().getPath(), modLoc("block/machines/" + block.getId().getPath()));
     }
 
-    private ItemModelBuilder blockItemFromBlockModelBomb(RegistryObject<Block> block) {
+    private ItemModelBuilder blockItemFromBlockModelBomb(RegistrySupplier<Block> block) {
         return withExistingParent(block.getId().getPath(), modLoc("block/bomb/" + block.getId().getPath()));
     }
 
-    private ItemModelBuilder blockItemFromBlockModel(RegistryObject<Block> block) {
+    private ItemModelBuilder blockItemFromBlockModel(RegistrySupplier<Block> block) {
         return withExistingParent(block.getId().getPath(), modLoc("block/" + block.getId().getPath()));
     }
     
-    private void ingotItem(RegistryObject<Item> itemObject) {
+    private void ingotItem(RegistrySupplier<Item> itemObject) {
         // 1. Получаем регистрационное имя (например, "uranium_ingot")
         String registrationName = itemObject.getId().getPath();
         
@@ -523,7 +523,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("layer0", modLoc("item/ingot/" + textureFileName));
     }
 
-    private void powdersItem(RegistryObject<Item> itemObject) {
+    private void powdersItem(RegistrySupplier<Item> itemObject) {
         String registrationName = itemObject.getId().getPath();
         String baseName = registrationName.replace("_powder", "");
         String textureFileName = "powder_" + baseName;
@@ -531,7 +531,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("layer0", modLoc("item/powders/" + textureFileName));
     }
 
-    private void tinyPowderItem(RegistryObject<Item> itemObject) {
+    private void tinyPowderItem(RegistrySupplier<Item> itemObject) {
         String registrationName = itemObject.getId().getPath();
         String baseName = registrationName.replace("_powder_tiny", "");
         String textureFileName = "powder_" + baseName + "_tiny";
@@ -539,7 +539,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .texture("layer0", modLoc("item/powders/tiny/" + textureFileName));
     }
 
-    private void powderTexture(RegistryObject<Item> itemObject, String texturePath) {
+    private void powderTexture(RegistrySupplier<Item> itemObject, String texturePath) {
         withExistingParent(itemObject.getId().getPath(), "item/generated")
                 .texture("layer0", modLoc("item/" + texturePath));
     }
@@ -554,10 +554,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         return existingFileHelper.exists(texture, PackType.CLIENT_RESOURCES);
     }
 
-    private void trimmedArmorItem(RegistryObject<Item> itemRegistryObject) {
+    private void trimmedArmorItem(RegistrySupplier<Item> itemRegistrySupplier) {
         final String MOD_ID = MainRegistry.MOD_ID;
 
-        if(itemRegistryObject.get() instanceof ArmorItem armorItem) {
+        if(itemRegistrySupplier.get() instanceof ArmorItem armorItem) {
             trimMaterials.entrySet().forEach(entry -> {
 
                 ResourceKey<TrimMaterial> trimMaterial = entry.getKey();
@@ -585,19 +585,19 @@ public class ModItemModelProvider extends ItemModelProvider {
                         .texture("layer0", armorItemResLoc)
                         .texture("layer1", trimResLoc);
 
-                this.withExistingParent(itemRegistryObject.getId().getPath(),
+                this.withExistingParent(itemRegistrySupplier.getId().getPath(),
                                 mcLoc("item/generated"))
                         .override()
                         .model(new ModelFile.UncheckedModelFile(trimNameResLoc))
                         .predicate(mcLoc("trim_type"), trimValue).end()
                         .texture("layer0",
                                 ResourceLocation.fromNamespaceAndPath(MOD_ID,
-                                        "item/" + itemRegistryObject.getId().getPath()));
+                                        "item/" + itemRegistrySupplier.getId().getPath()));
             });
         }
     }
 
-    public void evenSimplerBlockItem(RegistryObject<Block> block) {
+    public void evenSimplerBlockItem(RegistrySupplier<Block> block) {
         this.withExistingParent(MainRegistry.MOD_ID + ":" + ForgeRegistries.BLOCKS.getKey(block.get()).getPath(),
                 modLoc("block/" + ForgeRegistries.BLOCKS.getKey(block.get()).getPath()));
     }
