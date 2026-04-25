@@ -67,9 +67,54 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PLATE_CAST_DARK.get(), 16)
                 .addIngredient(ModItems.INSULATOR.get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 4)
-                .addIngredient(ModItems.METAL_ROD.get(), 16)
+                .addIngredient(ModItems.METAL_ROD.get(), 16) //Needs High Speed Steel Bolt
                 .addIngredient(Items.GREEN_DYE, 4)
                 .save(writer, "large_vehicle_door");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.SILO_HATCH.get(), 1), 40, 125)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4) //Welded Plate needs added.
+                .addIngredient(ModItems.INSULATOR.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 16)
+                .addIngredient(Items.GREEN_DYE, 4)
+                .save(writer, "silo_hatch");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.SILO_HATCH_LARGE.get(), 1), 60, 125)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 6) //Welded Plate needs added.
+                .addIngredient(ModItems.INSULATOR.get(), 8)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 16)
+                .addIngredient(Items.GREEN_DYE, 8)
+                .save(writer, "silo_hatch_large");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.WATER_DOOR.get(), 1), 40, 125)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 16)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 4) //NEEDS DURA-STEEL BOLT
+                .addIngredient(ModItems.CINNABAR.get(), 1)
+                .save(writer, "water_door");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.QE_CONTAINMENT.get(), 1), 80, 125)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4) //CAST STEEL PLATE NEEDED
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 4)
+                .addIngredient(ModItems.INSULATOR.get(), 8)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 32) //DURA-STEEL BOLT NEEDED
+                .addIngredient(ModItems.CINNABAR.get(), 4) //CRACKED OIL TAR NEEDED
+                .save(writer, "door_qe_containment");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.QE_SLIDING.get(), 1), 40, 125)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(ModItems.INSULATOR.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 4)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 4) //DURA-STEEL BOLT NEEDED
+                .addIngredient(ModItems.FLUORITE.get(), 4)
+                .addIngredient(Items.GLASS, 4)
+                .save(writer, "door_qe_sliding");
     }
 
     private static void registerElectronics(Consumer<FinishedRecipe> writer) {
