@@ -30,6 +30,7 @@ import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.block.entity.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.block.entity.machines.MachineGasCentrifugeBlockEntity;
+import com.hbm_m.block.entity.machines.MachineCoolingTowerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineIndustrialBoilerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineIndustrialTurbineBlockEntity;
@@ -61,6 +62,11 @@ public class ModBlockEntities {
 	public static final RegistryObject<BlockEntityType<MachineHydraulicFrackiningTowerBlockEntity>> HYDRAULIC_FRACKINING_TOWER_BE =
 		BLOCK_ENTITIES.register("hydraulic_frackining_tower_be", () ->
             BlockEntityType.Builder.of(MachineHydraulicFrackiningTowerBlockEntity::new, ModBlocks.HYDRAULIC_FRACKINING_TOWER.get())
+                .build(null));
+
+	public static final RegistryObject<BlockEntityType<MachineCoolingTowerBlockEntity>> COOLING_TOWER_BE =
+		BLOCK_ENTITIES.register("cooling_tower_be", () ->
+            BlockEntityType.Builder.of(MachineCoolingTowerBlockEntity::new, ModBlocks.COOLING_TOWER.get())
                 .build(null));
 
     public static final RegistryObject<BlockEntityType<GeigerCounterBlockEntity>> GEIGER_COUNTER_BE =

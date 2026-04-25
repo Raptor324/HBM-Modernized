@@ -1,0 +1,19 @@
+{
+  "variants": {
+    "facing=north": {
+      "model": "hbm_m:block/machines/cooling_tower"
+    },
+    "facing=south": {
+      "model": "hbm_m:block/machines/cooling_tower",
+      "y": 180
+    },
+    "facing=west": {
+      "model": "hbm_m:block/machines/cooling_tower",
+      "y": 270
+    },
+    "facing=east": {
+      "model": "hbm_m:block/machines/cooling_tower",
+      "y": 90
+    }
+  }
+}

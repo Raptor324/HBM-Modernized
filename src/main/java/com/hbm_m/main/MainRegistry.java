@@ -1177,6 +1177,7 @@ public class MainRegistry {
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
+            event.accept(ModBlocks.COOLING_TOWER);
             event.accept(ModBlocks.FLUID_TANK);
             event.accept(ModBlocks.MACHINE_BATTERY_SOCKET);
             event.accept(ModBlocks.INDUSTRIAL_BOILER);

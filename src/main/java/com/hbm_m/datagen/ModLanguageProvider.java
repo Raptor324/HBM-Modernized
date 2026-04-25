@@ -1539,6 +1539,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.designator.set_z", "Установить текущую позицию Z...");
                 add(ModBlocks.CRYSTALLIZER.get(), "Рудный окислитель (WIP)");
                 add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Башня гидроразрыва пласта (WIP)");
+                add(ModBlocks.COOLING_TOWER.get(), "Градирня (WIP)");
                 add(ModBlocks.CHEMICAL_PLANT.get(), "Химический завод (WIP)");
                 add(ModBlocks.CENTRIFUGE.get(), "Центрифуга (WIP)");
                 add(ModBlocks.INDUSTRIAL_TURBINE.get(), "Промышленная турбина");
@@ -3093,6 +3094,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.designator.set_z", "Set coord to current Z position...");
                 add(ModBlocks.CRYSTALLIZER.get(), "Ore Acidizer (WIP)");
                 add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Hydraulic Fracking Tower (WIP)");
+                add(ModBlocks.COOLING_TOWER.get(), "Cooling Tower (WIP)");
                 add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant (WIP)");
                 add(ModBlocks.CENTRIFUGE.get(), "Centrifuge (WIP)");
                 add(ModBlocks.FLUID_TANK.get(), "Tank (WIP)");

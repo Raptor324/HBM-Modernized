@@ -1269,6 +1269,9 @@ public class ModItems {
     public static final RegistryObject<Item> HYDRAULIC_FRACKINING_TOWER = ITEMS.register("hydraulic_frackining_tower",
         () -> new MultiblockBlockItem(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), new Item.Properties()));
 
+    public static final RegistryObject<Item> COOLING_TOWER = ITEMS.register("cooling_tower",
+        () -> new MultiblockBlockItem(ModBlocks.COOLING_TOWER.get(), new Item.Properties()));
+
 	public static final RegistryObject<Item> CHEMICAL_PLANT = ITEMS.register("chemical_plant",
         () -> new MultiblockBlockItem(ModBlocks.CHEMICAL_PLANT.get(), new Item.Properties()));
 
