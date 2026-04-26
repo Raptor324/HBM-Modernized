@@ -3,17 +3,6 @@ plugins {
 	id("fabric-loom")
 }
 
-// TEMP (Fabric 1.20.1): make project compile while common code is still Forge-centric.
-// Once common sources are properly split (Architectury/platform), remove this block.
-sourceSets {
-	named("main") {
-		java {
-			setSrcDirs(listOf("src/main/java/com/hbm_m/main"))
-			include("**/FabricEntrypoint.java", "**/FabricClientEntrypoint.java")
-		}
-	}
-}
-
 platform {
 	loader = "fabric"
 	dependencies {

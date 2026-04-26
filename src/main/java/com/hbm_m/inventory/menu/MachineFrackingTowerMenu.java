@@ -15,12 +15,11 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import com.hbm_m.inventory.ForgeItemHandlerAdapter;
 
 /**
  * Menu (Container) для Fracking Tower.
  * Порт из версии 1.7.10 (ContainerMachineOilWell).
- * 
+ *
  * Слоты инвентаря (как в оригинале):
  * - Слот 0: Батарея (8, 53)
  * - Слот 1: Канистра ввод (80, 17)
@@ -33,7 +32,7 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
 
     public final MachineHydraulicFrackiningTowerBlockEntity blockEntity;
     private final ContainerLevelAccess access;
-    
+
     //=====================================================================================//
     // КОНСТРУКТОРЫ
     //=====================================================================================//
@@ -43,19 +42,19 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
     }
 
     private MachineFrackingTowerMenu(int id, Inventory inv, BlockPos pos) {
-        this(id, inv, 
-             inv.player.level().getBlockEntity(pos) instanceof MachineHydraulicFrackiningTowerBlockEntity be ? new ForgeItemHandlerAdapter(be.getInventory()) : null,
-             inv.player.level().getBlockEntity(pos) instanceof MachineHydraulicFrackiningTowerBlockEntity be ? be : null,
-             ContainerLevelAccess.create(inv.player.level(), pos));
+        this(id, inv,
+                inv.player.level().getBlockEntity(pos) instanceof MachineHydraulicFrackiningTowerBlockEntity be ? be.getInventory() : null,
+                inv.player.level().getBlockEntity(pos) instanceof MachineHydraulicFrackiningTowerBlockEntity be ? be : null,
+                ContainerLevelAccess.create(inv.player.level(), pos));
     }
 
     /**
      * Основной конструктор.
      */
     public MachineFrackingTowerMenu(int containerId, Inventory playerInventory,
-                                          @Nullable IItemHandler handler,
-                                          @Nullable MachineHydraulicFrackiningTowerBlockEntity blockEntity,
-                                          ContainerLevelAccess access) {
+                                    @Nullable IItemHandler handler,
+                                    @Nullable MachineHydraulicFrackiningTowerBlockEntity blockEntity,
+                                    ContainerLevelAccess access) {
         super(ModMenuTypes.FRACTURING_TOWER_MENU.get(), containerId);
         this.blockEntity = blockEntity;
         this.access = access;
@@ -66,15 +65,15 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
         }
 
         // Слот 0: Батарея (8, 53)
-        this.addSlot(new SlotItemHandler(handler, 
+        this.addSlot(new SlotItemHandler(handler,
                 MachineHydraulicFrackiningTowerBlockEntity.SLOT_BATTERY, 8, 53));
 
         // Слот 1: Канистра ввод (80, 17)
-        this.addSlot(new SlotItemHandler(handler, 
+        this.addSlot(new SlotItemHandler(handler,
                 MachineHydraulicFrackiningTowerBlockEntity.SLOT_CANISTER_IN, 80, 17));
 
         // Слот 2: Канистра вывод - только вывод (80, 53)
-        this.addSlot(new SlotItemHandler(handler, 
+        this.addSlot(new SlotItemHandler(handler,
                 MachineHydraulicFrackiningTowerBlockEntity.SLOT_CANISTER_OUT, 80, 53) {
             @Override
             public boolean mayPlace(ItemStack stack) {
@@ -83,11 +82,11 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
         });
 
         // Слот 3: Газ баллон ввод (125, 17)
-        this.addSlot(new SlotItemHandler(handler, 
+        this.addSlot(new SlotItemHandler(handler,
                 MachineHydraulicFrackiningTowerBlockEntity.SLOT_GAS_IN, 125, 17));
 
         // Слот 4: Газ баллон вывод - только вывод (125, 53)
-        this.addSlot(new SlotItemHandler(handler, 
+        this.addSlot(new SlotItemHandler(handler,
                 MachineHydraulicFrackiningTowerBlockEntity.SLOT_GAS_OUT, 125, 53) {
             @Override
             public boolean mayPlace(ItemStack stack) {
@@ -96,17 +95,17 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
         });
 
         // Слоты 5-7: Апгрейды (152, 17), (152, 35), (152, 53)
-        this.addSlot(new SlotUpgrade(handler, 
+        this.addSlot(new SlotUpgrade(handler,
                 MachineHydraulicFrackiningTowerBlockEntity.SLOT_UPGRADE_1, 152, 17));
-        this.addSlot(new SlotUpgrade(handler, 
+        this.addSlot(new SlotUpgrade(handler,
                 MachineHydraulicFrackiningTowerBlockEntity.SLOT_UPGRADE_2, 152, 35));
-        this.addSlot(new SlotUpgrade(handler, 
+        this.addSlot(new SlotUpgrade(handler,
                 MachineHydraulicFrackiningTowerBlockEntity.SLOT_UPGRADE_3, 152, 53));
 
         // Инвентарь игрока (3 строки по 9 слотов)
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(playerInventory, 
+                this.addSlot(new Slot(playerInventory,
                         col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
             }
         }
@@ -122,12 +121,12 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
     //=====================================================================================//
 
     public static MachineFrackingTowerMenu create(int containerId, Inventory playerInventory,
-                                                        MachineHydraulicFrackiningTowerBlockEntity blockEntity) {
+                                                  MachineHydraulicFrackiningTowerBlockEntity blockEntity) {
         return new MachineFrackingTowerMenu(
-                containerId, 
-                playerInventory, 
-                new ForgeItemHandlerAdapter(blockEntity.getInventory()), 
-                blockEntity, 
+                containerId,
+                playerInventory,
+                blockEntity.getInventory(),
+                blockEntity,
                 ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos())
         );
     }
@@ -151,7 +150,7 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(slotStack, 8, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
-            } 
+            }
             // Слоты игрока (8+)
             else {
                 // Проверка на апгрейд
@@ -160,7 +159,7 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
                     if (!this.moveItemStackTo(slotStack, 5, 8, false)) {
                         return ItemStack.EMPTY;
                     }
-                } 
+                }
                 // Проверка на батарею или жидкостной контейнер
                 else {
                     // Пробуем в слот батареи (0-1) или слоты контейнеров (1, 3)

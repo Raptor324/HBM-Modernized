@@ -22,7 +22,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.network.PacketDistributor;
-import com.hbm_m.inventory.ForgeItemHandlerAdapter;
 
 public class MachineCrystallizerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -62,7 +61,7 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
         checkContainerDataCount(data, 2);
         addDataSlots(data);
 
-        var handler = new ForgeItemHandlerAdapter(blockEntity.getInventory());
+        var handler = blockEntity.getInventory();
 
         // Original slot layout from ContainerCrystallizer
         this.addSlot(new SlotItemHandler(handler, SLOT_INPUT, 62, 45));
@@ -70,8 +69,8 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
-                    || stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
-                    || stack.getItem() instanceof ItemCreativeBattery;
+                        || stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
+                        || stack.getItem() instanceof ItemCreativeBattery;
             }
         });
         this.addSlot(new SlotItemHandler(handler, SLOT_OUTPUT, 113, 45) {
@@ -166,8 +165,8 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
         super.broadcastChanges();
         if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
             ModPacketHandler.INSTANCE.send(
-                PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
-                new PacketSyncEnergy(containerId, blockEntity.getEnergyStored(), blockEntity.getMaxEnergyStored(), 0L)
+                    PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
+                    new PacketSyncEnergy(containerId, blockEntity.getEnergyStored(), blockEntity.getMaxEnergyStored(), 0L)
             );
         }
     }
@@ -191,8 +190,8 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
             }
         } else {
             boolean isBattery = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
-                || stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
-                || stack.getItem() instanceof ItemCreativeBattery;
+                    || stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
+                    || stack.getItem() instanceof ItemCreativeBattery;
 
             if (isBattery) {
                 if (!moveItemStackTo(stack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {

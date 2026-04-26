@@ -15,7 +15,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.SlotItemHandler;
-import com.hbm_m.inventory.ForgeItemHandlerAdapter;
 
 /**
  * Меню для ржавой пусковой площадки.
@@ -49,7 +48,7 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
         this.level = inv.player.level();
         this.player = inv.player;
 
-        var handler = new ForgeItemHandlerAdapter(blockEntity.getInventory());
+        var handler = blockEntity.getInventory();
 
         // Выходной слот (нельзя класть предметы)
         this.addSlot(new SlotItemHandler(handler, SLOT_OUTPUT, 26, 72) {

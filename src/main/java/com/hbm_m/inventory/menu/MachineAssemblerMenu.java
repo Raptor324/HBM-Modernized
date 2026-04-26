@@ -41,8 +41,8 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
         this.level = inv.player.level();
         this.data = data;
 
-            addPlayerInventory(inv);
-            addPlayerHotbar(inv);
+        addPlayerInventory(inv);
+        addPlayerHotbar(inv);
 
         this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
             // Слот для батареи (0)
@@ -188,7 +188,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
 
         return maxProgress != 0 && progress != 0 ? progress * progressArrowSize / maxProgress : 0;
     }
-    
+
     // Логика Shift-Click, адаптированная из старого кода
     private static final int VANILLA_SLOT_COUNT = 36;
     private static final int VANILLA_FIRST_SLOT_INDEX = 0;

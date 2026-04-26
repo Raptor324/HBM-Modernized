@@ -4,8 +4,11 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineShredderBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.network.packet.PacketSyncEnergy;
 import com.hbm_m.item.industrial.ItemBlades;
+import com.hbm_m.util.LongDataPacker;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -16,9 +19,9 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.items.IItemHandler;
-import com.hbm_m.inventory.ForgeItemHandlerAdapter;
+import net.minecraftforge.network.PacketDistributor;
 
 public class MachineShredderMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -58,7 +61,7 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         this.player = playerInventory.player;
         addDataSlots(data);
 
-        IItemHandler itemHandler = new ForgeItemHandlerAdapter(this.blockEntity.getInventory());
+        ItemStackHandler itemHandler = this.blockEntity.getInventory();
 
         // Входные слоты (3x3 сетка) - верхняя левая часть GUI (0-8)
         int startX = 44;
@@ -159,22 +162,22 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
             boolean isBattery = slotStack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).isPresent();
 
             boolean moved = false;
-            
+
             if (isBattery) {
                 // Пытаемся поместить в слот для батареи
                 moved = this.moveItemStackTo(slotStack, BATTERY_SLOT, BATTERY_SLOT + 1, false);
             }
-            
+
             if (!moved && isBlade) {
                 // Пытаемся поместить в слоты для лезвий
                 moved = this.moveItemStackTo(slotStack, BLADE_LEFT, BLADE_RIGHT + 1, false);
             }
-            
+
             if (!moved) {
                 // Пытаемся поместить во входные слоты (разрешаем все предметы, кроме лезвий)
                 moved = this.moveItemStackTo(slotStack, 0, INPUT_SLOTS, false);
             }
-            
+
             if (!moved) {
                 return ItemStack.EMPTY;
             }

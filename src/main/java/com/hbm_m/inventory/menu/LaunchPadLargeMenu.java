@@ -15,7 +15,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.SlotItemHandler;
-import com.hbm_m.inventory.ForgeItemHandlerAdapter;
 
 /**
  * Меню для обычной (и большой) пусковой площадки.
@@ -52,7 +51,7 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu {
         this.level = inv.player.level();
         this.player = inv.player;
 
-        var handler = new ForgeItemHandlerAdapter(blockEntity.getInventory());
+        var handler = blockEntity.getInventory();
 
         // Слоты машины - координаты соответствуют старому GUI
         // Missile

@@ -10,31 +10,17 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
+import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineAssemblerMenu;
-import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
+import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.sound.ClientSoundManager;
-import com.hbm_m.inventory.ForgeItemHandlerAdapter;
-
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
-//?}
-
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -52,6 +38,11 @@ import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.items.IItemHandler;
 
 /**
  * Сборочная машина (Assembler) - мультиблочная структура для автоматизированного крафта.
@@ -78,7 +69,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     // Proxy handlers для multiblock parts
     private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
     private LazyOptional<IItemHandler> lazyOutputProxy = LazyOptional.empty();
-    private final LazyOptional<IItemHandler> itemHandler = LazyOptional.of(() -> new ForgeItemHandlerAdapter(this.inventory));
 
     // Отслеживание источников предметов
     private final Set<BlockPos> lastPullSources = new HashSet<>();
@@ -254,11 +244,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             entity.serverTick();
         }
     }
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+
+    @OnlyIn(Dist.CLIENT)
     private void clientTick() {
         ClientSoundManager.updateSound(this, this.isCrafting(),
                 () -> new com.hbm_m.sound.AssemblerSoundInstance(this.getBlockPos()));
@@ -653,11 +640,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     }
 
     // ==================== CLIENT ====================
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+
+    @OnlyIn(Dist.CLIENT)
     public void setCrafting(boolean crafting) {
         this.isCrafting = crafting;
     }
@@ -705,5 +689,3 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
     }
 }
-
-
