@@ -10,7 +10,6 @@ import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.config.MachineConfig;
 import com.hbm_m.inventory.menu.MachineFrackingTowerMenu;
 
-import dev.architectury.fluid.FluidStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -26,6 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 //?}
@@ -123,23 +123,51 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
               INVENTORY_SIZE, maxPower, consumption * 2, 0L);
         
         // Инициализация танков
+        //? if forge {
         this.oilTank = new ModFluidTank(64_000) {
+            @Override
             public boolean isFluidValid(FluidStack stack) {
                 return stack.getFluid().isSame(ModFluids.CRUDE_OIL.getSource());
             }
         };
-        
+
         this.gasTank = new ModFluidTank(64_000) {
+            @Override
             public boolean isFluidValid(FluidStack stack) {
                 return stack.getFluid().isSame(ModFluids.GAS.getSource());
             }
         };
-        
+
         this.fracksolTank = new ModFluidTank(64_000) {
+            @Override
             public boolean isFluidValid(FluidStack stack) {
                 return stack.getFluid().isSame(ModFluids.FRACKSOL.getSource());
             }
         };
+        //?}
+
+        //? if fabric {
+        /*this.oilTank = new ModFluidTank(64_000) {
+            @Override
+            public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
+                return fluid.isSame(ModFluids.CRUDE_OIL.getSource());
+            }
+        };
+
+        this.gasTank = new ModFluidTank(64_000) {
+            @Override
+            public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
+                return fluid.isSame(ModFluids.GAS.getSource());
+            }
+        };
+
+        this.fracksolTank = new ModFluidTank(64_000) {
+            @Override
+            public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
+                return fluid.isSame(ModFluids.FRACKSOL.getSource());
+            }
+        };*/
+        //?}
     }
 
     //=====================================================================================//

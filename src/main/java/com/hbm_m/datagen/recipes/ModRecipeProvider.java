@@ -4,6 +4,8 @@ import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
 
+import org.jetbrains.annotations.NotNull;
+
 // Провайдер генерации рецептов крафта для мода.
 // Здесь мы определяем, как создаются наши предметы в игре.
 

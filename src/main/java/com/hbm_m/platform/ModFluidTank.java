@@ -26,6 +26,10 @@ public class ModFluidTank extends FluidTank {
         return fluid.getAmount();
     }
 
+    public boolean isEmpty() {
+        return fluid.isEmpty();
+    }
+
 //     Свободное место в мБ.
     public int getSpaceMb() {
         return capacity - fluid.getAmount();
@@ -34,6 +38,18 @@ public class ModFluidTank extends FluidTank {
 //   Тип жидкости (Fluids.EMPTY если пусто).
     public Fluid getStoredFluid() {
         return fluid.isEmpty() ? Fluids.EMPTY : fluid.getFluid();
+    }
+
+    // ──────────────── Fill/Drain в mB (как на Fabric) ────────────────
+
+    public int fillMb(Fluid fluid, int amountMb) {
+        if (amountMb <= 0 || fluid == Fluids.EMPTY) return 0;
+        return fill(new FluidStack(fluid, amountMb), FluidAction.EXECUTE);
+    }
+
+    public int drainMb(int amountMb) {
+        if (amountMb <= 0) return 0;
+        return drain(amountMb, FluidAction.EXECUTE).getAmount();
     }
 
 

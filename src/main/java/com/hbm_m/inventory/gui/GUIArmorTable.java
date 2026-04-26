@@ -2,6 +2,7 @@ package com.hbm_m.inventory.gui;
 
 import javax.annotation.Nonnull;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.armormod.menu.ArmorTableMenu;
