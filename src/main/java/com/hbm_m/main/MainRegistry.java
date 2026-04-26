@@ -664,6 +664,7 @@ public class MainRegistry {
         if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
             event.accept(ModItems.BOLT_STEEL);
             event.accept(ModItems.COIL_TUNGSTEN);
+            event.accept(ModItems.CENTRIFUGE_ELEMENT);
 
             event.accept(ModItems.PLATE_IRON);
             event.accept(ModItems.PLATE_ALUMINUM);
