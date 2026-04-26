@@ -56,6 +56,7 @@ repositories {
 	mavenCentral()
 	strictMaven("https://api.modrinth.com/maven", "maven.modrinth") { name = "Modrinth" }
 	strictMaven("https://maven.architectury.dev/", "dev.architectury") { name = "Architectury" }
+	maven("https://maven.parchmentmc.org") { name = "ParchmentMC" }
 }
 
 dependencies {

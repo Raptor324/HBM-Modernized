@@ -26,8 +26,13 @@ platform {
 }
 
 legacyForge {
-	version = "${property("deps.minecraft")}-${property("deps.forge")}" 
-
+	version = "${property("deps.minecraft")}-${property("deps.forge")}"
+	if (hasProperty("deps.parchment")) parchment {
+		val parchmentProp = property("deps.parchment") as String
+		val parts = parchmentProp.split(":")
+		mappingsVersion = parts[1]
+		minecraftVersion = parts[0]
+	}
 	validateAccessTransformers = true
 	accessTransformers.from(rootProject.file("src/main/resources/aw/${stonecutter.current.version}.cfg"))
 

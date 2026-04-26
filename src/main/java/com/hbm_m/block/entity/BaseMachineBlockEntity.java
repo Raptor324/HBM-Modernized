@@ -6,12 +6,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
+//? if forge {
 import com.hbm_m.api.energy.PackedEnergyCapabilityProvider;
 import com.hbm_m.capability.ModCapabilities;
+//?}
 import com.hbm_m.interfaces.IEnergyConnector;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
-
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -27,11 +28,19 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
+//?}
+
+//? if fabric {
+/*import team.reborn.energy.api.EnergyStorage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
+import net.minecraft.world.SimpleContainer;
+*///?}
 
 /**
  * Базовый класс для всех машин с энергией.
@@ -40,8 +49,12 @@ import net.minecraftforge.items.ItemStackHandler;
 public abstract class BaseMachineBlockEntity extends BlockEntity implements MenuProvider, IEnergyProvider, IEnergyReceiver {
 
     // Инвентарь
+    //? if forge {
     protected final ItemStackHandler inventory;
-    protected LazyOptional<IItemHandler> itemHandler = LazyOptional.empty();
+    protected LazyOptional<IItemHandler> itemHandler = LazyOptional.empty();//?}
+    //? if fabric {
+    /*protected final MachineInventory inventory;
+    *///?}
 
     // Энергия (long для больших значений)
     protected long energy = 0;
@@ -55,15 +68,59 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
 
     protected boolean networkInitialized = false;
 
-    // Capability провайдеры
+    // Capability провайдеры (Forge)
+    //? if forge {
     private final LazyOptional<IEnergyProvider> hbmProvider = LazyOptional.of(() -> this);
     private final LazyOptional<IEnergyReceiver> hbmReceiver = LazyOptional.of(() -> this);
     private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-    private final PackedEnergyCapabilityProvider feCapabilityProvider;
+    private final PackedEnergyCapabilityProvider feCapabilityProvider;//?}
+
+    // Провайдер TeamReborn Energy (Fabric)
+    //? if fabric {
+    /*private final EnergyStorage energyStorage = new EnergyStorage() {
+        @Override
+        public long insert(long maxAmount, TransactionContext transaction) {
+            if (!canReceive()) return 0;
+            long amount = Math.min(capacity - energy, Math.min(maxReceive, maxAmount));
+            if (amount > 0) {
+                transaction.addCloseCallback((ctx, result) -> {
+                    if (result.wasCommitted()) setEnergyStored(energy + amount);
+                });
+            }
+            return amount;
+        }
+
+        @Override
+        public long extract(long maxAmount, TransactionContext transaction) {
+            if (!canExtract()) return 0;
+            long amount = Math.min(energy, Math.min(maxExtract, maxAmount));
+            if (amount > 0) {
+                transaction.addCloseCallback((ctx, result) -> {
+                    if (result.wasCommitted()) setEnergyStored(energy - amount);
+                });
+            }
+            return amount;
+        }
+
+        @Override
+        public long getAmount() {
+            return energy;
+        }
+
+        @Override
+        public long getCapacity() {
+            return capacity;
+        }
+    };
+
+    public EnergyStorage getEnergyStorage() {
+        return energyStorage;
+    }
+    *///?}
 
     /**
      *  ОСНОВНОЙ КОНСТРУКТОР для машин-потребителей.
-     * По умолчанию, maxExtract = 0, потому что нехуй высасывать энергию из того, что
+     * По умолчанию, maxExtract = 0, потому что нехуй высасывать энергию из того, что не
      * должно её жрать. Машина - не батарейка. Запомни это, или я приду к тебе во сне.
      */
     public BaseMachineBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state,
@@ -83,9 +140,12 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         this.capacity = capacity;
         this.maxReceive = maxReceive;
         this.maxExtract = maxExtract;
-        this.feCapabilityProvider = new PackedEnergyCapabilityProvider(this);
+        //? if forge {
+        this.feCapabilityProvider = new PackedEnergyCapabilityProvider(this);//?}
     }
 
+    // --- Инвентарь Forge ---
+    //? if forge {
     protected ItemStackHandler createInventoryHandler(int size) {
         return new ItemStackHandler(size) {
             @Override
@@ -105,7 +165,56 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
 
     public ItemStackHandler getInventory() {
         return this.inventory;
+    }//?}
+
+    // --- Инвентарь Fabric ---
+    //? if fabric {
+    /*protected MachineInventory createInventoryHandler(int size) {
+        return new MachineInventory(size);
     }
+
+    public MachineInventory getInventory() {
+        return this.inventory;
+    }
+
+    public class MachineInventory extends SimpleContainer {
+        public MachineInventory(int size) {
+            super(size);
+        }
+
+        @Override
+        public void setItem(int slot, @NotNull ItemStack stack) {
+            super.setItem(slot, stack);
+            onContentsChanged(slot);
+        }
+
+        @Override
+        public ItemStack removeItem(int slot, int amount) {
+            ItemStack stack = super.removeItem(slot, amount);
+            onContentsChanged(slot);
+            return stack;
+        }
+
+        @Override
+        public ItemStack removeItemNoUpdate(int slot) {
+            ItemStack stack = super.removeItemNoUpdate(slot);
+            onContentsChanged(slot);
+            return stack;
+        }
+
+        protected void onContentsChanged(int slot) {
+            BaseMachineBlockEntity.this.setChanged();
+            if (isCriticalSlot(slot)) {
+                sendUpdateToClient();
+            }
+        }
+
+        @Override
+        public boolean canPlaceItem(int slot, @NotNull ItemStack stack) {
+            return isItemValidForSlot(slot, stack);
+        }
+    }
+    *///?}
 
     // --- Абстрактные методы ---
     protected abstract Component getDefaultName();
@@ -222,7 +331,10 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.put("inventory", inventory.serializeNBT());
+        //? if forge {
+        tag.put("inventory", inventory.serializeNBT());//?}
+        //? if fabric {
+        /*tag.put("inventory", inventory.createTag());*///?}
         tag.putLong("energy", energy);
         tag.putLong("lastEnergy", lastEnergy);
         tag.putLong("energyDelta", energyDelta);
@@ -231,7 +343,13 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        inventory.deserializeNBT(tag.getCompound("inventory"));
+        //? if forge {
+        inventory.deserializeNBT(tag.getCompound("inventory"));//?}
+        //? if fabric {
+        /*if (tag.contains("inventory", 9)) {
+            inventory.fromTag(tag.getList("inventory", 10));
+        }
+        *///?}
         energy = tag.getLong("energy");
         lastEnergy = tag.getLong("lastEnergy");
         energyDelta = tag.getLong("energyDelta");
@@ -245,10 +363,11 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         return tag;
     }
 
+    //? if forge {
     @Override
     public void handleUpdateTag(CompoundTag tag) {
         load(tag);
-    }
+    }//?}
 
     @Nullable
     @Override
@@ -256,10 +375,13 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
+    //? if forge {
     @Override
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        load(pkt.getTag());
-    }
+        if (pkt.getTag() != null) {
+            load(pkt.getTag());
+        }
+    }//?}
 
     protected void sendUpdateToClient() {
         if (level != null && !level.isClientSide && !isRemoved()) {
@@ -268,6 +390,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     }
 
     // --- Capabilities ---
+    //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ModCapabilities.HBM_ENERGY_PROVIDER) {
@@ -287,15 +410,16 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         if (feCap.isPresent()) return feCap;
 
         return super.getCapability(cap, side);
-    }
+    }//?}
 
+    //? if forge {
     @Override
     public void onLoad() {
         super.onLoad();
         itemHandler = LazyOptional.of(() -> inventory);
         setupFluidCapability();
         // Сеть инициализируем позже, в тике
-    }
+    }//?}
 
     protected void ensureNetworkInitialized() {
         if (!networkInitialized && level != null && !level.isClientSide) {
@@ -304,6 +428,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         }
     }
 
+    //? if forge {
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
@@ -312,7 +437,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         hbmReceiver.invalidate();
         hbmConnector.invalidate();
         feCapabilityProvider.invalidate();
-    }
+    }//?}
 
     @Override
     public void setRemoved() {

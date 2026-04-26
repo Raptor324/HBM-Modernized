@@ -2,33 +2,43 @@ package com.hbm_m.armormod.client;
 
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.datagen.assets.ModItemTagProvider;
-import com.hbm_m.lib.RefStrings;
 
+import dev.architectury.event.events.client.ClientTooltipEvent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 
 import java.util.List;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+import com.hbm_m.lib.RefStrings;
 //?}
 
 /**
  * Этот класс отвечает за добавление общих подсказок ко всем предметам-модификациям брони.
- * Он слушает событие ItemTooltipEvent на стороне клиента.
+ * Он слушает событие на стороне клиента через Architectury API.
  */
+//? if forge {
+@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)//?}
 public class ModTooltipHandler {
 
+    //? if forge {
+    @SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        init();
+    }
+    //?}
 
+    public static void init() {
+        ClientTooltipEvent.ITEM.register(ModTooltipHandler::onItemTooltip);
+    }
 
-    @Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT)
-    public class ForgeHooks {
-        @SubscribeEvent
-        public static void onItemTooltip(ItemTooltipEvent event) {
-            ModTooltipHandler.addTooltip(event.getItemStack(), event.getToolTip());
-        }
+    private static void onItemTooltip(ItemStack stack, List<Component> tooltip, TooltipFlag flag) {
+        addTooltip(stack, tooltip);
     }
 
     public static void addTooltip(net.minecraft.world.item.ItemStack stack, List<Component> tooltip) {
