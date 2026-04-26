@@ -1,10 +1,15 @@
 package com.hbm_m.client.render.implementations;
 
+
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
-import com.hbm_m.block.machines.MachinePressBlock;
 import com.hbm_m.block.entity.machines.MachinePressBlockEntity;
+import com.hbm_m.block.machines.MachinePressBlock;
 import com.hbm_m.client.model.PressBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
@@ -20,6 +25,10 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -30,10 +39,11 @@ import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePressBlockEntity, PressBakedModel> {
 
     private static final String HEAD_PART = "Head";

@@ -14,6 +14,7 @@ import com.hbm_m.network.FluidTankModePacket;
 import com.hbm_m.network.ModPacketHandler;
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -25,11 +26,15 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.fluids.FluidStack;
 
 public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTankMenu> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation TEXTURE = new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
+    *///?} else {
+        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
+    //?}
+
 
     private final int tankX = 71;
     private final int tankY = 17;
@@ -86,7 +91,7 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
         float a = ((fluidColor >> 24) & 255) / 255.0F;
         if (a == 0) a = 1.0F; // Если alpha не задана, используем 1.0
 
-        ResourceLocation fluidPng = FluidGuiRendering.guiTexturePngForFluid(fluid, fluidStack);
+        ResourceLocation fluidPng = FluidGuiRendering.guiTexturePngForFluid(fluid, dev.architectury.hooks.fluid.forge.FluidStackHooksForge.fromForge(fluidStack));
         if (fluidPng == null) return;
 
         RenderSystem.enableBlend();

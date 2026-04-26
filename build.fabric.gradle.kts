@@ -3,6 +3,17 @@ plugins {
 	id("fabric-loom")
 }
 
+// TEMP (Fabric 1.20.1): make project compile while common code is still Forge-centric.
+// Once common sources are properly split (Architectury/platform), remove this block.
+sourceSets {
+	named("main") {
+		java {
+			setSrcDirs(listOf("src/main/java/com/hbm_m/main"))
+			include("**/FabricEntrypoint.java", "**/FabricClientEntrypoint.java")
+		}
+	}
+}
+
 platform {
 	loader = "fabric"
 	dependencies {
@@ -55,6 +66,15 @@ repositories {
 	strictMaven("https://maven.terraformersmc.com/", "com.terraformersmc") { name = "TerraformersMC" }
 	strictMaven("https://api.modrinth.com/maven", "maven.modrinth") { name = "Modrinth" }
 	strictMaven("https://maven.architectury.dev/", "dev.architectury") { name = "Architectury" }
+
+	// CCA releases for 1.20.x live under dev.onyxstudios.cardinal-components-api on Ladysnake maven.
+	maven("https://maven.ladysnake.org/releases") { name = "Ladysnake" }
+
+	// TeamReborn Energy API is published to FabricMC maven.
+	maven("https://maven.fabricmc.net") { name = "FabricMC Maven" }
+
+	// Compile-only Forge API to keep shared sources compiling on Fabric.
+	maven("https://maven.minecraftforge.net") { name = "Forge Maven" }
 }
 
 dependencies {
@@ -70,11 +90,52 @@ dependencies {
 	modImplementation("net.fabricmc.fabric-api:fabric-api:${prop("deps.fabric-api")}")
 	modImplementation("dev.architectury:architectury-fabric:${prop("deps.architectury")}")
 	modLocalRuntime("com.terraformersmc:modmenu:${prop("deps.modmenu")}")
+
+	// Fabric compat: Chunk radiation via CCA (bundled)
+	modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.3")
+	modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-chunk:5.2.3")
+	include("dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.3")
+	include("dev.onyxstudios.cardinal-components-api:cardinal-components-chunk:5.2.3")
+
+	// Fabric compat: external energy via TeamReborn Energy API (bundled)
+	modApi("teamreborn:energy:3.0.0")
+	include("teamreborn:energy:3.0.0")
+
+	// ---- Compile-only shims for shared (Forge-origin) sources ----
+	// These MUST NOT end up in the Fabric runtime jar.
+	// compileOnly("net.minecraftforge:forge:1.20.1-47.4.20:universal")
+	// compileOnly("net.minecraftforge:fmlloader:1.20.1-47.4.20")
+	// compileOnly("net.minecraftforge:fmlcore:1.20.1-47.4.20")
+	// compileOnly("net.minecraftforge:javafmllanguage:1.20.1-47.4.20")
+	// compileOnly("net.minecraftforge:lowcodelanguage:1.20.1-47.4.20")
+	// compileOnly("net.minecraftforge:mclanguage:1.20.1-47.4.20")
+	// compileOnly("com.google.code.findbugs:jsr305:3.0.2")
 }
 
+// Temporary: Fabric compilation unblocks while common code is being de-forged.
+// Re-enable once common sources are properly split/ported.
+// tasks.named("compileJava") {
+// 	enabled = false
+// }
+
 stonecutter {
-	replacements.string(current.parsed >= "1.21.11") {
-		replace("ResourceLocation", "Identifier")
-		replace("location()", "identifier()")
+	val isModern = current.parsed >= "1.21.11"
+
+	replacements.regex(isModern) {
+		replace("\\bResourceLocation\\b", "Identifier")
+		reversePattern.set("\\bIdentifier\\b")
+		reverseValue.set("ResourceLocation")
+	}
+
+	replacements.regex(isModern) {
+		replace("\\blocation\\(\\)", "identifier()")
+		reversePattern.set("\\bidentifier\\(\\)")
+		reverseValue.set("location()")
+	}
+
+	replacements.regex(isModern) {
+		replace("net\\.minecraft\\.resources\\.ResourceLocation", "net.minecraft.util.Identifier")
+		reversePattern.set("net\\.minecraft\\.util\\.Identifier")
+		reverseValue.set("net.minecraft.resources.ResourceLocation")
 	}
 }

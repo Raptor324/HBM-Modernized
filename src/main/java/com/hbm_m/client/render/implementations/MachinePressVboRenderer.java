@@ -1,5 +1,14 @@
 package com.hbm_m.client.render.implementations;
 
+
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
+
 import org.joml.Matrix4f;
 
 import com.hbm_m.client.model.PressBakedModel;
@@ -12,10 +21,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 import org.jetbrains.annotations.Nullable;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class MachinePressVboRenderer {
 
     private static final String HEAD = "Head";

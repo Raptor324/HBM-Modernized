@@ -62,7 +62,7 @@ public class ModCreativeTabs {
                     Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_spareparts_tab"),
                     () -> new ItemStack(ModItems.PLATE_DESH.get())));
 
-//     public static final RegistryObject<CreativeModeTab> NTM_INSTRUMENTS_TAB = CREATIVE_MODE_TABS.register("ntm_instruments_tab",
+//     public static final RegistrySupplier<CreativeModeTab> NTM_INSTRUMENTS_TAB = CREATIVE_MODE_TABS.register("ntm_instruments_tab",
 //             () -> CreativeModeTab.builder()
 //                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_instruments_tab"))
 //                     .icon(() -> new ItemStack(ModItems.GEIGER_COUNTER.get()))

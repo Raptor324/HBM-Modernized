@@ -1,5 +1,10 @@
 package com.hbm_m.client.render.implementations;
 
+
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
@@ -7,14 +12,19 @@ import com.hbm_m.client.model.MachineAssemblerBakedModel;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.mojang.blaze3d.vertex.PoseStack;
 
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class MachineAssemblerVboRenderer {
 
     private static final String BODY = "Body";

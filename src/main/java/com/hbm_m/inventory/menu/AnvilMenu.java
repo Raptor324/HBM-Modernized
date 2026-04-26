@@ -11,9 +11,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
+import com.hbm_m.inventory.ForgeItemHandlerAdapter;
+import com.hbm_m.inventory.ItemStackHandler;
 
 public class AnvilMenu extends AbstractContainerMenu {
     
@@ -48,7 +49,7 @@ public class AnvilMenu extends AbstractContainerMenu {
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
 
-        IItemHandler itemHandler = blockEntity.getItemHandler();
+        IItemHandler itemHandler = new ForgeItemHandlerAdapter(blockEntity.getItemHandler());
 
         // Слот A (вход 1) - индекс 36
         this.addSlot(new SmithingInputSlot(itemHandler, 0, 17, 27));

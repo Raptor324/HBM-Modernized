@@ -38,7 +38,7 @@ import net.minecraftforge.network.PacketDistributor;
 import net.minecraft.network.chat.Component;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public class GeigerCounterBlock extends BaseEntityBlock {
     // Свойство для хранения направления, куда "смотрит" блок

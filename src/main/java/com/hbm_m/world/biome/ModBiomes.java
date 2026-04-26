@@ -46,11 +46,21 @@ public class ModBiomes {
     // ResourceKey для использования в коде (для lookup в реестре)
     public static final ResourceKey<Biome> INNER_CRATER_KEY =
             ResourceKey.create(Registries.BIOME,
-                    ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "inner_crater"));
+                    //? if fabric && < 1.21.1 {
+                    /*new ResourceLocation(MainRegistry.MOD_ID, "inner_crater"));
+                    *///?} else {
+                                        ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "inner_crater"));
+                    //?}
+
 
     public static final ResourceKey<Biome> OUTER_CRATER_KEY =
             ResourceKey.create(Registries.BIOME,
-                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "outer_crater"));
+                //? if fabric && < 1.21.1 {
+                /*new ResourceLocation(MainRegistry.MOD_ID, "outer_crater"));
+                *///?} else {
+                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "outer_crater"));
+                //?}
+
 
     public static void init() {
         BIOMES.register();

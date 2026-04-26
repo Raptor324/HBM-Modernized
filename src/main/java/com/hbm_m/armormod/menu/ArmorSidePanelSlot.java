@@ -10,8 +10,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.EquipmentSlot;
 
-import javax.annotation.Nonnull;
-
 public class ArmorSidePanelSlot extends Slot {
 
     private final Player player;
@@ -28,7 +26,7 @@ public class ArmorSidePanelSlot extends Slot {
      * Это наше событие "снятия" брони.
      */
     @Override
-    public void onTake(@Nonnull Player pPlayer, @Nonnull ItemStack pStack) {
+    public void onTake(Player pPlayer, ItemStack pStack) {
         if (pStack.getItem() instanceof ArmorItem armorItem) {
             playSound(armorItem.getEquipSound());
         }
@@ -40,7 +38,7 @@ public class ArmorSidePanelSlot extends Slot {
      * Это наше событие "надевания" брони.
      */
     @Override
-    public void set(@Nonnull ItemStack pStack) {
+    public void set(ItemStack pStack) {
         // Мы хотим проиграть звук, только если предмет действительно изменился
         if (!ItemStack.isSameItem(this.getItem(), pStack) && pStack.getItem() instanceof ArmorItem armorItem) {
             playSound(armorItem.getEquipSound());
@@ -56,7 +54,7 @@ public class ArmorSidePanelSlot extends Slot {
     // Валидация и прочие методы, как в ванильном слоте брони
 
     @Override
-    public boolean mayPlace(@Nonnull ItemStack stack) {
+    public boolean mayPlace(ItemStack stack) {
         return stack.canEquip(this.slotType, this.player);
     }
 

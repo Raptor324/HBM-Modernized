@@ -4,6 +4,7 @@ import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;
 import com.hbm_m.main.MainRegistry;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;

@@ -128,7 +128,12 @@ public class ModSounds {
     // Вспомогательный метод для регистрации
     private static RegistrySupplier<SoundEvent> registerSoundEvents(String name) {
         // Создаем ResourceLocation, избегая устаревших методов
-        ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, name);
+        //? if fabric && < 1.21.1 {
+        /*ResourceLocation id = new ResourceLocation(RefStrings.MODID, name);
+        *///?} else {
+                ResourceLocation id = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, name);
+        //?}
+
         return SOUND_EVENTS.register(name, () -> SoundEvent.createVariableRangeEvent(id));
     }
     

@@ -52,8 +52,18 @@ public class NukeTorex extends ParticleNT {
     private static final int MAX_CLOUDLETS_FANCY = 12_000;
     private static final int MAX_CLOUDLETS_FAST = 6_000;
 
-    private static final ResourceLocation CLOUDLET = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/particle_base.png");
-    private static final ResourceLocation FLASH = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/flare.png");
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation CLOUDLET = new ResourceLocation(RefStrings.MODID, "textures/particle/particle_base.png");
+    *///?} else {
+        private static final ResourceLocation CLOUDLET = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/particle_base.png");
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation FLASH = new ResourceLocation(RefStrings.MODID, "textures/particle/flare.png");
+    *///?} else {
+        private static final ResourceLocation FLASH = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/flare.png");
+    //?}
+
 
     public NukeTorex(ClientLevel level, double x, double y, double z) {
         super(level, x, y, z);

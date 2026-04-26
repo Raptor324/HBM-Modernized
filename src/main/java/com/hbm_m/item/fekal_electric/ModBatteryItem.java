@@ -3,7 +3,7 @@ package com.hbm_m.item.fekal_electric;
 import java.util.List;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyCapabilityProvider;
 import com.hbm_m.capability.ModCapabilities;

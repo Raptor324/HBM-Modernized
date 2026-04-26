@@ -1,5 +1,6 @@
 package com.hbm_m.client.render.shader;
 
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -13,8 +14,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
-
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class ShaderCompatibilityDetector {
 
     private static boolean initialized = false;

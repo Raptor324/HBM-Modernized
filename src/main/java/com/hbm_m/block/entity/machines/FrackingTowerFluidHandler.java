@@ -1,9 +1,11 @@
 package com.hbm_m.block.entity.machines;
 
-import com.hbm_m.api.fluids.ModFluids;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
 import org.jetbrains.annotations.NotNull;
+
+import com.hbm_m.api.fluids.ModFluids;
+
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.fluids.FluidStack;
 
 /**
  * Обработчик жидкостей для Fracking Tower.

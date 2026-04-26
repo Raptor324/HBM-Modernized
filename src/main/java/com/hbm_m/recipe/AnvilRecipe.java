@@ -5,7 +5,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;

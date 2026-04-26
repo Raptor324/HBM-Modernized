@@ -2,7 +2,7 @@ package com.hbm_m.block.machines;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.entity.ModBlockEntities;

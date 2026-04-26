@@ -4,15 +4,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
+import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.hbm_m.lib.RefStrings;
 
+import dev.architectury.fluid.FluidStack;
+import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
@@ -24,8 +28,6 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
 
 /**
  * Chemical Plant recipe (1.20.1).
@@ -160,7 +162,12 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
 
     public static final class Serializer implements RecipeSerializer<ChemicalPlantRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "chemical_plant");
+        //? if fabric && < 1.21.1 {
+        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "chemical_plant");
+        *///?} else {
+                public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "chemical_plant");
+        //?}
+
 
         @Override
         public ChemicalPlantRecipe fromJson(@Nonnull ResourceLocation recipeId, @Nonnull JsonObject json) {
@@ -207,7 +214,7 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
             int fluidOutCount = buf.readVarInt();
             List<FluidStack> fluidOutputs = new ArrayList<>(fluidOutCount);
             for (int i = 0; i < fluidOutCount; i++) {
-                fluidOutputs.add(buf.readFluidStack());
+                fluidOutputs.add(FluidStackHooksForge.fromForge(buf.readFluidStack()));
             }
 
             return new ChemicalPlantRecipe(recipeId, itemInputs, fluidInputs, itemOutputs, fluidOutputs, duration, power, blueprintPool);
@@ -244,7 +251,7 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
 
             buf.writeVarInt(recipe.fluidOutputs.size());
             for (FluidStack out : recipe.fluidOutputs) {
-                buf.writeFluidStack(out);
+                buf.writeFluidStack(FluidStackHooksForge.toForge(out));
             }
         }
 
@@ -293,10 +300,10 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
                 JsonObject obj = el.getAsJsonObject();
                 ResourceLocation id = ResourceLocation.tryParse(GsonHelper.getAsString(obj, "fluid"));
                 if (id == null) continue;
-                var fluid = ForgeRegistries.FLUIDS.getValue(id);
+                var fluid = BuiltInRegistries.FLUID.get(id);
                 if (fluid == null) continue;
                 int amount = GsonHelper.getAsInt(obj, "amount", 0);
-                result.add(new FluidStack(fluid, amount));
+                result.add(FluidStack.create(fluid, (long) amount));
             }
             return result;
         }

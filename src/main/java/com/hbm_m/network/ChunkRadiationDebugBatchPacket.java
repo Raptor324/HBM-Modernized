@@ -1,20 +1,21 @@
 package com.hbm_m.network;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Supplier;
+
 // Пакет для отправки от сервера к клиенту данных о радиации в чанках для отладки.
 // Используется только в режиме отладки для отображения уровней радиации в чанках на клиенте.
 // Содержит карту позиций чанков и их уровней радиации, а также идентификатор измерения.
 
 import com.hbm_m.client.ClientRadiationData;
+
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Supplier;
 
 public class ChunkRadiationDebugBatchPacket {
 

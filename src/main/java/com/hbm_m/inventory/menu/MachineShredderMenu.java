@@ -16,8 +16,9 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
+import net.minecraftforge.items.IItemHandler;
+import com.hbm_m.inventory.ForgeItemHandlerAdapter;
 
 public class MachineShredderMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -57,7 +58,7 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         this.player = playerInventory.player;
         addDataSlots(data);
 
-        ItemStackHandler itemHandler = this.blockEntity.getInventory();
+        IItemHandler itemHandler = new ForgeItemHandlerAdapter(this.blockEntity.getInventory());
 
         // Входные слоты (3x3 сетка) - верхняя левая часть GUI (0-8)
         int startX = 44;

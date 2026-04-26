@@ -23,19 +23,34 @@ public class ModTags {
         public static final TagKey<Block> NON_OCCLUDING = create("non_occluding");
 
         private static TagKey<Block> tag(String name) {
-            return BlockTags.create(ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
+            //? if fabric && < 1.21.1 {
+            /*return BlockTags.create(new ResourceLocation(MainRegistry.MOD_ID, name));
+            *///?} else {
+                        return BlockTags.create(ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
+            //?}
+
         }
 
         private static TagKey<Block> create(String name) {
             return TagKey.create(Registries.BLOCK, 
-                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
+                //? if fabric && < 1.21.1 {
+                /*new ResourceLocation(MainRegistry.MOD_ID, name));
+                *///?} else {
+                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
+                //?}
+
         }
     }
 
     public static class Items {
 
         private static TagKey<Item> tag(String name) {
-            return ItemTags.create(ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
+            //? if fabric && < 1.21.1 {
+            /*return ItemTags.create(new ResourceLocation(MainRegistry.MOD_ID, name));
+            *///?} else {
+                        return ItemTags.create(ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
+            //?}
+
         }
     }
 }

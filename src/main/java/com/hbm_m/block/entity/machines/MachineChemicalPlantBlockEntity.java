@@ -16,12 +16,14 @@ import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe.CountedIngredient;
 import com.hbm_m.recipe.ChemicalPlantRecipe.FluidIngredient;
 
+import dev.architectury.fluid.FluidStack;
+import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.world.phys.AABB;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.Containers;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -30,14 +32,13 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
-import net.minecraftforge.registries.ForgeRegistries;
 
 /**
  * Chemical Plant BlockEntity - порт с 1.7.10.
@@ -295,11 +296,12 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         List<FluidIngredient> fluidInputs = recipe.getFluidInputs();
         for (int i = 0; i < fluidInputs.size(); i++) {
             FluidIngredient req = fluidInputs.get(i);
-            var fluid = ForgeRegistries.FLUIDS.getValue(req.fluidId());
+            var fluid = BuiltInRegistries.FLUID.get(req.fluidId());
             if (fluid == null) return false;
             FluidTank tank = inputTanks[i];
-            if (tank.getFluid().isEmpty()
-                || tank.getFluid().getFluid() != fluid
+            net.minecraftforge.fluids.FluidStack tankFluid = tank.getFluid();
+            if (tankFluid.isEmpty()
+                || tankFluid.getFluid() != fluid
                 || tank.getFluidAmount() < req.amount()) {
                 return false;
             }
@@ -324,7 +326,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             FluidStack output = fluidOutputs.get(i);
             if (output.isEmpty()) continue;
             FluidTank tank = outputTanks[i];
-            if (!tank.getFluid().isEmpty() && tank.getFluid().getFluid() != output.getFluid()) return false;
+            net.minecraftforge.fluids.FluidStack tankFluid = tank.getFluid();
+            if (!tankFluid.isEmpty() && tankFluid.getFluid() != output.getFluid()) return false;
             if (tank.getFluidAmount() + output.getAmount() > tank.getCapacity()) return false;
         }
 
@@ -364,7 +367,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         for (int i = 0; i < fluidOutputs.size(); i++) {
             FluidStack output = fluidOutputs.get(i);
             if (output.isEmpty()) continue;
-            outputTanks[i].fill(output.copy(), IFluidHandler.FluidAction.EXECUTE);
+            outputTanks[i].fill(FluidStackHooksForge.toForge(output), IFluidHandler.FluidAction.EXECUTE);
         }
     }
 
@@ -566,7 +569,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
     }
 
     public FluidStack getFluid() {
-        return inputTanks[0].getFluid();
+        return FluidStackHooksForge.fromForge(inputTanks[0].getFluid());
     }
 
     public float getFluidFillFraction() {

@@ -16,7 +16,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
 import dev.architectury.registry.registries.RegistrySupplier;
-import net.minecraftforge.registries.RegistryObject;
+import dev.architectury.registry.registries.RegistrySupplier;
 
 public final class AnvilRecipeGenerator {
     private AnvilRecipeGenerator() { }
@@ -269,8 +269,14 @@ public final class AnvilRecipeGenerator {
     }
 
     private static ResourceLocation anvilId(String tierFolder, String category, String name) {
-        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
+        //? if fabric && < 1.21.1 {
+        /*return new ResourceLocation(RefStrings.MODID,
                 "anvil/" + tierFolder + "/" + category + "_" + name);
+        *///?} else {
+                return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
+                "anvil/" + tierFolder + "/" + category + "_" + name);
+        //?}
+
     }
 
     private static ItemStack stack(Object obj, int count) {
@@ -281,8 +287,8 @@ public final class AnvilRecipeGenerator {
             } else if (val instanceof Block) {
                 return new ItemStack(((Block) val).asItem(), count);
             }
-        } else if (obj instanceof RegistryObject<?>) {
-            Object val = ((RegistryObject<?>) obj).get();
+        } else if (obj instanceof RegistrySupplier<?>) {
+            Object val = ((RegistrySupplier<?>) obj).get();
             if (val instanceof Item) {
                 return new ItemStack((Item) val, count);
             } else if (val instanceof Block) {

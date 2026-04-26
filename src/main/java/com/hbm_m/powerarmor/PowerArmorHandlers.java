@@ -206,7 +206,12 @@ public final class PowerArmorHandlers {
     private static final String TAG_SMASH_FALLDIST = "hbm_smash_falldist";
     
     private static final TagKey<net.minecraft.world.level.block.Block> HBM_HARDLANDING_BREAKABLE =
-            TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "hardlanding_breakable"));
+            //? if fabric && < 1.21.1 {
+            /*TagKey.create(Registries.BLOCK, new ResourceLocation(MainRegistry.MOD_ID, "hardlanding_breakable"));
+            *///?} else {
+                        TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "hardlanding_breakable"));
+            //?}
+
 
     private static void handleHardLanding(ServerPlayer player) {
         if (player.isSpectator()) return;

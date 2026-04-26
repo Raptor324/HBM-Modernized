@@ -7,6 +7,7 @@ import java.util.Optional;
 import com.hbm_m.inventory.menu.MachineCrystallizerMenu;
 import com.hbm_m.lib.RefStrings;
 
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
@@ -14,7 +15,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 
 /**
@@ -23,8 +23,14 @@ import net.minecraftforge.fluids.capability.templates.FluidTank;
  */
 public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMenu> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
             RefStrings.MODID, "textures/gui/processing/gui_crystallizer_alt.png");
+    *///?} else {
+        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+            RefStrings.MODID, "textures/gui/processing/gui_crystallizer_alt.png");
+    //?}
+
 
     private static final int TANK_WIDTH = 16;
     private static final int TANK_HEIGHT = 52;

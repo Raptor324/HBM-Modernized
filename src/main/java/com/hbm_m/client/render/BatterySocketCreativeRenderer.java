@@ -25,7 +25,12 @@ import net.minecraft.world.level.Level;
 public class BatterySocketCreativeRenderer implements BlockEntityRenderer<BatterySocketBlockEntity> {
 
     private static final ResourceLocation MOD_SKIN =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
+            //? if fabric && < 1.21.1 {
+            /*new ResourceLocation(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
+            //?}
+
     private static final ResourceLocation STEVE =
             ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
 

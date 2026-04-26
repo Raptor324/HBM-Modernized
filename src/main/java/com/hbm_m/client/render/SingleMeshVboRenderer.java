@@ -1,5 +1,10 @@
 package com.hbm_m.client.render;
 
+
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.List;
@@ -21,6 +26,10 @@ import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.LightTexture;
@@ -33,9 +42,11 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     /** Optional companion mesh in Iris-extended {@code NEW_ENTITY} format, lazy-built. */

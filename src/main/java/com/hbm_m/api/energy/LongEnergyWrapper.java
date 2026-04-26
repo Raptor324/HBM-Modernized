@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.api.energy;
 
 import com.hbm_m.interfaces.IEnergyConnector;
@@ -143,3 +144,4 @@ public class LongEnergyWrapper implements IEnergyStorage {
         return handler instanceof IEnergyReceiver r && r.canReceive();
     }
 }
+//?}

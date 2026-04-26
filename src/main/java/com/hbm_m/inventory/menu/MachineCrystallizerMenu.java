@@ -22,6 +22,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.network.PacketDistributor;
+import com.hbm_m.inventory.ForgeItemHandlerAdapter;
 
 public class MachineCrystallizerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -61,7 +62,7 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
         checkContainerDataCount(data, 2);
         addDataSlots(data);
 
-        var handler = blockEntity.getInventory();
+        var handler = new ForgeItemHandlerAdapter(blockEntity.getInventory());
 
         // Original slot layout from ContainerCrystallizer
         this.addSlot(new SlotItemHandler(handler, SLOT_INPUT, 62, 45));

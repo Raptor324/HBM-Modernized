@@ -2,7 +2,7 @@ package com.hbm_m.item.grenades_and_activators;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.sound.ModSounds;

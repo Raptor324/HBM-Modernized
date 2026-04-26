@@ -17,8 +17,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
-import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 public abstract class ItemArmorMod extends Item {
 
@@ -52,7 +51,7 @@ public abstract class ItemArmorMod extends Item {
     }
     
     @Override
-    public void appendHoverText(@Nonnull ItemStack pStack, @Nullable Level pLevel, @Nonnull List<Component> pTooltip, @Nonnull TooltipFlag pIsAdvanced) {
+    public void appendHoverText(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltip, TooltipFlag pIsAdvanced) {
         super.appendHoverText(pStack, pLevel, pTooltip, pIsAdvanced);
         // Добавляем строки с эффектами, которые определены в дочерних классах.
         pTooltip.addAll(this.getEffectTooltipLines());

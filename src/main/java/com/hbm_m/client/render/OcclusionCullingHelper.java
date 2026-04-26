@@ -1,5 +1,19 @@
 package com.hbm_m.client.render;
 
+
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.config.ModClothConfig;
+
+import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.tags.TagKey;
@@ -9,14 +23,11 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-
-import javax.annotation.Nullable;
-import com.hbm_m.config.ModClothConfig;
-
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public final class OcclusionCullingHelper {
     
     // Кэш результатов только в пределах ОДНОГО кадра.

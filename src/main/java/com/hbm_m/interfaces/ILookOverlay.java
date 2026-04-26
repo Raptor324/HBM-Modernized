@@ -9,19 +9,16 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.GameType;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGuiEvent;
+
 
 /**
  * Crosshair HUD when looking at a block
  */
 public interface ILookOverlay {
 
-    @OnlyIn(Dist.CLIENT)
     void printHook(RenderGuiEvent.Pre event, Level level, BlockPos pos);
 
-    @OnlyIn(Dist.CLIENT)
     static void printGeneric(RenderGuiEvent.Pre event, Component title, int titleCol, int bgCol, List<Component> text) {
         Minecraft mc = Minecraft.getInstance();
         Options options = mc.options;

@@ -1,5 +1,6 @@
 package com.hbm_m.block.machines;
 
+
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -8,7 +9,8 @@ import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
+import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
@@ -19,6 +21,14 @@ import com.hbm_m.interfaces.ILookOverlay;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidDuctItem;
 
+import dev.architectury.fluid.FluidStack;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -50,11 +60,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.FluidStack;
 
 /**
  * Fluid duct: multipart blockstate + Forge OBJ visibility on {@code pipe_neo.obj}. Fluid type lives in the block entity.
@@ -391,7 +398,11 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     @Override
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     public void printHook(RenderGuiEvent.Pre event, Level level, BlockPos pos) {
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof FluidDuctBlockEntity ductBe)) {
@@ -402,7 +413,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         if (fluid == null || fluid == Fluids.EMPTY) {
             text.add(Component.translatable("gui.hbm_m.fluid_duct.overlay.fluid_empty"));
         } else {
-            FluidStack stack = new FluidStack(fluid, 1);
+            net.minecraftforge.fluids.FluidStack stack = new net.minecraftforge.fluids.FluidStack(fluid, 1);
             int rgb = HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
             text.add(stack.getDisplayName().copy().withStyle(Style.EMPTY.withColor(TextColor.fromRgb(rgb))));
             text.add(Component.literal("Net nodes: " + ductBe.getNetworkSize())

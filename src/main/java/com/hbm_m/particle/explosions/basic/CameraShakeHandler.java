@@ -1,8 +1,9 @@
 package com.hbm_m.particle.explosions.basic;
 
-import com.mojang.blaze3d.vertex.PoseStack;
-import net.minecraft.client.Minecraft;
 import com.hbm_m.lib.RefStrings;
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.client.event.ViewportEvent;

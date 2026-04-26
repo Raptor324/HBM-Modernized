@@ -1,12 +1,11 @@
 package com.hbm_m.item.industrial;
 
-// Предмет-папка для хранения и управления шаблонами мультиблоков.
-// При использовании открывает GUI с возможностью получать шаблоны.
 
 import java.util.List;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.inventory.gui.GUITemplateFolder;
 
@@ -21,7 +20,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn; // OHIO
+import net.minecraftforge.api.distmarker.OnlyIn;
+// Предмет-папка для хранения и управления шаблонами мультиблоков.
+// При использовании открывает GUI с возможностью получать шаблоны.
 
 public class ItemTemplateFolder extends Item {
     public ItemTemplateFolder(Properties pProperties) {
@@ -39,8 +40,11 @@ public class ItemTemplateFolder extends Item {
 
         return InteractionResultHolder.sidedSuccess(itemStack, pLevel.isClientSide());
     }
-
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     private void openScreen(Player player, ItemStack stack) {
         Minecraft.getInstance().setScreen(new GUITemplateFolder(stack));
     }

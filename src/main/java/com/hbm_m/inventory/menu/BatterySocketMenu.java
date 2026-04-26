@@ -19,6 +19,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.network.PacketDistributor;
+import com.hbm_m.inventory.ForgeItemHandlerAdapter;
 
 public class BatterySocketMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -48,7 +49,7 @@ public class BatterySocketMenu extends AbstractContainerMenu implements ILongEne
         addPlayerInventory(inv, 8, 99);
         addPlayerHotbar(inv, 8, 157);
 
-        this.addSlot(new SlotItemHandler(be.getItemHandler(), 0, 35, 35) {
+        this.addSlot(new SlotItemHandler(new ForgeItemHandlerAdapter(be.getItemHandler()), 0, 35, 35) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return BatterySocketBlockEntity.isAllowedPortableEnergyStack(stack);

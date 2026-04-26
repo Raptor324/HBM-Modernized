@@ -11,17 +11,17 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.util.EnergyFormatter;
 
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 
 /**
@@ -30,8 +30,14 @@ import net.minecraftforge.fluids.capability.templates.FluidTank;
  */
 public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChemicalPlantMenu> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
             RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
+    *///?} else {
+        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+            RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
+    //?}
+
 
     private static final int TANK_WIDTH = 16;
     private static final int TANK_HEIGHT = 34;
@@ -108,7 +114,7 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         float a = ((color >> 24) & 255) / 255.0F;
         if (a == 0) a = 1.0F;
 
-        ResourceLocation png = FluidGuiRendering.guiTexturePngForStack(fluid);
+        ResourceLocation png = FluidGuiRendering.guiTexturePngForStack(dev.architectury.hooks.fluid.forge.FluidStackHooksForge.fromForge(fluid));
         if (png == null) return;
 
         com.mojang.blaze3d.systems.RenderSystem.enableBlend();
@@ -272,10 +278,10 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
             lines.add(Component.literal("  " + out.getCount() + "x ").withStyle(ChatFormatting.GRAY)
                     .append(out.getHoverName()));
         }
-        for (FluidStack out : recipe.getFluidOutputs()) {
+        for (dev.architectury.fluid.FluidStack out : recipe.getFluidOutputs()) {
             if (out.isEmpty()) continue;
             lines.add(Component.literal("  " + out.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
-                    .append(out.getDisplayName()));
+                    .append(dev.architectury.hooks.fluid.FluidStackHooks.getName(out)));
         }
 
         return lines;

@@ -1,5 +1,11 @@
 package com.hbm_m.armormod.util;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.UUID;
+
 // Хелпер для управления модификациями брони: сохранение/загрузка из NBT,
 // применение атрибутов, вычисление защиты от радиации и т.п.
 import com.google.common.collect.Multimap;
@@ -8,22 +14,16 @@ import com.hbm_m.armormod.item.ItemModRadProtection;
 import com.hbm_m.datagen.assets.ModItemTagProvider;
 import com.hbm_m.hazard.HazardSystem;
 
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.Tag;
 import net.minecraft.world.entity.ai.attributes.Attribute;
 import net.minecraft.world.entity.ai.attributes.AttributeModifier;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraft.world.entity.player.Player;
-
-import java.util.UUID;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import net.minecraft.world.Container;
 
 public class ArmorModificationHelper {
 
@@ -225,10 +225,10 @@ public class ArmorModificationHelper {
         return ItemStack.EMPTY;
     }
 
-    public static void loadModsIntoTable(ItemStack armorStack, IItemHandler tableInventory) {
+    public static void loadModsIntoTable(ItemStack armorStack, Container tableInventory) {
         // Очищаем стол перед загрузкой
-        for (int i = 0; i < tableInventory.getSlots(); i++) {
-            tableInventory.extractItem(i, tableInventory.getStackInSlot(i).getCount(), false);
+        for (int i = 0; i < tableInventory.getContainerSize(); i++) {
+            tableInventory.setItem(i, ItemStack.EMPTY);
         }
 
         if (!armorStack.hasTag() || !armorStack.getTag().contains(MOD_COMPOUND_KEY)) {
@@ -240,13 +240,13 @@ public class ArmorModificationHelper {
             String key = MOD_SLOT_KEY_PREFIX + i;
             if (mods.contains(key)) {
                 ItemStack modStack = ItemStack.of(mods.getCompound(key));
-                tableInventory.insertItem(i, modStack, false);
+                tableInventory.setItem(i, modStack);
             }
         }
     }
 
 
-    public static void saveTableToArmor(ItemStack armorStack, IItemHandler tableInventory, Player player) {
+    public static void saveTableToArmor(ItemStack armorStack, Container tableInventory, Player player) {
         if (!(armorStack.getItem() instanceof ArmorItem armorItem)) {
             return;
         }
@@ -257,7 +257,7 @@ public class ArmorModificationHelper {
 
         // ШАГ 1: СОХРАНЕНИЕ КОНФИГУРАЦИИ МОДОВ В НАШ ТЕГ
         for (int i = 0; i < 9; i++) {
-            ItemStack modStack = tableInventory.getStackInSlot(i);
+            ItemStack modStack = tableInventory.getItem(i);
             if (!modStack.isEmpty()) {
                 modsCompound.put(MOD_SLOT_KEY_PREFIX + i, modStack.save(new CompoundTag()));
             }
@@ -289,7 +289,9 @@ public class ArmorModificationHelper {
             Multimap<Attribute, AttributeModifier> defaultModifiers = armorItem.getDefaultAttributeModifiers(armorItem.getEquipmentSlot());
             for (Map.Entry<Attribute, AttributeModifier> entry : defaultModifiers.entries()) {
                 CompoundTag modifierTag = entry.getValue().save();
-                modifierTag.putString("AttributeName", ForgeRegistries.ATTRIBUTES.getKey(entry.getKey()).toString());
+                var key = BuiltInRegistries.ATTRIBUTE.getKey(entry.getKey());
+                if (key == null) continue;
+                modifierTag.putString("AttributeName", key.toString());
                 modifierTag.putString("Slot", armorItem.getEquipmentSlot().getName());
                 preservedModifiers.add(modifierTag);
             }
@@ -297,7 +299,7 @@ public class ArmorModificationHelper {
 
         // 2b: Добавляем атрибуты от наших модов, устанавливая им маркер.
         for (int i = 0; i < 9; i++) {
-            ItemStack modStack = tableInventory.getStackInSlot(i);
+            ItemStack modStack = tableInventory.getItem(i);
             if (modStack.getItem() instanceof ItemArmorMod mod) {
                 boolean isCompatible = switch (armorItem.getType()) {
                     case HELMET -> modStack.is(ModItemTagProvider.REQUIRES_HELMET);
@@ -312,7 +314,9 @@ public class ArmorModificationHelper {
                     if (modModifiers != null) {
                         for (Map.Entry<Attribute, AttributeModifier> entry : modModifiers.entries()) {
                             CompoundTag modifierTag = entry.getValue().save();
-                            modifierTag.putString("AttributeName", ForgeRegistries.ATTRIBUTES.getKey(entry.getKey()).toString());
+                            var key = BuiltInRegistries.ATTRIBUTE.getKey(entry.getKey());
+                            if (key == null) continue;
+                            modifierTag.putString("AttributeName", key.toString());
                             modifierTag.putString("Slot", armorItem.getEquipmentSlot().getName());
                             // ВАЖНО: Добавляем наш маркер, чтобы идентифицировать этот атрибут в будущем.
                             modifierTag.putBoolean(MODIFIER_MARKER_KEY, true);

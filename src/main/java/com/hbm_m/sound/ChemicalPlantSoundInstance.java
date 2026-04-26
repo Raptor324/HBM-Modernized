@@ -1,13 +1,17 @@
 package com.hbm_m.sound;
 
+
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class ChemicalPlantSoundInstance extends AbstractTickableSoundInstance {
 
     public ChemicalPlantSoundInstance(BlockPos pos) {

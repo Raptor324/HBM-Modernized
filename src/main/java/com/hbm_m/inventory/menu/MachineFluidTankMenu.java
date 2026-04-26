@@ -1,22 +1,27 @@
 package com.hbm_m.inventory.menu;
 
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.world.level.material.Fluids;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.*;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.SimpleContainerData;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.items.SlotItemHandler;
-import org.jetbrains.annotations.NotNull;
 
 public class MachineFluidTankMenu extends AbstractContainerMenu {
 

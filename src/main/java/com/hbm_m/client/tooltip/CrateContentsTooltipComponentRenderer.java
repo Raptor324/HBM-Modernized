@@ -1,21 +1,31 @@
 package com.hbm_m.client.tooltip;
 
+
 import java.util.List;
 
 import javax.annotation.Nonnull;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Client renderer for crate tooltip rows (item icon + name).
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class CrateContentsTooltipComponentRenderer implements ClientTooltipComponent {
     private static final int ROW_HEIGHT = 18;
     private static final int TEXT_X_OFFSET = 22;

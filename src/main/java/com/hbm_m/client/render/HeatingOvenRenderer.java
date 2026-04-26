@@ -1,9 +1,19 @@
 package com.hbm_m.client.render;
 
+
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
+
+import java.util.List;
+
 import com.hbm_m.block.entity.machines.HeatingOvenBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import dev.architectury.utils.Env;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -13,17 +23,17 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.ModelData;
-
-import java.util.List;
 
 /**
  * Renderer for HeatingOven block entity.
  * Renders animated door and inner burning state based on original 1.7.10 code.
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class HeatingOvenRenderer implements BlockEntityRenderer<HeatingOvenBlockEntity> {
 
     private static final RandomSource RANDOM = RandomSource.create(42);

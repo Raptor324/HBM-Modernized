@@ -16,6 +16,8 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.event.TickEvent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -37,8 +39,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-// Основные импорты Forge
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.client.event.RenderItemInFrameEvent;
@@ -46,7 +46,6 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
@@ -940,8 +939,18 @@ public class ModEventHandlerClient {
     // TODO: Добавить методы для визуальных эффектов
     // TODO: Добавить методы для обработки ввода
     // Текстуры для предметов в рамках
-    private static final ResourceLocation POSTER = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/misc/poster.png");
-    private static final ResourceLocation POSTER_CAT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/misc/poster_cat.png");
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation POSTER = new ResourceLocation(RefStrings.MODID, "textures/models/misc/poster.png");
+    *///?} else {
+        private static final ResourceLocation POSTER = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/misc/poster.png");
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation POSTER_CAT = new ResourceLocation(RefStrings.MODID, "textures/models/misc/poster_cat.png");
+    *///?} else {
+        private static final ResourceLocation POSTER_CAT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/misc/poster_cat.png");
+    //?}
+
 
     // ===== TODO ЗАГЛУШКИ ДЛЯ НЕРЕАЛИЗОВАННЫХ ФУНКЦИЙ =====
     // Эти функции требуют дополнительных зависимостей или инфраструктуры,

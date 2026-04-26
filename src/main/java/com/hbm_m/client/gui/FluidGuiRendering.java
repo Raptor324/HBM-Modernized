@@ -6,11 +6,12 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.main.MainRegistry;
 
+import dev.architectury.fluid.FluidStack;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.fluids.FluidStack;
+import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
 
 /**
  * Утилиты для отрисовки жидкости в GUI так же, как в 1.7.10 {@code FluidType} /
@@ -38,9 +39,16 @@ public final class FluidGuiRendering {
      */
     public static ResourceLocation hbmGuiFluidPng(String fluidTextureBaseName) {
         String safe = fluidTextureBaseName == null ? "" : fluidTextureBaseName.toLowerCase(Locale.US);
-        return ResourceLocation.fromNamespaceAndPath(
+        //? if fabric && < 1.21.1 {
+        /*return new ResourceLocation(
                 MainRegistry.MOD_ID,
                 "textures/gui/fluids/" + safe + ".png");
+        *///?} else {
+                return ResourceLocation.fromNamespaceAndPath(
+                MainRegistry.MOD_ID,
+                "textures/gui/fluids/" + safe + ".png");
+        //?}
+
     }
 
     /**
@@ -49,9 +57,16 @@ public final class FluidGuiRendering {
      */
     public static ResourceLocation hbmGuiFluidPngCustom(String textureFileBaseName) {
         String name = textureFileBaseName == null ? "" : textureFileBaseName;
-        return ResourceLocation.fromNamespaceAndPath(
+        //? if fabric && < 1.21.1 {
+        /*return new ResourceLocation(
                 MainRegistry.MOD_ID,
                 "textures/gui/fluids/" + name + ".png");
+        *///?} else {
+                return ResourceLocation.fromNamespaceAndPath(
+                MainRegistry.MOD_ID,
+                "textures/gui/fluids/" + name + ".png");
+        //?}
+
     }
 
     /**
@@ -59,9 +74,16 @@ public final class FluidGuiRendering {
      * → полный {@link ResourceLocation} PNG для {@link GuiGraphics#blit(ResourceLocation, int, int, int, int, int, int, int, int)}.
      */
     public static ResourceLocation texturePngFromStillSpriteId(ResourceLocation stillId) {
-        return ResourceLocation.fromNamespaceAndPath(
+        //? if fabric && < 1.21.1 {
+        /*return new ResourceLocation(
                 stillId.getNamespace(),
                 "textures/" + stillId.getPath() + ".png");
+        *///?} else {
+                return ResourceLocation.fromNamespaceAndPath(
+                stillId.getNamespace(),
+                "textures/" + stillId.getPath() + ".png");
+        //?}
+
     }
 
     @Nullable
@@ -72,7 +94,7 @@ public final class FluidGuiRendering {
 
     @Nullable
     public static ResourceLocation guiTexturePngForFluid(Fluid fluid, FluidStack stackForStillTexture) {
-        ResourceLocation still = IClientFluidTypeExtensions.of(fluid).getStillTexture(stackForStillTexture);
+        ResourceLocation still = IClientFluidTypeExtensions.of(fluid).getStillTexture(FluidStackHooksForge.toForge(stackForStillTexture));
         return still == null ? null : texturePngFromStillSpriteId(still);
     }
 

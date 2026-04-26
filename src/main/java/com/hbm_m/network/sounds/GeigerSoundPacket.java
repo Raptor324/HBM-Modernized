@@ -1,20 +1,22 @@
 package com.hbm_m.network.sounds;
 
+import java.util.function.Supplier;
+
+import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.main.MainRegistry;
+
+
 // Пакет для отправки звуковых эффектов от сервера к клиенту.
 // Используется для воспроизведения звуковых эффектов на клиентской стороне, инициируемых сервером (например, звуки приборов, действия игрока и т.д.).
 
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.resources.ResourceLocation;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.api.distmarker.Dist;
-import com.hbm_m.main.MainRegistry;
-import com.hbm_m.config.ModClothConfig;
-
-import java.util.function.Supplier;
 
 public class GeigerSoundPacket {
     private final ResourceLocation soundLocation;

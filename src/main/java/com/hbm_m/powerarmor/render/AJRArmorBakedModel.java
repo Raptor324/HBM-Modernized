@@ -1,5 +1,6 @@
 package com.hbm_m.powerarmor.render;
 
+
 import java.util.Map;
 
 import com.hbm_m.interfaces.IArmorModelConfig;
@@ -13,12 +14,19 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
 
 /**
  * Baked model for rendering AJR armor in GUI/hand.
  * Uses the shared multipart baked model infrastructure (same as T51).
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class AJRArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final String[] AJR_ORDER = {

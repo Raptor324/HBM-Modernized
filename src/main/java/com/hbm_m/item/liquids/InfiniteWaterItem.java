@@ -6,6 +6,7 @@ import javax.annotation.Nonnull;
 
 import org.jetbrains.annotations.Nullable;
 
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -18,7 +19,6 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 public class InfiniteWaterItem extends Item {

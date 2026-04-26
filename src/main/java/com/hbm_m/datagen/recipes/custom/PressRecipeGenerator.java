@@ -30,108 +30,228 @@ public final class PressRecipeGenerator {
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_IRON.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(Items.IRON_INGOT)
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_iron"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_iron"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_iron"));
+                //?}
+
 
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_COPPER.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(Items.COPPER_INGOT)
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_copper"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_copper"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_copper"));
+                //?}
+
 
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_GOLD.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(Items.GOLD_INGOT)
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_gold"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_gold"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_gold"));
+                //?}
+
 
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_STEEL.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(ModItems.getIngot(ModIngots.STEEL).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_steel"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_steel"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_steel"));
+                //?}
+
 
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_LEAD.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(ModItems.getIngot(ModIngots.LEAD).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_lead"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_lead"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_lead"));
+                //?}
+
                 
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_ADVANCED_ALLOY.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_advanced_alloy"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_advanced_alloy"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_advanced_alloy"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_SATURNITE.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(ModItems.getIngot(ModIngots.SATURNITE).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_saturnite"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_saturnite"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_saturnite"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_SCHRABIDIUM.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(ModItems.getIngot(ModIngots.SCHRABIDIUM).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_schrabidium"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_schrabidium"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_schrabidium"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_TITANIUM.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(ModItems.getIngot(ModIngots.TITANIUM).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_titanium"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_titanium"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_titanium"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_ALUMINUM.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(ModItems.getIngot(ModIngots.ALUMINUM).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_aluminium"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_aluminium"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_aluminium"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_GUNSTEEL.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(ModItems.getIngot(ModIngots.GUNSTEEL).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_gunsteel"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_gunsteel"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_gunsteel"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_COMBINE_STEEL.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(ModItems.getIngot(ModIngots.COMBINE_STEEL).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_combine_steel"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_combine_steel"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_combine_steel"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.PLATE_GUNMETAL.get()))
                 .stamp(ModItemTagProvider.STAMPS_PLATE)
                 .material(ModItems.getIngot(ModIngots.GUNMETAL).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_gunmetal"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "plate_gunmetal"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "plate_gunmetal"));
+                //?}
+
     }
 
     private static void generateWires(Consumer<FinishedRecipe> writer) {
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_COPPER.get(), 8))
                 .stamp(ModItemTagProvider.STAMPS_WIRE)
                 .material(Items.COPPER_INGOT)
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_copper"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "wire_copper"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_copper"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_GOLD.get(), 8))
                 .stamp(ModItemTagProvider.STAMPS_WIRE)
                 .material(Items.GOLD_INGOT)
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_gold"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "wire_gold"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_gold"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_ADVANCED_ALLOY.get(), 8))
                 .stamp(ModItemTagProvider.STAMPS_WIRE)
                 .material(ModItems.getIngot(ModIngots.ADVANCED_ALLOY).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_advanced_alloy"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "wire_advanced_alloy"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_advanced_alloy"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_ALUMINIUM.get(), 8))
                 .stamp(ModItemTagProvider.STAMPS_WIRE)
                 .material(ModItems.getIngot(ModIngots.ALUMINUM).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_aluminium"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "wire_aluminium"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_aluminium"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_CARBON.get(), 8))
                 .stamp(ModItemTagProvider.STAMPS_WIRE)
                 .material(ModItems.getIngot(ModIngots.LEAD).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_carbon"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "wire_carbon"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_carbon"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_FINE.get(), 8))
                 .stamp(ModItemTagProvider.STAMPS_WIRE)
                 .material(Items.IRON_INGOT)
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_fine"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "wire_fine"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_fine"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_MAGNETIZED_TUNGSTEN.get(), 8))
                 .stamp(ModItemTagProvider.STAMPS_WIRE)
                 .material(ModItems.getIngot(ModIngots.MAGNETIZED_TUNGSTEN).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_magnetized_tungsten"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "wire_magnetized_tungsten"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_magnetized_tungsten"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_RED_COPPER.get(), 8))
                 .stamp(ModItemTagProvider.STAMPS_WIRE)
                 .material(ModItems.getIngot(ModIngots.RED_COPPER).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_red_copper"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "wire_red_copper"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_red_copper"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_SCHRABIDIUM.get(), 8))
                 .stamp(ModItemTagProvider.STAMPS_WIRE)
                 .material(ModItems.getIngot(ModIngots.SCHRABIDIUM).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_schrabidium"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "wire_schrabidium"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_schrabidium"));
+                //?}
+
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.WIRE_TUNGSTEN.get(), 8))
                 .stamp(ModItemTagProvider.STAMPS_WIRE)
                 .material(ModItems.getIngot(ModIngots.TUNGSTEN).get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_tungsten"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "wire_tungsten"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "wire_tungsten"));
+                //?}
+
 
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.SILICON_CIRCUIT.get()))
                 .stamp(ModItemTagProvider.STAMPS_CIRCUIT)
                 .material(ModItems.BILLET_SILICON.get())
-                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silicon_circuit"));
+                //? if fabric && < 1.21.1 {
+                /*.save(writer, new ResourceLocation(RefStrings.MODID, "silicon_circuit"));
+                *///?} else {
+                                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silicon_circuit"));
+                //?}
+
     }
 
 

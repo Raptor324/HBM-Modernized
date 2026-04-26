@@ -41,7 +41,6 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.shapes.BooleanOp;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.PacketDistributor;
 
 public class MultiblockStructureHelper {
     
@@ -643,7 +642,7 @@ public class MultiblockStructureHelper {
             if (player instanceof ServerPlayer serverPlayer) {
                 // Проверяем, включена ли опция в конфиге, перед отправкой пакета
                 if (ModClothConfig.get().obstructionHighlight.enableObstructionHighlight) {
-                    ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new HighlightBlocksPacket(obstructions));
+                    // TODO(multiloader): re-implement highlight packet sending on Fabric.
                 }
             }
             player.displayClientMessage(Component.translatable("chat.hbm_m.structure.obstructed"), true);

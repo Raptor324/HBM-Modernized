@@ -12,7 +12,12 @@ import net.minecraft.resources.ResourceLocation;
 
 public class MachineBatterySocketModelLoader extends AbstractObjPartModelLoader<MachineBatterySocketBakedModel> {
 
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("hbm_m", "battery_socket");
+    //? if fabric && < 1.21.1 {
+    /*public static final ResourceLocation ID = new ResourceLocation("hbm_m", "battery_socket");
+    *///?} else {
+        public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath("hbm_m", "battery_socket");
+    //?}
+
 
     @Override
     protected Set<String> getPartNames(JsonObject jsonObject) {

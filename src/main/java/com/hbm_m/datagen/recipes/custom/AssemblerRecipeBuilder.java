@@ -1,13 +1,23 @@
 package com.hbm_m.datagen.recipes.custom;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
+import javax.annotation.Nonnull;
+
+import org.jetbrains.annotations.Nullable;
+
 // Билдер рецептов для AssemblerRecipe с поддержкой количества ингредиентов.
 // Позволяет легко создавать рецепты с несколькими ингредиентами, каждый из которых имеет свое количество.
 // Используется в классе генерации данных ModRecipeProvider.
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.AssemblerRecipe;
+
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -15,14 +25,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.jetbrains.annotations.Nullable;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
-
-import javax.annotation.Nonnull;
 
 public class AssemblerRecipeBuilder implements RecipeBuilder {
     private final ItemStack output;
@@ -116,7 +118,7 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
             pJson.add("ingredients", jsonIngredients);
 
             JsonObject jsonOutput = new JsonObject();
-            jsonOutput.addProperty("item", ForgeRegistries.ITEMS.getKey(this.builder.output.getItem()).toString());
+            jsonOutput.addProperty("item", BuiltInRegistries.ITEM.getKey(this.builder.output.getItem()).toString());
             if (this.builder.output.getCount() > 1) {
                 jsonOutput.addProperty("count", this.builder.output.getCount());
             }

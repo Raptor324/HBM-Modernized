@@ -24,30 +24,120 @@ import java.util.concurrent.CompletableFuture;
 public class ModItemTagProvider extends ItemTagsProvider {
 
     // Теги, определяющие, в какой ФИЗИЧЕСКИЙ СЛОТ можно положить предмет
-    public static final TagKey<Item> UPGRADE_MODULES = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "upgrade_modules"));
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> UPGRADE_MODULES = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "upgrade_modules"));
+    *///?} else {
+        public static final TagKey<Item> UPGRADE_MODULES = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "upgrade_modules"));
+    //?}
 
-    public static final TagKey<Item> SLOT_HELMET_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_helmet"));
-    public static final TagKey<Item> SLOT_CHESTPLATE_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_chestplate"));
-    public static final TagKey<Item> SLOT_LEGGINGS_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_leggings"));
-    public static final TagKey<Item> SLOT_BOOTS_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_boots"));
-    public static final TagKey<Item> SLOT_SERVOS_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_servos"));
-    public static final TagKey<Item> SLOT_CLADDING_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_cladding"));
-    public static final TagKey<Item> SLOT_SPECIAL_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_special"));
-    public static final TagKey<Item> SLOT_BATTERY_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_battery"));
-    public static final TagKey<Item> SLOT_INSERT_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_insert"));
+
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> SLOT_HELMET_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_helmet"));
+    *///?} else {
+        public static final TagKey<Item> SLOT_HELMET_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_helmet"));
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> SLOT_CHESTPLATE_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_chestplate"));
+    *///?} else {
+        public static final TagKey<Item> SLOT_CHESTPLATE_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_chestplate"));
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> SLOT_LEGGINGS_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_leggings"));
+    *///?} else {
+        public static final TagKey<Item> SLOT_LEGGINGS_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_leggings"));
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> SLOT_BOOTS_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_boots"));
+    *///?} else {
+        public static final TagKey<Item> SLOT_BOOTS_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_boots"));
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> SLOT_SERVOS_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_servos"));
+    *///?} else {
+        public static final TagKey<Item> SLOT_SERVOS_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_servos"));
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> SLOT_CLADDING_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_cladding"));
+    *///?} else {
+        public static final TagKey<Item> SLOT_CLADDING_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_cladding"));
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> SLOT_SPECIAL_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_special"));
+    *///?} else {
+        public static final TagKey<Item> SLOT_SPECIAL_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_special"));
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> SLOT_BATTERY_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_battery"));
+    *///?} else {
+        public static final TagKey<Item> SLOT_BATTERY_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_battery"));
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> SLOT_INSERT_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_insert"));
+    *///?} else {
+        public static final TagKey<Item> SLOT_INSERT_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_insert"));
+    //?}
+
 
     // Теги, определяющие, с каким ТИПОМ БРОНИ совместим предмет
-    public static final TagKey<Item> REQUIRES_HELMET = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_helmet"));
-    public static final TagKey<Item> REQUIRES_CHESTPLATE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_chestplate"));
-    public static final TagKey<Item> REQUIRES_LEGGINGS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_leggings"));
-    public static final TagKey<Item> REQUIRES_BOOTS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_boots"));
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> REQUIRES_HELMET = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/requires_helmet"));
+    *///?} else {
+        public static final TagKey<Item> REQUIRES_HELMET = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_helmet"));
+    //?}
 
-    public static final TagKey<Item> BLADES = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blades"));
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> REQUIRES_CHESTPLATE = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/requires_chestplate"));
+    *///?} else {
+        public static final TagKey<Item> REQUIRES_CHESTPLATE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_chestplate"));
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> REQUIRES_LEGGINGS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/requires_leggings"));
+    *///?} else {
+        public static final TagKey<Item> REQUIRES_LEGGINGS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_leggings"));
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> REQUIRES_BOOTS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/requires_boots"));
+    *///?} else {
+        public static final TagKey<Item> REQUIRES_BOOTS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_boots"));
+    //?}
+
+
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> BLADES = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "blades"));
+    *///?} else {
+        public static final TagKey<Item> BLADES = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blades"));
+    //?}
+
 
     // Теги для штампов пресса
-    public static final TagKey<Item> STAMPS_PLATE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "stamps/plate"));
-    public static final TagKey<Item> STAMPS_WIRE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "stamps/wire"));
-    public static final TagKey<Item> STAMPS_CIRCUIT = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "stamps/circuit"));
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> STAMPS_PLATE = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "stamps/plate"));
+    *///?} else {
+        public static final TagKey<Item> STAMPS_PLATE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "stamps/plate"));
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> STAMPS_WIRE = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "stamps/wire"));
+    *///?} else {
+        public static final TagKey<Item> STAMPS_WIRE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "stamps/wire"));
+    //?}
+
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Item> STAMPS_CIRCUIT = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "stamps/circuit"));
+    *///?} else {
+        public static final TagKey<Item> STAMPS_CIRCUIT = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "stamps/circuit"));
+    //?}
+
 
     public ModItemTagProvider(PackOutput packOutput, CompletableFuture<HolderLookup.Provider> lookupProvider, CompletableFuture<TagLookup<Block>> blockTagsProvider, ExistingFileHelper existingFileHelper) {
         super(packOutput, lookupProvider, blockTagsProvider, RefStrings.MODID, existingFileHelper);
@@ -57,29 +147,51 @@ public class ModItemTagProvider extends ItemTagsProvider {
     protected void addTags(@Nonnull HolderLookup.Provider provider) {
 
         //  АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ СЛИТКОВ
-        TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots")));
+        //? if fabric && < 1.21.1 {
+        /*TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(new ResourceLocation("forge", "ingots")));
+        *///?} else {
+                TagsProvider.TagAppender<Item> ingotsTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots")));
+        //?}
+
 
         for (ModIngots ingot : ModIngots.values()) {
             RegistrySupplier<Item> ingotObject = ModItems.getIngot(ingot);
             //  ПРОВЕРКА НА NULL И НА РЕГИСТРАЦИЮ
             if (ingotObject != null && ingotObject.isPresent()) {
                 String ingotName = ingot.getName();
-                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots/" + ingotName)))
+                //? if fabric && < 1.21.1 {
+                /*this.tag(ItemTags.create(new ResourceLocation("forge", "ingots/" + ingotName)))
                         .add(ingotObject.get());
+                *///?} else {
+                                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ingots/" + ingotName)))
+                        .add(ingotObject.get());
+                //?}
+
                 ingotsTagBuilder.add(ingotObject.getKey());
             }
         }
 
         //  АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ ПОРОШКОВ
-        TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders")));
+        //? if fabric && < 1.21.1 {
+        /*TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(new ResourceLocation("forge", "powders")));
+        *///?} else {
+                TagsProvider.TagAppender<Item> powdersTagBuilder = this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders")));
+        //?}
+
 
         for (ModPowders powder : ModPowders.values()) {
             RegistrySupplier<Item> powderObject = ModItems.getPowders(powder);
             //  ПОЛНАЯ ПРОВЕРКА - ИСПРАВЛЕНА ОСНОВНАЯ ОШИБКА!
             if (powderObject != null && powderObject.isPresent()) {
                 String powderName = powder.getName();
-                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + powderName)))
+                //? if fabric && < 1.21.1 {
+                /*this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + powderName)))
                         .add(powderObject.get());
+                *///?} else {
+                                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + powderName)))
+                        .add(powderObject.get());
+                //?}
+
                 powdersTagBuilder.add(powderObject.getKey());
             }
         }
@@ -88,16 +200,28 @@ public class ModItemTagProvider extends ItemTagsProvider {
         for (ModIngots ingot : ModIngots.values()) {
             RegistrySupplier<Item> powderObject = ModItems.getPowder(ingot);
             if (powderObject != null && powderObject.isPresent()) {  //  ДОБАВЛЕНА ПРОВЕРКА isPresent()
-                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName())))
+                //? if fabric && < 1.21.1 {
+                /*this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + ingot.getName())))
                         .add(powderObject.get());
+                *///?} else {
+                                this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName())))
+                        .add(powderObject.get());
+                //?}
+
                 powdersTagBuilder.add(powderObject.getKey());
             }
 
             //  МАЛЕНЬКИЕ ПОРОШКИ С ПРОВЕРКОЙ
             ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
                 if (tiny != null && tiny.isPresent()) {  //  ДОПОЛНИТЕЛЬНАЯ ПРОВЕРКА
-                    this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName() + "/tiny")))
+                    //? if fabric && < 1.21.1 {
+                    /*this.tag(ItemTags.create(new ResourceLocation("forge", "powders/" + ingot.getName() + "/tiny")))
                             .add(tiny.get());
+                    *///?} else {
+                                        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "powders/" + ingot.getName() + "/tiny")))
+                            .add(tiny.get());
+                    //?}
+
                 }
             });
         }
@@ -108,12 +232,30 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
 
         // АВТОМАТИЧЕСКОЕ КОПИРОВАНИЕ ТЕГОВ ИЗ БЛОКОВ
-        this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")),
+        //? if fabric && < 1.21.1 {
+        /*this.copy(BlockTags.create(new ResourceLocation("forge", "storage_blocks/uranium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")));
-        this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")),
+        *///?} else {
+                this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")),
+                ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")));
+        //?}
+
+        //? if fabric && < 1.21.1 {
+        /*this.copy(BlockTags.create(new ResourceLocation("forge", "storage_blocks/plutonium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")));
-        this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")),
+        *///?} else {
+                this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")),
+                ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")));
+        //?}
+
+        //? if fabric && < 1.21.1 {
+        /*this.copy(BlockTags.create(new ResourceLocation("forge", "ores/uranium")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")));
+        *///?} else {
+                this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")),
+                ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")));
+        //?}
+
 
 
 

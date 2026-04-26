@@ -1,13 +1,21 @@
 package com.hbm_m.datagen.recipes.custom;
 
+import java.util.function.Consumer;
+
+import javax.annotation.Nonnull;
+
+import org.jetbrains.annotations.Nullable;
+
 // Билдер рецептов для BlastFurnaceRecipe.
 // Позволяет быстро описывать двухкомпонентные рецепты доменной печи и генерирует корректный JSON.
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
+
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -16,11 +24,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.jetbrains.annotations.Nullable;
-
-import javax.annotation.Nonnull;
-import java.util.function.Consumer;
 
 public class BlastFurnaceRecipeBuilder implements RecipeBuilder {
 
@@ -82,7 +85,7 @@ public class BlastFurnaceRecipeBuilder implements RecipeBuilder {
             json.add("ingredients", ingredients);
 
             JsonObject outputObject = new JsonObject();
-            outputObject.addProperty("item", ForgeRegistries.ITEMS.getKey(builder.output.getItem()).toString());
+            outputObject.addProperty("item", BuiltInRegistries.ITEM.getKey(builder.output.getItem()).toString());
             if (builder.output.getCount() > 1) {
                 outputObject.addProperty("count", builder.output.getCount());
             }

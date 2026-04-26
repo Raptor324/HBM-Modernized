@@ -15,6 +15,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
+import com.hbm_m.inventory.ForgeItemHandlerAdapter;
 
 /**
  * Menu (Container) для Fracking Tower.
@@ -43,7 +44,7 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
 
     private MachineFrackingTowerMenu(int id, Inventory inv, BlockPos pos) {
         this(id, inv, 
-             inv.player.level().getBlockEntity(pos) instanceof MachineHydraulicFrackiningTowerBlockEntity be ? be.getInventory() : null,
+             inv.player.level().getBlockEntity(pos) instanceof MachineHydraulicFrackiningTowerBlockEntity be ? new ForgeItemHandlerAdapter(be.getInventory()) : null,
              inv.player.level().getBlockEntity(pos) instanceof MachineHydraulicFrackiningTowerBlockEntity be ? be : null,
              ContainerLevelAccess.create(inv.player.level(), pos));
     }
@@ -125,7 +126,7 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
         return new MachineFrackingTowerMenu(
                 containerId, 
                 playerInventory, 
-                blockEntity.getInventory(), 
+                new ForgeItemHandlerAdapter(blockEntity.getInventory()), 
                 blockEntity, 
                 ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos())
         );

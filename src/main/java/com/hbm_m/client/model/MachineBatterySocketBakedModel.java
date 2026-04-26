@@ -25,7 +25,12 @@ import net.minecraftforge.client.model.data.ModelData;
 public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
     private static final ResourceLocation BATTERY_TEX =
-            ResourceLocation.fromNamespaceAndPath("hbm_m", "block/machines/battery_socket");
+            //? if fabric && < 1.21.1 {
+            /*new ResourceLocation("hbm_m", "block/machines/battery_socket");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath("hbm_m", "block/machines/battery_socket");
+            //?}
+
 
     private final Map<Object, List<BakedQuad>> batteryQuadCache = new ConcurrentHashMap<>();
     private static final Object NULL_SIDE_KEY = new Object();

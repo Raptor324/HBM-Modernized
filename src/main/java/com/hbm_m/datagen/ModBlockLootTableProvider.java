@@ -8,9 +8,11 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.advancements.critereon.EnchantmentPredicate;
 import net.minecraft.advancements.critereon.ItemPredicate;
 import net.minecraft.advancements.critereon.MinMaxBounds;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.loot.BlockLootSubProvider;
 import net.minecraft.world.flag.FeatureFlags;
 import net.minecraft.world.item.Item;
@@ -29,8 +31,6 @@ import net.minecraft.world.level.storage.loot.predicates.MatchTool;
 import net.minecraft.world.level.storage.loot.providers.nbt.ContextNbtProvider;
 import net.minecraft.world.level.storage.loot.providers.number.ConstantValue;
 import net.minecraft.world.level.storage.loot.providers.number.UniformGenerator;
-import dev.architectury.registry.registries.RegistrySupplier;
-import net.minecraftforge.registries.ForgeRegistries;
 
 public class ModBlockLootTableProvider extends BlockLootSubProvider {
 
@@ -49,7 +49,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 continue;
             }
 
-            Item mappedItem = ForgeRegistries.ITEMS.getValue(entry.getId());
+            Item mappedItem = BuiltInRegistries.ITEM.get(entry.getId());
             if (mappedItem != null && mappedItem != Items.AIR) {
                 dropMappedItem(block, mappedItem);
             } else {

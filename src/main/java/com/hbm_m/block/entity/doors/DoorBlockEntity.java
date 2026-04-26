@@ -1,10 +1,10 @@
 package com.hbm_m.block.entity.doors;
 
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.client.model.variant.DoorModelProperties;
 import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.model.variant.DoorModelType;
@@ -17,6 +17,14 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.sound.ClientSoundManager;
 
+// Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -32,9 +40,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.model.data.ModelData;
 
 
 public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
@@ -54,8 +59,12 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     /**
      * Кэшированные ModelData для производительности
      */
-    @OnlyIn(Dist.CLIENT)
-    private ModelData cachedModelData;
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
+    private Object cachedModelData;
 
     private String doorDeclId;
     
@@ -64,15 +73,22 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     private PartRole partRole = PartRole.DEFAULT;
 
     private java.util.Set<Direction> allowedClimbSides = java.util.EnumSet.noneOf(Direction.class);
-    
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     private Object loopingSound;
 
     /** Called from DoorAnimationDelayHelper when delay expires. Client-only. */
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     public void clearAnimationDelayClient() {
         this.cachedModelData = null;
-        requestModelDataUpdate();
+        // requestModelDataUpdate() is Forge-only (model data system). On Fabric it's a no-op.
     }
 
     public DoorBlockEntity(BlockPos pos, BlockState state, String doorDeclId) {
@@ -104,7 +120,6 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             // Инвалидируем кэш
             if (level != null && level.isClientSide) {
                 this.cachedModelData = null;
-                requestModelDataUpdate();
                 DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
             }
             
@@ -399,7 +414,6 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         // Инвалидируем кэш ModelData при изменении состояния движения
         if (level != null && level.isClientSide) {
             this.cachedModelData = null;
-            requestModelDataUpdate();
             DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
         }
         syncToClient();
@@ -549,7 +563,11 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     // }
 
     // ==================== Client Sound Handling ====================
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     private void handleNewState(byte oldState, byte newState) {
         if (oldState == newState) return;
         if (!isController()) return;
@@ -573,8 +591,11 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             ClientSoundManager.stopSound(worldPosition);
         }
     }
-
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     private void handleSoundTransition(SoundEvent startSound, SoundEvent loopSound, SoundEvent loopSound2) {
         // 1. Разовый звук старта
         if (startSound != null) {
@@ -591,8 +612,11 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             ClientSoundManager.updateDoorSound(worldPosition, "loop2", true, () -> createLoopingSound(loopSound2));
         }
     }
-
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     private void handleSoundEnd(SoundEvent endSound) {
         // Останавливаем ОБА цикла
         ClientSoundManager.stopSpecificSound(worldPosition, "loop1");
@@ -603,8 +627,11 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             ClientSoundManager.playOneShotSound(worldPosition, endSound, getDoorDecl().getSoundVolume());
         }
     }
-
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     private net.minecraft.client.resources.sounds.AbstractTickableSoundInstance createLoopingSound(SoundEvent sound) {
         return new net.minecraft.client.resources.sounds.AbstractTickableSoundInstance(sound, SoundSource.BLOCKS, RandomSource.create()) {
             {
@@ -723,25 +750,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             }
         }
     }
-
-    @OnlyIn(Dist.CLIENT)
-    @Override
-    public ModelData getModelData() {
-        if (cachedModelData == null) {
-            // isMoving: state 2/3 или период overlap (BER продолжает рисовать створки)
-            boolean inDelay = DoorAnimationDelayHelper.isInDelayPeriod(this);
-            boolean isOverlap = (state == 0 || state == 1) && inDelay;
-            boolean isMoving = state == 2 || state == 3 || isOverlap;
-            boolean isOpen = state == 1;
-            cachedModelData = ModelData.builder()
-                .with(DoorModelProperties.MODEL_SELECTION_PROPERTY, modelSelection)
-                .with(DoorModelProperties.DOOR_MOVING_PROPERTY, isMoving)
-                .with(DoorModelProperties.OPEN_PROPERTY, isOpen)
-                .with(DoorModelProperties.OVERLAP_PROPERTY, isOverlap)
-                .build();
-        }
-        return cachedModelData;
-    }
+    // Forge-only ModelData hook removed for Fabric compilation.
 
     /**
      * Инициализирует выбор модели на основе конфигурации.
@@ -750,7 +759,11 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
      * Если hadModelSelectionInNbt=true - не перезаписывать: значение уже загружено из NBT
      * (в т.ч. явный выбор LEGACY, который равен DoorModelSelection.DEFAULT).
      */
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     public void initModelSelection(boolean applyConfigDefault) {
         if (!applyConfigDefault) {
             return; // Значение из NBT - не перезаписывать

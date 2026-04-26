@@ -1,5 +1,6 @@
 package com.hbm_m.client.render.shader.modification;
 
+
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +16,9 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceProvider;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
 
 /**
  * Wraps a {@link ResourceProvider} so that resources matching a target {@link ResourceLocation}
@@ -25,7 +29,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * variants of the same shader source with different preprocessor defines (e.g. with and
  * without {@code #define USE_INSTANCING}).
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public final class ShaderPreDefinitions {
 
     private ShaderPreDefinitions() {}

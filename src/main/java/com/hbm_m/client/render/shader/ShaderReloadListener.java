@@ -1,6 +1,8 @@
 package com.hbm_m.client.render.shader;
 
+
 import com.hbm_m.main.MainRegistry;
+
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimplePreparableReloadListener;
 import net.minecraft.util.profiling.ProfilerFiller;
@@ -11,7 +13,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * Слушатель перезагрузки ресурсов для детектирования изменений шейдеров
  * Срабатывает при F3+T, смене шейдерпака или загрузке мира
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class ShaderReloadListener extends SimplePreparableReloadListener<Void> {
     
     /**

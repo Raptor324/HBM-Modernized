@@ -10,7 +10,9 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
+//?}
 import org.jetbrains.annotations.Nullable;
 
 import java.util.Collections;
@@ -60,6 +62,7 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         String[] getPartNames();
     }
 
+    //? if forge {
     @Override
     public TextureAtlasSprite getParticleIcon(ModelData data) {
         if (cachedParticleIcon == null) {
@@ -114,6 +117,7 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         return Collections.emptyList();
     }
 
+
     /**
      * Vanilla BakedModel legacy methods (still required by the interface).
      * Delegate to Forge's extended overloads.
@@ -129,6 +133,8 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     public TextureAtlasSprite getParticleIcon() {
         return getParticleIcon(ModelData.EMPTY);
     }
+
+    //?}
 
     protected abstract boolean shouldSkipWorldRendering(@Nullable BlockState state);
 

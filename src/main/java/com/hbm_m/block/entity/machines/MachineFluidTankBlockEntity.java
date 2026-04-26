@@ -17,6 +17,7 @@ import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Amat;
 import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous;
 import com.hbm_m.inventory.menu.MachineFluidTankMenu;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
+import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -41,16 +42,23 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
+//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+//?}
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+import net.minecraftforge.items.IItemHandler;
+import net.minecraftforge.items.ItemStackHandler;
 
 public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider, IMultiblockSidedIO {
 
@@ -83,7 +91,9 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     /** Разрешённые стороны прямого подключения к контроллеру (пусто = все). */
     private java.util.Set<Direction> allowedFluidSides = java.util.EnumSet.noneOf(Direction.class);
 
+    //? if forge {
     public static final ModelProperty<ResourceLocation> FLUID_TEXTURE_PROPERTY = new ModelProperty<>();
+    //?}
 
     public MachineFluidTankBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FLUID_TANK_BE.get(), pos, state);
@@ -239,21 +249,33 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         }
     
         if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
-            return ResourceLocation.fromNamespaceAndPath("hbm_m", "block/tank/tank_none"); 
+            //? if fabric && < 1.21.1 {
+            /*return new ResourceLocation(MainRegistry.MOD_ID, "block/tank/tank_none");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_none");
+            //?}
+
         }
     
-        ResourceLocation typeId = net.minecraftforge.registries.ForgeRegistries.FLUID_TYPES.get().getKey(fluid.getFluidType());
+        ResourceLocation typeId = BuiltInRegistries.FLUID.getKey(fluid);
         String fluidName = typeId != null ? typeId.getPath() : "none";
         
-        return ResourceLocation.fromNamespaceAndPath("hbm_m", "block/tank/tank_" + fluidName);
+        //? if fabric && < 1.21.1 {
+        /*return new ResourceLocation(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
+        *///?} else {
+                return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
+        //?}
+
     }
 
+    //? if forge {
     @Override
     public @NotNull ModelData getModelData() {
         return ModelData.builder()
                 .with(FLUID_TEXTURE_PROPERTY, getTankTextureLocation())
                 .build();
     }
+    //?}
 
     public void explode() {
         if (this.hasExploded) return;
@@ -345,7 +367,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         onFire = tag.getBoolean("onFire");
 
         if (tag.contains("filterFluid")) {
-            filterFluid = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(tag.getString("filterFluid")));
+            filterFluid = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(tag.getString("filterFluid")));
         } else {
             filterFluid = null;
         }
@@ -371,7 +393,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         tag.putBoolean("onFire", onFire);
 
         if (filterFluid != null && filterFluid != Fluids.EMPTY) {
-            ResourceLocation key = ForgeRegistries.FLUIDS.getKey(filterFluid);
+            ResourceLocation key = BuiltInRegistries.FLUID.getKey(filterFluid);
             if (key != null) {
                 tag.putString("filterFluid", key.toString());
             }
@@ -494,33 +516,33 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         public int getTanks() { return internal.getTanks(); }
 
         @Override
-        public FluidStack getFluidInTank(int tank) { return internal.getFluidInTank(tank); }
+        public net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) { return internal.getFluidInTank(tank); }
 
         @Override
         public int getTankCapacity(int tank) { return internal.getTankCapacity(tank); }
 
         @Override
-        public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
+        public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
             return internal.isFluidValid(tank, stack);
         }
 
         @Override
-        public int fill(FluidStack resource, FluidAction action) {
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return 0;
             return internal.fill(resource, action);
         }
 
         @NotNull
         @Override
-        public FluidStack drain(FluidStack resource, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return FluidStack.EMPTY;
+        public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
             return internal.drain(resource, action);
         }
 
         @NotNull
         @Override
-        public FluidStack drain(int maxDrain, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return FluidStack.EMPTY;
+        public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
             return internal.drain(maxDrain, action);
         }
     }

@@ -1,25 +1,40 @@
 package com.hbm_m.world.biome;
 
 import com.hbm_m.main.MainRegistry;
+
+import dev.architectury.registry.registries.DeferredRegister;
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.biome.*;
-import net.minecraftforge.registries.DeferredRegister;
+import net.minecraft.world.level.biome.AmbientParticleSettings;
+import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.biome.BiomeGenerationSettings;
+import net.minecraft.world.level.biome.BiomeSpecialEffects;
+import net.minecraft.world.level.biome.MobSpawnSettings;
 import net.minecraftforge.registries.RegistryObject;
 
 public class CraterBiomes {
 
     public static final DeferredRegister<Biome> BIOMES =
-            DeferredRegister.create(Registries.BIOME, MainRegistry.MOD_ID);
+            DeferredRegister.create(MainRegistry.MOD_ID, Registries.BIOME);
 
-    public static final RegistryObject<Biome> INNER_CRATER = BIOMES.register("inner_crater", CraterBiomes::createInnerCraterBiome);
-    public static final RegistryObject<Biome> OUTER_CRATER = BIOMES.register("outer_crater", CraterBiomes::createOuterCraterBiome);
+    public static final RegistrySupplier<Biome> INNER_CRATER = BIOMES.register("inner_crater", CraterBiomes::createInnerCraterBiome);
+    public static final RegistrySupplier<Biome> OUTER_CRATER = BIOMES.register("outer_crater", CraterBiomes::createOuterCraterBiome);
 
-    public static final ResourceKey<Biome> INNER_CRATER_KEY = ResourceKey.create(Registries.BIOME, new ResourceLocation(MainRegistry.MOD_ID, "inner_crater"));
+    public static void init() {
+        BIOMES.register();
+    }
+
+    //? if forge {
+    public static final ResourceKey<Biome> INNER_CRATER_KEY = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "inner_crater"));
+    public static final ResourceKey<Biome> OUTER_CRATER_KEY = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "outer_crater"));
+    //?}
+    //? if fabric {
+    /*public static final ResourceKey<Biome> INNER_CRATER_KEY = ResourceKey.create(Registries.BIOME, new ResourceLocation(MainRegistry.MOD_ID, "inner_crater"));
     public static final ResourceKey<Biome> OUTER_CRATER_KEY = ResourceKey.create(Registries.BIOME, new ResourceLocation(MainRegistry.MOD_ID, "outer_crater"));
-
+    *///?}
     public static Biome createInnerCraterBiome() {
         return new Biome.BiomeBuilder()
                 .hasPrecipitation(true)

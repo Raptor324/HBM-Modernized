@@ -1,8 +1,7 @@
 package com.hbm_m.block.entity.machines;
 
-import javax.annotation.Nullable;
-
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
@@ -10,6 +9,7 @@ import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.config.MachineConfig;
 import com.hbm_m.inventory.menu.MachineFrackingTowerMenu;
 
+import dev.architectury.fluid.FluidStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -24,7 +24,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 
@@ -113,21 +112,18 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
         
         // Инициализация танков
         this.oilTank = new FluidTank(64_000) {
-            @Override
             public boolean isFluidValid(FluidStack stack) {
                 return stack.getFluid().isSame(ModFluids.CRUDE_OIL.getSource());
             }
         };
         
         this.gasTank = new FluidTank(64_000) {
-            @Override
             public boolean isFluidValid(FluidStack stack) {
                 return stack.getFluid().isSame(ModFluids.GAS.getSource());
             }
         };
         
         this.fracksolTank = new FluidTank(64_000) {
-            @Override
             public boolean isFluidValid(FluidStack stack) {
                 return stack.getFluid().isSame(ModFluids.FRACKSOL.getSource());
             }
@@ -318,11 +314,11 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
 
         inputStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).ifPresent(handler -> {
             // Пытаемся заполнить контейнер из танка
-            FluidStack fluidInTank = sourceTank.getFluid();
+            net.minecraftforge.fluids.FluidStack fluidInTank = sourceTank.getFluid();
             if (!fluidInTank.isEmpty() && fluidInTank.getAmount() > 0) {
                 int filled = handler.fill(fluidInTank, IFluidHandler.FluidAction.SIMULATE);
                 if (filled > 0) {
-                    FluidStack toFill = sourceTank.drain(filled, IFluidHandler.FluidAction.EXECUTE);
+                    net.minecraftforge.fluids.FluidStack toFill = sourceTank.drain(filled, IFluidHandler.FluidAction.EXECUTE);
                     handler.fill(toFill, IFluidHandler.FluidAction.EXECUTE);
                     
                     // Обновляем стек в инвентаре
@@ -398,12 +394,12 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
 
         // Добавление жидкости в танки
         if (oil > 0) {
-            FluidStack oilStack = new FluidStack(ModFluids.CRUDE_OIL.getSource(), oil);
+            net.minecraftforge.fluids.FluidStack oilStack = new net.minecraftforge.fluids.FluidStack(ModFluids.CRUDE_OIL.getSource(), oil);
             oilTank.fill(oilStack, IFluidHandler.FluidAction.EXECUTE);
         }
         
         if (gas > 0) {
-            FluidStack gasStack = new FluidStack(ModFluids.GAS.getSource(), gas);
+            net.minecraftforge.fluids.FluidStack gasStack = new net.minecraftforge.fluids.FluidStack(ModFluids.GAS.getSource(), gas);
             gasTank.fill(gasStack, IFluidHandler.FluidAction.EXECUTE);
         }
 

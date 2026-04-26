@@ -23,8 +23,14 @@ import net.minecraft.world.item.ItemStack;
  */
 public class DesignatorScreen extends Screen {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
             RefStrings.MODID, "textures/gui/gui_designator.png");
+    *///?} else {
+        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+            RefStrings.MODID, "textures/gui/gui_designator.png");
+    //?}
+
     private static final int WIDTH = 176;
     private static final int HEIGHT = 178;
 

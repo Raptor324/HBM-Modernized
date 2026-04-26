@@ -1,5 +1,6 @@
 package com.hbm_m.client.render.implementations;
 
+
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -20,8 +21,11 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class DoorVboRenderer extends SingleMeshVboRenderer {
 
     private final DoorBakedModel model;

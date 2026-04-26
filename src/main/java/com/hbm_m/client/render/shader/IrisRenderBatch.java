@@ -1,5 +1,13 @@
 package com.hbm_m.client.render.shader;
 
+
+import org.joml.Matrix3f;
+import org.joml.Matrix4f;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
+
 import com.hbm_m.client.render.IrisCompanionMesh;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.blaze3d.shaders.Uniform;
@@ -11,13 +19,6 @@ import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
-import org.joml.Matrix3f;
-import org.joml.Matrix4f;
-import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
 
 /**
  * Per-block-entity batching session for the Iris {@code ExtendedShader} render path.
@@ -53,7 +54,11 @@ import org.lwjgl.opengl.GL30;
  * unchanged so callers can compose sessions safely. Only the OUTER {@link #close} call
  * actually emits {@code shader.clear()}.
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public final class IrisRenderBatch implements AutoCloseable {
 
     private static final IrisRenderBatch INSTANCE = new IrisRenderBatch();

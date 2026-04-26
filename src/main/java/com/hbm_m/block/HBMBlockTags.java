@@ -10,5 +10,10 @@ import com.hbm_m.lib.RefStrings;
 import net.minecraft.resources.ResourceLocation;
 
 public class HBMBlockTags {
-    public static final TagKey<Block> EMIT_DARK_PARTICLES = BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "emit_dark_particles"));
+    //? if fabric && < 1.21.1 {
+    /*public static final TagKey<Block> EMIT_DARK_PARTICLES = BlockTags.create(new ResourceLocation(RefStrings.MODID, "emit_dark_particles"));
+    *///?} else {
+        public static final TagKey<Block> EMIT_DARK_PARTICLES = BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "emit_dark_particles"));
+    //?}
+
 }

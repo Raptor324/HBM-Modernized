@@ -16,6 +16,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
+import com.hbm_m.inventory.ForgeItemHandlerAdapter;
 
 /**
  * Базовое меню для всех ящиков HBM.
@@ -55,7 +56,7 @@ public abstract class BaseCrateMenu extends AbstractContainerMenu {
             for (int col = 0; col < crateType.getCols(); col++) {
                 int index = row * crateType.getCols() + col;
                 this.addSlot(new CrateSlot(
-                        blockEntity.getItemHandler(),
+                        new ForgeItemHandlerAdapter(blockEntity.getItemHandler()),
                         index,
                         startX + col * 18,
                         startY + row * 18

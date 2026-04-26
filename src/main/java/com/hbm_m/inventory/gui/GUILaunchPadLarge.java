@@ -21,7 +21,12 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_large.png");
+            //? if fabric && < 1.21.1 {
+            /*new ResourceLocation(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_large.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_large.png");
+            //?}
+
 
     public GUILaunchPadLarge(LaunchPadLargeMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);

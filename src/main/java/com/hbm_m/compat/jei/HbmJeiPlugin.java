@@ -17,6 +17,7 @@ import com.hbm_m.recipe.CentrifugeRecipes.RecipeInput;
 import com.hbm_m.recipe.ChemicalPlantRecipes;
 import com.hbm_m.recipe.ChemicalPlantRecipes.ChemicalRecipe;
 
+import net.minecraftforge.fluids.FluidStack;
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
@@ -24,16 +25,20 @@ import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.ISubtypeRegistration;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
 
 @JeiPlugin
 public class HbmJeiPlugin implements IModPlugin {
 
     private static final ResourceLocation PLUGIN_UID =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "jei_plugin");
+            //? if fabric && < 1.21.1 {
+            /*new ResourceLocation(RefStrings.MODID, "jei_plugin");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "jei_plugin");
+            //?}
+
 
     @Override
     public ResourceLocation getPluginUid() {
@@ -73,7 +78,7 @@ public class HbmJeiPlugin implements IModPlugin {
             (stack, ctx) -> {
                 FluidStack fluid = FluidBarrelItem.getFluid(stack);
                 if (fluid.isEmpty()) return "empty";
-                ResourceLocation fluidId = ForgeRegistries.FLUIDS.getKey(fluid.getFluid());
+                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fluid.getFluid());
                 return (fluidId != null ? fluidId.toString() : "unknown") + ":" + fluid.getAmount();
             }
         );
@@ -92,7 +97,7 @@ public class HbmJeiPlugin implements IModPlugin {
             (stack, ctx) -> {
                 ItemStack output = ItemAssemblyTemplate.getRecipeOutput(stack);
                 if (output.isEmpty()) return "empty";
-                ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(output.getItem());
+                ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(output.getItem());
                 return (itemId != null ? itemId.toString() : "unknown") +
                     (output.hasTag() ? output.getTag().toString() : "");
             }

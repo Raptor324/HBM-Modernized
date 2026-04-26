@@ -1,5 +1,6 @@
 package com.hbm_m.client.render.shader;
 
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -27,7 +28,11 @@ import net.minecraftforge.fml.ModList;
  * per-batch open/close pair amortises against the JIT-friendly invokeExact
  * call site rather than {@link Method#invoke}'s {@code Object[]} boxing path.
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public final class IrisPhaseGuard implements AutoCloseable {
 
     private static volatile boolean initialized = false;

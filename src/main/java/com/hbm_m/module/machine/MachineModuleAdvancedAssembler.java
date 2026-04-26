@@ -12,7 +12,7 @@ import net.minecraftforge.items.IItemHandler;
 
 // ИЗМЕНЕНИЕ: Импортируем нашу long-систему
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.List;
 import java.util.Objects;
 

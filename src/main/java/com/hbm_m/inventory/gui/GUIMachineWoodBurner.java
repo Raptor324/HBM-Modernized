@@ -16,7 +16,12 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBurnerMenu> {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/generators/gui_wood_burner_alt.png");
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation TEXTURE = new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/generators/gui_wood_burner_alt.png");
+    *///?} else {
+        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/generators/gui_wood_burner_alt.png");
+    //?}
+
 
     public GUIMachineWoodBurner(MachineWoodBurnerMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);

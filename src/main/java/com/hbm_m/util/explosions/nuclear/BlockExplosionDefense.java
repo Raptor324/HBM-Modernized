@@ -1,5 +1,7 @@
 package com.hbm_m.util.explosions.nuclear;
 
+import com.hbm_m.block.ModBlocks;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
@@ -12,7 +14,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import com.hbm_m.block.ModBlocks;
 
 /**
  *  СИСТЕМА ЗАЩИТЫ БЛОКОВ С КОЭФФИЦИЕНТОМ ПРОБИТИЯ v3.0

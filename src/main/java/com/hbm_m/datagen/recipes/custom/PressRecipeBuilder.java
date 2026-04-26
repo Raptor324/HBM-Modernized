@@ -1,10 +1,19 @@
 package com.hbm_m.datagen.recipes.custom;
 
+import java.util.Objects;
+import java.util.function.Consumer;
+
+import javax.annotation.Nonnull;
+
+import org.jetbrains.annotations.Nullable;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.PressRecipe;
+
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -14,12 +23,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ItemLike;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.jetbrains.annotations.Nullable;
-
-import javax.annotation.Nonnull;
-import java.util.Objects;
-import java.util.function.Consumer;
 
 /**
  * Builder for {@link PressRecipe} data generation.
@@ -54,7 +57,7 @@ public class PressRecipeBuilder implements RecipeBuilder {
 
     public PressRecipeBuilder stamp(ItemLike item) {
         this.stampJson = itemJson(Objects.requireNonNull(
-                ForgeRegistries.ITEMS.getKey(item.asItem()), "Item is not registered"));
+                BuiltInRegistries.ITEM.getKey(item.asItem()), "Item is not registered"));
         return this;
     }
 
@@ -75,7 +78,7 @@ public class PressRecipeBuilder implements RecipeBuilder {
 
     public PressRecipeBuilder material(ItemLike item) {
         this.materialJson = itemJson(Objects.requireNonNull(
-                ForgeRegistries.ITEMS.getKey(item.asItem()), "Item is not registered"));
+                BuiltInRegistries.ITEM.getKey(item.asItem()), "Item is not registered"));
         return this;
     }
 
@@ -142,7 +145,7 @@ public class PressRecipeBuilder implements RecipeBuilder {
 
             JsonObject jsonOutput = new JsonObject();
             jsonOutput.addProperty("item", Objects.requireNonNull(
-                    ForgeRegistries.ITEMS.getKey(this.builder.output.getItem()),
+                    BuiltInRegistries.ITEM.getKey(this.builder.output.getItem()),
                     "Output item is not registered").toString());
             if (this.builder.output.getCount() > 1) {
                 jsonOutput.addProperty("count", this.builder.output.getCount());

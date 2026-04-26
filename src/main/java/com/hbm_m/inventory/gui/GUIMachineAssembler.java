@@ -25,7 +25,12 @@ import net.minecraft.world.item.ItemStack;
 public class GUIMachineAssembler extends GuiInfoScreen<MachineAssemblerMenu> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_assembler.png");
+            //? if fabric && < 1.21.1 {
+            /*new ResourceLocation(RefStrings.MODID, "textures/gui/gui_assembler.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_assembler.png");
+            //?}
+
     
     // Константа для корректного индекса слота шаблона
     private static final int TEMPLATE_SLOT_GUI_INDEX = 36 + 4; // 36 слотов игрока + 4 слота машины

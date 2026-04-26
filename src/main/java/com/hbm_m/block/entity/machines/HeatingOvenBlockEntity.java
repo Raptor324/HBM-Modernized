@@ -1,5 +1,11 @@
 package com.hbm_m.block.entity.machines;
 
+import java.util.Optional;
+
+import javax.annotation.Nonnull;
+
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.inventory.menu.HeatingOvenMenu;
@@ -14,17 +20,11 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import org.jetbrains.annotations.Nullable;
-import javax.annotation.Nonnull;
-
-import java.util.Optional;
 
 /**
  * Heating Oven block entity - a furnace-like device with animated door.
@@ -267,22 +267,18 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     }
 
     // Client-side getters for renderer
-    @OnlyIn(Dist.CLIENT)
     public float getDoorAngle() {
         return doorAngle;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public float getPrevDoorAngle() {
         return prevDoorAngle;
     }
 
-    @OnlyIn(Dist.CLIENT)
     public float getInterpolatedDoorAngle(float partialTick) {
         return Mth.lerp(partialTick, prevDoorAngle, doorAngle);
     }
 
-    @OnlyIn(Dist.CLIENT)
     public boolean isOvenOn() {
         return wasOn;
     }

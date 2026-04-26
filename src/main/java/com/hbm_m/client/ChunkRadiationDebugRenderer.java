@@ -1,12 +1,16 @@
 package com.hbm_m.client;
 
+import com.hbm_m.config.ModClothConfig;
 // Этот класс отвечает за отрисовку радиации в чанках в режиме отладки. 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.core.BlockPos;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
@@ -14,10 +18,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.resources.ResourceLocation;
-
-import com.hbm_m.config.ModClothConfig;
 
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class ChunkRadiationDebugRenderer {

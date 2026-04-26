@@ -1,7 +1,12 @@
 package com.hbm_m.compat.jei;
 
+import java.util.List;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
+
+import dev.architectury.fluid.FluidStack;
+import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -13,9 +18,6 @@ import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
-
-import java.util.List;
 
 /**
  * JEI category for Chemical Plant recipes.
@@ -26,7 +28,12 @@ public class ChemicalPlantJeiCategory implements IRecipeCategory<ChemicalPlantJe
             RecipeType.create(RefStrings.MODID, "chemical_plant", ChemicalPlantJeiRecipe.class);
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
+            //? if fabric && < 1.21.1 {
+            /*new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
+            //?}
+
 
     private final IDrawable background;
     private final IDrawable icon;
@@ -84,7 +91,7 @@ public class ChemicalPlantJeiCategory implements IRecipeCategory<ChemicalPlantJe
             if (!fluid.isEmpty()) {
                 builder.addSlot(RecipeIngredientRole.INPUT, 8 + i * 18, 7)
                         .setFluidRenderer(24000, false, 16, 34)
-                        .addIngredient(ForgeTypes.FLUID_STACK, fluid);
+                        .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
             }
         }
 
@@ -105,7 +112,7 @@ public class ChemicalPlantJeiCategory implements IRecipeCategory<ChemicalPlantJe
             if (!fluid.isEmpty()) {
                 builder.addSlot(RecipeIngredientRole.OUTPUT, 80 + i * 18, 7)
                         .setFluidRenderer(24000, false, 16, 34)
-                        .addIngredient(ForgeTypes.FLUID_STACK, fluid);
+                        .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
             }
         }
     }

@@ -404,7 +404,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
                 return model;
             }
             String doorId = preview.contains("doorId") ? preview.getString("doorId")
-                : net.minecraftforge.registries.ForgeRegistries.ITEMS.getKey(stack.getItem()).getPath();
+                : net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
             DoorModelSelection selection = DoorModelSelection.load(preview);
             DoorModelRegistry registry = DoorModelRegistry.getInstance();
             if (!registry.isRegistered(doorId)) {

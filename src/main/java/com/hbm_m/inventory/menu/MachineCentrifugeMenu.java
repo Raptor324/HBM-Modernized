@@ -20,9 +20,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.items.IItemHandler;
+import com.hbm_m.inventory.ForgeItemHandlerAdapter;
 
 public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -69,7 +70,7 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
 
         addDataSlots(data);
 
-        ItemStackHandler itemHandler = this.blockEntity.getInventory();
+        IItemHandler itemHandler = new ForgeItemHandlerAdapter(this.blockEntity.getInventory());
 
         // battery
         this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, SLOT_BATTERY_X, SLOT_BATTERY_Y) {

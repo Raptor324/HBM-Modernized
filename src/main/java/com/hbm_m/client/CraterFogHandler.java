@@ -2,14 +2,15 @@ package com.hbm_m.client;
 
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.world.biome.CraterBiomes;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+import net.minecraftforge.api.distmarker.Dist;
 
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
 public class CraterFogHandler {

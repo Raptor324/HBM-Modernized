@@ -1,5 +1,10 @@
 package com.hbm_m.client.render;
 
+
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
@@ -10,20 +15,26 @@ import org.lwjgl.system.MemoryUtil;
 
 import com.hbm_m.main.MainRegistry;
 
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.model.data.ModelData;
 
 /**
  * Один проход {@link BakedModel#getQuads} для multipart-части: общий список квадов (Iris / putBulkData)
  * и построение {@link com.hbm_m.client.render.SingleMeshVboRenderer.VboData} из тех же квадов.
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public record PartGeometry(List<BakedQuad> solidQuads) {
 
     public static final long BAKE_SEED = 42L;

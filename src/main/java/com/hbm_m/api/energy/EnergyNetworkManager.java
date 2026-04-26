@@ -6,7 +6,7 @@ import java.util.LinkedList;
 import java.util.Queue;
 import java.util.Set;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import org.slf4j.Logger;
 

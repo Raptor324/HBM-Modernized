@@ -1,6 +1,14 @@
 package com.hbm_m.item.liquids;
 
+import java.util.List;
+
+import javax.annotation.Nonnull;
+
+import org.jetbrains.annotations.Nullable;
+
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
@@ -14,14 +22,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
-import net.minecraftforge.registries.ForgeRegistries;
-
-import org.jetbrains.annotations.Nullable;
-
-import javax.annotation.Nonnull;
-import java.util.List;
 
 /**
  * Universal infinite fluid source - provides any requested fluid type.
@@ -42,7 +43,7 @@ public class InfiniteFluidItem extends Item {
      */
     public Fluid getFluidType(ItemStack stack) {
         if (stack.hasTag() && stack.getTag().contains("FluidType")) {
-            return ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(stack.getTag().getString("FluidType")));
+            return BuiltInRegistries.FLUID.get(ResourceLocation.parse(stack.getTag().getString("FluidType")));
         }
         return Fluids.EMPTY;
     }
@@ -85,7 +86,7 @@ public class InfiniteFluidItem extends Item {
         // В 1.7.10 бесконечная бочка имела тип. Узнаем его из NBT предмета
         private Fluid getFluidType() {
             if (container.hasTag() && container.getTag().contains("FluidType")) {
-                return ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(container.getTag().getString("FluidType")));
+                return BuiltInRegistries.FLUID.get(ResourceLocation.parse(container.getTag().getString("FluidType")));
             }
             return Fluids.EMPTY;
         }

@@ -1,15 +1,26 @@
 package com.hbm_m.client.render;
 
-import com.hbm_m.main.MainRegistry;
-import com.mojang.blaze3d.systems.RenderSystem;
 
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
+//?}
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL30;
 
+import com.hbm_m.main.MainRegistry;
+import com.mojang.blaze3d.systems.RenderSystem;
+
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
+
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public abstract class AbstractGpuMesh {
 
     protected int vaoId = -1;

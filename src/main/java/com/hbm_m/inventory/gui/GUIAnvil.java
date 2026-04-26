@@ -23,18 +23,24 @@ import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.NotNull;
 import org.lwjgl.glfw.GLFW;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import net.minecraftforge.items.ItemStackHandler;
+import com.hbm_m.inventory.ItemStackHandler;
 
 public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
             RefStrings.MODID, "textures/gui/processing/gui_anvil.png");
+    *///?} else {
+        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+            RefStrings.MODID, "textures/gui/processing/gui_anvil.png");
+    //?}
+
     private static final int DISPLAY_SLOTS = 10;
     
     private final List<AnvilRecipe> originRecipes = new ArrayList<>();

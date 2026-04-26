@@ -46,7 +46,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.api.distmarker.Dist;
+import dev.architectury.utils.Env;
 import net.minecraftforge.fml.DistExecutor;
 
 public class UniversalMachinePartBlock extends BaseEntityBlock implements IDetonatable {
@@ -252,13 +252,27 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         // Это особенно важно, когда контроллер был разрушен - блок сразу станет осиротевшим
         if (pLevel.isClientSide()) {
             if (isOrphaned(pLevel, pPos)) {
-                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                //? if forge {
+                DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
                     com.hbm_m.client.ClientRenderHandler.addOrphanedPhantomBlock(pPos);
                 });
+                //?}
+                //? if fabric {
+                /*DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
+                    com.hbm_m.client.ClientRenderHandler.addOrphanedPhantomBlock(pPos);
+                });
+                *///?}
             } else {
-                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+                //? if forge {
+                DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
                     com.hbm_m.client.ClientRenderHandler.removeOrphanedPhantomBlock(pPos);
                 });
+                //?}
+                //? if fabric {
+                /*DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
+                    com.hbm_m.client.ClientRenderHandler.removeOrphanedPhantomBlock(pPos);
+                });
+                *///?}
             }
         }
         if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {

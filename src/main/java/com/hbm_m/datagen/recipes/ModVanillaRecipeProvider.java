@@ -997,6 +997,11 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
     }
 
     private ResourceLocation recipeId(String path) {
-        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
+        //? if fabric && < 1.21.1 {
+        /*return new ResourceLocation(RefStrings.MODID, path);
+        *///?} else {
+                return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
+        //?}
+
     }
 }

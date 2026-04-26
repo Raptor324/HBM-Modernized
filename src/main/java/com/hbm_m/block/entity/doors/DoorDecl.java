@@ -538,7 +538,12 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "large_vehicle_door");
+            //? if fabric && < 1.21.1 {
+            /*return new ResourceLocation(RefStrings.MODID, "large_vehicle_door");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "large_vehicle_door");
+            //?}
+
         }
 
         @Override
@@ -618,7 +623,12 @@ public abstract class DoorDecl {
         }
         @Override
         public ResourceLocation getBlockId() {
-            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "round_airlock_door");
+            //? if fabric && < 1.21.1 {
+            /*return new ResourceLocation(RefStrings.MODID, "round_airlock_door");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "round_airlock_door");
+            //?}
+
         }
 
         @Override
@@ -665,12 +675,22 @@ public abstract class DoorDecl {
     public static final DoorDecl TRANSITION_SEAL = new DoorDecl() {
         @Override
         public ResourceLocation getBlockId() {
-            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "transition_seal");
+            //? if fabric && < 1.21.1 {
+            /*return new ResourceLocation(RefStrings.MODID, "transition_seal");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "transition_seal");
+            //?}
+
         }
     
         @Override
         public ResourceLocation getColladaAnimationSource() {
-            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/transition_seal.dae");
+            //? if fabric && < 1.21.1 {
+            /*return new ResourceLocation(RefStrings.MODID, "models/block/doors/transition_seal.dae");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/transition_seal.dae");
+            //?}
+
         }
     
         @Override
@@ -764,7 +784,12 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "fire_door");
+            //? if fabric && < 1.21.1 {
+            /*return new ResourceLocation(RefStrings.MODID, "fire_door");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "fire_door");
+            //?}
+
         }
 
         @Override
@@ -800,7 +825,12 @@ public abstract class DoorDecl {
     public static final DoorDecl SLIDE_DOOR = new DoorDecl() {
         @Override
         public ResourceLocation getBlockId() {
-            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_blast_door");
+            //? if fabric && < 1.21.1 {
+            /*return new ResourceLocation(RefStrings.MODID, "sliding_blast_door");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_blast_door");
+            //?}
+
         }
 
         @Override
@@ -810,7 +840,12 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getColladaAnimationSource() {
-            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/sliding_blast_door.dae");
+            //? if fabric && < 1.21.1 {
+            /*return new ResourceLocation(RefStrings.MODID, "models/block/doors/sliding_blast_door.dae");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/sliding_blast_door.dae");
+            //?}
+
         }
 
         /** Blender: frame 0 = open. Закрытое состояние = последний keyframe */
@@ -997,7 +1032,12 @@ public abstract class DoorDecl {
         }
         @Override
         public ResourceLocation getBlockId() {
-            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_seal_door");
+            //? if fabric && < 1.21.1 {
+            /*return new ResourceLocation(RefStrings.MODID, "sliding_seal_door");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_seal_door");
+            //?}
+
         }
 
         @Override
@@ -1072,7 +1112,12 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "secure_access_door");
+            //? if fabric && < 1.21.1 {
+            /*return new ResourceLocation(RefStrings.MODID, "secure_access_door");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "secure_access_door");
+            //?}
+
         }
 
         @Override
@@ -1149,7 +1194,12 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "qe_sliding_door");
+            //? if fabric && < 1.21.1 {
+            /*return new ResourceLocation(RefStrings.MODID, "qe_sliding_door");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "qe_sliding_door");
+            //?}
+
         }
 
         @Override
@@ -1221,7 +1271,12 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "qe_containment_door");
+            //? if fabric && < 1.21.1 {
+            /*return new ResourceLocation(RefStrings.MODID, "qe_containment_door");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "qe_containment_door");
+            //?}
+
         }
 
         @Override
@@ -1313,7 +1368,12 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "water_door");
+            //? if fabric && < 1.21.1 {
+            /*return new ResourceLocation(RefStrings.MODID, "water_door");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "water_door");
+            //?}
+
         }
 
         @Override
@@ -1484,7 +1544,12 @@ public abstract class DoorDecl {
             defineStructure(builder.parseHorizontal(closed, open, 'C'));
         }
 
-        @Override public ResourceLocation getBlockId() { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silo_hatch"); }
+        //? if fabric && < 1.21.1 {
+        /*@Override public ResourceLocation getBlockId() { return new ResourceLocation(RefStrings.MODID, "silo_hatch");
+        *///?} else {
+                @Override public ResourceLocation getBlockId() { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silo_hatch");
+        //?}
+ }
         @Override public String[] getPartNames() { return new String[] { "frame", "door" }; }
         @Override public int getOpenTime() { return 60; }
         @Override public boolean remoteControllable() { return true; }
@@ -1555,7 +1620,12 @@ public abstract class DoorDecl {
             defineStructure(builder.parseHorizontal(closed, open, 'C'));
         }
 
-        @Override public ResourceLocation getBlockId() { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silo_hatch_large"); }
+        //? if fabric && < 1.21.1 {
+        /*@Override public ResourceLocation getBlockId() { return new ResourceLocation(RefStrings.MODID, "silo_hatch_large");
+        *///?} else {
+                @Override public ResourceLocation getBlockId() { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silo_hatch_large");
+        //?}
+ }
         @Override public String[] getPartNames() { return new String[] { "frame", "door" }; }
         @Override public int getOpenTime() { return 60; }
         @Override public boolean remoteControllable() { return true; }
@@ -1625,7 +1695,12 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "vault_door");
+            //? if fabric && < 1.21.1 {
+            /*return new ResourceLocation(RefStrings.MODID, "vault_door");
+            *///?} else {
+                        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "vault_door");
+            //?}
+
         }
 
         @Override

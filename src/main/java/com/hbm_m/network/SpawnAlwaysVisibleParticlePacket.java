@@ -1,5 +1,7 @@
 package com.hbm_m.network;
 
+import java.util.function.Supplier;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.particles.ParticleOptions;
 import net.minecraft.core.particles.ParticleType;
@@ -9,8 +11,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
 import net.minecraftforge.registries.ForgeRegistries;
-
-import java.util.function.Supplier;
 
 public class SpawnAlwaysVisibleParticlePacket {
     private final ResourceLocation particleTypeId;

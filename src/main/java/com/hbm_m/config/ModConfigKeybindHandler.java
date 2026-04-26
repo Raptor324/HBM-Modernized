@@ -2,6 +2,8 @@ package com.hbm_m.config;
 // Обработчик привязки клавиш для открытия экрана конфигурации мода.
 // Использует AutoConfig для получения экрана настроек и регистрирует сочетание клавиш
 
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.event.TickEvent;
 import org.lwjgl.glfw.GLFW;
 
 import com.hbm_m.client.overlay.OverlayInfoToast;
@@ -15,11 +17,9 @@ import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.settings.KeyConflictContext;
 import net.minecraftforge.client.settings.KeyModifier;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 

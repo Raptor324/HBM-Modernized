@@ -22,6 +22,7 @@ import com.hbm_m.sound.ModSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.model.HumanoidModel;
 import net.minecraft.client.model.geom.ModelPart;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -40,7 +41,6 @@ import net.minecraftforge.event.entity.living.LivingEquipmentChangeEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.registries.ForgeRegistries;
 
 public class ModPowerArmorItem extends ModArmorFSBPowered {
     private static final Random RANDOM = new Random();
@@ -103,7 +103,7 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
      * - hbm_m:ajr_chestplate -> ajr_helmet / ajr_chest / ajr_leg (depending on slot)
      */
     private static String resolveArmorTextureName(ItemStack stack, EquipmentSlot slot) {
-        ResourceLocation id = ForgeRegistries.ITEMS.getKey(stack.getItem());
+        ResourceLocation id = BuiltInRegistries.ITEM.getKey(stack.getItem());
         String path = id != null ? id.getPath() : "";
 
         String prefix = stripKnownArmorSuffix(path);

@@ -1,5 +1,14 @@
 package com.hbm_m.client.render;
 
+
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
+
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.ShortBuffer;
@@ -29,8 +38,6 @@ import com.mojang.blaze3d.vertex.VertexFormatElement;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Lazy-built companion VBO+VAO that holds geometry in a vertex format compatible
@@ -47,7 +54,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * is marked failed and the calling code is expected to fall back to vanilla
  * paths.
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public final class IrisCompanionMesh {
 
     private final List<BakedQuad> quads;

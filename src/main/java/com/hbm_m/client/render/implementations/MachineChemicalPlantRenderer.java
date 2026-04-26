@@ -1,10 +1,15 @@
 package com.hbm_m.client.render.implementations;
 
+
+import java.util.List;
+import java.util.Optional;
+
+import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
+import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
@@ -16,16 +21,21 @@ import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.blaze3d.vertex.VertexConsumer;
 
+import dev.architectury.fluid.FluidStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
@@ -33,18 +43,12 @@ import net.minecraft.world.phys.AABB;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.registries.ForgeRegistries;
-
-import com.mojang.blaze3d.vertex.VertexConsumer;
-import net.minecraft.client.renderer.RenderType;
-import com.hbm_m.recipe.ChemicalPlantRecipe;
-
-import javax.annotation.Nullable;
-import java.util.List;
-import java.util.Optional;
-
+import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<MachineChemicalPlantBlockEntity, MachineChemicalPlantBakedModel> {
 
     private MachineChemicalPlantVboRenderer gpu;
@@ -314,9 +318,9 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         if (colorFluids.isEmpty() && !recipe.getFluidInputs().isEmpty()) {
             List<FluidStack> tmp = new java.util.ArrayList<>();
             for (var fin : recipe.getFluidInputs()) {
-                var fluid = ForgeRegistries.FLUIDS.getValue(fin.fluidId());
+                var fluid = BuiltInRegistries.FLUID.get(fin.fluidId());
                 if (fluid == null) continue;
-                tmp.add(new FluidStack(fluid, fin.amount()));
+                tmp.add(FluidStack.create(fluid, (long) fin.amount()));
             }
             colorFluids = tmp;
         }
@@ -326,7 +330,7 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         float rr = 0, gg = 0, bb = 0;
         for (FluidStack fs : colorFluids) {
             if (fs.isEmpty()) continue;
-            int tint = IClientFluidTypeExtensions.of(fs.getFluid()).getTintColor(fs);
+            int tint = IClientFluidTypeExtensions.of(fs.getFluid()).getTintColor(FluidStackHooksForge.toForge(fs));
             rr += ((tint >> 16) & 0xFF) / 255.0F;
             gg += ((tint >> 8) & 0xFF) / 255.0F;
             bb += (tint & 0xFF) / 255.0F;
@@ -344,9 +348,9 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         }
         if (texFluid == null) {
             for (var fin : recipe.getFluidInputs()) {
-                var fluid = ForgeRegistries.FLUIDS.getValue(fin.fluidId());
+                var fluid = BuiltInRegistries.FLUID.get(fin.fluidId());
                 if (fluid == null) continue;
-                texFluid = new FluidStack(fluid, fin.amount());
+                texFluid = FluidStack.create(fluid, (long) fin.amount());
                 break;
             }
         }
@@ -359,7 +363,7 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
                                     MultiBufferSource buffer, int packedLight, int packedOverlay, ChemicalPlantRecipeVisual visual) {
         FluidStack fluid = visual.textureFluid();
         IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid.getFluid());
-        var stillTexture = ext.getStillTexture(fluid);
+        var stillTexture = ext.getStillTexture(FluidStackHooksForge.toForge(fluid));
         if (stillTexture == null) {
             return;
         }

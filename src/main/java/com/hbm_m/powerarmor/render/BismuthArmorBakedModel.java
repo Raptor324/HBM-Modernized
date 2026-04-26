@@ -1,22 +1,31 @@
 package com.hbm_m.powerarmor.render;
 
+
+import java.util.Map;
+
 import com.hbm_m.interfaces.IArmorModelConfig;
 import com.hbm_m.powerarmor.BismuthArmor;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
+
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-
-import java.util.Map;
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
 
 /**
  * Baked model for rendering Bismuth power armor in GUI/hand.
  * Uses the same multipart baked model infrastructure as T51/AJR.
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class BismuthArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final String[] BISMUTH_ORDER = {

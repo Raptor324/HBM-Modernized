@@ -1,5 +1,6 @@
 package com.hbm_m.recipe;
 
+
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
@@ -23,8 +24,11 @@ public final class AnvilRecipeManager {
     public static List<AnvilRecipe> getAllRecipes(Level level) {
         return level.getRecipeManager().getAllRecipesFor(AnvilRecipe.Type.INSTANCE);
     }
-
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     public static List<AnvilRecipe> getClientRecipes() {
         Minecraft minecraft = Minecraft.getInstance();
         Level level = minecraft.level;

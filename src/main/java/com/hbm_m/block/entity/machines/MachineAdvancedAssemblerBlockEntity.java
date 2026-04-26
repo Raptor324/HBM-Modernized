@@ -1,5 +1,13 @@
 package com.hbm_m.block.entity.machines;
 
+
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
 import java.util.Arrays;
 import java.util.List;
 
@@ -20,6 +28,7 @@ import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.inventory.ForgeItemHandlerAdapter;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -41,14 +50,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.items.IItemHandler;
 
 /**
  * Advanced Assembler Block Entity:
@@ -73,6 +81,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     private final FluidTank outputTank = new FluidTank(4000);
     protected LazyOptional<IFluidHandler> fluidInputHandler = LazyOptional.empty();
     protected LazyOptional<IFluidHandler> fluidOutputHandler = LazyOptional.empty();
+
+    private final LazyOptional<IItemHandler> itemHandler = LazyOptional.of(() -> new ForgeItemHandlerAdapter(this.inventory));
 
     /** Разрешённые стороны прямого подключения к контроллеру (пусто = все). */
     private java.util.Set<Direction> allowedEnergySides = java.util.EnumSet.noneOf(Direction.class);
@@ -125,20 +135,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
     };
 
-    // Клиентские анимации
-    // @OnlyIn(Dist.CLIENT) public final AssemblerArm[] arms = new AssemblerArm[2];
-    // @OnlyIn(Dist.CLIENT) public float ringAngle;
-    // @OnlyIn(Dist.CLIENT) public float prevRingAngle;
-    // @OnlyIn(Dist.CLIENT) private float ringTarget;
-    // @OnlyIn(Dist.CLIENT) private float ringSpeed;
-    // @OnlyIn(Dist.CLIENT) private int ringDelay;
-
     public MachineAdvancedAssemblerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), pos, state, 17, 100_000L, 100_000L);
 
         // Инициализируем модуль здесь, передавая СЕБЯ (this) как IEnergyReceiver
         if (this.level != null && !this.level.isClientSide) {
-            this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level);
+            this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, new ForgeItemHandlerAdapter(this.inventory), this.level);
         }
     }
 
@@ -272,7 +274,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
         if (assemblerModule == null && level != null) {
             // Передаем 'this' как IEnergyReceiver
-            assemblerModule = new MachineModuleAdvancedAssembler(0, this, inventory, level);
+            assemblerModule = new MachineModuleAdvancedAssembler(0, this, new ForgeItemHandlerAdapter(inventory), level);
         }
         if (assemblerModule != null) {
             boolean wasCrafting = assemblerModule.isProcessing();
@@ -589,8 +591,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
         if (tag.contains("AssemblerModule") && level != null) {
             if (assemblerModule == null) {
-                // НОВЫЙ ПРАВИЛЬНЫЙ СПОСОБ
-                assemblerModule = new MachineModuleAdvancedAssembler(0, this, inventory, level);
+                assemblerModule = new MachineModuleAdvancedAssembler(0, this, new ForgeItemHandlerAdapter(inventory), level);
             }
             assemblerModule.readFromNBT(tag.getCompound("AssemblerModule"));
         }
@@ -692,16 +693,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public void onLoad() {
         super.onLoad();
         if (level != null && !level.isClientSide && assemblerModule == null) {
-            this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level);
+            this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, new ForgeItemHandlerAdapter(this.inventory), this.level);
         }
     }
-
-    // @OnlyIn(Dist.CLIENT)
-    // private void initClientArms() {
-    //     for (int i = 0; i < arms.length; i++) {
-    //         arms[i] = new AssemblerArm();
-    //     }
-    // }
 
     @Override
     public void invalidateCaps() {
@@ -720,123 +714,33 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         super.setRemoved();
     }
 
-    // ==================== АНИМАЦИОННЫЕ РУКИ ====================
-    // @OnlyIn(Dist.CLIENT)
-    // public static class AssemblerArm {
-    //     public float[] angles = new float[4];
-    //     public float[] prevAngles = new float[4];
-    //     private float[] targetAngles = new float[4];
-    //     private float[] speed = new float[4];
-    //     private ArmActionState state = ArmActionState.ASSUME_POSITION;
-    //     private int actionDelay = 0;
-
-    //     private enum ArmActionState {
-    //         ASSUME_POSITION, EXTEND_STRIKER, RETRACT_STRIKER
-    //     }
-
-    //     public AssemblerArm() {
-    //         resetSpeed();
-    //     }
-
-    //     public void updateInterp() {
-    //         System.arraycopy(angles, 0, prevAngles, 0, angles.length);
-    //     }
-
-    //     public void returnToNullPos() {
-    //         Arrays.fill(targetAngles, 0);
-    //         speed[0] = speed[1] = speed[2] = 3;
-    //         speed[3] = 0.25f;
-    //         state = ArmActionState.RETRACT_STRIKER;
-    //         move();
-    //     }
-
-    //     private void resetSpeed() {
-    //         speed[0] = 15;
-    //         speed[1] = 15;
-    //         speed[2] = 15;
-    //         speed[3] = 0.5f;
-    //     }
-
-    //     public void updateArm(Level level, BlockPos pos, RandomSource random) {
-    //         resetSpeed();
-    //         if (actionDelay > 0) {
-    //             actionDelay--;
-    //             return;
-    //         }
-    //         switch (state) {
-    //             case ASSUME_POSITION:
-    //                 if (move()) {
-    //                     actionDelay = 2;
-    //                     state = ArmActionState.EXTEND_STRIKER;
-    //                     targetAngles[3] = -0.75f;
-    //                 }
-    //                 break;
-    //             case EXTEND_STRIKER:
-    //                 if (move()) {
-    //                     level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-    //                             ModSounds.ASSEMBLER_STRIKE_RANDOM.get(), SoundSource.BLOCKS, 0.5f, 1.0F, false);
-    //                     state = ArmActionState.RETRACT_STRIKER;
-    //                     targetAngles[3] = 0f;
-    //                 }
-    //                 break;
-    //             case RETRACT_STRIKER:
-    //                 if (move()) {
-    //                     actionDelay = 2 + random.nextInt(5);
-    //                     chooseNewArmPosition(random);
-    //                     state = ArmActionState.ASSUME_POSITION;
-    //                 }
-    //                 break;
-    //         }
-    //     }
-
-    //     private static final float[][] POSITIONS = {
-    //             {45, -15, -5}, {15, 15, -15}, {25, 10, -15},
-    //             {30, 0, -10}, {70, -10, -25}
-    //     };
-
-    //     public void chooseNewArmPosition(RandomSource random) {
-    //         int chosen = random.nextInt(5);
-    //         targetAngles[0] = POSITIONS[chosen][0];
-    //         targetAngles[1] = POSITIONS[chosen][1];
-    //         targetAngles[2] = POSITIONS[chosen][2];
-    //     }
-
-    //     private boolean move() {
-    //         boolean allReached = true;
-    //         for (int i = 0; i < angles.length; i++) {
-    //             float current = angles[i];
-    //             float target = targetAngles[i];
-    //             if (current == target) continue;
-    //             allReached = false;
-    //             float delta = target - current;
-    //             float absDelta = Math.abs(delta);
-    //             if (absDelta <= speed[i]) {
-    //                 angles[i] = target;
-    //             } else {
-    //                 angles[i] += Math.signum(delta) * speed[i];
-    //             }
-    //         }
-    //         return allReached;
-    //     }
-    // }
-
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     public float getRingAngle() {
         if (clientTicker.isPresent()) {
              return ((ClientTicker)clientTicker.orElseThrow(IllegalStateException::new)).ringAngle;
         }
         return 0;
     }
-    
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     public float getPrevRingAngle() {
         if (clientTicker.isPresent()) {
              return ((ClientTicker)clientTicker.orElseThrow(IllegalStateException::new)).prevRingAngle;
         }
         return 0;
     }
-    
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     public ClientTicker.AssemblerArm[] getArms() {
          if (clientTicker.isPresent()) {
              return ((ClientTicker)clientTicker.orElseThrow(IllegalStateException::new)).arms;
@@ -845,7 +749,11 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
 
     // ==================== КЛИЕНТСКИЙ ТИКЕР ====================
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     public static class ClientTicker {
 
         private final AssemblerArm[] arms = new AssemblerArm[2];

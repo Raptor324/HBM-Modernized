@@ -1,17 +1,18 @@
 package com.hbm_m.network;
 
+import java.util.function.Supplier;
+
 // Пакет для передачи данных о радиации от сервера к клиенту.
 // Содержит два значения: общую радиацию в окружающей среде и радиацию игрока.
 // Используется для обновления оверлея радиации на клиенте.
 
 import com.hbm_m.client.overlay.OverlayGeiger;
 import com.hbm_m.main.MainRegistry;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.network.NetworkEvent;
 
-import java.util.function.Supplier;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.DistExecutor;
+import net.minecraftforge.network.NetworkEvent;
 
 public class RadiationDataPacket {
 

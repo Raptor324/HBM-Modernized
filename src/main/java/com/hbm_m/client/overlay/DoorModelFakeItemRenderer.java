@@ -1,5 +1,6 @@
 package com.hbm_m.client.overlay;
 
+
 import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 
@@ -14,7 +15,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * с выбором (modelType, skin, doorId) заставляет ItemRenderer использовать нужную модель.
  * Это даёт корректный порядок рендера частей и трансформации из display.gui.
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public final class DoorModelFakeItemRenderer {
 
     private static final String PREVIEW_TAG = "hbm_m:door_preview";

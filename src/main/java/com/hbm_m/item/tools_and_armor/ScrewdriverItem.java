@@ -2,6 +2,7 @@ package com.hbm_m.item.tools_and_armor;
 
 import java.util.List;
 
+import net.minecraftforge.api.distmarker.Dist;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
@@ -19,7 +20,6 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.UseOnContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 
 /**

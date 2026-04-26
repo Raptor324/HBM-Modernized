@@ -2,7 +2,7 @@ package com.hbm_m.network;
 
 import java.util.function.Supplier;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
 

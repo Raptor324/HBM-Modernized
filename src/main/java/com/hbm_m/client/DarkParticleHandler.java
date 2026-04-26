@@ -4,18 +4,19 @@ package com.hbm_m.client;
 // и если блок имеет нужный тег, спавнит частицы в соседних воздушных блоках. (НЕ работает)
 
 import com.hbm_m.block.HBMBlockTags;
+import com.hbm_m.lib.RefStrings;
 import com.hbm_m.particle.ModParticleTypes;
+
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.event.TickEvent;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import com.hbm_m.lib.RefStrings;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class DarkParticleHandler {

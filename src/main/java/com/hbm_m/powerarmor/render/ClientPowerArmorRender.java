@@ -22,19 +22,44 @@ import net.minecraftforge.fml.common.Mod;
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
 public final class ClientPowerArmorRender {
 
-    public static final ResourceLocation T51_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "t51_armor");
+    //? if fabric && < 1.21.1 {
+    /*public static final ResourceLocation T51_MODEL_ID = new ResourceLocation(MainRegistry.MOD_ID, "t51_armor");
+    *///?} else {
+        public static final ResourceLocation T51_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "t51_armor");
+    //?}
+
     public static final ModelResourceLocation T51_MODEL_BAKED = new ModelResourceLocation(T51_MODEL_ID, "inventory");
 
-    public static final ResourceLocation AJR_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "ajr_armor");
+    //? if fabric && < 1.21.1 {
+    /*public static final ResourceLocation AJR_MODEL_ID = new ResourceLocation(MainRegistry.MOD_ID, "ajr_armor");
+    *///?} else {
+        public static final ResourceLocation AJR_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "ajr_armor");
+    //?}
+
     public static final ModelResourceLocation AJR_MODEL_BAKED = new ModelResourceLocation(AJR_MODEL_ID, "inventory");
 
-    public static final ResourceLocation AJRO_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "ajro_armor");
+    //? if fabric && < 1.21.1 {
+    /*public static final ResourceLocation AJRO_MODEL_ID = new ResourceLocation(MainRegistry.MOD_ID, "ajro_armor");
+    *///?} else {
+        public static final ResourceLocation AJRO_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "ajro_armor");
+    //?}
+
     public static final ModelResourceLocation AJRO_MODEL_BAKED = new ModelResourceLocation(AJRO_MODEL_ID, "inventory");
 
-    public static final ResourceLocation BISMUTH_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "bismuth_armor");
+    //? if fabric && < 1.21.1 {
+    /*public static final ResourceLocation BISMUTH_MODEL_ID = new ResourceLocation(MainRegistry.MOD_ID, "bismuth_armor");
+    *///?} else {
+        public static final ResourceLocation BISMUTH_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "bismuth_armor");
+    //?}
+
     public static final ModelResourceLocation BISMUTH_MODEL_BAKED = new ModelResourceLocation(BISMUTH_MODEL_ID, "inventory");
 
-    public static final ResourceLocation DNT_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "dnt_armor");
+    //? if fabric && < 1.21.1 {
+    /*public static final ResourceLocation DNT_MODEL_ID = new ResourceLocation(MainRegistry.MOD_ID, "dnt_armor");
+    *///?} else {
+        public static final ResourceLocation DNT_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "dnt_armor");
+    //?}
+
     public static final ModelResourceLocation DNT_MODEL_BAKED = new ModelResourceLocation(DNT_MODEL_ID, "inventory");
 
     @SubscribeEvent

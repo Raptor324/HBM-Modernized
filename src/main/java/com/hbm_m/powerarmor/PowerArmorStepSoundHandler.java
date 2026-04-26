@@ -111,7 +111,12 @@ public final class PowerArmorStepSoundHandler {
         if (id.contains(":")) {
             rl = ResourceLocation.tryParse(id);
         } else {
-            rl = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, id);
+            //? if fabric && < 1.21.1 {
+            /*rl = new ResourceLocation(MainRegistry.MOD_ID, id);
+            *///?} else {
+                        rl = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, id);
+            //?}
+
         }
 
         if (rl == null) return null;

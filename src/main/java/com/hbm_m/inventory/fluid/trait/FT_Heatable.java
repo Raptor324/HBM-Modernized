@@ -12,11 +12,11 @@ import com.google.gson.stream.JsonWriter;
 import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.ChatFormatting;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.registries.ForgeRegistries;
 
 public class FT_Heatable extends FluidTrait {
 
@@ -94,7 +94,7 @@ public class FT_Heatable extends FluidTrait {
         writer.name("steps").beginArray();
         for (HeatingStep step : steps) {
             writer.beginObject();
-            ResourceLocation loc = ForgeRegistries.FLUIDS.getKey(step.typeProduced);
+            ResourceLocation loc = BuiltInRegistries.FLUID.getKey(step.typeProduced);
             writer.name("typeProduced").value(loc != null ? loc.toString() : "minecraft:empty");
             writer.name("amountReq").value(step.amountReq);
             writer.name("amountProd").value(step.amountProduced);
@@ -114,7 +114,7 @@ public class FT_Heatable extends FluidTrait {
             JsonArray arr = obj.getAsJsonArray("steps");
             for (int i = 0; i < arr.size(); i++) {
                 JsonObject step = arr.get(i).getAsJsonObject();
-                Fluid f = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(step.get("typeProduced").getAsString()));
+                Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(step.get("typeProduced").getAsString()));
                 this.steps.add(new HeatingStep(
                         step.get("amountReq").getAsInt(),
                         step.get("heatReq").getAsInt(),

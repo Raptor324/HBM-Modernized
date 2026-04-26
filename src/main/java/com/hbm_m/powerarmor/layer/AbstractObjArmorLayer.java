@@ -1,5 +1,6 @@
 package com.hbm_m.powerarmor.layer;
 
+
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -37,7 +38,11 @@ import net.minecraftforge.client.model.data.ModelData;
  * Абстрактный базовый класс для рендеринга OBJ-брони.
  * Содержит всю общую логику рендеринга, оставляя подклассам только конфигурацию.
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends RenderLayer<T, M> {
 
     protected static final float PIXEL_SCALE = 1.0F / 16.0F;

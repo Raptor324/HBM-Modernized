@@ -9,6 +9,8 @@ import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 
+import dev.architectury.registry.registries.RegistrySupplier;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
@@ -22,8 +24,6 @@ import net.minecraftforge.client.model.generators.ItemModelBuilder;
 import net.minecraftforge.client.model.generators.ItemModelProvider;
 import net.minecraftforge.client.model.generators.ModelFile;
 import net.minecraftforge.common.data.ExistingFileHelper;
-import dev.architectury.registry.registries.RegistrySupplier;
-import net.minecraftforge.registries.ForgeRegistries;
 
 public class ModItemModelProvider extends ItemModelProvider {
 
@@ -491,7 +491,12 @@ public class ModItemModelProvider extends ItemModelProvider {
     private ItemModelBuilder simpleBlockItem(RegistrySupplier<Block> item) {
         return withExistingParent(item.getId().getPath(),
                 ResourceLocation.parse("item/generated")).texture("layer0",
-                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
+                //? if fabric && < 1.21.1 {
+                /*new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
+                *///?} else {
+                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
+                //?}
+
     }
 
     private ItemModelBuilder blockItemFromBlockModelMachine(RegistrySupplier<Block> block) {
@@ -574,9 +579,19 @@ public class ModItemModelProvider extends ItemModelProvider {
                 String armorItemPath = "item/" + armorItem;
                 String trimPath = "trims/items/" + armorType + "_trim_" + trimMaterial.location().getPath();
                 String currentTrimName = armorItemPath + "_" + trimMaterial.location().getPath() + "_trim";
-                ResourceLocation armorItemResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, armorItemPath);
+                //? if fabric && < 1.21.1 {
+                /*ResourceLocation armorItemResLoc = new ResourceLocation(MOD_ID, armorItemPath);
+                *///?} else {
+                                ResourceLocation armorItemResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, armorItemPath);
+                //?}
+
                 ResourceLocation trimResLoc = ResourceLocation.parse(trimPath); // minecraft namespace
-                ResourceLocation trimNameResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, currentTrimName);
+                //? if fabric && < 1.21.1 {
+                /*ResourceLocation trimNameResLoc = new ResourceLocation(MOD_ID, currentTrimName);
+                *///?} else {
+                                ResourceLocation trimNameResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, currentTrimName);
+                //?}
+
 
                 existingFileHelper.trackGenerated(trimResLoc, PackType.CLIENT_RESOURCES, ".png", "textures");
 
@@ -591,15 +606,21 @@ public class ModItemModelProvider extends ItemModelProvider {
                         .model(new ModelFile.UncheckedModelFile(trimNameResLoc))
                         .predicate(mcLoc("trim_type"), trimValue).end()
                         .texture("layer0",
-                                ResourceLocation.fromNamespaceAndPath(MOD_ID,
+                                //? if fabric && < 1.21.1 {
+                                /*new ResourceLocation(MOD_ID,
                                         "item/" + itemRegistrySupplier.getId().getPath()));
+                                *///?} else {
+                                                                ResourceLocation.fromNamespaceAndPath(MOD_ID,
+                                        "item/" + itemRegistrySupplier.getId().getPath()));
+                                //?}
+
             });
         }
     }
 
     public void evenSimplerBlockItem(RegistrySupplier<Block> block) {
-        this.withExistingParent(MainRegistry.MOD_ID + ":" + ForgeRegistries.BLOCKS.getKey(block.get()).getPath(),
-                modLoc("block/" + ForgeRegistries.BLOCKS.getKey(block.get()).getPath()));
+        this.withExistingParent(MainRegistry.MOD_ID + ":" + BuiltInRegistries.BLOCK.getKey(block.get()).getPath(),
+                modLoc("block/" + BuiltInRegistries.BLOCK.getKey(block.get()).getPath()));
     }
 
 }

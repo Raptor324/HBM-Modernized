@@ -5,7 +5,8 @@ import java.util.List;
 import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
+import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -13,6 +14,7 @@ import com.hbm_m.recipe.ChemicalPlantRecipe;
 
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -21,7 +23,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.registries.ForgeRegistries;
 
 /**
  * Datagen builder for {@link ChemicalPlantRecipe}.
@@ -118,7 +119,12 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
     }
 
     public void save(@Nonnull Consumer<FinishedRecipe> writer, @Nonnull String path) {
-        save(writer, ResourceLocation.fromNamespaceAndPath("hbm_m", path));
+        //? if fabric && < 1.21.1 {
+        /*save(writer, new ResourceLocation("hbm_m", path));
+        *///?} else {
+                save(writer, ResourceLocation.fromNamespaceAndPath("hbm_m", path));
+        //?}
+
     }
 
     private static final class Result implements FinishedRecipe {
@@ -149,7 +155,7 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
 
             JsonArray fluidInputs = new JsonArray();
             for (FluidAmount fa : builder.fluidInputs) {
-                ResourceLocation fluidId = ForgeRegistries.FLUIDS.getKey(fa.fluid());
+                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fa.fluid());
                 if (fluidId == null) continue;
                 JsonObject obj = new JsonObject();
                 obj.addProperty("fluid", fluidId.toString());
@@ -161,7 +167,7 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
             JsonArray itemOutputs = new JsonArray();
             for (ItemStack out : builder.itemOutputs) {
                 JsonObject o = new JsonObject();
-                ResourceLocation itemId = ForgeRegistries.ITEMS.getKey(out.getItem());
+                ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(out.getItem());
                 if (itemId == null) continue;
                 o.addProperty("item", itemId.toString());
                 if (out.getCount() > 1) {
@@ -173,7 +179,7 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
 
             JsonArray fluidOutputs = new JsonArray();
             for (FluidAmount fa : builder.fluidOutputs) {
-                ResourceLocation fluidId = ForgeRegistries.FLUIDS.getKey(fa.fluid());
+                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fa.fluid());
                 if (fluidId == null) continue;
                 JsonObject obj = new JsonObject();
                 obj.addProperty("fluid", fluidId.toString());

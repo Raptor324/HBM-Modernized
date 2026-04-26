@@ -14,6 +14,11 @@ public class RefStrings {
 	public static final String SERVERSIDE = "com.hbm_m.main.ServerProxy";
 	
 	public static ResourceLocation resourceLocation(String path) {
-        return ResourceLocation.fromNamespaceAndPath(MODID, path);
+        //? if fabric && < 1.21.1 {
+        /*return new ResourceLocation(MODID, path);
+        *///?} else {
+                return ResourceLocation.fromNamespaceAndPath(MODID, path);
+        //?}
+
 	}
 }

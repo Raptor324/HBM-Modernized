@@ -2,7 +2,7 @@ package com.hbm_m.powerarmor;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyCapabilityProvider;
 import com.hbm_m.armormod.item.ItemModBattery;

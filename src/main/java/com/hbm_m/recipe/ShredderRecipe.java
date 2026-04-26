@@ -81,7 +81,12 @@ public class ShredderRecipe implements Recipe<Container> {
 
     public static class Serializer implements RecipeSerializer<ShredderRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredding");
+        //? if fabric && < 1.21.1 {
+        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "shredding");
+        *///?} else {
+                public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredding");
+        //?}
+
 
         @Override
         public ShredderRecipe fromJson(ResourceLocation recipeId, JsonObject json) {

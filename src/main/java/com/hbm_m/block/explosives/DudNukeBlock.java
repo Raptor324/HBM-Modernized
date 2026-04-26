@@ -2,7 +2,7 @@ package com.hbm_m.block.explosives;
 
 import java.util.List;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.explosion.command.ExplosionCommandOptions;
 import com.hbm_m.explosion.command.NuclearScenarioLaunchers;

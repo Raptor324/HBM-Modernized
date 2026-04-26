@@ -2,7 +2,7 @@ package com.hbm_m.block.bomb;
 
 import java.util.Map;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.bomb.IBomb;
 import com.hbm_m.block.ModBlocks;
@@ -38,7 +38,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
 
 public class NukeFatManBlock extends BaseEntityBlock implements IMultiblockController, IBomb, IDetonatable {
 
@@ -122,7 +121,9 @@ public class NukeFatManBlock extends BaseEntityBlock implements IMultiblockContr
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof MenuProvider provider) {
-            NetworkHooks.openScreen((ServerPlayer) player, provider, pos);
+            if (player instanceof ServerPlayer sp) {
+                sp.openMenu(provider);
+            }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }

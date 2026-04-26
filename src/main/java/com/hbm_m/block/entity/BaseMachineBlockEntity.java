@@ -6,9 +6,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
-import com.hbm_m.api.energy.PackedEnergyCapabilityProvider;
-import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.interfaces.IEnergyConnector;
+import com.hbm_m.inventory.ItemStackHandler;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
 
@@ -27,11 +25,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
 
 /**
  * Базовый класс для всех машин с энергией.
@@ -41,7 +34,6 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
 
     // Инвентарь
     protected final ItemStackHandler inventory;
-    protected LazyOptional<IItemHandler> itemHandler = LazyOptional.empty();
 
     // Энергия (long для больших значений)
     protected long energy = 0;
@@ -55,11 +47,6 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
 
     protected boolean networkInitialized = false;
 
-    // Capability провайдеры
-    private final LazyOptional<IEnergyProvider> hbmProvider = LazyOptional.of(() -> this);
-    private final LazyOptional<IEnergyReceiver> hbmReceiver = LazyOptional.of(() -> this);
-    private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-    private final PackedEnergyCapabilityProvider feCapabilityProvider;
 
     /**
      *  ОСНОВНОЙ КОНСТРУКТОР для машин-потребителей.
@@ -83,7 +70,6 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         this.capacity = capacity;
         this.maxReceive = maxReceive;
         this.maxExtract = maxExtract;
-        this.feCapabilityProvider = new PackedEnergyCapabilityProvider(this);
     }
 
     protected ItemStackHandler createInventoryHandler(int size) {
@@ -267,32 +253,9 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         }
     }
 
-    // --- Capabilities ---
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ModCapabilities.HBM_ENERGY_PROVIDER) {
-            return hbmProvider.cast();
-        }
-        if (cap == ModCapabilities.HBM_ENERGY_RECEIVER) {
-            return hbmReceiver.cast();
-        }
-        if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
-            return hbmConnector.cast();
-        }
-        if (cap == ForgeCapabilities.ITEM_HANDLER) {
-            return itemHandler.cast();
-        }
-
-        LazyOptional<T> feCap = feCapabilityProvider.getCapability(cap, side);
-        if (feCap.isPresent()) return feCap;
-
-        return super.getCapability(cap, side);
-    }
-
     @Override
     public void onLoad() {
         super.onLoad();
-        itemHandler = LazyOptional.of(() -> inventory);
         setupFluidCapability();
         // Сеть инициализируем позже, в тике
     }
@@ -304,15 +267,7 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
         }
     }
 
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        itemHandler.invalidate();
-        hbmProvider.invalidate();
-        hbmReceiver.invalidate();
-        hbmConnector.invalidate();
-        feCapabilityProvider.invalidate();
-    }
+    // Forge capabilities are not available on Fabric; capability hooks removed for compilation.
 
     @Override
     public void setRemoved() {

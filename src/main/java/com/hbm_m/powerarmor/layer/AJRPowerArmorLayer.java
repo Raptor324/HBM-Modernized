@@ -1,5 +1,6 @@
 package com.hbm_m.powerarmor.layer;
 
+
 import java.util.Map;
 
 import org.jetbrains.annotations.NotNull;
@@ -24,7 +25,11 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * Render layer for AJR Power Armor (entity rendering).
  * Mirrors the working T51 pipeline but with AJR textures/model id.
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class AJRPowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends AbstractObjArmorLayer<T, M> {
 
     private static final ResourceLocation AJR_ATLAS_LOCATION = InventoryMenu.BLOCK_ATLAS;
@@ -51,7 +56,12 @@ public class AJRPowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<
         );
 
         private static Material withTex(String path) {
-            return new Material(AJR_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
+            //? if fabric && < 1.21.1 {
+            /*return new Material(AJR_ATLAS_LOCATION, new ResourceLocation(MainRegistry.MOD_ID, path));
+            *///?} else {
+                        return new Material(AJR_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
+            //?}
+
         }
 
         @Override

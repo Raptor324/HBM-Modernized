@@ -6,7 +6,8 @@ import java.util.Locale;
 import java.util.function.Consumer;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+
+import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -15,6 +16,7 @@ import com.hbm_m.recipe.AnvilRecipe;
 
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -22,7 +24,6 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraftforge.registries.ForgeRegistries;
 
 public class AnvilRecipeBuilder implements RecipeBuilder {
     private final ItemStack inputA;
@@ -123,7 +124,7 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
 
     private static JsonObject stackToJson(ItemStack stack) {
         JsonObject obj = new JsonObject();
-        obj.addProperty("item", ForgeRegistries.ITEMS.getKey(stack.getItem()).toString());
+        obj.addProperty("item", BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
         if (stack.getCount() > 1) {
             obj.addProperty("count", stack.getCount());
         }

@@ -26,7 +26,12 @@ public class OverlayGeiger {
     private static boolean hasGeigerCached = false;
     private static final long INVENTORY_CHECK_INTERVAL = 1000;
 
-    private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/misc/overlay_misc.png");
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation OVERLAY = new ResourceLocation(RefStrings.MODID, "textures/misc/overlay_misc.png");
+    *///?} else {
+        private static final ResourceLocation OVERLAY = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/misc/overlay_misc.png");
+    //?}
+
 
     public static void onRenderOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         

@@ -1,23 +1,23 @@
 package com.hbm_m.inventory.gui;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
 import com.hbm_m.inventory.menu.MachineFrackingTowerMenu;
 import com.hbm_m.main.MainRegistry;
 
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-
-import org.jetbrains.annotations.NotNull;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * GUI Screen для Fracking Tower (Гидроразрывная вышка).
@@ -37,7 +37,12 @@ public class GUIMachineFrackingTower extends AbstractContainerScreen<MachineFrac
 
     /** Путь к текстуре GUI */
     private static final ResourceLocation GUI_TEXTURE = 
-            ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/machine/gui_well.png");
+            //? if fabric && < 1.21.1 {
+            /*new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/machine/gui_well.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/machine/gui_well.png");
+            //?}
+
 
     //=====================================================================================//
     // UV КООРДИНАТЫ (из оригинала)
@@ -320,7 +325,12 @@ public class GUIMachineFrackingTower extends AbstractContainerScreen<MachineFrac
      */
     private ResourceLocation getFluidTexture(Fluid fluid) {
         String fluidName = getFluidName(fluid);
-        return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/fluids/" + fluidName);
+        //? if fabric && < 1.21.1 {
+        /*return new ResourceLocation(MainRegistry.MOD_ID, "block/fluids/" + fluidName);
+        *///?} else {
+                return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/fluids/" + fluidName);
+        //?}
+
     }
 
     /**

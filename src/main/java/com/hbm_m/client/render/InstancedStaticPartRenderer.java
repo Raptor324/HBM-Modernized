@@ -1,8 +1,9 @@
 package com.hbm_m.client.render;
 
+
+import java.lang.ref.Cleaner;
 import java.nio.FloatBuffer;
 import java.util.List;
-import java.lang.ref.Cleaner;
 
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
@@ -47,7 +48,11 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
  * + companion VBO с {@code IrisVertexFormats.ENTITY} layout, что даёт корректный
  * G-buffer / shadow pass / pack uniforms.
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class InstancedStaticPartRenderer extends AbstractGpuMesh {
 
     private static final int MAX_INSTANCES = 1024;

@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import net.minecraft.core.NonNullList;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.ItemTags;
 import net.minecraft.tags.TagKey;
@@ -403,7 +404,7 @@ public class CentrifugeRecipes {
     private static ItemStack stack(String itemId, int count) {
         ResourceLocation loc = ResourceLocation.tryParse(itemId);
         if (loc == null) return ItemStack.EMPTY;
-        Item item = ForgeRegistries.ITEMS.getValue(loc);
+        Item item = BuiltInRegistries.ITEM.get(loc);
         if (item == null || item == Items.AIR) return ItemStack.EMPTY;
         return new ItemStack(item, count);
     }
@@ -416,7 +417,7 @@ public class CentrifugeRecipes {
     public static void addItemRecipe(String itemId, ItemStack... outputs) {
         ResourceLocation loc = ResourceLocation.tryParse(itemId);
         if (loc == null) return;
-        Item item = ForgeRegistries.ITEMS.getValue(loc);
+        Item item = BuiltInRegistries.ITEM.get(loc);
         if (item == null || item == Items.AIR) return;
         addItemRecipe(item, outputs);
     }

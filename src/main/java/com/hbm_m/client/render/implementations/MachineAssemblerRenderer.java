@@ -1,9 +1,10 @@
 package com.hbm_m.client.render.implementations;
 
+
 import org.joml.Matrix4f;
 
-import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.entity.machines.MachineAssemblerBlockEntity;
+import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.client.model.MachineAssemblerBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
@@ -21,6 +22,17 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.items.IItemHandler;
+//?}
+
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -33,12 +45,12 @@ import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
 
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineAssemblerBlockEntity, MachineAssemblerBakedModel> {
 
     private MachineAssemblerVboRenderer gpu;

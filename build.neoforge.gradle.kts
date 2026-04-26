@@ -69,8 +69,23 @@ tasks.named("createMinecraftArtifacts") {
 }
 
 stonecutter {
-	replacements.string(current.parsed >= "1.21.11") {
-		replace("ResourceLocation", "Identifier")
-		replace("location()", "identifier()")
+	val isModern = current.parsed >= "1.21.11"
+
+	replacements.regex(isModern) {
+		replace("\\bResourceLocation\\b", "Identifier")
+		reversePattern.set("\\bIdentifier\\b")
+		reverseValue.set("ResourceLocation")
+	}
+
+	replacements.regex(isModern) {
+		replace("\\blocation\\(\\)", "identifier()")
+		reversePattern.set("\\bidentifier\\(\\)")
+		reverseValue.set("location()")
+	}
+
+	replacements.regex(isModern) {
+		replace("net\\.minecraft\\.resources\\.ResourceLocation", "net.minecraft.util.Identifier")
+		reversePattern.set("net\\.minecraft\\.util\\.Identifier")
+		reverseValue.set("net.minecraft.resources.ResourceLocation")
 	}
 }

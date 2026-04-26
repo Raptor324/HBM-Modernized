@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Locale;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
@@ -24,11 +24,18 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+import dev.architectury.hooks.fluid.FluidStackHooks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class GUIScreenRecipeSelector extends Screen {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
             RefStrings.MODID, "textures/gui/processing/gui_recipe_selector.png");
+    *///?} else {
+        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+            RefStrings.MODID, "textures/gui/processing/gui_recipe_selector.png");
+    //?}
+
     
     public static final String NULL_SELECTION = "null";
     
@@ -478,7 +485,7 @@ public class GUIScreenRecipeSelector extends Screen {
             for (var out : chemicalRecipe.getFluidOutputs()) {
                 if (out.isEmpty()) continue;
                 tooltip.add(Component.literal("  " + out.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
-                        .append(out.getDisplayName()));
+                        .append(FluidStackHooks.getName(out)));
             }
         }
     }

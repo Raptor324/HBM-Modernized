@@ -1,5 +1,7 @@
 package com.hbm_m.main;
 
+import java.util.List;
+
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.armormod.item.ItemArmorMod;
@@ -12,18 +14,16 @@ import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
+
+import dev.architectury.fluid.FluidStack;
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fml.DistExecutor;
-
-import dev.architectury.registry.registries.RegistrySupplier;
-
-import java.util.List;
 
 /**
  * Наполнение креативных вкладок (логика из старого Forge {@code MainRegistry#addCreative}).
@@ -1071,7 +1071,7 @@ public final class CreativeModeTabEventHandler {
             event.accept(new ItemStack(ModItems.FLUID_BARREL.get()));
             for (ModFluids.FluidEntry entry : HbmFluidRegistry.getOrderedFluids()) {
                 ItemStack filledBarrel = new ItemStack(ModItems.FLUID_BARREL.get());
-                FluidBarrelItem.setFluid(filledBarrel, new FluidStack(entry.getSource(), FluidBarrelItem.CAPACITY));
+                FluidBarrelItem.setFluid(filledBarrel, new net.minecraftforge.fluids.FluidStack(entry.getSource(), FluidBarrelItem.CAPACITY));
                 event.accept(filledBarrel, net.minecraft.world.item.CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
             }
             // Fluid Ducts - one per fluid type (neo / colored / silver styles)

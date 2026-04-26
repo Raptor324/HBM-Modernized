@@ -6,6 +6,7 @@ package com.hbm_m.event;
 
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;
+
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.event.TickEvent;

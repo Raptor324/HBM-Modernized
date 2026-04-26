@@ -1,7 +1,7 @@
 package com.hbm_m.recipe;
 
 import javax.annotation.Nonnull;
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.lib.RefStrings;
@@ -115,7 +115,12 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
 
     public static class Serializer implements RecipeSerializer<AssemblerRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler");
+        //? if fabric && < 1.21.1 {
+        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "assembler");
+        *///?} else {
+                public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "assembler");
+        //?}
+
 
         @Override
         public AssemblerRecipe fromJson(@Nonnull ResourceLocation pRecipeId, @Nonnull JsonObject pSerializedRecipe) {

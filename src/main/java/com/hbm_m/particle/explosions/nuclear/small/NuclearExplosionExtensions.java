@@ -1,14 +1,16 @@
 package com.hbm_m.particle.explosions.nuclear.small;
 
+import net.minecraftforge.api.distmarker.Dist;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.hbm_m.particle.ModExplosionParticles;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *  РАСШИРЕНИЯ ДЛЯ ЯДЕРНЫХ ЭФФЕКТОВ

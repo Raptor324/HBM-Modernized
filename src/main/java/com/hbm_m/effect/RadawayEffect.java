@@ -66,7 +66,12 @@ public class RadawayEffect extends MobEffect {
         @Override
     public void initializeClient(@Nonnull Consumer<IClientMobEffectExtensions> consumer) {
         consumer.accept(new IClientMobEffectExtensions() {
-            private static final ResourceLocation POTIONS_SHEET = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/potions.png");
+            //? if fabric && < 1.21.1 {
+            /*private static final ResourceLocation POTIONS_SHEET = new ResourceLocation(RefStrings.MODID, "textures/gui/potions.png");
+            *///?} else {
+                        private static final ResourceLocation POTIONS_SHEET = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/potions.png");
+            //?}
+
             
             private static final int TEXTURE_WIDTH = 256;
             private static final int TEXTURE_HEIGHT = 256;

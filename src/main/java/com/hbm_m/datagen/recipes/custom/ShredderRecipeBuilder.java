@@ -1,12 +1,20 @@
 package com.hbm_m.datagen.recipes.custom;
 
+import java.util.function.Consumer;
+
+import javax.annotation.Nonnull;
+
+import org.jetbrains.annotations.Nullable;
+
 // Билдер рецептов для ShredderRecipe.
 // Позволяет легко создавать рецепты для шреддера (один вход -> один выход).
 // Используется в классе генерации данных ModRecipeProvider.
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.ShredderRecipe;
+
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.CriterionTriggerInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
@@ -14,11 +22,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
-import net.minecraftforge.registries.ForgeRegistries;
-import org.jetbrains.annotations.Nullable;
-
-import javax.annotation.Nonnull;
-import java.util.function.Consumer;
 
 public class ShredderRecipeBuilder implements RecipeBuilder {
     private final Ingredient input;
@@ -92,7 +95,7 @@ public class ShredderRecipeBuilder implements RecipeBuilder {
 
             // Сериализуем выходной предмет
             JsonObject resultJson = new JsonObject();
-            resultJson.addProperty("item", ForgeRegistries.ITEMS.getKey(this.builder.output.getItem()).toString());
+            resultJson.addProperty("item", BuiltInRegistries.ITEM.getKey(this.builder.output.getItem()).toString());
             if (this.builder.output.getCount() > 1) {
                 resultJson.addProperty("count", this.builder.output.getCount());
             }

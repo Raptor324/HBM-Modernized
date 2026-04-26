@@ -1,14 +1,15 @@
 package com.hbm_m.network;
 
+import java.util.function.Supplier;
+
 import com.hbm_m.particle.helper.ParticleEffectClient;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.fml.DistExecutor;
 import net.minecraftforge.network.NetworkEvent;
-
-import java.util.function.Supplier;
 
 /** S2C packet: spawn custom NT particle at (x,y,z) with NBT data. */
 public class AuxParticlePacket {

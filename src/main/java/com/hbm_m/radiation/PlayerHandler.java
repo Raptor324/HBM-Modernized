@@ -7,9 +7,9 @@ import java.util.UUID;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.damagesource.ModDamageSources;
+import com.hbm_m.explosion.command.HbmExplosionCommands;
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;
-import com.hbm_m.explosion.command.HbmExplosionCommands;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
@@ -278,7 +278,12 @@ public class PlayerHandler {
                 ServerAdvancementManager advancementManager = server.getAdvancements();
 
                 // Достижение "Ура, Радиация!" (200 РАД)
-                Advancement rad200Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_200"));
+                //? if fabric && < 1.21.1 {
+                /*Advancement rad200Advancement = advancementManager.getAdvancement(new ResourceLocation(RefStrings.MODID, "radiation_200"));
+                *///?} else {
+                                Advancement rad200Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_200"));
+                //?}
+
                 if (rad200Advancement != null) {
                     AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(rad200Advancement);
                     if (!progress.isDone()) {
@@ -297,7 +302,12 @@ public class PlayerHandler {
                 }
 
                 // Испытание "Ай, Радиация!" (1000 РАД)
-                Advancement rad1000Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_1000"));
+                //? if fabric && < 1.21.1 {
+                /*Advancement rad1000Advancement = advancementManager.getAdvancement(new ResourceLocation(RefStrings.MODID, "radiation_1000"));
+                *///?} else {
+                                Advancement rad1000Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_1000"));
+                //?}
+
                 if (rad1000Advancement != null) {
                     AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(rad1000Advancement);
                     if (!progress.isDone()) {

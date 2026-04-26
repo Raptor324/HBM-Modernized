@@ -10,6 +10,7 @@ import com.hbm_m.block.entity.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -22,7 +23,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.registries.ForgeRegistries;
 
 /**
  * BlockEntity клапана (порт TileEntityFluidValve из 1.7.10).
@@ -168,7 +168,7 @@ public class FluidValveBlockEntity extends BlockEntity implements IFluidPipeMK2 
     @Override
     protected void saveAdditional(@Nonnull CompoundTag tag) {
         super.saveAdditional(tag);
-        ResourceLocation loc = ForgeRegistries.FLUIDS.getKey(fluidType);
+        ResourceLocation loc = BuiltInRegistries.FLUID.getKey(fluidType);
         if (loc != null) tag.putString(NBT_FLUID_TYPE, loc.toString());
         tag.putBoolean(NBT_OPEN, open);
     }
@@ -177,7 +177,7 @@ public class FluidValveBlockEntity extends BlockEntity implements IFluidPipeMK2 
     public void load(@Nonnull CompoundTag tag) {
         super.load(tag);
         if (tag.contains(NBT_FLUID_TYPE)) {
-            Fluid f = ForgeRegistries.FLUIDS.getValue(ResourceLocation.parse(tag.getString(NBT_FLUID_TYPE)));
+            Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.parse(tag.getString(NBT_FLUID_TYPE)));
             this.fluidType = f != null ? f : Fluids.EMPTY;
         }
         open = !tag.contains(NBT_OPEN) || tag.getBoolean(NBT_OPEN);

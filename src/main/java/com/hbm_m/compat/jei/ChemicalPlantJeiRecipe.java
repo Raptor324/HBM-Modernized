@@ -1,13 +1,13 @@
 package com.hbm_m.compat.jei;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.hbm_m.recipe.ChemicalPlantRecipes.ChemicalRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipes.RecipeInput;
 
+import dev.architectury.fluid.FluidStack;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fluids.FluidStack;
-
-import java.util.ArrayList;
-import java.util.List;
 
 /**
  * Wrapper class for displaying Chemical Plant recipes in JEI.

@@ -3,7 +3,7 @@ package com.hbm_m.block.machines;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import javax.annotation.Nullable;
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;

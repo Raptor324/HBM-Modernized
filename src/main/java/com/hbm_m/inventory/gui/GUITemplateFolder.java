@@ -23,7 +23,12 @@ import java.util.Locale;
 import javax.annotation.Nonnull;
 
 public class GUITemplateFolder extends Screen {
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_planner.png");
+    //? if fabric && < 1.21.1 {
+    /*private static final ResourceLocation TEXTURE = new ResourceLocation(RefStrings.MODID, "textures/gui/gui_planner.png");
+    *///?} else {
+        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_planner.png");
+    //?}
+
     private final int imageWidth = 176;
     private final int imageHeight = 229;
     private int leftPos;

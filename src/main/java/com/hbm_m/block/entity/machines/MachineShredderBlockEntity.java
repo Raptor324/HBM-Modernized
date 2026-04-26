@@ -1,14 +1,28 @@
 package com.hbm_m.block.entity.machines;
 
+
+import java.util.Optional;
+
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineShredderMenu;
-import com.hbm_m.item.industrial.ItemBlades;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.industrial.ItemBlades;
 import com.hbm_m.recipe.ShredderRecipe;
 import com.hbm_m.sound.ClientSoundManager;
 import com.hbm_m.sound.ShredderSoundInstance;
+
+import dev.architectury.registry.registries.RegistrySupplier;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -26,13 +40,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import dev.architectury.registry.registries.RegistrySupplier;
-import org.jetbrains.annotations.Nullable;
-
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-
-import java.util.Optional;
 
 /**
  * Шреддер машина - перерабатывает предметы в пыль/скрап
@@ -208,8 +215,11 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             blockEntity.serverTick(level, pos);
         }
     }
-
-    @OnlyIn(Dist.CLIENT)
+//? if forge {
+@OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
     private void clientTick() {
         ClientSoundManager.updateSound(this, getIsActive(),
                 () -> new ShredderSoundInstance(this.getBlockPos()));

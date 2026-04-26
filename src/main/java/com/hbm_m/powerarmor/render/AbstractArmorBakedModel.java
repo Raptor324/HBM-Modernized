@@ -1,5 +1,18 @@
 package com.hbm_m.powerarmor.render;
 
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.client.model.AbstractMultipartBakedModel;
+import com.hbm_m.interfaces.IArmorModelConfig;
+import com.hbm_m.powerarmor.ModPowerArmorItem;
+
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
@@ -14,27 +27,23 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;*///?}
 import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
-import org.jetbrains.annotations.Nullable;
-
-import com.hbm_m.client.model.AbstractMultipartBakedModel;
-import com.hbm_m.interfaces.IArmorModelConfig;
-import com.hbm_m.powerarmor.ModPowerArmorItem;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Абстрактный базовый класс для рендеринга иконок брони в GUI.
  * Содержит всю общую логику рендеринга, оставляя подклассам только конфигурацию.
  * Аналогично AbstractObjArmorLayer для entity рендеринга.
  */
+//? if forge {
 @OnlyIn(Dist.CLIENT)
+//?}
+//? if fabric {
+/*@Environment(EnvType.CLIENT)*///?}
 public abstract class AbstractArmorBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
     // ModelProperty для передачи armorType через ModelData

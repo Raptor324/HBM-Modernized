@@ -22,11 +22,20 @@ public class ModPacketHandler {
     private static boolean REGISTERED = false;
 
     public static final SimpleChannel INSTANCE = NetworkRegistry.newSimpleChannel(
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "main_channel"),
+            //? if fabric && < 1.21.1 {
+            /*new ResourceLocation(RefStrings.MODID, "main_channel"),
             () -> PROTOCOL_VERSION,
             PROTOCOL_VERSION::equals,
             PROTOCOL_VERSION::equals
     );
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "main_channel"),
+            () -> PROTOCOL_VERSION,
+            PROTOCOL_VERSION::equals,
+            PROTOCOL_VERSION::equals
+    );
+            //?}
+
 
     public static void register() {
         if (REGISTERED) {

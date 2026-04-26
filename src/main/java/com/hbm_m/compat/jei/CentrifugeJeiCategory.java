@@ -21,7 +21,12 @@ public class CentrifugeJeiCategory implements IRecipeCategory<CentrifugeJeiRecip
             RecipeType.create(RefStrings.MODID, "centrifuge", CentrifugeJeiRecipe.class);
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
+            //? if fabric && < 1.21.1 {
+            /*new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
+            *///?} else {
+                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
+            //?}
+
 
     private final IDrawable background;
     private final IDrawable icon;
