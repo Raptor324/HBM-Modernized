@@ -2,11 +2,9 @@ package com.hbm_m.item.liquids;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -22,6 +20,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 /**
@@ -69,9 +68,9 @@ public class InfiniteFluidItem extends Item {
             this.optional = LazyOptional.of(() -> handler);
         }
 
-        @Nonnull
+        @NotNull
         @Override
-        public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
+        public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
             if (cap == ForgeCapabilities.FLUID_HANDLER_ITEM) {
                 return optional.cast();
             }
@@ -115,7 +114,7 @@ public class InfiniteFluidItem extends Item {
             this.rate = rate;
         }
 
-        @Nonnull
+        @NotNull
         @Override
         public ItemStack getContainer() {
             return container;
@@ -126,7 +125,7 @@ public class InfiniteFluidItem extends Item {
             return 1;
         }
 
-        @Nonnull
+        @NotNull
         @Override
         public FluidStack getFluidInTank(int tank) {
             return FluidStack.EMPTY;
@@ -138,11 +137,11 @@ public class InfiniteFluidItem extends Item {
         }
 
         @Override
-        public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
+        public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
             return false;
         }
 
-        @Nonnull
+        @NotNull
         @Override
         public FluidStack drain(FluidStack resource, FluidAction action) {
             if (resource.isEmpty()) return FluidStack.EMPTY;

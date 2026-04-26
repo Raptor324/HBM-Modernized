@@ -1,5 +1,5 @@
 package com.hbm_m.block.entity.machines;
-
+//? if forge {
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.ModFluids;
@@ -98,3 +98,4 @@ public class FrackingTowerFluidHandler implements IFluidHandler {
         return blockEntity.getGasTank().drain(maxDrain, action);
     }
 }
+//?}

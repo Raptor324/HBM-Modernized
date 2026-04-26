@@ -2,8 +2,7 @@ package com.hbm_m.item.industrial;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.recipe.AssemblerRecipe;
@@ -39,7 +38,7 @@ public class ItemBlueprintFolder extends Item {
     }
 
     @Override
-    public Component getName(@Nonnull ItemStack stack) {
+    public Component getName(@NotNull ItemStack stack) {
         String pool = getBlueprintPool(stack);
         if (!pool.isEmpty()) {
             // Формат: "Папка шаблонов машин: <название группы>"
@@ -51,8 +50,8 @@ public class ItemBlueprintFolder extends Item {
     }
 
     @Override
-    public void appendHoverText(@Nonnull ItemStack stack, @Nullable Level level,
-                            @Nonnull List<Component> tooltip, @Nonnull TooltipFlag flag) {
+    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level,
+                            @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
         String pool = getBlueprintPool(stack);
         
         // Если NBT пустой - показываем "пустой шаблон"

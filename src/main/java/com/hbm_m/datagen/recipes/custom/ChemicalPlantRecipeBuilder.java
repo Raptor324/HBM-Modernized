@@ -4,8 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import javax.annotation.Nonnull;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonArray;
@@ -94,7 +93,7 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
     private record FluidAmount(Fluid fluid, int amount) {}
 
     @Override
-    public RecipeBuilder unlockedBy(@Nonnull String name, @Nonnull CriterionTriggerInstance criterion) {
+    public RecipeBuilder unlockedBy(@NotNull String name, @NotNull CriterionTriggerInstance criterion) {
         this.advancement.addCriterion(name, criterion);
         return this;
     }
@@ -114,11 +113,11 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public void save(@Nonnull Consumer<FinishedRecipe> writer, @Nonnull ResourceLocation recipeId) {
+    public void save(@NotNull Consumer<FinishedRecipe> writer, @NotNull ResourceLocation recipeId) {
         writer.accept(new Result(recipeId, this));
     }
 
-    public void save(@Nonnull Consumer<FinishedRecipe> writer, @Nonnull String path) {
+    public void save(@NotNull Consumer<FinishedRecipe> writer, @NotNull String path) {
         //? if fabric && < 1.21.1 {
         /*save(writer, new ResourceLocation("hbm_m", path));
         *///?} else {
@@ -137,7 +136,7 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
         }
 
         @Override
-        public void serializeRecipeData(@Nonnull JsonObject json) {
+        public void serializeRecipeData(@NotNull JsonObject json) {
             json.addProperty("duration", builder.duration);
             json.addProperty("power", builder.power);
 

@@ -1,11 +1,18 @@
 package com.hbm_m.inventory.gui;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
+
+import javax.annotation.Nonnull;
+
+import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.GiveTemplateC2SPacket;
 import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.item.ModItems;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.util.TemplateCraftingCosts;
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.Button;
 import net.minecraft.client.gui.components.EditBox;
@@ -15,12 +22,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-
-import javax.annotation.Nonnull;
 
 public class GUITemplateFolder extends Screen {
     //? if fabric && < 1.21.1 {
@@ -153,7 +154,7 @@ public class GUITemplateFolder extends Screen {
     }
 
     @Override
-    public void render(@Nonnull GuiGraphics guiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
+    public void render(@NotNull GuiGraphics guiGraphics, int pMouseX, int pMouseY, float pPartialTick) {
         this.renderBackground(guiGraphics);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 

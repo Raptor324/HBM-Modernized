@@ -1,8 +1,15 @@
 package com.hbm_m.client.model;
 
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
 // Модель предмета, которая показывает результат сборки из шаблона при зажатом Shift.
 // Основана на BakedModelWrapper и ItemOverrides.
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
+
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
@@ -13,11 +20,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.client.model.BakedModelWrapper;
 
-import javax.annotation.Nonnull;
-import org.jetbrains.annotations.Nullable;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-
 public class TemplateBakedModel extends BakedModelWrapper<BakedModel> {
 
     private final TemplateItemOverrides itemOverrides;
@@ -27,7 +29,7 @@ public class TemplateBakedModel extends BakedModelWrapper<BakedModel> {
         this.itemOverrides = new TemplateItemOverrides();
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public ItemOverrides getOverrides() {
         return this.itemOverrides;
@@ -45,7 +47,7 @@ public class TemplateBakedModel extends BakedModelWrapper<BakedModel> {
 
         @Override
         @Nullable
-        public BakedModel resolve(@Nonnull BakedModel model, @Nonnull ItemStack stack, @Nullable ClientLevel level, @Nullable LivingEntity entity, int seed) {
+        public BakedModel resolve(@NotNull BakedModel model, @NotNull ItemStack stack, @Nullable ClientLevel level, @Nullable LivingEntity entity, int seed) {
             if (!Screen.hasShiftDown()) {
                 return model;
             }

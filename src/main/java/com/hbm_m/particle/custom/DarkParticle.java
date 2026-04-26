@@ -1,7 +1,7 @@
 package com.hbm_m.particle.custom;
 
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
@@ -60,7 +60,7 @@ public class DarkParticle extends TextureSheetParticle {
             this.spriteSet = spriteSet;
         }
 
-        public Particle createParticle(@Nonnull SimpleParticleType particleType, @Nonnull ClientLevel level,
+        public Particle createParticle(@NotNull SimpleParticleType particleType, @NotNull ClientLevel level,
                                        double x, double y, double z,
                                        double dx, double dy, double dz) {
             return new DarkParticle(level, x, y, z, this.spriteSet, dx, dy, dz);

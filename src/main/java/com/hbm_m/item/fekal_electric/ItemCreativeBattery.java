@@ -2,8 +2,6 @@ package com.hbm_m.item.fekal_electric;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -31,7 +29,7 @@ public class ItemCreativeBattery extends ModBatteryItem {
     }
 
     @Override
-    public void appendHoverText(@Nonnull ItemStack pStack, @Nullable Level pLevel, @Nonnull List<Component> pTooltipComponents, @Nonnull TooltipFlag pIsAdvanced) {
+    public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, @NotNull List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
         pTooltipComponents.add(Component.translatable("tooltip.hbm_m.creative_battery_desc")
                 .withStyle(ChatFormatting.LIGHT_PURPLE));
         pTooltipComponents.add(Component.translatable("tooltip.hbm_m.creative_battery_flavor")
@@ -39,17 +37,17 @@ public class ItemCreativeBattery extends ModBatteryItem {
     }
 
     @Override
-    public boolean isBarVisible(@Nonnull ItemStack pStack) {
+    public boolean isBarVisible(@NotNull ItemStack pStack) {
         return false;
     }
 
     @Override
-    public int getBarWidth(@Nonnull ItemStack pStack) {
+    public int getBarWidth(@NotNull ItemStack pStack) {
         return 13; // Всегда полная
     }
 
     @Override
-    public int getBarColor(@Nonnull ItemStack pStack) {
+    public int getBarColor(@NotNull ItemStack pStack) {
         return 0xFF00FF; // Фиолетовый для креатива
     }
 

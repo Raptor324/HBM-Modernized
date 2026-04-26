@@ -3,7 +3,7 @@ package com.hbm_m.entity.grenades;
 import java.util.Random;
 import java.util.UUID;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
@@ -308,7 +308,7 @@ public class AirstrikeAgentEntity extends Entity {
         tag.putInt("SprayTimer", sprayTimer);
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);

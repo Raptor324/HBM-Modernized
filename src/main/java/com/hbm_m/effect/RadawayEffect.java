@@ -5,7 +5,7 @@ package com.hbm_m.effect;
 
 import java.util.function.Consumer;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.radiation.PlayerHandler;
@@ -38,7 +38,7 @@ public class RadawayEffect extends MobEffect {
      * @param amplifier Уровень эффекта (0 для уровня I, 1 для уровня II и т.д.)
      */
     @Override
-    public void applyEffectTick(@Nonnull LivingEntity entity, int amplifier) {
+    public void applyEffectTick(@NotNull LivingEntity entity, int amplifier) {
         // Убедимся, что это игрок и что мы на серверной стороне
         if (entity instanceof Player && !entity.level().isClientSide()) {
             Player player = (Player) entity;
@@ -64,7 +64,7 @@ public class RadawayEffect extends MobEffect {
     }
 
         @Override
-    public void initializeClient(@Nonnull Consumer<IClientMobEffectExtensions> consumer) {
+    public void initializeClient(@NotNull Consumer<IClientMobEffectExtensions> consumer) {
         consumer.accept(new IClientMobEffectExtensions() {
             //? if fabric && < 1.21.1 {
             /*private static final ResourceLocation POTIONS_SHEET = new ResourceLocation(RefStrings.MODID, "textures/gui/potions.png");

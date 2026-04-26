@@ -1,5 +1,12 @@
 package com.hbm_m.block.entity.machines;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
+import java.util.Random;
+
+import org.jetbrains.annotations.NotNull;
+
 // Блок-энтити для Гейгера, который измеряет радиацию в чанке и издает щелчки в зависимости от уровня радиации.
 // Логика звуков адаптирована из GeigerCounterItem, но с учетом того, что это блок, а не предмет.
 // Радиоактивность измеряется с помощью ChunkRadiationManager, который управляет радиацией на уровне чанков.
@@ -7,6 +14,7 @@ package com.hbm_m.block.entity.machines;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.sound.ModSounds;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundEvent;
@@ -14,13 +22,6 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
-
-import javax.annotation.Nonnull;
 
 public class GeigerCounterBlockEntity extends BlockEntity {
 
@@ -94,14 +95,14 @@ public class GeigerCounterBlockEntity extends BlockEntity {
     
     // Сохранение данных при выходе из мира
     @Override
-    protected void saveAdditional(@Nonnull CompoundTag pTag) {
+    protected void saveAdditional(@NotNull CompoundTag pTag) {
         pTag.putFloat("lastMeasuredRads", this.lastMeasuredRads);
         super.saveAdditional(pTag);
     }
 
     // Загрузка данных при входе в мир
     @Override
-    public void load(@Nonnull CompoundTag pTag) {
+    public void load(@NotNull CompoundTag pTag) {
         super.load(pTag);
         this.lastMeasuredRads = pTag.getFloat("lastMeasuredRads");
     }

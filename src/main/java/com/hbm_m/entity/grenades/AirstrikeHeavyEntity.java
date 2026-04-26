@@ -3,7 +3,7 @@ package com.hbm_m.entity.grenades;
 import java.util.Random;
 import java.util.UUID;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.sound.ModSounds;
@@ -303,7 +303,7 @@ public class AirstrikeHeavyEntity extends Entity {
         tag.putInt("BombsDropped", bombsDropped);  // 🆕 Сохранение счётчика
     }
 
-    @Nonnull
+    @NotNull
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return NetworkHooks.getEntitySpawningPacket(this);

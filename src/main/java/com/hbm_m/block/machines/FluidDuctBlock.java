@@ -8,8 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.ImmutableMap;
@@ -21,10 +20,6 @@ import com.hbm_m.interfaces.ILookOverlay;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidDuctItem;
 
-import dev.architectury.fluid.FluidStack;
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 //?}
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
@@ -60,6 +55,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
@@ -130,8 +128,8 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     @Override
-    public VoxelShape getShape(@Nonnull BlockState state, @Nonnull BlockGetter level, @Nonnull BlockPos pos,
-            @Nonnull CollisionContext context) {
+    public VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos,
+            @NotNull CollisionContext context) {
         VoxelShape shape = CORE;
         for (Direction dir : Direction.values()) {
             if (state.getValue(PROPERTY_BY_DIRECTION.get(dir))) {
@@ -162,9 +160,9 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     @Override
-    public BlockState updateShape(@Nonnull BlockState state, @Nonnull Direction facing,
-            @Nonnull BlockState facingState, @Nonnull LevelAccessor level,
-            @Nonnull BlockPos currentPos, @Nonnull BlockPos facingPos) {
+    public BlockState updateShape(@NotNull BlockState state, @NotNull Direction facing,
+            @NotNull BlockState facingState, @NotNull LevelAccessor level,
+            @NotNull BlockPos currentPos, @NotNull BlockPos facingPos) {
         BlockState self = level.getBlockState(currentPos);
         if (self.getBlock() instanceof FluidDuctBlock duct) {
             return duct.getConnectionState(level, currentPos);
@@ -173,8 +171,8 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     @Override
-    public void neighborChanged(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos,
-            @Nonnull Block block, @Nonnull BlockPos fromPos, boolean isMoving) {
+    public void neighborChanged(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
+            @NotNull Block block, @NotNull BlockPos fromPos, boolean isMoving) {
         super.neighborChanged(state, level, pos, block, fromPos, isMoving);
         BlockState newState = getConnectionState(level, pos);
         if (!newState.equals(state)) {
@@ -228,8 +226,8 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     @Override
-    public InteractionResult use(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos,
-            @Nonnull Player player, @Nonnull InteractionHand hand, @Nonnull BlockHitResult hit) {
+    public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
+            @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         ItemStack stack = player.getItemInHand(hand);
         if (stack.isEmpty() || !(stack.getItem() instanceof IItemFluidIdentifier idItem)) {
             return InteractionResult.PASS;
@@ -346,14 +344,14 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
 
     @Nullable
     @Override
-    public BlockEntity newBlockEntity(@Nonnull BlockPos pos, @Nonnull BlockState state) {
+    public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
         return new FluidDuctBlockEntity(pos, state);
     }
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@Nonnull Level level,
-            @Nonnull BlockState state, @Nonnull BlockEntityType<T> type) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level,
+            @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
         return level.isClientSide ? null : (lvl, pos, st, be) -> {
             if (be instanceof FluidDuctBlockEntity duct) {
                 FluidDuctBlockEntity.tick(lvl, pos, st, duct);
@@ -362,13 +360,13 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     @Override
-    public RenderShape getRenderShape(@Nonnull BlockState state) {
+    public RenderShape getRenderShape(@NotNull BlockState state) {
         return RenderShape.MODEL;
     }
 
-    @Nonnull
+    @NotNull
     @Override
-    public ItemStack getCloneItemStack(@Nonnull BlockGetter level, @Nonnull BlockPos pos, @Nonnull BlockState state) {
+    public ItemStack getCloneItemStack(@NotNull BlockGetter level, @NotNull BlockPos pos, @NotNull BlockState state) {
         ItemStack stack = new ItemStack(getDuctItem());
         BlockEntity be = level.getBlockEntity(pos);
         if (be instanceof FluidDuctBlockEntity ductBe
@@ -387,7 +385,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     @Override
-    public List<ItemStack> getDrops(@Nonnull BlockState state, LootParams.Builder builder) {
+    public List<ItemStack> getDrops(@NotNull BlockState state, LootParams.Builder builder) {
         BlockEntity be = builder.getOptionalParameter(LootContextParams.BLOCK_ENTITY);
         ItemStack drop = new ItemStack(getDuctItem());
         if (be instanceof FluidDuctBlockEntity ductBe

@@ -1,5 +1,7 @@
 package com.hbm_m.item.radiation_meter;
 
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.network.ModPacketHandler;
@@ -7,6 +9,7 @@ import com.hbm_m.network.sounds.GeigerSoundPacket;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.sound.ModSounds;
+
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,8 +22,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraftforge.network.PacketDistributor;
 
-import javax.annotation.Nonnull;
-
 /**
  * Базовый класс для всех измерителей радиации (Счетчик Гейгера, Дозиметр).
  * Содержит общую логику измерения и вывода информации.
@@ -32,9 +33,9 @@ public abstract class AbstractRadiationMeterItem extends Item {
         super(pProperties);
     }
 
-    @Nonnull
+    @NotNull
     @Override
-    public InteractionResultHolder<ItemStack> use(@Nonnull Level pLevel, @Nonnull Player pPlayer, @Nonnull InteractionHand pUsedHand) {
+    public InteractionResultHolder<ItemStack> use(@NotNull Level pLevel, @NotNull Player pPlayer, @NotNull InteractionHand pUsedHand) {
         if (!pLevel.isClientSide() && pPlayer instanceof ServerPlayer serverPlayer) {
             RadiationData data = measureRadiation(pLevel, serverPlayer);
             Component message = createUsageMessage(data);

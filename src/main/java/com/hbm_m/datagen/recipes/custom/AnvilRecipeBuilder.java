@@ -5,8 +5,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.function.Consumer;
 
-import javax.annotation.Nonnull;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonArray;
@@ -102,7 +101,7 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public AnvilRecipeBuilder unlockedBy(@Nonnull String criterionName, @Nonnull CriterionTriggerInstance criterionTrigger) {
+    public AnvilRecipeBuilder unlockedBy(@NotNull String criterionName, @NotNull CriterionTriggerInstance criterionTrigger) {
         this.advancement.addCriterion(criterionName, criterionTrigger);
         return this;
     }
@@ -118,7 +117,7 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public void save(@Nonnull Consumer<FinishedRecipe> consumer, @Nonnull ResourceLocation recipeId) {
+    public void save(@NotNull Consumer<FinishedRecipe> consumer, @NotNull ResourceLocation recipeId) {
         consumer.accept(new Result(recipeId, this));
     }
 
@@ -144,7 +143,7 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
         }
 
         @Override
-        public void serializeRecipeData(@Nonnull JsonObject json) {
+        public void serializeRecipeData(@NotNull JsonObject json) {
             if (!builder.inputA.isEmpty()) {
                 json.add("input_a", stackToJson(builder.inputA));
             }

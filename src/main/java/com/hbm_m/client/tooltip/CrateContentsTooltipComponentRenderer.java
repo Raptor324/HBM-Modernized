@@ -3,11 +3,8 @@ package com.hbm_m.client.tooltip;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 //?}
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
@@ -17,6 +14,9 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Client renderer for crate tooltip rows (item icon + name).
@@ -41,7 +41,7 @@ public class CrateContentsTooltipComponentRenderer implements ClientTooltipCompo
     }
 
     @Override
-    public int getWidth(@Nonnull Font font) {
+    public int getWidth(@NotNull Font font) {
         int maxTextWidth = 0;
         for (CrateContentsTooltipComponent.Entry entry : entries) {
             maxTextWidth = Math.max(maxTextWidth, font.width(getRowText(entry)));
@@ -50,7 +50,7 @@ public class CrateContentsTooltipComponentRenderer implements ClientTooltipCompo
     }
 
     @Override
-    public void renderImage(@Nonnull Font font, int x, int y, @Nonnull GuiGraphics guiGraphics) {
+    public void renderImage(@NotNull Font font, int x, int y, @NotNull GuiGraphics guiGraphics) {
         for (int i = 0; i < entries.size(); i++) {
             CrateContentsTooltipComponent.Entry entry = entries.get(i);
             ItemStack stack = entry.stack();

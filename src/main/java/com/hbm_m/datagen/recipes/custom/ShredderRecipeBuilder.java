@@ -2,8 +2,7 @@ package com.hbm_m.datagen.recipes.custom;
 
 import java.util.function.Consumer;
 
-import javax.annotation.Nonnull;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 // Билдер рецептов для ShredderRecipe.
@@ -57,7 +56,7 @@ public class ShredderRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public RecipeBuilder unlockedBy(@Nonnull String pCriterionName, @Nonnull CriterionTriggerInstance pCriterionTrigger) {
+    public RecipeBuilder unlockedBy(@NotNull String pCriterionName, @NotNull CriterionTriggerInstance pCriterionTrigger) {
         this.advancement.addCriterion(pCriterionName, pCriterionTrigger);
         return this;
     }
@@ -73,7 +72,7 @@ public class ShredderRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public void save(@Nonnull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @Nonnull ResourceLocation pRecipeId) {
+    public void save(@NotNull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @NotNull ResourceLocation pRecipeId) {
         pFinishedRecipeConsumer.accept(new Result(pRecipeId, this));
     }
 
@@ -89,7 +88,7 @@ public class ShredderRecipeBuilder implements RecipeBuilder {
         }
 
         @Override
-        public void serializeRecipeData(@Nonnull JsonObject pJson) {
+        public void serializeRecipeData(@NotNull JsonObject pJson) {
             // Сериализуем входной ингредиент
             pJson.add("ingredient", this.builder.input.toJson());
 

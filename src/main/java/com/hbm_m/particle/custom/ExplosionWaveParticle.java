@@ -1,7 +1,7 @@
 package com.hbm_m.particle.custom;
 
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
@@ -90,7 +90,7 @@ public class ExplosionWaveParticle extends TextureSheetParticle {
         }
 
         @Override
-        public Particle createParticle(@Nonnull SimpleParticleType particleType, @Nonnull ClientLevel level,
+        public Particle createParticle(@NotNull SimpleParticleType particleType, @NotNull ClientLevel level,
                                        double x, double y, double z,
                                        double dx, double dy, double dz) {
             return new ExplosionWaveParticle(level, x, y, z, this.spriteSet, dx, dy, dz);

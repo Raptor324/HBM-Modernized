@@ -2,7 +2,7 @@ package com.hbm_m.item.fekal_electric;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyCapabilityProvider;
@@ -86,12 +86,12 @@ public class ModBatteryItem extends Item {
     }
 
     @Override
-    public boolean isBarVisible(@Nonnull ItemStack stack) {
+    public boolean isBarVisible(@NotNull ItemStack stack) {
         return true;
     }
 
     @Override
-    public int getBarWidth(@Nonnull ItemStack stack) {
+    public int getBarWidth(@NotNull ItemStack stack) {
         return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
                 .map(energy -> {
                     if (energy.getMaxEnergyStored() <= 0) return 0;
@@ -106,7 +106,7 @@ public class ModBatteryItem extends Item {
     }
 
     @Override
-    public int getBarColor(@Nonnull ItemStack stack) {
+    public int getBarColor(@NotNull ItemStack stack) {
         float ratio = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
                 .map(energy -> {
                     if (energy.getMaxEnergyStored() <= 0) return 0.0f;
@@ -123,7 +123,7 @@ public class ModBatteryItem extends Item {
     }
 
     @Override
-    public void appendHoverText(@Nonnull ItemStack stack, @Nullable Level level, @Nonnull List<Component> tooltip, @Nonnull TooltipFlag flag) {
+    public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
         // [🔥 ИЗМЕНЕНО: Мы передаем ChatFormatting.AQUA в addEnergyTooltip 🔥]
         stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
                 .ifPresent(energy -> addEnergyTooltip(tooltip, energy.getEnergyStored(), energy.getMaxEnergyStored(), ChatFormatting.AQUA));

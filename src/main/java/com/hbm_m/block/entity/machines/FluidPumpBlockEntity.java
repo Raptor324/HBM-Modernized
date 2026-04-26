@@ -1,6 +1,6 @@
 package com.hbm_m.block.entity.machines;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.ConnectionPriority;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
@@ -155,7 +155,7 @@ public class FluidPumpBlockEntity extends BlockEntity implements IFluidStandardT
     // =====================================================================================
 
     @Override
-    protected void saveAdditional(@Nonnull CompoundTag tag) {
+    protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
         tank.writeToNBT(tag, "t");
         tag.putByte("priority", (byte) priority.ordinal());
@@ -164,7 +164,7 @@ public class FluidPumpBlockEntity extends BlockEntity implements IFluidStandardT
     }
 
     @Override
-    public void load(@Nonnull CompoundTag tag) {
+    public void load(@NotNull CompoundTag tag) {
         super.load(tag);
         tank.readFromNBT(tag, "t");
         fluidType = tank.getTankType();

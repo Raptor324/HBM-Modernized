@@ -2,11 +2,9 @@ package com.hbm_m.item.liquids;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -19,6 +17,7 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 public class InfiniteWaterItem extends Item {
@@ -53,9 +52,9 @@ public class InfiniteWaterItem extends Item {
             this.optional = LazyOptional.of(() -> handler);
         }
 
-        @Nonnull
+        @NotNull
         @Override
-        public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
+        public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
             if (cap == ForgeCapabilities.FLUID_HANDLER_ITEM) {
                 return optional.cast();
             }
@@ -73,7 +72,7 @@ public class InfiniteWaterItem extends Item {
             this.rate = rate;
         }
 
-        @Nonnull
+        @NotNull
         @Override
         public ItemStack getContainer() {
             return container;
@@ -84,7 +83,7 @@ public class InfiniteWaterItem extends Item {
             return 1;
         }
 
-        @Nonnull
+        @NotNull
         @Override
         public FluidStack getFluidInTank(int tank) {
             // Визуально показываем, что бак всегда полон воды
@@ -97,7 +96,7 @@ public class InfiniteWaterItem extends Item {
         }
 
         @Override
-        public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
+        public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
             // Нельзя залить ничего другого
             return stack.getFluid() == Fluids.WATER;
         }
@@ -108,7 +107,7 @@ public class InfiniteWaterItem extends Item {
             return 0;
         }
 
-        @Nonnull
+        @NotNull
         @Override
         public FluidStack drain(FluidStack resource, FluidAction action) {
             if (resource.isEmpty() || resource.getFluid() != Fluids.WATER) {
@@ -117,7 +116,7 @@ public class InfiniteWaterItem extends Item {
             return drain(resource.getAmount(), action);
         }
 
-        @Nonnull
+        @NotNull
         @Override
         public FluidStack drain(int maxDrain, FluidAction action) {
             // ВОТ ТУТ МАГИЯ

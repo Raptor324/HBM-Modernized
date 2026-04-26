@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.Locale;
 
 import javax.annotation.Nonnull;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
@@ -16,6 +17,7 @@ import com.hbm_m.network.SetChemPlantRecipeC2SPacket;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 
+import dev.architectury.hooks.fluid.FluidStackHooks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
@@ -24,7 +26,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
-import dev.architectury.hooks.fluid.FluidStackHooks;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class GUIScreenRecipeSelector extends Screen {
@@ -113,7 +114,7 @@ public class GUIScreenRecipeSelector extends Screen {
     }
     
     @Override
-    public void render(@Nonnull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
+    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.renderBackground(guiGraphics);
         drawGuiBackground(guiGraphics, mouseX, mouseY);
         super.render(guiGraphics, mouseX, mouseY, partialTick);

@@ -5,7 +5,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 // Предмет-дозиметр для измерения радиации в окружающей среде.
 // Показывает уровень радиации в чате при использовании и издает звуки щелчков в зависимости от уровня радиации.
@@ -50,7 +50,7 @@ public class ItemDosimeter extends AbstractRadiationMeterItem {
      * @return Компонент сообщения для отправки игроку.
      */
 
-    @Nonnull
+    @NotNull
     @Override
     protected Component createUsageMessage(RadiationData data) {
         float totalEnvironmentRad = data.getTotalEnvironmentRad();
@@ -81,7 +81,7 @@ public class ItemDosimeter extends AbstractRadiationMeterItem {
      * Скопирован из GeigerCounterItem и вызывает измененный метод playDosimeterTickSound.
      */
     @Override
-    public void inventoryTick(@Nonnull ItemStack pStack, @Nonnull Level pLevel, @Nonnull Entity pEntity, int pSlotId, boolean pIsSelected) {
+    public void inventoryTick(@NotNull ItemStack pStack, @NotNull Level pLevel, @NotNull Entity pEntity, int pSlotId, boolean pIsSelected) {
         if (!pLevel.isClientSide() && pEntity instanceof ServerPlayer serverPlayer && serverPlayer.isAlive()) {
             soundTickCounter++;
             final int SOUND_INTERVAL_TICKS = 5; // Звук проигрывается раз в 5 тиков (четверть секунды)

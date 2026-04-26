@@ -1,5 +1,11 @@
 package com.hbm_m.powerarmor;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
+
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.nbt.CompoundTag;
@@ -19,10 +25,6 @@ import net.minecraftforge.event.entity.living.LivingAttackEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import javax.annotation.Nonnull;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.function.Consumer;
 
 // Full Set Bonus armor base class
 @Mod.EventBusSubscriber(modid = com.hbm_m.main.MainRegistry.MOD_ID)
@@ -284,7 +286,7 @@ public class ModArmorFSB extends ArmorItem {
     }
 
     @Override
-    public void onArmorTick(@Nonnull ItemStack stack, @Nonnull Level world, @Nonnull Player player) {
+    public void onArmorTick(@NotNull ItemStack stack, @NotNull Level world, @NotNull Player player) {
         // FSB armor tick logic can be implemented here
         // For now, simplified version - geiger logic moved to ModPowerArmorItem
     }

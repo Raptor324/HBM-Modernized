@@ -1,5 +1,9 @@
 package com.hbm_m.inventory.gui;
 
+import javax.annotation.Nonnull;
+
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.armormod.menu.ArmorTableMenu;
 import com.hbm_m.interfaces.IHasTooltip;
 import com.hbm_m.interfaces.IMixinSlot;
@@ -15,8 +19,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import javax.annotation.Nonnull;
-import org.jetbrains.annotations.Nullable;
 
 public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
 
@@ -69,7 +71,7 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
      * потому что теперь он знает ПРАВИЛЬНЫЕ координаты слотов.
      */
     @Override
-    public void render(@Nonnull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
+    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTicks) {
         renderBackground(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTicks);
         // Отдельно вызываем рендер наших кастомных подсказок, чтобы они были поверх всего.
@@ -99,7 +101,7 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
     }
 
     @Override
-    protected void renderBg(@Nonnull GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
+    protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTicks, int mouseX, int mouseY) {
         int x = this.leftPos;
         int y = this.topPos;
 
@@ -138,7 +140,7 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
     }
 
     @Override
-    protected void renderTooltip(@Nonnull GuiGraphics guiGraphics, int mouseX, int mouseY) {
+    protected void renderTooltip(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
         // Сначала вызываем стандартную логику, чтобы не сломать подсказки для предметов
         super.renderTooltip(guiGraphics, mouseX, mouseY);
         

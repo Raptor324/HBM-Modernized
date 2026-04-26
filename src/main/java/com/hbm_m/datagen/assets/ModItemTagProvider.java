@@ -1,9 +1,15 @@
 package com.hbm_m.datagen.assets;
 
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import java.util.concurrent.CompletableFuture;
+
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
 import com.hbm_m.lib.RefStrings;
+
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.data.PackOutput;
@@ -16,10 +22,6 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.data.ExistingFileHelper;
-import dev.architectury.registry.registries.RegistrySupplier;
-
-import javax.annotation.Nonnull;
-import java.util.concurrent.CompletableFuture;
 
 public class ModItemTagProvider extends ItemTagsProvider {
 
@@ -144,7 +146,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
     }
 
     @Override
-    protected void addTags(@Nonnull HolderLookup.Provider provider) {
+    protected void addTags(@NotNull HolderLookup.Provider provider) {
 
         //  АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ СЛИТКОВ
         //? if fabric && < 1.21.1 {

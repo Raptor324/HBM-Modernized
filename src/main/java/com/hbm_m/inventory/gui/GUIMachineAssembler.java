@@ -3,15 +3,13 @@ package com.hbm_m.inventory.gui;
 import java.util.ArrayList;
 import java.util.List;
 
-// GUI для сборочной машины. Отвечает за отрисовку прогресса, энергии и подсказок.
-// Основан на GuiInfoScreen и использует текстуры из ресурсов мода.
 import javax.annotation.Nonnull;
 
 import com.hbm_m.inventory.menu.MachineAssemblerMenu;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.lib.RefStrings;
-import com.mojang.blaze3d.systems.RenderSystem;
 import com.hbm_m.util.EnergyFormatter;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
@@ -44,7 +42,7 @@ public class GUIMachineAssembler extends GuiInfoScreen<MachineAssemblerMenu> {
     }
 
     @Override
-    protected void renderBg(@Nonnull GuiGraphics guiGraphics, float pPartialTick, int pMouseX, int pMouseY) {
+    protected void renderBg(@NotNull GuiGraphics guiGraphics, float pPartialTick, int pMouseX, int pMouseY) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         int x = this.leftPos;
@@ -170,14 +168,14 @@ public class GUIMachineAssembler extends GuiInfoScreen<MachineAssemblerMenu> {
     }
 
     @Override
-    public void render(@Nonnull GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
+    public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
         renderBackground(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, delta);
         renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
     @Override
-    protected void renderTooltip(@Nonnull GuiGraphics pGuiGraphics, int pX, int pY) {
+    protected void renderTooltip(@NotNull GuiGraphics pGuiGraphics, int pX, int pY) {
         super.renderTooltip(pGuiGraphics, pX, pY);
 
         // Подсказка для энергии

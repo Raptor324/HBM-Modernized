@@ -2,8 +2,7 @@ package com.hbm_m.block.entity.machines;
 
 import java.util.Optional;
 
-import javax.annotation.Nonnull;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
@@ -113,7 +112,7 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public @Nullable AbstractContainerMenu createMenu(int containerId, @Nonnull Inventory playerInventory, @Nonnull Player player) {
+    public @Nullable AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
         return new HeatingOvenMenu(containerId, playerInventory, this, this.data);
     }
 

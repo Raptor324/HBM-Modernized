@@ -7,7 +7,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.block.ModBlocks;
@@ -931,7 +931,7 @@ public class ClientSetup {
         }
 
         @Override
-        public ChunkRenderTypeSet getRenderTypes(@Nonnull BlockState state, @Nonnull RandomSource rand, @Nonnull ModelData data) {
+        public ChunkRenderTypeSet getRenderTypes(@NotNull BlockState state, @NotNull RandomSource rand, @NotNull ModelData data) {
             
             GraphicsStatus graphics = Minecraft.getInstance().options.graphicsMode().get();
             

@@ -3,7 +3,7 @@ package com.hbm_m.datagen.assets;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 // Провайдер генерации тегов блоков для мода.
 // Здесь мы определяем, какими инструментами можно добывать наши блоки и руды,
@@ -13,6 +13,7 @@ import javax.annotation.Nonnull;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
 
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.HolderLookup;
 import net.minecraft.data.PackOutput;
 import net.minecraft.resources.ResourceLocation;
@@ -27,8 +28,6 @@ import net.minecraftforge.common.Tags;
 import net.minecraftforge.common.data.BlockTagsProvider;
 import net.minecraftforge.common.data.ExistingFileHelper;
 
-import dev.architectury.registry.registries.RegistrySupplier;
-
 public class ModBlockTagProvider extends BlockTagsProvider {
 
     public ModBlockTagProvider(PackOutput output, CompletableFuture lookupProvider, ExistingFileHelper existingFileHelper) {
@@ -36,7 +35,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
     }
 
     @Override
-    protected void addTags(@Nonnull HolderLookup.Provider provider) {
+    protected void addTags(@NotNull HolderLookup.Provider provider) {
         // ============ МИНЕРАЛЬНЫЙ ТАГ: ДОБЫЧА КИРКАМИ ============
 
 

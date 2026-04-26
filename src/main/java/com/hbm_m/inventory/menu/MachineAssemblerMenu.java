@@ -1,25 +1,29 @@
 package com.hbm_m.inventory.menu;
 
+import javax.annotation.Nonnull;
+
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineAssemblerBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.main.MainRegistry;
-
 import com.hbm_m.network.ModPacketHandler;
+
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.*;
+import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.SimpleContainerData;
+import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
-
-import javax.annotation.Nonnull;
-
-import org.jetbrains.annotations.NotNull;
 
 public class MachineAssemblerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
     private final MachineAssemblerBlockEntity blockEntity;
@@ -196,7 +200,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
     private static final int TE_INVENTORY_SLOT_COUNT = 18;
 
     @Override
-    public @NotNull ItemStack quickMoveStack(@Nonnull Player playerIn, int pIndex) {
+    public @NotNull ItemStack quickMoveStack(@NotNull Player playerIn, int pIndex) {
         Slot sourceSlot = this.slots.get(pIndex);
         if (sourceSlot == null || !sourceSlot.hasItem()) return ItemStack.EMPTY;
         ItemStack sourceStack = sourceSlot.getItem();
@@ -251,7 +255,7 @@ public class MachineAssemblerMenu extends AbstractContainerMenu implements ILong
     }
 
     @Override
-    public boolean stillValid(@Nonnull Player pPlayer) {
+    public boolean stillValid(@NotNull Player pPlayer) {
         return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
                 pPlayer, ModBlocks.MACHINE_ASSEMBLER.get());
     }

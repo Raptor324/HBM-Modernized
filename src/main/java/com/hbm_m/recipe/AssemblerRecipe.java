@@ -1,10 +1,12 @@
 package com.hbm_m.recipe;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.lib.RefStrings;
+
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
@@ -13,7 +15,11 @@ import net.minecraft.util.GsonHelper;
 import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.StackedContents;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.*;
+import net.minecraft.world.item.crafting.Ingredient;
+import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.RecipeSerializer;
+import net.minecraft.world.item.crafting.RecipeType;
+import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.Level;
 
 public class AssemblerRecipe implements Recipe<SimpleContainer> {
@@ -44,7 +50,7 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
     }
 
     @Override
-    public boolean matches(@Nonnull SimpleContainer pContainer, @Nonnull Level pLevel) {
+    public boolean matches(@NotNull SimpleContainer pContainer, @NotNull Level pLevel) {
         if (pLevel.isClientSide()) {
             return false;
         }
@@ -60,7 +66,7 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
     }
 
     @Override
-    public ItemStack assemble(@Nonnull SimpleContainer pContainer, @Nonnull RegistryAccess pRegistryAccess) {
+    public ItemStack assemble(@NotNull SimpleContainer pContainer, @NotNull RegistryAccess pRegistryAccess) {
         return output.copy();
     }
 
@@ -70,7 +76,7 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
     }
 
     @Override
-    public ItemStack getResultItem(@Nonnull RegistryAccess pRegistryAccess) {
+    public ItemStack getResultItem(@NotNull RegistryAccess pRegistryAccess) {
         return output.copy();
     }
 
@@ -123,7 +129,7 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
 
 
         @Override
-        public AssemblerRecipe fromJson(@Nonnull ResourceLocation pRecipeId, @Nonnull JsonObject pSerializedRecipe) {
+        public AssemblerRecipe fromJson(@NotNull ResourceLocation pRecipeId, @NotNull JsonObject pSerializedRecipe) {
             ItemStack output = ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(pSerializedRecipe, "output"));
             JsonArray ingredientsJson = GsonHelper.getAsJsonArray(pSerializedRecipe, "ingredients");
             
@@ -147,7 +153,7 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
         }
 
         @Override
-        public @Nullable AssemblerRecipe fromNetwork(@Nonnull ResourceLocation pRecipeId, @Nonnull FriendlyByteBuf pBuffer) {
+        public @Nullable AssemblerRecipe fromNetwork(@NotNull ResourceLocation pRecipeId, @NotNull FriendlyByteBuf pBuffer) {
             int ingredientCount = pBuffer.readVarInt();
             NonNullList<Ingredient> inputs = NonNullList.withSize(ingredientCount, Ingredient.EMPTY);
             for(int i = 0; i < ingredientCount; i++) {
@@ -165,7 +171,7 @@ public class AssemblerRecipe implements Recipe<SimpleContainer> {
         }
 
         @Override
-        public void toNetwork(@Nonnull FriendlyByteBuf pBuffer, @Nonnull AssemblerRecipe pRecipe) {
+        public void toNetwork(@NotNull FriendlyByteBuf pBuffer, @NotNull AssemblerRecipe pRecipe) {
             pBuffer.writeVarInt(pRecipe.recipeItems.size());
             for (Ingredient ing : pRecipe.recipeItems) {
                 ing.toNetwork(pBuffer);

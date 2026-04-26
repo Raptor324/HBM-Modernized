@@ -1,7 +1,7 @@
 package com.hbm_m.particle.custom;
 
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.Particle;
@@ -81,8 +81,8 @@ public class RadFogParticle extends TextureSheetParticle {
             this.sprites = spriteSet;
         }
 
-        @Nonnull
-        public Particle createParticle(@Nonnull SimpleParticleType particleType, @Nonnull ClientLevel level,
+        @NotNull
+        public Particle createParticle(@NotNull SimpleParticleType particleType, @NotNull ClientLevel level,
                                        double x, double y, double z,
                                        double dx, double dy, double dz) {
             return new RadFogParticle(level, x, y, z, dx, dy, dz, this.sprites);

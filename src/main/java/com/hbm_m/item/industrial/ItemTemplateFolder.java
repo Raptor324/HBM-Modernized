@@ -3,8 +3,7 @@ package com.hbm_m.item.industrial;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.inventory.gui.GUITemplateFolder;
@@ -30,7 +29,7 @@ public class ItemTemplateFolder extends Item {
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(@Nonnull Level pLevel, @Nonnull Player pPlayer, @Nonnull InteractionHand pUsedHand) {
+    public InteractionResultHolder<ItemStack> use(@NotNull Level pLevel, @NotNull Player pPlayer, @NotNull InteractionHand pUsedHand) {
         ItemStack itemStack = pPlayer.getItemInHand(pUsedHand);
 
         // GUI открывается только на клиенте
@@ -49,7 +48,7 @@ public class ItemTemplateFolder extends Item {
         Minecraft.getInstance().setScreen(new GUITemplateFolder(stack));
     }
     @Override
-    public void appendHoverText(@Nonnull ItemStack pStack, @Nullable Level pLevel, @Nonnull List<Component> pTooltipComponents, @Nonnull TooltipFlag pIsAdvanced) {
+    public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, @NotNull List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
         // Получаем нашу строку из файла локализации
             String fullDesc = Component.translatable("item.hbm_m.template_folder.desc").getString();
             

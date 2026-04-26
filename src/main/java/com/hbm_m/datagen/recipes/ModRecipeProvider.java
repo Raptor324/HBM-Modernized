@@ -1,5 +1,9 @@
 package com.hbm_m.datagen.recipes;
 
+import java.util.function.Consumer;
+
+import javax.annotation.Nonnull;
+
 // Провайдер генерации рецептов крафта для мода.
 // Здесь мы определяем, как создаются наши предметы в игре.
 
@@ -10,8 +14,9 @@ import com.hbm_m.datagen.recipes.custom.BlastFurnaceRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.ChemicalPlantRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.PressRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.ShredderRecipeGenerator;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.tags_and_tiers.ModIngots;
+
 import net.minecraft.advancements.critereon.InventoryChangeTrigger;
 import net.minecraft.data.PackOutput;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -19,10 +24,6 @@ import net.minecraft.data.recipes.RecipeProvider;
 import net.minecraft.data.recipes.ShapedRecipeBuilder;
 import net.minecraft.data.recipes.ShapelessRecipeBuilder;
 import net.minecraft.world.level.ItemLike;
-
-import java.util.function.Consumer;
-
-import javax.annotation.Nonnull;
 
 public class ModRecipeProvider extends RecipeProvider {
 
@@ -34,7 +35,7 @@ public class ModRecipeProvider extends RecipeProvider {
     }
 
     @Override
-    protected void buildRecipes(@Nonnull Consumer<FinishedRecipe> pWriter) {
+    protected void buildRecipes(@NotNull Consumer<FinishedRecipe> pWriter) {
 
         BlastFurnaceRecipeGenerator.generate(pWriter);
         PressRecipeGenerator.generate(pWriter);

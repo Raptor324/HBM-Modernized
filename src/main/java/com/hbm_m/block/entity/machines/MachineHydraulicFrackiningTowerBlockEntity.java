@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity.machines;
 
+import com.hbm_m.platform.ModFluidTank;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -21,11 +22,20 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
+//?}
+
+//? if fabric {
+/*import dev.architectury.fluid.FluidStack;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+*///?}
 
 /**
  * BlockEntity для Fracking Tower (Гидроразрывная вышка).
@@ -64,13 +74,15 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
     //=====================================================================================//
 
     // Танк для нефти (выход) - 64,000 mB
-    protected final FluidTank oilTank;
+    protected final ModFluidTank oilTank;
     // Танк для газа (выход) - 64,000 mB  
-    protected final FluidTank gasTank;
+    protected final ModFluidTank gasTank;
     // Танк для FrackSol (вход) - 64,000 mB
-    protected final FluidTank fracksolTank;
+    protected final ModFluidTank fracksolTank;
 
+    //? if forge {
     protected LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
+     //?}
 
     //=====================================================================================//
     // СОСТОЯНИЕ МАШИНЫ
@@ -111,19 +123,19 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
               INVENTORY_SIZE, maxPower, consumption * 2, 0L);
         
         // Инициализация танков
-        this.oilTank = new FluidTank(64_000) {
+        this.oilTank = new ModFluidTank(64_000) {
             public boolean isFluidValid(FluidStack stack) {
                 return stack.getFluid().isSame(ModFluids.CRUDE_OIL.getSource());
             }
         };
         
-        this.gasTank = new FluidTank(64_000) {
+        this.gasTank = new ModFluidTank(64_000) {
             public boolean isFluidValid(FluidStack stack) {
                 return stack.getFluid().isSame(ModFluids.GAS.getSource());
             }
         };
         
-        this.fracksolTank = new FluidTank(64_000) {
+        this.fracksolTank = new ModFluidTank(64_000) {
             public boolean isFluidValid(FluidStack stack) {
                 return stack.getFluid().isSame(ModFluids.FRACKSOL.getSource());
             }
@@ -154,26 +166,38 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
         return Component.translatable("container.frackingTower");
     }
 
+    // ════════════════════════ Валидация слотов ════════════════════════════════
+
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return switch (slot) {
-            case SLOT_BATTERY -> isEnergyItem(stack);
-            case SLOT_CANISTER_IN, SLOT_GAS_IN -> isFluidContainer(stack);
-            case SLOT_UPGRADE_1, SLOT_UPGRADE_2, SLOT_UPGRADE_3 -> isUpgradeItem(stack);
+            case SLOT_BATTERY                              -> isEnergyItem(stack);
+            case SLOT_CANISTER_IN, SLOT_GAS_IN            -> isFluidContainer(stack);
+            case SLOT_UPGRADE_1, SLOT_UPGRADE_2,
+                 SLOT_UPGRADE_3                            -> isUpgradeItem(stack);
             default -> false;
         };
     }
 
     private boolean isEnergyItem(ItemStack stack) {
+        //? if forge {
         return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+         //?}
+        //? if fabric {
+        /*return team.reborn.energy.api.EnergyStorage.ITEM.find(stack, null) != null;
+        *///?}
     }
 
     private boolean isFluidContainer(ItemStack stack) {
+        //? if forge {
         return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+         //?}
+        //? if fabric {
+        /*return FluidStorage.ITEM.find(stack, null) != null;
+        *///?}
     }
 
     private boolean isUpgradeItem(ItemStack stack) {
-        // Проверка на ItemMachineUpgrade
         String className = stack.getItem().getClass().getSimpleName();
         return className.contains("MachineUpgrade") || className.contains("Upgrade");
     }
@@ -182,15 +206,15 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
     // ГЕТТЕРЫ ДЛЯ GUI
     //=====================================================================================//
 
-    public FluidTank getOilTank() {
+    public ModFluidTank  getOilTank() {
         return this.oilTank;
     }
 
-    public FluidTank getGasTank() {
+    public ModFluidTank  getGasTank() {
         return this.gasTank;
     }
 
-    public FluidTank getFracksolTank() {
+    public ModFluidTank  getFracksolTank() {
         return this.fracksolTank;
     }
 
@@ -250,7 +274,7 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
         }
 
         // Проверка наличия FrackSol
-        if (entity.fracksolTank.getFluidAmount() < solutionRequired) {
+        if (entity.fracksolTank.getFluidAmountMb() < solutionRequired) {
             entity.indicator = 3; // Нет раствора
             return;
         }
@@ -298,49 +322,60 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
     protected void processFluidContainers() {
         // Обработка канистры для нефти
         processContainerPair(SLOT_CANISTER_IN, SLOT_CANISTER_OUT, oilTank);
-        
+
         // Обработка баллона для газа
         processContainerPair(SLOT_GAS_IN, SLOT_GAS_OUT, gasTank);
     }
 
     /**
-     * Обработка пары слотов ввода/вывода для жидкостей.
+     * Перелив из танка машины в контейнер в слоте инвентаря.
+     * На Forge — через FLUID_HANDLER_ITEM capability.
+     * На Fabric — через FluidStorage.ITEM.
      */
-    protected void processContainerPair(int inputSlot, int outputSlot, FluidTank sourceTank) {
-        ItemStack inputStack = inventory.getStackInSlot(inputSlot);
+    protected void processContainerPair(int inputSlot, int outputSlot, ModFluidTank sourceTank) {
+        ItemStack inputStack  = inventory.getStackInSlot(inputSlot);
         ItemStack outputStack = inventory.getStackInSlot(outputSlot);
+        if (inputStack.isEmpty() || sourceTank.isEmpty()) return;
 
-        if (inputStack.isEmpty()) return;
-
+        //? if forge {
         inputStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).ifPresent(handler -> {
-            // Пытаемся заполнить контейнер из танка
-            net.minecraftforge.fluids.FluidStack fluidInTank = sourceTank.getFluid();
-            if (!fluidInTank.isEmpty() && fluidInTank.getAmount() > 0) {
-                int filled = handler.fill(fluidInTank, IFluidHandler.FluidAction.SIMULATE);
-                if (filled > 0) {
-                    net.minecraftforge.fluids.FluidStack toFill = sourceTank.drain(filled, IFluidHandler.FluidAction.EXECUTE);
-                    handler.fill(toFill, IFluidHandler.FluidAction.EXECUTE);
-                    
-                    // Обновляем стек в инвентаре
-                    ItemStack result = handler.getContainer();
-                    if (outputStack.isEmpty()) {
-                        inventory.setStackInSlot(inputSlot, ItemStack.EMPTY);
-                        inventory.setStackInSlot(outputSlot, result);
-                    } else if (ItemStack.isSameItemSameTags(outputStack, result)) {
-                        outputStack.grow(result.getCount());
-                        inventory.setStackInSlot(inputSlot, ItemStack.EMPTY);
-                    }
-                }
+            FluidStack fluidInTank = sourceTank.getFluid();
+            if (fluidInTank.isEmpty()) return;
+            int filled = handler.fill(fluidInTank, IFluidHandler.FluidAction.SIMULATE);
+            if (filled <= 0) return;
+            FluidStack toFill = sourceTank.drain(filled, IFluidHandler.FluidAction.EXECUTE);
+            handler.fill(toFill, IFluidHandler.FluidAction.EXECUTE);
+            ItemStack result = handler.getContainer();
+            if (outputStack.isEmpty()) {
+                inventory.setStackInSlot(inputSlot, ItemStack.EMPTY);
+                inventory.setStackInSlot(outputSlot, result);
+            } else if (ItemStack.isSameItemSameTags(outputStack, result)) {
+                outputStack.grow(result.getCount());
+                inventory.setStackInSlot(inputSlot, ItemStack.EMPTY);
             }
         });
+        //?}
+
+        //? if fabric {
+        /*var containerStorage = FluidStorage.ITEM.find(inputStack, net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext.withConstant(inputStack));
+        if (containerStorage == null) return;
+        FluidVariant variant = FluidVariant.of(sourceTank.getStoredFluid());
+        long toTransfer = (long) sourceTank.getFluidAmountMb() * ModFluidTank.DROPLETS_PER_MB;
+        try (var tx = net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.openOuter()) {
+            long inserted = containerStorage.insert(variant, toTransfer, tx);
+            if (inserted > 0) {
+                sourceTank.getStorage().extract(variant, inserted, tx);
+                tx.commit();
+            }
+        }
+        *///?}
     }
 
     /**
      * Проверка возможности работы машины.
      */
     protected boolean canOperate() {
-        // Проверка, что выходные танки не полны
-        return oilTank.getSpace() > 0 || gasTank.getSpace() > 0;
+        return oilTank.getSpaceMb() > 0 || gasTank.getSpaceMb() > 0;
     }
 
     /**
@@ -355,7 +390,7 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
         if (energy < energyRequired) return;
 
         // Потребление FrackSol
-        if (fracksolTank.getFluidAmount() < solutionRequired) return;
+        if (fracksolTank.getFluidAmountMb() < solutionRequired) return;
 
         // Поиск руды в радиусе
         BlockPos orePos = findOilOre();
@@ -366,52 +401,31 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
 
         // Потребление ресурсов
         energy -= energyRequired;
-        fracksolTank.drain(solutionRequired, IFluidHandler.FluidAction.EXECUTE);
+        fracksolTank.drainMb(solutionRequired);
 
         // Добыча
-        Block oreBlock = level.getBlockState(orePos).getBlock();
-        int oil = 0;
-        int gas = 0;
+        String blockName = level.getBlockState(orePos).getBlock().getDescriptionId().toLowerCase();
+        int oil, gas;
 
-        // Определение количества по типу руды
-        String blockName = oreBlock.getDescriptionId().toLowerCase();
-        
         if (blockName.contains("bedrock")) {
-            // Bedrock oil ore
             oil = oilPerBedrockDeposit;
-            gas = gasPerBedrockDepositMin + level.random.nextInt(gasPerBedrockDepositMax - gasPerBedrockDepositMin + 1);
+            gas = gasPerBedrockDepositMin + level.random.nextInt(
+                    gasPerBedrockDepositMax - gasPerBedrockDepositMin + 1);
         } else {
-            // Обычная oil ore
             oil = oilPerDeposit;
-            gas = gasPerDepositMin + level.random.nextInt(gasPerDepositMax - gasPerDepositMin + 1);
-            
-            // Шанс истощения руды
+            gas = gasPerDepositMin + level.random.nextInt(
+                    gasPerDepositMax - gasPerDepositMin + 1);
             if (level.random.nextDouble() < drainChance) {
-                // Заменяем на истощённую руду
-                // TODO: level.setBlock(orePos, ModBlocks.ORE_OIL_EMPTY.get().defaultBlockState(), 3);
+                // TODO: заменить на истощённую руду
             }
         }
 
-        // Добавление жидкости в танки
-        if (oil > 0) {
-            net.minecraftforge.fluids.FluidStack oilStack = new net.minecraftforge.fluids.FluidStack(ModFluids.CRUDE_OIL.getSource(), oil);
-            oilTank.fill(oilStack, IFluidHandler.FluidAction.EXECUTE);
-        }
-        
-        if (gas > 0) {
-            net.minecraftforge.fluids.FluidStack gasStack = new net.minecraftforge.fluids.FluidStack(ModFluids.GAS.getSource(), gas);
-            gasTank.fill(gasStack, IFluidHandler.FluidAction.EXECUTE);
-        }
+        if (oil > 0) oilTank.fillMb(ModFluids.CRUDE_OIL.getSource(), oil);
+        if (gas > 0) gasTank.fillMb(ModFluids.GAS.getSource(),       gas);
 
-        // Эффект Afterburner (дополнительный урон/бонус)
-        if (afterburnerUpgradeLevel > 0) {
-            applyAfterburnerEffect(orePos);
-        }
+        if (afterburnerUpgradeLevel > 0) applyAfterburnerEffect(orePos);
 
-        // Генерация OilSpot (разрушение области)
-        // TODO: OilSpot.generateOilSpot(level, orePos.getX(), orePos.getZ(), destructionRange, 10, false);
-        
-        indicator = 0; // Норма
+        indicator = 0;
     }
 
     /**
@@ -453,12 +467,21 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
     // NBT СЕРИАЛИЗАЦИЯ
     //=====================================================================================//
 
+    //? if fabric {
+    /*@Nullable
+    public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
+        if (side == Direction.DOWN) return fracksolTank.getStorage();
+        if (side == Direction.UP)   return oilTank.getStorage();
+        return gasTank.getStorage();
+    }
+    *///?}
+
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.put("oilTank", oilTank.writeToNBT(new CompoundTag()));
-        tag.put("gasTank", gasTank.writeToNBT(new CompoundTag()));
-        tag.put("fracksolTank", fracksolTank.writeToNBT(new CompoundTag()));
+        tag.put("oilTank", oilTank.writeNBT(new CompoundTag()));
+        tag.put("gasTank", gasTank.writeNBT(new CompoundTag()));
+        tag.put("fracksolTank", fracksolTank.writeNBT(new CompoundTag()));
         tag.putInt("progressTimer", progressTimer);
         tag.putInt("indicator", indicator);
         tag.putInt("speedUpgrade", speedUpgradeLevel);
@@ -469,9 +492,9 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
-        oilTank.readFromNBT(tag.getCompound("oilTank"));
-        gasTank.readFromNBT(tag.getCompound("gasTank"));
-        fracksolTank.readFromNBT(tag.getCompound("fracksolTank"));
+        oilTank.readNBT(tag.getCompound("oilTank"));
+        gasTank.readNBT(tag.getCompound("gasTank"));
+        fracksolTank.readNBT(tag.getCompound("fracksolTank"));
         progressTimer = tag.getInt("progressTimer");
         indicator = tag.getInt("indicator");
         speedUpgradeLevel = tag.getInt("speedUpgrade");
@@ -483,6 +506,7 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
     // CAPABILITIES
     //=====================================================================================//
 
+    //? if forge {
     @Override
     protected void setupFluidCapability() {
         fluidHandler = LazyOptional.of(() -> new FrackingTowerFluidHandler(this));
@@ -490,9 +514,7 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            return fluidHandler.cast();
-        }
+        if (cap == ForgeCapabilities.FLUID_HANDLER) return fluidHandler.cast();
         return super.getCapability(cap, side);
     }
 
@@ -501,20 +523,20 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
         super.invalidateCaps();
         fluidHandler.invalidate();
     }
+    //?}
 
     //=====================================================================================//
     // РЕНДЕРИНГ
     //=====================================================================================//
 
+    //? if forge {
     @Override
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
-        // Контроллер находится на полу (y=0) в центре структуры 7х7.
-        // Вышка имеет ширину 7 блоков (от -3 до +3 относительно контроллера).
-        // Высота башни - 24 блока (от 0 до +24).
         return new net.minecraft.world.phys.AABB(this.worldPosition)
                 .inflate(3.0, 0.0, 3.0)
                 .expandTowards(0.0, 24.0, 0.0);
     }
+    //?}
 
     //=====================================================================================//
     // КОНФИГУРАЦИЯ

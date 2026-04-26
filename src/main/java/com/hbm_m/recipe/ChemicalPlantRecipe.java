@@ -105,13 +105,13 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
     }
 
     @Override
-    public boolean matches(@Nonnull SimpleContainer container, @Nonnull Level level) {
+    public boolean matches(@NotNull SimpleContainer container, @NotNull Level level) {
         // Машина не использует стандартный shaped-мэтчинг.
         return false;
     }
 
     @Override
-    public ItemStack assemble(@Nonnull SimpleContainer container, @Nonnull RegistryAccess registryAccess) {
+    public ItemStack assemble(@NotNull SimpleContainer container, @NotNull RegistryAccess registryAccess) {
         return ItemStack.EMPTY;
     }
 
@@ -121,7 +121,7 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
     }
 
     @Override
-    public ItemStack getResultItem(@Nonnull RegistryAccess registryAccess) {
+    public ItemStack getResultItem(@NotNull RegistryAccess registryAccess) {
         for (ItemStack out : itemOutputs) {
             if (!out.isEmpty()) return out.copy();
         }
@@ -170,7 +170,7 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
 
 
         @Override
-        public ChemicalPlantRecipe fromJson(@Nonnull ResourceLocation recipeId, @Nonnull JsonObject json) {
+        public ChemicalPlantRecipe fromJson(@NotNull ResourceLocation recipeId, @NotNull JsonObject json) {
             int duration = GsonHelper.getAsInt(json, "duration", 100);
             int power = GsonHelper.getAsInt(json, "power", 1000);
             String blueprintPool = GsonHelper.getAsString(json, "blueprint_pool", null);
@@ -184,7 +184,7 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
         }
 
         @Override
-        public @Nullable ChemicalPlantRecipe fromNetwork(@Nonnull ResourceLocation recipeId, @Nonnull FriendlyByteBuf buf) {
+        public @Nullable ChemicalPlantRecipe fromNetwork(@NotNull ResourceLocation recipeId, @NotNull FriendlyByteBuf buf) {
             int duration = buf.readVarInt();
             int power = buf.readVarInt();
             String blueprintPool = buf.readBoolean() ? buf.readUtf() : null;
@@ -221,7 +221,7 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
         }
 
         @Override
-        public void toNetwork(@Nonnull FriendlyByteBuf buf, @Nonnull ChemicalPlantRecipe recipe) {
+        public void toNetwork(@NotNull FriendlyByteBuf buf, @NotNull ChemicalPlantRecipe recipe) {
             buf.writeVarInt(recipe.duration);
             buf.writeVarInt(recipe.powerConsumption);
 

@@ -2,8 +2,7 @@ package com.hbm_m.item.liquids;
 
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
@@ -126,9 +125,9 @@ public class FluidBarrelItem extends Item {
             this.optional = LazyOptional.of(() -> handler);
         }
 
-        @Nonnull
+        @NotNull
         @Override
-        public <T> LazyOptional<T> getCapability(@Nonnull Capability<T> cap, @Nullable Direction side) {
+        public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
             if (cap == ForgeCapabilities.FLUID_HANDLER_ITEM) {
                 return optional.cast();
             }
@@ -144,7 +143,7 @@ public class FluidBarrelItem extends Item {
             this.container = container;
         }
 
-        @Nonnull
+        @NotNull
         @Override
         public ItemStack getContainer() {
             return container;
@@ -155,7 +154,7 @@ public class FluidBarrelItem extends Item {
             return 1;
         }
 
-        @Nonnull
+        @NotNull
         @Override
         public FluidStack getFluidInTank(int tank) {
             return FluidBarrelItem.getFluid(container);
@@ -167,7 +166,7 @@ public class FluidBarrelItem extends Item {
         }
 
         @Override
-        public boolean isFluidValid(int tank, @Nonnull FluidStack stack) {
+        public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
             FluidStack current = getFluidInTank(tank);
             // Can accept if empty or same fluid type
             return current.isEmpty() || current.isFluidEqual(stack);
@@ -196,7 +195,7 @@ public class FluidBarrelItem extends Item {
             return toFill;
         }
 
-        @Nonnull
+        @NotNull
         @Override
         public FluidStack drain(FluidStack resource, FluidAction action) {
             if (resource.isEmpty()) return FluidStack.EMPTY;
@@ -209,7 +208,7 @@ public class FluidBarrelItem extends Item {
             return drain(resource.getAmount(), action);
         }
 
-        @Nonnull
+        @NotNull
         @Override
         public FluidStack drain(int maxDrain, FluidAction action) {
             FluidStack current = getFluidInTank(0);

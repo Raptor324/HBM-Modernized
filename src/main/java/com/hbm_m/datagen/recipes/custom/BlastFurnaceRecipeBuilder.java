@@ -2,8 +2,7 @@ package com.hbm_m.datagen.recipes.custom;
 
 import java.util.function.Consumer;
 
-import javax.annotation.Nonnull;
-
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 // Билдер рецептов для BlastFurnaceRecipe.
@@ -47,7 +46,7 @@ public class BlastFurnaceRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public RecipeBuilder unlockedBy(@Nonnull String criterionName, @Nonnull CriterionTriggerInstance trigger) {
+    public RecipeBuilder unlockedBy(@NotNull String criterionName, @NotNull CriterionTriggerInstance trigger) {
         this.advancement.addCriterion(criterionName, trigger);
         return this;
     }
@@ -63,7 +62,7 @@ public class BlastFurnaceRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public void save(@Nonnull Consumer<FinishedRecipe> consumer, @Nonnull ResourceLocation recipeId) {
+    public void save(@NotNull Consumer<FinishedRecipe> consumer, @NotNull ResourceLocation recipeId) {
         consumer.accept(new Result(recipeId, this));
     }
 
@@ -78,7 +77,7 @@ public class BlastFurnaceRecipeBuilder implements RecipeBuilder {
         }
 
         @Override
-        public void serializeRecipeData(@Nonnull JsonObject json) {
+        public void serializeRecipeData(@NotNull JsonObject json) {
             JsonArray ingredients = new JsonArray();
             ingredients.add(builder.inputA.toJson());
             ingredients.add(builder.inputB.toJson());

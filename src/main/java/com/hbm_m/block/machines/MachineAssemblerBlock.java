@@ -3,7 +3,7 @@ package com.hbm_m.block.machines;
 import java.util.Map;
 import java.util.function.Supplier;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 
 import org.jetbrains.annotations.Nullable;
 
@@ -233,7 +233,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
     }
 
     @Override
-    public InteractionResult use(@Nonnull BlockState state, @Nonnull Level level, @Nonnull BlockPos pos, @Nonnull Player player, @Nonnull InteractionHand hand, @Nonnull BlockHitResult hit) {
+    public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider) {
@@ -256,27 +256,27 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
     }
 
     @Override
-    public RenderShape getRenderShape(@Nonnull BlockState state) {
+    public RenderShape getRenderShape(@NotNull BlockState state) {
         return RenderShape.MODEL;
     }
 
     @Nullable @Override
-    public BlockEntity newBlockEntity(@Nonnull BlockPos pos, @Nonnull BlockState state) {
+    public BlockEntity newBlockEntity(@NotNull BlockPos pos, @NotNull BlockState state) {
         return new MachineAssemblerBlockEntity(pos, state);
     }
 
     @Nullable @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@Nonnull Level level, @Nonnull BlockState state, @Nonnull BlockEntityType<T> type) {
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(@NotNull Level level, @NotNull BlockState state, @NotNull BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerBlockEntity::tick);
     }
 
     @Nullable @Override
-    public BlockState getStateForPlacement(@Nonnull BlockPlaceContext context) {
+    public BlockState getStateForPlacement(@NotNull BlockPlaceContext context) {
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
     @Override
-    protected void createBlockStateDefinition(@Nonnull StateDefinition.Builder<Block, BlockState> builder) {
+    protected void createBlockStateDefinition(@NotNull StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, RENDER_ACTIVE);
     }
 }

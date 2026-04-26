@@ -1,5 +1,12 @@
 package com.hbm_m.item.industrial;
 
+import java.util.List;
+
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.util.TemplateTooltipUtil;
+
 // Предмет-шаблон для крафтов в сборочной машине.
 // Хранит в себе NBT с рецептом сборки (выходной предмет).
 
@@ -9,13 +16,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
-
-import com.hbm_m.util.TemplateTooltipUtil;
-
-import java.util.List;
-
-import javax.annotation.Nonnull;
 
 public class ItemAssemblyTemplate extends Item {
     public ItemAssemblyTemplate(Properties pProperties) {
@@ -42,7 +42,7 @@ public class ItemAssemblyTemplate extends Item {
     
     // Кастомное название и тултип 
    @Override
-    public Component getName(@Nonnull ItemStack pStack) {
+    public Component getName(@NotNull ItemStack pStack) {
         ItemStack output = getRecipeOutput(pStack);
         if (!output.isEmpty()) {
             // Используем ключ локализации и передаем имя предмета как аргумент
@@ -66,7 +66,7 @@ public class ItemAssemblyTemplate extends Item {
     // }
 
     @Override
-    public void appendHoverText(@Nonnull ItemStack pStack, @Nullable Level pLevel, @Nonnull List<Component> pTooltipComponents, @Nonnull TooltipFlag pIsAdvanced) {
+    public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, @NotNull List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
 
         TemplateTooltipUtil.buildTemplateTooltip(pStack, pLevel, pTooltipComponents);
     }

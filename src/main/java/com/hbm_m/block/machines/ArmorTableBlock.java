@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraftforge.network.NetworkHooks;
 
-import javax.annotation.Nonnull;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.armormod.menu.ArmorTableMenu;
@@ -30,19 +30,19 @@ public class ArmorTableBlock extends BaseEntityBlock {
     }
 
     @Override
-    public RenderShape getRenderShape(@Nonnull BlockState pState) {
+    public RenderShape getRenderShape(@NotNull BlockState pState) {
         return RenderShape.MODEL;
     }
     
     // BlockEntity нам не нужен для хранения инвентаря, поэтому метод может возвращать null
     @Nullable
     @Override
-    public BlockEntity newBlockEntity(@Nonnull BlockPos pPos, @Nonnull BlockState pState) {
+    public BlockEntity newBlockEntity(@NotNull BlockPos pPos, @NotNull BlockState pState) {
         return null; 
     }
 
     @Override
-    public InteractionResult use(@Nonnull BlockState pState, @Nonnull Level pLevel, @Nonnull BlockPos pPos, @Nonnull Player pPlayer, @Nonnull InteractionHand pHand, @Nonnull BlockHitResult pHit) {
+    public InteractionResult use(@NotNull BlockState pState, @NotNull Level pLevel, @NotNull BlockPos pPos, @NotNull Player pPlayer, @NotNull InteractionHand pHand, @NotNull BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
             // Создаем анонимный MenuProvider
             MenuProvider menuProvider = new MenuProvider() {
@@ -53,7 +53,7 @@ public class ArmorTableBlock extends BaseEntityBlock {
 
                 @Nullable
                 @Override
-                public AbstractContainerMenu createMenu(int pContainerId, @Nonnull Inventory pPlayerInventory, @Nonnull Player pPlayer) {
+                public AbstractContainerMenu createMenu(int pContainerId, @NotNull Inventory pPlayerInventory, @NotNull Player pPlayer) {
                     // Передаем в конструктор КООРДИНАТЫ БЛОКА (pPos)
                     return new ArmorTableMenu(pContainerId, pPlayerInventory, pPos);
                 }
