@@ -2,6 +2,7 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.HeatingOvenBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -10,8 +11,7 @@ import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.SlotItemHandler;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 
 /**
  * Menu for the Heating Oven machine.
@@ -56,11 +56,11 @@ public class HeatingOvenMenu extends AbstractContainerMenu {
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
 
-        this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(iItemHandler -> {
-            this.addSlot(new FuelSlot(iItemHandler, 0, 56, 53)); // Fuel slot
-            this.addSlot(new SlotItemHandler(iItemHandler, 1, 56, 17)); // Input slot
-            this.addSlot(new OutputSlot(iItemHandler, 2, 116, 35)); // Output slot
-        });
+        var handler = this.blockEntity.getInventory();
+        var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
+        this.addSlot(new FuelSlot(container, 0, 56, 53)); // Fuel slot
+        this.addSlot(new Slot(container, 1, 56, 17)); // Input slot
+        this.addSlot(new OutputSlot(container, 2, 116, 35)); // Output slot
 
         addDataSlots(data);
     }
@@ -141,20 +141,20 @@ public class HeatingOvenMenu extends AbstractContainerMenu {
     }
 
     // Fuel slot - only accepts burnable items
-    private static class FuelSlot extends SlotItemHandler {
-        public FuelSlot(net.minecraftforge.items.IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+    private static class FuelSlot extends Slot {
+        public FuelSlot(net.minecraft.world.Container itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
         }
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            return net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null) > 0;
+            return AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0) > 0;
         }
     }
 
     // Output slot - cannot receive items
-    private static class OutputSlot extends SlotItemHandler {
-        public OutputSlot(net.minecraftforge.items.IItemHandler itemHandler, int index, int xPosition, int yPosition) {
+    private static class OutputSlot extends Slot {
+        public OutputSlot(net.minecraft.world.Container itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);
         }
 

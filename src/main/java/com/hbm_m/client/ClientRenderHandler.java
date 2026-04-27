@@ -19,7 +19,6 @@ import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
-import net.minecraftforge.event.TickEvent;
 import net.minecraft.Util;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderStateShard;
@@ -30,8 +29,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 public class ClientRenderHandler {
 
@@ -181,14 +178,10 @@ public class ClientRenderHandler {
 
     /**
      * Автоматически сканирует область вокруг игрока и находит осиротевшие фантомные блоки.
-     * Вызывается из клиентского тика.
+     * Вызывается из клиентского тика (platform hook).
      * Оптимизировано: проверяет только загруженные чанки в небольшом радиусе.
      */
-    @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) {
-            return;
-        }
+    public static void onClientTickEnd() {
 
         // Проверяем раз в 3 секунды (60 тиков) для оптимизации производительности
         tickCounter++;
@@ -281,19 +274,17 @@ public class ClientRenderHandler {
         });
     }
 
-    @SubscribeEvent
-    public static void onRenderWorldLast(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES) {
-            return;
-        }
-
+    /**
+     * Platform hook: render highlight boxes in world.
+     *
+     * Forge: call from RenderLevelStageEvent.Stage.AFTER_BLOCK_ENTITIES
+     * Fabric: call from a late WorldRenderEvents stage (e.g. AFTER_ENTITIES).
+     */
+    public static void onRenderWorldLate(net.minecraft.client.renderer.MultiBufferSource.BufferSource ignored, com.mojang.blaze3d.vertex.PoseStack poseStack, Vec3 cameraPos) {
         Minecraft mc = Minecraft.getInstance();
-        var camera = mc.gameRenderer.getMainCamera();
-        Vec3 cameraPos = camera.getPosition();
         long currentTime = System.currentTimeMillis();
         VertexConsumer fillConsumer = mc.renderBuffers().bufferSource().getBuffer(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
         float alpha = ModClothConfig.get().obstructionHighlight.obstructionHighlightAlpha / 100.0f;
-        var poseStack = event.getPoseStack();
 
         poseStack.pushPose();
         poseStack.translate(-cameraPos.x, -cameraPos.y, -cameraPos.z);

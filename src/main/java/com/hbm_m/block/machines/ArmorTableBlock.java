@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
+import com.hbm_m.platform.NetworkHooksCompat;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -59,7 +59,8 @@ public class ArmorTableBlock extends BaseEntityBlock {
                 }
             };
             // Открываем GUI с помощью NetworkHooks, который правильно обрабатывает передачу данных
-            NetworkHooks.openScreen((ServerPlayer) pPlayer, menuProvider, pPos);
+            NetworkHooksCompat.openScreen((ServerPlayer) pPlayer, menuProvider, pPos);
+
         }
         return InteractionResult.SUCCESS;
     }

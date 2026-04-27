@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.client;
 
 // Обработчик клиентских событий для очистки данных о радиации при входе в мир или отключении.
@@ -36,3 +37,4 @@ public class ClientRadiationEventHandler {
         }
     }
 }
+//?}

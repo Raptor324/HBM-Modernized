@@ -3,7 +3,6 @@ package com.hbm_m.main;
 
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.config.MachineConfig;
 import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
@@ -28,7 +27,6 @@ public final class ForgeEntrypoint {
         MainRegistry.init();
         ModWorldGen.register(modBus);
         ModFluids.register(modBus);
-        modBus.register(MachineConfig.class);
         modBus.addListener(ModCapabilities::register);
         modBus.addListener(CreativeModeTabEventHandler::onBuildCreativeModeTabContents);
 

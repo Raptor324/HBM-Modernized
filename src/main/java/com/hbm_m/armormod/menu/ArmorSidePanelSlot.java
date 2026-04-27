@@ -3,6 +3,7 @@ package com.hbm_m.armormod.menu;
 // Этот класс отвечает за боковую панель со слотами брони на игроке в GUI стола модификации брони.
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ArmorItem;
@@ -55,7 +56,10 @@ public class ArmorSidePanelSlot extends Slot {
 
     @Override
     public boolean mayPlace(ItemStack stack) {
-        return stack.canEquip(this.slotType, this.player);
+        if (stack.isEmpty()) {
+            return false;
+        }
+        return Mob.getEquipmentSlotForItem(stack) == this.slotType;
     }
 
     @Override

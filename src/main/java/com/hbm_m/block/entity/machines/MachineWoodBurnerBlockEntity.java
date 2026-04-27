@@ -3,7 +3,7 @@ package com.hbm_m.block.entity.machines;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
-import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.inventory.menu.MachineWoodBurnerMenu;
 import com.hbm_m.item.ModItems;
 
@@ -19,10 +19,16 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.ForgeHooks;
+//? if forge {
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
+//?}
+//? if fabric {
+/*import team.reborn.energy.api.EnergyStorage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+*///?}
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -133,7 +139,7 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
 
     private void startBurning() {
         ItemStack fuelStack = this.inventory.getStackInSlot(FUEL_SLOT);
-        int burnTicks = ForgeHooks.getBurnTime(fuelStack, null);
+        int burnTicks = AbstractFurnaceBlockEntity.getFuel().getOrDefault(fuelStack.getItem(), 0);
 
         if (burnTicks > 0) {
             this.maxBurnTime = burnTicks;
@@ -217,52 +223,64 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
         ItemStack itemToCharge = this.inventory.getStackInSlot(CHARGE_SLOT);
         if (itemToCharge.isEmpty()) return;
 
-        // === 1. ПРОВЕРКА HBM API (Твои батарейки) ===
-        // Сначала пытаемся зарядить через нашу "родную" HBM-систему (которая использует long)
-        LazyOptional<com.hbm_m.interfaces.IEnergyReceiver> hbmEnergy =
-                itemToCharge.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER);
+        long toTransfer = Math.min(this.energy, getProvideSpeed());
+        if (toTransfer <= 0) return;
 
-        if (hbmEnergy.isPresent()) {
-            com.hbm_m.interfaces.IEnergyReceiver itemReceiver = hbmEnergy.resolve().get();
-
-            if (itemReceiver.canReceive()) {
-                long maxTransfer = Math.min(this.energy, getProvideSpeed());
-
-                // Наша HBM API работает с long, что идеально
-                long accepted = itemReceiver.receiveEnergy(maxTransfer, false);
-
+        //? if forge {
+        // 1) HBM long-capability
+        var hbmCap = itemToCharge.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER);
+        if (hbmCap.isPresent()) {
+            hbmCap.ifPresent(target -> {
+                if (!target.canReceive()) return;
+                long accepted = target.receiveEnergy(toTransfer, false);
                 if (accepted > 0) {
-                    this.setEnergyStored(this.energy - accepted);
+                    setEnergyStored(energy - accepted);
                     setChanged();
                 }
-            }
-            // Мы нашли HBM-совместимый предмет, выходим, даже если он полный
+            });
             return;
         }
 
-        // === 2. ПРОВЕРКА FORGE API (Для модов) ===
-        // Если HBM API не найдено, ищем Forge Energy
-        LazyOptional<net.minecraftforge.energy.IEnergyStorage> forgeEnergy =
-                itemToCharge.getCapability(ForgeCapabilities.ENERGY);
+        // 2) Forge Energy fallback (int-safe)
+        itemToCharge.getCapability(ForgeCapabilities.ENERGY).ifPresent(target -> {
+            if (!target.canReceive()) return;
+            int maxTransfer = (int) Math.min(toTransfer, Integer.MAX_VALUE);
+            if (maxTransfer <= 0) return;
+            int accepted = target.receiveEnergy(maxTransfer, false);
+            if (accepted > 0) {
+                setEnergyStored(energy - accepted);
+                setChanged();
+            }
+        });
+        //?}
 
-        if (forgeEnergy.isPresent()) {
-            net.minecraftforge.energy.IEnergyStorage itemEnergy = forgeEnergy.resolve().get();
+        //? if fabric {
+        /*// На Fabric HBM батарейки читаются из NBT через ItemEnergyAccess (см. ModBatteryItem)
+        var hbm = ItemEnergyAccess.getHbmReceiver(itemToCharge);
+        if (hbm.isPresent()) {
+            var target = hbm.get();
+            if (!target.canReceive()) return;
+            long accepted = target.receiveEnergy(toTransfer, false);
+            if (accepted > 0) {
+                setEnergyStored(energy - accepted);
+                setChanged();
+            }
+            return;
+        }
 
-            if (itemEnergy.canReceive()) {
-                long maxTransfer = Math.min(this.energy, getProvideSpeed());
+        // TeamReborn Energy (если предмет его поддерживает)
+        var target = EnergyStorage.ITEM.find(itemToCharge, null);
+        if (target == null || !target.supportsInsertion()) return;
 
-                // Конвертируем long в int для Forge API
-                int transferInt = (int) Math.min(Integer.MAX_VALUE, maxTransfer);
-                if (transferInt <= 0) return;
-
-                int accepted = itemEnergy.receiveEnergy(transferInt, false);
-
-                if (accepted > 0) {
-                    this.setEnergyStored(this.energy - accepted);
-                    setChanged();
-                }
+        try (Transaction tx = Transaction.openOuter()) {
+            long accepted = target.insert(toTransfer, tx);
+            if (accepted > 0) {
+                setEnergyStored(energy - accepted);
+                tx.commit();
+                setChanged();
             }
         }
+        *///?}
     }
 
     // --- Реализация абстрактных методов ---
@@ -275,7 +293,7 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == FUEL_SLOT) {
             // Только топливо в слот топлива
-            return ForgeHooks.getBurnTime(stack, null) > 0;
+            return AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0) > 0;
         }
         if (slot == ASH_SLOT) {
             // Ничего нельзя положить в слот пепла
@@ -283,8 +301,16 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
         }
         if (slot == CHARGE_SLOT) {
             // Только заряжаемые предметы в слот зарядки
-            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent() ||
-                   stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
+            //? if forge {
+            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
+                    || stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
+            //?} else if fabric {
+            /*if (ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
+            var es = EnergyStorage.ITEM.find(stack, null);
+            return es != null && es.supportsInsertion();
+            *///?} else {
+            /*return false;
+            *///?}
         }
         return false;
     }

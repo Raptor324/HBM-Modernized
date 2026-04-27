@@ -11,6 +11,7 @@ import com.hbm_m.block.entity.machines.MachineCentrifugeBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.platform.NetworkHooksCompat;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -33,7 +34,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+
 
 public class MachineCentrifugeBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -141,7 +142,7 @@ public class MachineCentrifugeBlock extends BaseEntityBlock implements IMultiblo
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MachineCentrifugeBlockEntity centrifuge) {
-                NetworkHooks.openScreen(((ServerPlayer) player), centrifuge, pos);
+                NetworkHooksCompat.openScreen((ServerPlayer) player, centrifuge, pos);
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

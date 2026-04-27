@@ -14,7 +14,6 @@ import com.hbm_m.block.nature.RadioactiveBlock;
 
 // Этот класс реализует простую и эффективную систему симуляции радиации в чанках. Ядро всей радиационной механики мода.
 
-import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;
@@ -51,7 +50,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
     private final Map<UUID, Map<ChunkPos, Float>> lastSentDebugValues = new ConcurrentHashMap<>();
 
     public static Optional<IChunkRadiation> getChunkRadiationCap(LevelChunk chunk) {
-        return chunk.getCapability(ChunkRadiationProvider.CHUNK_RADIATION_CAPABILITY).resolve();
+        return ChunkRadiationAccess.get(chunk);
     }
 
     @Override

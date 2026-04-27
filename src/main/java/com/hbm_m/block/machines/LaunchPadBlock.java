@@ -13,6 +13,8 @@ import com.hbm_m.block.entity.machines.LaunchPadBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.platform.NetworkHooksCompat;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -40,7 +42,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+
 
 public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -120,7 +122,7 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
             if (pLevel.getBlockEntity(pPos) instanceof MenuProvider provider) {
-                NetworkHooks.openScreen((ServerPlayer) pPlayer, provider, pPos);
+                NetworkHooksCompat.openScreen((ServerPlayer) pPlayer, provider, pPos);
             }
         }
         return InteractionResult.sidedSuccess(pLevel.isClientSide());

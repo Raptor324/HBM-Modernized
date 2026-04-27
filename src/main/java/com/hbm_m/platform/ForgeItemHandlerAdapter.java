@@ -1,4 +1,4 @@
-package com.hbm_m.inventory;
+package com.hbm_m.platform;
 
 import net.minecraft.world.item.ItemStack;
 
@@ -7,7 +7,7 @@ import net.minecraftforge.items.IItemHandlerModifiable;
 //?}
 
 /**
- * Forge-side adapter for {@link com.hbm_m.inventory.ItemStackHandler}.
+ * Forge-side adapter for {@link ModItemStackHandler}.
  *
  * Common code stores inventories in a loader-agnostic handler; Forge menus/slots
  * (e.g. {@code SlotItemHandler}) require {@code IItemHandler}.
@@ -15,9 +15,9 @@ import net.minecraftforge.items.IItemHandlerModifiable;
 //? if forge {
 public final class ForgeItemHandlerAdapter implements IItemHandlerModifiable {
 
-    private final com.hbm_m.inventory.ItemStackHandler delegate;
+    private final ModItemStackHandler delegate;
 
-    public ForgeItemHandlerAdapter(com.hbm_m.inventory.ItemStackHandler delegate) {
+    public ForgeItemHandlerAdapter(ModItemStackHandler delegate) {
         this.delegate = delegate;
     }
 
@@ -56,9 +56,5 @@ public final class ForgeItemHandlerAdapter implements IItemHandlerModifiable {
         delegate.setStackInSlot(slot, stack);
     }
 }
-//?} else {
-/*public final class ForgeItemHandlerAdapter {
-    public ForgeItemHandlerAdapter(com.hbm_m.inventory.ItemStackHandler delegate) {
-    }
-}*///?}
+//?}
 

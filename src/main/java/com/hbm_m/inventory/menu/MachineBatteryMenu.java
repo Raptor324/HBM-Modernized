@@ -2,6 +2,7 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
 import com.hbm_m.block.machines.MachineBatteryBlock;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
@@ -16,7 +17,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.network.PacketDistributor;
 
 import java.util.Optional;
@@ -59,10 +59,10 @@ public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEn
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
 
-        this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-            this.addSlot(new SlotItemHandler(handler, 0, 26, 17));  // INPUT
-            this.addSlot(new SlotItemHandler(handler, 1, 26, 53));  // OUTPUT
-        });
+        var handler = this.blockEntity.getInventory();
+        var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
+        this.addSlot(new Slot(container, 0, 26, 17));  // INPUT
+        this.addSlot(new Slot(container, 1, 26, 53));  // OUTPUT
 
         addDataSlots(data);
     }

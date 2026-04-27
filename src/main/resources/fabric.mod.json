@@ -1,0 +1,34 @@
+{
+  "schemaVersion": 1,
+  "id": "${id}",
+  "version": "${version}",
+  "name": "${name}",
+  "description": "${description}",
+  "authors": [${authors}],
+  "contact": {
+    "homepage": "${homepage_url}",
+    "sources": "${sources_url}",
+    "issues": "${issues_url}"
+  },
+  "license": "${license}",
+  "environment": "*",
+  "entrypoints": {
+    "main": [
+      "com.hbm_m.main.FabricEntrypoint"
+    ],
+    "client": [
+      "com.hbm_m.main.FabricClientEntrypoint"
+    ],
+    "cardinal-components-chunk": [
+      "com.hbm_m.capability.FabricChunkComponents"
+    ]
+  },
+  "mixins": [
+    "${mixin_config}"
+  ],
+  "depends": {
+    "fabricloader": ">=0.14.0",
+    "minecraft": "${minecraft}"
+  }${dependencies}
+}
+

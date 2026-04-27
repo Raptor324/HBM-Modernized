@@ -166,8 +166,8 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
             public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
                 return fluid.isSame(ModFluids.FRACKSOL.getSource());
             }
-        };*/
-        //?}
+        };
+        *///?}
     }
 
     //=====================================================================================//

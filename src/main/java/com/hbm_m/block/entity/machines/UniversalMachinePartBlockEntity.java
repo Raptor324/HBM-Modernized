@@ -4,11 +4,9 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.multiblock.PartRole;
 
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -21,10 +19,22 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+
+//? if forge {
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
+//?}
+
+//? if fabric {
+/*import dev.architectury.fluid.FluidStack;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+*///?}
 
 public class UniversalMachinePartBlockEntity extends BlockEntity implements IMultiblockPart {
 
@@ -86,6 +96,14 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             return;
         }
 
+        //? if fabric {
+        /*// На Fabric нет Forge capability для универсального получения IFluidHandler у контроллера,
+          // поэтому прямую перекачку делаем только там, где мы можем безопасно получить Storage.
+          // Сейчас контроллеры не предоставляют общий public API для этого — оставляем без прямого трансфера.
+          return;
+        *///?}
+
+        //? if forge {
         // Чтобы не перекачивать дважды (A->B и B->A из двух тиков),
         // выбираем "ведущую" позицию пары по asLong().
         long selfKey = pos.asLong();
@@ -103,8 +121,10 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             }
             tryDirectFluidTransfer(level, be, otherPart);
         }
+        //?}
     }
 
+    //? if forge {
     private static void tryDirectFluidTransfer(Level level, UniversalMachinePartBlockEntity a, UniversalMachinePartBlockEntity b) {
         BlockEntity aCtrl = level.getBlockEntity(a.controllerPos);
         BlockEntity bCtrl = level.getBlockEntity(b.controllerPos);
@@ -145,6 +165,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         }
         return to.fill(drained, IFluidHandler.FluidAction.EXECUTE);
     }
+    //?}
 
     @Override
     public BlockPos getControllerPos() {
@@ -199,7 +220,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     public java.util.Set<Direction> getAllowedFluidSides() {
         return this.allowedFluidSides;
     }
-
+    //? if forge {
     @Override
     public void onLoad() {
         super.onLoad();
@@ -210,6 +231,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
         }
     }
+
 
     @NotNull
     @Override
@@ -276,6 +298,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
 
         return super.getCapability(cap, side);
     }
+    //?}
 
     @Override
     protected void saveAdditional(CompoundTag pTag) {
@@ -349,6 +372,7 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         return this.saveWithoutMetadata();
     }
 
+    //? if forge {
     @Override
     public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
         CompoundTag tag = pkt.getTag();
@@ -361,4 +385,5 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
             }
         }
     }
+    //?}
 }

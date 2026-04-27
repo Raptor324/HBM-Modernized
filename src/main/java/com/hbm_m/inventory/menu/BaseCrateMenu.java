@@ -6,6 +6,7 @@ import com.hbm_m.block.machines.crates.CrateSlot;
 import com.hbm_m.block.machines.crates.CrateType;
 import com.hbm_m.block.machines.crates.CrateValidation;
 import com.hbm_m.block.entity.crates.BaseCrateBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
@@ -16,7 +17,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import com.hbm_m.inventory.ForgeItemHandlerAdapter;
 
 /**
  * Базовое меню для всех ящиков HBM.
@@ -28,6 +28,7 @@ public abstract class BaseCrateMenu extends AbstractContainerMenu {
     protected final BaseCrateBlockEntity blockEntity;
     protected final Level level;
     protected final CrateType crateType;
+    private final ModItemStackHandlerContainer crateContainer;
 
     private final int crateSlots;
     private final int playerInvStart;
@@ -39,6 +40,7 @@ public abstract class BaseCrateMenu extends AbstractContainerMenu {
         this.blockEntity = blockEntity;
         this.level = inv.player.level();
         this.crateType = crateType;
+        this.crateContainer = new ModItemStackHandlerContainer(blockEntity.getItemHandler(), blockEntity::setChanged);
         this.crateSlots = crateType.getSlotCount();
         this.playerInvStart = crateSlots;
         this.totalSlots = crateSlots + 36;
@@ -56,7 +58,7 @@ public abstract class BaseCrateMenu extends AbstractContainerMenu {
             for (int col = 0; col < crateType.getCols(); col++) {
                 int index = row * crateType.getCols() + col;
                 this.addSlot(new CrateSlot(
-                        new ForgeItemHandlerAdapter(blockEntity.getItemHandler()),
+                        crateContainer,
                         index,
                         startX + col * 18,
                         startY + row * 18

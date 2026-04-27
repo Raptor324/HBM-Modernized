@@ -27,7 +27,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import com.hbm_m.inventory.ItemStackHandler;
+import com.hbm_m.platform.ModItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -40,7 +40,7 @@ import net.minecraft.util.RandomSource;
 
 public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
 
-    private final ItemStackHandler itemHandler = new ItemStackHandler(3) {
+    private final ModItemStackHandler itemHandler = new ModItemStackHandler(3) {
         @Override
         protected void onContentsChanged(int slot) {
             // Если изменились входные слоты, нужно пересчитать выход
@@ -108,7 +108,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         player.openMenu(this);
     }
 
-    public ItemStackHandler getItemHandler() {
+    public ModItemStackHandler getItemHandler() {
         return itemHandler;
     }
 

@@ -58,7 +58,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGuiEvent;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import com.hbm_m.api.fluids.FluidCapabilityAccess;
 //?}
 
 /**
@@ -195,7 +195,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
 
         BlockEntity be = level.getBlockEntity(neighborPos);
         if (be != null) {
-            return be.getCapability(ForgeCapabilities.FLUID_HANDLER, direction.getOpposite()).isPresent();
+            return FluidCapabilityAccess.hasFluidHandler(level, neighborPos, direction.getOpposite());
         }
         return false;
     }
@@ -401,7 +401,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
 //?}
 //? if fabric {
 /*@Environment(EnvType.CLIENT)*///?}
-    public void printHook(RenderGuiEvent.Pre event, Level level, BlockPos pos) {
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof FluidDuctBlockEntity ductBe)) {
             return;
@@ -411,14 +411,14 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         if (fluid == null || fluid == Fluids.EMPTY) {
             text.add(Component.translatable("gui.hbm_m.fluid_duct.overlay.fluid_empty"));
         } else {
-            net.minecraftforge.fluids.FluidStack stack = new net.minecraftforge.fluids.FluidStack(fluid, 1);
             int rgb = HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
-            text.add(stack.getDisplayName().copy().withStyle(Style.EMPTY.withColor(TextColor.fromRgb(rgb))));
+            String name = HbmFluidRegistry.getFluidName(fluid);
+            text.add(Component.literal(name).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(rgb))));
             text.add(Component.literal("Net nodes: " + ductBe.getNetworkSize())
                     .withStyle(net.minecraft.ChatFormatting.GRAY));
             text.add(Component.literal("Transfer/t: " + ductBe.getFluidTracker() + " mB")
                     .withStyle(net.minecraft.ChatFormatting.GRAY));
         }
-        ILookOverlay.printGeneric(event, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+        ILookOverlay.printGeneric(guiGraphics, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 }

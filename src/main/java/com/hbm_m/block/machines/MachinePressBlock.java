@@ -39,7 +39,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+import com.hbm_m.platform.NetworkHooksCompat;
 
 public class MachinePressBlock extends BaseEntityBlock implements IMultiblockController {
     // 3 блока в высоту, 1 блок в ширину и глубину
@@ -108,7 +108,7 @@ public class MachinePressBlock extends BaseEntityBlock implements IMultiblockCon
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if(entity instanceof MachinePressBlockEntity) {
-                NetworkHooks.openScreen(((ServerPlayer) player), (MachinePressBlockEntity) entity, pos);
+                NetworkHooksCompat.openScreen((ServerPlayer) player, (MachinePressBlockEntity) entity, pos);
             } else {
                 throw new IllegalStateException("Our Container provider is missing!");
             }

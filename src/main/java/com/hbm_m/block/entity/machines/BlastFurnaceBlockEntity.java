@@ -84,6 +84,11 @@ public class BlastFurnaceBlockEntity extends BlockEntity implements MenuProvider
         }
     };
 
+    /** Общий (loader-agnostic) доступ к инвентарю для меню/рендера. */
+    public ModItemStackHandler getInventory() {
+        return itemHandler;
+    }
+
     //? if forge {
     private final Map<Direction, LazyOptional<IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();

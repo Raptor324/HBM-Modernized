@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.client;
 
 import com.hbm_m.particle.ModExplosionParticles;
@@ -95,3 +96,4 @@ public class ClientParticleHandler {
 
     }
 }
+//?}

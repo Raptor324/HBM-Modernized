@@ -1,7 +1,11 @@
 package com.hbm_m.block.machines;
 
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.MachineShredderBlockEntity;
+import com.hbm_m.platform.NetworkHooksCompat;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -15,8 +19,6 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
-import org.jetbrains.annotations.Nullable;
 
 /**
  * Блок измельчителя (Shredder)
@@ -59,7 +61,7 @@ public class MachineShredderBlock extends BaseEntityBlock {
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MachineShredderBlockEntity shredderEntity) {
-                NetworkHooks.openScreen((ServerPlayer) player, shredderEntity, pos);
+                NetworkHooksCompat.openScreen((ServerPlayer) player, shredderEntity, pos);
             } else {
                 throw new IllegalStateException("Container provider is missing!");
             }

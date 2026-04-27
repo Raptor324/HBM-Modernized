@@ -14,11 +14,16 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.block.entity.BlockEntity;
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
 /*@Environment(EnvType.CLIENT)*///?}
 public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends BakedModel>

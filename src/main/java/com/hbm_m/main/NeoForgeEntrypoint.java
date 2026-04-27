@@ -2,7 +2,6 @@
 /*package com.hbm_m.main;
 
 import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.config.MachineConfig;
 import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
@@ -21,7 +20,6 @@ public final class NeoForgeEntrypoint {
         MainRegistry.init();
 
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
-        modBus.register(MachineConfig.class);
         modBus.addListener(ModCapabilities::register);
 
         NeoForge.EVENT_BUS.register(new CrateBreaker());

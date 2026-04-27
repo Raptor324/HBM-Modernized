@@ -29,7 +29,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+import com.hbm_m.platform.NetworkHooksCompat;
 import org.jetbrains.annotations.Nullable;
 
 @SuppressWarnings("deprecation")
@@ -94,7 +94,7 @@ public class BlastFurnaceBlock extends BaseEntityBlock {
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if(entity instanceof BlastFurnaceBlockEntity) {
-                NetworkHooks.openScreen(((ServerPlayer) player), (BlastFurnaceBlockEntity) entity, pos);
+                NetworkHooksCompat.openScreen((ServerPlayer) player, (BlastFurnaceBlockEntity) entity, pos);
             } else {
                 throw new IllegalStateException("Our Container provider is missing!");
             }

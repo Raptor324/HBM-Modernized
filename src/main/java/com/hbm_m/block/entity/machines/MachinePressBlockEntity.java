@@ -33,6 +33,7 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
@@ -263,6 +264,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         return Mth.clamp(interpolated, 0.0F, 1.0F);
     }
 
+    //? if forge {
     @Override
     public AABB getRenderBoundingBox() {
         return new AABB(
@@ -274,6 +276,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             worldPosition.getZ() + 1
         );
     }
+    //?}
     
     private void craftItem() {
         Optional<PressRecipe> recipe = getCurrentRecipe();
@@ -343,13 +346,9 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     // ==================== UTILITY ====================
     
     public int getBurnTime(Item item) {
-        ItemStack stack = new ItemStack(item);
-        // Получаем ванильное время горения в тиках
-        int vanillaBurnTime = net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null);
-        if (vanillaBurnTime <= 0) return 0;
-        
-        // Конвертируем тики в секунды (делим на 20)
-        return (vanillaBurnTime / 20);
+        int vanillaBurnTimeTicks = AbstractFurnaceBlockEntity.getFuel().getOrDefault(item, 0);
+        if (vanillaBurnTimeTicks <= 0) return 0;
+        return vanillaBurnTimeTicks / 20;
     }
     
     public int getHeatState() {

@@ -111,6 +111,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeManager;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.event.EntityRenderersEvent;
@@ -119,7 +120,6 @@ import net.minecraftforge.client.event.RegisterClientReloadListenersEvent;
 import net.minecraftforge.client.event.RegisterClientTooltipComponentFactoriesEvent;
 import net.minecraftforge.client.event.RegisterColorHandlersEvent;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import net.minecraftforge.client.event.RegisterKeyMappingsEvent;
 import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
 import net.minecraftforge.client.event.RegisterShadersEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
@@ -131,114 +131,331 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
+//?}
 
+//? if fabric {
+/*import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
+import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
+import net.fabricmc.fabric.api.client.rendering.v1.BlockEntityRendererRegistry;
+import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
+import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
+import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
+import net.minecraft.server.packs.PackType;
+
+import static dev.architectury.registry.client.rendering.fabric.BlockEntityRendererRegistryImpl.register;
+*///?}
+
+//? if forge {
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+//?}
 public class ClientSetup {
 
+    private static boolean initialized = false;
+
+    /**
+     * Loader-agnostic клиентская инициализация.
+     *
+     * Вызывается:
+     * - на Forge: из {@link #onClientSetup(FMLClientSetupEvent)} (MOD bus)
+     * - на Fabric: из {@code FabricClientEntrypoint} (см. src/main/java/.../FabricClientEntrypoint.java)
+     */
+    public static synchronized void initClient() {
+        if (initialized) return;
+        initialized = true;
+
+        // Key mappings регистрируются в ModConfigKeybindHandler.init() через Architectury/обвязку,
+        // но на некоторых таргетах удобно иметь fallback в одном месте.
+        ModConfigKeybindHandler.init();
+
+        // Экраны меню - vanilla API, одинаково работает на обоих лоадерах.
+        registerScreens();
+
+        // Рендереры (entity + block entity) - loader-specific registration.
+        registerRenderersCommon();
+
+        // Частицы - loader-specific registration.
+        registerParticlesCommon();
+
+        // Цвета предметов/блоков - loader-specific registration.
+        registerColorsCommon();
+
+        // Reload listeners + очистка кэшей.
+        registerReloadListenersCommon();
+
+        // Overlays/HUD.
+        registerHudCommon();
+
+        // World render hooks (debug, stage flushes, etc.).
+        registerWorldRenderHooksCommon();
+
+        // Disconnect handler - чистим VBO/модельные кэши.
+        registerDisconnectHandlerCommon();
+
+        // Клиентские тэги/настройки рендера, общие для обоих.
+        OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
+    }
+
+    //? if forge {
     @SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
-        MainRegistry.LOGGER.info("FMLClientSetupEvent fired. Registering client-side FORGE event handlers.");
-        // Обработчики, которые должны работать каждый тик/каждое событие в игре,
-        // регистрируются на шине MinecraftForge.EVENT_BUS.
-        MinecraftForge.EVENT_BUS.register(ModConfigKeybindHandler.class);
+        MainRegistry.LOGGER.info("FMLClientSetupEvent fired. Initializing client.");
+        initClient();
+
+        // Forge-only: шина событий для тик/рендер-хендлеров.
         MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
+        MinecraftForge.EVENT_BUS.register(HbmThermalHandler.INSTANCE);
 
-        // MinecraftForge.EVENT_BUS.register(DoorDebugRenderer.class);
-        // MinecraftForge.EVENT_BUS.register(ClientSetup.class);
+        // Forge-only: дисконнект (на Fabric есть свой хук).
+        MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
+    }
+    //?}
 
-        // Register Entity Renders
-        ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
+    private static void registerScreens() {
+        MenuScreens.register(ModMenuTypes.CRYSTALLIZER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCrystallizer::new);
+        MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
+        MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
+        MenuScreens.register(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
+        MenuScreens.register(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
+        MenuScreens.register(ModMenuTypes.BATTERY_SOCKET_MENU.get(), GUIBatterySocket::new);
+        MenuScreens.register(ModMenuTypes.BLAST_FURNACE_MENU.get(), GUIBlastFurnace::new);
+        MenuScreens.register(ModMenuTypes.HEATING_OVEN_MENU.get(), GUIHeatingOven::new);
+        MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
+        MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), GUIMachineShredder::new);
+        MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
+        MenuScreens.register(ModMenuTypes.ANVIL_MENU.get(), GUIAnvil::new);
+        MenuScreens.register(ModMenuTypes.CENTRIFUGE_MENU.get(), GUIMachineCentrifuge::new);
+        MenuScreens.register(ModMenuTypes.IRON_CRATE_MENU.get(), GUIIronCrate::new);
+        MenuScreens.register(ModMenuTypes.STEEL_CRATE_MENU.get(), GUISteelCrate::new);
+        MenuScreens.register(ModMenuTypes.DESH_CRATE_MENU.get(), GUIDeshCrate::new);
+        MenuScreens.register(ModMenuTypes.TUNGSTEN_CRATE_MENU.get(), GUITungstenCrate::new);
+        MenuScreens.register(ModMenuTypes.TEMPLATE_CRATE_MENU.get(), GUITemplateCrate::new);
+        MenuScreens.register(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
+        MenuScreens.register(ModMenuTypes.CHEMICAL_PLANT_MENU.get(), GUIMachineChemicalPlant::new);
+        MenuScreens.register(ModMenuTypes.FRACTURING_TOWER_MENU.get(), GUIMachineFrackingTower::new);
+        MenuScreens.register(ModMenuTypes.LAUNCH_PAD_LARGE_MENU.get(), GUILaunchPadLarge::new);
+        MenuScreens.register(ModMenuTypes.LAUNCH_PAD_RUSTED_MENU.get(), GUILaunchPadRusted::new);
+        MenuScreens.register(ModMenuTypes.NUKE_FAT_MAN_MENU.get(), com.hbm_m.inventory.gui.GUINukeFatMan::new);
+    }
+
+    private static void registerRenderersCommon() {
+        //? if forge {
+        ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.GRENADE_IF_FIRE_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.GRENADE_IF_SLIME_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.GRENADE_IF_HE_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.GRENADE_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.GRENADEFIRE_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.GRENADESMART_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.GRENADE_IF_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.MISSILE_TEST.ifPresent(entityType -> EntityRenderers.register(entityType, MissileTestEntityRenderer::new));
+
+        BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), MachineChemicalPlantRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
+        //?}
+
+        //? if fabric {
+        /*ModEntities.GRENADE_NUC_PROJECTILE.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.GRENADE_IF_FIRE_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
+                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.GRENADE_IF_SLIME_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
+                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.GRENADE_IF_HE_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
+                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.GRENADE_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
+                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
+                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.GRENADEFIRE_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
+                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.GRENADESMART_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
+                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
+                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.GRENADE_IF_PROJECTILE.ifPresent(entityType ->
-                EntityRenderers.register(entityType, ThrownItemRenderer::new)
-        );
-
+                EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.MISSILE_TEST.ifPresent(entityType ->
-                EntityRenderers.register(entityType, MissileTestEntityRenderer::new)
-        );
+                EntityRendererRegistry.register(entityType, MissileTestEntityRenderer::new));
 
-        // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
+        register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
+        register(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerRenderer::new);
+        register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
+        register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
+        register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), MachineChemicalPlantRenderer::new);
+        register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
+        register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
+        register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
+        register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
+        *///?}
+    }
 
-        event.enqueueWork(() -> {
-            MenuScreens.register(ModMenuTypes.CRYSTALLIZER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCrystallizer::new);
-            MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
-            MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
-            MenuScreens.register(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
-            MenuScreens.register(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
-            MenuScreens.register(ModMenuTypes.BATTERY_SOCKET_MENU.get(), GUIBatterySocket::new);
-            MenuScreens.register(ModMenuTypes.BLAST_FURNACE_MENU.get(), GUIBlastFurnace::new);
-            MenuScreens.register(ModMenuTypes.HEATING_OVEN_MENU.get(), GUIHeatingOven::new);
-            MenuScreens.register(ModMenuTypes.PRESS_MENU.get(), GUIMachinePress::new);
-            MenuScreens.register(ModMenuTypes.SHREDDER_MENU.get(), GUIMachineShredder::new);
-            MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
-            MenuScreens.register(ModMenuTypes.ANVIL_MENU.get(), GUIAnvil::new);
-            MenuScreens.register(ModMenuTypes.CENTRIFUGE_MENU.get(), GUIMachineCentrifuge::new);
-            MenuScreens.register(ModMenuTypes.IRON_CRATE_MENU.get(), GUIIronCrate::new);
-            MenuScreens.register(ModMenuTypes.STEEL_CRATE_MENU.get(), GUISteelCrate::new);
-            MenuScreens.register(ModMenuTypes.DESH_CRATE_MENU.get(), GUIDeshCrate::new);
-            MenuScreens.register(ModMenuTypes.TUNGSTEN_CRATE_MENU.get(), GUITungstenCrate::new);
-            MenuScreens.register(ModMenuTypes.TEMPLATE_CRATE_MENU.get(), GUITemplateCrate::new);
-            MenuScreens.register(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
-            MenuScreens.register(ModMenuTypes.CHEMICAL_PLANT_MENU.get(), GUIMachineChemicalPlant::new);
-            MenuScreens.register(ModMenuTypes.FRACTURING_TOWER_MENU.get(), GUIMachineFrackingTower::new);
-            MenuScreens.register(ModMenuTypes.LAUNCH_PAD_LARGE_MENU.get(), GUILaunchPadLarge::new);
-            MenuScreens.register(ModMenuTypes.LAUNCH_PAD_RUSTED_MENU.get(), GUILaunchPadRusted::new);
-            MenuScreens.register(ModMenuTypes.NUKE_FAT_MAN_MENU.get(), com.hbm_m.inventory.gui.GUINukeFatMan::new);
+    private static void registerParticlesCommon() {
+//        Particles registered via Forge event below.
+        //? if forge {
 
-            // Register BlockEntity renderers
-            BlockEntityRenderers.register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
-            BlockEntityRenderers.register(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerRenderer::new);
-            BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
-            BlockEntityRenderers.register(ModBlockEntities.PRESS_BE.get(), MachinePressRenderer::new);
-            BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_PLANT_BE.get(), MachineChemicalPlantRenderer::new);
-            BlockEntityRenderers.register(ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), MachineHydraulicFrackiningTowerRenderer::new);
-            BlockEntityRenderers.register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
-            BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
-            BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
+        //?}
 
-            OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
-            try {
-                MainRegistry.LOGGER.info("VBO render system initialized successfully");
-            } catch (Exception e) {
-                MainRegistry.LOGGER.error("Failed to initialize VBO render system", e);
+        //? if fabric {
+        /*ParticleFactoryRegistry.getInstance().register(ModParticleTypes.DARK_PARTICLE.get(), DarkParticle.Provider::new);
+        ParticleFactoryRegistry.getInstance().register(ModParticleTypes.RAD_FOG_PARTICLE.get(), RadFogParticle.Provider::new);
+        *///?}
+    }
+
+    private static void registerColorsCommon() {
+//        Colors registered via Forge events below.
+        //? if forge {
+
+        //?}
+
+        //? if fabric {
+        /*ColorProviderRegistry.ITEM.register((stack, tintIndex) -> {
+            if (tintIndex == 0) return 0xFFFFFF;
+            return com.hbm_m.item.liquids.FluidIdentifierItem.getTintColor(stack);
+        }, ModItems.FLUID_IDENTIFIER.get());
+        ColorProviderRegistry.ITEM.register((stack, tintIndex) -> {
+            if (tintIndex == 0) return 0xFFFFFF;
+            return com.hbm_m.item.liquids.FluidBarrelItem.getTintColor(stack);
+        }, ModItems.FLUID_BARREL.get());
+        ColorProviderRegistry.ITEM.register((stack, tintIndex) -> {
+            if (tintIndex == 0) return 0xFFFFFF;
+            return com.hbm_m.item.liquids.FluidDuctItem.getTintColor(stack);
+        }, ModItems.FLUID_DUCT.get(), ModItems.FLUID_DUCT_COLORED.get(), ModItems.FLUID_DUCT_SILVER.get());
+        ColorProviderRegistry.ITEM.register((stack, tintIndex) -> {
+            if (stack.getItem() instanceof com.hbm_m.item.MineralPipeItem pipe) {
+                return pipe.getTintColor();
             }
-            MinecraftForge.EVENT_BUS.register(HbmThermalHandler.INSTANCE);
-            
-            // Регистрация обработчика отключения от сервера
-            MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
-            MainRegistry.LOGGER.info("VBO render system initialized successfully");
+            return 0xFFFFFF;
+        }, ModItems.PIPE_IRON.get(), ModItems.PIPE_COPPER.get(), ModItems.PIPE_GOLD.get(),
+           ModItems.PIPE_LEAD.get(), ModItems.PIPE_STEEL.get(), ModItems.PIPE_TUNGSTEN.get(),
+           ModItems.PIPE_TITANIUM.get(), ModItems.PIPE_ALUMINUM.get());
+
+        ColorProviderRegistry.BLOCK.register((state, level, pos, tintIndex) -> {
+            if (tintIndex == 0) return 0xFFFFFF;
+            if (tintIndex != 1 || level == null || pos == null) return 0xFFFFFF;
+            var be = level.getBlockEntity(pos);
+            if (be instanceof com.hbm_m.block.entity.machines.FluidDuctBlockEntity ductBe) {
+                var fluid = ductBe.getFluidType();
+                if (fluid != net.minecraft.world.level.material.Fluids.EMPTY) {
+                    return com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(fluid);
+                }
+            }
+            return 0xFFFFFF;
+        }, com.hbm_m.block.ModBlocks.FLUID_DUCT.get(),
+                com.hbm_m.block.ModBlocks.FLUID_DUCT_COLORED.get(),
+                com.hbm_m.block.ModBlocks.FLUID_DUCT_SILVER.get());
+        *///?}
+    }
+
+    private static void registerReloadListenersCommon() {
+//        Reload listeners registered via Forge event below.
+        //? if forge {
+
+        //?}
+
+        //? if fabric {
+        /*ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
+                new com.hbm_m.client.reload.IdentifiableReloadListenerAdapter(
+                        new ResourceLocation(RefStrings.MODID, "shader_reload_listener"),
+                        new ShaderReloadListener()));
+        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
+                new com.hbm_m.client.reload.IdentifiableReloadListenerAdapter(
+                        new ResourceLocation(RefStrings.MODID, "thermal_handler_reload_listener"),
+                        HbmThermalHandler.INSTANCE));
+        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
+                new com.hbm_m.client.reload.IdentifiableReloadListenerAdapter(
+                        new ResourceLocation(RefStrings.MODID, "door_model_registry_reload_listener"),
+                        com.hbm_m.client.model.variant.DoorModelRegistry.getInstance()));
+        ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
+                new com.hbm_m.client.reload.IdentifiableReloadListenerAdapter(
+                        new ResourceLocation(RefStrings.MODID, "deferred_cache_cleanup_reload_listener"),
+                        new com.hbm_m.client.reload.DeferredCacheCleanupReloadListener()));
+        *///?}
+    }
+
+    private static void registerHudCommon() {
+//        Overlays registered via Forge event below.
+        //? if forge {
+
+        //?}
+
+        //? if fabric {
+        /*HudRenderCallback.EVENT.register((gfx, tickDelta) -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null || mc.getWindow() == null) return;
+            int w = mc.getWindow().getGuiScaledWidth();
+            int h = mc.getWindow().getGuiScaledHeight();
+
+            OverlayGeiger.render(gfx, tickDelta, w, h);
+            OverlayPowerArmor.render(gfx, tickDelta, w, h);
+            OverlayRadiationVisuals.render(gfx, tickDelta, w, h);
+            OverlayInfoToast.render(gfx, tickDelta, w, h);
+            com.hbm_m.client.overlay.BlockLookOverlayHud.render(gfx);
+        });
+        *///?}
+    }
+
+    private static void registerWorldRenderHooksCommon() {
+        // Forge: wired via Forge event subscribers (RenderLevelStageEvent) in separate classes.
+
+        //? if fabric {
+        /*// Closest equivalent to "after particles" stage for our debug text:
+        // we're in world render pass and have camera + PoseStack.
+        WorldRenderEvents.AFTER_ENTITIES.register(ctx ->
+                ChunkRadiationDebugRenderer.render(ctx.matrixStack(), ctx.camera().getPosition()));
+
+        WorldRenderEvents.AFTER_ENTITIES.register(ctx -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null) return;
+            ClientRenderHandler.onRenderWorldLate(mc.renderBuffers().bufferSource(), ctx.matrixStack(), ctx.camera().getPosition());
+        });
+
+        ClientTickEvents.END_CLIENT_TICK.register(client -> ClientRenderHandler.onClientTickEnd());
+
+        // Clear radiation cache when joining/leaving worlds/dimensions.
+        ClientPlayConnectionEvents.JOIN.register((handler, sender, client) -> ClientRadiationData.clearAll());
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientRadiationData.clearAll());
+        *///?}
+    }
+
+    private static void registerDisconnectHandlerCommon() {
+//        Forge uses ClientPlayerNetworkEvent.LoggingOut (see onClientDisconnect).
+        //? if forge {
+
+        //?}
+
+        //? if fabric {
+        /*ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> clearClientCachesDeferred());
+        *///?}
+    }
+
+    private static void clearClientCachesDeferred() {
+        com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
+            MachineAdvancedAssemblerRenderer.clearCaches();
+            MachineAssemblerRenderer.clearCaches();
+            MachineHydraulicFrackiningTowerRenderer.clearCaches();
+            DoorRenderer.clearAllCaches();
+            MachinePressRenderer.clearCaches();
+            MachineChemicalPlantRenderer.clearCaches();
+            GlobalMeshCache.clearAll();
+            AbstractObjArmorLayer.clearAllCaches();
         });
     }
 
-
-
+    //? if forge {
     @SubscribeEvent
     public static void onModelBake(ModelEvent.ModifyBakingResult event) {
         Map<ResourceLocation, BakedModel> modelRegistry = event.getModels();
@@ -583,11 +800,7 @@ public class ClientSetup {
         MainRegistry.LOGGER.info("Registered geometry loaders: advanced_assembly_machine_loader, chemical_plant_loader, machine_assembler_loader, hydraulic_frackining_tower_loader, template_loader, door, press_loader, heating_oven_loader");
     }
 
-    @SubscribeEvent
-    public static void onRegisterKeyMappings(RegisterKeyMappingsEvent event) {
-        ModConfigKeybindHandler.onRegisterKeyMappings(event);
-        MainRegistry.LOGGER.info("Registered key mappings.");
-    }
+    // Key mappings регистрируются в ModConfigKeybindHandler.init() через Architectury.
 
     @SubscribeEvent
     public static void onRegisterItemColors(RegisterColorHandlersEvent.Item event) {
@@ -680,18 +893,7 @@ public class ClientSetup {
     }
 
     public static void onClientDisconnect(net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event) {
-        com.mojang.blaze3d.systems.RenderSystem.recordRenderCall(() -> {
-            MachineAdvancedAssemblerRenderer.clearCaches();
-            MachineAssemblerRenderer.clearCaches();
-            MachineHydraulicFrackiningTowerRenderer.clearCaches();
-            DoorRenderer.clearAllCaches();
-            MachinePressRenderer.clearCaches();
-            MachineChemicalPlantRenderer.clearCaches();
-            GlobalMeshCache.clearAll();
-            
-            // Очищаем кэши рендеринга брони
-            AbstractObjArmorLayer.clearAllCaches();
-        });
+        clearClientCachesDeferred();
     }
 
     @SubscribeEvent
@@ -989,4 +1191,5 @@ public class ClientSetup {
         // Generic dummy armor model for all power armor items.
         event.registerLayerDefinition(ModModelLayers.POWER_ARMOR, PowerArmorEmptyModel::createBodyLayer);
     }
+    //?}
 }

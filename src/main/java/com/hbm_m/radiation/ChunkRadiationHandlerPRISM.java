@@ -2,7 +2,6 @@ package com.hbm_m.radiation;
 
 // TODO: Эта система пока что ВООБЩЕ не работает. Будет исправлено в будущем, пока что просто как заглушка
 
-import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 import net.minecraft.core.BlockPos;
@@ -74,7 +73,7 @@ public class ChunkRadiationHandlerPRISM extends ChunkRadiationHandler {
             if (level.hasChunk(coords.x, coords.z)) {
                 LevelChunk chunk = level.getChunk(coords.x, coords.z);
                 SubChunk finalSubChunk = subChunks[yReg]; // Create a final variable
-                chunk.getCapability(ChunkRadiationProvider.CHUNK_RADIATION_CAPABILITY).ifPresent(cap -> {
+                    ChunkRadiationAccess.get(chunk).ifPresent(cap -> {
                     cap.setBlockRadiation(finalSubChunk.radiation);
                     chunk.setUnsaved(true);
                 });

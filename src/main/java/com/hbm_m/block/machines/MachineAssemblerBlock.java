@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import org.jetbrains.annotations.NotNull;
-
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.ImmutableMap;
@@ -15,6 +14,7 @@ import com.hbm_m.block.entity.machines.MachineAssemblerBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.platform.NetworkHooksCompat;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -43,9 +43,11 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.Lazy;
-import net.minecraftforge.network.NetworkHooks;
+//?}
+import java.util.concurrent.atomic.AtomicReference;
+
 
 /**
  * Сборочная машина (мультиблок 3x2x3).
@@ -56,7 +58,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty RENDER_ACTIVE = BooleanProperty.create("render_active");
 
-    static final Lazy<Map<Direction, VoxelShape>> SHAPES_LAZY = Lazy.of(() ->
+    private static final Supplier<Map<Direction, VoxelShape>> SHAPES = memoize(() ->
             ImmutableMap.<Direction, VoxelShape>builder()
                     .put(Direction.NORTH, buildShapeNorth().move(0.5, 0, 0.5))
                     .put(Direction.SOUTH,  buildShapeSouth().move(0.5, 0, 0.5))
@@ -64,6 +66,17 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
                     .put(Direction.EAST,   buildShapeEast().move(0.5, 0, 0.5))
                     .build()
     );
+
+    private static <T> Supplier<T> memoize(Supplier<T> factory) {
+        AtomicReference<T> ref = new AtomicReference<>();
+        return () -> {
+            T existing = ref.get();
+            if (existing != null) return existing;
+            T created = factory.get();
+            ref.compareAndSet(null, created);
+            return ref.get();
+        };
+    }
 
     private static VoxelShape buildShapeNorth() {
         return Shapes.or(
@@ -159,7 +172,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
 
     @Override
     public VoxelShape getCustomMasterVoxelShape(BlockState state) {
-        return SHAPES_LAZY.get().get(state.getValue(FACING));
+        return SHAPES.get().get(state.getValue(FACING));
     }
 
     private static Map<BlockPos, Supplier<BlockState>> defineStructure() {
@@ -216,14 +229,8 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
                 }
                 
                 BlockEntity blockEntity = level.getBlockEntity(pos);
-                if (blockEntity instanceof MachineAssemblerBlockEntity) {
-                    // Получаем capability инвентаря
-                    blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-                        // Проходимся по всем слотам и выбрасываем их содержимое
-                        for (int i = 0; i < handler.getSlots(); i++) {
-                            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), handler.getStackInSlot(i));
-                        }
-                    });
+                if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity be) {
+                    be.dropInventoryContents();
                 }
 
                 helper.destroyStructure(level, pos, facing);
@@ -238,7 +245,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider) {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    NetworkHooks.openScreen(serverPlayer, (MenuProvider) entity, pos);
+                    NetworkHooksCompat.openScreen(serverPlayer, (MenuProvider) entity, pos);
                 }
             }
         }

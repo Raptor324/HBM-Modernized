@@ -6,6 +6,9 @@ import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.api.energy.ItemEnergyAccess;
+import com.hbm_m.api.fluids.FluidItemAccess;
 import com.hbm_m.item.industrial.ItemBlueprintFolder;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -18,8 +21,9 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.SlotItemHandler;
+//? if fabric {
+/*import team.reborn.energy.api.EnergyStorage;
+*///?}
 
 /**
  * Menu для Chemical Plant - порт с 1.7.10.
@@ -44,75 +48,84 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
         this.blockEntity = (MachineChemicalPlantBlockEntity) entity;
         this.data = data;
 
-        blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-            addSlot(new SlotItemHandler(handler, 0, 152, 81));
-            addSlot(new SlotItemHandler(handler, 1, 35, 126));
-            addSlot(new SlotItemHandler(handler, 2, 152, 108));
-            addSlot(new SlotItemHandler(handler, 3, 170, 108));
-            addSlot(new SlotItemHandler(handler, 4, 8, 99));
-            addSlot(new SlotItemHandler(handler, 5, 26, 99));
-            addSlot(new SlotItemHandler(handler, 6, 44, 99));
-            addSlot(new SlotItemHandler(handler, 7, 80, 99) {
+        var handler = blockEntity.getInventory();
+        var container = new ModItemStackHandlerContainer(handler, blockEntity::setChanged);
+
+            addSlot(new Slot(container, 0, 152, 81) {
+                @Override
+                public boolean mayPlace(@NotNull ItemStack stack) {
+                    if (stack.getItem() instanceof ItemBlueprintFolder) return true;
+                    if (ItemEnergyAccess.getHbmProvider(stack).isPresent() || ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
+                    //? if fabric {
+                    /*return EnergyStorage.ITEM.find(stack, null) != null;
+                    *///?} else {
+                    return false;
+                    //?}
+                }
+            });
+            addSlot(new Slot(container, 1, 35, 126));  // ??? (оставляем без ограничений как было)
+            addSlot(new Slot(container, 2, 152, 108));
+            addSlot(new Slot(container, 3, 170, 108));
+            addSlot(new Slot(container, 4, 8, 99));
+            addSlot(new Slot(container, 5, 26, 99));
+            addSlot(new Slot(container, 6, 44, 99));
+            addSlot(new Slot(container, 7, 80, 99) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
                     return false;
                 }
             });
-            addSlot(new SlotItemHandler(handler, 8, 98, 99) {
+            addSlot(new Slot(container, 8, 98, 99) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
                     return false;
                 }
             });
-            addSlot(new SlotItemHandler(handler, 9, 116, 99) {
+            addSlot(new Slot(container, 9, 116, 99) {
+                @Override public boolean mayPlace(@NotNull ItemStack stack) { return false; }
+            });
+            addSlot(new Slot(container, 10, 8, 54));
+            addSlot(new Slot(container, 11, 26, 54));
+            addSlot(new Slot(container, 12, 44, 54));
+            addSlot(new Slot(container, 13, 8, 72) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
                     return false;
                 }
             });
-            addSlot(new SlotItemHandler(handler, 10, 8, 54));
-            addSlot(new SlotItemHandler(handler, 11, 26, 54));
-            addSlot(new SlotItemHandler(handler, 12, 44, 54));
-            addSlot(new SlotItemHandler(handler, 13, 8, 72) {
+            addSlot(new Slot(container, 14, 26, 72) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
                     return false;
                 }
             });
-            addSlot(new SlotItemHandler(handler, 14, 26, 72) {
+            addSlot(new Slot(container, 15, 44, 72) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
                     return false;
                 }
             });
-            addSlot(new SlotItemHandler(handler, 15, 44, 72) {
+            addSlot(new Slot(container, 16, 80, 54));
+            addSlot(new Slot(container, 17, 98, 54));
+            addSlot(new Slot(container, 18, 116, 54));
+            addSlot(new Slot(container, 19, 80, 72) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
                     return false;
                 }
             });
-            addSlot(new SlotItemHandler(handler, 16, 80, 54));
-            addSlot(new SlotItemHandler(handler, 17, 98, 54));
-            addSlot(new SlotItemHandler(handler, 18, 116, 54));
-            addSlot(new SlotItemHandler(handler, 19, 80, 72) {
+            addSlot(new Slot(container, 20, 98, 72) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
                     return false;
                 }
             });
-            addSlot(new SlotItemHandler(handler, 20, 98, 72) {
+            addSlot(new Slot(container, 21, 116, 72) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
                     return false;
                 }
             });
-            addSlot(new SlotItemHandler(handler, 21, 116, 72) {
-                @Override
-                public boolean mayPlace(@NotNull ItemStack stack) {
-                    return false;
-                }
-            });
-        });
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -157,12 +170,16 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
         } else {
-            if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
-                    || stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
+            if (ItemEnergyAccess.getHbmProvider(stack).isPresent()
+                    || ItemEnergyAccess.getHbmReceiver(stack).isPresent()
+                    //? if fabric {
+                    /*|| EnergyStorage.ITEM.find(stack, null) != null
+                    *///?}
+            ) {
                 if (!moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
             } else if (stack.getItem() instanceof ItemBlueprintFolder) {
                 if (!moveItemStackTo(stack, 1, 2, false)) return ItemStack.EMPTY;
-            } else if (stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent()) {
+            } else if (FluidItemAccess.hasFluidHandler(stack)) {
                 if (!moveItemStackTo(stack, 10, 13, false) && !moveItemStackTo(stack, 16, 19, false)) {
                     return ItemStack.EMPTY;
                 }

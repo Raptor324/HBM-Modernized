@@ -14,6 +14,7 @@ import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.platform.NetworkHooksCompat;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -40,7 +41,7 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+
 
 public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMultiblockController, IMultiblockSidedIO {
 
@@ -173,7 +174,7 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider) {
-                NetworkHooks.openScreen((ServerPlayer) player, menuProvider, pos);
+                NetworkHooksCompat.openScreen((ServerPlayer) player, menuProvider, pos);
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

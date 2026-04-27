@@ -1,5 +1,6 @@
 package com.hbm_m.block.entity.machines;
 
+import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.FluidNetProvider;

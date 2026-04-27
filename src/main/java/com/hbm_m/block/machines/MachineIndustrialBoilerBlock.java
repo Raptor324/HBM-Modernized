@@ -12,6 +12,7 @@ import com.hbm_m.block.entity.machines.MachineIndustrialBoilerBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.platform.NetworkHooksCompat;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -41,8 +42,10 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.network.NetworkHooks;
+//?}
+
 
 /**
  * Industrial Boiler - converts water to steam using heat.
@@ -147,12 +150,8 @@ public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMu
             }
 
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof MachineIndustrialBoilerBlockEntity) {
-                blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-                    for (int i = 0; i < handler.getSlots(); i++) {
-                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), handler.getStackInSlot(i));
-                    }
-                });
+            if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity be) {
+                be.dropInventoryContents();
             }
 
             structureHelper.destroyStructure(level, pos, facing);
@@ -170,7 +169,7 @@ public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMu
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof MenuProvider provider) {
-                NetworkHooks.openScreen((ServerPlayer) player, provider, pos);
+                NetworkHooksCompat.openScreen((ServerPlayer) player, provider, pos);
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

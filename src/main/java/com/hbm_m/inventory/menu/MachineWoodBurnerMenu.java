@@ -2,8 +2,10 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineWoodBurnerBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.api.energy.ItemEnergyAccess;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -11,10 +13,14 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.ForgeHooks;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.items.SlotItemHandler;
+//?}
+//? if fabric {
+/*import team.reborn.energy.api.EnergyStorage;
+*///?}
 
 public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
     
@@ -48,22 +54,29 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
         this.data = data;
         this.player = inv.player; // Сохраняем игрока
 
-        // Используем inventory из базового класса через capability
-        this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(h -> {
-            this.addSlot(new SlotItemHandler(h, 0, 26, 18) { // Fuel slot
-                @Override public boolean mayPlace(ItemStack stack) { return ForgeHooks.getBurnTime(stack, null) > 0; }
-            });
-            this.addSlot(new SlotItemHandler(h, 1, 26, 54) { // Ash slot
-                @Override public boolean mayPlace(ItemStack stack) { return false; }
-            });
+        var handler = this.blockEntity.getInventory();
+        var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
 
-            this.addSlot(new SlotItemHandler(h, 2, 143, 54) { // Charge slot
-                @Override public boolean mayPlace(ItemStack stack) {
-                    // Разрешаем класть предметы, которые могут принимать энергию
-                    return stack.getCapability(ForgeCapabilities.ENERGY).map(IEnergyStorage::canReceive).orElse(false) ||
-                           stack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered;
-                }
-            });
+        this.addSlot(new Slot(container, 0, 26, 18) { // Fuel slot
+            @Override public boolean mayPlace(ItemStack stack) {
+                return AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0) > 0;
+            }
+        });
+        this.addSlot(new Slot(container, 1, 26, 54) { // Ash slot
+            @Override public boolean mayPlace(ItemStack stack) { return false; }
+        });
+        this.addSlot(new Slot(container, 2, 143, 54) { // Charge slot
+            @Override public boolean mayPlace(ItemStack stack) {
+                if (stack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered) return true;
+                // HBM батарейки (NBT на Fabric / capability на Forge внутри ItemEnergyAccess)
+                if (ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
+
+                //? if fabric {
+                /*return EnergyStorage.ITEM.find(stack, null) != null;
+                *///?} else {
+                return false;
+                //?}
+            }
         });
 
         addPlayerInventory(inv);
@@ -157,7 +170,7 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
                 slot.onQuickCraft(slotStack, itemstack);
             }
             else if (pIndex >= PLAYER_INV_START && pIndex < PLAYER_INV_END) {
-                if (ForgeHooks.getBurnTime(slotStack, null) > 0) {
+                if (AbstractFurnaceBlockEntity.getFuel().getOrDefault(slotStack.getItem(), 0) > 0) {
                     if (!this.moveItemStackTo(slotStack, FUEL_SLOT, FUEL_SLOT + 1, false)) {
                         // continue
                     } else {
@@ -168,8 +181,13 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
                 }
 
                 // Пробуем в СЛОТ ЗАРЯДКИ
+                //? if forge {
                 if (slotStack.getCapability(ForgeCapabilities.ENERGY).map(IEnergyStorage::canReceive).orElse(false) ||
                     slotStack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered) {
+                //?} else {
+                if (ItemEnergyAccess.getHbmReceiver(slotStack).isPresent() ||
+                    slotStack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered) {
+                //?}
                     if (!this.moveItemStackTo(slotStack, CHARGE_SLOT, CHARGE_SLOT + 1, false)) {
                         // continue
                     } else {

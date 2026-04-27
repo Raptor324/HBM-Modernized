@@ -47,7 +47,6 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import dev.architectury.utils.Env;
-import net.minecraftforge.fml.DistExecutor;
 
 public class UniversalMachinePartBlock extends BaseEntityBlock implements IDetonatable {
 
@@ -252,27 +251,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         // Это особенно важно, когда контроллер был разрушен - блок сразу станет осиротевшим
         if (pLevel.isClientSide()) {
             if (isOrphaned(pLevel, pPos)) {
-                //? if forge {
-                DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-                    com.hbm_m.client.ClientRenderHandler.addOrphanedPhantomBlock(pPos);
-                });
-                //?}
-                //? if fabric {
-                /*DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
-                    com.hbm_m.client.ClientRenderHandler.addOrphanedPhantomBlock(pPos);
-                });
-                *///?}
+                // Мы уже на клиенте (level.isClientSide), поэтому можно безопасно дернуть клиентский хук напрямую.
+                com.hbm_m.client.ClientRenderHandler.addOrphanedPhantomBlock(pPos);
             } else {
-                //? if forge {
-                DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-                    com.hbm_m.client.ClientRenderHandler.removeOrphanedPhantomBlock(pPos);
-                });
-                //?}
-                //? if fabric {
-                /*DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
-                    com.hbm_m.client.ClientRenderHandler.removeOrphanedPhantomBlock(pPos);
-                });
-                *///?}
+                com.hbm_m.client.ClientRenderHandler.removeOrphanedPhantomBlock(pPos);
             }
         }
         if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {

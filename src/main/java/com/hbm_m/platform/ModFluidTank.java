@@ -26,6 +26,11 @@ public class ModFluidTank extends FluidTank {
         return fluid.getAmount();
     }
 
+    //   Емкость танка в мБ.
+    public int getCapacityMb() {
+        return capacity;
+    }
+
     public boolean isEmpty() {
         return fluid.isEmpty();
     }

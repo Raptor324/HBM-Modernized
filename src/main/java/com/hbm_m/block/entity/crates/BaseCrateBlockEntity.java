@@ -8,7 +8,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import com.hbm_m.inventory.ItemStackHandler;
+import com.hbm_m.platform.ModItemStackHandler;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -17,11 +17,11 @@ import org.jetbrains.annotations.NotNull;
  */
 public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuProvider {
 
-    protected final ItemStackHandler itemHandler;
+    protected final ModItemStackHandler itemHandler;
 
     protected BaseCrateBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state, int slots) {
         super(type, pos, state);
-        this.itemHandler = new ItemStackHandler(slots) {
+        this.itemHandler = new ModItemStackHandler(slots) {
             @Override
             protected void onContentsChanged(int slot) {
                 setChanged();
@@ -67,7 +67,7 @@ public abstract class BaseCrateBlockEntity extends BlockEntity implements MenuPr
         }
     }
 
-    public ItemStackHandler getItemHandler() {
+    public ModItemStackHandler getItemHandler() {
         return itemHandler;
     }
 

@@ -12,6 +12,7 @@ import com.hbm_m.block.entity.machines.MachineIndustrialTurbineBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.platform.NetworkHooksCompat;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -39,7 +40,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
 
 /**
  * Industrial Turbine - converts steam to energy (HE).
@@ -166,7 +166,7 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof MenuProvider provider) {
-                NetworkHooks.openScreen((ServerPlayer) player, provider, pos);
+                NetworkHooksCompat.openScreen((ServerPlayer) player, provider, pos);
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

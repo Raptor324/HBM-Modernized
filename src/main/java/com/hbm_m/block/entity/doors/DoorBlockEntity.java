@@ -787,8 +787,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         saveAdditional(tag);
         return tag;
     }
-
+    //? if forge {
     @Override
+    //?}
+
     public void handleUpdateTag(CompoundTag tag) {
         load(tag);
     }
@@ -803,7 +805,9 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         return this.openTicks;
     }
 
+    //? if forge {
     @Override
+    //?}
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
@@ -814,7 +818,6 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             load(tag);
 
             if (level != null && level.isClientSide) {
-                requestModelDataUpdate();
                 // Инвалидируем чанк только при реальном изменении видимого состояния:
                 // DOOR_MOVING/OPEN перехода или смены скина/модели.
                 // Иначе каждый BE-пакет (даже с теми же данными) вызывал пересборку.
@@ -851,8 +854,9 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
             }
         }
     }
-
+    //? if forge {
     @Override
+    //?}
     public AABB getRenderBoundingBox() {
         double radius = 8.0; // Fallback
         if (level != null && level.isClientSide) {

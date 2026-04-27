@@ -4,7 +4,6 @@ import java.util.Map;
 import java.util.function.Supplier;
 
 import org.jetbrains.annotations.NotNull;
-
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
@@ -14,7 +13,7 @@ import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-
+import com.hbm_m.platform.NetworkHooksCompat;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -40,8 +39,10 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.network.NetworkHooks;
+//?}
+
 
 public class MachineFluidTankBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -132,12 +133,8 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
             Direction facing = state.getValue(FACING);
 
             BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof MachineFluidTankBlockEntity) {
-                blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-                    for (int i = 0; i < handler.getSlots(); i++) {
-                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), handler.getStackInSlot(i));
-                    }
-                });
+            if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity be) {
+                be.dropInventoryContents();
             }
             structureHelper.destroyStructure(level, pos, facing);
         }
@@ -178,7 +175,7 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
             return InteractionResult.PASS;
         }
 
-        NetworkHooks.openScreen((ServerPlayer) player, tank, pos);
+        NetworkHooksCompat.openScreen((ServerPlayer) player, tank, pos);
         return InteractionResult.sidedSuccess(false);
     }
 

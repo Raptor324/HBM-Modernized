@@ -5,6 +5,7 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.AnvilCraftC2SPacket;
 import com.hbm_m.network.AnvilSelectRecipeC2SPacket;
 import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -29,7 +30,6 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
-import com.hbm_m.inventory.ItemStackHandler;
 
 public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     
@@ -782,7 +782,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
             return 0;
         }
         
-        ItemStackHandler handler = menu.blockEntity.getItemHandler();
+        ModItemStackHandler handler = menu.blockEntity.getItemHandler();
         int count = 0;
         int slotLimit = Math.min(handler.getSlots(), 2);
         

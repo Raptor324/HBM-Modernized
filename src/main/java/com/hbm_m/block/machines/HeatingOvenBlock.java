@@ -4,6 +4,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.HeatingOvenBlockEntity;
+import com.hbm_m.platform.NetworkHooksCompat;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -28,7 +29,7 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+
 
 /**
  * Heating Oven block - a 3x1x3 multiblock furnace with animated door.
@@ -96,7 +97,7 @@ public class HeatingOvenBlock extends BaseEntityBlock {
             }
 
             // Normal click to open GUI
-            NetworkHooks.openScreen((ServerPlayer) player, oven, pos);
+            NetworkHooksCompat.openScreen((ServerPlayer) player, oven, pos);
             return InteractionResult.CONSUME;
         }
 
@@ -108,20 +109,7 @@ public class HeatingOvenBlock extends BaseEntityBlock {
         if (!state.is(newState.getBlock())) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof HeatingOvenBlockEntity oven) {
-                // Drop inventory contents
-                net.minecraft.world.Containers.dropContents(level, pos, new net.minecraft.world.SimpleContainer(
-                    oven.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER)
-                        .map(handler -> {
-                            net.minecraft.core.NonNullList<net.minecraft.world.item.ItemStack> items = 
-                                net.minecraft.core.NonNullList.withSize(handler.getSlots(), net.minecraft.world.item.ItemStack.EMPTY);
-                            for (int i = 0; i < handler.getSlots(); i++) {
-                                items.set(i, handler.getStackInSlot(i));
-                            }
-                            return items;
-                        })
-                        .orElse(net.minecraft.core.NonNullList.create())
-                        .toArray(new net.minecraft.world.item.ItemStack[0])
-                ));
+                oven.dropInventoryContents();
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);

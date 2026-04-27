@@ -2,7 +2,7 @@ package com.hbm_m.block.entity.machines;
 
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.inventory.menu.MachineCentrifugeMenu;
 import com.hbm_m.recipe.CentrifugeRecipes;
 import net.minecraft.core.BlockPos;
@@ -16,8 +16,11 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import org.jetbrains.annotations.Nullable;
+
+//? if forge {
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 
 /**
  * Centrifuge machine.
@@ -80,15 +83,16 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             return false;
         }
         if (slot == BATTERY_SLOT) {
-            boolean hasHbmEnergy = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
-                    .map(provider -> provider.canExtract())
-                    .orElse(false);
-            if (hasHbmEnergy) {
+            if (ItemEnergyAccess.getHbmProvider(stack).map(p -> p.canExtract()).orElse(false)) {
                 return true;
             }
+            //? if forge {
             return stack.getCapability(ForgeCapabilities.ENERGY)
                     .map(storage -> storage.canExtract())
                     .orElse(false);
+            //?} else {
+            /*return false;
+            *///?}
         }
         return true;
     }
@@ -220,7 +224,7 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        boolean transferred = batteryStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).map(itemEnergy -> {
+        boolean transferred = ItemEnergyAccess.getHbmProvider(batteryStack).map(itemEnergy -> {
             if (!itemEnergy.canExtract()) {
                 return false;
             }
@@ -245,6 +249,7 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
+        //? if forge {
         batteryStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
             if (!itemEnergy.canExtract()) {
                 return;
@@ -266,5 +271,6 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
                 setChanged();
             }
         });
+        //?}
     }
 }

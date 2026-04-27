@@ -25,8 +25,6 @@ import com.mojang.math.Axis;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
 //?}
 
 //? if fabric {
@@ -458,10 +456,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
     }
 
     private ItemStack getRecipeOutput(MachineAssemblerBlockEntity be) {
-        IItemHandler handler = be.getCapability(ForgeCapabilities.ITEM_HANDLER).orElse(null);
-        if (handler == null) return ItemStack.EMPTY;
-
-        ItemStack template = handler.getStackInSlot(4);
+        ItemStack template = be.getInventory().getStackInSlot(4);
         if (template.isEmpty() || !(template.getItem() instanceof ItemAssemblyTemplate)) {
             return ItemStack.EMPTY;
         }

@@ -42,8 +42,10 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.network.NetworkHooks;
+//?}
+import com.hbm_m.platform.NetworkHooksCompat;
 
 public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -106,14 +108,8 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
                 }
 
                 BlockEntity blockEntity = level.getBlockEntity(pos);
-                if (blockEntity instanceof MachineAdvancedAssemblerBlockEntity) {
-                    // Получаем capability инвентаря
-                    blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-                        // Проходимся по всем слотам и выбрасываем их содержимое
-                        for (int i = 0; i < handler.getSlots(); i++) {
-                            Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), handler.getStackInSlot(i));
-                        }
-                    });
+                if (blockEntity instanceof com.hbm_m.block.entity.BaseMachineBlockEntity be) {
+                    be.dropInventoryContents();
                 }
 
                 helper.destroyStructure(level, pos, facing);
@@ -137,7 +133,7 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
             if (pLevel.getBlockEntity(pPos) instanceof MenuProvider provider) {
-                NetworkHooks.openScreen((ServerPlayer) pPlayer, provider, pPos);
+                NetworkHooksCompat.openScreen((ServerPlayer) pPlayer, provider, pPos);
             }
         }
         return InteractionResult.sidedSuccess(pLevel.isClientSide());

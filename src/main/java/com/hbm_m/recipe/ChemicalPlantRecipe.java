@@ -3,8 +3,6 @@ package com.hbm_m.recipe;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -14,7 +12,6 @@ import com.google.gson.JsonObject;
 import com.hbm_m.lib.RefStrings;
 
 import dev.architectury.fluid.FluidStack;
-import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
 import net.minecraft.core.NonNullList;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -215,7 +212,7 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
             int fluidOutCount = buf.readVarInt();
             List<FluidStack> fluidOutputs = new ArrayList<>(fluidOutCount);
             for (int i = 0; i < fluidOutCount; i++) {
-                fluidOutputs.add(FluidStackHooksForge.fromForge(buf.readFluidStack()));
+                fluidOutputs.add(readFluidStack(buf));
             }
 
             return new ChemicalPlantRecipe(recipeId, itemInputs, fluidInputs, itemOutputs, fluidOutputs, duration, power, blueprintPool);
@@ -252,8 +249,47 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
 
             buf.writeVarInt(recipe.fluidOutputs.size());
             for (FluidStack out : recipe.fluidOutputs) {
-                buf.writeFluidStack(FluidStackHooksForge.toForge(out));
+                writeFluidStack(buf, out);
             }
+        }
+
+        /**
+         * Platform-agnostic сериализация FluidStack.
+         *
+         * Не используем Forge-specific {@code FriendlyByteBuf#readFluidStack}/{@code writeFluidStack}
+         * и {@code FluidStackHooksForge}, чтобы общий код компилировался на всех лоадерах.
+         *
+         * Формат:
+         * - boolean present
+         * - ResourceLocation fluidId
+         * - varLong amount (mB)
+         */
+        private static FluidStack readFluidStack(FriendlyByteBuf buf) {
+            boolean present = buf.readBoolean();
+            if (!present) {
+                return FluidStack.empty();
+            }
+            ResourceLocation id = buf.readResourceLocation();
+            long amount = buf.readVarLong();
+            var fluid = BuiltInRegistries.FLUID.get(id);
+            if (fluid == null) {
+                return FluidStack.empty();
+            }
+            if (amount <= 0) {
+                return FluidStack.empty();
+            }
+            return FluidStack.create(fluid, amount);
+        }
+
+        private static void writeFluidStack(FriendlyByteBuf buf, FluidStack stack) {
+            if (stack == null || stack.isEmpty()) {
+                buf.writeBoolean(false);
+                return;
+            }
+            buf.writeBoolean(true);
+            ResourceLocation id = BuiltInRegistries.FLUID.getKey(stack.getFluid());
+            buf.writeResourceLocation(id != null ? id : ResourceLocation.tryParse("minecraft:empty"));
+            buf.writeVarLong(stack.getAmount());
         }
 
         private static List<CountedIngredient> readItemInputs(JsonObject json) {

@@ -3,11 +3,12 @@ package com.hbm_m.block.entity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineCrystallizerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
+import com.hbm_m.platform.ModFluidTank;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -20,12 +21,21 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+
+//? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
+//?}
+
+//? if fabric {
+/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+*///?}
 
 /**
  * Crystallizer BlockEntity - порт с 1.7.10.
@@ -47,7 +57,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     private static final int TANK_CAPACITY = 8_000;
     private static final int DEFAULT_DURATION = 600;
 
-    private final FluidTank tank = new FluidTank(TANK_CAPACITY) {
+    private final ModFluidTank tank = new ModFluidTank(TANK_CAPACITY) {
         @Override
         protected void onContentsChanged() {
             setChanged();
@@ -56,7 +66,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
             }
         }
     };
-    private final LazyOptional<IFluidHandler> tankHandler = LazyOptional.of(() -> tank);
+    //? if forge {
+    private final LazyOptional<IFluidHandler> tankHandler = LazyOptional.of(() -> (IFluidHandler) tank);
+    //?}
 
     private int progress = 0;
     private int duration = DEFAULT_DURATION;
@@ -126,17 +138,20 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(provider -> {
+        boolean transferred = ItemEnergyAccess.getHbmProvider(stack).map(provider -> {
             long needed = getMaxEnergyStored() - getEnergyStored();
-            if (needed <= 0) return;
+            if (needed <= 0) return false;
             long extracted = provider.extractEnergy(Math.min(needed, getReceiveSpeed()), false);
             if (extracted > 0) {
                 setEnergyStored(getEnergyStored() + extracted);
                 setChanged();
+                return true;
             }
-        });
+            return false;
+        }).orElse(false);
 
-        if (!stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
+        if (!transferred) {
+            //? if forge {
             stack.getCapability(ForgeCapabilities.ENERGY).ifPresent(provider -> {
                 long needed = getMaxEnergyStored() - getEnergyStored();
                 if (needed <= 0) return;
@@ -146,6 +161,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
                     setChanged();
                 }
             });
+            //?}
         }
     }
 
@@ -154,12 +170,38 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         if (fillStack.isEmpty()) return;
         if (!inventory.getStackInSlot(SLOT_FLUID_OUTPUT).isEmpty()) return;
 
-        var result = FluidUtil.tryEmptyContainer(fillStack, tank, TANK_CAPACITY, null, false);
+        //? if forge {
+        var result = FluidUtil.tryEmptyContainer(fillStack, (IFluidHandler) tank, TANK_CAPACITY, null, false);
         if (result.isSuccess()) {
             inventory.setStackInSlot(SLOT_FLUID_INPUT, ItemStack.EMPTY);
             inventory.setStackInSlot(SLOT_FLUID_OUTPUT, result.getResult());
             setChanged();
         }
+        //?}
+
+        //? if fabric {
+        /*ItemStack one = fillStack.copy();
+        one.setCount(1);
+
+        Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, null);
+        if (itemStorage == null) return;
+
+        try (Transaction tx = Transaction.openOuter()) {
+            long moved = net.fabricmc.fabric.api.transfer.v1.storage.StorageUtil.move(
+                    itemStorage,
+                    tank.getStorage(),
+                    v -> true,
+                    Long.MAX_VALUE,
+                    tx
+            );
+            if (moved > 0) {
+                tx.commit();
+                inventory.setStackInSlot(SLOT_FLUID_INPUT, ItemStack.EMPTY);
+                inventory.setStackInSlot(SLOT_FLUID_OUTPUT, one);
+                setChanged();
+            }
+        }
+        *///?}
     }
 
     private boolean canProcess() {
@@ -191,7 +233,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         return dur <= 0 ? 0 : (progress * scale) / dur;
     }
 
-    public FluidTank getTank() {
+    public ModFluidTank getTank() {
         return tank;
     }
 
@@ -212,15 +254,28 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_BATTERY) {
-            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
-                || stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
-                || stack.getItem() instanceof ItemCreativeBattery;
+            if (stack.getItem() instanceof ItemCreativeBattery) {
+                return true;
+            }
+            if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) {
+                return true;
+            }
+            //? if forge {
+            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+            //?} else {
+            /*return false;
+            *///?}
         }
         if (slot == SLOT_OUTPUT || slot == SLOT_FLUID_OUTPUT) {
             return false;
         }
         if (slot == SLOT_FLUID_INPUT) {
+            //? if forge {
             return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            //?}
+            //? if fabric {
+            /*return FluidStorage.ITEM.find(stack, null) != null;
+            *///?}
         }
         if (slot == SLOT_FLUID_ID) {
             return true; // Заглушка: IItemFluidIdentifier
@@ -241,7 +296,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
-        tag.put("tank", tank.writeToNBT(new CompoundTag()));
+        tag.put("tank", tank.writeNBT(new CompoundTag()));
         tag.putInt("progress", progress);
         tag.putInt("duration", duration);
         tag.putBoolean("isOn", isOn);
@@ -251,13 +306,14 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     public void load(CompoundTag tag) {
         super.load(tag);
         if (tag.contains("tank")) {
-            tank.readFromNBT(tag.getCompound("tank"));
+            tank.readNBT(tag.getCompound("tank"));
         }
         progress = tag.getInt("progress");
         duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
         isOn = tag.getBoolean("isOn");
     }
 
+    //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
@@ -271,4 +327,5 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         super.invalidateCaps();
         tankHandler.invalidate();
     }
+    //?}
 }

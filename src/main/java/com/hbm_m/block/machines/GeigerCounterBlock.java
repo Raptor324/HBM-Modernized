@@ -3,8 +3,6 @@ package com.hbm_m.block.machines;
 import com.hbm_m.block.entity.machines.GeigerCounterBlockEntity;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.network.sounds.GeigerSoundPacket;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.sound.ModSounds;
 
@@ -14,6 +12,7 @@ import net.minecraft.network.chat.MutableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
@@ -34,7 +33,6 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.PacketDistributor;
 import net.minecraft.network.chat.Component;
 
 import org.jetbrains.annotations.NotNull;
@@ -116,9 +114,9 @@ public class GeigerCounterBlock extends BaseEntityBlock {
                 SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
                 if (soundEvent != null) {
                     ResourceLocation soundLocation = soundEvent.getLocation();
-                    // Важно: pPlayer нужно привести к ServerPlayer для отправки пакета
                     if (pPlayer instanceof ServerPlayer serverPlayer) {
-                        ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new GeigerSoundPacket(soundLocation, 1.0F, 1.0F));
+                        // Loader-agnostic: проигрываем звук напрямую сервером игроку (без Forge PacketDistributor).
+                        serverPlayer.playNotifySound(soundEvent, SoundSource.PLAYERS, 1.0F, 1.0F);
                     }
                 }
             }

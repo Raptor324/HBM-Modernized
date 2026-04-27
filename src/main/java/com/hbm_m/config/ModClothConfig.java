@@ -226,6 +226,59 @@ public class ModClothConfig implements ConfigData {
     @BoundedDiscrete(min = 1, max = 32)
     public int vatsRenderDistanceChunks = 7;
 
+    // Машины
+
+    @Category("machines")
+    @Gui.CollapsibleObject(startExpanded = false)
+    public FrackingTowerSettings frackingTower = new FrackingTowerSettings();
+
+    public static class FrackingTowerSettings {
+        @Gui.Tooltip
+        public long maxPower = 5_000_000L;
+
+        @Gui.Tooltip
+        public long consumption = 5_000L;
+
+        @Gui.Tooltip
+        @BoundedDiscrete(min = 1, max = 10_000)
+        public int solutionRequired = 10;
+
+        @Gui.Tooltip
+        @BoundedDiscrete(min = 1, max = 1200)
+        public int delay = 20;
+
+        @Gui.Tooltip
+        @BoundedDiscrete(min = 1, max = 64_000)
+        public int oilPerDeposit = 1000;
+
+        @Gui.Tooltip
+        @BoundedDiscrete(min = 1, max = 64_000)
+        public int gasPerDepositMin = 100;
+
+        @Gui.Tooltip
+        @BoundedDiscrete(min = 1, max = 64_000)
+        public int gasPerDepositMax = 500;
+
+        @Gui.Tooltip
+        public double drainChance = 0.02D;
+
+        @Gui.Tooltip
+        @BoundedDiscrete(min = 1, max = 64_000)
+        public int oilPerBedrockDeposit = 100;
+
+        @Gui.Tooltip
+        @BoundedDiscrete(min = 1, max = 64_000)
+        public int gasPerBedrockDepositMin = 10;
+
+        @Gui.Tooltip
+        @BoundedDiscrete(min = 1, max = 64_000)
+        public int gasPerBedrockDepositMax = 50;
+
+        @Gui.Tooltip
+        @BoundedDiscrete(min = 1, max = 256)
+        public int destructionRange = 75;
+    }
+
     // ЯДЕРНЫЕ ВЗРЫВЫ (MK5)
 
     @Category("explosions")
@@ -312,6 +365,9 @@ public class ModClothConfig implements ConfigData {
 
         this.radiationPixelEffect.radiationPixelEffectGreenChance = Mth.clamp(originalScaling, 0.0F, 1.0F);
         // Здесь можно добавить валидацию для других полей, если потребуется
+
+        // Машины
+        this.frackingTower.drainChance = Mth.clamp(this.frackingTower.drainChance, 0.0D, 1.0D);
     }
 
     // Регистрация конфига (вызывать в инициализации мода) 

@@ -14,18 +14,16 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(value = Dist.CLIENT)
 public class ChunkRadiationDebugRenderer {
 
-    @SubscribeEvent
-    public static void onRenderWorld(RenderLevelStageEvent event) {
-        if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_PARTICLES) return;
-
+    /**
+     * Loader-agnostic render entrypoint.
+     *
+     * Platform hooks should call this at a suitable world render stage
+     * (Forge: RenderLevelStageEvent.Stage.AFTER_PARTICLES).
+     */
+    public static void render(PoseStack poseStack, Vec3 camPos) {
         Minecraft mc = Minecraft.getInstance();
         Player player = mc.player;
         Level level = mc.level;
@@ -40,13 +38,10 @@ public class ChunkRadiationDebugRenderer {
 
         boolean isCreativeOrSpectator = player.isCreative() || player.isSpectator();
         if (!ModClothConfig.get().debugRenderInSurvival && !isCreativeOrSpectator) return;
-
-        Vec3 camPos = event.getCamera().getPosition();
         // Используем значения из ClothConfig:
         int radius = ModClothConfig.get().debugRenderDistance; // Сколько чанков вокруг игрока показывать
         float scale = ModClothConfig.get().debugRenderTextSize; // Размер текста
 
-        PoseStack poseStack = event.getPoseStack();
         MultiBufferSource.BufferSource buffer = mc.renderBuffers().bufferSource();
         Font font = mc.font;
 

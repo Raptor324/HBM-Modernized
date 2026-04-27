@@ -22,6 +22,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.SmeltingRecipe;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
@@ -106,7 +107,7 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
             return false; // Output slot can't have items inserted
         }
         if (slot == FUEL_SLOT) {
-            return net.minecraftforge.common.ForgeHooks.getBurnTime(stack, null) > 0;
+            return AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0) > 0;
         }
         return true; // Input slot accepts anything
     }
@@ -130,7 +131,7 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
             // Try to consume fuel
             ItemStack fuelStack = blockEntity.inventory.getStackInSlot(FUEL_SLOT);
             if (!fuelStack.isEmpty()) {
-                int fuelValue = net.minecraftforge.common.ForgeHooks.getBurnTime(fuelStack, null);
+                int fuelValue = AbstractFurnaceBlockEntity.getFuel().getOrDefault(fuelStack.getItem(), 0);
                 if (fuelValue > 0) {
                     blockEntity.burnTime = fuelValue;
                     fuelStack.shrink(1);

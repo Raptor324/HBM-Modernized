@@ -5,6 +5,7 @@ import java.lang.ref.Cleaner;
 import java.nio.FloatBuffer;
 import java.util.List;
 
+
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
@@ -37,10 +38,15 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
-
+//?}
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+*///?}
 /**
  * Instanced Renderer для статических частей (Base/Frame).
  * Без шейдеров рендерит все машины одного типа одним {@code glDrawElementsInstanced}.

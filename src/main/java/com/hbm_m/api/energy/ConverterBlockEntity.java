@@ -57,9 +57,11 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
         public long insert(long maxAmount, net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
             if (!canReceive()) return 0;
             long received = receiveEnergy(maxAmount, true);
-            net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.current().addCloseCallback((t, result) -> {
-                if (result.wasCommitted()) receiveEnergy(maxAmount, false);
-            });
+            if (received > 0) {
+                transaction.addCloseCallback((ctx, result) -> {
+                    if (result.wasCommitted()) receiveEnergy(received, false);
+                });
+            }
             return received;
         }
 
@@ -67,9 +69,11 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
         public long extract(long maxAmount, net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
             if (!canExtract()) return 0;
             long extracted = extractEnergy(maxAmount, true);
-            net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.current().addCloseCallback((t, result) -> {
-                if (result.wasCommitted()) extractEnergy(maxAmount, false);
-            });
+            if (extracted > 0) {
+                transaction.addCloseCallback((ctx, result) -> {
+                    if (result.wasCommitted()) extractEnergy(extracted, false);
+                });
+            }
             return extracted;
         }
 

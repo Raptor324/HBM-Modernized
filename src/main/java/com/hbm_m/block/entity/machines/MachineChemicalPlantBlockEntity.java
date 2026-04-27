@@ -15,9 +15,9 @@ import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe.CountedIngredient;
 import com.hbm_m.recipe.ChemicalPlantRecipe.FluidIngredient;
+import com.hbm_m.platform.ModFluidTank;
 
 import dev.architectury.fluid.FluidStack;
-import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -32,13 +32,25 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
+
+//? if forge {
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
+//?}
+
+//? if fabric {
+/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+import team.reborn.energy.api.EnergyStorage;
+*///?}
 
 /**
  * Chemical Plant BlockEntity - порт с 1.7.10.
@@ -68,10 +80,13 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
     private static final int TANK_CAPACITY = 24_000;
     private static final long MAX_POWER = 100_000;
 
-    private final FluidTank[] inputTanks = new FluidTank[3];
-    private final FluidTank[] outputTanks = new FluidTank[3];
+    private final ModFluidTank[] inputTanks = new ModFluidTank[3];
+    private final ModFluidTank[] outputTanks = new ModFluidTank[3];
+
+    //? if forge {
     private final LazyOptional<IFluidHandler>[] inputTankHandlers = new LazyOptional[3];
     private final LazyOptional<IFluidHandler>[] outputTankHandlers = new LazyOptional[3];
+    //?}
 
     private boolean didProcess = false;
     @Nullable private ResourceLocation selectedRecipeId = null;
@@ -161,7 +176,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
 
         for (int i = 0; i < 3; i++) {
             final int idx = i;
-            inputTanks[i] = new FluidTank(TANK_CAPACITY) {
+            inputTanks[i] = new ModFluidTank(TANK_CAPACITY) {
                 @Override
                 protected void onContentsChanged() {
                     setChanged();
@@ -170,7 +185,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
                     }
                 }
             };
-            outputTanks[i] = new FluidTank(TANK_CAPACITY) {
+            outputTanks[i] = new ModFluidTank(TANK_CAPACITY) {
                 @Override
                 protected void onContentsChanged() {
                     setChanged();
@@ -179,8 +194,10 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
                     }
                 }
             };
-            inputTankHandlers[i] = LazyOptional.of(() -> inputTanks[idx]);
-            outputTankHandlers[i] = LazyOptional.of(() -> outputTanks[idx]);
+            //? if forge {
+            inputTankHandlers[i] = LazyOptional.of(() -> (IFluidHandler) inputTanks[idx]);
+            outputTankHandlers[i] = LazyOptional.of(() -> (IFluidHandler) outputTanks[idx]);
+            //?}
         }
     }
 
@@ -298,11 +315,10 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             FluidIngredient req = fluidInputs.get(i);
             var fluid = BuiltInRegistries.FLUID.get(req.fluidId());
             if (fluid == null) return false;
-            FluidTank tank = inputTanks[i];
-            net.minecraftforge.fluids.FluidStack tankFluid = tank.getFluid();
-            if (tankFluid.isEmpty()
-                || tankFluid.getFluid() != fluid
-                || tank.getFluidAmount() < req.amount()) {
+            ModFluidTank tank = inputTanks[i];
+            if (tank.isEmpty()
+                || tank.getStoredFluid() != fluid
+                || tank.getFluidAmountMb() < req.amount()) {
                 return false;
             }
         }
@@ -325,10 +341,9 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         for (int i = 0; i < fluidOutputs.size(); i++) {
             FluidStack output = fluidOutputs.get(i);
             if (output.isEmpty()) continue;
-            FluidTank tank = outputTanks[i];
-            net.minecraftforge.fluids.FluidStack tankFluid = tank.getFluid();
-            if (!tankFluid.isEmpty() && tankFluid.getFluid() != output.getFluid()) return false;
-            if (tank.getFluidAmount() + output.getAmount() > tank.getCapacity()) return false;
+            ModFluidTank tank = outputTanks[i];
+            if (!tank.isEmpty() && tank.getStoredFluid() != output.getFluid()) return false;
+            if (tank.getFluidAmountMb() + (int) output.getAmount() > tank.getCapacityMb()) return false;
         }
 
         return true;
@@ -345,7 +360,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         // Consume fluid inputs
         List<FluidIngredient> fluidInputs = recipe.getFluidInputs();
         for (int i = 0; i < fluidInputs.size(); i++) {
-            inputTanks[i].drain(fluidInputs.get(i).amount(), IFluidHandler.FluidAction.EXECUTE);
+            inputTanks[i].drainMb(fluidInputs.get(i).amount());
         }
 
         // Produce item outputs
@@ -367,7 +382,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         for (int i = 0; i < fluidOutputs.size(); i++) {
             FluidStack output = fluidOutputs.get(i);
             if (output.isEmpty()) continue;
-            outputTanks[i].fill(FluidStackHooksForge.toForge(output), IFluidHandler.FluidAction.EXECUTE);
+            outputTanks[i].fillMb(output.getFluid(), (int) output.getAmount());
         }
     }
 
@@ -378,7 +393,9 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         return installed != null && !installed.isEmpty() && installed.equals(pool);
     }
 
+    //? if forge {
     @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?}
     private void clientTick() {
         com.hbm_m.sound.ClientSoundManager.updateSound(this, this.didProcess,
                 () -> new com.hbm_m.sound.ChemicalPlantSoundInstance(this.getBlockPos()));
@@ -393,7 +410,9 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
+        //? if forge {
         stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(provider -> {
+            if (!provider.canExtract()) return;
             long needed = getMaxEnergyStored() - getEnergyStored();
             if (needed <= 0) return;
             long extracted = provider.extractEnergy(Math.min(needed, getReceiveSpeed()), false);
@@ -405,6 +424,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
 
         if (!stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
             stack.getCapability(ForgeCapabilities.ENERGY).ifPresent(provider -> {
+                if (!provider.canExtract()) return;
                 long needed = getMaxEnergyStored() - getEnergyStored();
                 if (needed <= 0) return;
                 int extracted = provider.extractEnergy((int) Math.min(needed, getReceiveSpeed()), false);
@@ -414,6 +434,27 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
                 }
             });
         }
+        //?}
+
+        //? if fabric {
+        /*var source = EnergyStorage.ITEM.find(stack, null);
+        if (source == null || !source.supportsExtraction()) return;
+
+        long needed = getMaxEnergyStored() - getEnergyStored();
+        if (needed <= 0) return;
+
+        long toExtract = Math.min(needed, getReceiveSpeed());
+        if (toExtract <= 0) return;
+
+        try (Transaction tx = Transaction.openOuter()) {
+            long extracted = source.extract(toExtract, tx);
+            if (extracted > 0) {
+                setEnergyStored(getEnergyStored() + extracted);
+                setChanged();
+                tx.commit();
+            }
+        }
+        *///?}
     }
 
     private void transferFluidsFromItems() {
@@ -424,12 +465,52 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             if (fullContainer.isEmpty()) continue;
             if (!inventory.getStackInSlot(emptyContainerSlot).isEmpty()) continue;
 
-            var result = FluidUtil.tryEmptyContainer(fullContainer, inputTanks[i], TANK_CAPACITY, null, true);
+            //? if forge {
+            var result = FluidUtil.tryEmptyContainer(fullContainer, (IFluidHandler) inputTanks[i], TANK_CAPACITY, null, true);
             if (result.isSuccess()) {
                 fullContainer.shrink(1);
                 inventory.setStackInSlot(emptyContainerSlot, result.getResult());
                 setChanged();
             }
+            //?}
+
+            //? if fabric {
+            /*ItemStack one = fullContainer.copy();
+            one.setCount(1);
+            Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, null);
+            if (itemStorage == null) continue;
+
+            Storage<FluidVariant> tankStorage = inputTanks[i].getStorage();
+            long spaceDroplets = (long) inputTanks[i].getSpaceMb() * ModFluidTank.DROPLETS_PER_MB;
+            if (spaceDroplets <= 0) continue;
+
+            StorageView<FluidVariant> view = null;
+            for (StorageView<FluidVariant> v : itemStorage) {
+                if (!v.isResourceBlank() && v.getAmount() > 0) { view = v; break; }
+            }
+            if (view == null) continue;
+
+            boolean moved = false;
+            try (Transaction tx = Transaction.openOuter()) {
+                FluidVariant variant = view.getResource();
+                long movable = Math.min(view.getAmount(), spaceDroplets);
+                long inserted = tankStorage.insert(variant, movable, tx);
+                if (inserted <= 0) {
+                    // no-op
+                } else {
+                    long extracted = itemStorage.extract(variant, inserted, tx);
+                    if (extracted == inserted) {
+                        tx.commit();
+                        moved = true;
+                    }
+                }
+            }
+            if (!moved) continue;
+
+            fullContainer.shrink(1);
+            inventory.setStackInSlot(emptyContainerSlot, one);
+            setChanged();
+            *///?}
         }
     }
 
@@ -441,12 +522,52 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             if (emptyContainer.isEmpty()) continue;
             if (!inventory.getStackInSlot(filledContainerSlot).isEmpty()) continue;
 
-            var result = FluidUtil.tryFillContainer(emptyContainer, outputTanks[i], TANK_CAPACITY, null, true);
+            //? if forge {
+            var result = FluidUtil.tryFillContainer(emptyContainer, (IFluidHandler) outputTanks[i], TANK_CAPACITY, null, true);
             if (result.isSuccess()) {
                 emptyContainer.shrink(1);
                 inventory.setStackInSlot(filledContainerSlot, result.getResult());
                 setChanged();
             }
+            //?}
+
+            //? if fabric {
+            /*if (outputTanks[i].isEmpty()) continue;
+
+            ItemStack one = emptyContainer.copy();
+            one.setCount(1);
+            Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, null);
+            if (itemStorage == null) continue;
+
+            Storage<FluidVariant> tankStorage = outputTanks[i].getStorage();
+            StorageView<FluidVariant> view = null;
+            for (StorageView<FluidVariant> v : tankStorage) {
+                if (!v.isResourceBlank() && v.getAmount() > 0) { view = v; break; }
+            }
+            if (view == null) continue;
+
+            boolean moved = false;
+            try (Transaction tx = Transaction.openOuter()) {
+                FluidVariant variant = view.getResource();
+                long available = view.getAmount();
+                long toMove = Math.min(available, (long) TANK_CAPACITY * ModFluidTank.DROPLETS_PER_MB);
+                long inserted = itemStorage.insert(variant, toMove, tx);
+                if (inserted <= 0) {
+                    // no-op
+                } else {
+                    long extracted = tankStorage.extract(variant, inserted, tx);
+                    if (extracted == inserted) {
+                        tx.commit();
+                        moved = true;
+                    }
+                }
+            }
+            if (!moved) continue;
+
+            emptyContainer.shrink(1);
+            inventory.setStackInSlot(filledContainerSlot, one);
+            setChanged();
+            *///?}
         }
     }
 
@@ -473,8 +594,15 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_BATTERY) {
-            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
-                || stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent();
+            if (stack.isEmpty()) return false;
+            if (stack.getItem() instanceof ItemCreativeBattery) return true;
+            //? if forge {
+            if (stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) return true;
+            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+            //?}
+            //? if fabric {
+            /*return EnergyStorage.ITEM.find(stack, null) != null;
+            *///?}
         }
         if (slot == SLOT_SCHEMATIC) {
             return stack.getItem() instanceof ItemBlueprintFolder;
@@ -486,16 +614,32 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             return false;
         }
         if (slot >= SLOT_FLUID_INPUT_START && slot <= SLOT_FLUID_INPUT_END) {
+            //? if forge {
             return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            //?} else {
+            /*return FluidStorage.ITEM.find(stack, null) != null;
+            *///?}
         }
         if (slot >= SLOT_FLUID_OUTPUT_START && slot <= SLOT_FLUID_OUTPUT_END) {
+            //? if forge {
             return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            //?} else {
+            /*return FluidStorage.ITEM.find(stack, null) != null;
+            *///?}
         }
         if (slot >= SLOT_FLUID_INPUT_EMPTY_START && slot <= SLOT_FLUID_INPUT_EMPTY_END) {
+            //? if forge {
             return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            //?} else {
+            /*return FluidStorage.ITEM.find(stack, null) != null;
+            *///?}
         }
         if (slot >= SLOT_FLUID_OUTPUT_EMPTY_START && slot <= SLOT_FLUID_OUTPUT_EMPTY_END) {
+            //? if forge {
             return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            //?} else {
+            /*return FluidStorage.ITEM.find(stack, null) != null;
+            *///?}
         }
         return true;
     }
@@ -511,11 +655,11 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         return new MachineChemicalPlantMenu(containerId, playerInventory, this, data);
     }
 
-    public FluidTank[] getInputTanks() {
+    public ModFluidTank[] getInputTanks() {
         return inputTanks;
     }
 
-    public FluidTank[] getOutputTanks() {
+    public ModFluidTank[] getOutputTanks() {
         return outputTanks;
     }
 
@@ -569,20 +713,21 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
     }
 
     public FluidStack getFluid() {
-        return FluidStackHooksForge.fromForge(inputTanks[0].getFluid());
+        if (inputTanks[0].isEmpty()) return FluidStack.create(Fluids.EMPTY, 0L);
+        return FluidStack.create(inputTanks[0].getStoredFluid(), (long) inputTanks[0].getFluidAmountMb());
     }
 
     public float getFluidFillFraction() {
-        if (inputTanks[0].getCapacity() <= 0) return 0.0F;
-        return Math.min(1.0F, Math.max(0.0F, inputTanks[0].getFluidAmount() / (float) inputTanks[0].getCapacity()));
+        if (inputTanks[0].getCapacityMb() <= 0) return 0.0F;
+        return Math.min(1.0F, Math.max(0.0F, inputTanks[0].getFluidAmountMb() / (float) inputTanks[0].getCapacityMb()));
     }
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         for (int i = 0; i < 3; i++) {
-            tag.put("inputTank" + i, inputTanks[i].writeToNBT(new CompoundTag()));
-            tag.put("outputTank" + i, outputTanks[i].writeToNBT(new CompoundTag()));
+            tag.put("inputTank" + i, inputTanks[i].writeNBT(new CompoundTag()));
+            tag.put("outputTank" + i, outputTanks[i].writeNBT(new CompoundTag()));
         }
         tag.putBoolean("didProcess", didProcess);
         tag.putBoolean("HasRecipe", selectedRecipeId != null);
@@ -600,10 +745,10 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         super.load(tag);
         for (int i = 0; i < 3; i++) {
             if (tag.contains("inputTank" + i)) {
-                inputTanks[i].readFromNBT(tag.getCompound("inputTank" + i));
+                inputTanks[i].readNBT(tag.getCompound("inputTank" + i));
             }
             if (tag.contains("outputTank" + i)) {
-                outputTanks[i].readFromNBT(tag.getCompound("outputTank" + i));
+                outputTanks[i].readNBT(tag.getCompound("outputTank" + i));
             }
         }
         didProcess = tag.getBoolean("didProcess");
@@ -639,6 +784,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         return cachedRecipe;
     }
 
+    //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
@@ -655,4 +801,5 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             outputTankHandlers[i].invalidate();
         }
     }
+    //?}
 }

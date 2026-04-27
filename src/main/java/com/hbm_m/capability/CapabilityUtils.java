@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.capability;
 
 // Утилитарный класс для работы с capability в Minecraft Forge.
@@ -11,3 +12,4 @@ public class CapabilityUtils {
         return CapabilityManager.get(new CapabilityToken<T>() {});
     }
 }
+//?}

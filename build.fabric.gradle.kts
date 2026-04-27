@@ -55,6 +55,8 @@ repositories {
 	strictMaven("https://maven.terraformersmc.com/", "com.terraformersmc") { name = "TerraformersMC" }
 	strictMaven("https://api.modrinth.com/maven", "maven.modrinth") { name = "Modrinth" }
 	strictMaven("https://maven.architectury.dev/", "dev.architectury") { name = "Architectury" }
+	strictMaven("https://cursemaven.com/","curse.maven") { name = "CurseMaven" }
+
 
 	maven("https://maven.parchmentmc.org") { name = "ParchmentMC" }
 
@@ -91,7 +93,8 @@ dependencies {
 	// Fabric compat: external energy via TeamReborn Energy API (bundled)
 	modApi("teamreborn:energy:3.0.0")
 	include("teamreborn:energy:3.0.0")
-
+	include("curse.maven:cloth-config-348521:5729104")
+	modApi("curse.maven:cloth-config-348521:5729104")
 	// ---- Compile-only shims for shared (Forge-origin) sources ----
 	// These MUST NOT end up in the Fabric runtime jar.
 	// compileOnly("net.minecraftforge:forge:1.20.1-47.4.20:universal")

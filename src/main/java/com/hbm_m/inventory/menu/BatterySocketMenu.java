@@ -19,7 +19,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.items.SlotItemHandler;
 import net.minecraftforge.network.PacketDistributor;
-import com.hbm_m.inventory.ForgeItemHandlerAdapter;
+import com.hbm_m.platform.ForgeItemHandlerAdapter;
 
 public class BatterySocketMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 

@@ -7,6 +7,7 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
+import com.hbm_m.platform.NetworkHooksCompat;
 import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.ChatFormatting;
@@ -38,7 +39,7 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
+
 
 /**
  * Универсальный класс блока для всех энергохранилищ.
@@ -117,7 +118,7 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MachineBatteryBlockEntity battery) {
-                NetworkHooks.openScreen((ServerPlayer) player, battery, pos);
+                NetworkHooksCompat.openScreen((ServerPlayer) player, battery, pos);
             }
             return InteractionResult.CONSUME;
         }

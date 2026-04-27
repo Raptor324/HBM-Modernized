@@ -18,6 +18,7 @@ import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous;
 import com.hbm_m.inventory.menu.MachineFluidTankMenu;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -50,15 +51,8 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
 import net.minecraft.core.registries.BuiltInRegistries;
 //?}
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemStackHandler;
 
 public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider, IMultiblockSidedIO {
 
@@ -82,11 +76,13 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     private Fluid filterFluid = null;
 
     private final FluidTank fluidTank;
-    private final ItemStackHandler itemHandler;
+    private final ModItemStackHandler itemHandler;
     protected final ContainerData data;
 
+    //? if forge {
     private final LazyOptional<IItemHandler> lazyItemHandler;
     private final LazyOptional<IFluidHandler> lazyFluidHandler;
+    //?}
 
     /** Разрешённые стороны прямого подключения к контроллеру (пусто = все). */
     private java.util.Set<Direction> allowedFluidSides = java.util.EnumSet.noneOf(Direction.class);
@@ -100,7 +96,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
         this.fluidTank = new FluidTank(ModFluids.NONE.getSource(), TANK_CAPACITY);
 
-        this.itemHandler = new ItemStackHandler(6) {
+        this.itemHandler = new ModItemStackHandler(6) {
             @Override
             protected void onContentsChanged(int slot) {
                 setChanged();
@@ -139,8 +135,10 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             public int getCount() { return 7; }
         };
 
+        //? if forge {
         this.lazyItemHandler = LazyOptional.of(() -> itemHandler);
         this.lazyFluidHandler = LazyOptional.of(() -> new NetworkFluidHandlerWrapper(this));
+        //?}
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineFluidTankBlockEntity entity) {
@@ -210,14 +208,15 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         }
     }
 
-    @Override
     public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket pkt) {
         // Сохраняем старую жидкость для проверки
         Fluid oldFluid = getFilterFluid();
         Fluid oldTankFluid = fluidTank.getTankType();
 
-        // Этот супер-вызов применит новые данные из пакета (вызовет метод load)
-        super.onDataPacket(net, pkt);
+        CompoundTag tag = pkt.getTag();
+        if (tag != null) {
+            load(tag);
+        }
 
         if (level != null && level.isClientSide) {
             Fluid newFluid = getFilterFluid();
@@ -225,19 +224,21 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
             // Проверяем, изменилась ли жидкость, чтобы не перерисовывать чанк лишний раз
             if (oldFluid != newFluid || oldTankFluid != newTankFluid) {
-                // Говорим клиенту обновить ModelData
+                //? if forge {
                 requestModelDataUpdate();
+                //?}
                 // Флаг 8 (Block.UPDATE_CLIENTS) заставляет клиентскую сторону перестроить меш чанка
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
             }
         }
     }
 
-    @Override
     public void handleUpdateTag(CompoundTag tag) {
-        super.handleUpdateTag(tag);
+        load(tag);
         if (level != null && level.isClientSide) {
+            //? if forge {
             requestModelDataUpdate();
+            //?}
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
         }
     }
@@ -341,6 +342,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
     public short getMode() { return mode; }
     public FluidTank getFluidTank() { return fluidTank; }
+    public com.hbm_m.platform.ModItemStackHandler getItemHandler() { return itemHandler; }
     
     private ItemStack[] getSlotsArray() {
         ItemStack[] arr = new ItemStack[6];
@@ -352,7 +354,9 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         for (int i = 0; i < 6; i++) itemHandler.setStackInSlot(i, arr[i]);
     }
 
+    //? if forge {
     @Override
+    //?}
     public AABB getRenderBoundingBox() {
         return new AABB(worldPosition).inflate(3.0D);
     }
@@ -406,6 +410,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         }
     }
 
+    //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
@@ -421,6 +426,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         }
         return super.getCapability(cap, side);
     }
+    //?}
 
     @Override
     public void setAllowedFluidSides(java.util.Set<Direction> sides) {
@@ -439,8 +445,10 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     @Override
     public void setRemoved() {
         super.setRemoved();
+        //? if forge {
         lazyItemHandler.invalidate();
         lazyFluidHandler.invalidate();
+        //?}
     }
 
     @Override
@@ -503,6 +511,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this);
     }
 
+    //? if forge {
     private class NetworkFluidHandlerWrapper implements IFluidHandler {
         private final MachineFluidTankBlockEntity entity;
         private IFluidHandler internal;
@@ -546,4 +555,5 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             return internal.drain(maxDrain, action);
         }
     }
+    //?}
 }

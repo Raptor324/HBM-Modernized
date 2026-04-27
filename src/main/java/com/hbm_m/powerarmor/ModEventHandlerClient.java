@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.powerarmor;
 
 import java.util.HashSet;
@@ -881,6 +882,16 @@ public class ModEventHandlerClient {
      * Рендерит оверлей тепловизора
      */
     public static void onRenderThermalOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+        renderThermalOverlayHud(guiGraphics, partialTick, screenWidth, screenHeight);
+    }
+
+    /**
+     * Loader-agnostic HUD hook для тепловизора.
+     *
+     * Forge: вызывается из {@link #onRenderThermalOverlay(ForgeGui, GuiGraphics, float, int, int)}.
+     * Fabric: вызывается из {@code ClientSetup.initClient()} через HudRenderCallback.
+     */
+    public static void renderThermalOverlayHud(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
 
@@ -917,22 +928,7 @@ public class ModEventHandlerClient {
      */
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onRenderGuiPreBlockLookOverlays(RenderGuiEvent.Pre event) {
-        Minecraft mc = Minecraft.getInstance();
-        LocalPlayer player = mc.player;
-        if (player == null) {
-            return;
-        }
-        HitResult hr = mc.hitResult;
-        Level level = mc.level;
-        if (hr == null || level == null) {
-            return;
-        }
-        if (hr.getType() == HitResult.Type.BLOCK) {
-            BlockHitResult bhr = (BlockHitResult) hr;
-            if (level.getBlockState(bhr.getBlockPos()).getBlock() instanceof ILookOverlay ilo) {
-                ilo.printHook(event, level, bhr.getBlockPos());
-            }
-        }
+        com.hbm_m.client.overlay.BlockLookOverlayHud.render(event.getGuiGraphics());
     }
 
     // TODO: Добавить методы для HUD оверлеев
@@ -1033,3 +1029,4 @@ public class ModEventHandlerClient {
     // TODO: Добавить вспомогательные методы
 
 }
+//?}

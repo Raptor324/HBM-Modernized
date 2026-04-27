@@ -13,8 +13,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.SlotItemHandler;
 import org.jetbrains.annotations.NotNull;
-import com.hbm_m.inventory.ForgeItemHandlerAdapter;
-import com.hbm_m.inventory.ItemStackHandler;
+import com.hbm_m.platform.ForgeItemHandlerAdapter;
 
 public class AnvilMenu extends AbstractContainerMenu {
     
@@ -126,7 +125,7 @@ public class AnvilMenu extends AbstractContainerMenu {
         this.access.execute((level, pos) -> {
             // Выполняем только на сервере
             if (!level.isClientSide) {
-                ItemStackHandler handler = blockEntity.getItemHandler();
+                var handler = blockEntity.getItemHandler();
                 
                 // Проходим только по ВХОДНЫМ слотам (0 и 1)
                 // Слот 2 (выход) пропускаем, чтобы не дюпать результат

@@ -1,6 +1,7 @@
 package com.hbm_m.mixin;
 
 import org.spongepowered.asm.mixin.Mixin;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
@@ -21,6 +22,7 @@ import net.minecraft.world.level.dimension.DimensionType;
 @Mixin(LightTexture.class)
 public class LightTextureMixin {
 
+    @Unique
     private static boolean isFullShaderThermalActive() {
         if (!ModEventHandlerClient.isThermalActive()) {
             return false;

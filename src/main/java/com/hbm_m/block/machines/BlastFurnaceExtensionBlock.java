@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
+import com.hbm_m.platform.NetworkHooksCompat;
 import org.jetbrains.annotations.NotNull;
 
 public class BlastFurnaceExtensionBlock extends Block {
@@ -66,7 +66,7 @@ public class BlastFurnaceExtensionBlock extends Block {
         }
 
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
-            NetworkHooks.openScreen(serverPlayer, furnace, furnacePos);
+            NetworkHooksCompat.openScreen(serverPlayer, furnace, furnacePos);
         }
 
         return InteractionResult.sidedSuccess(level.isClientSide());

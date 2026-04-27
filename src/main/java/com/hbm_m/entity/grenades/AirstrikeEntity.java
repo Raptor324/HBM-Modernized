@@ -22,7 +22,7 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.network.NetworkHooks;
+
 
 public class AirstrikeEntity extends Entity {
 
@@ -321,7 +321,7 @@ public class AirstrikeEntity extends Entity {
     @NotNull
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return NetworkHooks.getEntitySpawningPacket(this);
+        return com.hbm_m.platform.NetworkHooksCompat.getEntitySpawningPacket(this);
     }
 
     @Override public boolean isPickable() { return false; }

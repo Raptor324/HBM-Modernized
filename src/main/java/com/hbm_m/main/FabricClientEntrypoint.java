@@ -1,11 +1,15 @@
 //? if fabric {
+/*package com.hbm_m.main;
 
-/*import net.fabricmc.api.ClientModInitializer;
+import com.hbm_m.client.ClientSetup;
+import com.hbm_m.config.ModConfigKeybindHandler;
+import net.fabricmc.api.ClientModInitializer;
 
 public final class FabricClientEntrypoint implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
-        // TEMP (Fabric compile-only): keep entrypoint minimal while common is being split.
+        ModConfigKeybindHandler.init();
+        ClientSetup.initClient();
     }
 }
 *///?}

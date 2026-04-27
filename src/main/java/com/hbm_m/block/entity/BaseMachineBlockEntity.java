@@ -116,6 +116,24 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
     }
     *///?}
 
+    /** Общий доступ к инвентарю машины (loader-agnostic). */
+    public ModItemStackHandler getInventory() {
+        return inventory;
+    }
+
+    /**
+     * Loader-agnostic дроп содержимого инвентаря.
+     * Используй это вместо Forge-only доступа через ITEM_HANDLER capability.
+     */
+    public void dropInventoryContents() {
+        if (level == null) return;
+        net.minecraft.world.SimpleContainer c = new net.minecraft.world.SimpleContainer(inventory.getSlots());
+        for (int i = 0; i < inventory.getSlots(); i++) {
+            c.setItem(i, inventory.getStackInSlot(i));
+        }
+        net.minecraft.world.Containers.dropContents(level, worldPosition, c);
+    }
+
     /**
      *  ОСНОВНОЙ КОНСТРУКТОР для машин-потребителей.
      * По умолчанию, maxExtract = 0, потому что нехуй высасывать энергию из того, что не
@@ -156,8 +174,6 @@ public abstract class BaseMachineBlockEntity extends BlockEntity implements Menu
             }
         };
     }
-
-    public ModItemStackHandler getInventory() { return this.inventory; }
 
     // --- Абстрактные методы ---
     protected abstract Component getDefaultName();

@@ -7,7 +7,6 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineShredderMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemBlades;
@@ -39,7 +38,14 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
+import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
+//? if fabric {
+/*import team.reborn.energy.api.EnergyStorage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+*///?}
 
 /**
  * Шреддер машина - перерабатывает предметы в пыль/скрап
@@ -124,6 +130,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         }
         if (slot == BATTERY_SLOT) {
             // Разрешаем предметы, которые могут отдавать энергию
+            //? if forge {
             boolean hasHbmEnergy = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
                     .map(provider -> provider.canExtract())
                     .orElse(false);
@@ -133,6 +140,10 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             return stack.getCapability(ForgeCapabilities.ENERGY)
                     .map(storage -> storage.canExtract())
                     .orElse(false);
+            //?}
+            //? if fabric {
+            /*return EnergyStorage.ITEM.find(stack, null) != null;
+            *///?}
         }
         return false;
     }
@@ -158,25 +169,17 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         return tag;
     }
 
+    //? if forge {
     @Override
-    public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket() {
-        CompoundTag tag = new CompoundTag();
-        saveAdditional(tag);
-        return net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket.create(this, be -> tag);
+    public void handleUpdateTag(CompoundTag tag) {
+        load(tag);
     }
-    
-    @Override
-    public void onDataPacket(Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket pkt) {
-        load(pkt.getTag());
-    }
+    //?}
 
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
         progress = tag.getInt("progress");
-        if (tag.contains("power")) {
-            this.setEnergyStored(tag.getLong("power"));
-        }
         if (tag.contains("active")) {
             isActive = tag.getBoolean("active");
             // Обновляем clientIsActive (как в Advanced Assembler)
@@ -330,6 +333,29 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
+        //? if fabric {
+        /*var itemEnergy = EnergyStorage.ITEM.find(batteryStack, null);
+        if (itemEnergy == null || !itemEnergy.supportsExtraction()) {
+            return;
+        }
+
+        long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
+        if (energyNeeded <= 0) return;
+
+        long energyToTransfer = Math.min(energyNeeded, this.getReceiveSpeed());
+        if (energyToTransfer <= 0) return;
+
+        try (Transaction tx = Transaction.openOuter()) {
+            long extracted = itemEnergy.extract(energyToTransfer, tx);
+            if (extracted > 0) {
+                this.setEnergyStored(this.getEnergyStored() + extracted);
+                tx.commit();
+            }
+        }
+        return;
+        *///?}
+
+        //? if forge {
         boolean transferred = batteryStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).map(itemEnergy -> {
             if (!itemEnergy.canExtract()) {
                 return false;
@@ -376,6 +402,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
                 setChanged();
             }
         });
+        //?}
     }
 
     public boolean hasPower() {

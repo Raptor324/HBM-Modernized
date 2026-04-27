@@ -12,6 +12,7 @@ import com.hbm_m.block.entity.machines.BatterySocketBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.platform.NetworkHooksCompat;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -40,9 +41,13 @@ import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.network.NetworkHooks;
+//?}
+//? if forge {
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
+//?}
 /**
  * 2×2×2 multiblock cube.
  */
@@ -172,12 +177,8 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
                 }
             }
             BlockEntity be = level.getBlockEntity(pos);
-            if (be != null) {
-                be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(h -> {
-                    for (int i = 0; i < h.getSlots(); i++) {
-                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), h.getStackInSlot(i));
-                    }
-                });
+            if (be instanceof com.hbm_m.block.entity.BaseMachineBlockEntity machine) {
+                machine.dropInventoryContents();
             }
             helper.destroyStructure(level, pos, facing);
         }
@@ -187,7 +188,7 @@ public class MachineBatterySocketBlock extends BaseEntityBlock implements IMulti
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider provider) {
-            NetworkHooks.openScreen((ServerPlayer) player, provider, pos);
+            NetworkHooksCompat.openScreen((ServerPlayer) player, provider, pos);
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }

@@ -309,9 +309,13 @@ public class ArmorTableMenu extends AbstractContainerMenu {
             super(container, index, x, y);
         }
 
+        private int getModSlotIndex() {
+            return this.index;
+        }
+
         @Override
         public Component getEmptyTooltip() {
-            String key = TOOLTIP_KEYS.getOrDefault(this.getSlotIndex(), "");
+            String key = TOOLTIP_KEYS.getOrDefault(getModSlotIndex(), "");
             return Component.translatable(key).withStyle(ChatFormatting.DARK_PURPLE);
         }
 
@@ -329,7 +333,7 @@ public class ArmorTableMenu extends AbstractContainerMenu {
             }
             
             // Проверка 3: Соответствует ли тип мода этому физическому слоту? (остается)
-            if (mod.type != this.getSlotIndex()) {
+            if (mod.type != getModSlotIndex()) {
                 return false;
             }
             // Проверка 4: Совместим ли мод с ТИПОМ БРОНИ?

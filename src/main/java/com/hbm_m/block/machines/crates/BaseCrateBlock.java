@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
+import com.hbm_m.platform.NetworkHooksCompat;
 
 /**
  * Базовый блок для всех ящиков HBM.
@@ -41,7 +41,7 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
                                  Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof BaseCrateBlockEntity crateEntity) {
             playOpenSound(level, pos);
-            NetworkHooks.openScreen((ServerPlayer) player, crateEntity, pos);
+            NetworkHooksCompat.openScreen((ServerPlayer) player, crateEntity, pos);
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
