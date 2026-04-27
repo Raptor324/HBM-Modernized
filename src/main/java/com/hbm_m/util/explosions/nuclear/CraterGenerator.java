@@ -25,6 +25,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.fml.loading.FMLEnvironment;
 import net.minecraftforge.server.ServerLifecycleHooks;
 
 /**
@@ -228,6 +230,9 @@ public class CraterGenerator {
     }
 
     private static boolean isDebugScreenEnabled() {
+	if (FMLEnvironment.dist != Dist.CLIENT) {
+	    return false;
+	}
         try {
             Minecraft mc = Minecraft.getInstance();
             return mc != null && mc.options.renderDebug;
