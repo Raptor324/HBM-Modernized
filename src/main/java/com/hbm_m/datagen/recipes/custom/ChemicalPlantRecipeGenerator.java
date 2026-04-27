@@ -1,5 +1,5 @@
 package com.hbm_m.datagen.recipes.custom;
-
+//? if forge {
 import java.util.function.Consumer;
 
 import com.hbm_m.api.fluids.ModFluids;
@@ -193,4 +193,4 @@ public final class ChemicalPlantRecipeGenerator {
             .save(writer, "chemplant/chem_kevlar");
     }
 }
-
+//?}

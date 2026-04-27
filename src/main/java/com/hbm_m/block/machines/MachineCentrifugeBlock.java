@@ -11,8 +11,8 @@ import com.hbm_m.block.entity.machines.MachineCentrifugeBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import com.hbm_m.platform.NetworkHooksCompat;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -142,7 +142,7 @@ public class MachineCentrifugeBlock extends BaseEntityBlock implements IMultiblo
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MachineCentrifugeBlockEntity centrifuge) {
-                NetworkHooksCompat.openScreen((ServerPlayer) player, centrifuge, pos);
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, centrifuge, buf -> buf.writeBlockPos(pos));
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

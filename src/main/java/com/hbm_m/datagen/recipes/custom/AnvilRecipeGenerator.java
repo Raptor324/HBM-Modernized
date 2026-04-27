@@ -1,5 +1,5 @@
 package com.hbm_m.datagen.recipes.custom;
-
+//? if forge {
 import java.util.function.Consumer;
 
 import com.hbm_m.block.ModBlocks;
@@ -305,7 +305,5 @@ public final class AnvilRecipeGenerator {
     private static ItemStack stack(Object obj) {
         return stack(obj, 1);
     }
-
-
 }
-
+//?}

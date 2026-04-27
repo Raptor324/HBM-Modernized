@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.client.loader;
 
 import com.google.gson.JsonDeserializationContext;
@@ -146,3 +147,18 @@ public class HeatingOvenModelLoader implements IGeometryLoader<HeatingOvenModelL
         }
     }
 }
+//?}
+
+//? if fabric {
+/*package com.hbm_m.client.loader;
+
+/^*
+ * Fabric: Forge geometry/OBJ pipeline isn't available.
+ * Stub to keep compilation working across loaders.
+ ^/
+public class HeatingOvenModelLoader {
+    public HeatingOvenModelLoader() {
+        throw new UnsupportedOperationException("HeatingOvenModelLoader is not implemented on Fabric yet.");
+    }
+}
+*///?}

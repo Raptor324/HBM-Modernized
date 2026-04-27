@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.client.render;
 
 import com.hbm_m.util.explosions.nuclear.CraterGenerator;
@@ -39,8 +40,6 @@ public class RayVisualizationRenderer {
         PoseStack poseStack = event.getPoseStack();
         MultiBufferSource.BufferSource bufferSource = mc.renderBuffers().bufferSource();
 
-        // ВАЖНОЕ ИЗМЕНЕНИЕ: Используем debugLineStrip(2.0)
-        // Это делает линии толстыми (2 пикселя) и видимыми с ЛЮБОГО угла
         VertexConsumer consumer = bufferSource.getBuffer(RenderType.debugLineStrip(2.0));
 
         poseStack.pushPose();
@@ -50,7 +49,6 @@ public class RayVisualizationRenderer {
         int counter = 0;
 
         for (CraterGenerator.RayData ray : rays) {
-            // Прореживание
             if (counter++ % RENDER_STEP != 0) continue;
 
             float remaining = ray.getRemainingSeconds();
@@ -64,8 +62,6 @@ public class RayVisualizationRenderer {
             float z1 = (float) ray.startZ;
 
             float x2, y2, z2;
-
-            // Логика длины луча
             if (!ray.hitBlocks.isEmpty()) {
                 BlockPos lastHit = ray.hitBlocks.get(ray.hitBlocks.size() - 1);
                 x2 = lastHit.getX() + 0.5f;
@@ -77,14 +73,19 @@ public class RayVisualizationRenderer {
                 z2 = (float) (ray.startZ + ray.dirZ * 100.0);
             }
 
-            // Рисуем линию
             consumer.vertex(matrix, x1, y1, z1).color(0.0f, 1.0f, 1.0f, rayAlpha).normal(0, 1, 0).endVertex();
             consumer.vertex(matrix, x2, y2, z2).color(0.0f, 1.0f, 1.0f, rayAlpha).normal(0, 1, 0).endVertex();
         }
 
         poseStack.popPose();
-
-        // Завершаем батч именно для debugLineStrip
         bufferSource.endBatch(RenderType.debugLineStrip(2.0));
     }
 }
+//?}
+
+//? if fabric {
+/*package com.hbm_m.client.render;
+
+/^* Fabric: Forge render event bus subscriber isn't wired yet. ^/
+public class RayVisualizationRenderer { }
+*///?}

@@ -1,5 +1,5 @@
 package com.hbm_m.datagen.recipes.custom;
-
+//? if forge {
 import java.util.Objects;
 import java.util.function.Consumer;
 
@@ -176,4 +176,4 @@ public class PressRecipeBuilder implements RecipeBuilder {
         }
     }
 }
-
+//?}

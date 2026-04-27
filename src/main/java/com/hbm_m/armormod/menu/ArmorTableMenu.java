@@ -4,6 +4,7 @@ import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.block.ModBlocks;
 
+import com.hbm_m.item.tags_and_tiers.ModTags;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -19,7 +20,6 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.Container;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
-import com.hbm_m.datagen.assets.ModItemTagProvider;
 import com.hbm_m.interfaces.IHasTooltip;
 import com.hbm_m.inventory.menu.ModMenuTypes;
 import com.hbm_m.sound.ModSounds;
@@ -340,10 +340,10 @@ public class ArmorTableMenu extends AbstractContainerMenu {
             ArmorItem.Type armorType = armorItem.getType();
 
             return switch (armorType) {
-                case HELMET -> stack.is(ModItemTagProvider.REQUIRES_HELMET);
-                case CHESTPLATE -> stack.is(ModItemTagProvider.REQUIRES_CHESTPLATE);
-                case LEGGINGS -> stack.is(ModItemTagProvider.REQUIRES_LEGGINGS);
-                case BOOTS -> stack.is(ModItemTagProvider.REQUIRES_BOOTS);
+                case HELMET -> stack.is(ModTags.Items.REQUIRES_HELMET);
+                case CHESTPLATE -> stack.is(ModTags.Items.REQUIRES_CHESTPLATE);
+                case LEGGINGS -> stack.is(ModTags.Items.REQUIRES_LEGGINGS);
+                case BOOTS -> stack.is(ModTags.Items.REQUIRES_BOOTS);
                 default -> false; // На случай будущих типов брони
             };
         }

@@ -5,13 +5,12 @@ import java.util.Locale;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.api.fluids.HbmFluidRegistry;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
 
 /**
  * Утилиты для отрисовки жидкости в GUI так же, как в 1.7.10 {@code FluidType} /
@@ -94,8 +93,11 @@ public final class FluidGuiRendering {
 
     @Nullable
     public static ResourceLocation guiTexturePngForFluid(Fluid fluid, FluidStack stackForStillTexture) {
-        ResourceLocation still = IClientFluidTypeExtensions.of(fluid).getStillTexture(FluidStackHooksForge.toForge(stackForStillTexture));
-        return still == null ? null : texturePngFromStillSpriteId(still);
+        // Loader-agnostic fallback: use our legacy GUI fluid textures by name.
+        // This keeps common code free of Forge-only client extensions.
+        String name = HbmFluidRegistry.getFluidName(fluid);
+        if (name == null || name.isBlank() || "none".equals(name) || "empty".equals(name)) return null;
+        return hbmGuiFluidPng(name);
     }
 
     /**

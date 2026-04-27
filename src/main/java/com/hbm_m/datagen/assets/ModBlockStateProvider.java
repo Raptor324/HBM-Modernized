@@ -1,5 +1,5 @@
 package com.hbm_m.datagen.assets;
-
+//? if forge {
 // Провайдер генерации состояний блоков и моделей для блоков мода.
 // Используется в классе DataGenerators для регистрации.
 import com.hbm_m.block.ModBlocks;
@@ -1496,3 +1496,4 @@ public class ModBlockStateProvider extends BlockStateProvider {
         };
     }
 }
+//?}

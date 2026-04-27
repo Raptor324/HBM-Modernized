@@ -69,6 +69,14 @@ tasks.named("createMinecraftArtifacts") {
 	dependsOn(tasks.named("stonecutterGenerate"))
 }
 
+sourceSets {
+	main {
+		java {
+			exclude("com/hbm_m/datagen/**")
+		}
+	}
+}
+
 stonecutter {
 	val isModern = current.parsed >= "1.21.11"
 

@@ -1,5 +1,5 @@
 package com.hbm_m.datagen.recipes.custom;
-
+//? if forge {
 import java.util.function.Consumer;
 
 import com.hbm_m.block.ModBlocks;
@@ -240,3 +240,4 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "plate_euphemium_from_ingots");
     }
 }
+//?}

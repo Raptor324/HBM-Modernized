@@ -13,8 +13,8 @@ import com.hbm_m.block.entity.machines.LaunchPadBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import com.hbm_m.platform.NetworkHooksCompat;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
@@ -122,7 +122,7 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
             if (pLevel.getBlockEntity(pPos) instanceof MenuProvider provider) {
-                NetworkHooksCompat.openScreen((ServerPlayer) pPlayer, provider, pPos);
+                MenuRegistry.openExtendedMenu((ServerPlayer) pPlayer, provider, buf -> buf.writeBlockPos(pPos));
             }
         }
         return InteractionResult.sidedSuccess(pLevel.isClientSide());

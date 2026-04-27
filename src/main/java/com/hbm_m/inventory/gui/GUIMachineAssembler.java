@@ -3,8 +3,6 @@ package com.hbm_m.inventory.gui;
 import java.util.ArrayList;
 import java.util.List;
 
-import javax.annotation.Nonnull;
-
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.inventory.menu.MachineAssemblerMenu;

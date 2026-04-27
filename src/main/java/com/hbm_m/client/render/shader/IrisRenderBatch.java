@@ -1,6 +1,7 @@
 package com.hbm_m.client.render.shader;
 
 
+
 import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.GL11;
@@ -17,8 +18,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+
 
 /**
  * Per-block-entity batching session for the Iris {@code ExtendedShader} render path.
@@ -55,10 +55,14 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * actually emits {@code shader.clear()}.
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+@Environment(EnvType.CLIENT)*///?}
 public final class IrisRenderBatch implements AutoCloseable {
 
     private static final IrisRenderBatch INSTANCE = new IrisRenderBatch();

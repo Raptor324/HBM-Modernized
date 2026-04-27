@@ -15,11 +15,14 @@ import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
+//? if forge {
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
@@ -42,10 +45,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
-import com.hbm_m.platform.NetworkHooksCompat;
 
 public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -133,7 +132,7 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
             if (pLevel.getBlockEntity(pPos) instanceof MenuProvider provider) {
-                NetworkHooksCompat.openScreen((ServerPlayer) pPlayer, provider, pPos);
+                MenuRegistry.openExtendedMenu((ServerPlayer) pPlayer, provider, buf -> buf.writeBlockPos(pPos));
             }
         }
         return InteractionResult.sidedSuccess(pLevel.isClientSide());

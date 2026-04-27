@@ -17,7 +17,11 @@ import com.hbm_m.recipe.CentrifugeRecipes.RecipeInput;
 import com.hbm_m.recipe.ChemicalPlantRecipes;
 import com.hbm_m.recipe.ChemicalPlantRecipes.ChemicalRecipe;
 
-import net.minecraftforge.fluids.FluidStack;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.ItemStack;
+
+//? if forge {
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
@@ -25,9 +29,7 @@ import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.ISubtypeRegistration;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.item.ItemStack;
+import net.minecraftforge.fluids.FluidStack;
 
 @JeiPlugin
 public class HbmJeiPlugin implements IModPlugin {
@@ -132,3 +134,7 @@ public class HbmJeiPlugin implements IModPlugin {
         return recipes;
     }
 }
+//?} else {
+/*public final class HbmJeiPlugin {
+    private HbmJeiPlugin() {}
+}*///?}

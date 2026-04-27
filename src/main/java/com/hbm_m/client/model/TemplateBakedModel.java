@@ -1,5 +1,6 @@
 package com.hbm_m.client.model;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -13,19 +14,23 @@ import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.multiplayer.ClientLevel;
+import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.Direction;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.model.BakedModelWrapper;
 
-public class TemplateBakedModel extends BakedModelWrapper<BakedModel> {
+public class TemplateBakedModel implements BakedModel {
+
+    private final BakedModel originalModel;
 
     private final TemplateItemOverrides itemOverrides;
 
     public TemplateBakedModel(BakedModel originalModel) {
-        super(originalModel);
+        this.originalModel = originalModel;
         this.itemOverrides = new TemplateItemOverrides();
     }
 
@@ -33,6 +38,41 @@ public class TemplateBakedModel extends BakedModelWrapper<BakedModel> {
     @Override
     public ItemOverrides getOverrides() {
         return this.itemOverrides;
+    }
+
+    @Override
+    public List<BakedQuad> getQuads(@Nullable net.minecraft.world.level.block.state.BlockState state, @Nullable Direction side, RandomSource rand) {
+        return originalModel.getQuads(state, side, rand);
+    }
+
+    @Override
+    public boolean useAmbientOcclusion() {
+        return originalModel.useAmbientOcclusion();
+    }
+
+    @Override
+    public boolean isGui3d() {
+        return originalModel.isGui3d();
+    }
+
+    @Override
+    public boolean usesBlockLight() {
+        return originalModel.usesBlockLight();
+    }
+
+    @Override
+    public boolean isCustomRenderer() {
+        return originalModel.isCustomRenderer();
+    }
+
+    @Override
+    public net.minecraft.client.renderer.texture.TextureAtlasSprite getParticleIcon() {
+        return originalModel.getParticleIcon();
+    }
+
+    @Override
+    public net.minecraft.client.renderer.block.model.ItemTransforms getTransforms() {
+        return originalModel.getTransforms();
     }
 
     private static class TemplateItemOverrides extends ItemOverrides {

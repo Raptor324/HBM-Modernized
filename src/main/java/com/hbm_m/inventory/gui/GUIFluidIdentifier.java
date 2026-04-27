@@ -12,6 +12,7 @@ import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.FluidIdentifierControlPacket;
 
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
@@ -23,18 +24,21 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+
 
 /**
  * GUI for selecting primary/secondary fluid in the fluid identifier.
  * LMB: set primary. RMB: set secondary.
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+@Environment(EnvType.CLIENT)*///?}
 public class GUIFluidIdentifier extends Screen {
 
     private static final ResourceLocation TEXTURE =

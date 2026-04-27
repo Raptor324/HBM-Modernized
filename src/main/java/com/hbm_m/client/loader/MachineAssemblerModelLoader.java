@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.client.loader;
 
 import java.util.HashMap;
@@ -161,3 +162,18 @@ public class MachineAssemblerModelLoader implements IGeometryLoader<MachineAssem
         }
     }
 }
+//?}
+
+//? if fabric {
+/*package com.hbm_m.client.loader;
+
+/^*
+ * Fabric: Forge geometry/OBJ pipeline isn't available.
+ * Stub to keep compilation working across loaders.
+ ^/
+public class MachineAssemblerModelLoader {
+    public MachineAssemblerModelLoader() {
+        throw new UnsupportedOperationException("MachineAssemblerModelLoader is not implemented on Fabric yet.");
+    }
+}
+*///?}

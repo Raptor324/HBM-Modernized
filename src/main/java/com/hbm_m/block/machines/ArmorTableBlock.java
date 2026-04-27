@@ -1,6 +1,12 @@
 package com.hbm_m.block.machines;
 
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.armormod.menu.ArmorTableMenu;
+
 // Этот класс реализует блок стола модификации брони
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,12 +22,6 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import com.hbm_m.platform.NetworkHooksCompat;
-
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import com.hbm_m.armormod.menu.ArmorTableMenu;
 
 public class ArmorTableBlock extends BaseEntityBlock {
 
@@ -59,7 +59,7 @@ public class ArmorTableBlock extends BaseEntityBlock {
                 }
             };
             // Открываем GUI с помощью NetworkHooks, который правильно обрабатывает передачу данных
-            NetworkHooksCompat.openScreen((ServerPlayer) pPlayer, menuProvider, pPos);
+            MenuRegistry.openExtendedMenu((ServerPlayer) pPlayer, menuProvider, buf -> buf.writeBlockPos(pPos));
 
         }
         return InteractionResult.SUCCESS;

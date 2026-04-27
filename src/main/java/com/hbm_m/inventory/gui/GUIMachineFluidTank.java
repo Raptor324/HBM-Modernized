@@ -14,7 +14,6 @@ import com.hbm_m.network.FluidTankModePacket;
 import com.hbm_m.network.ModPacketHandler;
 import com.mojang.blaze3d.systems.RenderSystem;
 
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -25,7 +24,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
+import dev.architectury.fluid.FluidStack;
 
 public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTankMenu> {
 
@@ -83,15 +82,14 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
 
         Fluid fluid = fluidStack.getFluid();
         
-        // Получаем tint цвет - сначала пробуем HbmFluidRegistry для кастомных жидкостей
-        int fluidColor = getFluidTintColor(fluid);
+        // Для GUI используем наши HBM-палитры и текстуры (loader-agnostic).
+        int fluidColor = HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
         float r = (fluidColor >> 16 & 255) / 255.0F;
         float g = (fluidColor >> 8 & 255) / 255.0F;
         float b = (fluidColor & 255) / 255.0F;
-        float a = ((fluidColor >> 24) & 255) / 255.0F;
-        if (a == 0) a = 1.0F; // Если alpha не задана, используем 1.0
+        float a = 1.0F;
 
-        ResourceLocation fluidPng = FluidGuiRendering.guiTexturePngForFluid(fluid, dev.architectury.hooks.fluid.forge.FluidStackHooksForge.fromForge(fluidStack));
+        ResourceLocation fluidPng = FluidGuiRendering.guiTexturePngForFluid(fluid, fluidStack);
         if (fluidPng == null) return;
 
         RenderSystem.enableBlend();
@@ -108,24 +106,10 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
     }
 
     /**
-     * Получает tint цвет для жидкости.
-     * Сначала проверяет HbmFluidRegistry для кастомных жидкостей HBM,
-     * затем использует стандартный метод Forge.
+     * Старый Forge-only путь для tint/текстур больше не используется:
+     * GUI рендерит жидкости по нашему реестру/текстурам.
      */
-    private int getFluidTintColor(Fluid fluid) {
-        // Для кастомных жидкостей HBM используем HbmFluidRegistry
-        String fluidName = HbmFluidRegistry.getFluidName(fluid);
-        if (fluidName != null && !fluidName.equals("none") && !fluidName.equals("empty")) {
-            int hbmColor = HbmFluidRegistry.getTintColor(fluid);
-            if (hbmColor != 0xFFFFFF) {
-                return hbmColor;
-            }
-        }
-        
-        // Для ванильных и других жидкостей используем Forge API
-        IClientFluidTypeExtensions fluidProps = IClientFluidTypeExtensions.of(fluid);
-        return fluidProps.getTintColor();
-    }
+    // (intentionally no fallback)
 
     private void renderFluidTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         if (!isHovering(tankX, tankY, tankWidth, tankHeight, mouseX, mouseY)) return;
@@ -136,7 +120,7 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
         int pressure = this.menu.getPressure();
 
         if (!fluid.isEmpty()) {
-            lines.add(fluid.getDisplayName());
+            lines.add(Component.literal(HbmFluidRegistry.getFluidName(fluid.getFluid())));
             lines.add(Component.literal(fluid.getAmount() + " / " + tankCapacity + " mB"));
             appendPressureLines(lines, pressure);
             FluidTraitManager.appendFluidTypeTooltip(fluid.getFluid(), shift, lines);
@@ -147,7 +131,7 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
             if (tankType == ModFluids.NONE.getSource()) {
                 lockedTypeName = Component.translatable("fluid.hbm_m.none");
             } else if (tankType != null && tankType != Fluids.EMPTY) {
-                lockedTypeName = Component.translatable(tankType.getFluidType().getDescriptionId());
+                lockedTypeName = Component.literal(HbmFluidRegistry.getFluidName(tankType));
             }
             if (lockedTypeName != null) {
                 lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty_locked", lockedTypeName));
@@ -162,7 +146,7 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
                     Fluid filterFluid = BuiltInRegistries.FLUID.byId(filterId);
                     if (filterFluid != null && filterFluid != Fluids.EMPTY) {
                         lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty_filter",
-                                Component.translatable(filterFluid.getFluidType().getDescriptionId())));
+                                Component.literal(HbmFluidRegistry.getFluidName(filterFluid))));
                         appendPressureLines(lines, pressure);
                         FluidTraitManager.appendFluidTypeTooltip(filterFluid, shift, lines);
                     } else {

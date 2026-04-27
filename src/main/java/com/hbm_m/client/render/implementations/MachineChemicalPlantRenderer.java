@@ -40,10 +40,18 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.phys.AABB;
+
+//? if forge {
+import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
+//?}
+
+//? if fabric {
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+import net.fabricmc.fabric.api.client.render.fluid.v1.FluidRenderHandlerRegistry;*///?}
 //? if forge {
 @OnlyIn(Dist.CLIENT)
 //?}
@@ -272,10 +280,14 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         return distanceSquared > thresholdBlocks * thresholdBlocks;
     }
 
+    //? if forge {
     public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
         flushInstanced(event, instancedBase);
         flushInstanced(event, instancedFrame);
     }
+    //?} else {
+    /*public static void flushInstancedBatches(Object ignored) {
+    }*///?}
 
     public static void clearCaches() {
         cleanupInstanced(instancedBase);
@@ -289,10 +301,12 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         if (r != null) r.cleanup();
     }
 
+    //? if forge {
     private static void flushInstanced(net.minecraftforge.client.event.RenderLevelStageEvent event,
                                        InstancedStaticPartRenderer r) {
         if (r != null) r.flush(event);
     }
+    //?}
 
     private record ChemicalPlantRecipeVisual(FluidStack textureFluid, float r, float g, float b) {}
 
@@ -330,7 +344,12 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         float rr = 0, gg = 0, bb = 0;
         for (FluidStack fs : colorFluids) {
             if (fs.isEmpty()) continue;
-            int tint = IClientFluidTypeExtensions.of(fs.getFluid()).getTintColor(FluidStackHooksForge.toForge(fs));
+            int tint =
+                //? if forge {
+                IClientFluidTypeExtensions.of(fs.getFluid()).getTintColor(FluidStackHooksForge.toForge(fs));
+                //?} else {
+                /*com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(fs.getFluid());
+                *///?}
             rr += ((tint >> 16) & 0xFF) / 255.0F;
             gg += ((tint >> 8) & 0xFF) / 255.0F;
             bb += (tint & 0xFF) / 255.0F;
@@ -362,13 +381,20 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
     private static void renderSwirl(MachineChemicalPlantBlockEntity blockEntity, float partialTick, PoseStack poseStack,
                                     MultiBufferSource buffer, int packedLight, int packedOverlay, ChemicalPlantRecipeVisual visual) {
         FluidStack fluid = visual.textureFluid();
+        //? if forge {
         IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid.getFluid());
         var stillTexture = ext.getStillTexture(FluidStackHooksForge.toForge(fluid));
-        if (stillTexture == null) {
-            return;
-        }
-
+        if (stillTexture == null) return;
         var sprite = Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
+        //?} else {
+        /*var mc = Minecraft.getInstance();
+        if (mc.level == null) return;
+        var handler = FluidRenderHandlerRegistry.INSTANCE.get(fluid.getFluid());
+        if (handler == null) return;
+        var sprites = handler.getFluidSprites(mc.level, BlockPos.ZERO, fluid.getFluid().defaultFluidState());
+        if (sprites == null || sprites.length == 0 || sprites[0] == null) return;
+        var sprite = sprites[0];
+        *///?}
         float red = visual.r();
         float green = visual.g();
         float blue = visual.b();

@@ -1,8 +1,6 @@
 package com.hbm_m.datagen;
-
+//? if forge {
 import java.util.concurrent.CompletableFuture;
-
-import javax.annotation.Nonnull;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -96,3 +94,4 @@ public class ModDamageTypeTagProvider extends DamageTypeTagsProvider {
         // DamageTypeTags.BYPASSES_RESISTANCE
     }
 }
+//?}

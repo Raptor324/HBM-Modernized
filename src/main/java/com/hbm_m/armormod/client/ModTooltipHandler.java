@@ -1,8 +1,8 @@
 package com.hbm_m.armormod.client;
 
 import com.hbm_m.armormod.item.ItemArmorMod;
-import com.hbm_m.datagen.assets.ModItemTagProvider;
 
+import com.hbm_m.item.tags_and_tiers.ModTags;
 import dev.architectury.event.events.client.ClientTooltipEvent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -50,10 +50,10 @@ public class ModTooltipHandler {
         // Секция "Применяется к:"
         tooltip.add(Component.translatable("tooltip.hbm_m.applies_to").withStyle(ChatFormatting.DARK_PURPLE));
 
-        boolean requiresHelmet = stack.is(ModItemTagProvider.REQUIRES_HELMET);
-        boolean requiresChestplate = stack.is(ModItemTagProvider.REQUIRES_CHESTPLATE);
-        boolean requiresLeggings = stack.is(ModItemTagProvider.REQUIRES_LEGGINGS);
-        boolean requiresBoots = stack.is(ModItemTagProvider.REQUIRES_BOOTS);
+        boolean requiresHelmet = stack.is(ModTags.Items.REQUIRES_HELMET);
+        boolean requiresChestplate = stack.is(ModTags.Items.REQUIRES_CHESTPLATE);
+        boolean requiresLeggings = stack.is(ModTags.Items.REQUIRES_LEGGINGS);
+        boolean requiresBoots = stack.is(ModTags.Items.REQUIRES_BOOTS);
 
         if (requiresHelmet && requiresChestplate && requiresLeggings && requiresBoots) {
             tooltip.add(Component.literal("  ").append(Component.translatable("tooltip.hbm_m.armor.all")).withStyle(ChatFormatting.GRAY));

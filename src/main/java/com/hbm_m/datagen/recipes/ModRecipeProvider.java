@@ -2,8 +2,6 @@ package com.hbm_m.datagen.recipes;
 
 import java.util.function.Consumer;
 
-import javax.annotation.Nonnull;
-
 import org.jetbrains.annotations.NotNull;
 
 // Провайдер генерации рецептов крафта для мода.

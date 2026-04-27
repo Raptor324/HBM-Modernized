@@ -1,5 +1,5 @@
 package com.hbm_m.datagen.recipes.custom;
-
+//? if forge {
 import com.hbm_m.datagen.recipes.ModRecipeProvider;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.tags_and_tiers.ModPowders;
@@ -97,4 +97,4 @@ public final class BlastFurnaceRecipeGenerator {
 
     }
 }
-
+//?}

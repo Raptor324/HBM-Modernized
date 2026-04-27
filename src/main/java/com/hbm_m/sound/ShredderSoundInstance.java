@@ -1,13 +1,7 @@
 package com.hbm_m.sound;
 
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
 
-import dev.architectury.utils.Env;
 import net.minecraft.client.resources.sounds.AbstractTickableSoundInstance;
 import net.minecraft.client.resources.sounds.SoundInstance;
 import net.minecraft.core.BlockPos;
@@ -19,10 +13,14 @@ import net.minecraft.sounds.SoundSource;
  * Использует AbstractTickableSoundInstance для управления воспроизведением и остановкой звука.
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+@Environment(EnvType.CLIENT)*///?}
 public class ShredderSoundInstance extends AbstractTickableSoundInstance {
 
     public ShredderSoundInstance(BlockPos pos) {

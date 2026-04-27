@@ -1,8 +1,12 @@
 package com.hbm_m.block.machines;
 
+import org.jetbrains.annotations.NotNull;
+
 // Верхняя часть доменной печи. Ускоряет работу при установке и пробрасывает интерфейс блока ниже.
 
 import com.hbm_m.block.entity.machines.BlastFurnaceBlockEntity;
+
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -14,12 +18,10 @@ import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.BlockHitResult;
-import com.hbm_m.platform.NetworkHooksCompat;
-import org.jetbrains.annotations.NotNull;
 
 public class BlastFurnaceExtensionBlock extends Block {
 
@@ -66,7 +68,7 @@ public class BlastFurnaceExtensionBlock extends Block {
         }
 
         if (!level.isClientSide() && player instanceof ServerPlayer serverPlayer) {
-            NetworkHooksCompat.openScreen(serverPlayer, furnace, furnacePos);
+            MenuRegistry.openExtendedMenu(serverPlayer, furnace, buf -> buf.writeBlockPos(furnacePos));
         }
 
         return InteractionResult.sidedSuccess(level.isClientSide());

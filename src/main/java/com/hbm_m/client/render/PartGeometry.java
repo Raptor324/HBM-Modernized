@@ -24,7 +24,9 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
+//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
+//?}
 
 /**
  * Один проход {@link BakedModel#getQuads} для multipart-части: общий список квадов (Iris / putBulkData)
@@ -78,11 +80,21 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
         RandomSource random = RandomSource.create(BAKE_SEED);
 
         random.setSeed(BAKE_SEED);
+        //? if forge {
         quads.addAll(modelPart.getQuads(null, null, random, ModelData.EMPTY, RenderType.solid()));
+        //?}
+        //? if fabric {
+        /*quads.addAll(modelPart.getQuads(null, null, random));
+        *///?}
 
         for (Direction direction : Direction.values()) {
             random.setSeed(BAKE_SEED);
+            //? if forge {
             quads.addAll(modelPart.getQuads(null, direction, random, ModelData.EMPTY, RenderType.solid()));
+            //?}
+            //? if fabric {
+            /*quads.addAll(modelPart.getQuads(null, direction, random));
+            *///?}
         }
 
         return quads.isEmpty() ? List.of() : Collections.unmodifiableList(quads);

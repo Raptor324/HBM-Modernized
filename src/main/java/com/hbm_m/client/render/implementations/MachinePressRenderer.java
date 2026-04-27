@@ -269,9 +269,11 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
         }
     }
 
+    //? if forge {
     public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
         if (instancedHead != null) instancedHead.flush(event);
     }
+    //?}
 
     public static void clearCaches() {
         if (instancedHead != null) {

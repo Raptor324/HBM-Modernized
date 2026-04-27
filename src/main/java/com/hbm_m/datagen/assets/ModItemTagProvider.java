@@ -1,7 +1,8 @@
 package com.hbm_m.datagen.assets;
-
+//? if forge {
 import java.util.concurrent.CompletableFuture;
 
+import com.hbm_m.item.tags_and_tiers.ModTags;
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.item.ModItems;
@@ -23,123 +24,9 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.common.data.ExistingFileHelper;
 
+import static com.hbm_m.item.tags_and_tiers.ModTags.Items.*;
+
 public class ModItemTagProvider extends ItemTagsProvider {
-
-    // Теги, определяющие, в какой ФИЗИЧЕСКИЙ СЛОТ можно положить предмет
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> UPGRADE_MODULES = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "upgrade_modules"));
-    *///?} else {
-        public static final TagKey<Item> UPGRADE_MODULES = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "upgrade_modules"));
-    //?}
-
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> SLOT_HELMET_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_helmet"));
-    *///?} else {
-        public static final TagKey<Item> SLOT_HELMET_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_helmet"));
-    //?}
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> SLOT_CHESTPLATE_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_chestplate"));
-    *///?} else {
-        public static final TagKey<Item> SLOT_CHESTPLATE_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_chestplate"));
-    //?}
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> SLOT_LEGGINGS_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_leggings"));
-    *///?} else {
-        public static final TagKey<Item> SLOT_LEGGINGS_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_leggings"));
-    //?}
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> SLOT_BOOTS_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_boots"));
-    *///?} else {
-        public static final TagKey<Item> SLOT_BOOTS_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_boots"));
-    //?}
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> SLOT_SERVOS_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_servos"));
-    *///?} else {
-        public static final TagKey<Item> SLOT_SERVOS_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_servos"));
-    //?}
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> SLOT_CLADDING_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_cladding"));
-    *///?} else {
-        public static final TagKey<Item> SLOT_CLADDING_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_cladding"));
-    //?}
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> SLOT_SPECIAL_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_special"));
-    *///?} else {
-        public static final TagKey<Item> SLOT_SPECIAL_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_special"));
-    //?}
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> SLOT_BATTERY_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_battery"));
-    *///?} else {
-        public static final TagKey<Item> SLOT_BATTERY_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_battery"));
-    //?}
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> SLOT_INSERT_MODS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/slot_insert"));
-    *///?} else {
-        public static final TagKey<Item> SLOT_INSERT_MODS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/slot_insert"));
-    //?}
-
-
-    // Теги, определяющие, с каким ТИПОМ БРОНИ совместим предмет
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> REQUIRES_HELMET = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/requires_helmet"));
-    *///?} else {
-        public static final TagKey<Item> REQUIRES_HELMET = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_helmet"));
-    //?}
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> REQUIRES_CHESTPLATE = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/requires_chestplate"));
-    *///?} else {
-        public static final TagKey<Item> REQUIRES_CHESTPLATE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_chestplate"));
-    //?}
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> REQUIRES_LEGGINGS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/requires_leggings"));
-    *///?} else {
-        public static final TagKey<Item> REQUIRES_LEGGINGS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_leggings"));
-    //?}
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> REQUIRES_BOOTS = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "mods/requires_boots"));
-    *///?} else {
-        public static final TagKey<Item> REQUIRES_BOOTS = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "mods/requires_boots"));
-    //?}
-
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> BLADES = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "blades"));
-    *///?} else {
-        public static final TagKey<Item> BLADES = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blades"));
-    //?}
-
-
-    // Теги для штампов пресса
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> STAMPS_PLATE = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "stamps/plate"));
-    *///?} else {
-        public static final TagKey<Item> STAMPS_PLATE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "stamps/plate"));
-    //?}
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> STAMPS_WIRE = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "stamps/wire"));
-    *///?} else {
-        public static final TagKey<Item> STAMPS_WIRE = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "stamps/wire"));
-    //?}
-
-    //? if fabric && < 1.21.1 {
-    /*public static final TagKey<Item> STAMPS_CIRCUIT = TagKey.create(Registries.ITEM, new ResourceLocation(RefStrings.MODID, "stamps/circuit"));
-    *///?} else {
-        public static final TagKey<Item> STAMPS_CIRCUIT = TagKey.create(Registries.ITEM, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "stamps/circuit"));
-    //?}
-
 
     public ModItemTagProvider(PackOutput packOutput, CompletableFuture<HolderLookup.Provider> lookupProvider, CompletableFuture<TagLookup<Block>> blockTagsProvider, ExistingFileHelper existingFileHelper) {
         super(packOutput, lookupProvider, blockTagsProvider, RefStrings.MODID, existingFileHelper);
@@ -261,7 +148,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
 
 
-        this.tag(BLADES)
+        this.tag(ModTags.Items.BLADES)
                 .add(ModItems.BLADE_STEEL.get())
                 .add(ModItems.BLADE_TITANIUM.get())
                 .add(ModItems.BLADE_ALLOY.get())
@@ -269,7 +156,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
         // ТЕГИ ДЛЯ ШТАМПОВ ПРЕССА
 
         // Все штампы пластин
-        this.tag(STAMPS_PLATE)
+        this.tag(ModTags.Items.STAMPS_PLATE)
                 .add(ModItems.STAMP_STONE_PLATE.get())
                 .add(ModItems.STAMP_IRON_PLATE.get())
                 .add(ModItems.STAMP_STEEL_PLATE.get())
@@ -278,7 +165,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.STAMP_DESH_PLATE.get());
 
         // Все штампы проводов
-        this.tag(STAMPS_WIRE)
+        this.tag(ModTags.Items.STAMPS_WIRE)
                 .add(ModItems.STAMP_STONE_WIRE.get())
                 .add(ModItems.STAMP_IRON_WIRE.get())
                 .add(ModItems.STAMP_STEEL_WIRE.get())
@@ -287,7 +174,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.STAMP_DESH_WIRE.get());
 
         // Все штампы микросхем
-        this.tag(STAMPS_CIRCUIT)
+        this.tag(ModTags.Items.STAMPS_CIRCUIT)
                 .add(ModItems.STAMP_STONE_CIRCUIT.get())
                 .add(ModItems.STAMP_IRON_CIRCUIT.get())
                 .add(ModItems.STAMP_STEEL_CIRCUIT.get())
@@ -295,7 +182,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.STAMP_OBSIDIAN_CIRCUIT.get())
                 .add(ModItems.STAMP_DESH_CIRCUIT.get());
 
-        this.tag(REQUIRES_HELMET)
+        this.tag(ModTags.Items.REQUIRES_HELMET)
                 .add(ModItems.GHIORSIUM_CLADDING.get())
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
@@ -310,7 +197,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.ARMOR_BATTERY_MK2.get())
                 .add(ModItems.ARMOR_BATTERY_MK3.get());
 
-        this.tag(REQUIRES_CHESTPLATE)
+        this.tag(ModTags.Items.REQUIRES_CHESTPLATE)
                 .add(ModItems.HEART_PIECE.get())
                 .add(ModItems.HEART_CONTAINER.get())
                 .add(ModItems.HEART_BOOSTER.get())
@@ -330,7 +217,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.ARMOR_BATTERY_MK2.get())
                 .add(ModItems.ARMOR_BATTERY_MK3.get());
 
-        this.tag(REQUIRES_LEGGINGS)
+        this.tag(ModTags.Items.REQUIRES_LEGGINGS)
                 .add(ModItems.GHIORSIUM_CLADDING.get())
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
@@ -345,7 +232,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.ARMOR_BATTERY_MK2.get())
                 .add(ModItems.ARMOR_BATTERY_MK3.get());
 
-        this.tag(REQUIRES_BOOTS)
+        this.tag(ModTags.Items.REQUIRES_BOOTS)
                 .add(ModItems.GHIORSIUM_CLADDING.get())
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
@@ -368,7 +255,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.HEART_FAB.get())
                 .add(ModItems.BLACK_DIAMOND.get());
 
-        this.tag(SLOT_CLADDING_MODS)
+        this.tag(ModTags.Items.SLOT_CLADDING_MODS)
                 .add(ModItems.GHIORSIUM_CLADDING.get())
                 .add(ModItems.DESH_CLADDING.get())
                 .add(ModItems.LEAD_CLADDING.get())
@@ -376,11 +263,11 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 .add(ModItems.PAINT_CLADDING.get());
 
 
-        this.tag(SLOT_HELMET_MODS);
-        this.tag(SLOT_CHESTPLATE_MODS);
-        this.tag(SLOT_LEGGINGS_MODS);
-        this.tag(SLOT_BOOTS_MODS);
-        this.tag(SLOT_SERVOS_MODS);
+        this.tag(ModTags.Items.SLOT_HELMET_MODS);
+        this.tag(ModTags.Items.SLOT_CHESTPLATE_MODS);
+        this.tag(ModTags.Items.SLOT_LEGGINGS_MODS);
+        this.tag(ModTags.Items.SLOT_BOOTS_MODS);
+        this.tag(ModTags.Items.SLOT_SERVOS_MODS);
         
         this.tag(SLOT_BATTERY_MODS)
                 .add(ModItems.ARMOR_BATTERY.get())
@@ -389,7 +276,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 
         this.tag(SLOT_INSERT_MODS);
 
-        this.tag(UPGRADE_MODULES)
+        this.tag(ModTags.Items.UPGRADE_MODULES)
                 .addTag(SLOT_HELMET_MODS)
                 .addTag(SLOT_CHESTPLATE_MODS)
                 .addTag(SLOT_LEGGINGS_MODS)
@@ -439,3 +326,4 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 ModItems.ALLOY_BOOTS.get());
     }
 }
+//?}

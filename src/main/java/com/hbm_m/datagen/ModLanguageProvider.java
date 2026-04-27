@@ -1,5 +1,5 @@
 package com.hbm_m.datagen;
-
+//? if forge {
 import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
 import static com.hbm_m.block.ModBlocks.getIngotBlock;
 
@@ -3597,3 +3597,4 @@ public class ModLanguageProvider extends LanguageProvider {
         }
     }
 }
+//?}

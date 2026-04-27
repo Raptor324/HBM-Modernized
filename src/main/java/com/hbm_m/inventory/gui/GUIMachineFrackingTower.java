@@ -5,19 +5,20 @@ import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
 
-import com.hbm_m.api.fluids.ModFluids;
+import com.hbm_m.api.fluids.HbmFluidRegistry;
+import com.hbm_m.client.gui.FluidGuiRendering;
 import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
 import com.hbm_m.inventory.menu.MachineFrackingTowerMenu;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.ModFluidTank;
 
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraftforge.fluids.capability.IFluidHandler;
+import dev.architectury.fluid.FluidStack;
 
 /**
  * GUI Screen для Fracking Tower (Гидроразрывная вышка).
@@ -274,75 +275,31 @@ public class GUIMachineFrackingTower extends AbstractContainerScreen<MachineFrac
      * Рендер отдельного танка жидкости.
      * Жидкость рендерится снизу вверх.
      */
-    private void renderFluidTank(GuiGraphics graphics, int x, int y, int width, int height, IFluidHandler tank) {
-        FluidStack fluid = tank.getFluidInTank(0);
-        if (fluid.isEmpty()) return;
+    private void renderFluidTank(GuiGraphics graphics, int x, int y, int width, int height, ModFluidTank tank) {
+        Fluid fluid = tank.getStoredFluid();
+        int amountMb = tank.getFluidAmountMb();
+        int capacityMb = tank.getCapacityMb();
+        if (fluid == net.minecraft.world.level.material.Fluids.EMPTY || amountMb <= 0 || capacityMb <= 0) return;
 
-        int amount = fluid.getAmount();
-        int capacity = tank.getTankCapacity(0);
-        int fillHeight = (int) (height * (float) amount / capacity);
-
+        int fillHeight = (int) (height * (float) amountMb / (float) capacityMb);
         if (fillHeight <= 0) return;
 
-        // Рендер жидкости
-        Fluid fluidType = fluid.getFluid();
-        renderFluid(graphics, x, y, width, fillHeight, fluidType, amount, capacity);
-    }
-
-    /**
-     * Рендер текстуры жидкости.
-     */
-    private void renderFluid(GuiGraphics graphics, int x, int y, int width, int fillHeight, 
-                             Fluid fluid, int amount, int capacity) {
-        // Получаем tint цвет из ModFluids
-        int tintColor = ModFluids.getTintColor(getFluidName(fluid));
-        
-        // Получаем текстуру жидкости
-        ResourceLocation texture = getFluidTexture(fluid);
-        
-        // Устанавливаем цвет
+        int tintColor = HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
         float r = ((tintColor >> 16) & 0xFF) / 255.0f;
         float g = ((tintColor >> 8) & 0xFF) / 255.0f;
         float b = (tintColor & 0xFF) / 255.0f;
-        
-        graphics.setColor(r, g, b, 1.0f);
-        
-        // Рендер текстуры жидкости (тайлами)
-        int tiles = (fillHeight + 16) / 16;
-        for (int tile = 0; tile < tiles; tile++) {
-            int tileHeight = Math.min(16, fillHeight - tile * 16);
-            int tileY = y - tile * 16 - tileHeight;
-            
-            graphics.blit(texture, x, tileY, width, tileHeight, 
-                    0, 16 - tileHeight, 16, tileHeight, 16, 16);
-        }
-        
-        graphics.setColor(1.0f, 1.0f, 1.0f, 1.0f);
-    }
 
-    /**
-     * Получение текстуры для жидкости.
-     */
-    private ResourceLocation getFluidTexture(Fluid fluid) {
-        String fluidName = getFluidName(fluid);
-        //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(MainRegistry.MOD_ID, "block/fluids/" + fluidName);
-        *///?} else {
-                return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/fluids/" + fluidName);
-        //?}
+        ResourceLocation texture = FluidGuiRendering.guiTexturePngForFluid(fluid, FluidStack.create(fluid, (long) amountMb));
+        if (texture == null) return;
 
-    }
+        com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+        com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
+        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(r, g, b, 1.0f);
 
-    /**
-     * Получение имени жидкости для текстуры.
-     */
-    private String getFluidName(Fluid fluid) {
-        // Маппинг на имена из ModFluids
-        String path = fluid.toString().toLowerCase();
-        if (path.contains("crude_oil") || path.contains("oil")) return "crude_oil";
-        if (path.contains("gas")) return "gas";
-        if (path.contains("fracksol")) return "fracksol";
-        return "none";
+        FluidGuiRendering.renderTiledFluid(graphics, texture, x, y - fillHeight, width, fillHeight);
+
+        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);
+        com.mojang.blaze3d.systems.RenderSystem.disableBlend();
     }
 
     /**
@@ -364,11 +321,10 @@ public class GUIMachineFrackingTower extends AbstractContainerScreen<MachineFrac
      */
     private void renderTankTooltip(GuiGraphics graphics, int mouseX, int mouseY, 
                                    int tankX, int tankY, int tankWidth, int tankHeight,
-                                   IFluidHandler tank, String fluidNameKey) {
+                                   ModFluidTank tank, String fluidNameKey) {
         if (isMouseOver(mouseX, mouseY, tankX, tankY, tankWidth, tankHeight)) {
-            FluidStack fluid = tank.getFluidInTank(0);
-            int amount = fluid.getAmount();
-            int capacity = tank.getTankCapacity(0);
+            int amount = tank.getFluidAmountMb();
+            int capacity = tank.getCapacityMb();
             
             List<Component> tooltip = new ArrayList<>();
             tooltip.add(Component.translatable(fluidNameKey));

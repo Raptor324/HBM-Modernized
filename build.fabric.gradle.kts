@@ -106,11 +106,17 @@ dependencies {
 	// compileOnly("com.google.code.findbugs:jsr305:3.0.2")
 }
 
-// Temporary: Fabric compilation unblocks while common code is being de-forged.
-// Re-enable once common sources are properly split/ported.
-// tasks.named("compileJava") {
-// 	enabled = false
-// }
+tasks.withType<JavaCompile>().configureEach {
+	options.compilerArgs.addAll(listOf("-Xmaxerrs", "10000"))
+}
+
+sourceSets {
+	main {
+		java {
+			exclude("com/hbm_m/datagen/**")
+		}
+	}
+}
 
 stonecutter {
 	val isModern = current.parsed >= "1.21.11"

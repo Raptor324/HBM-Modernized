@@ -4,8 +4,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.MachineShredderBlockEntity;
-import com.hbm_m.platform.NetworkHooksCompat;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -61,7 +61,7 @@ public class MachineShredderBlock extends BaseEntityBlock {
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MachineShredderBlockEntity shredderEntity) {
-                NetworkHooksCompat.openScreen((ServerPlayer) player, shredderEntity, pos);
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, shredderEntity, buf -> buf.writeBlockPos(pos));
             } else {
                 throw new IllegalStateException("Container provider is missing!");
             }

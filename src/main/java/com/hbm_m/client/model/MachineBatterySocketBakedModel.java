@@ -20,7 +20,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
+//?}
 
 public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
@@ -50,6 +52,7 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
     }
 
     @Override
+    //? if forge {
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
         List<BakedQuad> quads = new ArrayList<>();
         int rotationY = getRotationYForFacing(state);
@@ -72,6 +75,25 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
 
         return quads;
     }
+    //?}
+
+    //? if fabric {
+    /*@Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
+        List<BakedQuad> quads = new ArrayList<>();
+        int rotationY = getRotationYForFacing(state);
+        Direction querySide = getUnrotatedSide(side, rotationY);
+
+        BakedModel socket = getPart("Socket");
+        if (socket != null) {
+            List<BakedQuad> socketQuads = socket.getQuads(state, querySide, rand);
+            quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(socketQuads, rotationY) : socketQuads);
+        }
+
+        // Fabric: нет Forge ModelData -> пока что без батарейки в baked (чтобы компилировалось).
+        return quads;
+    }
+    *///?}
 
     private static int getRotationYForFacing(@Nullable BlockState state) {
         if (state == null || !state.hasProperty(MachineBatterySocketBlock.FACING)) return 0;
@@ -98,9 +120,17 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
         return batteryQuadCache.computeIfAbsent(key, k -> {
             List<BakedQuad> out = new ArrayList<>();
             TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(BATTERY_TEX);
+            //? if forge {
             for (BakedQuad q : battery.getQuads(null, side, rand, ModelData.EMPTY, null)) {
                 out.add(retextureQuad(q, sprite));
             }
+            //?}
+
+            //? if fabric {
+            /*for (BakedQuad q : battery.getQuads(null, side, rand)) {
+                out.add(retextureQuad(q, sprite));
+            }
+            *///?}
             return out;
         });
     }

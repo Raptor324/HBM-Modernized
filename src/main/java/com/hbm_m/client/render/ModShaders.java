@@ -6,8 +6,10 @@ package com.hbm_m.client.render;
 import net.fabricmc.api.Environment;
 *///?}
 import net.minecraft.client.renderer.ShaderInstance;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
 //? if forge {
 @OnlyIn(Dist.CLIENT)
 //?}

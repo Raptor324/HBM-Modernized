@@ -1,5 +1,5 @@
 package com.hbm_m.datagen;
-
+//? if forge {
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -423,7 +423,5 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         }
         return list;
     }
-
-
-
 }
+//?}

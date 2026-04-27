@@ -15,6 +15,7 @@ import com.hbm_m.network.ServerboundDoorModelPacket;
 import com.hbm_m.sound.ModSounds;
 import com.mojang.blaze3d.systems.RenderSystem;
 
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
@@ -24,8 +25,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+
 
 /**
  * UI Меню для выбора модели и скина двери.
@@ -34,10 +34,14 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * @author HBM-M Team
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+@Environment(EnvType.CLIENT)*///?}
 public class GUIDoorModelSelection extends Screen {
 
     // Масштаб GUI. Масштабирование через PoseStack - без дублирования текстуры.

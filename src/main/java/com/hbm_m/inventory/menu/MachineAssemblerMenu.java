@@ -1,7 +1,5 @@
 package com.hbm_m.inventory.menu;
 
-import javax.annotation.Nonnull;
-
 import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.block.ModBlocks;

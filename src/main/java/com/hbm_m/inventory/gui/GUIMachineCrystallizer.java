@@ -4,18 +4,19 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+import com.hbm_m.api.fluids.HbmFluidRegistry;
+import com.hbm_m.client.gui.FluidGuiRendering;
 import com.hbm_m.inventory.menu.MachineCrystallizerMenu;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.ModFluidTank;
 
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.inventory.InventoryMenu;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
+import dev.architectury.fluid.FluidStack;
+import net.minecraft.world.level.material.Fluid;
 
 /**
  * GUI для Crystallizer - порт с 1.7.10 GUICrystallizer.
@@ -65,31 +66,31 @@ public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMen
         renderFluidTank(guiGraphics, menu.getBlockEntity().getTank(), this.leftPos + 35, this.topPos + 70);
     }
 
-    private void renderFluidTank(GuiGraphics guiGraphics, FluidTank tank, int x, int y) {
-        FluidStack fluid = tank.getFluid();
-        if (fluid.isEmpty()) return;
+    private void renderFluidTank(GuiGraphics guiGraphics, ModFluidTank tank, int x, int y) {
+        Fluid fluid = tank.getStoredFluid();
+        int amountMb = tank.getFluidAmountMb();
+        if (fluid == net.minecraft.world.level.material.Fluids.EMPTY || amountMb <= 0) return;
 
-        int pixelHeight = (int) ((long) fluid.getAmount() * TANK_HEIGHT / TANK_CAPACITY);
-        if (pixelHeight == 0 && fluid.getAmount() > 0) pixelHeight = 1;
+        int pixelHeight = (int) ((long) amountMb * TANK_HEIGHT / TANK_CAPACITY);
+        if (pixelHeight == 0 && amountMb > 0) pixelHeight = 1;
         if (pixelHeight > TANK_HEIGHT) pixelHeight = TANK_HEIGHT;
 
-        IClientFluidTypeExtensions fluidProps = IClientFluidTypeExtensions.of(fluid.getFluid());
-        ResourceLocation fluidTextureId = fluidProps.getStillTexture(fluid);
-        var fluidSprite = this.minecraft.getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(fluidTextureId);
-        int fluidColor = fluidProps.getTintColor(fluid);
-
+        int fluidColor = HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
         float r = (fluidColor >> 16 & 255) / 255.0F;
         float g = (fluidColor >> 8 & 255) / 255.0F;
         float b = (fluidColor & 255) / 255.0F;
-        float a = ((fluidColor >> 24) & 255) / 255.0F;
-        if (a == 0) a = 1.0F;
 
-        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(r, g, b, a);
-        com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, InventoryMenu.BLOCK_ATLAS);
+        ResourceLocation png = FluidGuiRendering.guiTexturePngForFluid(fluid, FluidStack.create(fluid, (long) amountMb));
+        if (png == null) return;
 
-        guiGraphics.blit(x, y + TANK_HEIGHT - pixelHeight, 0, TANK_WIDTH, pixelHeight, fluidSprite);
+        com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+        com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
+        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(r, g, b, 1.0F);
+
+        FluidGuiRendering.renderTiledFluid(guiGraphics, png, x, y + TANK_HEIGHT - pixelHeight, TANK_WIDTH, pixelHeight);
 
         com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        com.mojang.blaze3d.systems.RenderSystem.disableBlend();
     }
 
     @Override
@@ -127,14 +128,15 @@ public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMen
         drawCustomInfoStat(guiGraphics, mouseX, mouseY, 117, 22, 8, 8, mouseX, mouseY, upgradeText);
     }
 
-    private void renderTankTooltip(GuiGraphics guiGraphics, FluidTank tank, int mouseX, int mouseY) {
-        FluidStack fluid = tank.getFluid();
+    private void renderTankTooltip(GuiGraphics guiGraphics, ModFluidTank tank, int mouseX, int mouseY) {
+        Fluid fluid = tank.getStoredFluid();
+        int amountMb = tank.getFluidAmountMb();
         List<Component> tooltip = new ArrayList<>();
-        if (fluid.isEmpty()) {
+        if (fluid == net.minecraft.world.level.material.Fluids.EMPTY || amountMb <= 0) {
             tooltip.add(Component.translatable("gui.hbm_m.fluid.empty"));
         } else {
-            tooltip.add(fluid.getDisplayName());
-            tooltip.add(Component.literal(fluid.getAmount() + " / " + TANK_CAPACITY + " mB"));
+            tooltip.add(Component.literal(HbmFluidRegistry.getFluidName(fluid)));
+            tooltip.add(Component.literal(amountMb + " / " + TANK_CAPACITY + " mB"));
         }
         guiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), mouseX, mouseY);
     }

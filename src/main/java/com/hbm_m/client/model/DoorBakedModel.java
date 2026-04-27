@@ -34,8 +34,10 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
+//?}
 
 public class DoorBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
     
@@ -73,9 +75,29 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
+        //? if forge {
         return getQuads(state, side, rand, ModelData.EMPTY, null);
+        //?}
+
+        //? if fabric {
+        /*// ITEM RENDER
+        if (state == null) {
+            return getItemQuads(side, rand);
+        }
+
+        if (ShaderCompatibilityDetector.useVboGeometry()) {
+            return Collections.emptyList();
+        }
+
+        boolean isMoving = state.hasProperty(DoorBlock.DOOR_MOVING) && state.getValue(DoorBlock.DOOR_MOVING);
+        if (!isMoving) {
+            return getAllPartQuads(state, side, rand);
+        }
+        return getStaticPartQuads(state, side, rand);
+        *///?}
     }
     
+    //? if forge {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData, 
@@ -227,6 +249,117 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         }
         return allQuads;
     }
+    //?}
+
+    //? if fabric {
+    /*private List<BakedQuad> getStaticPartQuads(@Nullable BlockState state, @Nullable Direction side,
+                                              RandomSource rand) {
+        List<BakedQuad> result = new ArrayList<>();
+        int rotationY = getRotationYForFacing(state);
+
+        for (String partName : STATIC_PART_NAMES) {
+            BakedModel part = parts.get(partName);
+            if (part == null) continue;
+
+            List<BakedQuad> partQuads = new ArrayList<>();
+            for (Direction d : Direction.values()) {
+                partQuads.addAll(part.getQuads(state, d, rand));
+            }
+            partQuads.addAll(part.getQuads(state, null, rand));
+
+            if (!partQuads.isEmpty()) {
+                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
+                List<BakedQuad> rotated = ModelHelper.transformQuadsByFacing(translated, rotationY);
+                if (side != null) {
+                    for (BakedQuad q : rotated) {
+                        if (q.getDirection() == side) result.add(q);
+                    }
+                } else {
+                    result.addAll(rotated);
+                }
+            }
+        }
+        return result;
+    }
+
+    private List<BakedQuad> getAllPartQuads(@Nullable BlockState state, @Nullable Direction side,
+                                          RandomSource rand) {
+        if (state == null) return Collections.emptyList();
+
+        DoorDecl doorDecl = DoorDeclRegistry.getById(extractDoorTypeFromPath(doorId.getPath()));
+        if (doorDecl == null) return Collections.emptyList();
+
+        boolean isOpen = state.hasProperty(DoorBlock.OPEN) && state.getValue(DoorBlock.OPEN);
+        float openTicks = isOpen ? doorDecl.getOpenTime() : 0f;
+
+        int rotationY = getRotationYForFacing(state);
+
+        ColladaAnimationData animData = null;
+        if (ModClothConfig.get().useColladaDoorAnimations && doorDecl.getColladaAnimationSource() != null) {
+            var mc = Minecraft.getInstance();
+            if (mc.getResourceManager() != null) {
+                animData = ColladaAnimationData.getOrLoad(mc.getResourceManager(), doorDecl.getColladaAnimationSource());
+            }
+        }
+
+        String[] partNamesToUse = parts.keySet().toArray(new String[0]);
+        List<BakedQuad> allQuads = new ArrayList<>();
+        java.util.Map<String, Matrix4f> transformCache = new java.util.HashMap<>();
+        for (String partName : partNamesToUse) {
+            BakedModel part = parts.get(partName);
+            if (part == null) continue;
+
+            List<BakedQuad> partQuads = new ArrayList<>();
+            for (Direction d : Direction.values()) {
+                partQuads.addAll(part.getQuads(state, d, rand));
+            }
+            partQuads.addAll(part.getQuads(state, null, rand));
+            if (partQuads.isEmpty()) continue;
+
+            if (isStaticPart(partName)) {
+                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
+                allQuads.addAll(ModelHelper.transformQuadsByFacing(translated, rotationY));
+            } else {
+                DoorModelSelection selection = null;
+                Matrix4f transform = buildPartTransformWithParent(doorDecl, partName, openTicks, animData, partNamesToUse, transformCache, selection);
+                if (transform != null) {
+                    partQuads = ModelHelper.transformQuadsByMatrix(partQuads, transform);
+                }
+                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
+                allQuads.addAll(ModelHelper.transformQuadsByFacing(translated, rotationY));
+            }
+        }
+        return allQuads;
+    }
+
+    private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
+        if (!itemQuadsCached) {
+            buildItemQuads(rand);
+            itemQuadsCached = true;
+        }
+        if (side != null) {
+            return cachedItemQuads.stream()
+                .filter(quad -> quad.getDirection() == side)
+                .toList();
+        }
+        return cachedItemQuads;
+    }
+
+    private void buildItemQuads(RandomSource rand) {
+        List<BakedQuad> allQuads = new ArrayList<>();
+        List<String> itemRenderParts = getItemRenderPartNames();
+        for (String partName : itemRenderParts) {
+            BakedModel part = parts.get(partName);
+            if (part != null) {
+                for (Direction dir : Direction.values()) {
+                    allQuads.addAll(part.getQuads(null, dir, rand));
+                }
+                allQuads.addAll(part.getQuads(null, null, rand));
+            }
+        }
+        this.cachedItemQuads = allQuads;
+    }
+    *///?}
 
     private static boolean isStaticPart(String partName) {
         for (String s : STATIC_PART_NAMES) {
@@ -330,6 +463,8 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         return mat;
     }
     
+    //? if forge {
+    
     private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand,
                                           ModelData modelData, 
                                           @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -373,6 +508,8 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         
         this.cachedItemQuads = allQuads;
     }
+    
+    //?}
     
     @Override
     public ItemOverrides getOverrides() {
@@ -422,15 +559,23 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         }
     }
 
+    //? if forge {
     @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         // cutoutMipped для прозрачных текстур (стекло, решётки и т.д.)
         return ChunkRenderTypeSet.of(RenderType.cutoutMipped());
     }
+    //?}
 
     @Override
     public TextureAtlasSprite getParticleIcon() {
+        //? if forge {
         return getParticleIcon(ModelData.EMPTY);
+        //?}
+
+        //? if fabric {
+        /*return super.getParticleIcon();
+        *///?}
     }
     
     @Override

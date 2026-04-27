@@ -64,6 +64,7 @@ versions/1.21.11-fabric/.gradle
 versions/1.21.11-fabric/run
 versions/1.21.11-fabric/.eclipse
 versions/datagen/
+legacy/forgegradle/.gradle
 
 # ================= Logs & Temporary Files =================
 # Логи, дампы ошибок и временные файлы.

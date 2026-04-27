@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.client.loader;
 
 import java.util.HashMap;
@@ -227,3 +228,21 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
 
     }
 }
+//?}
+
+//? if fabric {
+/*package com.hbm_m.client.loader;
+
+import com.google.gson.JsonDeserializationContext;
+import com.google.gson.JsonObject;
+
+/^*
+ * Fabric: Forge geometry/OBJ pipeline isn't available.
+ * This class exists as a stub to keep common code compiling across loaders.
+ ^/
+public abstract class AbstractObjPartModelLoader<T> {
+    public Object read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) {
+        throw new UnsupportedOperationException("OBJ part model loader is not implemented on Fabric yet.");
+    }
+}
+*///?}

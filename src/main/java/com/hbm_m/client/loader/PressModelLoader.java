@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.client.loader;
 
 import com.google.gson.JsonDeserializationContext;
@@ -112,4 +113,19 @@ public class PressModelLoader implements IGeometryLoader<PressModelLoader.PressG
         }
     }
 }
+//?}
+
+//? if fabric {
+/*package com.hbm_m.client.loader;
+
+/^*
+ * Fabric: Forge geometry/OBJ pipeline isn't available.
+ * Stub to keep compilation working across loaders.
+ ^/
+public class PressModelLoader {
+    public PressModelLoader() {
+        throw new UnsupportedOperationException("PressModelLoader is not implemented on Fabric yet.");
+    }
+}
+*///?}
 

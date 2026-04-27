@@ -1,5 +1,5 @@
 package com.hbm_m.datagen.recipes.custom;
-
+//? if forge {
 import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
@@ -126,4 +126,4 @@ public class ShredderRecipeBuilder implements RecipeBuilder {
         }
     }
 }
-
+//?}

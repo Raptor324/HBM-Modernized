@@ -1,5 +1,5 @@
 package com.hbm_m.datagen.recipes;
-
+//? if forge {
 import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
@@ -1002,6 +1002,6 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         *///?} else {
                 return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
         //?}
-
     }
 }
+//?}

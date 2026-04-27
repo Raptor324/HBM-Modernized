@@ -7,21 +7,22 @@ import org.jetbrains.annotations.NotNull;
 
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+import net.fabricmc.api.Environment;
+*///?}
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.tooltip.ClientTooltipComponent;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-
 /**
  * Client renderer for crate tooltip rows (item icon + name).
  */
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
+//?}
+
 //? if fabric {
 /*@Environment(EnvType.CLIENT)*///?}
 public class CrateContentsTooltipComponentRenderer implements ClientTooltipComponent {

@@ -169,6 +169,7 @@ public class ClientSetup {
         // Key mappings регистрируются в ModConfigKeybindHandler.init() через Architectury/обвязку,
         // но на некоторых таргетах удобно иметь fallback в одном месте.
         ModConfigKeybindHandler.init();
+        DarkParticleHandler.init();
 
         // Экраны меню - vanilla API, одинаково работает на обоих лоадерах.
         registerScreens();
@@ -205,7 +206,6 @@ public class ClientSetup {
         initClient();
 
         // Forge-only: шина событий для тик/рендер-хендлеров.
-        MinecraftForge.EVENT_BUS.register(DarkParticleHandler.class);
         MinecraftForge.EVENT_BUS.register(ChunkRadiationDebugRenderer.class);
         MinecraftForge.EVENT_BUS.register(ClientRenderHandler.class);
         MinecraftForge.EVENT_BUS.register(HbmThermalHandler.INSTANCE);

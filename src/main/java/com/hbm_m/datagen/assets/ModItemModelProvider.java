@@ -1,5 +1,5 @@
 package com.hbm_m.datagen.assets;
-
+//? if forge {
 import java.util.LinkedHashMap;
 
 import com.hbm_m.block.ModBlocks;
@@ -624,3 +624,4 @@ public class ModItemModelProvider extends ItemModelProvider {
     }
 
 }
+//?}

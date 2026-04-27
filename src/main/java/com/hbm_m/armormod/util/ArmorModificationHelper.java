@@ -11,9 +11,9 @@ import java.util.UUID;
 import com.google.common.collect.Multimap;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.armormod.item.ItemModRadProtection;
-import com.hbm_m.datagen.assets.ModItemTagProvider;
 import com.hbm_m.hazard.HazardSystem;
 
+import com.hbm_m.item.tags_and_tiers.ModTags;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
@@ -302,10 +302,10 @@ public class ArmorModificationHelper {
             ItemStack modStack = tableInventory.getItem(i);
             if (modStack.getItem() instanceof ItemArmorMod mod) {
                 boolean isCompatible = switch (armorItem.getType()) {
-                    case HELMET -> modStack.is(ModItemTagProvider.REQUIRES_HELMET);
-                    case CHESTPLATE -> modStack.is(ModItemTagProvider.REQUIRES_CHESTPLATE);
-                    case LEGGINGS -> modStack.is(ModItemTagProvider.REQUIRES_LEGGINGS);
-                    case BOOTS -> modStack.is(ModItemTagProvider.REQUIRES_BOOTS);
+                    case HELMET -> modStack.is(ModTags.Items.REQUIRES_HELMET);
+                    case CHESTPLATE -> modStack.is(ModTags.Items.REQUIRES_CHESTPLATE);
+                    case LEGGINGS -> modStack.is(ModTags.Items.REQUIRES_LEGGINGS);
+                    case BOOTS -> modStack.is(ModTags.Items.REQUIRES_BOOTS);
                     default -> false;
                 };
 

@@ -22,16 +22,15 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 
+import dev.architectury.fluid.FluidStack;
+
 //? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.items.SlotItemHandler;
 //?}
 
 //? if fabric {
-/*import dev.architectury.fluid.FluidStack;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-*///?}
+/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;*///?}
 
 public class MachineFluidTankMenu extends AbstractContainerMenu {
 
@@ -183,19 +182,11 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
         int fluidId = this.data.get(1);
 
         if (fluidId < 0 || amount <= 0) {
-            //? if forge {
-            return FluidStack.EMPTY;
-            //?} else {
-            /*return FluidStack.empty();
-            *///?}
+            return FluidStack.empty();
         }
 
         Fluid fluid = BuiltInRegistries.FLUID.byId(fluidId);
-        //? if forge {
-        return new FluidStack(fluid, amount);
-        //?} else {
-        /*return FluidStack.create(fluid, (long) amount);
-        *///?}
+        return FluidStack.create(fluid, (long) amount);
     }
 
     /** Синхронизированный тип цистерны (как в мире), даже при 0 mB. */

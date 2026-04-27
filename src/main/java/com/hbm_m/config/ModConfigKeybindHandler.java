@@ -5,6 +5,8 @@ package com.hbm_m.config;
 import org.lwjgl.glfw.GLFW;
 
 import com.hbm_m.client.overlay.OverlayInfoToast;
+import com.hbm_m.inventory.gui.GUIMultiDetonator;
+import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.hbm_m.powerarmor.PowerArmorHandlers;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -49,6 +51,13 @@ public class ModConfigKeybindHandler {
             CATEGORY
     );
 
+    public static final KeyMapping OPEN_MULTI_DETONATOR = new KeyMapping(
+            "key.hbm_m.multi_detonator_open",
+            InputConstants.Type.KEYSYM,
+            GLFW.GLFW_KEY_R,
+            CATEGORY
+    );
+
     public static void init() {
         if (INITIALIZED) return;
         INITIALIZED = true;
@@ -57,6 +66,7 @@ public class ModConfigKeybindHandler {
         KeyMappingRegistry.register(POWER_ARMOR_DASH);
         KeyMappingRegistry.register(POWER_ARMOR_VATS);
         KeyMappingRegistry.register(POWER_ARMOR_THERMAL);
+        KeyMappingRegistry.register(OPEN_MULTI_DETONATOR);
 
         // Аналог END-фазы ClientTickEvent на Forge: выполняем после стандартного тика клиента.
         ClientTickEvent.CLIENT_POST.register(client -> onClientPostTick());
@@ -126,6 +136,20 @@ public class ModConfigKeybindHandler {
                             }
                         }
                     }
+                }
+            }
+        }
+
+        // Multi-detonator GUI (R)
+        if (OPEN_MULTI_DETONATOR.consumeClick()) {
+            if (mc.player != null && mc.screen == null) {
+                var player = mc.player;
+                var main = player.getMainHandItem();
+                var off = player.getOffhandItem();
+                if (main.getItem() instanceof MultiDetonatorItem) {
+                    mc.setScreen(new GUIMultiDetonator(main));
+                } else if (off.getItem() instanceof MultiDetonatorItem) {
+                    mc.setScreen(new GUIMultiDetonator(off));
                 }
             }
         }

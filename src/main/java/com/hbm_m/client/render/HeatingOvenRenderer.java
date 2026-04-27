@@ -1,8 +1,10 @@
 package com.hbm_m.client.render;
 
 
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//?}
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;*///?}
@@ -23,7 +25,9 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
+//? if forge {
 import net.minecraftforge.client.model.data.ModelData;
+//?}
 
 /**
  * Renderer for HeatingOven block entity.
@@ -54,11 +58,21 @@ public class HeatingOvenRenderer implements BlockEntityRenderer<HeatingOvenBlock
 
         VertexConsumer buffer = bufferSource.getBuffer(RenderType.solid());
 
+        //? if forge {
         List<BakedQuad> quads = part.getQuads(null, null, RANDOM, ModelData.EMPTY, RenderType.solid());
+        //?}
+        //? if fabric {
+        /*List<BakedQuad> quads = part.getQuads(null, null, RANDOM);
+        *///?}
         renderQuads(poseStack, buffer, quads, packedLight, packedOverlay);
 
         for (Direction dir : Direction.values()) {
+            //? if forge {
             quads = part.getQuads(null, dir, RANDOM, ModelData.EMPTY, RenderType.solid());
+            //?}
+            //? if fabric {
+            /*quads = part.getQuads(null, dir, RANDOM);
+            *///?}
             renderQuads(poseStack, buffer, quads, packedLight, packedOverlay);
         }
     }
@@ -88,11 +102,21 @@ public class HeatingOvenRenderer implements BlockEntityRenderer<HeatingOvenBlock
 
         VertexConsumer buffer = bufferSource.getBuffer(RenderType.solid());
 
+        //? if forge {
         List<BakedQuad> quads = innerBurningPart.getQuads(null, null, RANDOM, ModelData.EMPTY, RenderType.solid());
+        //?}
+        //? if fabric {
+        /*List<BakedQuad> quads = innerBurningPart.getQuads(null, null, RANDOM);
+        *///?}
         renderQuads(poseStack, buffer, quads, fullBright, packedOverlay);
 
         for (Direction dir : Direction.values()) {
+            //? if forge {
             quads = innerBurningPart.getQuads(null, dir, RANDOM, ModelData.EMPTY, RenderType.solid());
+            //?}
+            //? if fabric {
+            /*quads = innerBurningPart.getQuads(null, dir, RANDOM);
+            *///?}
             renderQuads(poseStack, buffer, quads, fullBright, packedOverlay);
         }
     }

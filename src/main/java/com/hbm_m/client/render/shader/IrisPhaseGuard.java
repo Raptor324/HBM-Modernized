@@ -1,5 +1,5 @@
+//? if forge {
 package com.hbm_m.client.render.shader;
-
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -15,24 +15,9 @@ import net.minecraftforge.fml.ModList;
 /**
  * Try-with-resources scope helper that calls
  * {@code WorldRenderingPipeline.setPhase(WorldRenderingPhase.<phase>)} on entry
- * and restores {@code WorldRenderingPhase.NONE} on close. Pack-aware effects
- * (per-block-entity normal maps, SSAO masking, etc.) read this phase to apply
- * the right pass logic.
- * <p>
- * If Iris is not loaded or the reflection lookup fails, this guard becomes a
- * no-op so calling code does not have to special-case absence of Iris.
- * <p>
- * The hot operations ({@code Iris.getPipelineManager()},
- * {@code PipelineManager.getPipelineNullable()},
- * {@code WorldRenderingPipeline.setPhase()}) are bound as MethodHandles so the
- * per-batch open/close pair amortises against the JIT-friendly invokeExact
- * call site rather than {@link Method#invoke}'s {@code Object[]} boxing path.
+ * and restores {@code WorldRenderingPhase.NONE} on close.
  */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class IrisPhaseGuard implements AutoCloseable {
 
     private static volatile boolean initialized = false;
@@ -190,3 +175,26 @@ public final class IrisPhaseGuard implements AutoCloseable {
         }
     }
 }
+//?}
+
+//? if fabric {
+/*package com.hbm_m.client.render.shader;
+
+/^*
+ * Fabric stub: Iris phase integration isn't available here yet.
+ ^/
+public final class IrisPhaseGuard implements AutoCloseable {
+
+    private static final IrisPhaseGuard NOOP = new IrisPhaseGuard();
+
+    private IrisPhaseGuard() {}
+
+    public static IrisPhaseGuard pushBlockEntities() {
+        return NOOP;
+    }
+
+    @Override
+    public void close() {
+    }
+}
+*///?}

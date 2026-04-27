@@ -4,8 +4,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.entity.machines.HeatingOvenBlockEntity;
-import com.hbm_m.platform.NetworkHooksCompat;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -97,7 +97,7 @@ public class HeatingOvenBlock extends BaseEntityBlock {
             }
 
             // Normal click to open GUI
-            NetworkHooksCompat.openScreen((ServerPlayer) player, oven, pos);
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, oven, buf -> buf.writeBlockPos(pos));
             return InteractionResult.CONSUME;
         }
 

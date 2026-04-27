@@ -1,14 +1,14 @@
 package com.hbm_m.inventory.menu;
 
-import javax.annotation.Nonnull;
+
 
 import org.jetbrains.annotations.NotNull;
 
+import com.hbm_m.api.energy.ItemEnergyAccess;
+import com.hbm_m.api.fluids.FluidItemAccess;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.api.energy.ItemEnergyAccess;
-import com.hbm_m.api.fluids.FluidItemAccess;
 import com.hbm_m.item.industrial.ItemBlueprintFolder;
 
 import net.minecraft.network.FriendlyByteBuf;

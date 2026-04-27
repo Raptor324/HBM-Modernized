@@ -1,5 +1,5 @@
+//? if forge {
 package com.hbm_m.client.render.shader;
-
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
@@ -14,11 +14,8 @@ import net.minecraft.client.Minecraft;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.fml.ModList;
-//? if forge {
+
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public class ShaderCompatibilityDetector {
 
     private static boolean initialized = false;
@@ -194,3 +191,43 @@ public class ShaderCompatibilityDetector {
         return isExternalShaderActive() && ModClothConfig.useIrisExtendedShaderPath();
     }
 }
+//?}
+
+//? if fabric {
+/*package com.hbm_m.client.render.shader;
+
+import com.hbm_m.config.ModClothConfig;
+
+/^*
+ * Fabric stub: Iris/Oculus integration is not wired yet.
+ * Keep logic consistent by making shader-related checks return safe defaults.
+ ^/
+public class ShaderCompatibilityDetector {
+
+    private ShaderCompatibilityDetector() {}
+
+    public static boolean isExternalShaderActive() {
+        return false;
+    }
+
+    public static void processPendingChunkInvalidation() {
+        // no-op on Fabric for now
+    }
+
+    public static boolean isRenderingShadowPass() {
+        return false;
+    }
+
+    public static boolean canUseIrisExtendedShader() {
+        return false;
+    }
+
+    public static boolean useVboGeometry() {
+        return !isExternalShaderActive() || ModClothConfig.useIrisExtendedShaderPath();
+    }
+
+    public static boolean useNewIrisVboPath() {
+        return false;
+    }
+}
+*///?}

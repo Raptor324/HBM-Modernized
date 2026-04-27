@@ -1,5 +1,5 @@
 package com.hbm_m.event;
-
+//? if forge {
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
@@ -9,6 +9,7 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.sound.ModSounds;
 
+import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
@@ -22,8 +23,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraftforge.event.entity.player.PlayerInteractEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-
-import dev.architectury.registry.registries.RegistrySupplier;
 
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class BombDefuser {
@@ -143,3 +142,12 @@ public class BombDefuser {
         }
     }
 }
+//?}
+
+//? if fabric {
+/*/^*
+ * Fabric build: Forge event bus hooks are not available.
+ * This is a stub to keep compilation working; gameplay logic will be re-wired later.
+ ^/
+public class BombDefuser { }
+*///?}

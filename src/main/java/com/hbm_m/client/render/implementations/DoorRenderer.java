@@ -4,7 +4,7 @@ package com.hbm_m.client.render.implementations;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -695,3 +695,13 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         MainRegistry.LOGGER.debug("Door renderer caches cleared");
     }
 }
+
+//?}
+
+//? if fabric {
+/*/^*
+ * Fabric stub: Forge-based door renderer isn't wired yet.
+ * (Door visuals should come from vanilla model/baked path for now.)
+ ^/
+public class DoorRenderer { }
+*///?}

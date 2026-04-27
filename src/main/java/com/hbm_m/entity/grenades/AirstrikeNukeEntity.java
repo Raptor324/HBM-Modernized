@@ -306,7 +306,7 @@ public class AirstrikeNukeEntity extends Entity {
     @NotNull
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return com.hbm_m.platform.NetworkHooksCompat.getEntitySpawningPacket(this);
+        return new net.minecraft.network.protocol.game.ClientboundAddEntityPacket(this);
     }
 
     @Override public boolean isPickable() { return false; }

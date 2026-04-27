@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.block.entity.crates.BaseCrateBlockEntity;
 import com.hbm_m.sound.ModSounds;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,7 +20,6 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
-import com.hbm_m.platform.NetworkHooksCompat;
 
 /**
  * Базовый блок для всех ящиков HBM.
@@ -41,7 +41,7 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
                                  Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof BaseCrateBlockEntity crateEntity) {
             playOpenSound(level, pos);
-            NetworkHooksCompat.openScreen((ServerPlayer) player, crateEntity, pos);
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, crateEntity, buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }

@@ -1,6 +1,10 @@
 package com.hbm_m.block.machines;
 
 import java.util.Map;
+//? if forge {
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
 import org.jetbrains.annotations.NotNull;
@@ -14,13 +18,12 @@ import com.hbm_m.block.entity.machines.MachineAssemblerBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import com.hbm_m.platform.NetworkHooksCompat;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
@@ -43,10 +46,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
-import java.util.concurrent.atomic.AtomicReference;
 
 
 /**
@@ -245,7 +244,7 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider) {
                 if (player instanceof ServerPlayer serverPlayer) {
-                    NetworkHooksCompat.openScreen(serverPlayer, (MenuProvider) entity, pos);
+                    MenuRegistry.openExtendedMenu(serverPlayer, (MenuProvider) entity, buf -> buf.writeBlockPos(pos));
                 }
             }
         }

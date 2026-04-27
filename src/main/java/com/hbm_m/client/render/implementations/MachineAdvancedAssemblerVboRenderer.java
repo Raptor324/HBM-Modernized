@@ -1,6 +1,7 @@
 package com.hbm_m.client.render.implementations;
 
 
+
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
@@ -12,13 +13,16 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
+
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//? if forge {
 @OnlyIn(Dist.CLIENT)
 //?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+@Environment(EnvType.CLIENT)*///?}
 public class MachineAdvancedAssemblerVboRenderer {
     private static final String BASE = "Base";
     private static final String FRAME = "Frame";

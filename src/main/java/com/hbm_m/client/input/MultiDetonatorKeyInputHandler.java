@@ -1,3 +1,4 @@
+//? if forge {
 package com.hbm_m.client.input;
 
 import com.hbm_m.main.MainRegistry;
@@ -53,3 +54,4 @@ public class MultiDetonatorKeyInputHandler {
         }
     }
 }
+//?}

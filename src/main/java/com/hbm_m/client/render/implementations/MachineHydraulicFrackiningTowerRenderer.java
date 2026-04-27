@@ -56,11 +56,13 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
     }
 
     // Реализуем метод flush, чтобы отрисовывать накопленные инстансы в конце кадра
+    //? if forge {
     public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
         if (instancedMain != null) {
             instancedMain.flush(event);
         }
     }
+    //?}
 
     // Инициализация статического рендерера (один раз для всех вышек)
     private static synchronized void initializeInstancedRenderersSync(MachineHydraulicFrackiningTowerBakedModel model) {

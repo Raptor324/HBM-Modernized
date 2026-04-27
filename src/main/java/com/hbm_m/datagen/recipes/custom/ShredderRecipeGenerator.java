@@ -1,5 +1,5 @@
 package com.hbm_m.datagen.recipes.custom;
-
+//? if forge {
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
 import com.hbm_m.item.ModItems;
@@ -263,6 +263,6 @@ public final class ShredderRecipeGenerator {
                 *///?} else {
                                 .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "dust_tiny_from_dust"));
                 //?}
-
     }
 }
+//?}

@@ -16,6 +16,7 @@ import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
@@ -39,7 +40,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import com.hbm_m.platform.NetworkHooksCompat;
 
 public class MachinePressBlock extends BaseEntityBlock implements IMultiblockController {
     // 3 блока в высоту, 1 блок в ширину и глубину
@@ -108,7 +108,7 @@ public class MachinePressBlock extends BaseEntityBlock implements IMultiblockCon
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if(entity instanceof MachinePressBlockEntity) {
-                NetworkHooksCompat.openScreen((ServerPlayer) player, (MachinePressBlockEntity) entity, pos);
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, (MachinePressBlockEntity) entity, buf -> buf.writeBlockPos(pos));
             } else {
                 throw new IllegalStateException("Our Container provider is missing!");
             }

@@ -1,5 +1,5 @@
 package com.hbm_m.datagen.assets;
-
+//? if forge {
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
@@ -244,3 +244,4 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
     }
 }
+//?}
