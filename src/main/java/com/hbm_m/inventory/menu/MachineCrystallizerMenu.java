@@ -21,7 +21,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.network.PacketDistributor;
 
 public class MachineCrystallizerMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -164,10 +163,8 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
     public void broadcastChanges() {
         super.broadcastChanges();
         if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
-            ModPacketHandler.INSTANCE.send(
-                    PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
-                    new PacketSyncEnergy(containerId, blockEntity.getEnergyStored(), blockEntity.getMaxEnergyStored(), 0L)
-            );
+            ModPacketHandler.sendToPlayer((ServerPlayer) player, ModPacketHandler.SYNC_ENERGY,
+                new PacketSyncEnergy(containerId, blockEntity.getEnergyStored(), blockEntity.getMaxEnergyStored(), 0L));
         }
     }
 

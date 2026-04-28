@@ -34,7 +34,6 @@ import net.minecraftforge.event.RegisterCommandsEvent;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.network.PacketDistributor;
 
 public class PlayerHandler {
     
@@ -76,7 +75,8 @@ public class PlayerHandler {
                 float environmentRad = ChunkRadiationManager.getRadiation(serverPlayer.level(), serverPlayer.blockPosition().getX(), serverPlayer.blockPosition().getY(), serverPlayer.blockPosition().getZ());
                 
                 // 2. Отправляем пакет с ДВУМЯ значениями
-                ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new RadiationDataPacket(environmentRad, clamped));
+                ModPacketHandler.sendToPlayer(serverPlayer, ModPacketHandler.RADIATION_DATA,
+                    new RadiationDataPacket(environmentRad, clamped));
                 
                 if (ModClothConfig.get().enableDebugLogging) {
                     MainRegistry.LOGGER.debug("SERVER: Sent RadiationDataPacket (from setPlayerRads) to player {} with EnvRad: {}, PlayerRad: {}", player.getName().getString(), environmentRad, clamped);
@@ -256,7 +256,8 @@ public class PlayerHandler {
                 // 1. КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Добавлен недостающий вызов отправки пакета.
                 // 2. УЛУЧШЕНИЕ: В качестве 'environmentRad' теперь отправляется `incomingRadForPacket`, 
                 //    который включает и чанк, и инвентарь.
-                ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer), new RadiationDataPacket(incomingRadForPacket, currentAccumulatedRads));
+                ModPacketHandler.sendToPlayer(serverPlayer, ModPacketHandler.RADIATION_DATA,
+                    new RadiationDataPacket(incomingRadForPacket, currentAccumulatedRads));
                 
                 if (ModClothConfig.get().enableDebugLogging) {
                     MainRegistry.LOGGER.debug("SERVER: Sending periodic RadiationDataPacket to player {}. EnvRad (Incoming): {}, PlayerRad (Accumulated): {}", player.getName().getString(), incomingRadForPacket, currentAccumulatedRads);
@@ -279,10 +280,10 @@ public class PlayerHandler {
 
                 // Достижение "Ура, Радиация!" (200 РАД)
                 //? if fabric && < 1.21.1 {
-                /*Advancement rad200Advancement = advancementManager.getAdvancement(new ResourceLocation(RefStrings.MODID, "radiation_200"));
-                *///?} else {
-                                Advancement rad200Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_200"));
-                //?}
+                Advancement rad200Advancement = advancementManager.getAdvancement(new ResourceLocation(RefStrings.MODID, "radiation_200"));
+                //?} else {
+                                /*Advancement rad200Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_200"));
+                *///?}
 
                 if (rad200Advancement != null) {
                     AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(rad200Advancement);
@@ -303,10 +304,10 @@ public class PlayerHandler {
 
                 // Испытание "Ай, Радиация!" (1000 РАД)
                 //? if fabric && < 1.21.1 {
-                /*Advancement rad1000Advancement = advancementManager.getAdvancement(new ResourceLocation(RefStrings.MODID, "radiation_1000"));
-                *///?} else {
-                                Advancement rad1000Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_1000"));
-                //?}
+                Advancement rad1000Advancement = advancementManager.getAdvancement(new ResourceLocation(RefStrings.MODID, "radiation_1000"));
+                //?} else {
+                                /*Advancement rad1000Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_1000"));
+                *///?}
 
                 if (rad1000Advancement != null) {
                     AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(rad1000Advancement);

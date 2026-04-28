@@ -22,8 +22,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?}
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?}
 
 public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
@@ -33,10 +33,10 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
     
     // Текстура по умолчанию (если пустой бак)
     //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation DEFAULT_TEX = new ResourceLocation("hbm_m", "block/tank/tank_none");
-    *///?} else {
-        private static final ResourceLocation DEFAULT_TEX = ResourceLocation.fromNamespaceAndPath("hbm_m", "block/tank/tank_none");
-    //?}
+    private static final ResourceLocation DEFAULT_TEX = new ResourceLocation("hbm_m", "block/tank/tank_none");
+    //?} else {
+        /*private static final ResourceLocation DEFAULT_TEX = ResourceLocation.fromNamespaceAndPath("hbm_m", "block/tank/tank_none");
+    *///?}
 
 
     public MachineFluidTankBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
@@ -54,20 +54,20 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
         return getQuadsInternal(state, side, rand, modelData, renderType);
     }
-    //?}
+    *///?}
 
     //? if fabric {
-    /*@Override
+    @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         // На Fabric для динамических моделей обычно используются Mixin или FabricBackupModel,
         // но мы сделаем упрощенный fallback через world access если возможно.
         return getQuadsInternal(state, side, rand, null, null);
     }
-    *///?}
+    //?}
 
     // Общая внутренняя логика
     private List<BakedQuad> getQuadsInternal(@Nullable BlockState state, @Nullable Direction side, RandomSource rand, @Nullable Object modelDataObj, @Nullable RenderType renderType) {
@@ -79,10 +79,10 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
         BakedModel frame = getPart("Frame");
         if (frame != null) {
             //? if forge {
-            quads.addAll(ModelHelper.transformQuadsByFacing(frame.getQuads(state, querySide, rand, (ModelData)modelDataObj, renderType), rotationY));
-            //?} else {
-            /*quads.addAll(ModelHelper.transformQuadsByFacing(frame.getQuads(state, querySide, rand), rotationY));
-             *///?}
+            /*quads.addAll(ModelHelper.transformQuadsByFacing(frame.getQuads(state, querySide, rand, (ModelData)modelDataObj, renderType), rotationY));
+            *///?} else {
+            quads.addAll(ModelHelper.transformQuadsByFacing(frame.getQuads(state, querySide, rand), rotationY));
+             //?}
         }
 
         // Бак
@@ -91,11 +91,11 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
             ResourceLocation fluidTex = DEFAULT_TEX;
 
             //? if forge {
-            ModelData modelData = (ModelData) modelDataObj;
+            /*ModelData modelData = (ModelData) modelDataObj;
             if (modelData != null && modelData.has(MachineFluidTankBlockEntity.FLUID_TEXTURE_PROPERTY)) {
                 fluidTex = modelData.get(MachineFluidTankBlockEntity.FLUID_TEXTURE_PROPERTY);
             }
-            //?}
+            *///?}
 
             //? if fabric {
             
@@ -142,10 +142,10 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
         return directionalCache.computeIfAbsent(cacheKey, k -> {
             List<BakedQuad> newQuads = new ArrayList<>();
             //? if forge {
-            List<BakedQuad> originalQuads = originalTank.getQuads(null, side, rand, ModelData.EMPTY, null);
-            //?} else {
-            /*List<BakedQuad> originalQuads = originalTank.getQuads(null, side, rand);
-             *///?}
+            /*List<BakedQuad> originalQuads = originalTank.getQuads(null, side, rand, ModelData.EMPTY, null);
+            *///?} else {
+            List<BakedQuad> originalQuads = originalTank.getQuads(null, side, rand);
+             //?}
 
             // net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS в 1.20.1
             TextureAtlasSprite newSprite = Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(safeTexture);

@@ -28,13 +28,13 @@ public class CraterBiomes {
     }
 
     //? if forge {
-    public static final ResourceKey<Biome> INNER_CRATER_KEY = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "inner_crater"));
+    /*public static final ResourceKey<Biome> INNER_CRATER_KEY = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "inner_crater"));
     public static final ResourceKey<Biome> OUTER_CRATER_KEY = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "outer_crater"));
-    //?}
-    //? if fabric {
-    /*public static final ResourceKey<Biome> INNER_CRATER_KEY = ResourceKey.create(Registries.BIOME, new ResourceLocation(MainRegistry.MOD_ID, "inner_crater"));
-    public static final ResourceKey<Biome> OUTER_CRATER_KEY = ResourceKey.create(Registries.BIOME, new ResourceLocation(MainRegistry.MOD_ID, "outer_crater"));
     *///?}
+    //? if fabric {
+    public static final ResourceKey<Biome> INNER_CRATER_KEY = ResourceKey.create(Registries.BIOME, new ResourceLocation(MainRegistry.MOD_ID, "inner_crater"));
+    public static final ResourceKey<Biome> OUTER_CRATER_KEY = ResourceKey.create(Registries.BIOME, new ResourceLocation(MainRegistry.MOD_ID, "outer_crater"));
+    //?}
     public static Biome createInnerCraterBiome() {
         return new Biome.BiomeBuilder()
                 .hasPrecipitation(true)

@@ -39,14 +39,14 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 *///?}
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+//?}
 /**
  * Instanced Renderer для статических частей (Base/Frame).
  * Без шейдеров рендерит все машины одного типа одним {@code glDrawElementsInstanced}.
@@ -55,10 +55,10 @@ import net.fabricmc.api.Environment;
  * G-buffer / shadow pass / pack uniforms.
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class InstancedStaticPartRenderer extends AbstractGpuMesh {
 
     private static final int MAX_INSTANCES = 1024;
@@ -395,7 +395,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 VertexConsumer consumer = bufferSource.getBuffer(RenderType.solid());
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
-                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    //? if forge {
+                    /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    *///?} else {
+                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
+                    //?}
                 }
             }
             return;
@@ -410,7 +414,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 VertexConsumer consumer = bufferSource.getBuffer(RenderType.solid());
                 PoseStack.Pose pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
-                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    //? if forge {
+                    /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    *///?} else {
+                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
+                    //?}
                 }
             }
             return;
@@ -504,7 +512,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 VertexConsumer consumer = bufferSource.getBuffer(RenderType.solid());
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
-                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    //? if forge {
+                    /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    *///?} else {
+                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
+                    //?}
                 }
             }
             return;
@@ -704,11 +716,18 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         flush(RenderSystem.getProjectionMatrix());
     }
 
-    public void flush(RenderLevelStageEvent event) {
+    //? if forge {
+    /*public void flush(net.minecraftforge.client.event.RenderLevelStageEvent event) {
         flush(event.getProjectionMatrix());
     }
+    *///?}
+    //? if fabric {
+    public void flush(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
+        flush(event.projectionMatrix());
+    }
+    //?}
 
-    private void flush(Matrix4f projectionMatrix) {
+    public void flush(Matrix4f projectionMatrix) {
         if (instanceCount == 0) return;
 
         if (!initialized || vaoId == -1 || eboId == -1) {

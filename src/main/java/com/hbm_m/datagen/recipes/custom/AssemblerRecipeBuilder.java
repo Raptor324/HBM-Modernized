@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.ArrayList;
+/*import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -46,17 +46,17 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
     }
 
     
-    /**
+    /^*
      * Добавляет ингредиент с указанным количеством.
-     */
+     ^/
     public AssemblerRecipeBuilder addIngredient(Ingredient ingredient, int count) {
         this.ingredients.add(new CountableIngredient(ingredient, count));
         return this;
     }
     
-    /**
+    /^*
      * Удобный метод для добавления ванильных предметов.
-     */
+     ^/
     public AssemblerRecipeBuilder addIngredient(Item item, int count) {
         return addIngredient(Ingredient.of(item), count);
     }
@@ -156,4 +156,4 @@ public class AssemblerRecipeBuilder implements RecipeBuilder {
         }
     }
 }
-//?}
+*///?}

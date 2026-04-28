@@ -41,12 +41,12 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+*///?}
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
-//?}
+*///?}
 /**
  * 2×2×2 multiblock cube.
  */

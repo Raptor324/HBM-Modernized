@@ -18,7 +18,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.network.PacketDistributor;
 import com.hbm_m.platform.ForgeItemHandlerAdapter;
 
 public class BatterySocketMenu extends AbstractContainerMenu implements ILongEnergyMenu {
@@ -150,9 +149,8 @@ public class BatterySocketMenu extends AbstractContainerMenu implements ILongEne
             long curM = blockEntity.getMaxEnergyStored();
             long curD = blockEntity.getEnergyDelta();
             if (curE != lastSyncedEnergy || curM != lastSyncedMaxEnergy || curD != lastSyncedDelta) {
-                ModPacketHandler.INSTANCE.send(
-                        PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
-                        new PacketSyncEnergy(containerId, curE, curM, curD));
+                ModPacketHandler.sendToPlayer((ServerPlayer) player, ModPacketHandler.SYNC_ENERGY,
+                    new PacketSyncEnergy(containerId, curE, curM, curD));
                 lastSyncedEnergy = curE;
                 lastSyncedMaxEnergy = curM;
                 lastSyncedDelta = curD;

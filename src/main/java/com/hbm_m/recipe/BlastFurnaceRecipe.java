@@ -115,13 +115,14 @@ public class BlastFurnaceRecipe implements Recipe<SimpleContainer> {
 
         @Override
         public void toNetwork(FriendlyByteBuf buffer, BlastFurnaceRecipe recipe) {
-            buffer.writeInt(recipe.inputItems.size());
+            buffer.writeVarInt(recipe.getIngredients().size());
 
             for (Ingredient ingredient : recipe.getIngredients()) {
                 ingredient.toNetwork(buffer);
             }
 
-            buffer.writeItemStack(recipe.getResultItem(null), false);
+            // Заменяем writeItemStack(stack, false) на ванильный writeItem(stack)
+            buffer.writeItem(recipe.getResultItem(null));
         }
     }
 }

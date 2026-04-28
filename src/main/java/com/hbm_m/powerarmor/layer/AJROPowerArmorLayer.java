@@ -26,10 +26,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * Reuses the AJR OBJ model but with distinct AJRO textures.
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class AJROPowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends AbstractObjArmorLayer<T, M> {
 
     private static final ResourceLocation AJRO_ATLAS_LOCATION = InventoryMenu.BLOCK_ATLAS;
@@ -57,10 +57,10 @@ public class AJROPowerArmorLayer<T extends LivingEntity, M extends HumanoidModel
 
         private static Material withTex(String path) {
             //? if fabric && < 1.21.1 {
-            /*return new Material(AJRO_ATLAS_LOCATION, new ResourceLocation(MainRegistry.MOD_ID, path));
-            *///?} else {
-                        return new Material(AJRO_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
-            //?}
+            return new Material(AJRO_ATLAS_LOCATION, new ResourceLocation(MainRegistry.MOD_ID, path));
+            //?} else {
+                        /*return new Material(AJRO_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
+            *///?}
 
         }
 

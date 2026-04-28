@@ -1,57 +1,71 @@
 package com.hbm_m.network;
 
 import com.hbm_m.inventory.menu.AnvilMenu;
+import com.hbm_m.network.C2SPacket;
 import com.hbm_m.recipe.AnvilRecipeManager;
+
+import dev.architectury.networking.NetworkManager.PacketContext;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
 
 import org.jetbrains.annotations.Nullable;
-import java.util.function.Supplier;
 
-public class AnvilSelectRecipeC2SPacket {
+public class AnvilSelectRecipeC2SPacket implements C2SPacket {
+
     private final BlockPos pos;
     @Nullable
     private final ResourceLocation recipeId;
 
     public AnvilSelectRecipeC2SPacket(BlockPos pos, @Nullable ResourceLocation recipeId) {
-        this.pos = pos;
+        this.pos      = pos;
         this.recipeId = recipeId;
     }
 
-    public static void encode(AnvilSelectRecipeC2SPacket packet, FriendlyByteBuf buffer) {
-        buffer.writeBlockPos(packet.pos);
-        if (packet.recipeId != null) {
-            buffer.writeBoolean(true);
-            buffer.writeResourceLocation(packet.recipeId);
-        } else {
-            buffer.writeBoolean(false);
-        }
-    }
+    // ── Serialization ─────────────────────────────────────────────────────────
 
-    public static AnvilSelectRecipeC2SPacket decode(FriendlyByteBuf buffer) {
-        BlockPos pos = buffer.readBlockPos();
-        ResourceLocation recipeId = buffer.readBoolean() ? buffer.readResourceLocation() : null;
+    public static AnvilSelectRecipeC2SPacket decode(FriendlyByteBuf buf) {
+        BlockPos          pos      = buf.readBlockPos();
+        ResourceLocation  recipeId = buf.readBoolean() ? buf.readResourceLocation() : null;
         return new AnvilSelectRecipeC2SPacket(pos, recipeId);
     }
 
-    public static void handle(AnvilSelectRecipeC2SPacket packet, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context context = contextSupplier.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null) return;
+    @Override
+    public void write(FriendlyByteBuf buf) {
+        buf.writeBlockPos(pos);
+        if (recipeId != null) {
+            buf.writeBoolean(true);
+            buf.writeResourceLocation(recipeId);
+        } else {
+            buf.writeBoolean(false);
+        }
+    }
+
+    // ── Handler ───────────────────────────────────────────────────────────────
+
+    public static void handle(AnvilSelectRecipeC2SPacket msg, PacketContext context) {
+        context.queue(() -> {
+            if (!(context.getPlayer() instanceof ServerPlayer player)) return;
+
             if (player.containerMenu instanceof AnvilMenu menu &&
-                    menu.blockEntity.getBlockPos().equals(packet.pos)) {
-                menu.blockEntity.setSelectedRecipeId(packet.recipeId);
-                if (packet.recipeId != null) {
-                    AnvilRecipeManager.getRecipe(player.level(), packet.recipeId)
+                    menu.blockEntity.getBlockPos().equals(msg.pos)) {
+
+                menu.blockEntity.setSelectedRecipeId(msg.recipeId);
+
+                if (msg.recipeId != null) {
+                    AnvilRecipeManager.getRecipe(player.level(), msg.recipeId)
                             .ifPresent(recipe -> menu.blockEntity.populateInputsFromPlayer(player, recipe));
                 }
             }
         });
-        context.setPacketHandled(true);
+    }
+
+    // ── Send helper ───────────────────────────────────────────────────────────
+
+    public static void sendToServer(BlockPos pos, @Nullable ResourceLocation recipeId) {
+        ModPacketHandler.sendToServer(ModPacketHandler.ANVIL_SELECT_RECIPE,
+                new AnvilSelectRecipeC2SPacket(pos, recipeId));
     }
 }
-

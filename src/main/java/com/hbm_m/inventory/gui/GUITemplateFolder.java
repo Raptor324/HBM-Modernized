@@ -25,10 +25,10 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 public class GUITemplateFolder extends Screen {
     //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(RefStrings.MODID, "textures/gui/gui_planner.png");
-    *///?} else {
-        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_planner.png");
-    //?}
+    private static final ResourceLocation TEXTURE = new ResourceLocation(RefStrings.MODID, "textures/gui/gui_planner.png");
+    //?} else {
+        /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_planner.png");
+    *///?}
 
     private final int imageWidth = 176;
     private final int imageHeight = 229;
@@ -241,7 +241,8 @@ public class GUITemplateFolder extends Screen {
             int y = this.topPos + 26 + (row * 27);
 
             if (pMouseX >= x && pMouseX < x + 18 && pMouseY >= y && pMouseY < y + 18) {
-                ModPacketHandler.INSTANCE.sendToServer(new GiveTemplateC2SPacket(filteredRecipes.get(recipeIndex)));
+                ModPacketHandler.sendToServer(ModPacketHandler.GIVE_TEMPLATE,
+                    new GiveTemplateC2SPacket(filteredRecipes.get(recipeIndex)));
                 this.minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
                 return true;
             }

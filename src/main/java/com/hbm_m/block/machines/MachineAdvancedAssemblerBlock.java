@@ -16,8 +16,8 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+*///?}
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;

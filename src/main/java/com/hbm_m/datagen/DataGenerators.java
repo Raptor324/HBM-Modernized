@@ -1,6 +1,6 @@
 package com.hbm_m.datagen;
 //? if forge {
-import java.lang.reflect.Field;
+/*import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.List;
 import java.util.Set;
@@ -122,4 +122,4 @@ public class DataGenerators {
         return List.of(p_195347_, InSquarePlacement.spread(), p_195348_, BiomeFilter.biome());
     }
 }
-//?}
+*///?}

@@ -19,9 +19,9 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.ChunkRenderTypeSet;
+/*import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-//?}
+*///?}
 
 /**
  * Iris/chunk mesh: при {@code render_active=false} - Base, Frame, Slider и Spinner (idle).
@@ -83,20 +83,20 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
      * Только cutout: совпадает с {@code chemical_plant.json} и исключает попытки запекать translucent в terrain.
      */
     //? if forge {
-    @Override
+    /*@Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         return ChunkRenderTypeSet.of(RenderType.cutout());
     }
-    //?}
+    *///?}
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         //? if forge {
-        return getQuads(state, side, rand, ModelData.EMPTY, null);
-        //?}
+        /*return getQuads(state, side, rand, ModelData.EMPTY, null);
+        *///?}
 
         //? if fabric {
-        /*if (state == null) {
+        if (state == null) {
             return getItemQuads(side, rand);
         }
         if (ShaderCompatibilityDetector.useVboGeometry()) {
@@ -126,11 +126,11 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
             addIdleSliderAndSpinner(state, side, rand, rotationY, result);
         }
         return result;
-        *///?}
+        //?}
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                     RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
         if (state == null) {
@@ -166,7 +166,7 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
 
         return result;
     }
-    //?}
+    *///?}
 
     /** Soft peak sine (BobMathUtil.sps); при anim=0 даёт 1.0. */
     private static double chemicalSps(double x) {
@@ -174,18 +174,18 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
     }
 
     //? if forge {
-    private void addIdleSliderAndSpinner(BlockState state, @Nullable Direction side, RandomSource rand,
+    /*private void addIdleSliderAndSpinner(BlockState state, @Nullable Direction side, RandomSource rand,
                                         ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType,
                                         int rotationY, List<BakedQuad> result) {
         double sdx = chemicalSps(0) * 0.375;
 
-        /*
+        /^
          * Legacy GL (RenderChemicalPlant): после R_facing слайдер - только glTranslated(sdx, 0, 0) вдоль локальной X,
          * т.е. R * (v + (sdx,0,0)) = R*v + R*(sdx,0,0). Нельзя делать translate до R с (-0.5,0,-0.5) - иначе
          * «диагональный» оффсет на N/S и визуально «лишние» 90°.
          * Спиннер при static: T(0.5) R_spin T(-0.5) при R_spin=0 - единичный; лишний translate до R на квадах
          * давал сдвиг на полблока.
-         */
+         ^/
         float slideRad = (float) Math.toRadians(rotationY);
         float slideTx = (float) (sdx * Math.cos(slideRad));
         float slideTz = (float) (sdx * Math.sin(slideRad));
@@ -204,10 +204,10 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
             result.addAll(ModelHelper.transformQuadsByFacing(spq, rotationY));
         }
     }
-    //?}
+    *///?}
 
     //? if fabric {
-    /*private void addIdleSliderAndSpinner(BlockState state, @Nullable Direction side, RandomSource rand,
+    private void addIdleSliderAndSpinner(BlockState state, @Nullable Direction side, RandomSource rand,
                                         int rotationY, List<BakedQuad> result) {
         double sdx = chemicalSps(0) * 0.375;
 
@@ -229,10 +229,10 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
             result.addAll(ModelHelper.transformQuadsByFacing(spq, rotationY));
         }
     }
-    *///?}
+    //?}
 
     //? if forge {
-    private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand,
+    /*private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand,
                                         ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
         if (!itemQuadsCached) {
             buildItemQuads(rand, modelData, renderType);
@@ -259,10 +259,10 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
         }
         this.cachedItemQuads = allQuads;
     }
-    //?}
+    *///?}
 
     //? if fabric {
-    /*private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
+    private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
         if (!itemQuadsCached) {
             buildItemQuads(rand);
             itemQuadsCached = true;
@@ -288,7 +288,7 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
         }
         this.cachedItemQuads = allQuads;
     }
-    *///?}
+    //?}
 
     @Override
     protected List<String> getItemRenderPartNames() {
@@ -298,12 +298,12 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
     @Override
     public TextureAtlasSprite getParticleIcon() {
         //? if forge {
-        return getParticleIcon(ModelData.EMPTY);
-        //?}
+        /*return getParticleIcon(ModelData.EMPTY);
+        *///?}
 
         //? if fabric {
-        /*return super.getParticleIcon();
-        *///?}
+        return super.getParticleIcon();
+        //?}
     }
 
     @Override

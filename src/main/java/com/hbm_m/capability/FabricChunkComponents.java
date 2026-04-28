@@ -1,5 +1,5 @@
 //? if fabric {
-/*package com.hbm_m.capability;
+package com.hbm_m.capability;
 
 import com.hbm_m.interfaces.IChunkRadiation;
 import com.hbm_m.lib.RefStrings;
@@ -15,12 +15,12 @@ import net.minecraft.nbt.Tag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 
-/^*
+/**
  * Fabric-only CCA регистрация chunk radiation.
  *
  * ВАЖНО: этот класс должен быть добавлен в fabric entrypoints
  * ("cardinal-components-chunk") в `fabric.mod.json`.
- ^/
+ */
 public final class FabricChunkComponents implements ChunkComponentInitializer {
     public static final ComponentKey<IChunkRadiationComponent> CHUNK_RADIATION =
             ComponentRegistry.getOrCreate(new ResourceLocation(RefStrings.MODID, "chunk_radiation"), IChunkRadiationComponent.class);
@@ -30,9 +30,9 @@ public final class FabricChunkComponents implements ChunkComponentInitializer {
         registry.register(CHUNK_RADIATION, chunk -> new ChunkRadiationComponent());
     }
 
-    /^*
+    /**
      * Узкий тип компонента для CCA (IChunkRadiation + Component lifecycle).
-     ^/
+     */
     public interface IChunkRadiationComponent extends IChunkRadiation, AutoSyncedComponent {
         void readFromNbt(CompoundTag tag);
         void writeToNbt(CompoundTag tag);
@@ -100,5 +100,5 @@ public final class FabricChunkComponents implements ChunkComponentInitializer {
         }
     }
 }
-*///?}
+//?}
 

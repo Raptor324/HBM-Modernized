@@ -9,7 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import java.util.List;
 
 //? if forge {
-import mezz.jei.api.constants.VanillaTypes;
+/*import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -24,10 +24,10 @@ public class CentrifugeJeiCategory implements IRecipeCategory<CentrifugeJeiRecip
 
     private static final ResourceLocation TEXTURE =
             //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
-            //?}
+            new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
+            //?} else {
+                        /^ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_centrifuge.png");
+            ^///?}
 
 
     private final IDrawable background;
@@ -78,7 +78,7 @@ public class CentrifugeJeiCategory implements IRecipeCategory<CentrifugeJeiRecip
         }
     }
 }
-//?} else {
-/*public final class CentrifugeJeiCategory {
+*///?} else {
+public final class CentrifugeJeiCategory {
     private CentrifugeJeiCategory() {}
-}*///?}
+}//?}

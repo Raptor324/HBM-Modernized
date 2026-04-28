@@ -16,12 +16,12 @@ import com.hbm_m.sound.ShredderSoundInstance;
 
 import dev.architectury.registry.registries.RegistrySupplier;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.Connection;
@@ -39,13 +39,13 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import com.hbm_m.capability.ModCapabilities;
+/*import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
-//? if fabric {
-/*import team.reborn.energy.api.EnergyStorage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 *///?}
+//? if fabric {
+import team.reborn.energy.api.EnergyStorage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+//?}
 
 /**
  * Шреддер машина - перерабатывает предметы в пыль/скрап
@@ -131,7 +131,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         if (slot == BATTERY_SLOT) {
             // Разрешаем предметы, которые могут отдавать энергию
             //? if forge {
-            boolean hasHbmEnergy = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
+            /*boolean hasHbmEnergy = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
                     .map(provider -> provider.canExtract())
                     .orElse(false);
             if (hasHbmEnergy) {
@@ -140,10 +140,10 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             return stack.getCapability(ForgeCapabilities.ENERGY)
                     .map(storage -> storage.canExtract())
                     .orElse(false);
-            //?}
-            //? if fabric {
-            /*return EnergyStorage.ITEM.find(stack, null) != null;
             *///?}
+            //? if fabric {
+            return EnergyStorage.ITEM.find(stack, null) != null;
+            //?}
         }
         return false;
     }
@@ -170,11 +170,11 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public void handleUpdateTag(CompoundTag tag) {
         load(tag);
     }
-    //?}
+    *///?}
 
     @Override
     public void load(CompoundTag tag) {
@@ -219,10 +219,10 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         }
     }
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
     private void clientTick() {
         ClientSoundManager.updateSound(this, getIsActive(),
                 () -> new ShredderSoundInstance(this.getBlockPos()));
@@ -334,7 +334,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         }
 
         //? if fabric {
-        /*var itemEnergy = EnergyStorage.ITEM.find(batteryStack, null);
+        var itemEnergy = EnergyStorage.ITEM.find(batteryStack, null);
         if (itemEnergy == null || !itemEnergy.supportsExtraction()) {
             return;
         }
@@ -353,10 +353,10 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             }
         }
         return;
-        *///?}
+        //?}
 
         //? if forge {
-        boolean transferred = batteryStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).map(itemEnergy -> {
+        /*boolean transferred = batteryStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).map(itemEnergy -> {
             if (!itemEnergy.canExtract()) {
                 return false;
             }
@@ -402,7 +402,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
                 setChanged();
             }
         });
-        //?}
+        *///?}
     }
 
     public boolean hasPower() {

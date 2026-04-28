@@ -8,12 +8,12 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 
 /**
  * Renderer for the Industrial Turbine.
@@ -21,10 +21,10 @@ import net.fabricmc.api.Environment;*///?}
  * TODO: Animate the Flywheel OBJ group spinning when the turbine is active.
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class IndustrialTurbineRenderer implements BlockEntityRenderer<MachineIndustrialTurbineBlockEntity> {
 
     public IndustrialTurbineRenderer(BlockEntityRendererProvider.Context context) {

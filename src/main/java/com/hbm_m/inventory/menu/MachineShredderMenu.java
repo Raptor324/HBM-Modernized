@@ -21,7 +21,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.network.PacketDistributor;
 
 public class MachineShredderMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -270,15 +269,13 @@ public class MachineShredderMenu extends AbstractContainerMenu implements ILongE
         super.broadcastChanges();
 
         if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
-            ModPacketHandler.INSTANCE.send(
-                    net.minecraftforge.network.PacketDistributor.PLAYER.with(() -> (net.minecraft.server.level.ServerPlayer) this.player),
-                    new com.hbm_m.network.packet.PacketSyncEnergy(
-                            this.containerId,
-                            blockEntity.getEnergyStored(),
-                            blockEntity.getMaxEnergyStored(),
-                            0L // <--- Передаем 0 как дельту
-                    )
-            );
+            ModPacketHandler.sendToPlayer((net.minecraft.server.level.ServerPlayer) this.player, ModPacketHandler.SYNC_ENERGY,
+                new com.hbm_m.network.packet.PacketSyncEnergy(
+                    this.containerId,
+                    blockEntity.getEnergyStored(),
+                    blockEntity.getMaxEnergyStored(),
+                    0L
+                ));
         }
     }
 }

@@ -22,20 +22,20 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.templates.FluidTank;
-//?}
+*///?}
 
 //? if fabric {
-/*import dev.architectury.fluid.FluidStack;
+import dev.architectury.fluid.FluidStack;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-*///?}
+//?}
 
 /**
  * BlockEntity для Fracking Tower (Гидроразрывная вышка).
@@ -81,8 +81,8 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
     protected final ModFluidTank fracksolTank;
 
     //? if forge {
-    protected LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-     //?}
+    /*protected LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
+     *///?}
 
     //=====================================================================================//
     // СОСТОЯНИЕ МАШИНЫ
@@ -124,7 +124,7 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
         
         // Инициализация танков
         //? if forge {
-        this.oilTank = new ModFluidTank(64_000) {
+        /*this.oilTank = new ModFluidTank(64_000) {
             @Override
             public boolean isFluidValid(FluidStack stack) {
                 return stack.getFluid().isSame(ModFluids.CRUDE_OIL.getSource());
@@ -144,10 +144,10 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
                 return stack.getFluid().isSame(ModFluids.FRACKSOL.getSource());
             }
         };
-        //?}
+        *///?}
 
         //? if fabric {
-        /*this.oilTank = new ModFluidTank(64_000) {
+        this.oilTank = new ModFluidTank(64_000) {
             @Override
             public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
                 return fluid.isSame(ModFluids.CRUDE_OIL.getSource());
@@ -167,7 +167,7 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
                 return fluid.isSame(ModFluids.FRACKSOL.getSource());
             }
         };
-        *///?}
+        //?}
     }
 
     //=====================================================================================//
@@ -209,20 +209,20 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
 
     private boolean isEnergyItem(ItemStack stack) {
         //? if forge {
-        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-         //?}
+        /*return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+         *///?}
         //? if fabric {
-        /*return team.reborn.energy.api.EnergyStorage.ITEM.find(stack, null) != null;
-        *///?}
+        return team.reborn.energy.api.EnergyStorage.ITEM.find(stack, null) != null;
+        //?}
     }
 
     private boolean isFluidContainer(ItemStack stack) {
         //? if forge {
-        return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-         //?}
+        /*return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+         *///?}
         //? if fabric {
-        /*return FluidStorage.ITEM.find(stack, null) != null;
-        *///?}
+        return FluidStorage.ITEM.find(stack, null) != null;
+        //?}
     }
 
     private boolean isUpgradeItem(ItemStack stack) {
@@ -366,7 +366,7 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
         if (inputStack.isEmpty() || sourceTank.isEmpty()) return;
 
         //? if forge {
-        inputStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).ifPresent(handler -> {
+        /*inputStack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).ifPresent(handler -> {
             FluidStack fluidInTank = sourceTank.getFluid();
             if (fluidInTank.isEmpty()) return;
             int filled = handler.fill(fluidInTank, IFluidHandler.FluidAction.SIMULATE);
@@ -382,10 +382,10 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
                 inventory.setStackInSlot(inputSlot, ItemStack.EMPTY);
             }
         });
-        //?}
+        *///?}
 
         //? if fabric {
-        /*var containerStorage = FluidStorage.ITEM.find(inputStack, net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext.withConstant(inputStack));
+        var containerStorage = FluidStorage.ITEM.find(inputStack, net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext.withConstant(inputStack));
         if (containerStorage == null) return;
         FluidVariant variant = FluidVariant.of(sourceTank.getStoredFluid());
         long toTransfer = (long) sourceTank.getFluidAmountMb() * ModFluidTank.DROPLETS_PER_MB;
@@ -396,7 +396,7 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
                 tx.commit();
             }
         }
-        *///?}
+        //?}
     }
 
     /**
@@ -496,13 +496,13 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
     //=====================================================================================//
 
     //? if fabric {
-    /*@Nullable
+    @Nullable
     public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
         if (side == Direction.DOWN) return fracksolTank.getStorage();
         if (side == Direction.UP)   return oilTank.getStorage();
         return gasTank.getStorage();
     }
-    *///?}
+    //?}
 
     @Override
     protected void saveAdditional(CompoundTag tag) {
@@ -535,7 +535,7 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
     //=====================================================================================//
 
     //? if forge {
-    @Override
+    /*@Override
     protected void setupFluidCapability() {
         fluidHandler = LazyOptional.of(() -> new FrackingTowerFluidHandler(this));
     }
@@ -551,20 +551,21 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
         super.invalidateCaps();
         fluidHandler.invalidate();
     }
-    //?}
+    *///?}
 
     //=====================================================================================//
     // РЕНДЕРИНГ
     //=====================================================================================//
 
     //? if forge {
-    @Override
+    /*@Override
+     *///?}
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(this.worldPosition)
                 .inflate(3.0, 0.0, 3.0)
                 .expandTowards(0.0, 24.0, 0.0);
     }
-    //?}
+
 
     //=====================================================================================//
     // КОНФИГУРАЦИЯ

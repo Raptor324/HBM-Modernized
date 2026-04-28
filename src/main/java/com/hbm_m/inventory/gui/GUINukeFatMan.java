@@ -23,10 +23,10 @@ public class GUINukeFatMan extends GuiInfoScreen<NukeFatManMenu> {
 
     private static final ResourceLocation TEXTURE =
             //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/weapon/fat_man_schematic.png");
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/fat_man_schematic.png");
-            //?}
+            new ResourceLocation(RefStrings.MODID, "textures/gui/weapon/fat_man_schematic.png");
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/fat_man_schematic.png");
+            *///?}
 
 
     private final NukeFatManBlockEntity be;

@@ -36,21 +36,21 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
+*///?}
 
 //? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import team.reborn.energy.api.EnergyStorage;
-*///?}
+//?}
 
 /**
  * Chemical Plant BlockEntity - порт с 1.7.10.
@@ -84,9 +84,9 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
     private final ModFluidTank[] outputTanks = new ModFluidTank[3];
 
     //? if forge {
-    private final LazyOptional<IFluidHandler>[] inputTankHandlers = new LazyOptional[3];
+    /*private final LazyOptional<IFluidHandler>[] inputTankHandlers = new LazyOptional[3];
     private final LazyOptional<IFluidHandler>[] outputTankHandlers = new LazyOptional[3];
-    //?}
+    *///?}
 
     private boolean didProcess = false;
     @Nullable private ResourceLocation selectedRecipeId = null;
@@ -195,9 +195,9 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
                 }
             };
             //? if forge {
-            inputTankHandlers[i] = LazyOptional.of(() -> (IFluidHandler) inputTanks[idx]);
+            /*inputTankHandlers[i] = LazyOptional.of(() -> (IFluidHandler) inputTanks[idx]);
             outputTankHandlers[i] = LazyOptional.of(() -> (IFluidHandler) outputTanks[idx]);
-            //?}
+            *///?}
         }
     }
 
@@ -394,8 +394,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
     }
 
     //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?}
+    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    *///?}
     private void clientTick() {
         com.hbm_m.sound.ClientSoundManager.updateSound(this, this.didProcess,
                 () -> new com.hbm_m.sound.ChemicalPlantSoundInstance(this.getBlockPos()));
@@ -411,7 +411,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         }
 
         //? if forge {
-        stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(provider -> {
+        /*stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(provider -> {
             if (!provider.canExtract()) return;
             long needed = getMaxEnergyStored() - getEnergyStored();
             if (needed <= 0) return;
@@ -434,10 +434,10 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
                 }
             });
         }
-        //?}
+        *///?}
 
         //? if fabric {
-        /*var source = EnergyStorage.ITEM.find(stack, null);
+        var source = EnergyStorage.ITEM.find(stack, null);
         if (source == null || !source.supportsExtraction()) return;
 
         long needed = getMaxEnergyStored() - getEnergyStored();
@@ -454,7 +454,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
                 tx.commit();
             }
         }
-        *///?}
+        //?}
     }
 
     private void transferFluidsFromItems() {
@@ -466,16 +466,16 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             if (!inventory.getStackInSlot(emptyContainerSlot).isEmpty()) continue;
 
             //? if forge {
-            var result = FluidUtil.tryEmptyContainer(fullContainer, (IFluidHandler) inputTanks[i], TANK_CAPACITY, null, true);
+            /*var result = FluidUtil.tryEmptyContainer(fullContainer, (IFluidHandler) inputTanks[i], TANK_CAPACITY, null, true);
             if (result.isSuccess()) {
                 fullContainer.shrink(1);
                 inventory.setStackInSlot(emptyContainerSlot, result.getResult());
                 setChanged();
             }
-            //?}
+            *///?}
 
             //? if fabric {
-            /*ItemStack one = fullContainer.copy();
+            ItemStack one = fullContainer.copy();
             one.setCount(1);
             Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, null);
             if (itemStorage == null) continue;
@@ -510,7 +510,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             fullContainer.shrink(1);
             inventory.setStackInSlot(emptyContainerSlot, one);
             setChanged();
-            *///?}
+            //?}
         }
     }
 
@@ -523,16 +523,16 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             if (!inventory.getStackInSlot(filledContainerSlot).isEmpty()) continue;
 
             //? if forge {
-            var result = FluidUtil.tryFillContainer(emptyContainer, (IFluidHandler) outputTanks[i], TANK_CAPACITY, null, true);
+            /*var result = FluidUtil.tryFillContainer(emptyContainer, (IFluidHandler) outputTanks[i], TANK_CAPACITY, null, true);
             if (result.isSuccess()) {
                 emptyContainer.shrink(1);
                 inventory.setStackInSlot(filledContainerSlot, result.getResult());
                 setChanged();
             }
-            //?}
+            *///?}
 
             //? if fabric {
-            /*if (outputTanks[i].isEmpty()) continue;
+            if (outputTanks[i].isEmpty()) continue;
 
             ItemStack one = emptyContainer.copy();
             one.setCount(1);
@@ -567,7 +567,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             emptyContainer.shrink(1);
             inventory.setStackInSlot(filledContainerSlot, one);
             setChanged();
-            *///?}
+            //?}
         }
     }
 
@@ -597,12 +597,12 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             if (stack.isEmpty()) return false;
             if (stack.getItem() instanceof ItemCreativeBattery) return true;
             //? if forge {
-            if (stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) return true;
+            /*if (stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) return true;
             return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-            //?}
-            //? if fabric {
-            /*return EnergyStorage.ITEM.find(stack, null) != null;
             *///?}
+            //? if fabric {
+            return EnergyStorage.ITEM.find(stack, null) != null;
+            //?}
         }
         if (slot == SLOT_SCHEMATIC) {
             return stack.getItem() instanceof ItemBlueprintFolder;
@@ -615,31 +615,31 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         }
         if (slot >= SLOT_FLUID_INPUT_START && slot <= SLOT_FLUID_INPUT_END) {
             //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?} else {
-            /*return FluidStorage.ITEM.find(stack, null) != null;
-            *///?}
+            /*return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            *///?} else {
+            return FluidStorage.ITEM.find(stack, null) != null;
+            //?}
         }
         if (slot >= SLOT_FLUID_OUTPUT_START && slot <= SLOT_FLUID_OUTPUT_END) {
             //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?} else {
-            /*return FluidStorage.ITEM.find(stack, null) != null;
-            *///?}
+            /*return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            *///?} else {
+            return FluidStorage.ITEM.find(stack, null) != null;
+            //?}
         }
         if (slot >= SLOT_FLUID_INPUT_EMPTY_START && slot <= SLOT_FLUID_INPUT_EMPTY_END) {
             //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?} else {
-            /*return FluidStorage.ITEM.find(stack, null) != null;
-            *///?}
+            /*return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            *///?} else {
+            return FluidStorage.ITEM.find(stack, null) != null;
+            //?}
         }
         if (slot >= SLOT_FLUID_OUTPUT_EMPTY_START && slot <= SLOT_FLUID_OUTPUT_EMPTY_END) {
             //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?} else {
-            /*return FluidStorage.ITEM.find(stack, null) != null;
-            *///?}
+            /*return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            *///?} else {
+            return FluidStorage.ITEM.find(stack, null) != null;
+            //?}
         }
         return true;
     }
@@ -785,7 +785,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
             return inputTankHandlers[0].cast();
@@ -801,5 +801,5 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             outputTankHandlers[i].invalidate();
         }
     }
-    //?}
+    *///?}
 }

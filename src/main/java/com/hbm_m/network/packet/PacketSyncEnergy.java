@@ -1,53 +1,68 @@
 package com.hbm_m.network.packet;
 
-import java.util.function.Supplier;
+import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.network.S2CPacket;
+
+import dev.architectury.networking.NetworkManager.PacketContext;
 
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.server.level.ServerPlayer;
 
-public class PacketSyncEnergy {
-    private final int containerId;
+/**
+ * S2C пакет: синхронизация энергии между сервером и GUI клиента.
+ */
+public class PacketSyncEnergy implements S2CPacket {
+
+    private final int  containerId;
     private final long energy;
     private final long maxEnergy;
-    private final long delta; // <-- Новое поле
+    private final long delta;
 
     public PacketSyncEnergy(int containerId, long energy, long maxEnergy, long delta) {
         this.containerId = containerId;
-        this.energy = energy;
-        this.maxEnergy = maxEnergy;
-        this.delta = delta;
+        this.energy      = energy;
+        this.maxEnergy   = maxEnergy;
+        this.delta       = delta;
     }
 
-    public static void encode(PacketSyncEnergy msg, FriendlyByteBuf buffer) {
-        buffer.writeInt(msg.containerId);
-        buffer.writeLong(msg.energy);
-        buffer.writeLong(msg.maxEnergy);
-        buffer.writeLong(msg.delta); // <-- Пишем long
-    }
+    // ── Serialization ─────────────────────────────────────────────────────────
 
-    public static PacketSyncEnergy decode(FriendlyByteBuf buffer) {
+    public static PacketSyncEnergy decode(FriendlyByteBuf buf) {
         return new PacketSyncEnergy(
-                buffer.readInt(),
-                buffer.readLong(),
-                buffer.readLong(),
-                buffer.readLong() // <-- Читаем long
+                buf.readInt(),
+                buf.readLong(),
+                buf.readLong(),
+                buf.readLong()
         );
     }
 
-    public static void handle(PacketSyncEnergy msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                // Вызываем обновленный хендлер
+    @Override
+    public void write(FriendlyByteBuf buf) {
+        buf.writeInt(containerId);
+        buf.writeLong(energy);
+        buf.writeLong(maxEnergy);
+        buf.writeLong(delta);
+    }
+
+    // ── Handler ───────────────────────────────────────────────────────────────
+
+    public static void handle(PacketSyncEnergy msg, PacketContext context) {
+        // context.queue() — главный поток клиента, доступ к Minecraft безопасен
+        context.queue(() ->
                 com.hbm_m.client.ClientEnergySyncHandler.handle(
                         msg.containerId,
                         msg.energy,
                         msg.maxEnergy,
                         msg.delta
-                );
-            });
-        });
-        ctx.get().setPacketHandled(true);
+                )
+        );
+    }
+
+    // ── Send helper ───────────────────────────────────────────────────────────
+
+    public static void sendTo(ServerPlayer player,
+                              int containerId, long energy, long maxEnergy, long delta) {
+        ModPacketHandler.sendToPlayer(player, ModPacketHandler.SYNC_ENERGY,
+                new PacketSyncEnergy(containerId, energy, maxEnergy, delta));
     }
 }

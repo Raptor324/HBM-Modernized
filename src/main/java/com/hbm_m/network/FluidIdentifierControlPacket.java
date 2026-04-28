@@ -1,55 +1,55 @@
 package com.hbm_m.network;
 
-import java.util.function.Supplier;
-
 import com.hbm_m.interfaces.IItemControlReceiver;
+import com.hbm_m.network.C2SPacket;
+
+import dev.architectury.networking.NetworkManager.PacketContext;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
 
-/**
- * Packet for fluid identifier GUI: sends primary/secondary fluid selection to server.
- */
-public class FluidIdentifierControlPacket {
+public class FluidIdentifierControlPacket implements C2SPacket {
 
     private final CompoundTag data;
 
     public FluidIdentifierControlPacket(CompoundTag data) {
-        this.data = data;
+        this.data = data != null ? data : new CompoundTag();
     }
 
-    public static void encode(FluidIdentifierControlPacket msg, FriendlyByteBuf buffer) {
-        buffer.writeNbt(msg.data);
+    // ── Serialization ─────────────────────────────────────────────────────────
+
+    public static FluidIdentifierControlPacket decode(FriendlyByteBuf buf) {
+        CompoundTag tag = buf.readNbt();
+        return new FluidIdentifierControlPacket(tag);
     }
 
-    public static FluidIdentifierControlPacket decode(FriendlyByteBuf buffer) {
-        CompoundTag tag = buffer.readNbt();
-        return new FluidIdentifierControlPacket(tag != null ? tag : new CompoundTag());
+    @Override
+    public void write(FriendlyByteBuf buf) {
+        buf.writeNbt(data);
     }
 
-    public static void handle(FluidIdentifierControlPacket msg, Supplier<NetworkEvent.Context> contextSupplier) {
-        NetworkEvent.Context ctx = contextSupplier.get();
-        ctx.enqueueWork(() -> {
-            ServerPlayer player = ctx.getSender();
-            if (player == null) return;
+    // ── Handler ───────────────────────────────────────────────────────────────
+
+    public static void handle(FluidIdentifierControlPacket msg, PacketContext context) {
+        context.queue(() -> {
+            if (!(context.getPlayer() instanceof ServerPlayer player)) return;
 
             ItemStack held = player.getMainHandItem();
-            if (held.isEmpty() || !(held.getItem() instanceof IItemControlReceiver)) {
-                return;
-            }
+            if (held.isEmpty() || !(held.getItem() instanceof IItemControlReceiver receiver)) return;
 
-            ((IItemControlReceiver) held.getItem()).receiveControl(held, msg.data);
+            receiver.receiveControl(held, msg.data);
         });
-        ctx.setPacketHandled(true);
     }
+
+    // ── Send helper ───────────────────────────────────────────────────────────
 
     public static void send(String primary, String secondary) {
         CompoundTag tag = new CompoundTag();
-        if (primary != null) tag.putString("fluid1", primary);
+        if (primary   != null) tag.putString("fluid1", primary);
         if (secondary != null) tag.putString("fluid2", secondary);
-        ModPacketHandler.INSTANCE.sendToServer(new FluidIdentifierControlPacket(tag));
+        ModPacketHandler.sendToServer(ModPacketHandler.FLUID_IDENTIFIER_CTRL,
+                new FluidIdentifierControlPacket(tag));
     }
 }

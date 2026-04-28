@@ -29,12 +29,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class GUIScreenRecipeSelector extends Screen {
     //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
+    private static final ResourceLocation TEXTURE = new ResourceLocation(
             RefStrings.MODID, "textures/gui/processing/gui_recipe_selector.png");
-    *///?} else {
-        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    //?} else {
+        /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/processing/gui_recipe_selector.png");
-    //?}
+    *///?}
 
     
     public static final String NULL_SELECTION = "null";
@@ -315,11 +315,11 @@ public class GUIScreenRecipeSelector extends Screen {
     
     private void applySelection() {
         if (assembler != null) {
-            ModPacketHandler.INSTANCE.sendToServer(
-                    new SetAssemblerRecipeC2SPacket(machinePos, selectedRecipe));
+            ModPacketHandler.sendToServer(ModPacketHandler.SET_ASSEMBLER_RECIPE,
+                new SetAssemblerRecipeC2SPacket(machinePos, selectedRecipe));
         } else if (chemicalPlant != null) {
-            ModPacketHandler.INSTANCE.sendToServer(
-                    new SetChemPlantRecipeC2SPacket(machinePos, selectedRecipe));
+            ModPacketHandler.sendToServer(ModPacketHandler.SET_CHEM_RECIPE,
+                new SetChemPlantRecipeC2SPacket(machinePos, selectedRecipe));
         }
         if (this.minecraft != null) {
             this.minecraft.setScreen(this.parentScreen);

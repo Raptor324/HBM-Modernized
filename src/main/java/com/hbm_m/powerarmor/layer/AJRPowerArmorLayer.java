@@ -26,10 +26,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * Mirrors the working T51 pipeline but with AJR textures/model id.
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class AJRPowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends AbstractObjArmorLayer<T, M> {
 
     private static final ResourceLocation AJR_ATLAS_LOCATION = InventoryMenu.BLOCK_ATLAS;
@@ -57,10 +57,10 @@ public class AJRPowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<
 
         private static Material withTex(String path) {
             //? if fabric && < 1.21.1 {
-            /*return new Material(AJR_ATLAS_LOCATION, new ResourceLocation(MainRegistry.MOD_ID, path));
-            *///?} else {
-                        return new Material(AJR_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
-            //?}
+            return new Material(AJR_ATLAS_LOCATION, new ResourceLocation(MainRegistry.MOD_ID, path));
+            //?} else {
+                        /*return new Material(AJR_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
+            *///?}
 
         }
 

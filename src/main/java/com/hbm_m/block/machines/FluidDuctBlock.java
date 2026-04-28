@@ -22,8 +22,8 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidDuctItem;
 
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -56,11 +56,11 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import com.hbm_m.api.fluids.FluidCapabilityAccess;
-//?}
+*///?}
 
 /**
  * Fluid duct: multipart blockstate + Forge OBJ visibility on {@code pipe_neo.obj}. Fluid type lives in the block entity.
@@ -99,7 +99,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
 
     private static final int IDENTIFIER_NETWORK_LIMIT = 512;
 
-    /** Identifier "none" mod fluid → cleared duct ({@link Fluids#EMPTY}). */
+    /** ResourceLocation "none" mod fluid → cleared duct ({@link Fluids#EMPTY}). */
     @Nullable
     private static Fluid normalizeDuctPaintFluid(@Nullable Fluid fluid) {
         if (fluid == null) {
@@ -398,10 +398,10 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
 
     @Override
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
     public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof FluidDuctBlockEntity ductBe)) {

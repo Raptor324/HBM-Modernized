@@ -30,10 +30,10 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
     // Используем современный .fromNamespaceAndPath()
     private static final ResourceLocation TEXTURE =
             //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/storage/gui_battery.png");
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/storage/gui_battery.png");
-            //?}
+            new ResourceLocation(RefStrings.MODID, "textures/gui/storage/gui_battery.png");
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/storage/gui_battery.png");
+            *///?}
 
 
     public GUIMachineBattery(MachineBatteryMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
@@ -221,19 +221,22 @@ public class GUIMachineBattery extends AbstractContainerScreen<MachineBatteryMen
             // Кнопка "Без сигнала"
             if (isMouseOver(pMouseX, pMouseY, 133, 16, 18, 18)) {
                 playSound();
-                ModPacketHandler.INSTANCE.sendToServer(new UpdateBatteryC2SPacket(this.menu.blockEntity.getBlockPos(), 0));
+                ModPacketHandler.sendToServer(ModPacketHandler.UPDATE_BATTERY,
+                    new UpdateBatteryC2SPacket(this.menu.blockEntity.getBlockPos(), 0));
                 return true;
             }
             // Кнопка "С сигналом"
             if (isMouseOver(pMouseX, pMouseY, 133, 52, 18, 18)) {
                 playSound();
-                ModPacketHandler.INSTANCE.sendToServer(new UpdateBatteryC2SPacket(this.menu.blockEntity.getBlockPos(), 1));
+                ModPacketHandler.sendToServer(ModPacketHandler.UPDATE_BATTERY,
+                    new UpdateBatteryC2SPacket(this.menu.blockEntity.getBlockPos(), 1));
                 return true;
             }
             // Кнопка "Приоритет"
             if (isMouseOver(pMouseX, pMouseY, 152, 35, 16, 16)) {
                 playSound();
-                ModPacketHandler.INSTANCE.sendToServer(new UpdateBatteryC2SPacket(this.menu.blockEntity.getBlockPos(), 2));
+                ModPacketHandler.sendToServer(ModPacketHandler.UPDATE_BATTERY,
+                    new UpdateBatteryC2SPacket(this.menu.blockEntity.getBlockPos(), 2));
                 return true;
             }
         }

@@ -19,8 +19,8 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
 //? if forge {
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-//?}
+/*import net.minecraftforge.common.capabilities.ICapabilityProvider;
+*///?}
 
 public class ModBatteryItem extends Item {
     protected final long capacity;
@@ -52,13 +52,13 @@ public class ModBatteryItem extends Item {
     }
 
     //? if forge {
-    @Nullable
+    /*@Nullable
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
 
         return new EnergyCapabilityProvider(stack, this.capacity, this.maxReceive, this.maxExtract);
     }
-    //?}
+    *///?}
 
     // --- Статический метод для установки энергии ---
     /**

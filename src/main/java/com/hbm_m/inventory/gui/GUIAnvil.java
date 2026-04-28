@@ -34,12 +34,12 @@ import java.util.Objects;
 public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     
     //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
+    private static final ResourceLocation TEXTURE = new ResourceLocation(
             RefStrings.MODID, "textures/gui/processing/gui_anvil.png");
-    *///?} else {
-        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    //?} else {
+        /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/processing/gui_anvil.png");
-    //?}
+    *///?}
 
     private static final int DISPLAY_SLOTS = 10;
     
@@ -329,7 +329,8 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         if (isOverCraftButton(mouseX, mouseY) && isCraftButtonEnabled()) {
             playClickSound();
             boolean craftAll = hasShiftDown();
-            ModPacketHandler.INSTANCE.sendToServer(
+            ModPacketHandler.sendToServer(
+                ModPacketHandler.ANVIL_CRAFT,
                 new AnvilCraftC2SPacket(menu.blockEntity.getBlockPos(), craftAll));
             return true;
         }
@@ -408,7 +409,8 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         ResourceLocation id = recipe != null ? recipe.getId() : null;
         cachedServerSelection = id;
         menu.blockEntity.setSelectedRecipeId(id);
-        ModPacketHandler.INSTANCE.sendToServer(
+        ModPacketHandler.sendToServer(
+            ModPacketHandler.ANVIL_SELECT_RECIPE,
             new AnvilSelectRecipeC2SPacket(menu.blockEntity.getBlockPos(), id));
     }
     

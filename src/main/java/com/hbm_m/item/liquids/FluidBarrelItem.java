@@ -7,6 +7,25 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 
+//? if forge {
+/*import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.capabilities.ICapabilityProvider;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.capability.IFluidHandlerItem;
+import net.minecraftforge.fluids.capability.templates.FluidHandlerItemStack;
+*///?}
+
+//? if fabric {
+import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleVariantItemStorage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
+//?}
+
+import dev.architectury.fluid.FluidStack;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -15,12 +34,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandlerItem;
 
 /**
  * Fluid Barrel - A portable fluid container that can hold 16,000 mB (16 buckets) of any fluid.
@@ -43,7 +56,7 @@ public class FluidBarrelItem extends Item {
             return Component.translatable("item.hbm_m.fluid_barrel.empty");
         }
         // Если жидкость есть, подставляем её переведенное название (например, "Water Barrel")
-        return Component.translatable("item.hbm_m.fluid_barrel", fluid.getDisplayName());
+        return Component.translatable("item.hbm_m.fluid_barrel", fluid.getName());
     }
 
     @Override
@@ -55,7 +68,7 @@ public class FluidBarrelItem extends Item {
             tooltip.add(Component.literal("Empty").withStyle(ChatFormatting.GRAY));
         } else {
             tooltip.add(Component.literal("Fluid: ").withStyle(ChatFormatting.GRAY)
-                    .append(fluid.getDisplayName().copy().withStyle(ChatFormatting.AQUA)));
+                    .append(fluid.getName().copy().withStyle(ChatFormatting.AQUA)));
             tooltip.add(Component.literal("Amount: ").withStyle(ChatFormatting.GRAY)
                     .append(Component.literal(fluid.getAmount() + " / " + CAPACITY + " mB").withStyle(ChatFormatting.YELLOW)));
         }
@@ -79,32 +92,30 @@ public class FluidBarrelItem extends Item {
         return 0xFFFF00;
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
         return new FluidBarrelCapabilityProvider(stack);
     }
+    *///?}
 
     // Static helper methods for NBT access
     public static FluidStack getFluid(ItemStack stack) {
         CompoundTag tag = stack.getTag();
         if (tag != null && tag.contains(NBT_FLUID)) {
-            return FluidStack.loadFluidStackFromNBT(tag.getCompound(NBT_FLUID));
+            return FluidStack.read(tag.getCompound(NBT_FLUID));
         }
-        return FluidStack.EMPTY;
+        return FluidStack.empty();
     }
 
     public static void setFluid(ItemStack stack, FluidStack fluid) {
         if (fluid.isEmpty()) {
-            CompoundTag tag = stack.getTag();
-            if (tag != null) {
-                tag.remove(NBT_FLUID);
-                if (tag.isEmpty()) {
-                    stack.setTag(null);
-                }
-            }
+            stack.removeTagKey(NBT_FLUID);
         } else {
             CompoundTag tag = stack.getOrCreateTag();
-            tag.put(NBT_FLUID, fluid.writeToNBT(new CompoundTag()));
+            CompoundTag fluidTag = new CompoundTag();
+            fluid.write(fluidTag);
+            tag.put(NBT_FLUID, fluidTag);
         }
     }
 
@@ -115,120 +126,168 @@ public class FluidBarrelItem extends Item {
         return HbmFluidRegistry.getTintColor(fluid.getFluid());
     }
 
-    // --- Capability Provider ---
-    private static class FluidBarrelCapabilityProvider implements ICapabilityProvider {
-        private final FluidBarrelHandler handler;
+    // ================================================================== //
+    //  FORGE — ICapabilityProvider + IFluidHandlerItem                   //
+    // ================================================================== //
+
+    //? if forge {
+    /*private static class FluidBarrelCapabilityProvider implements ICapabilityProvider {
+        private final FluidBarrelForgeHandler handler;
         private final LazyOptional<IFluidHandlerItem> optional;
 
-        public FluidBarrelCapabilityProvider(ItemStack stack) {
-            this.handler = new FluidBarrelHandler(stack);
+        FluidBarrelCapabilityProvider(ItemStack stack) {
+            this.handler  = new FluidBarrelForgeHandler(stack);
             this.optional = LazyOptional.of(() -> handler);
         }
 
         @NotNull
         @Override
         public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-            if (cap == ForgeCapabilities.FLUID_HANDLER_ITEM) {
-                return optional.cast();
-            }
-            return LazyOptional.empty();
+            return cap == ForgeCapabilities.FLUID_HANDLER_ITEM
+                    ? optional.cast()
+                    : LazyOptional.empty();
         }
     }
 
-    // --- Fluid Handler Implementation ---
-    private static class FluidBarrelHandler implements IFluidHandlerItem {
+    // Forge FluidStack ≠ Architectury FluidStack → конвертируем внутри хэндлера
+    private static class FluidBarrelForgeHandler implements IFluidHandlerItem {
         private final ItemStack container;
 
-        public FluidBarrelHandler(ItemStack container) {
-            this.container = container;
-        }
+        FluidBarrelForgeHandler(ItemStack container) { this.container = container; }
 
-        @NotNull
-        @Override
-        public ItemStack getContainer() {
-            return container;
-        }
+        // --- helpers ---
 
-        @Override
-        public int getTanks() {
-            return 1;
-        }
-
-        @NotNull
-        @Override
-        public FluidStack getFluidInTank(int tank) {
+        private dev.architectury.fluid.FluidStack archFluid() {
             return FluidBarrelItem.getFluid(container);
         }
 
+        private static net.minecraftforge.fluids.FluidStack toForge(dev.architectury.fluid.FluidStack arch) {
+            return arch.isEmpty()
+                    ? net.minecraftforge.fluids.FluidStack.EMPTY
+                    : new net.minecraftforge.fluids.FluidStack(arch.getFluid(), (int) arch.getAmount());
+        }
+
+        // --- IFluidHandlerItem ---
+
+        @NotNull @Override public ItemStack getContainer() { return container; }
+
+        @Override public int getTanks() { return 1; }
+
+        @NotNull
         @Override
-        public int getTankCapacity(int tank) {
-            return CAPACITY;
+        public net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            return toForge(archFluid());
         }
 
         @Override
-        public boolean isFluidValid(int tank, @NotNull FluidStack stack) {
-            FluidStack current = getFluidInTank(tank);
-            // Can accept if empty or same fluid type
-            return current.isEmpty() || current.isFluidEqual(stack);
+        public int getTankCapacity(int tank) { return (int) CAPACITY; }
+
+        @Override
+        public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
+            dev.architectury.fluid.FluidStack cur = archFluid();
+            return cur.isEmpty() || cur.getFluid() == stack.getFluid();
         }
 
         @Override
-        public int fill(FluidStack resource, FluidAction action) {
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (resource.isEmpty()) return 0;
 
-            FluidStack current = getFluidInTank(0);
-            
-            // If not empty, must be same fluid
-            if (!current.isEmpty() && !current.isFluidEqual(resource)) {
-                return 0;
-            }
+            dev.architectury.fluid.FluidStack cur = archFluid();
+            if (!cur.isEmpty() && cur.getFluid() != resource.getFluid()) return 0;
 
-            int currentAmount = current.isEmpty() ? 0 : current.getAmount();
-            int space = CAPACITY - currentAmount;
-            int toFill = Math.min(space, resource.getAmount());
+            long have   = cur.isEmpty() ? 0L : cur.getAmount();
+            long space  = CAPACITY - have;
+            long toFill = Math.min(space, resource.getAmount());
 
             if (toFill > 0 && action.execute()) {
-                FluidStack newFluid = new FluidStack(resource.getFluid(), currentAmount + toFill);
-                FluidBarrelItem.setFluid(container, newFluid);
+                FluidBarrelItem.setFluid(container,
+                        dev.architectury.fluid.FluidStack.create(resource.getFluid(), have + toFill));
             }
-
-            return toFill;
+            return (int) toFill;
         }
 
         @NotNull
         @Override
-        public FluidStack drain(FluidStack resource, FluidAction action) {
-            if (resource.isEmpty()) return FluidStack.EMPTY;
-            
-            FluidStack current = getFluidInTank(0);
-            if (current.isEmpty() || !current.isFluidEqual(resource)) {
-                return FluidStack.EMPTY;
-            }
-
+        public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            dev.architectury.fluid.FluidStack cur = archFluid();
+            if (cur.isEmpty() || cur.getFluid() != resource.getFluid()) return net.minecraftforge.fluids.FluidStack.EMPTY;
             return drain(resource.getAmount(), action);
         }
 
         @NotNull
         @Override
-        public FluidStack drain(int maxDrain, FluidAction action) {
-            FluidStack current = getFluidInTank(0);
-            if (current.isEmpty() || maxDrain <= 0) {
-                return FluidStack.EMPTY;
-            }
+        public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            dev.architectury.fluid.FluidStack cur = archFluid();
+            if (cur.isEmpty() || maxDrain <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
 
-            int toDrain = Math.min(current.getAmount(), maxDrain);
-            FluidStack drained = new FluidStack(current.getFluid(), toDrain);
+            long toDrain  = Math.min(cur.getAmount(), maxDrain);
+            net.minecraftforge.fluids.FluidStack out = new net.minecraftforge.fluids.FluidStack(cur.getFluid(), (int) toDrain);
 
             if (action.execute()) {
-                int remaining = current.getAmount() - toDrain;
-                if (remaining > 0) {
-                    FluidBarrelItem.setFluid(container, new FluidStack(current.getFluid(), remaining));
-                } else {
-                    FluidBarrelItem.setFluid(container, FluidStack.EMPTY);
-                }
+                long remaining = cur.getAmount() - toDrain;
+                FluidBarrelItem.setFluid(container, remaining > 0
+                        ? dev.architectury.fluid.FluidStack.create(cur.getFluid(), remaining)
+                        : dev.architectury.fluid.FluidStack.empty());
             }
-
-            return drained;
+            return out;
         }
     }
+    *///?}
+
+    // ================================================================== //
+    //  FABRIC — Fabric Transfer API (SingleVariantItemStorage)            //
+    //  Регистрацию делай через FluidStorage.ITEM.registerForItems(...)    //
+    //  в точке входа (onInitialize).                                      //
+    // ================================================================== //
+
+    //? if fabric {
+    public static Storage<FluidVariant> createFabricStorage(ContainerItemContext ctx) {
+        return new SingleVariantItemStorage<FluidVariant>(ctx) {
+
+            // Возвращает «пустой» вариант типа — аналог null для ресурса
+            @Override
+            protected FluidVariant getBlankResource() {
+                return FluidVariant.blank();
+            }
+
+            // Читаем текущую жидкость из NBT предмета
+            @Override
+            protected FluidVariant getResource(ItemVariant currentVariant) {
+                FluidStack fs = FluidBarrelItem.getFluid(currentVariant.toStack());
+                return fs.isEmpty() ? FluidVariant.blank() : FluidVariant.of(fs.getFluid());
+            }
+
+            // Читаем текущее количество из NBT предмета
+            @Override
+            protected long getAmount(ItemVariant currentVariant) {
+                FluidStack fs = FluidBarrelItem.getFluid(currentVariant.toStack());
+                return fs.isEmpty() ? 0L : fs.getAmount();
+            }
+
+            @Override
+            protected long getCapacity(FluidVariant variant) {
+                return CAPACITY;
+            }
+
+            // Создаём новый ItemVariant с обновлённым NBT (не мутируем оригинал)
+            // Вызывается фреймворком; откат транзакции обеспечивается через context.exchange()
+            @Override
+            protected ItemVariant getUpdatedVariant(ItemVariant currentVariant,
+                                                    FluidVariant newResource,
+                                                    long newAmount) {
+                // toStack() сохраняет весь NBT (имя, зачарования и т.д.) — только меняем fluid-тег
+                ItemStack stack = currentVariant.toStack();
+                if (newAmount == 0L || newResource.isBlank()) {
+                    // Очищаем тег, чтобы пустые бочки могли складываться в стак
+                    FluidBarrelItem.setFluid(stack, FluidStack.empty());
+                } else {
+                    FluidBarrelItem.setFluid(stack,
+                            FluidStack.create(newResource.getFluid(), newAmount));
+                }
+                return ItemVariant.of(stack);
+            }
+        };
+    }
+    //?}
 }

@@ -2,9 +2,9 @@ package com.hbm_m.client.render.implementations;
 
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -26,9 +26,9 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-*///?}
+//?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -40,10 +40,10 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePressBlockEntity, PressBakedModel> {
 
     private static final String HEAD_PART = "Head";
@@ -270,7 +270,13 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
     }
 
     //? if forge {
-    public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+    /*public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+        if (instancedHead != null) instancedHead.flush(event);
+    }
+    *///?}
+    
+    //? if fabric {
+    public static void flushInstancedBatches(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
         if (instancedHead != null) instancedHead.flush(event);
     }
     //?}

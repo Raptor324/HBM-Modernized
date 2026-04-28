@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.main;
+/*package com.hbm_m.main;
 
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.capability.ModCapabilities;
@@ -7,6 +7,7 @@ import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.worldgen.ModWorldGen;
@@ -29,6 +30,7 @@ public final class ForgeEntrypoint {
         ModFluids.register(modBus);
         modBus.addListener(ModCapabilities::register);
         modBus.addListener(CreativeModeTabEventHandler::onBuildCreativeModeTabContents);
+        modBus.addListener((net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent event) -> ModPacketHandler.register());
 
         MinecraftForge.EVENT_BUS.register(new CrateBreaker());
         MinecraftForge.EVENT_BUS.register(new BombDefuser());
@@ -38,4 +40,4 @@ public final class ForgeEntrypoint {
         MinecraftForge.EVENT_BUS.register(new PlayerHandler());
     }
 }
-//?}
+*///?}

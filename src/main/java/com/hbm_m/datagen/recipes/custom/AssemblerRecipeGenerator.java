@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.function.Consumer;
+/*import java.util.function.Consumer;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.datagen.recipes.ModRecipeProvider;
@@ -11,9 +11,9 @@ import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/**
+/^*
  * Groups all assembler recipes so they can be maintained separately from {@link ModRecipeProvider}.
- */
+ ^/
 public final class AssemblerRecipeGenerator {
 
     private AssemblerRecipeGenerator() {
@@ -240,4 +240,4 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "plate_euphemium_from_ingots");
     }
 }
-//?}
+*///?}

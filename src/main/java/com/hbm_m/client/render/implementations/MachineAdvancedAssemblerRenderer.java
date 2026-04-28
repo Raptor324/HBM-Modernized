@@ -2,13 +2,13 @@ package com.hbm_m.client.render.implementations;
 
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 *///?}
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+//?}
 import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
@@ -46,10 +46,10 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<MachineAdvancedAssemblerBlockEntity, MachineAdvancedAssemblerBakedModel> {
 
     private MachineAdvancedAssemblerVboRenderer gpu;
@@ -395,7 +395,8 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
      * ВАЖНО: Вызывать в конце рендера ВСЕХ машин для флаша батчей.
      * При useInstancedBatching использует матрицы из события.
      */
-    public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+    //? if forge {
+    /*public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
         flushInstanced(event, instancedBase);
         flushInstanced(event, instancedFrame);
         flushInstanced(event, instancedRing);
@@ -408,6 +409,23 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         flushInstanced(event, instancedHead2);
         flushInstanced(event, instancedSpike2);
     }
+
+    *///?}
+    //? if fabric {
+    public static void flushInstancedBatches(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
+        flushInstanced(event, instancedBase);
+        flushInstanced(event, instancedFrame);
+        flushInstanced(event, instancedRing);
+        flushInstanced(event, instancedArmLower1);
+        flushInstanced(event, instancedArmUpper1);
+        flushInstanced(event, instancedHead1);
+        flushInstanced(event, instancedSpike1);
+        flushInstanced(event, instancedArmLower2);
+        flushInstanced(event, instancedArmUpper2);
+        flushInstanced(event, instancedHead2);
+        flushInstanced(event, instancedSpike2);
+    }
+    //?}
 
     /**
      * Очищает кэши instanced рендереров (вызывается при периодической очистке памяти)
@@ -431,10 +449,18 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         if (r != null) r.cleanup();
     }
 
-    private static void flushInstanced(net.minecraftforge.client.event.RenderLevelStageEvent event,
+    //? if forge {
+    /*private static void flushInstanced(net.minecraftforge.client.event.RenderLevelStageEvent event,
                                        InstancedStaticPartRenderer r) {
         if (r != null) r.flush(event);
     }
+    *///?}
+    //? if fabric {
+    private static void flushInstanced(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event,
+                                       InstancedStaticPartRenderer r) {
+        if (r != null) r.flush(event);
+    }
+    //?}
 
     private void renderAnimated(MachineAdvancedAssemblerBlockEntity be, float pt,
                                 PoseStack pose, int blockLight, BlockPos blockPos,

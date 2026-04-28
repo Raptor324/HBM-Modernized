@@ -23,14 +23,14 @@ import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-*///?}
+//?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
@@ -45,10 +45,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.AABB;
 
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineAssemblerBlockEntity, MachineAssemblerBakedModel> {
 
     private MachineAssemblerVboRenderer gpu;
@@ -484,12 +484,22 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
 
     // ==================== INSTANCED BATCHING ====================
 
-    public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+    //? if forge {
+    /*public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
         if (instancedBody != null) instancedBody.flush(event);
         if (instancedSlider != null) instancedSlider.flush(event);
         if (instancedArm != null) instancedArm.flush(event);
         if (instancedCog != null) instancedCog.flush(event);
     }
+    *///?}
+    //? if fabric {
+    public static void flushInstancedBatches(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
+        if (instancedBody != null) instancedBody.flush(event);
+        if (instancedSlider != null) instancedSlider.flush(event);
+        if (instancedArm != null) instancedArm.flush(event);
+        if (instancedCog != null) instancedCog.flush(event);
+    }
+    //?}
 
     public static void clearCaches() {
         cleanupInstanced(instancedBody); instancedBody = null;

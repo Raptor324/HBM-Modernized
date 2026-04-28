@@ -33,12 +33,12 @@ import org.jetbrains.annotations.NotNull;
 public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChemicalPlantMenu> {
 
     //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
+    private static final ResourceLocation TEXTURE = new ResourceLocation(
             RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
-    *///?} else {
-        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    //?} else {
+        /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
-    //?}
+    *///?}
 
 
     private static final int TANK_WIDTH = 16;

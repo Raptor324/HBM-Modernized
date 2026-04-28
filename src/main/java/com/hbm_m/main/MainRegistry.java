@@ -58,6 +58,8 @@ public final class MainRegistry {
         ModEffects.init();
         ModRecipes.init();
 
+        
+
         // Common lifecycle hooks
         LifecycleEvent.SETUP.register(MainRegistry::commonSetup);
 

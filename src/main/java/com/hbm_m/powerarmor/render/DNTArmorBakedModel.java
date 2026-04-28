@@ -13,20 +13,20 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.ArmorItem;
 
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 
 /**
  * Baked model for rendering DNT power armor in GUI and hand.
  * Uses the same multipart baked model infrastructure as T51/AJR/Bismuth.
  */
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
-//?}
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class DNTArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final String[] DNT_ORDER = {

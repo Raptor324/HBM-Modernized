@@ -1,19 +1,20 @@
 package com.hbm_m.network;
 
-import java.util.function.Supplier;
-
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
+import com.hbm_m.network.C2SPacket;
+
+import dev.architectury.networking.NetworkManager.PacketContext;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.network.NetworkEvent;
 
-public class SetChemPlantRecipeC2SPacket {
+public class SetChemPlantRecipeC2SPacket implements C2SPacket {
+
     private final BlockPos blockPos;
     @Nullable
     private final ResourceLocation recipeId;
@@ -23,39 +24,44 @@ public class SetChemPlantRecipeC2SPacket {
         this.recipeId = recipeId;
     }
 
-    public SetChemPlantRecipeC2SPacket(FriendlyByteBuf buf) {
-        this.blockPos = buf.readBlockPos();
-        boolean hasRecipe = buf.readBoolean();
-        this.recipeId = hasRecipe ? buf.readResourceLocation() : null;
-    }
-
-    public static void encode(SetChemPlantRecipeC2SPacket packet, FriendlyByteBuf buf) {
-        buf.writeBlockPos(packet.blockPos);
-        buf.writeBoolean(packet.recipeId != null);
-        if (packet.recipeId != null) {
-            buf.writeResourceLocation(packet.recipeId);
-        }
-    }
+    // ── Serialization ─────────────────────────────────────────────────────────
 
     public static SetChemPlantRecipeC2SPacket decode(FriendlyByteBuf buf) {
-        return new SetChemPlantRecipeC2SPacket(buf);
+        BlockPos         blockPos  = buf.readBlockPos();
+        boolean          hasRecipe = buf.readBoolean();
+        ResourceLocation recipeId  = hasRecipe ? buf.readResourceLocation() : null;
+        return new SetChemPlantRecipeC2SPacket(blockPos, recipeId);
     }
 
-    public boolean handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            if (player == null) return;
+    @Override
+    public void write(FriendlyByteBuf buf) {
+        buf.writeBlockPos(blockPos);
+        buf.writeBoolean(recipeId != null);
+        if (recipeId != null) buf.writeResourceLocation(recipeId);
+    }
 
-            if (player.distanceToSqr(blockPos.getX() + 0.5, blockPos.getY() + 0.5, blockPos.getZ() + 0.5) > 64.0) {
-                return;
-            }
+    // ── Handler ───────────────────────────────────────────────────────────────
 
-            BlockEntity blockEntity = player.level().getBlockEntity(blockPos);
-            if (blockEntity instanceof MachineChemicalPlantBlockEntity chemPlant) {
-                chemPlant.setSelectedRecipe(recipeId);
+    public static void handle(SetChemPlantRecipeC2SPacket msg, PacketContext context) {
+        context.queue(() -> {
+            if (!(context.getPlayer() instanceof ServerPlayer player)) return;
+
+            if (player.distanceToSqr(
+                    msg.blockPos.getX() + 0.5,
+                    msg.blockPos.getY() + 0.5,
+                    msg.blockPos.getZ() + 0.5) > 64.0) return;
+
+            BlockEntity be = player.level().getBlockEntity(msg.blockPos);
+            if (be instanceof MachineChemicalPlantBlockEntity chemPlant) {
+                chemPlant.setSelectedRecipe(msg.recipeId);
             }
         });
-        return true;
+    }
+
+    // ── Send helper ───────────────────────────────────────────────────────────
+
+    public static void sendToServer(BlockPos blockPos, @Nullable ResourceLocation recipeId) {
+        ModPacketHandler.sendToServer(ModPacketHandler.SET_CHEM_RECIPE,
+                new SetChemPlantRecipeC2SPacket(blockPos, recipeId));
     }
 }

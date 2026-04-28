@@ -7,13 +7,13 @@ import com.hbm_m.client.model.variant.DoorModelSelection;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.ItemStack;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 *///?}
+//? if fabric {
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;
+//?}
 
 /**
  * Рендерит 3D модель двери с выбранным скином в GUI через стандартный renderFakeItem.
@@ -22,10 +22,10 @@ import net.fabricmc.api.Environment;
  * Это даёт корректный порядок рендера частей и трансформации из display.gui.
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public final class DoorModelFakeItemRenderer {
 
     private static final String PREVIEW_TAG = "hbm_m:door_preview";

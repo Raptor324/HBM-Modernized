@@ -86,24 +86,24 @@ public class FluidExhaustBlockEntity extends BlockEntity implements IFluidPipeMK
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public void onLoad() {
         super.onLoad();
         if (level instanceof ServerLevel serverLevel) {
             initNodes(serverLevel);
         }
     }
-    //?}
+    *///?}
 
     //? if fabric {
-    /*@Override
+    @Override
     public void setLevel(Level level) {
         super.setLevel(level);
         if (level instanceof ServerLevel serverLevel) {
             initNodes(serverLevel);
         }
     }
-    *///?}
+    //?}
 
     @Override
     public void setRemoved() {
@@ -119,14 +119,14 @@ public class FluidExhaustBlockEntity extends BlockEntity implements IFluidPipeMK
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public void onChunkUnloaded() {
         for (FluidNode n : nodes) {
             if (n != null) n.expired = true;
         }
         super.onChunkUnloaded();
     }
-    //?}
+    *///?}
 
     private void ensureNode(ServerLevel serverLevel, int index, Fluid fluid) {
         if (nodes[index] == null || nodes[index].isExpired()) {

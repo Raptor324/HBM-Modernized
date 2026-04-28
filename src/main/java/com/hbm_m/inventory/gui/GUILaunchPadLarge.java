@@ -22,10 +22,10 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
 
     private static final ResourceLocation TEXTURE =
             //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_large.png");
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_large.png");
-            //?}
+            new ResourceLocation(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_large.png");
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/gui_launch_pad_large.png");
+            *///?}
 
 
     public GUILaunchPadLarge(LaunchPadLargeMenu menu, Inventory playerInventory, Component title) {

@@ -22,7 +22,6 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.PacketDistributor;
 
 
 public class ItemDosimeter extends AbstractRadiationMeterItem {
@@ -134,7 +133,8 @@ public class ItemDosimeter extends AbstractRadiationMeterItem {
 
         sound.ifPresent(soundEvent -> {
             ResourceLocation soundLocation = soundEvent.getLocation();
-            ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
+            ModPacketHandler.sendToPlayer(player, ModPacketHandler.GEIGER_SOUND,
+                new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
         });
     }
 }

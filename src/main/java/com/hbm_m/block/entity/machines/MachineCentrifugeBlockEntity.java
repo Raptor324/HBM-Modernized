@@ -19,8 +19,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+*///?}
 
 /**
  * Centrifuge machine.
@@ -87,12 +87,12 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
                 return true;
             }
             //? if forge {
-            return stack.getCapability(ForgeCapabilities.ENERGY)
+            /*return stack.getCapability(ForgeCapabilities.ENERGY)
                     .map(storage -> storage.canExtract())
                     .orElse(false);
-            //?} else {
-            /*return false;
-            *///?}
+            *///?} else {
+            return false;
+            //?}
         }
         return true;
     }
@@ -250,7 +250,7 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
         }
 
         //? if forge {
-        batteryStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
+        /*batteryStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
             if (!itemEnergy.canExtract()) {
                 return;
             }
@@ -271,6 +271,6 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
                 setChanged();
             }
         });
-        //?}
+        *///?}
     }
 }

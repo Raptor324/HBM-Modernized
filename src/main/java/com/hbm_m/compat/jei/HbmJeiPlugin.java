@@ -22,24 +22,23 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 //? if forge {
-import mezz.jei.api.IModPlugin;
+/*import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
 import mezz.jei.api.registration.IRecipeCategoryRegistration;
 import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.ISubtypeRegistration;
-import net.minecraftforge.fluids.FluidStack;
 
 @JeiPlugin
 public class HbmJeiPlugin implements IModPlugin {
 
     private static final ResourceLocation PLUGIN_UID =
             //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "jei_plugin");
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "jei_plugin");
-            //?}
+            new ResourceLocation(RefStrings.MODID, "jei_plugin");
+            //?} else {
+                        /^ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "jei_plugin");
+            ^///?}
 
 
     @Override
@@ -78,7 +77,7 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.registerSubtypeInterpreter(
             ModItems.FLUID_BARREL.get(),
             (stack, ctx) -> {
-                FluidStack fluid = FluidBarrelItem.getFluid(stack);
+                dev.architectury.fluid.FluidStack fluid = FluidBarrelItem.getFluid(stack);
                 if (fluid.isEmpty()) return "empty";
                 ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fluid.getFluid());
                 return (fluidId != null ? fluidId.toString() : "unknown") + ":" + fluid.getAmount();
@@ -134,7 +133,7 @@ public class HbmJeiPlugin implements IModPlugin {
         return recipes;
     }
 }
-//?} else {
-/*public final class HbmJeiPlugin {
+*///?} else {
+public final class HbmJeiPlugin {
     private HbmJeiPlugin() {}
-}*///?}
+}//?}

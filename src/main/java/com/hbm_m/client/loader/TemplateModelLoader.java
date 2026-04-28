@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.client.loader;
+/*package com.hbm_m.client.loader;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
@@ -46,18 +46,18 @@ public class TemplateModelLoader implements IGeometryLoader<TemplateModelLoader.
         }
     }
 }
-//?}
+*///?}
 
 //? if fabric {
-/*package com.hbm_m.client.loader;
+package com.hbm_m.client.loader;
 
-/^*
+/**
  * Fabric: Forge geometry loader isn't available.
  * Stub to keep compilation working across loaders.
- ^/
+ */
 public class TemplateModelLoader {
     public TemplateModelLoader() {
         throw new UnsupportedOperationException("TemplateModelLoader is not implemented on Fabric yet.");
     }
 }
-*///?}
+//?}

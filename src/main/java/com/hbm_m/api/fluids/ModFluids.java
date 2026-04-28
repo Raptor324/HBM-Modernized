@@ -17,10 +17,10 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.level.material.Fluid;
 
 //? if forge {
-import net.minecraftforge.eventbus.api.IEventBus;
+/*import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraft.core.registries.BuiltInRegistries;
-//?}
+*///?}
 
 public class ModFluids {
 
@@ -56,12 +56,12 @@ public class ModFluids {
         final RegistrySupplier<?>[] sourceRef   = new RegistrySupplier[1];
         final RegistrySupplier<?>[] flowingRef  = new RegistrySupplier[1];
         //? if fabric && < 1.21.1 {
-        /*ResourceLocation stillTex   = new ResourceLocation(MainRegistry.MOD_ID, "gui/fluids/" + name);
+        ResourceLocation stillTex   = new ResourceLocation(MainRegistry.MOD_ID, "gui/fluids/" + name);
         ResourceLocation flowingTex = new ResourceLocation(MainRegistry.MOD_ID, "gui/fluids/" + name);
-         *///?} else {
-        ResourceLocation stillTex   = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "gui/fluids/" + name);
+         //?} else {
+        /*ResourceLocation stillTex   = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "gui/fluids/" + name);
         ResourceLocation flowingTex = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "gui/fluids/" + name);
-        //?}
+        *///?}
         // Атрибуты жидкости — единые для обеих платформ через Architectury API
         // source/flowing передаём через supplier, чтобы избежать circular init
         SimpleArchitecturyFluidAttributes attributes = SimpleArchitecturyFluidAttributes
@@ -80,20 +80,20 @@ public class ModFluids {
         // Регистрируем source
         RegistrySupplier<Fluid> source = FLUIDS.register(
                 //? if fabric && < 1.21.1 {
-                /*new ResourceLocation(MainRegistry.MOD_ID, name),
-                *///?} else {
-                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name),
-                //?}
+                new ResourceLocation(MainRegistry.MOD_ID, name),
+                //?} else {
+                /*ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name),
+                *///?}
                 () -> new ArchitecturyFlowingFluid.Source(attributes)
         );
 
         // Регистрируем flowing
         RegistrySupplier<Fluid> flowing = FLUIDS.register(
                 //? if fabric && < 1.21.1 {
-                /*new ResourceLocation(MainRegistry.MOD_ID, name + "_flowing"),
-                 *///?} else {
-                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name + "_flowing"),
-                //?}
+                new ResourceLocation(MainRegistry.MOD_ID, name + "_flowing"),
+                 //?} else {
+                /*ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name + "_flowing"),
+                *///?}
                 () -> new ArchitecturyFlowingFluid.Flowing(attributes)
         );
 
@@ -348,14 +348,14 @@ public class ModFluids {
      * На Forge — передаётся mod event bus; на Fabric — просто вызывается register().
      */
     //? if forge {
-    public static void register(IEventBus eventBus) {
-        FLUIDS.register();
-    }
-    //?}
-
-    //? if fabric {
-    /*public static void register() {
+    /*public static void register(IEventBus eventBus) {
         FLUIDS.register();
     }
     *///?}
+
+    //? if fabric {
+    public static void register() {
+        FLUIDS.register();
+    }
+    //?}
 }

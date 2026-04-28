@@ -16,10 +16,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 // Используется для создания эффекта радиационного тумана в зонах с высокой радиацией.
 // Частица медленно увеличивается в размере и плавно исчезает, создавая атмосферный эффект.
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class RadFogParticle extends TextureSheetParticle {
 
     // Конструктор частицы
@@ -70,10 +70,10 @@ public class RadFogParticle extends TextureSheetParticle {
         return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
     public static class Provider implements ParticleProvider<SimpleParticleType> {
         private final SpriteSet sprites;
 

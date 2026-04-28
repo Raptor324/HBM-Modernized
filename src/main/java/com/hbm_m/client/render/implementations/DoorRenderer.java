@@ -1,9 +1,7 @@
 package com.hbm_m.client.render.implementations;
 
 
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+
 
 import java.util.List;
 import java.util.Set;
@@ -32,9 +30,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-*///?}
+//?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -46,12 +44,15 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.client.model.data.ModelData;
+
 //? if forge {
+/*import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
-//?}
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, DoorBakedModel> {
 
     // Instanced рендерер для статической части frame
@@ -66,7 +67,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
     private final float[] origin = new float[3];
     private final float[] rotation = new float[3];
 
-    /** Части без геометрии - не пытаемся рендерить и не спамим лог */
+//    / Части без геометрии - не пытаемся рендерить и не спамим лог
     private static final Set<String> PARTS_WITHOUT_GEOMETRY = ConcurrentHashMap.newKeySet();
 
     public DoorRenderer(BlockEntityRendererProvider.Context context) {
@@ -129,21 +130,31 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                 + "_" + selection.getSkin().getId() + "_" + partName;
     }
 
-    /** Ключ для frame/частей - включает selection для корректного кэша скинов */
+//    Ключ для frame/частей - включает selection для корректного кэша скинов
     private static String getSelectionCacheKey(DoorModelSelection selection) {
         return selection.getModelType().getId() + "_" + selection.getSkin().getId();
     }
 
-    /** Проверяет, есть ли у части геометрия (квады). Результат кэшируется. */
+//    Проверяет, есть ли у части геометрия (квады). Результат кэшируется.
     private static boolean partHasGeometry(BakedModel partModel, String partName, String cacheKey) {
         if (partModel == null) return false;
         if (PARTS_WITHOUT_GEOMETRY.contains(cacheKey)) return false;
         int count = 0;
         var rand = RandomSource.create(42);
         for (Direction d : Direction.values()) {
-            count += partModel.getQuads(null, d, rand, ModelData.EMPTY, RenderType.solid()).size();
+            //? if forge {
+            /*count += partModel.getQuads(null, d, rand, ModelData.EMPTY, RenderType.solid()).size();
+             *///?}
+            //? if fabric {
+            count += partModel.getQuads(null, d, rand).size();
+            //?}
         }
-        count += partModel.getQuads(null, null, rand, ModelData.EMPTY, RenderType.solid()).size();
+        //? if forge {
+        /*count += partModel.getQuads(null, null, rand, ModelData.EMPTY, RenderType.solid()).size();
+         *///?}
+        //? if fabric {
+        count += partModel.getQuads(null, null, rand).size();
+        //?}
         if (count == 0) {
             PARTS_WITHOUT_GEOMETRY.add(cacheKey);
             return false;
@@ -151,10 +162,10 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         return true;
     }
 
-    /**
-     * Для дверей с конфигом - загружаем модель из реестра по выбору (legacy/modern).
-     * Иначе используем модель из blockstate.
-     */
+
+//     * Для дверей с конфигом - загружаем модель из реестра по выбору (legacy/modern).
+//     * Иначе используем модель из blockstate.
+
     @Override
     protected BakedModel getModel(DoorBlockEntity blockEntity) {
         DoorDecl doorDecl = blockEntity.getDoorDecl();
@@ -225,9 +236,9 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         renderWithVBO(be, model, doorDecl, openTicks, isOpen, poseStack, packedLight, blockPos, bufferSource);
     }
 
-    /**
-     * VBO рендеринг для оптимальной производительности
-     */
+
+//     * VBO рендеринг для оптимальной производительности
+
     private void renderWithVBO(DoorBlockEntity be, DoorBakedModel model, DoorDecl doorDecl,
                             float openTicks, boolean isOpen, PoseStack poseStack,
                             int packedLight, BlockPos blockPos, MultiBufferSource bufferSource) {
@@ -366,11 +377,11 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         }
     }
     
-    /**
-     * Рендер анимированной части через putBulkData для Iris/Oculus пути.
-     * doorType в ключе кэша - иначе qe_containment_door показывал бы створку fire_door.
-     * @param child true при рекурсивном вызове для дочерних частей (water_door: spinny_upper/lower)
-     */
+
+//     * Рендер анимированной части через putBulkData для Iris/Oculus пути.
+//     * doorType в ключе кэша - иначе qe_containment_door показывал бы створку fire_door.
+//     * @param child true при рекурсивном вызове для дочерних частей (water_door: spinny_upper/lower)
+
     private void renderAnimatedPartForIris(String partName, String doorType, DoorModelSelection selection,
                                            DoorBlockEntity be, DoorBakedModel model,
                                            DoorDecl doorDecl, float openTicks, PoseStack poseStack,
@@ -390,8 +401,8 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
                 var consumer = bufferSource.getBuffer(RenderType.solid());
                 var pose = poseStack.last();
                 for (var quad : quads) {
-                    consumer.putBulkData(pose, quad, brightness, brightness, brightness, 1f, packedLight, 
-                                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, false);
+                    consumer.putBulkData(pose, quad, brightness, brightness, brightness, packedLight,
+                            net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
                 }
             }
         }
@@ -577,11 +588,11 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
     }
 
 
-    /**
-     * Применяет трансформации части двери.
-     * ВАЖНО: При наличии DAE-анимации применяются И процедурная трансформация (getOrigin, getRotation, getTranslation),
-     * И полная матрица DAE (включая translation) - оба источника нужны для корректных пивотов и смещений.
-     */
+
+//     * Применяет трансформации части двери.
+//     * ВАЖНО: При наличии DAE-анимации применяются И процедурная трансформация (getOrigin, getRotation, getTranslation),
+//     * И полная матрица DAE (включая translation) - оба источника нужны для корректных пивотов и смещений.
+
     private void doPartTransform(PoseStack poseStack, DoorDecl doorDecl,
                                 String partName, float openTicks, boolean child, ColladaAnimationData animData,
                                 DoorModelSelection selection) {
@@ -627,11 +638,12 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         return true;
     }
 
-    /**
-     * ВАЖНО: Вызывать в конце рендера ВСЕХ дверей для флаша батчей.
-     * При useInstancedBatching использует матрицы из события.
-     */
-    public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+
+//     * ВАЖНО: Вызывать в конце рендера ВСЕХ дверей для флаша батчей.
+//     * При useInstancedBatching использует матрицы из события.
+
+    //? if forge {
+    /*public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
         if (ModClothConfig.get().enableDebugLogging) {
             for (var e : instancedFrameCache.entrySet()) {
                 var r = e.getValue();
@@ -653,23 +665,48 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             if (renderer != null) renderer.flush(event);
         }
     }
+    *///?}
+    //? if fabric {
+    public static void flushInstancedBatches(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
+        if (ModClothConfig.get().enableDebugLogging) {
+            for (var e : instancedFrameCache.entrySet()) {
+                var r = e.getValue();
+                if (r != null && r.getInstanceCount() > 0) {
+                    MainRegistry.LOGGER.debug("DoorRenderer flush frame '{}': {} instances", e.getKey(), r.getInstanceCount());
+                }
+            }
+            for (var e : instancedPartCache.entrySet()) {
+                var r = e.getValue();
+                if (r != null && r.getInstanceCount() > 0) {
+                    MainRegistry.LOGGER.debug("DoorRenderer flush part '{}': {} instances", e.getKey(), r.getInstanceCount());
+                }
+            }
+        }
+        for (InstancedStaticPartRenderer renderer : instancedFrameCache.values()) {
+            if (renderer != null) renderer.flush(event);
+        }
+        for (InstancedStaticPartRenderer renderer : instancedPartCache.values()) {
+            if (renderer != null) renderer.flush(event);
+        }
+    }
+    //?}
 
     @Override
     public int getViewDistance() {
         return 128;
     }
 
-    /**
-     * Вызывается при перезагрузке ресурсов
-     */
+
+//     * Вызывается при перезагрузке ресурсов
+
     public void onResourceManagerReload() {
         // Очищаем instanced кэш
         clearAllCaches();
     }
 
-    /**
-     * Статический метод для глобальной очистки (вызывается из регистрации событий)
-     */
+
+//     * Статический метод для глобальной очистки (вызывается из регистрации событий)
+
     public static void clearAllCaches() {
         for (InstancedStaticPartRenderer renderer : instancedFrameCache.values()) {
             if (renderer != null) renderer.cleanup();
@@ -695,13 +732,3 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
         MainRegistry.LOGGER.debug("Door renderer caches cleared");
     }
 }
-
-//?}
-
-//? if fabric {
-/*/^*
- * Fabric stub: Forge-based door renderer isn't wired yet.
- * (Door visuals should come from vanilla model/baked path for now.)
- ^/
-public class DoorRenderer { }
-*///?}

@@ -22,8 +22,8 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if fabric {
-/*import team.reborn.energy.api.EnergyStorage;
-*///?}
+import team.reborn.energy.api.EnergyStorage;
+//?}
 
 /**
  * Menu для Chemical Plant - порт с 1.7.10.
@@ -57,10 +57,10 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
                     if (stack.getItem() instanceof ItemBlueprintFolder) return true;
                     if (ItemEnergyAccess.getHbmProvider(stack).isPresent() || ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
                     //? if fabric {
-                    /*return EnergyStorage.ITEM.find(stack, null) != null;
-                    *///?} else {
-                    return false;
-                    //?}
+                    return EnergyStorage.ITEM.find(stack, null) != null;
+                    //?} else {
+                    /*return false;
+                    *///?}
                 }
             });
             addSlot(new Slot(container, 1, 35, 126));  // ??? (оставляем без ограничений как было)
@@ -173,8 +173,8 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
             if (ItemEnergyAccess.getHbmProvider(stack).isPresent()
                     || ItemEnergyAccess.getHbmReceiver(stack).isPresent()
                     //? if fabric {
-                    /*|| EnergyStorage.ITEM.find(stack, null) != null
-                    *///?}
+                    || EnergyStorage.ITEM.find(stack, null) != null
+                    //?}
             ) {
                 if (!moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
             } else if (stack.getItem() instanceof ItemBlueprintFolder) {

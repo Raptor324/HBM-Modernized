@@ -13,22 +13,22 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 //? if forge {
-import com.hbm_m.capability.ModCapabilities;
+/*import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.util.LazyOptional;
-//?}
+*///?}
 
 //? if fabric {
-/*import dev.onyxstudios.cca.api.v3.component.ComponentKey;
+import dev.onyxstudios.cca.api.v3.component.ComponentKey;
 import dev.onyxstudios.cca.api.v3.component.ComponentProvider;
-*///?}
+//?}
 
 public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
 
     // Capability всегда "живая", но доступ к ней регулируется через getCapability
     //? if forge {
-    private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-     //?}
+    /*private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
+     *///?}
     public SwitchBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.SWITCH_BE.get(), pos, state);
     }
@@ -62,7 +62,7 @@ public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) {
             if (isValidSide(side)) {
@@ -85,7 +85,7 @@ public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
             EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
         }
     }
-    //?}
+    *///?}
 
     @Override
     public boolean canConnectEnergy(Direction side) {
@@ -105,7 +105,7 @@ public class SwitchBlockEntity extends BlockEntity implements IEnergyConnector {
             EnergyNetworkManager.get((ServerLevel) this.level).removeNode(this.getBlockPos());
         }
         //? if forge {
-        hbmConnector.invalidate();
-         //?}
+        /*hbmConnector.invalidate();
+         *///?}
     }
 }

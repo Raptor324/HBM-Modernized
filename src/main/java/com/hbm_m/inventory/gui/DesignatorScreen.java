@@ -24,12 +24,12 @@ import net.minecraft.world.item.ItemStack;
 public class DesignatorScreen extends Screen {
 
     //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
+    private static final ResourceLocation TEXTURE = new ResourceLocation(
             RefStrings.MODID, "textures/gui/gui_designator.png");
-    *///?} else {
-        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    //?} else {
+        /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/gui_designator.png");
-    //?}
+    *///?}
 
     private static final int WIDTH = 176;
     private static final int HEIGHT = 178;
@@ -181,7 +181,7 @@ public class DesignatorScreen extends Screen {
             if (minecraft != null) {
                 minecraft.getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK.value(), 1.0F));
             }
-            ModPacketHandler.INSTANCE.sendToServer(new ItemDesignatorPacket(operator, value, reference));
+            ItemDesignatorPacket.sendToServer(operator, value, reference);
             int result = 0;
             if (operator == 0) result += value;
             if (operator == 1) result -= value;

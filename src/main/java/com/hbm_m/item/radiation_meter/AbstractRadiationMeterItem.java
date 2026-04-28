@@ -20,7 +20,6 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.PacketDistributor;
 
 /**
  * Базовый класс для всех измерителей радиации (Счетчик Гейгера, Дозиметр).
@@ -108,7 +107,8 @@ public abstract class AbstractRadiationMeterItem extends Item {
             if (soundEvent != null) {
                 // И уже у него получаем ResourceLocation
                 ResourceLocation soundLocation = soundEvent.getLocation();
-                ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new GeigerSoundPacket(soundLocation, 1.0F, 1.0F));
+                ModPacketHandler.sendToPlayer(player, ModPacketHandler.GEIGER_SOUND,
+                    new GeigerSoundPacket(soundLocation, 1.0F, 1.0F));
             }
         }
     }

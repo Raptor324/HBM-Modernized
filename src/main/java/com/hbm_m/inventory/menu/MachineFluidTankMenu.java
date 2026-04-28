@@ -25,12 +25,12 @@ import net.minecraft.world.level.material.Fluids;
 import dev.architectury.fluid.FluidStack;
 
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.SlotItemHandler;
-//?}
+*///?}
 
 //? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;*///?}
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;//?}
 
 public class MachineFluidTankMenu extends AbstractContainerMenu {
 
@@ -56,7 +56,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
         checkContainerDataCount(data, 7);
 
         //? if forge {
-        this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
+        /*this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
             // Fluid identifier input: (8, 17) - только IItemFluidIdentifier
             this.addSlot(new SlotItemHandler(handler, MachineFluidTankBlockEntity.SLOT_ID_IN, 8, 17) {
                 @Override
@@ -105,8 +105,8 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
                 }
             });
         });
-        //?} else {
-        /*// Fabric: слоты напрямую через ModItemStackHandler (без Forge capabilities)
+        *///?} else {
+        // Fabric: слоты напрямую через ModItemStackHandler (без Forge capabilities)
         Container handlerContainer = new HandlerContainer(blockEntity.getItemHandler());
 
         // Fluid identifier input: (8, 17)
@@ -130,8 +130,8 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
                 //? if fabric {
-                /^return FluidStorage.ITEM.find(stack, null) != null;
-                ^///?}
+                return FluidStorage.ITEM.find(stack, null) != null;
+                //?}
                 return false;
             }
         });
@@ -149,8 +149,8 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
                 //? if fabric {
-                /^return FluidStorage.ITEM.find(stack, null) != null;
-                ^///?}
+                return FluidStorage.ITEM.find(stack, null) != null;
+                //?}
                 return false;
             }
         });
@@ -162,7 +162,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
                 return false;
             }
         });
-        *///?}
+        //?}
 
         addDataSlots(data);
 
@@ -220,7 +220,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
     @Override
     public ItemStack quickMoveStack(Player playerIn, int index) {
         //? if fabric {
-        /*ItemStack sourceStack = ItemStack.EMPTY;
+        ItemStack sourceStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
 
         if (slot == null || !slot.hasItem()) {
@@ -262,8 +262,8 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
 
         slot.onTake(playerIn, stackInSlot);
         return sourceStack;
-        *///?} else {
-        ItemStack sourceStack = ItemStack.EMPTY;
+        //?} else {
+        /*ItemStack sourceStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
 
         if (slot != null && slot.hasItem()) {
@@ -308,7 +308,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
             slot.onTake(playerIn, stackInSlot);
         }
         return sourceStack;
-        //?}
+        *///?}
     }
 
     @Override
@@ -318,7 +318,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
     }
 
     //? if fabric {
-    /*private static final class HandlerContainer implements Container {
+    private static final class HandlerContainer implements Container {
         private final com.hbm_m.platform.ModItemStackHandler handler;
 
         HandlerContainer(com.hbm_m.platform.ModItemStackHandler handler) {
@@ -373,5 +373,5 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
             for (int i = 0; i < handler.getSlots(); i++) handler.setStackInSlot(i, ItemStack.EMPTY);
         }
     }
-    *///?}
+    //?}
 }

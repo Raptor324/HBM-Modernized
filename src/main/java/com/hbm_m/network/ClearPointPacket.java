@@ -1,18 +1,16 @@
 package com.hbm_m.network;
 
-import java.util.function.Supplier;
+import com.hbm_m.network.C2SPacket;
+
+import dev.architectury.networking.NetworkManager.PacketContext;
+
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.item.ItemStack;
 
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
 
-import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.network.NetworkEvent;
-
-/**
- * Пакет для синхронизации очистки точки между клиентом и сервером.
- * Гарантирует что имя сохраняется при очистке координат (если clearPoint так реализован).
- */
-public class ClearPointPacket {
+public class ClearPointPacket implements C2SPacket {
 
     private final int pointIndex;
 
@@ -24,45 +22,44 @@ public class ClearPointPacket {
         this(0);
     }
 
-    public static void encode(ClearPointPacket msg, net.minecraft.network.FriendlyByteBuf buf) {
-        buf.writeInt(msg.pointIndex);
-    }
+    // ── Serialization ─────────────────────────────────────────────────────────
 
-    public static ClearPointPacket decode(net.minecraft.network.FriendlyByteBuf buf) {
+    public static ClearPointPacket decode(FriendlyByteBuf buf) {
         return new ClearPointPacket(buf.readInt());
     }
 
-    public static boolean handle(ClearPointPacket msg, Supplier<NetworkEvent.Context> ctxSupplier) {
-        NetworkEvent.Context ctx = ctxSupplier.get();
-        ctx.enqueueWork(() -> {
-            ServerPlayer player = ctx.getSender();
-            if (player != null) {
-                handleClearPoint(player, msg.pointIndex);
-            }
-        });
-        ctx.setPacketHandled(true);
-        return true;
+    @Override
+    public void write(FriendlyByteBuf buf) {
+        buf.writeInt(pointIndex);
     }
 
-    private static void handleClearPoint(ServerPlayer player, int pointIndex) {
-        ItemStack mainItem = player.getMainHandItem();
-        ItemStack offItem = player.getOffhandItem();
+    // ── Handler ───────────────────────────────────────────────────────────────
 
-        ItemStack detonatorStack = ItemStack.EMPTY;
-        if (mainItem.getItem() instanceof MultiDetonatorItem) {
-            detonatorStack = mainItem;
-        } else if (offItem.getItem() instanceof MultiDetonatorItem) {
-            detonatorStack = offItem;
-        }
+    public static void handle(ClearPointPacket msg, PacketContext context) {
+        context.queue(() -> {
+            if (!(context.getPlayer() instanceof ServerPlayer player)) return;
 
-        if (!detonatorStack.isEmpty()) {
-            MultiDetonatorItem detonatorItem =
-                    (MultiDetonatorItem) detonatorStack.getItem();
+            ItemStack mainItem = player.getMainHandItem();
+            ItemStack offItem  = player.getOffhandItem();
 
-            detonatorItem.clearPoint(detonatorStack, pointIndex);
+            ItemStack detonatorStack = ItemStack.EMPTY;
+            if (mainItem.getItem() instanceof MultiDetonatorItem) {
+                detonatorStack = mainItem;
+            } else if (offItem.getItem() instanceof MultiDetonatorItem) {
+                detonatorStack = offItem;
+            }
 
-            // Принудительно синхронизируем изменения ItemStack
+            if (detonatorStack.isEmpty()) return;
+
+            MultiDetonatorItem detonatorItem = (MultiDetonatorItem) detonatorStack.getItem();
+            detonatorItem.clearPoint(detonatorStack, msg.pointIndex);
             player.containerMenu.broadcastChanges();
-        }
+        });
+    }
+
+    // ── Send helper ───────────────────────────────────────────────────────────
+
+    public static void sendToServer(int pointIndex) {
+        ModPacketHandler.sendToServer(ModPacketHandler.CLEAR_POINT, new ClearPointPacket(pointIndex));
     }
 }

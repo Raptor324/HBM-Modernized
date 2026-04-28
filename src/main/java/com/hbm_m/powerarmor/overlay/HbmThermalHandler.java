@@ -25,10 +25,10 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
     public static final HbmThermalHandler INSTANCE = new HbmThermalHandler();
 
     //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation THERMAL_EFFECT = new ResourceLocation(MainRegistry.MOD_ID, "shaders/post/thermal.json");
-    *///?} else {
-        private static final ResourceLocation THERMAL_EFFECT = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/post/thermal.json");
-    //?}
+    private static final ResourceLocation THERMAL_EFFECT = new ResourceLocation(MainRegistry.MOD_ID, "shaders/post/thermal.json");
+    //?} else {
+        /*private static final ResourceLocation THERMAL_EFFECT = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/post/thermal.json");
+    *///?}
 
     private static PostChain thermalChain;
     private static int lastWidth = 0;

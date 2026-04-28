@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.assets;
 //? if forge {
-// Провайдер генерации состояний блоков и моделей для блоков мода.
+/*// Провайдер генерации состояний блоков и моделей для блоков мода.
 // Используется в классе DataGenerators для регистрации.
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.decorations.DoorBlock;
@@ -1167,10 +1167,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         oreWithItem(ModBlocks.SEQUESTRUM_ORE);
     }
 
-    /**
+    /^*
      * Метод для блоков, у которых текстура имеет префикс "block_".
      * Например, для блока с именем "uranium_block" он будет искать текстуру "block_uranium".
-     */
+     ^/
     private void resourceBlockWithItem(RegistrySupplier<Block> blockObject) {
         // 1. Получаем регистрационное имя (теперь оно уже "block_uranium")
         String registrationName = blockObject.getId().getPath();
@@ -1221,9 +1221,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), models().getExistingFile(modLoc("block/" + textureName)));
     }
 
-    /**
+    /^*
      * Старый метод для блоков, у которых имя текстуры СОВПАДАЕТ с именем регистрации.
-     */
+     ^/
     private void blockWithItem(RegistrySupplier<Block> blockObject) {
         simpleBlock(blockObject.get());
         simpleBlockItem(blockObject.get(), models().getExistingFile(blockTexture(blockObject.get())));
@@ -1243,10 +1243,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
     }
 
 
-    /**
+    /^*
      * Генерирует состояние для блока с кастомной OBJ моделью.
      * ВАЖНО: Сам файл модели (.json) должен быть создан вручную в /resources!
-     */
+     ^/
     private <T extends Block> void customObjBlock(RegistrySupplier<T> blockObject) {
         // Создаём только blockstate, который ссылается на JSON модель
         // JSON модель должна лежать в resources/assets/hbm_m/models/block/<название>.json
@@ -1293,16 +1293,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/bomb/" + blockObject.getId().getPath())));
     }
 
-    /**
+    /^*
      * Advanced Assembly Machine: FACING + FRAME (frame в BlockState для запекания в чанк).
      * Одна модель - getQuads возвращает Base+Frame при frame=true.
-     */
-    /**
+     ^/
+    /^*
      * Chemical plant: без {@code rotationY} в blockstate - поворот задаётся только в
      * {@link com.hbm_m.client.model.MachineChemicalPlantBakedModel} через
      * {@link com.hbm_m.util.MultipartFacingTransforms#legacyBlockEntityBakedRotationY}, в точности как
      * {@code LegacyAnimator.setupBlockTransform} у VBO (иначе vanilla y + getQuads дают двойной поворот).
-     */
+     ^/
     private void registerChemicalPlantBlock(RegistrySupplier<? extends Block> blockObject) {
         VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
         ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
@@ -1361,13 +1361,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
     }
 
-    /**
+    /^*
      * Генерирует модель и состояние для горизонтально-ориентированного блока.
      * @param blockObject Блок
      * @param sideTexture Текстура для боковых и задней сторон
      * @param frontTexture Текстура для лицевой стороны (север)
      * @param topTexture Текстура для верха и низа
-     */
+     ^/
     private void orientableBlockWithItem(RegistrySupplier<Block> blockObject, ResourceLocation sideTexture, ResourceLocation frontTexture, ResourceLocation topTexture) {
         // 1. Создаем модель блока с разными текстурами.
         //    Метод orientable использует стандартные имена: side, front, top, bottom.
@@ -1444,10 +1444,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block.get(), models().withExistingParent(baseName + "_inventory", mcLoc("block/snow_height2")).texture("texture", texture).texture("particle", texture));
     }
 
-    /**
+    /^*
      * Регистрирует blockstate для машин со свойством LIT (включен/выключен).
      * Генерирует варианты для каждого направления FACING и состояния LIT.
-     */
+     ^/
     private void registerLitMachineBlock(RegistrySupplier<? extends Block> blockObject, 
                                           DirectionProperty facingProperty,
                                           BooleanProperty litProperty,
@@ -1483,9 +1483,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // simpleBlockItem(blockObject.get(), offModelFile);
     }
 
-    /**
+    /^*
      * Возвращает угол поворота Y для направления в градусах.
-     */
+     ^/
     private int getRotationY(Direction facing) {
         return switch (facing) {
             case SOUTH -> 180;
@@ -1496,4 +1496,4 @@ public class ModBlockStateProvider extends BlockStateProvider {
         };
     }
 }
-//?}
+*///?}

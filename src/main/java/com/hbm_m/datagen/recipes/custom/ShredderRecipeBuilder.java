@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.function.Consumer;
+/*import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -32,25 +32,25 @@ public class ShredderRecipeBuilder implements RecipeBuilder {
         this.output = output;
     }
 
-    /**
+    /^*
      * Создает новый билдер рецепта для шреддера.
      * @param input Ингредиент (вход)
      * @param output Результат (выход)
-     */
+     ^/
     public static ShredderRecipeBuilder shredderRecipe(Ingredient input, ItemStack output) {
         return new ShredderRecipeBuilder(input, output);
     }
 
-    /**
+    /^*
      * Удобный метод для создания рецепта с одним предметом на входе.
-     */
+     ^/
     public static ShredderRecipeBuilder shredderRecipe(Item input, ItemStack output) {
         return new ShredderRecipeBuilder(Ingredient.of(input), output);
     }
 
-    /**
+    /^*
      * Удобный метод для создания рецепта с одним предметом на входе и выходе.
-     */
+     ^/
     public static ShredderRecipeBuilder shredderRecipe(Item input, Item output, int count) {
         return new ShredderRecipeBuilder(Ingredient.of(input), new ItemStack(output, count));
     }
@@ -126,4 +126,4 @@ public class ShredderRecipeBuilder implements RecipeBuilder {
         }
     }
 }
-//?}
+*///?}

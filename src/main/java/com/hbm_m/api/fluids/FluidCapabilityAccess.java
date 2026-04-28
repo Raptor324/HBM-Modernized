@@ -13,10 +13,10 @@ public final class FluidCapabilityAccess {
         if (be == null) return false;
 
         //? if forge {
-        return be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, sideFromPos).isPresent();
-        //?} else if fabric {
-        /*return net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.SIDED.find(level, pos, sideFromPos) != null;
-        *///?} else {
+        /*return be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, sideFromPos).isPresent();
+        *///?} else if fabric {
+        return net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.SIDED.find(level, pos, sideFromPos) != null;
+        //?} else {
         /*return false;
         *///?}
     }

@@ -36,7 +36,6 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-import net.minecraftforge.network.PacketDistributor;
 
 /**
  * Combined handler for Power Armor events.
@@ -185,10 +184,9 @@ public final class PowerArmorHandlers {
         tag.putInt(TAG_DASH_COOLDOWN, DASH_COOLDOWN_TICKS);
         
         // Отправка визуального эффекта другим игрокам
-        ModPacketHandler.INSTANCE.send(
-            PacketDistributor.TRACKING_ENTITY.with(() -> player),
-            new PowerArmorDashPacket(player.getId(), dashVelocity)
-        );
+        ModPacketHandler.sendToPlayersNear(serverPlayer.serverLevel(), serverPlayer.position(), 128.0D,
+            ModPacketHandler.POWER_ARMOR_DASH,
+            new PowerArmorDashPacket(player.getId(), dashVelocity));
         
         // Синхронизация энергии клиенту
         ((ModArmorFSBPowered) armorItem).syncEnergyToClient(player, chestStack, player.level(), EquipmentSlot.CHEST);
@@ -207,10 +205,10 @@ public final class PowerArmorHandlers {
     
     private static final TagKey<net.minecraft.world.level.block.Block> HBM_HARDLANDING_BREAKABLE =
             //? if fabric && < 1.21.1 {
-            /*TagKey.create(Registries.BLOCK, new ResourceLocation(MainRegistry.MOD_ID, "hardlanding_breakable"));
-            *///?} else {
-                        TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "hardlanding_breakable"));
-            //?}
+            TagKey.create(Registries.BLOCK, new ResourceLocation(MainRegistry.MOD_ID, "hardlanding_breakable"));
+            //?} else {
+                        /*TagKey.create(Registries.BLOCK, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "hardlanding_breakable"));
+            *///?}
 
 
     private static void handleHardLanding(ServerPlayer player) {

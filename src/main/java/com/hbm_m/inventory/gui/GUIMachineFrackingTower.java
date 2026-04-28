@@ -39,10 +39,10 @@ public class GUIMachineFrackingTower extends AbstractContainerScreen<MachineFrac
     /** Путь к текстуре GUI */
     private static final ResourceLocation GUI_TEXTURE = 
             //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/machine/gui_well.png");
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/machine/gui_well.png");
-            //?}
+            new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/machine/gui_well.png");
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/machine/gui_well.png");
+            *///?}
 
 
     //=====================================================================================//

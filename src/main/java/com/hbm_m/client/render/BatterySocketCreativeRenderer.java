@@ -26,13 +26,18 @@ public class BatterySocketCreativeRenderer implements BlockEntityRenderer<Batter
 
     private static final ResourceLocation MOD_SKIN =
             //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
-            //?}
+            new ResourceLocation(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
+            *///?}
 
     private static final ResourceLocation STEVE =
-            ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
+            //? if fabric {
+            new ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
+            //?}
+            //? if forge {
+            /*ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
+            *///?}
 
     private final PlayerModel<?> playerModel;
 

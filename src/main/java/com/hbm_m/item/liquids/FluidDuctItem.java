@@ -10,7 +10,7 @@ import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.entity.machines.FluidDuctBlockEntity;
 import com.hbm_m.block.machines.FluidDuctBlock;
 
-import net.minecraftforge.fluids.FluidStack;
+import dev.architectury.fluid.FluidStack;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -54,7 +54,7 @@ public class FluidDuctItem extends Item {
         if (fluid.isEmpty()) {
             return Component.translatable(translationEmpty);
         }
-        return Component.translatable(translationWithFluid, fluid.getDisplayName());
+        return Component.translatable(translationWithFluid, fluid.getName());
     }
 
     @Override
@@ -114,10 +114,10 @@ public class FluidDuctItem extends Item {
             String fluidName = stack.getTag().getString(NBT_FLUID_TYPE);
             Fluid fluid = BuiltInRegistries.FLUID.get(new ResourceLocation(fluidName));
             if (fluid != null && fluid != net.minecraft.world.level.material.Fluids.EMPTY) {
-                return new FluidStack(fluid, 1);
+                return FluidStack.create(fluid, 1);
             }
         }
-        return FluidStack.EMPTY;
+        return FluidStack.empty();
     }
 
     public static void setFluidType(ItemStack stack, Fluid fluid) {

@@ -202,14 +202,12 @@ public class ModArmorFSBPowered extends ModArmorFSB {
         int containerId = getArmorContainerId(player, slot);
         
         // Отправляем пакет через существующий канал
-        ModPacketHandler.INSTANCE.send(
-            PacketDistributor.PLAYER.with(() -> (ServerPlayer) player),
-            new com.hbm_m.network.packet.PacketSyncEnergy(
-                containerId, 
-                current, 
-                max, 
-                0 // delta не используется для брони
-            )
+        com.hbm_m.network.packet.PacketSyncEnergy.sendTo(
+                (ServerPlayer) player,
+                containerId,
+                current,
+                max,
+                0L
         );
     }
 

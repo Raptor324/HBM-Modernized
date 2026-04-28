@@ -1,6 +1,6 @@
 package com.hbm_m.datagen;
 //? if forge {
-import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
+/*import static com.hbm_m.block.ModBlocks.ENABLED_INGOT_BLOCKS;
 import static com.hbm_m.block.ModBlocks.getIngotBlock;
 
 import java.util.Arrays;
@@ -2554,8 +2554,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.PIPE_TUNGSTEN.get(), "Tungsten Pipe");
                 add(ModItems.PIPE_TITANIUM.get(), "Titanium Pipe");
                 add(ModItems.PIPE_ALUMINUM.get(), "Aluminum Pipe");
-                add("item.hbm_m.fluid_identifier", "Multi Fluid Identifier: %s");
-                add("item.hbm_m.fluid_identifier.none", "Multi Fluid Identifier");
+                add("item.hbm_m.fluid_identifier", "Multi Fluid ResourceLocation: %s");
+                add("item.hbm_m.fluid_identifier.none", "Multi Fluid ResourceLocation");
                 add("item.hbm_m.fluid_identifier.info", "Universal fluid identifier for:");
                 add("item.hbm_m.fluid_identifier.info2", "Secondary type:");
                 add("toast.hbm_m.fluid_identifier_active", "Current type: %s");
@@ -3597,4 +3597,4 @@ public class ModLanguageProvider extends LanguageProvider {
         }
     }
 }
-//?}
+*///?}

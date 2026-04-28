@@ -1,18 +1,16 @@
 package com.hbm_m.network;
 
-import java.util.function.Supplier;
-
+import com.hbm_m.network.S2CPacket;
 import com.hbm_m.particle.helper.ParticleEffectClient;
+
+import dev.architectury.networking.NetworkManager.PacketContext;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.server.level.ServerPlayer;
 
-/** S2C packet: spawn custom NT particle at (x,y,z) with NBT data. */
-public class AuxParticlePacket {
+public class AuxParticlePacket implements S2CPacket {
 
     private final CompoundTag nbt;
     private final double x, y, z;
@@ -24,28 +22,40 @@ public class AuxParticlePacket {
         this.z = z;
     }
 
-    public static void encode(AuxParticlePacket msg, FriendlyByteBuf buf) {
-        buf.writeNbt(msg.nbt);
-        buf.writeDouble(msg.x);
-        buf.writeDouble(msg.y);
-        buf.writeDouble(msg.z);
-    }
+    // ── Serialization ─────────────────────────────────────────────────────────
 
     public static AuxParticlePacket decode(FriendlyByteBuf buf) {
         return new AuxParticlePacket(buf.readNbt(), buf.readDouble(), buf.readDouble(), buf.readDouble());
     }
 
-    public static void handle(AuxParticlePacket msg, Supplier<NetworkEvent.Context> ctx) {
-        ctx.get().enqueueWork(() ->
-                DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
-                    Minecraft mc = Minecraft.getInstance();
-                    CompoundTag data = msg.nbt.copy();
-                    data.putDouble("posX", msg.x);
-                    data.putDouble("posY", msg.y);
-                    data.putDouble("posZ", msg.z);
-                    if (mc.level != null) {
-                        ParticleEffectClient.effectNT(data);
-                    }
-                }));
+    @Override
+    public void write(FriendlyByteBuf buf) {
+        buf.writeNbt(nbt);
+        buf.writeDouble(x);
+        buf.writeDouble(y);
+        buf.writeDouble(z);
+    }
+
+    // ── Handler ───────────────────────────────────────────────────────────────
+
+    public static void handle(AuxParticlePacket msg, PacketContext context) {
+        context.queue(() -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc.level == null) return;
+
+            CompoundTag data = msg.nbt.copy();
+            data.putDouble("posX", msg.x);
+            data.putDouble("posY", msg.y);
+            data.putDouble("posZ", msg.z);
+
+            ParticleEffectClient.effectNT(data);
+        });
+    }
+
+    // ── Send helper ───────────────────────────────────────────────────────────
+
+    public static void sendTo(ServerPlayer player, CompoundTag nbt, double x, double y, double z) {
+        ModPacketHandler.sendToPlayer(player, ModPacketHandler.AUX_PARTICLE,
+                new AuxParticlePacket(nbt, x, y, z));
     }
 }

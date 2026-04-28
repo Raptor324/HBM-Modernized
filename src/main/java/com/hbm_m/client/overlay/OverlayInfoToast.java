@@ -10,31 +10,31 @@ import com.mojang.blaze3d.systems.RenderSystem;
 
 import dev.architectury.utils.Env;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 //? if forge {
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+/*import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-//?}
+*///?}
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 //? if forge {
-@Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
-//?}
+/*@Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
+*///?}
 public class OverlayInfoToast {
 
     private static final List<Entry> ENTRIES = new ArrayList<>();
@@ -92,7 +92,7 @@ public class OverlayInfoToast {
     }
 
     //? if forge {
-    @SubscribeEvent
+    /*@SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         if (Minecraft.getInstance().isPaused()) return;
@@ -104,7 +104,7 @@ public class OverlayInfoToast {
             if (e.ticksLeft <= 0) it.remove();
         }
     }
-    //?}
+    *///?}
 
     public static void render(GuiGraphics gfx, float partialTick, int screenWidth, int screenHeight) {
         if (ENTRIES.isEmpty()) return;
@@ -155,7 +155,7 @@ public class OverlayInfoToast {
     }
 
     //? if forge {
-    public static final IGuiOverlay OVERLAY = (gui, gfx, partialTick, screenWidth, screenHeight) ->
+    /*public static final IGuiOverlay OVERLAY = (gui, gfx, partialTick, screenWidth, screenHeight) ->
             render(gfx, partialTick, screenWidth, screenHeight);
-    //?}
+    *///?}
 }

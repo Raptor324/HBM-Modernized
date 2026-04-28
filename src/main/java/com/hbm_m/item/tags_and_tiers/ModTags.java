@@ -24,20 +24,20 @@ public class ModTags {
 
         private static TagKey<Block> tag(String name) {
             //? if fabric && < 1.21.1 {
-            /*return BlockTags.create(new ResourceLocation(MainRegistry.MOD_ID, name));
-            *///?} else {
-                        return BlockTags.create(ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
-            //?}
+            return BlockTags.create(new ResourceLocation(MainRegistry.MOD_ID, name));
+            //?} else {
+                        /*return BlockTags.create(ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
+            *///?}
 
         }
 
         private static TagKey<Block> create(String name) {
             return TagKey.create(Registries.BLOCK, 
                 //? if fabric && < 1.21.1 {
-                /*new ResourceLocation(MainRegistry.MOD_ID, name));
-                *///?} else {
-                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
-                //?}
+                new ResourceLocation(MainRegistry.MOD_ID, name));
+                //?} else {
+                                /*ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
+                *///?}
 
         }
     }
@@ -70,10 +70,10 @@ public class ModTags {
 
         private static TagKey<Item> tag(String name) {
             //? if fabric && < 1.21.1 {
-            /*return ItemTags.create(new ResourceLocation(MainRegistry.MOD_ID, name));
-             *///?} else {
-            return ItemTags.create(ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
-            //?}
+            return ItemTags.create(new ResourceLocation(MainRegistry.MOD_ID, name));
+             //?} else {
+            /*return ItemTags.create(ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name));
+            *///?}
         }
     }
 }

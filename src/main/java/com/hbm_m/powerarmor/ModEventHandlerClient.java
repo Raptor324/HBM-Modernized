@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.powerarmor;
+/*package com.hbm_m.powerarmor;
 
 import java.util.HashSet;
 import java.util.Set;
@@ -52,7 +52,7 @@ import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
-/**
+/^*
  * Клиентский обработчик событий для HBM's Nuclear Tech Modernized
  * Портировано с 1.7.10 на 1.20.1
  *
@@ -63,7 +63,7 @@ import net.minecraftforge.fml.common.Mod;
  * - Система подсказок
  * - Звуковые эффекты
  * - Рендеринг специальных эффектов
- */
+ ^/
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class ModEventHandlerClient {
 
@@ -119,11 +119,11 @@ public class ModEventHandlerClient {
     private static final long PERFORMANCE_CHECK_INTERVAL = 1000; // Проверка каждую секунду
     private static boolean performanceWarningsLogged = false;
 
-    /**
+    /^*
      * Оверлей для ядерной вспышки
      * Рисуется поверх прицела для максимальной видимости
      * Оптимизировано - проверка видимости перед рендерингом
-     */
+     ^/
     public static final IGuiOverlay NUCLEAR_FLASH_OVERLAY = (gui, guiGraphics, partialTick, screenWidth, screenHeight) -> {
         // Быстрая проверка - закончилась ли вспышка
         long currentTime = System.currentTimeMillis();
@@ -176,16 +176,16 @@ public class ModEventHandlerClient {
         RenderSystem.disableBlend();
     };
 
-    /**
+    /^*
      * Оверлей тепловизора для силовой брони
-     */
+     ^/
     public static final IGuiOverlay THERMAL_OVERLAY = ModEventHandlerClient::onRenderThermalOverlay;
 
     // TODO: Реализовать остальные поля и методы
 
-    /**
+    /^*
      * Регистрация GUI оверлеев
-     */
+     ^/
     @SubscribeEvent
     public static void onRegisterGuiOverlays(RegisterGuiOverlaysEvent event) {
         // Регистрируем оверлей ядерной вспышки над всеми остальными элементами
@@ -195,10 +195,10 @@ public class ModEventHandlerClient {
         // Примечание: Thermal overlay регистрируется в ClientSetup.java
     }
 
-    /**
+    /^*
      * HUD-shake при ядерном взрыве (NukeTorex устанавливает shakeTimestamp).
      * В течение SHAKE_DURATION применяет смещение GUI по синусу.
-     */
+     ^/
     @SubscribeEvent
     public static void onRenderGuiPre(RenderGuiEvent.Pre event) {
         long now = System.currentTimeMillis();
@@ -210,10 +210,10 @@ public class ModEventHandlerClient {
         event.getGuiGraphics().pose().translate(horizontal * mult, vertical * mult, 0);
     }
 
-    /**
+    /^*
      * Обработка клиентского тика
      * Оптимизировано для производительности - тяжелые проверки выполняются периодически
-     */
+     ^/
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         Minecraft mc = Minecraft.getInstance();
@@ -277,10 +277,10 @@ public class ModEventHandlerClient {
     }
 
 
-    /**
+    /^*
      * Проверка производительности и вывод предупреждений
      * Выполняется периодически для избежания спама в логах
-     */
+     ^/
     private static void checkPerformanceWarnings(Minecraft mc) {
         // TODO: Добавить проверки производительности
         // - Количество активных частиц
@@ -292,11 +292,11 @@ public class ModEventHandlerClient {
         // MainRegistry.LOGGER.debug("Performance check completed");
     }
 
-    /**
+    /^*
      * Обработка вспомогательных эффектов тепловизора:
      * - в режиме ORIGINAL_FALLBACK даём игроку ночное зрение и подсвечиваем всех живых существ белым контуром;
      * - в режиме FULL_SHADER не трогаем эффекты, вся яркость управляется шейдером и миксинами.
-     */
+     ^/
     private static void handleThermalSpectralFallback(Minecraft mc) {
         // Если тепловизор не активен – чистим все эффекты и выходим
         if (!thermalActive) {
@@ -410,11 +410,11 @@ public class ModEventHandlerClient {
         spectralNightVisionApplied = false;
     }
 
-    /**
+    /^*
      * Проверка прямой видимости сущности с глаз игрока.
      * Используется только в клиентском ORIGINAL_FALLBACK‑режиме тепловизора,
      * чтобы локальный glow не работал как X‑ray сквозь стены.
-     */
+     ^/
     private static boolean canSeeEntity(LocalPlayer player, Entity entity) {
         if (player == null || entity == null) {
             return false;
@@ -424,10 +424,10 @@ public class ModEventHandlerClient {
         return player.hasLineOfSight(entity);
     }
 
-    /**
+    /^*
      * Обработка подсказок предметов
      * Дополняет HazardTooltipHandler дополнительными функциями
-     */
+     ^/
     @SubscribeEvent
     public static void onItemTooltip(ItemTooltipEvent event) {
         ItemStack stack = event.getItemStack();
@@ -542,10 +542,10 @@ public class ModEventHandlerClient {
     }
 
 
-    /**
+    /^*
      * Получает случайный веселый сплеш-текст или null для ванильного сплеша
      * Кастомные сплеши появляются с шансом 30%
-     */
+     ^/
     private static net.minecraft.network.chat.Component pickSplash() {
         double r = Math.random();
     
@@ -593,18 +593,18 @@ public class ModEventHandlerClient {
         return net.minecraft.network.chat.Component.literal(text);
     }
 
-    /**
+    /^*
      * Обработка изменения FOV (поля зрения)
      * TODO: Проверить доступность FOVUpdateEvent
-     */
+     ^/
     // @SubscribeEvent
     // public static void onFOVUpdate(FOVUpdateEvent event) {
     //     // Изменение FOV для оружия
     // }
 
-    /**
+    /^*
      * Обработка рендеринга игроков (перед рендерингом)
-     */
+     ^/
     // @SubscribeEvent
     // public static void onRenderPlayerPre(RenderPlayerEvent.Pre event) {
     //     // TODO: Реализовать невидимость (MainRegistry.proxy.isVanished)
@@ -612,26 +612,26 @@ public class ModEventHandlerClient {
     //     // TODO: Реализовать анимацию оружия (IHoldableWeapon)
     // }
 
-    /**
+    /^*
      * Обработка рендеринга брони
      * TODO: Проверить правильное имя события для рендеринга брони
-     */
+     ^/
     // @SubscribeEvent
     // public static void onRenderArmor(RenderPlayerEvent.SetArmorModel event) {
     //     // Модификации брони и аксессуары
     // }
 
-    /**
+    /^*
      * Обработка рендеринга сущностей (перед рендерингом, высокий приоритет)
-     */
+     ^/
     // @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.HIGHEST)
     // public static void onRenderLivingPre(RenderLivingEvent.Pre event) {
     //     // TODO: Реализовать невидимость сущностей (MainRegistry.proxy.isVanished)
     // }
 
-    // /**
+    // /^*
     //  * Обработка рендеринга сущностей (перед рендерингом)
-    //  */
+    //  ^/
     // @SubscribeEvent
     // public static void onRenderLivingPreNormal(RenderLivingEvent.Pre event) {
     //     Minecraft mc = Minecraft.getInstance();
@@ -643,36 +643,36 @@ public class ModEventHandlerClient {
     //     // TODO: Проверить наличие FSB брони и VATS режима
     // }
 
-    /**
+    /^*
      * Обработка воспроизведения звуков
      * TODO: Проверить доступность PlaySoundEvent
-     */
+     ^/
     // @SubscribeEvent
     // public static void onPlaySound(PlaySoundEvent event) {
     //     // Вакуумные блоки, движущиеся звуки
     // }
 
-    /**
+    /^*
      * Обработка текстур (предварительная стадия)
      * TODO: Проверить доступность TextureStitchEvent
-     */
+     ^/
     // @SubscribeEvent
     // public static void onTextureStitchPre(TextureStitchEvent.Pre event) {
     //     // Регистрация текстур частиц
     // }
 
-    /**
+    /^*
      * Обработка текстур (пост-стадия)
      * TODO: Проверить доступность TextureStitchEvent
-     */
+     ^/
     // @SubscribeEvent
     // public static void onTextureStitchPost(TextureStitchEvent.Post event) {
     //     // Получение спрайтов частиц
     // }
 
-    /**
+    /^*
      * Обработка рендеринга предметов в рамке
-     */
+     ^/
     @SubscribeEvent
     public static void onRenderItemInFrame(RenderItemInFrameEvent event) {
         ItemStack item = event.getItemStack();
@@ -689,17 +689,17 @@ public class ModEventHandlerClient {
         }
     }
 
-    /**
+    /^*
      * Обработка тика мира
      * TODO: Проверить доступность WorldTickEvent
-     */
+     ^/
     // @SubscribeEvent
     // public static void onWorldTick(TickEvent.WorldTickEvent event) {
     //     // Обработка тика мира
     // }
 
 
-    /**
+    /^*
      * Дополнительный рендер‑хук для ORIGINAL_FALLBACK:
      * рисуем простые белые боксы вокруг живых сущностей, видимые только
      * для игрока с включённым тепловизором и не сквозь блоки
@@ -708,7 +708,7 @@ public class ModEventHandlerClient {
      * Используем тот же паттерн, что и большинство примеров Forge:
      * Stage.AFTER_ENTITIES + translate(-camPos) поверх poseStack,
      * в которой уже учтён поворот камеры.
-     */
+     ^/
     @SubscribeEvent
     public static void onRenderWorldThermalFallback(RenderLevelStageEvent event) {
         if (event.getStage() != RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
@@ -732,10 +732,10 @@ public class ModEventHandlerClient {
         renderThermalFallbackOutlines(mc, event);
     }
 
-    /**
+    /^*
      * Рисует белые контуры вокруг всех видимых живых сущностей.
      * Это чисто клиентский эффект: никаких эффектов/пакетов на сервер.
-     */
+     ^/
     private static void renderThermalFallbackOutlines(Minecraft mc, RenderLevelStageEvent event) {
         PoseStack poseStack = event.getPoseStack();
         var bufferSource = mc.renderBuffers().bufferSource();
@@ -772,20 +772,20 @@ public class ModEventHandlerClient {
         }
     }
 
-    /**
+    /^*
      * Активирует ядерную вспышку
      * Вызывается при ядерном взрыве или подобных событиях
-     */
+     ^/
     public static void triggerNuclearFlash() {
         flashTimestamp = System.currentTimeMillis();
     }
 
-    /** Запас по краям экрана, чтобы при тряске камеры за вспышкой ничего не проступало. */
+    /^* Запас по краям экрана, чтобы при тряске камеры за вспышкой ничего не проступало. ^/
     private static final int FLASH_PADDING = 200;
 
-    /**
+    /^*
      * Рисует белую вспышку на весь экран через GUI.
-     */
+     ^/
     @SubscribeEvent
     public static void onRenderGuiNuclearFlash(RenderGuiEvent.Post event) {
         long currentTime = System.currentTimeMillis();
@@ -805,9 +805,9 @@ public class ModEventHandlerClient {
     }
 
 
-    /**
+    /^*
      * VATS система - методы управления
-     */
+     ^/
     public static void activateVATS() {
         vatsActive = true;
         vatsActivatedTime = System.currentTimeMillis();
@@ -821,9 +821,9 @@ public class ModEventHandlerClient {
         return vatsActive;
     }
 
-    /**
+    /^*
      * Тепловизор - методы управления
-     */
+     ^/
     public static void activateThermal() {
         if (!thermalActive) {
             Minecraft mc = Minecraft.getInstance();
@@ -878,19 +878,19 @@ public class ModEventHandlerClient {
         return thermalActive;
     }  
 
-    /**
+    /^*
      * Рендерит оверлей тепловизора
-     */
+     ^/
     public static void onRenderThermalOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         renderThermalOverlayHud(guiGraphics, partialTick, screenWidth, screenHeight);
     }
 
-    /**
+    /^*
      * Loader-agnostic HUD hook для тепловизора.
      *
      * Forge: вызывается из {@link #onRenderThermalOverlay(ForgeGui, GuiGraphics, float, int, int)}.
      * Fabric: вызывается из {@code ClientSetup.initClient()} через HudRenderCallback.
-     */
+     ^/
     public static void renderThermalOverlayHud(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         Minecraft mc = Minecraft.getInstance();
         LocalPlayer player = mc.player;
@@ -923,9 +923,9 @@ public class ModEventHandlerClient {
         guiGraphics.drawString(mc.font, "THERMAL VISION", 10, 10, 0x00FF00);
     }
 
-    /**
+    /^*
      * Прицельный HUD для блоков {@link ILookOverlay}
-     */
+     ^/
     @SubscribeEvent(priority = EventPriority.NORMAL)
     public static void onRenderGuiPreBlockLookOverlays(RenderGuiEvent.Pre event) {
         com.hbm_m.client.overlay.BlockLookOverlayHud.render(event.getGuiGraphics());
@@ -936,97 +936,97 @@ public class ModEventHandlerClient {
     // TODO: Добавить методы для обработки ввода
     // Текстуры для предметов в рамках
     //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation POSTER = new ResourceLocation(RefStrings.MODID, "textures/models/misc/poster.png");
-    *///?} else {
-        private static final ResourceLocation POSTER = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/misc/poster.png");
-    //?}
+    private static final ResourceLocation POSTER = new ResourceLocation(RefStrings.MODID, "textures/models/misc/poster.png");
+    //?} else {
+        /^private static final ResourceLocation POSTER = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/misc/poster.png");
+    ^///?}
 
     //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation POSTER_CAT = new ResourceLocation(RefStrings.MODID, "textures/models/misc/poster_cat.png");
-    *///?} else {
-        private static final ResourceLocation POSTER_CAT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/misc/poster_cat.png");
-    //?}
+    private static final ResourceLocation POSTER_CAT = new ResourceLocation(RefStrings.MODID, "textures/models/misc/poster_cat.png");
+    //?} else {
+        /^private static final ResourceLocation POSTER_CAT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/misc/poster_cat.png");
+    ^///?}
 
 
     // ===== TODO ЗАГЛУШКИ ДЛЯ НЕРЕАЛИЗОВАННЫХ ФУНКЦИЙ =====
     // Эти функции требуют дополнительных зависимостей или инфраструктуры,
     // которая еще не портирована на 1.20.1
 
-    /**
+    /^*
      * TODO: Dodd RBMK диагностика
      * Оригинальный код: onOverlayRender - DODD RBMK DIAGNOSTIC HOOK
      * Требует: расширение {@link ILookOverlay}, RBMK система
      * Сложность: Высокая - требует полной RBMK системы
-     */
+     ^/
 
-    /**
+    /^*
      * TODO: Рельсовая система (IRailNTM)
      * Оригинальный код: onOverlayRender - RailContext, IRailNTM
      * Требует: Полную рельсовую систему для поездов
      * Сложность: Очень высокая - комплексная физика движения
-     */
+     ^/
 
-    /**
+    /^*
      * TODO: QMAW система (Quick Manual And Wiki)
      * Оригинальный код: drawTooltip, clientTick - QMAWLoader, CanneryBase
      * Требует: QMAW интерфейс, cannery систему
      * Сложность: Средняя - требует контентной системы
-     */
+     ^/
 
-    /**
+    /^*
      * TODO: HTTP капсула система
      * Оригинальный код: onRenderWorldLastEvent - HTTPHandler.capsule
      * Требует: HTTP обработчик для загрузки внешнего контента
      * Сложность: Средняя - сетевые функции
-     */
+     ^/
 
-    /**
+    /^*
      * Hazard система реализована в com.hbm_m.hazard
      * @see com.hbm_m.hazard.HazardSystem
      * @see com.hbm_m.hazard.HazardData
-     */
+     ^/
 
-    /**
+    /^*
      * Armor модификации реализованы в com.hbm_m.armormod
      * @see com.hbm_m.armormod.item.ItemArmorMod
      * @see com.hbm_m.armormod.util.ArmorModificationHelper
-     */
+     ^/
 
-    /**
+    /^*
      * TODO: Кастомные ядерные боеголовки
      * Оригинальный код: drawTooltip - TileEntityNukeCustom
      * Требует: Систему кастомных ядерных боеголовок
      * Сложность: Высокая - требует nuke системы
-     */
+     ^/
 
-    /**
+    /^*
      * Звуковая система реализована в com.hbm_m.sound
      * @see com.hbm_m.sound.ModSounds
      * @see com.hbm_m.sound.PowerArmorSoundHandler
-     */
+     ^/
 
-    /**
+    /^*
      * TODO: RenderOverhead система
      * Оригинальный код: onRenderWorldLastEvent - RenderOverhead
      * Требует: Систему оверлейного рендеринга для маркеров и эффектов
      * Сложность: Высокая - комплексный рендеринг
-     */
+     ^/
 
-    /**
+    /^*
      * TODO: HbmLivingProps и HbmPlayerProps
      * Оригинальный код: Различные методы - HbmLivingProps, HbmPlayerProps
      * Требует: Систему свойств сущностей игрока
      * Сложность: Средняя - capability система
-     */
+     ^/
 
-    /**
+    /^*
      * TODO: Clock системное время
      * Оригинальный код: onRenderWorldLastEvent - Clock.get_ms()
      * Требует: Синхронизированную систему времени
      * Сложность: Низкая - утилитарная функция
-     */
+     ^/
 
     // TODO: Добавить вспомогательные методы
 
 }
-//?}
+*///?}

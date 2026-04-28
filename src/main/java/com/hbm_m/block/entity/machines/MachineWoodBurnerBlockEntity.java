@@ -22,13 +22,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import com.hbm_m.capability.ModCapabilities;
+/*import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
-//? if fabric {
-/*import team.reborn.energy.api.EnergyStorage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 *///?}
+//? if fabric {
+import team.reborn.energy.api.EnergyStorage;
+import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
+//?}
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -227,7 +227,7 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
         if (toTransfer <= 0) return;
 
         //? if forge {
-        // 1) HBM long-capability
+        /*// 1) HBM long-capability
         var hbmCap = itemToCharge.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER);
         if (hbmCap.isPresent()) {
             hbmCap.ifPresent(target -> {
@@ -252,10 +252,10 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
                 setChanged();
             }
         });
-        //?}
+        *///?}
 
         //? if fabric {
-        /*// На Fabric HBM батарейки читаются из NBT через ItemEnergyAccess (см. ModBatteryItem)
+        // На Fabric HBM батарейки читаются из NBT через ItemEnergyAccess (см. ModBatteryItem)
         var hbm = ItemEnergyAccess.getHbmReceiver(itemToCharge);
         if (hbm.isPresent()) {
             var target = hbm.get();
@@ -280,7 +280,7 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
                 setChanged();
             }
         }
-        *///?}
+        //?}
     }
 
     // --- Реализация абстрактных методов ---
@@ -302,13 +302,13 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
         if (slot == CHARGE_SLOT) {
             // Только заряжаемые предметы в слот зарядки
             //? if forge {
-            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
+            /*return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
                     || stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
-            //?} else if fabric {
-            /*if (ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
+            *///?} else if fabric {
+            if (ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
             var es = EnergyStorage.ITEM.find(stack, null);
             return es != null && es.supportsInsertion();
-            *///?} else {
+            //?} else {
             /*return false;
             *///?}
         }

@@ -18,18 +18,18 @@ public class ModHazards {
 
     public static final TagKey<Item> URANIUM_INGOTS = TagKey.create(Registries.ITEM,
             //? if fabric && < 1.21.1 {
-            /*new ResourceLocation("forge", "ingots/uranium"));
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath("forge", "ingots/uranium"));
-            //?}
+            new ResourceLocation("forge", "ingots/uranium"));
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath("forge", "ingots/uranium"));
+            *///?}
 
 
     public static final TagKey<Item> ALKALI_METALS = TagKey.create(Registries.ITEM,
             //? if fabric && < 1.21.1 {
-            /*new ResourceLocation("forge", "ingots/sodium"));
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath("forge", "ingots/sodium"));
-            //?}
+            new ResourceLocation("forge", "ingots/sodium"));
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath("forge", "ingots/sodium"));
+            *///?}
 
 
      public static void registerHazards() {

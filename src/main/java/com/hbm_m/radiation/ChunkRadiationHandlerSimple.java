@@ -38,9 +38,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
-import net.minecraftforge.event.level.ChunkEvent;
-import net.minecraftforge.network.PacketDistributor;
-import net.minecraftforge.server.ServerLifecycleHooks;
+//? if forge {
+/*import net.minecraftforge.event.level.ChunkEvent;
+*///?}
 
 // Моя конфетка, сколько же сил и нервов я на тебя потратил!
 public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
@@ -71,8 +71,10 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
         
         ResourceLocation dimId = dimensionEntry.getKey();
         ResourceKey<Level> levelKey = ResourceKey.create(Registries.DIMENSION, dimId);
-        
-        ServerLevel level = ServerLifecycleHooks.getCurrentServer().getLevel(levelKey);
+
+        var server = dev.architectury.utils.GameInstance.getServer();
+        if (server == null) continue;
+        ServerLevel level = server.getLevel(levelKey);
         if (level == null || level.isClientSide()) continue;
 
         Set<ChunkPos> currentActiveChunks = dimensionEntry.getValue();
@@ -266,13 +268,25 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
         recalculateChunkRadiation(chunk); 
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public void receiveChunkUnload(ChunkEvent.Unload event) {
         if (event.getChunk() instanceof LevelChunk chunk && !chunk.getLevel().isClientSide()) {
             Optional.ofNullable(activeChunksByDimension.get(chunk.getLevel().dimension()
             .location())).ifPresent(set -> set.remove(chunk.getPos()));
         }
     }
+    *///?}
+
+    // FABRIC АЛЬТЕРНАТИВА ВЫЗЫВАЕТСЯ ИЗ МЕНЕДЖЕРА
+    //? if fabric {
+    public void receiveChunkUnloadFabric(LevelChunk chunk) {
+        if (!chunk.getLevel().isClientSide()) {
+            Optional.ofNullable(activeChunksByDimension.get(chunk.getLevel().dimension()
+                    .location())).ifPresent(set -> set.remove(chunk.getPos()));
+        }
+    }
+    //?}
 
     @Override
     public float getRadiation(Level level, int x, int y, int z) {
@@ -394,8 +408,8 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             });
 
             if (!updatesForPlayer.isEmpty()) {
-                ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player),
-                        new ChunkRadiationDebugBatchPacket(updatesForPlayer, level.dimension().location()));
+                ModPacketHandler.sendToPlayer(player, ModPacketHandler.CHUNK_RAD_DEBUG_BATCH,
+                    new ChunkRadiationDebugBatchPacket(updatesForPlayer, level.dimension().location()));
             }
         }
     }

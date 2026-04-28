@@ -13,18 +13,18 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluid;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-//?}
+*///?}
 
 //? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-*///?}
+//?}
 
 import org.jetbrains.annotations.Nullable;
 
@@ -96,39 +96,39 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
     public long getFluidAvailable(Fluid fluid, int pressure) {
         if (fluid != targetFluid || pressure != 0) return 0;
         //? if forge {
-        IFluidHandler handler = getForgeHandler();
+        /*IFluidHandler handler = getForgeHandler();
         if (handler == null) return 0;
         FluidStack simulated = handler.drain(new FluidStack(fluid, Integer.MAX_VALUE), FluidAction.SIMULATE);
         return simulated.isEmpty() ? 0 : simulated.getAmount();
-        //?}
+        *///?}
 
         //? if fabric {
-        /*Storage<FluidVariant> storage = getFabricStorage();
+        Storage<FluidVariant> storage = getFabricStorage();
         if (storage == null || !storage.supportsExtraction()) return 0;
         try (Transaction tx = Transaction.openOuter()) {
             return storage.extract(FluidVariant.of(fluid), Long.MAX_VALUE, tx);
             // не коммитим — это симуляция
         }
-        *///?}
+        //?}
     }
 
     @Override
     public void useUpFluid(Fluid fluid, int pressure, long amount) {
         if (fluid != targetFluid || pressure != 0 || amount <= 0) return;
         //? if forge {
-        IFluidHandler handler = getForgeHandler();
+        /*IFluidHandler handler = getForgeHandler();
         if (handler == null) return;
         handler.drain(new FluidStack(fluid, clampInt(amount)), FluidAction.EXECUTE);
-        //?}
+        *///?}
 
         //? if fabric {
-        /*Storage<FluidVariant> storage = getFabricStorage();
+        Storage<FluidVariant> storage = getFabricStorage();
         if (storage == null) return;
         try (Transaction tx = Transaction.openOuter()) {
             storage.extract(FluidVariant.of(fluid), amount, tx);
             tx.commit();
         }
-        *///?}
+        //?}
     }
 
     @Override
@@ -147,19 +147,19 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
     public long getDemand(Fluid fluid, int pressure) {
         if (fluid != targetFluid || pressure != 0) return 0;
         //? if forge {
-        IFluidHandler handler = getForgeHandler();
+        /*IFluidHandler handler = getForgeHandler();
         if (handler == null) return 0;
         return handler.fill(new FluidStack(fluid, Integer.MAX_VALUE), FluidAction.SIMULATE);
-        //?}
+        *///?}
 
         //? if fabric {
-        /*Storage<FluidVariant> storage = getFabricStorage();
+        Storage<FluidVariant> storage = getFabricStorage();
         if (storage == null || !storage.supportsInsertion()) return 0;
         try (Transaction tx = Transaction.openOuter()) {
             return storage.insert(FluidVariant.of(fluid), Long.MAX_VALUE, tx);
             // не коммитим — это симуляция
         }
-        *///?}
+        //?}
     }
 
     /**
@@ -181,21 +181,21 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
     public long transferFluid(Fluid fluid, int pressure, long amount) {
         if (fluid != targetFluid || pressure != 0 || amount <= 0) return amount;
         //? if forge {
-        IFluidHandler handler = getForgeHandler();
+        /*IFluidHandler handler = getForgeHandler();
         if (handler == null) return amount;
         int filled = handler.fill(new FluidStack(fluid, clampInt(amount)), FluidAction.EXECUTE);
         return amount - filled;
-        //?}
+        *///?}
 
         //? if fabric {
-        /*Storage<FluidVariant> storage = getFabricStorage();
+        Storage<FluidVariant> storage = getFabricStorage();
         if (storage == null) return amount;
         try (Transaction tx = Transaction.openOuter()) {
             long filled = storage.insert(FluidVariant.of(fluid), amount, tx);
             if (filled > 0) tx.commit();
             return amount - filled;
         }
-        *///?}
+        //?}
     }
 
     @Override
@@ -206,29 +206,29 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
     // --- Helpers ---
 
     //? if forge {
-    @Nullable
+    /*@Nullable
     private IFluidHandler getForgeHandler() {
         BlockEntity be = level.getBlockEntity(machinePos);
         if (be == null || be.isRemoved()) return null;
         return be.getCapability(ForgeCapabilities.FLUID_HANDLER, sideOfMachineFacingDuct)
                 .orElse(null);
     }
-    //?}
+    *///?}
 
     //? if fabric {
-    /*@Nullable
+    @Nullable
     private Storage<FluidVariant> getFabricStorage() {
         BlockEntity be = level.getBlockEntity(machinePos);
         if (be == null || be.isRemoved()) return null;
         return FluidStorage.SIDED.find(level, machinePos, sideOfMachineFacingDuct);
     }
-    *///?}
+    //?}
 
     //? if forge {
-    private static int clampInt(long v) {
+    /*private static int clampInt(long v) {
         return (int) Math.min(v, Integer.MAX_VALUE);
     }
-    //?}
+    *///?}
 
     /** Объект создаётся каждый раз при необходимости, идентичность определяется по (pos, dir, fluid). */
     @Override

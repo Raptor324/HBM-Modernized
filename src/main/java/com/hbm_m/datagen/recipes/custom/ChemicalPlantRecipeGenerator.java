@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.function.Consumer;
+/*import java.util.function.Consumer;
 
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.item.ModItems;
@@ -11,11 +11,11 @@ import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
-/**
+/^*
  * Groups all chemical plant recipes (ported from 1.7.10 {@code ChemicalPlantRecipes.registerDefaults()}).
  *
  * <p>Рецепты пишутся в data-pack как custom recipes {@code hbm_m:chemical_plant}.</p>
- */
+ ^/
 public final class ChemicalPlantRecipeGenerator {
 
     private ChemicalPlantRecipeGenerator() {}
@@ -193,4 +193,4 @@ public final class ChemicalPlantRecipeGenerator {
             .save(writer, "chemplant/chem_kevlar");
     }
 }
-//?}
+*///?}

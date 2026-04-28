@@ -7,9 +7,9 @@ import net.minecraft.world.item.ItemStack;
 import java.util.Optional;
 
 //? if forge {
-import com.hbm_m.capability.ModCapabilities;
+/*import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+*///?}
 
 /**
  * Loader-safe доступ к энергетическим интерфейсам у ItemStack.
@@ -27,9 +27,9 @@ public final class ItemEnergyAccess {
         }
 
         //? if forge {
-        return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).resolve();
-        //?} else if fabric {
-        /*if (stack.getItem() instanceof com.hbm_m.item.fekal_electric.ModBatteryItem battery) {
+        /*return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).resolve();
+        *///?} else if fabric {
+        if (stack.getItem() instanceof com.hbm_m.item.fekal_electric.ModBatteryItem battery) {
             var storage = new EnergyCapabilityProvider.ItemEnergyStorage(
                     stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract()
             );
@@ -37,7 +37,7 @@ public final class ItemEnergyAccess {
         }
 
         return Optional.empty();
-        *///?} else {
+        //?} else {
         /*return Optional.empty();
         *///?}
     }
@@ -48,9 +48,9 @@ public final class ItemEnergyAccess {
         }
 
         //? if forge {
-        return stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).resolve();
-        //?} else if fabric {
-        /*if (stack.getItem() instanceof com.hbm_m.item.fekal_electric.ModBatteryItem battery) {
+        /*return stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).resolve();
+        *///?} else if fabric {
+        if (stack.getItem() instanceof com.hbm_m.item.fekal_electric.ModBatteryItem battery) {
             var storage = new EnergyCapabilityProvider.ItemEnergyStorage(
                     stack, battery.getCapacity(), battery.getMaxReceive(), battery.getMaxExtract()
             );
@@ -58,15 +58,15 @@ public final class ItemEnergyAccess {
         }
 
         return Optional.empty();
-        *///?} else {
+        //?} else {
         /*return Optional.empty();
         *///?}
     }
 
     //? if forge {
-    public static boolean canForgeExtract(ItemStack stack) {
+    /*public static boolean canForgeExtract(ItemStack stack) {
         return stack.getCapability(ForgeCapabilities.ENERGY).map(net.minecraftforge.energy.IEnergyStorage::canExtract).orElse(false);
     }
-    //?}
+    *///?}
 }
 

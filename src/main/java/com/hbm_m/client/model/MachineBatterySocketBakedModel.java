@@ -21,17 +21,17 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?}
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?}
 
 public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
     private static final ResourceLocation BATTERY_TEX =
             //? if fabric && < 1.21.1 {
-            /*new ResourceLocation("hbm_m", "block/machines/battery_socket");
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath("hbm_m", "block/machines/battery_socket");
-            //?}
+            new ResourceLocation("hbm_m", "block/machines/battery_socket");
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath("hbm_m", "block/machines/battery_socket");
+            *///?}
 
 
     private final Map<Object, List<BakedQuad>> batteryQuadCache = new ConcurrentHashMap<>();
@@ -53,7 +53,7 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
 
     @Override
     //? if forge {
-    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
+    /*public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
         List<BakedQuad> quads = new ArrayList<>();
         int rotationY = getRotationYForFacing(state);
         Direction querySide = getUnrotatedSide(side, rotationY);
@@ -75,10 +75,10 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
 
         return quads;
     }
-    //?}
+    *///?}
 
     //? if fabric {
-    /*@Override
+    @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         List<BakedQuad> quads = new ArrayList<>();
         int rotationY = getRotationYForFacing(state);
@@ -93,7 +93,7 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
         // Fabric: нет Forge ModelData -> пока что без батарейки в baked (чтобы компилировалось).
         return quads;
     }
-    *///?}
+    //?}
 
     private static int getRotationYForFacing(@Nullable BlockState state) {
         if (state == null || !state.hasProperty(MachineBatterySocketBlock.FACING)) return 0;
@@ -121,16 +121,16 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
             List<BakedQuad> out = new ArrayList<>();
             TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(BATTERY_TEX);
             //? if forge {
-            for (BakedQuad q : battery.getQuads(null, side, rand, ModelData.EMPTY, null)) {
-                out.add(retextureQuad(q, sprite));
-            }
-            //?}
-
-            //? if fabric {
-            /*for (BakedQuad q : battery.getQuads(null, side, rand)) {
+            /*for (BakedQuad q : battery.getQuads(null, side, rand, ModelData.EMPTY, null)) {
                 out.add(retextureQuad(q, sprite));
             }
             *///?}
+
+            //? if fabric {
+            for (BakedQuad q : battery.getQuads(null, side, rand)) {
+                out.add(retextureQuad(q, sprite));
+            }
+            //?}
             return out;
         });
     }

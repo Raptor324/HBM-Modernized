@@ -55,14 +55,14 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
  * actually emits {@code shader.clear()}.
  */
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+/^@OnlyIn(Dist.CLIENT)
+^/*///?}
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public final class IrisRenderBatch implements AutoCloseable {
 
     private static final IrisRenderBatch INSTANCE = new IrisRenderBatch();

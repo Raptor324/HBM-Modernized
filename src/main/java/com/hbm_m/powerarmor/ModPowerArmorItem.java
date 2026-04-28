@@ -367,8 +367,12 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         };
         sound.ifPresent(soundEvent -> {
             ResourceLocation soundLocation = soundEvent.getLocation();
-            ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player),
-                    new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
+            com.hbm_m.network.sounds.GeigerSoundPacket.sendTo(
+                    (ServerPlayer) player,
+                    soundLocation,
+                    0.4F,
+                    1.0F
+            );
         });
     }
 

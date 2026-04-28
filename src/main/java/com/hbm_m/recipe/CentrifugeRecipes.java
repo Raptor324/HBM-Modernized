@@ -13,7 +13,8 @@ import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraftforge.registries.ForgeRegistries;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.core.registries.Registries;
 
 /**
  * Centrifuge recipe registry - adapted from 1.7.10 HBM.
@@ -68,7 +69,7 @@ public class CentrifugeRecipes {
         private final TagKey<Item> tag;
 
         public TagInput(String tagName) {
-            this.tag = ItemTags.create(ResourceLocation.tryParse(tagName));
+            this.tag = TagKey.create(Registries.ITEM, new ResourceLocation(tagName));
         }
 
         public TagInput(TagKey<Item> tag) {
@@ -83,7 +84,7 @@ public class CentrifugeRecipes {
         @Override
         public List<ItemStack> getDisplayStacks() {
             List<ItemStack> stacks = new ArrayList<>();
-            ForgeRegistries.ITEMS.tags().getTag(tag).forEach(item -> {
+            BuiltInRegistries.ITEM.getTagOrEmpty(tag).forEach(item -> {
                 stacks.add(new ItemStack(item));
             });
             return stacks.isEmpty() ? List.of(ItemStack.EMPTY) : stacks;

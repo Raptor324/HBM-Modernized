@@ -7,20 +7,20 @@ import com.hbm_m.interfaces.IEnergyReceiver;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.ItemStack;
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-//?}
+*///?}
 /**
  * Провайдер capability для ItemStack (батарейки).
  * Предоставляет IEnergyProvider и IEnergyReceiver для предметов.
  * Совместим с Forge Energy через LongEnergyWrapper.
  */
 //? if forge {
-public class EnergyCapabilityProvider implements ICapabilityProvider {
+/*public class EnergyCapabilityProvider implements ICapabilityProvider {
 
     private final LazyOptional<ItemEnergyStorage> storage;
 
@@ -47,10 +47,10 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
         return LazyOptional.empty();
     }
 
-    /**
+    /^*
      * Внутреннее хранилище энергии для ItemStack.
      * Работает с NBT тега "energy".
-     */
+     ^/
     private static class ItemEnergyStorage implements IEnergyProvider, IEnergyReceiver {
         private final ItemStack stack;
         private final long capacity;
@@ -141,9 +141,9 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
         }
     }
 }
-//?}
+*///?}
 //? if fabric {
-/*public class EnergyCapabilityProvider {
+public class EnergyCapabilityProvider {
     public static class ItemEnergyStorage implements IEnergyProvider, IEnergyReceiver {
         private final ItemStack stack;
         private final long capacity;
@@ -189,4 +189,4 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
         @Override public boolean canConnectEnergy(Direction side) { return true; }
     }
 }
-*///?}
+//?}

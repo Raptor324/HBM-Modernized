@@ -13,14 +13,14 @@ import net.minecraft.sounds.SoundSource;
  * Использует AbstractTickableSoundInstance для управления воспроизведением и остановкой звука.
  */
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+/^@OnlyIn(Dist.CLIENT)
+^/*///?}
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class ShredderSoundInstance extends AbstractTickableSoundInstance {
 
     public ShredderSoundInstance(BlockPos pos) {

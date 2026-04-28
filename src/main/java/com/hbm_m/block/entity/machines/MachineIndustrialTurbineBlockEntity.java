@@ -21,19 +21,19 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
+*///?}
 
 //? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
-*///?}
+//?}
 
 /**
  * Industrial Turbine BlockEntity - converts steam to energy (HE).
@@ -71,14 +71,14 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
     private final FluidTank spentSteamTank;
 
     //? if forge {
-    private final LazyOptional<IFluidHandler> lazySteamHandler;
+    /*private final LazyOptional<IFluidHandler> lazySteamHandler;
     private final LazyOptional<IFluidHandler> lazySpentHandler;
-    //?}
+    *///?}
 
     //? if fabric {
-    /*private final Storage<FluidVariant> steamStorage;
+    private final Storage<FluidVariant> steamStorage;
     private final Storage<FluidVariant> spentStorage;
-    *///?}
+    //?}
 
     private boolean isActive = false;
     private float anim = 0.0F;
@@ -116,13 +116,13 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
         this.spentSteamTank = new FluidTank(ModFluids.SPENTSTEAM.getSource(), SPENT_STEAM_CAPACITY);
 
         //? if forge {
-        this.lazySteamHandler = LazyOptional.empty();
+        /*this.lazySteamHandler = LazyOptional.empty();
         this.lazySpentHandler = LazyOptional.empty();
-        //?}
-        //? if fabric {
-        /*this.steamStorage = new TankStorage(steamTank, true, false);
-        this.spentStorage = new TankStorage(spentSteamTank, false, true);
         *///?}
+        //? if fabric {
+        this.steamStorage = new TankStorage(steamTank, true, false);
+        this.spentStorage = new TankStorage(spentSteamTank, false, true);
+        //?}
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineIndustrialTurbineBlockEntity be) {
@@ -267,11 +267,11 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_STEAM_IN || slot == SLOT_SPENT_IN) {
             //? if forge {
-            return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?}
-            //? if fabric {
-            /*return net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.ITEM.find(stack, null) != null;
+            /*return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
             *///?}
+            //? if fabric {
+            return net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.ITEM.find(stack, null) != null;
+            //?}
         }
         return false;
     }
@@ -326,7 +326,7 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
     // --- Capabilities ---
 
     //? if forge {
-    @Override
+    /*@Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
             // UP = spent output, остальное = steam input
@@ -348,16 +348,16 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
         lazySteamHandler.invalidate();
         lazySpentHandler.invalidate();
     }
-    //?}
+    *///?}
 
     //? if fabric {
-    /*@Nullable
+    @Nullable
     public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
         // UP: spent out, иначе steam in
         if (side == Direction.UP) return spentStorage;
         return steamStorage;
     }
-    *///?}
+    //?}
 
 
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
@@ -368,7 +368,7 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
     }
 
     //? if fabric {
-    /*@SuppressWarnings("UnstableApiUsage")
+    @SuppressWarnings("UnstableApiUsage")
     private static final class TankStorage extends SnapshotParticipant<TankStorage.Snapshot>
             implements SingleSlotStorage<FluidVariant> {
 
@@ -436,5 +436,5 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
 
         private record Snapshot(net.minecraft.world.level.material.Fluid type, int amountMb) {}
     }
-    *///?}
+    //?}
 }

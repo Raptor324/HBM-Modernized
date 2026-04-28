@@ -29,10 +29,10 @@ import dev.architectury.fluid.FluidStack;
 public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTankMenu> {
 
     //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
-    *///?} else {
-        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
-    //?}
+    private static final ResourceLocation TEXTURE = new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
+    //?} else {
+        /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
+    *///?}
 
 
     private final int tankX = 71;
@@ -182,7 +182,8 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (isHovering(MODE_BUTTON_X, MODE_BUTTON_Y, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE, (int) mouseX, (int) mouseY)) {
-            ModPacketHandler.INSTANCE.sendToServer(new FluidTankModePacket(menu.blockEntity.getBlockPos()));
+            ModPacketHandler.sendToServer(ModPacketHandler.FLUID_TANK_MODE,
+                new FluidTankModePacket(menu.blockEntity.getBlockPos()));
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);

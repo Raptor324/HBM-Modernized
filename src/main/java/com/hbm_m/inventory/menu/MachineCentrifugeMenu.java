@@ -22,7 +22,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.ItemStackHandler;
 import net.minecraftforge.items.SlotItemHandler;
-import net.minecraftforge.network.PacketDistributor;
 
 public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -184,15 +183,13 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
         super.broadcastChanges();
 
         if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide) {
-            ModPacketHandler.INSTANCE.send(
-                    PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player),
-                    new PacketSyncEnergy(
-                            this.containerId,
-                            blockEntity.getEnergyStored(),
-                            blockEntity.getMaxEnergyStored(),
-                            0L
-                    )
-            );
+            ModPacketHandler.sendToPlayer((ServerPlayer) this.player, ModPacketHandler.SYNC_ENERGY,
+                new PacketSyncEnergy(
+                    this.containerId,
+                    blockEntity.getEnergyStored(),
+                    blockEntity.getMaxEnergyStored(),
+                    0L
+                ));
         }
     }
 

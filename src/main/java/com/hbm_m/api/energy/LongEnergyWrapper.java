@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.api.energy;
+/*package com.hbm_m.api.energy;
 
 import com.hbm_m.interfaces.IEnergyConnector;
 import com.hbm_m.interfaces.IEnergyProvider;
@@ -7,12 +7,12 @@ import com.hbm_m.interfaces.IEnergyReceiver;
 
 import net.minecraftforge.energy.IEnergyStorage;
 
-/**
+/^*
  * Обертка для совместимости между HBM Energy (long) и Forge Energy (int).
  * Работает с младшими (LOW) или старшими (HIGH) 32 битами long-значения.
  *
  * ВАЖНО: HIGH режим работает с битами умноженными на 2^32!
- */
+ ^/
 public class LongEnergyWrapper implements IEnergyStorage {
 
     private final IEnergyConnector handler;
@@ -144,4 +144,4 @@ public class LongEnergyWrapper implements IEnergyStorage {
         return handler instanceof IEnergyReceiver r && r.canReceive();
     }
 }
-//?}
+*///?}

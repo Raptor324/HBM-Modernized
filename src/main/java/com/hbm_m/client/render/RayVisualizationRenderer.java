@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.client.render;
+/*package com.hbm_m.client.render;
 
 import com.hbm_m.util.explosions.nuclear.CraterGenerator;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -81,11 +81,11 @@ public class RayVisualizationRenderer {
         bufferSource.endBatch(RenderType.debugLineStrip(2.0));
     }
 }
-//?}
+*///?}
 
 //? if fabric {
-/*package com.hbm_m.client.render;
+package com.hbm_m.client.render;
 
-/^* Fabric: Forge render event bus subscriber isn't wired yet. ^/
+/** Fabric: Forge render event bus subscriber isn't wired yet. */
 public class RayVisualizationRenderer { }
-*///?}
+//?}

@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.client;
+/*package com.hbm_m.client;
 
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.world.biome.CraterBiomes;
@@ -55,4 +55,4 @@ public class CraterFogHandler {
         }
     }
 }
-//?}
+*///?}

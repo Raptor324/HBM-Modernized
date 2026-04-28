@@ -17,12 +17,12 @@ import com.google.gson.JsonParser;
 import com.hbm_m.main.MainRegistry;
 
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
@@ -36,10 +36,10 @@ import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
  * @author HBM-M Team
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class DoorModelRegistry implements ResourceManagerReloadListener {
     
     private static final DoorModelRegistry INSTANCE = new DoorModelRegistry();
@@ -233,16 +233,16 @@ public class DoorModelRegistry implements ResourceManagerReloadListener {
                 // Путь к конфигу рядом с моделью
                 // models/block/doors/large_vehicle_door_config.json
                 //? if fabric && < 1.21.1 {
-                /*ResourceLocation configPath = new ResourceLocation(
+                ResourceLocation configPath = new ResourceLocation(
                     namespace, 
                     CONFIG_PATH + doorType + CONFIG_SUFFIX
                 );
-                *///?} else {
-                                ResourceLocation configPath = ResourceLocation.fromNamespaceAndPath(
+                //?} else {
+                                /*ResourceLocation configPath = ResourceLocation.fromNamespaceAndPath(
                     namespace, 
                     CONFIG_PATH + doorType + CONFIG_SUFFIX
                 );
-                //?}
+                *///?}
 
                 
                 try {

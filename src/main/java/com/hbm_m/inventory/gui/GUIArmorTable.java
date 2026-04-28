@@ -23,10 +23,10 @@ public class GUIArmorTable extends AbstractContainerScreen<ArmorTableMenu> {
 
     private static final ResourceLocation TEXTURE =
             //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/machine/gui_armor_modifier.png");
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_armor_modifier.png");
-            //?}
+            new ResourceLocation(RefStrings.MODID, "textures/gui/machine/gui_armor_modifier.png");
+            //?} else {
+                        /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_armor_modifier.png");
+            *///?}
 
 
     private static final int SIDE_PANEL_WIDTH = 22;

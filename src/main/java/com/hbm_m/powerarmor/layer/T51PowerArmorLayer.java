@@ -21,18 +21,18 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 
 /**
  * Render layer для T51 Power Armor.
  * Использует абстрактный базовый класс для общей логики рендеринга OBJ-брони.
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class T51PowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends AbstractObjArmorLayer<T, M> {
 
     /**
@@ -67,10 +67,10 @@ public class T51PowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<
 
         private static Material withTex(String path) {
             //? if fabric && < 1.21.1 {
-            /*return new Material(T51_ATLAS_LOCATION, new ResourceLocation(MainRegistry.MOD_ID, path));
-            *///?} else {
-                        return new Material(T51_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
-            //?}
+            return new Material(T51_ATLAS_LOCATION, new ResourceLocation(MainRegistry.MOD_ID, path));
+            //?} else {
+                        /*return new Material(T51_ATLAS_LOCATION, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, path));
+            *///?}
 
         }
 

@@ -1,6 +1,6 @@
 package com.hbm_m.event;
 //? if forge {
-import java.util.List;
+/*import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
@@ -142,12 +142,12 @@ public class BombDefuser {
         }
     }
 }
-//?}
+*///?}
 
 //? if fabric {
-/*/^*
+/**
  * Fabric build: Forge event bus hooks are not available.
  * This is a stub to keep compilation working; gameplay logic will be re-wired later.
- ^/
+ */
 public class BombDefuser { }
-*///?}
+//?}

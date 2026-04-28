@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.main;
+/*package com.hbm_m.main;
 
 import com.hbm_m.capability.ChunkRadiationProvider;
 import com.hbm_m.lib.RefStrings;
@@ -21,4 +21,4 @@ public final class ForgeMainEvents {
         }
     }
 }
-//?}
+*///?}

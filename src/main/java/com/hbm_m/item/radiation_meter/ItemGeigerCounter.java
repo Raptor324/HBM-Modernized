@@ -27,7 +27,6 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.network.PacketDistributor;
 
 public class ItemGeigerCounter extends AbstractRadiationMeterItem {
 
@@ -78,7 +77,7 @@ public class ItemGeigerCounter extends AbstractRadiationMeterItem {
                 }
 
                 if (!serverPlayer.isCreative() && !serverPlayer.isSpectator()) {
-                    ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> serverPlayer),
+                    ModPacketHandler.sendToPlayer(serverPlayer, ModPacketHandler.RADIATION_DATA,
                         new RadiationDataPacket(data.getTotalEnvironmentRad(), data.playerRad()));
                 }
 
@@ -118,7 +117,8 @@ public class ItemGeigerCounter extends AbstractRadiationMeterItem {
 
         sound.ifPresent(soundEvent -> {
             ResourceLocation soundLocation = soundEvent.getLocation();
-            ModPacketHandler.INSTANCE.send(PacketDistributor.PLAYER.with(() -> player), new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
+            ModPacketHandler.sendToPlayer(player, ModPacketHandler.GEIGER_SOUND,
+                new GeigerSoundPacket(soundLocation, 0.4F, 1.0F));
         });
     }
 }

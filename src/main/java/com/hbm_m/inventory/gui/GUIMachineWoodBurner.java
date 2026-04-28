@@ -17,10 +17,10 @@ import java.util.List;
 
 public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBurnerMenu> {
     //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/generators/gui_wood_burner_alt.png");
-    *///?} else {
-        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/generators/gui_wood_burner_alt.png");
-    //?}
+    private static final ResourceLocation TEXTURE = new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/generators/gui_wood_burner_alt.png");
+    //?} else {
+        /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/generators/gui_wood_burner_alt.png");
+    *///?}
 
 
     public GUIMachineWoodBurner(MachineWoodBurnerMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
@@ -138,7 +138,8 @@ public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBur
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (isMouseOver(mouseX, mouseY, 53, 17, 16, 16)) {
             // Отправка пакета на сервер для переключения 'enabled'
-            ModPacketHandler.INSTANCE.sendToServer(new ToggleWoodBurnerPacket(menu.blockEntity.getBlockPos()));
+            ModPacketHandler.sendToServer(ModPacketHandler.TOGGLE_WOOD_BURNER,
+                new ToggleWoodBurnerPacket(menu.blockEntity.getBlockPos()));
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);

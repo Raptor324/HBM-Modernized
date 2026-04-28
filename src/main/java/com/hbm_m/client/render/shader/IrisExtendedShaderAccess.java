@@ -12,14 +12,14 @@ import com.hbm_m.client.render.ModShaders;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.client.renderer.ShaderInstance;
+import dev.architectury.platform.Platform;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.fml.ModList;
-//?}
+*///?}
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 
 
 /**
@@ -38,10 +38,10 @@ import net.fabricmc.api.Environment;*///?}
  * the vanilla simple block_lit shader so the renderer still produces output.
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public final class IrisExtendedShaderAccess {
 
     private IrisExtendedShaderAccess() {}
@@ -456,7 +456,7 @@ public final class IrisExtendedShaderAccess {
         if (reflectionInitialized) return;
         reflectionInitialized = true;
 
-        if (!ModList.get().isLoaded("oculus") && !ModList.get().isLoaded("iris")) {
+        if (!Platform.isModLoaded("oculus") && !Platform.isModLoaded("iris")) {
             return;
         }
         // Iris/Oculus has shuffled package layout across versions. Try a few well-known names.

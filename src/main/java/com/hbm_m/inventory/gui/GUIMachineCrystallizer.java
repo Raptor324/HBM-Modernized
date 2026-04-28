@@ -25,12 +25,12 @@ import net.minecraft.world.level.material.Fluid;
 public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMenu> {
 
     //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
+    private static final ResourceLocation TEXTURE = new ResourceLocation(
             RefStrings.MODID, "textures/gui/processing/gui_crystallizer_alt.png");
-    *///?} else {
-        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    //?} else {
+        /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/processing/gui_crystallizer_alt.png");
-    //?}
+    *///?}
 
 
     private static final int TANK_WIDTH = 16;

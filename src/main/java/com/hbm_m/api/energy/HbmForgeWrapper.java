@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.api.energy;
+/*package com.hbm_m.api.energy;
 
 import net.minecraftforge.energy.IEnergyStorage;
 
@@ -48,9 +48,9 @@ public class HbmForgeWrapper implements IEnergyStorage {
     @Override
     public boolean canReceive() { return true; }
 }
-//?}
+*///?}
 //? if fabric {
-/*package com.hbm_m.api.energy;
+package com.hbm_m.api.energy;
 
 import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
 import net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant;
@@ -125,4 +125,4 @@ public class HbmForgeWrapper extends SnapshotParticipant<Long> implements Energy
         return tile.canExtract();
     }
 }
-*///?}
+//?}

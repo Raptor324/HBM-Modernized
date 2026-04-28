@@ -161,11 +161,11 @@ public class MediumNuclearMushroomCloud {
     private static void spawnNuclearParticle(ServerLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, boolean isSpark, boolean isMushroomSmoke, boolean isDarkSmoke) {
         level.getServer().execute(() -> {
             //? if forge {
-            DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            //?}
-            //? if fabric {
-            /*DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
+            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
             *///?}
+            //? if fabric {
+            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
+            //?}
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -181,11 +181,11 @@ public class MediumNuclearMushroomCloud {
 
                 clientLevel.addAlwaysVisibleParticle(particleType, true, x, y, z, xSpeed, ySpeed, zSpeed);
             //? if forge {
-            });
-            //?}
-            //? if fabric {
             /*});
             *///?}
+            //? if fabric {
+            });
+            //?}
         });
     }
 }

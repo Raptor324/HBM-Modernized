@@ -37,11 +37,11 @@ public class NuclearMushroomCloud {
     private static void spawnBlackSphere(ServerLevel level, double x, double y, double z, RandomSource random) {
         level.getServer().execute(() -> {
             //? if forge {
-            DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            //?}
-            //? if fabric {
-            /*DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
+            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
             *///?}
+            //? if fabric {
+            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
+            //?}
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
                 for (int i = 0; i < 750; i++) {
@@ -58,11 +58,11 @@ public class NuclearMushroomCloud {
                     clientLevel.addAlwaysVisibleParticle((SimpleParticleType) ModExplosionParticles.DARK_SMOKE.get(), true, x + offsetX, y + offsetY, z + offsetZ, xSpeed, ySpeed, zSpeed);
                 }
             //? if forge {
-            });
-            //?}
-            //? if fabric {
             /*});
             *///?}
+            //? if fabric {
+            });
+            //?}
         });
     }
 
@@ -172,11 +172,11 @@ public class NuclearMushroomCloud {
     private static void spawnNuclearParticle(ServerLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, boolean isSpark, boolean isMushroomSmoke, boolean isDarkSmoke) {
         level.getServer().execute(() -> {
             //? if forge {
-            DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            //?}
-            //? if fabric {
-            /*DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
+            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
             *///?}
+            //? if fabric {
+            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
+            //?}
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
                 SimpleParticleType particleType;
@@ -189,11 +189,11 @@ public class NuclearMushroomCloud {
                 }
                 clientLevel.addAlwaysVisibleParticle(particleType, true, x, y, z, xSpeed, ySpeed, zSpeed);
             //? if forge {
-            });
-            //?}
-            //? if fabric {
             /*});
             *///?}
+            //? if fabric {
+            });
+            //?}
         });
     }
 }

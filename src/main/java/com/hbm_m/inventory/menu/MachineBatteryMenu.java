@@ -17,7 +17,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
-import net.minecraftforge.network.PacketDistributor;
 
 import java.util.Optional;
 
@@ -154,15 +153,13 @@ public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEn
                     currentMax != lastSyncedMaxEnergy ||
                     currentDelta != lastSyncedDelta) {
 
-                ModPacketHandler.INSTANCE.send(
-                        PacketDistributor.PLAYER.with(() -> (ServerPlayer) this.player),
-                        new PacketSyncEnergy(
-                                this.containerId,
-                                currentEnergy,
-                                currentMax,
-                                currentDelta // [NEW] Отправляем long дельту
-                        )
-                );
+                ModPacketHandler.sendToPlayer((ServerPlayer) this.player, ModPacketHandler.SYNC_ENERGY,
+                    new PacketSyncEnergy(
+                        this.containerId,
+                        currentEnergy,
+                        currentMax,
+                        currentDelta
+                    ));
 
                 lastSyncedEnergy = currentEnergy;
                 lastSyncedMaxEnergy = currentMax;

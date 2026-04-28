@@ -14,14 +14,14 @@ import net.minecraft.util.profiling.ProfilerFiller;
  * Срабатывает при F3+T, смене шейдерпака или загрузке мира
  */
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+/^@OnlyIn(Dist.CLIENT)
+^/*///?}
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class ShaderReloadListener extends SimplePreparableReloadListener<Void> {
     
     /**

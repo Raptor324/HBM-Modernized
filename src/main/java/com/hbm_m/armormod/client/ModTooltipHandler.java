@@ -11,27 +11,27 @@ import net.minecraft.world.item.TooltipFlag;
 
 import java.util.List;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import com.hbm_m.lib.RefStrings;
-//?}
+*///?}
 
 /**
  * Этот класс отвечает за добавление общих подсказок ко всем предметам-модификациям брони.
  * Он слушает событие на стороне клиента через Architectury API.
  */
 //? if forge {
-@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)//?}
+/*@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)*///?}
 public class ModTooltipHandler {
 
     //? if forge {
-    @SubscribeEvent
+    /*@SubscribeEvent
     public static void onClientSetup(FMLClientSetupEvent event) {
         init();
     }
-    //?}
+    *///?}
 
     public static void init() {
         ClientTooltipEvent.ITEM.register(ModTooltipHandler::onItemTooltip);

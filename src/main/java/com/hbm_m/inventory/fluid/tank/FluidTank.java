@@ -16,22 +16,22 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraft.core.registries.BuiltInRegistries;
-//?}
+*///?}
 
 //? if fabric {
-/*import dev.architectury.fluid.FluidStack;
+import dev.architectury.fluid.FluidStack;
 import dev.architectury.hooks.fluid.FluidStackHooks;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.minecraft.core.registries.BuiltInRegistries;
-*///?}
+//?}
 
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 
@@ -56,15 +56,15 @@ public class FluidTank {
     protected int pressure = 0;
 
     //? if forge {
-    private final LazyOptional<IFluidHandler> lazyFluidHandler;
-     //?}
+    /*private final LazyOptional<IFluidHandler> lazyFluidHandler;
+     *///?}
 
     public FluidTank(Fluid type, int maxFluid) {
         this.type = type == null ? Fluids.EMPTY : type;
         this.maxFluid = maxFluid;
         //? if forge {
-        this.lazyFluidHandler = LazyOptional.of(() -> new ForgeFluidHandlerWrapper(this));
-         //?}
+        /*this.lazyFluidHandler = LazyOptional.of(() -> new ForgeFluidHandlerWrapper(this));
+         *///?}
     }
 
     public FluidTank(int maxFluid) {
@@ -113,10 +113,10 @@ public class FluidTank {
      * По умолчанию принимает всё; специальные баки (oil/gas/etc.) могут переопределить.
      */
     //? if forge {
-    public boolean isFluidValid(net.minecraftforge.fluids.FluidStack stack) {
+    /*public boolean isFluidValid(net.minecraftforge.fluids.FluidStack stack) {
         return true;
     }
-    //?}
+    *///?}
 
     public Fluid getTankType() { return type; }
     public int getFill() { return fluid; }
@@ -149,10 +149,10 @@ public class FluidTank {
     }
 
     //? if forge {
-    public LazyOptional<IFluidHandler> getCapability() {
+    /*public LazyOptional<IFluidHandler> getCapability() {
         return lazyFluidHandler;
     }
-    //?}
+    *///?}
 
     public boolean loadTank(int in, int out, ItemStack[] slots) {
         if (slots[in] == null || slots[in].isEmpty()) return false;
@@ -208,11 +208,11 @@ public class FluidTank {
         nbt.putInt(prefix + "_amount", fluid);
         nbt.putInt(prefix + "_max", maxFluid);
         //? if forge {
-        ResourceLocation loc = BuiltInRegistries.FLUID.getKey(type);
-        //?}
-        //? if fabric {
         /*ResourceLocation loc = BuiltInRegistries.FLUID.getKey(type);
         *///?}
+        //? if fabric {
+        ResourceLocation loc = BuiltInRegistries.FLUID.getKey(type);
+        //?}
         nbt.putString(prefix + "_type", loc != null ? loc.toString() : "minecraft:empty");
         nbt.putShort(prefix + "_p", (short) pressure);
     }
@@ -225,11 +225,11 @@ public class FluidTank {
         
         String typeIdStr = nbt.getString(prefix + "_type");
         //? if forge {
-        Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.parse(typeIdStr));
-         //?}
+        /*Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.parse(typeIdStr));
+         *///?}
         //? if fabric {
-        /*Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(typeIdStr));
-        *///?}
+        Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(typeIdStr));
+        //?}
         type = (f != null) ? f : Fluids.EMPTY;
         
         pressure = nbt.getShort(prefix + "_p");
@@ -239,11 +239,11 @@ public class FluidTank {
         buf.writeInt(fluid);
         buf.writeInt(maxFluid);
         //? if forge {
-        ResourceLocation loc = BuiltInRegistries.FLUID.getKey(type);
-         //?}
-        //? if fabric {
         /*ResourceLocation loc = BuiltInRegistries.FLUID.getKey(type);
-        *///?}
+         *///?}
+        //? if fabric {
+        ResourceLocation loc = BuiltInRegistries.FLUID.getKey(type);
+        //?}
         buf.writeResourceLocation(loc != null ? loc : ResourceLocation.tryParse("minecraft:empty"));
         buf.writeShort((short) pressure);
     }
@@ -252,11 +252,11 @@ public class FluidTank {
         fluid = buf.readInt();
         maxFluid = buf.readInt();
         //? if forge {
-        Fluid f = BuiltInRegistries.FLUID.get(buf.readResourceLocation());
-         //?}
-        //? if fabric {
         /*Fluid f = BuiltInRegistries.FLUID.get(buf.readResourceLocation());
-        *///?}
+         *///?}
+        //? if fabric {
+        Fluid f = BuiltInRegistries.FLUID.get(buf.readResourceLocation());
+        //?}
         type = (f != null) ? f : Fluids.EMPTY;
         pressure = buf.readShort();
     }
@@ -292,7 +292,7 @@ public class FluidTank {
 
             // Phase 1: SIMULATE on a copy to check feasibility and output slot compatibility
             //? if forge {
-            ItemStack simCopy = inputStack.copy();
+            /*ItemStack simCopy = inputStack.copy();
             simCopy.setCount(1);
             Boolean feasible = simCopy.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(simHandler -> {
                 FluidStack drainedSim = simHandler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
@@ -322,10 +322,10 @@ public class FluidTank {
                 if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
                 return true;
             }).orElse(false);
-            //?}
+            *///?}
 
             //? if fabric {
-            /*ItemStack simCopy = inputStack.copy();
+            ItemStack simCopy = inputStack.copy();
             simCopy.setCount(1);
             Storage<FluidVariant> simStorage = FluidStorage.ITEM.find(simCopy, null);
             if (simStorage == null) return false;
@@ -360,7 +360,7 @@ public class FluidTank {
             slots[in].shrink(1);
             if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
             return true;
-            *///?}
+            //?}
         }
 
         @Override
@@ -370,7 +370,7 @@ public class FluidTank {
             if (!isFluidTypeExplicitlySet(tank.getTankType())) return false;
 
             //? if forge {
-            ItemStack simCopy = inputStack.copy();
+            /*ItemStack simCopy = inputStack.copy();
             simCopy.setCount(1);
             Boolean feasible = simCopy.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(simHandler -> {
                 FluidStack resource = new FluidStack(
@@ -397,10 +397,10 @@ public class FluidTank {
                 if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
                 return true;
             }).orElse(false);
-            //?}
+            *///?}
 
             //? if fabric {
-            /*ItemStack execCopy = inputStack.copy();
+            ItemStack execCopy = inputStack.copy();
             execCopy.setCount(1);
             Storage<FluidVariant> storage = FluidStorage.ITEM.find(execCopy, null);
             if (storage == null) return false;
@@ -422,7 +422,7 @@ public class FluidTank {
             slots[in].shrink(1);
             if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
             return true;
-            *///?}
+            //?}
         }
     }
 
@@ -473,7 +473,7 @@ public class FluidTank {
     // ===================================================================================== //
 
     //? if forge {
-    public static class ForgeFluidHandlerWrapper implements IFluidHandler {
+    /*public static class ForgeFluidHandlerWrapper implements IFluidHandler {
         private final FluidTank tank;
 
         public ForgeFluidHandlerWrapper(FluidTank tank) {
@@ -531,5 +531,5 @@ public class FluidTank {
             return result;
         }
     }
-    //?}
+    *///?}
 }

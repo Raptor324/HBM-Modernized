@@ -1,5 +1,5 @@
 //? if fabric {
-/*package com.hbm_m.main;
+package com.hbm_m.main;
 
 import com.hbm_m.client.ClientSetup;
 import com.hbm_m.config.ModConfigKeybindHandler;
@@ -12,4 +12,4 @@ public final class FabricClientEntrypoint implements ClientModInitializer {
         ClientSetup.initClient();
     }
 }
-*///?}
+//?}

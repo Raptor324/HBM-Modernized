@@ -40,10 +40,10 @@ public class ItemTemplateFolder extends Item {
         return InteractionResultHolder.sidedSuccess(itemStack, pLevel.isClientSide());
     }
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
     private void openScreen(Player player, ItemStack stack) {
         Minecraft.getInstance().setScreen(new GUITemplateFolder(stack));
     }

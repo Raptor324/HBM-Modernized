@@ -19,12 +19,12 @@ import com.hbm_m.sound.ClientSoundManager;
 
 // Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -60,10 +60,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
      * Кэшированные ModelData для производительности
      */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
     private Object cachedModelData;
 
     private String doorDeclId;
@@ -74,18 +74,18 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
 
     private java.util.Set<Direction> allowedClimbSides = java.util.EnumSet.noneOf(Direction.class);
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
     private Object loopingSound;
 
     /** Called from DoorAnimationDelayHelper when delay expires. Client-only. */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
     public void clearAnimationDelayClient() {
         this.cachedModelData = null;
         // requestModelDataUpdate() is Forge-only (model data system). On Fabric it's a no-op.
@@ -564,10 +564,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
 
     // ==================== Client Sound Handling ====================
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
     private void handleNewState(byte oldState, byte newState) {
         if (oldState == newState) return;
         if (!isController()) return;
@@ -592,10 +592,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         }
     }
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
     private void handleSoundTransition(SoundEvent startSound, SoundEvent loopSound, SoundEvent loopSound2) {
         // 1. Разовый звук старта
         if (startSound != null) {
@@ -613,10 +613,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         }
     }
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
     private void handleSoundEnd(SoundEvent endSound) {
         // Останавливаем ОБА цикла
         ClientSoundManager.stopSpecificSound(worldPosition, "loop1");
@@ -628,10 +628,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         }
     }
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
     private net.minecraft.client.resources.sounds.AbstractTickableSoundInstance createLoopingSound(SoundEvent sound) {
         return new net.minecraft.client.resources.sounds.AbstractTickableSoundInstance(sound, SoundSource.BLOCKS, RandomSource.create()) {
             {
@@ -760,10 +760,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
      * (в т.ч. явный выбор LEGACY, который равен DoorModelSelection.DEFAULT).
      */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
     public void initModelSelection(boolean applyConfigDefault) {
         if (!applyConfigDefault) {
             return; // Значение из NBT - не перезаписывать
@@ -788,8 +788,8 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         return tag;
     }
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
 
     public void handleUpdateTag(CompoundTag tag) {
         load(tag);
@@ -806,8 +806,8 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     }
 
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
         CompoundTag tag = pkt.getTag();
         if (tag != null) {
@@ -855,8 +855,8 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
         }
     }
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         double radius = 8.0; // Fallback
         if (level != null && level.isClientSide) {

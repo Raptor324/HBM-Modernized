@@ -1,9 +1,9 @@
 package com.hbm_m.client.render.implementations;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
 import com.hbm_m.block.machines.MachineHydraulicFrackiningTowerBlock;
 import com.hbm_m.client.model.MachineHydraulicFrackiningTowerBakedModel;
@@ -21,9 +21,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
+import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-*///?}
+//?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
@@ -33,10 +33,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
 public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRenderer<MachineHydraulicFrackiningTowerBlockEntity, MachineHydraulicFrackiningTowerBakedModel> {
 
     private MachineHydraulicFrackiningTowerVboRenderer gpu;
@@ -57,7 +57,15 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
 
     // Реализуем метод flush, чтобы отрисовывать накопленные инстансы в конце кадра
     //? if forge {
-    public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+    /*public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+        if (instancedMain != null) {
+            instancedMain.flush(event);
+        }
+    }
+    *///?}
+
+    //? if fabric {
+    public static void flushInstancedBatches(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
         if (instancedMain != null) {
             instancedMain.flush(event);
         }

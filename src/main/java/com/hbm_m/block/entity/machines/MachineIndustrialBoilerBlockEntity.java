@@ -24,15 +24,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
+*///?}
 
 //? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-*///?}
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+//?}
 
 /**
  * Industrial Boiler BlockEntity - converts water to steam using heat/energy.
@@ -73,9 +73,9 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
     protected final ContainerData data;
 
     //? if forge {
-    private final LazyOptional<IFluidHandler> lazyWaterHandler;
+    /*private final LazyOptional<IFluidHandler> lazyWaterHandler;
     private final LazyOptional<IFluidHandler> lazySteamHandler;
-    //?}
+    *///?}
 
     public MachineIndustrialBoilerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.INDUSTRIAL_BOILER_BE.get(), pos, state,
@@ -85,9 +85,9 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
         this.steamTank = new FluidTank(Fluids.EMPTY, STEAM_CAPACITY);
 
         //? if forge {
-        this.lazyWaterHandler = LazyOptional.of(() -> new WaterFluidHandler(this));
+        /*this.lazyWaterHandler = LazyOptional.of(() -> new WaterFluidHandler(this));
         this.lazySteamHandler = LazyOptional.of(() -> new SteamFluidHandler(this));
-        //?}
+        *///?}
 
         this.data = new ContainerData() {
             @Override
@@ -265,7 +265,7 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
 
     // --- Capabilities ---
     //? if forge {
-    @Override
+    /*@Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
             // Water input from sides and bottom, steam output from top
@@ -283,7 +283,7 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
         lazyWaterHandler.invalidate();
         lazySteamHandler.invalidate();
     }
-    //?}
+    *///?}
 
     // --- GUI ---
     @Override
@@ -307,13 +307,13 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return switch (slot) {
             //? if forge {
-            case SLOT_WATER_IN -> stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+            /*case SLOT_WATER_IN -> stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
             case SLOT_STEAM_IN -> stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-            //?}
-            //? if fabric {
-            /*case SLOT_WATER_IN -> FluidStorage.ITEM.find(stack, null) != null;
-            case SLOT_STEAM_IN -> FluidStorage.ITEM.find(stack, null) != null;
             *///?}
+            //? if fabric {
+            case SLOT_WATER_IN -> FluidStorage.ITEM.find(stack, null) != null;
+            case SLOT_STEAM_IN -> FluidStorage.ITEM.find(stack, null) != null;
+            //?}
             case SLOT_WATER_OUT, SLOT_STEAM_OUT -> false; // Output slots
             default -> false;
         };
@@ -331,7 +331,7 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
 
     // --- Fluid Handlers ---
     //? if forge {
-    private static class WaterFluidHandler implements IFluidHandler {
+    /*private static class WaterFluidHandler implements IFluidHandler {
         private final MachineIndustrialBoilerBlockEntity be;
 
         WaterFluidHandler(MachineIndustrialBoilerBlockEntity be) {
@@ -433,5 +433,5 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
             return drained;
         }
     }
-    //?}
+    *///?}
 }

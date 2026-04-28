@@ -16,12 +16,23 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
-import net.minecraftforge.common.capabilities.Capability;
+//? if forge {
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandlerItem;
+*///?}
+
+//? if fabric {
+import java.util.Iterator;
+import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
+import net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext;
+//?}
 
 /**
  * Universal infinite fluid source - provides any requested fluid type.
@@ -42,7 +53,7 @@ public class InfiniteFluidItem extends Item {
      */
     public Fluid getFluidType(ItemStack stack) {
         if (stack.hasTag() && stack.getTag().contains("FluidType")) {
-            return BuiltInRegistries.FLUID.get(ResourceLocation.parse(stack.getTag().getString("FluidType")));
+            return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(stack.getTag().getString("FluidType")));
         }
         return Fluids.EMPTY;
     }
@@ -54,7 +65,11 @@ public class InfiniteFluidItem extends Item {
         tooltip.add(Component.literal("§7Output Rate: §e" + transferRate + " mB/t"));
     }
 
-    @Override
+    //  FORGE — ICapabilityProvider + IFluidHandlerItem                   //
+    // ================================================================== //
+
+    //? if forge {
+    /*@Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
         return new InfiniteFluidCapabilityProvider(stack, transferRate);
     }
@@ -81,15 +96,15 @@ public class InfiniteFluidItem extends Item {
     private static class InfiniteFluidHandler implements IFluidHandlerItem {
         private final ItemStack container;
         private final int rate;
-    
+
         // В 1.7.10 бесконечная бочка имела тип. Узнаем его из NBT предмета
         private Fluid getFluidType() {
             if (container.hasTag() && container.getTag().contains("FluidType")) {
-                return BuiltInRegistries.FLUID.get(ResourceLocation.parse(container.getTag().getString("FluidType")));
+                return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(container.getTag().getString("FluidType")));
             }
             return Fluids.EMPTY;
         }
-    
+
         @Override
         public FluidStack drain(int maxDrain, FluidAction action) {
             Fluid type = getFluidType();
@@ -97,10 +112,10 @@ public class InfiniteFluidItem extends Item {
             // Возвращаем бесконечное количество (ограниченное rate или запросом трубы)
             return new FluidStack(type, Math.min(maxDrain, rate));
         }
-        
+
         @Override
         public int fill(FluidStack resource, FluidAction action) {
-            // Бесконечная бочка УНИЧТОЖАЕТ любую жидкость (работает как Void), 
+            // Бесконечная бочка УНИЧТОЖАЕТ любую жидкость (работает как Void),
             // если её тип совпадает или если она не настроена.
             Fluid type = getFluidType();
             if (type == Fluids.EMPTY || type == resource.getFluid()) {
@@ -149,4 +164,71 @@ public class InfiniteFluidItem extends Item {
             return new FluidStack(resource.getFluid(), amountToDrain);
         }
     }
+    *///?}
+
+    //  FABRIC — Fabric Transfer API (Storage)                            //
+    // ================================================================== //
+
+    //? if fabric {
+    public Storage<FluidVariant> createFabricStorage(ContainerItemContext context) {
+        return new Storage<FluidVariant>() {
+            @Override
+            public long insert(FluidVariant resource, long maxAmount, TransactionContext transaction) {
+                Fluid type = getFluidType(context.getItemVariant().toStack());
+                // Бесконечная бочка поглощает жидкость, если тип совпадает или не настроен (void)
+                if (type == Fluids.EMPTY || type == resource.getFluid()) {
+                    return maxAmount;
+                }
+                return 0;
+            }
+
+            @Override
+            public long extract(FluidVariant resource, long maxAmount, TransactionContext transaction) {
+                Fluid type = getFluidType(context.getItemVariant().toStack());
+                // Как и в Forge версии, если тип пустой, мы разрешаем вытянуть всё, что запросят.
+                // Иначе проверяем совпадение с настроенной жидкостью.
+                if (type != Fluids.EMPTY && type != resource.getFluid()) {
+                    return 0;
+                }
+                return Math.min(maxAmount, transferRate);
+            }
+
+            @Override
+            public Iterator<StorageView<FluidVariant>> iterator() {
+                return List.<StorageView<FluidVariant>>of(new StorageView<FluidVariant>() {
+                    @Override
+                    public long extract(FluidVariant resource, long maxAmount, TransactionContext transaction) {
+                        Fluid type = getFluidType(context.getItemVariant().toStack());
+                        if (type != Fluids.EMPTY && type != resource.getFluid()) {
+                            return 0;
+                        }
+                        return Math.min(maxAmount, transferRate);
+                    }
+
+                    @Override
+                    public boolean isResourceBlank() {
+                        return getFluidType(context.getItemVariant().toStack()) == Fluids.EMPTY;
+                    }
+
+                    @Override
+                    public FluidVariant getResource() {
+                        Fluid type = getFluidType(context.getItemVariant().toStack());
+                        return type == Fluids.EMPTY ? FluidVariant.blank() : FluidVariant.of(type);
+                    }
+
+                    @Override
+                    public long getAmount() {
+                        // Показываем трубам, что жидкости у нас бесконечно много (но отдаем не больше Long.MAX_VALUE)
+                        return isResourceBlank() ? 0 : Long.MAX_VALUE;
+                    }
+
+                    @Override
+                    public long getCapacity() {
+                        return Long.MAX_VALUE;
+                    }
+                }).iterator();
+            }
+        };
+    }
+    //?}
 }

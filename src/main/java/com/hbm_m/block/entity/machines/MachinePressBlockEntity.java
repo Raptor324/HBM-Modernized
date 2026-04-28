@@ -12,12 +12,12 @@ import com.hbm_m.recipe.PressRecipe;
 import com.hbm_m.sound.ModSounds;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 //? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -240,10 +240,10 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         }
     }
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
     private void clientTick() {
         float target = convertPressToProgress();
         if (!clientPressInitialized) {
@@ -255,17 +255,18 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         visualPressPosition = Mth.lerp(0.25F, visualPressPosition, target);
     }
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@Environment(EnvType.CLIENT)//?}
     public float getPressAnimationProgress(float partialTick) {
         float interpolated = Mth.lerp(partialTick, prevVisualPressPosition, visualPressPosition);
         return Mth.clamp(interpolated, 0.0F, 1.0F);
     }
 
     //? if forge {
-    @Override
+    /*@Override
+     *///?}
     public AABB getRenderBoundingBox() {
         return new AABB(
             worldPosition.getX(),
@@ -276,7 +277,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             worldPosition.getZ() + 1
         );
     }
-    //?}
+
     
     private void craftItem() {
         Optional<PressRecipe> recipe = getCurrentRecipe();

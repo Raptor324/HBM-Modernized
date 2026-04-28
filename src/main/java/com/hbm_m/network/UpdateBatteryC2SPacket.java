@@ -1,45 +1,57 @@
 package com.hbm_m.network;
 
-import java.util.function.Supplier;
-
 import com.hbm_m.block.entity.machines.BatterySocketBlockEntity;
 import com.hbm_m.block.entity.machines.MachineBatteryBlockEntity;
+import com.hbm_m.network.C2SPacket;
+
+import dev.architectury.networking.NetworkManager.PacketContext;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraftforge.network.NetworkEvent;
+import net.minecraft.world.level.block.entity.BlockEntity;
 
-public class UpdateBatteryC2SPacket {
+public class UpdateBatteryC2SPacket implements C2SPacket {
+
     private final BlockPos pos;
-    private final int buttonId;
+    private final int      buttonId;
 
     public UpdateBatteryC2SPacket(BlockPos pos, int buttonId) {
-        this.pos = pos;
+        this.pos      = pos;
         this.buttonId = buttonId;
     }
 
-    public UpdateBatteryC2SPacket(FriendlyByteBuf buf) {
-        this.pos = buf.readBlockPos();
-        this.buttonId = buf.readInt();
+    // ── Serialization ─────────────────────────────────────────────────────────
+
+    public static UpdateBatteryC2SPacket decode(FriendlyByteBuf buf) {
+        return new UpdateBatteryC2SPacket(buf.readBlockPos(), buf.readInt());
     }
 
-    public void toBytes(FriendlyByteBuf buf) {
+    @Override
+    public void write(FriendlyByteBuf buf) {
         buf.writeBlockPos(pos);
         buf.writeInt(buttonId);
     }
 
-    public boolean handle(Supplier<NetworkEvent.Context> supplier) {
-        NetworkEvent.Context context = supplier.get();
-        context.enqueueWork(() -> {
-            ServerPlayer player = context.getSender();
-            var be = player.level().getBlockEntity(pos);
+    // ── Handler ───────────────────────────────────────────────────────────────
+
+    public static void handle(UpdateBatteryC2SPacket msg, PacketContext context) {
+        context.queue(() -> {
+            if (!(context.getPlayer() instanceof ServerPlayer player)) return;
+
+            BlockEntity be = player.level().getBlockEntity(msg.pos);
             if (be instanceof MachineBatteryBlockEntity battery) {
-                battery.handleButtonPress(buttonId);
+                battery.handleButtonPress(msg.buttonId);
             } else if (be instanceof BatterySocketBlockEntity socket) {
-                socket.handleButtonPress(buttonId);
+                socket.handleButtonPress(msg.buttonId);
             }
         });
-        return true;
+    }
+
+    // ── Send helper ───────────────────────────────────────────────────────────
+
+    public static void sendToServer(BlockPos pos, int buttonId) {
+        ModPacketHandler.sendToServer(ModPacketHandler.UPDATE_BATTERY,
+                new UpdateBatteryC2SPacket(pos, buttonId));
     }
 }
