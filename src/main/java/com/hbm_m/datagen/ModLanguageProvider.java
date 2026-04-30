@@ -2202,6 +2202,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.ATOMIC_CLOCK.get(), "Atomic Clock");
                 add(ModItems.VACUUM_TUBE.get(), "Vacuum Tube");
                 add(ModItems.CAPACITOR.get(), "Capacitor");
+                add(ModItems.CENTRIFUGE_ELEMENT.get(), "Centrifuge Element");
                 add(ModItems.PCB.get(), "PCB");
                 add(ModItems.STRAWBERRY.get(), "Strawberry");
 

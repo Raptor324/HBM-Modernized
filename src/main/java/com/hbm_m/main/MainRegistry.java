@@ -677,6 +677,7 @@ public class MainRegistry {
             event.accept(ModItems.BOLT_TUNGSTEN);
             event.accept(ModItems.BOLT_HIGHSPEED_STEEL);
             event.accept(ModItems.COIL_TUNGSTEN);
+            event.accept(ModItems.CENTRIFUGE_ELEMENT);
 
             event.accept(ModItems.PLATE_IRON);
             event.accept(ModItems.PLATE_ALUMINUM);

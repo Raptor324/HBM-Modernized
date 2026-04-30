@@ -59,6 +59,30 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.MOTOR.get(), 2)
                 .addIngredient(ModItems.INSULATOR.get(), 16)
                 .save(writer, "chemical_plant");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.CENTRIFUGE.get(), 1), 40, 125)
+                .addIngredient(ModItems.getIngot(ModIngots.POLYMER).get(), 8)
+                .addIngredient(ModItems.CENTRIFUGE_ELEMENT.get(), 2)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 8)
+                .addIngredient(ModItems.PLATE_COPPER.get(), 4)
+                .save(writer, "centrifuge");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.FLUID_TANK.get(), 1), 40, 100)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 8)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 16) //TITANIUM_SHELL NEEDED, x4
+                .save(writer, "fluid_tank");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.CRYSTALLIZER.get(), 1), 40, 100)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 2) //PLATE_WELDED_STEEL NEEDED
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 12) //TITANIUM_SHELL NEEDED, x3
+                .addIngredient(ModItems.getIngot(ModIngots.DESH).get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 2)
+                .save(writer, "ore_acidizer");
     }
 
     private static void registerDoorRecipes(Consumer<FinishedRecipe> writer) {
@@ -67,9 +91,101 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PLATE_CAST_DARK.get(), 16)
                 .addIngredient(ModItems.INSULATOR.get(), 4)
                 .addIngredient(ModItems.MOTOR.get(), 4)
-                .addIngredient(ModItems.METAL_ROD.get(), 16)
+                .addIngredient(ModItems.METAL_ROD.get(), 16) //Needs High Speed Steel Bolt
                 .addIngredient(Items.GREEN_DYE, 4)
                 .save(writer, "large_vehicle_door");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.SILO_HATCH.get(), 1), 40, 125)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4) //Welded Plate needs added.
+                .addIngredient(ModItems.INSULATOR.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 16)
+                .addIngredient(Items.GREEN_DYE, 4)
+                .save(writer, "silo_hatch");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.SILO_HATCH_LARGE.get(), 1), 60, 125)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 6) //Welded Plate needs added.
+                .addIngredient(ModItems.INSULATOR.get(), 8)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 16)
+                .addIngredient(Items.GREEN_DYE, 8)
+                .save(writer, "silo_hatch_large");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.WATER_DOOR.get(), 1), 40, 125)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 16)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 4) //NEEDS DURA-STEEL BOLT
+                .addIngredient(ModItems.CINNABAR.get(), 1)
+                .save(writer, "water_door");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.QE_CONTAINMENT.get(), 1), 80, 125)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4) //CAST STEEL PLATE NEEDED
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 4)
+                .addIngredient(ModItems.INSULATOR.get(), 8)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 32) //DURA-STEEL BOLT NEEDED
+                .addIngredient(ModItems.CINNABAR.get(), 4) //CRACKED OIL TAR NEEDED
+                .save(writer, "door_qe_containment");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.QE_SLIDING.get(), 1), 40, 125)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 4)
+                .addIngredient(ModItems.INSULATOR.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 4)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 4) //DURA-STEEL BOLT NEEDED
+                .addIngredient(ModItems.FLUORITE.get(), 4)
+                .addIngredient(Items.GLASS, 4)
+                .save(writer, "door_qe_sliding");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.ROUND_AIRLOCK_DOOR.get(), 1), 80, 125)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 12) //CAST STEEL PLATE NEEDED
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 8)
+                .addIngredient(ModItems.INSULATOR.get(), 16)
+                .addIngredient(ModItems.MOTOR.get(), 4)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 16) //DURA-STEEL BOLT NEEDED
+                .addIngredient(Items.GREEN_DYE, 4) // GREEN CRAYON NEEDED
+                .save(writer, "round_airlock_door");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.SECURE_ACCESS_DOOR.get(), 1), 80, 125)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 12) //CAST STEEL PLATE NEEDED
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 16)
+                .addIngredient(ModItems.INSULATOR.get(), 8)
+                .addIngredient(ModItems.MOTOR.get(), 4)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 32) //DURA-STEEL BOLT NEEDED
+                .addIngredient(Items.RED_DYE, 4)
+                .save(writer, "secure_access_door");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.FIRE_DOOR.get(), 1), 60, 125)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 16)
+                .addIngredient(ModItems.PLATE_ADVANCED_ALLOY.get(), 8)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 8) //DURA-STEEL BOLT NEEDED
+                .save(writer, "fire_door");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.VAULT_DOOR.get(), 1), 120, 150)
+                .addIngredient(ModItems.getIngot(ModIngots.STEEL).get(), 32)
+                .addIngredient(ModItems.getIngot(ModIngots.DURA_STEEL).get(), 32)
+                .addIngredient(ModItems.PLATE_LEAD.get(), 8) //PLATE_CAST_LEAD NEEDED
+                .addIngredient(ModItems.MOTOR.get(), 3)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 32) //DURA-STEEL BOLT NEEDED
+                .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 12)
+                .save(writer, "door_vault_tech");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.SLIDING_SEAL_DOOR.get(), 1), 40, 125)
+                .addIngredient(ModItems.PLATE_STEEL.get(), 12)
+                .addIngredient(ModItems.INSULATOR.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 4) //DURA-STEEL BOLT NEEDED
+                .addIngredient(Items.GREEN_DYE, 2) // WHITE CRAYON NEEDED
+                .save(writer, "door_sliding_seal");
     }
 
     private static void registerElectronics(Consumer<FinishedRecipe> writer) {
@@ -121,6 +237,13 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.SULFUR.get(), 12)
                 .addIngredient(ModItems.getPowder(ModIngots.LEAD).get(), 12)
                 .save(writer, "battery");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.CENTRIFUGE_ELEMENT.get(), 1), 20, 100)
+                .addIngredient(ModItems.PLATE_DURA_STEEL.get(), 4)
+                .addIngredient(ModItems.PLATE_TITANIUM.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .save(writer, "centrifuge_element");
     }
 
     private static void registerPlateRecipes(Consumer<FinishedRecipe> writer) {

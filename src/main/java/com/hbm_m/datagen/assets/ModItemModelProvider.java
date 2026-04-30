@@ -172,8 +172,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.INFINITE_WATER_500);
         simpleItem(ModItems.INFINITE_WATER_5000);
 
-        simpleItem(ModItems.TEST_ITEM);
-
         simpleItem(ModItems.LIMESTONE);
         simpleItem(ModItems.SHELL_STEEL);
         simpleItem(ModItems.SHELL_COPPER);
@@ -284,6 +282,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.ANALOG_CIRCUIT);
         simpleItem(ModItems.VACUUM_TUBE);
         simpleItem(ModItems.CAPACITOR);
+        simpleItem(ModItems.CENTRIFUGE_ELEMENT);
         simpleItem(ModItems.PCB);
         simpleItem(ModItems.ATOMIC_CLOCK);
         simpleItem(ModItems.MICROCHIP);

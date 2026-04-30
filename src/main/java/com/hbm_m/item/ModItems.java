@@ -752,9 +752,6 @@ public class ModItems {
     public static final RegistryObject<Item> FAT_MAN_CORE = ITEMS.register("fat_man_core",
             () -> new Item(new Item.Properties()));
 
-	public static final RegistryObject<Item> TEST_ITEM = ITEMS.register("test_item",
-            () -> new Item(new Item.Properties()));
-
 
     public static final RegistryObject<Item> CROWBAR = ITEMS.register("crowbar",
             () -> new Item(new Item.Properties()) {
@@ -931,6 +928,9 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> CAPACITOR = ITEMS.register("capacitor",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistryObject<Item> CENTRIFUGE_ELEMENT = ITEMS.register("centrifuge_element",
             () -> new Item(new Item.Properties()));
 
     public static final RegistryObject<Item> MICROCHIP = ITEMS.register("microchip",
