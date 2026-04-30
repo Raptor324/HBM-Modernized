@@ -103,6 +103,7 @@ import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+import net.minecraftforge.common.ForgeSpawnEggItem;
 import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.registries.DeferredRegister;
 import net.minecraftforge.registries.ForgeRegistries;
@@ -126,7 +127,7 @@ public class ModItems {
             "sr90", "steel", "xe135");
     private static final Map<String, RegistryObject<Item>> POWDER_ITEMS_BY_ID = new HashMap<>();
 
-    private static final Set<String> ENABLED_MODPOWDERS = Set.of("iron", "gold", "coal"); // Только ModPowders!
+        private static final Set<String> ENABLED_MODPOWDERS = Set.of("iron", "gold", "coal", "cement", "limestone"); // Только ModPowders!
     private static final Set<String> ENABLED_INGOT_POWDERS = Set.of(
             "uranium", "plutonium",
             "actinium", "steel", "advanced_alloy", "aluminum", "schrabidium", "lead",
@@ -396,6 +397,8 @@ public class ModItems {
             () -> new AirBombItem(new Item.Properties(), ModEntities.AIRBOMB_PROJECTILE));
     public static final RegistryObject<Item> AIRNUKEBOMB_A = ITEMS.register("airnukebomb_a",
             () -> new AirNukeBombItem(new Item.Properties(), ModEntities.AIRNUKEBOMB_PROJECTILE));
+    public static final RegistryObject<Item> NOLO_SPAWN_EGG = ITEMS.register("nolo_spawn_egg",
+            () -> new ForgeSpawnEggItem(ModEntities.NOLO, 0x8b5e3c, 0xf0d8b0, new Item.Properties()));
 
     // БРОНЯ ГОРНЯКА:
     public static final RegistryObject<Item> ALLOY_HELMET = ITEMS.register("alloy_helmet",
@@ -772,6 +775,14 @@ public class ModItems {
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> LIMESTONE = ITEMS.register("limestone",
             () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> SHELL_STEEL = ITEMS.register("shell_steel",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> SHELL_COPPER = ITEMS.register("shell_copper",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> SHELL_ALUMINUM = ITEMS.register("shell_aluminum",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> SHELL_TITANIUM = ITEMS.register("shell_titanium",
+            () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> CAN_KEY = ITEMS.register("can_key",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> DEFUSER = ITEMS.register("defuser",
@@ -787,6 +798,12 @@ public class ModItems {
             });
 
     public static final RegistryObject<Item> BOLT_STEEL = ITEMS.register("bolt_steel",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> BOLT_LEAD = ITEMS.register("bolt_lead",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> BOLT_TUNGSTEN = ITEMS.register("bolt_tungsten",
+            () -> new Item(new Item.Properties()));
+    public static final RegistryObject<Item> BOLT_HIGHSPEED_STEEL = ITEMS.register("bolt_highspeed_steel",
             () -> new Item(new Item.Properties()));
     public static final RegistryObject<Item> ZIRCONIUM_SHARP = ITEMS.register("zirconium_sharp",
             () -> new Item(new Item.Properties()));
@@ -1272,6 +1289,57 @@ public class ModItems {
     public static final RegistryObject<Item> COOLING_TOWER = ITEMS.register("cooling_tower",
         () -> new MultiblockBlockItem(ModBlocks.COOLING_TOWER.get(), new Item.Properties()));
 
+	public static final RegistryObject<Item> TOWER_SMALL = ITEMS.register("tower_small",
+        () -> new MultiblockBlockItem(ModBlocks.TOWER_SMALL.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> CYCLOTRON = ITEMS.register("cyclotron",
+        () -> new MultiblockBlockItem(ModBlocks.CYCLOTRON.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> ZIRNOX = ITEMS.register("zirnox",
+        () -> new MultiblockBlockItem(ModBlocks.ZIRNOX.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> ARC_WELDER = ITEMS.register("arc_welder",
+        () -> new MultiblockBlockItem(ModBlocks.ARC_WELDER.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> SOLDERING_STATION = ITEMS.register("soldering_station",
+        () -> new MultiblockBlockItem(ModBlocks.SOLDERING_STATION.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> MIXER = ITEMS.register("mixer",
+        () -> new MultiblockBlockItem(ModBlocks.MIXER.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> DERRICK = ITEMS.register("derrick",
+        () -> new MultiblockBlockItem(ModBlocks.DERRICK.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> RBMK_CONSOLE = ITEMS.register("rbmk_console",
+        () -> new MultiblockBlockItem(ModBlocks.RBMK_CONSOLE.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> FLARE_STACK = ITEMS.register("flare_stack",
+        () -> new MultiblockBlockItem(ModBlocks.FLARE_STACK.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> PUMPJACK = ITEMS.register("pumpjack",
+        () -> new MultiblockBlockItem(ModBlocks.PUMPJACK.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> RADAR = ITEMS.register("radar",
+        () -> new MultiblockBlockItem(ModBlocks.RADAR.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> LARGE_RADAR = ITEMS.register("large_radar",
+        () -> new MultiblockBlockItem(ModBlocks.LARGE_RADAR.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> CRACKING_TOWER = ITEMS.register("cracking_tower",
+        () -> new MultiblockBlockItem(ModBlocks.CRACKING_TOWER.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> FRACTION_TOWER = ITEMS.register("fraction_tower",
+        () -> new MultiblockBlockItem(ModBlocks.FRACTION_TOWER.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> MINING_DRILL = ITEMS.register("mining_drill",
+        () -> new MultiblockBlockItem(ModBlocks.MINING_DRILL.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> FEL = ITEMS.register("fel",
+        () -> new MultiblockBlockItem(ModBlocks.FEL.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> SILEX = ITEMS.register("silex",
+        () -> new MultiblockBlockItem(ModBlocks.SILEX.get(), new Item.Properties()));
+
 	public static final RegistryObject<Item> CHEMICAL_PLANT = ITEMS.register("chemical_plant",
         () -> new MultiblockBlockItem(ModBlocks.CHEMICAL_PLANT.get(), new Item.Properties()));
 
@@ -1280,6 +1348,12 @@ public class ModItems {
 
 	public static final RegistryObject<Item> CRYSTALLIZER = ITEMS.register("crystallizer",
         () -> new MultiblockBlockItem(ModBlocks.CRYSTALLIZER.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> BREEDER = ITEMS.register("breeder",
+        () -> new MultiblockBlockItem(ModBlocks.BREEDER.get(), new Item.Properties()));
+
+	public static final RegistryObject<Item> LARGE_PYLON = ITEMS.register("large_pylon",
+        () -> new MultiblockBlockItem(ModBlocks.LARGE_PYLON.get(), new Item.Properties()));
 
 	public static final RegistryObject<Item> CENTRIFUGE = ITEMS.register("centrifuge",
         () -> new MultiblockBlockItem(ModBlocks.CENTRIFUGE.get(), new Item.Properties()));
@@ -1299,8 +1373,56 @@ public class ModItems {
     public static final RegistryObject<Item> INDUSTRIAL_BOILER = ITEMS.register("industrial_boiler",
         () -> new MultiblockBlockItem(ModBlocks.INDUSTRIAL_BOILER.get(), new Item.Properties()));
 
-    public static final RegistryObject<Item> INDUSTRIAL_TURBINE = ITEMS.register("industrial_turbine",
+    public static final RegistryObject<Item> SOLAR_BOILER = ITEMS.register("solar_boiler",
+        () -> new net.minecraft.world.item.BlockItem(ModBlocks.SOLAR_BOILER.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> SOLAR_MIRRORS = ITEMS.register("solar_mirrors",
+                () -> new net.minecraft.world.item.BlockItem(ModBlocks.SOLAR_MIRRORS.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> WATZ_POWERPLANT = ITEMS.register("watz_powerplant",
+                () -> new net.minecraft.world.item.BlockItem(ModBlocks.WATZ_POWERPLANT.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> HYDROTREATER = ITEMS.register("hydrotreater",
+                () -> new net.minecraft.world.item.BlockItem(ModBlocks.HYDROTREATER.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> CATALYTIC_REFORMER = ITEMS.register("catalytic_reformer",
+                () -> new net.minecraft.world.item.BlockItem(ModBlocks.CATALYTIC_REFORMER.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> DEUTERIUM_TOWER = ITEMS.register("deuterium_tower",
+                () -> new net.minecraft.world.item.BlockItem(ModBlocks.DEUTERIUM_TOWER.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> CHEMICAL_FACTORY = ITEMS.register("chemical_factory",
+                () -> new net.minecraft.world.item.BlockItem(ModBlocks.CHEMICAL_FACTORY.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> STEAM_TURBINE = ITEMS.register("steam_turbine",
+                () -> new net.minecraft.world.item.BlockItem(ModBlocks.STEAM_TURBINE.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> LIQUEFACTOR = ITEMS.register("liquefactor",
+                () -> new net.minecraft.world.item.BlockItem(ModBlocks.LIQUEFACTOR.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> CORE_EMITTER = ITEMS.register("core_emitter",
+                () -> new net.minecraft.world.item.BlockItem(ModBlocks.CORE_EMITTER.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> CORE_INJECTOR = ITEMS.register("core_injector",
+                () -> new net.minecraft.world.item.BlockItem(ModBlocks.CORE_INJECTOR.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> CORE_RECEIVER = ITEMS.register("core_receiver",
+                () -> new net.minecraft.world.item.BlockItem(ModBlocks.CORE_RECEIVER.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> VACUUM_DISTILL = ITEMS.register("vacuum_distill",
+                () -> new net.minecraft.world.item.BlockItem(ModBlocks.VACUUM_DISTILL.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> TURBOFAN = ITEMS.register("turbofan",
+                () -> new net.minecraft.world.item.BlockItem(ModBlocks.TURBOFAN.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> INDUSTRIAL_TURBINE = ITEMS.register("industrial_turbine",
         () -> new MultiblockBlockItem(ModBlocks.INDUSTRIAL_TURBINE.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> TURBINE = ITEMS.register("turbine",
+                () -> new MultiblockBlockItem(ModBlocks.TURBINE.get(), new Item.Properties()));
+
+        public static final RegistryObject<Item> SUBSTATION = ITEMS.register("substation",
+                () -> new MultiblockBlockItem(ModBlocks.SUBSTATION.get(), new Item.Properties()));
 
     public static final RegistryObject<Item> REFINERY = ITEMS.register("refinery",
         () -> new MultiblockBlockItem(ModBlocks.REFINERY.get(), new Item.Properties()));
@@ -1317,6 +1439,10 @@ public class ModItems {
     public static final RegistryObject<Item> MISSILE_TEST = ITEMS.register("missile_test",
         () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0,
                 MissileItem.MissileFuel.SOLID));
+
+        public static final RegistryObject<Item> MISSILE_ABM = ITEMS.register("missile_abm",
+                () -> new MissileItem(MissileItem.MissileFormFactor.ABM, MissileItem.MissileTier.TIER1,
+                                MissileItem.MissileFuel.SOLID));
 
     public static final RegistryObject<Item> DESIGNATOR = ITEMS.register("designator",
         () -> new ItemDesignator(new Item.Properties()));

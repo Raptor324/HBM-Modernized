@@ -80,6 +80,9 @@ public final class ShredderRecipeGenerator {
         ShredderRecipeBuilder.shredderRecipe(Items.BRICK,
                         new ItemStack(Items.CLAY_BALL, 1))
                 .save(writer, "brick_to_clay");
+        ShredderRecipeBuilder.shredderRecipe(ModItems.LIMESTONE.get(),
+                        new ItemStack(ModItems.getPowders(ModPowders.LIMESTONE).get(), 1))
+                .save(writer, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredder/limestone_to_powder"));
     }
 
     private static void registerMetalPowders(Consumer<FinishedRecipe> writer) {

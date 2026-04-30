@@ -18,6 +18,12 @@ public class ModMenuTypes {
     public static final RegistryObject<MenuType<MachineCrystallizerMenu>> CRYSTALLIZER_MENU =
             MENUS.register("crystallizer_menu", () -> IForgeMenuType.create(MachineCrystallizerMenu::new));
 
+    public static final RegistryObject<MenuType<MachineBreederMenu>> BREEDER_MENU =
+            MENUS.register("breeder_menu", () -> IForgeMenuType.create(MachineBreederMenu::new));
+
+    public static final RegistryObject<MenuType<MachineLargePylonMenu>> LARGE_PYLON_MENU =
+            MENUS.register("large_pylon_menu", () -> IForgeMenuType.create(MachineLargePylonMenu::new));
+
     public static final RegistryObject<MenuType<ArmorTableMenu>> ARMOR_TABLE_MENU =
             MENUS.register("armor_table_menu", () -> IForgeMenuType.create(ArmorTableMenu::new));
 
@@ -89,6 +95,60 @@ public class ModMenuTypes {
 
     public static final RegistryObject<MenuType<MachineChemicalPlantMenu>> CHEMICAL_PLANT_MENU =
             MENUS.register("chemical_plant_menu", () -> IForgeMenuType.create(MachineChemicalPlantMenu::new));
+
+    public static final RegistryObject<MenuType<MachineCyclotronMenu>> CYCLOTRON_MENU =
+            MENUS.register("cyclotron_menu", () -> IForgeMenuType.create(MachineCyclotronMenu::new));
+
+    public static final RegistryObject<MenuType<MachineZirnoxMenu>> ZIRNOX_MENU =
+            MENUS.register("zirnox_menu", () -> IForgeMenuType.create(MachineZirnoxMenu::new));
+
+    public static final RegistryObject<MenuType<MachineArcWelderMenu>> ARC_WELDER_MENU =
+            MENUS.register("arc_welder_menu", () -> IForgeMenuType.create(MachineArcWelderMenu::new));
+
+    public static final RegistryObject<MenuType<MachineSolderingStationMenu>> SOLDERING_STATION_MENU =
+            MENUS.register("soldering_station_menu", () -> IForgeMenuType.create(MachineSolderingStationMenu::new));
+
+    public static final RegistryObject<MenuType<MachineMixerMenu>> MIXER_MENU =
+            MENUS.register("mixer_menu", () -> IForgeMenuType.create(MachineMixerMenu::new));
+
+    public static final RegistryObject<MenuType<MachineDerrickMenu>> DERRICK_MENU =
+            MENUS.register("derrick_menu", () -> IForgeMenuType.create(MachineDerrickMenu::new));
+
+    public static final RegistryObject<MenuType<MachineRbmkConsoleMenu>> RBMK_CONSOLE_MENU =
+            MENUS.register("rbmk_console_menu", () -> IForgeMenuType.create(MachineRbmkConsoleMenu::new));
+
+    public static final RegistryObject<MenuType<MachineFlareStackMenu>> FLARE_STACK_MENU =
+            MENUS.register("flare_stack_menu", () -> IForgeMenuType.create(MachineFlareStackMenu::new));
+
+    public static final RegistryObject<MenuType<MachinePumpjackMenu>> PUMPJACK_MENU =
+            MENUS.register("pumpjack_menu", () -> IForgeMenuType.create(MachinePumpjackMenu::new));
+
+    public static final RegistryObject<MenuType<MachineRadarMenu>> RADAR_MENU =
+            MENUS.register("radar_menu", () -> IForgeMenuType.create(MachineRadarMenu::new));
+
+    public static final RegistryObject<MenuType<MachineCrackingTowerMenu>> CRACKING_TOWER_MENU =
+            MENUS.register("cracking_tower_menu", () -> IForgeMenuType.create(MachineCrackingTowerMenu::new));
+
+    public static final RegistryObject<MenuType<MachineFractionTowerMenu>> FRACTION_TOWER_MENU =
+            MENUS.register("fraction_tower_menu", () -> IForgeMenuType.create(MachineFractionTowerMenu::new));
+
+    public static final RegistryObject<MenuType<MachineMiningDrillMenu>> MINING_DRILL_MENU =
+            MENUS.register("mining_drill_menu", () -> IForgeMenuType.create(MachineMiningDrillMenu::new));
+
+    public static final RegistryObject<MenuType<MachineFelMenu>> FEL_MENU =
+            MENUS.register("fel_menu", () -> IForgeMenuType.create(MachineFelMenu::new));
+
+    public static final RegistryObject<MenuType<MachineSilexMenu>> SILEX_MENU =
+            MENUS.register("silex_menu", () -> IForgeMenuType.create(MachineSilexMenu::new));
+
+    public static final RegistryObject<MenuType<MachineIndustrialTurbineMenu>> INDUSTRIAL_TURBINE_MENU =
+            MENUS.register("industrial_turbine_menu", () -> IForgeMenuType.create(MachineIndustrialTurbineMenu::new));
+
+    public static final RegistryObject<MenuType<MachineTurbineMenu>> TURBINE_MENU =
+            MENUS.register("turbine_menu", () -> IForgeMenuType.create(MachineTurbineMenu::new));
+
+    public static final RegistryObject<MenuType<MachineSubstationMenu>> SUBSTATION_MENU =
+            MENUS.register("substation_menu", () -> IForgeMenuType.create(MachineSubstationMenu::new));
 
 	public static final RegistryObject<MenuType<MachineFrackingTowerMenu>> FRACTURING_TOWER_MENU =
             MENUS.register("fracking_tower_menu", () -> IForgeMenuType.create(MachineFrackingTowerMenu::new));

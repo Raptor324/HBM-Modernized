@@ -78,6 +78,12 @@ public class ModPacketHandler {
             FluidIdentifierControlPacket::handle
         );
         INSTANCE.registerMessage(id++,
+            UpdateRadarC2SPacket.class,
+            UpdateRadarC2SPacket::encode,
+            UpdateRadarC2SPacket::decode,
+            UpdateRadarC2SPacket::handle
+        );
+        INSTANCE.registerMessage(id++,
             ItemDesignatorPacket.class,
             ItemDesignatorPacket::encode,
             ItemDesignatorPacket::decode,

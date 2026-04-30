@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "hbm_m:block/machines/watz_powerplant", "y": 0 },
+    "facing=south": { "model": "hbm_m:block/machines/watz_powerplant", "y": 180 },
+    "facing=west":  { "model": "hbm_m:block/machines/watz_powerplant", "y": 270 },
+    "facing=east":  { "model": "hbm_m:block/machines/watz_powerplant", "y": 90 }
+  }
+}

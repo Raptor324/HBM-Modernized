@@ -32,6 +32,8 @@ import com.hbm_m.client.render.GasCentrifugeRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
 import com.hbm_m.client.render.HeatingOvenRenderer;
 import com.hbm_m.client.render.IndustrialTurbineRenderer;
+import com.hbm_m.client.render.LaunchPadMissileRenderer;
+import com.hbm_m.client.render.MachineRadarRenderer;
 import com.hbm_m.client.render.ModShaders;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.effect.RenderFallout;
@@ -48,6 +50,7 @@ import com.hbm_m.client.render.implementations.MachineCoolingTowerRenderer;
 import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRenderer;
 import com.hbm_m.client.render.implementations.MachinePressRenderer;
 import com.hbm_m.client.render.implementations.MissileTestEntityRenderer;
+import com.hbm_m.client.render.implementations.NoloEntityRenderer;
 import com.hbm_m.client.render.shader.ShaderReloadListener;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponent;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponentRenderer;
@@ -70,7 +73,25 @@ import com.hbm_m.inventory.gui.GUIMachineAssembler;
 import com.hbm_m.inventory.gui.GUIMachineBattery;
 import com.hbm_m.inventory.gui.GUIMachineCentrifuge;
 import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
+import com.hbm_m.inventory.gui.GUIMachineCyclotron;
 import com.hbm_m.inventory.gui.GUIMachineCrucible;
+import com.hbm_m.inventory.gui.GUIMachineArcWelder;
+import com.hbm_m.inventory.gui.GUIIndustrialTurbine;
+import com.hbm_m.inventory.gui.GUIMachineCrackingTower;
+import com.hbm_m.inventory.gui.GUIMachineDerrick;
+import com.hbm_m.inventory.gui.GUIMachineFractionTower;
+import com.hbm_m.inventory.gui.GUIMachineFel;
+import com.hbm_m.inventory.gui.GUIMachineFlareStack;
+import com.hbm_m.inventory.gui.GUIMachineMixer;
+import com.hbm_m.inventory.gui.GUIMachineMiningDrill;
+import com.hbm_m.inventory.gui.GUIMachinePumpjack;
+import com.hbm_m.inventory.gui.GUIMachineRadar;
+import com.hbm_m.inventory.gui.GUIMachineRbmkConsole;
+import com.hbm_m.inventory.gui.GUIMachineSilex;
+import com.hbm_m.inventory.gui.GUIMachineSolderingStation;
+import com.hbm_m.inventory.gui.GUIMachineSubstation;
+import com.hbm_m.inventory.gui.GUIMachineTurbine;
+import com.hbm_m.inventory.gui.GUIMachineZirnox;
 import com.hbm_m.inventory.gui.GUIMachineFluidTank;
 import com.hbm_m.inventory.gui.GUIMachineFrackingTower;
 import com.hbm_m.inventory.gui.GUIMachineGasCentrifuge;
@@ -188,11 +209,16 @@ public class ClientSetup {
         ModEntities.MISSILE_TEST.ifPresent(entityType ->
                 EntityRenderers.register(entityType, MissileTestEntityRenderer::new)
         );
+        ModEntities.MISSILE_ABM.ifPresent(entityType ->
+            EntityRenderers.register(entityType, ThrownItemRenderer::new)
+        );
 
         // MinecraftForge.EVENT_BUS.register(new ClientTickHandler());
 
         event.enqueueWork(() -> {
             MenuScreens.register(ModMenuTypes.CRYSTALLIZER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCrystallizer::new);
+            MenuScreens.register(ModMenuTypes.BREEDER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineBreeder::new);
+            MenuScreens.register(ModMenuTypes.LARGE_PYLON_MENU.get(), com.hbm_m.inventory.gui.GUIMachineLargePylon::new);
             MenuScreens.register(ModMenuTypes.ARMOR_TABLE_MENU.get(), GUIArmorTable::new);
             MenuScreens.register(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
             MenuScreens.register(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
@@ -205,6 +231,8 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
             MenuScreens.register(ModMenuTypes.ANVIL_MENU.get(), GUIAnvil::new);
             MenuScreens.register(ModMenuTypes.CENTRIFUGE_MENU.get(), GUIMachineCentrifuge::new);
+            MenuScreens.register(ModMenuTypes.LAUNCH_PAD_LARGE_MENU.get(), GUILaunchPadLarge::new);
+            MenuScreens.register(ModMenuTypes.LAUNCH_PAD_RUSTED_MENU.get(), GUILaunchPadRusted::new);
             MenuScreens.register(ModMenuTypes.IRON_CRATE_MENU.get(), GUIIronCrate::new);
             MenuScreens.register(ModMenuTypes.STEEL_CRATE_MENU.get(), GUISteelCrate::new);
             MenuScreens.register(ModMenuTypes.DESH_CRATE_MENU.get(), GUIDeshCrate::new);
@@ -212,6 +240,24 @@ public class ClientSetup {
             MenuScreens.register(ModMenuTypes.TEMPLATE_CRATE_MENU.get(), GUITemplateCrate::new);
             MenuScreens.register(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
             MenuScreens.register(ModMenuTypes.CHEMICAL_PLANT_MENU.get(), GUIMachineChemicalPlant::new);
+            MenuScreens.register(ModMenuTypes.CYCLOTRON_MENU.get(), GUIMachineCyclotron::new);
+            MenuScreens.register(ModMenuTypes.ZIRNOX_MENU.get(), GUIMachineZirnox::new);
+            MenuScreens.register(ModMenuTypes.ARC_WELDER_MENU.get(), GUIMachineArcWelder::new);
+            MenuScreens.register(ModMenuTypes.SOLDERING_STATION_MENU.get(), GUIMachineSolderingStation::new);
+            MenuScreens.register(ModMenuTypes.MIXER_MENU.get(), GUIMachineMixer::new);
+            MenuScreens.register(ModMenuTypes.DERRICK_MENU.get(), GUIMachineDerrick::new);
+            MenuScreens.register(ModMenuTypes.RBMK_CONSOLE_MENU.get(), GUIMachineRbmkConsole::new);
+            MenuScreens.register(ModMenuTypes.FLARE_STACK_MENU.get(), GUIMachineFlareStack::new);
+            MenuScreens.register(ModMenuTypes.PUMPJACK_MENU.get(), GUIMachinePumpjack::new);
+            MenuScreens.register(ModMenuTypes.RADAR_MENU.get(), GUIMachineRadar::new);
+            MenuScreens.register(ModMenuTypes.CRACKING_TOWER_MENU.get(), GUIMachineCrackingTower::new);
+            MenuScreens.register(ModMenuTypes.FRACTION_TOWER_MENU.get(), GUIMachineFractionTower::new);
+            MenuScreens.register(ModMenuTypes.MINING_DRILL_MENU.get(), GUIMachineMiningDrill::new);
+            MenuScreens.register(ModMenuTypes.FEL_MENU.get(), GUIMachineFel::new);
+            MenuScreens.register(ModMenuTypes.SILEX_MENU.get(), GUIMachineSilex::new);
+            MenuScreens.register(ModMenuTypes.INDUSTRIAL_TURBINE_MENU.get(), GUIIndustrialTurbine::new);
+            MenuScreens.register(ModMenuTypes.TURBINE_MENU.get(), GUIMachineTurbine::new);
+            MenuScreens.register(ModMenuTypes.SUBSTATION_MENU.get(), GUIMachineSubstation::new);
             MenuScreens.register(ModMenuTypes.FRACTURING_TOWER_MENU.get(), GUIMachineFrackingTower::new);
 
             // Register BlockEntity renderers
@@ -225,7 +271,10 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.COOLING_TOWER_BE.get(), MachineCoolingTowerRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.RADAR_BE.get(), MachineRadarRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
 
             OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
             try {
@@ -313,6 +362,10 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onModelRegisterAdditional(ModelEvent.RegisterAdditional event) {
         // Регистрируем модели вариантов дверей, чтобы они загружались в ModelManager
+        // radar
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/radar_dish"));
+        event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/radar_large_dish"));
+
         // round_airlock_door
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
         event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
@@ -418,6 +471,26 @@ public class ClientSetup {
         }, ModItems.PIPE_IRON.get(), ModItems.PIPE_COPPER.get(), ModItems.PIPE_GOLD.get(),
            ModItems.PIPE_LEAD.get(), ModItems.PIPE_STEEL.get(), ModItems.PIPE_TUNGSTEN.get(),
            ModItems.PIPE_TITANIUM.get(), ModItems.PIPE_ALUMINUM.get());
+
+        // Bolts use a shared base texture; tint layer0 per material.
+        event.register((stack, tintIndex) -> {
+            if (tintIndex != 0) {
+                return 0xFFFFFF;
+            }
+
+            if (stack.is(ModItems.BOLT_LEAD.get())) {
+                return 0x72809A;
+            }
+            if (stack.is(ModItems.BOLT_TUNGSTEN.get())) {
+                return 0x5E6673;
+            }
+            if (stack.is(ModItems.BOLT_HIGHSPEED_STEEL.get())) {
+                return 0x8AA2B8;
+            }
+
+            // Steel bolt keeps the original texture color.
+            return 0xFFFFFF;
+        }, ModItems.BOLT_STEEL.get(), ModItems.BOLT_LEAD.get(), ModItems.BOLT_TUNGSTEN.get(), ModItems.BOLT_HIGHSPEED_STEEL.get());
     }
 
     @SubscribeEvent
@@ -451,6 +524,7 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.NUKE_FALLOUT_RAIN.get(), RenderFallout::new);
         event.registerEntityRenderer(ModEntities.NUKE_MK5.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.FALLING_SELLAFIT_ENTITY_TYPE.get(), FallingBlockRenderer::new);
+        event.registerEntityRenderer(ModEntities.NOLO.get(), NoloEntityRenderer::new);
     }
 
     @SubscribeEvent

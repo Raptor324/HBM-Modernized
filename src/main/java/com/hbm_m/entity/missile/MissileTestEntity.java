@@ -1,9 +1,11 @@
 package com.hbm_m.entity.missile;
 
 import com.hbm_m.entity.ModEntities;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.util.explosions.nuclear.NuclearExplosionHelper;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.level.Level;
 
 /**
@@ -20,6 +22,11 @@ public class MissileTestEntity extends MissileBaseEntity {
 
     public MissileTestEntity(Level level) {
         this(ModEntities.MISSILE_TEST.get(), level);
+    }
+
+    @Override
+    protected Item getMissileItem() {
+        return ModItems.MISSILE_TEST.get();
     }
 
     @Override
