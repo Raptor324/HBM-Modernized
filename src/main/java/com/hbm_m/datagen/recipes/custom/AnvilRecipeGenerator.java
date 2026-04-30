@@ -270,12 +270,12 @@ public final class AnvilRecipeGenerator {
 
     private static ResourceLocation anvilId(String tierFolder, String category, String name) {
         //? if fabric && < 1.21.1 {
-        /^return new ResourceLocation(RefStrings.MODID,
+        return new ResourceLocation(RefStrings.MODID,
                 "anvil/" + tierFolder + "/" + category + "_" + name);
-        ^///?} else {
-                return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
+        //?} else {
+                /^return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
                 "anvil/" + tierFolder + "/" + category + "_" + name);
-        //?}
+        ^///?}
 
     }
 

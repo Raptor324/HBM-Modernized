@@ -38,7 +38,7 @@ public final class FabricEntrypoint implements ModInitializer {
 
         FluidStorage.ITEM.registerForItems((stack, context) -> FluidBarrelItem.createFabricStorage(context), ModItems.FLUID_BARREL.get());
         FluidStorage.ITEM.registerForItems(
-                (stack, context) -> ((InfiniteFluidItem) stack.getItem()).createFabricStorage(context),
+                (stack, context) -> ((InfiniteFluidItem) stack.getItem()).createFabricStorage(stack, context),
                 ModItems.FLUID_BARREL_INFINITE.get() // подставьте переменную регистрации предмета
         );
 

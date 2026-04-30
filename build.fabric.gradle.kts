@@ -49,7 +49,7 @@ loom {
 
 // Запуск из IDE (задача вида :…:net.fabricmc.devlaunchinjector.Main.main) — это JavaExec, не runClient из Loom.
 tasks.withType<JavaExec>().configureEach {
-	jvmArgs("-Dsodium.checks.issue2561=false")
+	jvmArgs("-Dsodium.checks.issue2561=false", "-Dhbm_m.modelDebug=true", "-Dhbm_m.modelDebugFilter=fluid_tank,centrifuge,geiger_counter_block,crystallizer,anvil_desh,wood_burner")
 }
 
 fabricApi {

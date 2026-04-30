@@ -42,7 +42,7 @@ legacyForge {
 			gameDirectory = file("run/")
 			ideName = "Forge Client (${stonecutter.active?.version})"
 			programArgument("--username=Dev")
-			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8")
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8", "-Dhbm_m.modelDebug=true", "-Dhbm_m.modelDebugFilter=fluid_tank,centrifuge,geiger_counter_block,ore_acidizer")
 		}
 		register("server") {
 			server()

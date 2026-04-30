@@ -15,8 +15,8 @@ import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.world.item.ArmorItem;
 
 //? if fabric {
-/^import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;^///?}
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 
 /^*
  * Baked model for rendering AJR armor in GUI/hand.
@@ -28,7 +28,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 ^///?}
 //? if fabric {
-/^@Environment(EnvType.CLIENT)^///?}
+@Environment(EnvType.CLIENT)//?}
 public class AJRArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final String[] AJR_ORDER = {

@@ -181,6 +181,10 @@ public class ClientSetup {
         PowerArmorSounds.register();
         PowerArmorStepSoundHandler.initClient();
 
+        //? if fabric {
+        com.hbm_m.client.model.loading.ForgeLikeModelLoadingFabric.init();
+        //?}
+
         // Экраны меню - vanilla API, одинаково работает на обоих лоадерах.
         registerScreens();
 
@@ -300,6 +304,25 @@ public class ClientSetup {
                 EntityRendererRegistry.register(entityType, ctx -> new ThrownItemRenderer<>(ctx)));
         ModEntities.MISSILE_TEST.ifPresent(entityType ->
                 EntityRendererRegistry.register(entityType, MissileTestEntityRenderer::new));
+
+        // Airstrike + авиационные бомбы (иначе на Fabric entityRenderer == null → краш при рендере)
+        ModEntities.AIRNUKEBOMB_PROJECTILE.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, AirNukeBombProjectileEntityRenderer::new));
+        ModEntities.AIRBOMB_PROJECTILE.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, AirBombProjectileEntityRenderer::new));
+        ModEntities.AIRSTRIKE_NUKE_ENTITY.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, AirstrikeNukeEntityRenderer::new));
+        ModEntities.AIRSTRIKE_ENTITY.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, AirstrikeEntityRenderer::new));
+        ModEntities.AIRSTRIKE_AGENT_ENTITY.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, ctx -> new EmptyEntityRenderer<>(ctx)));
+
+        ModEntities.NUKE_FALLOUT_RAIN.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, RenderFallout::new));
+        ModEntities.NUKE_MK5.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, ctx -> new EmptyEntityRenderer<>(ctx)));
+        ModEntities.FALLING_SELLAFIT_ENTITY_TYPE.ifPresent(entityType ->
+                EntityRendererRegistry.register(entityType, FallingBlockRenderer::new));
 
         register(ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(), MachineAdvancedAssemblerRenderer::new);
         register(ModBlockEntities.MACHINE_ASSEMBLER_BE.get(), MachineAssemblerRenderer::new);
@@ -575,259 +598,286 @@ public class ClientSetup {
         }
     }
 
+    /^*
+     * Debug wrapper for comparing baked model output between Forge and Fabric.
+     *
+     * Enable with:
+     * -Dhbm_m.modelDebug=true
+     * -Dhbm_m.modelDebugFilter=hbm_m:block/machines/fluid_tank,hbm_m:block/machines/chemical_plant
+     ^/
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onModelBakeDebugWrap(ModelEvent.ModifyBakingResult event) {
+        if (!com.hbm_m.client.model.loading.ModelDebugDumper.enabled()) return;
+
+        Map<ResourceLocation, BakedModel> models = event.getModels();
+        Map<ResourceLocation, BakedModel> replacements = new java.util.HashMap<>();
+
+        for (Map.Entry<ResourceLocation, BakedModel> entry : models.entrySet()) {
+            ResourceLocation id = entry.getKey();
+            if (!com.hbm_m.client.model.loading.ModelDebugDumper.matches(id)) continue;
+            BakedModel wrapped = com.hbm_m.client.model.loading.ModelDebugDumper.wrapIfEnabled(id, entry.getValue());
+            if (wrapped != entry.getValue()) replacements.put(id, wrapped);
+        }
+
+        if (!replacements.isEmpty()) {
+            models.putAll(replacements);
+            MainRegistry.LOGGER.info("[ModelDebug] Wrapped {} baked models for logging.", replacements.size());
+        }
+    }
+
     @SubscribeEvent
     public static void onModelRegisterAdditional(ModelEvent.RegisterAdditional event) {
         // Регистрируем модели вариантов дверей, чтобы они загружались в ModelManager
         // round_airlock_door
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern_clean"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_clean"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern_clean"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_clean"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern_green"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_green"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/round_airlock_door_modern_green"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_modern_green"));
+        ^///?}
 
         // large_vehicle_door
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_legacy"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_legacy"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_legacy"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_legacy"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_modern"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_modern"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/large_vehicle_door_modern_rad"));
+        ^///?}
 
         // fire_door
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_legacy"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_legacy"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_legacy"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_legacy"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_black"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_black"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_black"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_black"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_orange"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_orange"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_orange"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_orange"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_trefoil"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_trefoil"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_trefoil"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_trefoil"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_yellow"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_yellow"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/fire_door_modern_yellow"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/fire_door_modern_yellow"));
+        ^///?}
 
         // secure_access_door
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_legacy"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_legacy"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_legacy"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_legacy"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_gray"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_gray"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_gray"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_gray"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_yellow"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_yellow"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_yellow"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_yellow"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_black"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_black"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/secure_access_door_modern_black"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/secure_access_door_modern_black"));
+        ^///?}
 
         // water_door
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_legacy"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_legacy"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_legacy"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_legacy"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_modern"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_modern"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_modern"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_modern"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_clean"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_clean"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/water_door_clean"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/water_door_clean"));
+        ^///?}
 
         // qe_containment_door
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_legacy"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_legacy"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_legacy"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_legacy"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil_yellow"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil_yellow"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil_yellow"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_containment_door_modern_trefoil_yellow"));
+        ^///?}
 
         // qe_sliding_door
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_sliding_door_legacy"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_legacy"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_sliding_door_legacy"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_legacy"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_sliding_door_modern"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/qe_sliding_door_modern"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/qe_sliding_door_modern"));
+        ^///?}
 
         // sliding_blast_door
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_legacy"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_legacy"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_legacy"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_legacy"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant1"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant1"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant1"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant1"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant2"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant2"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant2"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_blast_door_modern_variant2"));
+        ^///?}
 
         // sliding_seal_door
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_seal_door_legacy"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_legacy"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_seal_door_legacy"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_legacy"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_seal_door_modern"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/sliding_seal_door_modern"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/sliding_seal_door_modern"));
+        ^///?}
 
 
         // vault_door
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_2"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_2"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_2"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_2"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_81"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_81"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_81"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_81"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_87"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_87"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_87"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_87"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_99"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_99"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_99"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_99"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_101"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_101"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_101"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_101"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_106"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_106"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_106"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_106"));
+        ^///?}
 
         //? if fabric && < 1.21.1 {
-        /^event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_111"));
-        ^///?} else {
-                event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_111"));
-        //?}
+        event.register(new ResourceLocation(RefStrings.MODID, "block/doors/vault_door_skin_111"));
+        //?} else {
+                /^event.register(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_111"));
+        ^///?}
 
         
         MainRegistry.LOGGER.debug("Registered door variant models for loading");
@@ -1015,31 +1065,31 @@ public class ClientSetup {
         // ResourceProvider wrapper synthesize it from the real source + the define injection.
         ResourceLocation realVsh =
             //? if fabric && < 1.21.1 {
-            /^new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit.vsh");
-            ^///?} else {
-                        ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit.vsh");
-            //?}
+            new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit.vsh");
+            //?} else {
+                        /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit.vsh");
+            ^///?}
 
         ResourceLocation virtualInstancedVsh =
             //? if fabric && < 1.21.1 {
-            /^new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced.vsh");
-            ^///?} else {
-                        ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced.vsh");
-            //?}
+            new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced.vsh");
+            //?} else {
+                        /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced.vsh");
+            ^///?}
 
         ResourceLocation virtualSlicedVsh =
             //? if fabric && < 1.21.1 {
-            /^new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_sliced.vsh");
-            ^///?} else {
-                        ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_sliced.vsh");
-            //?}
+            new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_sliced.vsh");
+            //?} else {
+                        /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_sliced.vsh");
+            ^///?}
 
         ResourceLocation virtualInstancedSlicedVsh =
             //? if fabric && < 1.21.1 {
-            /^new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced_sliced.vsh");
-            ^///?} else {
-                        ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced_sliced.vsh");
-            //?}
+            new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced_sliced.vsh");
+            //?} else {
+                        /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced_sliced.vsh");
+            ^///?}
 
 
         com.hbm_m.client.render.shader.modification.ShaderModification instancingDefine =
@@ -1071,18 +1121,18 @@ public class ClientSetup {
             new ShaderInstance(
                 event.getResourceProvider(),
                 //? if fabric && < 1.21.1 {
-                /^new ResourceLocation(MainRegistry.MOD_ID, "block_lit_simple"),
+                new ResourceLocation(MainRegistry.MOD_ID, "block_lit_simple"),
                 blockLitSimpleFormat
             ),
             ModShaders::setBlockLitSimpleShader
         );
-                ^///?} else {
-                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple"),
+                //?} else {
+                                /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple"),
                 blockLitSimpleFormat
             ),
             ModShaders::setBlockLitSimpleShader
         );
-                //?}
+                ^///?}
 
         MainRegistry.LOGGER.info("Successfully registered block_lit_simple shader");
 
@@ -1090,18 +1140,18 @@ public class ClientSetup {
             new ShaderInstance(
                 instancedProvider,
                 //? if fabric && < 1.21.1 {
-                /^new ResourceLocation(MainRegistry.MOD_ID, "block_lit_instanced"),
+                new ResourceLocation(MainRegistry.MOD_ID, "block_lit_instanced"),
                 blockLitInstancedFormat
             ),
             ModShaders::setBlockLitInstancedShader
         );
-                ^///?} else {
-                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced"),
+                //?} else {
+                                /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced"),
                 blockLitInstancedFormat
             ),
             ModShaders::setBlockLitInstancedShader
         );
-                //?}
+                ^///?}
 
         MainRegistry.LOGGER.info("Successfully registered block_lit_instanced shader");
 
@@ -1109,18 +1159,18 @@ public class ClientSetup {
             new ShaderInstance(
                 slicedProvider,
                 //? if fabric && < 1.21.1 {
-                /^new ResourceLocation(MainRegistry.MOD_ID, "block_lit_simple_sliced"),
+                new ResourceLocation(MainRegistry.MOD_ID, "block_lit_simple_sliced"),
                 blockLitSimpleFormat
             ),
             ModShaders::setBlockLitSimpleSlicedShader
         );
-                ^///?} else {
-                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple_sliced"),
+                //?} else {
+                                /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_simple_sliced"),
                 blockLitSimpleFormat
             ),
             ModShaders::setBlockLitSimpleSlicedShader
         );
-                //?}
+                ^///?}
 
         MainRegistry.LOGGER.info("Successfully registered block_lit_simple_sliced shader");
 
@@ -1128,18 +1178,18 @@ public class ClientSetup {
             new ShaderInstance(
                 instancedSlicedProvider,
                 //? if fabric && < 1.21.1 {
-                /^new ResourceLocation(MainRegistry.MOD_ID, "block_lit_instanced_sliced"),
+                new ResourceLocation(MainRegistry.MOD_ID, "block_lit_instanced_sliced"),
                 blockLitInstancedFormat
             ),
             ModShaders::setBlockLitInstancedSlicedShader
         );
-                ^///?} else {
-                                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced_sliced"),
+                //?} else {
+                                /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block_lit_instanced_sliced"),
                 blockLitInstancedFormat
             ),
             ModShaders::setBlockLitInstancedSlicedShader
         );
-                //?}
+                ^///?}
 
         MainRegistry.LOGGER.info("Successfully registered block_lit_instanced_sliced shader");
         

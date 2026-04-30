@@ -31,10 +31,10 @@ public class ChemicalPlantJeiCategory implements IRecipeCategory<ChemicalPlantJe
 
     private static final ResourceLocation TEXTURE =
             //? if fabric && < 1.21.1 {
-            /^new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
-            ^///?} else {
-                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
-            //?}
+            new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
+            //?} else {
+                        /^ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
+            ^///?}
 
 
     private final IDrawable background;

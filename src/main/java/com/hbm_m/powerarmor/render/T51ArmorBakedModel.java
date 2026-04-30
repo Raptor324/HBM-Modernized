@@ -15,8 +15,8 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 //? if fabric {
-/^import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;^///?}
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.Environment;//?}
 
 /^*
  * Модель для рендеринга T51 Power Armor в GUI и руке.
@@ -26,7 +26,7 @@ import net.fabricmc.api.Environment;^///?}
 /^@OnlyIn(Dist.CLIENT)
 ^///?}
 //? if fabric {
-/^@Environment(EnvType.CLIENT)^///?}
+@Environment(EnvType.CLIENT)//?}
 public class T51ArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final String[] T51_ORDER = {

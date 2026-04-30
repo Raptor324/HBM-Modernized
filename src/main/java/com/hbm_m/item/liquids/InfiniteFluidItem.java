@@ -2,12 +2,6 @@ package com.hbm_m.item.liquids;
 
 import java.util.List;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
@@ -16,8 +10,22 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
+
+import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
 import net.minecraftforge.common.util.LazyOptional;
@@ -170,11 +178,17 @@ public class InfiniteFluidItem extends Item {
     // ================================================================== //
 
     //? if fabric {
-    public Storage<FluidVariant> createFabricStorage(ContainerItemContext context) {
+    public Storage<FluidVariant> createFabricStorage(ItemStack stack, @Nullable ContainerItemContext context) {
         return new Storage<FluidVariant>() {
+            private ItemStack currentStack() {
+                // Fabric Transfer API иногда зовёт provider с context == null (например, при FluidStorage.ITEM.find(stack, null)).
+                // Для бесконечной бочки это ок: её поведение определяется NBT и не требует обязательного контекста.
+                return context != null ? context.getItemVariant().toStack() : stack;
+            }
+
             @Override
             public long insert(FluidVariant resource, long maxAmount, TransactionContext transaction) {
-                Fluid type = getFluidType(context.getItemVariant().toStack());
+                Fluid type = getFluidType(currentStack());
                 // Бесконечная бочка поглощает жидкость, если тип совпадает или не настроен (void)
                 if (type == Fluids.EMPTY || type == resource.getFluid()) {
                     return maxAmount;
@@ -184,7 +198,7 @@ public class InfiniteFluidItem extends Item {
 
             @Override
             public long extract(FluidVariant resource, long maxAmount, TransactionContext transaction) {
-                Fluid type = getFluidType(context.getItemVariant().toStack());
+                Fluid type = getFluidType(currentStack());
                 // Как и в Forge версии, если тип пустой, мы разрешаем вытянуть всё, что запросят.
                 // Иначе проверяем совпадение с настроенной жидкостью.
                 if (type != Fluids.EMPTY && type != resource.getFluid()) {
@@ -198,7 +212,7 @@ public class InfiniteFluidItem extends Item {
                 return List.<StorageView<FluidVariant>>of(new StorageView<FluidVariant>() {
                     @Override
                     public long extract(FluidVariant resource, long maxAmount, TransactionContext transaction) {
-                        Fluid type = getFluidType(context.getItemVariant().toStack());
+                        Fluid type = getFluidType(currentStack());
                         if (type != Fluids.EMPTY && type != resource.getFluid()) {
                             return 0;
                         }
@@ -207,12 +221,12 @@ public class InfiniteFluidItem extends Item {
 
                     @Override
                     public boolean isResourceBlank() {
-                        return getFluidType(context.getItemVariant().toStack()) == Fluids.EMPTY;
+                        return getFluidType(currentStack()) == Fluids.EMPTY;
                     }
 
                     @Override
                     public FluidVariant getResource() {
-                        Fluid type = getFluidType(context.getItemVariant().toStack());
+                        Fluid type = getFluidType(currentStack());
                         return type == Fluids.EMPTY ? FluidVariant.blank() : FluidVariant.of(type);
                     }
 

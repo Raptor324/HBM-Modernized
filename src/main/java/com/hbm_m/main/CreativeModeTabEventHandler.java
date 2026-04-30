@@ -1,6 +1,8 @@
 package com.hbm_m.main;
 
 import java.util.List;
+import java.util.HashSet;
+import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
@@ -31,6 +33,7 @@ import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.core.registries.BuiltInRegistries;
 
 
 /**
@@ -91,46 +94,10 @@ public final class CreativeModeTabEventHandler {
     //? if fabric {
     public static void initFabric() {
         ItemGroupEvents.MODIFY_ENTRIES_ALL.register((tabGroup, entries) -> {
-            boolean isSearch = tabGroup.equals(CreativeModeTabs.SEARCH);
-
-            if (tabGroup.equals(ModCreativeTabs.NTM_WEAPONS_TAB.getKey()) || isSearch) {
-                populateWeaponsTab((stack, vis) -> entries.accept(stack, vis));
-            }
-
-            if (tabGroup.equals(CreativeModeTabs.COMBAT) || isSearch) {
+            // Кастомные вкладки наполняются через `CreativeModeTab#displayItems` при их регистрации.
+            // На Fabric оставляем только точечное добавление в ванильные вкладки.
+            if (tabGroup.equals(CreativeModeTabs.COMBAT)) {
                 populateCombatTab((stack, vis) -> entries.accept(stack, vis));
-            }
-
-            if (tabGroup.equals(ModCreativeTabs.NTM_RESOURCES_TAB.getKey()) || isSearch) {
-                populateResourceTab((stack, vis) -> entries.accept(stack, vis));
-            }
-
-            if (tabGroup.equals(ModCreativeTabs.NTM_CONSUMABLES_TAB.getKey()) || isSearch) {
-                populateConsumablesTab((stack, vis) -> entries.accept(stack, vis));
-            }
-
-            if (tabGroup.equals(ModCreativeTabs.NTM_SPAREPARTS_TAB.getKey()) || isSearch) {
-                populateSparepartsTab((stack, vis) -> entries.accept(stack, vis));
-            }
-
-            if (tabGroup.equals(ModCreativeTabs.NTM_ORES_TAB.getKey()) || isSearch) {
-                populateOresTab((stack, vis) -> entries.accept(stack, vis));
-            }
-
-            if (tabGroup.equals(ModCreativeTabs.NTM_BUILDING_TAB.getKey()) || isSearch) {
-                populateBuildingTab((stack, vis) -> entries.accept(stack, vis));
-            }
-
-            if (tabGroup.equals(ModCreativeTabs.NTM_MACHINES_TAB.getKey()) || isSearch) {
-                populateMachinesTab((stack, vis) -> entries.accept(stack, vis));
-            }
-
-            if (tabGroup.equals(ModCreativeTabs.NTM_FUEL_TAB.getKey()) || isSearch) {
-                populateFuelTab((stack, vis) -> entries.accept(stack, vis));
-            }
-
-            if (tabGroup.equals(ModCreativeTabs.NTM_TEMPLATES_TAB.getKey()) || isSearch) {
-                populateTemplatesTab((stack, vis) -> entries.accept(stack, vis));
             }
         });
     }
@@ -785,9 +752,9 @@ public final class CreativeModeTabEventHandler {
                 }
             }
         }
-        add.accept(new ItemStack(ModBlocks.URANIUM_BLOCK.get()));
-        add.accept(new ItemStack(ModBlocks.PLUTONIUM_BLOCK.get()));
-        add.accept(new ItemStack(ModBlocks.PLUTONIUM_FUEL_BLOCK.get()));
+        // add.accept(new ItemStack(ModBlocks.URANIUM_BLOCK.get()));
+        // add.accept(new ItemStack(ModBlocks.PLUTONIUM_BLOCK.get()));
+        // add.accept(new ItemStack(ModBlocks.PLUTONIUM_FUEL_BLOCK.get()));
     }
 
 
@@ -1200,8 +1167,16 @@ public final class CreativeModeTabEventHandler {
     }
 
     public static void populateTemplatesTab(BiConsumer<ItemStack, CreativeModeTab.TabVisibility> acceptor) {
-        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS
-        Consumer<ItemStack> add = stack -> acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        // Упрощенный Consumer, по умолчанию использующий PARENT_AND_SEARCH_TABS.
+        // В 1.20.1 игра падает, если один и тот же ItemStack (item+tag) добавить в вкладку дважды.
+        Set<String> seen = new HashSet<>();
+        Consumer<ItemStack> add = stack -> {
+            if (stack == null || stack.isEmpty()) return;
+            String itemId = String.valueOf(BuiltInRegistries.ITEM.getKey(stack.getItem()));
+            String tag = stack.getTag() == null ? "" : stack.getTag().toString();
+            if (!seen.add(itemId + "|" + tag)) return;
+            acceptor.accept(stack, CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        };
 
         add.accept(new ItemStack(ModItems.BLADE_STEEL.get()));
         add.accept(new ItemStack(ModItems.BLADE_TITANIUM.get()));
@@ -1223,9 +1198,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.STAMP_STEEL_PLATE.get()));
         add.accept(new ItemStack(ModItems.STAMP_STEEL_WIRE.get()));
         add.accept(new ItemStack(ModItems.STAMP_STEEL_CIRCUIT.get()));
-        add.accept(new ItemStack(ModItems.STAMP_TITANIUM_FLAT.get()));
-        add.accept(new ItemStack(ModItems.STAMP_TITANIUM_PLATE.get()));
-        add.accept(new ItemStack(ModItems.STAMP_TITANIUM_WIRE.get()));
         add.accept(new ItemStack(ModItems.STAMP_TITANIUM_FLAT.get()));
         add.accept(new ItemStack(ModItems.STAMP_TITANIUM_PLATE.get()));
         add.accept(new ItemStack(ModItems.STAMP_TITANIUM_WIRE.get()));
