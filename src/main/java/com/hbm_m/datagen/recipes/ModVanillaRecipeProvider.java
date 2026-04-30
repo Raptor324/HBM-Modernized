@@ -551,6 +551,14 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.ALUMINUM_RAW.get()), has(ModItems.ALUMINUM_RAW.get()))
                 .save(writer, recipeId("crafting/alclay_fireclay"));
 
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.getPowders(ModPowders.CEMENT).get(), 4)
+                .pattern("AB")
+                .pattern("BB")
+                .define('A', ModItems.getPowders(ModPowders.LIMESTONE).get())
+                .define('B', Items.CLAY_BALL)
+                .unlockedBy(getHasName(ModItems.getPowders(ModPowders.LIMESTONE).get()), has(ModItems.getPowders(ModPowders.LIMESTONE).get()))
+                .save(writer, recipeId("crafting/limestone_cement"));
+
         registerSmelting(writer, ModItems.FIRECLAY_BALL.get(), ModItems.FIREBRICK.get(), 0.1F, 100, "firebrick_smelting");
     }
 

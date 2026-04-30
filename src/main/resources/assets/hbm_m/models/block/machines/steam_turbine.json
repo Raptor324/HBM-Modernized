@@ -1,0 +1,14 @@
+{
+	"parent": "minecraft:block/cube",
+	"textures": {
+		"up":     "hbm_m:block/machine/machine_turbine_top",
+		"down":   "hbm_m:block/machine/machine_turbine_base",
+		"north":  "hbm_m:block/machine/machine_turbine_base",
+		"south":  "hbm_m:block/machine/machine_turbine_base",
+		"east":   "hbm_m:block/machine/machine_turbine_base",
+		"west":   "hbm_m:block/machine/machine_turbine_base",
+		"particle": "hbm_m:block/machine/machine_turbine_base"
+        },
+        "display": {
+                "gui": { "rotation": [30,225,0], "translation": [0,0,0], "scale": [0.625,0.625,0.625] }
+}

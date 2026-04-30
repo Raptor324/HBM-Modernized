@@ -272,6 +272,7 @@ public class MainRegistry {
             event.accept(ModItems.DESIGNATOR_RANGE);
             event.accept(ModItems.DESIGNATOR_MANUAL);
             event.accept(ModItems.MISSILE_TEST);
+            event.accept(ModItems.MISSILE_ABM);
 
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to NTM Weapons tab");
@@ -460,6 +461,10 @@ public class MainRegistry {
             if (ModClothConfig.get().enableDebugLogging) {
                 LOGGER.info("Added Alloy Sword to vanilla Combat tab");
             }
+        }
+
+        if (event.getTabKey() == CreativeModeTabs.SPAWN_EGGS || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            event.accept(ModItems.NOLO_SPAWN_EGG);
         }
 
         // СЛИТКИ И РЕСУРСЫ
@@ -662,7 +667,15 @@ public class MainRegistry {
 
         // ЗАПЧАСТИ
         if (event.getTab() == ModCreativeTabs.NTM_SPAREPARTS_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
+            event.accept(ModItems.SHELL_STEEL);
+            event.accept(ModItems.SHELL_COPPER);
+            event.accept(ModItems.SHELL_ALUMINUM);
+            event.accept(ModItems.SHELL_TITANIUM);
+
             event.accept(ModItems.BOLT_STEEL);
+            event.accept(ModItems.BOLT_LEAD);
+            event.accept(ModItems.BOLT_TUNGSTEN);
+            event.accept(ModItems.BOLT_HIGHSPEED_STEEL);
             event.accept(ModItems.COIL_TUNGSTEN);
             event.accept(ModItems.CENTRIFUGE_ELEMENT);
 
@@ -1175,14 +1188,49 @@ public class MainRegistry {
             event.accept(ModBlocks.GAS_CENTRIFUGE);
             event.accept(ModBlocks.CENTRIFUGE);
             event.accept(ModBlocks.CRYSTALLIZER);
+            event.accept(ModBlocks.BREEDER);
+            event.accept(ModBlocks.LARGE_PYLON);
             event.accept(ModBlocks.MACHINE_ASSEMBLER);
             event.accept(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
             event.accept(ModBlocks.HYDRAULIC_FRACKINING_TOWER);
             event.accept(ModBlocks.COOLING_TOWER);
+            event.accept(ModBlocks.TOWER_SMALL);
+            event.accept(ModBlocks.CYCLOTRON);
+            event.accept(ModBlocks.ZIRNOX);
+            event.accept(ModBlocks.ARC_WELDER);
+            event.accept(ModBlocks.SOLDERING_STATION);
+            event.accept(ModBlocks.MIXER);
+            event.accept(ModBlocks.DERRICK);
+            event.accept(ModBlocks.RBMK_CONSOLE);
+            event.accept(ModBlocks.FLARE_STACK);
+            event.accept(ModBlocks.PUMPJACK);
+            event.accept(ModBlocks.RADAR);
+            event.accept(ModBlocks.LARGE_RADAR);
+            event.accept(ModBlocks.CRACKING_TOWER);
+            event.accept(ModBlocks.FRACTION_TOWER);
+            event.accept(ModBlocks.MINING_DRILL);
+            event.accept(ModBlocks.FEL);
+            event.accept(ModBlocks.SILEX);
             event.accept(ModBlocks.FLUID_TANK);
             event.accept(ModBlocks.MACHINE_BATTERY_SOCKET);
             event.accept(ModBlocks.INDUSTRIAL_BOILER);
-            event.accept(ModBlocks.INDUSTRIAL_TURBINE);
+            event.accept(ModBlocks.SOLAR_BOILER);
+                event.accept(ModBlocks.SOLAR_MIRRORS);
+                event.accept(ModBlocks.WATZ_POWERPLANT);
+                event.accept(ModBlocks.HYDROTREATER);
+                event.accept(ModBlocks.CATALYTIC_REFORMER);
+                event.accept(ModBlocks.DEUTERIUM_TOWER);
+                event.accept(ModBlocks.CHEMICAL_FACTORY);
+                event.accept(ModBlocks.STEAM_TURBINE);
+                event.accept(ModBlocks.LIQUEFACTOR);
+                event.accept(ModBlocks.CORE_EMITTER);
+                event.accept(ModBlocks.CORE_INJECTOR);
+                event.accept(ModBlocks.CORE_RECEIVER);
+                event.accept(ModBlocks.VACUUM_DISTILL);
+                event.accept(ModBlocks.TURBOFAN);
+                event.accept(ModBlocks.INDUSTRIAL_TURBINE);
+            event.accept(ModBlocks.TURBINE);
+            event.accept(ModBlocks.SUBSTATION);
             event.accept(ModBlocks.REFINERY);
             event.accept(ModBlocks.MACHINE_BATTERY);
             event.accept(ModBlocks.MACHINE_BATTERY_LITHIUM);

@@ -8,6 +8,7 @@ import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.inventory.menu.MachineIndustrialTurbineMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 
 import net.minecraft.core.BlockPos;
@@ -258,8 +259,11 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity 
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        // TODO: Implement menu/GUI
-        return null;
+        return new MachineIndustrialTurbineMenu(containerId, playerInventory, this, data);
+    }
+
+    public ContainerData getContainerData() {
+        return data;
     }
 
     // --- Accessors ---

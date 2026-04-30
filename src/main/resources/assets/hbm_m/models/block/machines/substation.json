@@ -1,0 +1,48 @@
+{
+  "textures": {
+    "particle": "hbm_m:block/machine/substation"
+  },
+  "loader": "forge:composite",
+  "children": {
+    "substation_model": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/substation.obj",
+      "flip_v": true,
+      "render_type": "minecraft:solid",
+      "textures": {
+        "default": "hbm_m:block/machine/substation"
+      }
+    }
+  },
+  "transform": {
+    "translation": [0.5, 0, 0.5],
+    "rotation": [0, 0, 0],
+    "scale": 1.0
+  },
+  "display": {
+    "gui": {
+      "rotation": [30, 225, 0],
+      "translation": [0, -3.75, 0],
+      "scale": [0.18, 0.18, 0.18]
+    },
+    "fixed": {
+      "rotation": [0, 180, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.3, 0.3, 0.3]
+    },
+    "ground": {
+      "translation": [0, 3, 0],
+      "scale": [0.18, 0.18, 0.18]
+    },
+    "thirdperson_righthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0, 2.5, 0],
+      "scale": [0.2, 0.2, 0.2]
+    },
+    "firstperson_righthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0.75, 1, 0],
+      "scale": [0.2, 0.2, 0.2]
+    }
+  }
+}

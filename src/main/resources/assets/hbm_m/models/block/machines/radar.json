@@ -1,0 +1,53 @@
+{
+  "textures": {
+    "particle": "hbm_m:block/machine/radar_base"
+  },
+  "loader": "forge:composite",
+  "children": {
+    "radar_base": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/radar.obj",
+      "flip_v": true,
+      "render_type": "minecraft:solid",
+      "textures": {
+        "particle": "hbm_m:block/machine/radar_base",
+        "default": "hbm_m:block/machine/radar_base"
+      },
+      "visibility": {
+        "Dish": false,
+        "Base": true
+      }
+    }
+  },
+  "transform": {
+    "translation": [0, 0, 0],
+    "rotation": [0, 0, 0],
+    "scale": 1.0
+  },
+  "display": {
+    "gui": {
+      "rotation": [30, 225, 0],
+      "translation": [0, -2.5, 0],
+      "scale": [0.18, 0.18, 0.18]
+    },
+    "fixed": {
+      "rotation": [0, 180, 0],
+      "translation": [0, 0, 0],
+      "scale": [0.28, 0.28, 0.28]
+    },
+    "ground": {
+      "translation": [0, 3, 0],
+      "scale": [0.18, 0.18, 0.18]
+    },
+    "thirdperson_righthand": {
+      "rotation": [75, 45, 0],
+      "translation": [0, 2.5, 0],
+      "scale": [0.2, 0.2, 0.2]
+    },
+    "firstperson_righthand": {
+      "rotation": [0, 45, 0],
+      "translation": [0.75, 1, 0],
+      "scale": [0.2, 0.2, 0.2]
+    }
+  }
+}
