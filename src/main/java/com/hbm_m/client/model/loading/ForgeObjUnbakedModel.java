@@ -12,11 +12,10 @@ import java.util.Set;
 import java.util.function.Function;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.hbm_m.main.MainRegistry;
-
 import com.mojang.math.Transformation;
+
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.minecraft.client.renderer.block.model.ItemOverrides;

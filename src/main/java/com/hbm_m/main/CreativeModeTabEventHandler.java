@@ -1,7 +1,7 @@
 package com.hbm_m.main;
 
-import java.util.List;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Set;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
@@ -28,12 +28,12 @@ import net.fabricmc.fabric.api.itemgroup.v1.ItemGroupEvents;
 //? if forge {
 /*import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
 *///?}
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.core.registries.BuiltInRegistries;
 
 
 /**

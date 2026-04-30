@@ -4,10 +4,11 @@ package com.hbm_m.main;
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.fekal_electric.ModBatteryItem;
 import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
-import com.hbm_m.item.fekal_electric.ModBatteryItem;
 import com.hbm_m.radiation.ChunkRadiationManager;
+
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;

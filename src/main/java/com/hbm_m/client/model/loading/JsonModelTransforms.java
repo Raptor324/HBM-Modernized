@@ -1,6 +1,8 @@
 //? if fabric {
 package com.hbm_m.client.model.loading;
 
+import java.util.Locale;
+
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
@@ -9,12 +11,11 @@ import com.google.gson.Gson;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.hbm_m.main.MainRegistry;
+import com.mojang.math.Transformation;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
-import com.mojang.math.Transformation;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
-import java.util.Locale;
 
 @Environment(EnvType.CLIENT)
 final class JsonModelTransforms {
