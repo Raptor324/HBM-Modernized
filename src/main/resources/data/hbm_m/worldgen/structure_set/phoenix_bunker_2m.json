@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "weight": 1,
+      "structure": "hbm_m:phoenix_bunker_2m"
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "separation": 10,
+    "spacing": 30,
+    "salt": 888774372
+  }
+}

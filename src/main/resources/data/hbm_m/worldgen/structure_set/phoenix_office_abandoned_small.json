@@ -1,0 +1,14 @@
+{
+  "structures": [
+    {
+      "weight": 1,
+      "structure": "hbm_m:phoenix_office_abandoned_small"
+    }
+  ],
+  "placement": {
+    "type": "minecraft:random_spread",
+    "separation": 20,
+    "spacing": 60,
+    "salt": 777945534
+  }
+}
