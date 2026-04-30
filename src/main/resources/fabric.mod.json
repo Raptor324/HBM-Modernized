@@ -4,7 +4,9 @@
   "version": "${version}",
   "name": "${name}",
   "description": "${description}",
-  "authors": [${authors}],
+  "authors": [
+    "${mod_authors}"
+  ],
   "contact": {
     "homepage": "${homepage_url}",
     "sources": "${sources_url}",
@@ -21,14 +23,25 @@
     ],
     "cardinal-components-chunk": [
       "com.hbm_m.capability.FabricChunkComponents"
+    ],
+    "cardinal-components-entity": [
+      "com.hbm_m.capability.FabricPlayerComponents"
     ]
   },
   "mixins": [
-    "${mixin_config}"
+    "${mixin_config}",
+    "mixins.hbm_m.fabric.json"
   ],
   "depends": {
     "fabricloader": ">=0.14.0",
     "minecraft": "${minecraft}"
-  }${dependencies}
+  },
+  "custom": {
+    "cardinal-components": [
+      "hbm_m:chunk_radiation",
+      "hbm_m:player_radiation",
+      "hbm_m:player_persistent_data"
+    ]
+  }
 }
 

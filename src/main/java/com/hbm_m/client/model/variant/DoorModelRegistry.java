@@ -16,6 +16,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import com.hbm_m.main.MainRegistry;
 
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
+import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 //? if fabric {
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;//?}
@@ -23,11 +27,6 @@ import net.fabricmc.api.Environment;//?}
 /*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 *///?}
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.Resource;
-import net.minecraft.server.packs.resources.ResourceManager;
-import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
-
 
 /**
  * Реестр моделей и скинов дверей.
@@ -331,14 +330,14 @@ public class DoorModelRegistry implements ResourceManagerReloadListener {
             // Модели
             ResourceLocation legacyModel = null;
             if (json.has("legacy_model")) {
-                legacyModel = ResourceLocation.parse(json.get("legacy_model").getAsString());
+                legacyModel = ResourceLocation.tryParse(json.get("legacy_model").getAsString());
             }
             
             ResourceLocation modernModel = null;
             if (json.has("modern_model")) {
                 JsonObject modern = json.getAsJsonObject("modern_model");
                 if (modern.has("model")) {
-                    modernModel = ResourceLocation.parse(modern.get("model").getAsString());
+                    modernModel = ResourceLocation.tryParse(modern.get("model").getAsString());
                 }
             }
             

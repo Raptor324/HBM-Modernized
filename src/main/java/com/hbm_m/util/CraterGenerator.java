@@ -20,7 +20,6 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraftforge.server.ServerLifecycleHooks;
 
 public class CraterGenerator {
 
@@ -108,7 +107,7 @@ public class CraterGenerator {
 
         removeItemsInRadiusBatched(level, centerPos, (int) topRemovalRadius + 20);
 
-        MinecraftServer server = ServerLifecycleHooks.getCurrentServer();
+        MinecraftServer server = level.getServer();
         if (server != null) {
             server.tell(new TickTask(2, () -> {
                 try {

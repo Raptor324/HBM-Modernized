@@ -11,7 +11,6 @@ import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.fml.common.Mod;
 
 /**
  * Damage Resistance Handler for HBM Modernized
@@ -24,7 +23,6 @@ import net.minecraftforge.fml.common.Mod;
  * 
  * @author hbm (ported to 1.20.1)
  */
-@Mod.EventBusSubscriber(modid = com.hbm_m.main.MainRegistry.MOD_ID)
 public class DamageResistanceHandler {
     
     /** Currently cached DT reduction */

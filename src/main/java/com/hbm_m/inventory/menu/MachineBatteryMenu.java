@@ -15,10 +15,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.energy.IEnergyStorage;
-
-import java.util.Optional;
 
 public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEnergyMenu {
     public final MachineBatteryBlockEntity blockEntity;
@@ -179,31 +175,13 @@ public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEn
 
         // Из инвентаря игрока в машину
         if (index >= PLAYER_INVENTORY_START && index < PLAYER_INVENTORY_END) {
-            Optional<IEnergyStorage> energyCapability = sourceStack.getCapability(ForgeCapabilities.ENERGY).resolve();
-
-            if (energyCapability.isPresent()) {
-                IEnergyStorage itemEnergy = energyCapability.get();
-                boolean moved = false;
-
-                // Если предмет может ОТДАВАТЬ энергию -> INPUT
-                if (itemEnergy.canExtract()) {
-                    if (moveItemStackTo(sourceStack, TE_INPUT_SLOT, TE_INPUT_SLOT + 1, false)) {
-                        moved = true;
-                    }
-                }
-
-                // Если предмет может ПРИНИМАТЬ энергию -> OUTPUT
-                if (!moved && itemEnergy.canReceive()) {
-                    if (moveItemStackTo(sourceStack, TE_OUTPUT_SLOT, TE_OUTPUT_SLOT + 1, false)) {
-                        moved = true;
-                    }
-                }
-
-                if (!moved) {
+            // Loader-agnostic shift-click:
+            // пробуем положить в input, если не получилось — в output.
+            // Валидность предмета проверяется контейнером/BlockEntity.
+            if (!moveItemStackTo(sourceStack, TE_INPUT_SLOT, TE_INPUT_SLOT + 1, false)) {
+                if (!moveItemStackTo(sourceStack, TE_OUTPUT_SLOT, TE_OUTPUT_SLOT + 1, false)) {
                     return ItemStack.EMPTY;
                 }
-            } else {
-                return ItemStack.EMPTY;
             }
 
             // Из машины в инвентарь игрока

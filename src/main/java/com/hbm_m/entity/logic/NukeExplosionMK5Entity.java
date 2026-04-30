@@ -156,7 +156,7 @@ public class NukeExplosionMK5Entity extends ChunkloadingEntity {
                         (int) Math.floor(getZ() + vec.z * i)
                 );
                 BlockState state = level().getBlockState(pos);
-                res += state.getExplosionResistance(level(), pos, null);
+                res += state.getBlock().getExplosionResistance();
             }
 
             if (res < 1) res = 1;

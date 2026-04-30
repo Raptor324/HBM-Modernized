@@ -1,4 +1,5 @@
-package com.hbm_m.powerarmor.render;
+//? if forge {
+/*package com.hbm_m.powerarmor.render;
 
 import com.google.gson.JsonObject;
 import com.hbm_m.client.loader.AbstractObjPartModelLoader;
@@ -47,3 +48,4 @@ public class T51ArmorModelLoader extends AbstractObjPartModelLoader<T51ArmorBake
     // Кастомный атлас не используется, так как при entity рендеринге Material создается
     // заново с BLOCK_ATLAS в T51PowerArmorLayer.T51Config
 }
+*///?}

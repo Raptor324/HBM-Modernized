@@ -1,35 +1,34 @@
 package com.hbm_m.event;
 
-// Этот класс обрабатывает события уровня, проверяя выброшенные предметы на наличие опасных свойств.
-// Если предмет обладает гидрореактивностью и находится в воде, он взрывается
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;
 
+import dev.architectury.event.events.common.TickEvent;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 
-@Mod.EventBusSubscriber
+/**
+ * Этот класс обрабатывает события уровня, проверяя выброшенные предметы на наличие опасных свойств.
+ * Если предмет обладает гидрореактивностью и находится в воде, он взрывается.
+ */
 public class HazardEventHandler {
 
-    @SubscribeEvent
-    public static void onLevelTick(TickEvent.LevelTickEvent event) {
-        // Нас интересует только логика на сервере и только в конце тика, чтобы избежать рассинхрона.
-        if (event.side.isClient() || event.phase != TickEvent.Phase.END) {
-            return;
-        }
+    /**
+     * Регистрация обработчика события.
+     * Вызывается один раз при инициализации мода.
+     */
+    public static void init() {
+        TickEvent.SERVER_LEVEL_POST.register(HazardEventHandler::onLevelTick);
+    }
 
-        ServerLevel level = (ServerLevel) event.level;
-
+    private static void onLevelTick(ServerLevel level) {
         // Перебираем все сущности, загруженные в мире.
         // ВАЖНО: Мы создаем копию списка entity-итератора, чтобы избежать ConcurrentModificationException
-        // при удалении сущности (item.kill()) во время итерации.
+        // при удалении сущности (item.discard()) во время итерации.
         for (Entity entity : level.getAllEntities()) {
             // Нас интересуют только выброшенные предметы (ItemEntity)
             if (entity instanceof ItemEntity itemEntity) {
@@ -46,21 +45,35 @@ public class HazardEventHandler {
                 // Флаг, который показывает, что предмет был уничтожен и дальнейшая обработка не нужна.
                 boolean itemDestroyed = false;
 
-                // 1. Проверка на гидрореактивность 
+                // 1. Проверка на гидрореактивность
                 float hydroStrength = HazardSystem.getHazardLevelFromStack(stack, HazardType.HYDRO_REACTIVE);
                 if (hydroStrength > 0 && itemEntity.isInWaterOrRain()) {
                     // Уничтожаем предмет и создаем взрыв
-                    itemEntity.discard(); // Используем discard вместо kill/remove для правильной обработки
-                    level.explode(itemEntity, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), hydroStrength, Level.ExplosionInteraction.TNT);
+                    itemEntity.discard();
+                    level.explode(
+                            itemEntity,
+                            itemEntity.getX(),
+                            itemEntity.getY(),
+                            itemEntity.getZ(),
+                            hydroStrength,
+                            Level.ExplosionInteraction.TNT
+                    );
                     itemDestroyed = true;
                 }
 
-                // 2. Проверка на взрыв в огне 
+                // 2. Проверка на взрыв в огне
                 if (!itemDestroyed) {
                     float explosiveStrength = HazardSystem.getHazardLevelFromStack(stack, HazardType.EXPLOSIVE_ON_FIRE);
                     if (explosiveStrength > 0 && itemEntity.isOnFire()) {
                         itemEntity.discard();
-                        level.explode(itemEntity, itemEntity.getX(), itemEntity.getY(), itemEntity.getZ(), explosiveStrength, Level.ExplosionInteraction.TNT);
+                        level.explode(
+                                itemEntity,
+                                itemEntity.getX(),
+                                itemEntity.getY(),
+                                itemEntity.getZ(),
+                                explosiveStrength,
+                                Level.ExplosionInteraction.TNT
+                        );
                         itemDestroyed = true;
                     }
                 }
@@ -71,9 +84,9 @@ public class HazardEventHandler {
                     if (radiationLevel > 0) {
                         // Здесь должна быть логика излучения.
                         // TODO: Позже реализую утилитарный класс типа ContaminationUtil, как в оригинальном HBM.
-                        
+
                         // ContaminationUtil.radiate(level, itemEntity.blockPosition(), 32, radiationLevel / 10f * stack.getCount());
-                        
+
                         // Временный плейсхолдер, чтобы показать, что логика работает:
                         // MainRegistry.LOGGER.debug("Item " + stack.getDisplayName().getString() + " is radiating at " + radiationLevel + " RAD/s");
                     }

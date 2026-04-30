@@ -18,12 +18,10 @@ public class MachineFluidTankModelLoader extends AbstractObjPartModelLoader<Mach
     *///?}
 
 
-    @Override
     protected Set<String> getPartNames(JsonObject jsonObject) {
         return Set.of("Frame", "Tank");
     }
 
-    @Override
     protected MachineFluidTankBakedModel createBakedModel(HashMap<String, BakedModel> bakedParts, ItemTransforms transforms, ResourceLocation modelLocation) {
         return new MachineFluidTankBakedModel(bakedParts, transforms);
     }

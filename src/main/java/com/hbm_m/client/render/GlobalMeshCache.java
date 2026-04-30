@@ -161,7 +161,11 @@ public class GlobalMeshCache {
         int neutralLight = 0;
 
         for (BakedQuad quad : quads) {
-            builder.putBulkData(neutralPose, quad, r, g, b, a, neutralLight, OverlayTexture.NO_OVERLAY, false);
+            //? if forge {
+            /*builder.putBulkData(neutralPose, quad, r, g, b, a, neutralLight, OverlayTexture.NO_OVERLAY, false);
+            *///?} else {
+            builder.putBulkData(neutralPose, quad, r, g, b, neutralLight, OverlayTexture.NO_OVERLAY);
+            //?}
         }
 
         BufferBuilder.RenderedBuffer renderedBuffer = builder.end();

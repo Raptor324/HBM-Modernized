@@ -170,9 +170,7 @@ public class EnergyNetworkManager extends SavedData {
                 // Проверяем, есть ли там реальный TileEntity с энергией
                 net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(neighborPos);
                 if (be != null) {
-                    boolean isEnergyBlock = be.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_PROVIDER).isPresent() ||
-                            be.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_RECEIVER).isPresent() ||
-                            be.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_CONNECTOR).isPresent();
+                    boolean isEnergyBlock = com.hbm_m.capability.ModCapabilities.hasEnergyComponent(be);
 
                     if (isEnergyBlock) {
                         // Мы нашли "потерянный" провод! Добавляем его принудительно.

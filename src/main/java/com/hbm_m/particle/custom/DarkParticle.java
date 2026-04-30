@@ -10,13 +10,7 @@ import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.particle.TextureSheetParticle;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
-//? if fabric {
-@Environment(EnvType.CLIENT)//?}
+
 public class DarkParticle extends TextureSheetParticle {
 
     protected DarkParticle(ClientLevel pLevel, double pX, double pY, double pZ,
@@ -48,11 +42,6 @@ public class DarkParticle extends TextureSheetParticle {
     }
 
     // Фабрика для создания частиц
-//? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
-//? if fabric {
-@Environment(EnvType.CLIENT)//?}
     public static class Provider implements ParticleProvider<SimpleParticleType> {
         private final SpriteSet spriteSet;
 

@@ -16,8 +16,6 @@ import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 // Обработчик событий клиента, добавляющий подсказки к предметам (опасности, OreDict теги).
 // Подсказки показываются при наведении на предмет в инвентаре.
-import com.hbm_m.lib.RefStrings;
-
 
 import dev.architectury.event.events.client.ClientTickEvent;
 import dev.architectury.event.events.client.ClientTooltipEvent;
@@ -27,12 +25,12 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ArmorItem;
-import net.minecraft.world.item.ItemStack;
 //? if fabric {
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 //?}
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+/*import com.hbm_m.lib.RefStrings;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
@@ -43,7 +41,12 @@ import net.minecraftforge.fml.common.Mod;
 *///?}
 public class ClientModEvents {
 
+    private static boolean initialized = false;
+
     public static void init() {
+        if (initialized) return;
+        initialized = true;
+
         ClientTooltipEvent.ITEM.register((stack, lines, flag) -> {
             if (stack.isEmpty() || stack.getItem() instanceof ArmorItem) {
                 return;

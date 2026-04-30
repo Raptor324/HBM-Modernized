@@ -2,7 +2,6 @@ package com.hbm_m.block.entity.machines;
 
 import java.util.Optional;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.energy.EnergyNetworkManager;
@@ -19,7 +18,6 @@ import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.Connection;
 import net.minecraft.network.chat.Component;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
@@ -37,9 +35,7 @@ import net.minecraft.world.phys.AABB;
 /*import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
 import com.hbm_m.capability.ModCapabilities;
-import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
 *///?}
 
 //? if fabric {
@@ -192,27 +188,35 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
     }
 
     private long getEnergyStoredFromStack() {
+        long result = 0L;
         //? if fabric {
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
-        if (stack.isEmpty()) return 0L;
-        var es = EnergyStorage.ITEM.find(stack, null);
-        return es != null ? es.getAmount() : 0L;
-        //?}
-        Optional<IEnergyReceiver> r = stackReceiver();
-        if (r.isPresent()) return r.get().getEnergyStored();
-        return stackProvider().map(IEnergyProvider::getEnergyStored).orElse(0L);
+        if (!stack.isEmpty()) {
+            var es = EnergyStorage.ITEM.find(stack, null);
+            if (es != null) result = es.getAmount();
+        }
+        //?} else {
+        /*Optional<IEnergyReceiver> r = stackReceiver();
+        if (r.isPresent()) result = r.get().getEnergyStored();
+        else result = stackProvider().map(IEnergyProvider::getEnergyStored).orElse(0L);
+        *///?}
+        return result;
     }
 
     private long getMaxEnergyStoredFromStack() {
+        long result = 1L;
         //? if fabric {
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
-        if (stack.isEmpty()) return 1L;
-        var es = EnergyStorage.ITEM.find(stack, null);
-        return es != null ? Math.max(1L, es.getCapacity()) : 1L;
-        //?}
-        Optional<IEnergyReceiver> r = stackReceiver();
-        if (r.isPresent()) return Math.max(1, r.get().getMaxEnergyStored());
-        return stackProvider().map(p -> Math.max(1, p.getMaxEnergyStored())).orElse(1L);
+        if (!stack.isEmpty()) {
+            var es = EnergyStorage.ITEM.find(stack, null);
+            if (es != null) result = Math.max(1L, es.getCapacity());
+        }
+        //?} else {
+        /*Optional<IEnergyReceiver> r = stackReceiver();
+        if (r.isPresent()) result = Math.max(1L, r.get().getMaxEnergyStored());
+        else result = stackProvider().map(p -> Math.max(1L, p.getMaxEnergyStored())).orElse(1L);
+        *///?}
+        return result;
     }
 
     @Override
@@ -237,10 +241,13 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
 
     @Override
     public long getReceiveSpeed() {
+        long speed = 0L;
         //? if fabric {
-        return getMaxEnergyStoredFromStack(); // ограничим реально капом предмета
-        //?}
-        return stackReceiver().map(IEnergyReceiver::getReceiveSpeed).orElse(0L);
+        speed = getMaxEnergyStoredFromStack(); // ограничим реально капом предмета
+        //?} else {
+        /*speed = stackReceiver().map(IEnergyReceiver::getReceiveSpeed).orElse(0L);
+        *///?}
+        return speed;
     }
 
     @Override
@@ -251,77 +258,92 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
     @Override
     public long receiveEnergy(long maxReceive, boolean simulate) {
         if (!canReceive()) return 0;
+        long accepted = 0L;
         //? if fabric {
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
         var es = EnergyStorage.ITEM.find(stack, null);
-        if (es == null || !es.supportsInsertion()) return 0;
-        if (simulate) {
-            try (Transaction tx = Transaction.openOuter()) {
-                long accepted = es.insert(maxReceive, tx);
-                return accepted;
+        if (es != null && es.supportsInsertion()) {
+            if (simulate) {
+                try (Transaction tx = Transaction.openOuter()) {
+                    accepted = es.insert(maxReceive, tx);
+                }
+            } else {
+                try (Transaction tx = Transaction.openOuter()) {
+                    accepted = es.insert(maxReceive, tx);
+                    if (accepted > 0) tx.commit();
+                }
             }
         }
-        try (Transaction tx = Transaction.openOuter()) {
-            long accepted = es.insert(maxReceive, tx);
-            if (accepted > 0) tx.commit();
-            return accepted;
-        }
-        //?}
-        return stackReceiver().map(r -> r.receiveEnergy(maxReceive, simulate)).orElse(0L);
+        //?} else {
+        /*accepted = stackReceiver().map(r -> r.receiveEnergy(maxReceive, simulate)).orElse(0L);
+        *///?}
+        return accepted;
     }
 
     @Override
     public boolean canReceive() {
         int mode = getMode();
         if (!(mode == 0 || mode == 1)) return false;
+        boolean result = false;
         //? if fabric {
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
         var es = EnergyStorage.ITEM.find(stack, null);
-        return es != null && es.supportsInsertion();
-        //?}
-        return stackReceiver().map(IEnergyReceiver::canReceive).orElse(false);
+        result = es != null && es.supportsInsertion();
+        //?} else {
+        /*result = stackReceiver().map(IEnergyReceiver::canReceive).orElse(false);
+        *///?}
+        return result;
     }
 
     @Override
     public long getProvideSpeed() {
+        long speed = 0L;
         //? if fabric {
-        return getEnergyStoredFromStack();
-        //?}
-        return stackProvider().map(IEnergyProvider::getProvideSpeed).orElse(0L);
+        speed = getEnergyStoredFromStack();
+        //?} else {
+        /*speed = stackProvider().map(IEnergyProvider::getProvideSpeed).orElse(0L);
+        *///?}
+        return speed;
     }
 
     @Override
     public long extractEnergy(long maxExtract, boolean simulate) {
         if (!canExtract()) return 0;
+        long extracted = 0L;
         //? if fabric {
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
         var es = EnergyStorage.ITEM.find(stack, null);
-        if (es == null || !es.supportsExtraction()) return 0;
-        if (simulate) {
-            try (Transaction tx = Transaction.openOuter()) {
-                long extracted = es.extract(maxExtract, tx);
-                return extracted;
+        if (es != null && es.supportsExtraction()) {
+            if (simulate) {
+                try (Transaction tx = Transaction.openOuter()) {
+                    extracted = es.extract(maxExtract, tx);
+                }
+            } else {
+                try (Transaction tx = Transaction.openOuter()) {
+                    extracted = es.extract(maxExtract, tx);
+                    if (extracted > 0) tx.commit();
+                }
             }
         }
-        try (Transaction tx = Transaction.openOuter()) {
-            long extracted = es.extract(maxExtract, tx);
-            if (extracted > 0) tx.commit();
-            return extracted;
-        }
-        //?}
-        return stackProvider().map(p -> p.extractEnergy(maxExtract, simulate)).orElse(0L);
+        //?} else {
+        /*extracted = stackProvider().map(p -> p.extractEnergy(maxExtract, simulate)).orElse(0L);
+        *///?}
+        return extracted;
     }
 
     @Override
     public boolean canExtract() {
         int mode = getMode();
         if (!(mode == 0 || mode == 2)) return false;
+        boolean result = false;
         //? if fabric {
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
         var es = EnergyStorage.ITEM.find(stack, null);
-        return es != null && es.supportsExtraction();
-        //?}
-        return stackProvider().map(IEnergyProvider::canExtract).orElse(false);
+        result = es != null && es.supportsExtraction();
+        //?} else {
+        /*result = stackProvider().map(IEnergyProvider::canExtract).orElse(false);
+        *///?}
+        return result;
     }
 
     @Override
@@ -390,10 +412,12 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         return tag;
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public AABB getRenderBoundingBox() {
         return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(3, 3, 3));
     }
+    *///?}
 
     @Override
     public Component getDisplayName() {

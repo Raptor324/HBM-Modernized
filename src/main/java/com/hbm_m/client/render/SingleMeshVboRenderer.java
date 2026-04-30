@@ -146,8 +146,17 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             return true;
         }
 
-        AABB renderBounds = blockEntity.getRenderBoundingBox();
+        AABB renderBounds = worldBoundsFromMesh(blockEntity);
         return OcclusionCullingHelper.shouldRender(blockPos, blockEntity.getLevel(), renderBounds);
+    }
+
+    /** Без Forge {@code getRenderBoundingBox}: мирный AABB из позиции BE и object-space {@link #objBbox}. */
+    private AABB worldBoundsFromMesh(BlockEntity blockEntity) {
+        BlockPos pos = blockEntity.getBlockPos();
+        return new AABB(
+                pos.getX() + objBbox[0], pos.getY() + objBbox[1], pos.getZ() + objBbox[2],
+                pos.getX() + objBbox[3], pos.getY() + objBbox[4], pos.getZ() + objBbox[5]
+        );
     }
 
     @Nullable
@@ -249,7 +258,11 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         var consumer = bufferSource.getBuffer(RenderType.solid());
         var pose = poseStack.last();
         for (BakedQuad quad : quads) {
-            consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+            //? if forge {
+            /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+            *///?} else {
+            consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
+            //?}
         }
     }
 

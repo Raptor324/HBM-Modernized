@@ -43,7 +43,7 @@ public abstract class AbstractExplosionParticle extends TextureSheetParticle {
      *
      * Это полностью обходит стандартное ограничение в 32 блока
      */
-    @Override
+    
     public boolean shouldCull() {
         Camera camera = Minecraft.getInstance().gameRenderer.getMainCamera();
         if (camera == null) {

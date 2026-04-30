@@ -45,7 +45,6 @@ public class DudFugasBlock extends Block implements IDetonatable {
         super(props);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
-    @Override
     public void appendHoverText(ItemStack stack,
                                 @Nullable net.minecraft.world.level.BlockGetter level,
                                 List<Component> tooltip,
@@ -56,33 +55,27 @@ public class DudFugasBlock extends Block implements IDetonatable {
                 .withStyle(ChatFormatting.GRAY));
     }
     // Не ломается поршнями
-    @Override
     public PushReaction getPistonPushReaction(BlockState state) {
         return PushReaction.BLOCK;
     }
 
     // Запретить ломать блок инструментом (игроком)
-    @Override
     public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
         return 0.0F; // Нельзя сломать вообще
     }
-    @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING);
     }
 
-    @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
         // Блок поворачивается лицом к игроку при установке (противоположно взгляду игрока)
         return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
-    @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return SHAPE;
     }
 
-    @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
         return SHAPE;
     }

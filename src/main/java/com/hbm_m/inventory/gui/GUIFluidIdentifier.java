@@ -17,6 +17,7 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
@@ -156,7 +157,13 @@ public class GUIFluidIdentifier extends Screen {
                 if (fluid == ModFluids.NONE.getSource() || fluid == Fluids.EMPTY) {
                     tooltip.add(Component.translatable("fluid.hbm_m.none"));
                 } else {
-                    tooltip.add(Component.translatable(fluid.getFluidType().getDescriptionId()));
+                    ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fluid);
+                    if (fluidId != null) {
+                        tooltip.add(Component.translatable(
+                                "fluid." + fluidId.getNamespace() + "." + fluidId.getPath()));
+                    } else {
+                        tooltip.add(Component.literal(HbmFluidRegistry.getFluidName(fluid)));
+                    }
                 }
                 FluidTraitManager.appendFluidTypeTooltip(fluid, Screen.hasShiftDown(), tooltip);
                 guiGraphics.renderComponentTooltip(font, tooltip, mouseX, mouseY);

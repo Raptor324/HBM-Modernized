@@ -18,18 +18,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Render layer for DNT Power Armor (entity rendering).
  * Mirrors the T51 pipeline but uses DNT OBJ/model id and textures.
  */
-//? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
-//? if fabric {
-@Environment(EnvType.CLIENT)//?}
 public class DNTPowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends AbstractObjArmorLayer<T, M> {
 
     private static final ResourceLocation DNT_ATLAS_LOCATION = InventoryMenu.BLOCK_ATLAS;

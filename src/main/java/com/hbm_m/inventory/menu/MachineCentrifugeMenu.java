@@ -2,10 +2,10 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineCentrifugeBlockEntity;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
+import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -19,9 +19,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.ItemStackHandler;
-import net.minecraftforge.items.SlotItemHandler;
 
 public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -29,6 +26,7 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
     private final Level level;
     private final ContainerData data;
     private final Player player;
+    private final HandlerContainer machineInventory;
 
     private long clientEnergy;
     private long clientMaxEnergy;
@@ -68,31 +66,19 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
 
         addDataSlots(data);
 
-        ItemStackHandler itemHandler = this.blockEntity.getInventory();
+        ModItemStackHandler itemHandler = this.blockEntity.getInventory();
+        this.machineInventory = new HandlerContainer(itemHandler);
 
         // battery
-        this.addSlot(new SlotItemHandler(itemHandler, BATTERY_SLOT, SLOT_BATTERY_X, SLOT_BATTERY_Y) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                boolean hbm = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
-                        .map(provider -> provider.canExtract())
-                        .orElse(false);
-                if (hbm) {
-                    return true;
-                }
-                return stack.getCapability(ForgeCapabilities.ENERGY)
-                        .map(storage -> storage.canExtract())
-                        .orElse(false);
-            }
-        });
+        this.addSlot(new Slot(machineInventory, BATTERY_SLOT, SLOT_BATTERY_X, SLOT_BATTERY_Y));
 
         // input
-        this.addSlot(new SlotItemHandler(itemHandler, INPUT_SLOT, SLOT_INPUT_X, SLOT_INPUT_Y));
+        this.addSlot(new Slot(machineInventory, INPUT_SLOT, SLOT_INPUT_X, SLOT_INPUT_Y));
 
         // outputs (4 slots)
         int outputY = SLOT_OUTPUT_Y;
         for (int i = 0; i < OUTPUT_SLOTS; i++) {
-            this.addSlot(new SlotItemHandler(itemHandler, OUTPUT_SLOT_START + i, SLOT_OUTPUT_X0 + i * SLOT_OUTPUT_X_STEP, outputY) {
+            this.addSlot(new Slot(machineInventory, OUTPUT_SLOT_START + i, SLOT_OUTPUT_X0 + i * SLOT_OUTPUT_X_STEP, outputY) {
                 @Override
                 public boolean mayPlace(ItemStack stack) {
                     return false;
@@ -212,14 +198,8 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
                 return ItemStack.EMPTY;
             }
         } else {
-            boolean isBattery = slotStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
-                    .map(provider -> provider.canExtract())
-                    .orElse(false) ||
-                    slotStack.getCapability(ForgeCapabilities.ENERGY)
-                            .map(storage -> storage.canExtract())
-                            .orElse(false);
-
-            if (isBattery) {
+            // Делегируем проверку допустимости слота машине (внутри учтёт loader-specific логику).
+            if (machineInventory.canPlaceItem(BATTERY_SLOT, slotStack)) {
                 if (!this.moveItemStackTo(slotStack, BATTERY_SLOT, BATTERY_SLOT + 1, false)) {
                     return ItemStack.EMPTY;
                 }
@@ -243,5 +223,82 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
     @Override
     public boolean stillValid(Player player) {
         return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.CENTRIFUGE.get());
+    }
+
+    /** Vanilla-адаптер для {@link ModItemStackHandler}, чтобы использовать обычные {@link Slot}. */
+    private static final class HandlerContainer implements net.minecraft.world.Container {
+        private final ModItemStackHandler handler;
+
+        private HandlerContainer(ModItemStackHandler handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        public int getContainerSize() {
+            return handler.getSlots();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                if (!handler.getStackInSlot(i).isEmpty()) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        @Override
+        public ItemStack getItem(int slot) {
+            return handler.getStackInSlot(slot);
+        }
+
+        @Override
+        public ItemStack removeItem(int slot, int amount) {
+            ItemStack existing = handler.getStackInSlot(slot);
+            if (existing.isEmpty() || amount <= 0) {
+                return ItemStack.EMPTY;
+            }
+
+            ItemStack split = existing.split(amount);
+            handler.setStackInSlot(slot, existing);
+            setChanged();
+            return split;
+        }
+
+        @Override
+        public ItemStack removeItemNoUpdate(int slot) {
+            ItemStack existing = handler.getStackInSlot(slot);
+            handler.setStackInSlot(slot, ItemStack.EMPTY);
+            return existing;
+        }
+
+        @Override
+        public void setItem(int slot, ItemStack stack) {
+            handler.setStackInSlot(slot, stack);
+            setChanged();
+        }
+
+        @Override
+        public void setChanged() {
+            // Изменения уже отслеживаются в handler, но Slot ожидает этот вызов.
+        }
+
+        @Override
+        public boolean stillValid(Player player) {
+            return true;
+        }
+
+        @Override
+        public void clearContent() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                handler.setStackInSlot(i, ItemStack.EMPTY);
+            }
+        }
+
+        @Override
+        public boolean canPlaceItem(int slot, ItemStack stack) {
+            return handler.isItemValid(slot, stack);
+        }
     }
 }

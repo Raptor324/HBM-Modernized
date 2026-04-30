@@ -131,8 +131,9 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
             public boolean mayPlace(@NotNull ItemStack stack) {
                 //? if fabric {
                 return FluidStorage.ITEM.find(stack, null) != null;
-                //?}
-                return false;
+                //?} else {
+                /*return false;
+                *///?}
             }
         });
 
@@ -150,8 +151,9 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
             public boolean mayPlace(@NotNull ItemStack stack) {
                 //? if fabric {
                 return FluidStorage.ITEM.find(stack, null) != null;
-                //?}
-                return false;
+                //?} else {
+                /*return false;
+                *///?}
             }
         });
 

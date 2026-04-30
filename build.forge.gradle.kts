@@ -14,7 +14,7 @@ platform {
 		required("forge") {
 			forgeVersionRange = "[1,)"
 		}
-		required("architectury") {
+		optional("architectury") {
 			slug("architectury-api")
 			forgeVersionRange = "[${prop("deps.architectury")},)"
 		}
@@ -103,6 +103,7 @@ dependencies {
 
 	// В Kotlin DSL динамические конфигурации оборачиваются в кавычки, либо вызываются через add()
 	"modImplementation"("dev.architectury:architectury-forge:${prop("deps.architectury")}")
+	jarJar("dev.architectury:architectury-forge:[${prop("deps.architectury")},)")
 	"modImplementation"("me.shedaniel.cloth:cloth-config-forge:${prop("deps.cloth-config")}")
 
 	"modCompileOnly"("curse.maven:jei-238222:${prop("deps.jei")}")

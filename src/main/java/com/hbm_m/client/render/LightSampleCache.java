@@ -247,7 +247,11 @@ public final class LightSampleCache {
 
         AABB bounds;
         try {
-            bounds = be.getRenderBoundingBox();
+            //? if forge {
+            /*bounds = be.getRenderBoundingBox();
+            *///?} else {
+            bounds = new AABB(be.getBlockPos());
+            //?}
         } catch (Throwable t) {
             bounds = null;
         }

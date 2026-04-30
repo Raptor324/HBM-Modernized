@@ -1,19 +1,17 @@
 package com.hbm_m.network;
 
-import java.util.function.Function;
-
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.packets.PowerArmorDashPacket;
 import com.hbm_m.network.sounds.GeigerSoundPacket;
-
 import dev.architectury.networking.NetworkManager;
 import dev.architectury.networking.NetworkManager.PacketContext;
-
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.Vec3;
+
+import java.util.function.Function;
 
 /**
  * Кроссплатформенный обработчик пакетов.
@@ -173,7 +171,11 @@ public class ModPacketHandler {
     // ══════════════════════ Вспомогательные методы ════════════════════════════
 
     private static ResourceLocation id(String path) {
+        //? if fabric && < 1.21.1 {
         return new ResourceLocation(RefStrings.MODID, path);
+        //?} else {
+        /*return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
+        *///?}
     }
 
     /**

@@ -52,9 +52,10 @@ public class ChunkRadiationManager {
      */
     public static ChunkRadiationHandler getProxy() {
         if (proxyInstance == null) {
-            proxyInstance = ModClothConfig.get().usePrismSystem
-                    ? new ChunkRadiationHandlerPRISM()
-                    : new ChunkRadiationHandlerSimple();
+//            proxyInstance = ModClothConfig.get().usePrismSystem
+//                    ? new ChunkRadiationHandlerPRISM()
+//                    : new ChunkRadiationHandlerSimple();
+            proxyInstance = new ChunkRadiationHandlerSimple();
         }
         return proxyInstance;
     }

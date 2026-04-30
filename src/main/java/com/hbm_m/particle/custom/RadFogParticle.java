@@ -10,16 +10,10 @@ import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.particle.TextureSheetParticle;
 import net.minecraft.core.particles.SimpleParticleType;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 // Частица радиационного тумана.
 // Используется для создания эффекта радиационного тумана в зонах с высокой радиацией.
 // Частица медленно увеличивается в размере и плавно исчезает, создавая атмосферный эффект.
-//? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
-//? if fabric {
-@Environment(EnvType.CLIENT)//?}
+
 public class RadFogParticle extends TextureSheetParticle {
 
     // Конструктор частицы
@@ -69,11 +63,6 @@ public class RadFogParticle extends TextureSheetParticle {
         // что частицы прозрачные и их нужно пытаться сортировать.
         return ParticleRenderType.PARTICLE_SHEET_TRANSLUCENT;
     }
-//? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
-//? if fabric {
-@Environment(EnvType.CLIENT)//?}
     public static class Provider implements ParticleProvider<SimpleParticleType> {
         private final SpriteSet sprites;
 

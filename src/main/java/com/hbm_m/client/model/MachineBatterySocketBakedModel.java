@@ -9,6 +9,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.machines.BatterySocketBlockEntity;
 import com.hbm_m.block.machines.MachineBatterySocketBlock;
+import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
@@ -26,13 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
-    private static final ResourceLocation BATTERY_TEX =
-            //? if fabric && < 1.21.1 {
-            new ResourceLocation("hbm_m", "block/machines/battery_socket");
-            //?} else {
-                        /*ResourceLocation.fromNamespaceAndPath("hbm_m", "block/machines/battery_socket");
-            *///?}
-
+    private static final ResourceLocation BATTERY_TEX = RefStrings.resourceLocation("block/machines/battery_socket");
 
     private final Map<Object, List<BakedQuad>> batteryQuadCache = new ConcurrentHashMap<>();
     private static final Object NULL_SIDE_KEY = new Object();
@@ -51,9 +46,10 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
         return false;
     }
 
-    @Override
     //? if forge {
-    /*public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
+    /*@Override
+    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand,
+            ModelData modelData, @Nullable RenderType renderType) {
         List<BakedQuad> quads = new ArrayList<>();
         int rotationY = getRotationYForFacing(state);
         Direction querySide = getUnrotatedSide(side, rotationY);
@@ -90,7 +86,7 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
             quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(socketQuads, rotationY) : socketQuads);
         }
 
-        // Fabric: нет Forge ModelData -> пока что без батарейки в baked (чтобы компилировалось).
+        // Fabric: без Forge ModelData — батарейка в мире здесь не рисуем (совпадает с прежней заглушкой).
         return quads;
     }
     //?}
@@ -125,7 +121,6 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
                 out.add(retextureQuad(q, sprite));
             }
             *///?}
-
             //? if fabric {
             for (BakedQuad q : battery.getQuads(null, side, rand)) {
                 out.add(retextureQuad(q, sprite));

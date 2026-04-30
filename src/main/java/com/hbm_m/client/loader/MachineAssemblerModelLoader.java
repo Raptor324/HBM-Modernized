@@ -47,7 +47,7 @@ public class MachineAssemblerModelLoader implements IGeometryLoader<MachineAssem
             JsonObject partJson = entry.getValue().getAsJsonObject();
             String model = GsonHelper.getAsString(partJson, "model");
             String texture = GsonHelper.getAsString(partJson, "texture");
-            partDefs.put(entry.getKey(), new PartDef(ResourceLocation.parse(model), ResourceLocation.parse(texture)));
+            partDefs.put(entry.getKey(), new PartDef(ResourceLocation.tryParse(model), ResourceLocation.tryParse(texture)));
         }
 
         MainRegistry.LOGGER.debug("MachineAssemblerModelLoader: read {} parts", partDefs.size());

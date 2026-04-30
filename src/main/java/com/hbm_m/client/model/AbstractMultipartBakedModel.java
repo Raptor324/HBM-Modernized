@@ -62,6 +62,19 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         String[] getPartNames();
     }
 
+    @Override
+    @Deprecated
+    public TextureAtlasSprite getParticleIcon() {
+        if (cachedParticleIcon == null) {
+            if (!parts.isEmpty()) {
+                cachedParticleIcon = parts.values().iterator().next().getParticleIcon();
+            } else {
+                cachedParticleIcon = Minecraft.getInstance().getModelManager().getMissingModel().getParticleIcon();
+            }
+        }
+        return cachedParticleIcon;
+    }
+
     //? if forge {
     /*@Override
     public TextureAtlasSprite getParticleIcon(ModelData data) {
@@ -126,12 +139,6 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     @Deprecated
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         return getQuads(state, side, rand, ModelData.EMPTY, null);
-    }
-
-    @Override
-    @Deprecated
-    public TextureAtlasSprite getParticleIcon() {
-        return getParticleIcon(ModelData.EMPTY);
     }
 
     *///?}

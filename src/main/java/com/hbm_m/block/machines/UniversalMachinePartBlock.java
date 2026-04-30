@@ -273,7 +273,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
      * Позволяет блокам с ролью LADDER быть использованными как лестница.
      * Работает с любых боковых сторон.
      */
-    @Override
     public boolean isLadder(BlockState pState, LevelReader pLevel, BlockPos pPos, LivingEntity pEntity) {
         // Проверяем, что это мультиблочная часть с ролью LADDER
         if (pLevel instanceof Level level && level.getBlockEntity(pPos) instanceof IMultiblockPart part) {
@@ -442,7 +441,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
      * Исправляет частицы при приземлении на фантомный блок.
      * Вместо текстуры фантома (которой нет), берет текстуру контроллера.
      */
-    @Override
     public boolean addLandingEffects(BlockState state1, ServerLevel level, BlockPos pos, BlockState state2, LivingEntity entity, int numberOfParticles) {
         if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
             BlockPos controllerPos = part.getControllerPos();
@@ -467,7 +465,6 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     /**
      * Исправляет частицы при беге по фантомному блоку.
      */
-    @Override
     public boolean addRunningEffects(BlockState state, Level level, BlockPos pos, Entity entity) {
         // Это выполняется на клиенте
         if (level.isClientSide && level.getBlockEntity(pos) instanceof IMultiblockPart part) {

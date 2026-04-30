@@ -6,18 +6,19 @@ import org.slf4j.LoggerFactory;
 import com.hbm_m.particle.ModExplosionParticles;
 
 import dev.architectury.utils.Env;
+import dev.architectury.utils.EnvExecutor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraftforge.fml.DistExecutor;
 
 /**
  *  ЯДЕРНЫЙ ВЗРЫВ (БЕЗ ЗАДЕРЖЕК, МГНОВЕННЫЙ)
  */
 public class NuclearMushroomCloud {
 
+    @SuppressWarnings("unused")
     private static final Logger LOGGER = LoggerFactory.getLogger(NuclearMushroomCloud.class);
 
     public static void spawnNuclearMushroom(ServerLevel level, double centerX, double centerY, double centerZ, RandomSource random) {
@@ -36,12 +37,7 @@ public class NuclearMushroomCloud {
 
     private static void spawnBlackSphere(ServerLevel level, double x, double y, double z, RandomSource random) {
         level.getServer().execute(() -> {
-            //? if forge {
-            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            *///?}
-            //? if fabric {
-            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
-            //?}
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
                 for (int i = 0; i < 750; i++) {
@@ -57,12 +53,7 @@ public class NuclearMushroomCloud {
                     double zSpeed = (offsetZ / Math.max(radius, 0.1)) * expansionSpeed;
                     clientLevel.addAlwaysVisibleParticle((SimpleParticleType) ModExplosionParticles.DARK_SMOKE.get(), true, x + offsetX, y + offsetY, z + offsetZ, xSpeed, ySpeed, zSpeed);
                 }
-            //? if forge {
-            /*});
-            *///?}
-            //? if fabric {
             });
-            //?}
         });
     }
 
@@ -171,12 +162,7 @@ public class NuclearMushroomCloud {
 
     private static void spawnNuclearParticle(ServerLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, boolean isSpark, boolean isMushroomSmoke, boolean isDarkSmoke) {
         level.getServer().execute(() -> {
-            //? if forge {
-            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            *///?}
-            //? if fabric {
-            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
-            //?}
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
                 SimpleParticleType particleType;
@@ -188,12 +174,7 @@ public class NuclearMushroomCloud {
                     particleType = (SimpleParticleType) ModExplosionParticles.LARGE_DARK_SMOKE.get();
                 }
                 clientLevel.addAlwaysVisibleParticle(particleType, true, x, y, z, xSpeed, ySpeed, zSpeed);
-            //? if forge {
-            /*});
-            *///?}
-            //? if fabric {
             });
-            //?}
         });
     }
 }

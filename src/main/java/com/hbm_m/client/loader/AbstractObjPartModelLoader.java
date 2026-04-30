@@ -49,7 +49,7 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
     public ObjPartGeometry<T> read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) {
         String modelStr = GsonHelper.getAsString(jsonObject, "model");
         MainRegistry.LOGGER.debug("{}: model string='{}'", this.getClass().getSimpleName(), modelStr);
-        ResourceLocation model = ResourceLocation.parse(modelStr);
+        ResourceLocation model = ResourceLocation.tryParse(modelStr);
         Set<String> partNames = getPartNames(jsonObject);
         boolean flipV = GsonHelper.getAsBoolean(jsonObject, "flip_v", true);
         return new ObjPartGeometry<>(model, partNames, flipV, this);

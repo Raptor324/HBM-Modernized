@@ -7,7 +7,6 @@ import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;
 import com.hbm_m.worldgen.ModWorldGen;
@@ -30,11 +29,8 @@ public final class ForgeEntrypoint {
         ModFluids.register(modBus);
         modBus.addListener(ModCapabilities::register);
         modBus.addListener(CreativeModeTabEventHandler::onBuildCreativeModeTabContents);
-        modBus.addListener((net.minecraftforge.fml.event.lifecycle.FMLCommonSetupEvent event) -> ModPacketHandler.register());
 
-        MinecraftForge.EVENT_BUS.register(new CrateBreaker());
         MinecraftForge.EVENT_BUS.register(new BombDefuser());
-        MinecraftForge.EVENT_BUS.register(new MobGearHandler());
         MinecraftForge.EVENT_BUS.register(new ForgeMainEvents());
         MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
         MinecraftForge.EVENT_BUS.register(new PlayerHandler());

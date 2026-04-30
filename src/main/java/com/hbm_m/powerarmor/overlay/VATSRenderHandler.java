@@ -1,11 +1,11 @@
-package com.hbm_m.powerarmor.overlay;
-
+//? if forge {
+/*package com.hbm_m.powerarmor.overlay;
 
 import org.joml.Matrix4f;
 
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.powerarmor.ModEventHandlerClient;
+import com.hbm_m.powerarmor.PowerArmorClientState;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -18,21 +18,13 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-//? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
-//? if fabric {
-import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;//?}
 import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-//? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
-//? if fabric {
-@Environment(EnvType.CLIENT)//?}
+
+@OnlyIn(Dist.CLIENT)
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class VATSRenderHandler {
 
@@ -45,7 +37,7 @@ public class VATSRenderHandler {
         if (player == null || entity == player) return;
 
         // VATS должен быть активен
-        if (!ModEventHandlerClient.isVATSActive()) return;
+        if (!PowerArmorClientState.isVATSActive()) return;
 
         // Игрок должен носить FSB броню с VATS (как у тебя в логике)
         if (!ModPowerArmorItem.hasFSBArmor(player)) return;
@@ -60,7 +52,6 @@ public class VATSRenderHandler {
         double maxDistSqr = maxDistBlocks * maxDistBlocks;
 
         if (player.distanceToSqr(entity) > maxDistSqr) return;
-
 
         // Считаем заполнение (1 полоска = 1 HP)
         float maxHp = entity.getMaxHealth();
@@ -109,3 +100,4 @@ public class VATSRenderHandler {
         return sb.toString();
     }
 }
+*///?}

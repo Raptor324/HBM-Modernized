@@ -313,11 +313,18 @@ public final class IrisCompanionMesh {
             // approximates the brightness of the baked-model path closely enough.
             final int fullBrightLight = LightTexture.pack(15, 15);
             for (BakedQuad quad : quads) {
-                builder.putBulkData(neutralPose, quad,
+                //? if forge {
+                /*builder.putBulkData(neutralPose, quad,
                         1.0F, 1.0F, 1.0F, 1.0F,
                         fullBrightLight,
                         OverlayTexture.NO_OVERLAY,
                         false);
+                *///?} else {
+                builder.putBulkData(neutralPose, quad,
+                        1.0F, 1.0F, 1.0F,
+                        fullBrightLight,
+                        OverlayTexture.NO_OVERLAY);
+                //?}
             }
 
             BufferBuilder.RenderedBuffer rendered = builder.end();
@@ -331,17 +338,21 @@ public final class IrisCompanionMesh {
             // prepareForShader() can hand the linker-resolved locations a
             // pointer to real per-vertex data populated by Iris's
             // MixinBufferBuilder.iris$beforeNext (iris_Entity / mc_midTexCoord
-            // / at_tangent). The element-mapping ImmutableMap iterates in the
-            // same order as getElements() - that's what Mojang's VertexFormat
-            // constructor guarantees - so a running offset over its entrySet()
-            // matches the per-element layout in the VBO byte stream.
+            // / at_tangent). Имена и порядок — из getElementAttributeNames() /
+            // getElements(); смещения накапливаем по getByteSize() (как раньше
+            // по entrySet getElementMapping), без getElementName/getOffset(Element),
+            // которых нет на 1.20.1 Forge.
             elementOffsets.clear();
             elementByName.clear();
+            var elements = actualFormat.getElements();
+            var names = actualFormat.getElementAttributeNames();
             int runningOffset = 0;
-            for (Map.Entry<String, VertexFormatElement> entry : actualFormat.getElementMapping().entrySet()) {
-                elementOffsets.put(entry.getKey(), runningOffset);
-                elementByName.put(entry.getKey(), entry.getValue());
-                runningOffset += entry.getValue().getByteSize();
+            for (int i = 0; i < elements.size(); i++) {
+                String name = names.get(i);
+                VertexFormatElement el = elements.get(i);
+                elementOffsets.put(name, runningOffset);
+                elementByName.put(name, el);
+                runningOffset += el.getByteSize();
             }
 
             this.vaoId = GL30.glGenVertexArrays();

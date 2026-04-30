@@ -7,12 +7,12 @@ import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.explosions.nuclear.small.NuclearMushroomCloud;
 
 import dev.architectury.utils.Env;
+import dev.architectury.utils.EnvExecutor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraftforge.fml.DistExecutor;
 
 /**
  *  УТИЛИТЫ ДЛЯ ВЗРЫВНЫХ ЭФФЕКТОВ
@@ -45,12 +45,7 @@ public class ExplosionParticleUtils {
      */
     public static void spawnAirBombSparks(ServerLevel level, double x, double y, double z) {
         level.getServer().execute(() -> {
-            //? if forge {
-            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            *///?}
-            //? if fabric {
-            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
-            //?}
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -75,12 +70,7 @@ public class ExplosionParticleUtils {
                             xSpeed, ySpeed, zSpeed
                     );
                 }
-            //? if forge {
-            /*});
-            *///?}
-            //? if fabric {
             });
-            //?}
         });
     }
 
@@ -89,12 +79,7 @@ public class ExplosionParticleUtils {
      */
     public static void spawnAirBombFireSparks(ServerLevel level, double x, double y, double z) {
         level.getServer().execute(() -> {
-            //? if forge {
-            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            *///?}
-            //? if fabric {
-            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
-            //?}
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -119,12 +104,7 @@ public class ExplosionParticleUtils {
                             xSpeed, ySpeed, zSpeed
                     );
                 }
-            //? if forge {
-            /*});
-            *///?}
-            //? if fabric {
             });
-            //?}
         });
     }
 
@@ -133,12 +113,7 @@ public class ExplosionParticleUtils {
      */
     public static void spawnAirBombShockwave(ServerLevel level, double x, double y, double z) {
         level.getServer().execute(() -> {
-            //? if forge {
-            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            *///?}
-            //? if fabric {
-            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
-            //?}
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -166,12 +141,7 @@ public class ExplosionParticleUtils {
                             xSpeed, ySpeed, zSpeed
                     );
                 }
-            //? if forge {
-            /*});
-            *///?}
-            //? if fabric {
             });
-            //?}
         });
     }
 
@@ -180,12 +150,7 @@ public class ExplosionParticleUtils {
      */
     public static void spawnAirBombMushroomCloud(ServerLevel level, double x, double y, double z) {
         level.getServer().execute(() -> {
-            //? if forge {
-            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            *///?}
-            //? if fabric {
-            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
-            //?}
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -237,12 +202,7 @@ public class ExplosionParticleUtils {
                             xSpeed, ySpeed, zSpeed
                     );
                 }
-            //? if forge {
-            /*});
-            *///?}
-            //? if fabric {
             });
-            //?}
         });
     }
 
@@ -253,12 +213,7 @@ public class ExplosionParticleUtils {
 
         //  ТОЛЬКО СПАВН ЧАСТИЦ (логика внутри самой частицы!)
         level.getServer().execute(() -> {
-            //? if forge {
-            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            *///?}
-            //? if fabric {
-            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
-            //?}
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -277,12 +232,7 @@ public class ExplosionParticleUtils {
                             xSpeed, ySpeed, zSpeed
                     );
                 }
-            //? if forge {
-            /*});
-            *///?}
-            //? if fabric {
             });
-            //?}
         });
     }
 
@@ -307,12 +257,7 @@ public class ExplosionParticleUtils {
     public static void spawnCustomNuclearSmoke(ServerLevel level, double x, double y, double z,
                                                double xSpeed, double ySpeed, double zSpeed) {
         level.getServer().execute(() -> {
-            //? if forge {
-            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            *///?}
-            //? if fabric {
-            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
-            //?}
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -322,12 +267,7 @@ public class ExplosionParticleUtils {
                         x, y, z,
                         xSpeed, ySpeed, zSpeed
                 );
-            //? if forge {
-            /*});
-            *///?}
-            //? if fabric {
             });
-            //?}
         });
     }
 
@@ -336,12 +276,7 @@ public class ExplosionParticleUtils {
      */
     public static void spawnLargeDarkSmokes(ServerLevel level, double x, double y, double z, int particleCount) {
         level.getServer().execute(() -> {
-            //? if forge {
-            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            *///?}
-            //? if fabric {
-            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
-            //?}
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -368,12 +303,7 @@ public class ExplosionParticleUtils {
                             xSpeed, ySpeed, zSpeed
                     );
                 }
-            //? if forge {
-            /*});
-            *///?}
-            //? if fabric {
             });
-            //?}
         });
     }
 
@@ -397,12 +327,7 @@ public class ExplosionParticleUtils {
      */
     public static void spawnEnhancedShockwave(ServerLevel level, double x, double y, double z) {
         level.getServer().execute(() -> {
-            //? if forge {
-            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            *///?}
-            //? if fabric {
-            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
-            //?}
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -430,12 +355,7 @@ public class ExplosionParticleUtils {
                             xSpeed, ySpeed, zSpeed
                     );
                 }
-            //? if forge {
-            /*});
-            *///?}
-            //? if fabric {
             });
-            //?}
         });
     }
 
@@ -467,12 +387,7 @@ public class ExplosionParticleUtils {
                                               int particleCount, double verticalSpeed,
                                               double horizontalSpread) {
         level.getServer().execute(() -> {
-            //? if forge {
-            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            *///?}
-            //? if fabric {
-            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
-            //?}
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -493,12 +408,7 @@ public class ExplosionParticleUtils {
                             xSpeed, ySpeed, zSpeed
                     );
                 }
-            //? if forge {
-            /*});
-            *///?}
-            //? if fabric {
             });
-            //?}
         });
     }
 
@@ -507,26 +417,28 @@ public class ExplosionParticleUtils {
      *  Универсальный метод для спавна ЛЮБОГО типа взрывных частиц
      */
     public static void spawnCustomExplosion(double x, double y, double z, float intensity, SimpleParticleType particleType) {
-        ClientLevel level = Minecraft.getInstance().level;
-        if (level == null) {
-            LOGGER.warn("Cannot spawn custom explosion: ClientLevel is null");
-            return;
-        }
+        EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
+            ClientLevel level = Minecraft.getInstance().level;
+            if (level == null) {
+                LOGGER.warn("Cannot spawn custom explosion: ClientLevel is null");
+                return;
+            }
 
-        RandomSource random = RandomSource.create();
-        int particleCount = Math.round(20 * intensity);
+            RandomSource random = RandomSource.create();
+            int particleCount = Math.round(20 * intensity);
 
-        for (int i = 0; i < particleCount; i++) {
-            double vx = (random.nextDouble() - 0.5) * 2.0 * intensity;
-            double vy = random.nextDouble() * 1.5 * intensity;
-            double vz = (random.nextDouble() - 0.5) * 2.0 * intensity;
+            for (int i = 0; i < particleCount; i++) {
+                double vx = (random.nextDouble() - 0.5) * 2.0 * intensity;
+                double vy = random.nextDouble() * 1.5 * intensity;
+                double vz = (random.nextDouble() - 0.5) * 2.0 * intensity;
 
-            level.addAlwaysVisibleParticle(
-                    particleType,
-                    true,
-                    x, y, z,
-                    vx, vy, vz
-            );
-        }
+                level.addAlwaysVisibleParticle(
+                        particleType,
+                        true,
+                        x, y, z,
+                        vx, vy, vz
+                );
+            }
+        });
     }
 }

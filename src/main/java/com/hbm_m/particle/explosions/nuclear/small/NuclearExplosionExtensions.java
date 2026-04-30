@@ -1,16 +1,16 @@
 package com.hbm_m.particle.explosions.nuclear.small;
 
-import net.minecraftforge.api.distmarker.Dist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hbm_m.particle.ModExplosionParticles;
 
+import dev.architectury.utils.Env;
+import dev.architectury.utils.EnvExecutor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraftforge.fml.DistExecutor;
 
 /**
  *  РАСШИРЕНИЯ ДЛЯ ЯДЕРНЫХ ЭФФЕКТОВ
@@ -39,7 +39,7 @@ public class NuclearExplosionExtensions {
             double xSpeed, double ySpeed, double zSpeed) {
         
         level.getServer().execute(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -59,7 +59,7 @@ public class NuclearExplosionExtensions {
     public static void spawnLargeExplosionSparks(ServerLevel level, double x, double y, double z, int particleCount) {
         
         level.getServer().execute(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -97,7 +97,7 @@ public class NuclearExplosionExtensions {
             double xSpeed, double ySpeed, double zSpeed) {
         
         level.getServer().execute(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -117,7 +117,7 @@ public class NuclearExplosionExtensions {
     public static void spawnLargeDarkSmokes(ServerLevel level, double x, double y, double z, int particleCount) {
         
         level.getServer().execute(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -182,7 +182,7 @@ public class NuclearExplosionExtensions {
     public static void spawnEnhancedShockwave(ServerLevel level, double x, double y, double z) {
         
         level.getServer().execute(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 

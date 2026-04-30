@@ -127,8 +127,12 @@ public class HeatingOvenRenderer implements BlockEntityRenderer<HeatingOvenBlock
 
         var pose = poseStack.last();
         for (BakedQuad quad : quads) {
-            buffer.putBulkData(pose, quad, 1.0f, 1.0f, 1.0f, 1.0f, 
-                packedLight, packedOverlay, true);
+            //? if forge {
+            /*buffer.putBulkData(pose, quad, 1.0f, 1.0f, 1.0f, 1.0f,
+                    packedLight, packedOverlay, true);
+            *///?} else {
+            buffer.putBulkData(pose, quad, 1.0f, 1.0f, 1.0f, packedLight, packedOverlay);
+            //?}
         }
     }
 

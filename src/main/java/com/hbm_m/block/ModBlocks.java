@@ -534,7 +534,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> CONCRETE_HAZARD = registerBlock("concrete_hazard",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> CONCRETE_HAZARD_STAIRS = registerBlock("concrete_hazard_stairs",
-            () -> new StairBlock(() -> ModBlocks.CONCRETE_HAZARD.get().defaultBlockState(),
+            () -> new StairBlock(ModBlocks.CONCRETE_HAZARD.get().defaultBlockState(),
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> CONCRETE_HAZARD_SLAB = registerBlock("concrete_hazard_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
@@ -542,7 +542,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BRICK_CONCRETE = registerBlock("brick_concrete",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> BRICK_CONCRETE_STAIRS = registerBlock("brick_concrete_stairs",
-            () -> new StairBlock(() -> ModBlocks.BRICK_CONCRETE.get().defaultBlockState(),
+            () -> new StairBlock(ModBlocks.BRICK_CONCRETE.get().defaultBlockState(),
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> BRICK_CONCRETE_SLAB = registerBlock("brick_concrete_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
@@ -550,7 +550,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> CONCRETE_MOSSY = registerBlock("concrete_mossy",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> CONCRETE_MOSSY_STAIRS = registerBlock("concrete_mossy_stairs",
-            () -> new StairBlock(() -> ModBlocks.CONCRETE_MOSSY.get().defaultBlockState(),
+            () -> new StairBlock(ModBlocks.CONCRETE_MOSSY.get().defaultBlockState(),
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> CONCRETE_MOSSY_SLAB = registerBlock("concrete_mossy_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
@@ -558,7 +558,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> CONCRETE  = registerBlock("concrete",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> CONCRETE_STAIRS = registerBlock("concrete_stairs",
-            () -> new StairBlock(() -> ModBlocks.CONCRETE.get().defaultBlockState(),
+            () -> new StairBlock(ModBlocks.CONCRETE.get().defaultBlockState(),
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> CONCRETE_SLAB = registerBlock("concrete_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
@@ -566,7 +566,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> CONCRETE_CRACKED  = registerBlock("concrete_cracked",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> CONCRETE_CRACKED_STAIRS = registerBlock("concrete_cracked_stairs",
-            () -> new StairBlock(() -> ModBlocks.CONCRETE_CRACKED.get().defaultBlockState(),
+            () -> new StairBlock(ModBlocks.CONCRETE_CRACKED.get().defaultBlockState(),
                     BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> CONCRETE_CRACKED_SLAB = registerBlock("concrete_cracked_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).sound(SoundType.STONE)));
@@ -1304,7 +1304,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BRICK_CONCRETE_BROKEN = registerBlock("brick_concrete_broken",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> BRICK_CONCRETE_BROKEN_STAIRS = registerBlock("brick_concrete_broken_stairs",
-            () -> new StairBlock(() -> ModBlocks.BRICK_CONCRETE_BROKEN.get().defaultBlockState(),
+            () -> new StairBlock(ModBlocks.BRICK_CONCRETE_BROKEN.get().defaultBlockState(),
                     BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> BRICK_CONCRETE_BROKEN_SLAB = registerBlock("brick_concrete_broken_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
@@ -1312,7 +1312,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BRICK_CONCRETE_CRACKED = registerBlock("brick_concrete_cracked",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> BRICK_CONCRETE_CRACKED_STAIRS = registerBlock("brick_concrete_cracked_stairs",
-            () -> new StairBlock(() -> ModBlocks.BRICK_CONCRETE_CRACKED.get().defaultBlockState(),
+            () -> new StairBlock(ModBlocks.BRICK_CONCRETE_CRACKED.get().defaultBlockState(),
                     BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> BRICK_CONCRETE_CRACKED_SLAB = registerBlock("brick_concrete_cracked_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
@@ -1320,7 +1320,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BRICK_CONCRETE_MOSSY = registerBlock("brick_concrete_mossy",
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> BRICK_CONCRETE_MOSSY_STAIRS = registerBlock("brick_concrete_mossy_stairs",
-            () -> new StairBlock(() -> ModBlocks.BRICK_CONCRETE_MOSSY.get().defaultBlockState(),
+            () -> new StairBlock(ModBlocks.BRICK_CONCRETE_MOSSY.get().defaultBlockState(),
                     BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> BRICK_CONCRETE_MOSSY_SLAB = registerBlock("brick_concrete_mossy_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
@@ -1329,7 +1329,7 @@ public class ModBlocks {
             () -> new Block(BlockBehaviour.Properties.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> REINFORCED_STONE_STAIRS = registerBlock("reinforced_stone_stairs",
-            () -> new StairBlock(() -> ModBlocks.REINFORCED_STONE.get().defaultBlockState(),
+            () -> new StairBlock(ModBlocks.REINFORCED_STONE.get().defaultBlockState(),
                     BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> REINFORCED_STONE_SLAB = registerBlock("reinforced_stone_slab",
             () -> new SlabBlock(BlockBehaviour.Properties.copy(Blocks.STONE).sound(SoundType.STONE)));
@@ -1362,7 +1362,7 @@ public class ModBlocks {
 
     // -----------------------<РАСТЕНИЯ>-----------------------------
     public static final RegistrySupplier<Block> STRAWBERRY_BUSH = registerBlock("strawberry_bush",
-            () -> new FlowerBlock(() -> MobEffects.LUCK, 5,
+            () -> new FlowerBlock(MobEffects.LUCK, 5,
                     BlockBehaviour.Properties.copy(Blocks.ALLIUM).noOcclusion().noCollission()));
 
 

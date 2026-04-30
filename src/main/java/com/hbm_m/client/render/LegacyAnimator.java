@@ -82,7 +82,11 @@ public class LegacyAnimator implements IDoorAnimator {
         if (quads == null || quads.isEmpty()) return;
         PoseStack.Pose pose = poseStack.last();
         for (BakedQuad quad : quads) {
-            buffer.putBulkData(pose, quad, 1.0f, 1.0f, 1.0f, 1.0f, packedLight, packedOverlay, false);
+            //? if forge {
+            /*buffer.putBulkData(pose, quad, 1.0f, 1.0f, 1.0f, 1.0f, packedLight, packedOverlay, false);
+            *///?} else {
+            buffer.putBulkData(pose, quad, 1.0f, 1.0f, 1.0f, packedLight, packedOverlay);
+            //?}
         }
     }
 

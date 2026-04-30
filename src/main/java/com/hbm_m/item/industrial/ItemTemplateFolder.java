@@ -8,8 +8,9 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.inventory.gui.GUITemplateFolder;
 
+import dev.architectury.utils.Env;
+import dev.architectury.utils.EnvExecutor;
 import net.minecraft.ChatFormatting;
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResultHolder;
@@ -18,8 +19,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 // Предмет-папка для хранения и управления шаблонами мультиблоков.
 // При использовании открывает GUI с возможностью получать шаблоны.
 
@@ -34,18 +33,16 @@ public class ItemTemplateFolder extends Item {
 
         // GUI открывается только на клиенте
         if (pLevel.isClientSide()) {
-            openScreen(pPlayer, itemStack);
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> ClientOnly.openScreen(itemStack));
         }
 
         return InteractionResultHolder.sidedSuccess(itemStack, pLevel.isClientSide());
     }
-//? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
-//? if fabric {
-@Environment(EnvType.CLIENT)//?}
-    private void openScreen(Player player, ItemStack stack) {
-        Minecraft.getInstance().setScreen(new GUITemplateFolder(stack));
+
+    private static final class ClientOnly {
+        private static void openScreen(ItemStack stack) {
+            net.minecraft.client.Minecraft.getInstance().setScreen(new GUITemplateFolder(stack));
+        }
     }
     @Override
     public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, @NotNull List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {

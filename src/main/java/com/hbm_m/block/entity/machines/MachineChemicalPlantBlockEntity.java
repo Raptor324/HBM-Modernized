@@ -2,13 +2,14 @@ package com.hbm_m.block.entity.machines;
 
 import java.util.List;
 
+import com.hbm_m.capability.ModCapabilities;
+import net.minecraft.core.Direction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineChemicalPlantMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.industrial.ItemBlueprintFolder;
@@ -19,7 +20,6 @@ import com.hbm_m.platform.ModFluidTank;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -139,7 +139,9 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         // TODO: crafting progress → RENDER_ACTIVE + chunk rebuild
     }
 
-    @Override
+    //? if forge {
+    /*@Override
+     *///?}
     public AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (!(state.getBlock() instanceof MachineChemicalPlantBlock block)) {
@@ -170,6 +172,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
             worldPosition.getZ() + maxZ + 1 + margin
         );
     }
+
 
     public MachineChemicalPlantBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CHEMICAL_PLANT_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER);

@@ -10,10 +10,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /**
  *  СИСТЕМА ЗАЩИТЫ БЛОКОВ С КОЭФФИЦИЕНТОМ ПРОБИТИЯ v3.0
@@ -26,8 +22,6 @@ import net.minecraftforge.fml.common.Mod;
  *  Специальный бетон (усиленный): 400-600
  *  Тултип с золотым цветом взрывоустойчивости
  */
-
-@Mod.EventBusSubscriber(modid = "hbm_m", bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class BlockExplosionDefense {
 
     /**
@@ -170,37 +164,42 @@ public class BlockExplosionDefense {
         return 100.0F;
     }
 
-    // ========== ОБРАБОТЧИК ТУЛТИПОВ (EventHandler встроен в класс) ==========
+    //? if forge {
+    /*@net.minecraftforge.fml.common.Mod.EventBusSubscriber(
+            modid = "hbm_m",
+            bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.FORGE,
+            value = net.minecraftforge.api.distmarker.Dist.CLIENT
+    )
+    public static final class ForgeClientHooks {
+        private ForgeClientHooks() {}
 
-    /**
-     * ОБРАБОТЧИК СОБЫТИЙ ТУЛТИПОВ
-     * Автоматически добавляет информацию о взрывоустойчивости к блокам
-     */
-    @SubscribeEvent
-    public static void onItemTooltip(ItemTooltipEvent event) {
-        ItemStack stack = event.getItemStack();
+        @net.minecraftforge.eventbus.api.SubscribeEvent
+        public static void onItemTooltip(net.minecraftforge.event.entity.player.ItemTooltipEvent event) {
+            ItemStack stack = event.getItemStack();
 
-        // Проверяем, это ли BlockItem (блок в виде предмета)
-        if (!(stack.getItem() instanceof net.minecraft.world.item.BlockItem blockItem)) {
-            return;
-        }
+            // Проверяем, это ли BlockItem (блок в виде предмета)
+            if (!(stack.getItem() instanceof net.minecraft.world.item.BlockItem blockItem)) {
+                return;
+            }
 
-        // Получаем блок из предмета
-        var block = blockItem.getBlock();
+            // Получаем блок из предмета
+            var block = blockItem.getBlock();
 
-        // Проверяем, это ли один из наших модульных блоков
-        if (isModularBlock(block)) {
-            // Определяем коэффициент защиты по типу блока
-            float defenseValue = getDefenseValueForBlock(block);
+            // Проверяем, это ли один из наших модульных блоков
+            if (isModularBlock(block)) {
+                // Определяем коэффициент защиты по типу блока
+                float defenseValue = getDefenseValueForBlock(block);
 
-            // Добавляем локализованную строку в тултип
-            if (defenseValue >= 10_000.0F) {
-                event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.unbreakable"));
-            } else if (defenseValue > 0) {
-                event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.value", String.format("%.0f", defenseValue)));
+                // Добавляем локализованную строку в тултип
+                if (defenseValue >= 10_000.0F) {
+                    event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.unbreakable"));
+                } else if (defenseValue > 0) {
+                    event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.value", String.format("%.0f", defenseValue)));
+                }
             }
         }
     }
+    *///?}
 
     /**
      *  Проверка: это ли один из наших модульных блоков

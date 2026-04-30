@@ -5,6 +5,9 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
+import com.hbm_m.client.model.variant.DoorModelProperties;
+import com.hbm_m.client.model.variant.DoorModelRegistry;
+import net.minecraft.client.renderer.RenderType;
 import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
@@ -12,27 +15,20 @@ import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.entity.doors.DoorDecl;
 import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.client.loader.ColladaAnimationData;
-import com.hbm_m.client.model.variant.DoorModelProperties;
-import com.hbm_m.client.model.variant.DoorModelRegistry;
 import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.util.MultipartFacingTransforms;
 
 import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 /*import net.minecraftforge.client.ChunkRenderTypeSet;
@@ -43,6 +39,9 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     
     private final String[] cachedPartNames;
     private final ResourceLocation doorId;
+
+    // Должно быть доступно и на Fabric (не внутри forge-only блоков).
+    private static final String[] STATIC_PART_NAMES = {"frame", "Frame", "DoorFrame", "Base", "base"};
     
     // Кэш квадов для item рендера
     private List<BakedQuad> cachedItemQuads;
@@ -187,8 +186,6 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         return result;
     }
     
-    private static final String[] STATIC_PART_NAMES = {"frame", "Frame", "DoorFrame", "Base", "base"};
-
     /^*
      * Возвращает квады всех частей для Iris-пути при статичной двери.
      * Створка (анимированные части) трансформируется в позицию open/closed.
@@ -513,51 +510,10 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     
     @Override
     public ItemOverrides getOverrides() {
-        return DoorItemOverrides.INSTANCE;
+        return ItemOverrides.EMPTY;
     }
 
-    /**
-     * ItemOverrides для превью в GUI выбора модели двери.
-     * Если в NBT стека есть "hbm_m:door_preview" с modelType и skin - возвращаем модель из реестра.
-     * Иначе - исходная модель. Используется renderFakeItem для корректного порядка рендера частей.
-     */
-    private static final class DoorItemOverrides extends ItemOverrides {
-        static final DoorItemOverrides INSTANCE = new DoorItemOverrides();
-
-        private DoorItemOverrides() {
-            super();
-        }
-
-        @Override
-        @Nullable
-        public BakedModel resolve(BakedModel model, ItemStack stack, @Nullable ClientLevel level,
-                                 @Nullable LivingEntity entity, int seed) {
-            CompoundTag tag = stack.getTag();
-            if (tag == null || !tag.contains("hbm_m:door_preview")) {
-                return model;
-            }
-            CompoundTag preview = tag.getCompound("hbm_m:door_preview");
-            if (!preview.contains("modelType")) {
-                return model;
-            }
-            String doorId = preview.contains("doorId") ? preview.getString("doorId")
-                : net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
-            DoorModelSelection selection = DoorModelSelection.load(preview);
-            DoorModelRegistry registry = DoorModelRegistry.getInstance();
-            if (!registry.isRegistered(doorId)) {
-                return model;
-            }
-            ResourceLocation modelPath = registry.getModelPath(doorId, selection);
-            if (modelPath == null) {
-                return model;
-            }
-            BakedModel override = Minecraft.getInstance().getModelManager().getModel(modelPath);
-            if (override == null || override == Minecraft.getInstance().getModelManager().getMissingModel()) {
-                return model;
-            }
-            return override;
-        }
-    }
+    // В 1.20+ ItemOverrides имеет приватный конструктор, поэтому кастомные overrides недоступны.
 
     //? if forge {
     /*@Override

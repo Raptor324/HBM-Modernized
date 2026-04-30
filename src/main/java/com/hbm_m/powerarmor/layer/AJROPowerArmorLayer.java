@@ -18,18 +18,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
 
 /**
  * Render layer for AJRO Power Armor (entity rendering).
  * Reuses the AJR OBJ model but with distinct AJRO textures.
  */
-//? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
-//? if fabric {
-@Environment(EnvType.CLIENT)//?}
 public class AJROPowerArmorLayer<T extends LivingEntity, M extends HumanoidModel<T>> extends AbstractObjArmorLayer<T, M> {
 
     private static final ResourceLocation AJRO_ATLAS_LOCATION = InventoryMenu.BLOCK_ATLAS;

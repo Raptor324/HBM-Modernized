@@ -12,17 +12,14 @@ import net.minecraft.world.level.levelgen.feature.Feature;
 import net.minecraft.world.level.levelgen.feature.configurations.NoneFeatureConfiguration;
 import net.minecraft.world.level.levelgen.placement.PlacedFeature;
 import net.minecraft.world.level.levelgen.structure.templatesystem.StructureProcessorType;
-import net.minecraftforge.eventbus.api.IEventBus;
-import net.minecraftforge.registries.ForgeRegistries;
-import net.minecraftforge.common.world.BiomeModifier;
 
 public class ModWorldGen {
 
     // Biome modifiers are Forge-only registry (forge:biome_modifier), not a vanilla registry.
     // Architectury's DeferredRegister cannot access it via RegistrarManager.
     //? if forge {
-    /*public static final net.minecraftforge.registries.DeferredRegister<BiomeModifier> BIOME_MODIFIERS =
-            net.minecraftforge.registries.DeferredRegister.create(ForgeRegistries.Keys.BIOME_MODIFIERS, RefStrings.MODID);
+    /*public static final net.minecraftforge.registries.DeferredRegister<net.minecraftforge.common.world.BiomeModifier> BIOME_MODIFIERS =
+            net.minecraftforge.registries.DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, RefStrings.MODID);
     *///?}
 
     public static final DeferredRegister<Feature<?>> FEATURES =
@@ -54,12 +51,17 @@ public class ModWorldGen {
                     *///?}
 
 
-    /** Регистрация worldgen DeferredRegister на Forge mod event bus (как в старом {@code MainRegistry}). */
-    public static void register(IEventBus modEventBus) {
-        //? if forge {
-        /*BIOME_MODIFIERS.register(modEventBus);
-        *///?}
+    /** Регистрация worldgen DeferredRegister на всех лоадерах. */
+    public static void register() {
         FEATURES.register();
         PROCESSORS.register();
     }
+
+    //? if forge {
+    /*/^* Регистрация worldgen DeferredRegister на Forge mod event bus (как в старом {@code MainRegistry}). ^/
+    public static void register(net.minecraftforge.eventbus.api.IEventBus modEventBus) {
+        BIOME_MODIFIERS.register(modEventBus);
+        register();
+    }
+    *///?}
 }

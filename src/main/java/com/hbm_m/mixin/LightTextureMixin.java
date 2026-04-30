@@ -7,7 +7,7 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 import com.hbm_m.config.ModClothConfig;
-import com.hbm_m.powerarmor.ModEventHandlerClient;
+import com.hbm_m.powerarmor.PowerArmorClientState;
 
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.world.entity.LivingEntity;
@@ -24,7 +24,7 @@ public class LightTextureMixin {
 
     @Unique
     private static boolean isFullShaderThermalActive() {
-        if (!ModEventHandlerClient.isThermalActive()) {
+        if (!PowerArmorClientState.isThermalActive()) {
             return false;
         }
         return ModClothConfig.get().thermalRenderMode == ModClothConfig.ThermalRenderMode.FULL_SHADER;

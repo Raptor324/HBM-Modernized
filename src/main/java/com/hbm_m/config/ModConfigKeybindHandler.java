@@ -7,6 +7,7 @@ import org.lwjgl.glfw.GLFW;
 import com.hbm_m.client.overlay.OverlayInfoToast;
 import com.hbm_m.inventory.gui.GUIMultiDetonator;
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
+import com.hbm_m.powerarmor.PowerArmorClientState;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.hbm_m.powerarmor.PowerArmorHandlers;
 import com.mojang.blaze3d.platform.InputConstants;
@@ -106,11 +107,11 @@ public class ModConfigKeybindHandler {
                 if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
                     var specs = armorItem.getSpecs();
                     if (specs.hasVats) {
-                        if (com.hbm_m.powerarmor.ModEventHandlerClient.isVATSActive()) {
-                            com.hbm_m.powerarmor.ModEventHandlerClient.deactivateVATS();
+                        if (PowerArmorClientState.isVATSActive()) {
+                            PowerArmorClientState.deactivateVATS();
                             OverlayInfoToast.show(Component.translatable("hud.hbm_m.vats.off"), 60, OverlayInfoToast.ID_VATS, 0xFF0000);
                         } else {
-                            com.hbm_m.powerarmor.ModEventHandlerClient.activateVATS();
+                            PowerArmorClientState.activateVATS();
                             OverlayInfoToast.show(Component.translatable("hud.hbm_m.vats.on"), 60, OverlayInfoToast.ID_VATS, 0x00FF00);
                         }
                     }
@@ -125,13 +126,13 @@ public class ModConfigKeybindHandler {
                 if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
                     var specs = armorItem.getSpecs();
                     if (specs.hasThermal) {
-                        if (com.hbm_m.powerarmor.ModEventHandlerClient.isThermalActive()) {
-                            com.hbm_m.powerarmor.ModEventHandlerClient.deactivateThermal();
+                        if (PowerArmorClientState.isThermalActive()) {
+                            PowerArmorClientState.deactivateThermal();
                             OverlayInfoToast.show(Component.translatable("hud.hbm_m.thermal.off"), 60, OverlayInfoToast.ID_THERMAL, 0xFF0000);
                         } else {
-                            com.hbm_m.powerarmor.ModEventHandlerClient.activateThermal();
+                            PowerArmorClientState.activateThermal();
                             // If activation was blocked by first-use warning, do not show "ON" toast.
-                            if (com.hbm_m.powerarmor.ModEventHandlerClient.isThermalActive()) {
+                            if (PowerArmorClientState.isThermalActive()) {
                                 OverlayInfoToast.show(Component.translatable("hud.hbm_m.thermal.on"), 60, OverlayInfoToast.ID_THERMAL, 0x00FF00);
                             }
                         }

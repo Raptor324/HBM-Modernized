@@ -60,10 +60,13 @@ public class BismuthArmor extends ModPowerArmorItem {
     /**
      * У висмутовой брони одна общая текстура (`bismuth.png`), без разбиения на `*_helmet/chest/leg`.
      * Иначе ванильный armor renderer пытается грузить несуществующие файлы и спамит WARN в лог.
+     * (Forge/NeoForge: IForgeItem#getArmorTexture; на Fabric рендер через свои хуки.)
      */
-    @Override
+    //? if !fabric {
+    /*@Override
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
         return "hbm_m:textures/block/armor/bismuth.png";
     }
+    *///?}
 }
 

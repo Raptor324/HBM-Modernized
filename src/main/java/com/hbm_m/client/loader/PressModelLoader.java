@@ -1,16 +1,28 @@
 //? if forge {
 /*package com.hbm_m.client.loader;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.function.Function;
+
+import org.jetbrains.annotations.NotNull;
+import org.joml.Vector3f;
+
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.hbm_m.client.model.PressBakedModel;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.math.Transformation;
+
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.*;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.resources.model.Material;
+import net.minecraft.client.resources.model.ModelBaker;
+import net.minecraft.client.resources.model.ModelState;
+import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
@@ -18,19 +30,13 @@ import net.minecraftforge.client.model.geometry.IGeometryLoader;
 import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 import net.minecraftforge.client.model.obj.ObjLoader;
 import net.minecraftforge.client.model.obj.ObjModel;
-import org.jetbrains.annotations.NotNull;
-import org.joml.Vector3f;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.function.Function;
 
 public class PressModelLoader implements IGeometryLoader<PressModelLoader.PressGeometry> {
 
     @Override
     public PressGeometry read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) throws JsonParseException {
-        ResourceLocation baseModel = ResourceLocation.parse(GsonHelper.getAsString(jsonObject, "base_model"));
-        ResourceLocation headModel = ResourceLocation.parse(GsonHelper.getAsString(jsonObject, "head_model"));
+        ResourceLocation baseModel = ResourceLocation.tryParse(GsonHelper.getAsString(jsonObject, "base_model"));
+        ResourceLocation headModel = ResourceLocation.tryParse(GsonHelper.getAsString(jsonObject, "head_model"));
         boolean flipV = GsonHelper.getAsBoolean(jsonObject, "flip_v", true);
 
         Vector3f headTranslation = new Vector3f(0.0F, 0.0F, 0.0F);

@@ -8,12 +8,14 @@ import net.minecraft.world.level.block.Block;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.Registries;
 
 public class HBMBlockTags {
-    //? if fabric && < 1.21.1 {
-    public static final TagKey<Block> EMIT_DARK_PARTICLES = BlockTags.create(new ResourceLocation(RefStrings.MODID, "emit_dark_particles"));
-    //?} else {
-        /*public static final TagKey<Block> EMIT_DARK_PARTICLES = BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "emit_dark_particles"));
-    *///?}
+    /**
+     * Используем прямое создание TagKey вместо BlockTags.create(...),
+     * потому что сигнатуры BlockTags.create менялись между версиями/маппингами.
+     */
+    public static final TagKey<Block> EMIT_DARK_PARTICLES =
+            TagKey.create(Registries.BLOCK, new ResourceLocation(RefStrings.MODID, "emit_dark_particles"));
 
 }

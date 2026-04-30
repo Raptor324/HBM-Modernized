@@ -33,7 +33,7 @@ public class BatterySocketCreativeRenderer implements BlockEntityRenderer<Batter
 
     private static final ResourceLocation STEVE =
             //? if fabric {
-            new ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
+            new ResourceLocation(ResourceLocation.DEFAULT_NAMESPACE, "textures/entity/player/wide/steve.png");
             //?}
             //? if forge {
             /*ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");

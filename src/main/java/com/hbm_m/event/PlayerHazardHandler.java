@@ -1,29 +1,33 @@
 package com.hbm_m.event;
 
-// Обработчик для применения эффектов опасностей (радиация, пирофорность) к игроку на основе его инвентаря.
-// Эффекты применяются каждый тик на сервере, если игрок не в креативе или режиме наблюдателя.
-// Используется в классе MainRegistry для регистрации на событие PlayerTickEvent.
-
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.hazard.HazardType;
 
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber
+import dev.architectury.event.events.common.TickEvent;
+
+/**
+ * Обработчик для применения эффектов опасностей (радиация, пирофорность) к игроку на основе его инвентаря.
+ * Эффекты применяются каждый тик на сервере, если игрок не в креативе или режиме наблюдателя.
+ */
 public class PlayerHazardHandler {
 
-    @SubscribeEvent
-    public static void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        // Выполняем только на сервере и в конце тика
-        if (event.side.isClient() || event.phase != TickEvent.Phase.END) {
+    /**
+     * Регистрация обработчика события.
+     * Вызывается один раз при инициализации мода.
+     */
+    public static void init() {
+        TickEvent.PLAYER_POST.register(PlayerHazardHandler::onPlayerTick);
+    }
+
+    private static void onPlayerTick(Player player) {
+        // Выполняем только на сервере
+        if (player.level().isClientSide) {
             return;
         }
 
-        Player player = event.player;
         // Не применяем эффекты в креативе или режиме наблюдателя
         if (player.isCreative() || player.isSpectator()) {
             return;
@@ -40,9 +44,9 @@ public class PlayerHazardHandler {
                 totalIgnition += HazardSystem.getHazardLevelFromStack(stack, HazardType.PYROPHORIC) * stack.getCount();
             }
         }
-        
+
         // Применяем накопленные эффекты 
-        
+
         // Применение радиации (когда будет система здоровья/радиации)
         if (totalRadiation > 0) {
             // ContaminationUtil.contaminate(player, ..., totalRadiation / 20f);

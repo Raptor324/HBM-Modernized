@@ -3,7 +3,7 @@ package com.hbm_m.multiblock;
 import java.util.Set;
 
 import com.hbm_m.interfaces.IMultiblockPart;
-import com.hbm_m.main.MainRegistry;
+import dev.architectury.event.events.common.TickEvent;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -12,18 +12,21 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraftforge.event.entity.living.LivingEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
-@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class LadderClimbHandler {
 
     private static final String TAG_WAS_ON_LADDER = "hbm_was_on_ladder";
 
-    @SubscribeEvent
-    public static void onLivingTick(LivingEvent.LivingTickEvent event) {
-        if (!(event.getEntity() instanceof Player player)) return;
+    private static boolean INITIALIZED = false;
+
+    /** One registration path for all loaders (Architectury). */
+    public static void register() {
+        if (INITIALIZED) return;
+        INITIALIZED = true;
+        TickEvent.PLAYER_POST.register(LadderClimbHandler::onPlayerTick);
+    }
+
+    private static void onPlayerTick(Player player) {
         if (player.getAbilities().flying || player.isSpectator()) return;
         if (player.onClimbable()) return;
 

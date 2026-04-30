@@ -12,13 +12,18 @@ public final class FluidCapabilityAccess {
         BlockEntity be = level.getBlockEntity(pos);
         if (be == null) return false;
 
+        boolean result = false;
+
         //? if forge {
-        /*return be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, sideFromPos).isPresent();
-        *///?} else if fabric {
-        return net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.SIDED.find(level, pos, sideFromPos) != null;
-        //?} else {
-        /*return false;
+        /*result = be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, sideFromPos).isPresent();
         *///?}
+
+        //? if fabric {
+        if (level instanceof net.minecraft.world.level.Level lvl) {
+            result = net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.SIDED.find(lvl, pos, sideFromPos) != null;
+        }
+        //?}
+
+        return result;
     }
 }
-

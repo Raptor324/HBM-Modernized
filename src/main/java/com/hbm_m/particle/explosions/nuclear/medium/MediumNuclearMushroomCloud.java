@@ -1,17 +1,17 @@
 package com.hbm_m.particle.explosions.nuclear.medium;
 
-import net.minecraftforge.api.distmarker.Dist;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hbm_m.particle.ModExplosionParticles;
 
+import dev.architectury.utils.Env;
+import dev.architectury.utils.EnvExecutor;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraftforge.fml.DistExecutor;
 
 /**
  *  УТИЛИТА СПАВНА ЧАСТЕЙ ЯДЕРНОГО ВЗРЫВА
@@ -19,6 +19,7 @@ import net.minecraftforge.fml.DistExecutor;
  */
 public class MediumNuclearMushroomCloud {
 
+    @SuppressWarnings("unused")
     private static final Logger LOGGER = LoggerFactory.getLogger(MediumNuclearMushroomCloud.class);
 
     /**
@@ -26,7 +27,7 @@ public class MediumNuclearMushroomCloud {
      */
     public static void spawnBlackSphere(ServerLevel level, double x, double y, double z, RandomSource random) {
         level.getServer().execute(() -> {
-            DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () -> {
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -160,12 +161,7 @@ public class MediumNuclearMushroomCloud {
      */
     private static void spawnNuclearParticle(ServerLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, boolean isSpark, boolean isMushroomSmoke, boolean isDarkSmoke) {
         level.getServer().execute(() -> {
-            //? if forge {
-            /*DistExecutor.unsafeRunWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            *///?}
-            //? if fabric {
-            DistExecutor.unsafeRunWhenOn(net.fabricmc.api.EnvType.CLIENT, () -> () -> {
-            //?}
+            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
                 ClientLevel clientLevel = Minecraft.getInstance().level;
                 if (clientLevel == null) return;
 
@@ -180,12 +176,7 @@ public class MediumNuclearMushroomCloud {
                 }
 
                 clientLevel.addAlwaysVisibleParticle(particleType, true, x, y, z, xSpeed, ySpeed, zSpeed);
-            //? if forge {
-            /*});
-            *///?}
-            //? if fabric {
             });
-            //?}
         });
     }
 }

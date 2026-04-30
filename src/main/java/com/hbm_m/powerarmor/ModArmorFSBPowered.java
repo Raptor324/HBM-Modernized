@@ -4,26 +4,28 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyCapabilityProvider;
 import com.hbm_m.armormod.item.ItemModBattery;
 import com.hbm_m.armormod.item.ItemModBatteryMk2;
 import com.hbm_m.armormod.item.ItemModBatteryMk3;
 import com.hbm_m.armormod.util.ArmorModificationHelper;
-import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
+//? if forge {
+/*import com.hbm_m.api.energy.EnergyCapabilityProvider;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
-import net.minecraftforge.network.PacketDistributor;
+*///?}
 
 // Full Set Bonus Powered armor - combines FSB functionality with battery system
 public class ModArmorFSBPowered extends ModArmorFSB {
@@ -149,15 +151,16 @@ public class ModArmorFSBPowered extends ModArmorFSB {
      * MATCHES 1.7.10 BEHAVIOR
      * This is called by Minecraft when armor would take damage.
      * Instead of damaging the item, we drain energy based on consumption.
+     * (Forge/NeoForge: IItemExtension#setDamage; на Fabric такого хука нет.)
      */
-    @Override
+    //? if !fabric {
+    /*@Override
     public void setDamage(ItemStack stack, int damage) {
-        // Don't damage the item - power armor doesn't break
-        // Instead, drain energy if consumption is configured
         if (this.consumption > 0) {
             this.dischargeBattery(stack, (long) damage * this.consumption);
         }
     }
+    *///?}
 
     private int getArmorContainerId(Player player, EquipmentSlot slot) {
         int slotIndex = switch (slot) {
@@ -175,21 +178,32 @@ public class ModArmorFSBPowered extends ModArmorFSB {
      * MATCHES 1.7.10 BEHAVIOR
      * Passive energy drain per tick when wearing full FSB armor set.
      */
-    @Override
+    //? if forge {
+    /*@Override
     public void onArmorTick(ItemStack stack, Level world, Player player) {
         super.onArmorTick(stack, world, player);
+        tickPoweredDrain(stack, world, player);
+    }
+    *///?} else {
+    @Override
+    public void inventoryTick(ItemStack stack, Level world, Entity entity, int slotId, boolean selected) {
+        super.inventoryTick(stack, world, entity, slotId, selected);
+        if (!(entity instanceof Player player)) return;
+        tickPoweredDrain(stack, world, player);
+    }
+    //?}
 
-        if (this.drain > 0 && ModArmorFSB.hasFSBArmor(player) 
-            && !player.getAbilities().instabuild && !player.isSpectator()) {
-            
+    private void tickPoweredDrain(ItemStack stack, Level world, Player player) {
+        if (this.drain > 0 && ModArmorFSB.hasFSBArmor(player)
+                && !player.getAbilities().instabuild && !player.isSpectator()) {
+
             long prevCharge = getCharge(stack);
             this.dischargeBattery(stack, drain);
             long newCharge = getCharge(stack);
             long maxCharge = getMaxCharge(stack);
-            
-            // Синхронизируем при изменении >5% или при полной разрядке
+
             if (maxCharge > 0 && (Math.abs(newCharge - prevCharge) > maxCharge * 0.05 || newCharge == 0)) {
-                syncEnergyToClient(player, stack, world, player.getEquipmentSlotForItem(stack));
+                syncEnergyToClient(player, stack, world, LivingEntity.getEquipmentSlotForItem(stack));
             }
         }
     }
@@ -211,10 +225,12 @@ public class ModArmorFSBPowered extends ModArmorFSB {
         );
     }
 
-    @Nullable
+    //? if forge {
+    /*@Nullable
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
         long modifiedCapacity = getMaxCharge(stack);
         return new EnergyCapabilityProvider(stack, modifiedCapacity, chargeRate, modifiedCapacity);
     }
+    *///?}
 }

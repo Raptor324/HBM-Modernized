@@ -4,47 +4,52 @@ import com.hbm_m.block.entity.doors.DoorBlockEntity;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.item.ModItems;
 
+import dev.architectury.event.EventResult;
+import dev.architectury.event.events.common.InteractionEvent;
+import dev.architectury.utils.Env;
+import dev.architectury.utils.EnvExecutor;
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.entity.player.PlayerInteractEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.DistExecutor;
-import net.minecraftforge.fml.common.Mod;
 
 /**
  * Отмена взаимодействия с дверью при клике отверткой.
  * Блокирует открытие/закрытие двери и открывает GUI выбора скина.
  */
-@Mod.EventBusSubscriber(modid = com.hbm_m.main.MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)
 public class ScrewdriverInteractionHandler {
 
-    @SubscribeEvent(priority = EventPriority.HIGHEST)
-    public static void onRightClickBlock(PlayerInteractEvent.RightClickBlock event) {
-        if (!isScrewdriver(event)) return;
+    /**
+     * Регистрация обработчика события.
+     * Вызывается один раз при инициализации мода.
+     */
+    public static void init() {
+        InteractionEvent.RIGHT_CLICK_BLOCK.register((player, hand, pos, face) -> {
+            if (!isScrewdriver(player, hand)) return EventResult.pass();
 
-        Level level = event.getLevel();
-        BlockPos pos = event.getPos();
-        DoorBlockEntity doorEntity = resolveDoorController(level, pos);
-        if (doorEntity == null) return;
+            Level level = player.level();
+            DoorBlockEntity doorEntity = resolveDoorController(level, pos);
+            if (doorEntity == null) return EventResult.pass();
 
-        event.setCanceled(true);
+            // Блокируем стандартное взаимодействие (открытие/закрытие двери).
+            // GUI выбора скина открываем только на клиенте.
+            if (level.isClientSide) {
+                openSelectionMenu(doorEntity);
+            }
 
-        if (level.isClientSide) {
-            openSelectionMenu(doorEntity);
-        }
+            return EventResult.interruptTrue();
+        });
     }
 
-    private static boolean isScrewdriver(PlayerInteractEvent.RightClickBlock event) {
-        net.minecraft.world.entity.player.Player player = event.getEntity();
-        return isScrewdriverStack(player.getItemInHand(event.getHand()))
-                || isScrewdriverStack(player.getItemInHand(event.getHand() == net.minecraft.world.InteractionHand.MAIN_HAND
-                        ? net.minecraft.world.InteractionHand.OFF_HAND : net.minecraft.world.InteractionHand.MAIN_HAND));
+    private static boolean isScrewdriver(Player player, InteractionHand hand) {
+        ItemStack main = player.getItemInHand(hand);
+        ItemStack other = player.getItemInHand(hand == InteractionHand.MAIN_HAND ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND);
+        return isScrewdriverStack(main) || isScrewdriverStack(other);
     }
 
-    private static boolean isScrewdriverStack(net.minecraft.world.item.ItemStack stack) {
+    private static boolean isScrewdriverStack(ItemStack stack) {
         return !stack.isEmpty() && stack.getItem() == ModItems.SCREWDRIVER.get();
     }
 
@@ -66,7 +71,7 @@ public class ScrewdriverInteractionHandler {
     }
 
     private static void openSelectionMenu(DoorBlockEntity doorEntity) {
-        DistExecutor.unsafeRunWhenOn(Dist.CLIENT, () -> () ->
+        EnvExecutor.runInEnv(Env.CLIENT, () -> () ->
                 com.hbm_m.client.overlay.DoorSelectionClientHooks.openSelectionMenu(doorEntity));
     }
 }

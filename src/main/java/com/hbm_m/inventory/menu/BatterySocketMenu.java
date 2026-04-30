@@ -5,8 +5,10 @@ import com.hbm_m.block.machines.MachineBatterySocketBlock;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
+import com.hbm_m.platform.ModItemStackHandler;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -17,8 +19,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraftforge.items.SlotItemHandler;
-import com.hbm_m.platform.ForgeItemHandlerAdapter;
 
 public class BatterySocketMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -48,7 +48,8 @@ public class BatterySocketMenu extends AbstractContainerMenu implements ILongEne
         addPlayerInventory(inv, 8, 99);
         addPlayerHotbar(inv, 8, 157);
 
-        this.addSlot(new SlotItemHandler(new ForgeItemHandlerAdapter(be.getItemHandler()), 0, 35, 35) {
+        Container socketContainer = new HandlerContainer(be.getItemHandler());
+        this.addSlot(new Slot(socketContainer, 0, 35, 35) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return BatterySocketBlockEntity.isAllowedPortableEnergyStack(stack);
@@ -185,5 +186,70 @@ public class BatterySocketMenu extends AbstractContainerMenu implements ILongEne
             return b instanceof MachineBatterySocketBlock
                     && player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) <= 64 * 64;
         }, true);
+    }
+
+    /**
+     * Ванильный Container-адаптер поверх {@link ModItemStackHandler}.
+     * Нужен, чтобы меню не зависело от Forge `IItemHandler`/`SlotItemHandler`.
+     */
+    private static final class HandlerContainer implements Container {
+        private final ModItemStackHandler handler;
+
+        private HandlerContainer(ModItemStackHandler handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        public int getContainerSize() {
+            return handler.getSlots();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                if (!handler.getStackInSlot(i).isEmpty()) return false;
+            }
+            return true;
+        }
+
+        @Override
+        public ItemStack getItem(int slot) {
+            return handler.getStackInSlot(slot);
+        }
+
+        @Override
+        public ItemStack removeItem(int slot, int amount) {
+            return handler.extractItem(slot, amount, false);
+        }
+
+        @Override
+        public ItemStack removeItemNoUpdate(int slot) {
+            ItemStack cur = handler.getStackInSlot(slot);
+            if (cur.isEmpty()) return ItemStack.EMPTY;
+            handler.setStackInSlot(slot, ItemStack.EMPTY);
+            return cur;
+        }
+
+        @Override
+        public void setItem(int slot, ItemStack stack) {
+            handler.setStackInSlot(slot, stack);
+        }
+
+        @Override
+        public void setChanged() {
+            // изменения трекаются в ModItemStackHandler.onContentsChanged()
+        }
+
+        @Override
+        public boolean stillValid(Player player) {
+            return true;
+        }
+
+        @Override
+        public void clearContent() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                handler.setStackInSlot(i, ItemStack.EMPTY);
+            }
+        }
     }
 }

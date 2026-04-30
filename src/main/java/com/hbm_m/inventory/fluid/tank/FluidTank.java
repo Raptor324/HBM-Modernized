@@ -5,23 +5,6 @@ import java.util.List;
 
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
-import com.hbm_m.item.liquids.InfiniteFluidItem;
-import com.hbm_m.item.liquids.InfiniteWaterItem;
-
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
-//? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.FluidStack;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraft.core.registries.BuiltInRegistries;
-*///?}
 
 //? if fabric {
 import dev.architectury.fluid.FluidStack;
@@ -34,6 +17,23 @@ import net.minecraft.core.registries.BuiltInRegistries;
 //?}
 
 import com.hbm_m.item.liquids.FluidIdentifierItem;
+import com.hbm_m.item.liquids.InfiniteFluidItem;
+import com.hbm_m.item.liquids.InfiniteWaterItem;
+
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
+//? if forge {
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.capability.IFluidHandler;
+*///?}
 
 public class FluidTank {
 
@@ -225,7 +225,7 @@ public class FluidTank {
         
         String typeIdStr = nbt.getString(prefix + "_type");
         //? if forge {
-        /*Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.parse(typeIdStr));
+        /*Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(typeIdStr));
          *///?}
         //? if fabric {
         Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(typeIdStr));

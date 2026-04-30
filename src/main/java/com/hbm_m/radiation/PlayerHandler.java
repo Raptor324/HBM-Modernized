@@ -1,9 +1,5 @@
 package com.hbm_m.radiation;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.UUID;
-
 import com.hbm_m.armormod.util.ArmorModificationHelper;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.damagesource.ModDamageSources;
@@ -14,8 +10,11 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.RadiationDataPacket;
+import com.hbm_m.platform.PlayerPersistentData;
 import com.mojang.brigadier.arguments.FloatArgumentType;
-
+import dev.architectury.event.events.common.CommandRegistrationEvent;
+import dev.architectury.event.events.common.PlayerEvent;
+import dev.architectury.event.events.common.TickEvent;
 import net.minecraft.advancements.Advancement;
 import net.minecraft.advancements.AdvancementProgress;
 import net.minecraft.commands.Commands;
@@ -30,10 +29,12 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.event.RegisterCommandsEvent;
-import net.minecraftforge.event.TickEvent;
-import net.minecraftforge.event.entity.player.PlayerEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
+
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.UUID;
+
+
 
 public class PlayerHandler {
     
@@ -42,6 +43,21 @@ public class PlayerHandler {
     
     // Ключ для хранения радиации в данных игрока
     private static final String NBT_KEY_PLAYER_RADIATION = "hbm_m_player_radiation";
+
+    // Счетчик тиков для периодического обновления (per-player через UUID)
+    private static final HashMap<UUID, Integer> tickCounters = new HashMap<>();
+
+    /**
+     * Регистрация всех обработчиков событий.
+     * Вызывается один раз при инициализации мода.
+     */
+    public static void register() {
+        PlayerEvent.PLAYER_JOIN.register(PlayerHandler::onPlayerJoin);
+        PlayerEvent.PLAYER_QUIT.register(PlayerHandler::onPlayerQuit);
+        PlayerEvent.PLAYER_RESPAWN.register(PlayerHandler::onPlayerRespawn);
+        TickEvent.PLAYER_POST.register(PlayerHandler::onPlayerTick);
+        CommandRegistrationEvent.EVENT.register(PlayerHandler::onRegisterCommands);
+    }
 
     /**
      * Получает уровень радиации игрока
@@ -106,57 +122,138 @@ public class PlayerHandler {
         
         setPlayerRads(player, Math.max(0, getPlayerRads(player) - rads));
     }
-    
-    /**
-     * Обработчик загрузки данных игрока
-     */
-    @SubscribeEvent
-    public void onPlayerLoad(PlayerEvent.LoadFromFile event) {
-        Player player = event.getEntity();
 
-        if (player instanceof ServerPlayer) {
-            CompoundTag persistentData = player.getPersistentData();
-            float rads = 0.0F;
-            if (persistentData.contains(NBT_KEY_PLAYER_RADIATION)) {
-                CompoundTag data = persistentData.getCompound(NBT_KEY_PLAYER_RADIATION);
-                rads = Math.round(data.getFloat("radiationLevel") * 10.0f) / 10.0f; // округление при загрузке
+    // ═══════════════════════════════════════════
+    // Обработчики событий
+    // ═══════════════════════════════════════════
+
+    /**
+     * Игрок зашёл на сервер — загружаем радиацию из NBT
+     */
+    private static void onPlayerJoin(ServerPlayer serverPlayer) {
+        float rads = 0.0F;
+        CompoundTag persistentData = PlayerPersistentData.get(serverPlayer);
+        if (persistentData.contains(NBT_KEY_PLAYER_RADIATION)) {
+            CompoundTag data = persistentData.getCompound(NBT_KEY_PLAYER_RADIATION);
+            rads = Math.round(data.getFloat("radiationLevel") * 10.0f) / 10.0f;
+        }
+        // Кладём в map без отправки пакета — соединение ещё не полностью установлено
+        playerRads.put(serverPlayer.getUUID(), Math.max(0, rads));
+        MainRegistry.LOGGER.debug("Loaded radiation data for player {}: {} RAD",
+                serverPlayer.getName().getString(), rads);
+    }
+
+    /**
+     * Игрок вышел с сервера — сохраняем радиацию в NBT и чистим map
+     */
+    private static void onPlayerQuit(ServerPlayer serverPlayer) {
+        float rounded = Math.round(getPlayerRads(serverPlayer) * 10.0f) / 10.0f;
+        CompoundTag persistentData = PlayerPersistentData.get(serverPlayer);
+        CompoundTag data = new CompoundTag();
+        data.putFloat("radiationLevel", rounded);
+        persistentData.put(NBT_KEY_PLAYER_RADIATION, data);
+
+        MainRegistry.LOGGER.debug("Saving radiation data for player {}: {} RAD",
+                serverPlayer.getName().getString(), rounded);
+
+        UUID uuid = serverPlayer.getUUID();
+        playerRads.remove(uuid);
+        tickCounters.remove(uuid);
+    }
+
+    /**
+     * Игрок возродился — сбрасываем радиацию
+     * (параметр keepInventory: если true — не сбрасываем, чтобы не злоупотребляли)
+     */
+    private static void onPlayerRespawn(ServerPlayer serverPlayer, boolean conqueredEnd) {
+        // Сброс при смерти, но не при телепортации через End
+        if (!conqueredEnd) {
+            setPlayerRads(serverPlayer, 0F);
+        }
+    }
+
+    /**
+     * Тик игрока — основная логика радиации
+     */
+    private static void onPlayerTick(Player player) {
+        // Выполняем только на сервере
+        if (player.level().isClientSide()) return;
+
+        // Сброс радиации при смерти в любом режиме
+        if (player.isDeadOrDying()) {
+            setPlayerRads(player, 0F);
+            return;
+        }
+
+        if (!ModClothConfig.get().enableRadiation) return;
+
+        UUID uuid = player.getUUID();
+        int counter = tickCounters.getOrDefault(uuid, 0) + 1;
+        tickCounters.put(uuid, counter);
+
+        // Обновляем радиацию каждые 20 тиков (1 секунда)
+        if (counter < 20) return;
+        tickCounters.put(uuid, 0);
+
+        float totalRad = 0f;
+
+        if (!player.isCreative() && !player.isSpectator()) {
+            float chunkRad = 0F;
+            float invRad = 0F;
+
+            if (ModClothConfig.get().enableChunkRads) {
+                chunkRad = ChunkRadiationManager.getRadiation(
+                        player.level(),
+                        player.blockPosition().getX(),
+                        player.blockPosition().getY(),
+                        player.blockPosition().getZ()
+                );
             }
-            setPlayerRads(player, rads); // Здесь не отправляем пакет, так как соединение еще не установлено
-            MainRegistry.LOGGER.debug("Loaded radiation data for player {}: {} RAD",
-                    player.getName().getString(), rads);
+            if (ModClothConfig.get().enableRadiation) {
+                invRad = getInventoryRadiation(player);
+            }
+
+            totalRad = chunkRad + invRad;
+
+            // Расчёт защиты брони
+            float totalAbsoluteProtection = 0f;
+            for (ItemStack armorStack : player.getArmorSlots()) {
+                totalAbsoluteProtection += ArmorModificationHelper.getTotalAbsoluteRadProtection(armorStack);
+            }
+            float protectionPercent = ArmorModificationHelper.convertAbsoluteToPercent(totalAbsoluteProtection);
+            float resultingRad = totalRad * (1.0f - protectionPercent);
+
+            if (resultingRad > 0) {
+                incrementPlayerRads(player, resultingRad);
+                if (ModClothConfig.get().enableDebugLogging) {
+                    MainRegistry.LOGGER.debug(
+                            "Add total radiation to player {}: chunk={} inv={} total={} prot={} final={}",
+                            player.getName().getString(), chunkRad, invRad, totalRad,
+                            String.format("%.2f%%", protectionPercent * 100), resultingRad);
+                }
+            }
+
+            decrementPlayerRads(player, ModClothConfig.get().radDecay);
+            applyRadiationEffects(player);
+        }
+
+        // Отправляем пакет ВСЕМ игрокам (клиент сам решит, показывать ли эффект в креативе)
+        if (player instanceof ServerPlayer serverPlayer) {
+            float currentAccumulatedRads = getPlayerRads(player);
+            ModPacketHandler.sendToPlayer(serverPlayer, ModPacketHandler.RADIATION_DATA,
+                    new RadiationDataPacket(totalRad, currentAccumulatedRads));
+
+            if (ModClothConfig.get().enableDebugLogging) {
+                MainRegistry.LOGGER.debug(
+                        "SERVER: Sending periodic RadiationDataPacket to player {}. EnvRad (Incoming): {}, PlayerRad (Accumulated): {}",
+                        player.getName().getString(), totalRad, currentAccumulatedRads);
+            }
         }
     }
 
-    /**
-     * Обработчик сохранения данных игрока
-     */
-    @SubscribeEvent
-    public void onPlayerSave(PlayerEvent.SaveToFile event) {
-        Player player = event.getEntity();
-
-        if (player instanceof ServerPlayer) {
-            CompoundTag persistentData = player.getPersistentData();
-            CompoundTag data = new CompoundTag();
-            float rounded = Math.round(getPlayerRads(player) * 10.0f) / 10.0f; // округление при сохранении
-            data.putFloat("radiationLevel", rounded);
-            persistentData.put(NBT_KEY_PLAYER_RADIATION, data);
-
-            MainRegistry.LOGGER.debug("Saving radiation data for player {}: {} RAD",
-                    player.getName().getString(), rounded);
-        }
-    }
-    
-    /**
-     * Обработчик выхода игрока
-     */
-    @SubscribeEvent
-    public void onPlayerLogout(PlayerEvent.PlayerLoggedOutEvent event) {
-        Player player = event.getEntity();
-        playerRads.remove(player.getUUID());
-    }
-    
-    // Счетчик тиков для периодического обновления
-    private int tickCounter = 0;
+    // ═══════════════════════════════════════════
+    // Вспомогательные методы
+    // ═══════════════════════════════════════════
     
     /**
      * Возвращает радиацию от всех радиоактивных предметов в инвентаре игрока (за тик)
@@ -175,128 +272,44 @@ public class PlayerHandler {
     }
 
     private static float getRadiationFromItemStack(ItemStack stack) {
-    if (stack.isEmpty()) {
-        return 0.0F;
-    }
-
-    float perItemRadiation = HazardSystem.getHazardLevelFromStack(stack, HazardType.RADIATION);
+        if (stack.isEmpty()) return 0.0F;
+        float perItemRadiation = HazardSystem.getHazardLevelFromStack(stack, HazardType.RADIATION);
         return perItemRadiation * stack.getCount();
-    }
-
-    /**
-     * Обработчик тика игрока, обновляет радиацию
-     */
-    @SubscribeEvent
-    public void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        // Сброс радиации при смерти в любом режиме
-        if (event.player.isDeadOrDying()) {
-            setPlayerRads(event.player, 0F);
-            return;
-        }
-
-        if (!ModClothConfig.get().enableRadiation || event.phase != TickEvent.Phase.END || event.player.level().isClientSide()) {
-            return;
-        }
-
-        Player player = event.player;
-        tickCounter++;
-
-        // Обновляем радиацию каждые 20 тиков (1 секунда)
-        if (tickCounter >= 20) {
-            tickCounter = 0;
-
-            // Переменные для входящей радиации. Инициализируем нулем.
-            float totalRad = 0f;
-
-            if (!player.isCreative() && !player.isSpectator()) {
-                float chunkRad = 0F;
-                float invRad = 0F;
-                if (ModClothConfig.get().enableChunkRads) {
-                    chunkRad = ChunkRadiationManager.getRadiation(player.level(), player.blockPosition().getX(), player.blockPosition().getY(), player.blockPosition().getZ());
-                }
-                if (ModClothConfig.get().enableRadiation) {
-                    invRad = getInventoryRadiation(player);
-                }
-                // Это и есть наша суммарная ВХОДЯЩАЯ радиация
-                totalRad = chunkRad + invRad;
-                
-                // Расчет входящей радиации С УЧЕТОМ защиты
-                float totalAbsoluteProtection = 0f;
-                for (ItemStack armorStack : player.getArmorSlots()) {
-                    totalAbsoluteProtection += ArmorModificationHelper.getTotalAbsoluteRadProtection(armorStack);
-                }
-                float protectionPercent = ArmorModificationHelper.convertAbsoluteToPercent(totalAbsoluteProtection);
-                float resultingRad = totalRad * (1.0f - protectionPercent);
-            
-                // Увеличиваем накопленную радиацию
-                if (resultingRad > 0) {
-                    incrementPlayerRads(player, resultingRad);
-                    if (ModClothConfig.get().enableDebugLogging) {
-                        MainRegistry.LOGGER.debug("Add total radiation to player {}: chunk={} inv={} total={} prot={} final={}", 
-                            player.getName().getString(), chunkRad, invRad, totalRad, String.format("%.2f%%", protectionPercent * 100), resultingRad);
-                    }
-                }
-
-                // Уменьшаем накопленную радиацию (естественный распад)
-                decrementPlayerRads(player, ModClothConfig.get().radDecay);
-                // Применяем эффекты от НАКОПЛЕННОЙ радиации
-                applyRadiationEffects(player);
-            }
-
-            // --- ИСПРАВЛЕННЫЙ БЛОК ОТПРАВКИ ПАКЕТА ---
-            // Отправляем пакет ВСЕМ игрокам, чтобы клиент всегда имел актуальные данные.
-            // Оверлей на клиенте сам решит, показывать ли эффект в креативе.
-            if (player instanceof ServerPlayer serverPlayer) {
-                float currentAccumulatedRads = getPlayerRads(player);
-                
-                // totalRad для игроков в креативе будет 0, что корректно.
-                // Для игроков в выживании это будет сумма chunkRad + invRad.
-                float incomingRadForPacket = totalRad;
-                
-                // 1. КРИТИЧЕСКОЕ ИСПРАВЛЕНИЕ: Добавлен недостающий вызов отправки пакета.
-                // 2. УЛУЧШЕНИЕ: В качестве 'environmentRad' теперь отправляется `incomingRadForPacket`, 
-                //    который включает и чанк, и инвентарь.
-                ModPacketHandler.sendToPlayer(serverPlayer, ModPacketHandler.RADIATION_DATA,
-                    new RadiationDataPacket(incomingRadForPacket, currentAccumulatedRads));
-                
-                if (ModClothConfig.get().enableDebugLogging) {
-                    MainRegistry.LOGGER.debug("SERVER: Sending periodic RadiationDataPacket to player {}. EnvRad (Incoming): {}, PlayerRad (Accumulated): {}", player.getName().getString(), incomingRadForPacket, currentAccumulatedRads);
-                }
-            }
-        }
     }
     
     /**
      * Применяет эффекты в зависимости от уровня радиации
      */
-    private void applyRadiationEffects(Player player) {
+    private static void applyRadiationEffects(Player player) {
         float rads = getPlayerRads(player);
-        
+
         // Проверяем достижения
         if (player instanceof ServerPlayer serverPlayer) {
             var server = serverPlayer.getServer();
-            if (server != null) { // Добавлена проверка на null
+            if (server != null) {
                 ServerAdvancementManager advancementManager = server.getAdvancements();
 
                 // Достижение "Ура, Радиация!" (200 РАД)
                 //? if fabric && < 1.21.1 {
                 Advancement rad200Advancement = advancementManager.getAdvancement(new ResourceLocation(RefStrings.MODID, "radiation_200"));
                 //?} else {
-                                /*Advancement rad200Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_200"));
-                *///?}
+                /*Advancement rad200Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_200"));
+                 *///?}
 
                 if (rad200Advancement != null) {
                     AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(rad200Advancement);
-                    if (!progress.isDone()) {
+                    if (!progress.isDone() && rads >= 200.0F) {
                         if (ModClothConfig.get().enableDebugLogging) {
-                            MainRegistry.LOGGER.debug("SERVER: Checking radiation_200 advancement for player {}. Current rads: {}, isDone: {}", serverPlayer.getName().getString(), rads, progress.isDone());
+                            MainRegistry.LOGGER.debug(
+                                    "SERVER: Checking radiation_200 advancement for player {}. Current rads: {}, isDone: {}",
+                                    serverPlayer.getName().getString(), rads, false);
                         }
-                            if (rads >= 200.0F) {
-                            for (String criterion : progress.getRemainingCriteria()) {
-                                serverPlayer.getAdvancements().award(rad200Advancement, criterion);
-                                if (ModClothConfig.get().enableDebugLogging) {
-                                    MainRegistry.LOGGER.info("SERVER: Awarded radiation_200 advancement to player {} for criterion {}", serverPlayer.getName().getString(), criterion);
-                                }
+                        for (String criterion : progress.getRemainingCriteria()) {
+                            serverPlayer.getAdvancements().award(rad200Advancement, criterion);
+                            if (ModClothConfig.get().enableDebugLogging) {
+                                MainRegistry.LOGGER.info(
+                                        "SERVER: Awarded radiation_200 advancement to player {} for criterion {}",
+                                        serverPlayer.getName().getString(), criterion);
                             }
                         }
                     }
@@ -306,21 +319,23 @@ public class PlayerHandler {
                 //? if fabric && < 1.21.1 {
                 Advancement rad1000Advancement = advancementManager.getAdvancement(new ResourceLocation(RefStrings.MODID, "radiation_1000"));
                 //?} else {
-                                /*Advancement rad1000Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_1000"));
-                *///?}
+                /*Advancement rad1000Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_1000"));
+                 *///?}
 
                 if (rad1000Advancement != null) {
                     AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(rad1000Advancement);
-                    if (!progress.isDone()) {
+                    if (!progress.isDone() && rads >= ModClothConfig.get().maxPlayerRad) {
                         if (ModClothConfig.get().enableDebugLogging) {
-                            MainRegistry.LOGGER.debug("SERVER: Checking radiation_1000 advancement for player {}. Current rads: {}, isDone: {}", serverPlayer.getName().getString(), rads, progress.isDone());
+                            MainRegistry.LOGGER.debug(
+                                    "SERVER: Checking radiation_1000 advancement for player {}. Current rads: {}, isDone: {}",
+                                    serverPlayer.getName().getString(), rads, false);
                         }
-                            if (rads >= ModClothConfig.get().maxPlayerRad) {
-                            for (String criterion : progress.getRemainingCriteria()) {
-                                serverPlayer.getAdvancements().award(rad1000Advancement, criterion);
-                                if (ModClothConfig.get().enableDebugLogging) {
-                                    MainRegistry.LOGGER.info("SERVER: Awarded radiation_1000 advancement to player {} for criterion {}", serverPlayer.getName().getString(), criterion);
-                                }
+                        for (String criterion : progress.getRemainingCriteria()) {
+                            serverPlayer.getAdvancements().award(rad1000Advancement, criterion);
+                            if (ModClothConfig.get().enableDebugLogging) {
+                                MainRegistry.LOGGER.info(
+                                        "SERVER: Awarded radiation_1000 advancement to player {} for criterion {}",
+                                        serverPlayer.getName().getString(), criterion);
                             }
                         }
                     }
@@ -328,32 +343,28 @@ public class PlayerHandler {
             }
         }
 
-        // Если радиация достигла летального порога, игрок умирает
+        // Летальный порог
         if (rads >= ModClothConfig.get().maxPlayerRad) {
-            MainRegistry.LOGGER.debug("SERVER: Player {} radiation ({}) reached maxPlayerRad ({}). Killing player and resetting radiation.", player.getName().getString(), rads, ModClothConfig.get().maxPlayerRad);
+            MainRegistry.LOGGER.debug(
+                    "SERVER: Player {} radiation ({}) reached maxPlayerRad ({}). Killing player and resetting radiation.",
+                    player.getName().getString(), rads, ModClothConfig.get().maxPlayerRad);
             player.hurt(ModDamageSources.radiation(player.level()), Float.MAX_VALUE);
-            setPlayerRads(player, 0F); // Сброс радиации после смерти
-            return; // Прекращаем применение других эффектов, так как игрок мертв
+            setPlayerRads(player, 0F);
+            return;
         }
 
-        // Если радиация выше порога урона, наносим урон
         if (rads > ModClothConfig.get().radDamageThreshold) {
             player.hurt(player.damageSources().magic(), ModClothConfig.get().radDamage);
         }
-        
-        // Применяем различные эффекты в зависимости от уровня радиации
         if (rads > ModClothConfig.get().radBlindness) {
             player.addEffect(new MobEffectInstance(MobEffects.BLINDNESS, 220, 0));
         }
-        
         if (rads > ModClothConfig.get().radConfusion) {
             player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 220, 0));
         }
-        
         if (rads > ModClothConfig.get().radWater) {
             player.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 220, 2));
         }
-        
         if (rads > ModClothConfig.get().radSickness) {
             player.addEffect(new MobEffectInstance(MobEffects.HUNGER, 220, 0));
             player.addEffect(new MobEffectInstance(MobEffects.POISON, 220, 0));
@@ -363,12 +374,14 @@ public class PlayerHandler {
     /**
      * Регистрация команд радиации
      */
-    @SubscribeEvent
-    public void onRegisterCommands(RegisterCommandsEvent event) {
+    private static void onRegisterCommands(
+            com.mojang.brigadier.CommandDispatcher<net.minecraft.commands.CommandSourceStack> dispatcher,
+            net.minecraft.commands.CommandBuildContext buildContext,
+            Commands.CommandSelection selection) {
         // ═══════════════════════════════════════════════════════
         // СЕРВЕРНЫЕ КОМАНДЫ: Команды радиации (работают везде)
         // ═══════════════════════════════════════════════════════
-        event.getDispatcher().register(
+        dispatcher.register(
             Commands.literal(RefStrings.MODID)
                 .then(HbmExplosionCommands.buildExplosionBranch())
                 .then(Commands.literal("rad")

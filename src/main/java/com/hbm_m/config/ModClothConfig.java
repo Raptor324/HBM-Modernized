@@ -25,9 +25,9 @@ public class ModClothConfig implements ConfigData {
     @Gui.Tooltip
     public boolean enableChunkRads = true;
 
-    @Category("general")
-    @Gui.Tooltip
-    public boolean usePrismSystem = false;
+//    @Category("general")
+//    @Gui.Tooltip
+//    public boolean usePrismSystem = false;
 
      // Эффекты мира 
     @Category("world_effects")

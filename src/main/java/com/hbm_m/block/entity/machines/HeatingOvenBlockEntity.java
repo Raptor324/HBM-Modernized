@@ -252,19 +252,23 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
         return tag;
     }
 
-    @Override
+    //? if forge {
+    /*@Override
     public void handleUpdateTag(CompoundTag tag) {
-        super.handleUpdateTag(tag);
+        // Forge-only hook; на Fabric используется стандартная синхронизация через load()
         wasOn = tag.getBoolean("isOn");
         doorAngle = tag.getFloat("doorAngle");
         prevDoorAngle = doorAngle;
         doorOpen = tag.getBoolean("doorOpen");
     }
+    *///?}
 
-    @Override
+    //? if forge {
+    /*@Override
     public AABB getRenderBoundingBox() {
         return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 2, 2));
     }
+    *///?}
 
     // Client-side getters for renderer
     public float getDoorAngle() {

@@ -1754,12 +1754,12 @@ public class ModItems {
 
     //=============================== ВЁДРА ДЛЯ ЖИДКОСТЕЙ ===============================//
 
-    public static final RegistrySupplier<Item> CRUDE_OIL_BUCKET = ITEMS.register("bucket_crude_oil",
-            () -> new BucketItem(
-                    () -> ModFluids.CRUDE_OIL.source.get(),
-                    new Item.Properties()
-                            .craftRemainder(Items.BUCKET)
-                            .stacksTo(1)));
+//    public static final RegistrySupplier<Item> CRUDE_OIL_BUCKET = ITEMS.register("bucket_crude_oil",
+//            () -> new BucketItem(
+//                    () -> ModFluids.CRUDE_OIL.source.get(),
+//                    new Item.Properties()
+//                            .craftRemainder(Items.BUCKET)
+//                            .stacksTo(1)));
 
 
     public static void init() {

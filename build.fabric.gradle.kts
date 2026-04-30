@@ -1,3 +1,5 @@
+import org.gradle.api.tasks.JavaExec
+
 plugins {
 	id("mod-platform")
 	id("fabric-loom")
@@ -9,7 +11,7 @@ platform {
 		required("minecraft") {
 			versionRange = prop("deps.minecraft")
 		}
-		required("architectury") {
+		optional("architectury") {
 			slug("architectury-api")
 			versionRange = ">=${prop("deps.architectury")}"
 		}
@@ -33,6 +35,8 @@ loom {
 		environment = "client"
 		programArgs("--username=Dev")
 		configName = "Fabric Client"
+		// Sodium 0.5.x + Loom: см. также tasks.withType<JavaExec> ниже (DevLaunchInjector из IDE не наследует vmArgs).
+		vmArgs("-Dsodium.checks.issue2561=false")
 	}
 	runs.named("server") {
 		server()
@@ -41,6 +45,11 @@ loom {
 		environment = "server"
 		configName = "Fabric Server"
 	}
+}
+
+// Запуск из IDE (задача вида :…:net.fabricmc.devlaunchinjector.Main.main) — это JavaExec, не runClient из Loom.
+tasks.withType<JavaExec>().configureEach {
+	jvmArgs("-Dsodium.checks.issue2561=false")
 }
 
 fabricApi {
@@ -82,13 +91,18 @@ dependencies {
 	include(libs.moulberry.mixinconstraints)
 	modImplementation("net.fabricmc.fabric-api:fabric-api:${prop("deps.fabric-api")}")
 	modImplementation("dev.architectury:architectury-fabric:${prop("deps.architectury")}")
+	include("dev.architectury:architectury-fabric:${prop("deps.architectury")}")
 	modLocalRuntime("com.terraformersmc:modmenu:${prop("deps.modmenu")}")
+	modImplementation("curse.maven:sodium-394468:6260639")
+	modImplementation("curse.maven:irisshaders-455508:6258195")
 
 	// Fabric compat: Chunk radiation via CCA (bundled)
 	modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.3")
 	modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-chunk:5.2.3")
+	modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.2.3")
 	include("dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.3")
 	include("dev.onyxstudios.cardinal-components-api:cardinal-components-chunk:5.2.3")
+	include("dev.onyxstudios.cardinal-components-api:cardinal-components-entity:5.2.3")
 
 	// Fabric compat: external energy via TeamReborn Energy API (bundled)
 	modApi("teamreborn:energy:3.0.0")

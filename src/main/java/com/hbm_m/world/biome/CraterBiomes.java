@@ -1,9 +1,6 @@
 package com.hbm_m.world.biome;
 
 import com.hbm_m.main.MainRegistry;
-
-import dev.architectury.registry.registries.DeferredRegister;
-import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -13,28 +10,24 @@ import net.minecraft.world.level.biome.Biome;
 import net.minecraft.world.level.biome.BiomeGenerationSettings;
 import net.minecraft.world.level.biome.BiomeSpecialEffects;
 import net.minecraft.world.level.biome.MobSpawnSettings;
-import net.minecraftforge.registries.RegistryObject;
 
-public class CraterBiomes {
+/**
+ * Фабрики биомов кратера: на Forge / NeoForge регистрируются из {@link ModBiomes}; на Fabric те же id
+ * загружаются из datapack мода ({@code data/hbm_m/worldgen/biome/}). Ключи — {@link ModBiomes#INNER_CRATER_KEY},
+ * {@link ModBiomes#OUTER_CRATER_KEY} (туман — {@link com.hbm_m.client.CraterFogHandler}).
+ */
+public final class CraterBiomes {
 
-    public static final DeferredRegister<Biome> BIOMES =
-            DeferredRegister.create(MainRegistry.MOD_ID, Registries.BIOME);
+    public static final ResourceKey<Biome> INNER_CRATER_KEY =
+            ResourceKey.create(Registries.BIOME,
+                    new ResourceLocation(MainRegistry.MOD_ID, "inner_crater"));
 
-    public static final RegistrySupplier<Biome> INNER_CRATER = BIOMES.register("inner_crater", CraterBiomes::createInnerCraterBiome);
-    public static final RegistrySupplier<Biome> OUTER_CRATER = BIOMES.register("outer_crater", CraterBiomes::createOuterCraterBiome);
+    public static final ResourceKey<Biome> OUTER_CRATER_KEY =
+            ResourceKey.create(Registries.BIOME,
+                    new ResourceLocation(MainRegistry.MOD_ID, "outer_crater"));
 
-    public static void init() {
-        BIOMES.register();
-    }
+    private CraterBiomes() {}
 
-    //? if forge {
-    /*public static final ResourceKey<Biome> INNER_CRATER_KEY = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "inner_crater"));
-    public static final ResourceKey<Biome> OUTER_CRATER_KEY = ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "outer_crater"));
-    *///?}
-    //? if fabric {
-    public static final ResourceKey<Biome> INNER_CRATER_KEY = ResourceKey.create(Registries.BIOME, new ResourceLocation(MainRegistry.MOD_ID, "inner_crater"));
-    public static final ResourceKey<Biome> OUTER_CRATER_KEY = ResourceKey.create(Registries.BIOME, new ResourceLocation(MainRegistry.MOD_ID, "outer_crater"));
-    //?}
     public static Biome createInnerCraterBiome() {
         return new Biome.BiomeBuilder()
                 .hasPrecipitation(true)
@@ -47,7 +40,6 @@ public class CraterBiomes {
                         .waterColor(0x0a0a1a)
                         .waterFogColor(0x050510)
                         .fogColor(0x1a1a1a)
-                        // 🔥 ПОВЫШЕНА ВЕРОЯТНОСТЬ: 0.118 -> 0.5 (очень густой пепел)
                         .ambientParticle(new AmbientParticleSettings(ParticleTypes.WHITE_ASH, 0.5F))
                         .build())
                 .mobSpawnSettings(MobSpawnSettings.EMPTY)
@@ -67,7 +59,6 @@ public class CraterBiomes {
                         .waterColor(0x0a0a1a)
                         .waterFogColor(0x050510)
                         .fogColor(0x3d3d3d)
-                        // 🔥 ПОВЫШЕНА ВЕРОЯТНОСТЬ: 0.025 -> 0.15 (заметный пепел)
                         .ambientParticle(new AmbientParticleSettings(ParticleTypes.ASH, 0.15F))
                         .build())
                 .mobSpawnSettings(MobSpawnSettings.EMPTY)

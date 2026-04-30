@@ -10,7 +10,7 @@ import org.joml.Vector3f;
 
 import com.hbm_m.client.ClientRenderHandler;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.powerarmor.ModEventHandlerClient;
+import com.hbm_m.powerarmor.PowerArmorClientState;
 import com.hbm_m.sound.ModSounds;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -468,11 +468,11 @@ public class NukeTorex extends ParticleNT {
         // buffer.endBatch(ClientRenderHandler.CustomRenderTypes.NUKE_CLOUDS.apply(CLOUDLET));
 
         long now = System.currentTimeMillis();
-        if (this.age < 10 && now - ModEventHandlerClient.flashTimestamp > 1_000) {
-            ModEventHandlerClient.triggerNuclearFlash();
+        if (this.age < 10 && now - PowerArmorClientState.flashTimestamp > 1_000) {
+            PowerArmorClientState.triggerNuclearFlash();
         }
-        if (this.didPlaySound && !this.didShake && now - ModEventHandlerClient.shakeTimestamp > 1_000) {
-            ModEventHandlerClient.shakeTimestamp = now;
+        if (this.didPlaySound && !this.didShake && now - PowerArmorClientState.shakeTimestamp > 1_000) {
+            PowerArmorClientState.shakeTimestamp = now;
             this.didShake = true;
             Player player = Minecraft.getInstance().player;
             if (player != null) {

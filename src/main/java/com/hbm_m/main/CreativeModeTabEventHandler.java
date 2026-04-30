@@ -91,18 +91,46 @@ public final class CreativeModeTabEventHandler {
     //? if fabric {
     public static void initFabric() {
         ItemGroupEvents.MODIFY_ENTRIES_ALL.register((tabGroup, entries) -> {
-            if (tabGroup.equals(ModCreativeTabs.NTM_WEAPONS_TAB.getKey()) || tabGroup.equals(CreativeModeTabs.SEARCH)) {
-                populateWeaponsTab((stack, vis) -> entries.accept(stack, vis));
-                populateCombatTab((stack, vis) -> entries.accept(stack, vis));
-                populateResourceTab((stack, vis) -> entries.accept(stack, vis));
-                populateConsumablesTab((stack, vis) -> entries.accept(stack, vis));
-                populateSparepartsTab((stack, vis) -> entries.accept(stack, vis));
-                populateOresTab((stack, vis) -> entries.accept(stack, vis));
-                populateBuildingTab((stack, vis) -> entries.accept(stack, vis));
-                populateMachinesTab((stack, vis) -> entries.accept(stack, vis));
-                populateFuelTab((stack, vis) -> entries.accept(stack, vis));
-                populateTemplatesTab((stack, vis) -> entries.accept(stack, vis));
+            boolean isSearch = tabGroup.equals(CreativeModeTabs.SEARCH);
 
+            if (tabGroup.equals(ModCreativeTabs.NTM_WEAPONS_TAB.getKey()) || isSearch) {
+                populateWeaponsTab((stack, vis) -> entries.accept(stack, vis));
+            }
+
+            if (tabGroup.equals(CreativeModeTabs.COMBAT) || isSearch) {
+                populateCombatTab((stack, vis) -> entries.accept(stack, vis));
+            }
+
+            if (tabGroup.equals(ModCreativeTabs.NTM_RESOURCES_TAB.getKey()) || isSearch) {
+                populateResourceTab((stack, vis) -> entries.accept(stack, vis));
+            }
+
+            if (tabGroup.equals(ModCreativeTabs.NTM_CONSUMABLES_TAB.getKey()) || isSearch) {
+                populateConsumablesTab((stack, vis) -> entries.accept(stack, vis));
+            }
+
+            if (tabGroup.equals(ModCreativeTabs.NTM_SPAREPARTS_TAB.getKey()) || isSearch) {
+                populateSparepartsTab((stack, vis) -> entries.accept(stack, vis));
+            }
+
+            if (tabGroup.equals(ModCreativeTabs.NTM_ORES_TAB.getKey()) || isSearch) {
+                populateOresTab((stack, vis) -> entries.accept(stack, vis));
+            }
+
+            if (tabGroup.equals(ModCreativeTabs.NTM_BUILDING_TAB.getKey()) || isSearch) {
+                populateBuildingTab((stack, vis) -> entries.accept(stack, vis));
+            }
+
+            if (tabGroup.equals(ModCreativeTabs.NTM_MACHINES_TAB.getKey()) || isSearch) {
+                populateMachinesTab((stack, vis) -> entries.accept(stack, vis));
+            }
+
+            if (tabGroup.equals(ModCreativeTabs.NTM_FUEL_TAB.getKey()) || isSearch) {
+                populateFuelTab((stack, vis) -> entries.accept(stack, vis));
+            }
+
+            if (tabGroup.equals(ModCreativeTabs.NTM_TEMPLATES_TAB.getKey()) || isSearch) {
+                populateTemplatesTab((stack, vis) -> entries.accept(stack, vis));
             }
         });
     }
@@ -1165,7 +1193,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.FLUID_VALVE.get()));
         add.accept(new ItemStack(ModItems.FLUID_PUMP.get()));
         add.accept(new ItemStack(ModItems.FLUID_EXHAUST.get()));
-        add.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
+//        add.accept(new ItemStack(ModItems.CRUDE_OIL_BUCKET.get()));
         add.accept(new ItemStack(ModItems.INFINITE_WATER_500.get()));
         add.accept(new ItemStack(ModItems.INFINITE_WATER_5000.get()));
         add.accept(new ItemStack(ModItems.FLUID_BARREL_INFINITE.get()));
