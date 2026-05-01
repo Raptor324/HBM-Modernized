@@ -85,12 +85,11 @@ public final class ForgeObjUnbakedModel implements ForgeLikeUnbakedModel {
         for (Direction d : Direction.values()) out.put(d, new ArrayList<>());
         out.put(null, new ArrayList<>());
 
-        Transformation pivotedRot = ModelStateTransforms.resolveAndPivot(modelState);
-        org.joml.Matrix4f combinedM = new org.joml.Matrix4f(pivotedRot.getMatrix());
-        if (rootTransform != null && !rootTransform.equals(Transformation.identity())) {
-            combinedM.mul(new org.joml.Matrix4f(rootTransform.getMatrix()));
-        }
-        Transformation combined = new Transformation(combinedM);
+        // Forge pipeline:
+        //   transform = rootTransform.isIdentity() ? modelState.getRotation() : modelState.getRotation().compose(rootTransform)
+        //   transformation = transform.blockCenterToCorner()
+        // Final matrix applied to verts: T(0.5) * modelState * rootTransform * T(-0.5)
+        Transformation combined = ModelStateTransforms.composeForObjBaking(modelState, rootTransform);
 
         Set<String> hidden = new HashSet<>();
         for (var e : visibility.entrySet()) if (Boolean.FALSE.equals(e.getValue())) hidden.add(e.getKey());

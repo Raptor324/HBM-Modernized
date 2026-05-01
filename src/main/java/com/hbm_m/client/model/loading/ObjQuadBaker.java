@@ -55,7 +55,6 @@ final class ObjQuadBaker {
                                       boolean shade) {
         boolean hasTransform = transform != null && !transform.equals(Transformation.identity());
 
-        // NO MORE PIVOT HACKS HERE! We apply strictly the finalized absolute Matrix4f.
         Matrix4f m = hasTransform ? new Matrix4f(transform.getMatrix()) : new Matrix4f().identity();
         Matrix3f normalM = hasTransform ? new Matrix3f(m).invert().transpose() : null;
 
@@ -91,6 +90,8 @@ final class ObjQuadBaker {
             norm[i] = n0;
         }
 
+        // Forge uses the first vertex normal for direction determination in makeQuad.
+        // This matches: quadBaker.setDirection(Direction.getNearest(normal.x(), normal.y(), normal.z())) at i==0
         Direction dir = Direction.getNearest(norm[0].x(), norm[0].y(), norm[0].z());
 
         int packed = packNormal(norm[0].x(), norm[0].y(), norm[0].z());
@@ -103,36 +104,59 @@ final class ObjQuadBaker {
         return new BakedQuad(data, -1, dir, sprite, shade);
     }
 
+    /**
+     * Forge's automatic culling logic from ObjModel.makeQuad():
+     * Checks that ALL 4 vertices lie on the face of the unit cube corresponding to the direction,
+     * AND that the normal points outward in that direction.
+     *
+     * Forge uses Mth.equal(a, b) which checks |a - b| < 1e-5f.
+     */
     static void addQuadWithCulling(BakedQuad q, Map<Direction, List<BakedQuad>> out, boolean automaticCulling) {
-        Direction d = q.getDirection();
-        if (!automaticCulling || d == null) {
+        if (!automaticCulling) {
             out.get(null).add(q);
             return;
         }
 
-        boolean onBorder = true;
-        float eps = 1e-4f;
         int[] v = q.getVertices();
+        float[] px = new float[4], py = new float[4], pz = new float[4];
         for (int i = 0; i < 4; i++) {
-            float x = Float.intBitsToFloat(v[i * 8]);
-            float y = Float.intBitsToFloat(v[i * 8 + 1]);
-            float z = Float.intBitsToFloat(v[i * 8 + 2]);
-            switch (d) {
-                case DOWN -> { if (y > eps) onBorder = false; }
-                case UP -> { if (y < 1.0f - eps) onBorder = false; }
-                case WEST -> { if (x > eps) onBorder = false; }
-                case EAST -> { if (x < 1.0f - eps) onBorder = false; }
-                case NORTH -> { if (z > eps) onBorder = false; }
-                case SOUTH -> { if (z < 1.0f - eps) onBorder = false; }
-            }
-            if (!onBorder) break;
+            px[i] = Float.intBitsToFloat(v[i * 8]);
+            py[i] = Float.intBitsToFloat(v[i * 8 + 1]);
+            pz[i] = Float.intBitsToFloat(v[i * 8 + 2]);
         }
 
-        if (onBorder) {
-            out.get(d).add(q);
+        // Extract first vertex normal for direction check (matches Forge using norm[0])
+        int packedN = v[7]; // first vertex, offset 7 = normal
+        float nx = ((byte)(packedN & 0xFF)) / 127.0f;
+        float ny = ((byte)((packedN >> 8) & 0xFF)) / 127.0f;
+        float nz = ((byte)((packedN >> 16) & 0xFF)) / 127.0f;
+
+        Direction cull = null;
+
+        // Forge checks: all 4 positions equal to border value AND normal points outward
+        if (mthEqual(px[0], 0) && mthEqual(px[1], 0) && mthEqual(px[2], 0) && mthEqual(px[3], 0) && nx < 0) {
+            cull = Direction.WEST;
+        } else if (mthEqual(px[0], 1) && mthEqual(px[1], 1) && mthEqual(px[2], 1) && mthEqual(px[3], 1) && nx > 0) {
+            cull = Direction.EAST;
+        } else if (mthEqual(pz[0], 0) && mthEqual(pz[1], 0) && mthEqual(pz[2], 0) && mthEqual(pz[3], 0) && nz < 0) {
+            cull = Direction.NORTH;
+        } else if (mthEqual(pz[0], 1) && mthEqual(pz[1], 1) && mthEqual(pz[2], 1) && mthEqual(pz[3], 1) && nz > 0) {
+            cull = Direction.SOUTH;
+        } else if (mthEqual(py[0], 0) && mthEqual(py[1], 0) && mthEqual(py[2], 0) && mthEqual(py[3], 0) && ny < 0) {
+            cull = Direction.DOWN;
+        } else if (mthEqual(py[0], 1) && mthEqual(py[1], 1) && mthEqual(py[2], 1) && mthEqual(py[3], 1) && ny > 0) {
+            cull = Direction.UP;
+        }
+
+        if (cull != null) {
+            out.get(cull).add(q);
         } else {
             out.get(null).add(q);
         }
+    }
+
+    private static boolean mthEqual(float a, float b) {
+        return Math.abs(a - b) < 1e-5f;
     }
 
     private static void putVertex(int[] data, int v, Vector4f pos, float[] uv, int packedNormal) {

@@ -127,12 +127,12 @@ final class HbmLoaderAdapters {
             HashMap<String, BakedModel> bakedParts = new HashMap<>();
             TextureAtlasSprite particle = spriteGetter.apply(new Material(TextureAtlas.LOCATION_BLOCKS, textures.getOrDefault("particle", MissingTextureAtlasSprite.getLocation())));
 
-            com.mojang.math.Transformation pivotedRot = ModelStateTransforms.resolveAndPivot(modelState);
-            org.joml.Matrix4f combinedM = new org.joml.Matrix4f(pivotedRot.getMatrix());
-            if (rootTransform != null && !rootTransform.equals(com.mojang.math.Transformation.identity())) {
-                combinedM.mul(new org.joml.Matrix4f(rootTransform.getMatrix()));
-            }
-            com.mojang.math.Transformation combined = new com.mojang.math.Transformation(combinedM);
+            // On Forge, AbstractObjPartModelLoader bakes parts with IDENTITY modelState
+            // (the BakedModel handles facing rotation at runtime via transformQuadsByFacing).
+            // We only apply rootTransform here, with blockCenterToCorner for proper centering.
+            com.mojang.math.Transformation combined = ModelStateTransforms.isIdentity(rootTransform)
+                    ? com.mojang.math.Transformation.identity()
+                    : ModelStateTransforms.blockCenterToCorner(rootTransform);
 
             ObjQuadBaker.ObjQuadBakerState.MODEL = data;
             try {
@@ -197,12 +197,11 @@ final class HbmLoaderAdapters {
             HashMap<String, BakedModel> bakedParts = new HashMap<>();
             TextureAtlasSprite particle = spriteGetter.apply(new Material(TextureAtlas.LOCATION_BLOCKS, textures.getOrDefault("particle", MissingTextureAtlasSprite.getLocation())));
 
-            com.mojang.math.Transformation pivotedRot = ModelStateTransforms.resolveAndPivot(modelState);
-            org.joml.Matrix4f combinedM = new org.joml.Matrix4f(pivotedRot.getMatrix());
-            if (rootTransform != null && !rootTransform.equals(com.mojang.math.Transformation.identity())) {
-                combinedM.mul(new org.joml.Matrix4f(rootTransform.getMatrix()));
-            }
-            com.mojang.math.Transformation combined = new com.mojang.math.Transformation(combinedM);
+            // On Forge, AbstractObjPartModelLoader bakes parts with IDENTITY modelState.
+            // Only rootTransform is applied (with blockCenterToCorner for centering).
+            com.mojang.math.Transformation combined = ModelStateTransforms.isIdentity(rootTransform)
+                    ? com.mojang.math.Transformation.identity()
+                    : ModelStateTransforms.blockCenterToCorner(rootTransform);
 
             for (var e : partToObj.entrySet()) {
                 ObjModelData data = ObjModelData.load(rm, e.getValue());
