@@ -83,6 +83,7 @@ public abstract class NukeBaseBlock extends Block implements EntityBlock, IBomb 
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof net.minecraft.world.MenuProvider menuProvider) {
                 player.openMenu(menuProvider);
+                
             }
             return InteractionResult.CONSUME;
         }

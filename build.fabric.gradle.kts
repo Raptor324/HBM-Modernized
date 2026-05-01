@@ -99,6 +99,10 @@ dependencies {
 	modImplementation("curse.maven:sodium-394468:6260639")
 	modImplementation("curse.maven:irisshaders-455508:6258195")
 
+	modImplementation("org.anarres:jcpp:1.4.14") 
+	modImplementation("io.github.douira:glsl-transformer:2.0.0-pre13")
+	modImplementation("org.antlr:antlr4-runtime:4.13.1")
+
 	// Fabric compat: Chunk radiation via CCA (bundled)
 	modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-base:5.2.3")
 	modImplementation("dev.onyxstudios.cardinal-components-api:cardinal-components-chunk:5.2.3")

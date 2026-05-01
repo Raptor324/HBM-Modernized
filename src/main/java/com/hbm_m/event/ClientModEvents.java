@@ -79,11 +79,6 @@ public class ClientModEvents {
             }
         });
 
-        ClientTickEvent.CLIENT_PRE.register(client -> {
-            // Очистка старого кеша culling в начале тика
-            OcclusionCullingHelper.onFrameStart();
-        });
-
         ClientTickEvent.CLIENT_POST.register(client -> {
             // Обработка задержки анимации дверей (перед переключением на baked model)
             DoorAnimationDelayHelper.processQueue();
@@ -121,6 +116,10 @@ public class ClientModEvents {
             // dispatches). Saves ~17% on dense multiblock scenes by collapsing
             // 11×N redundant 6-block lookups down to N per frame.
             LightSampleCache.onFrameStart();
+            // Кэш окклюжена тоже должен жить кадр, а не тик (иначе при FPS>TPS
+            // одна и та же видимость переиспользуется несколько рендер-кадров
+            // и даёт заметный flicker на BER-only моделях).
+            OcclusionCullingHelper.onFrameStart();
         });
 
         WorldRenderEvents.LAST.register(context -> {
@@ -168,6 +167,10 @@ public class ClientModEvents {
             // dispatches). Saves ~17% on dense multiblock scenes by collapsing
             // 11×N redundant 6-block lookups down to N per frame.
             LightSampleCache.onFrameStart();
+            // Кэш окклюжена тоже должен жить кадр, а не тик (иначе при FPS>TPS
+            // одна и та же видимость переиспользуется несколько рендер-кадров
+            // и даёт заметный flicker на BER-only моделях).
+            OcclusionCullingHelper.onFrameStart();
         } else if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
             // Safety net for the IrisRenderBatch persistent-shadow path. The normal
             // teardown happens inside the first main-pass begin() that detects the

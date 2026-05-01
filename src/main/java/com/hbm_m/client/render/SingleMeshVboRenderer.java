@@ -255,7 +255,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     private void renderToBufferSource(PoseStack poseStack, int packedLight, List<BakedQuad> quads, MultiBufferSource bufferSource) {
         if (quads == null || quads.isEmpty() || bufferSource == null) return;
-        var consumer = bufferSource.getBuffer(RenderType.solid());
+        var consumer = bufferSource.getBuffer(RenderType.cutout());
         var pose = poseStack.last();
         for (BakedQuad quad : quads) {
             //? if forge {

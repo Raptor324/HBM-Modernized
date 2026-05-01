@@ -100,28 +100,22 @@ public final class OcclusionCullingHelper {
         }
 
         // Этап 1: дешёвая проверка центра.
-        if (!isRayOccluded(cameraPos, centerX, centerY, centerZ, level)) {
+        if (!isRayOccluded(cameraPos, centerX, centerY, centerZ, level, renderBounds)) {
             updateCache(posLong, cached, true);
             return true;
         }
 
         // Этап 2: если центр закрыт, обходим 8 углов AABB. Любой видимый
         // угол означает, что часть структуры на экране, и культить нельзя.
-        // Раньше fallback срабатывал ТОЛЬКО при distSq < 1024 (32 блока),
-        // из-за чего дальние мультиблоки полностью исчезали как только их
-        // контроллер заслонялся - даже когда вся башня/сборочная была в
-        // прямой видимости. Лимит снят: 8 raycast'ов на BE при промахе
-        // центра кэшируются на кадр (см. occlusionCache), для 400 машин
-        // это ~50µs суммарно даже в worst case.
         boolean visible =
-                !isRayOccluded(cameraPos, renderBounds.minX, renderBounds.minY, renderBounds.minZ, level) ||
-                !isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.minY, renderBounds.minZ, level) ||
-                !isRayOccluded(cameraPos, renderBounds.minX, renderBounds.maxY, renderBounds.minZ, level) ||
-                !isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.maxY, renderBounds.minZ, level) ||
-                !isRayOccluded(cameraPos, renderBounds.minX, renderBounds.minY, renderBounds.maxZ, level) ||
-                !isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.minY, renderBounds.maxZ, level) ||
-                !isRayOccluded(cameraPos, renderBounds.minX, renderBounds.maxY, renderBounds.maxZ, level) ||
-                !isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.maxY, renderBounds.maxZ, level);
+                !isRayOccluded(cameraPos, renderBounds.minX, renderBounds.minY, renderBounds.minZ, level, renderBounds) ||
+                !isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.minY, renderBounds.minZ, level, renderBounds) ||
+                !isRayOccluded(cameraPos, renderBounds.minX, renderBounds.maxY, renderBounds.minZ, level, renderBounds) ||
+                !isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.maxY, renderBounds.minZ, level, renderBounds) ||
+                !isRayOccluded(cameraPos, renderBounds.minX, renderBounds.minY, renderBounds.maxZ, level, renderBounds) ||
+                !isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.minY, renderBounds.maxZ, level, renderBounds) ||
+                !isRayOccluded(cameraPos, renderBounds.minX, renderBounds.maxY, renderBounds.maxZ, level, renderBounds) ||
+                !isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.maxY, renderBounds.maxZ, level, renderBounds);
 
         updateCache(posLong, cached, visible);
         return visible;
@@ -140,7 +134,7 @@ public final class OcclusionCullingHelper {
      * Идет от камеры к цели по сетке блоков.
      * Возвращает TRUE, если луч ПЕРЕКРЫТ твердым блоком.
      */
-    private static boolean isRayOccluded(Vec3 start, double endX, double endY, double endZ, Level level) {
+    private static boolean isRayOccluded(Vec3 start, double endX, double endY, double endZ, Level level, AABB renderBounds) {
         double startX = start.x;
         double startY = start.y;
         double startZ = start.z;
@@ -199,7 +193,15 @@ public final class OcclusionCullingHelper {
             // Исключаем стартовый блок (где камера), чтобы не клипаться головой
             if (currentX != Mth.floor(startX) || currentY != Mth.floor(startY) || currentZ != Mth.floor(startZ)) {
                 mutablePos.set(currentX, currentY, currentZ);
-                if (isOccluder(level, mutablePos)) {
+                
+                // Игнорируем блоки, которые пересекаются с AABB самой структуры!
+                // Иначе мультиблок (например, его dummy-блоки) будет перекрывать сам себя.
+                if (renderBounds != null && 
+                    currentX + 1 > renderBounds.minX && currentX < renderBounds.maxX &&
+                    currentY + 1 > renderBounds.minY && currentY < renderBounds.maxY &&
+                    currentZ + 1 > renderBounds.minZ && currentZ < renderBounds.maxZ) {
+                    // Это блок самой структуры (или внутри её AABB), пропускаем
+                } else if (isOccluder(level, mutablePos)) {
                     return true; // Нашли стену!
                 }
             }

@@ -80,6 +80,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 //? if fabric {
+import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
@@ -130,6 +131,7 @@ public class ClientSetup {
         //? if fabric {
         com.hbm_m.client.model.loading.ForgeLikeModelLoadingFabric.init();
         registerFabricShaders();
+        registerFabricRenderLayers();
         //?}
 
         // Экраны меню - vanilla API, одинаково работает на обоих лоадерах.
@@ -162,6 +164,14 @@ public class ClientSetup {
 
     //? if fabric {
     private static volatile boolean fabricShadersLoaded = false;
+
+    private static void registerFabricRenderLayers() {
+        BlockRenderLayerMap.INSTANCE.putBlocks(RenderType.cutout(),
+                ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get(),
+                ModBlocks.MACHINE_ASSEMBLER.get(),
+                ModBlocks.CHEMICAL_PLANT.get(),
+                ModBlocks.CRYSTALLIZER.get());
+    }
 
     private static void registerFabricShaders() {
         ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
@@ -197,7 +207,32 @@ public class ClientSetup {
                 .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
                 .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
                 .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
-                .put("InstBrightness", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1))
+                .put("InstBboxMin", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstBboxSize", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstLightC01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC45", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightC67", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .build()
+        );
+
+        VertexFormat blockLitInstancedSlicedFormat = new VertexFormat(
+            ImmutableMap.<String, VertexFormatElement>builder()
+                .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
+                .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
+                .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
+                .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstBboxMin", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstBboxSize", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                .put("InstLightS0C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS0C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS1C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS1C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS2C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS2C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS3C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstLightS3C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .build()
         );
 
@@ -205,6 +240,13 @@ public class ClientSetup {
         ResourceLocation virtualInstancedVsh = new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced.vsh");
         ResourceLocation virtualSlicedVsh = new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_sliced.vsh");
         ResourceLocation virtualInstancedSlicedVsh = new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced_sliced.vsh");
+        net.minecraft.server.packs.resources.ResourceProvider hbmCoreShaderProvider = location -> {
+            if ("minecraft".equals(location.getNamespace()) && location.getPath().startsWith("shaders/core/block_lit")) {
+                ResourceLocation modLocation = new ResourceLocation(MainRegistry.MOD_ID, location.getPath());
+                return manager.getResource(modLocation);
+            }
+            return manager.getResource(location);
+        };
 
         com.hbm_m.client.render.shader.modification.ShaderModification instancingDefine =
             com.hbm_m.client.render.shader.modification.ShaderModification.builder()
@@ -221,20 +263,20 @@ public class ClientSetup {
 
         net.minecraft.server.packs.resources.ResourceProvider instancedProvider =
             com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
-                manager, virtualInstancedVsh, realVsh, instancingDefine);
+                hbmCoreShaderProvider, virtualInstancedVsh, realVsh, instancingDefine);
 
         net.minecraft.server.packs.resources.ResourceProvider slicedProvider =
             com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
-                manager, virtualSlicedVsh, realVsh, slicedDefine);
+                hbmCoreShaderProvider, virtualSlicedVsh, realVsh, slicedDefine);
 
         net.minecraft.server.packs.resources.ResourceProvider instancedSlicedProvider =
             com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
-                manager, virtualInstancedSlicedVsh, realVsh, instancedSlicedDefine);
+                hbmCoreShaderProvider, virtualInstancedSlicedVsh, realVsh, instancedSlicedDefine);
 
         try {
             ShaderInstance simpleShader = new ShaderInstance(
-                manager,
-                MainRegistry.MOD_ID + ":block_lit_simple",
+                hbmCoreShaderProvider,
+                "block_lit_simple",
                 blockLitSimpleFormat
             );
             ModShaders.setBlockLitSimpleShader(simpleShader);
@@ -242,7 +284,7 @@ public class ClientSetup {
 
             ShaderInstance instancedShader = new ShaderInstance(
                 instancedProvider,
-                MainRegistry.MOD_ID + ":block_lit_instanced",
+                "block_lit_instanced",
                 blockLitInstancedFormat
             );
             ModShaders.setBlockLitInstancedShader(instancedShader);
@@ -250,7 +292,7 @@ public class ClientSetup {
 
             ShaderInstance slicedShader = new ShaderInstance(
                 slicedProvider,
-                MainRegistry.MOD_ID + ":block_lit_simple_sliced",
+                "block_lit_simple_sliced",
                 blockLitSimpleFormat
             );
             ModShaders.setBlockLitSimpleSlicedShader(slicedShader);
@@ -258,8 +300,8 @@ public class ClientSetup {
 
             ShaderInstance instancedSlicedShader = new ShaderInstance(
                 instancedSlicedProvider,
-                MainRegistry.MOD_ID + ":block_lit_instanced_sliced",
-                blockLitInstancedFormat
+                "block_lit_instanced_sliced",
+                blockLitInstancedSlicedFormat
             );
             ModShaders.setBlockLitInstancedSlicedShader(instancedSlicedShader);
             MainRegistry.LOGGER.info("Successfully registered block_lit_instanced_sliced shader (Fabric)");

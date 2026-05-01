@@ -13,6 +13,7 @@ import com.google.gson.JsonObject;
 import com.hbm_m.client.model.DoorBakedModel;
 import com.hbm_m.client.model.HeatingOvenBakedModel;
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
+import com.hbm_m.client.model.MachineAssemblerBakedModel;
 import com.hbm_m.client.model.MachineBatterySocketBakedModel;
 import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
 import com.hbm_m.client.model.MachineFluidTankBakedModel;
@@ -37,6 +38,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.GsonHelper;
+import org.joml.Vector3f;
 
 @Environment(EnvType.CLIENT)
 final class HbmLoaderAdapters {
@@ -51,8 +53,15 @@ final class HbmLoaderAdapters {
         com.mojang.math.Transformation rootTransform = JsonModelTransforms.parseRootTransform(json.getAsJsonObject("transform"));
         ItemTransforms transforms = JsonModelTransforms.parseItemTransforms(json.get("display"), gson);
         Map<String, ResourceLocation> textures = parseTextures(json);
+        JsonObject headTransform = json.has("head_transform") && json.get("head_transform").isJsonObject()
+                ? json.getAsJsonObject("head_transform")
+                : null;
+        Vector3f headRestOffset = parseVector3(headTransform, "translation", new Vector3f(0.0F, 0.8F, 0.0F));
+        float headTravelDistance = headTransform != null
+                ? GsonHelper.getAsFloat(headTransform, "travel", 0.8F)
+                : 0.8F;
 
-        return new MultiObjUnbakedModel(id, Map.of("Base", base, "Head", head), flipV, automaticCulling, rootTransform, textures, transforms, rm, parts -> new PressBakedModel(parts, transforms, new org.joml.Vector3f(0, 0, 0), 0.8f));
+        return new MultiObjUnbakedModel(id, Map.of("Base", base, "Head", head), flipV, automaticCulling, rootTransform, textures, transforms, rm, parts -> new PressBakedModel(parts, transforms, headRestOffset, headTravelDistance));
     }
 
     static ForgeLikeUnbakedModel heatingOven(ResourceLocation id, JsonObject json, ResourceManager rm, Gson gson) {
@@ -91,10 +100,25 @@ final class HbmLoaderAdapters {
     }
 
     static ForgeLikeUnbakedModel machineAssembler(ResourceLocation id, JsonObject json, ResourceManager rm, Gson gson) {
-        if (json.has("model")) return ForgeObjUnbakedModel.fromJson(id, json, rm, gson);
-        MainRegistry.LOGGER.warn("machine_assembler_loader not yet fully implemented on Fabric for {}", id);
-        return null;
+        JsonObject parts = GsonHelper.getAsJsonObject(json, "parts");
+        Map<String, PartObjDef> partDefs = new java.util.LinkedHashMap<>();
+        for (var entry : parts.entrySet()) {
+            JsonObject partJson = entry.getValue().getAsJsonObject();
+            ResourceLocation model = ResourceLocation.tryParse(GsonHelper.getAsString(partJson, "model"));
+            ResourceLocation texture = ResourceLocation.tryParse(GsonHelper.getAsString(partJson, "texture"));
+            partDefs.put(entry.getKey(), new PartObjDef(model, texture));
+        }
+
+        boolean flipV = GsonHelper.getAsBoolean(json, "flip_v", true);
+        boolean automaticCulling = GsonHelper.getAsBoolean(json, "automatic_culling", true);
+        com.mojang.math.Transformation rootTransform = JsonModelTransforms.parseRootTransform(json.getAsJsonObject("transform"));
+        ItemTransforms transforms = JsonModelTransforms.parseItemTransforms(json.get("display"), gson);
+        Map<String, ResourceLocation> textures = parseTextures(json);
+        return new PerPartObjUnbakedModel(id, partDefs, flipV, automaticCulling, rootTransform, textures, transforms, rm,
+                partsMap -> new MachineAssemblerBakedModel(partsMap, transforms));
     }
+
+    private record PartObjDef(ResourceLocation model, ResourceLocation texture) {}
 
     private interface MultipartFactory<T extends BakedModel> {
         T create(HashMap<String, BakedModel> bakedParts, ItemTransforms transforms, ResourceLocation modelLocation);
@@ -226,6 +250,53 @@ final class HbmLoaderAdapters {
         }
     }
 
+    private static final class PerPartObjUnbakedModel implements ForgeLikeUnbakedModel {
+        private final ResourceLocation id; private final Map<String, PartObjDef> partDefs; private final boolean flipV; private final boolean automaticCulling; private final com.mojang.math.Transformation rootTransform; private final Map<String, ResourceLocation> textures; private final ItemTransforms transforms; private final ResourceManager rm; private final Function<HashMap<String, BakedModel>, BakedModel> factory;
+
+        private PerPartObjUnbakedModel(ResourceLocation id, Map<String, PartObjDef> partDefs, boolean flipV, boolean automaticCulling, com.mojang.math.Transformation rootTransform, Map<String, ResourceLocation> textures, ItemTransforms transforms, ResourceManager rm, Function<HashMap<String, BakedModel>, BakedModel> factory) {
+            this.id = id; this.partDefs = partDefs; this.flipV = flipV; this.automaticCulling = automaticCulling; this.rootTransform = rootTransform; this.textures = textures; this.transforms = transforms; this.rm = rm; this.factory = factory;
+        }
+
+        @Override public Map<String, ResourceLocation> textures() { return textures; }
+        @Override public java.util.Collection<ResourceLocation> getDependencies() { return List.of(); }
+        @Override public void resolveParents(Function<ResourceLocation, UnbakedModel> modelGetter) {}
+
+        @Override
+        public BakedModel bake(ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ResourceLocation modelLocation) {
+            HashMap<String, BakedModel> bakedParts = new HashMap<>();
+            TextureAtlasSprite particle = spriteGetter.apply(new Material(TextureAtlas.LOCATION_BLOCKS, textures.getOrDefault("particle", MissingTextureAtlasSprite.getLocation())));
+            com.mojang.math.Transformation combined = ModelStateTransforms.isIdentity(rootTransform)
+                    ? com.mojang.math.Transformation.identity()
+                    : ModelStateTransforms.blockCenterToCorner(rootTransform);
+
+            for (var e : partDefs.entrySet()) {
+                PartObjDef def = e.getValue();
+                ObjModelData data = ObjModelData.load(rm, def.model());
+                ObjQuadBaker.ObjQuadBakerState.MODEL = data;
+                try {
+                    Map<Direction, List<BakedQuad>> quads = new HashMap<>();
+                    for (Direction d : Direction.values()) quads.put(d, new java.util.ArrayList<>());
+                    quads.put(null, new java.util.ArrayList<>());
+
+                    ResourceLocation partTexture = def.texture() != null
+                            ? def.texture()
+                            : textures.getOrDefault("default", textures.getOrDefault("particle", MissingTextureAtlasSprite.getLocation()));
+                    TextureAtlasSprite sprite = spriteGetter.apply(new Material(TextureAtlas.LOCATION_BLOCKS, partTexture));
+                    if (sprite == null) sprite = particle;
+
+                    for (ObjModelData.Face f : data.faces()) {
+                        List<BakedQuad> fQuads = ObjQuadBaker.bakeFaceToQuads(f, sprite, flipV, combined, true);
+                        for (BakedQuad q : fQuads) ObjQuadBaker.addQuadWithCulling(q, quads, automaticCulling);
+                    }
+                    bakedParts.put(e.getKey(), new ObjBakedModel(quads, particle, true, false, ItemTransforms.NO_TRANSFORMS, ItemOverrides.EMPTY));
+                } finally {
+                    ObjQuadBaker.ObjQuadBakerState.MODEL = null;
+                }
+            }
+            return ModelDebugDumper.wrapIfEnabled(modelLocation, factory.apply(bakedParts));
+        }
+    }
+
     private static Map<String, ResourceLocation> parseTextures(JsonObject json) {
         if (!json.has("textures")) return Map.of();
         JsonObject t = json.getAsJsonObject("textures");
@@ -236,6 +307,17 @@ final class HbmLoaderAdapters {
             if (rl != null) out.put(e.getKey(), rl);
         }
         return out;
+    }
+
+    private static Vector3f parseVector3(JsonObject json, String key, Vector3f fallback) {
+        if (json == null || !json.has(key) || !json.get(key).isJsonArray()) {
+            return new Vector3f(fallback);
+        }
+        var arr = json.getAsJsonArray(key);
+        if (arr.size() != 3) {
+            return new Vector3f(fallback);
+        }
+        return new Vector3f(arr.get(0).getAsFloat(), arr.get(1).getAsFloat(), arr.get(2).getAsFloat());
     }
 }
 //?}

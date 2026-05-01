@@ -2,6 +2,7 @@ package com.hbm_m.block.bomb;
 
 import java.util.Map;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.bomb.IBomb;
@@ -122,7 +123,7 @@ public class NukeFatManBlock extends BaseEntityBlock implements IMultiblockContr
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide && level.getBlockEntity(pos) instanceof MenuProvider provider) {
             if (player instanceof ServerPlayer sp) {
-                sp.openMenu(provider);
+                MenuRegistry.openExtendedMenu((ServerPlayer) sp, provider, buf -> buf.writeBlockPos(pos));
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

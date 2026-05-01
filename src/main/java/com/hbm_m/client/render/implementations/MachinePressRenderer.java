@@ -119,9 +119,6 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
             instancedHead.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource);
             poseStack.popPose();
         } else {
-            if (instancedHead != null && !instancedHead.isInitialized()) {
-                MainRegistry.LOGGER.warn("MachinePressRenderer: instancedHead exists but NOT initialized, using fallback");
-            }
             // Under Iris/Oculus, the per-part extended-shader path is extremely sensitive to
             // apply()/clear() frequency. When instancing is disabled, we open an IrisRenderBatch
             // session so the head draw shares one apply()/clear() with other parts in this pass.
@@ -254,11 +251,18 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
         }
         try {
             BakedModel headModel = model.getPart(HEAD_PART);
+            instancedHead = null;
             if (headModel != null) {
                 var headData = ObjModelVboBuilder.buildSinglePart(headModel, HEAD_PART);
                 if (headData != null) {
                     var headQuads = GlobalMeshCache.getOrCompile("press_head", headModel);
-                    instancedHead = new InstancedStaticPartRenderer(headData, headQuads);
+                    InstancedStaticPartRenderer candidate = new InstancedStaticPartRenderer(headData, headQuads);
+                    if (candidate.isInitialized()) {
+                        instancedHead = candidate;
+                    } else {
+                        MainRegistry.LOGGER.warn("MachinePressRenderer: instancedHead couldn't initialize, using fallback");
+                        candidate.cleanup();
+                    }
                 }
             }
         } catch (Exception e) {

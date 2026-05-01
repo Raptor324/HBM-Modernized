@@ -102,8 +102,14 @@ public final class ObjModelData {
                 line = line.trim();
                 if (line.isEmpty() || line.startsWith("#")) continue;
 
-                if (line.startsWith("o ") || line.startsWith("g ")) {
+                if (line.startsWith("o ")) {
                     currentObject = line.substring(2).trim();
+                    continue;
+                }
+                if (line.startsWith("g ")) {
+                    if (currentObject == null || currentObject.isBlank()) {
+                        currentObject = line.substring(2).trim();
+                    }
                     continue;
                 }
                 if (line.startsWith("usemtl ")) {

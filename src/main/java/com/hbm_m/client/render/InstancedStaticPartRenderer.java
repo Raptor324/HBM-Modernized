@@ -12,6 +12,7 @@ import org.joml.Quaternionf;
 import org.joml.Vector3f;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
@@ -219,6 +220,18 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             initialized = false;
             return;
         }
+        if (!RenderSystem.isOnRenderThread()) {
+            MainRegistry.LOGGER.warn("InstancedStaticPartRenderer: Skipping initialization because this is not render thread.");
+            data.close();
+            initialized = false;
+            return;
+        }
+        if (!supportsInstancedAttributeDivisor()) {
+            MainRegistry.LOGGER.warn("InstancedStaticPartRenderer: No active GL33 context or function unavailable. Falling back to non-instanced render path.");
+            data.close();
+            initialized = false;
+            return;
+        }
 
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
@@ -345,6 +358,15 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         } finally {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             GL30.glBindVertexArray(previousVao);
+        }
+    }
+
+    private static boolean supportsInstancedAttributeDivisor() {
+        try {
+            var caps = GL.getCapabilities();
+            return caps != null && caps.OpenGL33;
+        } catch (Throwable ignored) {
+            return false;
         }
     }
 
