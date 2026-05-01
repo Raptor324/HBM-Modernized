@@ -191,6 +191,11 @@ public class ModClothConfig implements ConfigData {
 
     @Category("rendering")
     @Gui.Tooltip
+    @BoundedDiscrete(min = 1, max = 20)
+    public int modelStaticRenderDistance = 8;
+
+    @Category("rendering")
+    @Gui.Tooltip
     public boolean enableOcclusionCulling = true;
 
     @Category("rendering")

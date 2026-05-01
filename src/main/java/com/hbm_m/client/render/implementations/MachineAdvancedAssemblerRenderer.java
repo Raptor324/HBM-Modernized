@@ -22,6 +22,8 @@ import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.PartGeometry;
+import com.hbm_m.client.render.RenderDistanceHelper;
+import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -210,11 +212,13 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         // super.render() runs, so this only stays true when culling passes.
         visibleThisFrame = true;
 
-        // Старый baked-путь под шейдерами + машина спит → всё в BakedModel, BER не рендерит.
-        // Под новым VBO путём (useVboGeometry==true) baked пуст и нам нужно рендерить статику самим.
         if (!useVboGeometry && !renderActive) {
             return;
         }
+
+        float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        if (staticFade < 0) return;
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
 
         int blockLight = LightTexture.block(packedLight);
         int skyLight = LightTexture.sky(packedLight);
@@ -286,7 +290,12 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         //      Without this, machines either fail to cast shadows OR duplicate
         //      themselves "in the sky" at shadow-camera coordinates.
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-        boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
+        //? if forge {
+        /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
+        *///?}
+        //? if fabric {
+        boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+        //?}
         if (useIrisBatch) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                 // batch == null means Iris couldn't hand out a usable shader; fall
@@ -372,23 +381,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
      *  Проверка, нужно ли пропустить фрейм на основе дистанции
      */
     private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
-        var minecraft = Minecraft.getInstance();
-        var camera = minecraft.gameRenderer.getMainCamera();
-        var cameraPos = camera.getPosition();
-        
-        // Вычисляем квадрат дистанции
-        double dx = blockPos.getX() + 0.5 - cameraPos.x;
-        double dy = blockPos.getY() + 0.5 - cameraPos.y;
-        double dz = blockPos.getZ() + 0.5 - cameraPos.z;
-        double distanceSquared = dx * dx + dy * dy + dz * dz;
-        
-        // Пороговое значение из конфига (в чанках -> блоки -> квадрат)
-        int thresholdChunks = ModClothConfig.get().modelUpdateDistance;
-        double thresholdBlocks = thresholdChunks * 16.0;
-        double thresholdSquared = thresholdBlocks * thresholdBlocks;
-        
-        // Если дальше порога - отключаем анимацию
-        return distanceSquared > thresholdSquared;
+        return RenderDistanceHelper.shouldSkipAnimation(blockPos);
     }
 
     /**
@@ -607,5 +600,5 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         return !ShaderCompatibilityDetector.isRenderingShadowPass();
     }
 
-    @Override public int getViewDistance() { return 128; }
+    @Override public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }

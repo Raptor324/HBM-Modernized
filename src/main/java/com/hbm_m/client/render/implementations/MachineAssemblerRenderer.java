@@ -12,6 +12,8 @@ import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.RenderDistanceHelper;
+import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -150,11 +152,13 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         // super.render() runs, so this only stays true when culling passes.
         visibleThisFrame = true;
 
+        float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        if (staticFade < 0) return;
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
+
         // Источник статической геометрии: VBO/Iris путь vs baked-model путь.
         boolean useVboGeometry = ShaderCompatibilityDetector.useVboGeometry();
         if (useVboGeometry) {
-            // Шейдеров нет ИЛИ включён useIrisExtendedShaderPath:
-            // полный VBO/инстансинг рендер, baked-model вернул пустые quad'ы.
             renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource);
         } else if (renderActive && be.isCrafting()) {
             // Шейдеры + работает: baked рисует Base, BER дорисовывает подвижные части через putBulkData.
@@ -212,7 +216,15 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         // See MachineAdvancedAssemblerRenderer.renderWithVBO and IrisRenderBatch
         // for the full rationale.
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-        boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
+        //? if forge {
+        /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || shadowPass);
+        *///?}
+        //? if fabric {
+        // On Fabric, always open an IrisRenderBatch when Iris VBO path is
+        // active. addInstance() draws eagerly (no deferred flush), so the
+        // batch amortizes apply()/clear() across all parts of one machine.
+        boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+        //?}
         if (useIrisBatch) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                 renderAssemblerPartsInternal(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useBatching);
@@ -467,19 +479,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
     // ==================== DISTANCE CHECK ====================
 
     private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
-        var minecraft = Minecraft.getInstance();
-        var camera = minecraft.gameRenderer.getMainCamera();
-        var cameraPos = camera.getPosition();
-
-        double dx = blockPos.getX() + 0.5 - cameraPos.x;
-        double dy = blockPos.getY() + 0.5 - cameraPos.y;
-        double dz = blockPos.getZ() + 0.5 - cameraPos.z;
-        double distanceSquared = dx * dx + dy * dy + dz * dz;
-
-        int thresholdChunks = ModClothConfig.get().modelUpdateDistance;
-        double thresholdBlocks = thresholdChunks * 16.0;
-
-        return distanceSquared > thresholdBlocks * thresholdBlocks;
+        return RenderDistanceHelper.shouldSkipAnimation(blockPos);
     }
 
     // ==================== INSTANCED BATCHING ====================
@@ -519,5 +519,5 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
     }
 
     @Override
-    public int getViewDistance() { return 128; }
+    public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }

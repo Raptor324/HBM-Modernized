@@ -196,30 +196,139 @@ public class ShaderCompatibilityDetector {
 //? if fabric {
 package com.hbm_m.client.render.shader;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.reflect.Method;
+
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.main.MainRegistry;
+import com.mojang.blaze3d.systems.RenderSystem;
+
+import dev.architectury.platform.Platform;
+import net.minecraft.client.Minecraft;
 
 /**
- * Fabric stub: Iris/Oculus integration is not wired yet.
- * Keep logic consistent by making shader-related checks return safe defaults.
+ * Fabric Iris/Oculus integration.
+ * Detects Iris shader state via reflection so the VBO render pipeline
+ * correctly routes draws through the Iris ExtendedShader path instead
+ * of attempting raw GL draws against a vanilla shader that Iris has
+ * replaced (which produces "GL No active program" errors).
  */
 public class ShaderCompatibilityDetector {
 
     private ShaderCompatibilityDetector() {}
 
+    private static boolean initialized = false;
+    private static Object irisApiInstance = null;
+    private static MethodHandle irisIsShaderPackInUseMH = null;
+    private static MethodHandle irisIsRenderingShadowPassMH = null;
+    private static Method irisIsShaderPackInUse = null;
+    private static Method irisIsRenderingShadowPass = null;
+
+    private static boolean lastState = false;
+    private static volatile boolean cachedShaderActive = false;
+    private static volatile boolean pendingChunkInvalidation = false;
+
+    private static void init() {
+        if (initialized) return;
+
+        if (Platform.isModLoaded("iris") || Platform.isModLoaded("oculus")) {
+            try {
+                Class<?> irisApiClass = Class.forName("net.irisshaders.iris.api.v0.IrisApi");
+                Method getInstanceMethod = irisApiClass.getMethod("getInstance");
+                irisApiInstance = getInstanceMethod.invoke(null);
+                irisIsShaderPackInUse = irisApiClass.getMethod("isShaderPackInUse");
+                irisIsRenderingShadowPass = irisApiClass.getMethod("isRenderingShadowPass");
+
+                try {
+                    MethodHandles.Lookup lookup = MethodHandles.lookup();
+                    irisIsShaderPackInUse.setAccessible(true);
+                    irisIsRenderingShadowPass.setAccessible(true);
+                    irisIsShaderPackInUseMH = lookup.unreflect(irisIsShaderPackInUse)
+                            .asType(MethodType.methodType(boolean.class, Object.class));
+                    irisIsRenderingShadowPassMH = lookup.unreflect(irisIsRenderingShadowPass)
+                            .asType(MethodType.methodType(boolean.class, Object.class));
+                } catch (Throwable mhFail) {
+                    MainRegistry.LOGGER.warn("ShaderCompatibilityDetector: MethodHandle binding failed ({}), using Method.invoke", mhFail.toString());
+                    irisIsShaderPackInUseMH = null;
+                    irisIsRenderingShadowPassMH = null;
+                }
+
+                MainRegistry.LOGGER.info("ShaderCompatibilityDetector: Iris API found and cached (MH={}).",
+                        irisIsShaderPackInUseMH != null);
+            } catch (Exception e) {
+                MainRegistry.LOGGER.error("ShaderCompatibilityDetector: Failed to cache Iris API", e);
+            }
+        }
+        initialized = true;
+    }
+
     public static boolean isExternalShaderActive() {
-        return false;
+        if (!RenderSystem.isOnRenderThread()) {
+            return cachedShaderActive;
+        }
+
+        if (!initialized) {
+            init();
+        }
+
+        if (irisApiInstance == null || (irisIsShaderPackInUseMH == null && irisIsShaderPackInUse == null)) {
+            return false;
+        }
+
+        try {
+            boolean isActive;
+            if (irisIsShaderPackInUseMH != null) {
+                isActive = (boolean) irisIsShaderPackInUseMH.invokeExact((Object) irisApiInstance);
+            } else {
+                Boolean inUse = (Boolean) irisIsShaderPackInUse.invoke(irisApiInstance);
+                isActive = inUse != null && inUse;
+            }
+
+            cachedShaderActive = isActive;
+
+            if (isActive != lastState) {
+                MainRegistry.LOGGER.info("Shader state changed: {}", isActive ? "Active" : "Inactive");
+                lastState = isActive;
+                pendingChunkInvalidation = true;
+            }
+            return isActive;
+        } catch (Throwable e) {
+            return false;
+        }
     }
 
     public static void processPendingChunkInvalidation() {
-        // no-op on Fabric for now
+        if (!pendingChunkInvalidation) return;
+        pendingChunkInvalidation = false;
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level != null && mc.levelRenderer != null) {
+            try {
+                mc.levelRenderer.allChanged();
+            } catch (Exception e) {
+                MainRegistry.LOGGER.debug("Chunk invalidation on shader change: {}", e.getMessage());
+            }
+        }
     }
 
     public static boolean isRenderingShadowPass() {
-        return false;
+        if (!initialized) init();
+        if (irisApiInstance == null) return false;
+        try {
+            if (irisIsRenderingShadowPassMH != null) {
+                return (boolean) irisIsRenderingShadowPassMH.invokeExact((Object) irisApiInstance);
+            }
+            if (irisIsRenderingShadowPass == null) return false;
+            Boolean result = (Boolean) irisIsRenderingShadowPass.invoke(irisApiInstance);
+            return result != null && result;
+        } catch (Throwable e) {
+            return false;
+        }
     }
 
     public static boolean canUseIrisExtendedShader() {
-        return false;
+        return isExternalShaderActive() && IrisExtendedShaderAccess.isReflectionAvailable();
     }
 
     public static boolean useVboGeometry() {
@@ -227,7 +336,7 @@ public class ShaderCompatibilityDetector {
     }
 
     public static boolean useNewIrisVboPath() {
-        return false;
+        return isExternalShaderActive() && ModClothConfig.useIrisExtendedShaderPath();
     }
 }
 //?}

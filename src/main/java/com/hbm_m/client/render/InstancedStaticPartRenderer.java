@@ -159,6 +159,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     private Uniform uFogColor;
     private Uniform uSampler0;
     private Uniform uBrightness;
+    private Uniform uFadeAlpha;
 
     /**
      * Iris-extended uniform locations cached against {@link #cachedShader}'s
@@ -523,26 +524,50 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                             @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
         if (!initialized) return;
 
-        if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+        //? if fabric {
+        // On Fabric, Iris draws MUST happen eagerly during block entity
+        // dispatch — not deferred to flush(). Fabric API has no
+        // AFTER_BLOCK_ENTITIES event; the flush fires at AFTER_TRANSLUCENT,
+        // by which point Iris has already moved past the block entity phase,
+        // unbound the shader program, and swapped framebuffers. Deferred
+        // flushBatchIris() at that point hits "GL No active program" and
+        // draws to screen-space instead of world-space.
+        //
+        // The BER already opens a persistent IrisRenderBatch around all
+        // parts of one machine (see renderWithVBO → useIrisBatch), so
+        // drawSingleWithIrisExtended piggybacks on that batch and the
+        // per-machine apply()/clear() cost is amortized identically to
+        // the Forge instanced path — just without the deferred flush.
+        if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             if (drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
                 return;
             }
-            // Companion mesh unavailable - fall back to Iris's own pipeline via
-            // a putBulkData call. This still casts a shadow because Iris reads
-            // from RenderType.solid()'s buffer at the end of the shadow pass.
             if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
                 VertexConsumer consumer = bufferSource.getBuffer(RenderType.solid());
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
-                    //? if forge {
-                    /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
-                    *///?} else {
                     consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
-                    //?}
                 }
             }
             return;
         }
+        //?}
+
+        //? if forge {
+        /*if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
+            if (drawSingleWithIrisExtended(poseStack, packedLight, blockPos, blockEntity)) {
+                return;
+            }
+            if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
+                VertexConsumer consumer = bufferSource.getBuffer(RenderType.solid());
+                var pose = poseStack.last();
+                for (BakedQuad quad : quadsForIris) {
+                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+                }
+            }
+            return;
+        }
+        *///?}
 
         if (instanceCount >= MAX_INSTANCES) {
             if (!overflowLogged) {
@@ -758,8 +783,19 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             return;
         }
 
-        boolean shaderActive = ShaderCompatibilityDetector.isExternalShaderActive();
-        if (shaderActive) {
+        // Use the Iris batch path only when we can actually obtain a usable
+        // ExtendedShader (Iris loaded + reflection resolved + shader pack active
+        // + config enabled). When Iris is active but the ExtendedShader path
+        // is not available (e.g. reflection failed, config disabled, or Iris
+        // version unsupported), fall through to the vanilla instanced shader
+        // which works correctly regardless of Iris presence. Without this
+        // guard, flush would call flushBatchIris → getBlockShader falls back
+        // to the vanilla block_lit_simple shader → Iris's pipeline state
+        // (framebuffer binds, program context) clashes with our draw calls →
+        // "GL No active program" / "Uniform must be a matrix type" errors
+        // and models rendered on screen instead of in the world.
+        boolean useIrisFlush = ShaderCompatibilityDetector.useNewIrisVboPath();
+        if (useIrisFlush) {
             flushBatchIris(projectionMatrix);
         } else {
             flushBatchVanilla(projectionMatrix);
@@ -798,6 +834,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         this.uFogColor = shader.getUniform("FogColor");
         this.uSampler0 = shader.getUniform("Sampler0");
         this.uBrightness = shader.getUniform("Brightness");
+        this.uFadeAlpha = shader.getUniform("FadeAlpha");
 
         // Iris-extended uniform locations are looked up lazily inside flushBatchIris
         // because the program id is only valid after shader.apply(); mark them as
@@ -823,6 +860,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             uFogColor.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
         }
         if (uSampler0 != null) uSampler0.set(0);
+        if (uFadeAlpha != null) uFadeAlpha.set(SingleMeshVboRenderer.getFadeAlpha());
     }
 
     private void flushBatchVanilla(Matrix4f projectionMatrix) {
@@ -1410,6 +1448,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         this.uFogColor = null;
         this.uSampler0 = null;
         this.uBrightness = null;
+        this.uFadeAlpha = null;
 
         RenderSystem.recordRenderCall(() -> {
             try {

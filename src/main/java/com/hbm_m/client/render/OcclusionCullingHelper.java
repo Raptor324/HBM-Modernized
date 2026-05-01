@@ -117,6 +117,23 @@ public final class OcclusionCullingHelper {
                 !isRayOccluded(cameraPos, renderBounds.minX, renderBounds.maxY, renderBounds.maxZ, level, renderBounds) ||
                 !isRayOccluded(cameraPos, renderBounds.maxX, renderBounds.maxY, renderBounds.maxZ, level, renderBounds);
 
+        // Этап 3: если все 8 углов закрыты, проверяем 6 центров граней AABB.
+        // Для коротких/плоских мультиблоков (напр. Assembly Machine 4×2×4)
+        // лучи к нижним углам часто проходят через землю, а к верхним — через
+        // потолок/рельеф. Один твёрдый блок вне AABB рядом с гранью может
+        // одновременно заблокировать 4 угла этой грани. 6 дополнительных
+        // точек на гранях делают ложно-отрицательное окклюжен значительно
+        // менее вероятным (нужно закрыть 15 лучей, а не 9).
+        if (!visible) {
+            visible =
+                !isRayOccluded(cameraPos, centerX, renderBounds.minY, centerZ, level, renderBounds) || // bottom face
+                !isRayOccluded(cameraPos, centerX, renderBounds.maxY, centerZ, level, renderBounds) || // top face
+                !isRayOccluded(cameraPos, renderBounds.minX, centerY, centerZ, level, renderBounds) || // west face
+                !isRayOccluded(cameraPos, renderBounds.maxX, centerY, centerZ, level, renderBounds) || // east face
+                !isRayOccluded(cameraPos, centerX, centerY, renderBounds.minZ, level, renderBounds) || // north face
+                !isRayOccluded(cameraPos, centerX, centerY, renderBounds.maxZ, level, renderBounds);   // south face
+        }
+
         updateCache(posLong, cached, visible);
         return visible;
     }

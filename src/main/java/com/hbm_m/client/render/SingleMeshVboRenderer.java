@@ -54,6 +54,23 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
     private IrisCompanionMesh irisCompanion;
     private boolean irisCompanionAttempted;
 
+    /**
+     * Thread-local fade alpha for distance-based dissolve. Set by BER callers
+     * via {@link #setFadeAlpha(float)} before invoking {@link #render}; the
+     * value is uploaded to the {@code FadeAlpha} shader uniform and also applied
+     * to the Iris putBulkData fallback path via vertex color modulation.
+     * Defaults to 1.0 (fully opaque) and is reset after each render call.
+     */
+    private static final ThreadLocal<Float> currentFadeAlpha = ThreadLocal.withInitial(() -> 1.0f);
+
+    public static void setFadeAlpha(float alpha) {
+        currentFadeAlpha.set(alpha);
+    }
+
+    public static float getFadeAlpha() {
+        return currentFadeAlpha.get();
+    }
+
     // Scratch for 8-corner trilinear uniform upload in the non-instanced path.
     // tmpLocalPose holds the per-BE transform stripped of both the camera view
     // rotation (baked in by GameRenderer.renderLevel) and the
@@ -277,7 +294,14 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     public void render(PoseStack poseStack, int packedLight, BlockPos blockPos,
                        @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
-        if (!shouldRenderWithCulling(blockPos, blockEntity)) return;
+        // Per-part culling removed: all current call sites (multiblock BERs)
+        // perform a single per-BlockEntity OcclusionCullingHelper.shouldRender()
+        // check with the full multiblock AABB BEFORE invoking render() on each
+        // part. The per-mesh AABB computed by worldBoundsFromMesh() is much
+        // smaller and does not cover the structure's dummy blocks, so the
+        // structure's own solid blocks register as occluders and cause the
+        // model to flicker when the camera moves. This matches the same fix
+        // already applied in InstancedStaticPartRenderer.addInstance().
 
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             // 1) Try the Iris ExtendedShader path with our companion mesh - gives correct G-buffer
@@ -443,18 +467,31 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 fogColorUniform.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
             }
 
+            var fadeAlphaUniform = shader.getUniform("FadeAlpha");
+            if (fadeAlphaUniform != null) fadeAlphaUniform.set(currentFadeAlpha.get());
+
             // Must come BEFORE apply() - apply() reads samplerMap populated here and
             // does glUseProgram + glUniform1i + glBindTexture in one shot.
             prepareBlockLitSamplers(shader);
             shader.apply();
 
+            float fade = currentFadeAlpha.get();
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
-            RenderSystem.depthMask(true);
+            RenderSystem.depthMask(fade >= 0.99f);
             RenderSystem.disableCull();
+            if (fade < 0.99f) {
+                RenderSystem.enableBlend();
+                RenderSystem.defaultBlendFunc();
+            }
 
             GL30.glBindVertexArray(vaoId);
             GL11.glDrawElements(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0);
+
+            if (fade < 0.99f) {
+                RenderSystem.disableBlend();
+                RenderSystem.depthMask(true);
+            }
 
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during VBO render", e);
