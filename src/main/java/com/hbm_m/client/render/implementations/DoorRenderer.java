@@ -22,6 +22,7 @@ import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -303,7 +304,12 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             //      the full rationale.
             boolean useBatchingNow = ModClothConfig.useInstancedBatching();
             boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-            boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatchingNow || shadowPass);
+            //? if forge {
+            /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatchingNow || shadowPass);
+            *///?}
+            //? if fabric {
+            boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+            //?}
             if (useIrisBatch) {
                 try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                     renderDoorVboParts(be, model, doorDecl, partNames, staticFramePart, doorType,
@@ -693,7 +699,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
 
     @Override
     public int getViewDistance() {
-        return 128;
+        return RenderDistanceHelper.getStaticViewDistanceBlocks();
     }
 
 

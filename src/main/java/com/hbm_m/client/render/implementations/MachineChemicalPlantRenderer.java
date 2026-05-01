@@ -17,6 +17,8 @@ import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.PartGeometry;
+import com.hbm_m.client.render.RenderDistanceHelper;
+import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -139,6 +141,10 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         if (minecraft.level == null || !OcclusionCullingHelper.shouldRender(blockPos, minecraft.level, renderBounds)) {
             return;
         }
+
+        float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        if (staticFade < 0) return;
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
 
         ChemicalPlantRecipeVisual visual = getRecipeVisual(be);
 
@@ -268,16 +274,7 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
     }
 
     private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
-        var minecraft = Minecraft.getInstance();
-        var camera = minecraft.gameRenderer.getMainCamera();
-        var cameraPos = camera.getPosition();
-        double dx = blockPos.getX() + 0.5 - cameraPos.x;
-        double dy = blockPos.getY() + 0.5 - cameraPos.y;
-        double dz = blockPos.getZ() + 0.5 - cameraPos.z;
-        double distanceSquared = dx * dx + dy * dy + dz * dz;
-        int thresholdChunks = ModClothConfig.get().modelUpdateDistance;
-        double thresholdBlocks = thresholdChunks * 16.0;
-        return distanceSquared > thresholdBlocks * thresholdBlocks;
+        return RenderDistanceHelper.shouldSkipAnimation(blockPos);
     }
 
     //? if forge {
@@ -479,5 +476,5 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
             .endVertex();
     }
 
-    @Override public int getViewDistance() { return 128; }
+    @Override public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }

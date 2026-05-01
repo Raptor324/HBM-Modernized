@@ -17,6 +17,8 @@ import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.RenderDistanceHelper;
+import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -84,6 +86,10 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
             return;
         }
 
+        float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        if (staticFade < 0) return;
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
+
         int blockLight = LightTexture.block(packedLight);
         int skyLight = LightTexture.sky(packedLight);
         int dynamicLight = LightTexture.pack(blockLight, skyLight);
@@ -122,7 +128,12 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
             // Under Iris/Oculus, the per-part extended-shader path is extremely sensitive to
             // apply()/clear() frequency. When instancing is disabled, we open an IrisRenderBatch
             // session so the head draw shares one apply()/clear() with other parts in this pass.
-            boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || inShadowPass);
+            //? if forge {
+            /*boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath() && (!useBatching || inShadowPass);
+            *///?}
+            //? if fabric {
+            boolean useIrisBatch = ShaderCompatibilityDetector.useNewIrisVboPath();
+            //?}
             if (useIrisBatch) {
                 try (IrisRenderBatch batch = IrisRenderBatch.begin(inShadowPass, RenderSystem.getProjectionMatrix())) {
                     gpuRenderer.renderAnimatedHead(poseStack, packedLight, headTransform, blockPos, blockEntity, bufferSource);
@@ -147,20 +158,7 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
     }
 
     private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
-        var minecraft = Minecraft.getInstance();
-        var camera = minecraft.gameRenderer.getMainCamera();
-        var cameraPos = camera.getPosition();
-
-        double dx = blockPos.getX() + 0.5 - cameraPos.x;
-        double dy = blockPos.getY() + 0.5 - cameraPos.y;
-        double dz = blockPos.getZ() + 0.5 - cameraPos.z;
-        double distanceSquared = dx * dx + dy * dy + dz * dz;
-
-        int thresholdChunks = ModClothConfig.get().modelUpdateDistance;
-        double thresholdBlocks = thresholdChunks * 16.0;
-        double thresholdSquared = thresholdBlocks * thresholdBlocks;
-
-        return distanceSquared > thresholdSquared;
+        return RenderDistanceHelper.shouldSkipAnimation(blockPos);
     }
 
     private void renderWorkpiece(

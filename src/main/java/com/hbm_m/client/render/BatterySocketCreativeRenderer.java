@@ -3,6 +3,7 @@ package com.hbm_m.client.render;
 import java.util.Random;
 
 import com.hbm_m.block.entity.machines.BatterySocketBlockEntity;
+import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -121,6 +122,6 @@ public class BatterySocketCreativeRenderer implements BlockEntityRenderer<Batter
 
     @Override
     public int getViewDistance() {
-        return 256;
+        return RenderDistanceHelper.getStaticViewDistanceBlocks();
     }
 }

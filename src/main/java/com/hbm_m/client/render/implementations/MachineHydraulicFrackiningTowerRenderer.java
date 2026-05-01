@@ -13,6 +13,8 @@ import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.OcclusionCullingHelper;
+import com.hbm_m.client.render.RenderDistanceHelper;
+import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -123,6 +125,10 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
             return;
         }
 
+        float staticFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        if (staticFade < 0) return;
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
+
         if (cachedModel != model || gpu == null) {
             cachedModel = model;
             gpu = new MachineHydraulicFrackiningTowerVboRenderer(model);
@@ -175,5 +181,5 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
 
     @Override public boolean shouldRenderOffScreen(MachineHydraulicFrackiningTowerBlockEntity be) { return false; }
 
-    @Override public int getViewDistance() { return 128; }
+    @Override public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }
