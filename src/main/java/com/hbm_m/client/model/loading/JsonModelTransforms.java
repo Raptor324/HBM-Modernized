@@ -88,22 +88,24 @@ final class JsonModelTransforms {
     }
 
     private static Vector3f parseOrigin(JsonObject obj) {
-        // Forge root transforms default to the block corner (0,0,0) unless an origin is specified.
-        if (!obj.has("origin")) return new Vector3f(0.0f, 0.0f, 0.0f);
+        // Forge root transforms default to "opposing-corner" (1,1,1) when origin is not specified.
+        // See: https://docs.minecraftforge.net/en/1.20.1/rendering/modelextensions/transforms/
+        if (!obj.has("origin")) return new Vector3f(1.0f, 1.0f, 1.0f);
         JsonElement e = obj.get("origin");
-        if (e == null || e.isJsonNull()) return new Vector3f(0.0f, 0.0f, 0.0f);
+        if (e == null || e.isJsonNull()) return new Vector3f(1.0f, 1.0f, 1.0f);
         if (e.isJsonPrimitive()) {
             String s = e.getAsString().toLowerCase(Locale.ROOT);
             return switch (s) {
                 case "center", "block_center" -> new Vector3f(0.5f, 0.5f, 0.5f);
                 case "corner", "block_corner" -> new Vector3f(0.0f, 0.0f, 0.0f);
-                default -> new Vector3f(0.0f, 0.0f, 0.0f);
+                case "opposing-corner", "opposing_corner" -> new Vector3f(1.0f, 1.0f, 1.0f);
+                default -> new Vector3f(1.0f, 1.0f, 1.0f);
             };
         }
         if (e.isJsonArray()) {
             return parseVec3f(e, new Vector3f(0, 0, 0));
         }
-        return new Vector3f(0.0f, 0.0f, 0.0f);
+        return new Vector3f(1.0f, 1.0f, 1.0f);
     }
 
     private static Vector3f parseScale(JsonElement e) {
