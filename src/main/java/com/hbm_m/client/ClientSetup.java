@@ -86,6 +86,7 @@ import net.fabricmc.fabric.api.client.particle.v1.ParticleFactoryRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.ColorProviderRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
 import net.fabricmc.fabric.api.client.rendering.v1.HudRenderCallback;
+import net.fabricmc.fabric.api.client.rendering.v1.CoreShaderRegistrationCallback;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.fabricmc.fabric.api.resource.ResourceManagerHelper;
 import net.minecraft.client.Minecraft;
@@ -129,6 +130,7 @@ public class ClientSetup {
 
         //? if fabric {
         com.hbm_m.client.model.loading.ForgeLikeModelLoadingFabric.init();
+        registerFabricShaders();
         //?}
 
         // Экраны меню - vanilla API, одинаково работает на обоих лоадерах.
@@ -158,6 +160,102 @@ public class ClientSetup {
         // Клиентские тэги/настройки рендера, общие для обоих.
         OcclusionCullingHelper.setTransparentBlocksTag(ModTags.Blocks.NON_OCCLUDING);
     }
+
+    //? if fabric {
+    private static void registerFabricShaders() {
+        CoreShaderRegistrationCallback.EVENT.register(context -> {
+            MainRegistry.LOGGER.info("Registering optimized shaders (Fabric)...");
+
+            VertexFormat blockLitSimpleFormat = new VertexFormat(
+                ImmutableMap.<String, VertexFormatElement>builder()
+                    .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
+                    .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
+                    .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
+                    .build()
+            );
+
+            VertexFormat blockLitInstancedFormat = new VertexFormat(
+                ImmutableMap.<String, VertexFormatElement>builder()
+                    .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
+                    .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
+                    .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
+                    .put("InstPos", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 3))
+                    .put("InstRot", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                    .put("InstBrightness", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1))
+                    .build()
+            );
+
+            ResourceLocation realVsh = new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit.vsh");
+            ResourceLocation virtualInstancedVsh = new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced.vsh");
+            ResourceLocation virtualSlicedVsh = new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_sliced.vsh");
+            ResourceLocation virtualInstancedSlicedVsh = new ResourceLocation(MainRegistry.MOD_ID, "shaders/core/block_lit_instanced_sliced.vsh");
+
+            com.hbm_m.client.render.shader.modification.ShaderModification instancingDefine =
+                com.hbm_m.client.render.shader.modification.ShaderModification.builder()
+                    .define("USE_INSTANCING");
+
+            com.hbm_m.client.render.shader.modification.ShaderModification slicedDefine =
+                com.hbm_m.client.render.shader.modification.ShaderModification.builder()
+                    .define("USE_SLICED_LIGHT");
+
+            com.hbm_m.client.render.shader.modification.ShaderModification instancedSlicedDefine =
+                com.hbm_m.client.render.shader.modification.ShaderModification.builder()
+                    .define("USE_INSTANCING")
+                    .define("USE_SLICED_LIGHT");
+
+            net.minecraft.server.packs.resources.ResourceProvider vanillaProvider =
+                Minecraft.getInstance().getResourceManager();
+
+            net.minecraft.server.packs.resources.ResourceProvider instancedProvider =
+                com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
+                    vanillaProvider, virtualInstancedVsh, realVsh, instancingDefine);
+
+            net.minecraft.server.packs.resources.ResourceProvider slicedProvider =
+                com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
+                    vanillaProvider, virtualSlicedVsh, realVsh, slicedDefine);
+
+            net.minecraft.server.packs.resources.ResourceProvider instancedSlicedProvider =
+                com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
+                    vanillaProvider, virtualInstancedSlicedVsh, realVsh, instancedSlicedDefine);
+
+            try {
+                ShaderInstance simpleShader = new ShaderInstance(
+                    vanillaProvider,
+                    MainRegistry.MOD_ID + ":block_lit_simple",
+                    blockLitSimpleFormat
+                );
+                ModShaders.setBlockLitSimpleShader(simpleShader);
+                MainRegistry.LOGGER.info("Successfully registered block_lit_simple shader (Fabric)");
+
+                ShaderInstance instancedShader = new ShaderInstance(
+                    instancedProvider,
+                    MainRegistry.MOD_ID + ":block_lit_instanced",
+                    blockLitInstancedFormat
+                );
+                ModShaders.setBlockLitInstancedShader(instancedShader);
+                MainRegistry.LOGGER.info("Successfully registered block_lit_instanced shader (Fabric)");
+
+                ShaderInstance slicedShader = new ShaderInstance(
+                    slicedProvider,
+                    MainRegistry.MOD_ID + ":block_lit_simple_sliced",
+                    blockLitSimpleFormat
+                );
+                ModShaders.setBlockLitSimpleSlicedShader(slicedShader);
+                MainRegistry.LOGGER.info("Successfully registered block_lit_simple_sliced shader (Fabric)");
+
+                ShaderInstance instancedSlicedShader = new ShaderInstance(
+                    instancedSlicedProvider,
+                    MainRegistry.MOD_ID + ":block_lit_instanced_sliced",
+                    blockLitInstancedFormat
+                );
+                ModShaders.setBlockLitInstancedSlicedShader(instancedSlicedShader);
+                MainRegistry.LOGGER.info("Successfully registered block_lit_instanced_sliced shader (Fabric)");
+            } catch (IOException e) {
+                MainRegistry.LOGGER.error("Failed to register shaders on Fabric", e);
+            }
+        });
+    }
+    //?}
 
     //? if forge {
     /*@SubscribeEvent

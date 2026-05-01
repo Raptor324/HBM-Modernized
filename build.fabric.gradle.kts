@@ -77,6 +77,9 @@ repositories {
 
 	// Compile-only Forge API to keep shared sources compiling on Fabric.
 	maven("https://maven.minecraftforge.net") { name = "Forge Maven" }
+
+	// Cloth Config (Shedaniel Maven) — resolves basic-math transitive correctly
+	maven("https://maven.shedaniel.me/") { name = "Shedaniel" }
 }
 
 dependencies {
@@ -107,8 +110,8 @@ dependencies {
 	// Fabric compat: external energy via TeamReborn Energy API (bundled)
 	modApi("teamreborn:energy:3.0.0")
 	include("teamreborn:energy:3.0.0")
-	include("curse.maven:cloth-config-348521:5729104")
-	modApi("curse.maven:cloth-config-348521:5729104")
+	include("me.shedaniel.cloth:cloth-config-fabric:${prop("deps.cloth-config")}")
+	modApi("me.shedaniel.cloth:cloth-config-fabric:${prop("deps.cloth-config")}")
 	// ---- Compile-only shims for shared (Forge-origin) sources ----
 	// These MUST NOT end up in the Fabric runtime jar.
 	// compileOnly("net.minecraftforge:forge:1.20.1-47.4.20:universal")
