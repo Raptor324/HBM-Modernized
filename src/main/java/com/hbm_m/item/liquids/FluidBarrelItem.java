@@ -2,6 +2,11 @@ package com.hbm_m.item.liquids;
 
 import java.util.List;
 
+import com.hbm_m.api.fluids.VanillaFluidEquivalence;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -48,6 +53,18 @@ public class FluidBarrelItem extends Item {
         super(properties.stacksTo(64));
     }
 
+    /**
+     * Возвращает правильную вместимость для генерации предметов:
+     * 16000 для Forge и 1296000 (16000 * 81) для Fabric.
+     */
+    public static long getPlatformCapacity() {
+        //? if fabric {
+        return CAPACITY * 81L;
+        //?} else {
+        /*return CAPACITY;
+         *///?}
+    }
+
     @Override
     public Component getName(ItemStack stack) {
         FluidStack fluid = getFluid(stack);
@@ -62,29 +79,42 @@ public class FluidBarrelItem extends Item {
     @Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
-        
+
         FluidStack fluid = getFluid(stack);
         if (fluid.isEmpty()) {
             tooltip.add(Component.literal("Empty").withStyle(ChatFormatting.GRAY));
         } else {
+            long amount = fluid.getAmount();
+            //? if fabric {
+            amount /= 81L;
+            //?}
             tooltip.add(Component.literal("Fluid: ").withStyle(ChatFormatting.GRAY)
                     .append(fluid.getName().copy().withStyle(ChatFormatting.AQUA)));
             tooltip.add(Component.literal("Amount: ").withStyle(ChatFormatting.GRAY)
-                    .append(Component.literal(fluid.getAmount() + " / " + CAPACITY + " mB").withStyle(ChatFormatting.YELLOW)));
+                    .append(Component.literal(amount + " / " + CAPACITY + " mB").withStyle(ChatFormatting.YELLOW)));
         }
     }
 
     @Override
     public boolean isBarVisible(ItemStack stack) {
         FluidStack fluid = getFluid(stack);
-        return !fluid.isEmpty() && fluid.getAmount() < CAPACITY;
+        if (fluid.isEmpty()) return false;
+        long amount = fluid.getAmount();
+        //? if fabric {
+        amount /= 81L;
+        //?}
+        return amount < CAPACITY;
     }
 
     @Override
     public int getBarWidth(ItemStack stack) {
         FluidStack fluid = getFluid(stack);
         if (fluid.isEmpty()) return 0;
-        return Math.round(13.0F * fluid.getAmount() / CAPACITY);
+        long amount = fluid.getAmount();
+        //? if fabric {
+        amount /= 81L;
+        //?}
+        return Math.round(13.0F * amount / CAPACITY);
     }
 
     @Override
@@ -103,18 +133,36 @@ public class FluidBarrelItem extends Item {
     public static FluidStack getFluid(ItemStack stack) {
         CompoundTag tag = stack.getTag();
         if (tag != null && tag.contains(NBT_FLUID)) {
-            return FluidStack.read(tag.getCompound(NBT_FLUID));
+            CompoundTag fluidTag = tag.getCompound(NBT_FLUID);
+            // Читаем напрямую по ключам, чтобы избежать проблем с разными форматами Architectury
+            Fluid f = BuiltInRegistries.FLUID.get(new ResourceLocation(fluidTag.getString("id")));
+            long amount = fluidTag.getLong("amount");
+
+            if (f != Fluids.EMPTY && amount > 0) {
+                return FluidStack.create(f, amount);
+            }
         }
         return FluidStack.empty();
     }
 
     public static void setFluid(ItemStack stack, FluidStack fluid) {
-        if (fluid.isEmpty()) {
+        if (fluid.isEmpty() || fluid.getAmount() <= 0) {
             stack.removeTagKey(NBT_FLUID);
+            // Если после удаления тега он пустой — удаляем весь CompoundTag, чтобы стакалось с чистыми бочками
+            if (stack.hasTag() && stack.getTag().isEmpty()) {
+                stack.setTag(null);
+            }
         } else {
             CompoundTag tag = stack.getOrCreateTag();
             CompoundTag fluidTag = new CompoundTag();
-            fluid.write(fluidTag);
+
+            // Нормализация: вода всегда записывается как minecraft:water, чтобы бочки стакались
+            Fluid normalized = VanillaFluidEquivalence.forVanillaContainerFill(fluid.getFluid());
+
+            fluidTag.putString("id", BuiltInRegistries.FLUID.getKey(normalized).toString());
+            // Явно используем Long, чтобы NBT-тип всегда был одинаковым (Long)
+            fluidTag.putLong("amount", fluid.getAmount());
+
             tag.put(NBT_FLUID, fluidTag);
         }
     }
@@ -267,7 +315,7 @@ public class FluidBarrelItem extends Item {
 
             @Override
             protected long getCapacity(FluidVariant variant) {
-                return CAPACITY;
+                return CAPACITY * 81L;
             }
 
             // Создаём новый ItemVariant с обновлённым NBT (не мутируем оригинал)

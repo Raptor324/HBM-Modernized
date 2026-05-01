@@ -9,11 +9,15 @@ import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 //? if fabric {
 import dev.architectury.fluid.FluidStack;
 import dev.architectury.hooks.fluid.FluidStackHooks;
+import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.item.InventoryStorage;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
+import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.world.SimpleContainer;
 //?}
 
 import com.hbm_m.item.liquids.FluidIdentifierItem;
@@ -43,7 +47,7 @@ public class FluidTank {
     }
 
     private static final List<LoadingHandler> loadingHandlers = new ArrayList<>();
-    
+
     static {
         // Infinite must be first to prevent Standard loader from consuming infinite items
         loadingHandlers.add(new FluidLoaderInfinite());
@@ -80,11 +84,6 @@ public class FluidTank {
         return this;
     }
 
-    /**
-     * Задаёт уровень заполнения бака. Тип жидкости НЕ сбрасывается при 0 —
-     * это позволяет баку «помнить» свой тип, даже когда он пуст (как в 1.7.10).
-     * Для полного сброса используй {@link #resetTank()}.
-     */
     public void fill(int amount) {
         this.fluid = Mth.clamp(amount, 0, maxFluid);
     }
@@ -104,14 +103,10 @@ public class FluidTank {
 
     public FluidTank conformWithStack(FluidStack stack) {
         this.setTankType(stack.getFluid());
-        this.withPressure(0); 
+        this.withPressure(0);
         return this;
     }
 
-    /**
-     * Валидация жидкости для этого бака (Forge branch).
-     * По умолчанию принимает всё; специальные баки (oil/gas/etc.) могут переопределить.
-     */
     //? if forge {
     /*public boolean isFluidValid(net.minecraftforge.fluids.FluidStack stack) {
         return true;
@@ -122,20 +117,16 @@ public class FluidTank {
     public int getFill() { return fluid; }
     public int getMaxFill() { return maxFluid; }
 
-    /**
-     * Тип задан игроком через идентификатор: не {@link Fluids#EMPTY} и не {@link ModFluids#NONE}.
-     * Пока false — Forge fill/drain и загрузка из бочки не подставляют тип и не принимают жидкость.
-     */
     public static boolean isFluidTypeExplicitlySet(Fluid type) {
         if (type == null || type == Fluids.EMPTY) return false;
         return type != ModFluids.NONE.getSource();
     }
 
-    /** Задаёт тип и обнуляет объём (слот идентификатора); не вызывает {@link #fill(int)}, чтобы сохранить тип NONE. */
     public void assignTypeAndZeroFluid(Fluid newType) {
         this.type = newType == null ? Fluids.EMPTY : newType;
         this.fluid = 0;
     }
+
     public int getPressure() { return pressure; }
 
     public int changeTankSize(int size) {
@@ -159,7 +150,7 @@ public class FluidTank {
 
         boolean isInfinite = slots[in].getItem() instanceof InfiniteFluidItem || slots[in].getItem() instanceof InfiniteWaterItem;
         if (!isInfinite && pressure != 0) return false;
-        
+
         int prev = this.getFill();
         for (LoadingHandler handler : loadingHandlers) {
             if (handler.emptyItem(slots, in, out, this)) break;
@@ -169,7 +160,7 @@ public class FluidTank {
 
     public boolean unloadTank(int in, int out, ItemStack[] slots) {
         if (slots[in] == null || slots[in].isEmpty()) return false;
-        
+
         int prev = this.getFill();
         for (LoadingHandler handler : loadingHandlers) {
             if (handler.fillItem(slots, in, out, this)) break;
@@ -185,7 +176,6 @@ public class FluidTank {
         if (newType == null) {
             return false;
         }
-        // Тот же тип — ничего не делаем, идентификатор остаётся в слоте
         if (type == newType) {
             return false;
         }
@@ -209,7 +199,7 @@ public class FluidTank {
         nbt.putInt(prefix + "_max", maxFluid);
         //? if forge {
         /*ResourceLocation loc = BuiltInRegistries.FLUID.getKey(type);
-        *///?}
+         *///?}
         //? if fabric {
         ResourceLocation loc = BuiltInRegistries.FLUID.getKey(type);
         //?}
@@ -222,7 +212,7 @@ public class FluidTank {
         fluid = nbt.getInt(prefix + "_amount");
         maxFluid = nbt.getInt(prefix + "_max");
         fluid = Mth.clamp(fluid, 0, maxFluid);
-        
+
         String typeIdStr = nbt.getString(prefix + "_type");
         //? if forge {
         /*Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(typeIdStr));
@@ -231,7 +221,7 @@ public class FluidTank {
         Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(typeIdStr));
         //?}
         type = (f != null) ? f : Fluids.EMPTY;
-        
+
         pressure = nbt.getShort(prefix + "_p");
     }
 
@@ -269,9 +259,9 @@ public class FluidTank {
         if (resultStack.isEmpty()) return true;
         ItemStack stackInSlot = slots[slotOut];
         if (stackInSlot == null || stackInSlot.isEmpty()) return true;
-        
-        return ItemStack.isSameItemSameTags(stackInSlot, resultStack) && 
-               stackInSlot.getCount() + resultStack.getCount() <= stackInSlot.getMaxStackSize();
+
+        return ItemStack.isSameItemSameTags(stackInSlot, resultStack) &&
+                stackInSlot.getCount() + resultStack.getCount() <= stackInSlot.getMaxStackSize();
     }
 
     private static void placeItemInSlot(ItemStack[] slots, int slotOut, ItemStack resultStack) {
@@ -290,7 +280,6 @@ public class FluidTank {
             if (inputStack == null || inputStack.isEmpty()) return false;
             if (!isFluidTypeExplicitlySet(tank.getTankType())) return false;
 
-            // Phase 1: SIMULATE on a copy to check feasibility and output slot compatibility
             //? if forge {
             /*ItemStack simCopy = inputStack.copy();
             simCopy.setCount(1);
@@ -327,36 +316,56 @@ public class FluidTank {
             //? if fabric {
             ItemStack simCopy = inputStack.copy();
             simCopy.setCount(1);
-            Storage<FluidVariant> simStorage = FluidStorage.ITEM.find(simCopy, null);
+            SimpleContainer simInv = new SimpleContainer(simCopy);
+            ContainerItemContext simCtx = ContainerItemContext.ofSingleSlot(InventoryStorage.of(simInv, null).getSlot(0));
+            Storage<FluidVariant> simStorage = FluidStorage.ITEM.find(simCopy, simCtx);
             if (simStorage == null) return false;
 
-            FluidVariant targetVariant = FluidVariant.of(tank.getTankType());
+            // Узнаём, ЧТО конкретно находится внутри бочки/ведра
+            FluidVariant storedVariant = FluidVariant.blank();
+            for (StorageView<FluidVariant> view : simStorage) {
+                if (!view.isResourceBlank() && view.getAmount() > 0) {
+                    storedVariant = view.getResource();
+                    break;
+                }
+            }
+
+            if (storedVariant.isBlank()) return false;
+
+            // Проверяем, подходит ли жидкость из предмета к нашей цистерне (модовая вода = ванильная вода)
+            if (!VanillaFluidEquivalence.sameSubstance(tank.getTankType(), storedVariant.getFluid())) {
+                return false;
+            }
+
             int space = tank.getMaxFill() - tank.getFill();
+            long maxExtract = (long) space * 81L;
 
             // Simulate drain
-            long drainableSim;
             try (Transaction tx = Transaction.openOuter()) {
-                drainableSim = simStorage.extract(targetVariant, space, tx);
+                long drainableSim = simStorage.extract(storedVariant, maxExtract, tx);
+                if (drainableSim <= 0) return false;
+                if (!canPlaceItemInSlot(slots, out, simInv.getItem(0))) return false;
                 // don't commit — simulation only
             }
-            if (drainableSim <= 0) return false;
 
             // Execute drain
             ItemStack execCopy = inputStack.copy();
             execCopy.setCount(1);
-            Storage<FluidVariant> execStorage = FluidStorage.ITEM.find(execCopy, null);
+            SimpleContainer execInv = new SimpleContainer(execCopy);
+            ContainerItemContext execCtx = ContainerItemContext.ofSingleSlot(InventoryStorage.of(execInv, null).getSlot(0));
+            Storage<FluidVariant> execStorage = FluidStorage.ITEM.find(execCopy, execCtx);
             if (execStorage == null) return false;
 
             long drained;
             try (Transaction tx = Transaction.openOuter()) {
-                drained = execStorage.extract(targetVariant, space, tx);
+                drained = execStorage.extract(storedVariant, maxExtract, tx);
                 if (drained > 0) tx.commit();
             }
             if (drained <= 0) return false;
 
-            // Architectury FluidStack uses 81000 droplets per bucket; we store in mB
-            tank.fill(tank.getFill() + (int) (drained / 81));
-            placeItemInSlot(slots, out, execCopy);
+            // 1 ведро Fabric = 81000 droplets. 81000 / 81 = ровно 1000 mB для бака.
+            tank.fill(tank.getFill() + (int) (drained / 81L));
+            placeItemInSlot(slots, out, execInv.getItem(0));
             slots[in].shrink(1);
             if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
             return true;
@@ -400,25 +409,42 @@ public class FluidTank {
             *///?}
 
             //? if fabric {
-            ItemStack execCopy = inputStack.copy();
-            execCopy.setCount(1);
-            Storage<FluidVariant> storage = FluidStorage.ITEM.find(execCopy, null);
-            if (storage == null) return false;
+            ItemStack simCopy = inputStack.copy();
+            simCopy.setCount(1);
+            SimpleContainer simInv = new SimpleContainer(simCopy);
+            ContainerItemContext simCtx = ContainerItemContext.ofSingleSlot(InventoryStorage.of(simInv, null).getSlot(0));
+            Storage<FluidVariant> simStorage = FluidStorage.ITEM.find(simCopy, simCtx);
+            if (simStorage == null) return false;
 
             FluidVariant variant = FluidVariant.of(
                     VanillaFluidEquivalence.forVanillaContainerFill(tank.getTankType()));
-            // Convert mB → droplets (1 mB = 81 droplets)
-            long droplets = (long) tank.getFill() * 81;
+            long droplets = (long) tank.getFill() * 81L;
+
+            // Simulate fill
+            try (Transaction tx = Transaction.openOuter()) {
+                long fillableSim = simStorage.insert(variant, droplets, tx);
+                if (fillableSim <= 0) return false;
+                if (!canPlaceItemInSlot(slots, out, simInv.getItem(0))) return false;
+                // simulation, don't commit
+            }
+
+            // Execute fill
+            ItemStack execCopy = inputStack.copy();
+            execCopy.setCount(1);
+            SimpleContainer execInv = new SimpleContainer(execCopy);
+            ContainerItemContext execCtx = ContainerItemContext.ofSingleSlot(InventoryStorage.of(execInv, null).getSlot(0));
+            Storage<FluidVariant> execStorage = FluidStorage.ITEM.find(execCopy, execCtx);
+            if (execStorage == null) return false;
 
             long filled;
             try (Transaction tx = Transaction.openOuter()) {
-                filled = storage.insert(variant, droplets, tx);
+                filled = execStorage.insert(variant, droplets, tx);
                 if (filled > 0) tx.commit();
             }
             if (filled <= 0) return false;
 
-            tank.fill(tank.getFill() - (int) (filled / 81));
-            placeItemInSlot(slots, out, execCopy);
+            tank.fill(tank.getFill() - (int) (filled / 81L));
+            placeItemInSlot(slots, out, execInv.getItem(0));
             slots[in].shrink(1);
             if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
             return true;
@@ -432,7 +458,6 @@ public class FluidTank {
             ItemStack stack = slots[in];
             if (stack == null || stack.isEmpty()) return false;
 
-            // Универсальная бесконечная бочка: наполняет типом, выбранным идентификатором (тип бака), NBT FluidType не нужен.
             if (stack.getItem() instanceof InfiniteFluidItem) {
                 if (!isFluidTypeExplicitlySet(tank.getTankType())) return false;
                 if (tank.getFill() >= tank.getMaxFill()) return false;
@@ -456,8 +481,7 @@ public class FluidTank {
         public boolean fillItem(ItemStack[] slots, int in, int out, FluidTank tank) {
             ItemStack stack = slots[in];
             if (stack == null || stack.isEmpty()) return false;
-            
-            // Infinite Fluid Item acts as void
+
             if (stack.getItem() instanceof InfiniteFluidItem) {
                 if (tank.getFill() > 0) {
                     tank.fill(0);
@@ -467,10 +491,6 @@ public class FluidTank {
             return false;
         }
     }
-
-    // ===================================================================================== //
-    // WRAPPER (только для Forge)
-    // ===================================================================================== //
 
     //? if forge {
     /*public static class ForgeFluidHandlerWrapper implements IFluidHandler {

@@ -30,7 +30,9 @@ import net.minecraftforge.items.SlotItemHandler;
 *///?}
 
 //? if fabric {
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;//?}
+import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
+//?}
 
 public class MachineFluidTankMenu extends AbstractContainerMenu {
 
@@ -130,7 +132,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
                 //? if fabric {
-                return FluidStorage.ITEM.find(stack, null) != null;
+                return FluidStorage.ITEM.find(stack, ContainerItemContext.withConstant(stack)) != null;
                 //?} else {
                 /*return false;
                 *///?}
@@ -150,7 +152,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
                 //? if fabric {
-                return FluidStorage.ITEM.find(stack, null) != null;
+                return FluidStorage.ITEM.find(stack, ContainerItemContext.withConstant(stack)) != null;
                 //?} else {
                 /*return false;
                 *///?}
@@ -241,7 +243,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
                 if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_ID_IN, MachineFluidTankBlockEntity.SLOT_ID_IN + 1, false)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (FluidStorage.ITEM.find(stackInSlot, null) != null) {
+            } else if (FluidStorage.ITEM.find(stackInSlot, ContainerItemContext.withConstant(stackInSlot)) != null) {
                 if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_LOAD_IN, MachineFluidTankBlockEntity.SLOT_LOAD_IN + 1, false)) {
                     if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN + 1, false)) {
                         return ItemStack.EMPTY;

@@ -1147,7 +1147,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.FLUID_BARREL.get()));
         for (ModFluids.FluidEntry entry : HbmFluidRegistry.getOrderedFluids()) {
             ItemStack filledBarrel = new ItemStack(ModItems.FLUID_BARREL.get());
-            dev.architectury.fluid.FluidStack archFluidStack = dev.architectury.fluid.FluidStack.create(entry.getSource(), FluidBarrelItem.CAPACITY);
+            dev.architectury.fluid.FluidStack archFluidStack = dev.architectury.fluid.FluidStack.create(entry.getSource(), FluidBarrelItem.getPlatformCapacity());
             FluidBarrelItem.setFluid(filledBarrel, archFluidStack);
             add.accept(filledBarrel);
         }
