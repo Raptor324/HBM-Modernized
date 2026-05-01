@@ -109,18 +109,48 @@ public final class ForgeCompositeUnbakedModel implements ForgeLikeUnbakedModel {
         TextureAtlasSprite particle = spriteGetter.apply(new Material(TextureAtlas.LOCATION_BLOCKS, textures.getOrDefault("particle", MissingTextureAtlasSprite.getLocation())));
         if (particle == null) particle = spriteGetter.apply(new Material(TextureAtlas.LOCATION_BLOCKS, MissingTextureAtlasSprite.getLocation()));
 
-        com.mojang.math.Transformation pivotedRot = ModelStateTransforms.resolveAndPivot(modelState);
-        Matrix4f combinedM = new Matrix4f(pivotedRot.getMatrix());
-        if (transform != null) {
-            combinedM.mul(new Matrix4f(transform));
+        // Forge CompositeModel: composeRootTransformIntoModelState(modelState, rootTransform)
+        // which does: rootTransform = rootTransform.applyOrigin(-0.5, -0.5, -0.5)
+        //             newModelState.rotation = modelState.getRotation().compose(rootTransform)
+        // The children then get baked with this combined modelState, which will in turn
+        // call blockCenterToCorner() inside their own makeQuad/bakeQuads.
+        //
+        // Since our children (OBJ models) call composeForObjBaking() which already does
+        // blockCenterToCorner(), we need to pass a modelState that has the combined rotation
+        // WITHOUT the blockCenterToCorner applied yet.
+        //
+        // Forge's composeRootTransformIntoModelState:
+        //   rootTransform' = rootTransform.applyOrigin(new Vector3f(-0.5, -0.5, -0.5))
+        //   newRot = modelState.getRotation().compose(rootTransform')
+        com.mojang.math.Transformation modelRot = ModelStateTransforms.getModelStateRotation(modelState);
+        com.mojang.math.Transformation compositeRootTransform = transform != null
+                ? new com.mojang.math.Transformation(transform)
+                : com.mojang.math.Transformation.identity();
+
+        com.mojang.math.Transformation combinedRot;
+        if (ModelStateTransforms.isIdentity(compositeRootTransform)) {
+            combinedRot = modelRot;
+        } else {
+            // Forge: rootTransform.applyOrigin(-0.5, -0.5, -0.5)
+            com.mojang.math.Transformation adjustedRoot = ModelStateTransforms.applyOrigin(
+                    compositeRootTransform, new org.joml.Vector3f(-0.5f, -0.5f, -0.5f));
+            if (ModelStateTransforms.isIdentity(modelRot)) {
+                combinedRot = adjustedRoot;
+            } else {
+                // modelState.getRotation().compose(adjustedRoot)
+                Matrix4f m = new Matrix4f(modelRot.getMatrix());
+                m.mul(adjustedRoot.getMatrix());
+                combinedRot = new com.mojang.math.Transformation(m);
+            }
         }
 
-        ModelState childState = new ModelStateTransforms.PivotedModelState(new com.mojang.math.Transformation(combinedM), modelState.isUvLocked());
+        ModelState childState = new ModelStateTransforms.PivotedModelState(combinedRot,
+                modelState != null && modelState.isUvLocked());
 
         List<BakedModel> bakedKids = new ArrayList<>();
         for (var e : children.entrySet()) {
             String name = e.getKey();
-            if (visibility.containsKey(name) && Boolean.FALSE.equals(visibility.get(name))) continue;
+            if (Boolean.FALSE.equals(visibility.get(name))) continue;
             BakedModel kid = e.getValue().bake(baker, spriteGetter, childState, modelLocation);
             if (kid != null) bakedKids.add(kid);
         }
