@@ -259,9 +259,12 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         }
         poseStack.popPose();
 
-        boolean skipAnimation = shouldSkipAnimationUpdate(blockPos);
-        if (!skipAnimation) {
+        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        if (animFade >= 0) {
+            float savedFade = SingleMeshVboRenderer.getFadeAlpha();
+            SingleMeshVboRenderer.setFadeAlpha(Math.min(savedFade, animFade));
             renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useBatching);
+            SingleMeshVboRenderer.setFadeAlpha(savedFade);
         }
         poseStack.popPose();
     }
@@ -355,7 +358,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                                             LegacyAnimator animator,
                                             MachineAssemblerBlockEntity be,
                                             float pt) {
-        if (shouldSkipAnimationUpdate(be.getBlockPos())) return;
+        if (shouldSkipAnimatedRender(be.getBlockPos())) return;
 
         boolean isActive = be.isCrafting();
         if (!isActive) return;
@@ -423,7 +426,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                                         PoseStack poseStack,
                                         MultiBufferSource bufferSource,
                                         int packedLight, int packedOverlay) {
-        if (shouldSkipAnimationUpdate(be.getBlockPos())) return;
+        if (shouldSkipAnimatedRender(be.getBlockPos())) return;
 
         ItemStack icon = getRecipeOutput(be);
         if (icon.isEmpty()) return;
@@ -478,8 +481,8 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
 
     // ==================== DISTANCE CHECK ====================
 
-    private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
-        return RenderDistanceHelper.shouldSkipAnimation(blockPos);
+    private boolean shouldSkipAnimatedRender(BlockPos blockPos) {
+        return RenderDistanceHelper.computeAnimatedFade(blockPos) < 0;
     }
 
     // ==================== INSTANCED BATCHING ====================

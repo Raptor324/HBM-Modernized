@@ -252,8 +252,16 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
                 }
             }
 
-            boolean skipAnimation = shouldSkipAnimationUpdate(blockPos);
-            float anim = skipAnimation ? 0f : be.getAnim(partialTick);
+            float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+            if (animFade < 0) {
+                poseStack.popPose();
+                return;
+            }
+            if (animFade < 1.0f) {
+                float savedFade = SingleMeshVboRenderer.getFadeAlpha();
+                SingleMeshVboRenderer.setFadeAlpha(Math.min(savedFade, animFade));
+            }
+            float anim = be.getAnim(partialTick);
 
             double sdx = chemicalSps(anim * 0.125) * 0.375;
             // Как 1.7.10: после поворота facing только сдвиг по локальной X, без лишнего T(-0.5) на матрице части.
@@ -273,9 +281,6 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         }
     }
 
-    private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
-        return RenderDistanceHelper.shouldSkipAnimation(blockPos);
-    }
 
     //? if forge {
     /*public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {

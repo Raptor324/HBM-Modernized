@@ -114,8 +114,13 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
 
         // Base рендерится через BlockState/BakedModel (запечён в чанк Embeddium/Sodium)
 
-        boolean freezeAnimation = shouldSkipAnimationUpdate(blockPos);
-        Matrix4f headTransform = buildHeadTransform(model, blockEntity, partialTick, freezeAnimation);
+        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        if (animFade < 0) return null;
+        if (animFade < 1.0f) {
+            float savedFade = SingleMeshVboRenderer.getFadeAlpha();
+            SingleMeshVboRenderer.setFadeAlpha(Math.min(savedFade, animFade));
+        }
+        Matrix4f headTransform = buildHeadTransform(model, blockEntity, partialTick, false);
         boolean useInstancedHead = instancedHead != null && instancedHead.isInitialized();
         boolean useBatching = ModClothConfig.useInstancedBatching();
         boolean inShadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
@@ -157,9 +162,6 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
             .scale(HEAD_SCALE, HEAD_SCALE, HEAD_SCALE);
     }
 
-    private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
-        return RenderDistanceHelper.shouldSkipAnimation(blockPos);
-    }
 
     private void renderWorkpiece(
             MachinePressBlockEntity blockEntity,
