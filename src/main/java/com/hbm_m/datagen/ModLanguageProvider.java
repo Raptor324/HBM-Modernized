@@ -552,6 +552,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CRT_BSOD.get(), "BSOD Монитор ");
                 add(ModBlocks.CRT_CLEAN.get(), "Монитор");
                 add(ModBlocks.TOASTER.get(), "Тостер");
+                add(ModBlocks.STEEL_POLE.get(), "Antenna Pole"); //NEEDS TRANSLATION
+                add(ModBlocks.ANTENNA_TOP.get(), "Antenna Top"); //NEEDS TRANSLATION
+                add(ModBlocks.PUTER.get(), "(PC) Personal Computer"); //NEEDS TRANSLATION
                 add(ModBlocks.BARREL_CORRODED.get(), "Проржавевшая бочка");
                 add(ModBlocks.BARREL_LOX.get(), "Бочка с жидким кислородом");
                 add(ModBlocks.BARREL_PINK.get(), "Бочка с керосином");
@@ -2859,6 +2862,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.CRT_BSOD.get(), "BSOD CRT");
                 add(ModBlocks.CRT_CLEAN.get(), "Clean CRT");
                 add(ModBlocks.TOASTER.get(), "Toaster");
+                add(ModBlocks.STEEL_POLE.get(), "Antenna Pole");
+                add(ModBlocks.ANTENNA_TOP.get(), "Antenna Top");
+                add(ModBlocks.PUTER.get(), "PC-Personal Computer");
                 add(ModBlocks.BARREL_CORRODED.get(), "Corroded Barrel");
                 add(ModBlocks.BARREL_LOX.get(), "LOX Barrel");
                 add(ModBlocks.BARREL_PINK.get(), "Pink Barrel");

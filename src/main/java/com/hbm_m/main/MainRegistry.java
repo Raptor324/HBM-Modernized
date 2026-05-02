@@ -1134,6 +1134,9 @@ public class MainRegistry {
             event.accept(ModBlocks.CRT_CLEAN);
             event.accept(ModBlocks.CRT_BSOD);
             event.accept(ModBlocks.TOASTER);
+            event.accept(ModBlocks.STEEL_POLE);
+            event.accept(ModBlocks.ANTENNA_TOP);
+            event.accept(ModBlocks.PUTER);
 
             event.accept(ModBlocks.DOOR_OFFICE);
             event.accept(ModBlocks.DOOR_BUNKER);

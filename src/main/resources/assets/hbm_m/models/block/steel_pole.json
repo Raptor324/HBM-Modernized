@@ -1,0 +1,63 @@
+{
+  "loader": "forge:composite",
+  "textures": {
+    "particle": "hbm_m:block/steel_beam"
+  },
+  "children": {
+    "steel_pole_model": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/steel_pole.obj",
+      "flip_v": true,
+      "textures": {
+        "default": "hbm_m:block/steel_beam"
+      }
+    }
+  },
+  "transform": {
+    "translation": [0.50, 0.0, -1.5],
+    "rotation": [0, 90, 0],
+    "scale": 1.0
+  },
+  "display": {
+    "thirdperson_righthand": {
+        "rotation": [ 75, 180, 0 ],
+        "translation": [ 0.00, 2.50, 0.00 ],
+        "scale": [ 0.38, 0.38, 0.38 ]
+    },
+    "thirdperson_lefthand": {
+        "rotation": [ 75, 180, 0 ],
+        "translation": [ 0.00, 2.50, 0.00 ],
+        "scale": [ 0.38, 0.38, 0.38 ]
+    },
+    "firstperson_righthand": {
+        "rotation": [ 0, 134, 0 ],
+        "translation": [ 1.00, 2.00, 0.00 ],
+        "scale": [ 0.30, 0.30, 0.30 ]
+    },
+    "firstperson_lefthand": {
+        "rotation": [ 0, 180, 0 ],
+        "translation": [ 2.00, -1.00, 0.00 ],
+        "scale": [ 0.40, 0.40, 0.40 ]
+    },
+    "gui": {
+        "rotation": [ 30, 225, 0 ],
+        "translation": [ 1.00, -0.45, 0.00 ],
+        "scale": [ 0.60, 0.60, 0.60 ]
+    },
+    "head": {
+        "rotation": [ 0, 180, 0 ],
+        "translation": [ 0.00, 13.00, 7.00 ],
+        "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "fixed": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 0.50, 0.50, 0.50 ]
+    },
+    "ground": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 3.00, 0.00 ],
+        "scale": [ 0.35, 0.35, 0.35 ]
+    }
+  }
+}

@@ -873,6 +873,13 @@ public class ModBlocks {
     public static final RegistryObject<Block> FILE_CABINET = registerBlock("file_cabinet",
             () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
+    public static final RegistryObject<Block> STEEL_POLE = registerBlock("steel_pole",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.5F, 6.0F).noOcclusion()));
+    public static final RegistryObject<Block> ANTENNA_TOP = registerBlock("antenna_top",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(2.5F, 6.0F).noOcclusion()));
+    public static final RegistryObject<Block> PUTER = registerBlock("puter",
+            () -> new CrtBlock(Block.Properties.copy(Blocks.STONE).strength(1F, 6.0F).noOcclusion()));
+
     public static final RegistryObject<Block> B29 = registerBlock("b29",
             () -> new BarrelBlock(Block.Properties.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 

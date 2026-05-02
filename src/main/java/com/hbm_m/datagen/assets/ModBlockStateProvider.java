@@ -491,6 +491,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.CRT_BROKEN);
         customObjBlock(ModBlocks.CRT_BSOD);
         customObjBlock(ModBlocks.CRT_CLEAN);
+        customObjBlock(ModBlocks.STEEL_POLE);
+        customObjBlock(ModBlocks.ANTENNA_TOP);
+        customObjBlock(ModBlocks.PUTER);
         customObjBlock(ModBlocks.GEIGER_COUNTER_BLOCK);
         customObjBlock(ModBlocks.TAPE_RECORDER);
         customObjBlock(ModBlocks.TOASTER);

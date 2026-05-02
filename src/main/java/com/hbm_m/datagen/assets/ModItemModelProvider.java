@@ -444,9 +444,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.GRENADEHE);
         simpleItem(ModItems.GRENADEFIRE);
 
-        // Missile prototype item: 3D OBJ модель, используем готовый missile_micro.json
-        withExistingParent(ModItems.MISSILE_TEST.getId().getPath(),
-                modLoc("missile/missile_micro"));
 
         ModBlocks.getAnvilBlocks().forEach(this::blockItemFromBlockModelMachine);
         
