@@ -79,20 +79,7 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         *///?}
 
         //? if fabric {
-        // ITEM RENDER
-        if (state == null) {
-            return getItemQuads(side, rand);
-        }
-
-        if (ShaderCompatibilityDetector.useVboGeometry()) {
-            return Collections.emptyList();
-        }
-
-        boolean isMoving = state.hasProperty(DoorBlock.DOOR_MOVING) && state.getValue(DoorBlock.DOOR_MOVING);
-        if (!isMoving) {
-            return getAllPartQuads(state, side, rand);
-        }
-        return getStaticPartQuads(state, side, rand);
+        return getQuadsFabric(state, side, rand, FabricRenderDataBridge.get());
         //?}
     }
     
@@ -249,13 +236,38 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     *///?}
 
     //? if fabric {
-    private List<BakedQuad> getStaticPartQuads(@Nullable BlockState state, @Nullable Direction side,
-                                              RandomSource rand) {
+    public List<BakedQuad> getQuadsFabric(@Nullable BlockState state, @Nullable Direction side,
+                                          RandomSource rand, @Nullable Object renderData) {
+        if (state == null) {
+            return getItemQuads(side, rand);
+        }
+        if (ShaderCompatibilityDetector.useVboGeometry()) {
+            return Collections.emptyList();
+        }
+
+        com.hbm_m.block.entity.doors.DoorBlockEntity.DoorRenderData data =
+                renderData instanceof com.hbm_m.block.entity.doors.DoorBlockEntity.DoorRenderData d ? d : null;
+
+        boolean isMoving = state.hasProperty(DoorBlock.DOOR_MOVING) && state.getValue(DoorBlock.DOOR_MOVING);
+        if (data != null) isMoving = data.moving();
+        boolean isOverlap = data != null && data.overlap();
+
+        DoorModelSelection selection = data != null ? data.selection() : null;
+        Map<String, BakedModel> partsToUse = getPartsForSelection(selection);
+
+        if (isOverlap || !isMoving) {
+            return getAllPartQuadsFabric(state, side, rand, data, partsToUse);
+        }
+        return getStaticPartQuadsFabric(state, side, rand, partsToUse);
+    }
+
+    private List<BakedQuad> getStaticPartQuadsFabric(@Nullable BlockState state, @Nullable Direction side,
+                                                     RandomSource rand, Map<String, BakedModel> partsToUse) {
         List<BakedQuad> result = new ArrayList<>();
         int rotationY = getRotationYForFacing(state);
 
         for (String partName : STATIC_PART_NAMES) {
-            BakedModel part = parts.get(partName);
+            BakedModel part = partsToUse.get(partName);
             if (part == null) continue;
 
             List<BakedQuad> partQuads = new ArrayList<>();
@@ -281,12 +293,20 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
 
     private List<BakedQuad> getAllPartQuads(@Nullable BlockState state, @Nullable Direction side,
                                           RandomSource rand) {
+        return getAllPartQuadsFabric(state, side, rand, null, parts);
+    }
+
+    private List<BakedQuad> getAllPartQuadsFabric(@Nullable BlockState state, @Nullable Direction side,
+                                                 RandomSource rand,
+                                                 @Nullable com.hbm_m.block.entity.doors.DoorBlockEntity.DoorRenderData data,
+                                                 Map<String, BakedModel> partsToUse) {
         if (state == null) return Collections.emptyList();
 
         DoorDecl doorDecl = DoorDeclRegistry.getById(extractDoorTypeFromPath(doorId.getPath()));
         if (doorDecl == null) return Collections.emptyList();
 
         boolean isOpen = state.hasProperty(DoorBlock.OPEN) && state.getValue(DoorBlock.OPEN);
+        if (data != null) isOpen = data.open();
         float openTicks = isOpen ? doorDecl.getOpenTime() : 0f;
 
         int rotationY = getRotationYForFacing(state);
@@ -299,11 +319,13 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
             }
         }
 
-        String[] partNamesToUse = parts.keySet().toArray(new String[0]);
+        DoorModelSelection selection = data != null ? data.selection() : null;
+        String[] partNamesToUse = partsToUse.keySet().toArray(new String[0]);
+
         List<BakedQuad> allQuads = new ArrayList<>();
         java.util.Map<String, Matrix4f> transformCache = new java.util.HashMap<>();
         for (String partName : partNamesToUse) {
-            BakedModel part = parts.get(partName);
+            BakedModel part = partsToUse.get(partName);
             if (part == null) continue;
 
             List<BakedQuad> partQuads = new ArrayList<>();
@@ -317,7 +339,6 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
                 List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
                 allQuads.addAll(ModelHelper.transformQuadsByFacing(translated, rotationY));
             } else {
-                DoorModelSelection selection = null;
                 Matrix4f transform = buildPartTransformWithParent(doorDecl, partName, openTicks, animData, partNamesToUse, transformCache, selection);
                 if (transform != null) {
                     partQuads = ModelHelper.transformQuadsByMatrix(partQuads, transform);
@@ -327,6 +348,26 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
             }
         }
         return allQuads;
+    }
+
+    private Map<String, BakedModel> getPartsForSelection(@Nullable DoorModelSelection selection) {
+        if (selection == null || selection.equals(DoorModelSelection.DEFAULT)) return parts;
+
+        String doorType = extractDoorTypeFromPath(doorId.getPath());
+        DoorModelRegistry registry = DoorModelRegistry.getInstance();
+        if (!registry.isRegistered(doorType)) return parts;
+
+        ResourceLocation modelPath = registry.getModelPath(doorType, selection);
+        if (modelPath == null) return parts;
+
+        BakedModel selectionModel = Minecraft.getInstance().getModelManager().getModel(modelPath);
+        if (selectionModel == null || selectionModel == Minecraft.getInstance().getModelManager().getMissingModel()) {
+            return parts;
+        }
+        if (selectionModel instanceof DoorBakedModel doorModel) {
+            return doorModel.getParts();
+        }
+        return parts;
     }
 
     private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {

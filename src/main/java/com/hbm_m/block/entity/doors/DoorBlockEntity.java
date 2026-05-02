@@ -42,7 +42,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 
-public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
+public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
+    //? if fabric {
+    , net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
+    //?}
+{
     
     // 0=закрыта, 1=открыта, 2=закрывается, 3=открывается
     public byte state = 0;
@@ -108,6 +112,18 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart {
     public DoorModelSelection getModelSelection() {
         return modelSelection;
     }
+
+    //? if fabric {
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getRenderAttachmentData() {
+        boolean isMoving = state == 2 || state == 3;
+        boolean isOpen = state == 1;
+        boolean isOverlap = !isMoving && cachedModelData != null;
+        return new DoorRenderData(modelSelection, isMoving, isOpen, isOverlap);
+    }
+
+    public record DoorRenderData(DoorModelSelection selection, boolean moving, boolean open, boolean overlap) {}
+    //?}
     
     /**
      * Установить выбор модели

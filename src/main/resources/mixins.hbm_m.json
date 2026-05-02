@@ -12,7 +12,8 @@
   ],
   "client": [
     "GameRendererMixin",
-    "LightTextureMixin"
+    "LightTextureMixin",
+    "ModelBlockRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

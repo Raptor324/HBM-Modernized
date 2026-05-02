@@ -114,10 +114,13 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
 
         // Base рендерится через BlockState/BakedModel (запечён в чанк Embeddium/Sodium)
 
-        boolean freezeAnimation = shouldSkipAnimationUpdate(blockPos);
-        Matrix4f headTransform = buildHeadTransform(model, blockEntity, partialTick, freezeAnimation);
+        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        if (animFade < 0) return null;
+        float savedFade = SingleMeshVboRenderer.getFadeAlpha();
+        SingleMeshVboRenderer.setFadeAlpha(Math.min(savedFade, animFade));
+        Matrix4f headTransform = buildHeadTransform(model, blockEntity, partialTick, false);
         boolean useInstancedHead = instancedHead != null && instancedHead.isInitialized();
-        boolean useBatching = ModClothConfig.useInstancedBatching();
+        boolean useBatching = ModClothConfig.useInstancedBatching() && animFade >= 0.99f;
         boolean inShadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
         if (useBatching && !inShadowPass && useInstancedHead) {
             poseStack.pushPose();
@@ -142,6 +145,7 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
                 gpuRenderer.renderAnimatedHead(poseStack, packedLight, headTransform, blockPos, blockEntity, bufferSource);
             }
         }
+        SingleMeshVboRenderer.setFadeAlpha(savedFade);
         return headTransform;
     }
 
@@ -157,9 +161,6 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
             .scale(HEAD_SCALE, HEAD_SCALE, HEAD_SCALE);
     }
 
-    private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
-        return RenderDistanceHelper.shouldSkipAnimation(blockPos);
-    }
 
     private void renderWorkpiece(
             MachinePressBlockEntity blockEntity,

@@ -319,14 +319,19 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                                      boolean useBatching) {
         var blockState = be.getBlockState();
 
-        // 1. Рендер статики (Base + Frame) - только когда НЕТ шейдера (useVboPath).
-        // При активном шейдере Base и Frame рендерит BakedModel; BER рисует только подвижные части.
+        float staticFade = SingleMeshVboRenderer.getFadeAlpha();
+        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+
+        boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
+        boolean effectiveBatching = useBatching && !anyFading;
+
+        // 1. Static parts (Base + Frame).
         if (useVboPath) {
             poseStack.pushPose();
-            poseStack.translate(-0.5f, 0.0f, -0.5f); // Центровка модели
+            poseStack.translate(-0.5f, 0.0f, -0.5f);
 
             // Base
-            if (useBatching && instancedBase != null && instancedBase.isInitialized()) {
+            if (effectiveBatching && instancedBase != null && instancedBase.isInitialized()) {
                 poseStack.pushPose();
                 instancedBase.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
                 poseStack.popPose();
@@ -336,7 +341,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
             // Frame
             if (blockState.hasProperty(MachineAdvancedAssemblerBlock.FRAME) && blockState.getValue(MachineAdvancedAssemblerBlock.FRAME)) {
-                if (useBatching && instancedFrame != null && instancedFrame.isInitialized()) {
+                if (effectiveBatching && instancedFrame != null && instancedFrame.isInitialized()) {
                     poseStack.pushPose();
                     instancedFrame.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
                     poseStack.popPose();
@@ -347,41 +352,11 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
             poseStack.popPose();
         }
 
-        // 2. Рендер анимаций (подвижные части - всегда через BER)
-        // Если игрок далеко - пропускаем вычисления анимаций, но рисуем детали в дефолтной позе (или не рисуем, если так задумано для LOD)
-        boolean skipAnimation = shouldSkipAnimationUpdate(blockPos);
-        
-        // Если скипаем анимацию, ставим partialTick = 0 (дефолтная поза) или просто рендерим без lerp
-        // В данном случае, чтобы детали не исчезали, мы рендерим их, но не обновляем углы (или берем статические 0)
-        // Для оптимизации: если очень далеко, можно вообще не рисовать мелкие детали (arms).
-        if (!skipAnimation) {
-            renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useBatching);
-        } else {
-            // LOD: Рисуем только кольцо статично, руки не рисуем (они мелкие)
-            // Это сэкономит GPU на дальних дистанциях
-            renderStaticLOD(poseStack, dynamicLight, blockPos, be, bufferSource, useBatching);
-        }
-    }
-
-    // Упрощенный рендер для дальних дистанций
-    private void renderStaticLOD(PoseStack pose, int blockLight, BlockPos blockPos, 
-                                MachineAdvancedAssemblerBlockEntity be, MultiBufferSource bufferSource, boolean useBatching) {
-        setRingBaseMatrix(0f, getFacing(be));
-        if (useBatching && instancedRing != null) {
-            pose.pushPose();
-            pose.last().pose().mul(matRing);
-            instancedRing.addInstance(pose, blockLight, blockPos, be, bufferSource);
-            pose.popPose();
-        } else {
-            gpu.renderAnimatedPart(pose, blockLight, "Ring", matRing, blockPos, be, bufferSource);
-        }
-    }
-
-    /**
-     *  Проверка, нужно ли пропустить фрейм на основе дистанции
-     */
-    private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
-        return RenderDistanceHelper.shouldSkipAnimation(blockPos);
+        // 2. Animated parts: fade out at modelUpdateDistance.
+        if (animFade < 0) return;
+        SingleMeshVboRenderer.setFadeAlpha(Math.min(staticFade, animFade));
+        renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, effectiveBatching);
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
     }
 
     /**
@@ -544,7 +519,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         var selectedRecipeId = be.getSelectedRecipeId();
         if (selectedRecipeId == null) return;
 
-        if (shouldSkipAnimationUpdate(be.getBlockPos())) return;
+        if (RenderDistanceHelper.computeAnimatedFade(be.getBlockPos()) < 0) return;
 
         var mc = Minecraft.getInstance();
         if (mc.player == null) return;

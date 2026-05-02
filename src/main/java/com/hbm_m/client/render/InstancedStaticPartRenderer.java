@@ -415,13 +415,14 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             }
             // Fallback to the classic putBulkData path that defers to Iris's pipeline.
             if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
-                VertexConsumer consumer = bufferSource.getBuffer(RenderType.solid());
+                float fade = SingleMeshVboRenderer.getFadeAlpha();
+                VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
                     //? if forge {
-                    /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    /*consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
                     *///?} else {
-                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
+                    consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
                     //?}
                 }
             }
@@ -434,13 +435,14 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                                                : ModShaders.getBlockLitInstancedShader();
         if (shader == null) {
             if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
-                VertexConsumer consumer = bufferSource.getBuffer(RenderType.solid());
+                float fade = SingleMeshVboRenderer.getFadeAlpha();
+                VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 PoseStack.Pose pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
                     //? if forge {
-                    /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    /*consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
                     *///?} else {
-                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
+                    consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
                     //?}
                 }
             }
@@ -461,10 +463,15 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
             shader.apply();
 
+            float fade = SingleMeshVboRenderer.getFadeAlpha();
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
             GL11.glDisable(GL11.GL_CULL_FACE);
+            if (fade < 0.99f) {
+                RenderSystem.enableBlend();
+                RenderSystem.defaultBlendFunc();
+            }
 
             GL30.glBindVertexArray(vaoId);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVboId);
@@ -472,6 +479,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             for (int i = INSTANCE_ATTRIB_FIRST; i <= instanceAttribLast; i++) GL20.glEnableVertexAttribArray(i);
 
             GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0, 1);
+
+            if (fade < 0.99f) {
+                RenderSystem.disableBlend();
+            }
         } catch (Exception e) {
             MainRegistry.LOGGER.error("InstancedStaticPartRenderer.renderSingle failed", e);
         } finally {
@@ -543,10 +554,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 return;
             }
             if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
-                VertexConsumer consumer = bufferSource.getBuffer(RenderType.solid());
+                float fade = SingleMeshVboRenderer.getFadeAlpha();
+                VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
-                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
+                    consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
                 }
             }
             return;
@@ -559,10 +571,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 return;
             }
             if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
-                VertexConsumer consumer = bufferSource.getBuffer(RenderType.solid());
+                float fade = SingleMeshVboRenderer.getFadeAlpha();
+                VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
-                    consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
                 }
             }
             return;
@@ -897,12 +910,21 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
             shader.apply();
 
+            float fade = SingleMeshVboRenderer.getFadeAlpha();
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
             RenderSystem.disableCull();
+            if (fade < 0.99f) {
+                RenderSystem.enableBlend();
+                RenderSystem.defaultBlendFunc();
+            }
 
             GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0, instanceCount);
+
+            if (fade < 0.99f) {
+                RenderSystem.disableBlend();
+            }
 
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced flush (vanilla)", e);

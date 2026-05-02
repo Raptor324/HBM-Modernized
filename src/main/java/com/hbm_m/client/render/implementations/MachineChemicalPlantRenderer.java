@@ -222,18 +222,17 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
                                                   boolean renderActive) {
         var blockState = be.getBlockState();
 
-        /*
-         * Статика (Base/Frame) и подвижные части должны быть в одном фрейме: после setupBlockTransform
-         * нужен translate(-0.5,0,-0.5), чтобы совпасть с ModelHelper.transformQuadsByFacing / Iris chunk
-         * (T(+0.5)*R*T(-0.5) относительно геометрии части). Раньше Slider/Spinner вызывались после popPose()
-         * и обходили этот сдвиг - «поворот как будто верный», но меш визуально расходился с baked.
-         */
+        float staticFade = SingleMeshVboRenderer.getFadeAlpha();
+        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
+        boolean effectiveBatching = useBatching && !anyFading;
+
         if (useVboPath || renderActive) {
             poseStack.pushPose();
             poseStack.translate(-0.5f, 0.0f, -0.5f);
 
             if (useVboPath) {
-                if (useBatching && instancedBase != null && instancedBase.isInitialized()) {
+                if (effectiveBatching && instancedBase != null && instancedBase.isInitialized()) {
                     poseStack.pushPose();
                     instancedBase.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
                     poseStack.popPose();
@@ -242,7 +241,7 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
                 }
 
                 if (blockState.hasProperty(MachineChemicalPlantBlock.FRAME) && blockState.getValue(MachineChemicalPlantBlock.FRAME)) {
-                    if (useBatching && instancedFrame != null && instancedFrame.isInitialized()) {
+                    if (effectiveBatching && instancedFrame != null && instancedFrame.isInitialized()) {
                         poseStack.pushPose();
                         instancedFrame.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
                         poseStack.popPose();
@@ -252,11 +251,14 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
                 }
             }
 
-            boolean skipAnimation = shouldSkipAnimationUpdate(blockPos);
-            float anim = skipAnimation ? 0f : be.getAnim(partialTick);
+            if (animFade < 0) {
+                poseStack.popPose();
+                return;
+            }
+            SingleMeshVboRenderer.setFadeAlpha(Math.min(staticFade, animFade));
+            float anim = be.getAnim(partialTick);
 
             double sdx = chemicalSps(anim * 0.125) * 0.375;
-            // Как 1.7.10: после поворота facing только сдвиг по локальной X, без лишнего T(-0.5) на матрице части.
             matSlider.identity().translate((float) sdx, 0f, 0f);
 
             gpu.renderAnimatedPart(poseStack, dynamicLight, "Slider", matSlider, blockPos, be, bufferSource);
@@ -269,13 +271,11 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
 
             gpu.renderAnimatedPart(poseStack, dynamicLight, "Spinner", matSpinner, blockPos, be, bufferSource);
 
+            SingleMeshVboRenderer.setFadeAlpha(staticFade);
             poseStack.popPose();
         }
     }
 
-    private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
-        return RenderDistanceHelper.shouldSkipAnimation(blockPos);
-    }
 
     //? if forge {
     /*public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {

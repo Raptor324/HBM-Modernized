@@ -242,6 +242,11 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                                               BlockPos blockPos,
                                               MultiBufferSource bufferSource,
                                               boolean useBatching) {
+        float staticFade = SingleMeshVboRenderer.getFadeAlpha();
+        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
+        boolean effectiveBatching = useBatching && !anyFading;
+
         // Match legacy orientation: rotate full assembler 90 degrees clockwise.
         poseStack.pushPose();
         poseStack.translate(0.5f, 0.0f, 0.5f);
@@ -250,7 +255,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
 
         poseStack.pushPose();
         poseStack.translate(-0.5f, 0.0f, -0.5f);
-        if (useBatching && instancedBody != null && instancedBody.isInitialized()) {
+        if (effectiveBatching && instancedBody != null && instancedBody.isInitialized()) {
             poseStack.pushPose();
             instancedBody.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
             poseStack.popPose();
@@ -259,9 +264,10 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         }
         poseStack.popPose();
 
-        boolean skipAnimation = shouldSkipAnimationUpdate(blockPos);
-        if (!skipAnimation) {
-            renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useBatching);
+        if (animFade >= 0) {
+            SingleMeshVboRenderer.setFadeAlpha(Math.min(staticFade, animFade));
+            renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, effectiveBatching);
+            SingleMeshVboRenderer.setFadeAlpha(staticFade);
         }
         poseStack.popPose();
     }
@@ -355,7 +361,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                                             LegacyAnimator animator,
                                             MachineAssemblerBlockEntity be,
                                             float pt) {
-        if (shouldSkipAnimationUpdate(be.getBlockPos())) return;
+        if (shouldSkipAnimatedRender(be.getBlockPos())) return;
 
         boolean isActive = be.isCrafting();
         if (!isActive) return;
@@ -423,7 +429,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                                         PoseStack poseStack,
                                         MultiBufferSource bufferSource,
                                         int packedLight, int packedOverlay) {
-        if (shouldSkipAnimationUpdate(be.getBlockPos())) return;
+        if (shouldSkipAnimatedRender(be.getBlockPos())) return;
 
         ItemStack icon = getRecipeOutput(be);
         if (icon.isEmpty()) return;
@@ -478,8 +484,8 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
 
     // ==================== DISTANCE CHECK ====================
 
-    private boolean shouldSkipAnimationUpdate(BlockPos blockPos) {
-        return RenderDistanceHelper.shouldSkipAnimation(blockPos);
+    private boolean shouldSkipAnimatedRender(BlockPos blockPos) {
+        return RenderDistanceHelper.computeAnimatedFade(blockPos) < 0;
     }
 
     // ==================== INSTANCED BATCHING ====================

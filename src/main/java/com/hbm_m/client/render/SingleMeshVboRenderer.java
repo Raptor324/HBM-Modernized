@@ -272,13 +272,14 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     private void renderToBufferSource(PoseStack poseStack, int packedLight, List<BakedQuad> quads, MultiBufferSource bufferSource) {
         if (quads == null || quads.isEmpty() || bufferSource == null) return;
-        var consumer = bufferSource.getBuffer(RenderType.cutout());
+        float fade = currentFadeAlpha.get();
+        var consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.cutout());
         var pose = poseStack.last();
         for (BakedQuad quad : quads) {
             //? if forge {
-            /*consumer.putBulkData(pose, quad, 1f, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY, false);
+            /*consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
             *///?} else {
-            consumer.putBulkData(pose, quad, 1f, 1f, 1f, packedLight, OverlayTexture.NO_OVERLAY);
+            consumer.putBulkData(pose, quad, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY);
             //?}
         }
     }
@@ -478,7 +479,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             float fade = currentFadeAlpha.get();
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
-            RenderSystem.depthMask(fade >= 0.99f);
+            RenderSystem.depthMask(true);
             RenderSystem.disableCull();
             if (fade < 0.99f) {
                 RenderSystem.enableBlend();
@@ -490,7 +491,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
             if (fade < 0.99f) {
                 RenderSystem.disableBlend();
-                RenderSystem.depthMask(true);
             }
 
         } catch (Exception e) {

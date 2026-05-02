@@ -63,9 +63,7 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
     //? if fabric {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
-        // На Fabric для динамических моделей обычно используются Mixin или FabricBackupModel,
-        // но мы сделаем упрощенный fallback через world access если возможно.
-        return getQuadsInternal(state, side, rand, null, null);
+        return getQuadsInternal(state, side, rand, FabricRenderDataBridge.get(), null);
     }
     //?}
 
@@ -98,7 +96,9 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
             *///?}
 
             //? if fabric {
-            
+            if (modelDataObj instanceof ResourceLocation fabricTex) {
+                fluidTex = fabricTex;
+            }
             //?}
 
             List<BakedQuad> tankQuads = getCachedTankQuads(tank, fluidTex, querySide, rand);

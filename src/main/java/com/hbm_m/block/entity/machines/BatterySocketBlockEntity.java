@@ -45,7 +45,11 @@ import team.reborn.energy.api.EnergyStorage;
 /**
  * Battery socket: one portable battery slot, modes like machine battery, energy from item capabilities.
  */
-public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder {
+public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder
+    //? if fabric {
+    , net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
+    //?}
+{
 
     //? if forge {
     /*public static final ModelProperty<Boolean> HAS_INSERT = new ModelProperty<>();
@@ -150,6 +154,13 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
                 .build();
     }
     *///?}
+
+    //? if fabric {
+    @Override
+    public @Nullable Object getRenderAttachmentData() {
+        return !inventory.getStackInSlot(0).isEmpty();
+    }
+    //?}
 
     public long getEnergyDelta() {
         return energyDelta;
@@ -396,6 +407,11 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         }
         energyDelta = tag.getLong("energyDelta");
         lastEnergySample = tag.getLong("lastEnergySample");
+        //? if fabric {
+        if (level != null && level.isClientSide) {
+            com.hbm_m.client.render.DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
+        }
+        //?}
     }
 
     @Override
