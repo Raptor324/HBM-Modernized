@@ -116,13 +116,11 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
 
         float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
         if (animFade < 0) return null;
-        if (animFade < 1.0f) {
-            float savedFade = SingleMeshVboRenderer.getFadeAlpha();
-            SingleMeshVboRenderer.setFadeAlpha(Math.min(savedFade, animFade));
-        }
+        float savedFade = SingleMeshVboRenderer.getFadeAlpha();
+        SingleMeshVboRenderer.setFadeAlpha(Math.min(savedFade, animFade));
         Matrix4f headTransform = buildHeadTransform(model, blockEntity, partialTick, false);
         boolean useInstancedHead = instancedHead != null && instancedHead.isInitialized();
-        boolean useBatching = ModClothConfig.useInstancedBatching();
+        boolean useBatching = ModClothConfig.useInstancedBatching() && animFade >= 0.99f;
         boolean inShadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
         if (useBatching && !inShadowPass && useInstancedHead) {
             poseStack.pushPose();
@@ -147,6 +145,7 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
                 gpuRenderer.renderAnimatedHead(poseStack, packedLight, headTransform, blockPos, blockEntity, bufferSource);
             }
         }
+        SingleMeshVboRenderer.setFadeAlpha(savedFade);
         return headTransform;
     }
 

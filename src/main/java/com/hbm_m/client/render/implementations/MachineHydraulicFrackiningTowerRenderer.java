@@ -158,7 +158,7 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
             // Шейдеров нет ИЛИ включён useIrisExtendedShaderPath: используем нашу VBO/инстанс-систему.
             // SingleMeshVboRenderer и InstancedStaticPartRenderer сами выберут Iris ExtendedShader,
             // если шейдер-пак активен (см. ShaderCompatibilityDetector.canUseIrisExtendedShader).
-            if (useBatching && instancedMain != null && instancedMain.isInitialized()) {
+            if (useBatching && staticFade >= 0.99f && instancedMain != null && instancedMain.isInitialized()) {
                 instancedMain.addInstance(poseStack, packedLight, blockPos, be, bufferSource);
             } else {
                 // Ветка всегда без instancing (один part → SingleMeshVboRenderer). Под Iris

@@ -242,6 +242,11 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
                                               BlockPos blockPos,
                                               MultiBufferSource bufferSource,
                                               boolean useBatching) {
+        float staticFade = SingleMeshVboRenderer.getFadeAlpha();
+        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+        boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
+        boolean effectiveBatching = useBatching && !anyFading;
+
         // Match legacy orientation: rotate full assembler 90 degrees clockwise.
         poseStack.pushPose();
         poseStack.translate(0.5f, 0.0f, 0.5f);
@@ -250,7 +255,7 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
 
         poseStack.pushPose();
         poseStack.translate(-0.5f, 0.0f, -0.5f);
-        if (useBatching && instancedBody != null && instancedBody.isInitialized()) {
+        if (effectiveBatching && instancedBody != null && instancedBody.isInitialized()) {
             poseStack.pushPose();
             instancedBody.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
             poseStack.popPose();
@@ -259,12 +264,10 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
         }
         poseStack.popPose();
 
-        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
         if (animFade >= 0) {
-            float savedFade = SingleMeshVboRenderer.getFadeAlpha();
-            SingleMeshVboRenderer.setFadeAlpha(Math.min(savedFade, animFade));
-            renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useBatching);
-            SingleMeshVboRenderer.setFadeAlpha(savedFade);
+            SingleMeshVboRenderer.setFadeAlpha(Math.min(staticFade, animFade));
+            renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, effectiveBatching);
+            SingleMeshVboRenderer.setFadeAlpha(staticFade);
         }
         poseStack.popPose();
     }

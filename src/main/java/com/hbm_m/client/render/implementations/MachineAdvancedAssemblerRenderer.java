@@ -319,14 +319,19 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
                                      boolean useBatching) {
         var blockState = be.getBlockState();
 
-        // 1. Рендер статики (Base + Frame) - только когда НЕТ шейдера (useVboPath).
-        // При активном шейдере Base и Frame рендерит BakedModel; BER рисует только подвижные части.
+        float staticFade = SingleMeshVboRenderer.getFadeAlpha();
+        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
+
+        boolean anyFading = staticFade < 0.99f || (animFade >= 0 && animFade < 0.99f);
+        boolean effectiveBatching = useBatching && !anyFading;
+
+        // 1. Static parts (Base + Frame).
         if (useVboPath) {
             poseStack.pushPose();
-            poseStack.translate(-0.5f, 0.0f, -0.5f); // Центровка модели
+            poseStack.translate(-0.5f, 0.0f, -0.5f);
 
             // Base
-            if (useBatching && instancedBase != null && instancedBase.isInitialized()) {
+            if (effectiveBatching && instancedBase != null && instancedBase.isInitialized()) {
                 poseStack.pushPose();
                 instancedBase.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
                 poseStack.popPose();
@@ -336,7 +341,7 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
 
             // Frame
             if (blockState.hasProperty(MachineAdvancedAssemblerBlock.FRAME) && blockState.getValue(MachineAdvancedAssemblerBlock.FRAME)) {
-                if (useBatching && instancedFrame != null && instancedFrame.isInitialized()) {
+                if (effectiveBatching && instancedFrame != null && instancedFrame.isInitialized()) {
                     poseStack.pushPose();
                     instancedFrame.addInstance(poseStack, dynamicLight, blockPos, be, bufferSource);
                     poseStack.popPose();
@@ -348,12 +353,10 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
         }
 
         // 2. Animated parts: fade out at modelUpdateDistance.
-        float animFade = RenderDistanceHelper.computeAnimatedFade(blockPos);
         if (animFade < 0) return;
-        float savedFade = SingleMeshVboRenderer.getFadeAlpha();
-        SingleMeshVboRenderer.setFadeAlpha(Math.min(savedFade, animFade));
-        renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, useBatching);
-        SingleMeshVboRenderer.setFadeAlpha(savedFade);
+        SingleMeshVboRenderer.setFadeAlpha(Math.min(staticFade, animFade));
+        renderAnimated(be, partialTick, poseStack, dynamicLight, blockPos, bufferSource, effectiveBatching);
+        SingleMeshVboRenderer.setFadeAlpha(staticFade);
     }
 
     /**

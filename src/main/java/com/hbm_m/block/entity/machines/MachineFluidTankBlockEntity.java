@@ -54,7 +54,11 @@ import net.minecraftforge.items.IItemHandler;
 import net.minecraft.core.registries.BuiltInRegistries;
 *///?}
 
-public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider, IMultiblockSidedIO {
+public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider, IMultiblockSidedIO
+    //? if fabric {
+    , net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
+    //?}
+{
 
     public static final int SLOT_ID_IN = 0;
     public static final int SLOT_ID_OUT = 1;
@@ -227,8 +231,12 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
                 //? if forge {
                 /*requestModelDataUpdate();
                 *///?}
-                // Флаг 8 (Block.UPDATE_CLIENTS) заставляет клиентскую сторону перестроить меш чанка
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
+                //? if fabric {
+                if (level.isClientSide) {
+                    scheduleChunkRebuild();
+                }
+                //?}
             }
         }
     }
@@ -240,8 +248,20 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             /*requestModelDataUpdate();
             *///?}
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
+            //? if fabric {
+            scheduleChunkRebuild();
+            //?}
         }
     }
+
+    //? if fabric {
+    @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    private void scheduleChunkRebuild() {
+        if (level != null && level.isClientSide) {
+            com.hbm_m.client.render.DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
+        }
+    }
+    //?}
 
     public ResourceLocation getTankTextureLocation() {
         Fluid fluid = fluidTank.getTankType();
@@ -277,6 +297,13 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
                 .build();
     }
     *///?}
+
+    //? if fabric {
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getRenderAttachmentData() {
+        return getTankTextureLocation();
+    }
+    //?}
 
     public void explode() {
         if (this.hasExploded) return;

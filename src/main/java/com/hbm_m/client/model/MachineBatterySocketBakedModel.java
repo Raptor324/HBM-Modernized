@@ -86,7 +86,14 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
             quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(socketQuads, rotationY) : socketQuads);
         }
 
-        // Fabric: без Forge ModelData — батарейка в мире здесь не рисуем (совпадает с прежней заглушкой).
+        boolean showBattery = Boolean.TRUE.equals(FabricRenderDataBridge.get());
+        if (showBattery) {
+            BakedModel battery = getPart("Battery");
+            if (battery != null) {
+                List<BakedQuad> batteryQuads = getRetexturedBatteryQuads(battery, querySide, rand);
+                quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(batteryQuads, rotationY) : batteryQuads);
+            }
+        }
         return quads;
     }
     //?}
