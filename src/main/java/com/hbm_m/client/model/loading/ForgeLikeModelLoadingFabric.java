@@ -51,6 +51,16 @@ public final class ForgeLikeModelLoadingFabric {
             ForgeLikeUnbakedModel replacement = models.get(id);
             return replacement != null ? replacement : original;
         });
+
+        // Register variant/skin models so they are loaded into ModelManager.
+        // On Forge this is done via ModelEvent.RegisterAdditional; on Fabric we
+        // must call addModels() explicitly, otherwise getModel() returns the
+        // missing-model placeholder and door skin switching silently fails.
+        for (Object key : models.keySet()) {
+            if (key instanceof ResourceLocation rl && rl.getPath().startsWith("block/doors/")) {
+                ctx.addModels(rl);
+            }
+        }
     }
 
     private static Map<Object, ForgeLikeUnbakedModel> scanModels(ResourceManager rm) {
