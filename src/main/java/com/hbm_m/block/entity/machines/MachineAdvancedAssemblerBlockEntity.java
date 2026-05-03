@@ -58,6 +58,7 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import team.reborn.energy.api.EnergyStorage;
+import com.hbm_m.client.machine.AdvancedAssemblerClientTicker;
 //?}
 /**
  * Advanced Assembler Block Entity:
@@ -135,7 +136,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     *///?}
     //? if fabric {
     @Nullable
-    private ClientTicker clientTicker;
+    private AdvancedAssemblerClientTicker clientTicker;
     //?}
 
     // ContainerData: упаковываем long как два int через LongDataPacker
@@ -287,7 +288,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             /*entity.clientTicker.ifPresent(ticker -> invokeAdvAssemblerClientTick(ticker, level, pos, state, entity));
             *///?}
             //? if fabric {
-            if (entity.clientTicker == null) entity.clientTicker = new ClientTicker();
+            if (entity.clientTicker == null) entity.clientTicker = new AdvancedAssemblerClientTicker();
             entity.clientTicker.clientTick(level, pos, state, entity);
             //?}
         } else {
@@ -813,17 +814,17 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     //? if fabric {
     @Environment(EnvType.CLIENT)
     public float getRingAngle() {
-        return clientTicker != null ? clientTicker.ringAngle : 0;
+        return clientTicker != null ? clientTicker.getRingAngle() : 0;
     }
 
     @Environment(EnvType.CLIENT)
     public float getPrevRingAngle() {
-        return clientTicker != null ? clientTicker.prevRingAngle : 0;
+        return clientTicker != null ? clientTicker.getPrevRingAngle() : 0;
     }
 
     @Environment(EnvType.CLIENT)
-    public ClientTicker.AssemblerArm[] getArms() {
-        return clientTicker != null ? clientTicker.arms : new ClientTicker.AssemblerArm[0];
+    public AdvancedAssemblerClientTicker.AssemblerArm[] getArms() {
+        return clientTicker != null ? clientTicker.getArms() : new AdvancedAssemblerClientTicker.AssemblerArm[0];
     }
     //?}
 
