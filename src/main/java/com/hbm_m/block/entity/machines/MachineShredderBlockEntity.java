@@ -11,8 +11,7 @@ import com.hbm_m.inventory.menu.MachineShredderMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemBlades;
 import com.hbm_m.recipe.ShredderRecipe;
-import com.hbm_m.sound.ClientSoundManager;
-import com.hbm_m.sound.ShredderSoundInstance;
+import com.hbm_m.sound.ClientSoundBootstrap;
 
 import dev.architectury.registry.registries.RegistrySupplier;
 //? if forge {
@@ -52,6 +51,8 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
  * Основан на оригинальной версии из 1.7.10
  */
 public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
+
+    private static final String SHREDDER_SOUND_INSTANCE = "com.hbm_m.sound.ShredderSoundInstance";
 
     // Константы слотов (как в оригинале: 30 слотов)
     private static final int BATTERY_SLOT = 29;    // 29: батарея
@@ -197,7 +198,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         super.setRemoved();
         // Останавливаем звук при удалении блока
         if (level != null && level.isClientSide) {
-            ClientSoundManager.stopSound(worldPosition);
+            ClientSoundBootstrap.stopSound(level, worldPosition);
         }
     }
 
@@ -224,8 +225,15 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
 //? if fabric {
 @Environment(EnvType.CLIENT)//?}
     private void clientTick() {
-        ClientSoundManager.updateSound(this, getIsActive(),
-                () -> new ShredderSoundInstance(this.getBlockPos()));
+        ClientSoundBootstrap.updateSound(this, getIsActive(), () -> newShredderSoundInstance());
+    }
+
+    private Object newShredderSoundInstance() {
+        try {
+            return Class.forName(SHREDDER_SOUND_INSTANCE).getConstructor(BlockPos.class).newInstance(this.getBlockPos());
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
     
     /**

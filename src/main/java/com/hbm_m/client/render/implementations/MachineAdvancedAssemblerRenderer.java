@@ -13,7 +13,7 @@ import org.joml.Matrix4f;
 import org.joml.Vector3f;
 
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
-import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity.ClientTicker;
+import com.hbm_m.client.machine.AdvancedAssemblerClientTicker;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
@@ -447,14 +447,15 @@ public class MachineAdvancedAssemblerRenderer extends AbstractPartBasedRenderer<
             gpu.renderAnimatedPart(pose, blockLight, "Ring", matRing, blockPos, be, bufferSource);
         }
 
-        ClientTicker.AssemblerArm[] arms = be.getArms();
-        if (arms.length >= 2) {
+        AdvancedAssemblerClientTicker.AssemblerArm[] arms =
+            (AdvancedAssemblerClientTicker.AssemblerArm[]) be.getArms();
+        if (arms != null && arms.length >= 2) {
             renderArm(arms[0], false, pt, pose, blockLight, matRing, blockPos, be, bufferSource, useBatching);
             renderArm(arms[1], true, pt, pose, blockLight, matRing, blockPos, be, bufferSource, useBatching);
         }
     }
 
-    private void renderArm(ClientTicker.AssemblerArm arm, boolean inverted,
+    private void renderArm(AdvancedAssemblerClientTicker.AssemblerArm arm, boolean inverted,
                            float pt, PoseStack pose, int blockLight, Matrix4f baseTransform,
                            BlockPos blockPos, MachineAdvancedAssemblerBlockEntity be,
                            MultiBufferSource bufferSource, boolean useInstanced) {

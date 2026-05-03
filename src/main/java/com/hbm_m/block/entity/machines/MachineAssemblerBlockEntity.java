@@ -19,7 +19,7 @@ import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.recipe.AssemblerRecipe;
-import com.hbm_m.sound.ClientSoundManager;
+import com.hbm_m.sound.ClientSoundBootstrap;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.NonNullList;
@@ -66,6 +66,8 @@ import team.reborn.energy.api.EnergyStorage;
  * Адаптировано для long-энергосистемы с наследованием от BaseMachineBlockEntity.
  */
 public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
+
+    private static final String ASSEMBLER_SOUND_INSTANCE = "com.hbm_m.sound.AssemblerSoundInstance";
 
     // Слоты
     private static final int SLOT_COUNT = 18;
@@ -302,8 +304,15 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     private void clientTick() {
 
-        ClientSoundManager.updateSound(this, this.isCrafting(),
-                () -> new com.hbm_m.sound.AssemblerSoundInstance(this.getBlockPos()));
+        ClientSoundBootstrap.updateSound(this, this.isCrafting(), () -> newAssemblerSoundInstance());
+    }
+
+    private Object newAssemblerSoundInstance() {
+        try {
+            return Class.forName(ASSEMBLER_SOUND_INSTANCE).getConstructor(BlockPos.class).newInstance(this.getBlockPos());
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void serverTick() {
@@ -817,14 +826,13 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     public void setRemoved() {
         super.setRemoved(); // Сначала вызываем super
         //? if forge {
-        /*// Используем DistExecutor.runWhenOn - это правильный API для void возврата
-        net.minecraftforge.fml.DistExecutor.runWhenOn(net.minecraftforge.api.distmarker.Dist.CLIENT, () -> () -> {
-            ClientSoundManager.updateSound(this, false, null);
-        });
+        /*if (this.level != null && this.level.isClientSide) {
+            ClientSoundBootstrap.updateSound(this, false, null);
+        }
         *///?}
         //? if fabric {
         if (level != null && level.isClientSide) {
-            ClientSoundManager.updateSound(this, false, null);
+            ClientSoundBootstrap.updateSound(this, false, null);
         }
         //?}
 

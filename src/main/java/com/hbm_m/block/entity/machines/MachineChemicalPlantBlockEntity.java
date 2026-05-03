@@ -16,6 +16,7 @@ import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe.CountedIngredient;
 import com.hbm_m.recipe.ChemicalPlantRecipe.FluidIngredient;
+import com.hbm_m.sound.ClientSoundBootstrap;
 import com.hbm_m.platform.ModFluidTank;
 
 import dev.architectury.fluid.FluidStack;
@@ -58,6 +59,8 @@ import team.reborn.energy.api.EnergyStorage;
  * Логика крафтов - заглушка.
  */
 public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
+
+    private static final String CHEMICAL_PLANT_SOUND_INSTANCE = "com.hbm_m.sound.ChemicalPlantSoundInstance";
 
     private static final int SLOT_COUNT = 22;
     private static final int SLOT_BATTERY = 0;
@@ -400,8 +403,15 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
     /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
     *///?}
     private void clientTick() {
-        com.hbm_m.sound.ClientSoundManager.updateSound(this, this.didProcess,
-                () -> new com.hbm_m.sound.ChemicalPlantSoundInstance(this.getBlockPos()));
+        ClientSoundBootstrap.updateSound(this, this.didProcess, () -> newChemicalPlantSoundInstance());
+    }
+
+    private Object newChemicalPlantSoundInstance() {
+        try {
+            return Class.forName(CHEMICAL_PLANT_SOUND_INSTANCE).getConstructor(BlockPos.class).newInstance(this.getBlockPos());
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void chargeFromBattery() {

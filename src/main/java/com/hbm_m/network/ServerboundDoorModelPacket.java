@@ -5,7 +5,6 @@ import com.hbm_m.client.model.variant.DoorModelSelection;
 import com.hbm_m.client.model.variant.DoorModelType;
 import com.hbm_m.client.model.variant.DoorSkin;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.network.C2SPacket;
 
 import dev.architectury.networking.NetworkManager.PacketContext;
 
@@ -41,8 +40,9 @@ public class ServerboundDoorModelPacket implements C2SPacket {
     @Override
     public void write(FriendlyByteBuf buf) {
         buf.writeBlockPos(blockPos);
-        buf.writeUtf(selection.getModelType().getId());
-        buf.writeUtf(selection.getSkin().getId());
+        // Должно совпадать с readUtf(16/64), иначе декодер на другой стороне уезжает по буферу.
+        buf.writeUtf(selection.getModelType().getId(), 16);
+        buf.writeUtf(selection.getSkin().getId(), 64);
     }
 
     // ── Handler ───────────────────────────────────────────────────────────────

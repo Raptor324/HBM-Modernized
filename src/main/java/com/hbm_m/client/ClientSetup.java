@@ -28,6 +28,7 @@ import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.item.tags_and_tiers.ModTags;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.custom.DarkParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
@@ -117,6 +118,8 @@ public class ClientSetup {
     public static synchronized void initClient() {
         if (initialized) return;
         initialized = true;
+
+        ModPacketHandler.registerClientReceivers();
 
         // Key mappings регистрируются в ModConfigKeybindHandler.init() через Architectury/обвязку,
         // но на некоторых таргетах удобно иметь fallback в одном месте.

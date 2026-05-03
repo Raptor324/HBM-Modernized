@@ -18,8 +18,8 @@ import java.util.function.Function;
  * Использует Architectury NetworkManager — один код для Forge и Fabric.
  *
  * Регистрация пакета:
- *   registerS2C(ID, decoder, handler)  — сервер → клиент
- *   registerC2S(ID, decoder, handler)  — клиент → сервер
+ *   registerClientReceivers() — S2C (сервер → клиент), только из {@link com.hbm_m.client.ClientSetup#initClient()}
+ *   register() — C2S (клиент → сервер), из common setup на клиенте и сервере
  *
  * Отправка:
  *   sendToPlayer(player, packet)       — сервер → конкретный игрок
@@ -29,6 +29,9 @@ import java.util.function.Function;
 public class ModPacketHandler {
 
     private static boolean REGISTERED = false;
+    private static boolean CLIENT_RECEIVERS_REGISTERED = false;
+    private static final boolean NET_DEBUG_PACKETS = Boolean.getBoolean("hbm_m.netDebugPackets");
+    private static final boolean DISABLE_S2C = Boolean.getBoolean("hbm_m.disableS2C");
 
     // ══════════════════════════ ID пакетов ════════════════════════════════════
 
@@ -63,11 +66,14 @@ public class ModPacketHandler {
 
     // ══════════════════════════ Регистрация ═══════════════════════════════════
 
-    public static void register() {
-        if (REGISTERED) return;
-        REGISTERED = true;
-
-        // ── S2C (сервер → клиент) ────────────────────────────────────────────
+    /**
+     * Регистрация приёмников S2C — вызывать только с клиентского setup (Forge {@code FMLClientSetupEvent} /
+     * Fabric client entrypoint). Не вызывать из {@code LifecycleEvent.SETUP}: на Forge порядок/класслоадер
+     * отличается от настоящего клиента, Architectury может не привязать S2C → обрыв с UTF при входе на сервер.
+     */
+    public static void registerClientReceivers() {
+        if (CLIENT_RECEIVERS_REGISTERED) return;
+        CLIENT_RECEIVERS_REGISTERED = true;
 
         registerS2C(GEIGER_SOUND,
                 GeigerSoundPacket::decode,
@@ -92,6 +98,23 @@ public class ModPacketHandler {
         registerS2C(AUX_PARTICLE,
                 AuxParticlePacket::decode,
                 AuxParticlePacket::handle);
+
+        registerS2C(POWER_ARMOR_DASH,
+                PowerArmorDashPacket::decode,
+                PowerArmorDashPacket::handle);
+
+        registerS2C(ORPHANED_PHANTOMS,
+                HighlightBlocksPacket.OrphanedPhantomsPacket::fromBytes,
+                HighlightBlocksPacket.OrphanedPhantomsPacket::handle);
+
+        registerS2C(SPAWN_PARTICLE,
+                SpawnAlwaysVisibleParticlePacket::decode,
+                SpawnAlwaysVisibleParticlePacket::handle);
+    }
+
+    public static void register() {
+        if (REGISTERED) return;
+        REGISTERED = true;
 
         // ── C2S (клиент → сервер) ────────────────────────────────────────────
 
@@ -143,10 +166,6 @@ public class ModPacketHandler {
                 AnvilSelectRecipeC2SPacket::decode,
                 AnvilSelectRecipeC2SPacket::handle);
 
-        registerS2C(POWER_ARMOR_DASH,
-                PowerArmorDashPacket::decode,
-                PowerArmorDashPacket::handle);
-
         registerC2S(DOOR_MODEL,
                 ServerboundDoorModelPacket::decode,
                 ServerboundDoorModelPacket::handle);
@@ -158,14 +177,6 @@ public class ModPacketHandler {
         registerC2S(ITEM_DESIGNATOR,
                 ItemDesignatorPacket::decode,
                 ItemDesignatorPacket::handle);
-
-        registerS2C(ORPHANED_PHANTOMS,
-                HighlightBlocksPacket.OrphanedPhantomsPacket::fromBytes,
-                HighlightBlocksPacket.OrphanedPhantomsPacket::handle);
-
-        registerS2C(SPAWN_PARTICLE,
-                SpawnAlwaysVisibleParticlePacket::decode,
-                SpawnAlwaysVisibleParticlePacket::handle);
     }
 
     // ══════════════════════ Вспомогательные методы ════════════════════════════
@@ -221,8 +232,26 @@ public class ModPacketHandler {
      * Вызывается с серверной стороны.
      */
     public static void sendToPlayer(ServerPlayer player, ResourceLocation id, S2CPacket packet) {
+        if (DISABLE_S2C) {
+            if (NET_DEBUG_PACKETS) {
+                com.hbm_m.main.MainRegistry.LOGGER.info(
+                        "[NET-DBG] S2C disabled, drop -> {} id={}",
+                        player.getGameProfile().getName(),
+                        id
+                );
+            }
+            return;
+        }
         FriendlyByteBuf buf = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         packet.write(buf);
+        if (NET_DEBUG_PACKETS) {
+            com.hbm_m.main.MainRegistry.LOGGER.info(
+                    "[NET-DBG] S2C -> {} id={} bytes={}",
+                    player.getGameProfile().getName(),
+                    id,
+                    buf.readableBytes()
+            );
+        }
         NetworkManager.sendToPlayer(player, id, buf);
     }
 
@@ -264,6 +293,13 @@ public class ModPacketHandler {
     public static void sendToServer(ResourceLocation id, C2SPacket packet) {
         FriendlyByteBuf buf = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         packet.write(buf);
+        if (NET_DEBUG_PACKETS) {
+            com.hbm_m.main.MainRegistry.LOGGER.info(
+                    "[NET-DBG] C2S id={} bytes={}",
+                    id,
+                    buf.readableBytes()
+            );
+        }
         NetworkManager.sendToServer(id, buf);
     }
 }

@@ -15,7 +15,7 @@ import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import com.hbm_m.sound.ClientSoundManager;
+import com.hbm_m.sound.ClientSoundBootstrap;
 
 // Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
 //? if fabric {
@@ -34,8 +34,6 @@ import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -47,7 +45,8 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     , net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
     //?}
 {
-    
+    private static final String DOOR_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.DoorLoopSoundFactory";
+
     // 0=закрыта, 1=открыта, 2=закрывается, 3=открывается
     public byte state = 0;
     private int openTicks = 0;
@@ -604,7 +603,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
             handleSoundEnd(decl.getCloseSoundEnd());
             
         } else {
-            ClientSoundManager.stopSound(worldPosition);
+            ClientSoundBootstrap.stopSound(level, worldPosition);
         }
     }
 //? if forge {
@@ -615,17 +614,17 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     private void handleSoundTransition(SoundEvent startSound, SoundEvent loopSound, SoundEvent loopSound2) {
         // 1. Разовый звук старта
         if (startSound != null) {
-            ClientSoundManager.playOneShotSound(worldPosition, startSound, getDoorDecl().getSoundVolume());
+            ClientSoundBootstrap.playOneShotSound(level, worldPosition, startSound, getDoorDecl().getSoundVolume());
         }
         
         // 2. Первый цикл (основной)
         if (loopSound != null) {
-            ClientSoundManager.updateDoorSound(worldPosition, "loop1", true, () -> createLoopingSound(loopSound));
+            ClientSoundBootstrap.updateDoorSoundRaw(level, worldPosition, "loop1", true, () -> createLoopingSoundReflect(loopSound));
         }
         
         // 3. Второй цикл (дополнительный, например сирена)
         if (loopSound2 != null) {
-            ClientSoundManager.updateDoorSound(worldPosition, "loop2", true, () -> createLoopingSound(loopSound2));
+            ClientSoundBootstrap.updateDoorSoundRaw(level, worldPosition, "loop2", true, () -> createLoopingSoundReflect(loopSound2));
         }
     }
 //? if forge {
@@ -635,12 +634,12 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
 @Environment(EnvType.CLIENT)//?}
     private void handleSoundEnd(SoundEvent endSound) {
         // Останавливаем ОБА цикла
-        ClientSoundManager.stopSpecificSound(worldPosition, "loop1");
-        ClientSoundManager.stopSpecificSound(worldPosition, "loop2");
+        ClientSoundBootstrap.stopSpecificSound(level, worldPosition, "loop1");
+        ClientSoundBootstrap.stopSpecificSound(level, worldPosition, "loop2");
         
         // Воспроизводим звук финиша
         if (endSound != null) {
-            ClientSoundManager.playOneShotSound(worldPosition, endSound, getDoorDecl().getSoundVolume());
+            ClientSoundBootstrap.playOneShotSound(level, worldPosition, endSound, getDoorDecl().getSoundVolume());
         }
     }
 //? if forge {
@@ -648,39 +647,21 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
 *///?}
 //? if fabric {
 @Environment(EnvType.CLIENT)//?}
-    private net.minecraft.client.resources.sounds.AbstractTickableSoundInstance createLoopingSound(SoundEvent sound) {
-        return new net.minecraft.client.resources.sounds.AbstractTickableSoundInstance(sound, SoundSource.BLOCKS, RandomSource.create()) {
-            {
-                this.x = DoorBlockEntity.this.worldPosition.getX() + 0.5;
-                this.y = DoorBlockEntity.this.worldPosition.getY() + 0.5;
-                this.z = DoorBlockEntity.this.worldPosition.getZ() + 0.5;
-                this.volume = getDoorDecl().getSoundVolume();
-                this.pitch = 1.0f;
-                this.looping = true;
-            }
-            
-            @Override
-            public void tick() {
-                Level level = net.minecraft.client.Minecraft.getInstance().level; //  Полное имя
-                if (level == null) {
-                    this.stop();
-                    return;
-                }
-                
-                BlockEntity be = level.getBlockEntity(DoorBlockEntity.this.worldPosition);
-                if (!(be instanceof DoorBlockEntity doorBE) ||
-                    (doorBE.state != 2 && doorBE.state != 3)) {
-                    this.stop();
-                }
-            }
-        };
+    private Object createLoopingSoundReflect(SoundEvent sound) {
+        try {
+            return Class.forName(DOOR_LOOP_SOUND_FACTORY)
+                .getMethod("create", DoorBlockEntity.class, SoundEvent.class)
+                .invoke(null, this, sound);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void setRemoved() {
         super.setRemoved();
         if (level != null && level.isClientSide) {
-            ClientSoundManager.stopSound(worldPosition);
+            ClientSoundBootstrap.stopSound(level, worldPosition);
         }
     }
 

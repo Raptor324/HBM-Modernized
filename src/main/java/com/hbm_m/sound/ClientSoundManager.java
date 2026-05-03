@@ -46,6 +46,15 @@ public class ClientSoundManager {
             stopSpecificSound(pos, soundType);
         }
     }
+
+    /**
+     * Raw-версия для общего кода: позволяет передавать Supplier без упоминания
+     * клиентских типов в сигнатурах common-классов.
+     */
+    @SuppressWarnings("unchecked")
+    public static void updateDoorSoundRaw(BlockPos pos, String soundType, boolean isMoving, Supplier<?> loopSoundSupplier) {
+        updateDoorSound(pos, soundType, isMoving, (Supplier<AbstractTickableSoundInstance>) loopSoundSupplier);
+    }
     
     public static void playOneShotSound(BlockPos pos, SoundEvent sound, float volume) {
         if (sound == null) return;
