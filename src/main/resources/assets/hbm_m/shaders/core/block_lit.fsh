@@ -3,13 +3,13 @@
 in vec2 texCoord;
 in vec2 lightmapUV;
 in float vertexDistance;
+in float vFadeAlpha;
 
 uniform sampler2D Sampler0;
 uniform sampler2D Sampler2;
 uniform vec4 FogColor;
 uniform float FogStart;
 uniform float FogEnd;
-uniform float FadeAlpha;
 
 out vec4 fragColor;
 
@@ -22,7 +22,7 @@ void main() {
     vec3 lit = baseColor.rgb * lm;
     lit *= 0.6;
 
-    float alpha = baseColor.a * FadeAlpha;
+    float alpha = baseColor.a * vFadeAlpha;
     if (alpha < 0.01) {
         discard;
     }

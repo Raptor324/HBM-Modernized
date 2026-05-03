@@ -27,20 +27,21 @@ final class ObjQuadBaker {
                                            TextureAtlasSprite sprite,
                                            boolean flipV,
                                            Transformation transform,
-                                           boolean shade) {
+                                           boolean shade,
+                                           int tintIndex) {
         List<ObjModelData.FaceVertex> vs = face.verts();
         if (vs.size() < 3) return List.of();
 
         if (vs.size() == 3) {
-            return List.of(bakeQuad(vs.get(0), vs.get(1), vs.get(2), vs.get(2), sprite, flipV, transform, shade));
+            return List.of(bakeQuad(vs.get(0), vs.get(1), vs.get(2), vs.get(2), sprite, flipV, transform, shade, tintIndex));
         }
         if (vs.size() == 4) {
-            return List.of(bakeQuad(vs.get(0), vs.get(1), vs.get(2), vs.get(3), sprite, flipV, transform, shade));
+            return List.of(bakeQuad(vs.get(0), vs.get(1), vs.get(2), vs.get(3), sprite, flipV, transform, shade, tintIndex));
         }
 
         List<BakedQuad> out = new ArrayList<>(vs.size() - 2);
         for (int i = 1; i + 1 < vs.size(); i++) {
-            out.add(bakeQuad(vs.get(0), vs.get(i), vs.get(i + 1), vs.get(i + 1), sprite, flipV, transform, shade));
+            out.add(bakeQuad(vs.get(0), vs.get(i), vs.get(i + 1), vs.get(i + 1), sprite, flipV, transform, shade, tintIndex));
         }
         return out;
     }
@@ -52,7 +53,8 @@ final class ObjQuadBaker {
                                       TextureAtlasSprite sprite,
                                       boolean flipV,
                                       Transformation transform,
-                                      boolean shade) {
+                                      boolean shade,
+                                      int tintIndex) {
         boolean hasTransform = transform != null && !transform.equals(Transformation.identity());
 
         Matrix4f m = hasTransform ? new Matrix4f(transform.getMatrix()) : new Matrix4f().identity();
@@ -101,7 +103,7 @@ final class ObjQuadBaker {
         putVertex(data, 2, pos[2], uv(c, sprite, flipV), packed);
         putVertex(data, 3, pos[3], uv(d, sprite, flipV), packed);
 
-        return new BakedQuad(data, -1, dir, sprite, shade);
+        return new BakedQuad(data, tintIndex, dir, sprite, shade);
     }
 
     /**

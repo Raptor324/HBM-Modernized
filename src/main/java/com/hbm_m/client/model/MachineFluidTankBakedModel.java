@@ -61,6 +61,12 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
     *///?}
 
     //? if fabric {
+    /**
+     * Текстура «стакана» берётся из {@link MachineFluidTankBlockEntity#getRenderAttachmentData()}
+     * через {@link FabricRenderDataBridge} на этапе сборки чанка (см. mixins на ModelBlockRenderer / Sodium).
+     * При смене типа жидкости клиентский {@code BlockEntity.load()} должен планировать пересборку чанка,
+     * иначе кэш меша Sodium останется со старыми UV.
+     */
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         return getQuadsInternal(state, side, rand, FabricRenderDataBridge.get(), null);

@@ -23,6 +23,7 @@ import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.ObjModelVboBuilder;
 import com.hbm_m.client.render.OcclusionCullingHelper;
 import com.hbm_m.client.render.RenderDistanceHelper;
+import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
@@ -231,6 +232,15 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             return;
         }
 
+        // Рамка и створки — одна дистанция modelStaticRenderDistance (без modelUpdateDistance):
+        // иначе ThreadLocal FadeAlpha остаётся от другой BE, а instanced addInstance пишет чужую
+        // альфу в буфер до flush (как с машинами).
+        float doorFade = RenderDistanceHelper.computeStaticFade(blockPos);
+        if (doorFade < 0) {
+            return;
+        }
+        SingleMeshVboRenderer.setFadeAlpha(doorFade);
+
         // Применяем базовое смещение модели
         doorDecl.doOffsetTransform(animator);
 
@@ -404,11 +414,20 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             var quads = GlobalMeshCache.getOrCompile(animCacheKey, partModel);
             if (quads != null && !quads.isEmpty() && bufferSource != null) {
                 float brightness = ModClothConfig.get().doorAnimatedPartBrightness / 100f;
-                var consumer = bufferSource.getBuffer(RenderType.solid());
+                float fade = SingleMeshVboRenderer.getFadeAlpha();
+                float r = brightness * fade;
+                RenderType animRt = fade < 0.99f ? RenderType.translucent() : RenderType.solid();
+                var consumer = bufferSource.getBuffer(animRt);
                 var pose = poseStack.last();
                 for (var quad : quads) {
-                    consumer.putBulkData(pose, quad, brightness, brightness, brightness, packedLight,
+                    //? if forge {
+                    /*consumer.putBulkData(pose, quad, r, r, r, fade, packedLight,
+                            net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, false);
+                    *///?}
+                    //? if fabric {
+                    consumer.putBulkData(pose, quad, r, r, r, packedLight,
                             net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY);
+                    //?}
                 }
             }
         }

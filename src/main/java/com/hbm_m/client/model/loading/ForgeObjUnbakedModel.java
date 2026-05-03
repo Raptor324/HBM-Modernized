@@ -33,6 +33,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.GsonHelper;
 
+import org.jetbrains.annotations.Nullable;
+
 @Environment(EnvType.CLIENT)
 public final class ForgeObjUnbakedModel implements ForgeLikeUnbakedModel {
 
@@ -62,7 +64,12 @@ public final class ForgeObjUnbakedModel implements ForgeLikeUnbakedModel {
         Map<String, Boolean> visibility = parseVisibility(json);
         Transformation rootTransform = JsonModelTransforms.parseRootTransform(json.getAsJsonObject("transform"));
         ItemTransforms itemTransforms = JsonModelTransforms.parseItemTransforms(json.get("display"), gson);
-        ObjModelData data = ObjModelData.load(rm, objLoc);
+        @Nullable ResourceLocation mtlOverride = null;
+        if (json.has("mtl_override")) {
+            String mo = GsonHelper.getAsString(json, "mtl_override");
+            mtlOverride = ResourceLocation.tryParse(mo);
+        }
+        ObjModelData data = ObjModelData.load(rm, objLoc, mtlOverride);
         return new ForgeObjUnbakedModel(id, objLoc, flipV, shadeQuads, automaticCulling, textures, visibility, rootTransform, data, itemTransforms);
     }
 
@@ -104,7 +111,8 @@ public final class ForgeObjUnbakedModel implements ForgeLikeUnbakedModel {
                 TextureAtlasSprite sprite = spriteGetter.apply(new Material(TextureAtlas.LOCATION_BLOCKS, tex));
                 if (sprite == null) sprite = spriteGetter.apply(new Material(TextureAtlas.LOCATION_BLOCKS, MissingTextureAtlasSprite.getLocation()));
 
-                List<net.minecraft.client.renderer.block.model.BakedQuad> quads = ObjQuadBaker.bakeFaceToQuads(f, sprite, flipV, combined, shadeQuads);
+                List<net.minecraft.client.renderer.block.model.BakedQuad> quads = ObjQuadBaker.bakeFaceToQuads(
+                        f, sprite, flipV, combined, shadeQuads, objData.tintIndexForMaterial(f.materialName()));
                 for (net.minecraft.client.renderer.block.model.BakedQuad q : quads) ObjQuadBaker.addQuadWithCulling(q, out, automaticCulling);
             }
         } finally {

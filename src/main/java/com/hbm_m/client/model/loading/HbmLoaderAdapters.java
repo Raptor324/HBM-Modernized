@@ -227,7 +227,7 @@ final class HbmLoaderAdapters {
                         TextureAtlasSprite sprite = spriteGetter.apply(new Material(TextureAtlas.LOCATION_BLOCKS, tex));
                         if (sprite == null) sprite = spriteGetter.apply(new Material(TextureAtlas.LOCATION_BLOCKS, MissingTextureAtlasSprite.getLocation()));
 
-                        List<BakedQuad> fQuads = ObjQuadBaker.bakeFaceToQuads(f, sprite, flipV, combined, true);
+                        List<BakedQuad> fQuads = ObjQuadBaker.bakeFaceToQuads(f, sprite, flipV, combined, true, data.tintIndexForMaterial(f.materialName()));
                         for (BakedQuad q : fQuads) ObjQuadBaker.addQuadWithCulling(q, quads, automaticCulling);
                     }
                     bakedParts.put(part, new ObjBakedModel(quads, particle, true, false, ItemTransforms.NO_TRANSFORMS, ItemOverrides.EMPTY));
@@ -289,7 +289,7 @@ final class HbmLoaderAdapters {
                     for (ObjModelData.Face f : data.faces()) {
                         ResourceLocation tex = resolveTexture(textures, data, f);
                         TextureAtlasSprite sprite = spriteGetter.apply(new Material(TextureAtlas.LOCATION_BLOCKS, tex));
-                        List<BakedQuad> fQuads = ObjQuadBaker.bakeFaceToQuads(f, sprite, flipV, combined, true);
+                        List<BakedQuad> fQuads = ObjQuadBaker.bakeFaceToQuads(f, sprite, flipV, combined, true, data.tintIndexForMaterial(f.materialName()));
                         for (BakedQuad q : fQuads) ObjQuadBaker.addQuadWithCulling(q, quads, automaticCulling);
                     }
                     bakedParts.put(e.getKey(), new ObjBakedModel(quads, particle, true, false, ItemTransforms.NO_TRANSFORMS, ItemOverrides.EMPTY));
@@ -336,7 +336,7 @@ final class HbmLoaderAdapters {
                     if (sprite == null) sprite = particle;
 
                     for (ObjModelData.Face f : data.faces()) {
-                        List<BakedQuad> fQuads = ObjQuadBaker.bakeFaceToQuads(f, sprite, flipV, combined, true);
+                        List<BakedQuad> fQuads = ObjQuadBaker.bakeFaceToQuads(f, sprite, flipV, combined, true, data.tintIndexForMaterial(f.materialName()));
                         for (BakedQuad q : fQuads) ObjQuadBaker.addQuadWithCulling(q, quads, automaticCulling);
                     }
                     bakedParts.put(e.getKey(), new ObjBakedModel(quads, particle, true, false, ItemTransforms.NO_TRANSFORMS, ItemOverrides.EMPTY));

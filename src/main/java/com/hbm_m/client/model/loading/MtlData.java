@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
+import java.util.Locale;
 import java.util.Map;
 
 import com.hbm_m.main.MainRegistry;
@@ -21,23 +22,40 @@ final class MtlData {
     private MtlData() {}
 
     /**
-     * Reads {@code map_Kd} for each {@code newmtl}.
-     * Returns map: materialName -> raw map_Kd value (e.g. "#surface" or "hbm_m:block/airbomb").
+     * Результат разбора MTL: diffuse по материалу и опциональные {@code forge_TintIndex} (как в Forge OBJ).
      */
-    static Map<String, String> load(ResourceManager rm, ResourceLocation objLocation, String mtllibFile) {
-        // mtllib uses a file name relative to the OBJ file location.
+    record MtlParseResult(Map<String, String> texturesByMaterial, Map<String, Integer> tintIndexByMaterial) {
+        static final MtlParseResult EMPTY = new MtlParseResult(Map.of(), Map.of());
+    }
+
+    /**
+     * MTL из {@code mtllib} относительно каталога OBJ.
+     */
+    static MtlParseResult load(ResourceManager rm, ResourceLocation objLocation, String mtllibFile) {
         String objPath = objLocation.getPath();
         int lastSlash = objPath.lastIndexOf('/');
         String baseDir = lastSlash >= 0 ? objPath.substring(0, lastSlash + 1) : "";
 
         ResourceLocation mtlLoc = new ResourceLocation(objLocation.getNamespace(), baseDir + mtllibFile);
+        return readMtlFile(rm, mtlLoc, "OBJ " + objLocation);
+    }
+
+    /**
+     * MTL по абсолютному id (как в JSON {@code mtl_override}: {@code modid:models/.../file.mtl}).
+     */
+    static MtlParseResult loadAbsolute(ResourceManager rm, ResourceLocation mtlFile) {
+        return readMtlFile(rm, mtlFile, mtlFile.toString());
+    }
+
+    private static MtlParseResult readMtlFile(ResourceManager rm, ResourceLocation mtlLoc, String contextForLog) {
         Resource res = rm.getResource(mtlLoc).orElse(null);
         if (res == null) {
-            MainRegistry.LOGGER.warn("MTL not found for OBJ {}: {}", objLocation, mtlLoc);
-            return Map.of();
+            MainRegistry.LOGGER.warn("MTL not found ({}): {}", contextForLog, mtlLoc);
+            return MtlParseResult.EMPTY;
         }
 
-        Map<String, String> out = new HashMap<>();
+        Map<String, String> textures = new HashMap<>();
+        Map<String, Integer> tints = new HashMap<>();
         String currentMtl = null;
         try (BufferedReader br = new BufferedReader(new InputStreamReader(res.open(), StandardCharsets.UTF_8))) {
             String line;
@@ -48,16 +66,26 @@ final class MtlData {
                     currentMtl = line.substring("newmtl ".length()).trim();
                     continue;
                 }
-                if (currentMtl != null && line.startsWith("map_Kd ")) {
+                if (currentMtl == null) continue;
+
+                if (line.startsWith("map_Kd ")) {
                     String tex = line.substring("map_Kd ".length()).trim();
-                    out.put(currentMtl, tex);
+                    textures.put(currentMtl, tex);
+                    continue;
+                }
+
+                String[] sp = line.split("\\s+");
+                if (sp.length >= 2 && sp[0].toLowerCase(Locale.ROOT).equals("forge_tintindex")) {
+                    try {
+                        tints.put(currentMtl, Integer.parseInt(sp[1]));
+                    } catch (NumberFormatException ignored) {
+                    }
                 }
             }
         } catch (Exception e) {
-            MainRegistry.LOGGER.warn("Failed to read MTL {}", mtlLoc, e);
+            MainRegistry.LOGGER.warn("Failed to read MTL {} ({})", mtlLoc, contextForLog, e);
         }
-        return out;
+        return new MtlParseResult(Map.copyOf(textures), Map.copyOf(tints));
     }
 }
 //?}
-

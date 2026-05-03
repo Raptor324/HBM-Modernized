@@ -1,14 +1,16 @@
 package com.hbm_m.mixin;
 
-//? if fabric {
-import com.hbm_m.client.model.FabricRenderDataBridge;
-import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachedBlockView;
 import org.spongepowered.asm.mixin.Dynamic;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Pseudo;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
+
+//? if fabric {
+import com.hbm_m.client.model.FabricRenderDataBridge;
+
+import net.fabricmc.fabric.api.rendering.data.v1.RenderAttachedBlockView;
 
 @Pseudo
 @Mixin(targets = "me.jellysquid.mods.sodium.client.render.chunk.compile.pipeline.BlockRenderer", remap = false)

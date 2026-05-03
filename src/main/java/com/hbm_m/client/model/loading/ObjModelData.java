@@ -5,9 +5,10 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.main.MainRegistry;
 
@@ -32,6 +33,8 @@ public final class ObjModelData {
     private final List<Vec3> normals;
     private final List<Face> faces;
     private final Map<String, String> materialToTexture; // map_Kd raw string (can be "#key" or "ns:path")
+    /** Как у Forge OBJ: {@code forge_TintIndex} из MTL (например оверлей трубы = 1 для {@link net.minecraft.client.color.block.BlockColors}). */
+    private final Map<String, Integer> materialTintIndex;
     private final float minX, minY, minZ, maxX, maxY, maxZ;
 
     private ObjModelData(List<Vec3> positions,
@@ -39,6 +42,7 @@ public final class ObjModelData {
                          List<Vec3> normals,
                          List<Face> faces,
                          Map<String, String> materialToTexture,
+                         Map<String, Integer> materialTintIndex,
                          float minX, float minY, float minZ,
                          float maxX, float maxY, float maxZ) {
         this.positions = positions;
@@ -46,6 +50,7 @@ public final class ObjModelData {
         this.normals = normals;
         this.faces = faces;
         this.materialToTexture = materialToTexture;
+        this.materialTintIndex = materialTintIndex;
         this.minX = minX;
         this.minY = minY;
         this.minZ = minZ;
@@ -74,6 +79,12 @@ public final class ObjModelData {
         return materialToTexture.get(materialName);
     }
 
+    /** Tint index для квада (совпадает с Forge OBJ); -1 = без покраски блоком. */
+    public int tintIndexForMaterial(@Nullable String materialName) {
+        if (materialName == null) return -1;
+        return materialTintIndex.getOrDefault(materialName, -1);
+    }
+
     /**
      * Heuristic: if model vertices include negative coordinates, it's usually authored around origin (e.g. [-0.5..0.5]).
      * Such models should rotate around origin, and then be translated into block space by JSON "transform".
@@ -83,6 +94,14 @@ public final class ObjModelData {
     }
 
     public static ObjModelData load(ResourceManager rm, ResourceLocation objLocation) {
+        return load(rm, objLocation, null);
+    }
+
+    /**
+     * @param mtlOverride абсолютный id MTL из JSON {@code mtl_override} (Forge OBJ). Если задан — используется только он
+     * (как полная подстановка материалов для этого bake), без слияния с {@code mtllib} из OBJ; иначе — MTL из {@code mtllib}.
+     */
+    public static ObjModelData load(ResourceManager rm, ResourceLocation objLocation, @Nullable ResourceLocation mtlOverride) {
         // Forge expects location like "modid:models/block/foo.obj"
         ResourceLocation file = new ResourceLocation(objLocation.getNamespace(), objLocation.getPath());
         Resource objRes = rm.getResource(file).orElseThrow(() -> new IllegalArgumentException("OBJ not found: " + file));
@@ -149,7 +168,16 @@ public final class ObjModelData {
             throw new RuntimeException("Failed to read OBJ: " + file, e);
         }
 
-        Map<String, String> materialToTex = mtllib != null ? MtlData.load(rm, objLocation, mtllib) : Map.of();
+        MtlData.MtlParseResult mtl;
+        if (mtlOverride != null) {
+            mtl = MtlData.loadAbsolute(rm, mtlOverride);
+        } else if (mtllib != null) {
+            mtl = MtlData.load(rm, objLocation, mtllib);
+        } else {
+            mtl = MtlData.MtlParseResult.EMPTY;
+        }
+        Map<String, String> materialToTex = mtl.texturesByMaterial();
+        Map<String, Integer> materialTint = mtl.tintIndexByMaterial();
         MainRegistry.LOGGER.debug("Loaded OBJ {} (v={}, vt={}, vn={}, faces={}, mtllib={})",
                 objLocation, positions.size(), uvs.size(), normals.size(), faces.size(), mtllib);
 
@@ -164,7 +192,7 @@ public final class ObjModelData {
             maxZ = Math.max(maxZ, v.z());
         }
 
-        return new ObjModelData(positions, uvs, normals, faces, materialToTex, minX, minY, minZ, maxX, maxY, maxZ);
+        return new ObjModelData(positions, uvs, normals, faces, materialToTex, materialTint, minX, minY, minZ, maxX, maxY, maxZ);
     }
 
     private static FaceVertex parseFaceVertex(String token, int vCount, int vtCount, int vnCount) {

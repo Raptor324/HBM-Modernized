@@ -165,7 +165,11 @@ public class ClientSetup {
                 ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get(),
                 ModBlocks.MACHINE_ASSEMBLER.get(),
                 ModBlocks.CHEMICAL_PLANT.get(),
-                ModBlocks.CRYSTALLIZER.get());
+                ModBlocks.CRYSTALLIZER.get(),
+                // Multipart base (solid) + overlay (cutout) в Forge; на Fabric без слоя cutout оверлей с альфой не рисуется.
+                ModBlocks.FLUID_DUCT.get(),
+                ModBlocks.FLUID_DUCT_COLORED.get(),
+                ModBlocks.FLUID_DUCT_SILVER.get());
     }
 
     private static void registerFabricShaders() {
@@ -208,6 +212,7 @@ public class ClientSetup {
                 .put("InstLightC23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstLightC45", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstLightC67", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstFadeAlpha", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1))
                 .build()
         );
 
@@ -228,6 +233,7 @@ public class ClientSetup {
                 .put("InstLightS2C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstLightS3C01", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .put("InstLightS3C23", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
+                .put("InstFadeAlpha", new VertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 1))
                 .build()
         );
 
@@ -489,11 +495,6 @@ public class ClientSetup {
     }
 
     private static void registerReloadListenersCommon() {
-//        Reload listeners registered via Forge event below.
-        //? if forge {
-
-        //?}
-
         //? if fabric {
         // Критично: без вызова registerFabricShaders на Fabric не выполнялся loadFabricShaders — instanced shader == null,
         // flushBatchVanilla молча сбрасывал батч (машины пропадали), renderSingle уходил в putBulkData с WARN на каждый quad.

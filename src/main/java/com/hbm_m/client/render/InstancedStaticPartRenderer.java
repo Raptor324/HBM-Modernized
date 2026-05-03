@@ -76,14 +76,18 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     //   InstLightC23  vec4 (loc 8) @ 17   -- c2.uv, c3.uv
     //   InstLightC45  vec4 (loc 9) @ 21   -- c4.uv, c5.uv
     //   InstLightC67  vec4 (loc 10) @ 25  -- c6.uv, c7.uv
+    //   InstFadeAlpha float (loc 11) @ 29 -- captured at addInstance (flush used wrong global FadeAlpha)
+    // Sliced: lights @13..44, InstFadeAlpha (loc 15) @45
     private static final int INSTANCE_ATTRIB_FIRST = 3;
     private static final int LIGHT_FLOAT_OFFSET = 13; // first float of light data in instance record
-    private static final int BASE_INSTANCE_DATA_SIZE = 29; // legacy: 8 corners = 16 floats
-    private static final int SLICED_INSTANCE_DATA_SIZE = 45; // 4 slices * 4 probes * 2 floats = 32 floats
+    private static final int BASE_INSTANCE_DATA_SIZE = 30; // + InstFadeAlpha
+    private static final int SLICED_INSTANCE_DATA_SIZE = 46; // 4 slices * 4 probes * 2 floats = 32 floats + fade
 
     private final boolean useSlicedLight;
     private final int instanceDataSize;
     private final int instanceAttribLast;
+    /** Float index of {@code InstFadeAlpha} inside one instance record. */
+    private final int instanceFadeFloatOffset;
     private final int lightFloatCount;
 
     private int instanceCount = 0;
@@ -218,7 +222,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         this.quadsForIris = quadsForIris;
         this.useSlicedLight = useSlicedLight;
         this.instanceDataSize = useSlicedLight ? SLICED_INSTANCE_DATA_SIZE : BASE_INSTANCE_DATA_SIZE;
-        this.instanceAttribLast = useSlicedLight ? 14 : 10;
+        this.instanceAttribLast = useSlicedLight ? 15 : 11;
+        this.instanceFadeFloatOffset = useSlicedLight ? 45 : 29;
         this.lightFloatCount = useSlicedLight ? 32 : 16;
         this.tmpCornerUV = new float[lightFloatCount];
         this.tmpCornerShort = new short[lightFloatCount];
@@ -327,6 +332,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 GL20.glEnableVertexAttribArray(10);
                 GL20.glVertexAttribPointer(10, 4, GL11.GL_FLOAT, false, stride, 25 * 4);
                 glVertexAttribDivisorCompat(10, 1);
+                GL20.glEnableVertexAttribArray(11);
+                GL20.glVertexAttribPointer(11, 1, GL11.GL_FLOAT, false, stride, 29 * 4L);
+                glVertexAttribDivisorCompat(11, 1);
             } else {
                 // 4 slices * 2 vec4 per slice = 8 vec4 attributes, starting at float offset 13.
                 // loc 7  -> +0 floats
@@ -343,6 +351,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                     GL20.glVertexAttribPointer(loc, 4, GL11.GL_FLOAT, false, stride, (LIGHT_FLOAT_OFFSET + a * 4) * 4L);
                     glVertexAttribDivisorCompat(loc, 1);
                 }
+                GL20.glEnableVertexAttribArray(15);
+                GL20.glVertexAttribPointer(15, 1, GL11.GL_FLOAT, false, stride, 45 * 4L);
+                glVertexAttribDivisorCompat(15, 1);
             }
 
             GL30.glBindVertexArray(0);
@@ -526,7 +537,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
             shader.apply();
 
-            float fade = SingleMeshVboRenderer.getFadeAlpha();
+            float fade = instanceBuffer.get(instanceFadeFloatOffset);
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
@@ -753,6 +764,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         instanceBuffer.put(sx).put(sy).put(sz);
         // Light probes payload: either 16 floats (legacy) or 32 floats (sliced)
         instanceBuffer.put(tmpCornerUV);
+        instanceBuffer.put(SingleMeshVboRenderer.getFadeAlpha());
 
         instanceCount++;
     }
@@ -833,6 +845,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                       .put(objBbox[4] - objBbox[1])
                       .put(objBbox[5] - objBbox[2]);
         instanceBuffer.put(tmpCornerUV);
+        instanceBuffer.put(SingleMeshVboRenderer.getFadeAlpha());
         instanceBuffer.flip();
     }
 
@@ -980,19 +993,23 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
             shader.apply();
 
-            float fade = SingleMeshVboRenderer.getFadeAlpha();
+            float minFade = 1f;
+            for (int i = 0; i < instanceCount; i++) {
+                float fa = instanceBuffer.get(i * instanceDataSize + instanceFadeFloatOffset);
+                if (fa < minFade) minFade = fa;
+            }
             RenderSystem.enableDepthTest();
             RenderSystem.depthFunc(GL11.GL_LEQUAL);
             RenderSystem.depthMask(true);
             RenderSystem.disableCull();
-            if (fade < 0.99f) {
+            if (minFade < 0.99f) {
                 RenderSystem.enableBlend();
                 RenderSystem.defaultBlendFunc();
             }
 
             glDrawElementsInstancedCompat(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0, instanceCount);
 
-            if (fade < 0.99f) {
+            if (minFade < 0.99f) {
                 RenderSystem.disableBlend();
             }
 
@@ -1296,6 +1313,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                         lastBlockU = blockUInt;
                         lastSkyV = skyVInt;
                     }
+                }
+
+                if (uFadeAlpha != null) {
+                    uFadeAlpha.set(instanceBuffer.get(base + instanceFadeFloatOffset));
                 }
 
                 GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);

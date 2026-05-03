@@ -390,6 +390,13 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
     @Override
     public void load(CompoundTag tag) {
+        //? if fabric {
+        // На Fabric клиентский пакет синхронизации часто приходит через load(), а не через
+        // onDataPacket (Forge). Без инвалидации чанка Sodium держит старые квады baked-модели.
+        final boolean clientFabric = level != null && level.isClientSide;
+        final ResourceLocation prevTankTexture = clientFabric ? getTankTextureLocation() : null;
+        //?}
+
         super.load(tag);
         itemHandler.deserializeNBT(tag.getCompound("Inventory"));
         fluidTank.readFromNBT(tag, "tank");
@@ -412,6 +419,12 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
                 }
             }
         }
+
+        //? if fabric {
+        if (clientFabric && !getTankTextureLocation().equals(prevTankTexture)) {
+            scheduleChunkRebuild();
+        }
+        //?}
     }
 
     @Override
