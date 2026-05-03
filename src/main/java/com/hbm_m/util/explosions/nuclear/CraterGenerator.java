@@ -8,7 +8,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.TickTask;
@@ -226,13 +225,9 @@ public class CraterGenerator {
         return allRays;
     }
 
+    /** Debug ray visualization is client-only; never enable on dedicated server. */
     private static boolean isDebugScreenEnabled() {
-        try {
-            Minecraft mc = Minecraft.getInstance();
-            return mc != null && mc.options.renderDebug;
-        } catch (Exception e) {
-            return false;
-        }
+        return false;
     }
 
     // *** FIXED: Wave noise function ***

@@ -120,7 +120,7 @@ public class PressRecipe implements Recipe<SimpleContainer> {
 
         @Override
         public @Nullable PressRecipe fromNetwork(ResourceLocation recipeId, FriendlyByteBuf buffer) {
-            NonNullList<Ingredient> inputs = NonNullList.withSize(buffer.readInt(), Ingredient.EMPTY);
+            NonNullList<Ingredient> inputs = NonNullList.withSize(buffer.readVarInt(), Ingredient.EMPTY);
 
             for(int i = 0; i < inputs.size(); i++) {
                 inputs.set(i, Ingredient.fromNetwork(buffer));
