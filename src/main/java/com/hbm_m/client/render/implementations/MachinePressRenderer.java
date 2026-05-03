@@ -123,10 +123,29 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
         boolean useBatching = ModClothConfig.useInstancedBatching() && animFade >= 0.99f;
         boolean inShadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
         if (useBatching && !inShadowPass && useInstancedHead) {
-            poseStack.pushPose();
+            //? if fabric {
+            // Под Iris addInstance() сразу рисует через drawSingleWithIrisExtended и ждёт
+            // активный IrisRenderBatch (см. InstancedStaticPartRenderer). Без обёртки —
+            // «standalone» путь к шейдеру пакета, голова то есть то пропадает.
+            if (ShaderCompatibilityDetector.isExternalShaderActive()) {
+                try (IrisRenderBatch ignored = IrisRenderBatch.begin(false, RenderSystem.getProjectionMatrix())) {
+                    poseStack.pushPose();
+                    poseStack.last().pose().mul(headTransform);
+                    instancedHead.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource);
+                    poseStack.popPose();
+                }
+            } else {
+                poseStack.pushPose();
+                poseStack.last().pose().mul(headTransform);
+                instancedHead.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource);
+                poseStack.popPose();
+            }
+            //?} else {
+            /*poseStack.pushPose();
             poseStack.last().pose().mul(headTransform);
             instancedHead.addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource);
             poseStack.popPose();
+            *///?}
         } else {
             // Under Iris/Oculus, the per-part extended-shader path is extremely sensitive to
             // apply()/clear() frequency. When instancing is disabled, we open an IrisRenderBatch

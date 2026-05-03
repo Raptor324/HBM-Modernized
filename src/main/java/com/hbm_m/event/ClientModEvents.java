@@ -89,6 +89,15 @@ public class ClientModEvents {
         });
 
         //? if fabric {
+        net.fabricmc.fabric.api.client.rendering.v1.TooltipComponentCallback.EVENT.register(data -> {
+            if (data instanceof com.hbm_m.client.tooltip.CrateContentsTooltipComponent c) {
+                return new com.hbm_m.client.tooltip.CrateContentsTooltipComponentRenderer(c);
+            }
+            return null;
+        });
+        //?}
+
+        //? if fabric {
         WorldRenderEvents.AFTER_TRANSLUCENT.register(context -> {
             if (ModClothConfig.useInstancedBatching()) {
                 // Tear down any IrisRenderBatch opened during BER (e.g. Chemical Plant

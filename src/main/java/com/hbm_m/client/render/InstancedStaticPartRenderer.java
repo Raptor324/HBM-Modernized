@@ -10,9 +10,13 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
+import org.lwjgl.glfw.GLFW;
+import org.lwjgl.opengl.ARBDrawInstanced;
+import org.lwjgl.opengl.ARBInstancedArrays;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL;
+import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
@@ -85,6 +89,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
     private int instanceCount = 0;
     private float batchSkyDarken = -1f; // кэш getSkyDarken на батч
     private boolean overflowLogged = false;
+    /** Один WARN на сессию, если instanced-шейдер null при flush батча (раньше на Fabric не вызывали registerFabricShaders). */
+    private static volatile boolean warnedInstancedShaderNullFlush;
 
     /**
      * Per-instance smoothed lightmap UV2 - interleaved {@code (blockU, skyV)}
@@ -227,8 +233,14 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             initialized = false;
             return;
         }
+        if (GLFW.glfwGetCurrentContext() == 0L) {
+            MainRegistry.LOGGER.warn("InstancedStaticPartRenderer: No current GLFW OpenGL context (e.g. Sodium BE pass); falling back to non-instanced render path.");
+            data.close();
+            initialized = false;
+            return;
+        }
         if (!supportsInstancedAttributeDivisor()) {
-            MainRegistry.LOGGER.warn("InstancedStaticPartRenderer: No active GL33 context or function unavailable. Falling back to non-instanced render path.");
+            MainRegistry.LOGGER.warn("InstancedStaticPartRenderer: Instancing entrypoints unavailable (no GL caps / divisor or draw-instanced). Falling back to non-instanced render path.");
             data.close();
             initialized = false;
             return;
@@ -281,40 +293,40 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             // InstPos (vec3) @ 0
             GL20.glEnableVertexAttribArray(3);
             GL20.glVertexAttribPointer(3, 3, GL11.GL_FLOAT, false, stride, 0);
-            GL33.glVertexAttribDivisor(3, 1);
+            glVertexAttribDivisorCompat(3, 1);
 
             // InstRot (vec4) @ 3 floats = 12 bytes
             GL20.glEnableVertexAttribArray(4);
             GL20.glVertexAttribPointer(4, 4, GL11.GL_FLOAT, false, stride, 3 * 4);
-            GL33.glVertexAttribDivisor(4, 1);
+            glVertexAttribDivisorCompat(4, 1);
 
             // InstBboxMin (vec3) @ 7 floats = 28 bytes
             GL20.glEnableVertexAttribArray(5);
             GL20.glVertexAttribPointer(5, 3, GL11.GL_FLOAT, false, stride, 7 * 4);
-            GL33.glVertexAttribDivisor(5, 1);
+            glVertexAttribDivisorCompat(5, 1);
 
             // InstBboxSize (vec3) @ 10 floats = 40 bytes
             GL20.glEnableVertexAttribArray(6);
             GL20.glVertexAttribPointer(6, 3, GL11.GL_FLOAT, false, stride, 10 * 4);
-            GL33.glVertexAttribDivisor(6, 1);
+            glVertexAttribDivisorCompat(6, 1);
 
             if (!useSlicedLight) {
                 // InstLightC01 (vec4) @ 13 floats
                 GL20.glEnableVertexAttribArray(7);
                 GL20.glVertexAttribPointer(7, 4, GL11.GL_FLOAT, false, stride, 13 * 4);
-                GL33.glVertexAttribDivisor(7, 1);
+                glVertexAttribDivisorCompat(7, 1);
                 // InstLightC23 (vec4) @ 17 floats
                 GL20.glEnableVertexAttribArray(8);
                 GL20.glVertexAttribPointer(8, 4, GL11.GL_FLOAT, false, stride, 17 * 4);
-                GL33.glVertexAttribDivisor(8, 1);
+                glVertexAttribDivisorCompat(8, 1);
                 // InstLightC45 (vec4) @ 21 floats
                 GL20.glEnableVertexAttribArray(9);
                 GL20.glVertexAttribPointer(9, 4, GL11.GL_FLOAT, false, stride, 21 * 4);
-                GL33.glVertexAttribDivisor(9, 1);
+                glVertexAttribDivisorCompat(9, 1);
                 // InstLightC67 (vec4) @ 25 floats
                 GL20.glEnableVertexAttribArray(10);
                 GL20.glVertexAttribPointer(10, 4, GL11.GL_FLOAT, false, stride, 25 * 4);
-                GL33.glVertexAttribDivisor(10, 1);
+                glVertexAttribDivisorCompat(10, 1);
             } else {
                 // 4 slices * 2 vec4 per slice = 8 vec4 attributes, starting at float offset 13.
                 // loc 7  -> +0 floats
@@ -329,7 +341,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                     int loc = 7 + a;
                     GL20.glEnableVertexAttribArray(loc);
                     GL20.glVertexAttribPointer(loc, 4, GL11.GL_FLOAT, false, stride, (LIGHT_FLOAT_OFFSET + a * 4) * 4L);
-                    GL33.glVertexAttribDivisor(loc, 1);
+                    glVertexAttribDivisorCompat(loc, 1);
                 }
             }
 
@@ -362,12 +374,63 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         }
     }
 
+    /**
+     * Проверка возможности инстансинга и (при инициализации) вызовы divisor/draw должны
+     * согласоваться: нельзя принимать только {@code glVertexAttribDivisorARB}, а вызывать
+     * {@link GL33#glVertexAttribDivisor} — на части контекстов core entrypoint отсутствует
+     * (нативный abort: функция недоступна в текущем контексте).
+     * <p>
+     * Без привязанного GLFW-контекста {@link GL#getCapabilities()} на потоке не используем —
+     * иначе возможны устаревшие TLS capabilities (Sodium/Iris).
+     */
     private static boolean supportsInstancedAttributeDivisor() {
         try {
-            var caps = GL.getCapabilities();
-            return caps != null && caps.OpenGL33;
+            var caps = resolveGlCapabilities();
+            if (caps == null) {
+                return false;
+            }
+            boolean hasDivisor = caps.glVertexAttribDivisor != 0L || caps.glVertexAttribDivisorARB != 0L;
+            boolean hasDrawInstanced = caps.glDrawElementsInstanced != 0L || caps.glDrawElementsInstancedARB != 0L;
+            return hasDivisor && hasDrawInstanced;
         } catch (Throwable ignored) {
             return false;
+        }
+    }
+
+    @Nullable
+    private static GLCapabilities resolveGlCapabilities() {
+        if (GLFW.glfwGetCurrentContext() == 0L) {
+            return null;
+        }
+        var caps = GL.getCapabilities();
+        if (caps != null) {
+            return caps;
+        }
+        try {
+            GL.createCapabilities();
+        } catch (Throwable ignored) {
+            return null;
+        }
+        return GL.getCapabilities();
+    }
+
+    /** Core GL 3.3 divisor, иначе {@link ARBInstancedArrays} (должно совпадать с {@link #supportsInstancedAttributeDivisor}). */
+    private static void glVertexAttribDivisorCompat(int index, int divisor) {
+        GLCapabilities caps = GL.getCapabilities();
+        if (caps != null && caps.glVertexAttribDivisor != 0L) {
+            GL33.glVertexAttribDivisor(index, divisor);
+        } else {
+            ARBInstancedArrays.glVertexAttribDivisorARB(index, divisor);
+        }
+    }
+
+    /** Core GL 3.1 draw instanced, иначе {@link ARBDrawInstanced}. */
+    private static void glDrawElementsInstancedCompat(int mode, int count, int type, long indices, int primcount) {
+        GLCapabilities caps = GL.getCapabilities();
+        if (caps != null && caps.glDrawElementsInstanced != 0L) {
+            GL31.glDrawElementsInstanced(mode, count, type, indices, primcount);
+        } else {
+            ARBDrawInstanced.glDrawElementsInstancedARB(mode, count, type, indices, primcount);
         }
     }
 
@@ -478,7 +541,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
             GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, 0, instanceBuffer);
             for (int i = INSTANCE_ATTRIB_FIRST; i <= instanceAttribLast; i++) GL20.glEnableVertexAttribArray(i);
 
-            GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0, 1);
+            glDrawElementsInstancedCompat(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0, 1);
 
             if (fade < 0.99f) {
                 RenderSystem.disableBlend();
@@ -575,6 +638,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
+                MainRegistry.LOGGER.warn("InstancedStaticPartRenderer.addInstance: Fallback to the classic putBulkData!!");
                     consumer.putBulkData(pose, quad, fade, fade, fade, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
                 }
             }
@@ -880,6 +944,12 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
         ShaderInstance shader = useSlicedLight ? ModShaders.getBlockLitInstancedSlicedShader()
                                                : ModShaders.getBlockLitInstancedShader();
         if (shader == null) {
+            if (!warnedInstancedShaderNullFlush) {
+                warnedInstancedShaderNullFlush = true;
+                MainRegistry.LOGGER.warn(
+                        "InstancedStaticPartRenderer: instanced shader is null, discarding flush of {} instances (Fabric: ClientSetup.registerFabricShaders)",
+                        instanceCount);
+            }
             return;
         }
 
@@ -920,7 +990,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh {
                 RenderSystem.defaultBlendFunc();
             }
 
-            GL31.glDrawElementsInstanced(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0, instanceCount);
+            glDrawElementsInstancedCompat(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0, instanceCount);
 
             if (fade < 0.99f) {
                 RenderSystem.disableBlend();

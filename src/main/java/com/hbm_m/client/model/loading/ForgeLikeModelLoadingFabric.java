@@ -61,6 +61,12 @@ public final class ForgeLikeModelLoadingFabric {
                 ctx.addModels(rl);
             }
         }
+
+        // Только JSON: vanilla не подгружает item-модель, пока к ней не обратятся через предмет/блок.
+        // BuiltinItemRenderer Sodium не вызывает — подмена в {@code MixinItemRenderer#getModel}.
+        // Обязательно ModelResourceLocation#inventory иначе getModel(...) не находит запись —
+        // сравнение с missing провалится, миксин не подставит текстуру, игра оставит Fabric-обёртку.
+        ctx.addModels(new ModelResourceLocation(new ResourceLocation(MainRegistry.MOD_ID, "assembly_template_base"), "inventory"));
     }
 
     private static Map<Object, ForgeLikeUnbakedModel> scanModels(ResourceManager rm) {

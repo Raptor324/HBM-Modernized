@@ -4,6 +4,7 @@ package com.hbm_m.client.render;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 //? if fabric {
@@ -39,7 +40,19 @@ public final class OcclusionCullingHelper {
     private static TagKey<Block> transparentBlocksTag = null;
     
     private OcclusionCullingHelper() {}
-    
+
+    /**
+     * Ключ кэша: позиция контроллера + фаза (main vs Iris shadow). Иначе за один
+     * клиентский кадр сначала отрабатывает shadow pass с одной камерой, потом main
+     * с другой — оба вызывают {@link #shouldRender} с тем же {@code pos.asLong()},
+     * и второй проход получает чужой результат из кэша (типичный «мигающий» BER,
+     * особенно на компактных мультиблоках вроде Assembly Machine).
+     */
+    private static long occlusionCacheKey(BlockPos pos) {
+        long pk = pos.asLong();
+        return ShaderCompatibilityDetector.isRenderingShadowPass() ? (pk ^ (1L << 62)) : pk;
+    }
+
     public static void setTransparentBlocksTag(TagKey<Block> tag) {
         transparentBlocksTag = tag;
     }
@@ -61,8 +74,8 @@ public final class OcclusionCullingHelper {
     
     public static boolean shouldRender(BlockPos pos, Level level, AABB renderBounds) {
         if (!ModClothConfig.get().enableOcclusionCulling) return true;
-        
-        long posLong = pos.asLong();
+
+        long posLong = occlusionCacheKey(pos);
         CachedResult cached = occlusionCache.get(posLong);
         
         // 1. Если результат уже считали в этом кадре - используем его.

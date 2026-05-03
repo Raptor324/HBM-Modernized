@@ -33,6 +33,7 @@ public interface ForgeLikeUnbakedModel extends UnbakedModel {
                 case "hbm_m:fluid_tank_loader" -> HbmLoaderAdapters.fluidTank(id, json, rm, gson);
                 case "hbm_m:battery_socket_loader" -> HbmLoaderAdapters.batterySocket(id, json, rm, gson);
                 case "hbm_m:door" -> HbmLoaderAdapters.door(id, json, rm, gson);
+                case "hbm_m:template_loader" -> HbmLoaderAdapters.assemblyTemplate(id, json, rm, gson);
 
                 default -> null;
             };

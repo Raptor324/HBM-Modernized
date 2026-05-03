@@ -109,12 +109,12 @@ dependencies {
 
 	"modCompileOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
 	"modRuntimeOnly"("curse.maven:jei-238222:${prop("deps.jei")}")
-	// "modRuntimeOnly"("curse.maven:embeddium-908741:5681725")
+	"modRuntimeOnly"("curse.maven:embeddium-908741:5681725")
 //	"modRuntimeOnly"("curse.maven:oculus-581495:6020952")
-//	"modRuntimeOnly"("curse.maven:modernfix-790626:7515215")
-//	"modRuntimeOnly"("curse.maven:smooth-boot-reloaded-633412:5016280")
+	"modRuntimeOnly"("curse.maven:modernfix-790626:7515215")
+	"modRuntimeOnly"("curse.maven:smooth-boot-reloaded-633412:5016280")
 	"modRuntimeOnly"("maven.modrinth:spark:1.10.53-forge")
-	// "modRuntimeOnly"("curse.maven:screenshot-to-clipboard-326950:3643026")
+	"modRuntimeOnly"("curse.maven:screenshot-to-clipboard-326950:3643026")
 }
 
 sourceSets {

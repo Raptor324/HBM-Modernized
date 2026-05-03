@@ -5,6 +5,7 @@ import com.hbm_m.network.packets.PowerArmorDashPacket;
 import com.hbm_m.network.sounds.GeigerSoundPacket;
 import dev.architectury.networking.NetworkManager;
 import dev.architectury.networking.NetworkManager.PacketContext;
+import dev.architectury.utils.Env;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
@@ -200,11 +201,14 @@ public class ModPacketHandler {
             ResourceLocation id,
             Function<FriendlyByteBuf, T> decoder,
             java.util.function.BiConsumer<T, PacketContext> handler) {
-        NetworkManager.registerReceiver(
-                NetworkManager.Side.S2C,
-                id,
-                (buf, context) -> handler.accept(decoder.apply(buf), context)
-        );
+        if (dev.architectury.platform.Platform.getEnvironment() == Env.CLIENT) {
+            NetworkManager.registerReceiver(
+                    NetworkManager.Side.S2C,
+                    id,
+                    (buf, context) -> handler.accept(decoder.apply(buf), context)
+            ); 
+        }
+
     }
 
     /**

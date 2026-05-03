@@ -98,6 +98,7 @@ dependencies {
 	modLocalRuntime("com.terraformersmc:modmenu:${prop("deps.modmenu")}")
 	modImplementation("curse.maven:sodium-394468:6260639")
 	modImplementation("curse.maven:irisshaders-455508:6258195")
+	modImplementation("curse.maven:jei-238222:7920913")
 
 	modImplementation("org.anarres:jcpp:1.4.14") 
 	modImplementation("io.github.douira:glsl-transformer:2.0.0-pre13")

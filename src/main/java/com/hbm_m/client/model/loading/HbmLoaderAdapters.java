@@ -1,6 +1,7 @@
 //? if fabric {
 package com.hbm_m.client.model.loading;
 
+import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
@@ -19,10 +20,13 @@ import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
 import com.hbm_m.client.model.MachineFluidTankBakedModel;
 import com.hbm_m.client.model.MachineHydraulicFrackiningTowerBakedModel;
 import com.hbm_m.client.model.PressBakedModel;
+import com.hbm_m.client.model.TemplateBakedModel;
 import com.hbm_m.main.MainRegistry;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+import net.fabricmc.loader.api.FabricLoader;
+import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -44,6 +48,46 @@ import org.joml.Vector3f;
 final class HbmLoaderAdapters {
 
     private HbmLoaderAdapters() {}
+
+    private static volatile Gson cachedVanillaBlockModelGson;
+
+    /** Vanilla {@code BlockModel.GSON} — поле не public; без access widener читаем рефлексией. */
+    private static Gson vanillaBlockModelGson() {
+        Gson cached = cachedVanillaBlockModelGson;
+        if (cached != null) {
+            return cached;
+        }
+        synchronized (HbmLoaderAdapters.class) {
+            cached = cachedVanillaBlockModelGson;
+            if (cached != null) {
+                return cached;
+            }
+            try {
+                Field f = tryBlockModelGsonField();
+                f.setAccessible(true);
+                cached = (Gson) f.get(null);
+            } catch (ReflectiveOperationException e) {
+                throw new RuntimeException("Cannot access BlockModel Gson for template_loader", e);
+            }
+            cachedVanillaBlockModelGson = cached;
+            return cached;
+        }
+    }
+
+    private static Field tryBlockModelGsonField() throws NoSuchFieldException {
+        try {
+            return BlockModel.class.getDeclaredField("GSON");
+        } catch (NoSuchFieldException ignored) {
+            String mapped = FabricLoader.getInstance()
+                    .getMappingResolver()
+                    .mapFieldName(
+                            "named",
+                            "net.minecraft.client.renderer.block.model.BlockModel",
+                            "GSON",
+                            "intermediary");
+            return BlockModel.class.getDeclaredField(mapped);
+        }
+    }
 
     static ForgeLikeUnbakedModel press(ResourceLocation id, JsonObject json, ResourceManager rm, Gson gson) {
         ResourceLocation base = ResourceLocation.tryParse(GsonHelper.getAsString(json, "base_model"));
@@ -97,6 +141,13 @@ final class HbmLoaderAdapters {
             parts = parsed;
         }
         return objParts(id, json, rm, gson, parts, (p, t, loc) -> new DoorBakedModel(p, t, loc));
+    }
+
+    static ForgeLikeUnbakedModel assemblyTemplate(ResourceLocation id, JsonObject json, ResourceManager rm, Gson gsonUnused) {
+        JsonObject copy = json.deepCopy();
+        copy.remove("loader");
+        BlockModel blockModel = vanillaBlockModelGson().fromJson(copy, BlockModel.class);
+        return new TemplateAssemblyUnbakedModel(id, blockModel, parseTextures(json));
     }
 
     static ForgeLikeUnbakedModel machineAssembler(ResourceLocation id, JsonObject json, ResourceManager rm, Gson gson) {
@@ -294,6 +345,41 @@ final class HbmLoaderAdapters {
                 }
             }
             return ModelDebugDumper.wrapIfEnabled(modelLocation, factory.apply(bakedParts));
+        }
+    }
+
+    private static final class TemplateAssemblyUnbakedModel implements ForgeLikeUnbakedModel {
+        @SuppressWarnings("unused")
+        private final ResourceLocation id;
+        private final BlockModel blockModel;
+        private final Map<String, ResourceLocation> textures;
+
+        TemplateAssemblyUnbakedModel(ResourceLocation id, BlockModel blockModel, Map<String, ResourceLocation> textures) {
+            this.id = id;
+            this.blockModel = blockModel;
+            this.textures = textures;
+        }
+
+        @Override
+        public Map<String, ResourceLocation> textures() {
+            return textures;
+        }
+
+        @Override
+        public java.util.Collection<ResourceLocation> getDependencies() {
+            return blockModel.getDependencies();
+        }
+
+        @Override
+        public void resolveParents(Function<ResourceLocation, UnbakedModel> modelGetter) {
+            blockModel.resolveParents(modelGetter);
+        }
+
+        @Override
+        public BakedModel bake(ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ResourceLocation modelLocation) {
+            // Item/generated: shaded GUI item — последний параметр для плоских предметов лучше false (Fabric Indigo).
+            BakedModel original = blockModel.bake(baker, blockModel, spriteGetter, modelState, modelLocation, false);
+            return new TemplateBakedModel(original, baker, blockModel);
         }
     }
 

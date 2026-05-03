@@ -14,8 +14,6 @@ import com.hbm_m.client.render.implementations.*;
 import com.hbm_m.client.render.shader.ShaderReloadListener;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponent;
 import com.hbm_m.client.tooltip.CrateContentsTooltipComponentRenderer;
-import com.hbm_m.client.tooltip.ItemTooltipComponent;
-import com.hbm_m.client.tooltip.ItemTooltipComponentRenderer;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.config.ModConfigKeybindHandler;
 import com.hbm_m.entity.ModEntities;
@@ -130,12 +128,6 @@ public class ClientSetup {
         PowerArmorHardLandingCameraShakeClient.initClient();
         PowerArmorSounds.register();
         PowerArmorStepSoundHandler.initClient();
-
-        //? if fabric {
-        com.hbm_m.client.model.loading.ForgeLikeModelLoadingFabric.init();
-        registerFabricShaders();
-        registerFabricRenderLayers();
-        //?}
 
         // Экраны меню - vanilla API, одинаково работает на обоих лоадерах.
         registerScreens();
@@ -503,6 +495,10 @@ public class ClientSetup {
         //?}
 
         //? if fabric {
+        // Критично: без вызова registerFabricShaders на Fabric не выполнялся loadFabricShaders — instanced shader == null,
+        // flushBatchVanilla молча сбрасывал батч (машины пропадали), renderSingle уходил в putBulkData с WARN на каждый quad.
+        registerFabricRenderLayers();
+        registerFabricShaders();
         ResourceManagerHelper.get(PackType.CLIENT_RESOURCES).registerReloadListener(
                 new com.hbm_m.client.reload.IdentifiableReloadListenerAdapter(
                         new ResourceLocation(RefStrings.MODID, "shader_reload_listener"),
@@ -1131,7 +1127,6 @@ public class ClientSetup {
     
     @SubscribeEvent
     public static void registerTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
-        event.register(ItemTooltipComponent.class, ItemTooltipComponentRenderer::new);
         event.register(CrateContentsTooltipComponent.class, CrateContentsTooltipComponentRenderer::new);
     }
 

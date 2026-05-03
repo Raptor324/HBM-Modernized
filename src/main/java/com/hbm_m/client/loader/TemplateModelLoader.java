@@ -42,7 +42,7 @@ public class TemplateModelLoader implements IGeometryLoader<TemplateModelLoader.
                              ModelState modelState, ItemOverrides overrides, 
                              ResourceLocation modelLocation) {
             BakedModel originalModel = this.baseModel.bake(baker, this.baseModel, spriteGetter, modelState, modelLocation, true);
-            return new TemplateBakedModel(originalModel);
+            return new TemplateBakedModel(originalModel, baker, this.baseModel);
         }
     }
 }
@@ -51,13 +51,8 @@ public class TemplateModelLoader implements IGeometryLoader<TemplateModelLoader.
 //? if fabric {
 package com.hbm_m.client.loader;
 
-/**
- * Fabric: Forge geometry loader isn't available.
- * Stub to keep compilation working across loaders.
- */
-public class TemplateModelLoader {
-    public TemplateModelLoader() {
-        throw new UnsupportedOperationException("TemplateModelLoader is not implemented on Fabric yet.");
-    }
+/** Fabric: геометрия Forge не используется; см. {@code ForgeLikeModelLoadingFabric}. */
+public final class TemplateModelLoader {
+    private TemplateModelLoader() {}
 }
 //?}

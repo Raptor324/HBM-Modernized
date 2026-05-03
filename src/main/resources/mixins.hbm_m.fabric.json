@@ -9,6 +9,7 @@
   "client": [
     "client.MixinEffectRenderingInventoryScreen",
     "client.MixinGui",
+    "client.MixinItemRenderer",
     "SodiumBlockRendererMixin"
   ],
   "injectors": {

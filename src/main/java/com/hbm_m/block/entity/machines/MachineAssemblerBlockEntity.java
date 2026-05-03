@@ -804,7 +804,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     // частями (slider, arm, 4 cogs), которые торчат за пределы статической
     // footprint. Делегируем структурному helper'у - он кэширует AABB по
     // facing один раз на ВЕСЬ helper и переиспользует для всех BE этого типа.
-    // Inflate 1.0 покрывает sway руки и slider'а.
+    // Inflate 1.35: 1.0 давало пограничные ложные окклюжены + мигание при
+    // Iris shadow/main в одном кадре; advanced assembler использует 1.5.
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (!(state.getBlock() instanceof MachineAssemblerBlock block)) {
@@ -813,7 +814,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                     worldPosition.offset(3, 3, 3));
         }
         Direction facing = state.getValue(MachineAssemblerBlock.FACING);
-        return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 1.0);
+        return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 1.35);
     }
 
     @Override
