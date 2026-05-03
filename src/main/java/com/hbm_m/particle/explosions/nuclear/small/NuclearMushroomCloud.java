@@ -4,11 +4,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.hbm_m.particle.ModExplosionParticles;
+import com.hbm_m.particle.explosions.ServerExplosionParticles;
 
-import dev.architectury.utils.Env;
-import dev.architectury.utils.EnvExecutor;
-import net.minecraft.client.Minecraft;
-import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.core.particles.SimpleParticleType;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
@@ -36,25 +33,21 @@ public class NuclearMushroomCloud {
     }
 
     private static void spawnBlackSphere(ServerLevel level, double x, double y, double z, RandomSource random) {
-        level.getServer().execute(() -> {
-            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
-                ClientLevel clientLevel = Minecraft.getInstance().level;
-                if (clientLevel == null) return;
-                for (int i = 0; i < 750; i++) {
-                    double theta = random.nextDouble() * 2 * Math.PI;
-                    double phi = random.nextDouble() * Math.PI;
-                    double radius = 0.0 + random.nextDouble() * 4.0;
-                    double offsetX = radius * Math.sin(phi) * Math.cos(theta);
-                    double offsetY = radius * Math.sin(phi) * Math.sin(theta);
-                    double offsetZ = radius * Math.cos(phi);
-                    double expansionSpeed = 0.3 + random.nextDouble() * 0.06;
-                    double xSpeed = (offsetX / Math.max(radius, 0.1)) * expansionSpeed;
-                    double ySpeed = (offsetY / Math.max(radius, 0.1)) * expansionSpeed - 0.05;
-                    double zSpeed = (offsetZ / Math.max(radius, 0.1)) * expansionSpeed;
-                    clientLevel.addAlwaysVisibleParticle((SimpleParticleType) ModExplosionParticles.DARK_SMOKE.get(), true, x + offsetX, y + offsetY, z + offsetZ, xSpeed, ySpeed, zSpeed);
-                }
-            });
-        });
+        SimpleParticleType type = (SimpleParticleType) ModExplosionParticles.DARK_SMOKE.get();
+        for (int i = 0; i < 750; i++) {
+            double theta = random.nextDouble() * 2 * Math.PI;
+            double phi = random.nextDouble() * Math.PI;
+            double radius = 0.0 + random.nextDouble() * 4.0;
+            double offsetX = radius * Math.sin(phi) * Math.cos(theta);
+            double offsetY = radius * Math.sin(phi) * Math.sin(theta);
+            double offsetZ = radius * Math.cos(phi);
+            double expansionSpeed = 0.3 + random.nextDouble() * 0.06;
+            double xSpeed = (offsetX / Math.max(radius, 0.1)) * expansionSpeed;
+            double ySpeed = (offsetY / Math.max(radius, 0.1)) * expansionSpeed - 0.05;
+            double zSpeed = (offsetZ / Math.max(radius, 0.1)) * expansionSpeed;
+            ServerExplosionParticles.sendAlwaysVisible(
+                    level, type, x + offsetX, y + offsetY, z + offsetZ, xSpeed, ySpeed, zSpeed);
+        }
     }
 
     private static void spawnFireball(ServerLevel level, double centerX, double centerY, double centerZ, RandomSource random) {
@@ -161,20 +154,14 @@ public class NuclearMushroomCloud {
     }
 
     private static void spawnNuclearParticle(ServerLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, boolean isSpark, boolean isMushroomSmoke, boolean isDarkSmoke) {
-        level.getServer().execute(() -> {
-            EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
-                ClientLevel clientLevel = Minecraft.getInstance().level;
-                if (clientLevel == null) return;
-                SimpleParticleType particleType;
-                if (isDarkSmoke) {
-                    particleType = (SimpleParticleType) ModExplosionParticles.DARK_SMOKE.get();
-                } else if (isMushroomSmoke) {
-                    particleType = (SimpleParticleType) ModExplosionParticles.MUSHROOM_SMOKE.get();
-                } else {
-                    particleType = (SimpleParticleType) ModExplosionParticles.LARGE_DARK_SMOKE.get();
-                }
-                clientLevel.addAlwaysVisibleParticle(particleType, true, x, y, z, xSpeed, ySpeed, zSpeed);
-            });
-        });
+        SimpleParticleType particleType;
+        if (isDarkSmoke) {
+            particleType = (SimpleParticleType) ModExplosionParticles.DARK_SMOKE.get();
+        } else if (isMushroomSmoke) {
+            particleType = (SimpleParticleType) ModExplosionParticles.MUSHROOM_SMOKE.get();
+        } else {
+            particleType = (SimpleParticleType) ModExplosionParticles.LARGE_DARK_SMOKE.get();
+        }
+        ServerExplosionParticles.sendAlwaysVisible(level, particleType, x, y, z, xSpeed, ySpeed, zSpeed);
     }
 }
