@@ -7,6 +7,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.machines.FluidDuctBlock;
+import com.hbm_m.block.machines.MachineFluidTankBlock;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -18,6 +20,7 @@ import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous;
 import com.hbm_m.inventory.menu.MachineFluidTankMenu;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
@@ -38,6 +41,7 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
@@ -59,6 +63,15 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     , net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
     //?}
 {
+
+    //? if fabric {
+    /**
+     * Единый экземпляр для Fabric Transfer API (регистрация {@link com.hbm_m.main.FabricEntrypoint}).
+     * Логика fill/drain как у Forge {@code NetworkFluidHandlerWrapper}.
+     */
+    @SuppressWarnings("UnstableApiUsage")
+    private final TankFabricNetworkStorage tankFabricNetworkStorage = new TankFabricNetworkStorage(this);
+    //?}
 
     public static final int SLOT_ID_IN = 0;
     public static final int SLOT_ID_OUT = 1;
@@ -88,8 +101,10 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     private final LazyOptional<IFluidHandler> lazyFluidHandler;
     *///?}
 
-    /** Разрешённые стороны прямого подключения к контроллеру (пусто = все). */
+    /** Разрешённые стороны прямого подключения к контроллеру. Если {@link #fluidSidesFromMultiblockStructure} — пусто допустимо (= ни одной стороны); иначе пусто = все стороны. */
     private java.util.Set<Direction> allowedFluidSides = java.util.EnumSet.noneOf(Direction.class);
+    /** Набор из tuple fluidSideMap символа контроллера при постройке мультиблока. */
+    private boolean fluidSidesFromMultiblockStructure = false;
 
     //? if forge {
     /*public static final ModelProperty<ResourceLocation> FLUID_TEXTURE_PROPERTY = new ModelProperty<>();
@@ -196,6 +211,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
                 entity.applySlotsArray(slotsArray);
                 entity.setChanged();
                 level.sendBlockUpdated(pos, state, state, 3);
+                entity.refreshAdjacentFluidDuctConnections();
             }
 
         } else {
@@ -254,12 +270,213 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         }
     }
 
+    /**
+     * Уведомляет соседей (в т.ч. multipart-трубы) о смене доступности/типа жидкости: все блоки мультиблока,
+     * чтобы обновились соединения у лиц F-коннекторов.
+     */
+    public void refreshAdjacentFluidDuctConnections() {
+        Level level = this.level;
+        if (level == null) return;
+        if (level.isClientSide) {
+            refreshFluidDuctVisualsAroundMultiblock();
+            return;
+        }
+        BlockState st = getBlockState();
+        Block blk = st.getBlock();
+        if (blk instanceof MachineFluidTankBlock tankBlock) {
+            Direction facing = st.getValue(MachineFluidTankBlock.FACING);
+            MultiblockStructureHelper helper = tankBlock.getStructureHelper();
+            for (BlockPos p : helper.getAllPartPositions(worldPosition, facing)) {
+                Block at = level.getBlockState(p).getBlock();
+                level.updateNeighborsAt(p, at);
+            }
+        } else {
+            level.updateNeighborsAt(worldPosition, blk);
+        }
+    }
+
+    /**
+     * На клиенте {@link Level#updateNeighborsAt} не дергает пересчёт multipart у труб — после синка сторон жидкости
+     * рукава остаются как до постройки. Пересчитываем состояние каждой соседней трубы у всех блоков мультиблока.
+     */
+    private void refreshFluidDuctVisualsAroundMultiblock() {
+        Level level = this.level;
+        if (level == null || !level.isClientSide) return;
+        BlockState st = getBlockState();
+        if (!(st.getBlock() instanceof MachineFluidTankBlock tankBlock)) {
+            for (Direction d : Direction.values()) {
+                BlockPos n = worldPosition.relative(d);
+                BlockState bs = level.getBlockState(n);
+                if (bs.getBlock() instanceof FluidDuctBlock duct) {
+                    BlockState next = duct.getConnectionState(level, n);
+                    if (!next.equals(bs)) {
+                        level.setBlock(n, next, Block.UPDATE_CLIENTS);
+                    }
+                }
+            }
+            return;
+        }
+        Direction facing = st.getValue(MachineFluidTankBlock.FACING);
+        MultiblockStructureHelper helper = tankBlock.getStructureHelper();
+        for (BlockPos p : helper.getAllPartPositions(worldPosition, facing)) {
+            for (Direction d : Direction.values()) {
+                BlockPos n = p.relative(d);
+                BlockState bs = level.getBlockState(n);
+                if (bs.getBlock() instanceof FluidDuctBlock duct) {
+                    BlockState next = duct.getConnectionState(level, n);
+                    if (!next.equals(bs)) {
+                        level.setBlock(n, next, Block.UPDATE_CLIENTS);
+                    }
+                }
+            }
+        }
+    }
+
     //? if fabric {
     @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
     private void scheduleChunkRebuild() {
         if (level != null && level.isClientSide) {
             com.hbm_m.client.render.DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
         }
+    }
+
+    /**
+     * Сторона {@code null}: делегирование с коннекторов мультиблока / внутренний доступ без фильтра по грани.
+     * Для {@code side != null}: если задан tuple fluidSideMap контроллера — только перечисленные грани; иначе пустой разрешённый набор = все грани (совместимость).
+     */
+    @SuppressWarnings("UnstableApiUsage")
+    @org.jetbrains.annotations.Nullable
+    public net.fabricmc.fabric.api.transfer.v1.storage.Storage<net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant> getFluidStorage(
+            @org.jetbrains.annotations.Nullable Direction side) {
+        if (side != null) {
+            if (fluidSidesFromMultiblockStructure) {
+                if (!allowedFluidSides.contains(side)) {
+                    return null;
+                }
+            } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
+                return null;
+            }
+        }
+        return tankFabricNetworkStorage;
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    private static final class TankFabricNetworkStorage
+            extends net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant<TankFabricNetworkStorage.Snapshot>
+            implements net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage<net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant> {
+
+        private static final long DROPLETS_PER_MB = 81L;
+        private final MachineFluidTankBlockEntity entity;
+        /** Остаток дроплетов (&lt; 81), накапливается между insert до полной мБ — уменьшает потери округления на Fabric. */
+        private long insertRemainderDroplets;
+
+        private TankFabricNetworkStorage(MachineFluidTankBlockEntity entity) {
+            this.entity = entity;
+        }
+
+        private FluidTank tank() {
+            return entity.fluidTank;
+        }
+
+        @Override
+        public long insert(net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant resource, long maxAmount,
+                net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
+            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return 0;
+            if (resource.isBlank() || maxAmount <= 0) return 0;
+            if (tank().getPressure() != 0) return 0;
+            if (tank().getFill() <= 0 && !FluidTank.isFluidTypeExplicitlySet(tank().getTankType())) {
+                return 0;
+            }
+
+            long spaceMb = tank().getMaxFill() - tank().getFill();
+            if (spaceMb <= 0) return 0;
+
+            if (tank().getFill() > 0 && !com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank().getTankType(), resource.getFluid())) {
+                return 0;
+            }
+
+            long spaceDroplets = spaceMb * DROPLETS_PER_MB;
+            long rBefore = insertRemainderDroplets;
+            long incoming = maxAmount + rBefore;
+            long takeDroplets = Math.min(incoming, spaceDroplets);
+            long mbAdd = takeDroplets / DROPLETS_PER_MB;
+            long consumedFromOffer = Math.min(maxAmount, Math.max(0L, takeDroplets - rBefore));
+            if (mbAdd <= 0) {
+                updateSnapshots(transaction);
+                insertRemainderDroplets = (incoming - takeDroplets) + (takeDroplets % DROPLETS_PER_MB);
+                entity.setChanged();
+                return consumedFromOffer;
+            }
+
+            updateSnapshots(transaction);
+            insertRemainderDroplets = (incoming - takeDroplets) + (takeDroplets % DROPLETS_PER_MB);
+            if (tank().getTankType() == Fluids.EMPTY || tank().getFill() == 0) {
+                tank().setTankType(resource.getFluid());
+            }
+            tank().fill(tank().getFill() + (int) mbAdd);
+            entity.setChanged();
+            entity.refreshAdjacentFluidDuctConnections();
+            return consumedFromOffer;
+        }
+
+        @Override
+        public long extract(net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant resource, long maxAmount,
+                net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
+            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return 0;
+            if (resource.isBlank() || maxAmount <= 0) return 0;
+            if (tank().getFill() <= 0) return 0;
+            if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank().getTankType(), resource.getFluid())) {
+                return 0;
+            }
+
+            long toDrainMb = Math.min(tank().getFill(), maxAmount / DROPLETS_PER_MB);
+            if (toDrainMb <= 0) return 0;
+
+            updateSnapshots(transaction);
+            tank().fill(tank().getFill() - (int) toDrainMb);
+            entity.setChanged();
+            entity.refreshAdjacentFluidDuctConnections();
+            return toDrainMb * DROPLETS_PER_MB;
+        }
+
+        @Override
+        public boolean isResourceBlank() {
+            return tank().getFill() <= 0 || tank().getTankType() == Fluids.EMPTY;
+        }
+
+        @Override
+        public net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant getResource() {
+            return isResourceBlank()
+                    ? net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant.blank()
+                    : net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant.of(tank().getTankType());
+        }
+
+        @Override
+        public long getAmount() {
+            return (long) tank().getFill() * DROPLETS_PER_MB;
+        }
+
+        @Override
+        public long getCapacity() {
+            return (long) tank().getMaxFill() * DROPLETS_PER_MB;
+        }
+
+        @Override
+        protected Snapshot createSnapshot() {
+            return new Snapshot(tank().getTankType(), tank().getFill(), insertRemainderDroplets);
+        }
+
+        @Override
+        protected void readSnapshot(Snapshot snapshot) {
+            tank().setTankType(snapshot.type);
+            tank().fill(snapshot.amountMb);
+            insertRemainderDroplets = snapshot.insertRemainderDroplets;
+        }
+
+        @Override
+        protected void onFinalCommit() {}
+
+        private record Snapshot(Fluid type, int amountMb, long insertRemainderDroplets) {}
     }
     //?}
 
@@ -419,12 +636,18 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
                 }
             }
         }
+        if (tag.contains("FluidSidesFromMbStructure")) {
+            fluidSidesFromMultiblockStructure = tag.getBoolean("FluidSidesFromMbStructure");
+        }
 
         //? if fabric {
         if (clientFabric && !getTankTextureLocation().equals(prevTankTexture)) {
             scheduleChunkRebuild();
         }
         //?}
+        if (level != null) {
+            refreshAdjacentFluidDuctConnections();
+        }
     }
 
     @Override
@@ -443,7 +666,14 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             }
         }
 
-        if (!allowedFluidSides.isEmpty()) {
+        if (fluidSidesFromMultiblockStructure) {
+            tag.putBoolean("FluidSidesFromMbStructure", true);
+            int mask = 0;
+            for (Direction dir : allowedFluidSides) {
+                mask |= (1 << dir.get3DDataValue());
+            }
+            tag.putInt("AllowedFluidSides", mask);
+        } else if (!allowedFluidSides.isEmpty()) {
             int mask = 0;
             for (Direction dir : allowedFluidSides) mask |= (1 << dir.get3DDataValue());
             tag.putInt("AllowedFluidSides", mask);
@@ -456,21 +686,36 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return lazyItemHandler.cast();
         }
-        if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            // side == null: внутреннее делегирование от коннекторов или использование предметами (вёдра и т.п.)
-            // side != null: прямое подключение к лицу контроллера — разрешено/запрещено настройкой сторон.
-            if (side != null && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
-                return LazyOptional.empty();
+            if (cap == ForgeCapabilities.FLUID_HANDLER) {
+                if (side != null) {
+                    if (fluidSidesFromMultiblockStructure) {
+                        if (!allowedFluidSides.contains(side)) {
+                            return LazyOptional.empty();
+                        }
+                    } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
+                        return LazyOptional.empty();
+                    }
+                }
+                return lazyFluidHandler.cast();
             }
-            return lazyFluidHandler.cast();
-        }
         return super.getCapability(cap, side);
     }
     *///?}
 
     @Override
+    public void setAllowedFluidSidesFromMultiblockStructure(java.util.Set<Direction> sides) {
+        this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        this.fluidSidesFromMultiblockStructure = true;
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    @Override
     public void setAllowedFluidSides(java.util.Set<Direction> sides) {
         this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        this.fluidSidesFromMultiblockStructure = false;
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -530,6 +775,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            refreshAdjacentFluidDuctConnections();
         }
     }
 

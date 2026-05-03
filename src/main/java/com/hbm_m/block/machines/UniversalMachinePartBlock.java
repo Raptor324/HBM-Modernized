@@ -42,11 +42,11 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import dev.architectury.utils.Env;
 
 public class UniversalMachinePartBlock extends BaseEntityBlock implements IDetonatable {
 
@@ -191,43 +191,43 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
 
         // Сначала проверяем, есть ли у контроллера общая сложная форма (мастер-шейп)
         VoxelShape masterShape = controller.getCustomMasterVoxelShape(controllerState);
-        
+
         if (masterShape != null && !masterShape.isEmpty()) {
             BlockPos vecToController = controllerPos.subtract(pPos);
             return masterShape.move(vecToController.getX(), vecToController.getY(), vecToController.getZ());
         }
 
-        // Используем pattern matching или приведение типов, чтобы задействовать переменную doorBlock
         if (controllerBlock instanceof DoorBlock doorBlock) {
             BlockEntity controllerBE = pLevel.getBlockEntity(controllerPos);
-            
-            if (controllerBE instanceof DoorBlockEntity doorBE) {
-                String declId = doorBlock.getDoorDeclId();
-                DoorDecl decl = com.hbm_m.block.entity.doors.DoorDeclRegistry.getById(declId);
-                
-                if (decl != null && decl.getStructureDefinition() != null) {
-                    DoorDecl.DoorStructureDefinition def = decl.getStructureDefinition();
-                    
-                    Direction facing = controllerState.getValue(DoorBlock.FACING);
-                    BlockPos worldOffset = pPos.subtract(controllerPos);
-                    BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
 
-                    // Считаем открытой, если состояние не 0 (0 = закрыта)
-                    boolean isOpen = doorBE.getState() != 0; 
-                    
-                    // Выбираем карту коллизии используя переменную
-                    Map<BlockPos, VoxelShape> map = isOpen ? def.getOpenShapes() : def.getClosedShapes();
-                    
-                    VoxelShape shape = map.get(localOffset);
-                    if (shape != null) {
-                        if (!shape.isEmpty()) {
-                            return MultiblockStructureHelper.rotateShape(shape, facing);
-                        }
-                        return shape;
+            DoorDecl decl = DoorDeclRegistry.getById(doorBlock.getDoorDeclId());
+
+            if (decl != null && decl.getStructureDefinition() != null) {
+                DoorDecl.DoorStructureDefinition def = decl.getStructureDefinition();
+
+                Direction facing = controllerState.getValue(DoorBlock.FACING);
+                BlockPos worldOffset = pPos.subtract(controllerPos);
+                BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
+
+                boolean isOpen;
+                if (controllerBE instanceof DoorBlockEntity doorBE) {
+                    isOpen = doorBE.getState() != 0;
+                } else {
+                    // Pathfinding без TE у контроллера: полностью открыто по BlockState
+                    isOpen = controllerState.getValue(DoorBlock.OPEN);
+                }
+
+                Map<BlockPos, VoxelShape> map = isOpen ? def.getOpenShapes() : def.getClosedShapes();
+
+                VoxelShape shape = map.get(localOffset);
+                if (shape != null) {
+                    if (!shape.isEmpty()) {
+                        return MultiblockStructureHelper.rotateShape(shape, facing);
                     }
+                    return shape;
                 }
             }
-       }
+        }
 
         // 4. Общая логика для всех остальных частей мультиблока (MachineAssembler и т.д.)
         MultiblockStructureHelper helper = controller.getStructureHelper();
@@ -238,6 +238,17 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         BlockPos gridPos = localOffset.offset(helper.getControllerOffset());
 
         return helper.getSpecificCollisionShape(gridPos, facing);
+    }
+
+    /**
+     * Как у {@link DoorBlock}: проход для LAND только при пустой коллизии.
+     */
+    @Override
+    public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
+        return switch (type) {
+            case LAND -> getCollisionShape(state, level, pos, CollisionContext.empty()).isEmpty();
+            default -> super.isPathfindable(state, level, pos, type);
+        };
     }
 
     @Override

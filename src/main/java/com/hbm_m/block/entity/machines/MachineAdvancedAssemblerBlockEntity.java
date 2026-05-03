@@ -99,8 +99,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     /** Разрешённые стороны прямого подключения к контроллеру (пусто = все). */
     private java.util.Set<Direction> allowedEnergySides = java.util.EnumSet.noneOf(Direction.class);
-    /** Разрешённые стороны прямого подключения к контроллеру (пусто = все). */
+    /** Разрешённые стороны жидкости. Если {@link #fluidSidesFromMultiblockStructure} — пусто может означать «ни одной»; иначе пусто = все. */
     private java.util.Set<Direction> allowedFluidSides = java.util.EnumSet.noneOf(Direction.class);
+    private boolean fluidSidesFromMultiblockStructure = false;
 
     // Выбор рецепта и кеш
     @Nullable private ResourceLocation selectedRecipeId = null;
@@ -633,7 +634,14 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             for (Direction dir : allowedEnergySides) mask |= (1 << dir.get3DDataValue());
             tag.putInt("AllowedEnergySides", mask);
         }
-        if (!allowedFluidSides.isEmpty()) {
+        if (fluidSidesFromMultiblockStructure) {
+            tag.putBoolean("FluidSidesFromMbStructure", true);
+            int mask = 0;
+            for (Direction dir : allowedFluidSides) {
+                mask |= (1 << dir.get3DDataValue());
+            }
+            tag.putInt("AllowedFluidSides", mask);
+        } else if (!allowedFluidSides.isEmpty()) {
             int mask = 0;
             for (Direction dir : allowedFluidSides) mask |= (1 << dir.get3DDataValue());
             tag.putInt("AllowedFluidSides", mask);
@@ -691,6 +699,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 }
             }
         }
+        if (tag.contains("FluidSidesFromMbStructure")) {
+            fluidSidesFromMultiblockStructure = tag.getBoolean("FluidSidesFromMbStructure");
+        }
     }
 
     // Пакеты синхронизации
@@ -730,8 +741,14 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             if (wantsEnergy && !allowedEnergySides.isEmpty() && !allowedEnergySides.contains(side)) {
                 return LazyOptional.empty();
             }
-            if (cap == ForgeCapabilities.FLUID_HANDLER && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
-                return LazyOptional.empty();
+            if (cap == ForgeCapabilities.FLUID_HANDLER && side != null) {
+                if (fluidSidesFromMultiblockStructure) {
+                    if (!allowedFluidSides.contains(side)) {
+                        return LazyOptional.empty();
+                    }
+                } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
+                    return LazyOptional.empty();
+                }
             }
         }
 
@@ -745,7 +762,11 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     //? if fabric {
     @Nullable
     public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
-        if (side != null && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) return null;
+        if (side != null) {
+            if (fluidSidesFromMultiblockStructure) {
+                if (!allowedFluidSides.contains(side)) return null;
+            } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) return null;
+        }
         // По умолчанию: вниз = вход, вверх = выход, иначе вход
         if (side == Direction.UP) return outputTank.getStorage();
         return inputTank.getStorage();
@@ -765,8 +786,17 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
 
     @Override
+    public void setAllowedFluidSidesFromMultiblockStructure(java.util.Set<Direction> sides) {
+        this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        this.fluidSidesFromMultiblockStructure = true;
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    @Override
     public void setAllowedFluidSides(java.util.Set<Direction> sides) {
         this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        this.fluidSidesFromMultiblockStructure = false;
         setChanged();
         sendUpdateToClient();
     }

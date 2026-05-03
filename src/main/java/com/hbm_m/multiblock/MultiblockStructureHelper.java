@@ -69,8 +69,10 @@ public class MultiblockStructureHelper {
     private final Map<BlockPos, Set<Direction>> fluidLocalDirections = new HashMap<>();
     /** Локальные стороны подключения энергии на самом контроллере (если заданы). Пусто = все стороны. */
     private Set<Direction> controllerEnergyLocalDirections = Collections.emptySet();
-    /** Локальные стороны подключения жидкостей на самом контроллере (если заданы). Пусто = все стороны. */
+    /** Локальные стороны подключения жидкостей на самом контроллере. Если {@link #controllerFluidSidesFromStructure} — множество из tuple (пусто = ни одной стороны); иначе не используется для apply (устар.). */
     private Set<Direction> controllerFluidLocalDirections = Collections.emptySet();
+    /** В fluidSideMap указан символ контроллера — {@link #applyControllerSideConfig} вызывает {@link IMultiblockSidedIO#setAllowedFluidSidesFromMultiblockStructure}. */
+    private boolean controllerFluidSidesFromStructure = false;
     private final Map<BlockPos, VoxelShape> partShapes;
     private final Map<BlockPos, VoxelShape> collisionShapes;
     // Позиция контроллера в структуре (относительно центра)
@@ -404,6 +406,7 @@ public class MultiblockStructureHelper {
             }
             if (fluidSideMap != null && fluidSideMap.containsKey(controllerSymbol)) {
                 helper.controllerFluidLocalDirections = fluidTupleToLocalSet(controllerSymbol, fluidSideMap.get(controllerSymbol));
+                helper.controllerFluidSidesFromStructure = true;
             }
         }
         return helper;
@@ -796,11 +799,11 @@ public class MultiblockStructureHelper {
         }
 
         EnumSet<Direction> worldFluid = EnumSet.noneOf(Direction.class);
-        if (controllerFluidLocalDirections != null && !controllerFluidLocalDirections.isEmpty()) {
+        if (controllerFluidSidesFromStructure) {
             for (Direction localDir : controllerFluidLocalDirections) {
                 worldFluid.add(rotateLocalDirectionToWorld(localDir, facing));
             }
-            sided.setAllowedFluidSides(worldFluid);
+            sided.setAllowedFluidSidesFromMultiblockStructure(worldFluid);
         }
     }
     

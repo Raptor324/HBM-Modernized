@@ -36,6 +36,14 @@ public final class FabricEntrypoint implements ModInitializer {
                 (be, side) -> be.getFluidStorage(side),
                 ModBlockEntities.INDUSTRIAL_TURBINE_BE.get()
         );
+        FluidStorage.SIDED.registerForBlockEntity(
+                (be, side) -> be.getFluidStorage(side),
+                ModBlockEntities.FLUID_TANK_BE.get()
+        );
+        FluidStorage.SIDED.registerForBlockEntity(
+                (be, side) -> be.getFluidStorage(side),
+                ModBlockEntities.UNIVERSAL_MACHINE_PART_BE.get()
+        );
 
         FluidStorage.ITEM.registerForItems((stack, context) -> FluidBarrelItem.createFabricStorage(context), ModItems.FLUID_BARREL.get());
         FluidStorage.ITEM.registerForItems(

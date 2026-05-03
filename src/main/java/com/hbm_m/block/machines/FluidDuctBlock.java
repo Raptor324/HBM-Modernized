@@ -15,7 +15,12 @@ import com.google.common.collect.ImmutableMap;
 import com.hbm_m.api.fluids.FluidCapabilityAccess;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.ModFluids;
+import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.block.entity.machines.FluidDuctBlockEntity;
+import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
+import com.hbm_m.block.entity.machines.UniversalMachinePartBlockEntity;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.interfaces.ILookOverlay;
 import com.hbm_m.item.ModItems;
@@ -196,9 +201,52 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
 
         BlockEntity be = level.getBlockEntity(neighborPos);
         if (be != null) {
+            BlockEntity myBe = level.getBlockEntity(myPos);
+            Fluid ductFluid = Fluids.EMPTY;
+            if (myBe instanceof FluidDuctBlockEntity myDuct) {
+                Fluid raw = normalizeDuctPaintFluid(myDuct.getFluidType());
+                ductFluid = raw != null ? raw : Fluids.EMPTY;
+            }
+            MachineFluidTankBlockEntity fluidTank = resolveFluidTankForConnection(level, be);
+            if (fluidTank != null) {
+                if (ductFluid == Fluids.EMPTY) {
+                    return FluidCapabilityAccess.hasFluidHandler(level, neighborPos, direction.getOpposite());
+                }
+                return ductFluidMatchesTankForVisual(ductFluid, fluidTank);
+            }
             return FluidCapabilityAccess.hasFluidHandler(level, neighborPos, direction.getOpposite());
         }
         return false;
+    }
+
+    /**
+     * Цистерна мультиблока: коннектор {@link PartRole#FLUID_CONNECTOR} делегирует на контроллер — учитываем тип бака для визуала трубы.
+     */
+    @Nullable
+    private static MachineFluidTankBlockEntity resolveFluidTankForConnection(LevelAccessor level, BlockEntity neighborBe) {
+        if (neighborBe instanceof MachineFluidTankBlockEntity tank) {
+            return tank;
+        }
+        if (neighborBe instanceof UniversalMachinePartBlockEntity part
+                && part.getControllerPos() != null
+                && (part.getPartRole() == PartRole.FLUID_CONNECTOR || part.getPartRole() == PartRole.UNIVERSAL_CONNECTOR)) {
+            BlockEntity ctrl = level.getBlockEntity(part.getControllerPos());
+            if (ctrl instanceof MachineFluidTankBlockEntity tank) {
+                return tank;
+            }
+        }
+        return null;
+    }
+
+    /** Окрашенная труба не показывает «руку» к цистерне без заданного типа/заполнения; типы сверяются через {@link VanillaFluidEquivalence}. */
+    private static boolean ductFluidMatchesTankForVisual(Fluid ductFluidNorm, MachineFluidTankBlockEntity tank) {
+        Fluid tankType = tank.getFluidTank().getTankType();
+        int fill = tank.getFluidTank().getFill();
+        boolean tankCommitted = fill > 0 || FluidTank.isFluidTypeExplicitlySet(tankType);
+        if (!tankCommitted) {
+            return false;
+        }
+        return VanillaFluidEquivalence.sameSubstance(ductFluidNorm, tankType);
     }
 
     /** Refresh this duct and same-block neighbors (after fluid / connection change). */

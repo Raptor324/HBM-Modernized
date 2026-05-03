@@ -4,6 +4,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.LevelAccessor;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 
 public final class FluidCapabilityAccess {
     private FluidCapabilityAccess() {}
@@ -19,8 +20,10 @@ public final class FluidCapabilityAccess {
         *///?}
 
         //? if fabric {
+        // Тот же overload, что и в FluidDuctBlockEntity / ForgeFluidHandlerAdapter: иначе 3-arg find даёт иной результат и труба «липнет» к контроллеру.
         if (level instanceof net.minecraft.world.level.Level lvl) {
-            result = net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.SIDED.find(lvl, pos, sideFromPos) != null;
+            BlockState state = level.getBlockState(pos);
+            result = net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.SIDED.find(lvl, pos, state, be, sideFromPos) != null;
         }
         //?}
 

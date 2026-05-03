@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.interfaces.IEnergyConnector;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.multiblock.PartRole;
 
@@ -30,13 +31,12 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 *///?}
 
 //? if fabric {
-import dev.architectury.fluid.FluidStack;
+import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 //?}
 
-public class UniversalMachinePartBlockEntity extends BlockEntity implements IMultiblockPart {
+public class UniversalMachinePartBlockEntity extends BlockEntity implements IMultiblockPart, IEnergyConnector {
 
     /**
      * Прямое соединение "коннектор к коннектору" без промежуточных труб.
@@ -220,6 +220,52 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
     public java.util.Set<Direction> getAllowedFluidSides() {
         return this.allowedFluidSides;
     }
+
+    /**
+     * Как Forge {@code getCapability(HBM_ENERGY_*)}: часть с ролью коннектора участвует в визуале проводов и
+     * {@link com.hbm_m.capability.ModCapabilities#hasEnergyComponent} на Fabric ({@code instanceof}).
+     */
+    @Override
+    public boolean canConnectEnergy(@Nullable Direction side) {
+        if (!this.role.canReceiveEnergy() && !this.role.canSendEnergy()) {
+            return false;
+        }
+        if (side == null) {
+            return true;
+        }
+        if (allowedEnergySides.isEmpty()) {
+            return true;
+        }
+        return allowedEnergySides.contains(side);
+    }
+
+    /**
+     * Fabric Transfer API: делегирование жидкости в контроллер (аналог Forge {@code getCapability(FLUID_HANDLER, null)}).
+     */
+    //? if fabric {
+    @SuppressWarnings("UnstableApiUsage")
+    @Nullable
+    public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
+        if (this.controllerPos == null || this.level == null) {
+            return null;
+        }
+        if (!isFluidConnector(this.role)) {
+            return null;
+        }
+        boolean fluidSideOk = side == null
+                || allowedFluidSides.isEmpty()
+                || allowedFluidSides.contains(side);
+        if (!fluidSideOk) {
+            return null;
+        }
+        BlockEntity ctrl = this.level.getBlockEntity(this.controllerPos);
+        if (ctrl == null) {
+            return null;
+        }
+        return FluidStorage.SIDED.find(this.level, this.controllerPos, ctrl.getBlockState(), ctrl, null);
+    }
+    //?}
+
     //? if forge {
     /*@Override
     public void onLoad() {
@@ -359,6 +405,12 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
                 if ((mask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
             }
         }
+        //? if fabric {
+        if (level != null && !level.isClientSide()
+                && (isFluidConnector(this.role) || this.role.canReceiveEnergy() || this.role.canSendEnergy())) {
+            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
+        }
+        //?}
     }
 
     @Nullable

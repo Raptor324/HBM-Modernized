@@ -95,13 +95,19 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
             'L', MultiblockSideTuples.ladder(false, false, true, false)
         );
 
+        // Символ контроллера 'C': жидкость с лица самого контроллера отключена (только F-коннекторы). См. {@link com.hbm_m.interfaces.IMultiblockSidedIO#setAllowedFluidSidesFromMultiblockStructure}.
+        Map<Character, boolean[]> controllerFluidSideMap = Map.of(
+            'C', MultiblockSideTuples.fluid(false, false, false, false, false, false)
+        );
+
         return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
             new String[][]{layer0, layer1, layer2},
             symbolMap,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
             roleMap,
             ladderSideMap,
-            null
+            null,
+            controllerFluidSideMap
         );
     }
 

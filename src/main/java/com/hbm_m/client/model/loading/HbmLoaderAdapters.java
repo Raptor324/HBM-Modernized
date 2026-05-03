@@ -9,6 +9,8 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 
+import org.joml.Vector3f;
+
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 import com.hbm_m.client.model.DoorBakedModel;
@@ -21,13 +23,12 @@ import com.hbm_m.client.model.MachineFluidTankBakedModel;
 import com.hbm_m.client.model.MachineHydraulicFrackiningTowerBakedModel;
 import com.hbm_m.client.model.PressBakedModel;
 import com.hbm_m.client.model.TemplateBakedModel;
-import com.hbm_m.main.MainRegistry;
 
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
 import net.fabricmc.loader.api.FabricLoader;
-import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.block.model.BlockModel;
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
 import net.minecraft.client.renderer.texture.MissingTextureAtlasSprite;
@@ -42,7 +43,6 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.util.GsonHelper;
-import org.joml.Vector3f;
 
 @Environment(EnvType.CLIENT)
 final class HbmLoaderAdapters {

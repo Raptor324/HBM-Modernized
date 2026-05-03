@@ -11,6 +11,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 //? if forge {
 /*import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -220,7 +221,8 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
     private Storage<FluidVariant> getFabricStorage() {
         BlockEntity be = level.getBlockEntity(machinePos);
         if (be == null || be.isRemoved()) return null;
-        return FluidStorage.SIDED.find(level, machinePos, sideOfMachineFacingDuct);
+        BlockState st = level.getBlockState(machinePos);
+        return FluidStorage.SIDED.find(level, machinePos, st, be, sideOfMachineFacingDuct);
     }
     //?}
 
