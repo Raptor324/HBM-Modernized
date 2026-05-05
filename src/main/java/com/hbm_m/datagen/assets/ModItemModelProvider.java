@@ -155,6 +155,11 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.ALLOY_SWORD);
         simpleItem(ModItems.GEIGER_COUNTER);
         simpleItem(ModItems.DOSIMETER);
+        
+        // Music disc
+        withExistingParent(ModItems.MUSIC_DISC_BUNKER.getId().getPath(), "item/generated")
+                .texture("layer0", mcLoc("item/music_disc_13"));
+
         simpleItem(ModItems.HEART_PIECE);
         simpleItem(ModItems.HEART_CONTAINER);
         simpleItem(ModItems.HEART_BOOSTER);

@@ -324,6 +324,10 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 ModItems.COBALT_LEGGINGS.get(),
                 ModItems.COBALT_BOOTS.get(),
                 ModItems.ALLOY_BOOTS.get());
+
+        // Vanilla jukebox accepts only items in this tag (1.20.1)
+        this.tag(ItemTags.MUSIC_DISCS)
+                .add(ModItems.MUSIC_DISC_BUNKER.get());
     }
 }
 *///?}

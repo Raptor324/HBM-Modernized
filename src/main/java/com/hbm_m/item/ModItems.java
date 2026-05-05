@@ -15,7 +15,6 @@ import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.armormod.item.ItemModBattery;
 import com.hbm_m.armormod.item.ItemModBatteryMk2;
 import com.hbm_m.armormod.item.ItemModBatteryMk3;
@@ -92,13 +91,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.AxeItem;
-import net.minecraft.world.item.BucketItem;
 import net.minecraft.world.item.HoeItem;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
 import net.minecraft.world.item.PickaxeItem;
+import net.minecraft.world.item.Rarity;
+import net.minecraft.world.item.RecordItem;
 import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.SwordItem;
 import net.minecraft.world.item.TooltipFlag;
@@ -558,6 +557,14 @@ public class ModItems {
 
     public static final RegistrySupplier<Item> DOSIMETER = ITEMS.register("dosimeter",
             () -> new ItemDosimeter(new Item.Properties().stacksTo(1)));
+
+    public static final RegistrySupplier<Item> MUSIC_DISC_BUNKER = ITEMS.register("music_disc_bunker",
+            () -> new RecordItem(
+                    1,
+                    ModSounds.MUSIC_DISC_BUNKER.get(),
+                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
+                    20 * 120
+            ));
 
 
 

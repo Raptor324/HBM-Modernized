@@ -56,6 +56,11 @@ public final class CreativeModeTabEventHandler {
             populateCombatTab((stack, vis) -> event.accept(stack, vis));
         }
 
+        if (event.getTabKey() == CreativeModeTabs.TOOLS_AND_UTILITIES) {
+            event.accept(new ItemStack(ModItems.MUSIC_DISC_BUNKER.get()),
+                    CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+        }
+
         if (event.getTab() == ModCreativeTabs.NTM_RESOURCES_TAB.get() || event.getTabKey() == CreativeModeTabs.SEARCH) {
             populateResourceTab((stack, vis) -> event.accept(stack, vis));
         }
@@ -93,12 +98,34 @@ public final class CreativeModeTabEventHandler {
 
     //? if fabric {
     public static void initFabric() {
-        ItemGroupEvents.MODIFY_ENTRIES_ALL.register((tabGroup, entries) -> {
-            // Кастомные вкладки наполняются через `CreativeModeTab#displayItems` при их регистрации.
-            // На Fabric оставляем только точечное добавление в ванильные вкладки.
-            if (tabGroup.equals(CreativeModeTabs.COMBAT)) {
-                populateCombatTab((stack, vis) -> entries.accept(stack, vis));
-            }
+        // Кастомные вкладки наполняются через `CreativeModeTab#displayItems` при их регистрации.
+        // На Fabric добавляем только в ванильные вкладки через точечные хуки по ключу вкладки,
+        // чтобы не зависеть от типов аргументов колбэка (tab key vs tab instance).
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.COMBAT).register(entries ->
+                populateCombatTab((stack, vis) -> entries.accept(stack, vis)));
+
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.TOOLS_AND_UTILITIES).register(entries ->
+                entries.accept(new ItemStack(ModItems.MUSIC_DISC_BUNKER.get()),
+                        CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS));
+
+        // На Forge мы добавляем почти всё в SEARCH для удобства поиска.
+        // На Fabric ванильный SEARCH не подхватывает наши кастомные вкладки автоматически,
+        // поэтому зеркалим поведение.
+        ItemGroupEvents.modifyEntriesEvent(CreativeModeTabs.SEARCH).register(entries -> {
+            populateWeaponsTab((stack, vis) -> entries.accept(stack, vis));
+            populateCombatTab((stack, vis) -> entries.accept(stack, vis));
+
+            entries.accept(new ItemStack(ModItems.MUSIC_DISC_BUNKER.get()),
+                    CreativeModeTab.TabVisibility.PARENT_AND_SEARCH_TABS);
+
+            populateResourceTab((stack, vis) -> entries.accept(stack, vis));
+            populateConsumablesTab((stack, vis) -> entries.accept(stack, vis));
+            populateSparepartsTab((stack, vis) -> entries.accept(stack, vis));
+            populateOresTab((stack, vis) -> entries.accept(stack, vis));
+            populateBuildingTab((stack, vis) -> entries.accept(stack, vis));
+            populateMachinesTab((stack, vis) -> entries.accept(stack, vis));
+            populateFuelTab((stack, vis) -> entries.accept(stack, vis));
+            populateTemplatesTab((stack, vis) -> entries.accept(stack, vis));
         });
     }
     //?}

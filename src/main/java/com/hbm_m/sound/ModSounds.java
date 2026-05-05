@@ -1,7 +1,6 @@
 package com.hbm_m.sound;
 
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvent;
@@ -124,6 +123,9 @@ public class ModSounds {
     // Thermal vision sounds
     public static final RegistrySupplier<SoundEvent> NVG_ON = registerSoundEvents("tool.nvg_on");
     public static final RegistrySupplier<SoundEvent> NVG_OFF = registerSoundEvents("tool.nvg_off");
+
+    // Music discs
+    public static final RegistrySupplier<SoundEvent> MUSIC_DISC_BUNKER = registerSoundEvents("music_disc.bunker");
     
     // Вспомогательный метод для регистрации
     private static RegistrySupplier<SoundEvent> registerSoundEvents(String name) {

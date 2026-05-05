@@ -11,6 +11,8 @@
   "armor.fsb.stepSize": "Step Assist Lv.%d",
   "armor.fsb.thermalVision": "Thermal Sight",
   "armor.fsb.vats": "Enemy HUD",
+  "item.hbm_m.music_disc_bunker": "Music Disc",
+  "item.hbm_m.music_disc_bunker.desc": "Bunker",
   "block.hbm_m.advanced_assembly_machine": "Assembly Machine",
   "block.hbm_m.airbomb": "Airbomb",
   "block.hbm_m.aluminum_ore": "Aluminum Ore",

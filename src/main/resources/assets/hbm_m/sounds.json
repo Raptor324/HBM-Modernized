@@ -566,5 +566,12 @@
     "sounds": [
       "hbm_m:tool/nvg_off"
     ]
+  },
+  "music_disc.bunker": {
+    "category": "record",
+    "subtitle": "item.hbm_m.music_disc_bunker.desc",
+    "sounds": [
+      "hbm_m:messages/bunker"
+    ]
   }
 }

@@ -56,10 +56,10 @@ public final class MainRegistry {
         ModBlocks.init();
         ModEntities.init();
         ModExplosionParticles.init();
+        ModSounds.init();
         ModItems.init();
         ModMenuTypes.init();
         ModCreativeTabs.init();
-        ModSounds.init();
         ModParticleTypes.init();
         ModBlockEntities.init();
         ModEffects.init();
