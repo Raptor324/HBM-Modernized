@@ -209,8 +209,11 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
             }
             MachineFluidTankBlockEntity fluidTank = resolveFluidTankForConnection(level, be);
             if (fluidTank != null) {
+                if (!FluidCapabilityAccess.hasFluidHandler(level, neighborPos, direction.getOpposite())) {
+                    return false;
+                }
                 if (ductFluid == Fluids.EMPTY) {
-                    return FluidCapabilityAccess.hasFluidHandler(level, neighborPos, direction.getOpposite());
+                    return true;
                 }
                 return ductFluidMatchesTankForVisual(ductFluid, fluidTank);
             }

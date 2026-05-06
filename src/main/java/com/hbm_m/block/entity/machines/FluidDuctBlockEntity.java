@@ -17,8 +17,6 @@ import com.hbm_m.api.network.UniNodespace;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
-import com.hbm_m.interfaces.IMultiblockPart;
-
 //? if fabric {
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 //?}
@@ -233,45 +231,11 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
                 entity.adapterCache.put(dir, adapter);
             }
 
-            BlockEntity tankController = resolveMachineFluidTankController(neighbor);
-            if (tankController instanceof MachineFluidTankBlockEntity tankBe
-                    && !tankBe.hasExploded
-                    && tankBe.getMode() == 1) {
-                int max = tankBe.getFluidTank().getMaxFill();
-                if (max > 0) {
-                    float r = tankBe.getFluidTank().getFill() / (float) max;
-                    // Буфер: не подписывать и провайдером, и приёмником в одном тике — иначе сеть качает туда-сюда.
-                    // Мёртвая зона ~50%: при равномерном заполнении оба буфера не регистрируются и перестают осциллировать.
-                    if (r < 0.48f) {
-                        adapter.trySubscribe(entity.fluidType, serverLevel, pos, dir.getOpposite());
-                    } else if (r > 0.52f) {
-                        adapter.tryProvide(entity.fluidType, serverLevel, pos, dir.getOpposite());
-                    }
-                    continue;
-                }
-            }
-
             adapter.trySubscribe(entity.fluidType, serverLevel, pos, dir.getOpposite());
             adapter.tryProvide(entity.fluidType, serverLevel, pos, dir.getOpposite());
         }
     }
 
-    @Nullable
-    private static BlockEntity resolveMachineFluidTankController(BlockEntity neighbor) {
-        if (neighbor instanceof MachineFluidTankBlockEntity) {
-            return neighbor;
-        }
-        if (neighbor instanceof IMultiblockPart part) {
-            BlockPos c = part.getControllerPos();
-            if (c != null && neighbor.getLevel() != null) {
-                BlockEntity be = neighbor.getLevel().getBlockEntity(c);
-                if (be instanceof MachineFluidTankBlockEntity) {
-                    return be;
-                }
-            }
-        }
-        return null;
-    }
 
     /**
      * Проверяет наличие fluid handler у соседнего BlockEntity.

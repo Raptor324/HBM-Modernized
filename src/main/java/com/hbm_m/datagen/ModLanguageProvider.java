@@ -405,8 +405,39 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("desc.gui.assembler.warning", "Некорректный шаблон!");
                 add("desc.gui.upgrade", "Улучшения");
                 add("desc.gui.upgrade.speed", "Скорость: -25% времени за уровень");
+                add("desc.gui.upgrade.power", "Мощность: -25% потребления за уровень");
                 add("desc.gui.upgrade.effectiveness", "Эффективность: шанс бесплатного крафта");
+                add("desc.gui.upgrade.afterburner", "Форсаж: дополнительные эффекты");
                 add("desc.gui.upgrade.overdrive", "Овердрайв: x2 циклов за тик за уровень");
+
+                // Upgrade items
+                add("item.hbm_m.upgrade_speed_1", "Апгрейд скорости Mk.I");
+                add("item.hbm_m.upgrade_speed_2", "Апгрейд скорости Mk.II");
+                add("item.hbm_m.upgrade_speed_3", "Апгрейд скорости Mk.III");
+                add("item.hbm_m.upgrade_effect_1", "Апгрейд эффективности Mk.I");
+                add("item.hbm_m.upgrade_effect_2", "Апгрейд эффективности Mk.II");
+                add("item.hbm_m.upgrade_effect_3", "Апгрейд эффективности Mk.III");
+                add("item.hbm_m.upgrade_power_1", "Апгрейд мощности Mk.I");
+                add("item.hbm_m.upgrade_power_2", "Апгрейд мощности Mk.II");
+                add("item.hbm_m.upgrade_power_3", "Апгрейд мощности Mk.III");
+                add("item.hbm_m.upgrade_fortune_1", "Апгрейд удачи Mk.I");
+                add("item.hbm_m.upgrade_fortune_2", "Апгрейд удачи Mk.II");
+                add("item.hbm_m.upgrade_fortune_3", "Апгрейд удачи Mk.III");
+                add("item.hbm_m.upgrade_afterburn_1", "Апгрейд форсажа Mk.I");
+                add("item.hbm_m.upgrade_afterburn_2", "Апгрейд форсажа Mk.II");
+                add("item.hbm_m.upgrade_afterburn_3", "Апгрейд форсажа Mk.III");
+                add("item.hbm_m.upgrade_overdrive_1", "Апгрейд овердрайва Mk.I");
+                add("item.hbm_m.upgrade_overdrive_2", "Апгрейд овердрайва Mk.II");
+                add("item.hbm_m.upgrade_overdrive_3", "Апгрейд овердрайва Mk.III");
+
+                // Upgrade tooltips
+                add("tooltip.hbm_m.upgrade.type.speed", "Скорость: ускоряет работу, увеличивает потребление");
+                add("tooltip.hbm_m.upgrade.type.effect", "Эффективность: увеличивает радиус/эффект");
+                add("tooltip.hbm_m.upgrade.type.power", "Мощность: снижает потребление энергии");
+                add("tooltip.hbm_m.upgrade.type.fortune", "Удача: увеличивает выход продукции");
+                add("tooltip.hbm_m.upgrade.type.afterburn", "Форсаж: добавляет дополнительные эффекты");
+                add("tooltip.hbm_m.upgrade.type.overdrive", "Овердрайв: экстремальное ускорение");
+                add("tooltip.hbm_m.upgrade.tier", "Уровень: %d");
 
                 // === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
                 add("tooltip.hbm_m.gigadet.line1", "Был создан по приколу");
@@ -2196,8 +2227,39 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("desc.gui.assembler.warning", "No valid template!");
                 add("desc.gui.upgrade", "Upgrades");
                 add("desc.gui.upgrade.speed", "Speed: -25% time per level");
+                add("desc.gui.upgrade.power", "Power: -25% consumption per level");
                 add("desc.gui.upgrade.effectiveness", "Effectiveness: free craft chance");
+                add("desc.gui.upgrade.afterburner", "Afterburner: additional effects");
                 add("desc.gui.upgrade.overdrive", "Overdrive: x2 cycles per tick per level");
+
+                // Upgrade items
+                add("item.hbm_m.upgrade_speed_1", "Speed Upgrade Mk.I");
+                add("item.hbm_m.upgrade_speed_2", "Speed Upgrade Mk.II");
+                add("item.hbm_m.upgrade_speed_3", "Speed Upgrade Mk.III");
+                add("item.hbm_m.upgrade_effect_1", "Effectiveness Upgrade Mk.I");
+                add("item.hbm_m.upgrade_effect_2", "Effectiveness Upgrade Mk.II");
+                add("item.hbm_m.upgrade_effect_3", "Effectiveness Upgrade Mk.III");
+                add("item.hbm_m.upgrade_power_1", "Power Upgrade Mk.I");
+                add("item.hbm_m.upgrade_power_2", "Power Upgrade Mk.II");
+                add("item.hbm_m.upgrade_power_3", "Power Upgrade Mk.III");
+                add("item.hbm_m.upgrade_fortune_1", "Fortune Upgrade Mk.I");
+                add("item.hbm_m.upgrade_fortune_2", "Fortune Upgrade Mk.II");
+                add("item.hbm_m.upgrade_fortune_3", "Fortune Upgrade Mk.III");
+                add("item.hbm_m.upgrade_afterburn_1", "Afterburner Upgrade Mk.I");
+                add("item.hbm_m.upgrade_afterburn_2", "Afterburner Upgrade Mk.II");
+                add("item.hbm_m.upgrade_afterburn_3", "Afterburner Upgrade Mk.III");
+                add("item.hbm_m.upgrade_overdrive_1", "Overdrive Upgrade Mk.I");
+                add("item.hbm_m.upgrade_overdrive_2", "Overdrive Upgrade Mk.II");
+                add("item.hbm_m.upgrade_overdrive_3", "Overdrive Upgrade Mk.III");
+
+                // Upgrade tooltips
+                add("tooltip.hbm_m.upgrade.type.speed", "Speed: increases processing speed, increases power consumption");
+                add("tooltip.hbm_m.upgrade.type.effect", "Effectiveness: increases range/effect");
+                add("tooltip.hbm_m.upgrade.type.power", "Power: reduces energy consumption");
+                add("tooltip.hbm_m.upgrade.type.fortune", "Fortune: increases output yield");
+                add("tooltip.hbm_m.upgrade.type.afterburn", "Afterburner: adds additional effects");
+                add("tooltip.hbm_m.upgrade.type.overdrive", "Overdrive: extreme speed boost at high cost");
+                add("tooltip.hbm_m.upgrade.tier", "Tier: %d");
 
                 // === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
                 add("tooltip.hbm_m.crowbar.line1", "Tool for prying open containers.");

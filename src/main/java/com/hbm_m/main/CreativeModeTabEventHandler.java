@@ -1244,6 +1244,26 @@ public final class CreativeModeTabEventHandler {
 
         add.accept(new ItemStack(ModItems.TEMPLATE_FOLDER.get()));
 
+        // Machine Upgrades
+        add.accept(new ItemStack(ModItems.UPGRADE_SPEED_1.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_SPEED_2.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_SPEED_3.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_EFFECT_1.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_EFFECT_2.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_EFFECT_3.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_POWER_1.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_POWER_2.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_POWER_3.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_FORTUNE_1.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_FORTUNE_2.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_FORTUNE_3.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_AFTERBURN_1.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_AFTERBURN_2.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_AFTERBURN_3.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_OVERDRIVE_1.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_OVERDRIVE_2.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_OVERDRIVE_3.get()));
+
         EnvExecutor.runInEnv(Env.CLIENT, () -> () -> {
             ClientSetup.addTemplatesClient(add);
         });

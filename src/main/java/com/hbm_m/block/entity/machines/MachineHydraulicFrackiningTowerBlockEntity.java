@@ -99,6 +99,8 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
     protected int powerUpgradeLevel = 0;
     protected int afterburnerUpgradeLevel = 0;
 
+    private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
+
     //=====================================================================================//
     // СЛОТЫ ИНВЕНТАРЯ (как в оригинале ContainerMachineOilWell)
     //=====================================================================================//
@@ -226,8 +228,7 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
     }
 
     private boolean isUpgradeItem(ItemStack stack) {
-        String className = stack.getItem().getClass().getSimpleName();
-        return className.contains("MachineUpgrade") || className.contains("Upgrade");
+        return stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade;
     }
 
     //=====================================================================================//
@@ -320,28 +321,19 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
         entity.sendUpdateToClient();
     }
 
-    /**
-     * Обновление уровней апгрейдов из слотов.
-     */
-    protected void updateUpgrades() {
-        speedUpgradeLevel = 0;
-        powerUpgradeLevel = 0;
-        afterburnerUpgradeLevel = 0;
+    private static final java.util.Map<com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType, Integer> VALID_UPGRADES_FRACK = java.util.Map.of(
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED, 3,
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.POWER, 3,
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.AFTERBURN, 3,
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE, 3
+    );
 
-        for (int i = SLOT_UPGRADE_1; i <= SLOT_UPGRADE_3; i++) {
-            ItemStack stack = inventory.getStackInSlot(i);
-            if (!stack.isEmpty()) {
-                // Определение типа апгрейда по Item
-                String itemName = stack.getItem().getDescriptionId().toLowerCase();
-                if (itemName.contains("speed")) {
-                    speedUpgradeLevel += stack.getCount();
-                } else if (itemName.contains("power") || itemName.contains("energy")) {
-                    powerUpgradeLevel += stack.getCount();
-                } else if (itemName.contains("afterburn") || itemName.contains("overdrive")) {
-                    afterburnerUpgradeLevel += stack.getCount();
-                }
-            }
-        }
+    protected void updateUpgrades() {
+        upgradeManager.checkSlots(inventory, SLOT_UPGRADE_1, SLOT_UPGRADE_3, VALID_UPGRADES_FRACK);
+        speedUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED);
+        powerUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.POWER);
+        afterburnerUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.AFTERBURN)
+                + upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE);
     }
 
     /**

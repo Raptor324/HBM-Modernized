@@ -291,6 +291,7 @@ public class FluidBarrelItem extends Item {
 
     //? if fabric {
     public static Storage<FluidVariant> createFabricStorage(ContainerItemContext ctx) {
+        if (ctx == null) return null;
         return new SingleVariantItemStorage<FluidVariant>(ctx) {
 
             // Возвращает «пустой» вариант типа — аналог null для ресурса
