@@ -117,6 +117,11 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
             return switch (index) {
                 case 0 -> module != null ? module.getProgress() : 0;
                 case 1 -> module != null ? module.getMaxProgress() : 100;
+                case 2 -> (int) (getEnergyStored() & 0xFFFFFFFFL);
+                case 3 -> (int) ((getEnergyStored() >> 32) & 0xFFFFFFFFL);
+                case 4 -> (int) (getMaxEnergyStored() & 0xFFFFFFFFL);
+                case 5 -> (int) ((getMaxEnergyStored() >> 32) & 0xFFFFFFFFL);
+                case 6 -> module != null && module.getDidProcess() ? 1 : 0;
                 default -> 0;
             };
         }
@@ -126,7 +131,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
 
         @Override
         public int getCount() {
-            return 2;
+            return 7;
         }
     };
 
@@ -324,20 +329,25 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
             *///?}
 
             //? if fabric {
+            Fluid configuredFluid = inputTanks[i].getConfiguredFluid();
+            if (configuredFluid == Fluids.EMPTY) continue;
+
             ItemStack one = fullContainer.copy();
             one.setCount(1);
             Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, null);
             if (itemStorage == null) continue;
-
-            Storage<FluidVariant> tankStorage = inputTanks[i].getStorage();
-            long spaceDroplets = (long) inputTanks[i].getSpaceMb() * ModFluidTank.DROPLETS_PER_MB;
-            if (spaceDroplets <= 0) continue;
 
             StorageView<FluidVariant> view = null;
             for (StorageView<FluidVariant> v : itemStorage) {
                 if (!v.isResourceBlank() && v.getAmount() > 0) { view = v; break; }
             }
             if (view == null) continue;
+
+            if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configuredFluid, view.getResource().getFluid())) continue;
+
+            Storage<FluidVariant> tankStorage = inputTanks[i].getStorage();
+            long spaceDroplets = (long) inputTanks[i].getSpaceMb() * ModFluidTank.DROPLETS_PER_MB;
+            if (spaceDroplets <= 0) continue;
 
             boolean moved = false;
             try (Transaction tx = Transaction.openOuter()) {

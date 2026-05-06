@@ -95,16 +95,15 @@ public class MachineModuleChemplant {
 
             if (canProcess(recipe) && energyStorage.getEnergyStored() >= powerPerTick) {
                 energyStorage.setEnergyStored(energyStorage.getEnergyStored() - powerPerTick);
-                double step = Math.min(speed / maxProgress, 1.0);
-                progressAccum += step;
-                didProcess = true;
-                needsSync = true;
-
-                if (progressAccum >= 1.0) {
-                    int steps = (int) progressAccum;
+                progressAccum += speed;
+                int steps = (int) progressAccum;
+                if (steps > 0) {
                     progressAccum -= steps;
                     progress += steps;
                 }
+                didProcess = true;
+                needsSync = true;
+
                 if (progress >= maxProgress) {
                     progress = 0;
                     progressAccum = 0;

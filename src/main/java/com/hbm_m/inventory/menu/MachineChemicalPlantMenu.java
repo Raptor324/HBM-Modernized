@@ -156,6 +156,18 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
         return max > 0 ? getProgress() * width / max : 0;
     }
 
+    public long getEnergyStored() {
+        return ((long) data.get(3) << 32) | (data.get(2) & 0xFFFFFFFFL);
+    }
+
+    public long getMaxEnergyStored() {
+        return ((long) data.get(5) << 32) | (data.get(4) & 0xFFFFFFFFL);
+    }
+
+    public boolean getDidProcess() {
+        return data.get(6) != 0;
+    }
+
     @Override
     public @NotNull ItemStack quickMoveStack(@NotNull Player player, int index) {
         ItemStack result = ItemStack.EMPTY;

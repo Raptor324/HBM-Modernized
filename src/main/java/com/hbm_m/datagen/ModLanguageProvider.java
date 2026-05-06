@@ -1642,6 +1642,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.battery.mode.locked.desc", "Все операции с энергией отключены.");
 
                 add("gui.recipe.setRecipe", "Выбрать рецепт");
+                add("gui.recipe.duration", "Время");
+                add("gui.recipe.consumption", "Потребление");
+                add("gui.recipe.input", "Вход");
+                add("gui.recipe.output", "Выход");
                 add("gui.hbm_m.fluid.empty", "Пусто");
 
                 add("tooltip.hbm_m.battery.stored", "Хранится энергии:");
@@ -3403,6 +3407,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.battery.mode.locked.desc", "All energy operations are disabled.");
 
                 add("gui.recipe.setRecipe", "Set Recipe");
+                add("gui.recipe.duration", "Duration");
+                add("gui.recipe.consumption", "Consumption");
+                add("gui.recipe.input", "Input");
+                add("gui.recipe.output", "Output");
                 add("gui.hbm_m.fluid.empty", "Empty");
 
                 add("tooltip.hbm_m.battery.stored", "Stored energy:");

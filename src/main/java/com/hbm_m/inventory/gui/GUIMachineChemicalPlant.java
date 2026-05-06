@@ -58,8 +58,8 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
 
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        long energyStored = menu.getBlockEntity().getEnergyStored();
-        long maxEnergy = menu.getBlockEntity().getMaxEnergyStored();
+        long energyStored = menu.getEnergyStored();
+        long maxEnergy = menu.getMaxEnergyStored();
         if (maxEnergy > 0) {
             int p = (int) (energyStored * 61L / maxEnergy);
             if (p > 61) p = 61;
@@ -76,7 +76,7 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         }
 
         boolean hasRecipe = menu.getBlockEntity().getSelectedRecipeId() != null;
-        boolean didProcess = menu.getBlockEntity().getDidProcess();
+        boolean didProcess = menu.getDidProcess();
         boolean canProcess = hasRecipe && energyStored >= 100;
 
         if (didProcess) {
@@ -91,9 +91,9 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
 
         for (int i = 0; i < 3; i++) {
             renderFluidTank(guiGraphics, menu.getBlockEntity().getInputTanks()[i],
-                    this.leftPos + 8 + i * 18, this.topPos + 52);
+                    this.leftPos + 8 + i * 18, this.topPos + 18);
             renderFluidTank(guiGraphics, menu.getBlockEntity().getOutputTanks()[i],
-                    this.leftPos + 80 + i * 18, this.topPos + 52);
+                    this.leftPos + 80 + i * 18, this.topPos + 18);
         }
         com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, TEXTURE);
 
@@ -154,8 +154,8 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         super.renderTooltip(guiGraphics, mouseX, mouseY);
 
         if (isMouseOver(mouseX, mouseY, 152, 18, 16, 61)) {
-            long energy = menu.getBlockEntity().getEnergyStored();
-            long maxEnergy = menu.getBlockEntity().getMaxEnergyStored();
+            long energy = menu.getEnergyStored();
+            long maxEnergy = menu.getMaxEnergyStored();
             guiGraphics.renderTooltip(this.font,
                     Component.literal(EnergyFormatter.format(energy) + " / " + EnergyFormatter.format(maxEnergy) + " HE")
                             .withStyle(ChatFormatting.GREEN),
@@ -189,16 +189,21 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
 
     private void renderTankTooltip(GuiGraphics guiGraphics, ModFluidTank tank, int mouseX, int mouseY) {
         Fluid stored = tank.getStoredFluid();
+        Fluid configured = tank.getConfiguredFluid();
         int amountMb = tank.getFluidAmountMb();
-        FluidStack fluid = (stored == net.minecraft.world.level.material.Fluids.EMPTY || amountMb <= 0)
-                ? FluidStack.empty()
-                : FluidStack.create(stored, (long) amountMb);
         List<Component> tooltip = new ArrayList<>();
-        if (fluid.isEmpty()) {
-            tooltip.add(Component.translatable("gui.hbm_m.fluid.empty"));
+        if (stored == net.minecraft.world.level.material.Fluids.EMPTY || amountMb <= 0) {
+            if (configured != net.minecraft.world.level.material.Fluids.EMPTY) {
+                FluidStack cfgStack = FluidStack.create(configured, 0L);
+                tooltip.add(dev.architectury.hooks.fluid.FluidStackHooks.getName(cfgStack));
+                tooltip.add(Component.literal("0 / " + TANK_CAPACITY + " mB"));
+            } else {
+                tooltip.add(Component.translatable("gui.hbm_m.fluid.empty"));
+            }
         } else {
+            FluidStack fluid = FluidStack.create(stored, (long) amountMb);
             tooltip.add(dev.architectury.hooks.fluid.FluidStackHooks.getName(fluid));
-            tooltip.add(Component.literal(fluid.getAmount() + " / " + TANK_CAPACITY + " mB"));
+            tooltip.add(Component.literal(amountMb + " / " + TANK_CAPACITY + " mB"));
         }
         guiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), mouseX, mouseY);
     }
