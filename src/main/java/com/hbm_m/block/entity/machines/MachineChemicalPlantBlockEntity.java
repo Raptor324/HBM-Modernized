@@ -732,17 +732,11 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
                 if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configured, resource.getFluid())) continue;
                 long spaceMb = tank.getCapacityMb() - tank.getFluidAmountMb();
                 if (spaceMb <= 0) continue;
-                long mbToFill = Math.min(maxAmount / ModFluidTank.DROPLETS_PER_MB, spaceMb);
-                if (mbToFill <= 0) continue;
-                final int fillMb = (int) mbToFill;
-                final int tankIdx = i;
-                transaction.addCloseCallback((ctx, result) -> {
-                    if (result.wasCommitted()) {
-                        be.inputTanks[tankIdx].fillMb(resource.getFluid(), fillMb);
-                        be.setChanged();
-                    }
-                });
-                return mbToFill * ModFluidTank.DROPLETS_PER_MB;
+                long dropletsToFill = Math.min(maxAmount, spaceMb * ModFluidTank.DROPLETS_PER_MB);
+                if (dropletsToFill <= 0) continue;
+                long inserted = tank.getStorage().insert(resource, dropletsToFill, transaction);
+                if (inserted > 0) be.setChanged();
+                return inserted;
             }
             return 0;
         }
@@ -755,18 +749,12 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
                 ModFluidTank tank = be.outputTanks[i];
                 if (tank.isEmpty()) continue;
                 if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), resource.getFluid())) continue;
-                long availableMb = tank.getFluidAmountMb();
-                long mbToDrain = Math.min(maxAmount / ModFluidTank.DROPLETS_PER_MB, availableMb);
-                if (mbToDrain <= 0) continue;
-                final int drainMb = (int) mbToDrain;
-                final int tankIdx = i;
-                transaction.addCloseCallback((ctx, result) -> {
-                    if (result.wasCommitted()) {
-                        be.outputTanks[tankIdx].drainMb(drainMb);
-                        be.setChanged();
-                    }
-                });
-                return mbToDrain * ModFluidTank.DROPLETS_PER_MB;
+                long availableDroplets = (long) tank.getFluidAmountMb() * ModFluidTank.DROPLETS_PER_MB;
+                long dropletsToExtract = Math.min(maxAmount, availableDroplets);
+                if (dropletsToExtract <= 0) continue;
+                long extracted = tank.getStorage().extract(resource, dropletsToExtract, transaction);
+                if (extracted > 0) be.setChanged();
+                return extracted;
             }
             return 0;
         }

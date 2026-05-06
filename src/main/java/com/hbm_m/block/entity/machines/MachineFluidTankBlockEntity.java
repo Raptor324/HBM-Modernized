@@ -642,6 +642,11 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             scheduleChunkRebuild();
         }
         //?}
+        //? if forge {
+        /*if (level != null && level.isClientSide) {
+            requestModelDataUpdate();
+        }
+        *///?}
         if (level != null) {
             refreshAdjacentFluidDuctConnections();
         }
