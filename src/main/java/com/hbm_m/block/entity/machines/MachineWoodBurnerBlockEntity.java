@@ -3,7 +3,6 @@ package com.hbm_m.block.entity.machines;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
-import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.inventory.menu.MachineWoodBurnerMenu;
 import com.hbm_m.item.ModItems;
 
@@ -21,14 +20,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
-/*import com.hbm_m.capability.ModCapabilities;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-*///?}
-//? if fabric {
-import team.reborn.energy.api.EnergyStorage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-//?}
+
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -218,69 +210,7 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
 
 
     private void chargeItem() {
-        if (this.energy <= 0) return; // Нечего заряжать
-
-        ItemStack itemToCharge = this.inventory.getStackInSlot(CHARGE_SLOT);
-        if (itemToCharge.isEmpty()) return;
-
-        long toTransfer = Math.min(this.energy, getProvideSpeed());
-        if (toTransfer <= 0) return;
-
-        //? if forge {
-        /*// 1) HBM long-capability
-        var hbmCap = itemToCharge.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER);
-        if (hbmCap.isPresent()) {
-            hbmCap.ifPresent(target -> {
-                if (!target.canReceive()) return;
-                long accepted = target.receiveEnergy(toTransfer, false);
-                if (accepted > 0) {
-                    setEnergyStored(energy - accepted);
-                    setChanged();
-                }
-            });
-            return;
-        }
-
-        // 2) Forge Energy fallback (int-safe)
-        itemToCharge.getCapability(ForgeCapabilities.ENERGY).ifPresent(target -> {
-            if (!target.canReceive()) return;
-            int maxTransfer = (int) Math.min(toTransfer, Integer.MAX_VALUE);
-            if (maxTransfer <= 0) return;
-            int accepted = target.receiveEnergy(maxTransfer, false);
-            if (accepted > 0) {
-                setEnergyStored(energy - accepted);
-                setChanged();
-            }
-        });
-        *///?}
-
-        //? if fabric {
-        // На Fabric HBM батарейки читаются из NBT через ItemEnergyAccess (см. ModBatteryItem)
-        var hbm = ItemEnergyAccess.getHbmReceiver(itemToCharge);
-        if (hbm.isPresent()) {
-            var target = hbm.get();
-            if (!target.canReceive()) return;
-            long accepted = target.receiveEnergy(toTransfer, false);
-            if (accepted > 0) {
-                setEnergyStored(energy - accepted);
-                setChanged();
-            }
-            return;
-        }
-
-        // TeamReborn Energy (если предмет его поддерживает)
-        var target = EnergyStorage.ITEM.find(itemToCharge, null);
-        if (target == null || !target.supportsInsertion()) return;
-
-        try (Transaction tx = Transaction.openOuter()) {
-            long accepted = target.insert(toTransfer, tx);
-            if (accepted > 0) {
-                setEnergyStored(energy - accepted);
-                tx.commit();
-                setChanged();
-            }
-        }
-        //?}
+        chargeItemInSlot(CHARGE_SLOT);
     }
 
     // --- Реализация абстрактных методов ---
@@ -300,17 +230,7 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
             return false;
         }
         if (slot == CHARGE_SLOT) {
-            // Только заряжаемые предметы в слот зарядки
-            //? if forge {
-            /*return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
-                    || stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
-            *///?} else if fabric {
-            if (ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
-            var es = EnergyStorage.ITEM.find(stack, null);
-            return es != null && es.supportsInsertion();
-            //?} else {
-            /*return false;
-            *///?}
+            return isEnergyReceiverItem(stack);
         }
         return false;
     }

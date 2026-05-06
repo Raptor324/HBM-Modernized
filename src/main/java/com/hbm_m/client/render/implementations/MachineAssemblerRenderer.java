@@ -490,22 +490,12 @@ public class MachineAssemblerRenderer extends AbstractPartBasedRenderer<MachineA
 
     // ==================== INSTANCED BATCHING ====================
 
-    //? if forge {
-    /*public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
-        if (instancedBody != null) instancedBody.flush(event);
-        if (instancedSlider != null) instancedSlider.flush(event);
-        if (instancedArm != null) instancedArm.flush(event);
-        if (instancedCog != null) instancedCog.flush(event);
+    public static void flushInstancedBatches(org.joml.Matrix4f projectionMatrix) {
+        if (instancedBody != null) instancedBody.flush(projectionMatrix);
+        if (instancedSlider != null) instancedSlider.flush(projectionMatrix);
+        if (instancedArm != null) instancedArm.flush(projectionMatrix);
+        if (instancedCog != null) instancedCog.flush(projectionMatrix);
     }
-    *///?}
-    //? if fabric {
-    public static void flushInstancedBatches(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
-        if (instancedBody != null) instancedBody.flush(event);
-        if (instancedSlider != null) instancedSlider.flush(event);
-        if (instancedArm != null) instancedArm.flush(event);
-        if (instancedCog != null) instancedCog.flush(event);
-    }
-    //?}
 
     public static void clearCaches() {
         cleanupInstanced(instancedBody); instancedBody = null;

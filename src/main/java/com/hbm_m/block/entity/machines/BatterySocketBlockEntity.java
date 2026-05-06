@@ -97,14 +97,7 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
     public static boolean isAllowedPortableEnergyStack(ItemStack stack) {
         if (stack.isEmpty()) return false;
         if (stack.getItem() instanceof ItemCreativeBattery) return true;
-        //? if forge {
-        /*return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
-                || stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
-                || stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
-        *///?}
-        //? if fabric {
-        return EnergyStorage.ITEM.find(stack, null) != null;
-        //?}
+        return isEnergyProviderItem(stack) || isEnergyReceiverItem(stack);
     }
 
     @Override
@@ -428,12 +421,10 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         return tag;
     }
 
-    //? if forge {
-    /*@Override
+    @Override
     public AABB getRenderBoundingBox() {
         return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(3, 3, 3));
     }
-    *///?}
 
     @Override
     public Component getDisplayName() {

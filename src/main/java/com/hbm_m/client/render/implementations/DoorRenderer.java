@@ -667,8 +667,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
 //     * ВАЖНО: Вызывать в конце рендера ВСЕХ дверей для флаша батчей.
 //     * При useInstancedBatching использует матрицы из события.
 
-    //? if forge {
-    /*public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+    public static void flushInstancedBatches(org.joml.Matrix4f projectionMatrix) {
         if (ModClothConfig.get().enableDebugLogging) {
             for (var e : instancedFrameCache.entrySet()) {
                 var r = e.getValue();
@@ -684,37 +683,12 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Doo
             }
         }
         for (InstancedStaticPartRenderer renderer : instancedFrameCache.values()) {
-            if (renderer != null) renderer.flush(event);
+            if (renderer != null) renderer.flush(projectionMatrix);
         }
         for (InstancedStaticPartRenderer renderer : instancedPartCache.values()) {
-            if (renderer != null) renderer.flush(event);
+            if (renderer != null) renderer.flush(projectionMatrix);
         }
     }
-    *///?}
-    //? if fabric {
-    public static void flushInstancedBatches(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
-        if (ModClothConfig.get().enableDebugLogging) {
-            for (var e : instancedFrameCache.entrySet()) {
-                var r = e.getValue();
-                if (r != null && r.getInstanceCount() > 0) {
-                    MainRegistry.LOGGER.debug("DoorRenderer flush frame '{}': {} instances", e.getKey(), r.getInstanceCount());
-                }
-            }
-            for (var e : instancedPartCache.entrySet()) {
-                var r = e.getValue();
-                if (r != null && r.getInstanceCount() > 0) {
-                    MainRegistry.LOGGER.debug("DoorRenderer flush part '{}': {} instances", e.getKey(), r.getInstanceCount());
-                }
-            }
-        }
-        for (InstancedStaticPartRenderer renderer : instancedFrameCache.values()) {
-            if (renderer != null) renderer.flush(event);
-        }
-        for (InstancedStaticPartRenderer renderer : instancedPartCache.values()) {
-            if (renderer != null) renderer.flush(event);
-        }
-    }
-    //?}
 
     @Override
     public int getViewDistance() {

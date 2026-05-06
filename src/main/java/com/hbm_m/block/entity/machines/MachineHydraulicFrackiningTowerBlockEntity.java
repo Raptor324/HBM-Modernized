@@ -557,9 +557,7 @@ public class MachineHydraulicFrackiningTowerBlockEntity extends BaseMachineBlock
     // РЕНДЕРИНГ
     //=====================================================================================//
 
-    //? if forge {
-    /*@Override
-     *///?}
+    @Override
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(this.worldPosition)
                 .inflate(3.0, 0.0, 3.0)

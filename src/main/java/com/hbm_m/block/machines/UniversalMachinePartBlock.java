@@ -41,6 +41,7 @@ import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
+import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.level.pathfinder.PathComputationType;
 import net.minecraft.world.phys.BlockHitResult;
@@ -65,17 +66,25 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         return false;
     }
 
-    // FACING is the only property we need to sync with the controller
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
+    /**
+     * Флаг проходимости для AI-pathfinding (как {@code OPEN} у ванильной двери).
+     * Хранится в blockstate для надёжного доступа из {@link net.minecraft.world.level.pathfinder.WalkNodeEvaluator}
+     * без необходимости обращаться к BlockEntity (которое может быть недоступно в PathNavigationRegion).
+     * Устанавливается контроллером-дверью при открытии/закрытии.
+     */
+    public static final BooleanProperty PASSABLE = BooleanProperty.create("passable");
 
     public UniversalMachinePartBlock(Properties pProperties) {
         super(pProperties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any()
+                .setValue(FACING, Direction.NORTH)
+                .setValue(PASSABLE, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> pBuilder) {
-        pBuilder.add(FACING);
+        pBuilder.add(FACING, PASSABLE);
     }
 
     @Nullable
@@ -241,13 +250,15 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     }
 
     /**
-     * Как у {@link DoorBlock}: проход для LAND только при пустой коллизии.
+     * Как у ванильной двери: проходимость определяется blockstate-свойством {@link #PASSABLE},
+     * которое обновляется контроллером-дверью при открытии/закрытии.
+     * Это гарантирует корректную работу AI-pathfinding без обращения к BlockEntity.
      */
     @Override
     public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
         return switch (type) {
-            case LAND -> getCollisionShape(state, level, pos, CollisionContext.empty()).isEmpty();
-            default -> super.isPathfindable(state, level, pos, type);
+            case LAND, AIR -> state.getValue(PASSABLE);
+            default -> false;
         };
     }
 

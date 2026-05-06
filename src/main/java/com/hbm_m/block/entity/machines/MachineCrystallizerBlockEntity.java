@@ -131,38 +131,11 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
 
     private void chargeFromBattery() {
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
-        if (stack.isEmpty()) return;
-
-        if (stack.getItem() instanceof ItemCreativeBattery) {
+        if (!stack.isEmpty() && stack.getItem() instanceof ItemCreativeBattery) {
             setEnergyStored(getMaxEnergyStored());
             return;
         }
-
-        boolean transferred = ItemEnergyAccess.getHbmProvider(stack).map(provider -> {
-            long needed = getMaxEnergyStored() - getEnergyStored();
-            if (needed <= 0) return false;
-            long extracted = provider.extractEnergy(Math.min(needed, getReceiveSpeed()), false);
-            if (extracted > 0) {
-                setEnergyStored(getEnergyStored() + extracted);
-                setChanged();
-                return true;
-            }
-            return false;
-        }).orElse(false);
-
-        if (!transferred) {
-            //? if forge {
-            /*stack.getCapability(ForgeCapabilities.ENERGY).ifPresent(provider -> {
-                long needed = getMaxEnergyStored() - getEnergyStored();
-                if (needed <= 0) return;
-                int extracted = provider.extractEnergy((int) Math.min(needed, getReceiveSpeed()), false);
-                if (extracted > 0) {
-                    setEnergyStored(getEnergyStored() + extracted);
-                    setChanged();
-                }
-            });
-            *///?}
-        }
+        chargeFromBatterySlot(SLOT_BATTERY);
     }
 
     private void transferFluidsFromItems() {
@@ -254,17 +227,8 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_BATTERY) {
-            if (stack.getItem() instanceof ItemCreativeBattery) {
-                return true;
-            }
-            if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) {
-                return true;
-            }
-            //? if forge {
-            /*return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-            *///?} else {
-            return false;
-            //?}
+            if (stack.getItem() instanceof ItemCreativeBattery) return true;
+            return isEnergyProviderItem(stack);
         }
         if (slot == SLOT_OUTPUT || slot == SLOT_FLUID_OUTPUT) {
             return false;

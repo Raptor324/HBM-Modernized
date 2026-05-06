@@ -212,20 +212,11 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
 
         if (level.isClientSide) {
             if (entity.didProcess) {
-                entity.anim += 0.05F;
-            }
-            if (entity.anim > (float) (Math.PI * 2.0)) {
-                entity.anim -= (float) (Math.PI * 2.0);
+                entity.anim++;
             }
             entity.clientTick();
             return;
         }
-
-        entity.updateFrameBlockState();
-        entity.syncRenderActiveStub();
-
-        entity.updateFrameBlockState();
-        entity.syncRenderActiveStub();
 
         entity.updateFrameBlockState();
         entity.syncRenderActiveStub();
@@ -416,58 +407,11 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
 
     private void chargeFromBattery() {
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
-        if (stack.isEmpty()) return;
-
-        if (stack.getItem() instanceof ItemCreativeBattery) {
+        if (!stack.isEmpty() && stack.getItem() instanceof ItemCreativeBattery) {
             setEnergyStored(getMaxEnergyStored());
             return;
         }
-
-        //? if forge {
-        /*stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(provider -> {
-            if (!provider.canExtract()) return;
-            long needed = getMaxEnergyStored() - getEnergyStored();
-            if (needed <= 0) return;
-            long extracted = provider.extractEnergy(Math.min(needed, getReceiveSpeed()), false);
-            if (extracted > 0) {
-                setEnergyStored(getEnergyStored() + extracted);
-                setChanged();
-            }
-        });
-
-        if (!stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
-            stack.getCapability(ForgeCapabilities.ENERGY).ifPresent(provider -> {
-                if (!provider.canExtract()) return;
-                long needed = getMaxEnergyStored() - getEnergyStored();
-                if (needed <= 0) return;
-                int extracted = provider.extractEnergy((int) Math.min(needed, getReceiveSpeed()), false);
-                if (extracted > 0) {
-                    setEnergyStored(getEnergyStored() + extracted);
-                    setChanged();
-                }
-            });
-        }
-        *///?}
-
-        //? if fabric {
-        var source = EnergyStorage.ITEM.find(stack, null);
-        if (source == null || !source.supportsExtraction()) return;
-
-        long needed = getMaxEnergyStored() - getEnergyStored();
-        if (needed <= 0) return;
-
-        long toExtract = Math.min(needed, getReceiveSpeed());
-        if (toExtract <= 0) return;
-
-        try (Transaction tx = Transaction.openOuter()) {
-            long extracted = source.extract(toExtract, tx);
-            if (extracted > 0) {
-                setEnergyStored(getEnergyStored() + extracted);
-                setChanged();
-                tx.commit();
-            }
-        }
-        //?}
+        chargeFromBatterySlot(SLOT_BATTERY);
     }
 
     private void transferFluidsFromItems() {
@@ -609,13 +553,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
         if (slot == SLOT_BATTERY) {
             if (stack.isEmpty()) return false;
             if (stack.getItem() instanceof ItemCreativeBattery) return true;
-            //? if forge {
-            /*if (stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) return true;
-            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-            *///?}
-            //? if fabric {
-            return EnergyStorage.ITEM.find(stack, null) != null;
-            //?}
+            return isEnergyProviderItem(stack);
         }
         if (slot == SLOT_SCHEMATIC) {
             return stack.getItem() instanceof ItemBlueprintFolder;
@@ -798,10 +736,18 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
     }
 
     //? if forge {
-    /*@Override
+    /*private LazyOptional<IFluidHandler> combinedFluidHandler = LazyOptional.empty();
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        combinedFluidHandler = LazyOptional.of(() -> new CombinedChemPlantFluidHandler(this));
+    }
+
+    @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            return inputTankHandlers[0].cast();
+            return combinedFluidHandler.cast();
         }
         return super.getCapability(cap, side);
     }
@@ -809,10 +755,157 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity {
     @Override
     public void invalidateCaps() {
         super.invalidateCaps();
+        combinedFluidHandler.invalidate();
         for (int i = 0; i < 3; i++) {
             inputTankHandlers[i].invalidate();
             outputTankHandlers[i].invalidate();
         }
     }
+
+    private static class CombinedChemPlantFluidHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
+        private final MachineChemicalPlantBlockEntity be;
+        CombinedChemPlantFluidHandler(MachineChemicalPlantBlockEntity be) { this.be = be; }
+
+        @Override public int getTanks() { return 6; }
+
+        @Override
+        public net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            ModFluidTank t = tank < 3 ? be.inputTanks[tank] : be.outputTanks[tank - 3];
+            if (t.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            return new net.minecraftforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb());
+        }
+
+        @Override public int getTankCapacity(int tank) { return TANK_CAPACITY; }
+
+        @Override
+        public boolean isFluidValid(int tank, net.minecraftforge.fluids.FluidStack stack) {
+            if (tank >= 3) return false;
+            ModFluidTank t = be.inputTanks[tank];
+            return t.isEmpty() || com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(t.getStoredFluid(), stack.getFluid());
+        }
+
+        @Override
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty()) return 0;
+            for (int i = 0; i < 3; i++) {
+                ModFluidTank tank = be.inputTanks[i];
+                if (tank.isEmpty()) continue;
+                if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), resource.getFluid())) continue;
+                int space = tank.getCapacityMb() - tank.getFluidAmountMb();
+                if (space <= 0) continue;
+                int toFill = Math.min(resource.getAmount(), space);
+                if (action.execute()) {
+                    tank.fillMb(resource.getFluid(), toFill);
+                    be.setChanged();
+                }
+                return toFill;
+            }
+            return 0;
+        }
+
+        @Override
+        public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            for (int i = 0; i < 3; i++) {
+                ModFluidTank tank = be.outputTanks[i];
+                if (tank.isEmpty()) continue;
+                if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), resource.getFluid())) continue;
+                int available = tank.getFluidAmountMb();
+                int toDrain = Math.min(resource.getAmount(), available);
+                if (toDrain <= 0) continue;
+                if (action.execute()) {
+                    tank.drainMb(toDrain);
+                    be.setChanged();
+                }
+                return new net.minecraftforge.fluids.FluidStack(tank.getStoredFluid(), toDrain);
+            }
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+
+        @Override
+        public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (maxDrain <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            for (int i = 0; i < 3; i++) {
+                ModFluidTank tank = be.outputTanks[i];
+                if (tank.isEmpty()) continue;
+                int available = tank.getFluidAmountMb();
+                int toDrain = Math.min(maxDrain, available);
+                if (toDrain <= 0) continue;
+                if (action.execute()) {
+                    tank.drainMb(toDrain);
+                    be.setChanged();
+                }
+                return new net.minecraftforge.fluids.FluidStack(tank.getStoredFluid(), toDrain);
+            }
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+    }
     *///?}
+
+    //? if fabric {
+    @SuppressWarnings("UnstableApiUsage")
+    @Nullable
+    public net.fabricmc.fabric.api.transfer.v1.storage.Storage<net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant> getFluidStorage(@Nullable Direction side) {
+        return new ChemPlantFabricFluidStorage(this);
+    }
+
+    @SuppressWarnings("UnstableApiUsage")
+    private static class ChemPlantFabricFluidStorage implements net.fabricmc.fabric.api.transfer.v1.storage.Storage<net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant> {
+        private final MachineChemicalPlantBlockEntity be;
+        ChemPlantFabricFluidStorage(MachineChemicalPlantBlockEntity be) { this.be = be; }
+
+        @Override
+        public long insert(net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant resource, long maxAmount,
+                           net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
+            if (resource.isBlank() || maxAmount <= 0) return 0;
+            for (int i = 0; i < 3; i++) {
+                ModFluidTank tank = be.inputTanks[i];
+                if (tank.isEmpty()) continue;
+                if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), resource.getFluid())) continue;
+                long spaceMb = tank.getCapacityMb() - tank.getFluidAmountMb();
+                if (spaceMb <= 0) continue;
+                long mbToFill = Math.min(maxAmount / ModFluidTank.DROPLETS_PER_MB, spaceMb);
+                if (mbToFill <= 0) continue;
+                final int fillMb = (int) mbToFill;
+                final int tankIdx = i;
+                transaction.addCloseCallback((ctx, result) -> {
+                    if (result.wasCommitted()) {
+                        be.inputTanks[tankIdx].fillMb(resource.getFluid(), fillMb);
+                        be.setChanged();
+                    }
+                });
+                return mbToFill * ModFluidTank.DROPLETS_PER_MB;
+            }
+            return 0;
+        }
+
+        @Override
+        public long extract(net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant resource, long maxAmount,
+                            net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
+            if (resource.isBlank() || maxAmount <= 0) return 0;
+            for (int i = 0; i < 3; i++) {
+                ModFluidTank tank = be.outputTanks[i];
+                if (tank.isEmpty()) continue;
+                if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), resource.getFluid())) continue;
+                long availableMb = tank.getFluidAmountMb();
+                long mbToDrain = Math.min(maxAmount / ModFluidTank.DROPLETS_PER_MB, availableMb);
+                if (mbToDrain <= 0) continue;
+                final int drainMb = (int) mbToDrain;
+                final int tankIdx = i;
+                transaction.addCloseCallback((ctx, result) -> {
+                    if (result.wasCommitted()) {
+                        be.outputTanks[tankIdx].drainMb(drainMb);
+                        be.setChanged();
+                    }
+                });
+                return mbToDrain * ModFluidTank.DROPLETS_PER_MB;
+            }
+            return 0;
+        }
+
+        @Override public java.util.Iterator<net.fabricmc.fabric.api.transfer.v1.storage.StorageView<net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant>> iterator() {
+            return java.util.Collections.emptyIterator();
+        }
+    }
+    //?}
 }

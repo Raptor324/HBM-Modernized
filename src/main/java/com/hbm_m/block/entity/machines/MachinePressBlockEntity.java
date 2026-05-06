@@ -264,9 +264,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         return Mth.clamp(interpolated, 0.0F, 1.0F);
     }
 
-    //? if forge {
-    /*@Override
-     *///?}
+    @Override
     public AABB getRenderBoundingBox() {
         return new AABB(
             worldPosition.getX(),

@@ -263,12 +263,10 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
     }
     *///?}
 
-    //? if forge {
-    /*@Override
+    @Override
     public AABB getRenderBoundingBox() {
         return new AABB(worldPosition.offset(-1, 0, -1), worldPosition.offset(2, 2, 2));
     }
-    *///?}
 
     // Client-side getters for renderer
     public float getDoorAngle() {

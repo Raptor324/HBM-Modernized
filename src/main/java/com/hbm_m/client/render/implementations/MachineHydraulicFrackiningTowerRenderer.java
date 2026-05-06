@@ -57,22 +57,11 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
         instancersInitialized = false;
     }
 
-    // Реализуем метод flush, чтобы отрисовывать накопленные инстансы в конце кадра
-    //? if forge {
-    /*public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+    public static void flushInstancedBatches(org.joml.Matrix4f projectionMatrix) {
         if (instancedMain != null) {
-            instancedMain.flush(event);
+            instancedMain.flush(projectionMatrix);
         }
     }
-    *///?}
-
-    //? if fabric {
-    public static void flushInstancedBatches(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
-        if (instancedMain != null) {
-            instancedMain.flush(event);
-        }
-    }
-    //?}
 
     // Инициализация статического рендерера (один раз для всех вышек)
     private static synchronized void initializeInstancedRenderersSync(MachineHydraulicFrackiningTowerBakedModel model) {

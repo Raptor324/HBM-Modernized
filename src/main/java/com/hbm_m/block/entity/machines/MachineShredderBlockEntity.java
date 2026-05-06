@@ -37,14 +37,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
-/*import com.hbm_m.capability.ModCapabilities;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-*///?}
-//? if fabric {
-import team.reborn.energy.api.EnergyStorage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-//?}
 
 /**
  * Шреддер машина - перерабатывает предметы в пыль/скрап
@@ -130,21 +122,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             return stack.getItem() instanceof ItemBlades;
         }
         if (slot == BATTERY_SLOT) {
-            // Разрешаем предметы, которые могут отдавать энергию
-            //? if forge {
-            /*boolean hasHbmEnergy = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER)
-                    .map(provider -> provider.canExtract())
-                    .orElse(false);
-            if (hasHbmEnergy) {
-                return true;
-            }
-            return stack.getCapability(ForgeCapabilities.ENERGY)
-                    .map(storage -> storage.canExtract())
-                    .orElse(false);
-            *///?}
-            //? if fabric {
-            return EnergyStorage.ITEM.find(stack, null) != null;
-            //?}
+            return isEnergyProviderItem(stack);
         }
         return false;
     }
@@ -169,13 +147,6 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         tag.putBoolean("active", isActive);
         return tag;
     }
-
-    //? if forge {
-    /*@Override
-    public void handleUpdateTag(CompoundTag tag) {
-        load(tag);
-    }
-    *///?}
 
     @Override
     public void load(CompoundTag tag) {
@@ -336,81 +307,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     // ==================== ENERGY ====================
 
     private void chargeFromBattery() {
-        ItemStack batteryStack = inventory.getStackInSlot(BATTERY_SLOT);
-        if (batteryStack.isEmpty()) {
-            return;
-        }
-
-        //? if fabric {
-        var itemEnergy = EnergyStorage.ITEM.find(batteryStack, null);
-        if (itemEnergy == null || !itemEnergy.supportsExtraction()) {
-            return;
-        }
-
-        long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-        if (energyNeeded <= 0) return;
-
-        long energyToTransfer = Math.min(energyNeeded, this.getReceiveSpeed());
-        if (energyToTransfer <= 0) return;
-
-        try (Transaction tx = Transaction.openOuter()) {
-            long extracted = itemEnergy.extract(energyToTransfer, tx);
-            if (extracted > 0) {
-                this.setEnergyStored(this.getEnergyStored() + extracted);
-                tx.commit();
-            }
-        }
-        return;
-        //?}
-
-        //? if forge {
-        /*boolean transferred = batteryStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).map(itemEnergy -> {
-            if (!itemEnergy.canExtract()) {
-                return false;
-            }
-
-            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-            if (energyNeeded <= 0) {
-                return false;
-            }
-
-            long energyToTransfer = Math.min(energyNeeded, this.getReceiveSpeed());
-            long extracted = itemEnergy.extractEnergy(energyToTransfer, false);
-
-            if (extracted > 0) {
-                this.setEnergyStored(this.getEnergyStored() + extracted);
-                setChanged();
-                return true;
-            }
-            return false;
-        }).orElse(false);
-
-        if (transferred) {
-            return;
-        }
-
-        batteryStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
-            if (!itemEnergy.canExtract()) {
-                return;
-            }
-
-            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-            if (energyNeeded <= 0) {
-                return;
-            }
-
-            int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
-            if (maxTransfer <= 0) {
-                return;
-            }
-
-            int extracted = itemEnergy.extractEnergy(maxTransfer, false);
-            if (extracted > 0) {
-                this.setEnergyStored(this.getEnergyStored() + extracted);
-                setChanged();
-            }
-        });
-        *///?}
+        chargeFromBatterySlot(BATTERY_SLOT);
     }
 
     public boolean hasPower() {

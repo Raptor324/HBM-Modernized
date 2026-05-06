@@ -277,16 +277,10 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
     }
 
 
-    //? if forge {
-    /*public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
-        flushInstanced(event, instancedBase);
-        flushInstanced(event, instancedFrame);
+    public static void flushInstancedBatches(org.joml.Matrix4f projectionMatrix) {
+        flushInstanced(projectionMatrix, instancedBase);
+        flushInstanced(projectionMatrix, instancedFrame);
     }
-    *///?} else {
-    public static void flushInstancedBatches(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
-        flushInstanced(event, instancedBase);
-        flushInstanced(event, instancedFrame);
-    }//?}
 
     public static void clearCaches() {
         cleanupInstanced(instancedBase);
@@ -300,18 +294,10 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         if (r != null) r.cleanup();
     }
 
-    //? if forge {
-    /*private static void flushInstanced(net.minecraftforge.client.event.RenderLevelStageEvent event,
+    private static void flushInstanced(org.joml.Matrix4f projectionMatrix,
                                        InstancedStaticPartRenderer r) {
-        if (r != null) r.flush(event);
+        if (r != null) r.flush(projectionMatrix);
     }
-    *///?}
-    //? if fabric {
-    private static void flushInstanced(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event,
-                                       InstancedStaticPartRenderer r) {
-        if (r != null) r.flush(event);
-    }
-    //?}
 
     private record ChemicalPlantRecipeVisual(FluidStack textureFluid, float r, float g, float b) {}
 

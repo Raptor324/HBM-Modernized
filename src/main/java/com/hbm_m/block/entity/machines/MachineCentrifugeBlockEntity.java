@@ -18,10 +18,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
-//? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
-*///?}
-
 /**
  * Centrifuge machine.
  * Implements energy storage + simple progress cycle used by the GUI.
@@ -83,16 +79,7 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             return false;
         }
         if (slot == BATTERY_SLOT) {
-            if (ItemEnergyAccess.getHbmProvider(stack).map(p -> p.canExtract()).orElse(false)) {
-                return true;
-            }
-            //? if forge {
-            /*return stack.getCapability(ForgeCapabilities.ENERGY)
-                    .map(storage -> storage.canExtract())
-                    .orElse(false);
-            *///?} else {
-            return false;
-            //?}
+            return isEnergyProviderItem(stack);
         }
         return true;
     }
@@ -219,58 +206,6 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
     }
 
     private void chargeFromBattery() {
-        ItemStack batteryStack = inventory.getStackInSlot(BATTERY_SLOT);
-        if (batteryStack.isEmpty()) {
-            return;
-        }
-
-        boolean transferred = ItemEnergyAccess.getHbmProvider(batteryStack).map(itemEnergy -> {
-            if (!itemEnergy.canExtract()) {
-                return false;
-            }
-
-            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-            if (energyNeeded <= 0) {
-                return false;
-            }
-
-            long energyToTransfer = Math.min(energyNeeded, this.getReceiveSpeed());
-            long extracted = itemEnergy.extractEnergy(energyToTransfer, false);
-
-            if (extracted > 0) {
-                this.setEnergyStored(this.getEnergyStored() + extracted);
-                setChanged();
-                return true;
-            }
-            return false;
-        }).orElse(false);
-
-        if (transferred) {
-            return;
-        }
-
-        //? if forge {
-        /*batteryStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
-            if (!itemEnergy.canExtract()) {
-                return;
-            }
-
-            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-            if (energyNeeded <= 0) {
-                return;
-            }
-
-            int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
-            if (maxTransfer <= 0) {
-                return;
-            }
-
-            int extracted = itemEnergy.extractEnergy(maxTransfer, false);
-            if (extracted > 0) {
-                this.setEnergyStored(this.getEnergyStored() + extracted);
-                setChanged();
-            }
-        });
-        *///?}
+        chargeFromBatterySlot(BATTERY_SLOT);
     }
 }

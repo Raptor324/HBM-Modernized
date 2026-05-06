@@ -430,6 +430,11 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             }
 
             long toDrainMb = Math.min(tank().getFill(), maxAmount / DROPLETS_PER_MB);
+            if (entity.mode == 1) {
+                int excess = tank().getFill() - tank().getMaxFill() / 2;
+                if (excess <= 0) return 0;
+                toDrainMb = Math.min(toDrainMb, excess);
+            }
             if (toDrainMb <= 0) return 0;
 
             updateSnapshots(transaction);
@@ -598,9 +603,6 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         for (int i = 0; i < 6; i++) itemHandler.setStackInSlot(i, arr[i]);
     }
 
-    //? if forge {
-    /*@Override
-    *///?}
     public AABB getRenderBoundingBox() {
         return new AABB(worldPosition).inflate(3.0D);
     }
@@ -831,6 +833,13 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         @Override
         public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            if (entity.mode == 1) {
+                int excess = entity.fluidTank.getFill() - entity.fluidTank.getMaxFill() / 2;
+                if (excess <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+                net.minecraftforge.fluids.FluidStack limited = resource.copy();
+                limited.setAmount(Math.min(resource.getAmount(), excess));
+                return internal.drain(limited, action);
+            }
             return internal.drain(resource, action);
         }
 
@@ -838,6 +847,11 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         @Override
         public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
             if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            if (entity.mode == 1) {
+                int excess = entity.fluidTank.getFill() - entity.fluidTank.getMaxFill() / 2;
+                if (excess <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
+                maxDrain = Math.min(maxDrain, excess);
+            }
             return internal.drain(maxDrain, action);
         }
     }

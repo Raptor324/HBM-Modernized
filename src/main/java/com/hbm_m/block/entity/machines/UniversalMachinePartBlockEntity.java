@@ -97,10 +97,17 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         }
 
         //? if fabric {
-        // На Fabric нет Forge capability для универсального получения IFluidHandler у контроллера,
-          // поэтому прямую перекачку делаем только там, где мы можем безопасно получить Storage.
-          // Сейчас контроллеры не предоставляют общий public API для этого — оставляем без прямого трансфера.
-          return;
+        long selfKey = pos.asLong();
+        for (Direction dir : Direction.values()) {
+            BlockPos otherPos = pos.relative(dir);
+            if (selfKey >= otherPos.asLong()) continue;
+            BlockEntity otherBe = level.getBlockEntity(otherPos);
+            if (!(otherBe instanceof UniversalMachinePartBlockEntity otherPart)) continue;
+            if (!isFluidConnector(otherPart.role) || otherPart.controllerPos == null) continue;
+            if (be.controllerPos.equals(otherPart.controllerPos)) continue;
+            tryDirectFluidTransferFabric(level, be, otherPart);
+        }
+        return;
         //?}
 
         //? if forge {
@@ -166,6 +173,47 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         return to.fill(drained, IFluidHandler.FluidAction.EXECUTE);
     }
     *///?}
+
+    //? if fabric {
+    @SuppressWarnings("UnstableApiUsage")
+    private static void tryDirectFluidTransferFabric(Level level, UniversalMachinePartBlockEntity a, UniversalMachinePartBlockEntity b) {
+        var aStorage = FluidStorage.SIDED.find(level, a.controllerPos, null);
+        var bStorage = FluidStorage.SIDED.find(level, b.controllerPos, null);
+        if (aStorage == null || bStorage == null) return;
+
+        try (var tx = net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.openOuter()) {
+            for (var view : aStorage) {
+                if (view.isResourceBlank() || view.getAmount() <= 0) continue;
+                long maxDrain = Math.min(view.getAmount(), DIRECT_FLUID_TRANSFER_PER_TICK * 81L);
+                long inserted = bStorage.insert(view.getResource(), maxDrain, tx);
+                if (inserted > 0) {
+                    long extracted = view.extract(view.getResource(), inserted, tx);
+                    if (extracted > 0) {
+                        tx.commit();
+                        return;
+                    }
+                }
+                break;
+            }
+        }
+
+        try (var tx = net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.openOuter()) {
+            for (var view : bStorage) {
+                if (view.isResourceBlank() || view.getAmount() <= 0) continue;
+                long maxDrain = Math.min(view.getAmount(), DIRECT_FLUID_TRANSFER_PER_TICK * 81L);
+                long inserted = aStorage.insert(view.getResource(), maxDrain, tx);
+                if (inserted > 0) {
+                    long extracted = view.extract(view.getResource(), inserted, tx);
+                    if (extracted > 0) {
+                        tx.commit();
+                        return;
+                    }
+                }
+                break;
+            }
+        }
+    }
+    //?}
 
     @Override
     public BlockPos getControllerPos() {
@@ -238,6 +286,25 @@ public class UniversalMachinePartBlockEntity extends BlockEntity implements IMul
         }
         return allowedEnergySides.contains(side);
     }
+
+    /**
+     * Fabric Transfer API: делегирование энергии в контроллер (аналог Forge {@code getCapability(ENERGY, side)}).
+     * Зарегистрирован через {@code EnergyStorage.SIDED.registerForBlockEntity} в FabricEntrypoint.
+     */
+    //? if fabric {
+    @Nullable
+    public team.reborn.energy.api.EnergyStorage getEnergyStorageSided(@Nullable Direction side) {
+        if (this.controllerPos == null || this.level == null) return null;
+        if (!this.role.canReceiveEnergy() && !this.role.canSendEnergy()) return null;
+        boolean energySideOk = side == null
+                || allowedEnergySides.isEmpty()
+                || allowedEnergySides.contains(side);
+        if (!energySideOk) return null;
+        BlockEntity ctrl = this.level.getBlockEntity(this.controllerPos);
+        if (ctrl == null) return null;
+        return team.reborn.energy.api.EnergyStorage.SIDED.find(this.level, this.controllerPos, ctrl.getBlockState(), ctrl, null);
+    }
+    //?}
 
     /**
      * Fabric Transfer API: делегирование жидкости в контроллер (аналог Forge {@code getCapability(FLUID_HANDLER, null)}).

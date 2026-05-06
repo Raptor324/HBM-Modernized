@@ -105,12 +105,13 @@ public class ClientModEvents {
                 // shader.apply/clear; leaving ACTIVE set after clear() poisons the next
                 // frame with "No active program" / matrix uniform errors.
                 IrisRenderBatch.closePersistentIfActive();
-                MachineAdvancedAssemblerRenderer.flushInstancedBatches(context);
-                MachineHydraulicFrackiningTowerRenderer.flushInstancedBatches(context);
-                MachineAssemblerRenderer.flushInstancedBatches(context);
-                DoorRenderer.flushInstancedBatches(context);
-                MachinePressRenderer.flushInstancedBatches(context);
-                MachineChemicalPlantRenderer.flushInstancedBatches(context);
+                org.joml.Matrix4f proj = context.projectionMatrix();
+                MachineAdvancedAssemblerRenderer.flushInstancedBatches(proj);
+                MachineHydraulicFrackiningTowerRenderer.flushInstancedBatches(proj);
+                MachineAssemblerRenderer.flushInstancedBatches(proj);
+                DoorRenderer.flushInstancedBatches(proj);
+                MachinePressRenderer.flushInstancedBatches(proj);
+                MachineChemicalPlantRenderer.flushInstancedBatches(proj);
             }
             // Bump the per-pass shader-lookup cache in IrisExtendedShaderAccess so
             // the next frame re-resolves the shader from the (possibly rebuilt)
@@ -156,12 +157,13 @@ public class ClientModEvents {
                 // shader.apply/clear; leaving ACTIVE set after clear() poisons the next
                 // frame with "No active program" / matrix uniform errors.
                 IrisRenderBatch.closePersistentIfActive();
-                MachineAdvancedAssemblerRenderer.flushInstancedBatches(event);
-                MachineHydraulicFrackiningTowerRenderer.flushInstancedBatches(event);
-                MachineAssemblerRenderer.flushInstancedBatches(event);
-                DoorRenderer.flushInstancedBatches(event);
-                MachinePressRenderer.flushInstancedBatches(event);
-                MachineChemicalPlantRenderer.flushInstancedBatches(event);
+                org.joml.Matrix4f proj = event.getProjectionMatrix();
+                MachineAdvancedAssemblerRenderer.flushInstancedBatches(proj);
+                MachineHydraulicFrackiningTowerRenderer.flushInstancedBatches(proj);
+                MachineAssemblerRenderer.flushInstancedBatches(proj);
+                DoorRenderer.flushInstancedBatches(proj);
+                MachinePressRenderer.flushInstancedBatches(proj);
+                MachineChemicalPlantRenderer.flushInstancedBatches(proj);
             }
             // Bump the per-pass shader-lookup cache in IrisExtendedShaderAccess so
             // the next frame re-resolves the shader from the (possibly rebuilt)

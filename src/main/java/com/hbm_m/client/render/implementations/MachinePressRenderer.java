@@ -291,17 +291,9 @@ public class MachinePressRenderer extends AbstractPartBasedRenderer<MachinePress
         }
     }
 
-    //? if forge {
-    /*public static void flushInstancedBatches(net.minecraftforge.client.event.RenderLevelStageEvent event) {
-        if (instancedHead != null) instancedHead.flush(event);
+    public static void flushInstancedBatches(org.joml.Matrix4f projectionMatrix) {
+        if (instancedHead != null) instancedHead.flush(projectionMatrix);
     }
-    *///?}
-    
-    //? if fabric {
-    public static void flushInstancedBatches(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
-        if (instancedHead != null) instancedHead.flush(event);
-    }
-    //?}
 
     public static void clearCaches() {
         if (instancedHead != null) {

@@ -667,6 +667,7 @@ public class MultiblockStructureHelper {
 
         List<BlockPos> energyConnectorPositions = new ArrayList<>();
         List<BlockPos> allPlacedPositions = new ArrayList<>();
+        var energyManager = com.hbm_m.api.energy.EnergyNetworkManager.get((net.minecraft.server.level.ServerLevel) level);
         
         for (Map.Entry<BlockPos, Supplier<BlockState>> entry : structureMap.entrySet()) {
             BlockPos gridPos = entry.getKey();
@@ -732,6 +733,7 @@ public class MultiblockStructureHelper {
                     }
                     partBe.setAllowedEnergySides(worldEnergy);
                     energyConnectorPositions.add(worldPos);
+                    energyManager.addNode(worldPos);
                 }
 
                 // FLUID_CONNECTOR и UNIVERSAL_CONNECTOR - стороны из fluidSideMap или все шесть
@@ -827,9 +829,17 @@ public class MultiblockStructureHelper {
         if (level.isClientSide || IS_DESTROYING.get()) return;
         IS_DESTROYING.set(true);
         try {
+            var energyManager = com.hbm_m.api.energy.EnergyNetworkManager.get((net.minecraft.server.level.ServerLevel) level);
             for (BlockPos gridPos : structureMap.keySet()) {
                 BlockPos worldPos = getRotatedPos(controllerPos, gridPos, facing);
                 if (level.getBlockState(worldPos).getBlock() instanceof UniversalMachinePartBlock) {
+                    BlockEntity be = level.getBlockEntity(worldPos);
+                    if (be instanceof IMultiblockPart part) {
+                        PartRole role = part.getPartRole();
+                        if (role.canReceiveEnergy() || role.canSendEnergy()) {
+                            energyManager.removeNode(worldPos);
+                        }
+                    }
                     level.setBlock(worldPos, Blocks.AIR.defaultBlockState(), 3);
                 }
             }

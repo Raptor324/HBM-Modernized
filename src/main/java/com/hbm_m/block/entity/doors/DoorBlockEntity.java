@@ -492,6 +492,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
         
         Direction facing = blockState.getValue(DoorBlock.FACING);
         MultiblockStructureHelper structureHelper = doorBlock.getStructureHelper();
+        boolean isOpen = this.state != 0;
         
         // Контроллер: флаг 2 (NOTIFY_CLIENTS) - оповещаем клиентов о смене блокстейта.
         // updateNeighborsAt только для контроллера (редстоун и т.д.), не для каждого блока двери.
@@ -502,9 +503,13 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
 
         for (BlockPos partPos : structureHelper.getAllPartPositions(controllerPos, facing)) {
             BlockState partState = level.getBlockState(partPos);
-            // Флаг 2 (NOTIFY_CLIENTS only): заставляет клиента перерисовать блок.
-            // Флаг 1 (UPDATE_NEIGHBORS) убран - вызывал каскад соседних обновлений для каждой части,
-            // из-за чего Sodium пересобирал чанки десятки раз при открытии/закрытии.
+            if (partState.hasProperty(com.hbm_m.block.machines.UniversalMachinePartBlock.PASSABLE)) {
+                boolean currentPassable = partState.getValue(com.hbm_m.block.machines.UniversalMachinePartBlock.PASSABLE);
+                if (currentPassable != isOpen) {
+                    level.setBlock(partPos, partState.setValue(com.hbm_m.block.machines.UniversalMachinePartBlock.PASSABLE, isOpen), 2);
+                }
+            }
+            partState = level.getBlockState(partPos);
             level.sendBlockUpdated(partPos, partState, partState, 2);
             level.getLightEngine().checkBlock(partPos);
         }

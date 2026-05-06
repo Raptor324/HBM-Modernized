@@ -137,14 +137,14 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     }
 
     /**
-     * Мобы проходят через клетку только если коллизия пуста (открытая дверь без остаточного хитбокса).
-     * См. {@link #getCollisionShape} — там же учитывается open/closed и openShapes из DoorDecl.
+     * Как ванильная дверь: проходимость определяется blockstate-свойством {@link #OPEN}.
+     * Не зависит от BlockEntity, работает надёжно в PathNavigationRegion.
      */
     @Override
     public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
         return switch (type) {
-            case LAND -> getCollisionShape(state, level, pos, CollisionContext.empty()).isEmpty();
-            default -> super.isPathfindable(state, level, pos, type);
+            case LAND, AIR -> state.getValue(OPEN);
+            default -> false;
         };
     }
 
