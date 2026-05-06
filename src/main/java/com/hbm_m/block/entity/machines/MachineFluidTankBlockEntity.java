@@ -55,7 +55,6 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraft.core.registries.BuiltInRegistries;
 *///?}
 
 public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider, IMultiblockSidedIO
@@ -167,7 +166,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         // На Forge ModelData кешируется отдельно от NBT; при загрузке чанка гарантируем первичную инициализацию.
         if (level != null && level.isClientSide) {
             requestModelDataUpdate();
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL_IMMEDIATE);
         }
     }
     *///?}
@@ -240,35 +239,22 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         }
     }
 
+    //? if forge {
+    /*@Override
     public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket pkt) {
-        // Сохраняем старую жидкость для проверки
-        Fluid oldFluid = getFilterFluid();
-        Fluid oldTankFluid = fluidTank.getTankType();
+        // Важно: super.onDataPacket вызывает load(tag). Нам нужно сравнить старое/новое и
+        // при смене текстуры попросить Forge обновить ModelData и пересобрать меш чанка.
+        final boolean clientForge = level != null && level.isClientSide;
+        final ResourceLocation prevTankTextureForge = clientForge ? getTankTextureLocation() : null;
 
-        CompoundTag tag = pkt.getTag();
-        if (tag != null) {
-            load(tag);
-        }
+        super.onDataPacket(net, pkt);
 
-        if (level != null && level.isClientSide) {
-            Fluid newFluid = getFilterFluid();
-            Fluid newTankFluid = fluidTank.getTankType();
-
-            // Проверяем, изменилась ли жидкость, чтобы не перерисовывать чанк лишний раз
-            if (oldFluid != newFluid || oldTankFluid != newTankFluid) {
-                //? if forge {
-                /*requestModelDataUpdate();
-                *///?}
-                // На Forge для корректной перерисовки нужен UPDATE_CLIENTS (иначе baked model может не обновиться).
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-                //? if fabric {
-                if (level.isClientSide) {
-                    scheduleChunkRebuild();
-                }
-                //?}
-            }
+        if (clientForge && prevTankTextureForge != null && !prevTankTextureForge.equals(getTankTextureLocation())) {
+            requestModelDataUpdate();
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
         }
     }
+    *///?}
 
     public void handleUpdateTag(CompoundTag tag) {
         load(tag);
@@ -660,14 +646,11 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             scheduleChunkRebuild();
         }
         //?}
+
         //? if forge {
-        /*if (clientForge) {
-            ResourceLocation now = getTankTextureLocation();
-            if (prevTankTextureForge == null || !prevTankTextureForge.equals(now)) {
-                requestModelDataUpdate();
-                // Принудительно просим клиент перерисовать блок (ModelData -> baked model)
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-            }
+        /*if (clientForge && prevTankTextureForge != null && !prevTankTextureForge.equals(getTankTextureLocation())) {
+            requestModelDataUpdate();
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
         }
         *///?}
         if (level != null) {

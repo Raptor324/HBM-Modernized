@@ -114,6 +114,19 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
         return quads;
     }
 
+    //? if forge {
+    /*@Override
+    protected List<BakedQuad> getQuadsForModelData(
+        @Nullable BlockState state,
+        @Nullable Direction side,
+        RandomSource rand,
+        ModelData modelData,
+        @Nullable RenderType renderType
+    ) {
+        return getQuadsInternal(state, side, rand, modelData, renderType);
+    }
+    *///?}
+
     /**
      * Возвращает градус поворота по оси Y на основе свойства FACING.
      */
@@ -140,27 +153,44 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
         return r;
     }
 
-    private List<BakedQuad> getCachedTankQuads(BakedModel originalTank, ResourceLocation textureLocation, @Nullable Direction side, RandomSource rand) {
+    private List<BakedQuad> getCachedTankQuads(
+            BakedModel originalTank,
+            ResourceLocation textureLocation,
+            @Nullable Direction side,
+            RandomSource rand
+    ) {
         final ResourceLocation safeTexture = textureLocation == null ? DEFAULT_TEX : textureLocation;
-        Map<Object, List<BakedQuad>> directionalCache = quadCache.computeIfAbsent(safeTexture, k -> new ConcurrentHashMap<>());
+
+        //? if forge {
+
+        /*List<BakedQuad> result = new ArrayList<>();
+        List<BakedQuad> originalQuads = originalTank.getQuads(null, side, rand, ModelData.EMPTY, null);
+        TextureAtlasSprite newSprite = Minecraft.getInstance()
+            .getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS)
+            .apply(safeTexture);
+        for (BakedQuad quad : originalQuads) {
+            result.add(retextureAndFixUV(quad, newSprite));
+        }
+        return result;
+    *///?}
+
+        //? if fabric {
+        Map<Object, List<BakedQuad>> directionalCache =
+                quadCache.computeIfAbsent(safeTexture, k -> new ConcurrentHashMap<>());
         Object cacheKey = side == null ? NULL_SIDE_KEY : side;
 
         return directionalCache.computeIfAbsent(cacheKey, k -> {
             List<BakedQuad> newQuads = new ArrayList<>();
-            //? if forge {
-            /*List<BakedQuad> originalQuads = originalTank.getQuads(null, side, rand, ModelData.EMPTY, null);
-            *///?} else {
             List<BakedQuad> originalQuads = originalTank.getQuads(null, side, rand);
-             //?}
-
-            // net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS в 1.20.1
-            TextureAtlasSprite newSprite = Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(safeTexture);
-
+            TextureAtlasSprite newSprite = Minecraft.getInstance()
+                    .getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS)
+                    .apply(safeTexture);
             for (BakedQuad quad : originalQuads) {
                 newQuads.add(retextureAndFixUV(quad, newSprite));
             }
             return newQuads;
         });
+        //?}
     }
 
     private BakedQuad retextureAndFixUV(BakedQuad original, TextureAtlasSprite newSprite) {

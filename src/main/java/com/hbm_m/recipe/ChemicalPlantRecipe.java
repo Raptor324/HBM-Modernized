@@ -49,6 +49,12 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
     private final int powerConsumption;
 
     @Nullable
+    private final ItemStack iconItem;
+
+    @Nullable
+    private final ResourceLocation iconFluid;
+
+    @Nullable
     private final String blueprintPool;
 
     public ChemicalPlantRecipe(ResourceLocation id,
@@ -58,6 +64,8 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
                                List<FluidStack> fluidOutputs,
                                int duration,
                                int powerConsumption,
+                               @Nullable ItemStack iconItem,
+                               @Nullable ResourceLocation iconFluid,
                                @Nullable String blueprintPool) {
         this.id = id;
         this.itemInputs = itemInputs != null ? itemInputs : List.of();
@@ -66,6 +74,8 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
         this.fluidOutputs = fluidOutputs != null ? fluidOutputs : List.of();
         this.duration = duration;
         this.powerConsumption = powerConsumption;
+        this.iconItem = iconItem != null && !iconItem.isEmpty() ? iconItem : null;
+        this.iconFluid = iconFluid;
         this.blueprintPool = blueprintPool;
     }
 
@@ -120,6 +130,9 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
 
     @Override
     public ItemStack getResultItem(@NotNull RegistryAccess registryAccess) {
+        if (iconItem != null && !iconItem.isEmpty()) {
+            return iconItem.copy();
+        }
         for (ItemStack out : itemOutputs) {
             if (!out.isEmpty()) return out.copy();
         }
@@ -178,7 +191,11 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
             List<ItemStack> itemOutputs = readItemOutputs(json);
             List<FluidStack> fluidOutputs = readFluidOutputs(json);
 
-            return new ChemicalPlantRecipe(recipeId, itemInputs, fluidInputs, itemOutputs, fluidOutputs, duration, power, blueprintPool);
+            ItemStack iconItem = readIconItem(json);
+            ResourceLocation iconFluid = readIconFluid(json);
+            applyIconFluid(iconItem, iconFluid);
+
+            return new ChemicalPlantRecipe(recipeId, itemInputs, fluidInputs, itemOutputs, fluidOutputs, duration, power, iconItem, iconFluid, blueprintPool);
         }
 
         @Override
@@ -186,6 +203,10 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
             int duration = buf.readVarInt();
             int power = buf.readVarInt();
             String blueprintPool = buf.readBoolean() ? buf.readUtf() : null;
+
+            ItemStack iconItem = buf.readBoolean() ? buf.readItem() : ItemStack.EMPTY;
+            ResourceLocation iconFluid = buf.readBoolean() ? buf.readResourceLocation() : null;
+            applyIconFluid(iconItem, iconFluid);
 
             int itemInCount = buf.readVarInt();
             List<CountedIngredient> itemInputs = new ArrayList<>(itemInCount);
@@ -215,7 +236,7 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
                 fluidOutputs.add(readFluidStack(buf));
             }
 
-            return new ChemicalPlantRecipe(recipeId, itemInputs, fluidInputs, itemOutputs, fluidOutputs, duration, power, blueprintPool);
+            return new ChemicalPlantRecipe(recipeId, itemInputs, fluidInputs, itemOutputs, fluidOutputs, duration, power, iconItem, iconFluid, blueprintPool);
         }
 
         @Override
@@ -226,6 +247,20 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
             if (recipe.blueprintPool != null) {
                 buf.writeBoolean(true);
                 buf.writeUtf(recipe.blueprintPool);
+            } else {
+                buf.writeBoolean(false);
+            }
+
+            if (recipe.iconItem != null && !recipe.iconItem.isEmpty()) {
+                buf.writeBoolean(true);
+                buf.writeItem(recipe.iconItem);
+            } else {
+                buf.writeBoolean(false);
+            }
+
+            if (recipe.iconFluid != null) {
+                buf.writeBoolean(true);
+                buf.writeResourceLocation(recipe.iconFluid);
             } else {
                 buf.writeBoolean(false);
             }
@@ -250,6 +285,31 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
             buf.writeVarInt(recipe.fluidOutputs.size());
             for (FluidStack out : recipe.fluidOutputs) {
                 writeFluidStack(buf, out);
+            }
+        }
+
+        private static ItemStack readIconItem(JsonObject json) {
+            if (!json.has("icon_item")) return ItemStack.EMPTY;
+            JsonObject obj = GsonHelper.getAsJsonObject(json, "icon_item");
+            return ShapedRecipe.itemStackFromJson(obj);
+        }
+
+        @Nullable
+        private static ResourceLocation readIconFluid(JsonObject json) {
+            if (!json.has("icon_fluid")) return null;
+            return ResourceLocation.tryParse(GsonHelper.getAsString(json, "icon_fluid"));
+        }
+
+        private static void applyIconFluid(ItemStack iconItem, @Nullable ResourceLocation iconFluid) {
+            if (iconItem == null || iconItem.isEmpty() || iconFluid == null) return;
+
+            var fluid = BuiltInRegistries.FLUID.get(iconFluid);
+            if (fluid == null || fluid == net.minecraft.world.level.material.Fluids.EMPTY) return;
+
+            // На данный момент поддерживаем «иконку+жидкость» через FLUID_IDENTIFIER (он умеет хранить fluid в NBT).
+            // Если позже появятся канистры/гастэнки с совместимым NBT — расширим этот хук.
+            if (iconItem.getItem() instanceof com.hbm_m.item.liquids.FluidIdentifierItem) {
+                com.hbm_m.item.liquids.FluidIdentifierItem.setType(iconItem, fluid, true);
             }
         }
 

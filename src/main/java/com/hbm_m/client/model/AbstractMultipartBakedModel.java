@@ -15,6 +15,7 @@ import net.minecraft.world.level.block.state.BlockState;
 *///?}
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -117,17 +118,26 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         return cachedParticleIcon;
     }
 
+    protected List<BakedQuad> getQuadsForModelData(
+        @Nullable BlockState state,
+        @Nullable Direction side,
+        RandomSource rand,
+        ModelData modelData,
+        @Nullable RenderType renderType
+    ) {
+        // Дефолтная реализация: просто собираем квады из всех частей без ModelData-логики.
+        // Подклассы (например MachineFluidTankBakedModel) переопределяют для динамических текстур.
+        List<BakedQuad> quads = new ArrayList<>();
+        for (BakedModel part : parts.values()) {
+            quads.addAll(part.getQuads(state, side, rand, modelData, renderType));
+        }
+        return quads;
+    }
+
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                    RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
-        
-        // WORLD RENDER: state != null означает запрос от chunk mesh
-        if (shouldSkipWorldRendering(state)) {
-            return Collections.emptyList();
-        }
-        
-        // ITEM RENDER: state == null означает запрос для item/GUI рендера
-        return Collections.emptyList();
+        return getQuadsForModelData(state, side, rand, modelData, renderType);
     }
 
 
