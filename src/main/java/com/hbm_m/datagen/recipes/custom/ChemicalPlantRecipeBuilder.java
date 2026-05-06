@@ -46,6 +46,12 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
     private final List<FluidAmount> fluidOutputs = new ArrayList<>();
 
     @Nullable
+    private ItemStack iconItem;
+
+    @Nullable
+    private Fluid iconFluid;
+
+    @Nullable
     private String blueprintPool;
 
     private final Advancement.Builder advancement = Advancement.Builder.advancement();
@@ -80,6 +86,20 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
 
     public ChemicalPlantRecipeBuilder addFluidOutput(Fluid fluid, int amountMb) {
         this.fluidOutputs.add(new FluidAmount(fluid, amountMb));
+        return this;
+    }
+
+    public ChemicalPlantRecipeBuilder withIconItem(ItemStack stack) {
+        this.iconItem = (stack == null || stack.isEmpty()) ? null : stack.copy();
+        return this;
+    }
+
+    public ChemicalPlantRecipeBuilder withIconItem(Item item) {
+        return withIconItem(new ItemStack(item));
+    }
+
+    public ChemicalPlantRecipeBuilder withIconFluid(Fluid fluid) {
+        this.iconFluid = fluid;
         return this;
     }
 
@@ -142,6 +162,25 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
 
             if (builder.blueprintPool != null) {
                 json.addProperty("blueprint_pool", builder.blueprintPool);
+            }
+
+            if (builder.iconItem != null && !builder.iconItem.isEmpty()) {
+                JsonObject o = new JsonObject();
+                ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(builder.iconItem.getItem());
+                if (itemId != null) {
+                    o.addProperty("item", itemId.toString());
+                    if (builder.iconItem.getCount() > 1) {
+                        o.addProperty("count", builder.iconItem.getCount());
+                    }
+                    json.add("icon_item", o);
+                }
+            }
+
+            if (builder.iconFluid != null) {
+                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(builder.iconFluid);
+                if (fluidId != null) {
+                    json.addProperty("icon_fluid", fluidId.toString());
+                }
             }
 
             JsonArray itemInputs = new JsonArray();

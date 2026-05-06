@@ -40,7 +40,7 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
     private final ContainerData data;
 
     public MachineChemicalPlantMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(2));
+        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(7));
     }
 
     public MachineChemicalPlantMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -154,6 +154,18 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
     public int getProgressScaled(int width) {
         int max = getMaxProgress();
         return max > 0 ? getProgress() * width / max : 0;
+    }
+
+    public long getEnergyStored() {
+        return ((long) data.get(3) << 32) | (data.get(2) & 0xFFFFFFFFL);
+    }
+
+    public long getMaxEnergyStored() {
+        return ((long) data.get(5) << 32) | (data.get(4) & 0xFFFFFFFFL);
+    }
+
+    public boolean getDidProcess() {
+        return data.get(6) != 0;
     }
 
     @Override

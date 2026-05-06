@@ -55,6 +55,7 @@ import com.hbm_m.item.industrial.FuelItem;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
 import com.hbm_m.item.industrial.ItemBlades;
 import com.hbm_m.item.industrial.ItemBlueprintFolder;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemStamp;
 import com.hbm_m.item.industrial.ItemTemplateFolder;
 import com.hbm_m.item.liquids.FluidBarrelItem;
@@ -706,6 +707,51 @@ public class ModItems {
         )
     );
 
+    // ═══════════════════ MACHINE UPGRADES ═══════════════════
+
+    public static final RegistrySupplier<Item> UPGRADE_SPEED_1 = ITEMS.register("upgrade_speed_1",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.SPEED, 1));
+    public static final RegistrySupplier<Item> UPGRADE_SPEED_2 = ITEMS.register("upgrade_speed_2",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.SPEED, 2));
+    public static final RegistrySupplier<Item> UPGRADE_SPEED_3 = ITEMS.register("upgrade_speed_3",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.SPEED, 3));
+
+    public static final RegistrySupplier<Item> UPGRADE_EFFECT_1 = ITEMS.register("upgrade_effect_1",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.EFFECT, 1));
+    public static final RegistrySupplier<Item> UPGRADE_EFFECT_2 = ITEMS.register("upgrade_effect_2",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.EFFECT, 2));
+    public static final RegistrySupplier<Item> UPGRADE_EFFECT_3 = ITEMS.register("upgrade_effect_3",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.EFFECT, 3));
+
+    public static final RegistrySupplier<Item> UPGRADE_POWER_1 = ITEMS.register("upgrade_power_1",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.POWER, 1));
+    public static final RegistrySupplier<Item> UPGRADE_POWER_2 = ITEMS.register("upgrade_power_2",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.POWER, 2));
+    public static final RegistrySupplier<Item> UPGRADE_POWER_3 = ITEMS.register("upgrade_power_3",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.POWER, 3));
+
+    public static final RegistrySupplier<Item> UPGRADE_FORTUNE_1 = ITEMS.register("upgrade_fortune_1",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.FORTUNE, 1));
+    public static final RegistrySupplier<Item> UPGRADE_FORTUNE_2 = ITEMS.register("upgrade_fortune_2",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.FORTUNE, 2));
+    public static final RegistrySupplier<Item> UPGRADE_FORTUNE_3 = ITEMS.register("upgrade_fortune_3",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.FORTUNE, 3));
+
+    public static final RegistrySupplier<Item> UPGRADE_AFTERBURN_1 = ITEMS.register("upgrade_afterburn_1",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.AFTERBURN, 1));
+    public static final RegistrySupplier<Item> UPGRADE_AFTERBURN_2 = ITEMS.register("upgrade_afterburn_2",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.AFTERBURN, 2));
+    public static final RegistrySupplier<Item> UPGRADE_AFTERBURN_3 = ITEMS.register("upgrade_afterburn_3",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.AFTERBURN, 3));
+
+    public static final RegistrySupplier<Item> UPGRADE_OVERDRIVE_1 = ITEMS.register("upgrade_overdrive_1",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.OVERDRIVE, 1));
+    public static final RegistrySupplier<Item> UPGRADE_OVERDRIVE_2 = ITEMS.register("upgrade_overdrive_2",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.OVERDRIVE, 2));
+    public static final RegistrySupplier<Item> UPGRADE_OVERDRIVE_3 = ITEMS.register("upgrade_overdrive_3",
+            () -> new ItemMachineUpgrade(new Item.Properties(), ItemMachineUpgrade.UpgradeType.OVERDRIVE, 3));
+
+    // ═══════════════════ END MACHINE UPGRADES ═══════════════════
 
     public static final RegistrySupplier<Item> RADAWAY = ITEMS.register("radaway",
             () -> new ItemSimpleConsumable(new Item.Properties(), (player, stack) -> {

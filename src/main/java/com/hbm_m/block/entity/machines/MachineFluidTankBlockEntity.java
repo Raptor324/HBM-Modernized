@@ -7,9 +7,9 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
-import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.FT_Corrosive;
@@ -55,7 +55,6 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
-import net.minecraft.core.registries.BuiltInRegistries;
 *///?}
 
 public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider, IMultiblockSidedIO
@@ -160,6 +159,18 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         *///?}
     }
 
+    //? if forge {
+    /*@Override
+    public void onLoad() {
+        super.onLoad();
+        // На Forge ModelData кешируется отдельно от NBT; при загрузке чанка гарантируем первичную инициализацию.
+        if (level != null && level.isClientSide) {
+            requestModelDataUpdate();
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL_IMMEDIATE);
+        }
+    }
+    *///?}
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineFluidTankBlockEntity entity) {
         if (level.isClientSide) return;
 
@@ -228,34 +239,22 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         }
     }
 
+    //? if forge {
+    /*@Override
     public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket pkt) {
-        // Сохраняем старую жидкость для проверки
-        Fluid oldFluid = getFilterFluid();
-        Fluid oldTankFluid = fluidTank.getTankType();
+        // Важно: super.onDataPacket вызывает load(tag). Нам нужно сравнить старое/новое и
+        // при смене текстуры попросить Forge обновить ModelData и пересобрать меш чанка.
+        final boolean clientForge = level != null && level.isClientSide;
+        final ResourceLocation prevTankTextureForge = clientForge ? getTankTextureLocation() : null;
 
-        CompoundTag tag = pkt.getTag();
-        if (tag != null) {
-            load(tag);
-        }
+        super.onDataPacket(net, pkt);
 
-        if (level != null && level.isClientSide) {
-            Fluid newFluid = getFilterFluid();
-            Fluid newTankFluid = fluidTank.getTankType();
-
-            // Проверяем, изменилась ли жидкость, чтобы не перерисовывать чанк лишний раз
-            if (oldFluid != newFluid || oldTankFluid != newTankFluid) {
-                //? if forge {
-                /*requestModelDataUpdate();
-                *///?}
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
-                //? if fabric {
-                if (level.isClientSide) {
-                    scheduleChunkRebuild();
-                }
-                //?}
-            }
+        if (clientForge && prevTankTextureForge != null && !prevTankTextureForge.equals(getTankTextureLocation())) {
+            requestModelDataUpdate();
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
         }
     }
+    *///?}
 
     public void handleUpdateTag(CompoundTag tag) {
         load(tag);
@@ -263,7 +262,8 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             //? if forge {
             /*requestModelDataUpdate();
             *///?}
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
+            // На Forge для корректной перерисовки нужен UPDATE_CLIENTS (иначе baked model может не обновиться).
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
             //? if fabric {
             scheduleChunkRebuild();
             //?}
@@ -430,11 +430,6 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             }
 
             long toDrainMb = Math.min(tank().getFill(), maxAmount / DROPLETS_PER_MB);
-            if (entity.mode == 1) {
-                int excess = tank().getFill() - tank().getMaxFill() / 2;
-                if (excess <= 0) return 0;
-                toDrainMb = Math.min(toDrainMb, excess);
-            }
             if (toDrainMb <= 0) return 0;
 
             updateSnapshots(transaction);
@@ -615,6 +610,10 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         final boolean clientFabric = level != null && level.isClientSide;
         final ResourceLocation prevTankTexture = clientFabric ? getTankTextureLocation() : null;
         //?}
+        //? if forge {
+        /*final boolean clientForge = level != null && level.isClientSide;
+        final ResourceLocation prevTankTextureForge = clientForge ? getTankTextureLocation() : null;
+        *///?}
 
         super.load(tag);
         itemHandler.deserializeNBT(tag.getCompound("Inventory"));
@@ -647,6 +646,13 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             scheduleChunkRebuild();
         }
         //?}
+
+        //? if forge {
+        /*if (clientForge && prevTankTextureForge != null && !prevTankTextureForge.equals(getTankTextureLocation())) {
+            requestModelDataUpdate();
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
+        }
+        *///?}
         if (level != null) {
             refreshAdjacentFluidDuctConnections();
         }
@@ -833,13 +839,6 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         @Override
         public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
-            if (entity.mode == 1) {
-                int excess = entity.fluidTank.getFill() - entity.fluidTank.getMaxFill() / 2;
-                if (excess <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
-                net.minecraftforge.fluids.FluidStack limited = resource.copy();
-                limited.setAmount(Math.min(resource.getAmount(), excess));
-                return internal.drain(limited, action);
-            }
             return internal.drain(resource, action);
         }
 
@@ -847,11 +846,6 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         @Override
         public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
             if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
-            if (entity.mode == 1) {
-                int excess = entity.fluidTank.getFill() - entity.fluidTank.getMaxFill() / 2;
-                if (excess <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
-                maxDrain = Math.min(maxDrain, excess);
-            }
             return internal.drain(maxDrain, action);
         }
     }

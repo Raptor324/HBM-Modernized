@@ -14,10 +14,10 @@ import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.CentrifugeRecipes;
 import com.hbm_m.recipe.CentrifugeRecipes.RecipeInput;
-import com.hbm_m.recipe.ChemicalPlantRecipes;
-import com.hbm_m.recipe.ChemicalPlantRecipes.ChemicalRecipe;
+import com.hbm_m.recipe.ChemicalPlantRecipe;
 
 import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
@@ -125,11 +125,15 @@ public class HbmJeiPlugin implements IModPlugin {
 
     private static List<ChemicalPlantJeiRecipe> getChemicalPlantRecipes() {
         List<ChemicalPlantJeiRecipe> recipes = new ArrayList<>();
-        
-        for (ChemicalRecipe recipe : ChemicalPlantRecipes.getRecipeList()) {
+
+        // Datapack recipes (hbm_m:chemical_plant)
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) return recipes;
+        List<ChemicalPlantRecipe> all = mc.level.getRecipeManager().getAllRecipesFor(ChemicalPlantRecipe.Type.INSTANCE);
+        for (ChemicalPlantRecipe recipe : all) {
             recipes.add(new ChemicalPlantJeiRecipe(recipe));
         }
-        
+
         return recipes;
     }
 }

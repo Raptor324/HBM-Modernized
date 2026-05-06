@@ -15,8 +15,31 @@ import net.minecraftforge.fluids.capability.templates.FluidTank;
  
 public class ModFluidTank extends FluidTank {
 
+    private Fluid conformedFluid = Fluids.EMPTY;
+
     public ModFluidTank(int capacity) {
         super(capacity);
+    }
+
+    public void conform(Fluid type) {
+        if (type == null) type = Fluids.EMPTY;
+        if (getStoredFluid() != type && !isEmpty()) {
+            drain(getFluidAmountMb(), FluidAction.EXECUTE);
+        }
+        this.conformedFluid = type;
+    }
+
+    public void resetTank() {
+        if (!isEmpty()) {
+            drain(getFluidAmountMb(), FluidAction.EXECUTE);
+        }
+        this.conformedFluid = Fluids.EMPTY;
+    }
+
+    @NotNull
+    public Fluid getConfiguredFluid() {
+        Fluid stored = getStoredFluid();
+        return stored != Fluids.EMPTY ? stored : conformedFluid;
     }
 
     // ── Платформенные хелперы (для единообразия с Fabric API) ────────────────
@@ -79,12 +102,23 @@ public class ModFluidTank extends FluidTank {
 
 //     NBT: сохранить.
     public CompoundTag writeNBT(CompoundTag tag) {
-        return writeToNBT(tag);
+        writeToNBT(tag);
+        if (conformedFluid != Fluids.EMPTY) {
+            net.minecraft.resources.ResourceLocation loc = net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(conformedFluid);
+            if (loc != null) tag.putString("ConformedFluid", loc.toString());
+        }
+        return tag;
     }
 
 //    NBT: загрузить.
     public void readNBT(CompoundTag tag) {
         readFromNBT(tag);
+        if (tag.contains("ConformedFluid")) {
+            Fluid f = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(net.minecraft.resources.ResourceLocation.tryParse(tag.getString("ConformedFluid")));
+            conformedFluid = f != null ? f : Fluids.EMPTY;
+        } else {
+            conformedFluid = Fluids.EMPTY;
+        }
     }
 }
 *///?}
@@ -107,6 +141,7 @@ public abstract class ModFluidTank {
     public static final long DROPLETS_PER_MB = 81L;
 
     private final long capacityDroplets;
+    private Fluid conformedFluid = Fluids.EMPTY;
 
     private final SingleVariantStorage<FluidVariant> storage;
 
@@ -141,6 +176,30 @@ public abstract class ModFluidTank {
     }
 
     protected void onContentsChanged() {}
+
+    // ──────────────── Conform (порт 1.7.10 FluidTank.conform) ────────────────
+
+    public void conform(Fluid type) {
+        if (type == null) type = Fluids.EMPTY;
+        Fluid stored = getStoredFluid();
+        if (stored != type && !isEmpty()) {
+            drainMb(getFluidAmountMb());
+        }
+        this.conformedFluid = type;
+    }
+
+    public void resetTank() {
+        if (!isEmpty()) {
+            drainMb(getFluidAmountMb());
+        }
+        this.conformedFluid = Fluids.EMPTY;
+    }
+
+    @NotNull
+    public Fluid getConfiguredFluid() {
+        Fluid stored = getStoredFluid();
+        return stored != Fluids.EMPTY ? stored : conformedFluid;
+    }
 
     // ──────────────── Fill ────────────────
 
@@ -205,21 +264,42 @@ public abstract class ModFluidTank {
     public CompoundTag writeNBT(CompoundTag tag) {
         FluidVariant variant = storage.getResource();
         if (!variant.isBlank()) {
-            variant.toNbt();
+            tag.merge(variant.toNbt());
             tag.putLong("Amount", storage.getAmount());
+        }
+        if (conformedFluid != Fluids.EMPTY) {
+            net.minecraft.resources.ResourceLocation loc = net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(conformedFluid);
+            if (loc != null) tag.putString("ConformedFluid", loc.toString());
         }
         return tag;
     }
 
     public void readNBT(CompoundTag tag) {
-        if (tag.contains("id")) {
-            FluidVariant variant = FluidVariant.fromNbt(tag);
-            long amount = tag.getLong("Amount");
-
-            try (Transaction tx = Transaction.openOuter()) {
-                storage.insert(variant, amount, tx);
-                tx.commit();
+        try (Transaction tx = Transaction.openOuter()) {
+            // Перезаписываем содержимое, иначе при повторных sync/load будет накапливаться amount.
+            FluidVariant cur = storage.getResource();
+            long curAmt = storage.getAmount();
+            if (!cur.isBlank() && curAmt > 0) {
+                storage.extract(cur, curAmt, tx);
             }
+
+            // FluidVariant в Fabric сериализуется как минимум с ключом "fluid".
+            // В некоторых окружениях/старых данных мог встречаться "id" — поддержим оба варианта.
+            if (tag.contains("fluid") || tag.contains("id")) {
+                FluidVariant variant = FluidVariant.fromNbt(tag);
+                long amount = tag.getLong("Amount");
+                if (!variant.isBlank() && amount > 0) {
+                    storage.insert(variant, amount, tx);
+                }
+            }
+            tx.commit();
+        }
+        if (tag.contains("ConformedFluid")) {
+            Fluid f = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(
+                    net.minecraft.resources.ResourceLocation.tryParse(tag.getString("ConformedFluid")));
+            conformedFluid = f != null ? f : Fluids.EMPTY;
+        } else {
+            conformedFluid = Fluids.EMPTY;
         }
     }
 }

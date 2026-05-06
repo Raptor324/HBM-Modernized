@@ -173,6 +173,27 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.RADAWAY);
         simpleItem(ModItems.CREATIVE_BATTERY);
         simpleItem(ModItems.TEMPLATE_FOLDER);
+
+        // Machine upgrades
+        simpleItem(ModItems.UPGRADE_SPEED_1);
+        simpleItem(ModItems.UPGRADE_SPEED_2);
+        simpleItem(ModItems.UPGRADE_SPEED_3);
+        simpleItem(ModItems.UPGRADE_EFFECT_1);
+        simpleItem(ModItems.UPGRADE_EFFECT_2);
+        simpleItem(ModItems.UPGRADE_EFFECT_3);
+        simpleItem(ModItems.UPGRADE_POWER_1);
+        simpleItem(ModItems.UPGRADE_POWER_2);
+        simpleItem(ModItems.UPGRADE_POWER_3);
+        simpleItem(ModItems.UPGRADE_FORTUNE_1);
+        simpleItem(ModItems.UPGRADE_FORTUNE_2);
+        simpleItem(ModItems.UPGRADE_FORTUNE_3);
+        simpleItem(ModItems.UPGRADE_AFTERBURN_1);
+        simpleItem(ModItems.UPGRADE_AFTERBURN_2);
+        simpleItem(ModItems.UPGRADE_AFTERBURN_3);
+        simpleItem(ModItems.UPGRADE_OVERDRIVE_1);
+        simpleItem(ModItems.UPGRADE_OVERDRIVE_2);
+        simpleItem(ModItems.UPGRADE_OVERDRIVE_3);
+
         simpleItem(ModItems.STRAWBERRY);
         simpleItem(ModItems.INFINITE_WATER_500);
         simpleItem(ModItems.INFINITE_WATER_5000);
