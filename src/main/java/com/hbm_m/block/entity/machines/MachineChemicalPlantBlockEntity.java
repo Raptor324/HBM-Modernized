@@ -53,6 +53,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 //? if fabric {
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
 import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
+import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
 import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
 import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
 import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
@@ -334,7 +335,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
 
             ItemStack one = fullContainer.copy();
             one.setCount(1);
-            Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, null);
+            Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, ContainerItemContext.withConstant(one));
             if (itemStorage == null) continue;
 
             StorageView<FluidVariant> view = null;
@@ -395,7 +396,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
 
             ItemStack one = emptyContainer.copy();
             one.setCount(1);
-            Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, null);
+            Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, ContainerItemContext.withConstant(one));
             if (itemStorage == null) continue;
 
             Storage<FluidVariant> tankStorage = outputTanks[i].getStorage();
@@ -596,8 +597,19 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
             }
         }
         module.readNBT(tag);
+        // didProcess хранится отдельно от module.writeNBT(); нужен на клиенте для звука/анимации.
+        module.didProcess = tag.getBoolean("didProcess");
         anim = tag.getFloat("anim");
         prevAnim = tag.getFloat("prevAnim");
+    }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        // Если BE удалили (сломали блок/выгрузили чанк), clientTick больше не вызовется → стопаем loop-звук.
+        if (level != null && level.isClientSide) {
+            ClientSoundBootstrap.updateSound(this, false, null);
+        }
     }
 
     //? if forge {

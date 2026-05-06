@@ -40,7 +40,7 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
     private final ContainerData data;
 
     public MachineChemicalPlantMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(2));
+        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(7));
     }
 
     public MachineChemicalPlantMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {

@@ -7,9 +7,9 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
-import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.FT_Corrosive;
@@ -160,6 +160,18 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         *///?}
     }
 
+    //? if forge {
+    /*@Override
+    public void onLoad() {
+        super.onLoad();
+        // На Forge ModelData кешируется отдельно от NBT; при загрузке чанка гарантируем первичную инициализацию.
+        if (level != null && level.isClientSide) {
+            requestModelDataUpdate();
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+    *///?}
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineFluidTankBlockEntity entity) {
         if (level.isClientSide) return;
 
@@ -247,7 +259,8 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
                 //? if forge {
                 /*requestModelDataUpdate();
                 *///?}
-                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
+                // На Forge для корректной перерисовки нужен UPDATE_CLIENTS (иначе baked model может не обновиться).
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
                 //? if fabric {
                 if (level.isClientSide) {
                     scheduleChunkRebuild();
@@ -263,7 +276,8 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             //? if forge {
             /*requestModelDataUpdate();
             *///?}
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
+            // На Forge для корректной перерисовки нужен UPDATE_CLIENTS (иначе baked model может не обновиться).
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
             //? if fabric {
             scheduleChunkRebuild();
             //?}
@@ -610,6 +624,10 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         final boolean clientFabric = level != null && level.isClientSide;
         final ResourceLocation prevTankTexture = clientFabric ? getTankTextureLocation() : null;
         //?}
+        //? if forge {
+        /*final boolean clientForge = level != null && level.isClientSide;
+        final ResourceLocation prevTankTextureForge = clientForge ? getTankTextureLocation() : null;
+        *///?}
 
         super.load(tag);
         itemHandler.deserializeNBT(tag.getCompound("Inventory"));
@@ -643,8 +661,13 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         }
         //?}
         //? if forge {
-        /*if (level != null && level.isClientSide) {
-            requestModelDataUpdate();
+        /*if (clientForge) {
+            ResourceLocation now = getTankTextureLocation();
+            if (prevTankTextureForge == null || !prevTankTextureForge.equals(now)) {
+                requestModelDataUpdate();
+                // Принудительно просим клиент перерисовать блок (ModelData -> baked model)
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            }
         }
         *///?}
         if (level != null) {

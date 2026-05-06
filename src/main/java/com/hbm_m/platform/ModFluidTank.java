@@ -264,7 +264,7 @@ public abstract class ModFluidTank {
     public CompoundTag writeNBT(CompoundTag tag) {
         FluidVariant variant = storage.getResource();
         if (!variant.isBlank()) {
-            variant.toNbt();
+            tag.merge(variant.toNbt());
             tag.putLong("Amount", storage.getAmount());
         }
         if (conformedFluid != Fluids.EMPTY) {
@@ -275,14 +275,24 @@ public abstract class ModFluidTank {
     }
 
     public void readNBT(CompoundTag tag) {
-        if (tag.contains("id")) {
-            FluidVariant variant = FluidVariant.fromNbt(tag);
-            long amount = tag.getLong("Amount");
-
-            try (Transaction tx = Transaction.openOuter()) {
-                storage.insert(variant, amount, tx);
-                tx.commit();
+        try (Transaction tx = Transaction.openOuter()) {
+            // Перезаписываем содержимое, иначе при повторных sync/load будет накапливаться amount.
+            FluidVariant cur = storage.getResource();
+            long curAmt = storage.getAmount();
+            if (!cur.isBlank() && curAmt > 0) {
+                storage.extract(cur, curAmt, tx);
             }
+
+            // FluidVariant в Fabric сериализуется как минимум с ключом "fluid".
+            // В некоторых окружениях/старых данных мог встречаться "id" — поддержим оба варианта.
+            if (tag.contains("fluid") || tag.contains("id")) {
+                FluidVariant variant = FluidVariant.fromNbt(tag);
+                long amount = tag.getLong("Amount");
+                if (!variant.isBlank() && amount > 0) {
+                    storage.insert(variant, amount, tx);
+                }
+            }
+            tx.commit();
         }
         if (tag.contains("ConformedFluid")) {
             Fluid f = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(
