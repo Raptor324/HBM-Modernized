@@ -41,6 +41,7 @@ import com.hbm_m.inventory.fluid.trait.PollutionType;
 
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 
 /**
  * Seeds {@link FluidTraitManager} from 1.7.10 {@code Fluids.init()} + heat/cool chains + spreadsheet fuels.
@@ -76,6 +77,17 @@ public final class ModFluidTraitsBootstrap {
         }
     }
 
+    /** Applies temperature/traits to a raw {@link Fluid} (vanilla or modded). */
+    private static void t(Fluid f, Integer tempC, FluidTrait... traits) {
+        if (f == null) return;
+        if (tempC != null) {
+            FluidTraitManager.setTemperatureCelsius(f, tempC);
+        }
+        for (FluidTrait tr : traits) {
+            FluidTraitManager.addTrait(f, tr);
+        }
+    }
+
     public static void registerAll() {
         registerStructural();
         ModFluidCalculatedFuel.apply();
@@ -86,7 +98,11 @@ public final class ModFluidTraitsBootstrap {
         // NONE — no traits / room temp
         t(ModFluids.NONE, null);
 
+        // Water family: HBM registers its own water, but vanilla buckets/pipes use Fluids.WATER.
+        // For tooltip parity and GUI correctness, seed both variants with the same base traits.
         t(ModFluids.WATER, null, LQ, UNS);
+        t(Fluids.WATER, null, LQ, UNS);
+        t(Fluids.FLOWING_WATER, null, LQ, UNS);
         t(ModFluids.WATER_BASE, null, LQ, UNS);
         t(ModFluids.WATER_OPAQUE_BASE, null, LQ, UNS);
         t(ModFluids.CUSTOM_WATER, null, LQ, UNS);
@@ -231,6 +247,8 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.CONCRETE, null, LQ);
         t(ModFluids.DHC, null, GAS);
         t(ModFluids.LAVA, 1200, LQ, VIS);
+        t(Fluids.LAVA, 1200, LQ, VIS);
+        t(Fluids.FLOWING_LAVA, 1200, LQ, VIS);
         t(ModFluids.CUSTOM_LAVA, 1200, LQ, VIS);
         t(ModFluids.BLOOD, null, LQ, VIS, DEL);
         t(ModFluids.BLOOD_HOT, 666, LQ, VIS);
@@ -297,13 +315,32 @@ public final class ModFluidTraitsBootstrap {
         double effSteamCool = 0.5D;
 
         Fluid w = ModFluids.WATER.getSource();
+        Fluid vw = Fluids.WATER;
+        Fluid vfw = Fluids.FLOWING_WATER;
         Fluid st = ModFluids.STEAM.getSource();
         Fluid hst = ModFluids.HOTSTEAM.getSource();
         Fluid sst = ModFluids.SUPERHOTSTEAM.getSource();
         Fluid ust = ModFluids.ULTRAHOTSTEAM.getSource();
         Fluid spent = ModFluids.SPENTSTEAM.getSource();
 
-        FluidTraitManager.addTrait(w, new FT_Heatable()
+        FT_Heatable waterHeat = new FT_Heatable()
+                .setEff(HeatingType.BOILER, effSteamBoil)
+                .setEff(HeatingType.HEATEXCHANGER, effSteamHeatex)
+                .addStep(200, 1, st, 100)
+                .addStep(220, 1, hst, 10)
+                .addStep(238, 1, sst, 1)
+                .addStep(2500, 10, ust, 1);
+
+        FluidTraitManager.addTrait(w, waterHeat);
+        // Vanilla water needs identical heating traits for GUI/tooltips and cross-mod fluid IO.
+        FluidTraitManager.addTrait(vw, new FT_Heatable()
+                .setEff(HeatingType.BOILER, effSteamBoil)
+                .setEff(HeatingType.HEATEXCHANGER, effSteamHeatex)
+                .addStep(200, 1, st, 100)
+                .addStep(220, 1, hst, 10)
+                .addStep(238, 1, sst, 1)
+                .addStep(2500, 10, ust, 1));
+        FluidTraitManager.addTrait(vfw, new FT_Heatable()
                 .setEff(HeatingType.BOILER, effSteamBoil)
                 .setEff(HeatingType.HEATEXCHANGER, effSteamHeatex)
                 .addStep(200, 1, st, 100)

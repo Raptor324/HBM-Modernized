@@ -99,8 +99,8 @@ public class MachineChemicalPlantBlock extends BaseEntityBlock implements IMulti
         );
 
         Map<Character, boolean[]> fluidSideMap = Map.of(
-            'C', MultiblockSideTuples.fluid(true, true, true, true, true, false),
-            'F', MultiblockSideTuples.fluid(true, true, true, true, true, false)
+            'C', MultiblockSideTuples.fluid(true, true, true, true, false, false),
+            'F', MultiblockSideTuples.fluid(true, true, true, true, false, false)
         );
 
         Map<Character, boolean[]> energySideMap = Map.of(

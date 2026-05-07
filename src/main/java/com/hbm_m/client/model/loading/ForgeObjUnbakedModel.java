@@ -84,7 +84,7 @@ public final class ForgeObjUnbakedModel implements ForgeLikeUnbakedModel {
 
         ObjBakedModel baked = new ObjBakedModel(bakeQuads(spriteGetter, modelState, modelLocation), particle, shadeQuads, automaticCulling, itemTransforms, ItemOverrides.EMPTY);
         MainRegistry.LOGGER.debug("Baked forge-like OBJ model {} from {}", id, objModel);
-        return ModelDebugDumper.wrapIfEnabled(modelLocation, baked);
+        return baked;
     }
 
     private Map<Direction, List<net.minecraft.client.renderer.block.model.BakedQuad>> bakeQuads(Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ResourceLocation modelLocation) {

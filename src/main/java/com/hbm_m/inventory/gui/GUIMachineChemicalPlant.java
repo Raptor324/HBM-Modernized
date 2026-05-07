@@ -21,9 +21,7 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.platform.ModFluidTank;
-import dev.architectury.fluid.FluidStack;
-import net.minecraft.world.level.material.Fluid;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -36,14 +34,9 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
     private static final ResourceLocation TEXTURE = new ResourceLocation(
             RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
     //?} else {
-        /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+    /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/processing/gui_chemplant.png");
     *///?}
-
-
-    private static final int TANK_WIDTH = 16;
-    private static final int TANK_HEIGHT = 34;
-    private static final int TANK_CAPACITY = 24_000;
 
     public GUIMachineChemicalPlant(MachineChemicalPlantMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
@@ -76,9 +69,10 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         }
 
         boolean hasRecipe = menu.getBlockEntity().getSelectedRecipeId() != null;
-        boolean didProcess = menu.getDidProcess();
-        boolean canProcess = hasRecipe && energyStored >= 100;
+        boolean didProcess = menu.getBlockEntity().getDidProcess();
+        boolean canProcess = hasRecipe && energyStored >= 100; // Пример потребления энергии, можно адаптировать под рецепт
 
+        // ЛЕД-Индикаторы
         if (didProcess) {
             guiGraphics.blit(TEXTURE, this.leftPos + 51, this.topPos + 121, 195, 0, 3, 6);
             guiGraphics.blit(TEXTURE, this.leftPos + 56, this.topPos + 121, 195, 0, 3, 6);
@@ -89,43 +83,37 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
             }
         }
 
+        // Рендер рецепта по центру (результат / папка)
+        if (this.minecraft != null && this.minecraft.level != null) {
+            ChemicalPlantRecipe recipe = getSelectedRecipe();
+            if (recipe != null) {
+                ItemStack icon = ItemStack.EMPTY;
+                if (!recipe.getItemOutputs().isEmpty()) {
+                    icon = recipe.getItemOutputs().get(0);
+                } else if (recipe.getResultItem(this.minecraft.level.registryAccess()) != null) {
+                    icon = recipe.getResultItem(this.minecraft.level.registryAccess());
+                }
+                if (!icon.isEmpty()) {
+                    guiGraphics.renderItem(icon, this.leftPos + 8, this.topPos + 126);
+                } else {
+                    guiGraphics.renderItem(new ItemStack(ModItems.TEMPLATE_FOLDER.get()), this.leftPos + 8, this.topPos + 126);
+                }
+            } else {
+                guiGraphics.renderItem(new ItemStack(ModItems.TEMPLATE_FOLDER.get()), this.leftPos + 8, this.topPos + 126);
+            }
+        }
+
+        // Рендер призрачных предметов для входов (с учетом цикла времени)
+        renderGhostInputs(guiGraphics);
+
+        // Рендер танков
         for (int i = 0; i < 3; i++) {
-            renderFluidTank(guiGraphics, menu.getBlockEntity().getInputTanks()[i],
-                    this.leftPos + 8 + i * 18, this.topPos + 18);
-            renderFluidTank(guiGraphics, menu.getBlockEntity().getOutputTanks()[i],
-                    this.leftPos + 80 + i * 18, this.topPos + 18);
+            menu.getBlockEntity().getInputTanks()[i].renderTank(guiGraphics,
+                    this.leftPos + 8 + i * 18, this.topPos + 18, 16, 34);
+            menu.getBlockEntity().getOutputTanks()[i].renderTank(guiGraphics,
+                    this.leftPos + 80 + i * 18, this.topPos + 18, 16, 34);
         }
         com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, TEXTURE);
-
-        renderGhostInputs(guiGraphics);
-    }
-
-    private void renderFluidTank(GuiGraphics guiGraphics, ModFluidTank tank, int x, int y) {
-        Fluid fluid = tank.getStoredFluid();
-        int amountMb = tank.getFluidAmountMb();
-        if (fluid == net.minecraft.world.level.material.Fluids.EMPTY || amountMb <= 0) return;
-
-        int pixelHeight = (int) ((long) amountMb * TANK_HEIGHT / TANK_CAPACITY);
-        if (pixelHeight == 0 && amountMb > 0) pixelHeight = 1;
-        if (pixelHeight > TANK_HEIGHT) pixelHeight = TANK_HEIGHT;
-
-        int color = HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
-        float r = (color >> 16 & 255) / 255.0F;
-        float g = (color >> 8 & 255) / 255.0F;
-        float b = (color & 255) / 255.0F;
-        float a = 1.0F;
-
-        ResourceLocation png = FluidGuiRendering.guiTexturePngForFluid(fluid, FluidStack.create(fluid, (long) amountMb));
-        if (png == null) return;
-
-        com.mojang.blaze3d.systems.RenderSystem.enableBlend();
-        com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
-        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(r, g, b, a);
-
-        FluidGuiRendering.renderTiledFluid(guiGraphics, png, x, y + TANK_HEIGHT - pixelHeight, TANK_WIDTH, pixelHeight);
-
-        com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        com.mojang.blaze3d.systems.RenderSystem.disableBlend();
     }
 
     @Override
@@ -133,13 +121,6 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         String name = this.title.getString();
         guiGraphics.drawString(this.font, name, 70 - this.font.width(name) / 2, 6, 0x404040, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
-
-        if (this.minecraft != null && this.minecraft.screen == this) {
-            if (menu.getBlockEntity().getSelectedRecipeId() != null) {
-            } else {
-                guiGraphics.renderItem(new ItemStack(ModItems.TEMPLATE_FOLDER.get()), 8, 126);
-            }
-        }
     }
 
     @Override
@@ -163,18 +144,11 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         }
 
         for (int i = 0; i < 3; i++) {
-            if (isMouseOver(mouseX, mouseY, 8 + i * 18, 18, 16, 34)) {
-                ModFluidTank tank = menu.getBlockEntity().getInputTanks()[i];
-                renderTankTooltip(guiGraphics, tank, mouseX, mouseY);
-                return;
-            }
-            if (isMouseOver(mouseX, mouseY, 80 + i * 18, 18, 16, 34)) {
-                ModFluidTank tank = menu.getBlockEntity().getOutputTanks()[i];
-                renderTankTooltip(guiGraphics, tank, mouseX, mouseY);
-                return;
-            }
+            menu.getBlockEntity().getInputTanks()[i].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 8 + i * 18, this.topPos + 18, 16, 34);
+            menu.getBlockEntity().getOutputTanks()[i].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 80 + i * 18, this.topPos + 18, 16, 34);
         }
 
+        // Тултип кнопки рецепта
         if (isMouseOver(mouseX, mouseY, 7, 125, 18, 18)) {
             ChemicalPlantRecipe recipe = getSelectedRecipe();
             if (recipe != null) {
@@ -185,27 +159,6 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
                         mouseX, mouseY);
             }
         }
-    }
-
-    private void renderTankTooltip(GuiGraphics guiGraphics, ModFluidTank tank, int mouseX, int mouseY) {
-        Fluid stored = tank.getStoredFluid();
-        Fluid configured = tank.getConfiguredFluid();
-        int amountMb = tank.getFluidAmountMb();
-        List<Component> tooltip = new ArrayList<>();
-        if (stored == net.minecraft.world.level.material.Fluids.EMPTY || amountMb <= 0) {
-            if (configured != net.minecraft.world.level.material.Fluids.EMPTY) {
-                FluidStack cfgStack = FluidStack.create(configured, 0L);
-                tooltip.add(dev.architectury.hooks.fluid.FluidStackHooks.getName(cfgStack));
-                tooltip.add(Component.literal("0 / " + TANK_CAPACITY + " mB"));
-            } else {
-                tooltip.add(Component.translatable("gui.hbm_m.fluid.empty"));
-            }
-        } else {
-            FluidStack fluid = FluidStack.create(stored, (long) amountMb);
-            tooltip.add(dev.architectury.hooks.fluid.FluidStackHooks.getName(fluid));
-            tooltip.add(Component.literal(amountMb + " / " + TANK_CAPACITY + " mB"));
-        }
-        guiGraphics.renderTooltip(this.font, tooltip, Optional.empty(), mouseX, mouseY);
     }
 
     @Override
@@ -312,7 +265,9 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
             ItemStack[] variants = in.ingredient().getItems();
             if (variants.length == 0) continue;
 
-            ItemStack ghost = variants[0].copy();
+            // Цикличная смена отображения предметов из тегов, как было в 1.7.10
+            int cycleIndex = (int) ((System.currentTimeMillis() / 1000) % variants.length);
+            ItemStack ghost = variants[cycleIndex].copy();
             ghost.setCount(in.count());
 
             int x = this.leftPos + slot.x;

@@ -235,7 +235,7 @@ final class HbmLoaderAdapters {
             } finally {
                 ObjQuadBaker.ObjQuadBakerState.MODEL = null;
             }
-            return ModelDebugDumper.wrapIfEnabled(modelLocation, factory.create(bakedParts, itemTransforms, modelLocation));
+            return factory.create(bakedParts, itemTransforms, modelLocation);
         }
     }
 
@@ -344,7 +344,7 @@ final class HbmLoaderAdapters {
                     ObjQuadBaker.ObjQuadBakerState.MODEL = null;
                 }
             }
-            return ModelDebugDumper.wrapIfEnabled(modelLocation, factory.apply(bakedParts));
+            return factory.apply(bakedParts);
         }
     }
 

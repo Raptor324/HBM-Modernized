@@ -62,7 +62,7 @@ import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.FluidDuctItem;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
-import com.hbm_m.item.liquids.InfiniteWaterItem;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.item.missile.MissileItem;
 import com.hbm_m.item.radiation_meter.ItemDosimeter;
 import com.hbm_m.item.radiation_meter.ItemGeigerCounter;
@@ -1751,11 +1751,11 @@ public class ModItems {
 
 	// Медленный источник (500 mB/t)
 	public static final RegistrySupplier<Item> INFINITE_WATER_500 = ITEMS.register("inf_water",
-					() -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 500));
+					() -> new InfiniteFluidItem(new Item.Properties().stacksTo(1), net.minecraft.world.level.material.Fluids.WATER, 500));
 
 	// Быстрый источник (5000 mB/t)
 	public static final RegistrySupplier<Item> INFINITE_WATER_5000 = ITEMS.register("inf_water_mk2",
-            () -> new InfiniteWaterItem(new Item.Properties().stacksTo(1), 5000));
+            () -> new InfiniteFluidItem(new Item.Properties().stacksTo(1), net.minecraft.world.level.material.Fluids.WATER, 5000));
 
     // Fluid Barrel - 16,000 mB capacity portable fluid container
     public static final RegistrySupplier<Item> FLUID_BARREL = ITEMS.register("fluid_barrel",
@@ -1764,6 +1764,7 @@ public class ModItems {
     // Universal infinite fluid source (any fluid type, 1B mB/t - like 1.7.10 fluid_barrel_infinite)
     public static final RegistrySupplier<Item> FLUID_BARREL_INFINITE = ITEMS.register("fluid_barrel_infinite",
             () -> new InfiniteFluidItem(new Item.Properties().stacksTo(1), 1_000_000_000));
+
 
     // Universal fluid identifier - two fluid slots, Shift+RMB opens selection GUI
     public static final RegistrySupplier<Item> FLUID_IDENTIFIER = ITEMS.register("fluid_identifier",

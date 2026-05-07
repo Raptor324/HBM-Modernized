@@ -12,6 +12,8 @@ import com.hbm_m.block.machines.MachineFluidTankBlock;
 import com.hbm_m.util.MultipartFacingTransforms;
 
 import net.minecraft.client.Minecraft;
+import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.main.MainRegistry;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -99,6 +101,10 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
             if (modelData != null && modelData.has(MachineFluidTankBlockEntity.FLUID_TEXTURE_PROPERTY)) {
                 fluidTex = modelData.get(MachineFluidTankBlockEntity.FLUID_TEXTURE_PROPERTY);
             }
+            if (ModClothConfig.get().enableDebugLogging) {
+                boolean hasProp = modelData != null && modelData.has(MachineFluidTankBlockEntity.FLUID_TEXTURE_PROPERTY);
+                MainRegistry.LOGGER.debug("[ModelDebug] fluid_tank modelData present={} hasProperty={} tex={}", modelData != null, hasProp, fluidTex);
+            }
             *///?}
 
             //? if fabric {
@@ -126,7 +132,6 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
         return getQuadsInternal(state, side, rand, modelData, renderType);
     }
     *///?}
-
     /**
      * Возвращает градус поворота по оси Y на основе свойства FACING.
      */

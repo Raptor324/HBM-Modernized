@@ -2,7 +2,7 @@ package com.hbm_m.inventory.menu;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
+import com.hbm_m.block.entity.machines.MachineFrackingTowerBlockEntity;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.platform.ModItemStackHandler;
 
@@ -29,7 +29,7 @@ import net.minecraft.world.item.ItemStack;
  */
 public class MachineFrackingTowerMenu extends AbstractContainerMenu {
 
-    public final MachineHydraulicFrackiningTowerBlockEntity blockEntity;
+    public final MachineFrackingTowerBlockEntity blockEntity;
     private final ContainerLevelAccess access;
     private final HandlerContainer machineInventory;
 
@@ -43,8 +43,8 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
 
     private MachineFrackingTowerMenu(int id, Inventory inv, BlockPos pos) {
         this(id, inv,
-                inv.player.level().getBlockEntity(pos) instanceof MachineHydraulicFrackiningTowerBlockEntity be ? be.getInventory() : null,
-                inv.player.level().getBlockEntity(pos) instanceof MachineHydraulicFrackiningTowerBlockEntity be ? be : null,
+                inv.player.level().getBlockEntity(pos) instanceof MachineFrackingTowerBlockEntity be ? be.getInventory() : null,
+                inv.player.level().getBlockEntity(pos) instanceof MachineFrackingTowerBlockEntity be ? be : null,
                 ContainerLevelAccess.create(inv.player.level(), pos));
     }
 
@@ -53,7 +53,7 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
      */
     public MachineFrackingTowerMenu(int containerId, Inventory playerInventory,
                                     @Nullable ModItemStackHandler handler,
-                                    @Nullable MachineHydraulicFrackiningTowerBlockEntity blockEntity,
+                                    @Nullable MachineFrackingTowerBlockEntity blockEntity,
                                     ContainerLevelAccess access) {
         super(ModMenuTypes.FRACTURING_TOWER_MENU.get(), containerId);
         this.blockEntity = blockEntity;
@@ -72,15 +72,15 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
 
         // Слот 0: Батарея (8, 53)
         this.addSlot(new Slot(machineInventory,
-                MachineHydraulicFrackiningTowerBlockEntity.SLOT_BATTERY, 8, 53));
+                MachineFrackingTowerBlockEntity.SLOT_BATTERY, 8, 53));
 
         // Слот 1: Канистра ввод (80, 17)
         this.addSlot(new Slot(machineInventory,
-                MachineHydraulicFrackiningTowerBlockEntity.SLOT_CANISTER_IN, 80, 17));
+                MachineFrackingTowerBlockEntity.SLOT_CANISTER_IN, 80, 17));
 
         // Слот 2: Канистра вывод - только вывод (80, 53)
         this.addSlot(new Slot(machineInventory,
-                MachineHydraulicFrackiningTowerBlockEntity.SLOT_CANISTER_OUT, 80, 53) {
+                MachineFrackingTowerBlockEntity.SLOT_CANISTER_OUT, 80, 53) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false; // Только вывод
@@ -89,11 +89,11 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
 
         // Слот 3: Газ баллон ввод (125, 17)
         this.addSlot(new Slot(machineInventory,
-                MachineHydraulicFrackiningTowerBlockEntity.SLOT_GAS_IN, 125, 17));
+                MachineFrackingTowerBlockEntity.SLOT_GAS_IN, 125, 17));
 
         // Слот 4: Газ баллон вывод - только вывод (125, 53)
         this.addSlot(new Slot(machineInventory,
-                MachineHydraulicFrackiningTowerBlockEntity.SLOT_GAS_OUT, 125, 53) {
+                MachineFrackingTowerBlockEntity.SLOT_GAS_OUT, 125, 53) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false; // Только вывод
@@ -102,11 +102,11 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
 
         // Слоты 5-7: Апгрейды (152, 17), (152, 35), (152, 53)
         this.addSlot(new SlotUpgrade(machineInventory,
-                MachineHydraulicFrackiningTowerBlockEntity.SLOT_UPGRADE_1, 152, 17));
+                MachineFrackingTowerBlockEntity.SLOT_UPGRADE_1, 152, 17));
         this.addSlot(new SlotUpgrade(machineInventory,
-                MachineHydraulicFrackiningTowerBlockEntity.SLOT_UPGRADE_2, 152, 35));
+                MachineFrackingTowerBlockEntity.SLOT_UPGRADE_2, 152, 35));
         this.addSlot(new SlotUpgrade(machineInventory,
-                MachineHydraulicFrackiningTowerBlockEntity.SLOT_UPGRADE_3, 152, 53));
+                MachineFrackingTowerBlockEntity.SLOT_UPGRADE_3, 152, 53));
 
         // Инвентарь игрока (3 строки по 9 слотов)
         for (int row = 0; row < 3; row++) {
@@ -127,7 +127,7 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
     //=====================================================================================//
 
     public static MachineFrackingTowerMenu create(int containerId, Inventory playerInventory,
-                                                  MachineHydraulicFrackiningTowerBlockEntity blockEntity) {
+                                                  MachineFrackingTowerBlockEntity blockEntity) {
         return new MachineFrackingTowerMenu(
                 containerId,
                 playerInventory,
@@ -196,7 +196,7 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
     //=====================================================================================//
 
     @Nullable
-    public MachineHydraulicFrackiningTowerBlockEntity getBlockEntity() {
+    public MachineFrackingTowerBlockEntity getBlockEntity() {
         return this.blockEntity;
     }
 

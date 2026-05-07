@@ -1,63 +1,42 @@
 package com.hbm_m.inventory;
 
 import java.util.Arrays;
-import java.util.EnumMap;
 import java.util.Map;
 
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
-import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Порт UpgradeManagerNT из 1.7.10.
+ * Минимальная реализация менеджера апгрейдов.
  *
- * Сканирует указанный диапазон слотов инвентаря, суммирует уровни
- * {@link ItemMachineUpgrade} по типам и ограничивает по cap'у
- * из {@link IUpgradeInfoProvider#getValidUpgrades()}.
- *
- * Использует кэш: пересчёт происходит только при изменении содержимого слотов.
+ * Используется машинами, где апгрейды лежат в диапазоне слотов, а уровень считается
+ * по количеству предметов {@link ItemMachineUpgrade} нужного типа.
  */
-public class UpgradeManager {
+public final class UpgradeManager {
 
-    private final Map<UpgradeType, Integer> upgrades = new EnumMap<>(UpgradeType.class);
-    private ItemStack[] cachedSlots;
+    private final int[] levels = new int[ItemMachineUpgrade.UpgradeType.values().length];
 
-    public void checkSlots(ModItemStackHandler inventory, int startSlot, int endSlot,
-                           Map<UpgradeType, Integer> validUpgrades) {
-        if (validUpgrades == null || validUpgrades.isEmpty()) return;
+    public void checkSlots(ModItemStackHandler inv, int slotStartInclusive, int slotEndInclusive,
+                           Map<ItemMachineUpgrade.UpgradeType, Integer> caps) {
+        Arrays.fill(levels, 0);
+        if (inv == null) return;
 
-        int count = endSlot - startSlot + 1;
-        ItemStack[] current = new ItemStack[count];
-        for (int i = 0; i < count; i++) {
-            current[i] = inventory.getStackInSlot(startSlot + i).copy();
-        }
+        for (int slot = slotStartInclusive; slot <= slotEndInclusive; slot++) {
+            ItemStack stack = inv.getStackInSlot(slot);
+            if (stack == null || stack.isEmpty()) continue;
+            if (!(stack.getItem() instanceof ItemMachineUpgrade up)) continue;
 
-        if (cachedSlots != null && Arrays.equals(current, cachedSlots)) return;
-        cachedSlots = current;
-
-        upgrades.clear();
-
-        for (ItemStack stack : current) {
-            if (stack.isEmpty()) continue;
-            if (!(stack.getItem() instanceof ItemMachineUpgrade upgrade)) continue;
-
-            UpgradeType type = upgrade.getUpgradeType();
-            Integer cap = validUpgrades.get(type);
-            if (cap == null) continue;
-
-            int currentLevel = upgrades.getOrDefault(type, 0);
-            int add = Math.max(upgrade.getTier(), 1);
-            upgrades.put(type, Math.min(currentLevel + add, cap));
+            ItemMachineUpgrade.UpgradeType type = up.getUpgradeType();
+            int idx = type.ordinal();
+            int add = Math.max(up.getTier(), 1);
+            int cap = caps != null ? caps.getOrDefault(type, Integer.MAX_VALUE) : Integer.MAX_VALUE;
+            levels[idx] = Math.min(cap, levels[idx] + add);
         }
     }
 
-    public int getLevel(UpgradeType type) {
-        return upgrades.getOrDefault(type, 0);
-    }
-
-    public void invalidateCache() {
-        cachedSlots = null;
+    public int getLevel(ItemMachineUpgrade.UpgradeType type) {
+        return levels[type.ordinal()];
     }
 }

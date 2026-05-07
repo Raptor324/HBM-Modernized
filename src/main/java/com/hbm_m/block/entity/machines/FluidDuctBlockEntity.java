@@ -13,6 +13,7 @@ import com.hbm_m.api.fluids.FluidNode;
 import com.hbm_m.api.fluids.ForgeFluidHandlerAdapter;
 import com.hbm_m.api.fluids.IFluidConnectorMK2;
 import com.hbm_m.api.fluids.IFluidPipeMK2;
+import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.api.network.UniNodespace;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.FluidDuctBlock;
@@ -86,7 +87,7 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && fluid == this.fluidType;
+        return fromDir != null && VanillaFluidEquivalence.sameSubstance(fluid, this.fluidType);
     }
 
     // =====================================================================================
@@ -161,6 +162,12 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
         super.onLoad();
         if (level instanceof ServerLevel serverLevel) {
             ensureNode(serverLevel);
+        }
+        // Клиент: после перезахода соединения blockstate могут остаться в "дефолтном" виде,
+        // если соседние BE/капабилити ещё не были готовы во время первичного расчёта.
+        // Принудительно пересчитаем соединения для себя и соседних duct-блоков.
+        if (level != null && level.isClientSide && getBlockState().getBlock() instanceof FluidDuctBlock) {
+            FluidDuctBlock.refreshAdjacentDucts(level, worldPosition);
         }
     }
     *///?}

@@ -29,7 +29,7 @@ import com.hbm_m.block.entity.machines.MachineCentrifugeBlockEntity;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.block.entity.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
-import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
+import com.hbm_m.block.entity.machines.MachineFrackingTowerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineIndustrialBoilerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineIndustrialTurbineBlockEntity;
 import com.hbm_m.block.entity.machines.MachinePressBlockEntity;
@@ -56,9 +56,9 @@ public class ModBlockEntities {
 			BlockEntityType.Builder.of(MachineCrystallizerBlockEntity::new, ModBlocks.CRYSTALLIZER.get())
 				.build(null));
 
-	public static final RegistrySupplier<BlockEntityType<MachineHydraulicFrackiningTowerBlockEntity>> HYDRAULIC_FRACKINING_TOWER_BE =
+	public static final RegistrySupplier<BlockEntityType<MachineFrackingTowerBlockEntity>> HYDRAULIC_FRACKINING_TOWER_BE =
 		BLOCK_ENTITIES.register("hydraulic_frackining_tower_be", () ->
-            BlockEntityType.Builder.of(MachineHydraulicFrackiningTowerBlockEntity::new, ModBlocks.HYDRAULIC_FRACKINING_TOWER.get())
+            BlockEntityType.Builder.of(MachineFrackingTowerBlockEntity::new, ModBlocks.HYDRAULIC_FRACKINING_TOWER.get())
                 .build(null));
 
     public static final RegistrySupplier<BlockEntityType<GeigerCounterBlockEntity>> GEIGER_COUNTER_BE =

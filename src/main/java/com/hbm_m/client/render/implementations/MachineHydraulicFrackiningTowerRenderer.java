@@ -4,8 +4,8 @@ package com.hbm_m.client.render.implementations;
 /*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 *///?}
-import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
-import com.hbm_m.block.machines.MachineHydraulicFrackiningTowerBlock;
+import com.hbm_m.block.entity.machines.MachineFrackingTowerBlockEntity;
+import com.hbm_m.block.machines.MachineFrackingTowerBlock;
 import com.hbm_m.client.model.MachineHydraulicFrackiningTowerBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.GlobalMeshCache;
@@ -39,7 +39,7 @@ import net.minecraft.world.phys.AABB;
 *///?}
 //? if fabric {
 @Environment(EnvType.CLIENT)//?}
-public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRenderer<MachineHydraulicFrackiningTowerBlockEntity, MachineHydraulicFrackiningTowerBakedModel> {
+public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRenderer<MachineFrackingTowerBlockEntity, MachineHydraulicFrackiningTowerBakedModel> {
 
     private MachineHydraulicFrackiningTowerVboRenderer gpu;
     private MachineHydraulicFrackiningTowerBakedModel cachedModel;
@@ -92,12 +92,12 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
     }
 
     @Override
-    protected Direction getFacing(MachineHydraulicFrackiningTowerBlockEntity be) {
-        return be.getBlockState().getValue(MachineHydraulicFrackiningTowerBlock.FACING);
+    protected Direction getFacing(MachineFrackingTowerBlockEntity be) {
+        return be.getBlockState().getValue(MachineFrackingTowerBlock.FACING);
     }
 
     @Override
-    protected void renderParts(MachineHydraulicFrackiningTowerBlockEntity be,
+    protected void renderParts(MachineFrackingTowerBlockEntity be,
                                MachineHydraulicFrackiningTowerBakedModel model,
                                LegacyAnimator animator,
                                float partialTick,
@@ -168,7 +168,7 @@ public class MachineHydraulicFrackiningTowerRenderer extends AbstractPartBasedRe
         poseStack.popPose();
     }
 
-    @Override public boolean shouldRenderOffScreen(MachineHydraulicFrackiningTowerBlockEntity be) { return false; }
+    @Override public boolean shouldRenderOffScreen(MachineFrackingTowerBlockEntity be) { return false; }
 
     @Override public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }

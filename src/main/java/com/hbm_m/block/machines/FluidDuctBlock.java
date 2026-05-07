@@ -12,13 +12,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.ImmutableMap;
-import com.hbm_m.api.fluids.FluidCapabilityAccess;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.block.entity.machines.FluidDuctBlockEntity;
 import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.block.entity.machines.UniversalMachinePartBlockEntity;
+import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
@@ -38,6 +38,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -54,6 +55,8 @@ import net.minecraft.world.level.block.state.properties.BooleanProperty;
 import net.minecraft.world.level.block.state.properties.EnumProperty;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.BlockHitResult;
@@ -165,6 +168,16 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
                 .setValue(SHAPE, shape);
     }
 
+    /**
+     * Убирает 1-кадровый "isolated" глитч при постановке:
+     * сразу ставим корректный blockstate соединений.
+     */
+    @Nullable
+    @Override
+    public BlockState getStateForPlacement(@NotNull BlockPlaceContext ctx) {
+        return getConnectionState(ctx.getLevel(), ctx.getClickedPos());
+    }
+
     @Override
     public BlockState updateShape(@NotNull BlockState state, @NotNull Direction facing,
             @NotNull BlockState facingState, @NotNull LevelAccessor level,
@@ -177,6 +190,23 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     @Override
+    public void onPlace(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
+            @NotNull BlockState oldState, boolean movedByPiston) {
+        super.onPlace(state, level, pos, oldState, movedByPiston);
+
+        // Клиент: убираем 1-кадровый глитч baked-меша (isolated → connected).
+        // BlockState уже корректный из getStateForPlacement, но чанковый меш может быть не пересобран мгновенно.
+        if (level.isClientSide) {
+            level.sendBlockUpdated(pos, state, state, Block.UPDATE_IMMEDIATE | Block.UPDATE_CLIENTS);
+            DoorChunkInvalidationHelper.scheduleChunkInvalidation(pos);
+            // Соседи тоже могут изменить соединения в этот же кадр.
+            for (Direction d : Direction.values()) {
+                DoorChunkInvalidationHelper.scheduleChunkInvalidation(pos.relative(d));
+            }
+        }
+    }
+
+    @Override
     public void neighborChanged(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
             @NotNull Block block, @NotNull BlockPos fromPos, boolean isMoving) {
         super.neighborChanged(state, level, pos, block, fromPos, isMoving);
@@ -184,6 +214,16 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         if (!newState.equals(state)) {
             level.setBlock(pos, newState, Block.UPDATE_CLIENTS);
         }
+        // При загрузке чанков уведомления от соседей приходят до готовности BE/ролей/капабилити.
+        // Планируем отложенный пересчёт через 1 тик, чтобы состояние сошлось детерминированно.
+        level.scheduleTick(pos, this, 1);
+    }
+
+    @Override
+    public void tick(@NotNull BlockState state, @NotNull ServerLevel level, @NotNull BlockPos pos,
+            @NotNull RandomSource random) {
+        // One-shot delayed recompute (also refreshes same-block neighbors).
+        refreshAdjacentDucts(level, pos);
     }
 
     private boolean canConnectTo(LevelAccessor level, BlockPos myPos, BlockPos neighborPos, Direction direction) {
@@ -194,7 +234,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
             BlockEntity myBe = level.getBlockEntity(myPos);
             BlockEntity neighborBe = level.getBlockEntity(neighborPos);
             if (myBe instanceof FluidDuctBlockEntity myDuct && neighborBe instanceof FluidDuctBlockEntity neighborDuct) {
-                return myDuct.getFluidType() == neighborDuct.getFluidType();
+                return VanillaFluidEquivalence.sameSubstance(myDuct.getFluidType(), neighborDuct.getFluidType());
             }
             return true;
         }
@@ -207,39 +247,40 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
                 Fluid raw = normalizeDuctPaintFluid(myDuct.getFluidType());
                 ductFluid = raw != null ? raw : Fluids.EMPTY;
             }
-            MachineFluidTankBlockEntity fluidTank = resolveFluidTankForConnection(level, be);
-            if (fluidTank != null) {
-                if (!FluidCapabilityAccess.hasFluidHandler(level, neighborPos, direction.getOpposite())) {
+
+            // === Цистерна/коннектор мультиблока ===
+            // Важно: не полагаемся на Forge capabilities для визуала (они могут быть не готовы при загрузке чанка),
+            // и не даём трубе "липнуть" к контроллеру, если подключение разрешено только через части-коннекторы.
+            if (be instanceof UniversalMachinePartBlockEntity part
+                    && part.getControllerPos() != null
+                    && (part.getPartRole() == PartRole.FLUID_CONNECTOR || part.getPartRole() == PartRole.UNIVERSAL_CONNECTOR)) {
+                // Проверка стороны коннектора: если набор задан, пусто трактуем как "все стороны" (совместимость IMultiblockPart).
+                var allowed = part.getAllowedFluidSides();
+                if (allowed != null && !allowed.isEmpty() && !allowed.contains(direction.getOpposite())) {
                     return false;
                 }
-                if (ductFluid == Fluids.EMPTY) {
-                    return true;
+                BlockEntity ctrl = level.getBlockEntity(part.getControllerPos());
+                if (ctrl instanceof MachineFluidTankBlockEntity tank) {
+                    if (ductFluid == Fluids.EMPTY) {
+                        return true;
+                    }
+                    return ductFluidMatchesTankForVisual(ductFluid, tank);
                 }
-                return ductFluidMatchesTankForVisual(ductFluid, fluidTank);
+                return false;
             }
+
+            // Контроллер цистерны: прямое подключение запрещено правилами мультиблока.
+            // (Иначе при загрузке чанка возможно кратковременное "прилипание" до восстановления ролей/сторон.)
+            if (be instanceof MachineFluidTankBlockEntity) {
+                return false;
+            }
+
             return FluidCapabilityAccess.hasFluidHandler(level, neighborPos, direction.getOpposite());
         }
         return false;
     }
 
-    /**
-     * Цистерна мультиблока: коннектор {@link PartRole#FLUID_CONNECTOR} делегирует на контроллер — учитываем тип бака для визуала трубы.
-     */
-    @Nullable
-    private static MachineFluidTankBlockEntity resolveFluidTankForConnection(LevelAccessor level, BlockEntity neighborBe) {
-        if (neighborBe instanceof MachineFluidTankBlockEntity tank) {
-            return tank;
-        }
-        if (neighborBe instanceof UniversalMachinePartBlockEntity part
-                && part.getControllerPos() != null
-                && (part.getPartRole() == PartRole.FLUID_CONNECTOR || part.getPartRole() == PartRole.UNIVERSAL_CONNECTOR)) {
-            BlockEntity ctrl = level.getBlockEntity(part.getControllerPos());
-            if (ctrl instanceof MachineFluidTankBlockEntity tank) {
-                return tank;
-            }
-        }
-        return null;
-    }
+    // resolveFluidTankForConnection больше не нужен: визуальное подключение к цистерне делается только через части-коннекторы.
 
     /** Окрашенная труба не показывает «руку» к цистерне без заданного типа/заполнения; типы сверяются через {@link VanillaFluidEquivalence}. */
     private static boolean ductFluidMatchesTankForVisual(Fluid ductFluidNorm, MachineFluidTankBlockEntity tank) {

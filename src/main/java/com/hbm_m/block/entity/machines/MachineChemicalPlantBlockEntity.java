@@ -2,8 +2,6 @@ package com.hbm_m.block.entity.machines;
 
 import java.util.List;
 
-import com.hbm_m.capability.ModCapabilities;
-import net.minecraft.core.Direction;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -12,6 +10,7 @@ import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.interfaces.IUpgradeInfoProvider;
 import com.hbm_m.inventory.UpgradeManager;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineChemicalPlantMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.industrial.ItemBlueprintFolder;
@@ -19,13 +18,11 @@ import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.module.machine.MachineModuleChemplant;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
-import com.hbm_m.recipe.ChemicalPlantRecipe.CountedIngredient;
-import com.hbm_m.recipe.ChemicalPlantRecipe.FluidIngredient;
 import com.hbm_m.sound.ClientSoundBootstrap;
-import com.hbm_m.platform.ModFluidTank;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -41,7 +38,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
-
 //? if forge {
 /*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -90,8 +86,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
     private static final int TANK_CAPACITY = 24_000;
     private static final long MAX_POWER = 100_000;
 
-    private final ModFluidTank[] inputTanks = new ModFluidTank[3];
-    private final ModFluidTank[] outputTanks = new ModFluidTank[3];
+    private final FluidTank[] inputTanks = new FluidTank[3];
+    private final FluidTank[] outputTanks = new FluidTank[3];
 
     //? if forge {
     /*private final LazyOptional<IFluidHandler>[] inputTankHandlers = new LazyOptional[3];
@@ -126,17 +122,10 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
                 default -> 0;
             };
         }
-
-        @Override
-        public void set(int index, int value) {}
-
-        @Override
-        public int getCount() {
-            return 7;
-        }
+        @Override public void set(int index, int value) {}
+        @Override public int getCount() { return 7; }
     };
 
-    /** Как 1.7.10: не воздух на три блока выше контроллера → видимая «рама». */
     private void updateFrameBlockState() {
         if (level == null) return;
         BlockState st = getBlockState();
@@ -147,17 +136,13 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         }
     }
 
-    /**
-     * Заглушка под логику крафта: когда появится обработка рецептов - выставлять
-     * {@link MachineChemicalPlantBlock#RENDER_ACTIVE} (и сбрасывать по таймеру как у advanced assembler).
-     */
     private void syncRenderActiveStub() {
         // TODO: crafting progress → RENDER_ACTIVE + chunk rebuild
     }
 
     //? if forge {
     /*@Override
-     *///?}
+            *///?}
     public AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         if (!(state.getBlock() instanceof MachineChemicalPlantBlock block)) {
@@ -180,33 +165,31 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         }
         double margin = 1.5;
         return new AABB(
-            worldPosition.getX() + minX - margin,
-            worldPosition.getY() + minY - margin,
-            worldPosition.getZ() + minZ - margin,
-            worldPosition.getX() + maxX + 1 + margin,
-            worldPosition.getY() + maxY + 1 + margin,
-            worldPosition.getZ() + maxZ + 1 + margin
+                worldPosition.getX() + minX - margin,
+                worldPosition.getY() + minY - margin,
+                worldPosition.getZ() + minZ - margin,
+                worldPosition.getX() + maxX + 1 + margin,
+                worldPosition.getY() + maxY + 1 + margin,
+                worldPosition.getZ() + maxZ + 1 + margin
         );
     }
-
 
     public MachineChemicalPlantBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CHEMICAL_PLANT_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER);
 
         for (int i = 0; i < 3; i++) {
-            final int idx = i;
-            inputTanks[i] = new ModFluidTank(TANK_CAPACITY) {
+            inputTanks[i] = new FluidTank(TANK_CAPACITY) {
                 @Override
-                protected void onContentsChanged() {
+                public void onContentsChanged() {
                     setChanged();
                     if (level != null && !level.isClientSide) {
                         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
                     }
                 }
             };
-            outputTanks[i] = new ModFluidTank(TANK_CAPACITY) {
+            outputTanks[i] = new FluidTank(TANK_CAPACITY) {
                 @Override
-                protected void onContentsChanged() {
+                public void onContentsChanged() {
                     setChanged();
                     if (level != null && !level.isClientSide) {
                         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -214,8 +197,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
                 }
             };
             //? if forge {
-            /*inputTankHandlers[i] = LazyOptional.of(() -> (IFluidHandler) inputTanks[idx]);
-            outputTankHandlers[i] = LazyOptional.of(() -> (IFluidHandler) outputTanks[idx]);
+            /*inputTankHandlers[i] = inputTanks[i].getCapability();
+            outputTankHandlers[i] = outputTanks[i].getCapability();
             *///?}
         }
 
@@ -290,7 +273,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
 
     //? if forge {
     /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?}
+            *///?}
     private void clientTick() {
         ClientSoundBootstrap.updateSound(this, this.module.getDidProcess(), () -> newChemicalPlantSoundInstance());
     }
@@ -321,12 +304,13 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
             if (!inventory.getStackInSlot(emptyContainerSlot).isEmpty()) continue;
 
             //? if forge {
-            /*var result = FluidUtil.tryEmptyContainer(fullContainer, (IFluidHandler) inputTanks[i], TANK_CAPACITY, null, true);
-            if (result.isSuccess()) {
-                fullContainer.shrink(1);
-                inventory.setStackInSlot(emptyContainerSlot, result.getResult());
-                setChanged();
-            }
+            /*IFluidHandler handler = new GuardedInputTankFluidHandler(this, i);
+            var result = FluidUtil.tryEmptyContainer(fullContainer, handler, TANK_CAPACITY, null, true);
+                if (result.isSuccess()) {
+                    fullContainer.shrink(1);
+                    inventory.setStackInSlot(emptyContainerSlot, result.getResult());
+                    setChanged();
+                }
             *///?}
 
             //? if fabric {
@@ -337,7 +321,6 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
             one.setCount(1);
             Storage<FluidVariant> itemStorage = FluidStorage.ITEM.find(one, ContainerItemContext.withConstant(one));
             if (itemStorage == null) continue;
-
             StorageView<FluidVariant> view = null;
             for (StorageView<FluidVariant> v : itemStorage) {
                 if (!v.isResourceBlank() && v.getAmount() > 0) { view = v; break; }
@@ -347,7 +330,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
             if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configuredFluid, view.getResource().getFluid())) continue;
 
             Storage<FluidVariant> tankStorage = inputTanks[i].getStorage();
-            long spaceDroplets = (long) inputTanks[i].getSpaceMb() * ModFluidTank.DROPLETS_PER_MB;
+            long spaceDroplets = (long) inputTanks[i].getSpaceMb() * 81L; // 81 droplets = 1 mB
             if (spaceDroplets <= 0) continue;
 
             boolean moved = false;
@@ -383,11 +366,14 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
             if (!inventory.getStackInSlot(filledContainerSlot).isEmpty()) continue;
 
             //? if forge {
-            /*var result = FluidUtil.tryFillContainer(emptyContainer, (IFluidHandler) outputTanks[i], TANK_CAPACITY, null, true);
-            if (result.isSuccess()) {
-                emptyContainer.shrink(1);
-                inventory.setStackInSlot(filledContainerSlot, result.getResult());
-                setChanged();
+            /*IFluidHandler handler = outputTanks[i].getCapability().orElse(null);
+            if (handler != null) {
+                var result = FluidUtil.tryFillContainer(emptyContainer, handler, TANK_CAPACITY, null, true);
+                if (result.isSuccess()) {
+                    emptyContainer.shrink(1);
+                    inventory.setStackInSlot(filledContainerSlot, result.getResult());
+                    setChanged();
+                }
             }
             *///?}
 
@@ -410,7 +396,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
             try (Transaction tx = Transaction.openOuter()) {
                 FluidVariant variant = view.getResource();
                 long available = view.getAmount();
-                long toMove = Math.min(available, (long) TANK_CAPACITY * ModFluidTank.DROPLETS_PER_MB);
+                long toMove = Math.min(available, (long) TANK_CAPACITY * 81L);
                 long inserted = itemStorage.insert(variant, toMove, tx);
                 if (inserted <= 0) {
                     // no-op
@@ -442,14 +428,10 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
     }
 
     @Override
-    protected Component getDefaultName() {
-        return Component.translatable("container.hbm_m.chemical_plant");
-    }
+    protected Component getDefaultName() { return Component.translatable("container.hbm_m.chemical_plant"); }
 
     @Override
-    public Component getDisplayName() {
-        return getDefaultName();
-    }
+    public Component getDisplayName() { return getDefaultName(); }
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
@@ -472,35 +454,30 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
             /*return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
             *///?} else {
             return FluidStorage.ITEM.find(stack, null) != null;
-            //?}
+             //?}
         }
         if (slot >= SLOT_FLUID_OUTPUT_START && slot <= SLOT_FLUID_OUTPUT_END) {
             //? if forge {
             /*return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
             *///?} else {
             return FluidStorage.ITEM.find(stack, null) != null;
-            //?}
+             //?}
         }
         if (slot >= SLOT_FLUID_INPUT_EMPTY_START && slot <= SLOT_FLUID_INPUT_EMPTY_END) {
             //? if forge {
             /*return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
             *///?} else {
             return FluidStorage.ITEM.find(stack, null) != null;
-            //?}
+             //?}
         }
         if (slot >= SLOT_FLUID_OUTPUT_EMPTY_START && slot <= SLOT_FLUID_OUTPUT_EMPTY_END) {
             //? if forge {
             /*return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
             *///?} else {
             return FluidStorage.ITEM.find(stack, null) != null;
-            //?}
+             //?}
         }
         return true;
-    }
-
-    @Override
-    protected void setupFluidCapability() {
-        // Экспонируем первый input tank по умолчанию
     }
 
     @Nullable
@@ -509,13 +486,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         return new MachineChemicalPlantMenu(containerId, playerInventory, this, data);
     }
 
-    public ModFluidTank[] getInputTanks() {
-        return inputTanks;
-    }
-
-    public ModFluidTank[] getOutputTanks() {
-        return outputTanks;
-    }
+    public FluidTank[] getInputTanks() { return inputTanks; }
+    public FluidTank[] getOutputTanks() { return outputTanks; }
 
     public List<ChemicalPlantRecipe> getAvailableRecipes() {
         if (level == null) return List.of();
@@ -589,12 +561,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
     public void load(CompoundTag tag) {
         super.load(tag);
         for (int i = 0; i < 3; i++) {
-            if (tag.contains("inputTank" + i)) {
-                inputTanks[i].readNBT(tag.getCompound("inputTank" + i));
-            }
-            if (tag.contains("outputTank" + i)) {
-                outputTanks[i].readNBT(tag.getCompound("outputTank" + i));
-            }
+            if (tag.contains("inputTank" + i)) inputTanks[i].readNBT(tag.getCompound("inputTank" + i));
+            if (tag.contains("outputTank" + i)) outputTanks[i].readNBT(tag.getCompound("outputTank" + i));
         }
         module.readNBT(tag);
         // didProcess хранится отдельно от module.writeNBT(); нужен на клиенте для звука/анимации.
@@ -614,6 +582,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
 
     //? if forge {
     /*private LazyOptional<IFluidHandler> combinedFluidHandler = LazyOptional.empty();
+    private static final LazyOptional<?> EMPTY_CAP = LazyOptional.empty();
 
     @Override
     public void onLoad() {
@@ -624,7 +593,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
-            return combinedFluidHandler.cast();
+            if (side == null || side.getAxis().isHorizontal()) return combinedFluidHandler.cast();
+            return (LazyOptional<T>) EMPTY_CAP;
         }
         return super.getCapability(cap, side);
     }
@@ -647,7 +617,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
 
         @Override
         public net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
-            ModFluidTank t = tank < 3 ? be.inputTanks[tank] : be.outputTanks[tank - 3];
+            FluidTank t = tank < 3 ? be.inputTanks[tank] : be.outputTanks[tank - 3];
             if (t.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
             return new net.minecraftforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb());
         }
@@ -657,16 +627,16 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         @Override
         public boolean isFluidValid(int tank, net.minecraftforge.fluids.FluidStack stack) {
             if (tank >= 3) return false;
-            ModFluidTank t = be.inputTanks[tank];
-            Fluid configured = t.getConfiguredFluid();
-            return configured == Fluids.EMPTY || com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configured, stack.getFluid());
+            // Для труб/коннекта всегда "валидно": реальный приём решает fill() (по выбранному рецепту).
+            return true;
         }
 
         @Override
         public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (resource.isEmpty()) return 0;
+            if (be.module == null || be.module.getSelectedRecipeId() == null) return 0;
             for (int i = 0; i < 3; i++) {
-                ModFluidTank tank = be.inputTanks[i];
+                FluidTank tank = be.inputTanks[i];
                 Fluid configured = tank.getConfiguredFluid();
                 if (configured == Fluids.EMPTY) continue;
                 if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configured, resource.getFluid())) continue;
@@ -686,7 +656,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (resource.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
             for (int i = 0; i < 3; i++) {
-                ModFluidTank tank = be.outputTanks[i];
+                FluidTank tank = be.outputTanks[i];
                 if (tank.isEmpty()) continue;
                 if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), resource.getFluid())) continue;
                 int available = tank.getFluidAmountMb();
@@ -705,7 +675,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
             if (maxDrain <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
             for (int i = 0; i < 3; i++) {
-                ModFluidTank tank = be.outputTanks[i];
+                FluidTank tank = be.outputTanks[i];
                 if (tank.isEmpty()) continue;
                 int available = tank.getFluidAmountMb();
                 int toDrain = Math.min(maxDrain, available);
@@ -716,6 +686,67 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
                 }
                 return new net.minecraftforge.fluids.FluidStack(tank.getStoredFluid(), toDrain);
             }
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+    }
+
+    /^*
+     * Handler для заливки из предметов в конкретный входной танк.
+     * Должен уважать выбранный рецепт/сконфигуренную жидкость, чтобы ручной залив через GUI
+     * не обходил логику хим. установки.
+     ^/
+    private static final class GuardedInputTankFluidHandler implements IFluidHandler {
+        private final MachineChemicalPlantBlockEntity be;
+        private final int tankIndex;
+
+        private GuardedInputTankFluidHandler(MachineChemicalPlantBlockEntity be, int tankIndex) {
+            this.be = be;
+            this.tankIndex = tankIndex;
+        }
+
+        @Override public int getTanks() { return 1; }
+
+        @Override
+        public net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
+            FluidTank t = be.inputTanks[tankIndex];
+            if (t.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            return new net.minecraftforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb());
+        }
+
+        @Override public int getTankCapacity(int tank) { return TANK_CAPACITY; }
+
+        @Override
+        public boolean isFluidValid(int tank, net.minecraftforge.fluids.FluidStack stack) {
+            return true;
+        }
+
+        @Override
+        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty()) return 0;
+            if (be.module == null || be.module.getSelectedRecipeId() == null) return 0;
+
+            FluidTank tank = be.inputTanks[tankIndex];
+            Fluid configured = tank.getConfiguredFluid();
+            if (configured == Fluids.EMPTY) return 0;
+            if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configured, resource.getFluid())) return 0;
+
+            int space = tank.getCapacityMb() - tank.getFluidAmountMb();
+            if (space <= 0) return 0;
+            int toFill = Math.min(resource.getAmount(), space);
+            if (action.execute()) {
+                tank.fillMb(resource.getFluid(), toFill);
+                be.setChanged();
+            }
+            return toFill;
+        }
+
+        @Override
+        public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
+            return net.minecraftforge.fluids.FluidStack.EMPTY;
+        }
+
+        @Override
+        public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
             return net.minecraftforge.fluids.FluidStack.EMPTY;
         }
     }
@@ -738,13 +769,13 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
                            net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
             if (resource.isBlank() || maxAmount <= 0) return 0;
             for (int i = 0; i < 3; i++) {
-                ModFluidTank tank = be.inputTanks[i];
+                FluidTank tank = be.inputTanks[i];
                 Fluid configured = tank.getConfiguredFluid();
                 if (configured == Fluids.EMPTY) continue;
                 if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configured, resource.getFluid())) continue;
                 long spaceMb = tank.getCapacityMb() - tank.getFluidAmountMb();
                 if (spaceMb <= 0) continue;
-                long dropletsToFill = Math.min(maxAmount, spaceMb * ModFluidTank.DROPLETS_PER_MB);
+                long dropletsToFill = Math.min(maxAmount, spaceMb * 81L);
                 if (dropletsToFill <= 0) continue;
                 long inserted = tank.getStorage().insert(resource, dropletsToFill, transaction);
                 if (inserted > 0) be.setChanged();
@@ -758,10 +789,10 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
                             net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
             if (resource.isBlank() || maxAmount <= 0) return 0;
             for (int i = 0; i < 3; i++) {
-                ModFluidTank tank = be.outputTanks[i];
+                FluidTank tank = be.outputTanks[i];
                 if (tank.isEmpty()) continue;
                 if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), resource.getFluid())) continue;
-                long availableDroplets = (long) tank.getFluidAmountMb() * ModFluidTank.DROPLETS_PER_MB;
+                long availableDroplets = (long) tank.getFluidAmountMb() * 81L;
                 long dropletsToExtract = Math.min(maxAmount, availableDroplets);
                 if (dropletsToExtract <= 0) continue;
                 long extracted = tank.getStorage().extract(resource, dropletsToExtract, transaction);

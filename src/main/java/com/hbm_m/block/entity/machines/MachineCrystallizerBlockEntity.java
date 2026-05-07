@@ -3,12 +3,11 @@ package com.hbm_m.block.entity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCrystallizerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
-import com.hbm_m.platform.ModFluidTank;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -21,7 +20,6 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-
 //? if forge {
 /*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
@@ -57,9 +55,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     private static final int TANK_CAPACITY = 8_000;
     private static final int DEFAULT_DURATION = 600;
 
-    private final ModFluidTank tank = new ModFluidTank(TANK_CAPACITY) {
+    private final FluidTank tank = new FluidTank(TANK_CAPACITY) {
         @Override
-        protected void onContentsChanged() {
+        public void onContentsChanged() {
             setChanged();
             if (level != null && !level.isClientSide) {
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -67,7 +65,8 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         }
     };
     //? if forge {
-    /*private final LazyOptional<IFluidHandler> tankHandler = LazyOptional.of(() -> (IFluidHandler) tank);
+    /*// FluidTank itself is NOT an IFluidHandler; it exposes Forge handler via getCapability().
+    private final LazyOptional<IFluidHandler> tankHandler = tank.getCapability();
     *///?}
 
     private int progress = 0;
@@ -206,7 +205,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         return dur <= 0 ? 0 : (progress * scale) / dur;
     }
 
-    public ModFluidTank getTank() {
+    public FluidTank getTank() {
         return tank;
     }
 

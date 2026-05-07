@@ -82,7 +82,12 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     public static final int MODES = 4;
     private static final int TANK_CAPACITY = 256000;
 
-    private short mode = 0; 
+    /**
+     * Режим ввода/вывода.
+     * Важно: значение 0 запрещает drain через capability (см. {@link NetworkFluidHandlerWrapper}),
+     * что ломает переток "бак → сеть" при дефолтном состоянии.
+     */
+    private short mode = 1;
     public boolean hasExploded = false;
     public boolean onFire = false;
     private byte lastRedstone = 0;
@@ -168,6 +173,10 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             requestModelDataUpdate();
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL_IMMEDIATE);
         }
+        // Важно: при загрузке чанка load(NBT) может отработать до установки level у BE,
+        // поэтому refreshAdjacentFluidDuctConnections() там иногда пропускается.
+        // Дёргаем повторно здесь, чтобы визуальные соединения труб всегда пересчитались после перезахода.
+        refreshAdjacentFluidDuctConnections();
     }
     *///?}
 
@@ -221,7 +230,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
                 // Применяем изменения слотов обратно в Handler, так как FluidTank работает с массивом
                 entity.applySlotsArray(slotsArray);
                 entity.setChanged();
-                level.sendBlockUpdated(pos, state, state, 3);
+                	level.sendBlockUpdated(pos, state, state, Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
                 entity.refreshAdjacentFluidDuctConnections();
             }
 
@@ -263,7 +272,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             /*requestModelDataUpdate();
             *///?}
             // На Forge для корректной перерисовки нужен UPDATE_CLIENTS (иначе baked model может не обновиться).
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
             //? if fabric {
             scheduleChunkRebuild();
             //?}
@@ -272,7 +281,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
     /**
      * Уведомляет соседей (в т.ч. multipart-трубы) о смене доступности/типа жидкости: все блоки мультиблока,
-     * чтобы обновились соединения у лиц F-коннекторов.
+     * чтобы обновились соединения у лиц коннекторов.
      */
     public void refreshAdjacentFluidDuctConnections() {
         Level level = this.level;
@@ -618,7 +627,8 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         super.load(tag);
         itemHandler.deserializeNBT(tag.getCompound("Inventory"));
         fluidTank.readFromNBT(tag, "tank");
-        mode = tag.getShort("mode");
+        // Старые миры могли не иметь этого поля — по умолчанию нужен режим, который умеет и fill и drain.
+        mode = tag.contains("mode") ? tag.getShort("mode") : 1;
         hasExploded = tag.getBoolean("exploded");
         onFire = tag.getBoolean("onFire");
 
@@ -778,11 +788,16 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             return;
         }
 
+        // Если тип уже совпадает — ничего не делаем (не сливаем бак).
+        if (com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(resolved, fluidTank.getTankType())) {
+            return;
+        }
+
         fluidTank.assignTypeAndZeroFluid(resolved);
         filterFluid = resolved == ModFluids.NONE.getSource() ? null : resolved;
         setChanged();
         if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
             refreshAdjacentFluidDuctConnections();
         }
     }

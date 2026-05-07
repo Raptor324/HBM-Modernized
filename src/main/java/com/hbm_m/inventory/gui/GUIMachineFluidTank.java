@@ -7,6 +7,7 @@ import java.util.Optional;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.client.gui.FluidGuiRendering;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.FluidTraitManager;
 import com.hbm_m.inventory.menu.MachineFluidTankMenu;
 import com.hbm_m.main.MainRegistry;
@@ -30,8 +31,8 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
 
     //? if fabric && < 1.21.1 {
     private static final ResourceLocation TEXTURE = new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
-    //?} else {
-        /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
+     //?} else {
+    /*private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
     *///?}
 
 
@@ -56,7 +57,8 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
         renderBackground(guiGraphics);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTooltip(guiGraphics, mouseX, mouseY);
-        renderFluidTooltip(guiGraphics, mouseX, mouseY);
+
+        getTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + tankX, this.topPos + tankY, tankWidth, tankHeight);
         renderModeButtonTooltip(guiGraphics, mouseX, mouseY);
     }
 
@@ -69,106 +71,22 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
         int mode = menu.getMode();
         guiGraphics.blit(TEXTURE, this.leftPos + MODE_BUTTON_X, this.topPos + MODE_BUTTON_Y, 176, mode * MODE_BUTTON_SIZE, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE);
 
-        renderFluid(guiGraphics);
+        getTank().renderTank(guiGraphics, this.leftPos + tankX, this.topPos + tankY, tankWidth, tankHeight);
     }
 
-    private void renderFluid(GuiGraphics guiGraphics) {
-        FluidStack fluidStack = this.menu.getFluid();
-        if (fluidStack.isEmpty()) return;
+    private FluidTank getTank() {
+        FluidStack synced = menu.getFluid();
+        Fluid type = synced.isEmpty() ? menu.getTankTypeFluid() : synced.getFluid();
+        FluidTank dummy = new FluidTank(type, tankCapacity);
 
-        int pixelHeight = (int) ((long) fluidStack.getAmount() * tankHeight / tankCapacity);
-        if (pixelHeight == 0 && fluidStack.getAmount() > 0) pixelHeight = 1;
-        if (pixelHeight > tankHeight) pixelHeight = tankHeight;
-
-        Fluid fluid = fluidStack.getFluid();
-        
-        // Для GUI используем наши HBM-палитры и текстуры (loader-agnostic).
-        int fluidColor = HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
-        float r = (fluidColor >> 16 & 255) / 255.0F;
-        float g = (fluidColor >> 8 & 255) / 255.0F;
-        float b = (fluidColor & 255) / 255.0F;
-        float a = 1.0F;
-
-        ResourceLocation fluidPng = FluidGuiRendering.guiTexturePngForFluid(fluid, fluidStack);
-        if (fluidPng == null) return;
-
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-        RenderSystem.setShaderColor(r, g, b, a);
-
-        int x = this.leftPos + tankX;
-        int y = this.topPos + tankY + tankHeight - pixelHeight;
-
-        FluidGuiRendering.renderTiledFluid(guiGraphics, fluidPng, x, y, tankWidth, pixelHeight);
-
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        RenderSystem.disableBlend();
-    }
-
-    /**
-     * Старый Forge-only путь для tint/текстур больше не используется:
-     * GUI рендерит жидкости по нашему реестру/текстурам.
-     */
-    // (intentionally no fallback)
-
-    private void renderFluidTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        if (!isHovering(tankX, tankY, tankWidth, tankHeight, mouseX, mouseY)) return;
-
-        FluidStack fluid = this.menu.getFluid();
-        List<Component> lines = new ArrayList<>();
-        boolean shift = Screen.hasShiftDown();
-        int pressure = this.menu.getPressure();
-
-        if (!fluid.isEmpty()) {
-            lines.add(Component.literal(HbmFluidRegistry.getFluidName(fluid.getFluid())));
-            lines.add(Component.literal(fluid.getAmount() + " / " + tankCapacity + " mB"));
-            appendPressureLines(lines, pressure);
-            FluidTraitManager.appendFluidTypeTooltip(fluid.getFluid(), shift, lines);
-        } else {
-            // При 0 mB getFluid() пустой, но тип цистерны (как текстура в мире) — data[1], не filterFluid[6]
-            Fluid tankType = this.menu.getTankTypeFluid();
-            Component lockedTypeName = null;
-            if (tankType == ModFluids.NONE.getSource()) {
-                lockedTypeName = Component.translatable("fluid.hbm_m.none");
-            } else if (tankType != null && tankType != Fluids.EMPTY) {
-                lockedTypeName = Component.literal(HbmFluidRegistry.getFluidName(tankType));
-            }
-            if (lockedTypeName != null) {
-                lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty_locked", lockedTypeName));
-                lines.add(Component.literal("0 / " + tankCapacity + " mB"));
-                appendPressureLines(lines, pressure);
-                if (tankType != null && tankType != Fluids.EMPTY && tankType != ModFluids.NONE.getSource()) {
-                    FluidTraitManager.appendFluidTypeTooltip(tankType, shift, lines);
-                }
-            } else {
-                int filterId = this.menu.getFilterFluidId();
-                if (filterId >= 0) {
-                    Fluid filterFluid = BuiltInRegistries.FLUID.byId(filterId);
-                    if (filterFluid != null && filterFluid != Fluids.EMPTY) {
-                        lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty_filter",
-                                Component.literal(HbmFluidRegistry.getFluidName(filterFluid))));
-                        appendPressureLines(lines, pressure);
-                        FluidTraitManager.appendFluidTypeTooltip(filterFluid, shift, lines);
-                    } else {
-                        lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty"));
-                        appendPressureLines(lines, pressure);
-                    }
-                } else {
-                    lines.add(Component.translatable("gui.hbm_m.fluid_tank.empty"));
-                    appendPressureLines(lines, pressure);
-                }
-            }
+        int amount = synced.isEmpty() ? 0 : (int) Math.min(Integer.MAX_VALUE, synced.getAmount());
+        if (amount > 0 && type != null && type != Fluids.EMPTY) {
+            // Важно: FluidTank#fill(int) использует getStoredFluid(), который у "пустого" dummy = EMPTY.
+            // Поэтому для клиентского "dummy" выставляем напрямую тип+количество.
+            dummy.setFluid(type, amount);
         }
-
-        guiGraphics.renderTooltip(this.font, lines, Optional.empty(), mouseX, mouseY);
-    }
-
-    private static void appendPressureLines(List<Component> lines, int pressure) {
-        if (pressure == 0) return;
-        lines.add(Component.translatable("gui.hbm_m.fluid_tank.pressure", pressure).withStyle(ChatFormatting.RED));
-        boolean blink = (System.currentTimeMillis() / 500) % 2 == 0;
-        lines.add(Component.translatable("gui.hbm_m.fluid_tank.pressurized")
-                .withStyle(blink ? ChatFormatting.RED : ChatFormatting.DARK_RED));
+        dummy.withPressure(menu.getPressure());
+        return dummy;
     }
 
     private void renderModeButtonTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
@@ -183,7 +101,7 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (isHovering(MODE_BUTTON_X, MODE_BUTTON_Y, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE, (int) mouseX, (int) mouseY)) {
             ModPacketHandler.sendToServer(ModPacketHandler.FLUID_TANK_MODE,
-                new FluidTankModePacket(menu.blockEntity.getBlockPos()));
+                    new FluidTankModePacket(menu.blockEntity.getBlockPos()));
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);

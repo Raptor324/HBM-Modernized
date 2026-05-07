@@ -698,32 +698,7 @@ public class ClientSetup {
         }
     }
 
-    /^*
-     * Debug wrapper for comparing baked model output between Forge and Fabric.
-     *
-     * Enable with:
-     * -Dhbm_m.modelDebug=true
-     * -Dhbm_m.modelDebugFilter=hbm_m:block/machines/fluid_tank,hbm_m:block/machines/chemical_plant
-     ^/
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public static void onModelBakeDebugWrap(ModelEvent.ModifyBakingResult event) {
-        if (!com.hbm_m.client.model.loading.ModelDebugDumper.enabled()) return;
-
-        Map<ResourceLocation, BakedModel> models = event.getModels();
-        Map<ResourceLocation, BakedModel> replacements = new java.util.HashMap<>();
-
-        for (Map.Entry<ResourceLocation, BakedModel> entry : models.entrySet()) {
-            ResourceLocation id = entry.getKey();
-            if (!com.hbm_m.client.model.loading.ModelDebugDumper.matches(id)) continue;
-            BakedModel wrapped = com.hbm_m.client.model.loading.ModelDebugDumper.wrapIfEnabled(id, entry.getValue());
-            if (wrapped != entry.getValue()) replacements.put(id, wrapped);
-        }
-
-        if (!replacements.isEmpty()) {
-            models.putAll(replacements);
-            MainRegistry.LOGGER.info("[ModelDebug] Wrapped {} baked models for logging.", replacements.size());
-        }
-    }
+    
 
     @SubscribeEvent
     public static void onModelRegisterAdditional(ModelEvent.RegisterAdditional event) {

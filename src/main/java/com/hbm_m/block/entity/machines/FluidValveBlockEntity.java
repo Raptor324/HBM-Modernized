@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import com.hbm_m.api.fluids.FluidNetProvider;
 import com.hbm_m.api.fluids.FluidNode;
 import com.hbm_m.api.fluids.IFluidPipeMK2;
+import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.api.network.UniNodespace;
 import com.hbm_m.block.entity.ModBlockEntities;
 
@@ -54,7 +55,7 @@ public class FluidValveBlockEntity extends BlockEntity implements IFluidPipeMK2 
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && fluid == this.fluidType && open;
+        return fromDir != null && open && VanillaFluidEquivalence.sameSubstance(fluid, this.fluidType);
     }
 
     // =====================================================================================

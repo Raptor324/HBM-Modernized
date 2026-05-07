@@ -44,7 +44,7 @@ import com.hbm_m.block.machines.MachineCentrifugeBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineCrystallizerBlock;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
-import com.hbm_m.block.machines.MachineHydraulicFrackiningTowerBlock;
+import com.hbm_m.block.machines.MachineFrackingTowerBlock;
 import com.hbm_m.block.machines.MachineIndustrialBoilerBlock;
 import com.hbm_m.block.machines.MachineIndustrialTurbineBlock;
 import com.hbm_m.block.machines.MachinePressBlock;
@@ -309,7 +309,7 @@ public class ModBlocks {
             () -> new MachineAdvancedAssemblerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(2.0f).noOcclusion()));
 
     public static final RegistrySupplier<Block> HYDRAULIC_FRACKINING_TOWER = registerBlockWithoutItem("hydraulic_frackining_tower",
-            () -> new MachineHydraulicFrackiningTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+            () -> new MachineFrackingTowerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).strength(4.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> CRYSTALLIZER = registerBlockWithoutItem("crystallizer",
             () -> new MachineCrystallizerBlock(BlockBehaviour.Properties.copy(Blocks.IRON_BLOCK).noOcclusion().isSuffocating((state, world, pos) -> false)));

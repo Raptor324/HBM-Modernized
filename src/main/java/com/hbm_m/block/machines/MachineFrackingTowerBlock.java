@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
-import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
+import com.hbm_m.block.entity.machines.MachineFrackingTowerBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -46,13 +46,13 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * The exact legacy 1.7.10 shape can be refined later, but this keeps
  * the machine consistent with the current MultiblockStructureHelper system.
  */
-public class MachineHydraulicFrackiningTowerBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineFrackingTowerBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
     private final MultiblockStructureHelper structureHelper;
 
-    public MachineHydraulicFrackiningTowerBlock(Properties pProperties) {
+    public MachineFrackingTowerBlock(Properties pProperties) {
         super(pProperties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
         this.structureHelper = defineStructureNew();
@@ -224,14 +224,14 @@ public class MachineHydraulicFrackiningTowerBlock extends BaseEntityBlock implem
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new MachineHydraulicFrackiningTowerBlockEntity(pos, state);
+        return new MachineFrackingTowerBlockEntity(pos, state);
     }
 
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.HYDRAULIC_FRACKINING_TOWER_BE.get(), 
-                MachineHydraulicFrackiningTowerBlockEntity::tick);
+                MachineFrackingTowerBlockEntity::tick);
     }
 
     @Override

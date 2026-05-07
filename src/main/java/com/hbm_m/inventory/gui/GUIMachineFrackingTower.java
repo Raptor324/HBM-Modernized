@@ -7,10 +7,10 @@ import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.client.gui.FluidGuiRendering;
-import com.hbm_m.block.entity.machines.MachineHydraulicFrackiningTowerBlockEntity;
+import com.hbm_m.block.entity.machines.MachineFrackingTowerBlockEntity;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineFrackingTowerMenu;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.platform.ModFluidTank;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -99,7 +99,7 @@ public class GUIMachineFrackingTower extends AbstractContainerScreen<MachineFrac
     // ПОЛЯ
     //=====================================================================================//
 
-    private final MachineHydraulicFrackiningTowerBlockEntity blockEntity;
+    private final MachineFrackingTowerBlockEntity blockEntity;
 
     //=====================================================================================//
     // КОНСТРУКТОР
@@ -275,7 +275,7 @@ public class GUIMachineFrackingTower extends AbstractContainerScreen<MachineFrac
      * Рендер отдельного танка жидкости.
      * Жидкость рендерится снизу вверх.
      */
-    private void renderFluidTank(GuiGraphics graphics, int x, int y, int width, int height, ModFluidTank tank) {
+    private void renderFluidTank(GuiGraphics graphics, int x, int y, int width, int height, FluidTank tank) {
         Fluid fluid = tank.getStoredFluid();
         int amountMb = tank.getFluidAmountMb();
         int capacityMb = tank.getCapacityMb();
@@ -321,7 +321,7 @@ public class GUIMachineFrackingTower extends AbstractContainerScreen<MachineFrac
      */
     private void renderTankTooltip(GuiGraphics graphics, int mouseX, int mouseY, 
                                    int tankX, int tankY, int tankWidth, int tankHeight,
-                                   ModFluidTank tank, String fluidNameKey) {
+                                   FluidTank tank, String fluidNameKey) {
         if (isMouseOver(mouseX, mouseY, tankX, tankY, tankWidth, tankHeight)) {
             int amount = tank.getFluidAmountMb();
             int capacity = tank.getCapacityMb();

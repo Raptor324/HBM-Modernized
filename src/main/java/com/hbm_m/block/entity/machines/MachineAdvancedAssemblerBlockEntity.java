@@ -2,7 +2,6 @@ package com.hbm_m.block.entity.machines;
 
 import java.util.List;
 
-
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -10,14 +9,15 @@ import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
+import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IFrameSupportable;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.platform.ModFluidTank;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.sound.ModSounds;
 
@@ -40,14 +40,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-/*import com.hbm_m.capability.ModCapabilities;
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fluids.capability.templates.FluidTank;
 import net.minecraftforge.fml.DistExecutor;
 *///?}
 
@@ -79,15 +77,15 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
 
     // Флюиды
-    private final ModFluidTank inputTank = new ModFluidTank(4000) {
+    private final FluidTank inputTank = new FluidTank(4000) {
         @Override
-        protected void onContentsChanged() {
+        public void onContentsChanged() {
             setChanged();
         }
     };
-    private final ModFluidTank outputTank = new ModFluidTank(4000) {
+    private final FluidTank outputTank = new FluidTank(4000) {
         @Override
-        protected void onContentsChanged() {
+        public void onContentsChanged() {
             setChanged();
         }
     };
@@ -195,8 +193,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     protected void setupFluidCapability() {
         //? if forge {
-        /*fluidInputHandler = LazyOptional.of(() -> inputTank);
-        fluidOutputHandler = LazyOptional.of(() -> outputTank);
+        /*fluidInputHandler = inputTank.getCapability();
+        fluidOutputHandler = outputTank.getCapability();
         *///?}
     }
 
@@ -204,12 +202,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == ENERGY_SLOT) {
-            //? if forge {
-            /*return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-            *///?}
-            //? if fabric {
-            return EnergyStorage.ITEM.find(stack, null) != null;
-            //?}
+            return isEnergyProviderItem(stack);
         }
         if (slot == BLUEPRINT_FOLDER_SLOT) {
             return stack.getItem() instanceof ItemBlueprintFolder;
@@ -448,40 +441,19 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             return;
         }
 
-        //? if forge {
-        /*// Обычная батарея через HBM capability
-        energySourceStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(itemEnergy -> {
+        // Временно оставляем только Forge FE, чтобы убрать несовпадения capability-сигнатур HBM energy в этом порте.
+        energySourceStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
             long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
             if (energyNeeded <= 0) return;
 
-            long maxCanReceive = this.getReceiveSpeed();
-            long energyToTransfer = Math.min(energyNeeded, maxCanReceive);
+            int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
+            int extracted = itemEnergy.extractEnergy(maxTransfer, false);
 
-            if (energyToTransfer > 0) {
-                long extracted = itemEnergy.extractEnergy(energyToTransfer, false);
-                if (extracted > 0) {
-                    this.setEnergyStored(this.getEnergyStored() + extracted);
-                    setChanged();
-                }
+            if (extracted > 0) {
+                this.setEnergyStored(this.getEnergyStored() + extracted);
+                setChanged();
             }
         });
-
-        // Fallback на Forge Energy для совместимости
-        if (!energySourceStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
-            energySourceStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
-                long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-                if (energyNeeded <= 0) return;
-
-                int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
-                int extracted = itemEnergy.extractEnergy(maxTransfer, false);
-
-                if (extracted > 0) {
-                    this.setEnergyStored(this.getEnergyStored() + extracted);
-                    setChanged();
-                }
-            });
-        }
-        *///?}
 
         //? if fabric {
         var itemEnergy = EnergyStorage.ITEM.find(energySourceStack, null);
@@ -711,9 +683,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public ClientboundBlockEntityDataPacket getUpdatePacket() {
-        CompoundTag tag = new CompoundTag();
-        saveAdditional(tag);
-        return ClientboundBlockEntityDataPacket.create(this, be -> tag);
+        // Минимальная совместимость по сигнатуре
+        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override

@@ -8,7 +8,7 @@ import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.client.gui.FluidGuiRendering;
 import com.hbm_m.inventory.menu.MachineCrystallizerMenu;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.ModFluidTank;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
@@ -66,7 +66,7 @@ public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMen
         renderFluidTank(guiGraphics, menu.getBlockEntity().getTank(), this.leftPos + 35, this.topPos + 70);
     }
 
-    private void renderFluidTank(GuiGraphics guiGraphics, ModFluidTank tank, int x, int y) {
+    private void renderFluidTank(GuiGraphics guiGraphics, FluidTank tank, int x, int y) {
         Fluid fluid = tank.getStoredFluid();
         int amountMb = tank.getFluidAmountMb();
         if (fluid == net.minecraft.world.level.material.Fluids.EMPTY || amountMb <= 0) return;
@@ -128,7 +128,7 @@ public class GUIMachineCrystallizer extends GuiInfoScreen<MachineCrystallizerMen
         drawCustomInfoStat(guiGraphics, mouseX, mouseY, 117, 22, 8, 8, mouseX, mouseY, upgradeText);
     }
 
-    private void renderTankTooltip(GuiGraphics guiGraphics, ModFluidTank tank, int mouseX, int mouseY) {
+    private void renderTankTooltip(GuiGraphics guiGraphics, FluidTank tank, int mouseX, int mouseY) {
         Fluid fluid = tank.getStoredFluid();
         int amountMb = tank.getFluidAmountMb();
         List<Component> tooltip = new ArrayList<>();

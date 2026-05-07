@@ -893,7 +893,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.fluid_tank.mode.3", "Режим: Отключено");
                 add("gui.hbm_m.fluid_tank.pressure", "Давление: %s PU");
                 add("gui.hbm_m.fluid_tank.pressurized", "Под давлением — используйте компрессор!");
-                add("gui.hbm_m.fluid_tank.hold_shift_more", "Удерживайте LSHIFT для подробностей");
+                add("gui.hbm_m.fluid_tank.hold_shift_more", "Удерживайте <LSHIFT> для подробностей");
                 add("fluid.hbm_m.trait.polluting", "[Загрязняющая]");
                 add("fluid.hbm_m.trait.polluting.when_spilled", "При разливе:");
                 add("fluid.hbm_m.trait.polluting.when_burned", "При сжигании:");
@@ -2639,7 +2639,7 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.fluid_tank.mode.3", "Mode: Disabled");
                 add("gui.hbm_m.fluid_tank.pressure", "Pressure: %s PU");
                 add("gui.hbm_m.fluid_tank.pressurized", "Pressurized — use a compressor!");
-                add("gui.hbm_m.fluid_tank.hold_shift_more", "Hold LSHIFT for more info");
+                add("gui.hbm_m.fluid_tank.hold_shift_more", "Hold <LSHIFT> for more info");
                 add("fluid.hbm_m.trait.polluting", "[Polluting]");
                 add("fluid.hbm_m.trait.polluting.when_spilled", "When spilled:");
                 add("fluid.hbm_m.trait.polluting.when_burned", "When burned:");

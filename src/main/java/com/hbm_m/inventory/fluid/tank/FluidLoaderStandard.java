@@ -16,7 +16,9 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 //? if forge {
 /*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.FluidStack;
+import net.minecraftforge.fluids.FluidActionResult;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 *///?}
 
@@ -35,38 +37,35 @@ public class FluidLoaderStandard implements FluidTank.LoadingHandler {
         ItemStack inputStack = slots[in];
         if (inputStack == null || inputStack.isEmpty()) return false;
         if (!FluidTank.isFluidTypeExplicitlySet(tank.getTankType())) return false;
+        // Бесконечные бочки обрабатываются только {@link FluidLoaderInfinite}, иначе Standard перенесёт их в output слот.
+        if (inputStack.getItem() instanceof com.hbm_m.item.liquids.InfiniteFluidItem) {
+            return false;
+        }
 
         //? if forge {
-        /*ItemStack simCopy = inputStack.copy();
-        simCopy.setCount(1);
-        Boolean feasible = simCopy.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(simHandler -> {
-            FluidStack drainedSim = simHandler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
-            if (drainedSim.isEmpty()) return false;
-            if (!VanillaFluidEquivalence.sameSubstance(tank.getTankType(), drainedSim.getFluid())) return false;
-            int space = tank.getMaxFill() - tank.getFill();
-            int amountToDrain = Math.min(drainedSim.getAmount(), space);
-            if (amountToDrain <= 0) return false;
-            simHandler.drain(amountToDrain, IFluidHandler.FluidAction.EXECUTE);
-            ItemStack containerResult = simHandler.getContainer();
-            return FluidTank.canPlaceItemInSlot(slots, out, containerResult);
-        }).orElse(false);
-        if (!feasible) return false;
+        /*if (tank.getPressure() != 0) return false;
+        int space = tank.getMaxFill() - tank.getFill();
+        if (space <= 0) return false;
 
-        ItemStack execCopy = inputStack.copy();
-        execCopy.setCount(1);
-        return execCopy.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
-            FluidStack drainedSim = handler.drain(Integer.MAX_VALUE, IFluidHandler.FluidAction.SIMULATE);
-            int space = tank.getMaxFill() - tank.getFill();
-            int amountToDrain = Math.min(drainedSim.getAmount(), space);
-            FluidStack drainedReal = handler.drain(amountToDrain, IFluidHandler.FluidAction.EXECUTE);
-            if (drainedReal.isEmpty()) return false;
-            ItemStack containerResult = handler.getContainer();
-            tank.fill(tank.getFill() + drainedReal.getAmount());
-            FluidTank.placeItemInSlot(slots, out, containerResult);
-            slots[in].shrink(1);
-            if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
-            return true;
-        }).orElse(false);
+        ItemStack one = inputStack.copy();
+        one.setCount(1);
+
+        IFluidHandler tankHandler = tank.getCapability().orElse(null);
+        if (tankHandler == null) return false;
+
+        // (SIMULATE) проверяем: действительно ли в контейнере есть нужная жидкость и есть куда перелить,
+        // а также влезет ли результат в output слот.
+        FluidActionResult sim = FluidUtil.tryEmptyContainer(one.copy(), tankHandler, space, null, false);
+        if (!sim.isSuccess()) return false;
+        if (!FluidTank.canPlaceItemInSlot(slots, out, sim.getResult())) return false;
+
+        FluidActionResult res = FluidUtil.tryEmptyContainer(one, tankHandler, space, null, true);
+        if (!res.isSuccess()) return false;
+
+        FluidTank.placeItemInSlot(slots, out, res.getResult());
+        slots[in].shrink(1);
+        if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
+        return true;
         *///?}
 
         //? if fabric {
@@ -126,35 +125,33 @@ public class FluidLoaderStandard implements FluidTank.LoadingHandler {
         ItemStack inputStack = slots[in];
         if (inputStack == null || inputStack.isEmpty() || tank.getFill() <= 0) return false;
         if (!FluidTank.isFluidTypeExplicitlySet(tank.getTankType())) return false;
+        // Бесконечные бочки обрабатываются только {@link FluidLoaderInfinite}, иначе Standard перенесёт их в output слот.
+        if (inputStack.getItem() instanceof com.hbm_m.item.liquids.InfiniteFluidItem) {
+            return false;
+        }
 
         //? if forge {
-        /*ItemStack simCopy = inputStack.copy();
-        simCopy.setCount(1);
-        Boolean feasible = simCopy.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(simHandler -> {
-            FluidStack resource = new FluidStack(
-                VanillaFluidEquivalence.forVanillaContainerFill(tank.getTankType()), tank.getFill());
-            int filledAmount = simHandler.fill(resource, IFluidHandler.FluidAction.SIMULATE);
-            if (filledAmount <= 0) return false;
-            simHandler.fill(resource, IFluidHandler.FluidAction.EXECUTE);
-            ItemStack containerResult = simHandler.getContainer();
-            return FluidTank.canPlaceItemInSlot(slots, out, containerResult);
-        }).orElse(false);
-        if (!feasible) return false;
+        /*if (tank.getPressure() != 0) return false;
 
-        ItemStack execCopy = inputStack.copy();
-        execCopy.setCount(1);
-        return execCopy.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).map(handler -> {
-            FluidStack resource = new FluidStack(
-                VanillaFluidEquivalence.forVanillaContainerFill(tank.getTankType()), tank.getFill());
-            int filledAmount = handler.fill(resource, IFluidHandler.FluidAction.EXECUTE);
-            if (filledAmount <= 0) return false;
-            ItemStack containerResult = handler.getContainer();
-            tank.fill(tank.getFill() - filledAmount);
-            FluidTank.placeItemInSlot(slots, out, containerResult);
-            slots[in].shrink(1);
-            if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
-            return true;
-        }).orElse(false);
+        ItemStack one = inputStack.copy();
+        one.setCount(1);
+
+        IFluidHandler tankHandler = tank.getCapability().orElse(null);
+        if (tankHandler == null) return false;
+
+        // В tryFillContainer целевой handler — это источник жидкости, поэтому используем обёртку на базе tankHandler:
+        // сперва симуляция, затем выполнение.
+        FluidActionResult sim = FluidUtil.tryFillContainer(one.copy(), tankHandler, tank.getFill(), null, false);
+        if (!sim.isSuccess()) return false;
+        if (!FluidTank.canPlaceItemInSlot(slots, out, sim.getResult())) return false;
+
+        FluidActionResult res = FluidUtil.tryFillContainer(one, tankHandler, tank.getFill(), null, true);
+        if (!res.isSuccess()) return false;
+
+        FluidTank.placeItemInSlot(slots, out, res.getResult());
+        slots[in].shrink(1);
+        if (slots[in].isEmpty()) slots[in] = ItemStack.EMPTY;
+        return true;
         *///?}
 
         //? if fabric {
