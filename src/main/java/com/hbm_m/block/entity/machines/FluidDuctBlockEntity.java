@@ -195,7 +195,11 @@ public class FluidDuctBlockEntity extends BlockEntity implements IFluidPipeMK2 {
     //? if forge {
     /*@Override
     public void onChunkUnloaded() {
-        if (node != null) node.expired = true;
+        if (level instanceof ServerLevel serverLevel && node != null && !node.isExpired()) {
+            UniNodespace.destroyNode(serverLevel, node);
+        }
+        node = null;
+        adapterCache.clear();
         super.onChunkUnloaded();
     }
     *///?}

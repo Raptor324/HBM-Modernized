@@ -7,8 +7,8 @@ import java.util.Set;
 
 import org.jetbrains.annotations.NotNull;
 
-import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.item.liquids.InfiniteFluidItem;
 
@@ -48,7 +48,11 @@ public class FluidTank implements Cloneable {
         boolean fillItem(ItemStack[] slots, int in, int out, FluidTank tank);
     }
 
-    private static final List<LoadingHandler> loadingHandlers = new ArrayList<>();
+    /** 1.7.10 {@code public static final List<FluidLoadingHandler> loadingHandlers}: открытый список для регистрации сторонних обработчиков. */
+    public static final List<LoadingHandler> loadingHandlers = new ArrayList<>();
+
+    /** 1.7.10 {@code public static final Set<Item> noDualUnload}: предметы, которые нельзя выгружать в дуальном режиме. */
+    public static final Set<Item> noDualUnload = new HashSet<>();
 
     static {
         // Порядок переноса из 1.7.10:
@@ -85,6 +89,15 @@ public class FluidTank implements Cloneable {
             }
 
             @Override
+            public int fill(FluidStack resource, IFluidHandler.FluidAction action) {
+                if (resource.isEmpty() || !isFluidValid(resource)) {
+                    return 0;
+                }
+                FluidStack coerced = FluidTank.this.harmonizeForgeFillResource(getFluid(), resource);
+                return super.fill(coerced, action);
+            }
+
+            @Override
             protected void onContentsChanged() {
                 FluidTank.this.onContentsChanged();
             }
@@ -112,6 +125,39 @@ public class FluidTank implements Cloneable {
     }
 
     public void onContentsChanged() {}
+
+    //? if forge {
+    /*/^*
+     * Vanilla Forge {@link net.minecraftforge.fluids.capability.templates.FluidTank} смешивает только при совпадении
+     * жидкости и NBT по {@link FluidStack#isFluidEqual(FluidStack)}; {@code minecraft:water} и {@code hbm_m:water} тогда блокируются.
+     * Подменяем тип входящего стека на уже хранимый или на логический {@link #conformedFluid} при эквивалентности.
+     ^/
+    private FluidStack harmonizeForgeFillResource(FluidStack storedFluid, FluidStack resource) {
+        if (resource.isEmpty()) {
+            return resource;
+        }
+        if (!storedFluid.isEmpty()) {
+            if (storedFluid.isFluidEqual(resource)) {
+                return resource;
+            }
+            if (VanillaFluidEquivalence.sameSubstance(storedFluid.getFluid(), resource.getFluid())) {
+                return new FluidStack(storedFluid.getFluid(), resource.getAmount());
+            }
+            return resource;
+        }
+        Fluid logicalType = getConfiguredFluid();
+        if (logicalType != Fluids.EMPTY
+                && logicalType != ModFluids.NONE.getSource()
+                && VanillaFluidEquivalence.sameSubstance(logicalType, resource.getFluid())) {
+            return new FluidStack(logicalType, resource.getAmount());
+        }
+        Fluid normalized = VanillaFluidEquivalence.forVanillaContainerFill(resource.getFluid());
+        return normalized != resource.getFluid()
+                ? new FluidStack(normalized, resource.getAmount())
+                : resource;
+    }
+
+    *///?}
 
     public boolean isFluidValid(Fluid fluid) {
         if (pressure != 0) return false;
@@ -231,16 +277,17 @@ public class FluidTank implements Cloneable {
     }
 
     public FluidTank withPressure(int pressure) {
-        if (this.pressure != pressure) {
-            this.resetTank();
-        }
+        // 1.7.10: при смене давления зануляем только fill, тип НЕ трогаем.
+        if (this.pressure != pressure) this.setFill(0);
         this.pressure = pressure;
         return this;
     }
 
     public FluidTank conform(Fluid type) {
         if (type == null) type = Fluids.EMPTY;
-        if (getStoredFluid() != type && !isEmpty()) {
+        if (!isEmpty() && !VanillaFluidEquivalence.sameSubstance(getStoredFluid(), type)) {
+            // Важно: ванильные жидкости могут отличаться инстансом (source vs flowing),
+            // но при этом быть одной и той же "субстанцией". Такие переключения не должны дренить бак.
             drainMb(getFluidAmountMb());
         }
         this.conformedFluid = type;
@@ -256,8 +303,10 @@ public class FluidTank implements Cloneable {
     public void setTankType(Fluid type) { conform(type); }
 
     public void resetTank() {
+        // 1.7.10: type = Fluids.NONE; fluid = 0; pressure = 0;
+        // У нас "Fluids.NONE" — это {@code ModFluids.NONE.getSource()} (HBM-«пусто», не ваниль EMPTY).
         drainMb(getFluidAmountMb());
-        this.conformedFluid = Fluids.EMPTY;
+        this.conformedFluid = ModFluids.NONE.getSource();
         this.pressure = 0;
     }
     public Fluid getTankType() { return getConfiguredFluid(); }
@@ -284,8 +333,10 @@ public class FluidTank implements Cloneable {
     public boolean loadTank(int in, int out, ItemStack[] slots) {
         if (slots[in] == null || slots[in].isEmpty()) return false;
 
-        boolean isInfinite = slots[in].getItem() instanceof InfiniteFluidItem || slots[in].getItem() instanceof InfiniteFluidItem;
-        if (!isInfinite && pressure != 0) return false;
+        // 1.7.10: проверка строго на универсальную бесконечную бочку (fluid_barrel_infinite),
+        // в 1.20.1 этому соответствует instant-network-инстанс {@link InfiniteFluidItem}.
+        boolean isInfiniteBarrel = slots[in].getItem() instanceof InfiniteFluidItem inf && inf.isInstantNetwork();
+        if (!isInfiniteBarrel && pressure != 0) return false;
 
         int prev = this.getFill();
         for (LoadingHandler handler : loadingHandlers) {
@@ -304,23 +355,40 @@ public class FluidTank implements Cloneable {
         return this.getFill() < prev;
     }
 
+    /**
+     * Прямой порт 1.7.10 {@code FluidTank.setType(in, out, slots)}.
+     *
+     * <p>Семантика:
+     * <ul>
+     *   <li>{@code slots[in]} обязателен и должен быть {@link FluidIdentifierItem};</li>
+     *   <li>если новый тип совпадает с текущим — возвращается {@code false} без изменений;</li>
+     *   <li>если {@code in == out}: тип меняется, fluid обнуляется;</li>
+     *   <li>если {@code in != out}: дополнительно требуется, чтобы {@code slots[out]} был пустым,
+     *       иначе возвращается {@code false} без изменений; стэк копируется в out, in зануляется.</li>
+     * </ul>
+     */
     public boolean setType(int in, int out, ItemStack[] slots) {
         if (slots[in] == null || slots[in].isEmpty() || !(slots[in].getItem() instanceof FluidIdentifierItem)) {
             return false;
         }
         Fluid newType = FluidIdentifierItem.resolvePrimaryForTank(slots[in]);
         if (newType == null) return false;
-        if (getConfiguredFluid() == newType) return false;
 
-        conform(newType);
-
-        if (in != out) {
-            if (slots[out] == null || slots[out].isEmpty()) {
-                slots[out] = slots[in].copy();
-                slots[in] = ItemStack.EMPTY;
-            }
+        if (in == out) {
+            if (getConfiguredFluid() == newType) return false;
+            // 1.7.10: type = newType; fluid = 0;
+            this.conformedFluid = newType;
+            drainMb(getFluidAmountMb());
+            return true;
+        } else {
+            if (slots[out] != null && !slots[out].isEmpty()) return false;
+            if (getConfiguredFluid() == newType) return false;
+            this.conformedFluid = newType;
+            drainMb(getFluidAmountMb());
+            slots[out] = slots[in].copy();
+            slots[in] = ItemStack.EMPTY;
+            return true;
         }
-        return true;
     }
 
     public boolean setType(int in, ItemStack[] slots) {
@@ -570,61 +638,32 @@ public class FluidTank implements Cloneable {
     @net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
      //?}
     public void renderTankInfo(net.minecraft.client.gui.GuiGraphics guiGraphics, net.minecraft.client.gui.Font font, int mouseX, int mouseY, int x, int y, int width, int height) {
-        if (mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height) {
-            java.util.List<net.minecraft.network.chat.Component> lines = new java.util.ArrayList<>();
-            boolean shift = net.minecraft.client.gui.screens.Screen.hasShiftDown();
-            Fluid drawType = getConfiguredFluid();
-            int fluidAmt = getFluidAmountMb();
+        if (!(mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height)) return;
 
-            java.util.function.Function<Fluid, net.minecraft.network.chat.Component> displayName = (Fluid f) -> {
-                if (f == null || f == Fluids.EMPTY) {
-                    return net.minecraft.network.chat.Component.translatable("gui.hbm_m.fluid_tank.empty");
-                }
-                if (f == ModFluids.NONE.getSource()) {
-                    return net.minecraft.network.chat.Component.translatable("fluid.hbm_m.none");
-                }
-                // Use Architectury's FluidStack name to get a proper localized display name
-                // (fixes crude_oil -> Crude Oil and vanilla fluids too).
-                return dev.architectury.fluid.FluidStack.create(f, 1L).getName();
-            };
+        // Direct port of 1.7.10 FluidTank.renderTankInfo:
+        //   list.add(this.type.getLocalizedName());
+        //   list.add(fluid + "/" + maxFluid + "mB");
+        //   if(pressure != 0) { ... }
+        //   type.addInfo(list);
+        java.util.List<net.minecraft.network.chat.Component> lines = new java.util.ArrayList<>();
+        boolean shift = net.minecraft.client.gui.screens.Screen.hasShiftDown();
+        Fluid drawType = getConfiguredFluid();
+        int fluidAmt = getFluidAmountMb();
+        com.hbm_m.inventory.fluid.FluidType type = com.hbm_m.inventory.fluid.FluidType.forFluid(drawType);
 
-            if (fluidAmt > 0 && isFluidTypeExplicitlySet(drawType)) {
-                lines.add(displayName.apply(drawType));
-                lines.add(net.minecraft.network.chat.Component.literal(fluidAmt + " / " + capacity + " mB"));
-                if (pressure != 0) {
-                    lines.add(net.minecraft.network.chat.Component.translatable("gui.hbm_m.fluid_tank.pressure", pressure).withStyle(net.minecraft.ChatFormatting.RED));
-                    boolean blink = (System.currentTimeMillis() / 500) % 2 == 0;
-                    lines.add(net.minecraft.network.chat.Component.translatable("gui.hbm_m.fluid_tank.pressurized").withStyle(blink ? net.minecraft.ChatFormatting.RED : net.minecraft.ChatFormatting.DARK_RED));
-                }
-                com.hbm_m.inventory.fluid.trait.FluidTraitManager.appendFluidTypeTooltip(drawType, shift, lines);
-            } else {
-                net.minecraft.network.chat.Component lockedTypeName = null;
-                if (drawType == ModFluids.NONE.getSource()) {
-                    lockedTypeName = displayName.apply(drawType);
-                } else if (isFluidTypeExplicitlySet(drawType)) {
-                    lockedTypeName = displayName.apply(drawType);
-                }
+        lines.add(type.getLocalizedName());
+        lines.add(net.minecraft.network.chat.Component.literal(fluidAmt + " / " + capacity + " mB"));
 
-                if (lockedTypeName != null) {
-                    // Original behavior: show just the configured tank type name (None/Water/Crude Oil...)
-                    lines.add(lockedTypeName);
-                    lines.add(net.minecraft.network.chat.Component.literal("0 / " + capacity + " mB"));
-                } else {
-                    lines.add(net.minecraft.network.chat.Component.translatable("gui.hbm_m.fluid_tank.empty"));
-                }
-
-                if (pressure != 0) {
-                    lines.add(net.minecraft.network.chat.Component.translatable("gui.hbm_m.fluid_tank.pressure", pressure).withStyle(net.minecraft.ChatFormatting.RED));
-                    boolean blink = (System.currentTimeMillis() / 500) % 2 == 0;
-                    lines.add(net.minecraft.network.chat.Component.translatable("gui.hbm_m.fluid_tank.pressurized").withStyle(blink ? net.minecraft.ChatFormatting.RED : net.minecraft.ChatFormatting.DARK_RED));
-                }
-
-                if (lockedTypeName != null && isFluidTypeExplicitlySet(drawType)) {
-                    com.hbm_m.inventory.fluid.trait.FluidTraitManager.appendFluidTypeTooltip(drawType, shift, lines);
-                }
-            }
-
-            guiGraphics.renderTooltip(font, lines, java.util.Optional.empty(), mouseX, mouseY);
+        if (pressure != 0) {
+            lines.add(net.minecraft.network.chat.Component.translatable("gui.hbm_m.fluid_tank.pressure", pressure)
+                    .withStyle(net.minecraft.ChatFormatting.RED));
+            boolean blink = (System.currentTimeMillis() / 500) % 2 == 0;
+            lines.add(net.minecraft.network.chat.Component.translatable("gui.hbm_m.fluid_tank.pressurized")
+                    .withStyle(blink ? net.minecraft.ChatFormatting.RED : net.minecraft.ChatFormatting.DARK_RED));
         }
+
+        type.addInfo(shift, lines);
+
+        guiGraphics.renderTooltip(font, lines, java.util.Optional.empty(), mouseX, mouseY);
     }
 }

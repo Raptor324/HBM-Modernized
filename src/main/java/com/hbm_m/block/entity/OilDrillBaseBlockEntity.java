@@ -8,9 +8,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.hbm_m.api.fluids.ModFluids;
+import com.hbm_m.api.fluids.IFluidStandardSenderMK2;
+import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.UpgradeManager;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 
@@ -23,7 +25,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity {
+public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity implements IFluidStandardSenderMK2 {
 
     public int indicator = 0;
     public FluidTank[] tanks;
@@ -90,10 +92,17 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity {
         // Зарядка от батарейки (условный метод базы)
         entity.chargeFromBattery();
 
-        // Распределение жидкостей по трубам
+        // 1.7.10 getConPos() → 1.20.1 MK2: подписываемся в трубы по разрешённым направлениям
+        // и провайдим обе жидкости (нефть/газ) в сети соответствующих типов.
         for (Direction dir : entity.getConPos()) {
-            if (entity.tanks[0].getFluidAmountMb() > 0) entity.pushFluidToNeighbors(entity.tanks[0], dir);
-            if (entity.tanks[1].getFluidAmountMb() > 0) entity.pushFluidToNeighbors(entity.tanks[1], dir);
+            BlockPos pipePos = pos.relative(dir);
+            net.minecraft.world.level.block.entity.BlockEntity pipeBe = level.getBlockEntity(pipePos);
+            if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
+
+            for (FluidTank t : entity.tanks) {
+                if (t.getFill() <= 0) continue;
+                entity.tryProvide(t, level, pipePos, dir);
+            }
         }
 
         // Логика бурения и выкачивания
@@ -255,7 +264,26 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity {
         return upgrades;
     }
 
-    protected void pushFluidToNeighbors(FluidTank tank, Direction dir) {
-        com.hbm_m.api.fluids.FluidNetworkUtil.pushFluidToNeighbor(this, level, worldPosition, dir, tank);
+    // =====================================================================================
+    // IFluidStandardSenderMK2
+    // =====================================================================================
+
+    @Override
+    public FluidTank[] getAllTanks() { return tanks; }
+
+    @Override
+    public FluidTank[] getSendingTanks() { return tanks; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
+        if (fromDir == null) return false;
+        // Принимаем подключение к трубам нефти или попутного газа.
+        return VanillaFluidEquivalence.sameSubstance(fluid, tanks[0].getTankType())
+                || VanillaFluidEquivalence.sameSubstance(fluid, tanks[1].getTankType());
     }
 }

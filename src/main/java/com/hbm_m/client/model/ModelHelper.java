@@ -163,6 +163,39 @@ public class ModelHelper {
     }
 
     /**
+     * Смещение UV всех вершин квада (stride 8 ints: u,v в {@code base+4}, {@code base+5}).
+     * Для текстурной анимации как GL_TEXTURE в 1.7.10.
+     */
+    public static List<BakedQuad> offsetQuadUvs(List<BakedQuad> quads, float du, float dv) {
+        if (quads == null || quads.isEmpty() || (du == 0f && dv == 0f)) {
+            return quads;
+        }
+        List<BakedQuad> result = new ArrayList<>(quads.size());
+        for (BakedQuad quad : quads) {
+            int[] verts = quad.getVertices();
+            if (verts.length < 4 * MIN_STRIDE) {
+                result.add(quad);
+                continue;
+            }
+            int stride = verts.length / 4;
+            if (stride < 6) {
+                result.add(quad);
+                continue;
+            }
+            int[] newVerts = verts.clone();
+            for (int v = 0; v < 4; v++) {
+                int i = v * stride;
+                float u = Float.intBitsToFloat(newVerts[i + 4]);
+                float vv = Float.intBitsToFloat(newVerts[i + 5]);
+                newVerts[i + 4] = Float.floatToIntBits(u + du);
+                newVerts[i + 5] = Float.floatToIntBits(vv + dv);
+            }
+            result.add(new BakedQuad(newVerts, quad.getTintIndex(), quad.getDirection(), quad.getSprite(), quad.isShade()));
+        }
+        return result;
+    }
+
+    /**
      * Смещает квады на (dx, dy, dz). Для выравнивания baked model с BER (translate 0.5, 0, 0.5).
      */
     public static List<BakedQuad> translateQuads(List<BakedQuad> quads, float dx, float dy, float dz) {

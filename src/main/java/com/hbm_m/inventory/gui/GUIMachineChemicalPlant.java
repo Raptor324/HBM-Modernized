@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
-import com.hbm_m.client.gui.FluidGuiRendering;
+import com.hbm_m.api.fluids.FluidLocalization;
 import com.hbm_m.inventory.menu.MachineChemicalPlantMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
@@ -20,9 +20,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.inventory.fluid.tank.FluidTank;
-import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 /**
  * GUI для Chemical Plant - порт с 1.7.10.
@@ -68,11 +66,12 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
             }
         }
 
-        boolean hasRecipe = menu.getBlockEntity().getSelectedRecipeId() != null;
+        ChemicalPlantRecipe recipe = getSelectedRecipe();
+        boolean hasRecipe = recipe != null;
         boolean didProcess = menu.getBlockEntity().getDidProcess();
-        boolean canProcess = hasRecipe && energyStored >= 100; // Пример потребления энергии, можно адаптировать под рецепт
+        boolean canProcess = hasRecipe && energyStored >= (long) recipe.getPowerConsumption();
 
-        // ЛЕД-Индикаторы
+        // ЛЕД-Индикаторы (1.7.10: правый LED только при достаточной энергии для рецепта — см. recipe.power)
         if (didProcess) {
             guiGraphics.blit(TEXTURE, this.leftPos + 51, this.topPos + 121, 195, 0, 3, 6);
             guiGraphics.blit(TEXTURE, this.leftPos + 56, this.topPos + 121, 195, 0, 3, 6);
@@ -83,16 +82,10 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
             }
         }
 
-        // Рендер рецепта по центру (результат / папка)
+        // Иконка рецепта (1.7.10 recipe.getIcon() → здесь getResultItem с учётом icon в JSON)
         if (this.minecraft != null && this.minecraft.level != null) {
-            ChemicalPlantRecipe recipe = getSelectedRecipe();
             if (recipe != null) {
-                ItemStack icon = ItemStack.EMPTY;
-                if (!recipe.getItemOutputs().isEmpty()) {
-                    icon = recipe.getItemOutputs().get(0);
-                } else if (recipe.getResultItem(this.minecraft.level.registryAccess()) != null) {
-                    icon = recipe.getResultItem(this.minecraft.level.registryAccess());
-                }
+                ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
                 if (!icon.isEmpty()) {
                     guiGraphics.renderItem(icon, this.leftPos + 8, this.topPos + 126);
                 } else {
@@ -179,7 +172,7 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
                 (net.minecraft.client.gui.screens.Screen) this));
     }
 
-    private @NotNull ChemicalPlantRecipe getSelectedRecipe() {
+    private @Nullable ChemicalPlantRecipe getSelectedRecipe() {
         if (this.minecraft == null || this.minecraft.level == null) return null;
         ResourceLocation id = menu.getBlockEntity().getSelectedRecipeId();
         if (id == null) return null;
@@ -232,7 +225,7 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
         }
         for (var fin : recipe.getFluidInputs()) {
             lines.add(Component.literal("  " + fin.amount() + "mB ").withStyle(ChatFormatting.BLUE)
-                    .append(Component.literal(fin.fluidId().toString()).withStyle(ChatFormatting.GRAY)));
+                    .append(FluidLocalization.nameFromFluidId(fin.fluidId()).copy().withStyle(ChatFormatting.GRAY)));
         }
 
         lines.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));

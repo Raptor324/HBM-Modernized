@@ -1,11 +1,11 @@
 //? if forge {
 /*package com.hbm_m.main;
 
-import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.radiation.PlayerHandler;

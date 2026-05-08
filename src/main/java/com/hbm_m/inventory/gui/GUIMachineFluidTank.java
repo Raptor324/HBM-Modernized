@@ -5,10 +5,9 @@ import java.util.List;
 import java.util.Optional;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.client.gui.FluidGuiRendering;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-import com.hbm_m.inventory.fluid.trait.FluidTraitManager;
 import com.hbm_m.inventory.menu.MachineFluidTankMenu;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.FluidTankModePacket;
@@ -46,6 +45,19 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
     private static final int MODE_BUTTON_Y = 34;
     private static final int MODE_BUTTON_SIZE = 18;
 
+    /**
+     * Строка спрайта в {@code gui_tank.png} (U=176, каждая высотой MODE_BUTTON_SIZE).
+     * В атласе первый и третий спрайты когда‑то совпали с перепутанными подписями режимов;
+     * логика BE: 0 — только вывод, 2 — только ввод — поэтому для иконки меняем местами 0↔2.
+     */
+    private static int modeButtonSpriteRow(int logicalMode) {
+        return switch (logicalMode) {
+            case 0 -> 2;
+            case 2 -> 0;
+            default -> logicalMode;
+        };
+    }
+
     public GUIMachineFluidTank(MachineFluidTankMenu menu, Inventory inv, Component title) {
         super(menu, inv, title);
         this.imageWidth = 176;
@@ -69,7 +81,9 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
         int mode = menu.getMode();
-        guiGraphics.blit(TEXTURE, this.leftPos + MODE_BUTTON_X, this.topPos + MODE_BUTTON_Y, 176, mode * MODE_BUTTON_SIZE, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE);
+        int spriteRow = modeButtonSpriteRow(mode);
+        guiGraphics.blit(TEXTURE, this.leftPos + MODE_BUTTON_X, this.topPos + MODE_BUTTON_Y,
+                176, spriteRow * MODE_BUTTON_SIZE, MODE_BUTTON_SIZE, MODE_BUTTON_SIZE);
 
         getTank().renderTank(guiGraphics, this.leftPos + tankX, this.topPos + tankY, tankWidth, tankHeight);
     }
@@ -81,8 +95,6 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
 
         int amount = synced.isEmpty() ? 0 : (int) Math.min(Integer.MAX_VALUE, synced.getAmount());
         if (amount > 0 && type != null && type != Fluids.EMPTY) {
-            // Важно: FluidTank#fill(int) использует getStoredFluid(), который у "пустого" dummy = EMPTY.
-            // Поэтому для клиентского "dummy" выставляем напрямую тип+количество.
             dummy.setFluid(type, amount);
         }
         dummy.withPressure(menu.getPressure());

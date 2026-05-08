@@ -10,6 +10,7 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.industrial.ItemBlueprintFolder;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
@@ -26,8 +27,9 @@ import team.reborn.energy.api.EnergyStorage;
 //?}
 
 /**
- * Menu для Chemical Plant - порт с 1.7.10.
- * Layout слотов соответствует оригинальному ContainerMachineChemicalPlant.
+ * Menu для Chemical Plant — порт с 1.7.10.
+ * Координаты как в {@code ContainerMachineChemicalPlant}, кроме второго слота апгрейда:
+ * в оригинале (170, 108) он уходит за правый край текстуры 176px; здесь (152, 126), под первым.
  */
 public class MachineChemicalPlantMenu extends AbstractContainerMenu {
 
@@ -54,7 +56,6 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
             addSlot(new Slot(container, 0, 152, 81) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
-                    if (stack.getItem() instanceof ItemBlueprintFolder) return true;
                     if (ItemEnergyAccess.getHbmProvider(stack).isPresent() || ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
                     //? if fabric {
                     return EnergyStorage.ITEM.find(stack, null) != null;
@@ -64,8 +65,9 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
                 }
             });
             addSlot(new Slot(container, 1, 35, 126));  // ??? (оставляем без ограничений как было)
-            addSlot(new Slot(container, 2, 152, 108));
-            addSlot(new Slot(container, 3, 170, 108));
+            addSlot(new UpgradeSlot(container, 2, 152, 108));
+            // Второй апгрейд под первым: при x=170 слот выходил за правый край GUI (176px).
+            addSlot(new UpgradeSlot(container, 3, 152, 126));
             addSlot(new Slot(container, 4, 8, 99));
             addSlot(new Slot(container, 5, 26, 99));
             addSlot(new Slot(container, 6, 44, 99));
@@ -139,6 +141,23 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
         addDataSlots(data);
     }
 
+    /** Как 1.7.10 {@code SlotNonRetarded} для апгрейдов: только {@link ItemMachineUpgrade}, стек 1. */
+    private static final class UpgradeSlot extends Slot {
+        UpgradeSlot(ModItemStackHandlerContainer container, int index, int x, int y) {
+            super(container, index, x, y);
+        }
+
+        @Override
+        public boolean mayPlace(@NotNull ItemStack stack) {
+            return stack.getItem() instanceof ItemMachineUpgrade;
+        }
+
+        @Override
+        public int getMaxStackSize() {
+            return 1;
+        }
+    }
+
     public MachineChemicalPlantBlockEntity getBlockEntity() {
         return blockEntity;
     }
@@ -191,6 +210,8 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
                 if (!moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
             } else if (stack.getItem() instanceof ItemBlueprintFolder) {
                 if (!moveItemStackTo(stack, 1, 2, false)) return ItemStack.EMPTY;
+            } else if (stack.getItem() instanceof ItemMachineUpgrade) {
+                if (!moveItemStackTo(stack, 2, 4, false)) return ItemStack.EMPTY;
             } else if (FluidItemAccess.hasFluidHandler(stack)) {
                 if (!moveItemStackTo(stack, 10, 13, false) && !moveItemStackTo(stack, 16, 19, false)) {
                     return ItemStack.EMPTY;

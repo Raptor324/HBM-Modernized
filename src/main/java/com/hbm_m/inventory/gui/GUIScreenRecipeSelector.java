@@ -7,6 +7,7 @@ import java.util.Locale;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.fluids.FluidLocalization;
 import com.hbm_m.block.entity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.lib.RefStrings;
@@ -64,6 +65,16 @@ public class GUIScreenRecipeSelector extends Screen {
     private MachineChemicalPlantBlockEntity chemicalPlant;
 
     private record RecipeEntry(ResourceLocation id, ItemStack icon, @Nullable net.minecraft.world.item.crafting.Recipe<?> recipe) {}
+
+    /** Поиск по имени иконки, пути/id рецепта (англ.) — чтобы находить по chem_gasoline и т.п. */
+    private static boolean recipeSelectorEntryMatches(RecipeEntry entry, String lowerQuery) {
+        if (entry.icon.getHoverName().getString().toLowerCase(Locale.ROOT).contains(lowerQuery)) {
+            return true;
+        }
+        ResourceLocation rl = entry.id;
+        return rl != null && (rl.getPath().toLowerCase(Locale.ROOT).contains(lowerQuery)
+                || rl.getNamespace().toLowerCase(Locale.ROOT).contains(lowerQuery));
+    }
     
     public GUIScreenRecipeSelector(BlockPos machinePos, ResourceLocation currentRecipe, Screen parentScreen) {
         super(Component.translatable("gui.hbm_m.assembler_recipe_selector"));
@@ -104,7 +115,7 @@ public class GUIScreenRecipeSelector extends Screen {
         } else {
             String lowerQuery = query.toLowerCase(Locale.ROOT);
             for (RecipeEntry entry : allRecipes) {
-                if (entry.icon.getHoverName().getString().toLowerCase(Locale.ROOT).contains(lowerQuery)) {
+                if (recipeSelectorEntryMatches(entry, lowerQuery)) {
                     filteredRecipes.add(entry);
                 }
             }
@@ -473,7 +484,7 @@ public class GUIScreenRecipeSelector extends Screen {
             }
             for (var fin : chemicalRecipe.getFluidInputs()) {
                 tooltip.add(Component.literal("  " + fin.amount() + "mB ").withStyle(ChatFormatting.BLUE)
-                        .append(Component.literal(fin.fluidId().toString()).withStyle(ChatFormatting.GRAY)));
+                        .append(FluidLocalization.nameFromFluidId(fin.fluidId()).copy().withStyle(ChatFormatting.GRAY)));
             }
 
             tooltip.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));

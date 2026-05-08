@@ -2,7 +2,7 @@ package com.hbm_m.block.entity.machines;
 //? if forge {
 /*import org.jetbrains.annotations.NotNull;
 
-import com.hbm_m.api.fluids.ModFluids;
+import com.hbm_m.inventory.fluid.ModFluids;
 
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;

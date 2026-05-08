@@ -5,8 +5,8 @@ import java.util.ArrayList;
 import java.util.List;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.api.fluids.ModFluids;
-import com.hbm_m.inventory.fluid.trait.FluidTraitManager;
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.lib.RefStrings;
@@ -165,7 +165,7 @@ public class GUIFluidIdentifier extends Screen {
                         tooltip.add(Component.literal(HbmFluidRegistry.getFluidName(fluid)));
                     }
                 }
-                FluidTraitManager.appendFluidTypeTooltip(fluid, Screen.hasShiftDown(), tooltip);
+                FluidType.forFluid(fluid).addInfo(Screen.hasShiftDown(), tooltip);
                 guiGraphics.renderComponentTooltip(font, tooltip, mouseX, mouseY);
                 break;
             }

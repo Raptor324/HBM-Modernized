@@ -9,6 +9,8 @@ import org.jetbrains.annotations.Nullable;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
+import com.hbm_m.item.ModItems;
+import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.lib.RefStrings;
 
 import dev.architectury.fluid.FluidStack;
@@ -26,6 +28,8 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 
 /**
  * Chemical Plant recipe (1.20.1).
@@ -136,6 +140,13 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
         for (ItemStack out : itemOutputs) {
             if (!out.isEmpty()) return out.copy();
         }
+        // Как в 1.7.10 GenericRecipe.getIcon: при отсутствии иконки/предмета — первый fluid output.
+        for (FluidStack fs : fluidOutputs) {
+            if (fs == null || fs.isEmpty()) continue;
+            ItemStack stack = new ItemStack(ModItems.FLUID_IDENTIFIER.get());
+            FluidIdentifierItem.setType(stack, fs.getFluid(), true);
+            return stack;
+        }
         return ItemStack.EMPTY;
     }
 
@@ -191,9 +202,8 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
             List<ItemStack> itemOutputs = readItemOutputs(json);
             List<FluidStack> fluidOutputs = readFluidOutputs(json);
 
-            ItemStack iconItem = readIconItem(json);
             ResourceLocation iconFluid = readIconFluid(json);
-            applyIconFluid(iconItem, iconFluid);
+            ItemStack iconItem = finalizeIconStack(readIconItem(json), iconFluid);
 
             return new ChemicalPlantRecipe(recipeId, itemInputs, fluidInputs, itemOutputs, fluidOutputs, duration, power, iconItem, iconFluid, blueprintPool);
         }
@@ -206,7 +216,7 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
 
             ItemStack iconItem = buf.readBoolean() ? buf.readItem() : ItemStack.EMPTY;
             ResourceLocation iconFluid = buf.readBoolean() ? buf.readResourceLocation() : null;
-            applyIconFluid(iconItem, iconFluid);
+            iconItem = finalizeIconStack(iconItem, iconFluid);
 
             int itemInCount = buf.readVarInt();
             List<CountedIngredient> itemInputs = new ArrayList<>(itemInCount);
@@ -300,16 +310,37 @@ public class ChemicalPlantRecipe implements Recipe<SimpleContainer> {
             return ResourceLocation.tryParse(GsonHelper.getAsString(json, "icon_fluid"));
         }
 
+        /**
+         * Если задан только {@code icon_fluid} — создаётся стак {@link FluidIdentifierItem} (как в 1.7.10 ItemFluidIcon).
+         * Если заданы оба — для идентификатора прокидывается тип в NBT.
+         */
+        private static ItemStack finalizeIconStack(ItemStack iconItem, @Nullable ResourceLocation iconFluid) {
+            if (iconItem != null && !iconItem.isEmpty()) {
+                applyIconFluid(iconItem, iconFluid);
+                return iconItem;
+            }
+            if (iconFluid == null) {
+                return ItemStack.EMPTY;
+            }
+            Fluid fluid = BuiltInRegistries.FLUID.get(iconFluid);
+            if (fluid == null || fluid == Fluids.EMPTY) {
+                return ItemStack.EMPTY;
+            }
+            ItemStack stack = new ItemStack(ModItems.FLUID_IDENTIFIER.get());
+            FluidIdentifierItem.setType(stack, fluid, true);
+            return stack;
+        }
+
         private static void applyIconFluid(ItemStack iconItem, @Nullable ResourceLocation iconFluid) {
             if (iconItem == null || iconItem.isEmpty() || iconFluid == null) return;
 
-            var fluid = BuiltInRegistries.FLUID.get(iconFluid);
-            if (fluid == null || fluid == net.minecraft.world.level.material.Fluids.EMPTY) return;
+            Fluid fluid = BuiltInRegistries.FLUID.get(iconFluid);
+            if (fluid == null || fluid == Fluids.EMPTY) return;
 
             // На данный момент поддерживаем «иконку+жидкость» через FLUID_IDENTIFIER (он умеет хранить fluid в NBT).
             // Если позже появятся канистры/гастэнки с совместимым NBT — расширим этот хук.
-            if (iconItem.getItem() instanceof com.hbm_m.item.liquids.FluidIdentifierItem) {
-                com.hbm_m.item.liquids.FluidIdentifierItem.setType(iconItem, fluid, true);
+            if (iconItem.getItem() instanceof FluidIdentifierItem) {
+                FluidIdentifierItem.setType(iconItem, fluid, true);
             }
         }
 

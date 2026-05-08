@@ -6,9 +6,9 @@ import org.jetbrains.annotations.NotNull;
 import com.hbm_m.api.fluids.FluidNetProvider;
 import com.hbm_m.api.fluids.FluidNode;
 import com.hbm_m.api.fluids.IFluidPipeMK2;
-import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.api.network.UniNodespace;
 import com.hbm_m.block.entity.ModBlockEntities;
+import com.hbm_m.inventory.fluid.ModFluids;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -121,8 +121,13 @@ public class FluidExhaustBlockEntity extends BlockEntity implements IFluidPipeMK
     //? if forge {
     /*@Override
     public void onChunkUnloaded() {
-        for (FluidNode n : nodes) {
-            if (n != null) n.expired = true;
+        if (level instanceof ServerLevel serverLevel) {
+            for (int i = 0; i < nodes.length; i++) {
+                if (nodes[i] != null && !nodes[i].isExpired()) {
+                    UniNodespace.destroyNode(serverLevel, nodes[i]);
+                }
+                nodes[i] = null;
+            }
         }
         super.onChunkUnloaded();
     }

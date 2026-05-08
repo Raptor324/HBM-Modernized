@@ -887,9 +887,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.fluid_tank.empty_locked", "Пусто (тип цистерны: %s)");
                 add("gui.hbm_m.fluid_tank.empty_filter", "Пусто (фильтр: %s)");
                 add("gui.hbm_m.fluid_tank.filter_set", "Тип установлен: %s!");
-                add("gui.hbm_m.fluid_tank.mode.0", "Режим: Только ввод");
+                add("gui.hbm_m.fluid_tank.mode.0", "Режим: Только вывод");
                 add("gui.hbm_m.fluid_tank.mode.1", "Режим: Буфер");
-                add("gui.hbm_m.fluid_tank.mode.2", "Режим: Только вывод");
+                add("gui.hbm_m.fluid_tank.mode.2", "Режим: Только ввод");
                 add("gui.hbm_m.fluid_tank.mode.3", "Режим: Отключено");
                 add("gui.hbm_m.fluid_tank.pressure", "Давление: %s PU");
                 add("gui.hbm_m.fluid_tank.pressurized", "Под давлением — используйте компрессор!");
@@ -2633,9 +2633,9 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("gui.hbm_m.fluid_tank.empty_locked", "Empty (tank type: %s)");
                 add("gui.hbm_m.fluid_tank.empty_filter", "Empty (filter: %s)");
                 add("gui.hbm_m.fluid_tank.filter_set", "Type set to %s!");
-                add("gui.hbm_m.fluid_tank.mode.0", "Mode: Input only");
+                add("gui.hbm_m.fluid_tank.mode.0", "Mode: Output only");
                 add("gui.hbm_m.fluid_tank.mode.1", "Mode: Buffer");
-                add("gui.hbm_m.fluid_tank.mode.2", "Mode: Output only");
+                add("gui.hbm_m.fluid_tank.mode.2", "Mode: Input only");
                 add("gui.hbm_m.fluid_tank.mode.3", "Mode: Disabled");
                 add("gui.hbm_m.fluid_tank.pressure", "Pressure: %s PU");
                 add("gui.hbm_m.fluid_tank.pressurized", "Pressurized — use a compressor!");

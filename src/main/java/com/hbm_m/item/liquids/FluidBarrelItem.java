@@ -139,6 +139,7 @@ public class FluidBarrelItem extends Item {
             long amount = fluidTag.getLong("amount");
 
             if (f != Fluids.EMPTY && amount > 0) {
+                f = VanillaFluidEquivalence.forVanillaContainerFill(f);
                 return FluidStack.create(f, amount);
             }
         }
@@ -215,6 +216,12 @@ public class FluidBarrelItem extends Item {
                     : new net.minecraftforge.fluids.FluidStack(arch.getFluid(), (int) arch.getAmount());
         }
 
+        /^* Вода/лава: HBM-реестр vs vanilla — один состав, но разные объекты {@link Fluid}. ^/
+        private static boolean sameFluidPhysical(Fluid a, Fluid b) {
+            if (a == b) return true;
+            return VanillaFluidEquivalence.sameSubstance(a, b);
+        }
+
         // --- IFluidHandlerItem ---
 
         @NotNull @Override public ItemStack getContainer() { return container; }
@@ -233,7 +240,8 @@ public class FluidBarrelItem extends Item {
         @Override
         public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
             dev.architectury.fluid.FluidStack cur = archFluid();
-            return cur.isEmpty() || cur.getFluid() == stack.getFluid();
+            return cur.isEmpty()
+                    || sameFluidPhysical(cur.getFluid(), stack.getFluid());
         }
 
         @Override
@@ -241,15 +249,18 @@ public class FluidBarrelItem extends Item {
             if (resource.isEmpty()) return 0;
 
             dev.architectury.fluid.FluidStack cur = archFluid();
-            if (!cur.isEmpty() && cur.getFluid() != resource.getFluid()) return 0;
+            if (!cur.isEmpty() && !sameFluidPhysical(cur.getFluid(), resource.getFluid())) return 0;
 
             long have   = cur.isEmpty() ? 0L : cur.getAmount();
             long space  = CAPACITY - have;
             long toFill = Math.min(space, resource.getAmount());
 
             if (toFill > 0 && action.execute()) {
+                // setFluid уже нормализует воду/лаву под vanilla id в NBT
+                Fluid mergedType = VanillaFluidEquivalence.forVanillaContainerFill(
+                        cur.isEmpty() ? resource.getFluid() : cur.getFluid());
                 FluidBarrelItem.setFluid(container,
-                        dev.architectury.fluid.FluidStack.create(resource.getFluid(), have + toFill));
+                        dev.architectury.fluid.FluidStack.create(mergedType, have + toFill));
             }
             return (int) toFill;
         }
@@ -259,7 +270,7 @@ public class FluidBarrelItem extends Item {
         public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (resource.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
             dev.architectury.fluid.FluidStack cur = archFluid();
-            if (cur.isEmpty() || cur.getFluid() != resource.getFluid()) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            if (cur.isEmpty() || !sameFluidPhysical(cur.getFluid(), resource.getFluid())) return net.minecraftforge.fluids.FluidStack.EMPTY;
             return drain(resource.getAmount(), action);
         }
 

@@ -13,12 +13,13 @@ import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.block.entity.machines.FluidDuctBlockEntity;
+import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.block.entity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.block.entity.machines.UniversalMachinePartBlockEntity;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
@@ -248,9 +249,10 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
                 ductFluid = raw != null ? raw : Fluids.EMPTY;
             }
 
-            // === Цистерна/коннектор мультиблока ===
-            // Важно: не полагаемся на Forge capabilities для визуала (они могут быть не готовы при загрузке чанка),
-            // и не даём трубе "липнуть" к контроллеру, если подключение разрешено только через части-коннекторы.
+            // === Коннектор мультиблока (UniversalMachinePart) ===
+            // Важно: не даём трубе "липнуть" к контроллеру, если подключение разрешено только через части-коннекторы.
+            // Раньше тут был хардкод под цистерну, из-за чего трубы не коннектились к коннекторам других мультиблоков
+            // (например, хим. установки). Теперь разрешаем подключение к любому контроллеру с IFluidHandler.
             if (be instanceof UniversalMachinePartBlockEntity part
                     && part.getControllerPos() != null
                     && (part.getPartRole() == PartRole.FLUID_CONNECTOR || part.getPartRole() == PartRole.UNIVERSAL_CONNECTOR)) {
@@ -260,13 +262,36 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
                     return false;
                 }
                 BlockEntity ctrl = level.getBlockEntity(part.getControllerPos());
+                if (ctrl == null) return false;
+
+                // Химическая установка: коннект трубы визуально не фильтруем по краске/наличию рецепта
+                // (входные жидкости задаются рецептом; см. MachineChemicalPlantBlockEntity#getActiveFluidInputSlotCount).
+                if (ctrl instanceof MachineChemicalPlantBlockEntity) {
+                    return true;
+                }
+
+                // Цистерна: более строгая визуальная логика (не показываем "руку" пока тип не задан/не залит)
                 if (ctrl instanceof MachineFluidTankBlockEntity tank) {
-                    if (ductFluid == Fluids.EMPTY) {
-                        return true;
-                    }
+                    if (ductFluid == Fluids.EMPTY) return true;
                     return ductFluidMatchesTankForVisual(ductFluid, tank);
                 }
-                return false;
+
+                // Остальные контроллеры:
+                // - если труба не окрашена (EMPTY) — показываем соединение просто по наличию fluid handler
+                // - если окрашена — показываем соединение только если контроллер реально принимает этот fluid (SIMULATE fill > 0)
+                //? if forge {
+                /*var cap = ctrl.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, null);
+                if (!cap.isPresent()) return false;
+                if (ductFluid == Fluids.EMPTY) return true;
+                var handler = cap.resolve().orElse(null);
+                if (handler == null) return false;
+                int canFill = handler.fill(new net.minecraftforge.fluids.FluidStack(ductFluid, 1), net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
+                return canFill > 0;
+                *///?}
+
+                //? if fabric {
+                return ductFluid == Fluids.EMPTY;  TODO: Fabric Transfer API sided check
+                //?}
             }
 
             // Контроллер цистерны: прямое подключение запрещено правилами мультиблока.

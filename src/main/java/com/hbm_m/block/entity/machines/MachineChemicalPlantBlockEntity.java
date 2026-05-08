@@ -5,11 +5,15 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
+import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
+import com.hbm_m.api.fluids.IFluidUserMK2;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.interfaces.IUpgradeInfoProvider;
 import com.hbm_m.inventory.UpgradeManager;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineChemicalPlantMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
@@ -61,7 +65,7 @@ import team.reborn.energy.api.EnergyStorage;
  * 22 слота, 6 FluidTank (3 input, 3 output), энергия.
  * Логика крафтов - заглушка.
  */
-public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity implements IUpgradeInfoProvider {
+public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity implements IUpgradeInfoProvider, IFluidStandardTransceiverMK2 {
 
     private static final String CHEMICAL_PLANT_SOUND_INSTANCE = "com.hbm_m.sound.ChemicalPlantSoundInstance";
 
@@ -118,7 +122,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
                 case 3 -> (int) ((getEnergyStored() >> 32) & 0xFFFFFFFFL);
                 case 4 -> (int) (getMaxEnergyStored() & 0xFFFFFFFFL);
                 case 5 -> (int) ((getMaxEnergyStored() >> 32) & 0xFFFFFFFFL);
-                case 6 -> module != null && module.getDidProcess() ? 1 : 0;
+                case 6 -> module != null && (module.getDidProcess() || renderCooldownTimer > 0) ? 1 : 0;
                 default -> 0;
             };
         }
@@ -213,7 +217,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         entity.prevAnim = entity.anim;
 
         if (level.isClientSide) {
-            if (entity.module.getDidProcess()) {
+            if (entity.isChemplantEffectsActive()) {
                 entity.anim++;
             }
             entity.clientTick();
@@ -266,16 +270,112 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         return module;
     }
 
+    // =====================================================================================
+    // IFluidStandardTransceiverMK2 — нативное участие в MK2-сети.
+    // Контроллер сам не подписывается на трубы (он живёт внутри мультиблока);
+    // подписку выполняет UniversalMachinePartBlockEntity (FLUID_CONNECTOR) в своём тике.
+    // =====================================================================================
+
+    @Override
+    public FluidTank[] getReceivingTanks() { return inputTanks; }
+
+    @Override
+    public FluidTank[] getSendingTanks() { return outputTanks; }
+
+    @Override
+    public FluidTank[] getAllTanks() {
+        FluidTank[] all = new FluidTank[inputTanks.length + outputTanks.length];
+        System.arraycopy(inputTanks, 0, all, 0, inputTanks.length);
+        System.arraycopy(outputTanks, 0, all, inputTanks.length, outputTanks.length);
+        return all;
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
     @Override
     public java.util.Map<UpgradeType, Integer> getValidUpgrades() {
         return VALID_UPGRADES;
+    }
+
+    /**
+     * Количество входных fluid-баков, которые реально задаёт текущий рецепт (без этого «лишние» NONE-баки
+     * становятся сетевыми стоками и размазывают воду между слотами). 0 если рецепт не выбран или не содержит жидкостей.
+     */
+    public int getActiveFluidInputSlotCount() {
+        if (level == null) return 0;
+        ChemicalPlantRecipe r = module.peekRecipe(level);
+        if (r == null) return 0;
+        return Math.min(3, r.getFluidInputs().size());
+    }
+
+    @Override
+    public long getDemand(Fluid fluid, int pressure) {
+        long amount = 0;
+        int n = getActiveFluidInputSlotCount();
+        for (int i = 0; i < n; i++) {
+            FluidTank t = inputTanks[i];
+            if (!IFluidStandardReceiverMK2.receiverTankMatches(t, fluid, pressure)) continue;
+            amount += (long) Math.max(0, t.getMaxFill() - t.getFill());
+        }
+        return amount;
+    }
+
+    @Override
+    public long transferFluid(Fluid fluid, int pressure, long amount) {
+        if (amount <= 0 || fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
+            return amount;
+        }
+        int n = getActiveFluidInputSlotCount();
+        int tanksMatching = 0;
+        for (int i = 0; i < n; i++) {
+            if (IFluidStandardReceiverMK2.receiverTankMatches(inputTanks[i], fluid, pressure)) tanksMatching++;
+        }
+        long remain = amount;
+        if (tanksMatching > 1 && remain > 0) {
+            long share = (long) Math.floor((double) remain / tanksMatching);
+            for (int i = 0; i < n; i++) {
+                FluidTank t = inputTanks[i];
+                if (!IFluidStandardReceiverMK2.receiverTankMatches(t, fluid, pressure)) continue;
+                long got = IFluidStandardReceiverMK2.receiverFillReceivingTankMb(t, fluid, Math.min(share, remain));
+                remain -= got;
+                if (remain <= 0) return 0L;
+            }
+        }
+        if (remain > 0) {
+            for (int i = 0; i < n; i++) {
+                FluidTank t = inputTanks[i];
+                if (!IFluidStandardReceiverMK2.receiverTankMatches(t, fluid, pressure)) continue;
+                long got = IFluidStandardReceiverMK2.receiverFillReceivingTankMb(t, fluid, remain);
+                remain -= got;
+                if (remain <= 0) break;
+            }
+        }
+        return remain;
+    }
+
+    @Override
+    public int[] getReceivingPressureRange(Fluid fluid) {
+        int lowest = IFluidUserMK2.HIGHEST_VALID_PRESSURE;
+        int highest = 0;
+        int n = getActiveFluidInputSlotCount();
+        for (int i = 0; i < n; i++) {
+            FluidTank t = inputTanks[i];
+            if (!IFluidStandardReceiverMK2.receiverTankMatches(t, fluid, t.getPressure())) continue;
+            int pr = t.getPressure();
+            if (pr < lowest) lowest = pr;
+            if (pr > highest) highest = pr;
+        }
+        return lowest <= highest ? new int[]{ lowest, highest } : IFluidUserMK2.DEFAULT_PRESSURE_RANGE;
     }
 
     //? if forge {
     /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
             *///?}
     private void clientTick() {
-        ClientSoundBootstrap.updateSound(this, this.module.getDidProcess(), () -> newChemicalPlantSoundInstance());
+        ClientSoundBootstrap.updateSound(this, this.isChemplantEffectsActive(), () -> newChemicalPlantSoundInstance());
     }
 
     private Object newChemicalPlantSoundInstance() {
@@ -295,22 +395,35 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         chargeFromBatterySlot(SLOT_BATTERY);
     }
 
+    /** Живые ссылки на слоты — для {@link FluidTank#loadTank}, чтобы мутации шли напрямую в инвентарь TE. */
+    private ItemStack[] chemPlantInventorySlotBacking() {
+        int n = inventory.getSlots();
+        ItemStack[] slots = new ItemStack[n];
+        for (int s = 0; s < n; s++) {
+            slots[s] = inventory.getStackInSlot(s);
+        }
+        return slots;
+    }
+
     private void transferFluidsFromItems() {
+        //? if forge {
+        /*ItemStack[] slotView = chemPlantInventorySlotBacking();
+        *///?}
         for (int i = 0; i < 3; i++) {
             int fullContainerSlot = SLOT_FLUID_INPUT_START + i;
             int emptyContainerSlot = SLOT_FLUID_INPUT_EMPTY_START + i;
             ItemStack fullContainer = inventory.getStackInSlot(fullContainerSlot);
             if (fullContainer.isEmpty()) continue;
-            if (!inventory.getStackInSlot(emptyContainerSlot).isEmpty()) continue;
+
+            // Бесконечные контейнеры обрабатываются через FluidTank.loadTank / FluidLoaderInfinite
+            // и не требуют пустого нижнего слота под «опустошённый» стак Forge.
+            boolean infiniteIn = fullContainer.getItem() instanceof com.hbm_m.item.liquids.InfiniteFluidItem;
+            if (!infiniteIn && !inventory.getStackInSlot(emptyContainerSlot).isEmpty()) continue;
 
             //? if forge {
-            /*IFluidHandler handler = new GuardedInputTankFluidHandler(this, i);
-            var result = FluidUtil.tryEmptyContainer(fullContainer, handler, TANK_CAPACITY, null, true);
-                if (result.isSuccess()) {
-                    fullContainer.shrink(1);
-                    inventory.setStackInSlot(emptyContainerSlot, result.getResult());
-                    setChanged();
-                }
+            /*if (inputTanks[i].loadTank(fullContainerSlot, emptyContainerSlot, slotView)) {
+                setChanged();
+            }
             *///?}
 
             //? if fabric {
@@ -509,6 +622,22 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         return module.getDidProcess();
     }
 
+    /**
+     * Клиентский звук BER, приращение {@code anim} и жидкость не должны зависеть только от {@code didProcess}
+     * в одном сетевом снимке: между пакетами он часто false → мигание цвета/UV и обрыв лупа.
+     * На клиенте учитываем {@link MachineChemicalPlantBlock#RENDER_ACTIVE} и синхронизированный {@link MachineModuleChemplant#getProgress}.
+     */
+    public boolean isChemplantEffectsActive() {
+        if (level == null) return false;
+        if (!level.isClientSide) {
+            return module.getDidProcess() || renderCooldownTimer > 0;
+        }
+        BlockState st = getBlockState();
+        boolean renderActive = st.hasProperty(MachineChemicalPlantBlock.RENDER_ACTIVE)
+            && st.getValue(MachineChemicalPlantBlock.RENDER_ACTIVE);
+        return renderActive || module.getDidProcess() || module.getProgress() > 0;
+    }
+
     @Nullable
     public ResourceLocation getSelectedRecipeId() {
         return module.getSelectedRecipeId();
@@ -516,6 +645,9 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
 
     public void setSelectedRecipe(@Nullable ResourceLocation recipeId) {
         module.setSelectedRecipe(recipeId);
+        if (level != null && !level.isClientSide) {
+            module.syncTankConfigurationToRecipe(level);
+        }
         setChanged();
         if (level != null && !level.isClientSide) {
             sendUpdateToClient();
@@ -553,8 +685,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         }
         tag.putBoolean("didProcess", module.getDidProcess());
         module.writeNBT(tag);
-        tag.putFloat("anim", anim);
-        tag.putFloat("prevAnim", prevAnim);
+        // anim/prevAnim только на клиенте — не писать в NBT: иначе при каждом sync с сервера (0,0) сбрасывают интерполяцию.
     }
 
     @Override
@@ -567,8 +698,6 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         module.readNBT(tag);
         // didProcess хранится отдельно от module.writeNBT(); нужен на клиенте для звука/анимации.
         module.didProcess = tag.getBoolean("didProcess");
-        anim = tag.getFloat("anim");
-        prevAnim = tag.getFloat("prevAnim");
     }
 
     @Override
@@ -627,18 +756,21 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         @Override
         public boolean isFluidValid(int tank, net.minecraftforge.fluids.FluidStack stack) {
             if (tank >= 3) return false;
-            // Для труб/коннекта всегда "валидно": реальный приём решает fill() (по выбранному рецепту).
+            if (tank >= be.getActiveFluidInputSlotCount()) return false;
             return true;
         }
 
+        // Естественная фильтрация по рецепту:
+        //  - без выбора рецепта / без fluid во входах рецепта — ни один входной бак не примет;
+        //  - лишние баки (NONE после setupTanks) не участвуют (иначе они «пылесосят» вторую порцию той же жидкости).
         @Override
         public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
             if (resource.isEmpty()) return 0;
-            if (be.module == null || be.module.getSelectedRecipeId() == null) return 0;
-            for (int i = 0; i < 3; i++) {
+            int bound = be.getActiveFluidInputSlotCount();
+            for (int i = 0; i < bound; i++) {
                 FluidTank tank = be.inputTanks[i];
                 Fluid configured = tank.getConfiguredFluid();
-                if (configured == Fluids.EMPTY) continue;
+                if (configured == Fluids.EMPTY || configured == ModFluids.NONE.getSource()) continue;
                 if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configured, resource.getFluid())) continue;
                 int space = tank.getCapacityMb() - tank.getFluidAmountMb();
                 if (space <= 0) continue;
@@ -690,66 +822,6 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         }
     }
 
-    /^*
-     * Handler для заливки из предметов в конкретный входной танк.
-     * Должен уважать выбранный рецепт/сконфигуренную жидкость, чтобы ручной залив через GUI
-     * не обходил логику хим. установки.
-     ^/
-    private static final class GuardedInputTankFluidHandler implements IFluidHandler {
-        private final MachineChemicalPlantBlockEntity be;
-        private final int tankIndex;
-
-        private GuardedInputTankFluidHandler(MachineChemicalPlantBlockEntity be, int tankIndex) {
-            this.be = be;
-            this.tankIndex = tankIndex;
-        }
-
-        @Override public int getTanks() { return 1; }
-
-        @Override
-        public net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
-            FluidTank t = be.inputTanks[tankIndex];
-            if (t.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
-            return new net.minecraftforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb());
-        }
-
-        @Override public int getTankCapacity(int tank) { return TANK_CAPACITY; }
-
-        @Override
-        public boolean isFluidValid(int tank, net.minecraftforge.fluids.FluidStack stack) {
-            return true;
-        }
-
-        @Override
-        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty()) return 0;
-            if (be.module == null || be.module.getSelectedRecipeId() == null) return 0;
-
-            FluidTank tank = be.inputTanks[tankIndex];
-            Fluid configured = tank.getConfiguredFluid();
-            if (configured == Fluids.EMPTY) return 0;
-            if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configured, resource.getFluid())) return 0;
-
-            int space = tank.getCapacityMb() - tank.getFluidAmountMb();
-            if (space <= 0) return 0;
-            int toFill = Math.min(resource.getAmount(), space);
-            if (action.execute()) {
-                tank.fillMb(resource.getFluid(), toFill);
-                be.setChanged();
-            }
-            return toFill;
-        }
-
-        @Override
-        public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            return net.minecraftforge.fluids.FluidStack.EMPTY;
-        }
-
-        @Override
-        public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-            return net.minecraftforge.fluids.FluidStack.EMPTY;
-        }
-    }
     *///?}
 
     //? if fabric {
@@ -768,10 +840,11 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity impl
         public long insert(net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant resource, long maxAmount,
                            net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
             if (resource.isBlank() || maxAmount <= 0) return 0;
-            for (int i = 0; i < 3; i++) {
+            int bound = be.getActiveFluidInputSlotCount();
+            for (int i = 0; i < bound; i++) {
                 FluidTank tank = be.inputTanks[i];
                 Fluid configured = tank.getConfiguredFluid();
-                if (configured == Fluids.EMPTY) continue;
+                if (configured == Fluids.EMPTY || configured == ModFluids.NONE.getSource()) continue;
                 if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(configured, resource.getFluid())) continue;
                 long spaceMb = tank.getCapacityMb() - tank.getFluidAmountMb();
                 if (spaceMb <= 0) continue;

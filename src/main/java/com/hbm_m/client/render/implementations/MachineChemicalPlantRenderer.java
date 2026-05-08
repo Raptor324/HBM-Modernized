@@ -1,11 +1,6 @@
 package com.hbm_m.client.render.implementations;
 
 
-import java.util.List;
-import java.util.Optional;
-
-import org.jetbrains.annotations.Nullable;
-import org.joml.Matrix3f;
 import org.joml.Matrix4f;
 
 import com.hbm_m.block.entity.machines.MachineChemicalPlantBlockEntity;
@@ -23,31 +18,21 @@ import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import dev.architectury.fluid.FluidStack;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.Mth;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.phys.AABB;
 
 //? if forge {
-/*import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 *///?}
 
 //? if fabric {
@@ -73,6 +58,13 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
 
     /** Degrees → radians multiplier; see {@code MachineAdvancedAssemblerRenderer.DEG_TO_RAD}. */
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
+
+    /**
+     * Пивот вращения спиннера в пространстве уже запечённых VBO-вершин.
+     * В OBJ это {@code (0.5, 0, 0.5)}; JSON root translation {@code [-0.5, 0, 0.5]} сдвигает его в {@code (0, 0, 1)} — не менять JSON, только эти константы под VBO/Batch.
+     */
+    private static final float CHEMPLANT_BAKE_PIVOT_X = 0.0f;
+    private static final float CHEMPLANT_BAKE_PIVOT_Z = 1.0f;
 
     public MachineChemicalPlantRenderer(BlockEntityRendererProvider.Context ctx) {}
 
@@ -146,13 +138,13 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         if (staticFade < 0) return;
         SingleMeshVboRenderer.setFadeAlpha(staticFade);
 
-        ChemicalPlantRecipeVisual visual = getRecipeVisual(be);
+        MachineChemicalPlantVboRenderer.FluidVisual visual = MachineChemicalPlantVboRenderer.getRecipeVisual(be);
 
         // Старый baked-путь под шейдерами + простой: статика и idle-подвижные в baked; BER только жидкость/эффекты.
         // Под новым VBO путём (useVboGeometry==true) baked пуст и нам нужно рендерить всё самим.
         if (!useVboGeometry && !renderActive) {
             if (visual != null) {
-                renderSwirl(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+                MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
             }
             return;
         }
@@ -164,7 +156,7 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
         renderWithVBO(be, model, partialTick, poseStack, dynamicLight, blockPos, bufferSource, renderActive);
 
         if (visual != null) {
-            renderSwirl(be, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
+            MachineChemicalPlantVboRenderer.renderChemplantFluid(be, model, partialTick, poseStack, bufferSource, packedLight, packedOverlay, visual);
         }
     }
 
@@ -259,15 +251,17 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
             float anim = be.getAnim(partialTick);
 
             double sdx = chemicalSps(anim * 0.125) * 0.375;
+            // VBO/instanced: как GL после facing — сдвиг вдоль локальной X позы (не хвост T(-0.5) из assembler).
             matSlider.identity().translate((float) sdx, 0f, 0f);
 
             gpu.renderAnimatedPart(poseStack, dynamicLight, "Slider", matSlider, blockPos, be, bufferSource);
 
             float deg = (anim * 15f) % 360f;
+            if (deg < 0f) deg += 360f;
             matSpinner.identity()
-                .translate(0.5f, 0f, 0.5f)
+                .translate(CHEMPLANT_BAKE_PIVOT_X, 0f, CHEMPLANT_BAKE_PIVOT_Z)
                 .rotateY(deg * DEG_TO_RAD)
-                .translate(-0.5f, 0f, -0.5f);
+                .translate(-CHEMPLANT_BAKE_PIVOT_X, 0f, -CHEMPLANT_BAKE_PIVOT_Z);
 
             gpu.renderAnimatedPart(poseStack, dynamicLight, "Spinner", matSpinner, blockPos, be, bufferSource);
 
@@ -298,169 +292,5 @@ public class MachineChemicalPlantRenderer extends AbstractPartBasedRenderer<Mach
                                        InstancedStaticPartRenderer r) {
         if (r != null) r.flush(projectionMatrix);
     }
-
-    private record ChemicalPlantRecipeVisual(FluidStack textureFluid, float r, float g, float b) {}
-
-    @Nullable
-    private static ChemicalPlantRecipeVisual getRecipeVisual(MachineChemicalPlantBlockEntity be) {
-        if (!be.getDidProcess()) return null;
-        if (Minecraft.getInstance().level == null) return null;
-        ResourceLocation id = be.getSelectedRecipeId();
-        if (id == null) return null;
-
-        Optional<ChemicalPlantRecipe> recipeOpt = Minecraft.getInstance().level.getRecipeManager()
-                .byKey(id)
-                .filter(r -> r instanceof ChemicalPlantRecipe)
-                .map(r -> (ChemicalPlantRecipe) r);
-        if (recipeOpt.isEmpty()) return null;
-
-        ChemicalPlantRecipe recipe = recipeOpt.get();
-
-        // Как 1.7.10: цвет = средний по output fluids, иначе по input fluids.
-        List<FluidStack> colorFluids = !recipe.getFluidOutputs().isEmpty()
-                ? recipe.getFluidOutputs()
-                : List.of();
-        if (colorFluids.isEmpty() && !recipe.getFluidInputs().isEmpty()) {
-            List<FluidStack> tmp = new java.util.ArrayList<>();
-            for (var fin : recipe.getFluidInputs()) {
-                var fluid = BuiltInRegistries.FLUID.get(fin.fluidId());
-                if (fluid == null) continue;
-                tmp.add(FluidStack.create(fluid, (long) fin.amount()));
-            }
-            colorFluids = tmp;
-        }
-        if (colorFluids.isEmpty()) return null;
-
-        int colors = 0;
-        float rr = 0, gg = 0, bb = 0;
-        for (FluidStack fs : colorFluids) {
-            if (fs.isEmpty()) continue;
-            int tint =
-                //? if forge {
-                /*IClientFluidTypeExtensions.of(fs.getFluid()).getTintColor(FluidStackHooksForge.toForge(fs));
-                *///?} else {
-                com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(fs.getFluid());
-                //?}
-            rr += ((tint >> 16) & 0xFF) / 255.0F;
-            gg += ((tint >> 8) & 0xFF) / 255.0F;
-            bb += (tint & 0xFF) / 255.0F;
-            colors++;
-        }
-        if (colors <= 0) return null;
-        rr /= colors;
-        gg /= colors;
-        bb /= colors;
-
-        // Текстура: первая output fluid, иначе первая input fluid.
-        FluidStack texFluid = null;
-        for (FluidStack out : recipe.getFluidOutputs()) {
-            if (!out.isEmpty()) { texFluid = out; break; }
-        }
-        if (texFluid == null) {
-            for (var fin : recipe.getFluidInputs()) {
-                var fluid = BuiltInRegistries.FLUID.get(fin.fluidId());
-                if (fluid == null) continue;
-                texFluid = FluidStack.create(fluid, (long) fin.amount());
-                break;
-            }
-        }
-        if (texFluid == null || texFluid.isEmpty()) return null;
-        return new ChemicalPlantRecipeVisual(texFluid, rr, gg, bb);
-    }
-
-    /** Полупрозрачный «swirl» как 1.7.10: только BER {@link RenderType#translucent}. */
-    private static void renderSwirl(MachineChemicalPlantBlockEntity blockEntity, float partialTick, PoseStack poseStack,
-                                    MultiBufferSource buffer, int packedLight, int packedOverlay, ChemicalPlantRecipeVisual visual) {
-        FluidStack fluid = visual.textureFluid();
-        //? if forge {
-        /*IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid.getFluid());
-        var stillTexture = ext.getStillTexture(FluidStackHooksForge.toForge(fluid));
-        if (stillTexture == null) return;
-        var sprite = Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
-        *///?} else {
-        var mc = Minecraft.getInstance();
-        if (mc.level == null) return;
-        var handler = FluidRenderHandlerRegistry.INSTANCE.get(fluid.getFluid());
-        if (handler == null) return;
-        var sprites = handler.getFluidSprites(mc.level, BlockPos.ZERO, fluid.getFluid().defaultFluidState());
-        if (sprites == null || sprites.length == 0 || sprites[0] == null) return;
-        var sprite = sprites[0];
-        //?}
-        float red = visual.r();
-        float green = visual.g();
-        float blue = visual.b();
-        float alpha = 0.85F;
-        float fill = 1.0F;
-
-        boolean scrollActive = blockEntity.getDidProcess();
-        long time = blockEntity.getLevel() != null ? blockEntity.getLevel().getGameTime() : 0L;
-        float t = (time + partialTick) * 0.02F;
-        float scroll = t - (float) Mth.floor(t);
-
-        float uMin = sprite.getU0();
-        float uMax = sprite.getU1();
-        float vMin = sprite.getV0();
-        float vMax = sprite.getV1();
-
-        float du = scrollActive ? (uMax - uMin) * scroll : 0f;
-        float dv = scrollActive ? (vMax - vMin) * scroll : 0f;
-
-        float x0 = 0.20F;
-        float z0 = 0.20F;
-        float x1 = 0.80F;
-        float z1 = 0.80F;
-        float y0 = 0.10F;
-        float y1 = y0 + 0.60F * fill;
-
-        VertexConsumer vc = buffer.getBuffer(RenderType.translucent());
-
-        poseStack.pushPose();
-        PoseStack.Pose pose = poseStack.last();
-        Matrix4f poseMat = pose.pose();
-        Matrix3f normalMat = pose.normal();
-
-        addVertex(vc, poseMat, normalMat, x0, y1, z0, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, 0, 1, 0);
-        addVertex(vc, poseMat, normalMat, x0, y1, z1, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, 0, 1, 0);
-        addVertex(vc, poseMat, normalMat, x1, y1, z1, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, 0, 1, 0);
-        addVertex(vc, poseMat, normalMat, x1, y1, z0, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, 0, 1, 0);
-
-        addVertex(vc, poseMat, normalMat, x0, y0, z0, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, 0, 0, -1);
-        addVertex(vc, poseMat, normalMat, x1, y0, z0, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, 0, 0, -1);
-        addVertex(vc, poseMat, normalMat, x1, y1, z0, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, 0, 0, -1);
-        addVertex(vc, poseMat, normalMat, x0, y1, z0, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, 0, 0, -1);
-
-        addVertex(vc, poseMat, normalMat, x0, y0, z1, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, 0, 0, 1);
-        addVertex(vc, poseMat, normalMat, x0, y1, z1, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, 0, 0, 1);
-        addVertex(vc, poseMat, normalMat, x1, y1, z1, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, 0, 0, 1);
-        addVertex(vc, poseMat, normalMat, x1, y0, z1, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, 0, 0, 1);
-
-        addVertex(vc, poseMat, normalMat, x0, y0, z0, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, -1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x0, y1, z0, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, -1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x0, y1, z1, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, -1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x0, y0, z1, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, -1, 0, 0);
-
-        addVertex(vc, poseMat, normalMat, x1, y0, z0, red, green, blue, alpha, uMin + du, vMax + dv, packedOverlay, packedLight, 1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x1, y0, z1, red, green, blue, alpha, uMax + du, vMax + dv, packedOverlay, packedLight, 1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x1, y1, z1, red, green, blue, alpha, uMax + du, vMin + dv, packedOverlay, packedLight, 1, 0, 0);
-        addVertex(vc, poseMat, normalMat, x1, y1, z0, red, green, blue, alpha, uMin + du, vMin + dv, packedOverlay, packedLight, 1, 0, 0);
-
-        poseStack.popPose();
-    }
-
-    private static void addVertex(VertexConsumer vc, Matrix4f poseMat, Matrix3f normalMat,
-                                 float x, float y, float z,
-                                 float r, float g, float b, float a,
-                                 float u, float v,
-                                 int overlay, int light,
-                                 float nx, float ny, float nz) {
-        vc.vertex(poseMat, x, y, z)
-            .color(r, g, b, a)
-            .uv(u, v)
-            .overlayCoords(overlay)
-            .uv2(light)
-            .normal(normalMat, nx, ny, nz)
-            .endVertex();
-    }
-
     @Override public int getViewDistance() { return RenderDistanceHelper.getStaticViewDistanceBlocks(); }
 }

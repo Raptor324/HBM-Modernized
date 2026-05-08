@@ -6,7 +6,7 @@
     "textures": {
         "particle": "hbm_m:block/machine/chemical_plant",
         "default": "hbm_m:block/machine/chemical_plant",
-        "fluid": "hbm_m:gui/fluids/sulfuric_acid.png"
+        "fluid": "hbm_m:block/machine/chemical_plant_fluid"
     },
     "transform": {
         "rotation": [0, 0, 0],

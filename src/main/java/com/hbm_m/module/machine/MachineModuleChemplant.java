@@ -1,5 +1,6 @@
 package com.hbm_m.module.machine;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -31,6 +32,7 @@ public class MachineModuleChemplant {
     @Nullable private ResourceLocation selectedRecipeId;
     @Nullable private ChemicalPlantRecipe cachedRecipe;
     private boolean recipeCacheDirty;
+    @Nullable private ResourceLocation lastTankSetupRecipeId;
 
     private int progress;
     private int maxProgress = 100;
@@ -75,7 +77,7 @@ public class MachineModuleChemplant {
             needsSync = true;
         }
 
-        setupTanks(recipe);
+        setupTanksIfNeeded(recipe);
 
         if (recipe != null) {
             maxProgress = recipe.getDuration();
@@ -123,6 +125,40 @@ public class MachineModuleChemplant {
         return needsSync;
     }
 
+    /**
+     * Настройка типов баков под выбранный рецепт.
+     *
+     * Важно: не делаем reset/дренаж каждый тик — иначе любые внешние трубы будут
+     * бесконечно пытаться заливать "лишние" баки, которые тут же обнуляются.
+     */
+    private void setupTanksIfNeeded(@Nullable ChemicalPlantRecipe recipe) {
+        if (selectedRecipeId == null || recipe == null) {
+            lastTankSetupRecipeId = null;
+            return;
+        }
+        if (selectedRecipeId.equals(lastTankSetupRecipeId)) {
+            return;
+        }
+        setupTanks(recipe);
+        lastTankSetupRecipeId = selectedRecipeId;
+    }
+
+    /**
+     * После выбора рецепта на сервере: немедленно конфигурирует входные/выходные баки,
+     * чтобы блок-синх не уходил клиенту со старыми типами до следующего {@link #update}.
+     */
+    public void syncTankConfigurationToRecipe(Level level) {
+        if (selectedRecipeId == null) {
+            lastTankSetupRecipeId = null;
+            return;
+        }
+        ChemicalPlantRecipe recipe = getCachedRecipe(level);
+        if (recipe != null) {
+            setupTanks(recipe);
+            lastTankSetupRecipeId = selectedRecipeId;
+        }
+    }
+
     public void setupTanks(@Nullable ChemicalPlantRecipe recipe) {
         if (recipe == null) return;
         List<ChemicalPlantRecipe.FluidIngredient> fluidInputs = recipe.getFluidInputs();
@@ -166,23 +202,15 @@ public class MachineModuleChemplant {
             if (fluid == null) return false;
             FluidTank tank = inputTanks[i];
             if (tank.isEmpty()
-                    || tank.getStoredFluid() != fluid
+                    || !com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), fluid)
                     || tank.getFluidAmountMb() < req.amount()) {
                 return false;
             }
         }
 
         List<ItemStack> itemOutputs = recipe.getItemOutputs();
-        for (int i = 0; i < itemOutputs.size(); i++) {
-            ItemStack output = itemOutputs.get(i);
-            if (output.isEmpty()) continue;
-            if (i >= solidOutputSlots.length) return false;
-            int slot = solidOutputSlots[i];
-            ItemStack slotStack = inventory.getStackInSlot(slot);
-            if (!slotStack.isEmpty()) {
-                if (!ItemStack.isSameItemSameTags(slotStack, output)) return false;
-                if (slotStack.getCount() + output.getCount() > slotStack.getMaxStackSize()) return false;
-            }
+        if (!canFitAllItemOutputs(itemOutputs)) {
+            return false;
         }
 
         List<FluidStack> fluidOutputs = recipe.getFluidOutputs();
@@ -191,7 +219,7 @@ public class MachineModuleChemplant {
             if (output.isEmpty()) continue;
             if (i >= outputTanks.length) return false;
             FluidTank tank = outputTanks[i];
-            if (!tank.isEmpty() && tank.getStoredFluid() != output.getFluid()) return false;
+            if (!tank.isEmpty() && !com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), output.getFluid())) return false;
             if (tank.getFluidAmountMb() + (int) output.getAmount() > tank.getCapacityMb()) return false;
         }
         return true;
@@ -210,23 +238,107 @@ public class MachineModuleChemplant {
         }
 
         List<ItemStack> itemOutputs = recipe.getItemOutputs();
-        for (int i = 0; i < itemOutputs.size(); i++) {
-            ItemStack output = itemOutputs.get(i);
-            if (output.isEmpty()) continue;
-            int slot = solidOutputSlots[i];
-            ItemStack slotStack = inventory.getStackInSlot(slot);
-            if (slotStack.isEmpty()) {
-                inventory.setStackInSlot(slot, output.copy());
-            } else {
-                slotStack.grow(output.getCount());
-            }
-        }
+        placeAllItemOutputs(itemOutputs);
 
         List<FluidStack> fluidOutputs = recipe.getFluidOutputs();
         for (int i = 0; i < fluidOutputs.size(); i++) {
             FluidStack output = fluidOutputs.get(i);
             if (output.isEmpty()) continue;
             outputTanks[i].fillMb(output.getFluid(), (int) output.getAmount());
+        }
+    }
+
+    /** Непустые предметные выходы рецепта — порядок важен для DFS. */
+    private List<ItemStack> nonEmptyItemOutputs(List<ItemStack> itemOutputs) {
+        List<ItemStack> list = new ArrayList<>(3);
+        for (ItemStack o : itemOutputs) {
+            if (o.isEmpty()) continue;
+            list.add(o);
+        }
+        return list;
+    }
+
+    private ItemStack[] copyOutputSlotStacks() {
+        ItemStack[] sim = new ItemStack[solidOutputSlots.length];
+        for (int j = 0; j < solidOutputSlots.length; j++) {
+            ItemStack cur = inventory.getStackInSlot(solidOutputSlots[j]);
+            sim[j] = cur.isEmpty() ? ItemStack.EMPTY : cur.copy();
+        }
+        return sim;
+    }
+
+    private static boolean canMergeItemInto(ItemStack slotStack, ItemStack incoming) {
+        if (incoming.isEmpty()) return true;
+        if (slotStack.isEmpty()) return true;
+        if (!ItemStack.isSameItemSameTags(slotStack, incoming)) return false;
+        return (long) slotStack.getCount() + incoming.getCount() <= slotStack.getMaxStackSize();
+    }
+
+    /**
+     * Подбираем для каждой порции выхода один из трёх выходных слотов (слияние с уже лежащими стаками).
+     */
+    private boolean dfsPlaceItemOutputs(List<ItemStack> outs, int idx, ItemStack[] sim, int[] chosenSlotPerOutput) {
+        if (idx >= outs.size()) return true;
+        ItemStack inc = outs.get(idx);
+        for (int j = 0; j < solidOutputSlots.length; j++) {
+            ItemStack slotStack = sim[j];
+            if (!canMergeItemInto(slotStack, inc)) continue;
+
+            ItemStack prev = slotStack.isEmpty() ? ItemStack.EMPTY : slotStack.copy();
+            if (slotStack.isEmpty()) {
+                sim[j] = inc.copy();
+            } else {
+                ItemStack merged = slotStack.copy();
+                merged.grow(inc.getCount());
+                sim[j] = merged;
+            }
+            chosenSlotPerOutput[idx] = j;
+            if (dfsPlaceItemOutputs(outs, idx + 1, sim, chosenSlotPerOutput)) return true;
+            sim[j] = prev;
+        }
+        return false;
+    }
+
+    private boolean canFitAllItemOutputs(List<ItemStack> itemOutputs) {
+        List<ItemStack> outs = nonEmptyItemOutputs(itemOutputs);
+        if (outs.isEmpty()) return true;
+
+        ItemStack[] sim = copyOutputSlotStacks();
+        int[] pick = new int[outs.size()];
+        return dfsPlaceItemOutputs(outs, 0, sim, pick);
+    }
+
+    private void placeAllItemOutputs(List<ItemStack> itemOutputs) {
+        List<ItemStack> outs = nonEmptyItemOutputs(itemOutputs);
+        if (outs.isEmpty()) return;
+        ItemStack[] sim = copyOutputSlotStacks();
+        int[] pick = new int[outs.size()];
+        if (dfsPlaceItemOutputs(outs, 0, sim, pick)) {
+            for (int i = 0; i < outs.size(); i++) {
+                int j = pick[i];
+                int slot = solidOutputSlots[j];
+                ItemStack out = outs.get(i);
+                ItemStack cur = inventory.getStackInSlot(slot);
+                if (cur.isEmpty()) {
+                    inventory.setStackInSlot(slot, out.copy());
+                } else {
+                    cur.grow(out.getCount());
+                }
+            }
+            return;
+        }
+        // Fallback: порядная привязка выход → слот как в старом порте (DFS не нашёл решение из-за гонки/особого рецепта).
+        for (int i = 0; i < itemOutputs.size(); i++) {
+            ItemStack output = itemOutputs.get(i);
+            if (output.isEmpty()) continue;
+            if (i >= solidOutputSlots.length) break;
+            int slot = solidOutputSlots[i];
+            ItemStack cur = inventory.getStackInSlot(slot);
+            if (cur.isEmpty()) {
+                inventory.setStackInSlot(slot, output.copy());
+            } else {
+                cur.grow(output.getCount());
+            }
         }
     }
 
@@ -252,6 +364,12 @@ public class MachineModuleChemplant {
             recipeCacheDirty = false;
         }
         return cachedRecipe;
+    }
+
+    /** Рецепт из кэша / менеджера без привязки к тику {@link #update}; для сети и капабилити. */
+    @Nullable
+    public ChemicalPlantRecipe peekRecipe(Level level) {
+        return getCachedRecipe(level);
     }
 
     /**
@@ -298,6 +416,7 @@ public class MachineModuleChemplant {
         this.progressAccum = 0;
         this.progress = 0;
         this.didProcess = false;
+        this.lastTankSetupRecipeId = null;
         this.needsSync = true;
     }
 

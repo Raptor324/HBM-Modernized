@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.ConnectionPriority;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
+import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.FluidPumpBlock;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -67,7 +68,7 @@ public class FluidPumpBlockEntity extends BlockEntity implements IFluidStandardT
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && fluid == this.fluidType;
+        return fromDir != null && VanillaFluidEquivalence.sameSubstance(fluid, this.fluidType);
     }
 
     // =====================================================================================

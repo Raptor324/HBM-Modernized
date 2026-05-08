@@ -8,8 +8,8 @@ import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.P_GAS;
 import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.P_LIQUID_GAS;
 import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.P_OIL;
 
-import com.hbm_m.api.fluids.ModFluids;
-import com.hbm_m.api.fluids.ModFluids.FluidEntry;
+import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.inventory.fluid.ModFluids.FluidEntry;
 import com.hbm_m.inventory.fluid.trait.FT_Combustible;
 import com.hbm_m.inventory.fluid.trait.FT_Combustible.FuelGrade;
 import com.hbm_m.inventory.fluid.trait.FT_Coolable;
@@ -25,7 +25,7 @@ import com.hbm_m.inventory.fluid.trait.FT_Polluting;
 import com.hbm_m.inventory.fluid.trait.FT_Toxin;
 import com.hbm_m.inventory.fluid.trait.FT_VentRadiation;
 import com.hbm_m.inventory.fluid.trait.FluidTrait;
-import com.hbm_m.inventory.fluid.trait.FluidTraitManager;
+import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Amat;
 import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Delicious;
 import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous;
@@ -44,7 +44,7 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 
 /**
- * Seeds {@link FluidTraitManager} from 1.7.10 {@code Fluids.init()} + heat/cool chains + spreadsheet fuels.
+ * Seeds {@link FluidType} registry from 1.7.10 {@code Fluids.init()} + heat/cool chains + spreadsheet fuels.
  */
 public final class ModFluidTraitsBootstrap {
 
@@ -70,10 +70,10 @@ public final class ModFluidTraitsBootstrap {
         if (e == null) return;
         Fluid f = e.getSource();
         if (tempC != null) {
-            FluidTraitManager.setTemperatureCelsius(f, tempC);
+            FluidType.setTemperatureCelsius(f, tempC);
         }
         for (FluidTrait tr : traits) {
-            FluidTraitManager.addTrait(f, tr);
+            FluidType.addTrait(f, tr);
         }
     }
 
@@ -81,10 +81,10 @@ public final class ModFluidTraitsBootstrap {
     private static void t(Fluid f, Integer tempC, FluidTrait... traits) {
         if (f == null) return;
         if (tempC != null) {
-            FluidTraitManager.setTemperatureCelsius(f, tempC);
+            FluidType.setTemperatureCelsius(f, tempC);
         }
         for (FluidTrait tr : traits) {
-            FluidTraitManager.addTrait(f, tr);
+            FluidType.addTrait(f, tr);
         }
     }
 
@@ -331,16 +331,16 @@ public final class ModFluidTraitsBootstrap {
                 .addStep(238, 1, sst, 1)
                 .addStep(2500, 10, ust, 1);
 
-        FluidTraitManager.addTrait(w, waterHeat);
+        FluidType.addTrait(w, waterHeat);
         // Vanilla water needs identical heating traits for GUI/tooltips and cross-mod fluid IO.
-        FluidTraitManager.addTrait(vw, new FT_Heatable()
+        FluidType.addTrait(vw, new FT_Heatable()
                 .setEff(HeatingType.BOILER, effSteamBoil)
                 .setEff(HeatingType.HEATEXCHANGER, effSteamHeatex)
                 .addStep(200, 1, st, 100)
                 .addStep(220, 1, hst, 10)
                 .addStep(238, 1, sst, 1)
                 .addStep(2500, 10, ust, 1));
-        FluidTraitManager.addTrait(vfw, new FT_Heatable()
+        FluidType.addTrait(vfw, new FT_Heatable()
                 .setEff(HeatingType.BOILER, effSteamBoil)
                 .setEff(HeatingType.HEATEXCHANGER, effSteamHeatex)
                 .addStep(200, 1, st, 100)
@@ -348,29 +348,29 @@ public final class ModFluidTraitsBootstrap {
                 .addStep(238, 1, sst, 1)
                 .addStep(2500, 10, ust, 1));
 
-        FluidTraitManager.addTrait(st, new FT_Heatable()
+        FluidType.addTrait(st, new FT_Heatable()
                 .setEff(HeatingType.BOILER, effSteamBoil)
                 .setEff(HeatingType.HEATEXCHANGER, effSteamHeatex)
                 .addStep(2, 10, hst, 1));
-        FluidTraitManager.addTrait(hst, new FT_Heatable()
+        FluidType.addTrait(hst, new FT_Heatable()
                 .setEff(HeatingType.BOILER, effSteamBoil)
                 .setEff(HeatingType.HEATEXCHANGER, effSteamHeatex)
                 .addStep(18, 10, sst, 1));
-        FluidTraitManager.addTrait(sst, new FT_Heatable()
+        FluidType.addTrait(sst, new FT_Heatable()
                 .setEff(HeatingType.BOILER, effSteamBoil)
                 .setEff(HeatingType.HEATEXCHANGER, effSteamHeatex)
                 .addStep(120, 10, ust, 1));
 
-        FluidTraitManager.addTrait(st, new FT_Coolable(spent, 100, 1, 200)
+        FluidType.addTrait(st, new FT_Coolable(spent, 100, 1, 200)
                 .setEff(CoolingType.TURBINE, effSteamTurbine)
                 .setEff(CoolingType.HEATEXCHANGER, effSteamCool));
-        FluidTraitManager.addTrait(hst, new FT_Coolable(st, 1, 10, 2)
+        FluidType.addTrait(hst, new FT_Coolable(st, 1, 10, 2)
                 .setEff(CoolingType.TURBINE, effSteamTurbine)
                 .setEff(CoolingType.HEATEXCHANGER, effSteamCool));
-        FluidTraitManager.addTrait(sst, new FT_Coolable(hst, 1, 10, 18)
+        FluidType.addTrait(sst, new FT_Coolable(hst, 1, 10, 18)
                 .setEff(CoolingType.TURBINE, effSteamTurbine)
                 .setEff(CoolingType.HEATEXCHANGER, effSteamCool));
-        FluidTraitManager.addTrait(ust, new FT_Coolable(sst, 1, 10, 120)
+        FluidType.addTrait(ust, new FT_Coolable(sst, 1, 10, 120)
                 .setEff(CoolingType.TURBINE, effSteamTurbine)
                 .setEff(CoolingType.HEATEXCHANGER, effSteamCool));
 
@@ -383,94 +383,94 @@ public final class ModFluidTraitsBootstrap {
         Fluid crackDs = ModFluids.CRACKOIL_DS.getSource();
         Fluid hotcrackDs = ModFluids.HOTCRACKOIL_DS.getSource();
 
-        FluidTraitManager.addTrait(oil, new FT_Heatable()
+        FluidType.addTrait(oil, new FT_Heatable()
                 .setEff(HeatingType.BOILER, 1.0D)
                 .setEff(HeatingType.HEATEXCHANGER, 1.0D)
                 .addStep(10, 1, hotoil, 1));
-        FluidTraitManager.addTrait(oilDs, new FT_Heatable()
+        FluidType.addTrait(oilDs, new FT_Heatable()
                 .setEff(HeatingType.BOILER, 1.0D)
                 .setEff(HeatingType.HEATEXCHANGER, 1.0D)
                 .addStep(10, 1, hotoilDs, 1));
-        FluidTraitManager.addTrait(crack, new FT_Heatable()
+        FluidType.addTrait(crack, new FT_Heatable()
                 .setEff(HeatingType.BOILER, 1.0D)
                 .setEff(HeatingType.HEATEXCHANGER, 1.0D)
                 .addStep(10, 1, hotcrack, 1));
-        FluidTraitManager.addTrait(crackDs, new FT_Heatable()
+        FluidType.addTrait(crackDs, new FT_Heatable()
                 .setEff(HeatingType.BOILER, 1.0D)
                 .setEff(HeatingType.HEATEXCHANGER, 1.0D)
                 .addStep(10, 1, hotcrackDs, 1));
 
-        FluidTraitManager.addTrait(hotoil, new FT_Coolable(oil, 1, 1, 10).setEff(CoolingType.HEATEXCHANGER, 1.0D));
-        FluidTraitManager.addTrait(hotoilDs, new FT_Coolable(oilDs, 1, 1, 10).setEff(CoolingType.HEATEXCHANGER, 1.0D));
-        FluidTraitManager.addTrait(hotcrack, new FT_Coolable(crack, 1, 1, 10).setEff(CoolingType.HEATEXCHANGER, 1.0D));
-        FluidTraitManager.addTrait(hotcrackDs, new FT_Coolable(crackDs, 1, 1, 10).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+        FluidType.addTrait(hotoil, new FT_Coolable(oil, 1, 1, 10).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+        FluidType.addTrait(hotoilDs, new FT_Coolable(oilDs, 1, 1, 10).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+        FluidType.addTrait(hotcrack, new FT_Coolable(crack, 1, 1, 10).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+        FluidType.addTrait(hotcrackDs, new FT_Coolable(crackDs, 1, 1, 10).setEff(CoolingType.HEATEXCHANGER, 1.0D));
 
         Fluid cool = ModFluids.COOLANT.getSource();
         Fluid coolHot = ModFluids.COOLANT_HOT.getSource();
-        FluidTraitManager.addTrait(cool, new FT_Heatable()
+        FluidType.addTrait(cool, new FT_Heatable()
                 .setEff(HeatingType.HEATEXCHANGER, 1.0D)
                 .setEff(HeatingType.PWR, 1.0D)
                 .setEff(HeatingType.ICF, 1.0D)
                 .addStep(300, 1, coolHot, 1));
-        FluidTraitManager.addTrait(coolHot, new FT_Coolable(cool, 1, 1, 300).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+        FluidType.addTrait(coolHot, new FT_Coolable(cool, 1, 1, 300).setEff(CoolingType.HEATEXCHANGER, 1.0D));
 
         Fluid pfc = ModFluids.PERFLUOROMETHYL_COLD.getSource();
         Fluid pf = ModFluids.PERFLUOROMETHYL.getSource();
         Fluid pfh = ModFluids.PERFLUOROMETHYL_HOT.getSource();
-        FluidTraitManager.addTrait(pfc, new FT_Heatable().setEff(HeatingType.PA, 1.0D).addStep(300, 1, pf, 1));
-        FluidTraitManager.addTrait(pf, new FT_Heatable()
+        FluidType.addTrait(pfc, new FT_Heatable().setEff(HeatingType.PA, 1.0D).addStep(300, 1, pf, 1));
+        FluidType.addTrait(pf, new FT_Heatable()
                 .setEff(HeatingType.HEATEXCHANGER, 1.0D)
                 .setEff(HeatingType.PWR, 1.0D)
                 .setEff(HeatingType.ICF, 1.0D)
                 .addStep(300, 1, pfh, 1));
-        FluidTraitManager.addTrait(pfh, new FT_Coolable(pf, 1, 1, 300).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+        FluidType.addTrait(pfh, new FT_Coolable(pf, 1, 1, 300).setEff(CoolingType.HEATEXCHANGER, 1.0D));
 
         Fluid mug = ModFluids.MUG.getSource();
         Fluid mugH = ModFluids.MUG_HOT.getSource();
-        FluidTraitManager.addTrait(mug, new FT_Heatable()
+        FluidType.addTrait(mug, new FT_Heatable()
                 .setEff(HeatingType.HEATEXCHANGER, 1.0D)
                 .setEff(HeatingType.PWR, 1.0D)
                 .setEff(HeatingType.ICF, 1.25D)
                 .addStep(400, 1, mugH, 1));
-        FluidTraitManager.addTrait(mug, new FT_PWRModerator(1.15D));
-        FluidTraitManager.addTrait(mugH, new FT_Coolable(mug, 1, 1, 400).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+        FluidType.addTrait(mug, new FT_PWRModerator(1.15D));
+        FluidType.addTrait(mugH, new FT_Coolable(mug, 1, 1, 400).setEff(CoolingType.HEATEXCHANGER, 1.0D));
 
         Fluid blood = ModFluids.BLOOD.getSource();
         Fluid bloodH = ModFluids.BLOOD_HOT.getSource();
-        FluidTraitManager.addTrait(blood, new FT_Heatable()
+        FluidType.addTrait(blood, new FT_Heatable()
                 .setEff(HeatingType.HEATEXCHANGER, 1.0D)
                 .setEff(HeatingType.ICF, 1.25D)
                 .addStep(500, 1, bloodH, 1));
-        FluidTraitManager.addTrait(bloodH, new FT_Coolable(blood, 1, 1, 500).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+        FluidType.addTrait(bloodH, new FT_Coolable(blood, 1, 1, 500).setEff(CoolingType.HEATEXCHANGER, 1.0D));
 
         Fluid hw = ModFluids.HEAVYWATER.getSource();
         Fluid hwH = ModFluids.HEAVYWATER_HOT.getSource();
-        FluidTraitManager.addTrait(hw, new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(300, 1, hwH, 1));
-        FluidTraitManager.addTrait(hw, new FT_PWRModerator(1.25D));
-        FluidTraitManager.addTrait(hwH, new FT_Coolable(hw, 1, 1, 300).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+        FluidType.addTrait(hw, new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(300, 1, hwH, 1));
+        FluidType.addTrait(hw, new FT_PWRModerator(1.25D));
+        FluidType.addTrait(hwH, new FT_Coolable(hw, 1, 1, 300).setEff(CoolingType.HEATEXCHANGER, 1.0D));
 
         Fluid na = ModFluids.SODIUM.getSource();
         Fluid naH = ModFluids.SODIUM_HOT.getSource();
-        FluidTraitManager.addTrait(na, new FT_Heatable()
+        FluidType.addTrait(na, new FT_Heatable()
                 .setEff(HeatingType.PWR, 2.5D)
                 .setEff(HeatingType.ICF, 3D)
                 .addStep(400, 1, naH, 1));
-        FluidTraitManager.addTrait(naH, new FT_Coolable(na, 1, 1, 400).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+        FluidType.addTrait(naH, new FT_Coolable(na, 1, 1, 400).setEff(CoolingType.HEATEXCHANGER, 1.0D));
 
         Fluid pb = ModFluids.LEAD.getSource();
         Fluid pbH = ModFluids.LEAD_HOT.getSource();
-        FluidTraitManager.addTrait(pb, new FT_Heatable()
+        FluidType.addTrait(pb, new FT_Heatable()
                 .setEff(HeatingType.PWR, 0.75D)
                 .setEff(HeatingType.ICF, 4D)
                 .addStep(800, 1, pbH, 1));
-        FluidTraitManager.addTrait(pb, new FT_PWRModerator(0.75D));
-        FluidTraitManager.addTrait(pbH, new FT_Coolable(pb, 1, 1, 680).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+        FluidType.addTrait(pb, new FT_PWRModerator(0.75D));
+        FluidType.addTrait(pbH, new FT_Coolable(pb, 1, 1, 680).setEff(CoolingType.HEATEXCHANGER, 1.0D));
 
         Fluid th = ModFluids.THORIUM_SALT.getSource();
         Fluid thH = ModFluids.THORIUM_SALT_HOT.getSource();
         Fluid thD = ModFluids.THORIUM_SALT_DEPLETED.getSource();
-        FluidTraitManager.addTrait(th, new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(400, 1, thH, 1));
-        FluidTraitManager.addTrait(th, new FT_PWRModerator(2.5D));
-        FluidTraitManager.addTrait(thH, new FT_Coolable(thD, 1, 1, 400).setEff(CoolingType.HEATEXCHANGER, 1.0D));
+        FluidType.addTrait(th, new FT_Heatable().setEff(HeatingType.PWR, 1.0D).addStep(400, 1, thH, 1));
+        FluidType.addTrait(th, new FT_PWRModerator(2.5D));
+        FluidType.addTrait(thH, new FT_Coolable(thD, 1, 1, 400).setEff(CoolingType.HEATEXCHANGER, 1.0D));
     }
 }

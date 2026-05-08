@@ -7,11 +7,11 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.client.ClientSetup;
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.fekal_electric.ModBatteryItem;
 import com.hbm_m.item.liquids.FluidBarrelItem;

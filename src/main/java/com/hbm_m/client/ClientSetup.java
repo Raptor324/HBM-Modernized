@@ -40,6 +40,7 @@ import com.hbm_m.powerarmor.overlay.HbmThermalHandler;
 import com.hbm_m.powerarmor.overlay.OverlayPowerArmor;
 import com.hbm_m.powerarmor.overlay.PowerArmorHardLandingCameraShakeClient;
 import com.hbm_m.recipe.AssemblerRecipe;
+import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormat;
 import com.mojang.blaze3d.vertex.VertexFormatElement;
@@ -593,10 +594,16 @@ public class ClientSetup {
             RecipeManager recipeManager = Minecraft.getInstance().level.getRecipeManager();
             List<AssemblerRecipe> recipes = recipeManager.getAllRecipesFor(AssemblerRecipe.Type.INSTANCE);
 
-            // Собираем уникальные blueprintPool из всех рецептов
+            // Собираем уникальные blueprint_pool из сборочной машины и химзавода
             Set<String> blueprintPools = new HashSet<>();
             for (AssemblerRecipe recipe : recipes) {
                 String pool = recipe.getBlueprintPool();
+                if (pool != null && !pool.isEmpty()) {
+                    blueprintPools.add(pool);
+                }
+            }
+            for (ChemicalPlantRecipe chem : recipeManager.getAllRecipesFor(ChemicalPlantRecipe.Type.INSTANCE)) {
+                String pool = chem.getBlueprintPool();
                 if (pool != null && !pool.isEmpty()) {
                     blueprintPools.add(pool);
                 }

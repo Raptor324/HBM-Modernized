@@ -5,20 +5,23 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.fluids.ModFluids;
+import com.hbm_m.api.fluids.ConnectionPriority;
+import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.FT_Corrosive;
 import com.hbm_m.inventory.fluid.trait.FT_Flammable;
-import com.hbm_m.inventory.fluid.trait.FluidTraitManager;
+import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Amat;
 import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous;
 import com.hbm_m.inventory.menu.MachineFluidTankMenu;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
+import com.hbm_m.item.liquids.InfiniteFluidItem;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.platform.ModItemStackHandler;
@@ -57,7 +60,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.items.IItemHandler;
 *///?}
 
-public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider, IMultiblockSidedIO
+public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider, IMultiblockSidedIO, IFluidStandardTransceiverMK2
     //? if fabric {
     , net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
     //?}
@@ -180,8 +183,122 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     }
     *///?}
 
+    // =====================================================================================
+    // IFluidStandardTransceiverMK2 — нативное участие в MK2-сети.
+    // Mode: 0=drain only (отдача в сеть), 1=fill+drain буфер, 2=fill only (приём из сети), 3=lock.
+    // Совпадает с gui.hbm_m.fluid_tank.mode.*: 0 Output only, 2 Input only (подписи раньше были перепутаны).
+    // Приоритет: режим 1 (буфер) → LOW, чтобы обычные приёмники забирали жидкость первыми
+    // (как 1.7.10 TileEntityMachineFluidTank#getFluidPriority).
+    // =====================================================================================
+
+    private static final FluidTank[] EMPTY_TANKS = new FluidTank[0];
+
+    @Override
+    public FluidTank[] getAllTanks() { return new FluidTank[]{ fluidTank }; }
+
+    /** В сеть сливаем, если режим разрешает drain (0/1) и взорванный — нет. */
+    @Override
+    public FluidTank[] getSendingTanks() {
+        if (hasExploded || mode == 2 || mode == 3) return EMPTY_TANKS;
+        return new FluidTank[]{ fluidTank };
+    }
+
+    /** Из сети принимаем, если режим разрешает fill (1/2) и взорванный — нет. */
+    @Override
+    public FluidTank[] getReceivingTanks() {
+        if (hasExploded || mode == 0 || mode == 3) return EMPTY_TANKS;
+        return new FluidTank[]{ fluidTank };
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public ConnectionPriority getFluidPriority() {
+        // mode == 1 → буфер: заливать в последнюю очередь (LOW), как 1.7.10.
+        if (!hasExploded && mode == 1) return ConnectionPriority.LOW;
+        return ConnectionPriority.NORMAL;
+    }
+
+    @Override
+    public boolean canConnect(Fluid fluid, Direction fromDir) {
+        if (fromDir == null || hasExploded) return false;
+        // Если стороны заданы (через мультиблок-структуру или вручную) — фильтруем.
+        if (fluidSidesFromMultiblockStructure) {
+            if (!allowedFluidSides.contains(fromDir)) return false;
+        } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(fromDir)) {
+            return false;
+        }
+        // Принимаем подключение либо по совпадению типа, либо если бак ещё пуст и тип не зафиксирован.
+        Fluid current = fluidTank.getTankType();
+        if (current == null || current == Fluids.EMPTY || current == ModFluids.NONE.getSource()) {
+            return true;
+        }
+        return com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(current, fluid);
+    }
+
+    /**
+     * Бесконечный источник, если в инвентаре лежит {@link InfiniteFluidItem} c instant-режимом
+     * (порт fluid_barrel_infinite из 1.7.10).
+     */
+    @Override
+    public boolean isInfiniteNetworkSource(Fluid fluid) {
+        if (hasExploded || mode == 2 || mode == 3) return false;
+        if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(fluid, fluidTank.getTankType())) return false;
+        return hasInstantInfiniteBarrel();
+    }
+
+    /** Бесконечный сток-утилизатор по тем же критериям. */
+    @Override
+    public boolean isInfiniteNetworkSink(Fluid fluid) {
+        if (hasExploded || mode == 0 || mode == 3) return false;
+        if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(fluid, fluidTank.getTankType())) return false;
+        return hasInstantInfiniteBarrel();
+    }
+
+    private boolean hasInstantInfiniteBarrel() {
+        for (int i = 0; i < itemHandler.getSlots(); i++) {
+            ItemStack stack = itemHandler.getStackInSlot(i);
+            if (stack.isEmpty()) continue;
+            if (stack.getItem() instanceof InfiniteFluidItem inf && inf.isInstantNetwork()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineFluidTankBlockEntity entity) {
         if (level.isClientSide) return;
+
+        // 1.7.10-стиль: подписываемся на трубы у разрешённых сторон.
+        // FluidDuctBlockEntity#tick сам по себе нас не подключит, потому что мы IFluidConnectorMK2
+        // (это сделано умышленно — нативный MK2-путь даёт давление/приоритет/per-(fluid,pressure)).
+        Fluid mk2Type = entity.fluidTank.getTankType();
+        if (mk2Type != null && mk2Type != Fluids.EMPTY && mk2Type != ModFluids.NONE.getSource()) {
+            for (Direction dir : Direction.values()) {
+                if (entity.fluidSidesFromMultiblockStructure) {
+                    if (!entity.allowedFluidSides.contains(dir)) continue;
+                } else if (!entity.allowedFluidSides.isEmpty() && !entity.allowedFluidSides.contains(dir)) {
+                    continue;
+                }
+                BlockPos pipePos = pos.relative(dir);
+                BlockEntity pipeBe = level.getBlockEntity(pipePos);
+                // Подписываемся только в HBM-трубы/коннекторы; на чужие машины (или Forge IFluidHandler-машины)
+                // продолжит работать классический путь через Forge capability.
+                if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
+
+                // mode != 0/3 → принимаем
+                if (!entity.hasExploded && entity.mode != 0 && entity.mode != 3) {
+                    entity.trySubscribe(mk2Type, level, pipePos, dir);
+                }
+                // mode != 2/3 и есть содержимое → отдаём
+                if (!entity.hasExploded && entity.mode != 2 && entity.mode != 3 && entity.fluidTank.getFill() > 0) {
+                    entity.tryProvide(entity.fluidTank, level, pipePos, dir);
+                }
+            }
+        }
 
         if (!entity.hasExploded) {
             entity.age++;
@@ -192,14 +309,17 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
             if (entity.fluidTank.getFill() > 0) {
                 Fluid type = entity.fluidTank.getTankType();
-                if (FluidTraitManager.hasTrait(type, FT_Amat.class)) {
+                FluidType ftype = FluidType.forFluid(type);
+                if (ftype.isAntimatter()) {
                     entity.explode();
                     entity.fluidTank.fill(0);
                     level.explode(null, pos.getX() + 0.5, pos.getY() + 1.5, pos.getZ() + 0.5, 5F, Level.ExplosionInteraction.BLOCK);
                 }
-                FT_Corrosive corrosive = FluidTraitManager.getTrait(type, FT_Corrosive.class);
-                if (corrosive != null && corrosive.isHighlyCorrosive()) {
-                    entity.explode();
+                if (ftype.isCorrosive()) {
+                    FT_Corrosive corrosive = ftype.getTrait(FT_Corrosive.class);
+                    if (corrosive != null && corrosive.isHighlyCorrosive()) {
+                        entity.explode();
+                    }
                 }
             }
 
@@ -390,7 +510,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         @Override
         public long insert(net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant resource, long maxAmount,
                 net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
-            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return 0;
+            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return 0;
             if (resource.isBlank() || maxAmount <= 0) return 0;
             if (tank().getPressure() != 0) return 0;
             if (tank().getFill() <= 0 && !FluidTank.isFluidTypeExplicitlySet(tank().getTankType())) {
@@ -431,7 +551,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         @Override
         public long extract(net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant resource, long maxAmount,
                 net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
-            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return 0;
+            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return 0;
             if (resource.isBlank() || maxAmount <= 0) return 0;
             if (tank().getFill() <= 0) return 0;
             if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank().getTankType(), resource.getFluid())) {
@@ -534,7 +654,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     public void explode() {
         if (this.hasExploded) return;
         this.hasExploded = true;
-        this.onFire = FluidTraitManager.hasTrait(fluidTank.getTankType(), FT_Flammable.class);
+        this.onFire = FluidType.forFluid(fluidTank.getTankType()).hasTrait(FT_Flammable.class);
         this.setChanged();
     }
 
@@ -546,12 +666,13 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
     private int calculateLeakAmount() {
         Fluid type = fluidTank.getTankType();
+        FluidType ftype = FluidType.forFluid(type);
         int max = fluidTank.getMaxFill();
         int current = fluidTank.getFill();
         
-        if (FluidTraitManager.hasTrait(type, FT_Amat.class)) {
+        if (ftype.isAntimatter()) {
             return current; 
-        } else if (FluidTraitManager.hasTrait(type, FT_Gaseous.class)) {
+        } else if (ftype.hasTrait(FT_Gaseous.class)) {
             return Math.min(current, max / 100); 
         } else {
             return Math.min(current, max / 10000); 
@@ -563,10 +684,11 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
         fluidTank.fill(Math.max(0, fluidTank.getFill() - amount));
         Fluid type = fluidTank.getTankType();
+        FluidType ftype = FluidType.forFluid(type);
 
-        if (FluidTraitManager.hasTrait(type, FT_Amat.class)) {
+        if (ftype.isAntimatter()) {
             level.explode(null, worldPosition.getX() + 0.5, worldPosition.getY() + 1.5, worldPosition.getZ() + 0.5, 5F, ExplosionInteraction.BLOCK);
-        } else if (FluidTraitManager.hasTrait(type, FT_Flammable.class) && onFire) {
+        } else if (ftype.hasTrait(FT_Flammable.class) && onFire) {
             AABB fireBox = new AABB(worldPosition).inflate(2.5, 5.0, 2.5);
             List<LivingEntity> affected = level.getEntitiesOfClass(LivingEntity.class, fireBox);
             for (LivingEntity e : affected) {
@@ -575,7 +697,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             if (level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.FLAME, worldPosition.getX() + level.random.nextDouble(), worldPosition.getY() + 0.5 + level.random.nextDouble(), worldPosition.getZ() + level.random.nextDouble(), 3, 0.1, 0.1, 0.1, 0.05);
             }
-        } else if (FluidTraitManager.hasTrait(type, FT_Gaseous.class)) {
+        } else if (ftype.hasTrait(FT_Gaseous.class)) {
             if (level.getGameTime() % 5 == 0 && level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.CAMPFIRE_COSY_SMOKE, worldPosition.getX() + 0.5, worldPosition.getY() + 1, worldPosition.getZ() + 0.5, 5, 0.2, 0.5, 0.2, 0.05);
             }
@@ -846,21 +968,21 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
         @Override
         public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return 0;
+            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return 0;
             return internal.fill(resource, action);
         }
 
         @NotNull
         @Override
         public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
             return internal.drain(resource, action);
         }
 
         @NotNull
         @Override
         public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
             return internal.drain(maxDrain, action);
         }
     }

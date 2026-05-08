@@ -6,9 +6,9 @@ import java.util.function.Supplier;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.api.fluids.ModFluids;
 import com.hbm_m.block.entity.machines.FluidDuctBlockEntity;
 import com.hbm_m.block.machines.FluidDuctBlock;
+import com.hbm_m.inventory.fluid.ModFluids;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.core.BlockPos;

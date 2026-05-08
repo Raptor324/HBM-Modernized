@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.inventory.fluid.ModFluids;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.resources.ResourceLocation;
@@ -115,25 +117,24 @@ public final class HbmFluidRegistry {
         return BuiltInRegistries.FLUID.getKey(fluid);
     }
 
-    /** Gets fluid name (without _source) for NBT storage. */
+    /**
+     * Имя жидкости (без суффикса {@code _source}) для хранения в NBT.
+     * Делегирует в {@link FluidType#getName()} — единый источник правды.
+     */
     public static String getFluidName(Fluid fluid) {
-        ResourceLocation loc = BuiltInRegistries.FLUID.getKey(fluid);
-        if (loc == null) return "none";
-        String path = loc.getPath();
-        if (path.endsWith("_source")) {
-            return path.substring(0, path.length() - 7);
-        }
-        return path;
+        return FluidType.forFluid(fluid).getName();
     }
 
-    /** Returns tint color for fluid (for identifier icon). */
+    /** Тинт-цвет жидкости по её внутреннему имени; единственное место хранения — {@link ModFluids}. */
     public static int getTintColor(String fluidName) {
         return ModFluids.getTintColor(fluidName);
     }
 
-    /** Returns tint color for Fluid. */
+    /**
+     * Тинт-цвет жидкости. Делегирует в {@link FluidType#getTint()}.
+     */
     public static int getTintColor(Fluid fluid) {
-        return getTintColor(getFluidName(fluid));
+        return FluidType.forFluid(fluid).getTint();
     }
 
     /** Index of fluid in ordered list, or -1. */

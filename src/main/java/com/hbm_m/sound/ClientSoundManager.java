@@ -37,10 +37,16 @@ public class ClientSoundManager {
     public static void updateDoorSound(BlockPos pos, String soundType, boolean isMoving, Supplier<AbstractTickableSoundInstance> loopSoundSupplier) {
         String key = getKey(pos, soundType);
         if (isMoving) {
-            ACTIVE_SOUNDS.computeIfAbsent(key, k -> {
-                AbstractTickableSoundInstance newSound = loopSoundSupplier.get();
-                Minecraft.getInstance().getSoundManager().play(newSound);
-                return newSound;
+            ACTIVE_SOUNDS.compute(key, (k, existing) -> {
+                // На повторном заходе/перезагрузке чанка инстанс может остаться в map,
+                // но сам SoundInstance может быть уже остановлен. В этом случае нужно
+                // повторно запустить звук, иначе loop "не возвращается".
+                if (existing == null || existing.isStopped()) {
+                    AbstractTickableSoundInstance newSound = loopSoundSupplier.get();
+                    Minecraft.getInstance().getSoundManager().play(newSound);
+                    return newSound;
+                }
+                return existing;
             });
         } else {
             stopSpecificSound(pos, soundType);

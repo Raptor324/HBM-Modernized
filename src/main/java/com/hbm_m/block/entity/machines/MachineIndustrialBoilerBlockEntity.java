@@ -3,6 +3,8 @@ package com.hbm_m.block.entity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
+import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.block.entity.BaseMachineBlockEntity;
 import com.hbm_m.block.entity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineIndustrialBoilerBlock;
@@ -20,6 +22,7 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 
@@ -42,7 +45,7 @@ import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
  * - Steam tank: 6,400,000 mB
  * - TU (Thermal Units) for heat input
  */
-public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
+public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
     // Slot definitions
     public static final int SLOT_WATER_IN = 0;
@@ -131,12 +134,62 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
         // Convert water to steam if we have enough energy
         be.processBoiling();
 
+        // 1.7.10-стиль подписки в MK2-сеть.
+        // Steam (output): UP — наружу; Water (input): остальные стороны — внутрь.
+        for (Direction dir : Direction.values()) {
+            BlockPos pipePos = pos.relative(dir);
+            BlockEntity pipeBe = level.getBlockEntity(pipePos);
+            if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
+
+            if (dir == Direction.UP) {
+                // Steam out
+                if (be.steamTank.getFill() > 0) {
+                    be.tryProvide(be.steamTank, level, pipePos, dir);
+                }
+            } else {
+                // Water in (sides + bottom)
+                be.trySubscribe(Fluids.WATER, level, pipePos, dir);
+            }
+        }
+
         // Update visual state
         if (wasActive != be.isActive()) {
             level.setBlock(pos, state.setValue(MachineIndustrialBoilerBlock.LIT, be.isActive()), 3);
         }
 
         be.setChanged();
+    }
+
+    // =====================================================================================
+    // IFluidStandardTransceiverMK2
+    // - waterTank — приёмник (вода)
+    // - steamTank — поставщик (placeholder Fluids.WATER до появления реальной жидкости steam;
+    //   для steam-жидкости уже сейчас можно будет включить pressure-тиры (1/2/3)).
+    // =====================================================================================
+
+    @Override
+    public FluidTank[] getAllTanks() { return new FluidTank[]{ waterTank, steamTank }; }
+
+    @Override
+    public FluidTank[] getReceivingTanks() { return new FluidTank[]{ waterTank }; }
+
+    @Override
+    public FluidTank[] getSendingTanks() {
+        return steamTank.getFill() > 0 ? new FluidTank[]{ steamTank } : new FluidTank[0];
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction fromDir) {
+        if (fromDir == null) return false;
+        // UP — только steam-out; остальное — только water-in.
+        // Так как steam ещё не отдельная жидкость (placeholder=Fluids.WATER), временно разрешаем оба
+        // на UP и !UP — реальная фильтрация и так по типу, тип здесь один и тот же.
+        return true;
     }
 
     private void processFluidContainers() {
@@ -351,12 +404,12 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity {
 
         @Override
         public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
-            return stack.getFluid() == Fluids.WATER;
+            return VanillaFluidEquivalence.isWater(stack.getFluid());
         }
 
         @Override
         public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || resource.getFluid() != Fluids.WATER) return 0;
+            if (resource.isEmpty() || !VanillaFluidEquivalence.isWater(resource.getFluid())) return 0;
             
             int space = be.waterTank.getMaxFill() - be.waterTank.getFill();
             int toFill = Math.min(space, resource.getAmount());
