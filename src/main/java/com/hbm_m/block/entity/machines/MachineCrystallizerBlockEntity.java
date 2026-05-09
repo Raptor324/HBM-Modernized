@@ -132,7 +132,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
 
         // Поиск рецепта по входу + текущей жидкости в баке.
         ItemStack inputStack = entity.inventory.getStackInSlot(SLOT_INPUT);
-        FluidStack tankFluid = entity.tank.getFluid();
+        FluidStack tankFluid = entity.getTankFluidStack();
         CrystallizerRecipe recipe = CrystallizerRecipes.findRecipe(inputStack, tankFluid);
 
         boolean wasOn = entity.isOn;
@@ -186,7 +186,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         if (getEnergyStored() < getPowerRequired()) return false;
 
         // Хватает ли кислоты в баке.
-        if (recipe.getAcid() != null && tank.getFluidAmount() < recipe.getAcidAmount()) {
+        if (recipe.getAcid() != null && tank.getFluidAmountMb() < recipe.getAcidAmount()) {
             return false;
         }
 
@@ -215,7 +215,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
 
         // Слить кислоту, если рецепт её требует.
         if (recipe.getAcid() != null && recipe.getAcidAmount() > 0) {
-            tank.drain(recipe.getAcidAmount(), IFluidHandler.FluidAction.EXECUTE);
+            tank.drainMb(recipe.getAcidAmount());
         }
 
         // Productivity: шанс не тратить вход. С апгрейдом EFFECT шанс растёт
@@ -237,30 +237,11 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         if (fillStack.isEmpty()) return;
         if (!inventory.getStackInSlot(SLOT_FLUID_OUTPUT).isEmpty()) return;
 
-        var result = FluidUtil.tryEmptyContainer(fillStack, tank, TANK_CAPACITY, null, true);
-        if (result.isSuccess()) {
-            inventory.setStackInSlot(SLOT_FLUID_INPUT, ItemStack.EMPTY);
-            inventory.setStackInSlot(SLOT_FLUID_OUTPUT, result.getResult());
-            setChanged();
-        }
-    }
-
-    private void chargeFromBattery() {
-        ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
-        if (!stack.isEmpty() && stack.getItem() instanceof ItemCreativeBattery) {
-            setEnergyStored(getMaxEnergyStored());
-            return;
-        }
-        chargeFromBatterySlot(SLOT_BATTERY);
-    }
-
-    private void transferFluidsFromItems() {
-        ItemStack fillStack = inventory.getStackInSlot(SLOT_FLUID_INPUT);
-        if (fillStack.isEmpty()) return;
-        if (!inventory.getStackInSlot(SLOT_FLUID_OUTPUT).isEmpty()) return;
-
         //? if forge {
-        /*var result = FluidUtil.tryEmptyContainer(fillStack, (IFluidHandler) tank, TANK_CAPACITY, null, false);
+        /*IFluidHandler handler = tankHandler.orElse(null);
+        if (handler == null) return;
+
+        var result = FluidUtil.tryEmptyContainer(fillStack, handler, TANK_CAPACITY, null, true);
         if (result.isSuccess()) {
             inventory.setStackInSlot(SLOT_FLUID_INPUT, ItemStack.EMPTY);
             inventory.setStackInSlot(SLOT_FLUID_OUTPUT, result.getResult());
@@ -292,6 +273,27 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
         }
         //?}
     }
+
+    private void chargeFromBattery() {
+        ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
+        if (!stack.isEmpty() && stack.getItem() instanceof ItemCreativeBattery) {
+            setEnergyStored(getMaxEnergyStored());
+            return;
+        }
+        chargeFromBatterySlot(SLOT_BATTERY);
+    }
+
+    private int calcDuration(CrystallizerRecipe recipe) {
+        return recipe.getDuration();
+    }
+
+    //? if forge {
+    /*private FluidStack getTankFluidStack() {
+        var fluid = tank.getStoredFluid();
+        int amount = tank.getFluidAmountMb();
+        return fluid == null || amount <= 0 ? FluidStack.EMPTY : new FluidStack(fluid, amount);
+    }
+    *///?}
 
     private boolean canProcess() {
         if (inventory.getStackInSlot(SLOT_INPUT).isEmpty()) return false;
@@ -348,7 +350,7 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity {
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_INPUT) {
             // Принимаем только то, что подходит хотя бы под один рецепт с текущей жидкостью.
-            return CrystallizerRecipes.findRecipe(stack, tank.getFluid()) != null;
+            return CrystallizerRecipes.findRecipe(stack, getTankFluidStack()) != null;
         }
         if (slot == SLOT_BATTERY) {
             if (stack.getItem() instanceof ItemCreativeBattery) return true;
